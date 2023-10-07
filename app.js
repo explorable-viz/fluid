@@ -28972,8 +28972,8 @@
           return (v) => {
             if (v.tag === "Cons") {
               if (v._2.tag === "Nil") {
-                const v2 = op.i.match(v._1);
-                return map5(op.o.constr)(map5((v3) => $Tuple(op.fwd(v2._1), v3))(dictMonadWithGraphAlloc.new($Map(
+                const v2 = op.i.unpack(v._1);
+                return map5(op.o.pack)(map5((v3) => $Tuple(op.fwd(v2._1), v3))(dictMonadWithGraphAlloc.new($Map(
                   "Two",
                   Leaf2,
                   v2._2,
@@ -28991,71 +28991,58 @@
           return (v) => {
             if (v.tag === "Cons") {
               if (v._2.tag === "Nil") {
-                const v2 = op.i.match(v._1);
-                return pure2($Tuple(functorVal.map((v$1) => unit2)(v._1), op.o.constr($Tuple(op.fwd(v2._1), v2._2))));
+                const v2 = op.i.unpack(v._1);
+                return pure2($Tuple(functorVal.map((v$1) => unit2)(v._1), op.o.pack($Tuple(op.fwd(v2._1), v2._2))));
               }
               fail();
             }
             fail();
           };
         },
-        op_bwd: (dictAnn) => (v) => $List("Cons", op.i.constr($Tuple(op.i.match(v._1)._1, op.o.constr_bwd(v._2)._2)), Nil)
+        op_bwd: (dictAnn) => (v) => $List("Cons", op.i.pack($Tuple(op.i.unpack(v._1)._1, op.o.unpack(v._2)._2)), Nil)
       }),
       Nil
     )
   );
+  var typeError = (v) => (typeName3) => unsafePerformEffect(throwException(error(typeName3 + (" expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines)))));
   var string2 = {
-    constr: (v) => $Val("Str", v._2, v._1),
-    constr_bwd: (v) => {
+    pack: (v) => $Val("Str", v._2, v._1),
+    unpack: (v) => {
       if (v.tag === "Str") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Str expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-    },
-    match: (v) => {
-      if (v.tag === "Str") {
-        return $Tuple(v._2, v._1);
-      }
-      return unsafePerformEffect(throwException(error("Str expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+      return typeError(v)("Str");
     }
   };
-  var record = (dictAnn) => {
-    const prettyP1 = prettyP(prettyVal(dictAnn.Highlightable0()));
-    const match$p1 = (v) => {
+  var record = (dictAnn) => ({
+    pack: (v) => $Val("Record", v._2, v._1),
+    unpack: (v) => {
       if (v.tag === "Record") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Record expected; got " + prettyP1(v))));
-    };
-    return { constr: (v) => $Val("Record", v._2, v._1), constr_bwd: match$p1, match: match$p1 };
-  };
+      return typeError(v)("Record");
+    }
+  });
   var number5 = {
-    constr: (v) => $Val("Float", v._2, v._1),
-    constr_bwd: (v) => {
+    pack: (v) => $Val("Float", v._2, v._1),
+    unpack: (v) => {
       if (v.tag === "Float") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Float expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-    },
-    match: (v) => {
-      if (v.tag === "Float") {
-        return $Tuple(v._2, v._1);
-      }
-      return unsafePerformEffect(throwException(error("Float expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+      return typeError(v)("Float");
     }
   };
-  var matrixRep = (dictAnn) => {
-    const prettyP1 = prettyP(prettyVal(dictAnn.Highlightable0()));
-    const match$p1 = (v) => {
+  var matrixRep = (dictAnn) => ({
+    pack: (v) => $Val("Matrix", v._2, v._1),
+    unpack: (v) => {
       if (v.tag === "Matrix") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Matrix expected; got " + prettyP1(v))));
-    };
-    return { constr: (v) => $Val("Matrix", v._2, v._1), constr_bwd: match$p1, match: match$p1 };
-  };
+      return typeError(v)("Matrix");
+    }
+  });
   var intOrNumberOrString = {
-    constr: (v) => {
+    pack: (v) => {
       if (v._1.tag === "Left") {
         return $Val("Int", v._2, v._1._1);
       }
@@ -29070,7 +29057,7 @@
       }
       fail();
     },
-    constr_bwd: (v) => {
+    unpack: (v) => {
       if (v.tag === "Int") {
         return $Tuple($Either("Left", v._2), v._1);
       }
@@ -29080,23 +29067,11 @@
       if (v.tag === "Str") {
         return $Tuple($Either("Right", $Either("Right", v._2)), v._1);
       }
-      return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-    },
-    match: (v) => {
-      if (v.tag === "Int") {
-        return $Tuple($Either("Left", v._2), v._1);
-      }
-      if (v.tag === "Float") {
-        return $Tuple($Either("Right", $Either("Left", v._2)), v._1);
-      }
-      if (v.tag === "Str") {
-        return $Tuple($Either("Right", $Either("Right", v._2)), v._1);
-      }
-      return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+      return typeError(v)("Int, Float or Str");
     }
   };
   var intOrNumber = {
-    constr: (v) => {
+    pack: (v) => {
       if (v._1.tag === "Left") {
         return $Val("Int", v._2, v._1._1);
       }
@@ -29105,86 +29080,69 @@
       }
       fail();
     },
-    constr_bwd: (v) => {
+    unpack: (v) => {
       if (v.tag === "Int") {
         return $Tuple($Either("Left", v._2), v._1);
       }
       if (v.tag === "Float") {
         return $Tuple($Either("Right", v._2), v._1);
       }
-      return unsafePerformEffect(throwException(error("Int or Float expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-    },
-    match: (v) => {
-      if (v.tag === "Int") {
-        return $Tuple($Either("Left", v._2), v._1);
-      }
-      if (v.tag === "Float") {
-        return $Tuple($Either("Right", v._2), v._1);
-      }
-      return unsafePerformEffect(throwException(error("Int or Float expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+      return typeError(v)("Int or Float");
     }
   };
   var $$int = {
-    constr: (v) => $Val("Int", v._2, v._1),
-    constr_bwd: (v) => {
+    pack: (v) => $Val("Int", v._2, v._1),
+    unpack: (v) => {
       if (v.tag === "Int") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Int expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-    },
-    match: (v) => {
-      if (v.tag === "Int") {
-        return $Tuple(v._2, v._1);
-      }
-      return unsafePerformEffect(throwException(error("Int expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+      return typeError(v)("Int");
     }
   };
   var intPair = {
-    constr: (v) => $Val(
+    pack: (v) => $Val(
       "Constr",
       v._2,
       "Pair",
       $List("Cons", $Val("Int", v._1._1._2, v._1._1._1), $List("Cons", $Val("Int", v._1._2._2, v._1._2._1), Nil))
     ),
-    constr_bwd: (v) => {
+    unpack: (v) => {
       if (v.tag === "Constr") {
         if (v._3.tag === "Cons") {
           if (v._3._2.tag === "Cons") {
             if (v._3._2._2.tag === "Nil") {
               if (v._2 === "Pair") {
-                return $Tuple($Tuple($$int.match(v._3._1), $$int.match(v._3._2._1)), v._1);
+                return $Tuple(
+                  $Tuple(
+                    (() => {
+                      if (v._3._1.tag === "Int") {
+                        return $Tuple(v._3._1._2, v._3._1._1);
+                      }
+                      return typeError(v._3._1)("Int");
+                    })(),
+                    (() => {
+                      if (v._3._2._1.tag === "Int") {
+                        return $Tuple(v._3._2._1._2, v._3._2._1._1);
+                      }
+                      return typeError(v._3._2._1)("Int");
+                    })()
+                  ),
+                  v._1
+                );
               }
-              return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+              return typeError(v)("Pair");
             }
-            return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+            return typeError(v)("Pair");
           }
-          return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+          return typeError(v)("Pair");
         }
-        return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+        return typeError(v)("Pair");
       }
-      return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-    },
-    match: (v) => {
-      if (v.tag === "Constr") {
-        if (v._3.tag === "Cons") {
-          if (v._3._2.tag === "Cons") {
-            if (v._3._2._2.tag === "Nil") {
-              if (v._2 === "Pair") {
-                return $Tuple($Tuple($$int.match(v._3._1), $$int.match(v._3._2._1)), v._1);
-              }
-              return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-            }
-            return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-          }
-          return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-        }
-        return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-      }
-      return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+      return typeError(v)("Pair");
     }
   };
   var $$boolean = {
-    constr: (v) => {
+    pack: (v) => {
       if (v._1) {
         return $Val("Constr", v._2, "True", Nil);
       }
@@ -29193,7 +29151,7 @@
       }
       fail();
     },
-    constr_bwd: (v) => {
+    unpack: (v) => {
       if (v.tag === "Constr") {
         if (v._3.tag === "Nil") {
           if (v._2 === "True") {
@@ -29202,26 +29160,11 @@
           if (v._2 === "False") {
             return $Tuple(false, v._1);
           }
-          return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+          return typeError(v)("Boolean");
         }
-        return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+        return typeError(v)("Boolean");
       }
-      return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-    },
-    match: (v) => {
-      if (v.tag === "Constr") {
-        if (v._3.tag === "Nil") {
-          if (v._2 === "True") {
-            return $Tuple(true, v._1);
-          }
-          if (v._2 === "False") {
-            return $Tuple(false, v._1);
-          }
-          return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-        }
-        return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
-      }
-      return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
+      return typeError(v)("Boolean");
     }
   };
   var binaryZero = (dictBoundedJoinSemilattice) => (dictIsZero) => (op) => $Val(
@@ -29237,9 +29180,9 @@
             if (v.tag === "Cons") {
               if (v._2.tag === "Cons") {
                 if (v._2._2.tag === "Nil") {
-                  const $7 = op.i.match(v._1);
-                  const $8 = op.i.match(v._2._1);
-                  return map5(op.o.constr)(map5((v4) => $Tuple(op.fwd($7._1)($8._1), v4))(dictMonadWithGraphAlloc.new((() => {
+                  const $7 = op.i.unpack(v._1);
+                  const $8 = op.i.unpack(v._2._1);
+                  return map5(op.o.pack)(map5((v4) => $Tuple(op.fwd($7._1)($8._1), v4))(dictMonadWithGraphAlloc.new((() => {
                     if (dictIsZero.isZero($7._1)) {
                       return $Map("Two", Leaf2, $7._2, unit2, Leaf2);
                     }
@@ -29270,11 +29213,11 @@
               if (v.tag === "Cons") {
                 if (v._2.tag === "Cons") {
                   if (v._2._2.tag === "Nil") {
-                    const $8 = op.i.match(v._1);
-                    const $9 = op.i.match(v._2._1);
+                    const $8 = op.i.unpack(v._1);
+                    const $9 = op.i.unpack(v._2._1);
                     return pure2($Tuple(
                       $Tuple(functorVal.map((v$1) => unit2)(v._1), functorVal.map((v$1) => unit2)(v._2._1)),
-                      op.o.constr($Tuple(
+                      op.o.pack($Tuple(
                         op.fwd($8._1)($9._1),
                         (() => {
                           if (dictIsZero.isZero($8._1)) {
@@ -29299,27 +29242,27 @@
         op_bwd: (dictAnn) => {
           const bot1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
           return (v) => {
-            const $6 = op.o.constr_bwd(v._2)._2;
-            const $7 = op.i.match(v._1._1);
-            const $8 = op.i.match(v._1._2);
+            const $6 = op.o.unpack(v._2)._2;
+            const $7 = op.i.unpack(v._1._1);
+            const $8 = op.i.unpack(v._1._2);
             if (dictIsZero.isZero($7._1)) {
               return $List(
                 "Cons",
-                op.i.constr($Tuple($7._1, $6)),
-                $List("Cons", op.i.constr($Tuple($8._1, bot1)), Nil)
+                op.i.pack($Tuple($7._1, $6)),
+                $List("Cons", op.i.pack($Tuple($8._1, bot1)), Nil)
               );
             }
             if (dictIsZero.isZero($8._1)) {
               return $List(
                 "Cons",
-                op.i.constr($Tuple($7._1, bot1)),
-                $List("Cons", op.i.constr($Tuple($8._1, $6)), Nil)
+                op.i.pack($Tuple($7._1, bot1)),
+                $List("Cons", op.i.pack($Tuple($8._1, $6)), Nil)
               );
             }
             return $List(
               "Cons",
-              op.i.constr($Tuple($7._1, $6)),
-              $List("Cons", op.i.constr($Tuple($8._1, $6)), Nil)
+              op.i.pack($Tuple($7._1, $6)),
+              $List("Cons", op.i.pack($Tuple($8._1, $6)), Nil)
             );
           };
         }
@@ -29340,9 +29283,9 @@
             if (v.tag === "Cons") {
               if (v._2.tag === "Cons") {
                 if (v._2._2.tag === "Nil") {
-                  const $6 = op.i1.match(v._1);
-                  const $7 = op.i2.match(v._2._1);
-                  return map5(op.o.constr)(map5((v4) => $Tuple(op.fwd($6._1)($7._1), v4))(dictMonadWithGraphAlloc.new(insert2(ordVertex)($7._2)(unit2)($Map(
+                  const $6 = op.i1.unpack(v._1);
+                  const $7 = op.i2.unpack(v._2._1);
+                  return map5(op.o.pack)(map5((v4) => $Tuple(op.fwd($6._1)($7._1), v4))(dictMonadWithGraphAlloc.new(insert2(ordVertex)($7._2)(unit2)($Map(
                     "Two",
                     Leaf2,
                     $6._2,
@@ -29365,11 +29308,11 @@
               if (v.tag === "Cons") {
                 if (v._2.tag === "Cons") {
                   if (v._2._2.tag === "Nil") {
-                    const $7 = op.i1.match(v._1);
-                    const $8 = op.i2.match(v._2._1);
+                    const $7 = op.i1.unpack(v._1);
+                    const $8 = op.i2.unpack(v._2._1);
                     return pure2($Tuple(
                       $Tuple(functorVal.map((v$1) => unit2)(v._1), functorVal.map((v$1) => unit2)(v._2._1)),
-                      op.o.constr($Tuple(op.fwd($7._1)($8._1), meet($7._2)($8._2)))
+                      op.o.pack($Tuple(op.fwd($7._1)($8._1), meet($7._2)($8._2)))
                     ));
                   }
                   fail();
@@ -29381,11 +29324,11 @@
           };
         },
         op_bwd: (dictAnn) => (v) => {
-          const $4 = op.o.constr_bwd(v._2)._2;
+          const $4 = op.o.unpack(v._2)._2;
           return $List(
             "Cons",
-            op.i1.constr($Tuple(op.i1.match(v._1._1)._1, $4)),
-            $List("Cons", op.i2.constr($Tuple(op.i2.match(v._1._2)._1, $4)), Nil)
+            op.i1.pack($Tuple(op.i1.unpack(v._1._1)._1, $4)),
+            $List("Cons", op.i2.pack($Tuple(op.i2.unpack(v._1._2)._1, $4)), Nil)
           );
         }
       }),
@@ -29423,9 +29366,9 @@
 
   // output-es/App.Util/index.js
   var record1 = /* @__PURE__ */ record(annBoolean);
-  var record2 = (toRecord) => (u) => toRecord(record1.match(u)._1);
+  var record2 = (toRecord) => (u) => toRecord(record1.unpack(u)._1);
   var get_intOrNumber = (x2) => (r) => {
-    const $2 = intOrNumber.match($$get(x2)(r));
+    const $2 = intOrNumber.unpack($$get(x2)(r));
     return $Tuple(
       (() => {
         if ($2._1.tag === "Left") {
@@ -30712,10 +30655,27 @@
   var drawBarChart = curry4(drawBarChart_);
 
   // output-es/App.BarChart/index.js
-  var reflectDictValBooleanBarC = { from: () => (r) => ({ x: string2.match($$get("x")(r)), y: get_intOrNumber("y")(r) }) };
+  var reflectDictValBooleanBarC = {
+    from: () => (r) => ({
+      x: (() => {
+        const $2 = $$get("x")(r);
+        if ($2.tag === "Str") {
+          return $Tuple($2._2, $2._1);
+        }
+        return typeError($2)("Str");
+      })(),
+      y: get_intOrNumber("y")(r)
+    })
+  };
   var reflectDictValBooleanBarC1 = {
     from: () => (r) => ({
-      caption: string2.match($$get("caption")(r)),
+      caption: (() => {
+        const $2 = $$get("caption")(r);
+        if ($2.tag === "Str") {
+          return $Tuple($2._2, $2._1);
+        }
+        return typeError($2)("Str");
+      })(),
       data: arrayMap(record2(reflectDictValBooleanBarC.from()))(reflectValBooleanArrayVal.from()($$get("data")(r)))
     })
   };
@@ -30793,7 +30753,13 @@
   var reflectDictValBooleanPoin = { from: () => (r) => ({ x: get_intOrNumber("x")(r), y: get_intOrNumber("y")(r) }) };
   var reflectDictValBooleanLine = {
     from: () => (r) => ({
-      name: string2.match($$get("name")(r)),
+      name: (() => {
+        const $2 = $$get("name")(r);
+        if ($2.tag === "Str") {
+          return $Tuple($2._2, $2._1);
+        }
+        return typeError($2)("Str");
+      })(),
       data: arrayMap(record2(reflectDictValBooleanPoin.from()))(reflectValBooleanArrayVal.from()($$get("data")(r)))
     })
   };
@@ -30803,7 +30769,7 @@
         if (v._3.tag === "Cons") {
           if (v._3._2.tag === "Nil") {
             if (v._2 === "LinePlot") {
-              return reflectDictValBooleanLine.from()(record1.match(v._3._1)._1);
+              return reflectDictValBooleanLine.from()(record1.unpack(v._3._1)._1);
             }
             fail();
           }
@@ -30816,7 +30782,13 @@
   };
   var reflectDictValBooleanLine1 = {
     from: () => (r) => ({
-      caption: string2.match($$get("caption")(r)),
+      caption: (() => {
+        const $2 = $$get("caption")(r);
+        if ($2.tag === "Str") {
+          return $Tuple($2._2, $2._1);
+        }
+        return typeError($2)("Str");
+      })(),
       plots: arrayMap(reflectValBooleanLinePlot.from())(reflectValBooleanArrayVal.from()($$get("plots")(r)))
     })
   };
@@ -30872,7 +30844,7 @@
     )).__data__)(0));
     return matrixElement(definitely("index within bounds")(index2(xy)(0)))(definitely("index within bounds")(index2(xy)(1)))(functorVal.map(boolNot));
   };
-  var matrixRep2 = (v) => $Tuple(arrayMap(arrayMap((x2) => $$int.match(x2)))(v._1), $Tuple(v._2._1._1, v._2._2._1));
+  var matrixRep2 = (v) => $Tuple(arrayMap((v1) => arrayMap($$int.unpack)(v1))(v._1), $Tuple(v._2._1._1, v._2._2._1));
 
   // output-es/App.TableView/foreign.js
   function curry44(f) {
@@ -30923,9 +30895,27 @@
 
   // output-es/App.TableView/index.js
   var energyRecord = (r) => ({
-    year: $$int.match($$get("year")(r)),
-    country: string2.match($$get("country")(r)),
-    energyType: string2.match($$get("energyType")(r)),
+    year: (() => {
+      const $1 = $$get("year")(r);
+      if ($1.tag === "Int") {
+        return $Tuple($1._2, $1._1);
+      }
+      return typeError($1)("Int");
+    })(),
+    country: (() => {
+      const $1 = $$get("country")(r);
+      if ($1.tag === "Str") {
+        return $Tuple($1._2, $1._1);
+      }
+      return typeError($1)("Str");
+    })(),
+    energyType: (() => {
+      const $1 = $$get("energyType")(r);
+      if ($1.tag === "Str") {
+        return $Tuple($1._2, $1._1);
+      }
+      return typeError($1)("Str");
+    })(),
     output: get_intOrNumber("output")(r)
   });
 
@@ -31179,7 +31169,12 @@
             const $21 = $$eval(dictMonadError)(dictAnn)(v);
             return (a) => $21(a)(v2);
           })()))(v1._2)))((v3) => {
-            const v4 = unzip(listMap((u) => string2.match(u))(v3._1._2));
+            const v4 = unzip(listMap((u) => {
+              if (u.tag === "Str") {
+                return $Tuple(u._2, u._1);
+              }
+              return typeError(u)("Str");
+            })(v3._1._2));
             const d = fromFoldable14(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2._2)));
             return Applicative0.pure($Tuple(
               $Trace(
@@ -31220,7 +31215,7 @@
         }
         if (v1.tag === "Matrix") {
           return Bind1.bind($$eval(dictMonadError)(dictAnn)(v)(v1._4)(v2))((v3) => {
-            const v5 = intPair.match(v3._2)._1;
+            const v5 = intPair.unpack(v3._2)._1;
             return Bind1.bind(check2(greaterThanOrEq1($Tuple(v5._1._1, v5._2._1))($Tuple(1, 1)))("array must be at least (" + (show3($Tuple(1, 1)) + ("); got (" + (show3($Tuple(v5._1._1, v5._2._1)) + ")")))))(() => Bind1.bind(Functor0.map((() => {
               const $24 = listMap((x2) => {
                 const $25 = unzip(x2);
@@ -33636,7 +33631,7 @@
           const $19 = $$eval2(dictMonadWithGraphAlloc)(v);
           return (a) => $19(a)(v2);
         })()))(v1._2)))((v3) => {
-          const v4 = unzip(listMap(string2.match)(v3._1));
+          const v4 = unzip(listMap(string2.unpack)(v3._1));
           const $21 = fromFoldable16(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2)));
           return Functor0.map((f) => f($21))(Functor0.map(Dictionary3)(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v1._1)(unit2)(v2))));
         });
@@ -33670,7 +33665,7 @@
       }
       if (v1.tag === "Matrix") {
         return Bind1.bind($$eval2(dictMonadWithGraphAlloc)(v)(v1._4)(v2))((v3) => {
-          const v4 = intPair.match(v3)._1;
+          const v4 = intPair.unpack(v3)._1;
           return Bind1.bind(check2(greaterThanOrEq($Tuple(v4._1._1, v4._2._1))($Tuple(1, 1)))("array must be at least (" + (show32($Tuple(1, 1)) + ("); got (" + (show32($Tuple(v4._1._1, v4._2._1)) + ")")))))(() => Bind1.bind(sequence1(arrayBind(range2(1)(v4._1._1))((i) => [
             sequence1(arrayBind(range2(1)(v4._2._1))((j) => [
               $$eval2(dictMonadWithGraphAlloc)(unionWith2((v$1) => identity19)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
@@ -37470,10 +37465,10 @@
       if (v1._3.tag === "Cons") {
         if (v1._3._2.tag === "Nil") {
           if (v1._2 === "BarChart") {
-            return $View("BarChartFig", reflectDictValBooleanBarC1.from()(record1.match(v1._3._1)._1));
+            return $View("BarChartFig", reflectDictValBooleanBarC1.from()(record1.unpack(v1._3._1)._1));
           }
           if (v1._2 === "LineChart") {
-            return $View("LineChartFig", reflectDictValBooleanLine1.from()(record1.match(v1._3._1)._1));
+            return $View("LineChartFig", reflectDictValBooleanLine1.from()(record1.unpack(v1._3._1)._1));
           }
           if (v1._2 === "Nil" || v1._2 === ":") {
             return $View("EnergyTableView", { title: v, table: arrayMap(record2(energyRecord))(reflectValBooleanArrayVal.from()(v1)) });
@@ -37491,7 +37486,7 @@
       return unsafePerformEffect(throwException(error("absurd")));
     }
     if (v1.tag === "Matrix") {
-      return $View("MatrixFig", { title: v, matrix: matrixRep2(matrixRep3.match(v1)._1) });
+      return $View("MatrixFig", { title: v, matrix: matrixRep2(matrixRep3.unpack(v1)._1) });
     }
     return unsafePerformEffect(throwException(error("absurd")));
   };
