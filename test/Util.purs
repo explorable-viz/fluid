@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff, bench)
+import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, bench)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Foldable (foldl)
 import Data.Int (toNumber)
@@ -85,7 +85,7 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
    -- | Forward (round-tripping)
    let e𝔹' = desug𝔹.fwd s𝔹
    v𝔹 × t_fwd <- bench $ \_ -> do
-      pure $ eval.fwd (γ𝔹 × e𝔹' × top)
+      pure (eval.fwd (γ𝔹 × e𝔹' × top))
 
    -- | Check backward selections
    unless (null bwd_expect) $
@@ -94,8 +94,7 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
    unless (isGraphical v) do
       when logging $ log (prettyP v𝔹)
       checkPretty "Trace-based value" fwd_expect v𝔹
-   log (show t_fwd)
-   log (show t_bwd)
+
    pure { tEval: t_eval, tBwd: t_bwd, tFwd: t_fwd }
 
 testGraph :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> m GraphRow
@@ -106,54 +105,46 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
 
    -- | Eval
    let e = desug.fwd s
-   t_eval1 <- preciseTime
-   { gc: GC eval, eα, g, vα } <- graphGC gconfig e
-   t_eval2 <- preciseTime
+   { gc: GC eval, eα, g, vα } × t_eval <- bench $ \_ ->
+      graphGC gconfig e
 
    -- | Backward
-   t_bwd1 <- preciseTime
-   let
-      αs_out = selectαs (δv (botOf vα)) vα
-      αs_in = eval.bwd αs_out
-      e𝔹 = select𝔹s eα αs_in
-   t_bwd2 <- preciseTime
+   (e𝔹 × αs_out × αs_in) × t_bwd <- bench $ \_ -> do
+      let
+         αs_out = selectαs (δv (botOf vα)) vα
+         αs_in = eval.bwd αs_out
+      pure (select𝔹s eα αs_in × αs_out × αs_in)
    let s𝔹 = desug𝔹.bwd e𝔹
 
    -- | De Morgan dual of backward
-   t_bwdDual1 <- preciseTime
-   let
-      αs_out_dual = selectαs (δv (botOf vα)) vα
-      gbwd_dual = G.bwdSliceDual αs_out_dual g
-      αs_in_dual = sinks gbwd_dual
-      e𝔹_dual = select𝔹s eα αs_in_dual
-   t_bwdDual2 <- preciseTime
+   e𝔹_dual × t_bwdDual <- bench $ \_ -> do
+      let
+         αs_out_dual = selectαs (δv (botOf vα)) vα
+         gbwd_dual = G.bwdSliceDual αs_out_dual g
+         αs_in_dual = sinks gbwd_dual
+      pure (select𝔹s eα αs_in_dual)
 
    -- | Backward (all outputs selected)
-   t_bwdAll1 <- preciseTime
-   let
-      e𝔹_all = select𝔹s eα $ eval.bwd (vertices vα)
-   t_bwdAll2 <- preciseTime
+   e𝔹_all × t_bwdAll <- bench $ \_ -> do
+      pure (select𝔹s eα $ eval.bwd (vertices vα))
 
    -- | Forward (round-tripping)
-   t_fwd1 <- preciseTime
-   let
-      αs_out' = eval.fwd αs_in
-      v𝔹 = select𝔹s vα αs_out'
-   t_fwd2 <- preciseTime
+   (v𝔹 × αs_out') × t_fwd <- bench $ \_ -> do
+      let
+         αs_out' = eval.fwd αs_in
+      pure (select𝔹s vα αs_out' × αs_out')
 
    -- | De Morgan dual of forward
-   t_fwdDual1 <- preciseTime
-   let
-      gfwd_dual = G.fwdSliceDual αs_in g
-      v𝔹_dual = select𝔹s vα (vertices gfwd_dual)
-   t_fwdDual2 <- preciseTime
+   v𝔹_dual × t_fwdDual <- bench $ \_ -> do
+      let
+         gfwd_dual = G.fwdSliceDual αs_in g
+      pure (select𝔹s vα (vertices gfwd_dual))
 
    -- | Forward (round-tripping) using De Morgan dual
-   t_fwdAsDeMorgan1 <- preciseTime
-   let
-      gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
-      v𝔹_demorgan = select𝔹s vα (vertices gfwd_demorgan) <#> not
-   t_fwdAsDeMorgan2 <- preciseTime
+   v𝔹_demorgan × t_fwdAsDeMorgan <- bench $ \_ -> do
+      let
+         gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
+      pure (select𝔹s vα (vertices gfwd_demorgan) <#> not)
 
    -- | Check backward selections
    unless (null bwd_expect) do
@@ -171,13 +162,13 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
       log (prettyP v𝔹_dual)
 
    pure
-      { tEval: tdiff t_eval1 t_eval2
-      , tBwd: tdiff t_bwd1 t_bwd2
-      , tBwdDual: tdiff t_bwdDual1 t_bwdDual2
-      , tBwdAll: tdiff t_bwdAll1 t_bwdAll2
-      , tFwd: tdiff t_fwd1 t_fwd2
-      , tFwdDual: tdiff t_fwdDual1 t_fwdDual2
-      , tFwdAsDemorgan: tdiff t_fwdAsDeMorgan1 t_fwdAsDeMorgan2
+      { tEval: t_eval
+      , tBwd: t_bwd
+      , tBwdDual: t_bwdDual
+      , tBwdAll: t_bwdAll
+      , tFwd: t_fwd
+      , tFwdDual: t_fwdDual
+      , tFwdAsDemorgan: t_fwdAsDeMorgan
       }
 
 type TestSpec =

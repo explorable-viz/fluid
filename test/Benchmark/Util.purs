@@ -91,6 +91,6 @@ preciseTime = liftEffect microtime
 bench :: forall m a. MonadEffect m => (Unit -> m a) -> m (a × Number)
 bench prog = do
    t1 <- preciseTime
-   a <-  prog unit
+   a <- prog unit
    t2 <- preciseTime
    pure (a × tdiff t1 t2)
