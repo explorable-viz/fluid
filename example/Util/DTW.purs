@@ -1,14 +1,15 @@
 module Example.Util.DTW
    ( NumInf(..)
+   , costMatrixInit
    , distEuclid
    , distanceDTWWindow
    ) where
 
 import Prelude
 
-import Data.Array (length, modifyAtIndices, range, (!!), (..))
+import Data.Array (modifyAtIndices, range, (!!), (..))
 import Data.Foldable (foldl)
-import Data.List (List(..))
+import Data.List (List(..), index, length)
 import Data.Maybe (fromJust)
 import Data.Ord (abs)
 import Partial.Unsafe (unsafePartial)
@@ -29,7 +30,7 @@ costMatrixInit rows cols window = mapMatrix init indexMat
    init (_ × 0) = Infty
    init (x × y) = if (abs $ x - y) <= window then FNum 0.0 else Infty
 
-distanceDTWWindow :: Partial => Array Number -> Array Number -> Int -> (Number -> Number -> NumInf) -> Matrix NumInf × List (Int × Int)
+distanceDTWWindow :: Partial => List Number -> List Number -> Int -> (Number -> Number -> NumInf) -> Matrix NumInf × List (Int × Int)
 distanceDTWWindow seq1 seq2 window cost = result × (extractPath priorcells (n × m))
    where
    n = length seq1
@@ -48,7 +49,7 @@ distanceDTWWindow seq1 seq2 window cost = result × (extractPath priorcells (n �
          ijm1 = dists ! i' ! j' - 1
          im1jm1 = dists ! i' - 1 ! j' - 1
          minim × prev = costAndPrevD (i' × j') im1j ijm1 im1jm1
-         costij = cost (seq1 ! i' - 1) (seq2 ! j' - 1) `plus` minim
+         costij = cost (seq1 ? i' - 1) (seq2 ? j' - 1) `plus` minim
       in
          updateAt i' j' dists (const costij) × updateAt i' j' inds (const prev)
 
@@ -91,6 +92,11 @@ unsafeArrayInd :: forall a. Array a -> Int -> a
 unsafeArrayInd arr ind = unsafePartial $ fromJust (arr !! ind)
 
 infixl 5 unsafeArrayInd as !
+
+unsafeListInd :: forall a. List a -> Int -> a
+unsafeListInd list ind = unsafePartial $ fromJust (index list ind)
+
+infixl 5 unsafeListInd as ?
 
 mapMatrix :: forall a b. (a -> b) -> Matrix a -> Matrix b
 mapMatrix f m = map (\row -> map f row) m

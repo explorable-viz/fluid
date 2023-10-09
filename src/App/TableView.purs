@@ -18,9 +18,9 @@ foreign import drawTable :: Renderer EnergyTable
 
 energyRecord :: Dict (Val 𝔹) -> EnergyRecord
 energyRecord r =
-   { year: int.match (get "year" r)
-   , country: string.match (get "country" r)
-   , energyType: string.match (get "energyType" r)
+   { year: int.unpack (get "year" r)
+   , country: string.unpack (get "country" r)
+   , energyType: string.unpack (get "energyType" r)
    , output: get_intOrNumber "output" r
    }
 

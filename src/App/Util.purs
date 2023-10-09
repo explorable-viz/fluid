@@ -28,11 +28,11 @@ doNothing :: OnSel
 doNothing = const $ pure unit
 
 get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
-get_intOrNumber x r = first as (intOrNumber.match (get x r))
+get_intOrNumber x r = first as (intOrNumber.unpack (get x r))
 
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a
-record toRecord u = toRecord (fst (P.record.match u))
+record toRecord u = toRecord (fst (P.record.unpack u))
 
 class Reflect a b where
    from :: Partial => a -> b

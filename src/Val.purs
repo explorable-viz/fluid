@@ -21,9 +21,9 @@ import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
-import Graph.GraphWriter (class MonadGraphAlloc)
+import Graph.GraphWriter (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
-import Util (type (×), Endo, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
+import Util (type (×), Endo, definitely, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
 import Util.Pretty (Doc, beside, text)
 
 data Val a
@@ -54,7 +54,7 @@ instance (Ann a, BoundedLattice b) => Ann (a × b)
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a m. Ann a => MonadError Error m => List (Val a) -> m (t × Val a)
 type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
-type OpGraph = forall m. MonadGraphAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
+type OpGraph = forall m. MonadWithGraphAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' t = ForeignOp'
    { arity :: Int
@@ -106,11 +106,10 @@ newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
 
 type Array2 a = Array (Array a)
 
-matrixGet :: forall a m. MonadThrow Error m => Int -> Int -> MatrixRep a -> m (Val a)
-matrixGet i j (MatrixRep (vss × _ × _)) =
-   orElse "Index out of bounds" $ do
-      us <- vss !! (i - 1)
-      us !! (j - 1)
+matrixGet :: forall a. Int -> Int -> MatrixRep a -> Val a
+matrixGet i j (MatrixRep (vss × _ × _)) = definitely "index out of bounds!" $ do
+   us <- vss !! (i - 1)
+   us !! (j - 1)
 
 matrixUpdate :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
 matrixUpdate i j δv (MatrixRep (vss × h × w)) =
@@ -162,6 +161,7 @@ instance Apply Fun where
    apply (PartialConstr c fvs) (PartialConstr c' vs) = PartialConstr (c ≜ c') (zipWith (<*>) fvs vs)
    apply _ _ = error "Apply Fun: shape mismatch"
 
+-- Should require equal domains?
 instance Apply DictRep where
    apply (DictRep fxvs) (DictRep xvs) =
       DictRep $ D.intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs

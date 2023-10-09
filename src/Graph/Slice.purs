@@ -3,13 +3,12 @@ module Graph.Slice where
 import Prelude hiding (add)
 
 import Control.Monad.Rec.Class (Step(..), tailRecM)
-import Data.Foldable (class Foldable)
 import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map)
 import Data.Map (insert, empty, lookup, delete) as M
 import Data.Maybe (maybe)
-import Data.Set (Set, empty, insert, member, singleton, unions, difference)
+import Data.Set (Set, empty, insert, singleton, difference)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, sinks, op)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)
@@ -59,12 +58,3 @@ fwdSliceDual αs0 g0 = bwdSlice αs0 (op g0)
 fwdSliceAsDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
 fwdSliceAsDeMorgan αs0 g0 =
    bwdSlice (sinks g0 `difference` αs0) (op g0)
-
-vertices :: forall f. Apply f => Foldable f => f Vertex -> Set Vertex
-vertices vα = selectαs (const true <$> vα) vα
-
-selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
-selectαs v𝔹 vα = unions ((if _ then singleton else const empty) <$> v𝔹 <*> vα)
-
-select𝔹s :: forall f. Functor f => f Vertex -> Set Vertex -> f Boolean
-select𝔹s vα αs = (_ `member` αs) <$> vα

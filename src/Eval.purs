@@ -117,7 +117,7 @@ eval γ (Record α xes) α' = do
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
    let
-      ss × αs = (vs <#> \u -> string.match u) # unzip
+      ss × αs = (vs <#> \u -> string.unpack u) # unzip
       d = D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × V.Dictionary (α ∧ α') (DictRep d)
 eval γ (Constr α c es) α' = do
@@ -126,12 +126,12 @@ eval γ (Constr α c es) α' = do
    pure (T.Constr c ts × V.Constr (α ∧ α') c vs)
 eval γ (Matrix α e (x × y) e') α' = do
    t × v <- eval γ e' α'
-   let (i' × β) × (j' × β') = fst (intPair.match v)
+   let (i' × β) × (j' × β') = fst (intPair.unpack v)
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
-      ( sequence $ do
+      ( sequence do
            i <- range 1 i'
-           singleton $ sequence $ do
+           singleton $ sequence do
               j <- range 1 j'
               let γ' = D.singleton x (V.Int β i) `disjointUnion` (D.singleton y (V.Int β' j))
               singleton (eval (γ <+> γ') e α')
@@ -140,8 +140,8 @@ eval γ (Matrix α e (x × y) e') α' = do
    where
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
-eval γ (Lambda σ) α =
-   pure $ T.Const × V.Fun α (V.Closure (γ `restrict` fv σ) empty σ)
+eval γ (Lambda α σ) α' =
+   pure $ T.Const × V.Fun (α ∧ α') (V.Closure (γ `restrict` fv σ) empty σ)
 eval γ (Project e x) α = do
    t × v <- eval γ e α
    case v of
@@ -157,9 +157,9 @@ eval γ (Let (VarDef σ e) e') α = do
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
    t' × v' <- eval (γ <+> γ') e' α' -- (α ∧ α') for consistency with functions? (similarly for module defs)
    pure $ T.Let (T.VarDef w t) t' × v'
-eval γ (LetRec ρ e) α = do
-   let γ' = closeDefs γ ρ α
-   t × v <- eval (γ <+> γ') e α
+eval γ (LetRec α ρ e) α' = do
+   let γ' = closeDefs γ ρ (α ∧ α')
+   t × v <- eval (γ <+> γ') e (α ∧ α')
    pure $ T.LetRec (erase <$> ρ) t × v
 
 eval_module :: forall a m. MonadError Error m => Ann a => Env a -> Module a -> a -> m (Env a)
