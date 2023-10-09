@@ -94,7 +94,7 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
       when logging $ log (prettyP v𝔹)
       checkPretty "Trace-based value" fwd_expect v𝔹
 
-   pure (fromFoldable ["Trace-Eval" × t_eval, "Trace-Bwd" × t_bwd , "Trace-Fwd" × t_fwd])
+   pure (fromFoldable [ "Trace-Eval" × t_eval, "Trace-Bwd" × t_bwd, "Trace-Fwd" × t_fwd ])
 
 testGraph :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> m GraphRow
 testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
@@ -130,7 +130,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
    αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
       (flip subset αs_out')
 
-   let benchmarks = fromFoldable ["Graph-Eval" × t_eval, "Graph-Bwd" × t_bwd , "Graph-Fwd" × t_fwd]
+   let benchmarks = fromFoldable [ "Graph-Eval" × t_eval, "Graph-Bwd" × t_bwd, "Graph-Fwd" × t_fwd ]
 
    if not is_bench then pure benchmarks
    else do
@@ -166,7 +166,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
          log (prettyP v𝔹_dual)
 
       pure $ union benchmarks
-                   (fromFoldable [("Graph-BwdDual" × t_bwdDual), ("Graph-BwdAll" × t_bwdAll), ("Graph-FwdDual" × t_fwdDual),  ("Graph-FwdAsDeMorgan" × t_fwdAsDeMorgan)])
+         (fromFoldable [ ("Graph-BwdDual" × t_bwdDual), ("Graph-BwdAll" × t_bwdAll), ("Graph-FwdDual" × t_fwdDual), ("Graph-FwdAsDeMorgan" × t_fwdAsDeMorgan) ])
 
 type TestSpec =
    { file :: String
