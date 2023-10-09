@@ -4,20 +4,16 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), bench)
+import Benchmark.Util (BenchRow, bench, divRow)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
-import Data.Foldable (foldl)
-import Data.Int (toNumber)
 import Data.List (elem)
-import Data.List.Lazy (List, length, replicateM)
+import Data.List.Lazy (replicateM)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
-import Data.Tuple (snd)
 import Desug (desugGC)
-import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -43,22 +39,24 @@ type TestConfig =
    , bwd_expect :: String
    }
 
+type AffError m a = MonadAff m => MonadError Error m => m a
+
 logging :: Boolean
 logging = false
 
-test ∷ File -> ProgCxt Unit -> TestConfig -> (Int × Boolean) -> Aff BenchRow
+test ∷ forall m. File -> ProgCxt Unit -> TestConfig -> (Int × Boolean) -> AffError m BenchRow
 test file progCxt tconfig (n × is_bench) = do
    gconfig <- initialConfig progCxt
    s <- open file
    testPretty s
-   rows <- (map snd) <$>
-      ( replicateM n $ runWriterT $ do
+   _ × row_accum <- runWriterT
+      ( replicateM n $ do
            testTrace s gconfig.γ tconfig
            testGraph s gconfig tconfig is_bench
       )
-   pure $ averageRows rows
+   pure $ row_accum `divRow` n
 
-testPretty :: forall m a. MonadAff m => MonadError Error m => Ann a => SE.Expr a -> m Unit
+testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
    let src = prettyP s
    s' <- parse src program
@@ -67,7 +65,7 @@ testPretty s = do
       log ("NEW\n" <> show (erase s'))
       fail "not equal"
 
-testTrace :: forall m. MonadAff m => MonadError Error m => MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> TestConfig -> m Unit
+testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> TestConfig -> AffError m Unit
 testTrace s γ { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
@@ -97,7 +95,7 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
       when logging $ log (prettyP v𝔹)
       checkPretty "Trace-based value" fwd_expect v𝔹
 
-testGraph :: forall m. MonadAff m => MonadError Error m => MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> m Unit
+testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
 testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
@@ -201,10 +199,3 @@ shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -
 shouldSatisfy msg v pred =
    unless (pred v) $
       fail (show v <> " doesn't satisfy predicate: " <> msg)
-
-averageRows :: List BenchRow -> BenchRow
-averageRows rows =
-   average $ foldl (<>) mempty rows
-   where
-   runs = toNumber $ length rows
-   average (BenchRow row) = BenchRow (map (_ `div` runs) row)

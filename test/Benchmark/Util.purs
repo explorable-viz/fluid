@@ -4,13 +4,12 @@ import Prelude
 
 import Control.Monad.Writer.Class (class MonadWriter, tell)
 import Data.Array (intersperse, fromFoldable) as A
+import Data.Int (toNumber)
 import Data.List (fold)
 import Data.Map (Map, singleton, unionWith, fromFoldable, keys, values)
 import Effect.Class (class MonadEffect, liftEffect)
 import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
-
-newtype BenchRow = BenchRow (Map String Number)
 
 newtype BenchAcc = BenchAcc (Array (String × BenchRow))
 
@@ -27,6 +26,8 @@ instance Show BenchAcc where
       showRow :: String × BenchRow -> String
       showRow (test_name × (BenchRow row)) =
          fold $ A.intersperse "," ([ test_name ] <> (show <$> A.fromFoldable (values row)))
+
+newtype BenchRow = BenchRow (Map String Number)
 
 instance Semigroup BenchRow where
    append (BenchRow row1) (BenchRow row2) = BenchRow (unionWith (+) row1 row2)
@@ -48,3 +49,7 @@ bench name prog = do
    t2 <- preciseTime
    tell (BenchRow $ singleton name (tdiff t1 t2))
    pure r
+
+divRow :: BenchRow -> Int -> BenchRow
+divRow (BenchRow row) n = BenchRow (map (_ `div` toNumber n) row)
+
