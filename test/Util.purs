@@ -10,9 +10,9 @@ import Data.Foldable (foldl)
 import Data.Int (toNumber)
 import Data.List (elem)
 import Data.List.Lazy (List, length, replicateM)
--- import Data.Lazy (defer)
 import Data.Set (subset)
 import Data.String (null)
+import Data.Map (fromFoldable, union)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
 import Effect.Aff (Aff)
@@ -26,7 +26,6 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
-import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
@@ -95,7 +94,7 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
       when logging $ log (prettyP v𝔹)
       checkPretty "Trace-based value" fwd_expect v𝔹
 
-   pure { tEval: t_eval, tBwd: t_bwd, tFwd: t_fwd }
+   pure (fromFoldable ["Trace-Eval" × t_eval, "Trace-Bwd" × t_bwd , "Trace-Fwd" × t_fwd])
 
 testGraph :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> m GraphRow
 testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
@@ -131,16 +130,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
    αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
       (flip subset αs_out')
 
-   let
-      benchmarks =
-         { tEval: t_eval
-         , tBwd: t_bwd
-         , tFwd: t_fwd
-         , tBwdDual: 0.0
-         , tBwdAll: 0.0
-         , tFwdDual: 0.0
-         , tFwdAsDemorgan: 0.0
-         }
+   let benchmarks = fromFoldable ["Graph-Eval" × t_eval, "Graph-Bwd" × t_bwd , "Graph-Fwd" × t_fwd]
 
    if not is_bench then pure benchmarks
    else do
@@ -175,8 +165,8 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
          log (prettyP e𝔹_all)
          log (prettyP v𝔹_dual)
 
-      pure $ benchmarks
-         { tBwdDual = t_bwdDual, tBwdAll = t_bwdAll, tFwdDual = t_fwdDual, tFwdAsDemorgan = t_fwdAsDeMorgan }
+      pure $ union benchmarks
+                   (fromFoldable [("Graph-BwdDual" × t_bwdDual), ("Graph-BwdAll" × t_bwdAll), ("Graph-FwdDual" × t_fwdDual),  ("Graph-FwdAsDeMorgan" × t_fwdAsDeMorgan)])
 
 type TestSpec =
    { file :: String
@@ -218,7 +208,8 @@ shouldSatisfy msg v pred =
       fail (show v <> " doesn't satisfy predicate: " <> msg)
 
 averageRows :: List BenchRow -> BenchRow
-averageRows rows = average $ foldl (<>) mempty rows
+averageRows rows =
+   average $ foldl (<>) mempty rows
    where
    runs = toNumber $ length rows
-   average (BenchRow tr gr) = BenchRow (hmap (_ `div` runs) tr) (hmap (_ `div` runs) gr)
+   average (BenchRow tr gr) = BenchRow (map (_ `div` runs) tr) (map (_ `div` runs) gr)

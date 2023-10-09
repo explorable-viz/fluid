@@ -5,8 +5,7 @@ import Prelude
 import Control.Monad.Writer (WriterT, runWriterT)
 import Data.Array (intersperse)
 import Data.Foldable (fold)
--- import Data.Lazy (Lazy)
--- import Data.Lazy (force, defer) as Lazy
+import Data.Map (Map, unionWith, fromFoldable)
 import Effect.Class (class MonadEffect, liftEffect)
 import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
@@ -23,21 +22,21 @@ runWithBenchAcc = runWriterT
 derive newtype instance Semigroup BenchAcc
 derive newtype instance Monoid BenchAcc
 
-type TraceRow =
-   { tEval :: Number
-   , tBwd :: Number
-   , tFwd :: Number
-   }
+type TraceRow = Map String Number
+   -- { tEval :: Number
+   -- , tBwd :: Number
+   -- , tFwd :: Number
+   -- }
 
-type GraphRow =
-   { tEval :: Number
-   , tBwd :: Number
-   , tBwdDual :: Number
-   , tBwdAll :: Number
-   , tFwd :: Number
-   , tFwdDual :: Number
-   , tFwdAsDemorgan :: Number
-   }
+type GraphRow = Map String Number
+   -- { tEval :: Number
+   -- , tBwd :: Number
+   -- , tBwdDual :: Number
+   -- , tBwdAll :: Number
+   -- , tFwd :: Number
+   -- , tFwdDual :: Number
+   -- , tFwdAsDemorgan :: Number
+   -- }
 
 instance Show BenchAcc where
    show (BenchAcc rows) =
@@ -50,37 +49,16 @@ rowShow (str × row) = str <> "," <> show row
 instance Semigroup BenchRow where
    append (BenchRow trRow1 gRow1) (BenchRow trRow2 gRow2) =
       BenchRow
-         { tEval: trRow1.tEval + trRow2.tEval
-         , tBwd: trRow1.tBwd + trRow2.tBwd
-         , tFwd: trRow1.tFwd + trRow2.tFwd
-         }
-         { tEval: gRow1.tEval + gRow2.tEval
-         , tBwd: gRow1.tBwd + gRow2.tBwd
-         , tBwdDual: gRow1.tBwdDual + gRow2.tBwdDual
-         , tBwdAll: gRow1.tBwdAll + gRow2.tBwdAll
-         , tFwd: gRow1.tFwd + gRow2.tFwd
-         , tFwdDual: gRow1.tFwdDual + gRow2.tFwdDual
-         , tFwdAsDemorgan: gRow1.tFwdAsDemorgan + gRow2.tFwdAsDemorgan
-         }
+         (unionWith (+) trRow1 trRow2)
+         (unionWith (+) gRow1 gRow2)
 
 instance Monoid BenchRow where
    mempty = BenchRow
-      { tEval: 0.0, tBwd: 0.0, tFwd: 0.0 }
-      { tEval: 0.0, tBwd: 0.0, tBwdDual: 0.0, tBwdAll: 0.0, tFwd: 0.0, tFwdDual: 0.0, tFwdAsDemorgan: 0.0 }
+      (fromFoldable [ ("Trace-Eval" × 0.0), ("Trace-Bwd" × 0.0), ("Trace-Fwd" × 0.0)])
+      (fromFoldable [ ("Graph-Eval" × 0.0), ("Graph-Bwd" × 0.0), ("Graph-Fwd" × 0.0), ("Graph-BwdDual" × 0.0), ("Graph-BwdAll" × 0.0), ("Graph-FwdDual" × 0.0), ("Graph-FwdAsDeMorgan" × 0.0) ])
 
 instance Show BenchRow where
-   show (BenchRow trRow grRow) = fold $ intersperse "," $ (_ <#> show)
-      [ trRow.tEval
-      , trRow.tBwd
-      , trRow.tFwd
-      , grRow.tEval
-      , grRow.tBwd
-      , grRow.tBwdDual
-      , grRow.tBwdAll
-      , grRow.tFwd
-      , grRow.tFwdDual
-      , grRow.tFwdAsDemorgan
-      ]
+   show (BenchRow trRow grRow) = show trRow <> show grRow
 
 tdiff :: Number -> Number -> Number
 tdiff x y = sub y x
