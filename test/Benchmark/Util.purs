@@ -5,6 +5,8 @@ import Prelude
 import Control.Monad.Writer (WriterT, runWriterT)
 import Data.Array (intersperse)
 import Data.Foldable (fold)
+-- import Data.Lazy (Lazy)
+-- import Data.Lazy (force, defer) as Lazy
 import Effect.Class (class MonadEffect, liftEffect)
 import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
@@ -85,3 +87,10 @@ tdiff x y = sub y x
 
 preciseTime :: forall m. MonadEffect m => m Number
 preciseTime = liftEffect microtime
+
+bench :: forall m a. MonadEffect m => (Unit -> m a) -> m (a × Number)
+bench prog = do
+   t1 <- preciseTime
+   a <-  prog unit
+   t2 <- preciseTime
+   pure (a × tdiff t1 t2)

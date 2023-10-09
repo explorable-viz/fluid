@@ -4,12 +4,13 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
+import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff, bench)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Foldable (foldl)
 import Data.Int (toNumber)
 import Data.List (elem)
 import Data.List.Lazy (List, length, replicateM)
+-- import Data.Lazy (defer)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
@@ -72,21 +73,19 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
 
    -- | Eval
    let e = desug.fwd s
-   t_eval1 <- preciseTime
-   { gc: GC eval, v } <- traceGC (erase <$> γ) e
-   t_eval2 <- preciseTime
+   { gc: GC eval, v } × t_eval <- bench $ \_ ->
+      traceGC (erase <$> γ) e
 
    -- | Backward
-   t_bwd1 <- preciseTime
-   let γ𝔹 × e𝔹 × _ = eval.bwd (δv (botOf v))
-   t_bwd2 <- preciseTime
+   (γ𝔹 × e𝔹) × t_bwd <- bench $ \_ -> do
+      let γ𝔹 × e𝔹 × _ = eval.bwd (δv (botOf v))
+      pure (γ𝔹 × e𝔹)
    let s𝔹 = desug𝔹.bwd e𝔹
 
    -- | Forward (round-tripping)
    let e𝔹' = desug𝔹.fwd s𝔹
-   t_fwd1 <- preciseTime
-   let v𝔹 = eval.fwd (γ𝔹 × e𝔹' × top)
-   t_fwd2 <- preciseTime
+   v𝔹 × t_fwd <- bench $ \_ -> do
+      pure $ eval.fwd (γ𝔹 × e𝔹' × top)
 
    -- | Check backward selections
    unless (null bwd_expect) $
@@ -95,8 +94,9 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
    unless (isGraphical v) do
       when logging $ log (prettyP v𝔹)
       checkPretty "Trace-based value" fwd_expect v𝔹
-
-   pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tFwd: tdiff t_fwd1 t_fwd2 }
+   log (show t_fwd)
+   log (show t_bwd)
+   pure { tEval: t_eval, tBwd: t_bwd, tFwd: t_fwd }
 
 testGraph :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> m GraphRow
 testGraph s gconfig { δv, bwd_expect, fwd_expect } = do

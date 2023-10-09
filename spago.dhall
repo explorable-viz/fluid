@@ -23,6 +23,8 @@ You can edit this file as you like.
   , "http-methods"
   , "identity"
   , "integers"
+  , "js-date"
+  , "lazy"
   , "lists"
   , "maybe"
   , "newtype"
