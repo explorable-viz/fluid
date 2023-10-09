@@ -33,7 +33,7 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (successful, (×))
+import Util (type (×), successful, (×))
 import Val (class Ann, Env, Val(..))
 
 type TestConfig =
@@ -45,14 +45,14 @@ type TestConfig =
 logging :: Boolean
 logging = false
 
-test ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
-test n file progCxt tconfig = do
+test ∷ File -> ProgCxt Unit -> TestConfig -> (Int × Boolean) -> Aff BenchRow
+test file progCxt tconfig (n × is_bench) = do
    gconfig <- initialConfig progCxt
    s <- open file
    testPretty s
    rows <- replicateM n $ do
       trRow <- testTrace s gconfig.γ tconfig
-      grRow <- testGraph s gconfig tconfig
+      grRow <- testGraph s gconfig tconfig is_bench
       pure $ BenchRow trRow grRow
    pure $ averageRows rows
 
@@ -97,8 +97,8 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
 
    pure { tEval: t_eval, tBwd: t_bwd, tFwd: t_fwd }
 
-testGraph :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> m GraphRow
-testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
+testGraph :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> m GraphRow
+testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
@@ -116,35 +116,11 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
       pure (select𝔹s eα αs_in × αs_out × αs_in)
    let s𝔹 = desug𝔹.bwd e𝔹
 
-   -- | De Morgan dual of backward
-   e𝔹_dual × t_bwdDual <- bench $ \_ -> do
-      let
-         αs_out_dual = selectαs (δv (botOf vα)) vα
-         gbwd_dual = G.bwdSliceDual αs_out_dual g
-         αs_in_dual = sinks gbwd_dual
-      pure (select𝔹s eα αs_in_dual)
-
-   -- | Backward (all outputs selected)
-   e𝔹_all × t_bwdAll <- bench $ \_ -> do
-      pure (select𝔹s eα $ eval.bwd (vertices vα))
-
    -- | Forward (round-tripping)
    (v𝔹 × αs_out') × t_fwd <- bench $ \_ -> do
       let
          αs_out' = eval.fwd αs_in
       pure (select𝔹s vα αs_out' × αs_out')
-
-   -- | De Morgan dual of forward
-   v𝔹_dual × t_fwdDual <- bench $ \_ -> do
-      let
-         gfwd_dual = G.fwdSliceDual αs_in g
-      pure (select𝔹s vα (vertices gfwd_dual))
-
-   -- | Forward (round-tripping) using De Morgan dual
-   v𝔹_demorgan × t_fwdAsDeMorgan <- bench $ \_ -> do
-      let
-         gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
-      pure (select𝔹s vα (vertices gfwd_demorgan) <#> not)
 
    -- | Check backward selections
    unless (null bwd_expect) do
@@ -152,24 +128,55 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Check round-trip selections
    unless (isGraphical v𝔹) do
       checkPretty "Graph-based value" fwd_expect v𝔹
-      checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹_demorgan
    αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
       (flip subset αs_out')
-   -- | To avoid unused variables when benchmarking
-   when logging do
-      log (prettyP e𝔹_dual)
-      log (prettyP e𝔹_all)
-      log (prettyP v𝔹_dual)
 
-   pure
-      { tEval: t_eval
-      , tBwd: t_bwd
-      , tBwdDual: t_bwdDual
-      , tBwdAll: t_bwdAll
-      , tFwd: t_fwd
-      , tFwdDual: t_fwdDual
-      , tFwdAsDemorgan: t_fwdAsDeMorgan
-      }
+   let
+      benchmarks =
+         { tEval: t_eval
+         , tBwd: t_bwd
+         , tFwd: t_fwd
+         , tBwdDual: 0.0
+         , tBwdAll: 0.0
+         , tFwdDual: 0.0
+         , tFwdAsDemorgan: 0.0
+         }
+
+   if not is_bench then pure benchmarks
+   else do
+      -- | Forward (round-tripping) using De Morgan dual
+      v𝔹_demorgan × t_fwdAsDeMorgan <- bench $ \_ -> do
+         let
+            gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
+         pure (select𝔹s vα (vertices gfwd_demorgan) <#> not)
+
+      -- | De Morgan dual of backward
+      e𝔹_dual × t_bwdDual <- bench $ \_ -> do
+         let
+            αs_out_dual = selectαs (δv (botOf vα)) vα
+            gbwd_dual = G.bwdSliceDual αs_out_dual g
+            αs_in_dual = sinks gbwd_dual
+         pure (select𝔹s eα αs_in_dual)
+
+      -- | Backward (all outputs selected)
+      e𝔹_all × t_bwdAll <- bench $ \_ -> do
+         pure (select𝔹s eα $ eval.bwd (vertices vα))
+
+      -- | De Morgan dual of forward
+      v𝔹_dual × t_fwdDual <- bench $ \_ -> do
+         let
+            gfwd_dual = G.fwdSliceDual αs_in g
+         pure (select𝔹s vα (vertices gfwd_dual))
+
+      -- | To avoid unused variables when benchmarking
+      when logging do
+         log (prettyP v𝔹_demorgan)
+         log (prettyP e𝔹_dual)
+         log (prettyP e𝔹_all)
+         log (prettyP v𝔹_dual)
+
+      pure $ benchmarks
+         { tBwdDual = t_bwdDual, tBwdAll = t_bwdAll, tFwdDual = t_fwdDual, tFwdAsDemorgan = t_fwdAsDeMorgan }
 
 type TestSpec =
    { file :: String
