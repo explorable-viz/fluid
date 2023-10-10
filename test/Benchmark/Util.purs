@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Monad.Writer.Class (class MonadWriter, tell)
 import Data.Array (intersperse, fromFoldable) as A
+import Data.Array.NonEmpty (NonEmptyArray, toArray)
 import Data.Int (toNumber)
 import Data.List (fold)
 import Data.Map (Map, singleton, unionWith, fromFoldable, keys, values)
@@ -12,11 +13,11 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
 
-newtype BenchAcc = BenchAcc (Array (String × BenchRow))
+newtype BenchAcc = BenchAcc (NonEmptyArray (String × BenchRow))
 
 instance Show BenchAcc where
    show (BenchAcc rows) =
-      fold $ A.intersperse "\n" ([ showHeader ] <> (showRow <$> rows))
+      fold $ A.intersperse "\n" ([ showHeader ] <> (toArray $ showRow <$> rows))
       where
       BenchRow empty_row = mempty
 
