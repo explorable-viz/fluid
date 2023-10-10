@@ -77,14 +77,13 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
       traceGC (erase <$> γ) e
 
    -- | Backward
-   (γ𝔹 × e𝔹) <- bench "Trace-Bwd" $ \_ -> do
-      let γ𝔹 × e𝔹 × _ = eval.bwd (δv (botOf v))
-      pure (γ𝔹 × e𝔹)
+   (γ𝔹 × e𝔹 × _) <- bench "Trace-Bwd" $ \_ ->
+      pure (eval.bwd (δv (botOf v)))
    let s𝔹 = desug𝔹.bwd e𝔹
 
    -- | Forward (round-tripping)
    let e𝔹' = desug𝔹.fwd s𝔹
-   v𝔹 <- bench "Trace-Fwd" $ \_ -> do
+   v𝔹 <- bench "Trace-Fwd" $ \_ ->
       pure (eval.fwd (γ𝔹 × e𝔹' × top))
 
    -- | Check backward selections
@@ -121,10 +120,10 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
       pure (select𝔹s vα αs_out' × αs_out')
 
    -- | Check backward selections
-   unless (null bwd_expect) do
+   unless (null bwd_expect) $
       checkPretty "Graph-based source selection" bwd_expect s𝔹
    -- | Check round-trip selections
-   unless (isGraphical v𝔹) do
+   unless (isGraphical v𝔹) $
       checkPretty "Graph-based value" fwd_expect v𝔹
    αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
       (flip subset αs_out')
@@ -139,7 +138,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
          pure (select𝔹s eα αs_in_dual)
 
       -- | Backward (all outputs selected)
-      e𝔹_all <- bench "Graph-BwdAll" $ \_ -> do
+      e𝔹_all <- bench "Graph-BwdAll" $ \_ ->
          pure (select𝔹s eα $ eval.bwd (vertices vα))
 
       -- | De Morgan dual of forward
