@@ -1,0 +1,45 @@
+let nextIndices n m window = 
+  [(i, j) | i <- [1 .. n],
+            j <- [(max 1 (i - window)) .. (min m (i + window))]];
+
+let costMatrixInit rows cols window =
+    [| let initV = if or (and (n == 1) (m == 1)) (and (abs n m <= window) (not (or (n == 1) (m == 1))))
+                    then FNum 0
+                    else Infty 
+        in initV | (n, m) in (rows, cols) |];
+
+let minAndPrev (i, j) im1 jm1 ijm1 = 
+  let minim = minimal [im1, jm1, ijm1] in
+      if eq minim im1 then
+          ((i, j + 1), minim)
+      else
+          if eq minim jm1 then
+              ((i + 1, j ), minim)
+          else ((i, j), minim);
+let extractPath indmatrix (i, j) =
+  let traverser (n,m) matrix accum =
+      if and (n == 1) (m == 1)
+      then accum
+      else
+          traverser (matrix!(n,m)) matrix ((n - 1,m - 1) : accum)
+  in traverser (i,j) indmatrix Nil;        
+let localMinUpdate seq1 seq2 cost (costmatrix, indmatrix) (i, j) = 
+    let iEntr = nth (i - 1) seq1;
+        jEntr = nth (j - 1) seq2;
+        dist = cost iEntr jEntr;
+        im1 = costmatrix!(i , j + 1);
+        jm1 = costmatrix!(i + 1, j);
+        im1jm1 = costmatrix!(i , j);
+        (prev, minim) = minAndPrev (i, j) im1 jm1 im1jm1;
+        newVal = add (FNum dist) minim
+    in (matrixUpdate costmatrix (i + 1,j + 1) newVal, matrixUpdate indmatrix (i + 1,j + 1) prev);
+
+let computeDTW seq1 seq2 cost window = 
+  let n = length seq1;
+      m = length seq2;
+      initD = costMatrixInit (n + 1) (m + 1) window;
+      initI = [| 0 | (i,j) in (n + 1, m + 1)|];
+      indexing = nextIndices n m window;
+      (finished, indices) = foldl (localMinUpdate seq1 seq2 cost) (initD, initI) indexing
+  in
+      (finished, extractPath indices (n + 1,m + 1));

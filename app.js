@@ -36220,13 +36220,7 @@
                             if (v._2._2._2.tag === "Nil") {
                               if (v._2._1._2 === "Pair") {
                                 const $5 = matrixUpdate(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2);
-                                return Functor0.map((f) => f($5))(Functor0.map(Matrix3)(dictMonadWithGraphAlloc.new($Map(
-                                  "Two",
-                                  Leaf2,
-                                  v._1._1,
-                                  unit2,
-                                  Leaf2
-                                ))));
+                                return Functor0.map((f) => f($5))(Functor0.map(Matrix3)(dictMonadWithGraphAlloc.new(Leaf2)));
                               }
                               return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
                             }
@@ -36253,35 +36247,39 @@
         return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
       };
     },
-    op: (dictAnn) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Matrix") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Constr") {
-                if (v._2._1._3.tag === "Cons") {
-                  if (v._2._1._3._1.tag === "Int") {
-                    if (v._2._1._3._2.tag === "Cons") {
-                      if (v._2._1._3._2._1.tag === "Int") {
-                        if (v._2._1._3._2._2.tag === "Nil") {
-                          if (v._2._2.tag === "Cons") {
-                            if (v._2._2._2.tag === "Nil") {
-                              if (v._2._1._2 === "Pair") {
-                                return pure2($Tuple(
-                                  $Tuple(
+    op: (dictAnn) => {
+      const top3 = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().top;
+      return (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Matrix") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Constr") {
+                  if (v._2._1._3.tag === "Cons") {
+                    if (v._2._1._3._1.tag === "Int") {
+                      if (v._2._1._3._2.tag === "Cons") {
+                        if (v._2._1._3._2._1.tag === "Int") {
+                          if (v._2._1._3._2._2.tag === "Nil") {
+                            if (v._2._2.tag === "Cons") {
+                              if (v._2._2._2.tag === "Nil") {
+                                if (v._2._1._2 === "Pair") {
+                                  return pure2($Tuple(
                                     $Tuple(
-                                      arrayMap(arrayMap(erase))(v._1._2._1),
-                                      $Tuple($Tuple(v._1._2._2._1._1, unit2), $Tuple(v._1._2._2._2._1, unit2))
+                                      $Tuple(
+                                        arrayMap(arrayMap(erase))(v._1._2._1),
+                                        $Tuple($Tuple(v._1._2._2._1._1, unit2), $Tuple(v._1._2._2._2._1, unit2))
+                                      ),
+                                      $Tuple(
+                                        $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2),
+                                        functorVal.map((v$1) => unit2)(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))
+                                      )
                                     ),
-                                    $Tuple(
-                                      $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2),
-                                      functorVal.map((v$1) => unit2)(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))
-                                    )
-                                  ),
-                                  $Val("Matrix", v._1._1, matrixUpdate(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2))
-                                ));
+                                    $Val("Matrix", top3, matrixUpdate(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2))
+                                  ));
+                                }
+                                return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
                               }
                               return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
                             }
@@ -36304,8 +36302,7 @@
             return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
           }
           return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
-        }
-        return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+        };
       };
     },
     op_bwd: (dictAnn) => {
@@ -36316,7 +36313,7 @@
             "Cons",
             $Val(
               "Matrix",
-              v._2._1,
+              BoundedJoinSemilattice0.bot,
               matrixUpdate(v._1._2._1._1)(v._1._2._1._2)((() => {
                 const $3 = functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._2._2);
                 return (v$1) => $3;
@@ -37421,7 +37418,7 @@
     const module_1 = module_2(dictMonadAff);
     return (dictMonadError) => {
       const module_22 = module_1(dictMonadError);
-      return bind(bind(bind(pure2({ mods: Nil, datasets: Nil }))(module_22("prelude")))(module_22("graphics")))(module_22("convolution"));
+      return bind(bind(bind(bind(bind(pure2({ mods: Nil, datasets: Nil }))(module_22("prelude")))(module_22("graphics")))(module_22("convolution")))(module_22("fnum")))(module_22("dtw"));
     };
   };
   var datasetAs = (dictMonadAff) => {
