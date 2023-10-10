@@ -40,7 +40,7 @@ misc_cases =
    , { file: "range", fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
    , { file: "records", fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
    , { file: "reverse", fwd_expect: "(2 : (1 : []))" }
-   , { file: "slicing/dtw/matrix-update"
+   , { file: "slicing/dtw/compute-dtw"
      , fwd_expect:
           "(FNum 0, Infty, Infty, Infty, Infty, Infty, Infty, Infty,\n\
           \  Infty, FNum 1, FNum 10, FNum 19, Infty, Infty, Infty, Infty,\n\
