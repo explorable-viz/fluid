@@ -46,6 +46,6 @@
     "purescript-psa": "0.8.2",
     "purs-backend-es": "1.1.0",
     "purs-tidy": "^0.9.3",
-    "spago": "0.20.9"
+    "spago": "^0.20.9"
   }
 }

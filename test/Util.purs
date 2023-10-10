@@ -42,7 +42,7 @@ type TestConfig =
 type AffError m a = MonadAff m => MonadError Error m => m a
 
 logging :: Boolean
-logging = false
+logging = true
 
 test ∷ forall m. File -> ProgCxt Unit -> TestConfig -> (Int × Boolean) -> AffError m BenchRow
 test file progCxt tconfig (n × is_bench) = do

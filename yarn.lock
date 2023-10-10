@@ -2529,7 +2529,7 @@ source-map@^0.6.1:
   resolved "https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
-spago@0.20.9:
+spago@^0.20.9:
   version "0.20.9"
   resolved "https://registry.npmjs.org/spago/-/spago-0.20.9.tgz"
   integrity sha512-r5TUxnYn9HawlQyMswlhIk24BGFSN2KGbqgZFZrn47GjTpMscU14xkt9CqTWgoSQYsoZieG+3dUtOxUQ7GYD7w==

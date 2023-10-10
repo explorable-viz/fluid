@@ -69,6 +69,8 @@ defaultImports =
       >>= module_ (File "prelude")
       >>= module_ (File "graphics")
       >>= module_ (File "convolution")
+      >>= module_ (File "fnum")
+      >>= module_ (File "dtw")
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => File -> Var -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs file x (ProgCxt r@{ datasets }) = do
