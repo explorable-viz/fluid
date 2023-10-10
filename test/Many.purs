@@ -8,30 +8,30 @@ import Data.Array (zip)
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
 import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, checkPretty, test)
-import Util (type (×))
+import Util (type (×), (×))
 
-many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
-many specs n = zip (specs <#> _.file) (specs <#> one)
+many :: Array TestSpec -> (Int × Boolean) -> Array (String × Aff BenchRow)
+many specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
    where
    one { file, fwd_expect } = do
       progCxt <- defaultImports
-      test n (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty }
+      test (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
-bwdMany :: Array TestBwdSpec -> Int -> Array (String × Aff BenchRow)
-bwdMany specs n = zip (specs <#> _.file) (specs <#> one)
+bwdMany :: Array TestBwdSpec -> (Int × Boolean) -> Array (String × Aff BenchRow)
+bwdMany specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
    where
    folder = File "slicing/"
    one { file, file_expect, δv, fwd_expect } = do
       progCxt <- defaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
-      test n (folder <> File file) progCxt { δv, fwd_expect, bwd_expect }
+      test (folder <> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff BenchRow)
-withDatasetMany specs n = zip (specs <#> _.file) (specs <#> one)
+withDatasetMany :: Array TestWithDatasetSpec -> (Int × Boolean) -> Array (String × Aff BenchRow)
+withDatasetMany specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
    where
    one { dataset, file } = do
       progCxt <- defaultImports >>= datasetAs (File dataset) "data"
-      test n (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
+      test (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkMany :: Array TestLinkSpec -> Array (String × Aff Unit)
 linkMany specs = zip (specs <#> name) (specs <#> one)

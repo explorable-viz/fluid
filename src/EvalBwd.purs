@@ -1,8 +1,9 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
+
 import Bindings (Var, varAnon)
-import Control.Monad.Except (class MonadError, runExcept)
+import Control.Monad.Except (class MonadError)
 import Data.Exists (mkExists, runExists)
 import Data.Foldable (foldr)
 import Data.FoldableWithIndex (foldrWithIndex)
@@ -25,7 +26,7 @@ import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), Endo, absurd, definitely', error, fromRight, nonEmpty, (!), (×))
+import Util (type (×), Endo, absurd, definitely', error, nonEmpty, successful, (!), (×))
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp, ForeignOp'(..), MatrixRep(..), Val, append_inv, (<+>))
@@ -205,5 +206,5 @@ traceGC γ e = do
    t × v <- eval γ e bot
    let
       bwd v' = evalBwd γ e v' t
-      fwd (γ' × e' × α) = snd $ fromRight $ runExcept $ eval γ' e' α
+      fwd (γ' × e' × α) = snd $ successful $ eval γ' e' α
    pure $ { gc: GC { fwd, bwd }, v }

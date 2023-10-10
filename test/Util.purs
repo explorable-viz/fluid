@@ -4,17 +4,16 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
+import Benchmark.Util (BenchRow, bench, divRow)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
-import Data.Foldable (foldl)
-import Data.Int (toNumber)
+import Control.Monad.Writer.Class (class MonadWriter)
+import Control.Monad.Writer.Trans (runWriterT)
 import Data.List (elem)
-import Data.List.Lazy (List, length, replicateM)
+import Data.List.Lazy (replicateM)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
-import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -25,14 +24,13 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
-import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (successful, (×))
+import Util (type (×), successful, (×))
 import Val (class Ann, Env, Val(..))
 
 type TestConfig =
@@ -41,21 +39,24 @@ type TestConfig =
    , bwd_expect :: String
    }
 
+type AffError m a = MonadAff m => MonadError Error m => m a
+
 logging :: Boolean
 logging = true
 
-test ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
-test n file progCxt tconfig = do
+test ∷ forall m. File -> ProgCxt Unit -> TestConfig -> (Int × Boolean) -> AffError m BenchRow
+test file progCxt tconfig (n × is_bench) = do
    gconfig <- initialConfig progCxt
    s <- open file
    testPretty s
-   rows <- replicateM n $ do
-      trRow <- testTrace s gconfig.γ tconfig
-      grRow <- testGraph s gconfig tconfig
-      pure $ BenchRow trRow grRow
-   pure $ averageRows rows
+   _ × row_accum <- runWriterT
+      ( replicateM n $ do
+           testTrace s gconfig.γ tconfig
+           testGraph s gconfig tconfig is_bench
+      )
+   pure $ row_accum `divRow` n
 
-testPretty :: forall m a. MonadAff m => MonadError Error m => Ann a => SE.Expr a -> m Unit
+testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
    let src = prettyP s
    s' <- parse src program
@@ -64,7 +65,7 @@ testPretty s = do
       log ("NEW\n" <> show (erase s'))
       fail "not equal"
 
-testTrace :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> Env Vertex -> TestConfig -> m TraceRow
+testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> TestConfig -> AffError m Unit
 testTrace s γ { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
@@ -72,21 +73,19 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
 
    -- | Eval
    let e = desug.fwd s
-   t_eval1 <- preciseTime
-   { gc: GC eval, v } <- traceGC (erase <$> γ) e
-   t_eval2 <- preciseTime
+   { gc: GC eval, v } <- bench "Trace-Eval" $ \_ ->
+      traceGC (erase <$> γ) e
 
    -- | Backward
-   t_bwd1 <- preciseTime
-   let γ𝔹 × e𝔹 × _ = eval.bwd (δv (botOf v))
-   t_bwd2 <- preciseTime
+   (γ𝔹 × e𝔹) <- bench "Trace-Bwd" $ \_ -> do
+      let γ𝔹 × e𝔹 × _ = eval.bwd (δv (botOf v))
+      pure (γ𝔹 × e𝔹)
    let s𝔹 = desug𝔹.bwd e𝔹
 
    -- | Forward (round-tripping)
    let e𝔹' = desug𝔹.fwd s𝔹
-   t_fwd1 <- preciseTime
-   let v𝔹 = eval.fwd (γ𝔹 × e𝔹' × top)
-   t_fwd2 <- preciseTime
+   v𝔹 <- bench "Trace-Fwd" $ \_ -> do
+      pure (eval.fwd (γ𝔹 × e𝔹' × top))
 
    -- | Check backward selections
    unless (null bwd_expect) $
@@ -96,64 +95,30 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
       when logging $ log (prettyP v𝔹)
       checkPretty "Trace-based value" fwd_expect v𝔹
 
-   pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tFwd: tdiff t_fwd1 t_fwd2 }
-
-testGraph :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> m GraphRow
-testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
+testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
+testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
 
    -- | Eval
    let e = desug.fwd s
-   t_eval1 <- preciseTime
-   { gc: GC eval, eα, g, vα } <- graphGC gconfig e
-   t_eval2 <- preciseTime
+   { gc: GC eval, eα, g, vα } <- bench "Graph-Eval" $ \_ ->
+      graphGC gconfig e
 
    -- | Backward
-   t_bwd1 <- preciseTime
-   let
-      αs_out = selectαs (δv (botOf vα)) vα
-      αs_in = eval.bwd αs_out
-      e𝔹 = select𝔹s eα αs_in
-   t_bwd2 <- preciseTime
+   (e𝔹 × αs_out × αs_in) <- bench "Graph-Bwd" $ \_ -> do
+      let
+         αs_out = selectαs (δv (botOf vα)) vα
+         αs_in = eval.bwd αs_out
+      pure (select𝔹s eα αs_in × αs_out × αs_in)
    let s𝔹 = desug𝔹.bwd e𝔹
 
-   -- | De Morgan dual of backward
-   t_bwdDual1 <- preciseTime
-   let
-      αs_out_dual = selectαs (δv (botOf vα)) vα
-      gbwd_dual = G.bwdSliceDual αs_out_dual g
-      αs_in_dual = sinks gbwd_dual
-      e𝔹_dual = select𝔹s eα αs_in_dual
-   t_bwdDual2 <- preciseTime
-
-   -- | Backward (all outputs selected)
-   t_bwdAll1 <- preciseTime
-   let
-      e𝔹_all = select𝔹s eα $ eval.bwd (vertices vα)
-   t_bwdAll2 <- preciseTime
-
    -- | Forward (round-tripping)
-   t_fwd1 <- preciseTime
-   let
-      αs_out' = eval.fwd αs_in
-      v𝔹 = select𝔹s vα αs_out'
-   t_fwd2 <- preciseTime
-
-   -- | De Morgan dual of forward
-   t_fwdDual1 <- preciseTime
-   let
-      gfwd_dual = G.fwdSliceDual αs_in g
-      v𝔹_dual = select𝔹s vα (vertices gfwd_dual)
-   t_fwdDual2 <- preciseTime
-
-   -- | Forward (round-tripping) using De Morgan dual
-   t_fwdAsDeMorgan1 <- preciseTime
-   let
-      gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
-      v𝔹_demorgan = select𝔹s vα (vertices gfwd_demorgan) <#> not
-   t_fwdAsDeMorgan2 <- preciseTime
+   (v𝔹 × αs_out') <- bench "Graph-Fwd" $ \_ -> do
+      let
+         αs_out' = eval.fwd αs_in
+      pure (select𝔹s vα αs_out' × αs_out')
 
    -- | Check backward selections
    unless (null bwd_expect) do
@@ -161,24 +126,40 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Check round-trip selections
    unless (isGraphical v𝔹) do
       checkPretty "Graph-based value" fwd_expect v𝔹
-      checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹_demorgan
    αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
       (flip subset αs_out')
-   -- | To avoid unused variables when benchmarking
-   when logging do
-      log (prettyP e𝔹_dual)
-      log (prettyP e𝔹_all)
-      log (prettyP v𝔹_dual)
 
-   pure
-      { tEval: tdiff t_eval1 t_eval2
-      , tBwd: tdiff t_bwd1 t_bwd2
-      , tBwdDual: tdiff t_bwdDual1 t_bwdDual2
-      , tBwdAll: tdiff t_bwdAll1 t_bwdAll2
-      , tFwd: tdiff t_fwd1 t_fwd2
-      , tFwdDual: tdiff t_fwdDual1 t_fwdDual2
-      , tFwdAsDemorgan: tdiff t_fwdAsDeMorgan1 t_fwdAsDeMorgan2
-      }
+   unless (not is_bench) do
+      -- | De Morgan dual of backward
+      e𝔹_dual <- bench "Graph-BwdDual" $ \_ -> do
+         let
+            αs_out_dual = selectαs (δv (botOf vα)) vα
+            gbwd_dual = G.bwdSliceDual αs_out_dual g
+            αs_in_dual = sinks gbwd_dual
+         pure (select𝔹s eα αs_in_dual)
+
+      -- | Backward (all outputs selected)
+      e𝔹_all <- bench "Graph-BwdAll" $ \_ -> do
+         pure (select𝔹s eα $ eval.bwd (vertices vα))
+
+      -- | De Morgan dual of forward
+      v𝔹_dual <- bench "Graph-FwdDual" $ \_ -> do
+         let
+            gfwd_dual = G.fwdSliceDual αs_in g
+         pure (select𝔹s vα (vertices gfwd_dual))
+
+      -- | Forward (round-tripping) using De Morgan dual
+      v𝔹_demorgan <- bench "Graph-FwdAsDeMorgan" $ \_ -> do
+         let
+            gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
+         pure (select𝔹s vα (vertices gfwd_demorgan) <#> not)
+
+      -- | To avoid unused variables when benchmarking
+      when logging do
+         log (prettyP v𝔹_demorgan)
+         log (prettyP e𝔹_dual)
+         log (prettyP e𝔹_all)
+         log (prettyP v𝔹_dual)
 
 type TestSpec =
    { file :: String
@@ -218,9 +199,3 @@ shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -
 shouldSatisfy msg v pred =
    unless (pred v) $
       fail (show v <> " doesn't satisfy predicate: " <> msg)
-
-averageRows :: List BenchRow -> BenchRow
-averageRows rows = average $ foldl (<>) mempty rows
-   where
-   runs = toNumber $ length rows
-   average (BenchRow tr gr) = BenchRow (hmap (_ `div` runs) tr) (hmap (_ `div` runs) gr)

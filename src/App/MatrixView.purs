@@ -22,7 +22,7 @@ foreign import drawMatrix :: Renderer MatrixView
 
 matrixRep :: MatrixRep 𝔹 -> IntMatrix
 matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
-   ((<$>) ((<$>) (\x -> int.match x))) vss × i × j
+   ((int.unpack <$> _) <$> vss) × i × j
 
 matrixViewHandler :: Handler
 matrixViewHandler ev = flip (uncurry matrixElement) neg $ unsafePos $ target ev

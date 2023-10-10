@@ -22,13 +22,13 @@ foreign import drawBarChart :: Renderer BarChart
 
 instance Reflect (Dict (Val Boolean)) BarChartRecord where
    from r = BarChartRecord
-      { x: string.match (get f_x r)
+      { x: string.unpack (get f_x r)
       , y: get_intOrNumber f_y r
       }
 
 instance Reflect (Dict (Val Boolean)) BarChart where
    from r = BarChart
-      { caption: string.match (get f_caption r)
+      { caption: string.unpack (get f_caption r)
       , data: record from <$> from (get f_data r)
       }
 
