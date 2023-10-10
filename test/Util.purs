@@ -1,151 +1,164 @@
 module Test.Util where
 
 import Prelude hiding (absurd)
+
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
-import Control.Monad.Error.Class (class MonadThrow)
-import Control.Monad.Except (except, runExceptT)
-import Control.Monad.Trans.Class (lift)
-import Data.Either (Either(..))
-import Data.Foldable (foldl)
-import Data.Int (toNumber)
+import Benchmark.Util (BenchRow, bench, divRow)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Writer.Class (class MonadWriter)
+import Control.Monad.Writer.Trans (runWriterT)
 import Data.List (elem)
-import Data.List.Lazy (List, length)
+import Data.List.Lazy (replicateM)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
-import Debug (trace)
-import Desugarable (desug, desugBwd)
-import Effect.Aff (Aff)
+import Desug (desugGC)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import Eval (eval)
-import EvalBwd (evalBwd)
-import EvalGraph (GraphConfig, evalWithConfig)
-import Graph (sinks, sources, vertices)
+import EvalBwd (traceGC)
+import EvalGraph (GraphConfig, graphGC)
+import Expr (ProgCxt)
+import GaloisConnection (GaloisConnection(..))
+import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
-import Graph.Slice (selectαs, select𝔹s)
-import Heterogeneous.Mapping (hmap)
-import Lattice (bot, botOf, erase, Raw)
-import Module (parse)
+import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
+import Lattice (Raw, botOf, erase)
+import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (MayFailT, (×), error, successful)
-import Val (Val(..), class Ann)
+import Util (type (×), successful, (×))
+import Val (class Ann, Env, Val(..))
 
 type TestConfig =
    { δv :: Selector Val
-   , fwd_expect :: String
+   , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
    , bwd_expect :: String
    }
 
--- fwd_expect: prettyprinted value after bwd then fwd round-trip
--- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
-testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
-testWithSetup _name s gconfig tconfig = do
-   e <- runExceptT $ do
-      testParse s
-      trRow <- testTrace s gconfig tconfig
-      grRow <- testGraph s gconfig tconfig
-      pure (BenchRow trRow grRow)
-   case e of
-      Left msg -> error msg
-      Right x -> pure x
+type AffError m a = MonadAff m => MonadError Error m => m a
 
-testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
-testParse s = do
+logging :: Boolean
+logging = false
+
+test ∷ forall m. File -> ProgCxt Unit -> TestConfig -> (Int × Boolean) -> AffError m BenchRow
+test file progCxt tconfig (n × is_bench) = do
+   gconfig <- initialConfig progCxt
+   s <- open file
+   testPretty s
+   _ × row_accum <- runWriterT
+      ( replicateM n $ do
+           testTrace s gconfig.γ tconfig
+           testGraph s gconfig tconfig is_bench
+      )
+   pure $ row_accum `divRow` n
+
+testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
+testPretty s = do
    let src = prettyP s
    s' <- parse src program
-   trace ("Non-Annotated:\n" <> src) \_ ->
-      unless (eq (erase s) (erase s')) do
-         log ("SRC\n" <> show (erase s))
-         log ("NEW\n" <> show (erase s'))
-         (lift $ fail "not equal") :: MayFailT Aff Unit
+   unless (eq (erase s) (erase s')) do
+      log ("SRC\n" <> show (erase s))
+      log ("NEW\n" <> show (erase s'))
+      fail "not equal"
 
-testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
-testTrace s { γα: γ } { δv, bwd_expect, fwd_expect } = do
-   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
+testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> TestConfig -> AffError m Unit
+testTrace s γ { δv, bwd_expect, fwd_expect } = do
+   -- | Desugaring Galois connections for Unit and Boolean type selections
+   GC desug <- desugGC s
+   GC desug𝔹 <- desugGC s
+
    -- | Eval
-   e𝔹 <- desug s𝔹
-   tEval1 <- preciseTime
-   t × v𝔹 <- eval γ𝔹 e𝔹 bot
-   tEval2 <- preciseTime
+   let e = desug.fwd s
+   { gc: GC eval, v } <- bench "Trace-Eval" $ \_ ->
+      traceGC (erase <$> γ) e
 
    -- | Backward
-   tBwd1 <- preciseTime
-   let
-      v𝔹' = δv v𝔹
-      { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
-   tBwd2 <- preciseTime
-   let s𝔹' = desugBwd e𝔹' s
+   (γ𝔹 × e𝔹 × _) <- bench "Trace-Bwd" $ \_ ->
+      pure (eval.bwd (δv (botOf v)))
+   let s𝔹 = desug𝔹.bwd e𝔹
 
    -- | Forward (round-tripping)
-   e𝔹'' <- desug s𝔹'
-   tFwd1 <- preciseTime
-   _ × v𝔹'' <- eval γ𝔹' e𝔹'' top
-   tFwd2 <- preciseTime
+   let e𝔹' = desug𝔹.fwd s𝔹
+   v𝔹 <- bench "Trace-Fwd" $ \_ ->
+      pure (eval.fwd (γ𝔹 × e𝔹' × top))
 
-   lift do
-      unless (isGraphical v𝔹') $
-         log (prettyP v𝔹'')
-      -- | Check backward selections
-      unless (null bwd_expect) $
-         checkPretty "Trace-based source selection" bwd_expect s𝔹'
-      -- | Check round-trip selections
-      unless (isGraphical v𝔹') $
-         checkPretty "Trace-based value" fwd_expect v𝔹''
+   -- | Check backward selections
+   unless (null bwd_expect) $
+      checkPretty "Trace-based source selection" bwd_expect s𝔹
+   -- | Check round-trip selections
+   unless (isGraphical v) do
+      when logging $ log (prettyP v𝔹)
+      checkPretty "Trace-based value" fwd_expect v𝔹
 
-   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2 }
+testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
+testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
+   -- | Desugaring Galois connections for Unit and Boolean type selections
+   GC desug <- desugGC s
+   GC desug𝔹 <- desugGC s
 
-testGraph :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
-testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
-   e <- desug s
-   tEval1 <- preciseTime
-   (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
-   tEval2 <- preciseTime
+   let e = desug.fwd s
+   { gc: GC eval, eα, g, vα } <- bench "Graph-Eval" $ \_ ->
+      graphGC gconfig e
 
    -- | Backward
-   tBwd1 <- preciseTime
-   let
-      αs_out = selectαs (δv (botOf vα)) vα
-      gbwd = G.bwdSlice αs_out g
-      αs_in = sinks gbwd
-      e𝔹 = select𝔹s eα αs_in
-   tBwd2 <- preciseTime
-   let
-      s𝔹 = desugBwd e𝔹 (erase s)
+   (e𝔹 × αs_out × αs_in) <- bench "Graph-Bwd" $ \_ -> do
+      let
+         αs_out = selectαs (δv (botOf vα)) vα
+         αs_in = eval.bwd αs_out
+      pure (select𝔹s eα αs_in × αs_out × αs_in)
+   let s𝔹 = desug𝔹.bwd e𝔹
 
    -- | Forward (round-tripping)
-   tFwd1 <- preciseTime
-   let
-      gfwd = G.fwdSlice αs_in g
-      v𝔹 = select𝔹s vα (vertices gfwd)
-   tFwd2 <- preciseTime
+   (v𝔹 × αs_out') <- bench "Graph-Fwd" $ \_ -> do
+      let
+         αs_out' = eval.fwd αs_in
+      pure (select𝔹s vα αs_out' × αs_out')
 
-   -- | Forward (round-tripping) using De Morgan dual
-   tFwdDeMorgan1 <- preciseTime
-   let
-      gfwd' = G.fwdSliceDeMorgan αs_in g
-      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
-   tFwdDeMorgan2 <- preciseTime
+   -- | Check backward selections
+   unless (null bwd_expect) $
+      checkPretty "Graph-based source selection" bwd_expect s𝔹
+   -- | Check round-trip selections
+   unless (isGraphical v𝔹) $
+      checkPretty "Graph-based value" fwd_expect v𝔹
+   αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+      (flip subset αs_out')
 
-   lift do
-      -- | Check backward selections
-      unless (null bwd_expect) do
-         checkPretty "Graph-based source selection" bwd_expect s𝔹
-      -- | Check round-trip selections
-      unless (isGraphical v𝔹) do
-         checkPretty "Graph-based value" fwd_expect v𝔹
-         checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
-      sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
-         (flip subset (sources gfwd))
+   unless (not is_bench) do
+      -- | De Morgan dual of backward
+      e𝔹_dual <- bench "Graph-BwdDual" $ \_ -> do
+         let
+            αs_out_dual = selectαs (δv (botOf vα)) vα
+            gbwd_dual = G.bwdSliceDual αs_out_dual g
+            αs_in_dual = sinks gbwd_dual
+         pure (select𝔹s eα αs_in_dual)
 
-   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2, tFwdDemorgan: tdiff tFwdDeMorgan1 tFwdDeMorgan2 }
+      -- | Backward (all outputs selected)
+      e𝔹_all <- bench "Graph-BwdAll" $ \_ ->
+         pure (select𝔹s eα $ eval.bwd (vertices vα))
+
+      -- | De Morgan dual of forward
+      v𝔹_dual <- bench "Graph-FwdDual" $ \_ -> do
+         let
+            gfwd_dual = G.fwdSliceDual αs_in g
+         pure (select𝔹s vα (vertices gfwd_dual))
+
+      -- | Forward (round-tripping) using De Morgan dual
+      v𝔹_demorgan <- bench "Graph-FwdAsDeMorgan" $ \_ -> do
+         let
+            gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
+         pure (select𝔹s vα (vertices gfwd_demorgan) <#> not)
+
+      -- | To avoid unused variables when benchmarking
+      when logging do
+         log (prettyP v𝔹_demorgan)
+         log (prettyP e𝔹_dual)
+         log (prettyP e𝔹_all)
+         log (prettyP v𝔹_dual)
 
 type TestSpec =
    { file :: String
@@ -177,35 +190,11 @@ isGraphical _ = false
 
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty msg expect x =
-   unless (expect `eq` prettyP x)
-      $ fail (msg <> "\nExpected:\n" <> expect <> "\nReceived:\n" <> prettyP x)
+   unless (expect `eq` prettyP x) $
+      fail (msg <> "\nExpected:\n" <> expect <> "\nReceived:\n" <> prettyP x)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
 shouldSatisfy msg v pred =
-   unless (pred v)
-      $ fail (show v <> " doesn't satisfy predicate: " <> msg)
-
-averageRows :: List BenchRow -> BenchRow
-averageRows rows = averagedTr
-   where
-   runs = toNumber $ length rows
-
-   zeroRow :: BenchRow
-   zeroRow = BenchRow { tEval: 0.0, tBwd: 0.0, tFwd: 0.0 } { tEval: 0.0, tBwd: 0.0, tFwd: 0.0, tFwdDemorgan: 0.0 }
-
-   sumRow :: BenchRow -> BenchRow -> BenchRow
-   sumRow (BenchRow trRow1 gRow1) (BenchRow trRow2 gRow2) =
-      BenchRow
-         { tEval: trRow1.tEval + trRow2.tEval
-         , tBwd: trRow1.tBwd + trRow2.tBwd
-         , tFwd: trRow1.tFwd + trRow2.tFwd
-         }
-         { tEval: gRow1.tEval + gRow2.tEval
-         , tBwd: gRow1.tBwd + gRow2.tBwd
-         , tFwd: gRow1.tFwd + gRow2.tFwd
-         , tFwdDemorgan: gRow1.tFwdDemorgan + gRow2.tFwdDemorgan
-         }
-
-   summed = foldl sumRow zeroRow rows
-   averagedTr = (\(BenchRow tr gr) -> BenchRow (hmap (\num -> num `div` runs) tr) (hmap (\num -> num `div` runs) gr)) $ summed
+   unless (pred v) $
+      fail (show v <> " doesn't satisfy predicate: " <> msg)

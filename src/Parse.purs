@@ -222,7 +222,7 @@ simplePattern pattern' =
 
    pair :: SParser Pattern
    pair =
-      token.parens $ do
+      token.parens do
          π <- pattern' <* token.comma
          π' <- pattern'
          pure $ PConstr cPair (π : π' : Nil)
@@ -288,7 +288,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
    -- Pushing this to front of operator table to give it higher precedence than any other binary op.
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
    backtickOp :: Operator Identity String (Raw Expr)
-   backtickOp = flip Infix AssocLeft $ do
+   backtickOp = flip Infix AssocLeft do
       x <- between backtick backtick ident
       pure (\e e' -> BinaryApp e x e')
 

@@ -18,11 +18,9 @@ You can edit this file as you like.
   , "exists"
   , "foldable-traversable"
   , "foreign-object"
-  , "heterogeneous"
   , "http-methods"
   , "identity"
   , "integers"
-  , "js-date"
   , "lists"
   , "maybe"
   , "newtype"
@@ -45,6 +43,6 @@ You can edit this file as you like.
   , "web-events"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs", "test/**/*.purs", "example/**/*.purs" ]
 , backend = "purs-backend-es build"
 }

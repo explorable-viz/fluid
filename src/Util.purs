@@ -3,31 +3,38 @@ module Util where
 import Prelude hiding (absurd)
 
 import Control.Apply (lift2)
-import Control.Comonad (extract)
-import Control.Monad.Except (Except, ExceptT(..), withExceptT, runExceptT, except)
-import Control.MonadPlus (class MonadPlus, empty)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
+import Control.Monad.Except (Except, ExceptT, runExcept)
+import Control.MonadPlus (class Alternative, guard)
 import Data.Array ((!!), updateAt)
+import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
-import Data.Either (note) as Either
+import Data.Foldable (class Foldable, foldr)
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Identity (Identity(..))
 import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&), (***))
 import Data.Tuple (Tuple(..), fst, snd)
-import Effect.Exception (throw)
+import Effect.Exception (Error, message)
+import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
+
+type 𝔹 = Boolean
 
 infixr 6 type Tuple as × -- standard library has \/
 infixr 6 Tuple as ×
 
 infixr 6 type Either as + -- standard library has \/
 
+-- Rethink: has same name as Effect.Exception.error but without the type!
 error :: ∀ a. String -> a
 error msg = unsafePerformEffect (throw msg)
+
+throw :: forall m a. MonadThrow Error m => String -> m a
+throw = throwError <<< E.error
 
 assert :: ∀ a. Boolean -> a -> a
 assert true = identity
@@ -53,42 +60,37 @@ definitely' = definitely absurd
 get :: forall k v. Ord k => k -> Map k v -> v
 get k = definitely' <<< M.lookup k
 
-onlyIf :: Boolean -> forall m a. MonadPlus m => a -> m a
-onlyIf true = pure
-onlyIf false = const empty
+onlyIf :: forall m a. Bind m => Alternative m => Boolean -> a -> m a
+onlyIf b a = do
+   guard b
+   pure a
 
-type MayFail a = Except String a
-type MayFailT a = ExceptT String a
+type MayFail a = Except Error a
+type MayFailT m = ExceptT Error m
 
-orElse :: forall a m. Monad m => String -> Maybe a -> MayFailT m a
-orElse s = except <<< Either.note s
+orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
+orElse s Nothing = throw s
+orElse _ (Just x) = pure x
 
-ignoreMessage :: forall a. MayFail a -> Maybe a
-ignoreMessage = runExceptT >>> extract >>> case _ of
-   (Left _) -> Nothing
-   (Right x) -> Just x
-
-report :: String -> forall a m. Applicative m => MayFailT m a
-report s = except $ Left s
-
-fromRight :: forall a. Either String a -> a
-fromRight (Right x) = x
-fromRight (Left msg) = error msg
+mapLeft :: forall a b c. (a -> c) -> Either a b -> Either c b
+mapLeft = flip bimap identity
 
 successful :: forall a. MayFail a -> a
-successful (ExceptT (Identity (Right x))) = x
-successful (ExceptT (Identity (Left msg))) = error msg
+successful = runExcept >>> case _ of
+   Right x -> x
+   Left e -> error $ show e
 
 successfulWith :: String -> forall a. MayFail a -> a
 successfulWith msg = successful <<< with msg
 
 -- If the property fails, add an extra error message.
-with :: forall a m. Functor m => String -> MayFailT m a -> MayFailT m a
-with msg = withExceptT (\msg' -> msg' <> if msg == "" then "" else ("\n" <> msg))
+with :: forall a m. MonadError Error m => String -> Endo (m a)
+with msg m = catchError m \e ->
+   let msg' = message e in throwError $ E.error $ msg' <> if msg == "" then "" else ("\n" <> msg)
 
-check :: forall m. Monad m => Boolean -> String -> MayFailT m Unit
-check true _ = pure unit
-check false msg = report msg
+check :: forall m. MonadError Error m => Boolean -> String -> m Unit
+check true = const $ pure unit
+check false = throwError <<< E.error
 
 mayEq :: forall a. Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
@@ -102,7 +104,7 @@ mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >
 unionWithMaybe :: forall a b. Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
-mayFailEq :: forall a m. Monad m => Show a => Eq a => a -> a -> MayFailT m a
+mayFailEq :: forall a m. MonadError Error m => Show a => Eq a => a -> a -> m a
 mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
 
 infixl 4 mayEq as ≟
@@ -147,7 +149,6 @@ unzip = map fst &&& map snd
 both :: forall a b. (a -> b) -> a × a -> b × b
 both f = f *** f
 
--- Couldn't find these in standard library
 assoc1 :: forall a b c. (a × b) × c -> a × (b × c)
 assoc1 ((a × b) × c) = a × (b × c)
 
@@ -161,3 +162,7 @@ infixr 6 type WithTypeLeft as <×|
 infixr 6 WithTypeLeft as <×|
 
 derive instance Functor f => Functor (t <×| f)
+
+-- Haven't found this yet in PureScript
+concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a
+concatM = foldr (>=>) pure

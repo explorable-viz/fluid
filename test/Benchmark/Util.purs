@@ -2,76 +2,55 @@ module Benchmark.Util where
 
 import Prelude
 
-import Control.Monad.Writer (WriterT, runWriterT)
-import Data.Array (intersperse)
-import Data.Foldable (fold)
-import Data.JSDate (JSDate)
-import Data.JSDate (now) as JSDate
+import Control.Monad.Writer.Class (class MonadWriter, tell)
+import Data.Array (intersperse, fromFoldable) as A
+import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
+import Data.Int (toNumber)
+import Data.List (fold)
+import Data.Map (Map, singleton, unionWith, keys, values)
+import Data.Map (empty) as M
+import Data.Newtype (class Newtype, over2)
+import Data.Tuple (snd)
 import Effect.Class (class MonadEffect, liftEffect)
 import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
 
-newtype File = File String
-newtype Folder = Folder String
-
-derive newtype instance Show File
-derive newtype instance Semigroup File
-derive newtype instance Monoid File
-
-data BenchRow = BenchRow TraceRow GraphRow
-
-newtype BenchAcc = BenchAcc (Array (String × BenchRow))
-
-type WithBenchAcc g a = WriterT BenchAcc g a
-
-runWithBenchAcc :: forall g a. Monad g => WithBenchAcc g a -> g (a × BenchAcc)
-runWithBenchAcc = runWriterT
-
-derive newtype instance Semigroup BenchAcc
-derive newtype instance Monoid BenchAcc
-
-type TraceRow =
-   { tEval :: Number
-   , tBwd :: Number
-   , tFwd :: Number
-   }
-
-type GraphRow =
-   { tEval :: Number
-   , tBwd :: Number
-   , tFwd :: Number
-   , tFwdDemorgan :: Number
-   }
+newtype BenchAcc = BenchAcc (NonEmptyArray (String × BenchRow))
 
 instance Show BenchAcc where
    show (BenchAcc rows) =
-      "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-FwdDeMorgan\n"
-         <> (fold $ intersperse "\n" (map rowShow rows))
+      fold $ A.intersperse "\n" ([ showHeader ] <> (toArray $ showRow <$> rows))
+      where
+      BenchRow firstRow = head rows # snd
 
-rowShow :: String × BenchRow -> String
-rowShow (str × row) = str <> "," <> show row
+      showHeader :: String
+      showHeader =
+         fold $ A.intersperse "," ([ "Test-Name" ] <> A.fromFoldable (keys firstRow))
 
-instance Show BenchRow where
-   show (BenchRow trRow grRow) = fold $ intersperse ","
-      [ show trRow.tEval
-      , show trRow.tBwd
-      , show trRow.tFwd
-      , show grRow.tEval
-      , show grRow.tBwd
-      , show grRow.tFwd
-      , show grRow.tFwdDemorgan
-      ]
+      showRow :: String × BenchRow -> String
+      showRow (test_name × (BenchRow row)) =
+         fold $ A.intersperse "," ([ test_name ] <> (show <$> A.fromFoldable (values row)))
 
-now :: forall m. MonadEffect m => m JSDate
-now = liftEffect JSDate.now
+newtype BenchRow = BenchRow (Map String Number)
 
--- tdiff :: JSDate -> JSDate -> Number
--- tdiff begin end =
--- getTime end - getTime begin
--- 
+derive instance Newtype BenchRow _
 
-tdiff :: Number -> Number -> Number
-tdiff x y = sub y x
+instance Semigroup BenchRow where
+   append = unionWith (+) `flip over2` BenchRow
 
-preciseTime :: forall m. MonadEffect m => m Number
-preciseTime = liftEffect microtime
+instance Monoid BenchRow where
+   mempty = BenchRow M.empty
+
+bench :: forall m a. MonadEffect m => MonadWriter BenchRow m => String -> (Unit -> m a) -> m a
+bench name prog = do
+   t1 <- preciseTime
+   r <- prog unit
+   t2 <- preciseTime
+   tell (BenchRow $ singleton name (t2 `sub` t1))
+   pure r
+   where
+   preciseTime :: m Number
+   preciseTime = liftEffect microtime
+
+divRow :: BenchRow -> Int -> BenchRow
+divRow (BenchRow row) n = BenchRow ((_ `div` toNumber n) <$> row)
