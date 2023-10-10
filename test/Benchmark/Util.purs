@@ -41,9 +41,6 @@ instance Semigroup BenchRow where
 instance Monoid BenchRow where
    mempty = BenchRow M.empty
 
-preciseTime :: forall m. MonadEffect m => m Number
-preciseTime = liftEffect microtime
-
 bench :: forall m a. MonadEffect m => MonadWriter BenchRow m => String -> (Unit -> m a) -> m a
 bench name prog = do
    t1 <- preciseTime
@@ -51,7 +48,9 @@ bench name prog = do
    t2 <- preciseTime
    tell (BenchRow $ singleton name (t2 `sub` t1))
    pure r
+   where
+   preciseTime :: m Number
+   preciseTime = liftEffect microtime
 
 divRow :: BenchRow -> Int -> BenchRow
-divRow (BenchRow row) n = BenchRow (map (_ `div` toNumber n) row)
-
+divRow (BenchRow row) n = BenchRow ((_ `div` toNumber n) <$> row)
