@@ -7,6 +7,7 @@ import Data.Array (intersperse, fromFoldable) as A
 import Data.Int (toNumber)
 import Data.List (fold)
 import Data.Map (Map, singleton, unionWith, fromFoldable, keys, values)
+import Data.Newtype (class Newtype, over2)
 import Effect.Class (class MonadEffect, liftEffect)
 import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
@@ -29,8 +30,10 @@ instance Show BenchAcc where
 
 newtype BenchRow = BenchRow (Map String Number)
 
+derive instance Newtype BenchRow _
+
 instance Semigroup BenchRow where
-   append (BenchRow row1) (BenchRow row2) = BenchRow (unionWith (+) row1 row2)
+   append = unionWith (+) `flip over2` BenchRow
 
 instance Monoid BenchRow where
    mempty = BenchRow
