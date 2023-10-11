@@ -49,6 +49,10 @@ misc_cases =
           \  Infty, Infty, FNum 6, FNum 10, FNum 5, FNum 5, FNum 6, Infty,\n\
           \  Infty, Infty, Infty, FNum 7, FNum 9, FNum 9, FNum 5, FNum 6, ((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : []))))))))"
      }
+   , { file: "slicing/dtw/average-series"
+     , fwd_expect:
+          "(2.5 : (0.5 : (0.5 : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
+     }
    ]
 
 desugar_cases :: Array TestSpec
