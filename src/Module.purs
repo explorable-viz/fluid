@@ -4,7 +4,6 @@ import Prelude
 
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
-import Ann (Raw)
 import Bindings (Var, (↦))
 import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
@@ -22,6 +21,7 @@ import Expr (ProgCxt(..))
 import Graph (empty) as G
 import Graph.GraphImpl (GraphImpl)
 import Graph.GraphWriter (alloc, runWithGraphAllocT)
+import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)

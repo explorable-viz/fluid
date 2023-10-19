@@ -3,7 +3,7 @@ let nextIndices n m window =
             j <- [max 1 (i - window) .. min m (i + window)]];
 
 let costMatrixInit rows cols window =
-    [| let initV = if or (and (n == 1) (m == 1)) (and (abs n m <= window) (not (or (n == 1) (m == 1))))
+    [| let initV = if ((n == 1) `and` (m == 1)) `or` ((abs n m <= window) `and` not ((n == 1) `or` (m == 1)))
                    then FNum 0
                    else Infty
         in initV | (n, m) in (rows, cols) |];
@@ -19,7 +19,7 @@ let minAndPrev (i, j) im1 jm1 ijm1 =
 
 let extractPath indmatrix (i, j) =
   let traverser (n, m) matrix accum =
-      if and (n == 1) (m == 1)
+      if (n == 1) `and` (m == 1)
       then accum
       else
           traverser (matrix!(n, m)) matrix ((n - 1, m - 1) : accum)
