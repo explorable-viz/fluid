@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
 
 def parse(test_names, column_order):
   # Read benchmark csv
@@ -8,7 +9,7 @@ def parse(test_names, column_order):
 
   # Extract test names of interest
   df = pd.DataFrame(benchmarks.loc[test_names])
-  print(df)
+  print(df[column_order])
 
   # Reorder benchmark columns
   # column_colors = ['#0d6b12', '#93dbb5', '#3e3875', '#b8bef5', '#910303', '#e84d4d', '#e8bceb', '#5073a1']
@@ -44,4 +45,4 @@ def plot_benches(suite):
   
   parse(test_cases, bench_names)  
 
-plot_benches("all")
+plot_benches(sys.argv[1])
