@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import sys
 import argparse
 
 
@@ -27,10 +26,14 @@ def parse(test_names, column_order):
 
   plt.show()
 
+def decompose_list(input_str):
+  inner = input_str.split(", ")
+  return inner
+
 parser = argparse.ArgumentParser()  
 parser.add_argument("-s", "--Suite", help = "Premade testsuite")
-parser.add_argument("-t", "--Tests", help = "Specify list of tests")
-parser.add_argument("-b", "--Benches", help = "Specify list of benchmarks to show")
+parser.add_argument("-t", "--Tests", type=decompose_list, help = "Specify list of tests")
+parser.add_argument("-b", "--Benches",type=decompose_list, help = "Specify list of benchmarks to show")
 
 args = parser.parse_args()
 
@@ -52,3 +55,5 @@ if args.Suite:
     bench_names =  ['Trace-Eval','Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-Fwd']
   
   parse(test_cases, bench_names)  
+elif args.Tests and args.Benches:
+  parse(args.Tests, args.Benches)
