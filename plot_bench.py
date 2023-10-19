@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
+import argparse
+
 
 def parse(test_names, column_order):
   # Read benchmark csv
@@ -25,18 +27,24 @@ def parse(test_names, column_order):
 
   plt.show()
 
+parser = argparse.ArgumentParser()  
+parser.add_argument("-s", "--Suite", help = "Premade testsuite")
+parser.add_argument("-t", "--Tests", help = "Specify list of tests")
+parser.add_argument("-b", "--Benches", help = "Specify list of benchmarks to show")
 
-def plot_benches(suite):
+args = parser.parse_args()
+
+if args.Suite:
   test_cases = []
   bench_names = []
   
-  if suite == "all":
+  if args.Suite == "all":
     test_cases = ['convolution/edgeDetect', 'convolution/emboss', 'convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart']
     bench_names = ['Trace-Eval', 'Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-BwdDual', 'Graph-BwdAll', 'Graph-Fwd', 'Graph-FwdDual', 'Graph-FwdAsDeMorgan']
-  elif suite == "bwd":
+  elif args.Suite == "bwd":
     test_cases = ['convolution/edgeDetect', 'convolution/emboss', 'convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart']
     bench_names = ['Trace-Eval','Trace-Bwd', 'Graph-Eval', 'Graph-Bwd']
-  elif suite == "fwd":
+  elif args.Suite == "fwd":
     test_cases = ['convolution/edgeDetect', 'convolution/emboss', 'convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart']
     bench_names = ['Trace-Eval', 'Trace-Fwd', 'Graph-Eval', 'Graph-Fwd', 'Graph-FwdAsDeMorgan']
   else:
@@ -44,5 +52,3 @@ def plot_benches(suite):
     bench_names =  ['Trace-Eval','Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-Fwd']
   
   parse(test_cases, bench_names)  
-
-plot_benches(sys.argv[1])
