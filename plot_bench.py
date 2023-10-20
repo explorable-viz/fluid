@@ -30,10 +30,32 @@ def decompose_list(input_str):
   inner = input_str.split(", ")
   return inner
 
+def test_names(test_str):
+  if test_str == "expensive":
+    return ['convolution/edgeDetect', 'convolution/emboss', 'convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart', 'slicing/dtw/compute-dtw']
+  elif test_str == "graphics":
+    return ['graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart']
+  elif test_str == "convolution":
+    return ['convolution/edgeDetect', 'convolution/emboss', 'convolution/gaussian']
+  else:
+    return decompose_list(test_str)
+
+def bench_names(bench_str):
+  if bench_str == "all":
+    return ['Trace-Eval', 'Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-BwdDual', 'Graph-BwdAll', 'Graph-Fwd', 'Graph-FwdDual', 'Graph-FwdAsDeMorgan']
+  elif bench_str == "bwd":
+    return ['Trace-Eval','Trace-Bwd', 'Graph-Eval', 'Graph-Bwd']
+  elif bench_str == "fwd":
+    return ['Trace-Eval', 'Trace-Fwd', 'Graph-Eval', 'Graph-Fwd', 'Graph-FwdAsDeMorgan']
+  elif bench_str == "standard":
+    return ['Trace-Eval','Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-Fwd']
+  else:
+    return decompose_list(bench_str)
+
 parser = argparse.ArgumentParser()  
 parser.add_argument("-s", "--Suite", help = "Premade testsuite")
-parser.add_argument("-t", "--Tests", type=decompose_list, help = "Specify list of tests")
-parser.add_argument("-b", "--Benches",type=decompose_list, help = "Specify list of benchmarks to show")
+parser.add_argument("-t", "--Tests", help = "Specify list of tests")
+parser.add_argument("-b", "--Benches", help = "Specify list of benchmarks to show")
 
 args = parser.parse_args()
 
@@ -54,6 +76,9 @@ if args.Suite:
     test_cases = ['convolution/edgeDetect', 'convolution/emboss', 'convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart']
     bench_names =  ['Trace-Eval','Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-Fwd']
   
-  parse(test_cases, bench_names)  
+  parse(test_cases, bench_names) 
 elif args.Tests and args.Benches:
-  parse(args.Tests, args.Benches)
+  tests = test_names(args.Tests)
+  benches = bench_names(args.Benches)
+    
+  parse(tests, benches)
