@@ -17,7 +17,7 @@ bench_sets = {
   'standard': ['Trace-Eval','Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-Fwd'],
 }
 
-def parse(test_names, column_order, dest='Benchmarks/recent.png'):
+def parse(test_names, column_order, dest='recent.png'):
   # Read benchmark csv
   benchmarks = pd.read_csv('Benchmarks/benchmarks.csv', skipinitialspace=True, delimiter=',', index_col='Test-Name')
 
@@ -36,7 +36,8 @@ def parse(test_names, column_order, dest='Benchmarks/recent.png'):
   # Inserting a coloured horizontal line just to make clearer which columns have zero values
   plt.ylim(bottom=-10)
   plt.gca().axhline(0, lw=0.3, color='blue', label="Zero accuracy")
-  plt.savefig(dest)
+  real_dest = "plots/" + dest 
+  plt.savefig(real_dest)
   plt.show()
 
 def decompose_list(input_str):
