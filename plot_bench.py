@@ -17,14 +17,15 @@ bench_sets = {
   'standard': ['Trace-Eval','Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-Fwd'],
 }
 
-def parse(test_names, column_order, dest='recent.png'):
+def parse(test_names, column_order, cap, lab, dest='recent.png'):
   # Read benchmark csv
   benchmarks = pd.read_csv('Benchmarks/benchmarks.csv', skipinitialspace=True, delimiter=',', index_col='Test-Name')
 
   # Extract test names of interest
-  df = pd.DataFrame(benchmarks.loc[test_names])
+  df = pd.DataFrame(benchmarks.loc[test_names]).round(1)
+  tex = df[column_order].to_latex(float_format="%.2f", caption = cap, label = lab)
   print(df[column_order])
-
+  print(tex)
   # Reorder benchmark columns
   # column_colors = ['#0d6b12', '#93dbb5', '#3e3875', '#b8bef5', '#910303', '#e84d4d', '#e8bceb', '#5073a1']
   # Plot as bar chart
@@ -32,13 +33,17 @@ def parse(test_names, column_order, dest='recent.png'):
                         # , color=column_colors
                         , ylabel="Milliseconds", rot=0
                         , figsize=(16,6))
-
+  
   # Inserting a coloured horizontal line just to make clearer which columns have zero values
   plt.ylim(bottom=-10)
   plt.gca().axhline(0, lw=0.3, color='blue', label="Zero accuracy")
-  real_dest = "plots/" + dest 
-  plt.savefig(real_dest)
-  plt.show()
+  dest_png = dest + '.png'
+  dest_tex = dest + '.tex'
+  tex_f = open(dest_tex, "w")
+  tex_f.write(tex)
+  tex_f.close()
+  plt.savefig(dest_png)
+  # plt.show()
 
 def decompose_list(input_str):
   inner = input_str.split(", ")
@@ -56,7 +61,7 @@ def bench_names(bench_str):
   else:
     return decompose_list(bench_str)
 
-parser = argparse.ArgumentParser()  
+parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--Tests", help = "Specify list of tests")
 parser.add_argument("-b", "--Benches", help = "Specify list of benchmarks to show")
 parser.add_argument("-d", "--Dest", help = "Specify where to save plot")
@@ -65,7 +70,9 @@ args = parser.parse_args()
 if args.Tests and args.Benches:
   tests = test_names(args.Tests)
   benches = bench_names(args.Benches)
+  capt = "Tests: " + args.Tests + ", Benches: " + args.Benches
+  lab = args.Tests + '-' + args.Benches
   if args.Dest:    
-    parse(tests, benches, args.Dest)
+    parse(tests, benches, capt, lab, args.Dest)
   else:
-    parse(tests, benches)
+    parse(tests, benches, capt, lab)
