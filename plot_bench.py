@@ -12,7 +12,7 @@ test_sets = {
 
 bench_sets = {
   'all': ['Trace-Eval', 'Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-BwdDual', 'Graph-BwdAll', 'Graph-Fwd', 'Graph-FwdDual', 'Graph-FwdAsDeMorgan'],
-  'bwd': ['Trace-Eval','Trace-Bwd', 'Graph-Eval', 'Graph-Bwd'],
+  'bwd': ['Trace-Eval','Trace-Bwd','Graph-Eval', 'Graph-Bwd'],
   'fwd': ['Trace-Eval', 'Trace-Fwd', 'Graph-Eval', 'Graph-Fwd', 'Graph-FwdAsDeMorgan'],
   'standard': ['Trace-Eval','Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-Fwd'],
 }
@@ -73,6 +73,6 @@ if args.Tests and args.Benches:
   capt = "Tests: " + args.Tests + ", Benches: " + args.Benches
   lab = args.Tests + '-' + args.Benches
   if args.Dest:    
-    parse(tests, benches, capt, lab, args.Dest)
+    parse(tests, benches, capt, lab, dest=args.Dest)
   else:
     parse(tests, benches, capt, lab)
