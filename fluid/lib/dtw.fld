@@ -18,12 +18,12 @@ let minAndPrev (i, j) im1 jm1 ijm1 =
           else ((i, j), minim);
 
 let extractPath indmatrix (i, j) =
-  let traverser (n, m) matrix accum =
+  let traverser (n, m) accum =
       if (n == 1) `and` (m == 1)
       then accum
       else
-          traverser (matrix!(n, m)) matrix ((n - 1, m - 1) : accum)
-  in traverser (i, j) indmatrix Nil;
+          traverser (indmatrix!(n, m)) ((n - 1, m - 1) : accum)
+  in traverser (i, j) Nil;
 
 let localMinUpdate seq1 seq2 cost (costmatrix, indmatrix) (i, j) =
     let iEntr = nth (i - 1) seq1;
