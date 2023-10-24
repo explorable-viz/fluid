@@ -10,10 +10,10 @@ let costMatrixInit rows cols window =
 
 let minAndPrev (i, j) im1 jm1 ijm1 =
   let minim = minimal [im1, jm1, ijm1] in
-      if eq minim im1 then
+      if minim `eq` im1 then
           ((i, j + 1), minim)
       else
-          if eq minim jm1 then
+          if minim `eq` jm1 then
               ((i + 1, j ), minim)
           else ((i, j), minim);
 
