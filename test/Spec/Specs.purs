@@ -1,6 +1,7 @@
 module Test.Spec.Specs where
 
 import Prelude
+
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
@@ -40,15 +41,6 @@ misc_cases =
    , { file: "range", fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
    , { file: "records", fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
    , { file: "reverse", fwd_expect: "(2 : (1 : []))" }
-   , { file: "slicing/dtw/compute-dtw"
-     , fwd_expect:
-          "(FNum 0, Infty, Infty, Infty, Infty, Infty, Infty, Infty,\n\
-          \  Infty, FNum 1, FNum 10, FNum 19, Infty, Infty, Infty, Infty,\n\
-          \  Infty, FNum 2, FNum 2, FNum 3, FNum 7, Infty, Infty, Infty,\n\
-          \  Infty, FNum 2, FNum 6, FNum 6, FNum 4, FNum 5, Infty, Infty,\n\
-          \  Infty, Infty, FNum 6, FNum 10, FNum 5, FNum 5, FNum 6, Infty,\n\
-          \  Infty, Infty, Infty, FNum 7, FNum 9, FNum 9, FNum 5, FNum 6, ((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : []))))))))"
-     }
    , { file: "slicing/dtw/average-series"
      , fwd_expect:
           "(2.5 : (0.5 : (0.5 : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
@@ -204,6 +196,11 @@ bwd_cases =
      , file_expect: "zipWith-1.expect"
      , δv: listElement 1 neg
      , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
+     }
+   , { file: "dtw/compute-dtw"
+     , file_expect: "dtw/compute-dtw.expect"
+     , fwd_expect: "((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
+     , δv: listElement 1 neg
      }
    ]
 
