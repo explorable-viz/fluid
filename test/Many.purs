@@ -18,7 +18,7 @@ many specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
       test (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdMany :: Array TestBwdSpec -> (Int × Boolean) -> Array (String × Aff BenchRow)
-bwdMany specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
+bwdMany specs (n × is_bench) = zip (specs <#> (\spec -> "slicing/" <> spec.file)) (specs <#> one)
    where
    folder = File "slicing/"
    one { file, file_expect, δv, fwd_expect } = do
