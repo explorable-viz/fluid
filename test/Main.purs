@@ -21,6 +21,7 @@ tests = concat
    , test_graphics
    , test_linking
    ]
+
 {-
 tests = concat [ test_scratchpad ]
 -}
