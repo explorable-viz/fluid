@@ -56,5 +56,6 @@ bench name prog = do
 graphSizeB :: forall g m. Graph g => MonadEffect m => MonadWriter BenchRow m => g -> m Unit
 graphSizeB graph = do
    tell (BenchRow $ singleton "Graph-Nodes" (toNumber $ size graph))
+
 divRow :: BenchRow -> Int -> BenchRow
 divRow (BenchRow row) n = BenchRow ((_ `div` toNumber n) <$> row)

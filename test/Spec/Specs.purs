@@ -197,11 +197,21 @@ bwd_cases =
      , δv: listElement 1 neg
      , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
      }
-   , { file: "dtw/compute-dtw"
-     , file_expect: "dtw/compute-dtw.expect"
-     , fwd_expect: "((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
-     , δv: listElement 1 neg
+   , { file: "matrix-update"
+     , file_expect: "matrix-update.expect"
+     , fwd_expect:
+          "15, 13, 6, 9, 16,\n\
+          \12, ⸨4000⸩, 15, 4, 13,\n\
+          \14, 9, 20, 8, 1,\n\
+          \4, 10, 3, 7, 19,\n\
+          \3, 11, 15, 2, 9"
+     , δv: matrixElement 2 2 neg
      }
+   --  , { file: "dtw/compute-dtw"
+   --    , file_expect: "dtw/compute-dtw.expect"
+   --    , fwd_expect: "((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
+   --    , δv: listElement 1 neg
+   --    }
    ]
 
 graphics_cases :: Array TestWithDatasetSpec
