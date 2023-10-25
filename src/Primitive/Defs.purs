@@ -143,7 +143,7 @@ matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    op :: OpGraph
    op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
       | c == cPair = Matrix <$> new empty <@> (matrixPut i j (const v) r)
-   op _ = throw "Matrix, pair of ints, and new val expected"
+   op _ = throw "Matrix, pair of ints and value expected"
 
    fwd :: OpFwd (Raw MatrixRep × (Int × Int) × Raw Val)
    fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
@@ -154,7 +154,7 @@ matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
            in
               pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j) × (erase oldV)) × (Matrix top newM)
 
-   fwd _ = throw "Matrix, pair of ints, and new val expected"
+   fwd _ = throw "Matrix, pair of ints and value expected"
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int) × Raw Val)
    bwd ((((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j) × oldV) × (Matrix _ r))) =
