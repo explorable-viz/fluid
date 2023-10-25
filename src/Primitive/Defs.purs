@@ -138,7 +138,7 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
          : Nil
 
 matrixUpdate :: ForeignOp
-matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
+matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
@@ -153,10 +153,9 @@ matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
               newM = matrixPut i j (const v) r
            in
               pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j) × (erase oldV)) × (Matrix top newM)
-
    fwd _ = throw "Matrix, pair of ints and value expected"
 
-   bwd :: OpBwd (Raw MatrixRep × (Int × Int) × Raw Val)
+   bwd :: Partial => OpBwd (Raw MatrixRep × (Int × Int) × Raw Val)
    bwd ((((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j) × oldV) × (Matrix _ r))) =
       let
          newV = matrixGet i j r
@@ -165,7 +164,6 @@ matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
             : Constr bot cPair (Int bot i : Int bot j : Nil)
             : newV
             : Nil
-   bwd _ = error "absurd backwards!"
 
 dict_difference :: ForeignOp
 dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
