@@ -27,7 +27,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, throw, unimplemented, (×))
-import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixUpdate)
+import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Val a
 extern = Fun bot <<< flip Foreign Nil
@@ -63,10 +63,10 @@ primitives = D.fromFoldable
    , "dict_intersectionWith" × extern dict_intersectionWith
    , "dict_map" × extern dict_map
    , "div" × binaryZero { i: int, o: int, fwd: div }
+   , "matrixUpdate" × extern matrixMut
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
    , "quot" × binaryZero { i: int, o: int, fwd: quot }
    , "rem" × binaryZero { i: int, o: int, fwd: rem }
-   , "matrixUpdate" × extern matrixMut
    ]
 
 error_ :: ForeignOp
@@ -133,7 +133,7 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int))
    bwd (((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j)) × v) =
-      Matrix bot (matrixUpdate i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
+      Matrix bot (matrixPut i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
 
@@ -142,7 +142,7 @@ matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
    op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
-      | c == cPair = Matrix <$> new empty <@> (matrixUpdate i j (const v) r)
+      | c == cPair = Matrix <$> new empty <@> (matrixPut i j (const v) r)
    op _ = throw "Matrix, pair of ints, and new val expected"
 
    fwd :: OpFwd (Raw MatrixRep × (Int × Int) × Raw Val)
@@ -150,7 +150,7 @@ matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
       | c == cPair =
            let
               oldV = matrixGet i j r
-              newM = matrixUpdate i j (const v) r
+              newM = matrixPut i j (const v) r
            in
               pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j) × (erase oldV)) × (Matrix top newM)
 
@@ -161,7 +161,7 @@ matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
       let
          newV = matrixGet i j r
       in
-         Matrix bot (matrixUpdate i j (const (map (const bot) oldV)) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
+         Matrix bot (matrixPut i j (const (map (const bot) oldV)) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
             : Constr bot cPair (Int bot i : Int bot j : Nil)
             : newV
             : Nil

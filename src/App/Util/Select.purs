@@ -12,11 +12,11 @@ import Foreign.Object (update)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, error, definitely')
-import Val (DictRep(..), Val(..), matrixUpdate)
+import Val (DictRep(..), Val(..), matrixPut)
 
 -- Selection helpers. TODO: turn into lenses/prisms.
 matrixElement :: Int -> Int -> Endo (Selector Val)
-matrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
+matrixElement i j δv (Matrix α r) = Matrix α $ matrixPut i j δv r
 matrixElement _ _ _ _ = error absurd
 
 listElement :: Int -> Endo (Selector Val)

@@ -51,7 +51,7 @@ test file progCxt tconfig (n × is_bench) = do
    testPretty s
    _ × row_accum <- runWriterT
       ( replicateM n $ do
-           -- testTrace s gconfig.γ tconfig
+           testTrace s gconfig.γ tconfig
            testGraph s gconfig tconfig is_bench
       )
    pure $ row_accum `divRow` n
