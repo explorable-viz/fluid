@@ -1,13 +1,13 @@
 module Test.Benchmark where
 
 import Prelude
-import Benchmark.Util (BenchAcc(..), BenchRow)
 import Data.Array (concat)
 import Data.Array.NonEmpty (fromArray)
 import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class.Console (logShow)
+import Test.Benchmark.Util (BenchAcc(..), BenchRow)
 import Test.Many (many, bwdMany, withDatasetMany)
 import Test.Spec.Specs (misc_cases, bwd_cases, desugar_cases, graphics_cases)
 import Util (type (×), definitely, (×))

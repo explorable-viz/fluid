@@ -3,10 +3,10 @@ module Test.Many where
 import Prelude
 
 import App.Fig (linkResult, loadLinkFig)
-import Benchmark.Util (BenchRow)
 import Data.Array (zip)
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
+import Test.Benchmark.Util (BenchRow)
 import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, checkPretty, test)
 import Util (type (×), (×))
 
