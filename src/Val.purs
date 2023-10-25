@@ -111,8 +111,8 @@ matrixGet i j (MatrixRep (vss × _ × _)) = definitely "index out of bounds!" $ 
    us <- vss !! (i - 1)
    us !! (j - 1)
 
-matrixUpdate :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
-matrixUpdate i j δv (MatrixRep (vss × h × w)) =
+matrixPut :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
+matrixPut i j δv (MatrixRep (vss × h × w)) =
    MatrixRep (vss' × h × w)
    where
    vs_i = vss ! (i - 1)
