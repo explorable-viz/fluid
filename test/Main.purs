@@ -1,10 +1,13 @@
 module Test.Main where
 
 import Prelude hiding (add)
+
+import App.Util.Select (listElement)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Lattice (neg)
 import Test.Specs (bwd_cases, desugar_cases, graphics_cases, linking_cases, misc_cases)
 import Test.Util.Many (bwdMany, linkMany, many, withDatasetMany)
 import Test.Util.Mocha (run)
@@ -14,6 +17,7 @@ main :: Effect Unit
 main = run tests
 
 tests :: Array (String × Aff Unit)
+{-
 tests = concat
    [ test_desugaring
    , test_misc
@@ -21,21 +25,15 @@ tests = concat
    , test_graphics
    , test_linking
    ]
-
-{-
-tests = concat [ test_scratchpad ]
 -}
+tests = concat [ test_scratchpad ]
 
 test_scratchpad :: Array (String × Aff Unit)
-test_scratchpad = second void <$> many
-   [ { file: "slicing/dtw/matrix-update"
-     , fwd_expect:
-          "(FNum 0, Infty, Infty, Infty, Infty, Infty, Infty, Infty,\n\
-          \  Infty, FNum 1, FNum 10, FNum 19, Infty, Infty, Infty, Infty,\n\
-          \  Infty, FNum 2, FNum 2, FNum 3, FNum 7, Infty, Infty, Infty,\n\
-          \  Infty, FNum 2, FNum 6, FNum 6, FNum 4, FNum 5, Infty, Infty,\n\
-          \  Infty, Infty, FNum 6, FNum 10, FNum 5, FNum 5, FNum 6, Infty,\n\
-          \  Infty, Infty, Infty, FNum 7, FNum 9, FNum 9, FNum 5, FNum 6, ((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : []))))))))"
+test_scratchpad = second void <$> bwdMany
+   [ { file: "dtw/compute-dtw"
+     , file_expect: "dtw/compute-dtw.expect"
+     , fwd_expect: "((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
+     , δv: listElement 1 neg
      }
    ]
    (1 × false)
