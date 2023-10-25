@@ -153,11 +153,11 @@ matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsaf
    bwd :: Partial => OpBwd (Raw MatrixRep × (Int × Int) × Raw Val)
    bwd ((((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j) × oldV) × (Matrix _ r))) =
       let
-         newV = matrixGet i j r
+         v' = matrixGet i j r
       in
          Matrix bot (matrixPut i j (const (map (const bot) oldV)) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
             : Constr bot cPair (Int bot i : Int bot j : Nil)
-            : newV
+            : v'
             : Nil
 
 dict_difference :: ForeignOp
