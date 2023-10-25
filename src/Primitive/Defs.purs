@@ -63,7 +63,7 @@ primitives = D.fromFoldable
    , "dict_intersectionWith" × extern dict_intersectionWith
    , "dict_map" × extern dict_map
    , "div" × binaryZero { i: int, o: int, fwd: div }
-   , "matrixUpdate" × extern matrixMut
+   , "matrixUpdate" × extern matrixUpdate
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
    , "quot" × binaryZero { i: int, o: int, fwd: quot }
    , "rem" × binaryZero { i: int, o: int, fwd: rem }
@@ -137,8 +137,8 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
 
-matrixMut :: ForeignOp
-matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
+matrixUpdate :: ForeignOp
+matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
    op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
