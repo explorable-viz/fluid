@@ -32,7 +32,7 @@ test_scratchpad :: Array (String × Aff Unit)
 test_scratchpad = second void <$> bwdMany
    [ { file: "dtw/compute-dtw"
      , file_expect: "dtw/compute-dtw.expect"
-     , fwd_expect: "((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
+     , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
      , δv: listElement 1 neg
      }
    ]
