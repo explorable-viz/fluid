@@ -146,13 +146,12 @@ matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsaf
    op _ = throw "Matrix, pair of ints and value expected"
 
    fwd :: OpFwd (Raw MatrixRep × (Int × Int) × Raw Val)
-   fwd (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
-      | c == cPair =
-           let
-              oldV = matrixGet i j r
-              newM = matrixPut i j (const v) r
-           in
-              pure $ (erase r × (i × j) × erase oldV) × Matrix top newM
+   fwd (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil) | c == cPair =
+      let
+         oldV = matrixGet i j r
+         newM = matrixPut i j (const v) r
+      in
+         pure $ (erase r × (i × j) × erase oldV) × Matrix top newM
    fwd _ = throw "Matrix, pair of ints and value expected"
 
    bwd :: Partial => OpBwd (Raw MatrixRep × (Int × Int) × Raw Val)
