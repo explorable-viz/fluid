@@ -12,6 +12,7 @@ import Data.Map (empty) as M
 import Data.Newtype (class Newtype, over2)
 import Data.Tuple (snd)
 import Effect.Class (class MonadEffect, liftEffect)
+import Graph (class Graph, size)
 import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
 
@@ -51,6 +52,10 @@ bench name prog = do
    where
    preciseTime :: m Number
    preciseTime = liftEffect microtime
+
+graphSizeB :: forall g m. Graph g => MonadEffect m => MonadWriter BenchRow m => g -> m Unit
+graphSizeB graph = do
+   tell (BenchRow $ singleton "Graph-Nodes" (toNumber $ size graph))
 
 divRow :: BenchRow -> Int -> BenchRow
 divRow (BenchRow row) n = BenchRow ((_ `div` toNumber n) <$> row)

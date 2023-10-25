@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow, bench, divRow)
+import Benchmark.Util (BenchRow, bench, divRow, graphSizeB)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -127,7 +127,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } is_bench = do
       checkPretty "Graph-based value" fwd_expect v𝔹
    αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
       (flip subset αs_out')
-
+   graphSizeB g
    unless (not is_bench) do
       -- | De Morgan dual of backward
       e𝔹_dual <- bench "Graph-BwdDual" $ \_ -> do
