@@ -1,4 +1,4 @@
-module Test.Spec.Microtime
+module Test.Util.Microtime
    ( microtime
    ) where
 

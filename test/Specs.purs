@@ -1,7 +1,6 @@
-module Test.Spec.Specs where
+module Test.Specs where
 
 import Prelude
-
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
@@ -41,6 +40,7 @@ misc_cases =
    , { file: "range", fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
    , { file: "records", fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
    , { file: "reverse", fwd_expect: "(2 : (1 : []))" }
+   -- TODO: move to slicing tests once we fix matrix-update
    , { file: "slicing/dtw/average-series"
      , fwd_expect:
           "(2.5 : (0.5 : (0.5 : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"

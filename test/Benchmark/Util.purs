@@ -1,4 +1,4 @@
-module Benchmark.Util where
+module Test.Benchmark.Util where
 
 import Prelude
 
@@ -13,7 +13,7 @@ import Data.Newtype (class Newtype, over2)
 import Data.Tuple (snd)
 import Effect.Class (class MonadEffect, liftEffect)
 import Graph (class Graph, size)
-import Test.Spec.Microtime (microtime)
+import Test.Util.Microtime (microtime)
 import Util (type (×), (×))
 
 newtype BenchAcc = BenchAcc (NonEmptyArray (String × BenchRow))
