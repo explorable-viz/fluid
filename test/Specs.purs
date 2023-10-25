@@ -1,7 +1,6 @@
-module Test.Spec.Specs where
+module Test.Specs where
 
 import Prelude
-
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)

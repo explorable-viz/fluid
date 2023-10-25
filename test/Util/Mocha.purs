@@ -1,4 +1,4 @@
-module Test.Spec.Mocha
+module Test.Util.Mocha
    ( run
    , MOCHA()
    ) where

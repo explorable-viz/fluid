@@ -1,7 +1,6 @@
-module Test.Many where
+module Test.Util.Many where
 
 import Prelude
-
 import App.Fig (linkResult, loadLinkFig)
 import Data.Array (zip)
 import Effect.Aff (Aff)

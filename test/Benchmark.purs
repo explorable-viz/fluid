@@ -8,8 +8,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class.Console (logShow)
 import Test.Benchmark.Util (BenchAcc(..), BenchRow)
-import Test.Many (many, bwdMany, withDatasetMany)
-import Test.Spec.Specs (misc_cases, bwd_cases, desugar_cases, graphics_cases)
+import Test.Specs (misc_cases, bwd_cases, desugar_cases, graphics_cases)
+import Test.Util.Many (many, bwdMany, withDatasetMany)
 import Util (type (×), definitely, (×))
 
 main :: Effect Unit

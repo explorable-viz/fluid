@@ -1,14 +1,13 @@
 module Test.Main where
 
 import Prelude hiding (add)
-
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Test.Many (bwdMany, linkMany, many, withDatasetMany)
-import Test.Spec.Mocha (run)
-import Test.Spec.Specs (bwd_cases, desugar_cases, graphics_cases, linking_cases, misc_cases)
+import Test.Specs (bwd_cases, desugar_cases, graphics_cases, linking_cases, misc_cases)
+import Test.Util.Many (bwdMany, linkMany, many, withDatasetMany)
+import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
 main :: Effect Unit
