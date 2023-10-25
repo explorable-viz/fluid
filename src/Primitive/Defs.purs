@@ -120,15 +120,13 @@ matrixLookup :: ForeignOp
 matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
-   op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
-      | c == cPair = pure $ matrixGet i j r
+   op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : Nil) | c == cPair =
+      pure $ matrixGet i j r
    op _ = throw "Matrix and pair of integers expected"
 
    fwd :: OpFwd (Raw MatrixRep × (Int × Int))
-   fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
-      | c == cPair = do
-           let v = matrixGet i j r
-           pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j)) × v
+   fwd (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : Nil) | c == cPair =
+      pure $ (erase r × (i × j)) × matrixGet i j r
    fwd _ = throw "Matrix and pair of integers expected"
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int))
@@ -143,12 +141,12 @@ matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsaf
    op :: OpGraph
    op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
       | c == cPair = Matrix <$> new empty <@> (matrixPut i j (const v) r)
-   op _ = throw "Matrix, pair of ints and value expected"
+   op _ = throw "Matrix, pair of integers and value expected"
 
    fwd :: OpFwd ((Int × Int) × Raw Val)
    fwd (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil) | c == cPair =
       pure $ ((i × j) × erase (matrixGet i j r)) × Matrix top (matrixPut i j (const v) r)
-   fwd _ = throw "Matrix, pair of ints and value expected"
+   fwd _ = throw "Matrix, pair of integers and value expected"
 
    bwd :: Partial => OpBwd ((Int × Int) × Raw Val)
    bwd ((((i × j) × v) × Matrix _ r')) =
