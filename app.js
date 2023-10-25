@@ -28935,7 +28935,7 @@
     };
     return go(toUnfoldable8(xs))(Leaf2);
   };
-  var matrixUpdate = (i) => (j) => (\u03B4v) => (v) => {
+  var matrixPut = (i) => (j) => (\u03B4v) => (v) => {
     const vs_i = definitely("index within bounds")(index2(v._1)(i - 1 | 0));
     return $Tuple(
       unsafeUpdateAt(i - 1 | 0)(unsafeUpdateAt(j - 1 | 0)(\u03B4v(definitely("index within bounds")(index2(vs_i)(j - 1 | 0))))(vs_i))(v._1),
@@ -29431,7 +29431,7 @@
   // output-es/App.Util.Select/index.js
   var matrixElement = (v) => (v1) => (v2) => (v3) => {
     if (v3.tag === "Matrix") {
-      return $Val("Matrix", v3._1, matrixUpdate(v)(v1)(v2)(v3._2));
+      return $Val("Matrix", v3._1, matrixPut(v)(v1)(v2)(v3._2));
     }
     return unsafePerformEffect(throwException(error("absurd")));
   };
@@ -36219,7 +36219,7 @@
                           if (v._2._2.tag === "Cons") {
                             if (v._2._2._2.tag === "Nil") {
                               if (v._2._1._2 === "Pair") {
-                                const $5 = matrixUpdate(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2);
+                                const $5 = matrixPut(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2);
                                 return Functor0.map((f) => f($5))(Functor0.map(Matrix3)(dictMonadWithGraphAlloc.new(Leaf2)));
                               }
                               return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
@@ -36276,7 +36276,7 @@
                                         functorVal.map((v$1) => unit2)(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))
                                       )
                                     ),
-                                    $Val("Matrix", top3, matrixUpdate(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2))
+                                    $Val("Matrix", top3, matrixPut(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2))
                                   ));
                                 }
                                 return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
@@ -36314,7 +36314,7 @@
             $Val(
               "Matrix",
               BoundedJoinSemilattice0.bot,
-              matrixUpdate(v._1._2._1._1)(v._1._2._1._2)((() => {
+              matrixPut(v._1._2._1._1)(v._1._2._1._2)((() => {
                 const $3 = functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._2._2);
                 return (v$1) => $3;
               })())($Tuple(
@@ -36440,7 +36440,7 @@
         $Val(
           "Matrix",
           BoundedJoinSemilattice0.bot,
-          matrixUpdate(v._1._2._1)(v._1._2._2)((v$1) => v._2)($Tuple(
+          matrixPut(v._1._2._1)(v._1._2._2)((v$1) => v._2)($Tuple(
             arrayMap(arrayMap(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)))(v._1._1._1),
             $Tuple($Tuple(v._1._1._2._1._1, BoundedJoinSemilattice0.bot), $Tuple(v._1._1._2._2._1, BoundedJoinSemilattice0.bot))
           ))
@@ -37315,10 +37315,10 @@
     $Tuple("dict_intersectionWith", extern1(dict_intersectionWith)),
     $Tuple("dict_map", extern1(dict_map)),
     $Tuple("div", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: intDiv })),
+    $Tuple("matrixUpdate", extern1(matrixMut)),
     $Tuple("mod", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: intMod })),
     $Tuple("quot", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: quot })),
-    $Tuple("rem", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: rem })),
-    $Tuple("matrixUpdate", extern1(matrixMut))
+    $Tuple("rem", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: rem }))
   ]))();
 
   // output-es/Module/index.js
