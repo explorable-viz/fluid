@@ -152,7 +152,7 @@ matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsaf
 
    bwd :: Partial => OpBwd (Raw MatrixRep × (Int × Int))
    bwd (((r × (i × j)) × (Matrix _ r'))) =
-      Matrix bot (matrixPut i j identity (botOf r))
+      Matrix bot (botOf r)
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : matrixGet i j r'
          : Nil
