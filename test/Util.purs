@@ -41,6 +41,7 @@ type TestConfig =
    }
 
 type AffError m a = MonadAff m => MonadError Error m => m a
+type EffectError e m a = MonadEffect m => MonadError e m => m a
 
 logging :: Boolean
 logging = false
@@ -66,7 +67,7 @@ testPretty s = do
       log ("NEW\n" <> show (erase s'))
       fail "not equal"
 
-validate :: forall m. MonadError Error m => MonadEffect m => String -> TestConfig -> SE.Expr 𝔹 -> Val 𝔹 -> m Unit
+validate :: forall m. String -> TestConfig -> SE.Expr 𝔹 -> Val 𝔹 -> EffectError Error m Unit
 validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
    unless (null bwd_expect) $
       checkPretty (method <> "-based source selection") bwd_expect s𝔹

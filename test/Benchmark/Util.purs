@@ -53,7 +53,7 @@ benchmark name prog = do
    preciseTime :: m Number
    preciseTime = liftEffect microtime
 
-recordGraphSize :: forall g m. Graph g => MonadEffect m => MonadWriter BenchRow m => g -> m Unit
+recordGraphSize :: forall g m. Graph g => MonadWriter BenchRow m => g -> m Unit
 recordGraphSize g = do
    tell (BenchRow $ singleton "Graph-Nodes" (toNumber $ size g))
 
