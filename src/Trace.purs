@@ -34,7 +34,7 @@ data AppTrace
    | AppConstr Ctr
 
 data ForeignTrace' t = ForeignTrace' (ForeignOp' t) (Maybe t)
-type ForeignTrace = Exists ForeignTrace'
+newtype ForeignTrace = ForeignTrace (String × Exists ForeignTrace')
 
 data VarDef = VarDef Match Trace
 

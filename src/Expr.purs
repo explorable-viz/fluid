@@ -121,6 +121,80 @@ instance BV (Cont a) where
    bv (ContElim σ) = bv σ
    bv (ContExpr _) = empty
 
+instance JoinSemilattice a => JoinSemilattice (Elim a) where
+   maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
+   maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
+      ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
+   maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
+   maybeJoin _ _ = throw "Incompatible eliminators"
+
+   join σ = definedJoin σ
+
+instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
+   expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
+   expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
+   expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
+   expand _ _ = error "Incompatible eliminators"
+
+instance JoinSemilattice a => JoinSemilattice (Cont a) where
+   maybeJoin ContNone ContNone = pure ContNone
+   maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
+   maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
+   maybeJoin _ _ = throw "Incompatible continuations"
+
+   join κ = definedJoin κ
+
+instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
+   expand ContNone ContNone = ContNone
+   expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
+   expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
+   expand _ _ = error "Incompatible continuations"
+
+instance JoinSemilattice a => JoinSemilattice (VarDef a) where
+   join def = definedJoin def
+   maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
+
+instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
+   expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
+
+instance JoinSemilattice a => JoinSemilattice (Expr a) where
+   maybeJoin (Var x) (Var x') = Var <$> (x ≞ x')
+   maybeJoin (Op op) (Op op') = Op <$> (op ≞ op')
+   maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
+   maybeJoin (Str α str) (Str α' str') = Str (α ∨ α') <$> (str ≞ str')
+   maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
+   maybeJoin (Record α xes) (Record α' xes') = Record (α ∨ α') <$> maybeJoin xes xes'
+   maybeJoin (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') <$> maybeJoin ees ees'
+   maybeJoin (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin es es'
+   maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
+      Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
+   maybeJoin (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') <$> maybeJoin σ σ'
+   maybeJoin (Project e x) (Project e' x') = Project <$> maybeJoin e e' <*> (x ≞ x')
+   maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
+   maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
+   maybeJoin (LetRec α ρ e) (LetRec α' ρ' e') = LetRec (α ∨ α') <$> maybeJoin ρ ρ' <*> maybeJoin e e'
+   maybeJoin _ _ = throw "Incompatible expressions"
+
+   join e = definedJoin e
+
+instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
+   expand (Var x) (Var x') = Var (x ≜ x')
+   expand (Op op) (Op op') = Op (op ≜ op')
+   expand (Int α n) (Int _ n') = Int α (n ≜ n')
+   expand (Str α str) (Str _ str') = Str α (str ≜ str')
+   expand (Float α n) (Float _ n') = Float α (n ≜ n')
+   expand (Record α xes) (Record _ xes') = Record α (expand xes xes')
+   expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
+   expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
+   expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
+      Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
+   expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
+   expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
+   expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
+   expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
+   expand (LetRec α ρ e) (LetRec _ ρ' e') = LetRec α (expand ρ ρ') (expand e e')
+   expand _ _ = error "Incompatible expressions"
+
 -- ======================
 -- boilerplate
 -- ======================
@@ -221,76 +295,7 @@ instance Foldable ProgCxt where
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
-instance JoinSemilattice a => JoinSemilattice (Elim a) where
-   maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
-      ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
-   maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
-   maybeJoin _ _ = throw "Incompatible eliminators"
-
-   join σ = definedJoin σ
-
-instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
-   expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
-   expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
-   expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
-   expand _ _ = error "Incompatible eliminators"
-
-instance JoinSemilattice a => JoinSemilattice (Cont a) where
-   maybeJoin ContNone ContNone = pure ContNone
-   maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
-   maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
-   maybeJoin _ _ = throw "Incompatible continuations"
-
-   join κ = definedJoin κ
-
-instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
-   expand ContNone ContNone = ContNone
-   expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
-   expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
-   expand _ _ = error "Incompatible continuations"
-
-instance JoinSemilattice a => JoinSemilattice (VarDef a) where
-   join def = definedJoin def
-   maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
-
-instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
-   expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
-
-instance JoinSemilattice a => JoinSemilattice (Expr a) where
-   maybeJoin (Var x) (Var x') = Var <$> (x ≞ x')
-   maybeJoin (Op op) (Op op') = Op <$> (op ≞ op')
-   maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
-   maybeJoin (Str α str) (Str α' str') = Str (α ∨ α') <$> (str ≞ str')
-   maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
-   maybeJoin (Record α xes) (Record α' xes') = Record (α ∨ α') <$> maybeJoin xes xes'
-   maybeJoin (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') <$> maybeJoin ees ees'
-   maybeJoin (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin es es'
-   maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
-      Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
-   maybeJoin (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') <$> maybeJoin σ σ'
-   maybeJoin (Project e x) (Project e' x') = Project <$> maybeJoin e e' <*> (x ≞ x')
-   maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
-   maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
-   maybeJoin (LetRec α ρ e) (LetRec α' ρ' e') = LetRec (α ∨ α') <$> maybeJoin ρ ρ' <*> maybeJoin e e'
-   maybeJoin _ _ = throw "Incompatible expressions"
-
-   join e = definedJoin e
-
-instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
-   expand (Var x) (Var x') = Var (x ≜ x')
-   expand (Op op) (Op op') = Op (op ≜ op')
-   expand (Int α n) (Int _ n') = Int α (n ≜ n')
-   expand (Str α str) (Str _ str') = Str α (str ≜ str')
-   expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Record α xes) (Record _ xes') = Record α (expand xes xes')
-   expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
-   expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
-   expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
-      Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
-   expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
-   expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
-   expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
-   expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
-   expand (LetRec α ρ e) (LetRec _ ρ' e') = LetRec α (expand ρ ρ') (expand e e')
-   expand _ _ = error "Incompatible expressions"
+derive instance Ord a => Ord (Expr a)
+derive instance Ord a => Ord (Elim a)
+derive instance Ord a => Ord (Cont a)
+derive instance Ord a => Ord (VarDef a)

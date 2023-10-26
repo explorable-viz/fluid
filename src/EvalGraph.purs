@@ -34,7 +34,7 @@ import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (×), check, concatM, error, orElse, successful, throw, with, (×))
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 import Val (Fun(..), Val(..)) as V
 
 type GraphConfig g =
@@ -92,7 +92,7 @@ apply (V.Fun α (V.Closure γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
-apply (V.Fun α (V.Foreign φ vs)) v =
+apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs)) v =
    runExists apply' φ
    where
    vs' = snoc vs v
@@ -100,7 +100,7 @@ apply (V.Fun α (V.Foreign φ vs)) v =
    apply' :: forall t. ForeignOp' t -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         V.Fun <$> new (singleton α) <@> V.Foreign φ vs'
+         V.Fun <$> new (singleton α) <@> V.Foreign (ForeignOp (id × φ)) vs'
       else φ'.op' vs'
 apply (V.Fun α (V.PartialConstr c vs)) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)

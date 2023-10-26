@@ -4,7 +4,6 @@ import Prelude hiding (absurd, between)
 
 import Bindings (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
-import Data.Exists (runExists)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
@@ -29,7 +28,7 @@ import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, class Highlightable, DictRep(..), ForeignOp', Fun, MatrixRep(..), Val, highlightIf)
+import Val (class Ann, class Highlightable, DictRep(..), ForeignOp(..), Fun, MatrixRep(..), Val, highlightIf)
 
 class Pretty p where
    pretty :: p -> Doc
@@ -434,11 +433,11 @@ instance Highlightable a => Pretty (Val a) where
 
 instance Highlightable a => Pretty (a × Fun a) where
    pretty (α × V.Closure _ _ _) = (highlightIf α $ text "<closure>")
-   pretty (_ × V.Foreign φ _) = runExists pretty φ
+   pretty (_ × V.Foreign φ _) = pretty φ
    pretty (α × V.PartialConstr c vs) = prettyConstr α c vs
 
-instance Pretty (ForeignOp' t) where
-   pretty _ = text "<extern op>" -- TODO
+instance Pretty ForeignOp where
+   pretty (ForeignOp (s × _)) = text s
 
 instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty

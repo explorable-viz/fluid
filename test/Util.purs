@@ -109,8 +109,9 @@ testTrace s γα spec@{ δv } = do
 
    validate method spec s𝔹 v𝔹'
 
-   let γ𝔹_top × e𝔹_top × _ = eval.bwd (topOf v)
-       v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top × top)
+   let
+      γ𝔹_top × e𝔹_top × _ = eval.bwd (topOf v)
+      v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top × top)
    PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (const true)
 
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
