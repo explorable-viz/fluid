@@ -35,6 +35,7 @@ class Pretty p where
    pretty :: p -> Doc
 
 newtype PrettyShow a = PrettyShow a
+
 derive instance Newtype (PrettyShow a) _
 
 instance Pretty a => Show (PrettyShow a) where
