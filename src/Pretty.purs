@@ -185,11 +185,6 @@ instance Pretty Pattern where
          else
             parentheses (text c .<>. prettyPattConstr empty ps)
 
-   --pretty (PConstr c ps) = if c == cPair then parentheses (prettyPattConstr (text str.comma) ps)
-   --    if case uncons ps of
-   --       Nothing -> pretty ps
-   --    --    Just {head : p, tail: Nil} -> text c .<>. pretty p
-   --    --    _ -> parentheses (text c .<>. prettyPattConstr empty ps)
    pretty (PListEmpty) = brackets empty
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
 
