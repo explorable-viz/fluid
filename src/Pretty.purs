@@ -1,15 +1,15 @@
-module Pretty (class Pretty, pretty, prettyP) where
+module Pretty (class Pretty, PrettyShow(..), pretty, prettyP) where
 
 import Prelude hiding (absurd, between)
 
 import Bindings (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
-import Data.Exists (runExists)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, toUnfoldable) as S
@@ -29,7 +29,17 @@ import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, class Highlightable, DictRep(..), ForeignOp', Fun, MatrixRep(..), Val, highlightIf)
+import Val (class Ann, class Highlightable, DictRep(..), ForeignOp(..), Fun, MatrixRep(..), Val, highlightIf)
+
+class Pretty p where
+   pretty :: p -> Doc
+
+newtype PrettyShow a = PrettyShow a
+
+derive instance Newtype (PrettyShow a) _
+
+instance Pretty a => Show (PrettyShow a) where
+   show (PrettyShow x) = pretty x # render
 
 replacement :: Array (String × String)
 replacement =
@@ -110,11 +120,7 @@ getPrec x = case lookup x opDefs of
    Nothing -> -1
 
 infixl 5 beside as .<>.
--- infixl 5 space as .<>.
 infixl 5 atop as .-.
-
-class Pretty p where
-   pretty :: p -> Doc
 
 removeLineWS :: String -> String
 removeLineWS str = foldl (\curr (x × y) -> replaceAll x y curr) str pattRepPairs
@@ -327,8 +333,6 @@ prettyParensOpt x =
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
--- (highlightIf α $ parens (hcomma [ pretty x, pretty y ]))
---  (highlightIf ann $ text str.lBracket)
 prettyConstr :: forall d a. Pretty d => Highlightable a => a -> Ctr -> List d -> Doc
 prettyConstr α c (x : y : ys)
    | c == cPair = assert (null ys) $ (highlightIf α $ parens (hcomma [ pretty x, pretty y ]))
@@ -432,11 +436,11 @@ instance Highlightable a => Pretty (Val a) where
 
 instance Highlightable a => Pretty (a × Fun a) where
    pretty (α × V.Closure _ _ _) = (highlightIf α $ text "<closure>")
-   pretty (_ × V.Foreign φ _) = runExists pretty φ
+   pretty (_ × V.Foreign φ _) = pretty φ
    pretty (α × V.PartialConstr c vs) = prettyConstr α c vs
 
-instance Pretty (ForeignOp' t) where
-   pretty _ = text "<extern op>" -- TODO
+instance Pretty ForeignOp where
+   pretty (ForeignOp (s × _)) = text s
 
 instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty

@@ -9,6 +9,7 @@ import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List (elem)
 import Data.List.Lazy (replicateM)
+import Data.Newtype (unwrap)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
@@ -24,10 +25,10 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
-import Lattice (Raw, 𝔹, botOf, erase)
+import Lattice (Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
-import Pretty (class Pretty, prettyP)
+import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Spec.Assertions (fail)
@@ -97,9 +98,8 @@ testTrace s γα spec@{ δv } = do
 
    γ𝔹 × e𝔹 × _ <- do
       let v𝔹 = δv (botOf v)
-      unless (isGraphical v𝔹)
-         $ when logging
-         $ logAs "Selection for bwd" (prettyP v𝔹)
+      unless (isGraphical v𝔹) $
+         when logging (logAs "Selection for bwd" (prettyP v𝔹))
       benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
 
    GC desug𝔹 <- desugGC s
@@ -107,6 +107,12 @@ testTrace s γα spec@{ δv } = do
    v𝔹' <- do
       let e𝔹' = desug𝔹.fwd s𝔹
       benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹' × top))
+
+   let
+      v𝔹_top = topOf v
+      γ𝔹_top × e𝔹_top × _ = eval.bwd v𝔹_top
+      v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top × top)
+   PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (unwrap >>> (_ >= v𝔹_top))
 
    validate method spec s𝔹 v𝔹'
 
@@ -120,9 +126,7 @@ testGraph s gconfig spec@{ δv } benchmarking = do
       let e = desug.fwd s
       benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
 
-   let
-      v𝔹 = δv (botOf vα)
-      αs_out = selectαs v𝔹 vα
+   let αs_out = selectαs (δv (botOf vα)) vα
    αs_in <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd αs_out)
    let e𝔹 = select𝔹s eα αs_in
 
