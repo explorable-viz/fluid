@@ -17,7 +17,6 @@ main :: Effect Unit
 main = run tests
 
 tests :: Array (String × Aff Unit)
-{-
 tests = concat
    [ test_desugaring
    , test_misc
@@ -25,9 +24,10 @@ tests = concat
    , test_graphics
    , test_linking
    ]
--}
 
+{-
 tests = concat [ test_scratchpad ]
+-}
 
 test_scratchpad :: Array (String × Aff Unit)
 test_scratchpad = second void <$> bwdMany
