@@ -31770,7 +31770,7 @@
               v1._3._2
             ))))))(v5._2);
             const $18 = $$get(v1._2._1)(\u03B30);
-            const $19 = $$get(v1._2._1)(\u03B30);
+            const $19 = $$get(v1._2._2)(\u03B30);
             if ($18.tag === "Int") {
               if ($19.tag === "Int") {
                 return $Tuple(v5._1, $Tuple(v42._2._1, $Tuple(v42._2._2, $Tuple($18._1, $19._1))));
@@ -36271,33 +36271,29 @@
           return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
         };
       },
-      op: (dictAnn) => {
-        const top3 = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().top;
-        return (dictMonadError) => {
-          const MonadThrow0 = dictMonadError.MonadThrow0();
-          const pure2 = MonadThrow0.Monad0().Applicative0().pure;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._1.tag === "Matrix") {
-                if (v._2.tag === "Cons") {
-                  if (v._2._1.tag === "Constr") {
-                    if (v._2._1._3.tag === "Cons") {
-                      if (v._2._1._3._1.tag === "Int") {
-                        if (v._2._1._3._2.tag === "Cons") {
-                          if (v._2._1._3._2._1.tag === "Int") {
-                            if (v._2._1._3._2._2.tag === "Nil") {
-                              if (v._2._2.tag === "Cons") {
-                                if (v._2._2._2.tag === "Nil") {
-                                  if (v._2._1._2 === "Pair") {
-                                    return pure2($Tuple(
-                                      $Tuple(
-                                        $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2),
-                                        functorVal.map((v$1) => unit2)(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))
-                                      ),
-                                      $Val("Matrix", top3, matrixPut(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2))
-                                    ));
-                                  }
-                                  return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+      op: (dictAnn) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Matrix") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Constr") {
+                  if (v._2._1._3.tag === "Cons") {
+                    if (v._2._1._3._1.tag === "Int") {
+                      if (v._2._1._3._2.tag === "Cons") {
+                        if (v._2._1._3._2._1.tag === "Int") {
+                          if (v._2._1._3._2._2.tag === "Nil") {
+                            if (v._2._2.tag === "Cons") {
+                              if (v._2._2._2.tag === "Nil") {
+                                if (v._2._1._2 === "Pair") {
+                                  return pure2($Tuple(
+                                    $Tuple(
+                                      $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2),
+                                      functorVal.map((v$1) => unit2)(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))
+                                    ),
+                                    $Val("Matrix", v._1._1, matrixPut(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2))
+                                  ));
                                 }
                                 return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
                               }
@@ -36320,7 +36316,8 @@
               return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
             }
             return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-          };
+          }
+          return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
         };
       },
       op_bwd: (dictAnn) => {
@@ -36331,7 +36328,7 @@
               "Cons",
               $Val(
                 "Matrix",
-                BoundedJoinSemilattice0.bot,
+                v._2._1,
                 matrixPut(v._1._1._1)(v._1._1._2)((() => {
                   const $3 = functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._2);
                   return (v$1) => $3;
