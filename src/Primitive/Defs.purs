@@ -21,7 +21,7 @@ import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
 import Graph.GraphWriter (new)
-import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, top, (∧), (∨))
+import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, (∧), (∨))
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
@@ -149,13 +149,13 @@ matrixUpdate =
    op _ = throw "Matrix, pair of integers and value expected"
 
    fwd :: OpFwd ((Int × Int) × Raw Val)
-   fwd (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil) | c == cPair =
-      pure $ ((i × j) × erase (matrixGet i j r)) × Matrix top (matrixPut i j (const v) r)
+   fwd (Matrix α r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil) | c == cPair =
+      pure $ ((i × j) × erase (matrixGet i j r)) × Matrix α (matrixPut i j (const v) r)
    fwd _ = throw "Matrix, pair of integers and value expected"
 
    bwd :: Partial => OpBwd ((Int × Int) × Raw Val)
-   bwd ((((i × j) × v) × Matrix _ r')) =
-      Matrix bot (matrixPut i j (const (botOf v)) r')
+   bwd ((((i × j) × v) × Matrix α r')) =
+      Matrix α (matrixPut i j (const (botOf v)) r')
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : matrixGet i j r'
          : Nil

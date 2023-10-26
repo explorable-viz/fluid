@@ -96,8 +96,8 @@ testTrace s γα spec@{ δv } = do
          γ = erase <$> γα
       benchmark (method <> "-Eval") $ \_ -> traceGC γ e
 
+   let v𝔹 = δv (botOf v)
    γ𝔹 × e𝔹 × _ <- do
-      let v𝔹 = δv (botOf v)
       unless (isGraphical v𝔹) $
          when logging (logAs "Selection for bwd" (prettyP v𝔹))
       benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
@@ -107,11 +107,14 @@ testTrace s γα spec@{ δv } = do
    v𝔹' <- do
       let e𝔹' = desug𝔹.fwd s𝔹
       benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹' × top))
+   PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (unwrap >>> (_ >= v𝔹))
 
    let
       v𝔹_top = topOf v
       γ𝔹_top × e𝔹_top × _ = eval.bwd v𝔹_top
-      v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top × top)
+      s𝔹_top = desug𝔹.bwd e𝔹_top
+      e𝔹_top' = desug𝔹.fwd s𝔹_top
+      v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top' × top)
    PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (unwrap >>> (_ >= v𝔹_top))
 
    validate method spec s𝔹 v𝔹'
