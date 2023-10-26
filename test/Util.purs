@@ -41,10 +41,13 @@ type TestConfig =
    }
 
 type AffError m a = MonadAff m => MonadError Error m => m a
-type EffectError e m a = MonadEffect m => MonadError e m => m a
+type EffectError m a = MonadEffect m => MonadError Error m => m a
 
 logging :: Boolean
-logging = false
+logging = true
+
+logAs :: forall m. MonadEffect m => String -> String -> m Unit
+logAs tag s = log $ tag <> ": " <> s
 
 test ∷ forall m. File -> ProgCxt Unit -> TestConfig -> (Int × Boolean) -> AffError m BenchRow
 test file progCxt tconfig (n × benchmarking) = do
@@ -62,35 +65,48 @@ testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
    s' <- parse (prettyP s) program
    unless (eq (erase s) (erase s')) do
-      log ("SRC\n" <> show (erase s))
-      log ("NEW\n" <> show (erase s'))
-      fail "not equal"
+      logAs "Original" $ show (erase s)
+      logAs "New" $ show (erase s')
+      fail "parse/prettyP round trip"
 
-validate :: forall m. String -> TestConfig -> SE.Expr 𝔹 -> Val 𝔹 -> EffectError Error m Unit
+checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
+checkPretty msg expect x =
+   unless (expect `eq` prettyP x) $ do
+      logAs "\nExpected" $ "\n" <> expect
+      logAs "\nReceived" $ "\n" <> prettyP x
+      fail msg
+
+validate :: forall m. String -> TestConfig -> SE.Expr 𝔹 -> Val 𝔹 -> EffectError m Unit
 validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
    unless (null bwd_expect) $
-      checkPretty (method <> "-based source selection") bwd_expect s𝔹
+      checkPretty (method <> "-based bwd_expect") bwd_expect s𝔹
    unless (isGraphical v𝔹) do
       when logging $ log (prettyP v𝔹)
-      checkPretty (method <> " value") fwd_expect v𝔹
+      checkPretty (method <> "-based fwd_expect") fwd_expect v𝔹
 
 testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> TestConfig -> AffError m Unit
-testTrace s γ spec@{ δv } = do
+testTrace s γα spec@{ δv } = do
    let method = "Trace"
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
 
+   let e = desug.fwd s
+       γ = erase <$> γα
    { gc: GC eval, v } <- benchmark (method <> "-Eval") $ \_ ->
-      traceGC (erase <$> γ) (desug.fwd s)
+      traceGC γ e
 
+   let v𝔹 = δv (botOf v)
+   unless (isGraphical v𝔹) $
+      when logging $ logAs "Output selection" (prettyP v𝔹)
    γ𝔹 × e𝔹 × _ <- benchmark (method <> "-Bwd") $ \_ ->
-      pure (eval.bwd (δv (botOf v)))
+      pure (eval.bwd v𝔹)
 
    let s𝔹 = desug𝔹.bwd e𝔹
-   v𝔹 <- benchmark (method <> "-Fwd") $ \_ ->
-      pure (eval.fwd (γ𝔹 × desug𝔹.fwd s𝔹 × top))
+       e𝔹' = desug𝔹.fwd s𝔹
+   v𝔹' <- benchmark (method <> "-Fwd") $ \_ ->
+      pure (eval.fwd (γ𝔹 × e𝔹' × top))
 
-   validate method spec s𝔹 v𝔹
+   validate method spec s𝔹 v𝔹'
 
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } benchmarking = do
@@ -161,11 +177,6 @@ type TestLinkSpec =
 isGraphical :: forall a. Val a -> Boolean
 isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
 isGraphical _ = false
-
-checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
-checkPretty msg expect x =
-   unless (expect `eq` prettyP x) $
-      fail (msg <> "\nExpected:\n" <> expect <> "\nReceived:\n" <> prettyP x)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
