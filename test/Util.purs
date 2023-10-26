@@ -60,8 +60,7 @@ test file progCxt tconfig (n × benchmarking) = do
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
-   let src = prettyP s
-   s' <- parse src program
+   s' <- parse (prettyP s) program
    unless (eq (erase s) (erase s')) do
       log ("SRC\n" <> show (erase s))
       log ("NEW\n" <> show (erase s'))
@@ -81,18 +80,15 @@ testTrace s γ spec@{ δv } = do
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
 
-   let e = desug.fwd s
    { gc: GC eval, v } <- benchmark (method <> "-Eval") $ \_ ->
-      traceGC (erase <$> γ) e
+      traceGC (erase <$> γ) (desug.fwd s)
 
-   (γ𝔹 × e𝔹 × _) <- benchmark (method <> "-Bwd") $ \_ ->
+   γ𝔹 × e𝔹 × _ <- benchmark (method <> "-Bwd") $ \_ ->
       pure (eval.bwd (δv (botOf v)))
-   let s𝔹 = desug𝔹.bwd e𝔹
 
-   -- TODO: redescribe as "fwd ⚬ bwd"
-   let e𝔹' = desug𝔹.fwd s𝔹
+   let s𝔹 = desug𝔹.bwd e𝔹
    v𝔹 <- benchmark (method <> "-Fwd") $ \_ ->
-      pure (eval.fwd (γ𝔹 × e𝔹' × top))
+      pure (eval.fwd (γ𝔹 × desug𝔹.fwd s𝔹 × top))
 
    validate method spec s𝔹 v𝔹
 
@@ -102,22 +98,20 @@ testGraph s gconfig spec@{ δv } benchmarking = do
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
 
-   let e = desug.fwd s
    { gc: GC eval, eα, g, vα } <- benchmark (method <> "-Eval") $ \_ ->
-      graphGC gconfig e
+      graphGC gconfig (desug.fwd s)
 
-   (e𝔹 × αs_out × αs_in) <- benchmark (method <> "-Bwd") $ \_ -> do
+   e𝔹 × αs_out × αs_in <- benchmark (method <> "-Bwd") $ \_ -> do
       let
          αs_out = selectαs (δv (botOf vα)) vα
          αs_in = eval.bwd αs_out
       pure (select𝔹s eα αs_in × αs_out × αs_in)
-   let s𝔹 = desug𝔹.bwd e𝔹
 
-   (v𝔹 × αs_out') <- benchmark (method <> "-Fwd") $ \_ -> do
+   v𝔹 × αs_out' <- benchmark (method <> "-Fwd") $ \_ -> do
       let αs_out' = eval.fwd αs_in
       pure (select𝔹s vα αs_out' × αs_out')
 
-   validate method spec s𝔹 v𝔹
+   validate method spec (desug𝔹.bwd e𝔹) v𝔹
    αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (flip subset αs_out')
    recordGraphSize g
 
