@@ -97,9 +97,8 @@ testTrace s γα spec@{ δv } = do
 
    γ𝔹 × e𝔹 × _ <- do
       let v𝔹 = δv (botOf v)
-      unless (isGraphical v𝔹)
-         $ when logging
-         $ logAs "Selection for bwd" (prettyP v𝔹)
+      unless (isGraphical v𝔹) $
+         when logging (logAs "Selection for bwd" (prettyP v𝔹))
       benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
 
    GC desug𝔹 <- desugGC s
@@ -120,9 +119,7 @@ testGraph s gconfig spec@{ δv } benchmarking = do
       let e = desug.fwd s
       benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
 
-   let
-      v𝔹 = δv (botOf vα)
-      αs_out = selectαs v𝔹 vα
+   let αs_out = selectαs (δv (botOf vα)) vα
    αs_in <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd αs_out)
    let e𝔹 = select𝔹s eα αs_in
 
