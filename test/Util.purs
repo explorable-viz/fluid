@@ -87,24 +87,24 @@ validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
 testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> TestConfig -> AffError m Unit
 testTrace s γα spec@{ δv } = do
    let method = "Trace"
-   GC desug <- desugGC s
+
+   { gc: GC eval, v } <- do
+      GC desug <- desugGC s
+      let e = desug.fwd s
+          γ = erase <$> γα
+      benchmark (method <> "-Eval") $ \_ -> traceGC γ e
+
+   γ𝔹 × e𝔹 × _ <- do
+      let v𝔹 = δv (botOf v)
+      unless (isGraphical v𝔹) $
+         when logging $ logAs "Output selection" (prettyP v𝔹)
+      benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
+
    GC desug𝔹 <- desugGC s
-
-   let e = desug.fwd s
-       γ = erase <$> γα
-   { gc: GC eval, v } <- benchmark (method <> "-Eval") $ \_ ->
-      traceGC γ e
-
-   let v𝔹 = δv (botOf v)
-   unless (isGraphical v𝔹) $
-      when logging $ logAs "Output selection" (prettyP v𝔹)
-   γ𝔹 × e𝔹 × _ <- benchmark (method <> "-Bwd") $ \_ ->
-      pure (eval.bwd v𝔹)
-
    let s𝔹 = desug𝔹.bwd e𝔹
-       e𝔹' = desug𝔹.fwd s𝔹
-   v𝔹' <- benchmark (method <> "-Fwd") $ \_ ->
-      pure (eval.fwd (γ𝔹 × e𝔹' × top))
+   v𝔹' <- do
+      let e𝔹' = desug𝔹.fwd s𝔹
+      benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹' × top))
 
    validate method spec s𝔹 v𝔹'
 
@@ -120,9 +120,9 @@ testGraph s gconfig spec@{ δv } benchmarking = do
 
    let v𝔹 = δv (botOf vα)
        αs_out = selectαs v𝔹 vα
-   e𝔹 × αs_in <- benchmark (method <> "-Bwd") $ \_ -> do
-      let αs_in = eval.bwd αs_out
-      pure (select𝔹s eα αs_in × αs_in)
+   αs_in <- benchmark (method <> "-Bwd") $ \_ ->
+      pure (eval.bwd αs_out)
+   let e𝔹 = select𝔹s eα αs_in
 
    v𝔹' × αs_out' <- benchmark (method <> "-Fwd") $ \_ -> do
       let αs_out' = eval.fwd αs_in
