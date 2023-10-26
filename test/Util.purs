@@ -114,20 +114,21 @@ testGraph s gconfig spec@{ δv } benchmarking = do
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
 
+   let e = desug.fwd s
    { gc: GC eval, eα, g, vα } <- benchmark (method <> "-Eval") $ \_ ->
-      graphGC gconfig (desug.fwd s)
+      graphGC gconfig e
 
-   e𝔹 × αs_out × αs_in <- benchmark (method <> "-Bwd") $ \_ -> do
-      let
-         αs_out = selectαs (δv (botOf vα)) vα
-         αs_in = eval.bwd αs_out
-      pure (select𝔹s eα αs_in × αs_out × αs_in)
+   let v𝔹 = δv (botOf vα)
+       αs_out = selectαs v𝔹 vα
+   e𝔹 × αs_in <- benchmark (method <> "-Bwd") $ \_ -> do
+      let αs_in = eval.bwd αs_out
+      pure (select𝔹s eα αs_in × αs_in)
 
-   v𝔹 × αs_out' <- benchmark (method <> "-Fwd") $ \_ -> do
+   v𝔹' × αs_out' <- benchmark (method <> "-Fwd") $ \_ -> do
       let αs_out' = eval.fwd αs_in
       pure (select𝔹s vα αs_out' × αs_out')
 
-   validate method spec (desug𝔹.bwd e𝔹) v𝔹
+   validate method spec (desug𝔹.bwd e𝔹) v𝔹'
    αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (flip subset αs_out')
    recordGraphSize g
 
