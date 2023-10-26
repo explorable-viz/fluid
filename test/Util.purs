@@ -46,14 +46,14 @@ logging :: Boolean
 logging = false
 
 test ∷ forall m. File -> ProgCxt Unit -> TestConfig -> (Int × Boolean) -> AffError m BenchRow
-test file progCxt tconfig (n × is_benchmark) = do
+test file progCxt tconfig (n × benchmarking) = do
    gconfig <- initialConfig progCxt
    s <- open file
    testPretty s
    _ × row_accum <- runWriterT
       ( replicateM n $ do
            testTrace s gconfig.γ tconfig
-           testGraph s gconfig tconfig is_benchmark
+           testGraph s gconfig tconfig benchmarking
       )
    pure $ row_accum `divRow` n
 
@@ -96,7 +96,7 @@ testTrace s γ spec@{ δv } = do
    validate method spec s𝔹 v𝔹
 
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
-testGraph s gconfig spec@{ δv } is_bench = do
+testGraph s gconfig spec@{ δv } benchmarking = do
    let method = "Graph"
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
@@ -123,7 +123,7 @@ testGraph s gconfig spec@{ δv } is_bench = do
 
    recordGraphSize g
 
-   unless (not is_bench) do
+   when benchmarking do
       e𝔹_dual <- benchmark (method <> "-BwdDual") $ \_ -> do
          let
             αs_out_dual = selectαs (δv (botOf vα)) vα
