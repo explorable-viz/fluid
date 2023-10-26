@@ -27951,7 +27951,7 @@
         return dictHighlightable.highlightIf(v._1)(checkOneLine(split("\n")(" <closure>")));
       }
       if (v._2.tag === "Foreign") {
-        return checkOneLine(split("\n")(" <extern op>"));
+        return checkOneLine(split("\n")(" " + v._2._1._1));
       }
       if (v._2.tag === "PartialConstr") {
         return prettyConstr(prettyVal(dictHighlightable))(dictHighlightable)(v._1)(v._2._1)(v._2._2);
@@ -28978,48 +28978,54 @@
   var fanin2 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
   var isZeroNumber = { isZero: ($0) => 0 === $0 };
   var isZeroInt = { isZero: ($0) => 0 === $0 };
-  var unary = (dictBoundedJoinSemilattice) => (op) => $Val(
-    "Fun",
-    dictBoundedJoinSemilattice.bot,
-    $Fun(
-      "Foreign",
-      $ForeignOp$p({
-        arity: 1,
-        "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-          const map5 = dictMonadError.MonadThrow0().Monad0().Bind1().Apply0().Functor0().map;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._2.tag === "Nil") {
-                const v2 = op.i.unpack(v._1);
-                return map5(op.o.pack)(map5((v3) => $Tuple(op.fwd(v2._1), v3))(dictMonadWithGraphAlloc.new($Map(
-                  "Two",
-                  Leaf2,
-                  v2._2,
-                  unit2,
-                  Leaf2
-                ))));
-              }
-              fail();
-            }
-            fail();
-          };
-        },
-        op: (dictAnn) => (dictMonadError) => {
-          const pure2 = dictMonadError.MonadThrow0().Monad0().Applicative0().pure;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._2.tag === "Nil") {
-                const v2 = op.i.unpack(v._1);
-                return pure2($Tuple(functorVal.map((v$1) => unit2)(v._1), op.o.pack($Tuple(op.fwd(v2._1), v2._2))));
-              }
-              fail();
-            }
-            fail();
-          };
-        },
-        op_bwd: (dictAnn) => (v) => $List("Cons", op.i.pack($Tuple(op.i.unpack(v._1)._1, op.o.unpack(v._2)._2)), Nil)
-      }),
-      Nil
+  var unary = (dictBoundedJoinSemilattice) => (id3) => (f) => $Tuple(
+    id3,
+    $Val(
+      "Fun",
+      dictBoundedJoinSemilattice.bot,
+      $Fun(
+        "Foreign",
+        $Tuple(
+          id3,
+          $ForeignOp$p({
+            arity: 1,
+            "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
+              const map5 = dictMonadError.MonadThrow0().Monad0().Bind1().Apply0().Functor0().map;
+              return (v) => {
+                if (v.tag === "Cons") {
+                  if (v._2.tag === "Nil") {
+                    const v2 = f.i.unpack(v._1);
+                    return map5(f.o.pack)(map5((v3) => $Tuple(f.fwd(v2._1), v3))(dictMonadWithGraphAlloc.new($Map(
+                      "Two",
+                      Leaf2,
+                      v2._2,
+                      unit2,
+                      Leaf2
+                    ))));
+                  }
+                  fail();
+                }
+                fail();
+              };
+            },
+            op: (dictAnn) => (dictMonadError) => {
+              const pure2 = dictMonadError.MonadThrow0().Monad0().Applicative0().pure;
+              return (v) => {
+                if (v.tag === "Cons") {
+                  if (v._2.tag === "Nil") {
+                    const v2 = f.i.unpack(v._1);
+                    return pure2($Tuple(functorVal.map((v$1) => unit2)(v._1), f.o.pack($Tuple(f.fwd(v2._1), v2._2))));
+                  }
+                  fail();
+                }
+                fail();
+              };
+            },
+            op_bwd: (dictAnn) => (v) => $List("Cons", f.i.pack($Tuple(f.i.unpack(v._1)._1, f.o.unpack(v._2)._2)), Nil)
+          })
+        ),
+        Nil
+      )
     )
   );
   var typeError = (v) => (typeName3) => unsafePerformEffect(throwException(error(typeName3 + (" expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines)))));
@@ -29185,172 +29191,184 @@
       return typeError(v)("Boolean");
     }
   };
-  var binaryZero = (dictBoundedJoinSemilattice) => (dictIsZero) => (op) => $Val(
-    "Fun",
-    dictBoundedJoinSemilattice.bot,
-    $Fun(
-      "Foreign",
-      $ForeignOp$p({
-        arity: 2,
-        "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-          const map5 = dictMonadError.MonadThrow0().Monad0().Bind1().Apply0().Functor0().map;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._2.tag === "Cons") {
-                if (v._2._2.tag === "Nil") {
-                  const $7 = op.i.unpack(v._1);
-                  const $8 = op.i.unpack(v._2._1);
-                  return map5(op.o.pack)(map5((v4) => $Tuple(op.fwd($7._1)($8._1), v4))(dictMonadWithGraphAlloc.new((() => {
-                    if (dictIsZero.isZero($7._1)) {
-                      return $Map("Two", Leaf2, $7._2, unit2, Leaf2);
+  var binaryZero = (dictBoundedJoinSemilattice) => (dictIsZero) => (id3) => (f) => $Tuple(
+    id3,
+    $Val(
+      "Fun",
+      dictBoundedJoinSemilattice.bot,
+      $Fun(
+        "Foreign",
+        $Tuple(
+          id3,
+          $ForeignOp$p({
+            arity: 2,
+            "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
+              const map5 = dictMonadError.MonadThrow0().Monad0().Bind1().Apply0().Functor0().map;
+              return (v) => {
+                if (v.tag === "Cons") {
+                  if (v._2.tag === "Cons") {
+                    if (v._2._2.tag === "Nil") {
+                      const $8 = f.i.unpack(v._1);
+                      const $9 = f.i.unpack(v._2._1);
+                      return map5(f.o.pack)(map5((v4) => $Tuple(f.fwd($8._1)($9._1), v4))(dictMonadWithGraphAlloc.new((() => {
+                        if (dictIsZero.isZero($8._1)) {
+                          return $Map("Two", Leaf2, $8._2, unit2, Leaf2);
+                        }
+                        if (dictIsZero.isZero($9._1)) {
+                          return $Map("Two", Leaf2, $9._2, unit2, Leaf2);
+                        }
+                        return insert2(ordVertex)($9._2)(unit2)($Map(
+                          "Two",
+                          Leaf2,
+                          $8._2,
+                          unit2,
+                          Leaf2
+                        ));
+                      })())));
                     }
-                    if (dictIsZero.isZero($8._1)) {
-                      return $Map("Two", Leaf2, $8._2, unit2, Leaf2);
-                    }
-                    return insert2(ordVertex)($8._2)(unit2)($Map(
-                      "Two",
-                      Leaf2,
-                      $7._2,
-                      unit2,
-                      Leaf2
-                    ));
-                  })())));
-                }
-                fail();
-              }
-              fail();
-            }
-            fail();
-          };
-        },
-        op: (dictAnn) => {
-          const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-          return (dictMonadError) => {
-            const pure2 = dictMonadError.MonadThrow0().Monad0().Applicative0().pure;
-            return (v) => {
-              if (v.tag === "Cons") {
-                if (v._2.tag === "Cons") {
-                  if (v._2._2.tag === "Nil") {
-                    const $8 = op.i.unpack(v._1);
-                    const $9 = op.i.unpack(v._2._1);
-                    return pure2($Tuple(
-                      $Tuple(functorVal.map((v$1) => unit2)(v._1), functorVal.map((v$1) => unit2)(v._2._1)),
-                      op.o.pack($Tuple(
-                        op.fwd($8._1)($9._1),
-                        (() => {
-                          if (dictIsZero.isZero($8._1)) {
-                            return $8._2;
-                          }
-                          if (dictIsZero.isZero($9._1)) {
-                            return $9._2;
-                          }
-                          return meet($8._2)($9._2);
-                        })()
-                      ))
-                    ));
+                    fail();
                   }
                   fail();
                 }
                 fail();
-              }
-              fail();
-            };
-          };
-        },
-        op_bwd: (dictAnn) => {
-          const bot1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
-          return (v) => {
-            const $6 = op.o.unpack(v._2)._2;
-            const $7 = op.i.unpack(v._1._1);
-            const $8 = op.i.unpack(v._1._2);
-            if (dictIsZero.isZero($7._1)) {
-              return $List(
-                "Cons",
-                op.i.pack($Tuple($7._1, $6)),
-                $List("Cons", op.i.pack($Tuple($8._1, bot1)), Nil)
-              );
+              };
+            },
+            op: (dictAnn) => {
+              const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
+              return (dictMonadError) => {
+                const pure2 = dictMonadError.MonadThrow0().Monad0().Applicative0().pure;
+                return (v) => {
+                  if (v.tag === "Cons") {
+                    if (v._2.tag === "Cons") {
+                      if (v._2._2.tag === "Nil") {
+                        const $9 = f.i.unpack(v._1);
+                        const $10 = f.i.unpack(v._2._1);
+                        return pure2($Tuple(
+                          $Tuple(functorVal.map((v$1) => unit2)(v._1), functorVal.map((v$1) => unit2)(v._2._1)),
+                          f.o.pack($Tuple(
+                            f.fwd($9._1)($10._1),
+                            (() => {
+                              if (dictIsZero.isZero($9._1)) {
+                                return $9._2;
+                              }
+                              if (dictIsZero.isZero($10._1)) {
+                                return $10._2;
+                              }
+                              return meet($9._2)($10._2);
+                            })()
+                          ))
+                        ));
+                      }
+                      fail();
+                    }
+                    fail();
+                  }
+                  fail();
+                };
+              };
+            },
+            op_bwd: (dictAnn) => {
+              const bot1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
+              return (v) => {
+                const $7 = f.o.unpack(v._2)._2;
+                const $8 = f.i.unpack(v._1._1);
+                const $9 = f.i.unpack(v._1._2);
+                if (dictIsZero.isZero($8._1)) {
+                  return $List(
+                    "Cons",
+                    f.i.pack($Tuple($8._1, $7)),
+                    $List("Cons", f.i.pack($Tuple($9._1, bot1)), Nil)
+                  );
+                }
+                if (dictIsZero.isZero($9._1)) {
+                  return $List(
+                    "Cons",
+                    f.i.pack($Tuple($8._1, bot1)),
+                    $List("Cons", f.i.pack($Tuple($9._1, $7)), Nil)
+                  );
+                }
+                return $List(
+                  "Cons",
+                  f.i.pack($Tuple($8._1, $7)),
+                  $List("Cons", f.i.pack($Tuple($9._1, $7)), Nil)
+                );
+              };
             }
-            if (dictIsZero.isZero($8._1)) {
-              return $List(
-                "Cons",
-                op.i.pack($Tuple($7._1, bot1)),
-                $List("Cons", op.i.pack($Tuple($8._1, $6)), Nil)
-              );
-            }
-            return $List(
-              "Cons",
-              op.i.pack($Tuple($7._1, $6)),
-              $List("Cons", op.i.pack($Tuple($8._1, $6)), Nil)
-            );
-          };
-        }
-      }),
-      Nil
+          })
+        ),
+        Nil
+      )
     )
   );
-  var binary = (dictBoundedJoinSemilattice) => (op) => $Val(
-    "Fun",
-    dictBoundedJoinSemilattice.bot,
-    $Fun(
-      "Foreign",
-      $ForeignOp$p({
-        arity: 2,
-        "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-          const map5 = dictMonadError.MonadThrow0().Monad0().Bind1().Apply0().Functor0().map;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._2.tag === "Cons") {
-                if (v._2._2.tag === "Nil") {
-                  const $6 = op.i1.unpack(v._1);
-                  const $7 = op.i2.unpack(v._2._1);
-                  return map5(op.o.pack)(map5((v4) => $Tuple(op.fwd($6._1)($7._1), v4))(dictMonadWithGraphAlloc.new(insert2(ordVertex)($7._2)(unit2)($Map(
-                    "Two",
-                    Leaf2,
-                    $6._2,
-                    unit2,
-                    Leaf2
-                  )))));
-                }
-                fail();
-              }
-              fail();
-            }
-            fail();
-          };
-        },
-        op: (dictAnn) => {
-          const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-          return (dictMonadError) => {
-            const pure2 = dictMonadError.MonadThrow0().Monad0().Applicative0().pure;
-            return (v) => {
-              if (v.tag === "Cons") {
-                if (v._2.tag === "Cons") {
-                  if (v._2._2.tag === "Nil") {
-                    const $7 = op.i1.unpack(v._1);
-                    const $8 = op.i2.unpack(v._2._1);
-                    return pure2($Tuple(
-                      $Tuple(functorVal.map((v$1) => unit2)(v._1), functorVal.map((v$1) => unit2)(v._2._1)),
-                      op.o.pack($Tuple(op.fwd($7._1)($8._1), meet($7._2)($8._2)))
-                    ));
+  var binary = (dictBoundedJoinSemilattice) => (id3) => (f) => $Tuple(
+    id3,
+    $Val(
+      "Fun",
+      dictBoundedJoinSemilattice.bot,
+      $Fun(
+        "Foreign",
+        $Tuple(
+          id3,
+          $ForeignOp$p({
+            arity: 2,
+            "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
+              const map5 = dictMonadError.MonadThrow0().Monad0().Bind1().Apply0().Functor0().map;
+              return (v) => {
+                if (v.tag === "Cons") {
+                  if (v._2.tag === "Cons") {
+                    if (v._2._2.tag === "Nil") {
+                      const $7 = f.i1.unpack(v._1);
+                      const $8 = f.i2.unpack(v._2._1);
+                      return map5(f.o.pack)(map5((v4) => $Tuple(f.fwd($7._1)($8._1), v4))(dictMonadWithGraphAlloc.new(insert2(ordVertex)($8._2)(unit2)($Map(
+                        "Two",
+                        Leaf2,
+                        $7._2,
+                        unit2,
+                        Leaf2
+                      )))));
+                    }
+                    fail();
                   }
                   fail();
                 }
                 fail();
-              }
-              fail();
-            };
-          };
-        },
-        op_bwd: (dictAnn) => (v) => {
-          const $4 = op.o.unpack(v._2)._2;
-          return $List(
-            "Cons",
-            op.i1.pack($Tuple(op.i1.unpack(v._1._1)._1, $4)),
-            $List("Cons", op.i2.pack($Tuple(op.i2.unpack(v._1._2)._1, $4)), Nil)
-          );
-        }
-      }),
-      Nil
+              };
+            },
+            op: (dictAnn) => {
+              const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
+              return (dictMonadError) => {
+                const pure2 = dictMonadError.MonadThrow0().Monad0().Applicative0().pure;
+                return (v) => {
+                  if (v.tag === "Cons") {
+                    if (v._2.tag === "Cons") {
+                      if (v._2._2.tag === "Nil") {
+                        const $8 = f.i1.unpack(v._1);
+                        const $9 = f.i2.unpack(v._2._1);
+                        return pure2($Tuple(
+                          $Tuple(functorVal.map((v$1) => unit2)(v._1), functorVal.map((v$1) => unit2)(v._2._1)),
+                          f.o.pack($Tuple(f.fwd($8._1)($9._1), meet($8._2)($9._2)))
+                        ));
+                      }
+                      fail();
+                    }
+                    fail();
+                  }
+                  fail();
+                };
+              };
+            },
+            op_bwd: (dictAnn) => (v) => {
+              const $5 = f.o.unpack(v._2)._2;
+              return $List(
+                "Cons",
+                f.i1.pack($Tuple(f.i1.unpack(v._1._1)._1, $5)),
+                $List("Cons", f.i2.pack($Tuple(f.i2.unpack(v._1._2)._1, $5)), Nil)
+              );
+            }
+          })
+        ),
+        Nil
+      )
     )
   );
   var asNumberString = { as: (v) => unsafePerformEffect(throwException(error("Non-uniform argument types"))) };
@@ -31344,12 +31362,12 @@
                   ;
                   return go$r;
                 };
-                return v._1._2._1._1.arity > go(0)(vs$p);
+                return v._1._2._1._2._1.arity > go(0)(vs$p);
               })()) {
-                return pure2($Tuple(Nothing, $Val("Fun", v._1._1, $Fun("Foreign", v._1._2._1, vs$p))));
+                return pure2($Tuple(Nothing, $Val("Fun", v._1._1, $Fun("Foreign", $Tuple(v._1._2._1._1, v._1._2._1._2), vs$p))));
               }
-              return map32(strongFn.first(Just))(v._1._2._1._1.op(dictAnn)(dictMonadError)(vs$p));
-            })())((v3) => pure2($Tuple($ForeignTrace$p($ForeignOp$p(v._1._2._1._1), v3._1), v3._2))))((v2) => pure2($Tuple(
+              return map32(strongFn.first(Just))(v._1._2._1._2._1.op(dictAnn)(dictMonadError)(vs$p));
+            })())((v3) => pure2($Tuple($Tuple(v._1._2._1._1, $ForeignTrace$p($ForeignOp$p(v._1._2._1._2._1), v3._1)), v3._2))))((v2) => pure2($Tuple(
               $AppTrace(
                 "AppForeign",
                 (() => {
@@ -31828,11 +31846,15 @@
         return $Tuple($Val("Fun", JoinSemilattice0.join(v2._2._2)(v5._2._2), $Fun("Closure", join1(v4._1)(v5._1), v5._2._1, v6._2)), v6._1);
       }
       if (v._1.tag === "AppForeign") {
-        if (v._1._2._1._1.arity > v._1._1) {
+        if (v._1._2._2._1._1.arity > v._1._1) {
           if (v._2.tag === "Fun") {
             if (v._2._2.tag === "Foreign") {
               return $Tuple(
-                $Val("Fun", v._2._1, $Fun("Foreign", $ForeignOp$p(v._1._2._1._1), definitely("absurd")(unsnoc(v._2._2._2)).init)),
+                $Val(
+                  "Fun",
+                  v._2._1,
+                  $Fun("Foreign", $Tuple(v._1._2._1, $ForeignOp$p(v._1._2._2._1._1)), definitely("absurd")(unsnoc(v._2._2._2)).init)
+                ),
                 definitely("absurd")(unsnoc(v._2._2._2)).last
               );
             }
@@ -31846,11 +31868,11 @@
             BoundedJoinSemilattice0.bot,
             $Fun(
               "Foreign",
-              $ForeignOp$p(v._1._2._1._1),
-              definitely("absurd")(unsnoc(v._1._2._1._1.op_bwd(dictAnn)($Tuple(definitely("absurd")(v._1._2._2), v._2)))).init
+              $Tuple(v._1._2._1, $ForeignOp$p(v._1._2._2._1._1)),
+              definitely("absurd")(unsnoc(v._1._2._2._1._1.op_bwd(dictAnn)($Tuple(definitely("absurd")(v._1._2._2._2), v._2)))).init
             )
           ),
-          definitely("absurd")(unsnoc(v._1._2._1._1.op_bwd(dictAnn)($Tuple(definitely("absurd")(v._1._2._2), v._2)))).last
+          definitely("absurd")(unsnoc(v._1._2._2._1._1.op_bwd(dictAnn)($Tuple(definitely("absurd")(v._1._2._2._2), v._2)))).last
         );
       }
       if (v._1.tag === "AppConstr") {
@@ -33762,9 +33784,9 @@
               ;
               return go$r;
             };
-            return v._2._1._1.arity > go(0)(vs$p);
+            return v._2._1._2._1.arity > go(0)(vs$p);
           })()) {
-            return Functor0.map((f) => f($Fun("Foreign", v._2._1, vs$p)))(Functor0.map(Fun)(dictMonadWithGraphAlloc.new($Map(
+            return Functor0.map((f) => f($Fun("Foreign", $Tuple(v._2._1._1, v._2._1._2), vs$p)))(Functor0.map(Fun)(dictMonadWithGraphAlloc.new($Map(
               "Two",
               Leaf2,
               v._1,
@@ -33772,7 +33794,7 @@
               Leaf2
             ))));
           }
-          return v._2._1._1["op'"](dictMonadWithGraphAlloc)(MonadError1)(vs$p);
+          return v._2._1._2._1["op'"](dictMonadWithGraphAlloc)(MonadError1)(vs$p);
         }
         if (v._2.tag === "PartialConstr") {
           const n = successful(arity4(v._2._1));
@@ -36201,57 +36223,13 @@
     fail();
   };
   var notEquals = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)((x2) => (y2) => x2 !== y2)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asNumberString)(asNumberString)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2));
-  var matrixUpdate = /* @__PURE__ */ $ForeignOp$p({
-    arity: 3,
-    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const Functor0 = MonadThrow0.Monad0().Bind1().Apply0().Functor0();
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Matrix") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Constr") {
-                if (v._2._1._3.tag === "Cons") {
-                  if (v._2._1._3._1.tag === "Int") {
-                    if (v._2._1._3._2.tag === "Cons") {
-                      if (v._2._1._3._2._1.tag === "Int") {
-                        if (v._2._1._3._2._2.tag === "Nil") {
-                          if (v._2._2.tag === "Cons") {
-                            if (v._2._2._2.tag === "Nil") {
-                              if (v._2._1._2 === "Pair") {
-                                const $5 = matrixPut(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2);
-                                return Functor0.map((f) => f($5))(Functor0.map(Matrix3)(dictMonadWithGraphAlloc.new(Leaf2)));
-                              }
-                              return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-                            }
-                            return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-                          }
-                          return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-                        }
-                        return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-                      }
-                      return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-                    }
-                    return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-                  }
-                  return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-                }
-                return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-              }
-              return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-            }
-            return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-          }
-          return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-        }
-        return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
-      };
-    },
-    op: (dictAnn) => {
-      const top3 = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().top;
-      return (dictMonadError) => {
+  var matrixUpdate = /* @__PURE__ */ $Tuple(
+    "matrixUpdate",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 3,
+      "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
         const MonadThrow0 = dictMonadError.MonadThrow0();
-        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        const Functor0 = MonadThrow0.Monad0().Bind1().Apply0().Functor0();
         return (v) => {
           if (v.tag === "Cons") {
             if (v._1.tag === "Matrix") {
@@ -36265,13 +36243,8 @@
                             if (v._2._2.tag === "Cons") {
                               if (v._2._2._2.tag === "Nil") {
                                 if (v._2._1._2 === "Pair") {
-                                  return pure2($Tuple(
-                                    $Tuple(
-                                      $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2),
-                                      functorVal.map((v$1) => unit2)(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))
-                                    ),
-                                    $Val("Matrix", top3, matrixPut(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2))
-                                  ));
+                                  const $5 = matrixPut(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2);
+                                  return Functor0.map((f) => f($5))(Functor0.map(Matrix3)(dictMonadWithGraphAlloc.new(Leaf2)));
                                 }
                                 return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
                               }
@@ -36297,60 +36270,116 @@
           }
           return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
         };
-      };
-    },
-    op_bwd: (dictAnn) => {
-      const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
-      return (v) => {
-        if (v._2.tag === "Matrix") {
-          return $List(
-            "Cons",
-            $Val(
-              "Matrix",
-              BoundedJoinSemilattice0.bot,
-              matrixPut(v._1._1._1)(v._1._1._2)((() => {
-                const $3 = functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._2);
-                return (v$1) => $3;
-              })())(v._2._2)
-            ),
-            $List(
+      },
+      op: (dictAnn) => {
+        const top3 = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().top;
+        return (dictMonadError) => {
+          const MonadThrow0 = dictMonadError.MonadThrow0();
+          const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._1.tag === "Matrix") {
+                if (v._2.tag === "Cons") {
+                  if (v._2._1.tag === "Constr") {
+                    if (v._2._1._3.tag === "Cons") {
+                      if (v._2._1._3._1.tag === "Int") {
+                        if (v._2._1._3._2.tag === "Cons") {
+                          if (v._2._1._3._2._1.tag === "Int") {
+                            if (v._2._1._3._2._2.tag === "Nil") {
+                              if (v._2._2.tag === "Cons") {
+                                if (v._2._2._2.tag === "Nil") {
+                                  if (v._2._1._2 === "Pair") {
+                                    return pure2($Tuple(
+                                      $Tuple(
+                                        $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2),
+                                        functorVal.map((v$1) => unit2)(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))
+                                      ),
+                                      $Val("Matrix", top3, matrixPut(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2))
+                                    ));
+                                  }
+                                  return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+                                }
+                                return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+                              }
+                              return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+                            }
+                            return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+                          }
+                          return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+                        }
+                        return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+                      }
+                      return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+                    }
+                    return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+                  }
+                  return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+                }
+                return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+              }
+              return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+            }
+            return MonadThrow0.throwError(error("Matrix, pair of integers and value expected"));
+          };
+        };
+      },
+      op_bwd: (dictAnn) => {
+        const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+        return (v) => {
+          if (v._2.tag === "Matrix") {
+            return $List(
               "Cons",
               $Val(
-                "Constr",
+                "Matrix",
                 BoundedJoinSemilattice0.bot,
-                "Pair",
-                $List(
-                  "Cons",
-                  $Val("Int", BoundedJoinSemilattice0.bot, v._1._1._1),
-                  $List("Cons", $Val("Int", BoundedJoinSemilattice0.bot, v._1._1._2), Nil)
-                )
+                matrixPut(v._1._1._1)(v._1._1._2)((() => {
+                  const $3 = functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._2);
+                  return (v$1) => $3;
+                })())(v._2._2)
               ),
-              $List("Cons", matrixGet(v._1._1._1)(v._1._1._2)(v._2._2), Nil)
-            )
-          );
-        }
-        fail();
-      };
-    }
-  });
-  var matrixLookup = /* @__PURE__ */ $ForeignOp$p({
-    arity: 2,
-    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Matrix") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Constr") {
-                if (v._2._1._3.tag === "Cons") {
-                  if (v._2._1._3._1.tag === "Int") {
-                    if (v._2._1._3._2.tag === "Cons") {
-                      if (v._2._1._3._2._1.tag === "Int") {
-                        if (v._2._1._3._2._2.tag === "Nil") {
-                          if (v._2._2.tag === "Nil") {
-                            if (v._2._1._2 === "Pair") {
-                              return pure2(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2));
+              $List(
+                "Cons",
+                $Val(
+                  "Constr",
+                  BoundedJoinSemilattice0.bot,
+                  "Pair",
+                  $List(
+                    "Cons",
+                    $Val("Int", BoundedJoinSemilattice0.bot, v._1._1._1),
+                    $List("Cons", $Val("Int", BoundedJoinSemilattice0.bot, v._1._1._2), Nil)
+                  )
+                ),
+                $List("Cons", matrixGet(v._1._1._1)(v._1._1._2)(v._2._2), Nil)
+              )
+            );
+          }
+          fail();
+        };
+      }
+    })
+  );
+  var matrixLookup = /* @__PURE__ */ $Tuple(
+    "!",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 2,
+      "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Matrix") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Constr") {
+                  if (v._2._1._3.tag === "Cons") {
+                    if (v._2._1._3._1.tag === "Int") {
+                      if (v._2._1._3._2.tag === "Cons") {
+                        if (v._2._1._3._2._1.tag === "Int") {
+                          if (v._2._1._3._2._2.tag === "Nil") {
+                            if (v._2._2.tag === "Nil") {
+                              if (v._2._1._2 === "Pair") {
+                                return pure2(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2));
+                              }
+                              return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
                             }
                             return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
                           }
@@ -36371,29 +36400,29 @@
             return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
           }
           return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
-        }
-        return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
-      };
-    },
-    op: (dictAnn) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Matrix") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Constr") {
-                if (v._2._1._3.tag === "Cons") {
-                  if (v._2._1._3._1.tag === "Int") {
-                    if (v._2._1._3._2.tag === "Cons") {
-                      if (v._2._1._3._2._1.tag === "Int") {
-                        if (v._2._1._3._2._2.tag === "Nil") {
-                          if (v._2._2.tag === "Nil") {
-                            if (v._2._1._2 === "Pair") {
-                              return pure2($Tuple(
-                                $Tuple(functorMatrixRep.map((v$1) => unit2)(v._1._2), $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2)),
-                                matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2)
-                              ));
+        };
+      },
+      op: (dictAnn) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Matrix") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Constr") {
+                  if (v._2._1._3.tag === "Cons") {
+                    if (v._2._1._3._1.tag === "Int") {
+                      if (v._2._1._3._2.tag === "Cons") {
+                        if (v._2._1._3._2._1.tag === "Int") {
+                          if (v._2._1._3._2._2.tag === "Nil") {
+                            if (v._2._2.tag === "Nil") {
+                              if (v._2._1._2 === "Pair") {
+                                return pure2($Tuple(
+                                  $Tuple(functorMatrixRep.map((v$1) => unit2)(v._1._2), $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2)),
+                                  matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2)
+                                ));
+                              }
+                              return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
                             }
                             return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
                           }
@@ -36414,32 +36443,31 @@
             return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
           }
           return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
-        }
-        return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
-      };
-    },
-    op_bwd: (dictAnn) => {
-      const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
-      return (v) => $List(
-        "Cons",
-        $Val("Matrix", BoundedJoinSemilattice0.bot, matrixPut(v._1._2._1)(v._1._2._2)((v$1) => v._2)(functorMatrixRep.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1))),
-        $List(
+        };
+      },
+      op_bwd: (dictAnn) => {
+        const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+        return (v) => $List(
           "Cons",
-          $Val(
-            "Constr",
-            BoundedJoinSemilattice0.bot,
-            "Pair",
-            $List(
-              "Cons",
-              $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._1),
-              $List("Cons", $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._2), Nil)
-            )
-          ),
-          Nil
-        )
-      );
-    }
-  });
+          $Val("Matrix", BoundedJoinSemilattice0.bot, matrixPut(v._1._2._1)(v._1._2._2)((v$1) => v._2)(functorMatrixRep.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1))),
+          $List(
+            "Cons",
+            $Val(
+              "Constr",
+              BoundedJoinSemilattice0.bot,
+              "Pair",
+              $List(
+                "Cons",
+                $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._1),
+                $List("Cons", $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._2), Nil)
+              )
+            ),
+            Nil
+          )
+        );
+      }
+    })
+  );
   var log3 = (v2) => {
     if (v2.tag === "Left") {
       return log(toNumber(v2._1));
@@ -36453,133 +36481,136 @@
   var lessThan = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)((a1) => (a2) => a1 < a2)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asNumberString)(asNumberString)((a1) => (a2) => a1 < a2)((a1) => (a2) => a1 < a2));
   var greaterThanEquals = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)((a1) => (a2) => a1 >= a2)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asNumberString)(asNumberString)((a1) => (a2) => a1 >= a2)((a1) => (a2) => a1 >= a2));
   var greaterThan = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)((a1) => (a2) => a1 > a2)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asNumberString)(asNumberString)((a1) => (a2) => a1 > a2)((a1) => (a2) => a1 > a2));
-  var extern1 = /* @__PURE__ */ (() => {
-    const $0 = Fun(unit2);
-    return (x2) => $0($Fun("Foreign", x2, Nil));
-  })();
-  var error_ = /* @__PURE__ */ $ForeignOp$p({
-    arity: 1,
-    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Str") {
-            if (v._2.tag === "Nil") {
-              return pure2(unsafePerformEffect(throwException(error(v._1._2))));
+  var error_ = /* @__PURE__ */ $Tuple(
+    "error",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 1,
+      "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Str") {
+              if (v._2.tag === "Nil") {
+                return pure2(unsafePerformEffect(throwException(error(v._1._2))));
+              }
+              return MonadThrow0.throwError(error("String expected"));
             }
             return MonadThrow0.throwError(error("String expected"));
           }
           return MonadThrow0.throwError(error("String expected"));
-        }
-        return MonadThrow0.throwError(error("String expected"));
-      };
-    },
-    op: (dictAnn) => (dictMonadError) => {
-      const $$throw2 = $$throw(dictMonadError.MonadThrow0());
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Str") {
-            if (v._2.tag === "Nil") {
-              return unsafePerformEffect(throwException(error(v._1._2)));
+        };
+      },
+      op: (dictAnn) => (dictMonadError) => {
+        const $$throw2 = $$throw(dictMonadError.MonadThrow0());
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Str") {
+              if (v._2.tag === "Nil") {
+                return unsafePerformEffect(throwException(error(v._1._2)));
+              }
+              return $$throw2("String expected");
             }
             return $$throw2("String expected");
           }
           return $$throw2("String expected");
-        }
-        return $$throw2("String expected");
-      };
-    },
-    op_bwd: (dictAnn) => (v) => unsafePerformEffect(throwException(error("unimplemented")))
-  });
+        };
+      },
+      op_bwd: (dictAnn) => (v) => unsafePerformEffect(throwException(error("unimplemented")))
+    })
+  );
   var divide = /* @__PURE__ */ union4(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
-  var dims = /* @__PURE__ */ $ForeignOp$p({
-    arity: 1,
-    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const Bind1 = MonadThrow0.Monad0().Bind1();
-      const Functor0 = Bind1.Apply0().Functor0();
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Matrix") {
-            if (v._2.tag === "Nil") {
-              return Bind1.bind(Functor0.map((f) => f(v._1._2._2._1._1))(Functor0.map(Int3)(dictMonadWithGraphAlloc.new($Map(
-                "Two",
-                Leaf2,
-                v._1._2._2._1._2,
-                unit2,
-                Leaf2
-              )))))((v1) => Bind1.bind(Functor0.map((f) => f(v._1._2._2._2._1))(Functor0.map(Int3)(dictMonadWithGraphAlloc.new($Map(
-                "Two",
-                Leaf2,
-                v._1._2._2._2._2,
-                unit2,
-                Leaf2
-              )))))((v2) => Functor0.map((f) => f($List("Cons", v1, $List("Cons", v2, Nil))))(Functor0.map((f) => f("Pair"))(Functor0.map(Constr3)(dictMonadWithGraphAlloc.new($Map(
-                "Two",
-                Leaf2,
-                v._1._1,
-                unit2,
-                Leaf2
-              )))))));
-            }
-            return MonadThrow0.throwError(error("Matrix expected"));
-          }
-          return MonadThrow0.throwError(error("Matrix expected"));
-        }
-        return MonadThrow0.throwError(error("Matrix expected"));
-      };
-    },
-    op: (dictAnn) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Matrix") {
-            if (v._2.tag === "Nil") {
-              return pure2($Tuple(
-                arrayMap(arrayMap(erase))(v._1._2._1),
-                $Val(
-                  "Constr",
+  var dims = /* @__PURE__ */ $Tuple(
+    "dims",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 1,
+      "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const Bind1 = MonadThrow0.Monad0().Bind1();
+        const Functor0 = Bind1.Apply0().Functor0();
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Matrix") {
+              if (v._2.tag === "Nil") {
+                return Bind1.bind(Functor0.map((f) => f(v._1._2._2._1._1))(Functor0.map(Int3)(dictMonadWithGraphAlloc.new($Map(
+                  "Two",
+                  Leaf2,
+                  v._1._2._2._1._2,
+                  unit2,
+                  Leaf2
+                )))))((v1) => Bind1.bind(Functor0.map((f) => f(v._1._2._2._2._1))(Functor0.map(Int3)(dictMonadWithGraphAlloc.new($Map(
+                  "Two",
+                  Leaf2,
+                  v._1._2._2._2._2,
+                  unit2,
+                  Leaf2
+                )))))((v2) => Functor0.map((f) => f($List("Cons", v1, $List("Cons", v2, Nil))))(Functor0.map((f) => f("Pair"))(Functor0.map(Constr3)(dictMonadWithGraphAlloc.new($Map(
+                  "Two",
+                  Leaf2,
                   v._1._1,
-                  "Pair",
-                  $List(
-                    "Cons",
-                    $Val("Int", v._1._2._2._1._2, v._1._2._2._1._1),
-                    $List("Cons", $Val("Int", v._1._2._2._2._2, v._1._2._2._2._1), Nil)
-                  )
-                )
-              ));
+                  unit2,
+                  Leaf2
+                )))))));
+              }
+              return MonadThrow0.throwError(error("Matrix expected"));
             }
             return MonadThrow0.throwError(error("Matrix expected"));
           }
           return MonadThrow0.throwError(error("Matrix expected"));
-        }
-        return MonadThrow0.throwError(error("Matrix expected"));
-      };
-    },
-    op_bwd: (dictAnn) => {
-      const $1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
-      return (v) => {
-        if (v._2.tag === "Constr") {
-          if (v._2._3.tag === "Cons") {
-            if (v._2._3._1.tag === "Int") {
-              if (v._2._3._2.tag === "Cons") {
-                if (v._2._3._2._1.tag === "Int") {
-                  if (v._2._3._2._2.tag === "Nil") {
-                    if (v._2._2 === "Pair") {
-                      return $List(
-                        "Cons",
-                        $Val(
-                          "Matrix",
-                          v._2._1,
-                          $Tuple(
-                            arrayMap(arrayMap(functorVal.map((v$1) => $1.bot)))(v._1),
-                            $Tuple($Tuple(v._2._3._1._2, v._2._3._1._1), $Tuple(v._2._3._2._1._2, v._2._3._2._1._1))
-                          )
-                        ),
-                        Nil
-                      );
+        };
+      },
+      op: (dictAnn) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Matrix") {
+              if (v._2.tag === "Nil") {
+                return pure2($Tuple(
+                  arrayMap(arrayMap(erase))(v._1._2._1),
+                  $Val(
+                    "Constr",
+                    v._1._1,
+                    "Pair",
+                    $List(
+                      "Cons",
+                      $Val("Int", v._1._2._2._1._2, v._1._2._2._1._1),
+                      $List("Cons", $Val("Int", v._1._2._2._2._2, v._1._2._2._2._1), Nil)
+                    )
+                  )
+                ));
+              }
+              return MonadThrow0.throwError(error("Matrix expected"));
+            }
+            return MonadThrow0.throwError(error("Matrix expected"));
+          }
+          return MonadThrow0.throwError(error("Matrix expected"));
+        };
+      },
+      op_bwd: (dictAnn) => {
+        const $1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+        return (v) => {
+          if (v._2.tag === "Constr") {
+            if (v._2._3.tag === "Cons") {
+              if (v._2._3._1.tag === "Int") {
+                if (v._2._3._2.tag === "Cons") {
+                  if (v._2._3._2._1.tag === "Int") {
+                    if (v._2._3._2._2.tag === "Nil") {
+                      if (v._2._2 === "Pair") {
+                        return $List(
+                          "Cons",
+                          $Val(
+                            "Matrix",
+                            v._2._1,
+                            $Tuple(
+                              arrayMap(arrayMap(functorVal.map((v$1) => $1.bot)))(v._1),
+                              $Tuple($Tuple(v._2._3._1._2, v._2._3._1._1), $Tuple(v._2._3._2._1._2, v._2._3._2._1._1))
+                            )
+                          ),
+                          Nil
+                        );
+                      }
+                      fail();
                     }
                     fail();
                   }
@@ -36592,33 +36623,62 @@
             fail();
           }
           fail();
-        }
-        fail();
-      };
-    }
-  });
-  var dict_map = /* @__PURE__ */ $ForeignOp$p({
-    arity: 2,
-    "op'": (dictMonadWithGraphAlloc) => {
-      const apply5 = apply4(dictMonadWithGraphAlloc);
-      return (dictMonadError) => {
+        };
+      }
+    })
+  );
+  var dict_map = /* @__PURE__ */ $Tuple(
+    "dict_map",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 2,
+      "op'": (dictMonadWithGraphAlloc) => {
+        const apply5 = apply4(dictMonadWithGraphAlloc);
+        return (dictMonadError) => {
+          const MonadThrow0 = dictMonadError.MonadThrow0();
+          const Monad0 = MonadThrow0.Monad0();
+          const Bind1 = Monad0.Bind1();
+          const $6 = traversableWithIndexObject.traverseWithIndex(Monad0.Applicative0());
+          const Functor0 = Bind1.Apply0().Functor0();
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Dictionary") {
+                  if (v._2._2.tag === "Nil") {
+                    return Bind1.bind($6((v$1) => (v2) => Functor0.map((v3) => $Tuple(v2._1, v3))(apply5(v._1)(v2._2)))(v._2._1._2))((d$p) => Functor0.map((f) => f(d$p))(Functor0.map(Dictionary3)(dictMonadWithGraphAlloc.new($Map(
+                      "Two",
+                      Leaf2,
+                      v._2._1._1,
+                      unit2,
+                      Leaf2
+                    )))));
+                  }
+                  return MonadThrow0.throwError(error("Function and dictionary expected"));
+                }
+                return MonadThrow0.throwError(error("Function and dictionary expected"));
+              }
+              return MonadThrow0.throwError(error("Function and dictionary expected"));
+            }
+            return MonadThrow0.throwError(error("Function and dictionary expected"));
+          };
+        };
+      },
+      op: (dictAnn) => (dictMonadError) => {
         const MonadThrow0 = dictMonadError.MonadThrow0();
         const Monad0 = MonadThrow0.Monad0();
         const Bind1 = Monad0.Bind1();
-        const $6 = traversableWithIndexObject.traverseWithIndex(Monad0.Applicative0());
-        const Functor0 = Bind1.Apply0().Functor0();
+        const map32 = Bind1.Apply0().Functor0().map;
+        const Applicative0 = Monad0.Applicative0();
+        const $7 = traversableWithIndexObject.traverseWithIndex(Applicative0);
+        const apply5 = apply3(dictMonadError)(dictAnn);
         return (v) => {
           if (v.tag === "Cons") {
             if (v._2.tag === "Cons") {
               if (v._2._1.tag === "Dictionary") {
                 if (v._2._2.tag === "Nil") {
-                  return Bind1.bind($6((v$1) => (v2) => Functor0.map((v3) => $Tuple(v2._1, v3))(apply5(v._1)(v2._2)))(v._2._1._2))((d$p) => Functor0.map((f) => f(d$p))(Functor0.map(Dictionary3)(dictMonadWithGraphAlloc.new($Map(
-                    "Two",
-                    Leaf2,
-                    v._2._1._1,
-                    unit2,
-                    Leaf2
-                  )))));
+                  return Bind1.bind(map32(unzip2)($7((v$1) => (v2) => map32((m) => $Tuple(m._1, $Tuple(v2._1, m._2)))(apply5($Tuple(v._1, v2._2))))(v._2._1._2)))((v2) => Applicative0.pure($Tuple(
+                    $Tuple(functorVal.map((v$1) => unit2)(v._1), v2._1),
+                    $Val("Dictionary", v._2._1._1, v2._2)
+                  )));
                 }
                 return MonadThrow0.throwError(error("Function and dictionary expected"));
               }
@@ -36628,179 +36688,159 @@
           }
           return MonadThrow0.throwError(error("Function and dictionary expected"));
         };
-      };
-    },
-    op: (dictAnn) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const Monad0 = MonadThrow0.Monad0();
-      const Bind1 = Monad0.Bind1();
-      const map32 = Bind1.Apply0().Functor0().map;
-      const Applicative0 = Monad0.Applicative0();
-      const $7 = traversableWithIndexObject.traverseWithIndex(Applicative0);
-      const apply5 = apply3(dictMonadError)(dictAnn);
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Cons") {
-            if (v._2._1.tag === "Dictionary") {
-              if (v._2._2.tag === "Nil") {
-                return Bind1.bind(map32(unzip2)($7((v$1) => (v2) => map32((m) => $Tuple(m._1, $Tuple(v2._1, m._2)))(apply5($Tuple(v._1, v2._2))))(v._2._1._2)))((v2) => Applicative0.pure($Tuple(
-                  $Tuple(functorVal.map((v$1) => unit2)(v._1), v2._1),
-                  $Val("Dictionary", v._2._1._1, v2._2)
-                )));
-              }
-              return MonadThrow0.throwError(error("Function and dictionary expected"));
-            }
-            return MonadThrow0.throwError(error("Function and dictionary expected"));
-          }
-          return MonadThrow0.throwError(error("Function and dictionary expected"));
-        }
-        return MonadThrow0.throwError(error("Function and dictionary expected"));
-      };
-    },
-    op_bwd: (dictAnn) => {
-      const applyBwd2 = applyBwd(dictAnn);
-      const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
-      const join = joinSemilatticeVal(BoundedJoinSemilattice0.JoinSemilattice0()).join;
-      return (v) => {
-        if (v._2.tag === "Dictionary") {
-          const $5 = intersectionWith((t2) => (v3) => {
-            const $7 = applyBwd2($Tuple(t2, v3._2));
-            return $Tuple($7._1, $Tuple(v3._1, $7._2));
-          })(v._1._2)(v._2._2);
-          return $List(
-            "Cons",
-            fold((z) => (v$1) => join(z))(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1))(_fmapObject($5, fst)),
-            $List("Cons", $Val("Dictionary", v._2._1, _fmapObject($5, snd)), Nil)
-          );
-        }
-        fail();
-      };
-    }
-  });
-  var dict_intersectionWith = /* @__PURE__ */ $ForeignOp$p({
-    arity: 3,
-    "op'": (dictMonadWithGraphAlloc) => {
-      const apply5 = apply4(dictMonadWithGraphAlloc);
-      return (dictMonadError) => {
-        const MonadThrow0 = dictMonadError.MonadThrow0();
-        const Monad0 = MonadThrow0.Monad0();
-        const Bind1 = Monad0.Bind1();
-        const Apply0 = Bind1.Apply0();
-        const map32 = Apply0.Functor0().map;
-        const sequence1 = traversableWithIndexObject.traverseWithIndex(Monad0.Applicative0())((v) => identity11);
+      },
+      op_bwd: (dictAnn) => {
+        const applyBwd2 = applyBwd(dictAnn);
+        const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+        const join = joinSemilatticeVal(BoundedJoinSemilattice0.JoinSemilattice0()).join;
         return (v) => {
-          if (v.tag === "Cons") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Cons") {
-                  if (v._2._2._1.tag === "Dictionary") {
-                    if (v._2._2._2.tag === "Nil") {
-                      return Apply0.apply(map32(Dictionary3)(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v._2._2._1._1)(unit2)($Map(
-                        "Two",
-                        Leaf2,
-                        v._2._1._1,
-                        unit2,
-                        Leaf2
-                      )))))(map32(DictRep)(sequence1(intersectionWith((v2) => (v3) => Bind1.bind(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v3._1)(unit2)($Map(
-                        "Two",
-                        Leaf2,
-                        v2._1,
-                        unit2,
-                        Leaf2
-                      ))))((\u03B2$p$p) => map32(Tuple(\u03B2$p$p))(Bind1.bind(apply5(v._1)(v2._2))((a) => apply5(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2))));
-                    }
-                    return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-                  }
-                  return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-                }
-                return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-              }
-              return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-            }
-            return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-          }
-          return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-        };
-      };
-    },
-    op: (dictAnn) => {
-      const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      return (dictMonadError) => {
-        const MonadThrow0 = dictMonadError.MonadThrow0();
-        const Monad0 = MonadThrow0.Monad0();
-        const Bind1 = Monad0.Bind1();
-        const Applicative0 = Monad0.Applicative0();
-        const sequence1 = traversableWithIndexObject.traverseWithIndex(Applicative0)((v) => identity11);
-        const map32 = Bind1.Apply0().Functor0().map;
-        const apply23 = apply22(dictMonadError)(dictAnn);
-        return (v) => {
-          if (v.tag === "Cons") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Cons") {
-                  if (v._2._2._1.tag === "Dictionary") {
-                    if (v._2._2._2.tag === "Nil") {
-                      return Bind1.bind(sequence1(intersectionWith((v2) => (v3) => map32((v4) => $Tuple(meet(v2._1)(v3._1), v4))(apply23($Tuple(
-                        v._1,
-                        $Tuple(v2._2, v3._2)
-                      ))))(v._2._1._2)(v._2._2._1._2)))((d$p$p) => Applicative0.pure($Tuple(
-                        $Tuple(functorVal.map((v$1) => unit2)(v._1), _fmapObject(d$p$p, (x2) => x2._2._1)),
-                        $Val("Dictionary", meet(v._2._1._1)(v._2._2._1._1), _fmapObject(d$p$p, functorTuple.map(snd)))
-                      )));
-                    }
-                    return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-                  }
-                  return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-                }
-                return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-              }
-              return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-            }
-            return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-          }
-          return MonadThrow0.throwError(error("Function and two dictionaries expected"));
-        };
-      };
-    },
-    op_bwd: (dictAnn) => {
-      const apply2Bwd2 = apply2Bwd(dictAnn);
-      const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
-      const join = joinSemilatticeVal(BoundedJoinSemilattice0.JoinSemilattice0()).join;
-      return (v) => {
-        if (v._2.tag === "Dictionary") {
-          const d$p = intersectionWith((tt) => (v2) => $Tuple(v2._1, apply2Bwd2($Tuple(tt, v2._2))))(v._1._2)(v._2._2);
-          return $List(
-            "Cons",
-            fold((z) => (v$1) => join(z))(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1))(_fmapObject(d$p, (x2) => x2._2._1)),
-            $List(
+          if (v._2.tag === "Dictionary") {
+            const $5 = intersectionWith((t2) => (v3) => {
+              const $7 = applyBwd2($Tuple(t2, v3._2));
+              return $Tuple($7._1, $Tuple(v3._1, $7._2));
+            })(v._1._2)(v._2._2);
+            return $List(
               "Cons",
-              $Val("Dictionary", v._2._1, _fmapObject(d$p, (m) => $Tuple(m._1, m._2._2._1))),
-              $List("Cons", $Val("Dictionary", v._2._1, _fmapObject(d$p, (m) => $Tuple(m._1, m._2._2._2))), Nil)
-            )
-          );
-        }
-        fail();
-      };
-    }
-  });
-  var dict_get = /* @__PURE__ */ $ForeignOp$p({
-    arity: 2,
-    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const orElse2 = orElse(MonadThrow0);
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Str") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Nil") {
-                  return orElse2('Key "' + (v._1._2 + '" not found'))((() => {
-                    const $5 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
-                    if ($5.tag === "Just") {
-                      return $Maybe("Just", $5._1._2);
+              fold((z) => (v$1) => join(z))(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1))(_fmapObject($5, fst)),
+              $List("Cons", $Val("Dictionary", v._2._1, _fmapObject($5, snd)), Nil)
+            );
+          }
+          fail();
+        };
+      }
+    })
+  );
+  var dict_intersectionWith = /* @__PURE__ */ $Tuple(
+    "dict_intersectionWith",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 3,
+      "op'": (dictMonadWithGraphAlloc) => {
+        const apply5 = apply4(dictMonadWithGraphAlloc);
+        return (dictMonadError) => {
+          const MonadThrow0 = dictMonadError.MonadThrow0();
+          const Monad0 = MonadThrow0.Monad0();
+          const Bind1 = Monad0.Bind1();
+          const Apply0 = Bind1.Apply0();
+          const map32 = Apply0.Functor0().map;
+          const sequence1 = traversableWithIndexObject.traverseWithIndex(Monad0.Applicative0())((v) => identity11);
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Dictionary") {
+                  if (v._2._2.tag === "Cons") {
+                    if (v._2._2._1.tag === "Dictionary") {
+                      if (v._2._2._2.tag === "Nil") {
+                        return Apply0.apply(map32(Dictionary3)(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v._2._2._1._1)(unit2)($Map(
+                          "Two",
+                          Leaf2,
+                          v._2._1._1,
+                          unit2,
+                          Leaf2
+                        )))))(map32(DictRep)(sequence1(intersectionWith((v2) => (v3) => Bind1.bind(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v3._1)(unit2)($Map(
+                          "Two",
+                          Leaf2,
+                          v2._1,
+                          unit2,
+                          Leaf2
+                        ))))((\u03B2$p$p) => map32(Tuple(\u03B2$p$p))(Bind1.bind(apply5(v._1)(v2._2))((a) => apply5(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2))));
+                      }
+                      return MonadThrow0.throwError(error("Function and two dictionaries expected"));
                     }
-                    return Nothing;
-                  })());
+                    return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+                  }
+                  return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+                }
+                return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+              }
+              return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+            }
+            return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+          };
+        };
+      },
+      op: (dictAnn) => {
+        const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
+        return (dictMonadError) => {
+          const MonadThrow0 = dictMonadError.MonadThrow0();
+          const Monad0 = MonadThrow0.Monad0();
+          const Bind1 = Monad0.Bind1();
+          const Applicative0 = Monad0.Applicative0();
+          const sequence1 = traversableWithIndexObject.traverseWithIndex(Applicative0)((v) => identity11);
+          const map32 = Bind1.Apply0().Functor0().map;
+          const apply23 = apply22(dictMonadError)(dictAnn);
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Dictionary") {
+                  if (v._2._2.tag === "Cons") {
+                    if (v._2._2._1.tag === "Dictionary") {
+                      if (v._2._2._2.tag === "Nil") {
+                        return Bind1.bind(sequence1(intersectionWith((v2) => (v3) => map32((v4) => $Tuple(meet(v2._1)(v3._1), v4))(apply23($Tuple(
+                          v._1,
+                          $Tuple(v2._2, v3._2)
+                        ))))(v._2._1._2)(v._2._2._1._2)))((d$p$p) => Applicative0.pure($Tuple(
+                          $Tuple(functorVal.map((v$1) => unit2)(v._1), _fmapObject(d$p$p, (x2) => x2._2._1)),
+                          $Val("Dictionary", meet(v._2._1._1)(v._2._2._1._1), _fmapObject(d$p$p, functorTuple.map(snd)))
+                        )));
+                      }
+                      return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+                    }
+                    return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+                  }
+                  return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+                }
+                return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+              }
+              return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+            }
+            return MonadThrow0.throwError(error("Function and two dictionaries expected"));
+          };
+        };
+      },
+      op_bwd: (dictAnn) => {
+        const apply2Bwd2 = apply2Bwd(dictAnn);
+        const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+        const join = joinSemilatticeVal(BoundedJoinSemilattice0.JoinSemilattice0()).join;
+        return (v) => {
+          if (v._2.tag === "Dictionary") {
+            const d$p = intersectionWith((tt) => (v2) => $Tuple(v2._1, apply2Bwd2($Tuple(tt, v2._2))))(v._1._2)(v._2._2);
+            return $List(
+              "Cons",
+              fold((z) => (v$1) => join(z))(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1))(_fmapObject(d$p, (x2) => x2._2._1)),
+              $List(
+                "Cons",
+                $Val("Dictionary", v._2._1, _fmapObject(d$p, (m) => $Tuple(m._1, m._2._2._1))),
+                $List("Cons", $Val("Dictionary", v._2._1, _fmapObject(d$p, (m) => $Tuple(m._1, m._2._2._2))), Nil)
+              )
+            );
+          }
+          fail();
+        };
+      }
+    })
+  );
+  var dict_get = /* @__PURE__ */ $Tuple(
+    "dict_get",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 2,
+      "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const orElse2 = orElse(MonadThrow0);
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Str") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Dictionary") {
+                  if (v._2._2.tag === "Nil") {
+                    return orElse2('Key "' + (v._1._2 + '" not found'))((() => {
+                      const $5 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
+                      if ($5.tag === "Just") {
+                        return $Maybe("Just", $5._1._2);
+                      }
+                      return Nothing;
+                    })());
+                  }
+                  return MonadThrow0.throwError(error("String and dictionary expected"));
                 }
                 return MonadThrow0.throwError(error("String and dictionary expected"));
               }
@@ -36809,27 +36849,27 @@
             return MonadThrow0.throwError(error("String and dictionary expected"));
           }
           return MonadThrow0.throwError(error("String and dictionary expected"));
-        }
-        return MonadThrow0.throwError(error("String and dictionary expected"));
-      };
-    },
-    op: (dictAnn) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const map32 = MonadThrow0.Monad0().Bind1().Apply0().Functor0().map;
-      const orElse2 = orElse(MonadThrow0);
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Str") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Nil") {
-                  return map32((v1) => $Tuple(v._1._2, v1))(orElse2('Key "' + (v._1._2 + '" not found'))((() => {
-                    const $6 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
-                    if ($6.tag === "Just") {
-                      return $Maybe("Just", $6._1._2);
-                    }
-                    return Nothing;
-                  })()));
+        };
+      },
+      op: (dictAnn) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const map32 = MonadThrow0.Monad0().Bind1().Apply0().Functor0().map;
+        const orElse2 = orElse(MonadThrow0);
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Str") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Dictionary") {
+                  if (v._2._2.tag === "Nil") {
+                    return map32((v1) => $Tuple(v._1._2, v1))(orElse2('Key "' + (v._1._2 + '" not found'))((() => {
+                      const $6 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
+                      if ($6.tag === "Just") {
+                        return $Maybe("Just", $6._1._2);
+                      }
+                      return Nothing;
+                    })()));
+                  }
+                  return MonadThrow0.throwError(error("String and dictionary expected"));
                 }
                 return MonadThrow0.throwError(error("String and dictionary expected"));
               }
@@ -36838,110 +36878,148 @@
             return MonadThrow0.throwError(error("String and dictionary expected"));
           }
           return MonadThrow0.throwError(error("String and dictionary expected"));
-        }
-        return MonadThrow0.throwError(error("String and dictionary expected"));
-      };
-    },
-    op_bwd: (dictAnn) => {
-      const bot = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
-      return (v) => $List(
-        "Cons",
-        $Val("Str", bot, v._1),
-        $List(
+        };
+      },
+      op_bwd: (dictAnn) => {
+        const bot = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
+        return (v) => $List(
           "Cons",
-          $Val(
-            "Dictionary",
-            bot,
-            runST(bind_(newImpl)(poke3(v._1)($Tuple(bot, v._2))))
-          ),
-          Nil
-        )
-      );
-    }
-  });
-  var dict_fromRecord = /* @__PURE__ */ $ForeignOp$p({
-    arity: 1,
-    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const Monad0 = MonadThrow0.Monad0();
-      const Bind1 = Monad0.Bind1();
-      const $5 = traversableWithIndexObject.traverseWithIndex(Monad0.Applicative0());
-      const Functor0 = Bind1.Apply0().Functor0();
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Record") {
-            if (v._2.tag === "Nil") {
-              return Bind1.bind($5((v$1) => (v1) => Functor0.map((v2) => $Tuple(v2, v1))(dictMonadWithGraphAlloc.new($Map(
-                "Two",
-                Leaf2,
-                v._1._1,
-                unit2,
-                Leaf2
-              ))))(v._1._2))((xvs$p) => Functor0.map((f) => f(xvs$p))(Functor0.map(Dictionary3)(dictMonadWithGraphAlloc.new($Map(
-                "Two",
-                Leaf2,
-                v._1._1,
-                unit2,
-                Leaf2
-              )))));
-            }
-            return MonadThrow0.throwError(error("Record expected."));
-          }
-          return MonadThrow0.throwError(error("Record expected."));
-        }
-        return MonadThrow0.throwError(error("Record expected."));
-      };
-    },
-    op: (dictAnn) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Record") {
-            if (v._2.tag === "Nil") {
-              return pure2($Tuple(unit2, $Val("Dictionary", v._1._1, _fmapObject(v._1._2, (v1) => $Tuple(v._1._1, v1)))));
-            }
-            return MonadThrow0.throwError(error("Record expected."));
-          }
-          return MonadThrow0.throwError(error("Record expected."));
-        }
-        return MonadThrow0.throwError(error("Record expected."));
-      };
-    },
-    op_bwd: (dictAnn) => {
-      const join = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().JoinSemilattice0().join;
-      return (v) => {
-        if (v._2.tag === "Dictionary") {
-          return $List(
+          $Val("Str", bot, v._1),
+          $List(
             "Cons",
             $Val(
-              "Record",
-              fold((z) => (v$1) => join(z))(v._2._1)(_fmapObject(v._2._2, fst)),
-              _fmapObject(v._2._2, snd)
+              "Dictionary",
+              bot,
+              runST(bind_(newImpl)(poke3(v._1)($Tuple(bot, v._2))))
             ),
             Nil
-          );
-        }
-        fail();
-      };
-    }
-  });
-  var dict_foldl = /* @__PURE__ */ $ForeignOp$p({
-    arity: 3,
-    "op'": (dictMonadWithGraphAlloc) => {
-      const apply5 = apply4(dictMonadWithGraphAlloc);
-      return (dictMonadError) => {
+          )
+        );
+      }
+    })
+  );
+  var dict_fromRecord = /* @__PURE__ */ $Tuple(
+    "dict_fromRecord",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 1,
+      "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
         const MonadThrow0 = dictMonadError.MonadThrow0();
         const Monad0 = MonadThrow0.Monad0();
-        const foldM12 = foldM3(Monad0);
-        const bind = Monad0.Bind1().bind;
+        const Bind1 = Monad0.Bind1();
+        const $5 = traversableWithIndexObject.traverseWithIndex(Monad0.Applicative0());
+        const Functor0 = Bind1.Apply0().Functor0();
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Record") {
+              if (v._2.tag === "Nil") {
+                return Bind1.bind($5((v$1) => (v1) => Functor0.map((v2) => $Tuple(v2, v1))(dictMonadWithGraphAlloc.new($Map(
+                  "Two",
+                  Leaf2,
+                  v._1._1,
+                  unit2,
+                  Leaf2
+                ))))(v._1._2))((xvs$p) => Functor0.map((f) => f(xvs$p))(Functor0.map(Dictionary3)(dictMonadWithGraphAlloc.new($Map(
+                  "Two",
+                  Leaf2,
+                  v._1._1,
+                  unit2,
+                  Leaf2
+                )))));
+              }
+              return MonadThrow0.throwError(error("Record expected."));
+            }
+            return MonadThrow0.throwError(error("Record expected."));
+          }
+          return MonadThrow0.throwError(error("Record expected."));
+        };
+      },
+      op: (dictAnn) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Record") {
+              if (v._2.tag === "Nil") {
+                return pure2($Tuple(unit2, $Val("Dictionary", v._1._1, _fmapObject(v._1._2, (v1) => $Tuple(v._1._1, v1)))));
+              }
+              return MonadThrow0.throwError(error("Record expected."));
+            }
+            return MonadThrow0.throwError(error("Record expected."));
+          }
+          return MonadThrow0.throwError(error("Record expected."));
+        };
+      },
+      op_bwd: (dictAnn) => {
+        const join = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().JoinSemilattice0().join;
+        return (v) => {
+          if (v._2.tag === "Dictionary") {
+            return $List(
+              "Cons",
+              $Val(
+                "Record",
+                fold((z) => (v$1) => join(z))(v._2._1)(_fmapObject(v._2._2, fst)),
+                _fmapObject(v._2._2, snd)
+              ),
+              Nil
+            );
+          }
+          fail();
+        };
+      }
+    })
+  );
+  var dict_foldl = /* @__PURE__ */ $Tuple(
+    "dict_foldl",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 3,
+      "op'": (dictMonadWithGraphAlloc) => {
+        const apply5 = apply4(dictMonadWithGraphAlloc);
+        return (dictMonadError) => {
+          const MonadThrow0 = dictMonadError.MonadThrow0();
+          const Monad0 = MonadThrow0.Monad0();
+          const foldM12 = foldM3(Monad0);
+          const bind = Monad0.Bind1().bind;
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._2.tag === "Cons") {
+                if (v._2._2.tag === "Cons") {
+                  if (v._2._2._1.tag === "Dictionary") {
+                    if (v._2._2._2.tag === "Nil") {
+                      return foldM12((u1) => (v2) => bind(apply5(v._1)(u1))((a) => apply5(a)(v2._2)))(v._2._1)(v._2._2._1._2);
+                    }
+                    return MonadThrow0.throwError(error("Function, value and dictionary expected"));
+                  }
+                  return MonadThrow0.throwError(error("Function, value and dictionary expected"));
+                }
+                return MonadThrow0.throwError(error("Function, value and dictionary expected"));
+              }
+              return MonadThrow0.throwError(error("Function, value and dictionary expected"));
+            }
+            return MonadThrow0.throwError(error("Function, value and dictionary expected"));
+          };
+        };
+      },
+      op: (dictAnn) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const Monad0 = MonadThrow0.Monad0();
+        const Bind1 = Monad0.Bind1();
+        const foldWithIndexM1 = foldWithIndexM(Monad0);
+        const $6 = Bind1.Apply0().Functor0();
+        const apply23 = apply22(dictMonadError)(dictAnn);
+        const pure2 = Monad0.Applicative0().pure;
         return (v) => {
           if (v.tag === "Cons") {
             if (v._2.tag === "Cons") {
               if (v._2._2.tag === "Cons") {
                 if (v._2._2._1.tag === "Dictionary") {
                   if (v._2._2._2.tag === "Nil") {
-                    return foldM12((u1) => (v2) => bind(apply5(v._1)(u1))((a) => apply5(a)(v2._2)))(v._2._1)(v._2._2._1._2);
+                    return Bind1.bind(foldWithIndexM1((s) => (v2) => (v3) => $6.map((v$1) => $Tuple($List("Cons", $Tuple(s, v$1._1), v2._1), v$1._2))(apply23($Tuple(
+                      v._1,
+                      $Tuple(v2._2, v3._2)
+                    ))))($Tuple(Nil, v._2._1))(v._2._2._1._2))((v2) => pure2($Tuple(
+                      $Tuple(functorVal.map((v$1) => unit2)(v._1), v2._1),
+                      v2._2
+                    )));
                   }
                   return MonadThrow0.throwError(error("Function, value and dictionary expected"));
                 }
@@ -36953,132 +37031,70 @@
           }
           return MonadThrow0.throwError(error("Function, value and dictionary expected"));
         };
-      };
-    },
-    op: (dictAnn) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const Monad0 = MonadThrow0.Monad0();
-      const Bind1 = Monad0.Bind1();
-      const foldWithIndexM1 = foldWithIndexM(Monad0);
-      const $6 = Bind1.Apply0().Functor0();
-      const apply23 = apply22(dictMonadError)(dictAnn);
-      const pure2 = Monad0.Applicative0().pure;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Cons") {
-            if (v._2._2.tag === "Cons") {
-              if (v._2._2._1.tag === "Dictionary") {
-                if (v._2._2._2.tag === "Nil") {
-                  return Bind1.bind(foldWithIndexM1((s) => (v2) => (v3) => $6.map((v$1) => $Tuple($List("Cons", $Tuple(s, v$1._1), v2._1), v$1._2))(apply23($Tuple(
-                    v._1,
-                    $Tuple(v2._2, v3._2)
-                  ))))($Tuple(Nil, v._2._1))(v._2._2._1._2))((v2) => pure2($Tuple(
-                    $Tuple(functorVal.map((v$1) => unit2)(v._1), v2._1),
-                    v2._2
-                  )));
+      },
+      op_bwd: (dictAnn) => {
+        const apply2Bwd2 = apply2Bwd(dictAnn);
+        const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+        const join = joinSemilatticeVal(BoundedJoinSemilattice0.JoinSemilattice0()).join;
+        return (v) => {
+          const v2 = (() => {
+            const go = (go$a0$copy) => (go$a1$copy) => {
+              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+              while (go$c) {
+                const b = go$a0, v$1 = go$a1;
+                if (v$1.tag === "Nil") {
+                  go$c = false;
+                  go$r = b;
+                  continue;
                 }
-                return MonadThrow0.throwError(error("Function, value and dictionary expected"));
-              }
-              return MonadThrow0.throwError(error("Function, value and dictionary expected"));
-            }
-            return MonadThrow0.throwError(error("Function, value and dictionary expected"));
-          }
-          return MonadThrow0.throwError(error("Function, value and dictionary expected"));
-        }
-        return MonadThrow0.throwError(error("Function, value and dictionary expected"));
-      };
-    },
-    op_bwd: (dictAnn) => {
-      const apply2Bwd2 = apply2Bwd(dictAnn);
-      const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
-      const join = joinSemilatticeVal(BoundedJoinSemilattice0.JoinSemilattice0()).join;
-      return (v) => {
-        const v2 = (() => {
-          const go = (go$a0$copy) => (go$a1$copy) => {
-            let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-            while (go$c) {
-              const b = go$a0, v$1 = go$a1;
-              if (v$1.tag === "Nil") {
-                go$c = false;
-                go$r = b;
-                continue;
-              }
-              if (v$1.tag === "Cons") {
-                go$a0 = (() => {
-                  const v5 = apply2Bwd2($Tuple(v$1._1._2, b._2._1));
-                  return $Tuple(
-                    join(b._1)(v5._1),
-                    $Tuple(v5._2._1, mutate(poke3(v$1._1._1)($Tuple(BoundedJoinSemilattice0.bot, v5._2._2)))(b._2._2))
-                  );
-                })();
-                go$a1 = v$1._2;
-                continue;
-              }
-              fail();
-            }
-            ;
-            return go$r;
-          };
-          return go($Tuple(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1), $Tuple(v._2, empty2)))(v._1._2);
-        })();
-        return $List(
-          "Cons",
-          v2._1,
-          $List("Cons", v2._2._1, $List("Cons", $Val("Dictionary", BoundedJoinSemilattice0.bot, v2._2._2), Nil))
-        );
-      };
-    }
-  });
-  var dict_disjointUnion = /* @__PURE__ */ $ForeignOp$p({
-    arity: 2,
-    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const Functor0 = MonadThrow0.Monad0().Bind1().Apply0().Functor0();
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Dictionary") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Nil") {
-                  const $5 = unionWith2((v$1) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(v._1._2)(v._2._1._2);
-                  return Functor0.map((f) => f($5))(Functor0.map(Dictionary3)(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
-                    "Two",
-                    Leaf2,
-                    v._1._1,
-                    unit2,
-                    Leaf2
-                  )))));
+                if (v$1.tag === "Cons") {
+                  go$a0 = (() => {
+                    const v5 = apply2Bwd2($Tuple(v$1._1._2, b._2._1));
+                    return $Tuple(
+                      join(b._1)(v5._1),
+                      $Tuple(v5._2._1, mutate(poke3(v$1._1._1)($Tuple(BoundedJoinSemilattice0.bot, v5._2._2)))(b._2._2))
+                    );
+                  })();
+                  go$a1 = v$1._2;
+                  continue;
                 }
-                return MonadThrow0.throwError(error("Dictionaries expected"));
+                fail();
               }
-              return MonadThrow0.throwError(error("Dictionaries expected"));
-            }
-            return MonadThrow0.throwError(error("Dictionaries expected"));
-          }
-          return MonadThrow0.throwError(error("Dictionaries expected"));
-        }
-        return MonadThrow0.throwError(error("Dictionaries expected"));
-      };
-    },
-    op: (dictAnn) => {
-      const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      return (dictMonadError) => {
+              ;
+              return go$r;
+            };
+            return go($Tuple(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1), $Tuple(v._2, empty2)))(v._1._2);
+          })();
+          return $List(
+            "Cons",
+            v2._1,
+            $List("Cons", v2._2._1, $List("Cons", $Val("Dictionary", BoundedJoinSemilattice0.bot, v2._2._2), Nil))
+          );
+        };
+      }
+    })
+  );
+  var dict_disjointUnion = /* @__PURE__ */ $Tuple(
+    "dict_disjointUnion",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 2,
+      "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
         const MonadThrow0 = dictMonadError.MonadThrow0();
-        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        const Functor0 = MonadThrow0.Monad0().Bind1().Apply0().Functor0();
         return (v) => {
           if (v.tag === "Cons") {
             if (v._1.tag === "Dictionary") {
               if (v._2.tag === "Cons") {
                 if (v._2._1.tag === "Dictionary") {
                   if (v._2._2.tag === "Nil") {
-                    return pure2($Tuple(
-                      $Tuple(_fmapObject(v._1._2, (v$1) => unit2), _fmapObject(v._2._1._2, (v$1) => unit2)),
-                      $Val(
-                        "Dictionary",
-                        meet(v._1._1)(v._2._1._1),
-                        unionWith2((v$1) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(v._1._2)(v._2._1._2)
-                      )
-                    ));
+                    const $5 = unionWith2((v$1) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(v._1._2)(v._2._1._2);
+                    return Functor0.map((f) => f($5))(Functor0.map(Dictionary3)(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
+                      "Two",
+                      Leaf2,
+                      v._1._1,
+                      unit2,
+                      Leaf2
+                    )))));
                   }
                   return MonadThrow0.throwError(error("Dictionaries expected"));
                 }
@@ -37090,62 +37106,72 @@
           }
           return MonadThrow0.throwError(error("Dictionaries expected"));
         };
-      };
-    },
-    op_bwd: (dictAnn) => (v) => {
-      if (v._2.tag === "Dictionary") {
-        return $List(
-          "Cons",
-          $Val("Dictionary", v._2._1, difference2(v._2._2)(v._1._2)),
-          $List("Cons", $Val("Dictionary", v._2._1, difference2(v._2._2)(v._1._1)), Nil)
-        );
-      }
-      fail();
-    }
-  });
-  var dict_difference = /* @__PURE__ */ $ForeignOp$p({
-    arity: 2,
-    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const Functor0 = MonadThrow0.Monad0().Bind1().Apply0().Functor0();
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Dictionary") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Nil") {
-                  const $5 = difference2(v._1._2)(v._2._1._2);
-                  return Functor0.map((f) => f($5))(Functor0.map(Dictionary3)(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
-                    "Two",
-                    Leaf2,
-                    v._1._1,
-                    unit2,
-                    Leaf2
-                  )))));
+      },
+      op: (dictAnn) => {
+        const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
+        return (dictMonadError) => {
+          const MonadThrow0 = dictMonadError.MonadThrow0();
+          const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._1.tag === "Dictionary") {
+                if (v._2.tag === "Cons") {
+                  if (v._2._1.tag === "Dictionary") {
+                    if (v._2._2.tag === "Nil") {
+                      return pure2($Tuple(
+                        $Tuple(_fmapObject(v._1._2, (v$1) => unit2), _fmapObject(v._2._1._2, (v$1) => unit2)),
+                        $Val(
+                          "Dictionary",
+                          meet(v._1._1)(v._2._1._1),
+                          unionWith2((v$1) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(v._1._2)(v._2._1._2)
+                        )
+                      ));
+                    }
+                    return MonadThrow0.throwError(error("Dictionaries expected"));
+                  }
+                  return MonadThrow0.throwError(error("Dictionaries expected"));
                 }
-                return MonadThrow0.throwError(error("Dictionaries expected."));
+                return MonadThrow0.throwError(error("Dictionaries expected"));
               }
-              return MonadThrow0.throwError(error("Dictionaries expected."));
+              return MonadThrow0.throwError(error("Dictionaries expected"));
             }
-            return MonadThrow0.throwError(error("Dictionaries expected."));
-          }
-          return MonadThrow0.throwError(error("Dictionaries expected."));
+            return MonadThrow0.throwError(error("Dictionaries expected"));
+          };
+        };
+      },
+      op_bwd: (dictAnn) => (v) => {
+        if (v._2.tag === "Dictionary") {
+          return $List(
+            "Cons",
+            $Val("Dictionary", v._2._1, difference2(v._2._2)(v._1._2)),
+            $List("Cons", $Val("Dictionary", v._2._1, difference2(v._2._2)(v._1._1)), Nil)
+          );
         }
-        return MonadThrow0.throwError(error("Dictionaries expected."));
-      };
-    },
-    op: (dictAnn) => {
-      const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      return (dictMonadError) => {
+        fail();
+      }
+    })
+  );
+  var dict_difference = /* @__PURE__ */ $Tuple(
+    "dict_difference",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 2,
+      "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
         const MonadThrow0 = dictMonadError.MonadThrow0();
-        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        const Functor0 = MonadThrow0.Monad0().Bind1().Apply0().Functor0();
         return (v) => {
           if (v.tag === "Cons") {
             if (v._1.tag === "Dictionary") {
               if (v._2.tag === "Cons") {
                 if (v._2._1.tag === "Dictionary") {
                   if (v._2._2.tag === "Nil") {
-                    return pure2($Tuple(unit2, $Val("Dictionary", meet(v._1._1)(v._2._1._1), difference2(v._1._2)(v._2._1._2))));
+                    const $5 = difference2(v._1._2)(v._2._1._2);
+                    return Functor0.map((f) => f($5))(Functor0.map(Dictionary3)(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
+                      "Two",
+                      Leaf2,
+                      v._1._1,
+                      unit2,
+                      Leaf2
+                    )))));
                   }
                   return MonadThrow0.throwError(error("Dictionaries expected."));
                 }
@@ -37157,146 +37183,144 @@
           }
           return MonadThrow0.throwError(error("Dictionaries expected."));
         };
-      };
-    },
-    op_bwd: (dictAnn) => (v) => {
-      if (v._2.tag === "Dictionary") {
-        return $List(
-          "Cons",
-          $Val("Dictionary", v._2._1, v._2._2),
-          $List("Cons", $Val("Dictionary", v._2._1, empty2), Nil)
-        );
+      },
+      op: (dictAnn) => {
+        const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
+        return (dictMonadError) => {
+          const MonadThrow0 = dictMonadError.MonadThrow0();
+          const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._1.tag === "Dictionary") {
+                if (v._2.tag === "Cons") {
+                  if (v._2._1.tag === "Dictionary") {
+                    if (v._2._2.tag === "Nil") {
+                      return pure2($Tuple(unit2, $Val("Dictionary", meet(v._1._1)(v._2._1._1), difference2(v._1._2)(v._2._1._2))));
+                    }
+                    return MonadThrow0.throwError(error("Dictionaries expected."));
+                  }
+                  return MonadThrow0.throwError(error("Dictionaries expected."));
+                }
+                return MonadThrow0.throwError(error("Dictionaries expected."));
+              }
+              return MonadThrow0.throwError(error("Dictionaries expected."));
+            }
+            return MonadThrow0.throwError(error("Dictionaries expected."));
+          };
+        };
+      },
+      op_bwd: (dictAnn) => (v) => {
+        if (v._2.tag === "Dictionary") {
+          return $List(
+            "Cons",
+            $Val("Dictionary", v._2._1, v._2._2),
+            $List("Cons", $Val("Dictionary", v._2._1, empty2), Nil)
+          );
+        }
+        fail();
       }
-      fail();
-    }
-  });
-  var debugLog = /* @__PURE__ */ $ForeignOp$p({
-    arity: 1,
-    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Nil") {
-            return pure2(_trace(v._1, (v$1) => v._1));
+    })
+  );
+  var debugLog = /* @__PURE__ */ $Tuple(
+    "debugLog",
+    /* @__PURE__ */ $ForeignOp$p({
+      arity: 1,
+      "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._2.tag === "Nil") {
+              return pure2(_trace(v._1, (v$1) => v._1));
+            }
+            return MonadThrow0.throwError(error("Single value expected"));
           }
           return MonadThrow0.throwError(error("Single value expected"));
-        }
-        return MonadThrow0.throwError(error("Single value expected"));
-      };
-    },
-    op: (dictAnn) => (dictMonadError) => {
-      const MonadThrow0 = dictMonadError.MonadThrow0();
-      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Nil") {
-            return pure2($Tuple(unit2, _trace(v._1, (v$1) => v._1)));
+        };
+      },
+      op: (dictAnn) => (dictMonadError) => {
+        const MonadThrow0 = dictMonadError.MonadThrow0();
+        const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._2.tag === "Nil") {
+              return pure2($Tuple(unit2, _trace(v._1, (v$1) => v._1)));
+            }
+            return MonadThrow0.throwError(error("Single value expected"));
           }
           return MonadThrow0.throwError(error("Single value expected"));
-        }
-        return MonadThrow0.throwError(error("Single value expected"));
-      };
-    },
-    op_bwd: (dictAnn) => (v) => unsafePerformEffect(throwException(error("unimplemented")))
-  });
+        };
+      },
+      op_bwd: (dictAnn) => (v) => unsafePerformEffect(throwException(error("unimplemented")))
+    })
+  );
   var primitives = /* @__PURE__ */ (() => fromFoldable2(foldableArray)([
     $Tuple(":", $Val("Fun", unit2, $Fun("PartialConstr", ":", Nil))),
-    $Tuple("ceiling", unary(boundedJoinSemilatticeUni)({ i: number5, o: $$int, fwd: ceil2 })),
-    $Tuple("debugLog", extern1(debugLog)),
-    $Tuple("dims", extern1(dims)),
-    $Tuple("error", extern1(error_)),
-    $Tuple("floor", unary(boundedJoinSemilatticeUni)({ i: number5, o: $$int, fwd: floor2 })),
-    $Tuple("log", unary(boundedJoinSemilatticeUni)({ i: intOrNumber, o: number5, fwd: log3 })),
-    $Tuple("numToStr", unary(boundedJoinSemilatticeUni)({ i: intOrNumber, o: string2, fwd: numToStr })),
+    unary(boundedJoinSemilatticeUni)("ceiling")({ i: number5, o: $$int, fwd: ceil2 }),
+    $Tuple(debugLog._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(debugLog._1, debugLog._2), Nil))),
+    $Tuple(dims._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(dims._1, dims._2), Nil))),
+    $Tuple(error_._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(error_._1, error_._2), Nil))),
+    unary(boundedJoinSemilatticeUni)("floor")({ i: number5, o: $$int, fwd: floor2 }),
+    unary(boundedJoinSemilatticeUni)("log")({ i: intOrNumber, o: number5, fwd: log3 }),
+    unary(boundedJoinSemilatticeUni)("numToStr")({ i: intOrNumber, o: string2, fwd: numToStr }),
+    binary(boundedJoinSemilatticeUni)("+")({
+      i1: intOrNumber,
+      i2: intOrNumber,
+      o: intOrNumber,
+      fwd: union4(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd)
+    }),
+    binary(boundedJoinSemilatticeUni)("-")({
+      i1: intOrNumber,
+      i2: intOrNumber,
+      o: intOrNumber,
+      fwd: union4(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub)
+    }),
+    binaryZero(boundedJoinSemilatticeUni)({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })("*")({
+      i: intOrNumber,
+      o: intOrNumber,
+      fwd: union4(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul)
+    }),
+    binaryZero(boundedJoinSemilatticeUni)({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })("**")({
+      i: intOrNumber,
+      o: intOrNumber,
+      fwd: pow3
+    }),
+    binaryZero(boundedJoinSemilatticeUni)({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })("/")({
+      i: intOrNumber,
+      o: intOrNumber,
+      fwd: divide
+    }),
+    binary(boundedJoinSemilatticeUni)("==")({
+      i1: intOrNumberOrString,
+      i2: intOrNumberOrString,
+      o: $$boolean,
+      fwd: union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)(eqIntImpl)(unionStr(asBooleanBoolean)(asNumberString)(eqNumberImpl)(eqStringImpl))
+    }),
+    binary(boundedJoinSemilatticeUni)("/=")({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: notEquals }),
+    binary(boundedJoinSemilatticeUni)("<")({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: lessThan }),
+    binary(boundedJoinSemilatticeUni)(">")({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: greaterThan }),
+    binary(boundedJoinSemilatticeUni)("<=")({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: lessThanEquals }),
+    binary(boundedJoinSemilatticeUni)(">=")({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: greaterThanEquals }),
+    binary(boundedJoinSemilatticeUni)("++")({ i1: string2, i2: string2, o: string2, fwd: concatString }),
+    $Tuple(matrixLookup._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(matrixLookup._1, matrixLookup._2), Nil))),
+    $Tuple(dict_difference._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(dict_difference._1, dict_difference._2), Nil))),
     $Tuple(
-      "+",
-      binary(boundedJoinSemilatticeUni)({
-        i1: intOrNumber,
-        i2: intOrNumber,
-        o: intOrNumber,
-        fwd: union4(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd)
-      })
+      dict_disjointUnion._1,
+      $Val("Fun", unit2, $Fun("Foreign", $Tuple(dict_disjointUnion._1, dict_disjointUnion._2), Nil))
     ),
+    $Tuple(dict_foldl._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(dict_foldl._1, dict_foldl._2), Nil))),
+    $Tuple(dict_fromRecord._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(dict_fromRecord._1, dict_fromRecord._2), Nil))),
+    $Tuple(dict_get._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(dict_get._1, dict_get._2), Nil))),
     $Tuple(
-      "-",
-      binary(boundedJoinSemilatticeUni)({
-        i1: intOrNumber,
-        i2: intOrNumber,
-        o: intOrNumber,
-        fwd: union4(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub)
-      })
+      dict_intersectionWith._1,
+      $Val("Fun", unit2, $Fun("Foreign", $Tuple(dict_intersectionWith._1, dict_intersectionWith._2), Nil))
     ),
-    $Tuple(
-      "*",
-      binaryZero(boundedJoinSemilatticeUni)({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })({
-        i: intOrNumber,
-        o: intOrNumber,
-        fwd: union4(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul)
-      })
-    ),
-    $Tuple(
-      "**",
-      binaryZero(boundedJoinSemilatticeUni)({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })({
-        i: intOrNumber,
-        o: intOrNumber,
-        fwd: pow3
-      })
-    ),
-    $Tuple(
-      "/",
-      binaryZero(boundedJoinSemilatticeUni)({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })({
-        i: intOrNumber,
-        o: intOrNumber,
-        fwd: divide
-      })
-    ),
-    $Tuple(
-      "==",
-      binary(boundedJoinSemilatticeUni)({
-        i1: intOrNumberOrString,
-        i2: intOrNumberOrString,
-        o: $$boolean,
-        fwd: union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)(eqIntImpl)(unionStr(asBooleanBoolean)(asNumberString)(eqNumberImpl)(eqStringImpl))
-      })
-    ),
-    $Tuple(
-      "/=",
-      binary(boundedJoinSemilatticeUni)({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: notEquals })
-    ),
-    $Tuple(
-      "<",
-      binary(boundedJoinSemilatticeUni)({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: lessThan })
-    ),
-    $Tuple(
-      ">",
-      binary(boundedJoinSemilatticeUni)({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: greaterThan })
-    ),
-    $Tuple(
-      "<=",
-      binary(boundedJoinSemilatticeUni)({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: lessThanEquals })
-    ),
-    $Tuple(
-      ">=",
-      binary(boundedJoinSemilatticeUni)({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: greaterThanEquals })
-    ),
-    $Tuple(
-      "++",
-      binary(boundedJoinSemilatticeUni)({ i1: string2, i2: string2, o: string2, fwd: concatString })
-    ),
-    $Tuple("!", extern1(matrixLookup)),
-    $Tuple("dict_difference", extern1(dict_difference)),
-    $Tuple("dict_disjointUnion", extern1(dict_disjointUnion)),
-    $Tuple("dict_foldl", extern1(dict_foldl)),
-    $Tuple("dict_fromRecord", extern1(dict_fromRecord)),
-    $Tuple("dict_get", extern1(dict_get)),
-    $Tuple("dict_intersectionWith", extern1(dict_intersectionWith)),
-    $Tuple("dict_map", extern1(dict_map)),
-    $Tuple("div", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: intDiv })),
-    $Tuple("matrixUpdate", extern1(matrixUpdate)),
-    $Tuple("mod", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: intMod })),
-    $Tuple("quot", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: quot })),
-    $Tuple("rem", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: rem }))
+    $Tuple(dict_map._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(dict_map._1, dict_map._2), Nil))),
+    binaryZero(boundedJoinSemilatticeUni)(isZeroInt)("div")({ i: $$int, o: $$int, fwd: intDiv }),
+    $Tuple(matrixUpdate._1, $Val("Fun", unit2, $Fun("Foreign", $Tuple(matrixUpdate._1, matrixUpdate._2), Nil))),
+    binaryZero(boundedJoinSemilatticeUni)(isZeroInt)("mod")({ i: $$int, o: $$int, fwd: intMod }),
+    binaryZero(boundedJoinSemilatticeUni)(isZeroInt)("quot")({ i: $$int, o: $$int, fwd: quot }),
+    binaryZero(boundedJoinSemilatticeUni)(isZeroInt)("rem")({ i: $$int, o: $$int, fwd: rem })
   ]))();
 
   // output-es/Module/index.js
