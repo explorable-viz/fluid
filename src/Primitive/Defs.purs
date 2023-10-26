@@ -154,10 +154,10 @@ matrixUpdate =
    fwd _ = throw "Matrix, pair of integers and value expected"
 
    bwd :: Partial => OpBwd ((Int × Int) × Raw Val)
-   bwd ((((i × j) × v) × Matrix α r')) =
-      Matrix α (matrixPut i j (const (botOf v)) r')
+   bwd ((((i × j) × v) × Matrix α r)) =
+      Matrix α (matrixPut i j (const (botOf v)) r)
          : Constr bot cPair (Int bot i : Int bot j : Nil)
-         : matrixGet i j r'
+         : matrixGet i j r
          : Nil
 
 dict_difference :: ForeignOp
