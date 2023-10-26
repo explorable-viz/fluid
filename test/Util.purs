@@ -9,6 +9,7 @@ import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List (elem)
 import Data.List.Lazy (replicateM)
+import Data.Newtype (unwrap)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
@@ -110,9 +111,10 @@ testTrace s γα spec@{ δv } = do
    validate method spec s𝔹 v𝔹'
 
    let
-      γ𝔹_top × e𝔹_top × _ = eval.bwd (topOf v)
+      v𝔹_top = topOf v
+      γ𝔹_top × e𝔹_top × _ = eval.bwd v𝔹_top
       v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top × top)
-   PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (const true)
+   PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (unwrap >>> (_ >= v𝔹_top))
 
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } benchmarking = do

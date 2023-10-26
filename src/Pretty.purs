@@ -9,6 +9,7 @@ import Data.List (List(..), fromFoldable, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, toUnfoldable) as S
@@ -34,6 +35,7 @@ class Pretty p where
    pretty :: p -> Doc
 
 newtype PrettyShow a = PrettyShow a
+derive instance Newtype (PrettyShow a) _
 
 instance Pretty a => Show (PrettyShow a) where
    show (PrettyShow x) = pretty x # render
