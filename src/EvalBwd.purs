@@ -161,7 +161,7 @@ evalBwd' (V.Matrix α (MatrixRep (vss × (_ × βi) × (_ × βj)))) (T.Matrix t
             in
                unsafePartial $
                   let
-                     V.Int β _ × V.Int β' _ = get x γ0 × get x γ0
+                     V.Int β _ × V.Int β' _ = get x γ0 × get y γ0
                   in
                      γ × e × α' × β × β'
    γ × e × α' × β × β' = foldl1
