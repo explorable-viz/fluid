@@ -42,8 +42,8 @@ instance Semigroup BenchRow where
 instance Monoid BenchRow where
    mempty = BenchRow M.empty
 
-bench :: forall m a. MonadEffect m => MonadWriter BenchRow m => String -> (Unit -> m a) -> m a
-bench name prog = do
+benchmark :: forall m a. MonadEffect m => MonadWriter BenchRow m => String -> (Unit -> m a) -> m a
+benchmark name prog = do
    t1 <- preciseTime
    r <- prog unit
    t2 <- preciseTime
@@ -53,9 +53,9 @@ bench name prog = do
    preciseTime :: m Number
    preciseTime = liftEffect microtime
 
-graphSizeB :: forall g m. Graph g => MonadEffect m => MonadWriter BenchRow m => g -> m Unit
-graphSizeB graph = do
-   tell (BenchRow $ singleton "Graph-Nodes" (toNumber $ size graph))
+recordGraphSize :: forall g m. Graph g => MonadEffect m => MonadWriter BenchRow m => g -> m Unit
+recordGraphSize g = do
+   tell (BenchRow $ singleton "Graph-Nodes" (toNumber $ size g))
 
 divRow :: BenchRow -> Int -> BenchRow
 divRow (BenchRow row) n = BenchRow ((_ `div` toNumber n) <$> row)

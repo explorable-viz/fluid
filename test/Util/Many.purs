@@ -20,9 +20,9 @@ bwdMany :: Array TestBwdSpec -> (Int × Boolean) -> Array (String × Aff BenchRo
 bwdMany specs (n × is_bench) = zip (specs <#> (\spec -> "slicing/" <> spec.file)) (specs <#> one)
    where
    folder = File "slicing/"
-   one { file, file_expect, δv, fwd_expect } = do
+   one { file, bwd_expect_file, δv, fwd_expect } = do
       progCxt <- defaultImports
-      bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
+      bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
       test (folder <> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetMany :: Array TestWithDatasetSpec -> (Int × Boolean) -> Array (String × Aff BenchRow)

@@ -67,11 +67,11 @@ desugar_cases =
 
 bwd_cases :: Array TestBwdSpec
 bwd_cases =
-   [ { file: "add", file_expect: "add.expect", δv: neg, fwd_expect: "⸨8⸩" }
-   , { file: "array/lookup", file_expect: "array/lookup.expect", δv: neg, fwd_expect: "⸨14⸩" }
-   , { file: "array/dims", file_expect: "array/dims.expect", δv: neg, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩" }
+   [ { file: "add", bwd_expect_file: "add.expect", δv: neg, fwd_expect: "⸨8⸩" }
+   , { file: "array/lookup", bwd_expect_file: "array/lookup.expect", δv: neg, fwd_expect: "⸨14⸩" }
+   , { file: "array/dims", bwd_expect_file: "array/dims.expect", δv: neg, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩" }
    , { file: "convolution/edgeDetect"
-     , file_expect: "convolution/edgeDetect.expect"
+     , bwd_expect_file: "convolution/edgeDetect.expect"
      , δv: matrixElement 1 1 neg
      , fwd_expect:
           "⸨0⸩, -1, 2, 0, -1,\n\
@@ -81,7 +81,7 @@ bwd_cases =
           \1, 0, -3, 2, 0"
      }
    , { file: "convolution/emboss"
-     , file_expect: "convolution/emboss.expect"
+     , bwd_expect_file: "convolution/emboss.expect"
      , δv: matrixElement 1 1 neg
      , fwd_expect:
           "⸨5⸩, 4, 2, 5, 2,\n\
@@ -91,7 +91,7 @@ bwd_cases =
           \1, 0, -1, -1, -2"
      }
    , { file: "convolution/gaussian"
-     , file_expect: "convolution/gaussian.expect"
+     , bwd_expect_file: "convolution/gaussian.expect"
      , δv: matrixElement 1 1 neg
      , fwd_expect:
           "⸨38⸩, 37, 28, 30, 38,\n\
@@ -101,104 +101,104 @@ bwd_cases =
           \13, 32, 35, 19, 26"
      }
    , { file: "dict/create"
-     , file_expect: "dict/create.expect"
+     , bwd_expect_file: "dict/create.expect"
      , δv: dictKey "ab" neg
      , fwd_expect: "{|\"a\" := 5, ⸨\"ab\"⸩ := 6|}"
      }
    , { file: "dict/difference"
-     , file_expect: "dict/difference.expect"
+     , bwd_expect_file: "dict/difference.expect"
      , δv: dict neg
      , fwd_expect: "⸨{|\"a\" := 5|}⸩"
      }
    , { file: "dict/disjointUnion"
-     , file_expect: "dict/disjointUnion.expect"
+     , bwd_expect_file: "dict/disjointUnion.expect"
      , δv: dictKey "a" neg >>> dictVal "c" neg
      , fwd_expect: "{|⸨\"a\"⸩ := 5, \"b\" := 6, \"c\" := ⸨7⸩|}"
      }
-   , { file: "dict/foldl", file_expect: "dict/foldl.expect", δv: neg, fwd_expect: "⸨0⸩" }
+   , { file: "dict/foldl", bwd_expect_file: "dict/foldl.expect", δv: neg, fwd_expect: "⸨0⸩" }
    , { file: "dict/intersectionWith"
-     , file_expect: "dict/intersectionWith.expect"
+     , bwd_expect_file: "dict/intersectionWith.expect"
      , δv: dictVal "b" neg >>> dictVal "c" neg
      , fwd_expect: "{|\"b\" := ⸨0⸩, \"c\" := ⸨20⸩|}"
      }
    , { file: "dict/fromRecord"
-     , file_expect: "dict/fromRecord.expect"
+     , bwd_expect_file: "dict/fromRecord.expect"
      , δv: dictKey "ab" neg
      , fwd_expect: "⸨{|⸨\"a\"⸩ := 5, ⸨\"ab\"⸩ := 6|}⸩"
      }
-   , { file: "dict/get", file_expect: "dict/get.expect", δv: neg, fwd_expect: "⸨0⸩" }
-   , { file: "dict/map", file_expect: "dict/map.expect", δv: neg, fwd_expect: "⸨20⸩" }
-   , { file: "divide", file_expect: "divide.expect", δv: neg, fwd_expect: "⸨40.22222222222222⸩" }
+   , { file: "dict/get", bwd_expect_file: "dict/get.expect", δv: neg, fwd_expect: "⸨0⸩" }
+   , { file: "dict/map", bwd_expect_file: "dict/map.expect", δv: neg, fwd_expect: "⸨20⸩" }
+   , { file: "divide", bwd_expect_file: "divide.expect", δv: neg, fwd_expect: "⸨40.22222222222222⸩" }
    , { file: "filter"
-     , file_expect: "filter.expect"
+     , bwd_expect_file: "filter.expect"
      , δv: listCell 0 neg
      , fwd_expect: "(⸨8⸩ ⸨:⸩ (7 : []))"
      }
    , { file: "intersperse"
-     , file_expect: "intersperse-1.expect"
+     , bwd_expect_file: "intersperse-1.expect"
      , δv: listCell 1 neg
      , fwd_expect: "(1 : (0 ⸨:⸩ (2 : (0 : (3 : [])))))"
      }
    , { file: "intersperse"
-     , file_expect: "intersperse-2.expect"
+     , bwd_expect_file: "intersperse-2.expect"
      , δv: listCell 2 neg
      , fwd_expect: "(1 ⸨:⸩ (0 : (2 ⸨:⸩ (0 : (3 : [])))))"
      }
-   , { file: "length", file_expect: "length.expect", δv: neg, fwd_expect: "⸨5⸩" }
+   , { file: "length", bwd_expect_file: "length.expect", δv: neg, fwd_expect: "⸨5⸩" }
    , { file: "list-comp"
-     , file_expect: "list-comp-1.expect"
+     , bwd_expect_file: "list-comp-1.expect"
      , δv: listCell 1 neg
      , fwd_expect: "(6.2 : (260 ⸨:⸩ (19.9 : (91 : []))))"
      }
    , { file: "list-comp"
-     , file_expect: "list-comp-2.expect"
+     , bwd_expect_file: "list-comp-2.expect"
      , δv: listCell 2 neg
      , fwd_expect: "(6.2 : (260 : (19.9 ⸨:⸩ (91 : []))))"
      }
    , { file: "lookup"
-     , file_expect: "lookup.expect"
+     , bwd_expect_file: "lookup.expect"
      , δv: constr cSome neg
      , fwd_expect: "⸨Some \"Germany\"⸩"
      }
    , { file: "map"
-     , file_expect: "map.expect"
+     , bwd_expect_file: "map.expect"
      , δv: listCell 0 neg >>> listCell 1 neg
      , fwd_expect: "(5 ⸨:⸩ (6 ⸨:⸩ []))"
      }
-   , { file: "multiply", file_expect: "multiply.expect", δv: neg, fwd_expect: "⸨0⸩" }
-   , { file: "nth", file_expect: "nth.expect", δv: neg, fwd_expect: "⸨4⸩" }
+   , { file: "multiply", bwd_expect_file: "multiply.expect", δv: neg, fwd_expect: "⸨0⸩" }
+   , { file: "nth", bwd_expect_file: "nth.expect", δv: neg, fwd_expect: "⸨4⸩" }
    , { file: "section-5-example"
-     , file_expect: "section-5-example-1.expect"
+     , bwd_expect_file: "section-5-example-1.expect"
      , δv: listCell 0 neg
      , fwd_expect: "(88 ⸨:⸩ (6 : (4 : [])))"
      }
    , { file: "section-5-example"
-     , file_expect: "section-5-example-2.expect"
+     , bwd_expect_file: "section-5-example-2.expect"
      , δv: listElement 1 neg
      , fwd_expect: "(⸨88⸩ : (⸨6⸩ : (⸨4⸩ : [])))"
      }
    , { file: "section-5-example"
-     , file_expect: "section-5-example-3.expect"
+     , bwd_expect_file: "section-5-example-3.expect"
      , δv: listCell 2 neg
      , fwd_expect: "(88 : (6 : (4 ⸨:⸩ [])))"
      }
    , { file: "zeros"
-     , file_expect: "zeros-1.expect"
+     , bwd_expect_file: "zeros-1.expect"
      , δv: listCell 0 neg >>> listCell 2 neg
      , fwd_expect: "(0 ⸨:⸩ (0 : ⸨[]⸩))"
      }
    , { file: "zeros"
-     , file_expect: "zeros-2.expect"
+     , bwd_expect_file: "zeros-2.expect"
      , δv: listCell 2 neg
      , fwd_expect: "(0 : (0 : ⸨[]⸩))"
      }
    , { file: "zipWith"
-     , file_expect: "zipWith-1.expect"
+     , bwd_expect_file: "zipWith-1.expect"
      , δv: listElement 1 neg
      , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
      }
    , { file: "matrix-update"
-     , file_expect: "matrix-update.expect"
+     , bwd_expect_file: "matrix-update.expect"
      , fwd_expect:
           "15, 13, 6, 9, 16,\n\
           \12, ⸨4000⸩, 15, 4, 13,\n\
@@ -208,7 +208,7 @@ bwd_cases =
      , δv: matrixElement 2 2 neg
      }
    --  , { file: "dtw/compute-dtw"
-   --    , file_expect: "dtw/compute-dtw.expect"
+   --    , bwd_expect_file: "dtw/compute-dtw.expect"
    --    , fwd_expect: "((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
    --    , δv: listElement 1 neg
    --    }
