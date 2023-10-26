@@ -113,8 +113,7 @@ testGraph s gconfig spec@{ δv } benchmarking = do
    let s𝔹 = desug𝔹.bwd e𝔹
 
    (v𝔹 × αs_out') <- benchmark (method <> "-Fwd") $ \_ -> do
-      let
-         αs_out' = eval.fwd αs_in
+      let αs_out' = eval.fwd αs_in
       pure (select𝔹s vα αs_out' × αs_out')
 
    validate method spec s𝔹 v𝔹
@@ -124,27 +123,18 @@ testGraph s gconfig spec@{ δv } benchmarking = do
    recordGraphSize g
 
    when benchmarking do
-      e𝔹_dual <- benchmark (method <> "-BwdDual") $ \_ -> do
-         let
-            αs_out_dual = selectαs (δv (botOf vα)) vα
-            gbwd_dual = G.bwdSliceDual αs_out_dual g
-            αs_in_dual = sinks gbwd_dual
-         pure (select𝔹s eα αs_in_dual)
+      e𝔹_dual <- benchmark (method <> "-BwdDual") $ \_ ->
+         pure (select𝔹s eα (sinks (G.bwdSliceDual (selectαs (δv (botOf vα)) vα) g)))
 
       e𝔹_all <- benchmark (method <> "-BwdAll") $ \_ ->
          pure (select𝔹s eα $ eval.bwd (vertices vα))
 
-      v𝔹_dual <- benchmark (method <> "-FwdDual") $ \_ -> do
-         let
-            gfwd_dual = G.fwdSliceDual αs_in g
-         pure (select𝔹s vα (vertices gfwd_dual))
+      v𝔹_dual <- benchmark (method <> "-FwdDual") $ \_ ->
+         pure (select𝔹s vα (vertices (G.fwdSliceDual αs_in g)))
 
-      v𝔹_demorgan <- benchmark (method <> "-FwdAsDeMorgan") $ \_ -> do
-         let
-            gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
-         pure (select𝔹s vα (vertices gfwd_demorgan) <#> not)
+      v𝔹_demorgan <- benchmark (method <> "-FwdAsDeMorgan") $ \_ ->
+         pure (select𝔹s vα (vertices (G.fwdSliceDeMorgan αs_in g)) <#> not)
 
-      -- avoid unused variables when benchmarking
       when logging do
          log (prettyP v𝔹_demorgan)
          log (prettyP e𝔹_dual)
