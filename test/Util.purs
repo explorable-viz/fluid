@@ -116,7 +116,7 @@ testTrace s γα spec@{ δv } = do
       s𝔹_top = desug𝔹.bwd e𝔹_top
       e𝔹_top' = desug𝔹.fwd s𝔹_top
       v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top' × top)
-   PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-trip"` (unwrap >>> (_ >= v𝔹_top))
+   PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-trip (eval ⚬ desugar)"` (unwrap >>> (_ >= v𝔹_top))
 
    validate method spec s𝔹 v𝔹'
 
