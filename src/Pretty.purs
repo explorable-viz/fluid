@@ -1,4 +1,4 @@
-module Pretty (class Pretty, pretty, prettyP) where
+module Pretty (class Pretty, PrettyShow(..), pretty, prettyP) where
 
 import Prelude hiding (absurd, between)
 
@@ -30,6 +30,14 @@ import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, class Highlightable, DictRep(..), ForeignOp', Fun, MatrixRep(..), Val, highlightIf)
+
+class Pretty p where
+   pretty :: p -> Doc
+
+newtype PrettyShow a = PrettyShow a
+
+instance Pretty a => Show (PrettyShow a) where
+   show (PrettyShow x) = pretty x # render
 
 replacement :: Array (String × String)
 replacement =
@@ -110,11 +118,7 @@ getPrec x = case lookup x opDefs of
    Nothing -> -1
 
 infixl 5 beside as .<>.
--- infixl 5 space as .<>.
 infixl 5 atop as .-.
-
-class Pretty p where
-   pretty :: p -> Doc
 
 removeLineWS :: String -> String
 removeLineWS str = foldl (\curr (x × y) -> replaceAll x y curr) str pattRepPairs
@@ -327,8 +331,6 @@ prettyParensOpt x =
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
--- (highlightIf α $ parens (hcomma [ pretty x, pretty y ]))
---  (highlightIf ann $ text str.lBracket)
 prettyConstr :: forall d a. Pretty d => Highlightable a => a -> Ctr -> List d -> Doc
 prettyConstr α c (x : y : ys)
    | c == cPair = assert (null ys) $ (highlightIf α $ parens (hcomma [ pretty x, pretty y ]))

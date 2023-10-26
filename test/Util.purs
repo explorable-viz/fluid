@@ -24,10 +24,10 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
-import Lattice (Raw, 𝔹, botOf, erase)
+import Lattice (Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
-import Pretty (class Pretty, prettyP)
+import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Spec.Assertions (fail)
@@ -108,6 +108,10 @@ testTrace s γα spec@{ δv } = do
       benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹' × top))
 
    validate method spec s𝔹 v𝔹'
+
+   let γ𝔹_top × e𝔹_top × _ = eval.bwd (topOf v)
+       v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top × top)
+   PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (const true)
 
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } benchmarking = do
