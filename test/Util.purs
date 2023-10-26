@@ -117,9 +117,7 @@ testGraph s gconfig spec@{ δv } benchmarking = do
       pure (select𝔹s vα αs_out' × αs_out')
 
    validate method spec s𝔹 v𝔹
-   αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
-      (flip subset αs_out')
-
+   αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"` (flip subset αs_out')
    recordGraphSize g
 
    when benchmarking do
