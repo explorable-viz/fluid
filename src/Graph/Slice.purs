@@ -51,8 +51,11 @@ fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
          pure $ Loop (M.insert α βs h × es)
 
 -- | De Morgan dual of forward slicing (▷_G)° ≡ Backward slicing on the opposite graph (◁_{G_op})
-fwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceDual αs0 g0 = bwdSlice αs0 (op g0)
+fwdDualAsBwdOp :: forall g. Graph g => Set Vertex -> g -> g
+fwdDualAsBwdOp αs0 g0 = bwdSlice αs0 (op g0)
+
+fwdDual :: forall g. Graph g => Set Vertex -> g -> g
+fwdDual αs0 g0 = fwdSlice (sinks g0 `difference` αs0) g0
 
 -- | Forward slicing (▷_G) ≡ De Morgan dual of backward slicing on the opposite graph (◁_{G_op})°
 fwdSliceAsDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
