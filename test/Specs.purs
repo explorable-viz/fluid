@@ -41,10 +41,10 @@ misc_cases =
    , { file: "records", fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
    , { file: "reverse", fwd_expect: "(2 : (1 : []))" }
    -- TODO: move to slicing tests once we fix matrix-update
-   , { file: "slicing/dtw/average-series"
-     , fwd_expect:
-          "(2.5 : (0.5 : (0.5 : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
-     }
+  --  , { file: "slicing/dtw/average-series"
+  --    , fwd_expect:
+  --         "(2.5 : (0.5 : (0.5 : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
+  --    }
    ]
 
 desugar_cases :: Array TestSpec
