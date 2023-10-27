@@ -207,11 +207,11 @@ bwd_cases =
           \3, 11, 15, 2, 9"
      , δv: matrixElement 2 2 neg
      }
-   --  , { file: "dtw/compute-dtw"
-   --    , bwd_expect_file: "dtw/compute-dtw.expect"
-   --    , fwd_expect: "((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
-   --    , δv: listElement 1 neg
-   --    }
+   , { file: "dtw/compute-dtw"
+     , bwd_expect_file: "dtw/compute-dtw.expect"
+     , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
+     , δv: listElement 1 neg
+     }
    ]
 
 graphics_cases :: Array TestWithDatasetSpec

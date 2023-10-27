@@ -24,11 +24,11 @@ import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
+import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), absurd, both, check, error, orElse, successful, throw, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), (<+>), Val, for, lookup', restrict)
+import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -77,7 +77,7 @@ apply (V.Fun β (V.Closure γ1 ρ σ) × v) = do
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Fun α (V.Foreign φ vs) × v) = do
+apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs) × v) = do
    t × v'' <- runExists apply' φ
    pure $ T.AppForeign (length vs + 1) t × v''
    where
@@ -86,9 +86,9 @@ apply (V.Fun α (V.Foreign φ vs) × v) = do
    apply' :: forall t. ForeignOp' t -> m (ForeignTrace × Val _)
    apply' (ForeignOp' φ') = do
       t × v'' <- do
-         if φ'.arity > length vs' then pure $ Nothing × V.Fun α (V.Foreign φ vs')
+         if φ'.arity > length vs' then pure $ Nothing × V.Fun α (V.Foreign (ForeignOp (id × φ)) vs')
          else first Just <$> φ'.op vs'
-      pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v''
+      pure $ ForeignTrace (id × mkExists (ForeignTrace' (ForeignOp' φ') t)) × v''
 apply (V.Fun α (V.PartialConstr c vs) × v) = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    pure $ T.AppConstr c × v'

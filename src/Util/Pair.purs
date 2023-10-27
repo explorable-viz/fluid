@@ -11,8 +11,26 @@ import Util (type (×), (×))
 -- a |-> a × a can't derive a functor instance, so use this
 data Pair a = Pair a a
 
-instance Eq a => Eq (Pair a) where
-   eq (Pair x1 y1) (Pair x2 y2) = (eq x1 x2) && (eq y1 y2)
+instance Show a => Show (Pair a) where
+   show (Pair x y) = "(Pair " <> show x <> " " <> show y <> ")"
+
+toTuple :: forall a. Pair a -> a × a
+toTuple (Pair x y) = x × y
+
+fromTuple :: forall a. a × a -> Pair a
+fromTuple (x × y) = Pair x y
+
+zip :: forall a. List a -> List a -> List (Pair a)
+zip xs ys = L.zip xs ys <#> fromTuple
+
+unzip :: forall a. List (Pair a) -> List a × List a
+unzip xys = xys <#> toTuple # L.unzip
+
+-- ======================
+-- boilerplate
+-- ======================
+derive instance Eq a => Eq (Pair a)
+derive instance Ord a => Ord (Pair a)
 
 instance Functor Pair where
    map f (Pair x y) = Pair (f x) (f y)
@@ -31,18 +49,3 @@ instance Foldable Pair where
 instance Traversable Pair where
    traverse f (Pair x y) = Pair <$> f x <*> f y
    sequence = sequenceDefault
-
-instance Show a => Show (Pair a) where
-   show (Pair x y) = "(Pair " <> show x <> " " <> show y <> ")"
-
-toTuple :: forall a. Pair a -> a × a
-toTuple (Pair x y) = x × y
-
-fromTuple :: forall a. a × a -> Pair a
-fromTuple (x × y) = Pair x y
-
-zip :: forall a. List a -> List a -> List (Pair a)
-zip xs ys = L.zip xs ys <#> fromTuple
-
-unzip :: forall a. List (Pair a) -> List a × List a
-unzip xys = xys <#> toTuple # L.unzip

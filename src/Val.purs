@@ -63,7 +63,13 @@ data ForeignOp' t = ForeignOp'
    , op_bwd :: OpBwd t
    }
 
-type ForeignOp = Exists ForeignOp'
+newtype ForeignOp = ForeignOp (String × Exists ForeignOp') -- string is unique identifier (for Eq)
+
+instance Eq ForeignOp where
+   eq (ForeignOp (s × _)) (ForeignOp (s' × _)) = s == s'
+
+instance Ord ForeignOp where
+   compare (ForeignOp (s × _)) (ForeignOp (s' × _)) = compare s s'
 
 -- Environments.
 type Env a = Dict (Val a)
@@ -254,3 +260,13 @@ instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
 
 instance Neg a => Neg (Val a) where
    neg = (<$>) neg
+
+derive instance Eq a => Eq (Val a)
+derive instance Eq a => Eq (DictRep a)
+derive instance Eq a => Eq (MatrixRep a)
+derive instance Eq a => Eq (Fun a)
+
+derive instance Ord a => Ord (Val a)
+derive instance Ord a => Ord (DictRep a)
+derive instance Ord a => Ord (MatrixRep a)
+derive instance Ord a => Ord (Fun a)

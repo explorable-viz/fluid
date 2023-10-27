@@ -1,7 +1,7 @@
 module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
-
+import Bindings (Bind)
 import Data.Exists (mkExists)
 import Data.Foldable (foldl, foldM)
 import Data.FoldableWithIndex (foldWithIndexM)
@@ -21,56 +21,57 @@ import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
 import Graph.GraphWriter (new)
-import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, top, (∧), (∨))
+import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, (∧), (∨))
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, throw, unimplemented, (×))
-import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
+import Val (Array2, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
 
-extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Val a
-extern = Fun bot <<< flip Foreign Nil
+extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
+extern (ForeignOp (id × φ)) = id × Fun bot ((Foreign (ForeignOp (id × φ))) Nil)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Fun bot (PartialConstr cCons Nil)
-   , "ceiling" × unary { i: number, o: int, fwd: ceil }
-   , "debugLog" × extern debugLog
-   , "dims" × extern dims
-   , "error" × extern error_
-   , "floor" × unary { i: number, o: int, fwd: floor }
-   , "log" × unary { i: intOrNumber, o: number, fwd: log }
-   , "numToStr" × unary { i: intOrNumber, o: string, fwd: numToStr }
-   , "+" × binary { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: plus }
-   , "-" × binary { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: minus }
-   , "*" × binaryZero { i: intOrNumber, o: intOrNumber, fwd: times }
-   , "**" × binaryZero { i: intOrNumber, o: intOrNumber, fwd: pow }
-   , "/" × binaryZero { i: intOrNumber, o: intOrNumber, fwd: divide }
-   , "==" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: equals }
-   , "/=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: notEquals }
-   , "<" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThan }
-   , ">" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThan }
-   , "<=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThanEquals }
-   , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
-   , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
-   , "!" × extern matrixLookup
-   , "dict_difference" × extern dict_difference
-   , "dict_disjointUnion" × extern dict_disjointUnion
-   , "dict_foldl" × extern dict_foldl
-   , "dict_fromRecord" × extern dict_fromRecord
-   , "dict_get" × extern dict_get
-   , "dict_intersectionWith" × extern dict_intersectionWith
-   , "dict_map" × extern dict_map
-   , "div" × binaryZero { i: int, o: int, fwd: div }
-   , "matrixUpdate" × extern matrixUpdate
-   , "mod" × binaryZero { i: int, o: int, fwd: mod }
-   , "quot" × binaryZero { i: int, o: int, fwd: quot }
-   , "rem" × binaryZero { i: int, o: int, fwd: rem }
+   , unary "ceiling" { i: number, o: int, fwd: ceil }
+   , extern debugLog
+   , extern dims
+   , extern error_
+   , unary "floor" { i: number, o: int, fwd: floor }
+   , unary "log" { i: intOrNumber, o: number, fwd: log }
+   , unary "numToStr" { i: intOrNumber, o: string, fwd: numToStr }
+   , binary "+" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: plus }
+   , binary "-" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: minus }
+   , binaryZero "*" { i: intOrNumber, o: intOrNumber, fwd: times }
+   , binaryZero "**" { i: intOrNumber, o: intOrNumber, fwd: pow }
+   , binaryZero "/" { i: intOrNumber, o: intOrNumber, fwd: divide }
+   , binary "==" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: equals }
+   , binary "/=" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: notEquals }
+   , binary "<" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThan }
+   , binary ">" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThan }
+   , binary "<=" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThanEquals }
+   , binary ">=" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
+   , binary "++" { i1: string, i2: string, o: string, fwd: concat }
+   , extern matrixLookup
+   , extern dict_difference
+   , extern dict_disjointUnion
+   , extern dict_foldl
+   , extern dict_fromRecord
+   , extern dict_get
+   , extern dict_intersectionWith
+   , extern dict_map
+   , binaryZero "div" { i: int, o: int, fwd: div }
+   , extern matrixUpdate
+   , binaryZero "mod" { i: int, o: int, fwd: mod }
+   , binaryZero "quot" { i: int, o: int, fwd: quot }
+   , binaryZero "rem" { i: int, o: int, fwd: rem }
    ]
 
 error_ :: ForeignOp
-error_ = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
+error_ =
+   ForeignOp ("error" × mkExists (ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }))
    where
    op' :: OpGraph
    op' (Str _ s : Nil) = pure $ error s
@@ -84,7 +85,8 @@ error_ = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePart
    bwd _ = error unimplemented
 
 debugLog :: ForeignOp
-debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
+debugLog =
+   ForeignOp ("debugLog" × mkExists (ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }))
    where
    op' :: OpGraph
    op' (x : Nil) = pure $ trace x (const x)
@@ -98,7 +100,8 @@ debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePa
    bwd _ = error unimplemented
 
 dims :: ForeignOp
-dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dims =
+   ForeignOp ("dims" × mkExists (ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
    op (Matrix α (MatrixRep (_ × (i × β1) × (j × β2))) : Nil) = do
@@ -117,7 +120,8 @@ dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial
       Matrix α (MatrixRep (((<$>) botOf <$> vss) × (i × β1) × (j × β2))) : Nil
 
 matrixLookup :: ForeignOp
-matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
+matrixLookup =
+   ForeignOp ("!" × mkExists (ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }))
    where
    op :: OpGraph
    op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : Nil) | c == cPair =
@@ -136,7 +140,8 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
          : Nil
 
 matrixUpdate :: ForeignOp
-matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
+matrixUpdate =
+   ForeignOp ("matrixUpdate" × mkExists (ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
    op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
@@ -144,19 +149,20 @@ matrixUpdate = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsaf
    op _ = throw "Matrix, pair of integers and value expected"
 
    fwd :: OpFwd ((Int × Int) × Raw Val)
-   fwd (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil) | c == cPair =
-      pure $ ((i × j) × erase (matrixGet i j r)) × Matrix top (matrixPut i j (const v) r)
+   fwd (Matrix α r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil) | c == cPair =
+      pure $ ((i × j) × erase (matrixGet i j r)) × Matrix α (matrixPut i j (const v) r)
    fwd _ = throw "Matrix, pair of integers and value expected"
 
    bwd :: Partial => OpBwd ((Int × Int) × Raw Val)
-   bwd ((((i × j) × v) × Matrix _ r')) =
-      Matrix bot (matrixPut i j (const (botOf v)) r')
+   bwd ((((i × j) × v) × Matrix α r)) =
+      Matrix α (matrixPut i j (const (botOf v)) r)
          : Constr bot cPair (Int bot i : Int bot j : Nil)
-         : matrixGet i j r'
+         : matrixGet i j r
          : Nil
 
 dict_difference :: ForeignOp
-dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_difference =
+   ForeignOp ("dict_difference" × mkExists (ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
    op (Dictionary α (DictRep d) : Dictionary β (DictRep d') : Nil) =
@@ -173,7 +179,8 @@ dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: un
       Dictionary α d : Dictionary α (DictRep D.empty) : Nil
 
 dict_fromRecord :: ForeignOp
-dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_fromRecord =
+   ForeignOp ("dict_fromRecord" × mkExists (ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
    op (Record α xvs : Nil) = do
@@ -191,7 +198,8 @@ dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: un
       Record (foldl (∨) α (d <#> fst)) (d <#> snd) : Nil
 
 dict_disjointUnion :: ForeignOp
-dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_disjointUnion =
+   ForeignOp ("dict_disjointUnion" × mkExists (ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
    op (Dictionary α (DictRep d) : Dictionary β (DictRep d') : Nil) = do
@@ -208,7 +216,8 @@ dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd:
       Dictionary α (DictRep (d'' \\ d')) : Dictionary α (DictRep (d'' \\ d)) : Nil
 
 dict_foldl :: ForeignOp
-dict_foldl = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_foldl =
+   ForeignOp ("dict_foldl" × mkExists (ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
    op (v : u : Dictionary _ (DictRep d) : Nil) =
@@ -237,7 +246,8 @@ dict_foldl = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafeP
          ts
 
 dict_get :: ForeignOp
-dict_get = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_get =
+   ForeignOp ("dict_get" × mkExists (ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
    op (Str _ s : Dictionary _ (DictRep d) : Nil) =
@@ -254,7 +264,8 @@ dict_get = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePar
       Str bot s : Dictionary bot (DictRep $ D.singleton s (bot × v)) : Nil
 
 dict_intersectionWith :: ForeignOp
-dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_intersectionWith =
+   ForeignOp ("dict_intersectionWith" × mkExists (ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
    op (v : Dictionary α (DictRep d1) : Dictionary α' (DictRep d2) : Nil) =
@@ -287,7 +298,8 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_b
             :: Dict (_ × Val _ × Val _ × Val _)
 
 dict_map :: ForeignOp
-dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_map =
+   ForeignOp ("dict_map" × mkExists (ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
    op (v : Dictionary α (DictRep d) : Nil) = do

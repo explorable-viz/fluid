@@ -25,11 +25,11 @@ import GaloisConnection (GaloisConnection(..))
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, ForeignTrace'(..), Match(..), Trace)
+import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), Endo, absurd, definitely', error, nonEmpty, successful, (!), (×))
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp, ForeignOp'(..), MatrixRep(..), Val, append_inv, (<+>))
+import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, append_inv, (<+>))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -79,14 +79,14 @@ applyBwd (T.AppClosure xs w t3 × v) =
    γ1 × γ2 = append_inv xs γ1γ2
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
-applyBwd (T.AppForeign n t × v) =
+applyBwd (T.AppForeign n (ForeignTrace (id × t)) × v) =
    V.Fun α (V.Foreign φ vs'') × v2'
    where
    φ × α × { init: vs'', last: v2' } = second (second (definitely' <<< unsnoc)) $ runExists applyBwd' t
       where
       applyBwd' :: forall t. ForeignTrace' t -> ForeignOp × a × List (Val _)
       applyBwd' (ForeignTrace' (ForeignOp' φ) t') =
-         mkExists (ForeignOp' φ) ×
+         ForeignOp (id × mkExists (ForeignOp' φ)) ×
             if φ.arity > n then unsafePartial $ let V.Fun α (V.Foreign _ vs'') = v in α × vs''
             else bot × φ.op_bwd (definitely' t' × v)
 applyBwd (T.AppConstr c × v) =
@@ -161,7 +161,7 @@ evalBwd' (V.Matrix α (MatrixRep (vss × (_ × βi) × (_ × βj)))) (T.Matrix t
             in
                unsafePartial $
                   let
-                     V.Int β _ × V.Int β' _ = get x γ0 × get x γ0
+                     V.Int β _ × V.Int β' _ = get x γ0 × get y γ0
                   in
                      γ × e × α' × β × β'
    γ × e × α' × β × β' = foldl1

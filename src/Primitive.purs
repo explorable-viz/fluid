@@ -1,9 +1,9 @@
 module Primitive where
 
 import Prelude hiding (absurd, apply, div, top)
-
+import Bindings (Bind)
 import Data.Either (Either(..))
-import Data.Exists (mkExists)
+import Data.Exists (Exists, mkExists)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
@@ -15,7 +15,7 @@ import Lattice (class BoundedJoinSemilattice, Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), (×), error)
-import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
+import Val (class Ann, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -153,59 +153,65 @@ type BinaryZero i o a =
    , fwd :: i -> i -> o
    }
 
-unary :: forall i o a'. BoundedJoinSemilattice a' => (forall a. Unary i o a) -> Val a'
-unary op =
-   Fun bot $ flip Foreign Nil
-      $ mkExists
-      $ ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+unary :: forall i o a'. BoundedJoinSemilattice a' => String -> (forall a. Unary i o a) -> Bind (Val a')
+unary id f =
+   id × Fun bot (Foreign (ForeignOp (id × op)) Nil)
    where
+   op :: Exists ForeignOp'
+   op = mkExists $
+      ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+
    op' :: Partial => OpGraph
    op' (v : Nil) =
-      op.o.pack <$> ((op.fwd x × _) <$> new (singleton α))
+      f.o.pack <$> ((f.fwd x × _) <$> new (singleton α))
       where
-      x × α = op.i.unpack v
+      x × α = f.i.unpack v
 
    fwd :: Partial => OpFwd (Raw Val)
-   fwd (v : Nil) = pure $ erase v × op.o.pack (op.fwd x × α)
+   fwd (v : Nil) = pure $ erase v × f.o.pack (f.fwd x × α)
       where
-      x × α = op.i.unpack v
+      x × α = f.i.unpack v
 
    bwd :: Partial => OpBwd (Raw Val)
-   bwd (u × v) = op.i.pack (x × α) : Nil
+   bwd (u × v) = f.i.pack (x × α) : Nil
       where
-      _ × α = op.o.unpack v
-      (x × _) = op.i.unpack u
+      _ × α = f.o.unpack v
+      (x × _) = f.i.unpack u
 
-binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => (forall a. Binary i1 i2 o a) -> Val a'
-binary op =
-   Fun bot $ flip Foreign Nil
-      $ mkExists
-      $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
+binary id f =
+   id × Fun bot (Foreign (ForeignOp (id × op)) Nil)
    where
+   op :: Exists ForeignOp'
+   op = mkExists $
+      ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+
    op' :: Partial => OpGraph
    op' (v1 : v2 : Nil) =
-      op.o.pack <$> ((op.fwd x y × _) <$> new (singleton α # insert β))
+      f.o.pack <$> ((f.fwd x y × _) <$> new (singleton α # insert β))
       where
-      (x × α) × (y × β) = op.i1.unpack v1 × op.i2.unpack v2
+      (x × α) × (y × β) = f.i1.unpack v1 × f.i2.unpack v2
 
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
-   fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × op.o.pack (op.fwd x y × (α ∧ β))
+   fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × f.o.pack (f.fwd x y × (α ∧ β))
       where
-      (x × α) × (y × β) = op.i1.unpack v1 × op.i2.unpack v2
+      (x × α) × (y × β) = f.i1.unpack v1 × f.i2.unpack v2
 
    bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) = op.i1.pack (x × α) : op.i2.pack (y × α) : Nil
+   bwd ((u1 × u2) × v) = f.i1.pack (x × α) : f.i2.pack (y × α) : Nil
       where
-      _ × α = op.o.unpack v
-      (x × _) × (y × _) = op.i1.unpack u1 × op.i2.unpack u2
+      _ × α = f.o.unpack v
+      (x × _) × (y × _) = f.i1.unpack u1 × f.i2.unpack u2
 
 -- If both are zero, depend only on the first.
-binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => (forall a. BinaryZero i o a) -> Val a'
-binaryZero op =
-   Fun bot $ flip Foreign Nil
-      $ mkExists
-      $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => String -> (forall a. BinaryZero i o a) -> Bind (Val a')
+binaryZero id f =
+   id × Fun bot (Foreign (ForeignOp (id × op)) Nil)
    where
+   op :: Exists ForeignOp'
+   op = mkExists $
+      ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+
    op' :: Partial => OpGraph
    op' (v1 : v2 : Nil) =
       let
@@ -214,22 +220,22 @@ binaryZero op =
             else if isZero y then singleton β
             else singleton α # insert β
       in
-         op.o.pack <$> ((op.fwd x y × _) <$> new αs)
+         f.o.pack <$> ((f.fwd x y × _) <$> new αs)
       where
-      (x × α) × (y × β) = op.i.unpack v1 × op.i.unpack v2
+      (x × α) × (y × β) = f.i.unpack v1 × f.i.unpack v2
 
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) =
       pure $ (erase v1 × erase v2) ×
-         op.o.pack (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+         f.o.pack (f.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
-      (x × α) × (y × β) = op.i.unpack v1 × op.i.unpack v2
+      (x × α) × (y × β) = f.i.unpack v1 × f.i.unpack v2
 
    bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) = op.i.pack (x × β1) : op.i.pack (y × β2) : Nil
+   bwd ((u1 × u2) × v) = f.i.pack (x × β1) : f.i.pack (y × β2) : Nil
       where
-      _ × α = op.o.unpack v
-      (x × _) × (y × _) = op.i.unpack u1 × op.i.unpack u2
+      _ × α = f.o.unpack v
+      (x × _) × (y × _) = f.i.unpack u1 × f.i.unpack u2
       β1 × β2 =
          if isZero x then α × bot
          else if isZero y then bot × α
