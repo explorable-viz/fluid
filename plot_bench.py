@@ -5,9 +5,9 @@ import argparse
 
 
 test_sets = {
-  'expensive': ['convolution/edgeDetect', 'convolution/emboss', 'convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart', 'slicing/dtw/compute-dtw'],
+  'expensive': ['slicing/convolution/edgeDetect', 'slicing/convolution/emboss', 'slicing/convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart', 'slicing/dtw/compute-dtw'],
   'graphics': ['graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart'],
-  'convolution': ['convolution/edgeDetect', 'convolution/emboss', 'convolution/gaussian'],
+  'convolution': ['slicing/convolution/edgeDetect', 'slicing/convolution/emboss', 'slicing/convolution/gaussian'],
 }
 
 bench_sets = {
