@@ -24,7 +24,7 @@ import Expr (ProgCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSliceDual, fwdDualAsBwdOp, fwdSliceDeMorgan) as G
+import Graph.Slice (bwdSliceDual, fwdDual, fwdDualAsBwdOp, fwdSliceDeMorgan) as G
 import Lattice (Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
@@ -154,8 +154,9 @@ testGraph s gconfig spec@{ δv } benchmarking = do
 
       do
          g' <- benchmark (method <> "-FwdDual") $ \_ -> pure (G.fwdDualAsBwdOp αs_in g)
+         -- g'' <- benchmark (method <> "-FwdDual2") $ \_ -> pure (G.fwdDual αs_in g)
          when logging (logAs "FwdDual/output slice" (prettyP $ select𝔹s vα (vertices g')))
-
+      -- when logging (logAs "FwdDual2/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
       do
          g' <- benchmark (method <> "-FwdAsDeMorgan") $ \_ -> pure (G.fwdSliceDeMorgan αs_in g)
          when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
