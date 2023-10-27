@@ -24,7 +24,7 @@ import Expr (ProgCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSliceDual, fwdDual, fwdDualAsBwdOp, fwdSliceDeMorgan) as G
+import Graph.Slice (bwdSliceDual, fwdDualAsBwdOp, fwdSliceDeMorgan) as G
 import Lattice (Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
