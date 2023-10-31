@@ -15,7 +15,7 @@ import Util (type (×), definitely, (×))
 main :: Effect Unit
 main = launchAff_ do
    let
-      iter = 10
+      iter = 1
       arr = concat ([ bench_misc, bench_desugaring, bench_bwd, bench_graphics ] <#> ((#) (iter × true)))
    outs <- sequence $ (\(str × row) -> (str × _) <$> row) <$> arr
    logShow $ BenchAcc $ definitely "More than one benchmark" $ fromArray outs

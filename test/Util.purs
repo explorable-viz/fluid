@@ -24,7 +24,7 @@ import Expr (ProgCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSliceDual, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan) as G
+import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan) as G
 import Lattice (Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
@@ -144,8 +144,8 @@ testGraph s gconfig spec@{ δv } benchmarking = do
    when benchmarking do
       do
          let αs = selectαs (δv (botOf vα)) vα
-         g' <- benchmark (method <> "-BwdDual") $ \_ -> pure (G.bwdSliceDual αs g)
-         when logging (logAs "BwdDual/input slice" (prettyP $ select𝔹s eα (sinks g')))
+         g' <- benchmark (method <> "-BwdDualAsFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
+         when logging (logAs "BwdDualAsFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
 
       do
          let αs = vertices vα
@@ -153,9 +153,9 @@ testGraph s gconfig spec@{ δv } benchmarking = do
          when logging (logAs "BwdAll/input slice" (prettyP $ select𝔹s eα αs'))
 
       do
-         g' <- benchmark (method <> "-FwdDual") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
-         -- g'' <- benchmark (method <> "-FwdDual2") $ \_ -> pure (G.fwdDual αs_in g)
-         when logging (logAs "FwdDual/output slice" (prettyP $ select𝔹s vα (vertices g')))
+         g' <- benchmark (method <> "-FwdDualAsBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
+         -- g'' <- benchmark (method <> "-FwdDual2") $ \_ -> pure (G.fwdSliceDual αs_in g)
+         when logging (logAs "FwdDualAsBwdOp/output slice" (prettyP $ select𝔹s vα (vertices g')))
       -- when logging (logAs "FwdDual2/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
       do
          g' <- benchmark (method <> "-FwdAsDeMorgan") $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
