@@ -11,7 +11,7 @@ test_sets = {
 }
 
 bench_sets = {
-  'all': ['Trace-Eval', 'Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-BwdDual', 'Graph-BwdAll', 'Graph-Fwd', 'Graph-FwdDual', 'Graph-FwdAsDeMorgan'],
+  'all': ['Graph-Bwd','Graph-BwdAll','Graph-BwdDualAsFwdOp','Graph-BwdDualComp','Graph-Eval','Graph-Fwd','Graph-FwdAsDeMorgan','Graph-FwdDualAsBwdOp','Graph-FwdDualComp','Graph-Nodes','Trace-Bwd','Trace-Eval','Trace-Fwd'],
   'bwd': ['Trace-Eval','Trace-Bwd','Graph-Eval', 'Graph-Bwd'],
   'fwd': ['Trace-Eval', 'Trace-Fwd', 'Graph-Eval', 'Graph-Fwd', 'Graph-FwdAsDeMorgan'],
   'standard': ['Trace-Eval','Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-Fwd'],
@@ -23,6 +23,12 @@ def parse(test_names, column_order, cap, lab, dest='recent.png'):
 
   # Extract test names of interest
   df = pd.DataFrame(benchmarks.loc[test_names]).round(1)
+  
+  tex_all = benchmarks.round(2).to_latex(float_format="%.2f", caption = "All test-cases and all benchmarks, TODO: needs formatting somehow", label="table:all-benches")
+  tex_all_f = open('fig/performance/all-benches.tex', 'w')
+  tex_all_f.write(tex_all)
+  tex_all_f.close()
+
   tex = df[column_order].to_latex(float_format="%.2f", caption = cap, label = lab)
   print(df[column_order])
   print(tex)

@@ -29,7 +29,7 @@ misc_cases =
    , { file: "flatten"
      , fwd_expect: "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
      }
-   , { file: "foldr_sumSquares", fwd_expect: "661" }
+   , { file: "foldr-sumSquares", fwd_expect: "661" }
    , { file: "lexicalScoping", fwd_expect: "\"6\"" }
    , { file: "length", fwd_expect: "2" }
    , { file: "lookup", fwd_expect: "Some \"sarah\"" }
