@@ -45,7 +45,7 @@ type AffError m a = MonadAff m => MonadError Error m => m a
 type EffectError m a = MonadEffect m => MonadError Error m => m a
 
 logging :: Boolean
-logging = true
+logging = false
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
