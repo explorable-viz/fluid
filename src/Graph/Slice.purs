@@ -10,9 +10,10 @@ import Data.Map (insert, empty, lookup, delete) as M
 import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert, singleton, difference)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, sinks, op)
+import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks, vertices)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)
 import Util (type (×), (×))
+import Val (Val)
 
 type PendingVertices = Map Vertex (Set Vertex)
 
@@ -30,6 +31,10 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
 -- | De Morgan dual of backward slicing (◁_G)° ≡ Forward slicing on the opposite graph (▷_{G_op})
 bwdSliceDualAsFwdOp :: forall g. Graph g => Set Vertex -> g -> g
 bwdSliceDualAsFwdOp αs0 g0 = fwdSlice αs0 (op g0)
+
+-- | De Morgan dual of Backward slicing ◁_G° - missing final negation
+bwdSliceDual :: forall g. Graph g => Val Vertex -> Set Vertex -> g -> g
+bwdSliceDual vα αs0 g0 = bwdSlice (vertices vα `difference` αs0) g0
 
 -- | Forward slicing (▷_G)
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
