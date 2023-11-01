@@ -24,7 +24,7 @@ import Expr (ProgCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan) as G
+import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan, bwdSliceDual, fwdSliceDual) as G
 import Lattice (Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
@@ -45,7 +45,7 @@ type AffError m a = MonadAff m => MonadError Error m => m a
 type EffectError m a = MonadEffect m => MonadError Error m => m a
 
 logging :: Boolean
-logging = false
+logging = true
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
@@ -145,9 +145,9 @@ testGraph s gconfig spec@{ δv } benchmarking = do
       do
          let αs = selectαs (δv (botOf vα)) vα
          g' <- benchmark (method <> "-BwdDualAsFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
-         g'' <- benchmark (method <> "-BwdDualDirect") $ \_ -> pure (G.bwdSliceDual αs g)
+         g'' <- benchmark (method <> "-BwdDualComp") $ \_ -> pure (G.bwdSliceDual vα αs g)
          when logging (logAs "BwdDualAsFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
-         when logging (logAs "BwdDualDirect/ input slice" (prettyP $ select𝔹s eα (sinks g'') <#> not))
+         when logging (logAs "BwdDualComp/ input slice" (prettyP $ (select𝔹s eα (sinks g'') <#> not)))
       do
          let αs = vertices vα
          αs' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd αs)
@@ -155,9 +155,9 @@ testGraph s gconfig spec@{ δv } benchmarking = do
 
       do
          g' <- benchmark (method <> "-FwdDualAsBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
-         g'' <- benchmark (method <> "-FwdDualDirect") $ \_ -> pure (G.fwdSliceDual αs_in g)
+         g'' <- benchmark (method <> "-FwdDualComp") $ \_ -> pure (G.fwdSliceDual αs_in g)
          when logging (logAs "FwdDualAsBwdOp/output slice" (prettyP $ select𝔹s vα (vertices g')))
-         when logging (logAs "FwdDual2/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
+         when logging (logAs "FwdDualComp/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
       do
          g' <- benchmark (method <> "-FwdAsDeMorgan") $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
          when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
