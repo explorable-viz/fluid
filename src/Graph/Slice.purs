@@ -57,7 +57,7 @@ fwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
 fwdSliceDual αs0 g0 = fwdSlice (sinks g0 `difference` αs0) g0
 
 -- | De Morgan dual of Backward slicing ◁_G°
-bwdSliceDual :: forall g. Graph g => Set Vertex -> g  -> g
+bwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
 bwdSliceDual αs0 g0 = bwdSlice (sources g0 `difference` αs0) g0
 
 -- | De Morgan dual of forward slicing (▷_G)° ≡ Backward slicing on the opposite graph (◁_{G_op})

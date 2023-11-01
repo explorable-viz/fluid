@@ -145,8 +145,9 @@ testGraph s gconfig spec@{ δv } benchmarking = do
       do
          let αs = selectαs (δv (botOf vα)) vα
          g' <- benchmark (method <> "-BwdDualAsFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
+         g'' <- benchmark (method <> "-BwdDualDirect") $ \_ -> pure (G.bwdSliceDual αs g)
          when logging (logAs "BwdDualAsFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
-
+         when logging (logAs "BwdDualDirect/ input slice" (prettyP $ select𝔹s eα (sinks g'') <#> not))
       do
          let αs = vertices vα
          αs' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd αs)
@@ -154,9 +155,9 @@ testGraph s gconfig spec@{ δv } benchmarking = do
 
       do
          g' <- benchmark (method <> "-FwdDualAsBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
-         -- g'' <- benchmark (method <> "-FwdDual2") $ \_ -> pure (G.fwdSliceDual αs_in g)
+         g'' <- benchmark (method <> "-FwdDualDirect") $ \_ -> pure (G.fwdSliceDual αs_in g)
          when logging (logAs "FwdDualAsBwdOp/output slice" (prettyP $ select𝔹s vα (vertices g')))
-      -- when logging (logAs "FwdDual2/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
+         when logging (logAs "FwdDual2/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
       do
          g' <- benchmark (method <> "-FwdAsDeMorgan") $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
          when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
