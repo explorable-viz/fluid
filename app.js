@@ -33906,16 +33906,20 @@
 
   // output-es/Graph.GraphImpl/index.js
   var $GraphImpl = (_1) => ({ tag: "GraphImpl", _1 });
-  var fromFoldable10 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordVertex)(a)(unit2)(m))(Leaf2))();
-  var fromFoldable17 = /* @__PURE__ */ foldlArray((m) => (a) => insert2(ordVertex)(a)(unit2)(m))(Leaf2);
-  var verticesGraphImpl = { vertices: (v) => fromFoldable10(map2(ordVertex)(Vertex)(keys2(v._1.out))) };
+  var intersection3 = /* @__PURE__ */ intersection(ordVertex);
+  var fromFoldable10 = /* @__PURE__ */ foldlArray((m) => (a) => insert2(ordVertex)(a)(unit2)(m))(Leaf2);
+  var fromFoldable17 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordVertex)(a)(unit2)(m))(Leaf2))();
+  var verticesGraphImpl = { vertices: (v) => v._1.vertices };
   var semigroupGraphImpl = {
     append: (v) => (v1) => $GraphImpl({
       out: unionWith2(union2(ordVertex))(v._1.out)(v1._1.out),
-      in: unionWith2(union2(ordVertex))(v._1.in)(v1._1.in)
+      in: unionWith2(union2(ordVertex))(v._1.in)(v1._1.in),
+      sinks: unionWith(ordVertex)($$const)(intersection3(v._1.sinks)(v1._1.sinks))(unionWith(ordVertex)($$const)(difference3(ordVertex)(v._1.sinks)(v1._1.vertices))(difference3(ordVertex)(v1._1.sinks)(v._1.vertices))),
+      sources: unionWith(ordVertex)($$const)(intersection3(v._1.sources)(v1._1.sources))(unionWith(ordVertex)($$const)(difference3(ordVertex)(v._1.sources)(v1._1.vertices))(difference3(ordVertex)(v1._1.sources)(v._1.vertices))),
+      vertices: unionWith(ordVertex)($$const)(v._1.vertices)(v1._1.vertices)
     })
   };
-  var sinks$p = (m) => fromFoldable17(arrayMap((x2) => x2._1)(filter3((x2) => x2._2.tag === "Leaf")(toArrayWithKey(Tuple)(m))));
+  var sinks$p = (m) => fromFoldable10(arrayMap((x2) => x2._1)(filter3((x2) => x2._2.tag === "Leaf")(toArrayWithKey(Tuple)(m))));
   var addIfMissing = (acc) => (v) => {
     const $2 = peek(v)(acc);
     return () => {
@@ -33993,15 +33997,23 @@
       fail();
     },
     size: (v) => size(v._1.out),
-    sinks: (v) => sinks$p(v._1.out),
-    sources: (v) => sinks$p(v._1.in),
-    op: (v) => $GraphImpl({ out: v._1.in, in: v._1.out }),
-    empty: /* @__PURE__ */ $GraphImpl({ out: empty2, in: empty2 }),
+    sinks: (v) => v._1.sinks,
+    sources: (v) => v._1.sources,
+    op: (v) => $GraphImpl({ out: v._1.in, in: v._1.out, sinks: v._1.sources, sources: v._1.sinks, vertices: v._1.vertices }),
+    empty: /* @__PURE__ */ $GraphImpl({
+      out: empty2,
+      in: empty2,
+      sinks: Leaf2,
+      sources: Leaf2,
+      vertices: Leaf2
+    }),
     fromFoldable: (dictFunctor) => (dictFoldable) => {
       const fromFoldable24 = dictFoldable.foldr(Cons)(Nil);
       return (\u03B1_\u03B1s) => {
         const \u03B1_\u03B1s$p = fromFoldable24(\u03B1_\u03B1s);
-        return $GraphImpl({ out: runST(outMap(\u03B1_\u03B1s$p)), in: runST(inMap(\u03B1_\u03B1s$p)) });
+        const out = runST(outMap(\u03B1_\u03B1s$p));
+        const in_ = runST(inMap(\u03B1_\u03B1s$p));
+        return $GraphImpl({ out, in: in_, sinks: sinks$p(out), sources: sinks$p(in_), vertices: fromFoldable17(map2(ordVertex)(Vertex)(keys2(out))) });
       };
     },
     Vertices0: () => verticesGraphImpl,
