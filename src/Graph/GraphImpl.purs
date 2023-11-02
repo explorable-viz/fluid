@@ -4,7 +4,6 @@ module Graph.GraphImpl
    ) where
 
 import Prelude
-
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
 import Data.Array as A
