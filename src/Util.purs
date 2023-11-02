@@ -17,7 +17,7 @@ import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&), (***))
-import Data.Set (difference, union, intersection)
+import Data.Set as S
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
@@ -169,6 +169,7 @@ derive instance Functor f => Functor (t <×| f)
 concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a
 concatM = foldr (>=>) pure
 
-infixr 7 intersection as ∩
-infixr 6 union as ∪
-infix 5 difference as \\
+infixr 7 S.intersection as ∩
+infixr 6 S.union as ∪
+infix 5 S.difference as \\
+infix 5 S.member as ∈

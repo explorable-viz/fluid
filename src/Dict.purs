@@ -5,6 +5,8 @@ module Dict
    ( module Foreign.Object
    , Dict
    , (\\)
+   , (∩)
+   , (∪)
    , apply
    , apply2
    , lift2
@@ -57,6 +59,8 @@ intersection = intersectionWith const
 difference :: forall a b. Dict a -> Dict b -> Dict a
 difference m1 m2 = foldl (flip delete) m1 (O.keys m2)
 
+infixr 7 intersection as ∩
+infixr 6 union as ∪
 infix 5 difference as \\
 
 keys :: forall a. Dict a -> Set String

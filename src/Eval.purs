@@ -12,7 +12,7 @@ import Data.List (List(..), (:), length, range, singleton, unzip, zip)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
-import Data.Set (union, subset)
+import Data.Set (subset)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
@@ -25,7 +25,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), absurd, both, check, error, orElse, successful, throw, with, (×))
+import Util (type (×), (×), (∪), absurd, both, check, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
@@ -64,7 +64,7 @@ matchMany _ _ = error absurd
 
 closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
-   let ρ' = ρ `for` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
+   let ρ' = ρ `for` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
 
 checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = do
