@@ -61,16 +61,16 @@ instance Graph GraphImpl where
       vertices = S.fromFoldable $ S.map Vertex $ D.keys out
       α_αs' = L.fromFoldable α_αs -- doesn't seem to adversely affect performance
 
-      -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
-      -- This is better but still slow if there are thousands of sinks.
-      sinks' :: AdjMap -> Set Vertex
-      sinks' m = D.toArrayWithKey (×) m
-         # A.filter (snd >>> S.isEmpty)
-         <#> (fst >>> Vertex)
-         # S.fromFoldable
-
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices
+
+-- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
+-- This is better but still slow if there are thousands of sinks.
+sinks' :: AdjMap -> Set Vertex
+sinks' m = D.toArrayWithKey (×) m
+   # A.filter (snd >>> S.isEmpty)
+   <#> (fst >>> Vertex)
+   # S.fromFoldable
 
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
