@@ -87,7 +87,7 @@ validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
 
 testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> TestConfig -> AffError m Unit
 testTrace s γα spec@{ δv } = do
-   let method = "Trace"
+   let method = "T"
 
    { gc: GC eval, v } <- do
       GC desug <- desugGC s
@@ -122,7 +122,7 @@ testTrace s γα spec@{ δv } = do
 
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } benchmarking = do
-   let method = "Graph"
+   let method = "G"
    GC desug𝔹 <- desugGC s
 
    { gc: GC eval, eα, g, vα } <- do
@@ -144,22 +144,22 @@ testGraph s gconfig spec@{ δv } benchmarking = do
    when benchmarking do
       do
          let αs = selectαs (δv (botOf vα)) vα
-         g' <- benchmark (method <> "-BwdDualAsFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
-         g'' <- benchmark (method <> "-BwdDualComp") $ \_ -> pure (G.bwdSliceDual vα αs g)
-         when logging (logAs "BwdDualAsFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
-         when logging (logAs "BwdDualComp/ input slice" (prettyP $ (select𝔹s eα (sinks g'') <#> not)))
+         g' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
+         g'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (G.bwdSliceDual vα αs g)
+         when logging (logAs "BwdDlFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
+         when logging (logAs "BwdDlCmp/ input slice" (prettyP $ (select𝔹s eα (sinks g'') <#> not)))
       do
          let αs = vertices vα
          αs' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd αs)
          when logging (logAs "BwdAll/input slice" (prettyP $ select𝔹s eα αs'))
 
       do
-         g' <- benchmark (method <> "-FwdDualAsBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
-         g'' <- benchmark (method <> "-FwdDualComp") $ \_ -> pure (G.fwdSliceDual αs_in g)
-         when logging (logAs "FwdDualAsBwdOp/output slice" (prettyP $ select𝔹s vα (vertices g')))
-         when logging (logAs "FwdDualComp/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
+         g' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
+         g'' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure (G.fwdSliceDual αs_in g)
+         when logging (logAs "FwdDlBwdOp/output slice" (prettyP $ select𝔹s vα (vertices g')))
+         when logging (logAs "FwdDlCmp/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
       do
-         g' <- benchmark (method <> "-FwdAsDeMorgan") $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
+         g' <- benchmark "Naive-Fwd" $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
          when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
 
 type TestSpec =

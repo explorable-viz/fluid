@@ -11,10 +11,10 @@ test_sets = {
 }
 
 bench_sets = {
-  'all': ['Graph-Bwd','Graph-BwdAll','Graph-BwdDualAsFwdOp','Graph-BwdDualComp','Graph-Eval','Graph-Fwd','Graph-FwdAsDeMorgan','Graph-FwdDualAsBwdOp','Graph-FwdDualComp','Graph-Nodes','Trace-Bwd','Trace-Eval','Trace-Fwd'],
-  'bwd': ['Trace-Eval','Trace-Bwd','Graph-Eval', 'Graph-Bwd'],
-  'fwd': ['Trace-Eval', 'Trace-Fwd', 'Graph-Eval', 'Graph-Fwd', 'Graph-FwdAsDeMorgan'],
-  'standard': ['Trace-Eval','Trace-Bwd', 'Trace-Fwd', 'Graph-Eval', 'Graph-Bwd', 'Graph-Fwd'],
+  'all': ['G-Bwd','G-BwdAll','G-BwdDlFwdOp','G-BwdFlCmp','G-Eval','G-Fwd','Naive-Fwd','G-FwdDlBwdOp','G-FwdFlCmp','G-Nodes','T-Bwd','T-Eval','T-Fwd'],
+  'bwd': ['T-Eval','T-Bwd','G-Eval', 'G-Bwd'],
+  'fwd': ['T-Eval', 'T-Fwd', 'G-Eval', 'G-Fwd', 'Naive-Fwd'],
+  'standard': ['T-Eval','T-Bwd', 'T-Fwd', 'G-Eval', 'G-Bwd', 'G-Fwd'],
 }
 
 def parse(test_names, column_order, cap, lab, dest='recent.png'):
