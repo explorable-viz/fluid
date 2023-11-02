@@ -8,7 +8,7 @@ import Data.List as L
 import Data.Map (Map)
 import Data.Map (insert, empty, lookup, delete) as M
 import Data.Maybe (maybe)
-import Data.Set (Set, empty, insert, singleton, difference)
+import Data.Set (Set, empty, insert, member, singleton, difference)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks, vertices)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)
@@ -23,10 +23,14 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
    where
    go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
    go (_ × Nil) = pure $ Done unit
-   go (visited × (α : αs)) = do
-      let βs = outN g0 α
-      extend α βs
-      pure $ Loop ((visited # insert α) × (L.fromFoldable βs <> αs))
+   go (visited × (α : αs)) =
+      if α `member` visited
+      then
+         pure $ Loop (visited × αs)
+      else do
+         let βs = outN g0 α
+         extend α βs
+         pure $ Loop ((visited # insert α) × (L.fromFoldable βs <> αs))
 
 -- | De Morgan dual of backward slicing (◁_G)° ≡ Forward slicing on the opposite graph (▷_{G_op})
 bwdSliceDualAsFwdOp :: forall g. Graph g => Set Vertex -> g -> g
