@@ -22,15 +22,26 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, Vertex(..), op, outN)
-import Util (type (×), (×), definitely)
+import Util (type (×), (×), (∩), (∪), (\\), definitely)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
-data GraphImpl = GraphImpl { out :: AdjMap, in :: AdjMap }
+data GraphImpl = GraphImpl
+   { out :: AdjMap
+   , in :: AdjMap
+   , sinks :: Set Vertex
+   , sources :: Set Vertex
+   , vertices :: Set Vertex
+   }
 
 instance Semigroup GraphImpl where
-   append (GraphImpl g) (GraphImpl g') =
-      GraphImpl { out: D.unionWith S.union g.out g'.out, in: D.unionWith S.union g.in g'.in }
+   append (GraphImpl g) (GraphImpl g') = GraphImpl
+      { out: D.unionWith (∪) g.out g'.out
+      , in: D.unionWith (∪) g.in g'.in
+      , sinks: (g.sinks ∩ g'.sinks) ∪ (g.sinks \\ g'.vertices) ∪ (g'.sinks \\ g.vertices)
+      , sources: (g.sources ∩ g'.sources) ∪ (g.sources \\ g'.vertices) ∪ (g'.sources \\ g.vertices)
+      , vertices: g.vertices ∪ g'.vertices
+      }
 
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Graph GraphImpl where
@@ -38,25 +49,28 @@ instance Graph GraphImpl where
    inN g = outN (op g)
    elem α (GraphImpl g) = isJust (D.lookup (unwrap α) g.out)
    size (GraphImpl g) = D.size g.out
-   sinks (GraphImpl g) = sinks' g.out
-   sources (GraphImpl g) = sinks' g.in
-   op (GraphImpl g) = GraphImpl { out: g.in, in: g.out }
-   empty = GraphImpl { out: D.empty, in: D.empty }
+   sinks (GraphImpl g) = g.sinks
+   sources (GraphImpl g) = g.sources
+   op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
+   empty = GraphImpl { out: D.empty, in: D.empty, sinks: S.empty, sources: S.empty, vertices: S.empty }
 
-   fromFoldable α_αs = GraphImpl { out: runST (outMap α_αs'), in: runST (inMap α_αs') }
+   fromFoldable α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
+      out = runST (outMap α_αs')
+      in_ = runST (inMap α_αs')
+      vertices = S.fromFoldable $ S.map Vertex $ D.keys out
       α_αs' = L.fromFoldable α_αs -- doesn't seem to adversely affect performance
 
-instance Vertices GraphImpl where
-   vertices (GraphImpl g) = S.fromFoldable $ S.map Vertex $ D.keys g.out
+      -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
+      -- This is better but still slow if there are thousands of sinks.
+      sinks' :: AdjMap -> Set Vertex
+      sinks' m = D.toArrayWithKey (×) m
+         # A.filter (snd >>> S.isEmpty)
+         <#> (fst >>> Vertex)
+         # S.fromFoldable
 
--- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
--- This is better but still slow if there are thousands of sinks.
-sinks' :: AdjMap -> Set Vertex
-sinks' m = D.toArrayWithKey (×) m
-   # A.filter (snd >>> S.isEmpty)
-   <#> (fst >>> Vertex)
-   # S.fromFoldable
+instance Vertices GraphImpl where
+   vertices (GraphImpl g) = g.vertices
 
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
