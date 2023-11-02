@@ -13,7 +13,6 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable, singleton) as S
-import Data.Set (union)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
@@ -26,7 +25,7 @@ import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), Endo, absurd, definitely', error, nonEmpty, successful, (!), (×))
+import Util (type (×), (!), (×), (∪), Endo, absurd, definitely', error, nonEmpty, successful)
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, append_inv, (<+>))
@@ -156,7 +155,7 @@ evalBwd' (V.Matrix α (MatrixRep (vss × (_ × βi) × (_ × βj)))) (T.Matrix t
       case evalBwd' (vss ! (i - 1) ! (j - 1)) (tss ! (i - 1) ! (j - 1)) of
          γ'' × e × α' ->
             let
-               γ × γ' = append_inv (S.singleton x `union` S.singleton y) γ''
+               γ × γ' = append_inv (S.singleton x ∪ S.singleton y) γ''
                γ0 = (D.singleton x (V.Int bot i') `disjointUnion` D.singleton y (V.Int bot j')) <+> γ'
             in
                unsafePartial $

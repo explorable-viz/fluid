@@ -13,7 +13,7 @@ import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
 import Data.Traversable (sequence)
 import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
-import Dict (difference, intersectionWith, union, unionWith) as D
+import Dict ((\\), (∪), intersectionWith, unionWith) as D
 import Effect.Exception (Error)
 import Util (type (×), Endo, assert, successfulWith, throw, (×))
 import Util.Pair (Pair(..))
@@ -159,7 +159,7 @@ instance Expandable t u => Expandable (Pair t) (Pair u) where
 instance (BotOf u t, Expandable t u) => Expandable (Dict t) (Dict u) where
    expand kvs kvs' =
       assert (keys kvs `subset` keys kvs') $
-         (kvs `D.intersectionWith expand` kvs') `D.union` ((kvs' `D.difference` kvs) <#> botOf)
+         (kvs `D.intersectionWith expand` kvs') D.∪ ((kvs' D.\\ kvs) <#> botOf)
 
 instance Expandable t u => Expandable (List t) (List u) where
    expand xs ys = zipWith expand xs ys

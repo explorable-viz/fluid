@@ -8,11 +8,11 @@ import Data.List as L
 import Data.Map (Map)
 import Data.Map (insert, empty, lookup, delete) as M
 import Data.Maybe (maybe)
-import Data.Set (Set, empty, insert, member, singleton, difference)
+import Data.Set (Set, empty, insert, singleton)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks, vertices)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)
-import Util (type (×), (×))
+import Util (type (×), (×), (∈), (\\))
 import Val (Val)
 
 type PendingVertices = Map Vertex (Set Vertex)
@@ -24,7 +24,7 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
    go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
    go (_ × Nil) = pure $ Done unit
    go (visited × (α : αs)) =
-      if α `member` visited then
+      if α ∈ visited then
          pure $ Loop (visited × αs)
       else do
          let βs = outN g0 α
@@ -37,7 +37,7 @@ bwdSliceDualAsFwdOp αs0 g0 = fwdSlice αs0 (op g0)
 
 -- | De Morgan dual of Backward slicing ◁_G° - missing final negation
 bwdSliceDual :: forall g. Graph g => Val Vertex -> Set Vertex -> g -> g
-bwdSliceDual vα αs0 g0 = bwdSlice (vertices vα `difference` αs0) g0
+bwdSliceDual vα αs0 g0 = bwdSlice (vertices vα \\ αs0) g0
 
 -- | Forward slicing (▷_G)
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
@@ -57,12 +57,12 @@ fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
 -- Also doesn't do the final negation..
 fwdSliceAsDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
 fwdSliceAsDeMorgan αs0 g0 =
-   bwdSlice (sinks g0 `difference` αs0) (op g0)
+   bwdSlice (sinks g0 \\ αs0) (op g0)
 
 -- | De Morgan dual of forward slicing (▷_G)°
 -- Doesn't do the final negation..
 fwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceDual αs0 g0 = fwdSlice (sinks g0 `difference` αs0) g0
+fwdSliceDual αs0 g0 = fwdSlice (sinks g0 \\ αs0) g0
 
 -- | De Morgan dual of forward slicing (▷_G)° ≡ Backward slicing on the opposite graph (◁_{G_op})
 fwdSliceDualAsBwdOp :: forall g. Graph g => Set Vertex -> g -> g

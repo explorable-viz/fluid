@@ -17,6 +17,7 @@ import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&), (***))
+import Data.Set as S
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
@@ -24,6 +25,7 @@ import Effect.Unsafe (unsafePerformEffect)
 
 type 𝔹 = Boolean
 
+-- Surely × should have higher precedence than + by convention..
 infixr 6 type Tuple as × -- standard library has \/
 infixr 6 Tuple as ×
 
@@ -166,3 +168,8 @@ derive instance Functor f => Functor (t <×| f)
 -- Haven't found this yet in PureScript
 concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a
 concatM = foldr (>=>) pure
+
+infixr 7 S.intersection as ∩
+infixr 6 S.union as ∪
+infix 5 S.difference as \\
+infix 5 S.member as ∈
