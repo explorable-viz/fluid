@@ -24,8 +24,7 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
    go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
    go (_ × Nil) = pure $ Done unit
    go (visited × (α : αs)) =
-      if α `member` visited
-      then
+      if α `member` visited then
          pure $ Loop (visited × αs)
       else do
          let βs = outN g0 α
