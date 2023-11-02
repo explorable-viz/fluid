@@ -31,7 +31,7 @@ import Data.List (List, head)
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set)
-import Data.Set (fromFoldable, member) as S
+import Data.Set (fromFoldable) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, keys, toAscUnfoldable, values) as O
