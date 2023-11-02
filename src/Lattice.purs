@@ -100,7 +100,7 @@ infixl 7 meet as ∧
 infixl 6 join as ∨
 
 type 𝔹 = Boolean
-type Raw (c :: Type -> Type) = c Unit
+type Raw (f :: Type -> Type) = f Unit
 
 instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) where
    join ab = definedJoin ab
