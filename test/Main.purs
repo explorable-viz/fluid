@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
 import Test.Specs (bwd_cases, desugar_cases, graphics_cases, linking_cases, misc_cases)
-import Test.Util.Many (bwdMany, linkMany, many, withDatasetMany)
+import Test.Util.Many (bwdMany, linkedOutputsMany, many, withDatasetMany)
 import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
@@ -22,7 +22,7 @@ tests = concat
    , test_misc
    , test_bwd
    , test_graphics
-   , test_linking
+   , test_linkedOutputs
    ]
 
 {-
@@ -51,5 +51,5 @@ test_bwd = second void <$> bwdMany bwd_cases (1 × false)
 test_graphics :: Array (String × Aff Unit)
 test_graphics = second void <$> withDatasetMany graphics_cases (1 × false)
 
-test_linking :: Array (String × Aff Unit)
-test_linking = linkMany linking_cases
+test_linkedOutputs :: Array (String × Aff Unit)
+test_linkedOutputs = linkedOutputsMany linking_cases
