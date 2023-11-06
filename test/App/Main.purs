@@ -12,11 +12,11 @@ import Util (type (×), (×))
 test_fig :: FigSpec -> String × Aff Unit
 test_fig spec = spec.divId × void (loadFig spec)
 
-test_linkingFig :: LinkFigSpec -> String × Aff Unit
-test_linkingFig spec = spec.divId × void (loadLinkFig spec)
+test_linkedOutputsFig :: LinkFigSpec -> String × Aff Unit
+test_linkedOutputsFig spec = spec.divId × void (loadLinkFig spec)
 
 tests :: Array (String × Aff Unit)
-tests = [ test_fig fig1, test_fig fig2, test_linkingFig linkingFig1 ]
+tests = [ test_fig fig1, test_fig fig2, test_linkedOutputsFig linkingFig1 ]
 
 main :: Effect Unit
 main = run tests

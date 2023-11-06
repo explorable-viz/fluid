@@ -5,8 +5,8 @@ import Prelude hiding (add)
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Data.List (List(..), (:))
 import Data.List as L
-import Data.Map (Map)
-import Data.Map (insert, empty, lookup, delete) as M
+import Data.Map (Map, lookup)
+import Data.Map as M
 import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert, singleton)
 import Data.Tuple (fst)
@@ -46,7 +46,7 @@ fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
    go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
    go (h × Nil) = pure $ Done h
    go (h × ((α × β) : es)) = do
-      let βs = maybe (singleton β) (insert β) (M.lookup α h)
+      let βs = maybe (singleton β) (insert β) (lookup α h)
       if βs == outN g0 α then do
          extend α βs
          pure $ Loop (M.delete α h × (inEdges' g0 α <> es))

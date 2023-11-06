@@ -32,8 +32,8 @@ withDatasetMany specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
       progCxt <- defaultImports >>= datasetAs (File dataset) "data"
       test (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
-linkMany :: Array TestLinkSpec -> Array (String × Aff Unit)
-linkMany specs = zip (specs <#> name) (specs <#> one)
+linkedOutputsMany :: Array TestLinkSpec -> Array (String × Aff Unit)
+linkedOutputsMany specs = zip (specs <#> name) (specs <#> one)
    where
    name spec = "linking/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
    one { spec, δv1, v2_expect } = do
