@@ -23,8 +23,8 @@ scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdMany
    [ { file: "dtw/average-series"
      , bwd_expect_file: "dtw/average-series.expect"
-     , fwd_expect: "(2.5 : (⸨0.5⸩ : (0.5 : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
-     , δv: listElement 1 neg
+     , fwd_expect: "(2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
+     , δv: listElement 2 neg
      }
    ]
 
