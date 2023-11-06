@@ -1,11 +1,12 @@
 module Test.Specs where
 
 import Prelude
+
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
-import Test.Util (TestBwdSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec)
+import Test.Util (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -307,4 +308,16 @@ linkedOutputs_cases =
           \} : []))))\
           \}"
      }
+   ]
+
+linkedInputs_cases :: Array TestLinkedInputsSpec
+linkedInputs_cases =
+   [ {-{ spec:
+        { divId: ""
+        , file: File "pairs-1"
+        , xs: [ "data" ]
+        }
+   , δv1: listElement 2 neg
+   , v2_expect: ?_
+   }-}
    ]

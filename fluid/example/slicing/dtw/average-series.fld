@@ -1,13 +1,8 @@
 let d x y = (x - y) * (x - y);
 let avg x y = (x + y) / 2;
-let avgSeq seq1 seq2 fn pairs =
-    let worker seq1 seq2 fn (i, j) =
-        let x = nth (i - 1) seq1;
-            y = nth (j - 1) seq2
-        in
-            fn x y
-    in map (worker seq1 seq2 fn) pairs;
-
+let avgSeq seq1 seq2 f =
+    let worker (i, j) = f (nth (i - 1) seq1) (nth (j - 1) seq2)
+    in map worker;
 let seq1 = [3,1,2,2,1];
     seq2 = [2,0,0,3,3,1,0];
     window = 2;
