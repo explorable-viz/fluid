@@ -37554,13 +37554,13 @@
       const desug1 = exprFwd(boundedLattice2)(dictMonadError)(joinSemilatticeBoolean);
       const $$eval3 = $$eval(dictMonadError)(annBoolean);
       return (v) => {
-        const $19 = "linking/" + v.file1;
-        const $20 = "linking/" + v.file2;
-        return Bind1.bind(Bind1.bind(Bind1.bind(defaultImports1)(datasetAs1("example/linking/" + v.dataFile)(v.x)))(initialConfig2))((v2) => Bind1.bind(Apply0.apply(map22(Tuple)(open1($19)))(open1($20)))((v3) => {
+        const $19 = "linked-outputs/" + v.file1;
+        const $20 = "linked-outputs/" + v.file2;
+        return Bind1.bind(Bind1.bind(Bind1.bind(defaultImports1)(datasetAs1("example/linked-outputs/" + v.dataFile)(v.x)))(initialConfig2))((v2) => Bind1.bind(Apply0.apply(map22(Tuple)(open1($19)))(open1($20)))((v3) => {
           const \u03B30 = _fmapObject(v2["\u03B3"], botOf);
           const s2 = functorExpr2.map((v$1) => false)(v3._2);
           const s1 = functorExpr2.map((v$1) => false)(v3._1);
-          return Bind1.bind(loadFile1("fluid/example/linking")(v.dataFile))((dataFile$p) => Bind1.bind(Apply0.apply(map22(Tuple)(desug1(s1)))(desug1(s2)))((v4) => Bind1.bind($$eval3(\u03B30)(v4._1)(false))((v5) => Bind1.bind($$eval3(\u03B30)(v4._2)(false))((v6) => pure1({
+          return Bind1.bind(loadFile1("fluid/example/linked-outputs")(v.dataFile))((dataFile$p) => Bind1.bind(Apply0.apply(map22(Tuple)(desug1(s1)))(desug1(s2)))((v4) => Bind1.bind($$eval3(\u03B30)(v4._1)(false))((v5) => Bind1.bind($$eval3(\u03B30)(v4._2)(false))((v6) => pure1({
             spec: v,
             "\u03B3": \u03B30,
             s1,
@@ -37708,7 +37708,7 @@
   var loadFile2 = /* @__PURE__ */ loadFile(monadAffAff)(monadErrorAff);
   var loadFig2 = /* @__PURE__ */ loadFig(monadAffAff)(monadErrorAff);
   var loadLinkedOutputsFig2 = /* @__PURE__ */ loadLinkedOutputsFig(monadAffAff)(monadErrorAff);
-  var linkingFig1 = { divId: "fig-1", file1: "bar-chart", file2: "line-chart", dataFile: "renewables", x: "data" };
+  var linkedOutputsFig1 = { divId: "fig-1", file1: "bar-chart", file2: "line-chart", dataFile: "renewables", x: "data" };
   var fig2 = { divId: "fig-conv-2", file: "slicing/convolution/emboss-wrap", xs: ["image", "filter"] };
   var fig1 = { divId: "fig-conv-1", file: "slicing/convolution/emboss", xs: ["image", "filter"] };
   var drawFigs = (loadFigs) => {
@@ -37779,7 +37779,7 @@
     return () => {
       $0();
       drawFigs([loadFig2(fig1), loadFig2(fig2)])();
-      return drawLinkedOutputsFigs([loadLinkedOutputsFig2(linkingFig1)])();
+      return drawLinkedOutputsFigs([loadLinkedOutputsFig2(linkedOutputsFig1)])();
     };
   })();
 
