@@ -14,8 +14,8 @@ import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
 import Util (type (×), (×), Endo)
 
-linkingFig1 :: LinkedOutputsFigSpec
-linkingFig1 =
+linkedOutputsFig1 :: LinkedOutputsFigSpec
+linkedOutputsFig1 =
    { divId: "fig-1"
    , file1: File "bar-chart"
    , file2: File "line-chart"
@@ -75,4 +75,4 @@ main :: Effect Unit
 main = do
    drawFiles [ Folder "fluid/lib" × File "convolution" ]
    drawFigs [ loadFig fig1, loadFig fig2 ]
-   drawLinkedOutputsFigs [ loadLinkedOutputsFig linkingFig1 ]
+   drawLinkedOutputsFigs [ loadLinkedOutputsFig linkedOutputsFig1 ]
