@@ -16,6 +16,16 @@ import Util (type (×), (×))
 
 main :: Effect Unit
 main = run tests
+--main = run scratchpad
+
+scratchpad :: TestSuite
+scratchpad = asTestSuite $ bwdMany
+   [ { file: "dtw/compute-dtw"
+     , bwd_expect_file: "dtw/compute-dtw.expect"
+     , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
+     , δv: listElement 1 neg
+     }
+   ]
 
 type BenchSuite = (Int × Boolean) -> Array (String × Aff BenchRow)
 type TestSuite = Array (String × Aff Unit)
@@ -28,21 +38,8 @@ benchmarks =
    , withDatasetMany graphics_cases
    ]
 
-tests :: TestSuite
-tests = concat (benchmarks <#> asTestSuite) <> linkedOutputsMany linking_cases
-
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
 
-{-
-tests = concat [ test_scratchpad ]
--}
-
-test_scratchpad :: TestSuite
-test_scratchpad = asTestSuite $ bwdMany
-   [ { file: "dtw/compute-dtw"
-     , bwd_expect_file: "dtw/compute-dtw.expect"
-     , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
-     , δv: listElement 1 neg
-     }
-   ]
+tests :: TestSuite
+tests = concat (benchmarks <#> asTestSuite) <> linkedOutputsMany linking_cases
