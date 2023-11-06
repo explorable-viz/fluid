@@ -16,6 +16,7 @@ import Util (type (×), (×))
 
 main :: Effect Unit
 main = run tests
+
 --main = run scratchpad
 
 scratchpad :: TestSuite
