@@ -21,9 +21,9 @@ main = run tests
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdMany
-   [ { file: "dtw/compute-dtw"
-     , bwd_expect_file: "dtw/compute-dtw.expect"
-     , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
+   [ { file: "dtw/average-series"
+     , bwd_expect_file: "dtw/average-series.expect"
+     , fwd_expect: "(2.5 : (⸨0.5⸩ : (0.5 : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
      , δv: listElement 1 neg
      }
    ]
