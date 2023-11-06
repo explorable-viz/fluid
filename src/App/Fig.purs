@@ -211,7 +211,7 @@ loadFig spec@{ file } = do
 loadLinkedOutputsFig :: forall m. MonadAff m => MonadError Error m => LinkedOutputsFigSpec -> m LinkedOutputsFig
 loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
    let
-      dir = File "linking/"
+      dir = File "linked-outputs/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- views share ambient environment γ
    { γ } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= initialConfig
@@ -220,7 +220,7 @@ loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
       γ0 = botOf <$> γ
       s1 = botOf s1'
       s2 = botOf s2'
-   dataFile' <- loadFile (Folder "fluid/example/linking") dataFile -- TODO: use surface expression instead
+   dataFile' <- loadFile (Folder "fluid/example/linked-outputs") dataFile -- TODO: use surface expression instead
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
    t1 × v1 <- eval γ0 e1 bot
    t2 × v2 <- eval γ0 e2 bot

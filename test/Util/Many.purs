@@ -35,8 +35,8 @@ withDatasetMany specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
 linkedOutputsMany :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
 linkedOutputsMany specs = zip (specs <#> name) (specs <#> one)
    where
-   name spec = "linking/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
+   name spec = "linked-outputs/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
    one { spec, δv1, v2_expect } = do
       { γ, e1, e2, t1, t2, v1 } <- loadLinkedOutputsFig spec
       { v': v2' } <- linkedOutputsResult spec.x γ e1 e2 t1 t2 (δv1 v1)
-      checkPretty "LinkedOutputsed output" v2_expect v2'
+      checkPretty "linked output" v2_expect v2'
