@@ -5,7 +5,7 @@ let avgSeq seq1 seq2 fn pairs = let worker seq1 seq2 fn (i, j) = let x = nth (i 
                                                                     fn x y in
                                 map (worker seq1 seq2 fn) pairs in
 let seq1 = [3, ⸨1⸩, 2, 2, 1];
-    seq2 = [2, ⸨0⸩, 0, 3, 3, 1, 0];
+    seq2 = [2, 0, ⸨0⸩, 3, 3, 1, 0];
     window = 2;
     (costs, matched) = computeDTW seq1 seq2 d window in
 avgSeq seq1 seq2 avg matched
