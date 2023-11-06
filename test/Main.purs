@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
 import Test.Benchmark.Main (BenchSuite, benchmarks)
-import Test.Specs (linking_cases)
+import Test.Specs (linkedOutputs_cases)
 import Test.Util.Many (bwdMany, linkedOutputsMany)
 import Test.Util.Mocha (run)
 import Util (type (×), (×))
@@ -34,4 +34,4 @@ asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
 
 tests :: TestSuite
-tests = concat (benchmarks <#> asTestSuite) <> linkedOutputsMany linking_cases
+tests = concat (benchmarks <#> asTestSuite) <> linkedOutputsMany linkedOutputs_cases

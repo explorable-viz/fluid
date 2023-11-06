@@ -222,8 +222,8 @@ graphics_cases =
    , { dataset: "dataset/renewables-restricted", file: "graphics/stacked-bar-chart" }
    ]
 
-linking_cases :: Array TestLinkedOutputsSpec
-linking_cases =
+linkedOutputs_cases :: Array TestLinkedOutputsSpec
+linkedOutputs_cases =
    [ { spec:
           { divId: ""
           , file1: File "pairs-1"
