@@ -8,9 +8,9 @@ import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
-import Test.Benchmark.Util (BenchRow)
-import Test.Specs (bwd_cases, desugar_cases, graphics_cases, linking_cases, misc_cases)
-import Test.Util.Many (bwdMany, linkedOutputsMany, many, withDatasetMany)
+import Test.Benchmark.Main (BenchSuite, benchmarks)
+import Test.Specs (linking_cases)
+import Test.Util.Many (bwdMany, linkedOutputsMany)
 import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
@@ -27,16 +27,7 @@ scratchpad = asTestSuite $ bwdMany
      }
    ]
 
-type BenchSuite = (Int × Boolean) -> Array (String × Aff BenchRow)
 type TestSuite = Array (String × Aff Unit)
-
-benchmarks :: Array BenchSuite
-benchmarks =
-   [ many desugar_cases
-   , many misc_cases
-   , bwdMany bwd_cases
-   , withDatasetMany graphics_cases
-   ]
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
