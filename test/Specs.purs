@@ -209,8 +209,8 @@ bwd_cases =
      }
    , { file: "dtw/average-series"
      , bwd_expect_file: "dtw/average-series.expect"
-     , fwd_expect: "(2.5 : (⸨0.5⸩ : (0.5 : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
-     , δv: listElement 1 neg
+     , fwd_expect: "(2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
+     , δv: listElement 2 neg
      }
    ]
 
@@ -222,8 +222,8 @@ graphics_cases =
    , { dataset: "dataset/renewables-restricted", file: "graphics/stacked-bar-chart" }
    ]
 
-linking_cases :: Array TestLinkedOutputsSpec
-linking_cases =
+linkedOutputs_cases :: Array TestLinkedOutputsSpec
+linkedOutputs_cases =
    [ { spec:
           { divId: ""
           , file1: File "pairs-1"

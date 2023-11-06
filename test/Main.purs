@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
 import Test.Benchmark.Main (BenchSuite, benchmarks)
-import Test.Specs (linking_cases)
+import Test.Specs (linkedOutputs_cases)
 import Test.Util.Many (bwdMany, linkedOutputsMany)
 import Test.Util.Mocha (run)
 import Util (type (×), (×))
@@ -23,8 +23,8 @@ scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdMany
    [ { file: "dtw/average-series"
      , bwd_expect_file: "dtw/average-series.expect"
-     , fwd_expect: "(2.5 : (⸨0.5⸩ : (0.5 : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
-     , δv: listElement 1 neg
+     , fwd_expect: "(2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
+     , δv: listElement 2 neg
      }
    ]
 
@@ -34,4 +34,4 @@ asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
 
 tests :: TestSuite
-tests = concat (benchmarks <#> asTestSuite) <> linkedOutputsMany linking_cases
+tests = concat (benchmarks <#> asTestSuite) <> linkedOutputsMany linkedOutputs_cases
