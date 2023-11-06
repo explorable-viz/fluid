@@ -2,7 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd)
 
-import App.Fig (LinkFigSpec)
+import App.Fig (LinkedOutputsFigSpec, LinkedInputsFigSpec)
 import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
@@ -179,8 +179,14 @@ type TestWithDatasetSpec =
    , file :: String
    }
 
-type TestLinkSpec =
-   { spec :: LinkFigSpec
+type TestLinkedOutputsSpec =
+   { spec :: LinkedOutputsFigSpec
+   , δv1 :: Selector Val
+   , v2_expect :: String
+   }
+
+type TestLinkedInputsSpec =
+   { spec :: LinkedInputsFigSpec
    , δv1 :: Selector Val
    , v2_expect :: String
    }

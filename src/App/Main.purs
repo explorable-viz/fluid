@@ -3,7 +3,7 @@ module App.Main where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (addEditorView)
-import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawCode, drawFig, drawLinkFig, loadFig, loadLinkFig)
+import App.Fig (Fig, FigSpec, LinkedOutputsFig, LinkedOutputsFigSpec, drawCode, drawFig, drawLinkedOutputsFig, loadFig, loadLinkedOutputsFig)
 import Data.Either (Either(..))
 import Data.Newtype (unwrap)
 import Data.Traversable (sequence, sequence_)
@@ -14,7 +14,7 @@ import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
 import Util (type (×), (×), Endo)
 
-linkingFig1 :: LinkFigSpec
+linkingFig1 :: LinkedOutputsFigSpec
 linkingFig1 =
    { divId: "fig-1"
    , file1: File "bar-chart"
@@ -40,8 +40,8 @@ fig2 =
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
 
-drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
-drawLinkFigs loadFigs =
+drawLinkedOutputsFigs :: Array (Aff LinkedOutputsFig) -> Effect Unit
+drawLinkedOutputsFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
@@ -50,7 +50,7 @@ drawLinkFigs loadFigs =
                ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
                ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
                ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
-               drawLinkFig fig ed1 ed2 ed3 (Left $ botOf)
+               drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ botOf)
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =
@@ -75,4 +75,4 @@ main :: Effect Unit
 main = do
    drawFiles [ Folder "fluid/lib" × File "convolution" ]
    drawFigs [ loadFig fig1, loadFig fig2 ]
-   drawLinkFigs [ loadLinkFig linkingFig1 ]
+   drawLinkedOutputsFigs [ loadLinkedOutputsFig linkingFig1 ]

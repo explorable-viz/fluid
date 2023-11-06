@@ -5,7 +5,7 @@ import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCe
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
-import Test.Util (TestBwdSpec, TestSpec, TestWithDatasetSpec, TestLinkSpec)
+import Test.Util (TestBwdSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -222,7 +222,7 @@ graphics_cases =
    , { dataset: "dataset/renewables-restricted", file: "graphics/stacked-bar-chart" }
    ]
 
-linking_cases :: Array TestLinkSpec
+linking_cases :: Array TestLinkedOutputsSpec
 linking_cases =
    [ { spec:
           { divId: ""
