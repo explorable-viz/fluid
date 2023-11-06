@@ -37535,7 +37535,7 @@
     };
   };
   var splitDefs1 = /* @__PURE__ */ splitDefs(annBoolean);
-  var loadLinkFig = (dictMonadAff) => {
+  var loadLinkedOutputsFig = (dictMonadAff) => {
     const Monad0 = dictMonadAff.MonadEffect0().Monad0();
     const Bind1 = Monad0.Bind1();
     const defaultImports2 = defaultImports(dictMonadAff);
@@ -37609,7 +37609,7 @@
       });
     };
   };
-  var linkResult = (dictMonadError) => {
+  var linkedOutputsResult = (dictMonadError) => {
     const MonadThrow0 = dictMonadError.MonadThrow0();
     const Monad0 = MonadThrow0.Monad0();
     const bind1 = Monad0.Bind1().bind;
@@ -37627,7 +37627,7 @@
       ))(functorExpr.map((x$1) => true)(e22))(true))((v4) => pure1({ "v'": functorVal.map(boolNot)(v4._2), "v0'": v0$p })));
     };
   };
-  var linkResult1 = /* @__PURE__ */ linkResult(monadErrorEffect);
+  var linkedOutputsResult1 = /* @__PURE__ */ linkedOutputsResult(monadErrorEffect);
   var figViews = (dictMonadError) => {
     const Monad0 = dictMonadError.MonadThrow0().Monad0();
     const bind1 = Monad0.Bind1().bind;
@@ -37655,13 +37655,7 @@
     }
     fail();
   };
-  var drawCode = (ed) => (s) => {
-    const $2 = update(ed.state)([{ changes: { from: 0, to: getContentsLength(ed), insert: s } }]);
-    return () => {
-      const tr = $2();
-      return dispatch2(ed)(tr)();
-    };
-  };
+  var drawCode = (ed) => (s) => bindE(update(ed.state)([{ changes: { from: 0, to: getContentsLength(ed), insert: s } }]))(dispatch2(ed));
   var drawFig = (v) => (ed) => (\u03B4v) => {
     const $3 = log2("Redrawing " + v.spec.divId);
     return () => {
@@ -37672,14 +37666,14 @@
       return drawCode(ed)(intercalate4("\n")(removeDocWS(prettyExpr1(annBoolean).pretty(v.s0)).lines))();
     };
   };
-  var drawLinkFig = (v) => (ed1) => (ed2) => (ed3) => (\u03B4v) => {
+  var drawLinkedOutputsFig = (v) => (ed1) => (ed2) => (ed3) => (\u03B4v) => {
     const $5 = log2("Redrawing " + v.spec.divId);
     return () => {
       $5();
       const v3 = (() => {
         if (\u03B4v.tag === "Left") {
           const v1$p = \u03B4v._1(v.v1);
-          const $8 = linkResult1(v.spec.x)(v["\u03B3"])(v.e1)(v.e2)(v.t1)(v.t2)(v1$p);
+          const $8 = linkedOutputsResult1(v.spec.x)(v["\u03B3"])(v.e1)(v.e2)(v.t1)(v.t2)(v1$p);
           return () => {
             const v32 = $8();
             return $Tuple(v1$p, $Tuple(v32["v'"], $Tuple((v$1) => v1$p, $Tuple(identity24, v32["v0'"]))));
@@ -37687,7 +37681,7 @@
         }
         if (\u03B4v.tag === "Right") {
           const v2$p = \u03B4v._1(v.v2);
-          const $8 = linkResult1(v.spec.x)(v["\u03B3"])(v.e2)(v.e1)(v.t2)(v.t1)(v2$p);
+          const $8 = linkedOutputsResult1(v.spec.x)(v["\u03B3"])(v.e2)(v.e1)(v.t2)(v.t1)(v2$p);
           return () => {
             const v32 = $8();
             return $Tuple(v32["v'"], $Tuple(v2$p, $Tuple(identity24, $Tuple((v$1) => v2$p, v32["v0'"]))));
@@ -37695,8 +37689,8 @@
         }
         fail();
       })()();
-      drawView(v.spec.divId)((selector) => drawLinkFig(v)(ed1)(ed2)(ed3)($Either("Left", (x2) => selector(v3._2._2._1(x2)))))(2)(view("left view")(v3._1))();
-      drawView(v.spec.divId)((selector) => drawLinkFig(v)(ed1)(ed2)(ed3)($Either("Right", (x2) => selector(v3._2._2._2._1(x2)))))(0)(view("right view")(v3._2._1))();
+      drawView(v.spec.divId)((selector) => drawLinkedOutputsFig(v)(ed1)(ed2)(ed3)($Either("Left", (x2) => selector(v3._2._2._1(x2)))))(2)(view("left view")(v3._1))();
+      drawView(v.spec.divId)((selector) => drawLinkedOutputsFig(v)(ed1)(ed2)(ed3)($Either("Right", (x2) => selector(v3._2._2._2._1(x2)))))(0)(view("right view")(v3._2._1))();
       drawView(v.spec.divId)(doNothing)(1)(view("common data")(v3._2._2._2._2))();
       drawCode(ed1)(intercalate4("\n")(removeDocWS(prettyExpr1(annBoolean).pretty(v.s1)).lines))();
       drawCode(ed2)(intercalate4("\n")(removeDocWS(prettyExpr1(annBoolean).pretty(v.s2)).lines))();
@@ -37713,7 +37707,7 @@
   var botOf2 = /* @__PURE__ */ (() => functorVal.map((v) => false))();
   var loadFile2 = /* @__PURE__ */ loadFile(monadAffAff)(monadErrorAff);
   var loadFig2 = /* @__PURE__ */ loadFig(monadAffAff)(monadErrorAff);
-  var loadLinkFig2 = /* @__PURE__ */ loadLinkFig(monadAffAff)(monadErrorAff);
+  var loadLinkedOutputsFig2 = /* @__PURE__ */ loadLinkedOutputsFig(monadAffAff)(monadErrorAff);
   var linkingFig1 = { divId: "fig-1", file1: "bar-chart", file2: "line-chart", dataFile: "renewables", x: "data" };
   var fig2 = { divId: "fig-conv-2", file: "slicing/convolution/emboss-wrap", xs: ["image", "filter"] };
   var fig1 = { divId: "fig-conv-1", file: "slicing/convolution/emboss", xs: ["image", "filter"] };
@@ -37757,7 +37751,7 @@
       return unit2;
     };
   })(files));
-  var drawLinkFigs = (loadFigs) => {
+  var drawLinkedOutputsFigs = (loadFigs) => {
     const $1 = runAff((v) => {
       if (v.tag === "Left") {
         return log2(showErrorImpl(v._1));
@@ -37769,7 +37763,7 @@
             const ed1 = $3();
             const ed2 = addEditorView("codemirror-" + fig.spec.file2)();
             const ed3 = addEditorView("codemirror-" + fig.spec.dataFile)();
-            return drawLinkFig(fig)(ed1)(ed2)(ed3)($Either("Left", botOf2))();
+            return drawLinkedOutputsFig(fig)(ed1)(ed2)(ed3)($Either("Left", botOf2))();
           };
         })(v._1));
       }
@@ -37785,7 +37779,7 @@
     return () => {
       $0();
       drawFigs([loadFig2(fig1), loadFig2(fig2)])();
-      return drawLinkFigs([loadLinkFig2(linkingFig1)])();
+      return drawLinkedOutputsFigs([loadLinkedOutputsFig2(linkingFig1)])();
     };
   })();
 

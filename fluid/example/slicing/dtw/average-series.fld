@@ -1,7 +1,7 @@
 let d x y = (x - y) * (x - y);
 let avg x y = (x + y) / 2;
-let avgSeq seq1 seq2 fn pairs = 
-    let worker seq1 seq2 fn (i, j) = 
+let avgSeq seq1 seq2 fn pairs =
+    let worker seq1 seq2 fn (i, j) =
         let x = nth (i - 1) seq1;
             y = nth (j - 1) seq2
         in
