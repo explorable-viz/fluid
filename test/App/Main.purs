@@ -8,7 +8,7 @@ import Effect.Aff (Aff)
 import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
--- For now app tests just exercise figure creation code.
+-- For now just exercise figure creation code; will test via UI at some point.
 test_fig :: FigSpec -> String × Aff Unit
 test_fig spec = spec.divId × void (loadFig spec)
 
