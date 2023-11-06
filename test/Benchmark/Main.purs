@@ -14,11 +14,17 @@ import Util (type (×), definitely, (×))
 
 main :: Effect Unit
 main = launchAff_ do
-   let
-      iter = 3
-      arr = concat ([ bench_misc, bench_desugaring, bench_bwd, bench_graphics ] <#> ((#) (iter × true)))
-   outs <- sequence $ (\(str × row) -> (str × _) <$> row) <$> arr
+   outs <- sequence $ (\(str × row) -> (str × _) <$> row) <$> benchmarks
    logShow $ BenchAcc $ definitely "More than one benchmark" $ fromArray outs
+
+benchmarks :: Array (String × Aff BenchRow)
+benchmarks = concat ((<$>) (_ $ (iterations × true))
+   [ bench_desugaring
+   , bench_misc
+   , bench_bwd
+   , bench_graphics
+   ])
+   where iterations = 3
 
 bench_desugaring :: (Int × Boolean) -> Array (String × Aff BenchRow)
 bench_desugaring = many desugar_cases
