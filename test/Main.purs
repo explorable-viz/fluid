@@ -8,6 +8,7 @@ import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
+import Test.Benchmark.Util (BenchRow)
 import Test.Specs (bwd_cases, desugar_cases, graphics_cases, linking_cases, misc_cases)
 import Test.Util.Many (bwdMany, linkedOutputsMany, many, withDatasetMany)
 import Test.Util.Mocha (run)
@@ -16,40 +17,32 @@ import Util (type (×), (×))
 main :: Effect Unit
 main = run tests
 
-tests :: Array (String × Aff Unit)
-tests = concat
-   [ test_desugaring
-   , test_misc
-   , test_bwd
-   , test_graphics
-   , test_linkedOutputs
+type BenchSuite = (Int × Boolean) -> Array (String × Aff BenchRow)
+type TestSuite = Array (String × Aff Unit)
+
+benchmarks :: Array BenchSuite
+benchmarks =
+   [ many desugar_cases
+   , many misc_cases
+   , bwdMany bwd_cases
+   , withDatasetMany graphics_cases
    ]
+
+tests :: TestSuite
+tests = concat (benchmarks <#> asTestSuite) <> linkedOutputsMany linking_cases
+
+asTestSuite :: BenchSuite -> TestSuite
+asTestSuite suite = second void <$> suite (1 × false)
 
 {-
 tests = concat [ test_scratchpad ]
 -}
 
-test_scratchpad :: Array (String × Aff Unit)
-test_scratchpad = second void <$> bwdMany
+test_scratchpad :: TestSuite
+test_scratchpad = asTestSuite $ bwdMany
    [ { file: "dtw/compute-dtw"
      , bwd_expect_file: "dtw/compute-dtw.expect"
      , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
      , δv: listElement 1 neg
      }
    ]
-   (1 × false)
-
-test_desugaring :: Array (String × Aff Unit)
-test_desugaring = second void <$> many desugar_cases (1 × false)
-
-test_misc :: Array (String × Aff Unit)
-test_misc = second void <$> many misc_cases (1 × false)
-
-test_bwd :: Array (String × Aff Unit)
-test_bwd = second void <$> bwdMany bwd_cases (1 × false)
-
-test_graphics :: Array (String × Aff Unit)
-test_graphics = second void <$> withDatasetMany graphics_cases (1 × false)
-
-test_linkedOutputs :: Array (String × Aff Unit)
-test_linkedOutputs = linkedOutputsMany linking_cases
