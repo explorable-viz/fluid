@@ -216,7 +216,7 @@ bwd_cases =
      , bwd_expect_file: "motivating-example.expect"
      , fwd_expect: "⸨240⸩"
      , δv: neg
-   }
+     }
    ]
 
 graphics_cases :: Array TestWithDatasetSpec
