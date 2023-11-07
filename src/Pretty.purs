@@ -22,7 +22,7 @@ import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import Graph (Vertex(..))
 import Graph.GraphImpl (GraphImpl(..))
-import Parse (str)
+import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))

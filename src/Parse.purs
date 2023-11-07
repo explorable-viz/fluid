@@ -19,85 +19,19 @@ import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Lattice (Raw)
+import Parse.Constants (str)
 import Parsing.Combinators (between, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof)
 import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
+import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Pair (Pair(..))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
-
--- Constants (should also be used by prettyprinter). Haven't found a way to avoid the type definition.
-str
-   :: { arrayLBracket :: String
-      , arrayRBracket :: String
-      , as :: String
-      , backslash :: String
-      , backtick :: String
-      , bar :: String
-      , colon :: String
-      , colonEq :: String
-      , comma :: String
-      , curlylBrace :: String
-      , curlyrBrace :: String
-      , dictLBracket :: String
-      , dictRBracket :: String
-      , dot :: String
-      , ellipsis :: String
-      , else_ :: String
-      , equals :: String
-      , fun :: String
-      , if_ :: String
-      , in_ :: String
-      , lArrow :: String
-      , lBracket :: String
-      , let_ :: String
-      , lparenth :: String
-      , match :: String
-      , rArrow :: String
-      , rBracket :: String
-      , rparenth :: String
-      , semiColon :: String
-      , then_ :: String
-      }
-
-str =
-   { arrayLBracket: "[|"
-   , arrayRBracket: "|]"
-   , as: "as"
-   , backslash: "\\"
-   , backtick: "`"
-   , bar: "|"
-   , colon: ":"
-   , colonEq: ":="
-   , comma: ","
-   , curlylBrace: "{"
-   , curlyrBrace: "}"
-   , dictLBracket: "{|"
-   , dictRBracket: "|}"
-   , dot: "."
-   , ellipsis: ".."
-   , else_: "else"
-   , equals: "="
-   , fun: "fun"
-   , if_: "if"
-   , in_: "in"
-   , lArrow: "<-"
-   , lBracket: "["
-   , let_: "let"
-   , lparenth: "("
-
-   , match: "match"
-   , rArrow: "->"
-   , rBracket: "]"
-   , rparenth: ")"
-   , semiColon: ";"
-   , then_: "then"
-   }
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef)
@@ -302,7 +236,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
       onlyIf (op == op') $
          if op == str.dot then \e e' -> case e' of
             Var x -> Project e x
-            _ -> error "Field names are not first class."
+            _ -> error $ "Field names are not first class; got \"" <> prettyP e' <> "\"."
          else if isCtrOp op' then \e e' -> Constr unit op' (e : e' : empty)
          else \e e' -> BinaryApp e op e'
 
