@@ -1,10 +1,13 @@
 let country_gdp c_name countries_list cities =
-        sum [city.gdp | country <- countries_list
-                      , c_name == country.name
-                      , city <- cities
-                      , country_city <- country.cities
-                      , city.name == country_city];
-let all_countries = [{name: "Germany", cities: ["Berlin", "Hamburg", "Munich"]}];
+        let city_gdp = sum [city.gdp | country <- countries_list
+                        , c_name == country.name
+                        , city <- cities
+                        , country_city <- country.cities
+                        , city.name == country_city];
+            farm_gdp = sum [ country.farms * 3 | country <- countries_list, country.name == c_name ]
+        in city_gdp + farm_gdp;
+let all_countries = [{name: "Germany", cities: ["Berlin", "Hamburg", "Munich"], farms: 100},
+                     {name: "UK", cities: ["London"], farms: 200}];
 let all_cities = [
         {name: "Berlin", gdp: 100, country: "Germany"},
         {name: "Munich", gdp: 80,  country: "Germany"},

@@ -6,9 +6,10 @@ import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Lattice (neg)
 import Test.Benchmark.Main (benchmarks)
 import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
-import Test.Util.Many (BenchSuite, linkedInputsMany, linkedOutputsMany)
+import Test.Util.Many (BenchSuite, linkedInputsMany, linkedOutputsMany, bwdMany)
 import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
@@ -18,8 +19,14 @@ main :: Effect Unit
 main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = tests
-
+-- scratchpad = tests
+scratchpad = asTestSuite $ bwdMany
+ [ { file: "motivating-example"
+     , bwd_expect_file: "motivating-example.expect"
+     , fwd_expect: "⸨240⸩"
+     , δv: neg
+     }
+ ]
 type TestSuite = Array (String × Aff Unit)
 
 asTestSuite :: BenchSuite -> TestSuite
