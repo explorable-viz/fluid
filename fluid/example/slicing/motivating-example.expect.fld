@@ -1,4 +1,4 @@
-let country_water c_name countries_list cities = let city_water = sum [city.water|country <- countries_list, c_name == country.name, city <- cities, country_city <- country.cities, city.name == country_city];
+let country_water c_name countries_list cities = let city_water = sum [city.water|country <- countries_list, c_name == country.name, city <- cities, elem city.name country.cities];
                                                      farm_water = sum ⸨[country.farms * ⸨3⸩|country <- countries_list, country.name == c_name]⸩ in
                                                  city_water + farm_water in
 let all_countries = [{name : ⸨"Germany"⸩, cities : ["Berlin", "Hamburg", "Munich"], farms : ⸨100⸩}
