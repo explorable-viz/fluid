@@ -13,9 +13,8 @@ import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
 main :: Effect Unit
-
---main = run $ linkedInputsMany linkedInputs_cases
-main = run scratchpad
+main = run tests
+--main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ many
