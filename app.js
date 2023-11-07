@@ -27051,6 +27051,7 @@
   var Record2 = (value0) => (value1) => $Expr2("Record", value0, value1);
   var Dictionary2 = (value0) => (value1) => $Expr2("Dictionary", value0, value1);
   var Matrix2 = (value0) => (value1) => (value2) => (value3) => $Expr2("Matrix", value0, value1, value2, value3);
+  var Project2 = (value0) => (value1) => $Expr2("Project", value0, value1);
   var App3 = (value0) => (value1) => $Expr2("App", value0, value1);
   var MatchAs = (value0) => (value1) => $Expr2("MatchAs", value0, value1);
   var IfElse = (value0) => (value1) => (value2) => $Expr2("IfElse", value0, value1, value2);
@@ -28114,7 +28115,7 @@
           return parentheses(beside(checkOneLine(split("\n")(" fun")))(prettyClauses(dictAnn).pretty(v._1)));
         }
         if (v.tag === "Project") {
-          return beside(beside(prettyExpr1(dictAnn).pretty(v._1))(checkOneLine(split("\n")(" ."))))(checkOneLine(split("\n")(" " + v._2)));
+          return beside(beside(prettySimple(dictAnn)(v._1))(checkOneLine(split("\n")(" ."))))(checkOneLine(split("\n")(" " + v._2)));
         }
         if (v.tag === "App") {
           return prettyAppChain(dictAnn)($Expr2("App", v._1, v._2));
@@ -28240,6 +28241,7 @@
   var $Fun = (tag, _1, _2, _3) => ({ tag, _1, _2, _3 });
   var $Val = (tag, _1, _2, _3) => ({ tag, _1, _2, _3 });
   var identity19 = (x2) => x2;
+  var boundedLattice = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeUni, BoundedMeetSemilattice1: () => boundedMeetSemilatticeUni };
   var boundedLattice1 = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeBoo, BoundedMeetSemilattice1: () => boundedMeetSemilatticeBoo };
   var fromFoldable6 = /* @__PURE__ */ foldlArray((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2);
   var toUnfoldable8 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
@@ -28879,6 +28881,7 @@
       })()).expand(v)(v1)
     };
   };
+  var annUnit = { Highlightable0: () => highlightableUnit, BoundedLattice1: () => boundedLattice };
   var annBoolean = { Highlightable0: () => highlightableBoolean, BoundedLattice1: () => boundedLattice1 };
   var restrict = (\u03B3) => (xs) => filterWithKey((x2) => {
     const $3 = lookup(ordString)(x2)(xs);
@@ -35292,8 +35295,8 @@
   var fromFoldable18 = /* @__PURE__ */ (() => fromFoldableImpl(foldableNonEmptyList.foldr))();
   var onlyIf2 = /* @__PURE__ */ onlyIf(bindParserT)(alternativeParserT);
   var choose2 = /* @__PURE__ */ choose(altParserT);
-  var identity23 = (x2) => x2;
   var fanin3 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
+  var identity23 = (x2) => x2;
   var operators = (binaryOp) => fromFoldable11(listMap(arrayMap((v) => $Operator("Infix", $$try(binaryOp(v.op)), v.assoc)))(listMap(fromFoldable18)(groupBy((x2) => (y2) => x2.prec === y2.prec)(sortBy((x2) => (x$1) => {
     const $3 = ordInt.compare(x2.prec)(x$1.prec);
     if ($3.tag === "GT") {
@@ -35677,7 +35680,7 @@
             if (e$p.tag === "Var") {
               return $Expr2("Project", e, e$p._1);
             }
-            return unsafePerformEffect(throwException(error("Field names are not first class.")));
+            return unsafePerformEffect(throwException(error('Field names are not first class; got "' + (intercalate4("\n")(removeDocWS(prettyExpr1(annUnit).pretty(e$p)).lines) + '".'))));
           };
         }
         if (":" === definitely("absurd")(charAt2(0)(a))) {
@@ -35686,9 +35689,121 @@
         return (e) => (e$p) => $Expr2("BinaryApp", e, op, e$p);
       })())(state2, more, lift1, $$throw2, done))
     )))));
-    const go$lazy = binding(() => lazyParserT.defer((v) => $0((() => {
-      const simpleExpr = altParserT.alt(between(token.symbol("[|"))(token.symbol("|]"))((() => {
-        const $3 = Matrix2(unit2);
+    const go$lazy = binding(() => lazyParserT.defer((v) => $0(altParserT.alt((() => {
+      const $3 = keyword2("match");
+      const $4 = keyword2("as");
+      return (state1, more, lift1, $$throw2, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => more((v2$2) => more((v1$2) => $3(
+        state1,
+        more,
+        lift1,
+        $$throw2,
+        (state2, a) => more((v2$3) => more((v3) => go$lazy()(
+          state2,
+          more,
+          lift1,
+          $$throw2,
+          (state3, a$1) => more((v4) => more((v2$4) => more((v3$1) => $4(
+            state3,
+            more,
+            lift1,
+            $$throw2,
+            (state3$1, a$2) => more((v4$1) => more((v2$5) => {
+              const $29 = MatchAs(a$1);
+              return more((v3$2) => branches(go$lazy())(clause_uncurried)(state3$1, more, lift1, $$throw2, (state3$2, a$3) => more((v4$2) => done(state3$2, $29(a$3)))));
+            }))
+          ))))
+        )))
+      )))))));
+    })())(altParserT.alt((() => {
+      const $3 = keyword2("if");
+      const $4 = keyword2("then");
+      const $5 = keyword2("else");
+      return (state1, more, lift1, $$throw2, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v2$3) => more((v1$1) => more((v2$4) => more((v3) => more((v2$5) => more((v1$2) => $3(
+        state1,
+        more,
+        lift1,
+        $$throw2,
+        (state2, a) => more((v2$6) => more((v3$1) => go$lazy()(
+          state2,
+          more,
+          lift1,
+          $$throw2,
+          (state3, a$1) => more((v4) => more((v4$1) => {
+            const $29 = IfElse(a$1);
+            return more((v2$7) => more((v3$2) => $4(
+              state3,
+              more,
+              lift1,
+              $$throw2,
+              (state3$1, a$2) => more((v4$2) => more((v3$3) => go$lazy()(
+                state3$1,
+                more,
+                lift1,
+                $$throw2,
+                (state3$2, a$3) => more((v4$3) => {
+                  const $39 = $29(a$3);
+                  return more((v2$8) => more((v3$4) => $5(
+                    state3$2,
+                    more,
+                    lift1,
+                    $$throw2,
+                    (state3$3, a$4) => more((v4$4) => more((v3$5) => go$lazy()(state3$3, more, lift1, $$throw2, (state3$4, a$5) => more((v4$5) => done(state3$4, $39(a$5))))))
+                  )));
+                })
+              )))
+            )));
+          }))
+        )))
+      )))))))))));
+    })())(altParserT.alt((() => {
+      const $3 = keyword2("fun");
+      return (state1, more, lift1, $$throw2, done) => more((v1) => more((v2) => more((v1$1) => $3(
+        state1,
+        more,
+        lift1,
+        $$throw2,
+        (state2, a) => more((v2$1) => more((v3) => branches(go$lazy())(clause_curried)(
+          state2,
+          more,
+          lift1,
+          $$throw2,
+          (state3, a$1) => more((v4) => more((v2$2) => done(state3, $Expr2("Lambda", a$1))))
+        )))
+      ))));
+    })())(altParserT.alt((() => {
+      const $3 = sepBy1(defs(go$lazy()))(token.semi);
+      return (state1, more, lift1, $$throw2, done) => more((v1) => more((v1$1) => $3(
+        state1,
+        more,
+        lift1,
+        $$throw2,
+        (state2, a) => more((v2) => {
+          const $14 = bindList.bind($List("Cons", a._1, a._2))(identity8);
+          return more((v2$1) => {
+            const $16 = foldableList.foldr((def) => fanin3(Let2)(LetRec2)(def));
+            const $17 = keyword2("in");
+            return more((v1$2) => more((v1$3) => more((v2$2) => more((v1$4) => $17(
+              state2,
+              more,
+              lift1,
+              $$throw2,
+              (state2$1, a$1) => more((v2$3) => more((v3) => go$lazy()(
+                state2$1,
+                more,
+                lift1,
+                $$throw2,
+                (state3, a$2) => more((v4) => more((v2$4) => {
+                  const $30 = $16(a$2);
+                  return more((v2$5) => done(state3, $30($14)));
+                }))
+              )))
+            )))));
+          });
+        })
+      )));
+    })())((() => {
+      const $3 = altParserT.alt(between(token.symbol("[|"))(token.symbol("|]"))((() => {
+        const $32 = Matrix2(unit2);
         const $4 = token.parens((state1, more, lift1, $$throw2, done) => more((v2) => more((v1) => ident(
           state1,
           more,
@@ -35717,7 +35832,7 @@
             lift1,
             $$throw2,
             (state3, a$1) => more((v4) => more((v2$4) => {
-              const $24 = $3(a);
+              const $24 = $32(a);
               return more((v3$1) => $4(
                 state3,
                 more,
@@ -35738,7 +35853,7 @@
           )))
         ))))));
       })()))(altParserT.alt($$try(token.brackets((state1, v$1, v1, v2, done) => done(state1, $Expr2("ListEmpty", unit2)))))(altParserT.alt((() => {
-        const $3 = ListNonEmpty(unit2);
+        const $32 = ListNonEmpty(unit2);
         const $4 = (() => {
           const go$1$lazy = binding(() => lazyParserT.defer((v$1) => altParserT.alt((state1, more, lift1, $$throw2, done) => more((v2) => more((v1) => rBracket(
             state1,
@@ -35788,7 +35903,7 @@
             lift1,
             $$throw2,
             (state2$1, a$1) => more((v2$3) => {
-              const $21 = $3(a$1);
+              const $21 = $32(a$1);
               return more((v3$1) => $4(
                 state2$1,
                 more,
@@ -35803,7 +35918,7 @@
           )))))
         )));
       })())(altParserT.alt(token.brackets((() => {
-        const $3 = ListComp(unit2);
+        const $32 = ListComp(unit2);
         const $4 = sepBy1(altParserT.alt((state1, more, lift1, $$throw2, done) => more((v2) => more((v2$1) => more((v1) => more((v1$1) => pattern(
           state1,
           more,
@@ -35859,7 +35974,7 @@
           lift1,
           $$throw2,
           (state3, a) => more((v4) => {
-            const $18 = $3(a);
+            const $18 = $32(a);
             return more((v2$3) => more((v3$1) => bar(
               state3,
               more,
@@ -35891,19 +36006,19 @@
           )));
         })
       ))))))))(altParserT.alt($$try((() => {
-        const $3 = Constr2(unit2);
+        const $32 = Constr2(unit2);
         return (state1, more, lift1, $$throw2, done) => more((v1) => more((v1$1) => ctr(
           state1,
           more,
           lift1,
           $$throw2,
           (state2, a) => more((v2) => {
-            const $14 = $3(a);
+            const $14 = $32(a);
             return more((v2$1) => done(state2, $14(Nil)));
           })
         )));
       })()))(altParserT.alt(between(token.symbol("{|"))(token.symbol("|}"))((() => {
-        const $3 = sepBy((state1, more, lift1, $$throw2, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => go$lazy()(
+        const $32 = sepBy((state1, more, lift1, $$throw2, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => go$lazy()(
           state1,
           more,
           lift1,
@@ -35920,15 +36035,15 @@
           )))
         ))))))(token.comma);
         const $4 = Dictionary2(unit2);
-        return (state1, more, lift1, $$throw2, done) => more((v1) => $3(state1, more, lift1, $$throw2, (state2, a) => more((v2) => done(state2, $4(a)))));
+        return (state1, more, lift1, $$throw2, done) => more((v1) => $32(state1, more, lift1, $$throw2, (state2, a) => more((v2) => done(state2, $4(a)))));
       })()))(altParserT.alt(token.braces((() => {
-        const $3 = Record2(unit2);
+        const $32 = Record2(unit2);
         return (state1, more, lift1, $$throw2, done) => more((v1) => sepBy(field2(go$lazy()))(token.comma)(
           state1,
           more,
           lift1,
           $$throw2,
-          (state2, a) => more((v2) => done(state2, $3(a)))
+          (state2, a) => more((v2) => done(state2, $32(a)))
         ));
       })()))(altParserT.alt($$try((state1, more, lift1, $$throw2, done) => more((v1) => ident(
         state1,
@@ -35937,7 +36052,7 @@
         $$throw2,
         (state2, a) => more((v2) => done(state2, $Expr2("Var", a)))
       ))))(altParserT.alt($$try((() => {
-        const $3 = altParserT.alt((state1, more, lift1, $$throw2, done) => more((v1) => $$char("-")(
+        const $32 = altParserT.alt((state1, more, lift1, $$throw2, done) => more((v1) => $$char("-")(
           state1,
           more,
           lift1,
@@ -35950,7 +36065,7 @@
           $$throw2,
           (state2, a) => more((v2) => done(state2, identity23))
         )))((state1, v$1, v1, v2, done) => done(state1, identity23)));
-        return (state1, more, lift1, $$throw2, done) => more((v1) => $3(
+        return (state1, more, lift1, $$throw2, done) => more((v1) => $32(
           state1,
           more,
           lift1,
@@ -35961,7 +36076,7 @@
           })
         ));
       })()))(altParserT.alt($$try((() => {
-        const $3 = altParserT.alt((state1, more, lift1, $$throw2, done) => more((v1) => $$char("-")(
+        const $32 = altParserT.alt((state1, more, lift1, $$throw2, done) => more((v1) => $$char("-")(
           state1,
           more,
           lift1,
@@ -35974,7 +36089,7 @@
           $$throw2,
           (state2, a) => more((v2) => done(state2, identity23))
         )))((state1, v$1, v1, v2, done) => done(state1, identity23)));
-        return (state1, more, lift1, $$throw2, done) => more((v1) => $3(
+        return (state1, more, lift1, $$throw2, done) => more((v1) => $32(
           state1,
           more,
           lift1,
@@ -35985,68 +36100,12 @@
           })
         ));
       })()))(altParserT.alt((() => {
-        const $3 = Str2(unit2);
-        return (state1, more, lift1, $$throw2, done) => more((v1) => token.stringLiteral(state1, more, lift1, $$throw2, (state2, a) => more((v2) => done(state2, $3(a)))));
-      })())(altParserT.alt((() => {
-        const $3 = sepBy1(defs(go$lazy()))(token.semi);
-        return (state1, more, lift1, $$throw2, done) => more((v1) => more((v1$1) => $3(
-          state1,
-          more,
-          lift1,
-          $$throw2,
-          (state2, a) => more((v2) => {
-            const $14 = bindList.bind($List("Cons", a._1, a._2))(identity8);
-            return more((v2$1) => {
-              const $16 = foldableList.foldr((def) => fanin3(Let2)(LetRec2)(def));
-              const $17 = keyword2("in");
-              return more((v1$2) => more((v1$3) => more((v2$2) => more((v1$4) => $17(
-                state2,
-                more,
-                lift1,
-                $$throw2,
-                (state2$1, a$1) => more((v2$3) => more((v3) => go$lazy()(
-                  state2$1,
-                  more,
-                  lift1,
-                  $$throw2,
-                  (state3, a$2) => more((v4) => more((v2$4) => {
-                    const $30 = $16(a$2);
-                    return more((v2$5) => done(state3, $30($14)));
-                  }))
-                )))
-              )))));
-            });
-          })
-        )));
-      })())(altParserT.alt((() => {
-        const $3 = keyword2("match");
-        const $4 = keyword2("as");
-        return (state1, more, lift1, $$throw2, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => more((v2$2) => more((v1$2) => $3(
-          state1,
-          more,
-          lift1,
-          $$throw2,
-          (state2, a) => more((v2$3) => more((v3) => go$lazy()(
-            state2,
-            more,
-            lift1,
-            $$throw2,
-            (state3, a$1) => more((v4) => more((v2$4) => more((v3$1) => $4(
-              state3,
-              more,
-              lift1,
-              $$throw2,
-              (state3$1, a$2) => more((v4$1) => more((v2$5) => {
-                const $29 = MatchAs(a$1);
-                return more((v3$2) => branches(go$lazy())(clause_uncurried)(state3$1, more, lift1, $$throw2, (state3$2, a$3) => more((v4$2) => done(state3$2, $29(a$3)))));
-              }))
-            ))))
-          )))
-        )))))));
+        const $32 = Str2(unit2);
+        return (state1, more, lift1, $$throw2, done) => more((v1) => token.stringLiteral(state1, more, lift1, $$throw2, (state2, a) => more((v2) => done(state2, $32(a)))));
       })())(altParserT.alt($$try(token.parens(go$lazy())))(altParserT.alt($$try((() => {
-        const $3 = token.parens(token.operator);
-        return (state1, more, lift1, $$throw2, done) => more((v1) => $3(state1, more, lift1, $$throw2, (state2, a) => more((v2) => done(state2, $Expr2("Op", a)))));
-      })()))(altParserT.alt(token.parens((state1, more, lift1, $$throw2, done) => more((v2) => more((v2$1) => more((v3) => more((v2$2) => more((v1) => go$lazy()(
+        const $32 = token.parens(token.operator);
+        return (state1, more, lift1, $$throw2, done) => more((v1) => $32(state1, more, lift1, $$throw2, (state2, a) => more((v2) => done(state2, $Expr2("Op", a)))));
+      })()))(token.parens((state1, more, lift1, $$throw2, done) => more((v2) => more((v2$1) => more((v3) => more((v2$2) => more((v1) => go$lazy()(
         state1,
         more,
         lift1,
@@ -36067,66 +36126,27 @@
             ))
           ))))
         )))
-      ))))))))(altParserT.alt((() => {
-        const $3 = keyword2("fun");
-        return (state1, more, lift1, $$throw2, done) => more((v1) => more((v2) => more((v1$1) => $3(
-          state1,
-          more,
-          lift1,
-          $$throw2,
-          (state2, a) => more((v2$1) => more((v3) => branches(go$lazy())(clause_curried)(
-            state2,
-            more,
-            lift1,
-            $$throw2,
-            (state3, a$1) => more((v4) => more((v2$2) => done(state3, $Expr2("Lambda", a$1))))
-          )))
-        ))));
-      })())((() => {
-        const $3 = keyword2("if");
-        const $4 = keyword2("then");
-        const $5 = keyword2("else");
-        return (state1, more, lift1, $$throw2, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v2$3) => more((v1$1) => more((v2$4) => more((v3) => more((v2$5) => more((v1$2) => $3(
-          state1,
-          more,
-          lift1,
-          $$throw2,
-          (state2, a) => more((v2$6) => more((v3$1) => go$lazy()(
-            state2,
-            more,
-            lift1,
-            $$throw2,
-            (state3, a$1) => more((v4) => more((v4$1) => {
-              const $29 = IfElse(a$1);
-              return more((v2$7) => more((v3$2) => $4(
-                state3,
-                more,
-                lift1,
-                $$throw2,
-                (state3$1, a$2) => more((v4$2) => more((v3$3) => go$lazy()(
-                  state3$1,
-                  more,
-                  lift1,
-                  $$throw2,
-                  (state3$2, a$3) => more((v4$3) => {
-                    const $39 = $29(a$3);
-                    return more((v2$8) => more((v3$4) => $5(
-                      state3$2,
-                      more,
-                      lift1,
-                      $$throw2,
-                      (state3$3, a$4) => more((v4$4) => more((v3$5) => go$lazy()(state3$3, more, lift1, $$throw2, (state3$4, a$5) => more((v4$5) => done(state3$4, $39(a$5))))))
-                    )));
-                  })
-                )))
-              )));
-            }))
-          )))
-        )))))))))));
-      })()))))))))))))))))));
+      )))))))))))))))))))));
+      const simpleExprOrProjection = (state1, more, lift1, $$throw2, done) => more((v1) => $3(
+        state1,
+        more,
+        lift1,
+        $$throw2,
+        (state2, a) => more((v2) => altParserT.alt((() => {
+          const $13 = Project2(a);
+          const $14 = token.reservedOp(".");
+          return (state1$1, more$1, lift1$1, throw$1, done$1) => more$1((v1$1) => more$1((v2$1) => more$1((v1$2) => $14(
+            state1$1,
+            more$1,
+            lift1$1,
+            throw$1,
+            (state2$1, a$1) => more$1((v2$2) => more$1((v3) => ident(state2$1, more$1, lift1$1, throw$1, (state3, a$2) => more$1((v4) => more$1((v2$3) => done$1(state3, $13(a$2)))))))
+          ))));
+        })())((state1$1, v$1, v1$1, v2$1, done$1) => done$1(state1$1, a))(state2, more, lift1, $$throw2, done))
+      ));
       const rest = (v$1) => {
         if (v$1.tag === "Constr") {
-          return altParserT.alt((state1, more, lift1, $$throw2, done) => more((v1) => simpleExpr(
+          return altParserT.alt((state1, more, lift1, $$throw2, done) => more((v1) => simpleExprOrProjection(
             state1,
             more,
             lift1,
@@ -36140,21 +36160,27 @@
           )))((state1, v$2, v1, v2, done) => done(state1, v$1));
         }
         return altParserT.alt((() => {
-          const $6 = App3(v$1);
-          return (state1, more, lift1, $$throw2, done) => more((v1) => more((v1$1) => simpleExpr(
+          const $7 = App3(v$1);
+          return (state1, more, lift1, $$throw2, done) => more((v1) => more((v1$1) => simpleExprOrProjection(
             state1,
             more,
             lift1,
             $$throw2,
             (state2, a) => more((v2) => {
-              const $17 = $6(a);
-              return more((v2$1) => rest($17)(state2, more, lift1, $$throw2, done));
+              const $18 = $7(a);
+              return more((v2$1) => rest($18)(state2, more, lift1, $$throw2, done));
             })
           )));
         })())((state1, v$2, v1, v2, done) => done(state1, v$1));
       };
-      return (state1, more, lift1, $$throw2, done) => more((v1) => simpleExpr(state1, more, lift1, $$throw2, (state2, a) => more((v2) => rest(a)(state2, more, lift1, $$throw2, done))));
-    })())));
+      return (state1, more, lift1, $$throw2, done) => more((v1) => simpleExprOrProjection(
+        state1,
+        more,
+        lift1,
+        $$throw2,
+        (state2, a) => more((v2) => rest(a)(state2, more, lift1, $$throw2, done))
+      ));
+    })())))))));
     const go = go$lazy();
     return go;
   })();
@@ -37334,7 +37360,7 @@
   ]))();
 
   // output-es/Module/index.js
-  var boundedLattice = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeUni, BoundedMeetSemilattice1: () => boundedMeetSemilatticeUni };
+  var boundedLattice2 = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeUni, BoundedMeetSemilattice1: () => boundedMeetSemilatticeUni };
   var parse = (dictMonadError) => {
     const $1 = dictMonadError.MonadThrow0();
     const $2 = $1.Monad0().Applicative0().pure;
@@ -37388,7 +37414,7 @@
     return (dictMonadError) => {
       const loadFile22 = loadFile1(dictMonadError);
       const parse1 = parse(dictMonadError);
-      const desugarModuleFwd = moduleFwd(dictMonadError)(boundedLattice);
+      const desugarModuleFwd = moduleFwd(dictMonadError)(boundedLattice2);
       return (file) => (v) => bind(loadFile22("fluid/lib")(file))((src) => bind(bind(parse1(src)(module_))(desugarModuleFwd))((mod) => pure2({
         mods: $List("Cons", mod, v.mods),
         datasets: v.datasets
@@ -37440,7 +37466,7 @@
     const pure2 = Monad0.Applicative0().pure;
     return (dictMonadError) => {
       const parseProgram2 = parseProgram1(dictMonadError);
-      const desug1 = exprFwd(boundedLattice)(dictMonadError)(joinSemilatticeUnit);
+      const desug1 = exprFwd(boundedLattice2)(dictMonadError)(joinSemilatticeUnit);
       return (file) => (x2) => (v) => bind(bind(parseProgram2("fluid")(file))(desug1))((e\u03B1) => pure2({
         mods: v.mods,
         datasets: $List("Cons", $Tuple(x2, e\u03B1), v.datasets)
@@ -37461,7 +37487,7 @@
   var $View = (tag, _1) => ({ tag, _1 });
   var matrixRep3 = /* @__PURE__ */ matrixRep(annBoolean);
   var botOf = /* @__PURE__ */ (() => functorVal.map((v) => false))();
-  var boundedLattice2 = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeBoo, BoundedMeetSemilattice1: () => boundedMeetSemilatticeBoo };
+  var boundedLattice3 = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeBoo, BoundedMeetSemilattice1: () => boundedMeetSemilatticeBoo };
   var evalBwd2 = /* @__PURE__ */ evalBwd(annBoolean);
   var erase2 = /* @__PURE__ */ (() => functorVal.map((v) => unit2))();
   var sequence_ = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity5);
@@ -37552,7 +37578,7 @@
       const initialConfig2 = initialConfig(dictMonadError);
       const open1 = parseProgram1(dictMonadError)("fluid/example");
       const loadFile1 = loadFile3(dictMonadError);
-      const desug1 = exprFwd(boundedLattice2)(dictMonadError)(joinSemilatticeBoolean);
+      const desug1 = exprFwd(boundedLattice3)(dictMonadError)(joinSemilatticeBoolean);
       const $$eval3 = $$eval(dictMonadError)(annBoolean);
       return (v) => {
         const $19 = "linked-outputs/" + v.file1;
@@ -37590,7 +37616,7 @@
       const initialConfig2 = initialConfig(dictMonadError);
       const open1 = parseProgram1(dictMonadError)("fluid/example");
       const splitDefs2 = splitDefs1(dictMonadError);
-      const desug1 = exprFwd(boundedLattice2)(dictMonadError)(joinSemilatticeBoolean);
+      const desug1 = exprFwd(boundedLattice3)(dictMonadError)(joinSemilatticeBoolean);
       const $$eval3 = $$eval(dictMonadError)(annBoolean);
       return (v) => bind1(bind1(defaultImports1)(initialConfig2))((v1) => {
         const \u03B30 = _fmapObject(v1["\u03B3"], botOf);

@@ -227,5 +227,5 @@ let enumFromTo n m =
 let range (m1, n1) (m2, n2) =
       [ (i1, i2) | i1 <- [m1 .. m2], i2 <- [n1 .. n2] ];
 
--- Int -> Int -> Int (should probably be defined differently but this works for now) 
+-- Int -> Int -> Int (should probably be defined differently but this works for now)
 let abs x y = if x - y < 0 then negate (x - y) else (x - y);
