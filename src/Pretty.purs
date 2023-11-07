@@ -22,7 +22,7 @@ import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import Graph (Vertex(..))
 import Graph.GraphImpl (GraphImpl(..))
-import Parse (str)
+import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
@@ -84,7 +84,7 @@ exprType (App _ _) = Expression
 exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
 exprType (IfElse _ _ _) = Simple
-exprType (ListEmpty _) = Simple -- try
+exprType (ListEmpty _) = Simple
 exprType (ListNonEmpty _ _ _) = Simple
 exprType (ListEnum _ _) = Simple
 exprType (ListComp _ _ _) = Simple
@@ -148,7 +148,7 @@ instance Ann a => Pretty (Expr a) where
               .<>. pretty e'
          )
    pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
-   pretty (Project s x) = pretty s .<>. text str.dot .<>. text x
+   pretty (Project s x) = prettySimple s .<>. text str.dot .<>. text x
    pretty (App s s') = prettyAppChain (App s s')
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = ((text str.match .<>. pretty s .<>. text str.as)) .-. curlyBraces (pretty cs)
