@@ -21,12 +21,13 @@ main = run scratchpad
 scratchpad :: TestSuite
 -- scratchpad = tests
 scratchpad = asTestSuite $ bwdMany
- [ { file: "motivating-example"
+   [ { file: "motivating-example"
      , bwd_expect_file: "motivating-example.expect"
      , fwd_expect: "⸨240⸩"
      , δv: neg
      }
- ]
+   ]
+
 type TestSuite = Array (String × Aff Unit)
 
 asTestSuite :: BenchSuite -> TestSuite
