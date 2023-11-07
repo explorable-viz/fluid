@@ -30,7 +30,7 @@ misc_cases =
    , { file: "flatten"
      , fwd_expect: "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
      }
-   , { file: "foldr_sumSquares", fwd_expect: "661" }
+   , { file: "foldr-sumSquares", fwd_expect: "661" }
    , { file: "lexicalScoping", fwd_expect: "\"6\"" }
    , { file: "length", fwd_expect: "2" }
    , { file: "lookup", fwd_expect: "Some \"sarah\"" }
@@ -208,6 +208,11 @@ bwd_cases =
      , bwd_expect_file: "dtw/compute-dtw.expect"
      , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
      , δv: listElement 1 neg
+     }
+   , { file: "motivating-example"
+     , bwd_expect_file: "motivating-example.expect"
+     , fwd_expect: "⸨540⸩"
+     , δv: neg
      }
    , { file: "dtw/average-series"
      , bwd_expect_file: "dtw/average-series.expect"
