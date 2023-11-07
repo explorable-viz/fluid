@@ -25126,6 +25126,7 @@
     /* @__PURE__ */ dataType("Orient")([/* @__PURE__ */ $Tuple("Horiz", 0), /* @__PURE__ */ $Tuple("Vert", 0)]),
     /* @__PURE__ */ dataType("Plot")([
       /* @__PURE__ */ $Tuple("BarChart", 1),
+      /* @__PURE__ */ $Tuple("BubbleChart", 0),
       /* @__PURE__ */ $Tuple("LineChart", 1),
       /* @__PURE__ */ $Tuple("LinePlot", 1)
     ]),
