@@ -275,6 +275,10 @@ expr_ =
             ctrArgs = simpleExpr >>= \e' -> rest (Constr α c (es <> (e' : empty)))
          rest e = ((App e <$> simpleExpr) >>= rest) <|> pure e
 
+         projectionOpt :: Raw Expr -> List Var -> Raw Expr
+         projectionOpt e Nil = e
+         projectionOpt e (x : xs) = projectionOpt (Project e x) xs
+
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
          simpleExpr :: SParser (Raw Expr)
          simpleExpr =
