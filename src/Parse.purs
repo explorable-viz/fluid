@@ -215,18 +215,6 @@ recDefs expr' = do
 defs :: SParser (Raw Expr) -> SParser (List (Raw VarDefs + Raw RecDefs))
 defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
 
-matchAs :: Endo (SParser (Raw Expr))
-matchAs expr' =
-   MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' clause_uncurried
-
-ifElse :: Endo (SParser (Raw Expr))
-ifElse expr' = pure IfElse
-   <*> (keyword str.if_ *> expr')
-   <* keyword str.then_
-   <*> expr'
-   <* keyword str.else_
-   <*> expr'
-
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser (Raw Expr)
 expr_ =
@@ -256,8 +244,9 @@ expr_ =
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: Endo (SParser (Raw Expr))
    appChain expr' =
-      matchAs expr' <|>
-      ifElse expr' <|>
+      matchAs <|>
+      ifElse <|>
+      lambda <|>
       (simpleExpr >>= rest)
       where
       rest :: Raw Expr -> SParser (Raw Expr)
@@ -266,6 +255,21 @@ expr_ =
          ctrArgs :: SParser (Raw Expr)
          ctrArgs = simpleExpr >>= \e' -> rest (Constr α c (es <> (e' : empty)))
       rest e = ((App e <$> simpleExpr) >>= rest) <|> pure e
+
+      matchAs :: SParser (Raw Expr)
+      matchAs =
+         MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' clause_uncurried
+
+      ifElse :: SParser (Raw Expr)
+      ifElse = pure IfElse
+         <*> (keyword str.if_ *> expr')
+         <* keyword str.then_
+         <*> expr'
+         <* keyword str.else_
+         <*> expr'
+
+      lambda :: SParser (Raw Expr)
+      lambda = (Lambda <<< Clauses) <$> (keyword str.fun *> branches expr' clause_curried)
 
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (Raw Expr)
@@ -287,7 +291,6 @@ expr_ =
             <|> try (token.parens expr')
             <|> try parensOp
             <|> pair
-            <|> lambda
 
          where
          matrix :: SParser (Raw Expr)
@@ -368,9 +371,6 @@ expr_ =
          pair :: SParser (Raw Expr)
          pair = token.parens $
             (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
-
-         lambda :: SParser (Raw Expr)
-         lambda = (Lambda <<< Clauses) <$> (keyword str.fun *> branches expr' clause_curried)
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
