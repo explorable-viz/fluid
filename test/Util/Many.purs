@@ -1,13 +1,45 @@
 module Test.Util.Many where
 
 import Prelude
-import App.Fig (linkedOutputsResult, loadLinkedOutputsFig)
+
+import App.Fig (LinkedOutputsFigSpec, LinkedInputsFigSpec, linkedOutputsResult, loadLinkedOutputsFig)
+import App.Util (Selector)
 import Data.Array (zip)
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
 import Test.Benchmark.Util (BenchRow)
-import Test.Util (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, checkPretty, test)
+import Test.Util (checkPretty, test)
 import Util (type (×), (×))
+import Val (Val)
+
+type TestSpec =
+   { file :: String
+   , fwd_expect :: String
+   }
+
+type TestBwdSpec =
+   { file :: String
+   , bwd_expect_file :: String
+   , δv :: Selector Val -- relative to bot
+   , fwd_expect :: String
+   }
+
+type TestWithDatasetSpec =
+   { dataset :: String
+   , file :: String
+   }
+
+type TestLinkedOutputsSpec =
+   { spec :: LinkedOutputsFigSpec
+   , δv1 :: Selector Val
+   , v2_expect :: String
+   }
+
+type TestLinkedInputsSpec =
+   { spec :: LinkedInputsFigSpec
+   , δv1 :: Selector Val
+   , v2_expect :: String
+   }
 
 many :: Array TestSpec -> (Int × Boolean) -> Array (String × Aff BenchRow)
 many specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)

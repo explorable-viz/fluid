@@ -162,35 +162,6 @@ testGraph s gconfig spec@{ δv } benchmarking = do
          g' <- benchmark (method <> "-FwdAsDeMorgan") $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
          when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
 
-type TestSpec =
-   { file :: String
-   , fwd_expect :: String
-   }
-
-type TestBwdSpec =
-   { file :: String
-   , bwd_expect_file :: String
-   , δv :: Selector Val -- relative to bot
-   , fwd_expect :: String
-   }
-
-type TestWithDatasetSpec =
-   { dataset :: String
-   , file :: String
-   }
-
-type TestLinkedOutputsSpec =
-   { spec :: LinkedOutputsFigSpec
-   , δv1 :: Selector Val
-   , v2_expect :: String
-   }
-
-type TestLinkedInputsSpec =
-   { spec :: LinkedInputsFigSpec
-   , δv1 :: Selector Val
-   , v2_expect :: String
-   }
-
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
 isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
