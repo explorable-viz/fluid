@@ -247,6 +247,7 @@ expr_ =
       matchAs <|>
       ifElse <|>
       lambda <|>
+      defsExpr <|>
       (simpleExpr >>= rest)
       where
       rest :: Raw Expr -> SParser (Raw Expr)
@@ -271,6 +272,11 @@ expr_ =
       lambda :: SParser (Raw Expr)
       lambda = (Lambda <<< Clauses) <$> (keyword str.fun *> branches expr' clause_curried)
 
+      defsExpr :: SParser (Raw Expr)
+      defsExpr = do
+         defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
+         foldr (\def -> (Let ||| LetRec) def) <$> (keyword str.in_ *> expr') <@> defs'
+
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (Raw Expr)
       simpleExpr =
@@ -287,7 +293,6 @@ expr_ =
             <|> try float
             <|> try int -- int may start with +/-
             <|> string
-            <|> defsExpr
             <|> try (token.parens expr')
             <|> try parensOp
             <|> pair
@@ -358,11 +363,6 @@ expr_ =
 
          string :: SParser (Raw Expr)
          string = Str unit <$> token.stringLiteral
-
-         defsExpr :: SParser (Raw Expr)
-         defsExpr = do
-            defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
-            foldr (\def -> (Let ||| LetRec) def) <$> (keyword str.in_ *> expr') <@> defs'
 
          -- any binary operator, in parentheses
          parensOp :: SParser (Raw Expr)
