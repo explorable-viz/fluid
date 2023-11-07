@@ -6,22 +6,25 @@ import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Lattice (neg)
 import Test.Benchmark.Main (benchmarks)
 import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
-import Test.Util.Many (BenchSuite, linkedInputsMany, linkedOutputsMany, many)
+import Test.Util.Many (BenchSuite, linkedInputsMany, linkedOutputsMany, bwdMany)
 import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
 main :: Effect Unit
-main = run tests
+-- main = run $ linkedInputsMany linkedInputs_cases
 
---main = run $ linkedInputsMany linkedInputs_cases
---main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ many
-   [ { file: "record-lookup"
-     , fwd_expect: "True"
+-- scratchpad = tests
+scratchpad = asTestSuite $ bwdMany
+   [ { file: "motivating-example"
+     , bwd_expect_file: "motivating-example.expect"
+     , fwd_expect: "⸨570⸩"
+     , δv: neg
      }
    ]
 
