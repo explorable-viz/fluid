@@ -2,6 +2,7 @@ let country_gdp c_name countries_list cities = let city_gdp = sum [city.gdp|coun
                                                    farm_gdp = sum ⸨[country.farms * ⸨3⸩|country <- countries_list, country.name == c_name]⸩ in
                                                city_gdp + farm_gdp in
 let all_countries = [{name : ⸨"Germany"⸩, cities : ["Berlin", "Hamburg", "Munich"], farms : ⸨100⸩}
+                   , {name : "UK", cities : ["London"], farms : 200}
                    ] in
 let all_cities = [{name : "Berlin", gdp : ⸨100⸩, country : "Germany"}
                 , {name : "Munich", gdp : ⸨80⸩, country : "Germany"}

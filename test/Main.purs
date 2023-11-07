@@ -23,7 +23,7 @@ scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdMany
    [ { file: "motivating-example"
      , bwd_expect_file: "motivating-example.expect"
-     , fwd_expect: "⸨240⸩"
+     , fwd_expect: "⸨540⸩"
      , δv: neg
      }
    ]
