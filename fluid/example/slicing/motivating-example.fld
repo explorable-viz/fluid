@@ -1,0 +1,12 @@
+let country_gdp country cities = 
+        sum [city.gdp |city <- cities, city.country == country];
+let germany = {
+        cities: ["Berlin", "Hamburg", "Munich"]
+    };
+let all_cities = [
+        {name: "Berlin", gdp: 100, country: "Germany"},
+        {name: "Munich", gdp: 80,  country: "Germany"},
+        {name: "Hamburg", gdp: 60, country: "Germany"},
+        {name: "London", gdp: 200, country: "UK"}
+    ]
+in country_gdp "Germany" all_cities

@@ -212,6 +212,11 @@ bwd_cases =
      , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
      , δv: listElement 1 neg
      }
+   , { file: "motivating-example"
+     , bwd_expect_file: "motivating-example.expect"
+     , fwd_expect: "⸨240⸩"
+     , δv: neg
+   }
    ]
 
 graphics_cases :: Array TestWithDatasetSpec
