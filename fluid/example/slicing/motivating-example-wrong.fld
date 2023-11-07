@@ -1,12 +1,12 @@
-let country_gdp country cities =
-        sum [city.gdp | city <- cities, elem city.name country.cities];
+let country_water country cities =
+        sum [city.water | city <- cities, elem city.name country.cities];
 let germany = {
         cities: ["Berlin", "Hamburg", "Munich"]
     };
 let all_cities = [
-        {name: "Berlin", gdp: 100, country: "Germany"},
-        {name: "Munich", gdp: 80,  country: "Germany"},
-        {name: "Hamburg", gdp: 60, country: "Germany"},
-        {name: "London", gdp: 200, country: "UK"}
+        {name: "Berlin", water: 100, country: "Germany"},
+        {name: "Munich", water: 80,  country: "Germany"},
+        {name: "Hamburg", water: 60, country: "Germany"},
+        {name: "London", water: 200, country: "UK"}
     ]
-in country_gdp germany all_cities
+in country_water germany all_cities
