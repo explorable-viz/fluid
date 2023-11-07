@@ -6,7 +6,7 @@ import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCe
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
-import Test.Util (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
+import Test.Util.Many (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -312,12 +312,15 @@ linkedOutputs_cases =
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
-   [ {-{ spec:
-        { divId: ""
-        , file: File "pairs-1"
-        , xs: [ "data" ]
-        }
-   , δv1: listElement 2 neg
-   , v2_expect: ?_
-   }-}
+   [ { spec:
+          { divId: ""
+          , file: File "bubble-chart"
+          , xs: [ "data" ]
+          }
+     , δv1: listElement 2 neg
+     , v2_expect:
+          "BubbleChart {\
+          \caption : \"Caption to go here\", \
+          \}"
+     }
    ]
