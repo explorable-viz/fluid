@@ -215,10 +215,10 @@ recDefs expr' = do
 defs :: SParser (Raw Expr) -> SParser (List (Raw VarDefs + Raw RecDefs))
 defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
 
--- Tree whose branches are binary primitives and whose leaves are application chains.
+-- Tree whose branches are binary primitives and whose leaves are op tree leaves.
 expr_ :: SParser (Raw Expr)
 expr_ =
-   fix (appChain >>> buildExprParser ([ backtickOp ] `cons` operators binaryOp))
+   fix (opTreeLeaf >>> buildExprParser ([ backtickOp ] `cons` operators binaryOp))
    where
    -- Pushing this to front of operator table to give it higher precedence than any other binary op.
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
@@ -241,18 +241,9 @@ expr_ =
          else if isCtrOp op' then \e e' -> Constr unit op' (e : e' : empty)
          else \e e' -> BinaryApp e op e'
 
-   -- Left-associative tree of applications of one or more simple terms.
-   appChain :: Endo (SParser (Raw Expr))
-   appChain expr' =
-      matchAs <|> ifElse <|> lambda <|> defsExpr <|> (simpleExpr >>= rest)
+   opTreeLeaf :: Endo (SParser (Raw Expr))
+   opTreeLeaf expr' = matchAs <|> ifElse <|> lambda <|> defsExpr <|> appChain
       where
-      rest :: Raw Expr -> SParser (Raw Expr)
-      rest e@(Constr α c es) = ctrArgs <|> pure e
-         where
-         ctrArgs :: SParser (Raw Expr)
-         ctrArgs = simpleExpr >>= \e' -> rest (Constr α c (es <> (e' : empty)))
-      rest e = ((App e <$> simpleExpr) >>= rest) <|> pure e
-
       matchAs :: SParser (Raw Expr)
       matchAs =
          MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' clause_uncurried
@@ -273,100 +264,111 @@ expr_ =
          defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
          foldr (\def -> (Let ||| LetRec) def) <$> (keyword str.in_ *> expr') <@> defs'
 
-      -- Any expression other than an operator tree or an application chain.
-      simpleExpr :: SParser (Raw Expr)
-      simpleExpr =
-         -- matrix before list
-         matrix
-            <|> try nil
-            <|> listNonEmpty
-            <|> listComp
-            <|> listEnum
-            <|> try constr
-            <|> dict
-            <|> record
-            <|> try variable
-            <|> try float
-            <|> try int -- int may start with +/-
-            <|> string
-            <|> try (token.parens expr')
-            <|> try parensOp
-            <|> pair
-
+      -- Left-associative tree of applications of one or more simple terms.
+      appChain :: SParser (Raw Expr)
+      appChain = simpleExpr >>= rest
          where
-         matrix :: SParser (Raw Expr)
-         matrix =
-            between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
-               Matrix unit
-                  <$> (expr' <* bar)
-                  <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
-                  <*> (keyword str.in_ *> expr')
+         rest :: Raw Expr -> SParser (Raw Expr)
+         rest e@(Constr α c es) = ctrArgs <|> pure e
+            where
+            ctrArgs :: SParser (Raw Expr)
+            ctrArgs = simpleExpr >>= \e' -> rest (Constr α c (es <> (e' : empty)))
+         rest e = ((App e <$> simpleExpr) >>= rest) <|> pure e
 
-         nil :: SParser (Raw Expr)
-         nil = token.brackets $ pure (ListEmpty unit)
-
-         listNonEmpty :: SParser (Raw Expr)
-         listNonEmpty =
-            lBracket *> (ListNonEmpty unit <$> expr' <*> fix listRest)
+         -- Any expression other than an operator tree or an application chain.
+         simpleExpr :: SParser (Raw Expr)
+         simpleExpr =
+            -- matrix before list
+            matrix
+               <|> try nil
+               <|> listNonEmpty
+               <|> listComp
+               <|> listEnum
+               <|> try constr
+               <|> dict
+               <|> record
+               <|> try variable
+               <|> try float
+               <|> try int -- int may start with +/-
+               <|> string
+               <|> try (token.parens expr')
+               <|> try parensOp
+               <|> pair
 
             where
-            listRest :: Endo (SParser (Raw ListRest))
-            listRest listRest' =
-               rBracket *> pure (End unit) <|>
-                  token.comma *> (Next unit <$> expr' <*> listRest')
+            matrix :: SParser (Raw Expr)
+            matrix =
+               between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
+                  Matrix unit
+                     <$> (expr' <* bar)
+                     <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
+                     <*> (keyword str.in_ *> expr')
 
-         listComp :: SParser (Raw Expr)
-         listComp = token.brackets $
-            pure (ListComp unit) <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
+            nil :: SParser (Raw Expr)
+            nil = token.brackets $ pure (ListEmpty unit)
 
-            where
-            qualifier :: SParser (Raw Qualifier)
-            qualifier =
-               Generator <$> pattern <* lArrow <*> expr'
-                  <|> Declaration <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
-                  <|> Guard <$> expr'
+            listNonEmpty :: SParser (Raw Expr)
+            listNonEmpty =
+               lBracket *> (ListNonEmpty unit <$> expr' <*> fix listRest)
 
-         listEnum :: SParser (Raw Expr)
-         listEnum = token.brackets $
-            pure ListEnum <*> expr' <* ellipsis <*> expr'
+               where
+               listRest :: Endo (SParser (Raw ListRest))
+               listRest listRest' =
+                  rBracket *> pure (End unit) <|>
+                     token.comma *> (Next unit <$> expr' <*> listRest')
 
-         constr :: SParser (Raw Expr)
-         constr = Constr unit <$> ctr <@> empty
+            listComp :: SParser (Raw Expr)
+            listComp = token.brackets $
+               pure (ListComp unit) <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
 
-         dict :: SParser (Raw Expr)
-         dict = sepBy (Pair <$> (expr' <* colonEq) <*> expr') token.comma <#> Dictionary unit #
-            between (token.symbol str.dictLBracket) (token.symbol str.dictRBracket)
+               where
+               qualifier :: SParser (Raw Qualifier)
+               qualifier =
+                  Generator <$> pattern <* lArrow <*> expr'
+                     <|> Declaration <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
+                     <|> Guard <$> expr'
 
-         record :: SParser (Raw Expr)
-         record = sepBy (field expr') token.comma <#> Record unit # token.braces
+            listEnum :: SParser (Raw Expr)
+            listEnum = token.brackets $
+               pure ListEnum <*> expr' <* ellipsis <*> expr'
 
-         variable :: SParser (Raw Expr)
-         variable = ident <#> Var
+            constr :: SParser (Raw Expr)
+            constr = Constr unit <$> ctr <@> empty
 
-         signOpt :: ∀ a. Ring a => SParser (a -> a)
-         signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
+            dict :: SParser (Raw Expr)
+            dict = sepBy (Pair <$> (expr' <* colonEq) <*> expr') token.comma <#> Dictionary unit #
+               between (token.symbol str.dictLBracket) (token.symbol str.dictRBracket)
 
-         -- built-in integer/float parsers don't seem to allow leading signs.
-         int :: SParser (Raw Expr)
-         int = do
-            sign <- signOpt
-            (sign >>> Int unit) <$> token.natural
+            record :: SParser (Raw Expr)
+            record = sepBy (field expr') token.comma <#> Record unit # token.braces
 
-         float :: SParser (Raw Expr)
-         float = do
-            sign <- signOpt
-            (sign >>> Float unit) <$> token.float
+            variable :: SParser (Raw Expr)
+            variable = ident <#> Var
 
-         string :: SParser (Raw Expr)
-         string = Str unit <$> token.stringLiteral
+            signOpt :: ∀ a. Ring a => SParser (a -> a)
+            signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
 
-         -- any binary operator, in parentheses
-         parensOp :: SParser (Raw Expr)
-         parensOp = Op <$> token.parens token.operator
+            -- built-in integer/float parsers don't seem to allow leading signs.
+            int :: SParser (Raw Expr)
+            int = do
+               sign <- signOpt
+               (sign >>> Int unit) <$> token.natural
 
-         pair :: SParser (Raw Expr)
-         pair = token.parens $
-            (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
+            float :: SParser (Raw Expr)
+            float = do
+               sign <- signOpt
+               (sign >>> Float unit) <$> token.float
+
+            string :: SParser (Raw Expr)
+            string = Str unit <$> token.stringLiteral
+
+            -- any binary operator, in parentheses
+            parensOp :: SParser (Raw Expr)
+            parensOp = Op <$> token.parens token.operator
+
+            pair :: SParser (Raw Expr)
+            pair = token.parens $
+               (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
