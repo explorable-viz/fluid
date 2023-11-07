@@ -40,6 +40,7 @@ misc_cases =
    , { file: "pattern-match", fwd_expect: "4" }
    , { file: "range", fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
    , { file: "records", fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
+   , { file: "record-lookup", fwd_expect: "True" }
    , { file: "reverse", fwd_expect: "(2 : (1 : []))" }
    ]
 

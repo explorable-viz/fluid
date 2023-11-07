@@ -15,12 +15,12 @@ import Util (type (×), (×))
 main :: Effect Unit
 main = run tests
 
---main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ many
    [ { file: "record-lookup"
-     , fwd_expect: "(\"Germany\" : ((\"Germany\" : []) : []))"
+     , fwd_expect: "True"
      }
    ]
 
