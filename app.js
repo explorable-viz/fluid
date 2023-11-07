@@ -25126,7 +25126,7 @@
     /* @__PURE__ */ dataType("Orient")([/* @__PURE__ */ $Tuple("Horiz", 0), /* @__PURE__ */ $Tuple("Vert", 0)]),
     /* @__PURE__ */ dataType("Plot")([
       /* @__PURE__ */ $Tuple("BarChart", 1),
-      /* @__PURE__ */ $Tuple("BubbleChart", 0),
+      /* @__PURE__ */ $Tuple("BubbleChart", 1),
       /* @__PURE__ */ $Tuple("LineChart", 1),
       /* @__PURE__ */ $Tuple("LinePlot", 1)
     ]),
@@ -37562,7 +37562,7 @@
     };
   };
   var splitDefs1 = /* @__PURE__ */ splitDefs(annBoolean);
-  var loadLinkedOutputsFig = (dictMonadAff) => {
+  var loadLinkedOutputsFig = (v) => (dictMonadAff) => {
     const Monad0 = dictMonadAff.MonadEffect0().Monad0();
     const Bind1 = Monad0.Bind1();
     const defaultImports2 = defaultImports(dictMonadAff);
@@ -37573,65 +37573,52 @@
     const loadFile3 = loadFile(dictMonadAff);
     const pure1 = Monad0.Applicative0().pure;
     return (dictMonadError) => {
-      const defaultImports1 = defaultImports2(dictMonadError);
-      const datasetAs1 = datasetAs2(dictMonadError);
-      const initialConfig2 = initialConfig(dictMonadError);
       const open1 = parseProgram1(dictMonadError)("fluid/example");
       const loadFile1 = loadFile3(dictMonadError);
       const desug1 = exprFwd(boundedLattice3)(dictMonadError)(joinSemilatticeBoolean);
       const $$eval3 = $$eval(dictMonadError)(annBoolean);
-      return (v) => {
-        const $19 = "linked-outputs/" + v.file1;
-        const $20 = "linked-outputs/" + v.file2;
-        return Bind1.bind(Bind1.bind(Bind1.bind(defaultImports1)(datasetAs1("example/linked-outputs/" + v.dataFile)(v.x)))(initialConfig2))((v2) => Bind1.bind(Apply0.apply(map22(Tuple)(open1($19)))(open1($20)))((v3) => {
-          const \u03B30 = _fmapObject(v2["\u03B3"], botOf);
-          const s2 = functorExpr2.map((v$1) => false)(v3._2);
-          const s1 = functorExpr2.map((v$1) => false)(v3._1);
-          return Bind1.bind(loadFile1("fluid/example/linked-outputs")(v.dataFile))((dataFile$p) => Bind1.bind(Apply0.apply(map22(Tuple)(desug1(s1)))(desug1(s2)))((v4) => Bind1.bind($$eval3(\u03B30)(v4._1)(false))((v5) => Bind1.bind($$eval3(\u03B30)(v4._2)(false))((v6) => pure1({
-            spec: v,
-            "\u03B3": \u03B30,
-            s1,
-            s2,
-            e1: v4._1,
-            e2: v4._2,
-            t1: v5._1,
-            t2: v6._1,
-            v1: v5._2,
-            v2: v6._2,
-            v0: $$get(v.x)(\u03B30),
-            dataFile: dataFile$p
-          })))));
-        }));
-      };
+      const $16 = "linked-outputs/" + v.file1;
+      const $17 = "linked-outputs/" + v.file2;
+      return Bind1.bind(Bind1.bind(Bind1.bind(defaultImports2(dictMonadError))(datasetAs2(dictMonadError)("example/linked-outputs/" + v.dataFile)(v.x)))(initialConfig(dictMonadError)))((v2) => Bind1.bind(Apply0.apply(map22(Tuple)(open1($16)))(open1($17)))((v3) => {
+        const \u03B3 = _fmapObject(v2["\u03B3"], botOf);
+        const s2 = functorExpr2.map((v$1) => false)(v3._2);
+        const s1 = functorExpr2.map((v$1) => false)(v3._1);
+        return Bind1.bind(loadFile1("fluid/example/linked-outputs")(v.dataFile))((dataFile$p) => Bind1.bind(Apply0.apply(map22(Tuple)(desug1(s1)))(desug1(s2)))((v4) => Bind1.bind($$eval3(\u03B3)(v4._1)(false))((v5) => Bind1.bind($$eval3(\u03B3)(v4._2)(false))((v6) => pure1({
+          spec: v,
+          "\u03B3": \u03B3,
+          s1,
+          s2,
+          e1: v4._1,
+          e2: v4._2,
+          t1: v5._1,
+          t2: v6._1,
+          v1: v5._2,
+          v2: v6._2,
+          v0: $$get(v.x)(\u03B3),
+          dataFile: dataFile$p
+        })))));
+      }));
     };
   };
-  var loadFig = (dictMonadAff) => {
+  var loadFig = (v) => (dictMonadAff) => {
     const Monad0 = dictMonadAff.MonadEffect0().Monad0();
     const bind1 = Monad0.Bind1().bind;
     const defaultImports2 = defaultImports(dictMonadAff);
     const parseProgram1 = parseProgram(dictMonadAff);
     const pure1 = Monad0.Applicative0().pure;
     return (dictMonadError) => {
-      const defaultImports1 = defaultImports2(dictMonadError);
-      const initialConfig2 = initialConfig(dictMonadError);
       const open1 = parseProgram1(dictMonadError)("fluid/example");
       const splitDefs2 = splitDefs1(dictMonadError);
       const desug1 = exprFwd(boundedLattice3)(dictMonadError)(joinSemilatticeBoolean);
       const $$eval3 = $$eval(dictMonadError)(annBoolean);
-      return (v) => bind1(bind1(defaultImports1)(initialConfig2))((v1) => {
+      return bind1(bind1(defaultImports2(dictMonadError))(initialConfig(dictMonadError)))((v1) => {
         const \u03B30 = _fmapObject(v1["\u03B3"], botOf);
         return bind1(open1(v.file))((s$p) => {
           const s0 = functorExpr2.map((v$1) => false)(s$p);
-          return bind1(splitDefs2(\u03B30)(s0))((v2) => bind1(desug1(v2.s))((e) => bind1($$eval3(unionWith2((v$1) => identity19)(\u03B30)(v2["\u03B3"]))(e)(false))((v3) => pure1({
-            spec: v,
-            "\u03B30": \u03B30,
-            "\u03B3": unionWith2((v$1) => identity19)(\u03B30)(v2["\u03B3"]),
-            s0,
-            s: v2.s,
-            e,
-            t: v3._1,
-            v: v3._2
-          }))));
+          return bind1(splitDefs2(\u03B30)(s0))((v2) => bind1(desug1(v2.s))((e) => {
+            const \u03B3 = unionWith2((v$1) => identity19)(\u03B30)(v2["\u03B3"]);
+            return bind1($$eval3(\u03B3)(e)(false))((v3) => pure1({ spec: v, "\u03B30": \u03B30, "\u03B3": \u03B3, s0, s: v2.s, e, t: v3._1, v: v3._2 }));
+          }));
         });
       });
     };
@@ -37733,8 +37720,6 @@
   var sequence_2 = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity5);
   var botOf2 = /* @__PURE__ */ (() => functorVal.map((v) => false))();
   var loadFile2 = /* @__PURE__ */ loadFile(monadAffAff)(monadErrorAff);
-  var loadFig2 = /* @__PURE__ */ loadFig(monadAffAff)(monadErrorAff);
-  var loadLinkedOutputsFig2 = /* @__PURE__ */ loadLinkedOutputsFig(monadAffAff)(monadErrorAff);
   var linkedOutputsFig1 = { divId: "fig-1", file1: "bar-chart", file2: "line-chart", dataFile: "renewables", x: "data" };
   var fig2 = { divId: "fig-conv-2", file: "slicing/convolution/emboss-wrap", xs: ["image", "filter"] };
   var fig1 = { divId: "fig-conv-1", file: "slicing/convolution/emboss", xs: ["image", "filter"] };
@@ -37805,8 +37790,8 @@
     const $0 = drawFiles([$Tuple("fluid/lib", "convolution")]);
     return () => {
       $0();
-      drawFigs([loadFig2(fig1), loadFig2(fig2)])();
-      return drawLinkedOutputsFigs([loadLinkedOutputsFig2(linkedOutputsFig1)])();
+      drawFigs([loadFig(fig1)(monadAffAff)(monadErrorAff), loadFig(fig2)(monadAffAff)(monadErrorAff)])();
+      return drawLinkedOutputsFigs([loadLinkedOutputsFig(linkedOutputsFig1)(monadAffAff)(monadErrorAff)])();
     };
   })();
 
