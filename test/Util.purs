@@ -2,7 +2,6 @@ module Test.Util where
 
 import Prelude hiding (absurd)
 
-import App.Fig (LinkedOutputsFigSpec, LinkedInputsFigSpec)
 import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)

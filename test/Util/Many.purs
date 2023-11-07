@@ -2,7 +2,7 @@ module Test.Util.Many where
 
 import Prelude
 
-import App.Fig (LinkedOutputsFigSpec, LinkedInputsFigSpec, linkedOutputsResult, loadLinkedOutputsFig)
+import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
 import App.Util (Selector)
 import Data.Array (zip)
 import Effect.Aff (Aff)
@@ -11,6 +11,9 @@ import Test.Benchmark.Util (BenchRow)
 import Test.Util (checkPretty, test)
 import Util (type (×), (×))
 import Val (Val)
+
+-- benchmarks parameterised on number of iterations
+type BenchSuite = (Int × Boolean) -> Array (String × Aff BenchRow)
 
 type TestSpec =
    { file :: String
@@ -41,14 +44,14 @@ type TestLinkedInputsSpec =
    , v2_expect :: String
    }
 
-many :: Array TestSpec -> (Int × Boolean) -> Array (String × Aff BenchRow)
+many :: Array TestSpec -> BenchSuite
 many specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
    where
    one { file, fwd_expect } = do
       progCxt <- defaultImports
       test (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
-bwdMany :: Array TestBwdSpec -> (Int × Boolean) -> Array (String × Aff BenchRow)
+bwdMany :: Array TestBwdSpec -> BenchSuite
 bwdMany specs (n × is_bench) = zip (specs <#> (\spec -> "slicing/" <> spec.file)) (specs <#> one)
    where
    folder = File "slicing/"
@@ -57,7 +60,7 @@ bwdMany specs (n × is_bench) = zip (specs <#> (\spec -> "slicing/" <> spec.file
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
       test (folder <> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetMany :: Array TestWithDatasetSpec -> (Int × Boolean) -> Array (String × Aff BenchRow)
+withDatasetMany :: Array TestWithDatasetSpec -> BenchSuite
 withDatasetMany specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
    where
    one { dataset, file } = do
@@ -72,3 +75,11 @@ linkedOutputsMany specs = zip (specs <#> name) (specs <#> one)
       { γ, e1, e2, t1, t2, v1 } <- loadLinkedOutputsFig spec
       { v': v2' } <- linkedOutputsResult spec.x γ e1 e2 t1 t2 (δv1 v1)
       checkPretty "linked output" v2_expect v2'
+
+linkedInputsMany :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
+linkedInputsMany specs = zip (specs <#> name) (specs <#> one)
+   where
+   name { spec } = "linked-inputs/" <> show spec.file
+   one { spec } = do
+      {} <- loadLinkedInputsFig spec
+      pure unit

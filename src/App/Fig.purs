@@ -228,4 +228,4 @@ loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
    pure { spec, γ: γ0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
 
 loadLinkedInputsFig :: forall m. MonadAff m => MonadError Error m => LinkedInputsFigSpec -> m LinkedInputsFig
-loadLinkedInputsFig _ = error "todo"
+loadLinkedInputsFig spec = pure { spec }

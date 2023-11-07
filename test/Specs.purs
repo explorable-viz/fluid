@@ -312,12 +312,15 @@ linkedOutputs_cases =
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
-   [ {-{ spec:
-        { divId: ""
-        , file: File "pairs-1"
-        , xs: [ "data" ]
-        }
-   , δv1: listElement 2 neg
-   , v2_expect: ?_
-   }-}
+   [ { spec:
+          { divId: ""
+          , file: File "bubble-chart"
+          , xs: [ "data" ]
+          }
+     , δv1: listElement 2 neg
+     , v2_expect:
+          "BubbleChart {\
+          \caption : \"Caption to go here\", \
+          \}"
+     }
    ]
