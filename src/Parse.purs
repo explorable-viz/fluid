@@ -215,9 +215,22 @@ recDefs expr' = do
 defs :: SParser (Raw Expr) -> SParser (List (Raw VarDefs + Raw RecDefs))
 defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
 
+matchAs :: Endo (SParser (Raw Expr))
+matchAs expr' =
+   MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' clause_uncurried
+
+ifElse :: Endo (SParser (Raw Expr))
+ifElse expr' = pure IfElse
+   <*> (keyword str.if_ *> expr')
+   <* keyword str.then_
+   <*> expr'
+   <* keyword str.else_
+   <*> expr'
+
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser (Raw Expr)
-expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators binaryOp)
+expr_ =
+   fix (appChain >>> buildExprParser ([ backtickOp ] `cons` operators binaryOp))
    where
    -- Pushing this to front of operator table to give it higher precedence than any other binary op.
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
@@ -242,7 +255,10 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
 
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: Endo (SParser (Raw Expr))
-   appChain expr' = simpleExpr >>= rest
+   appChain expr' =
+      matchAs expr' <|>
+      ifElse expr' <|>
+      (simpleExpr >>= rest)
       where
       rest :: Raw Expr -> SParser (Raw Expr)
       rest e@(Constr α c es) = ctrArgs <|> pure e
@@ -268,12 +284,10 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
             <|> try int -- int may start with +/-
             <|> string
             <|> defsExpr
-            <|> matchAs
             <|> try (token.parens expr')
             <|> try parensOp
             <|> pair
             <|> lambda
-            <|> ifElse
 
          where
          matrix :: SParser (Raw Expr)
@@ -347,10 +361,6 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
             defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
             foldr (\def -> (Let ||| LetRec) def) <$> (keyword str.in_ *> expr') <@> defs'
 
-         matchAs :: SParser (Raw Expr)
-         matchAs =
-            MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' clause_uncurried
-
          -- any binary operator, in parentheses
          parensOp :: SParser (Raw Expr)
          parensOp = Op <$> token.parens token.operator
@@ -361,14 +371,6 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
 
          lambda :: SParser (Raw Expr)
          lambda = (Lambda <<< Clauses) <$> (keyword str.fun *> branches expr' clause_curried)
-
-         ifElse :: SParser (Raw Expr)
-         ifElse = pure IfElse
-            <*> (keyword str.if_ *> expr')
-            <* keyword str.then_
-            <*> expr'
-            <* keyword str.else_
-            <*> expr'
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
