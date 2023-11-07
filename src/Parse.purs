@@ -275,7 +275,7 @@ expr_ =
             ctrArgs = simpleExpr >>= \e' -> rest (Constr α c (es <> (e' : empty)))
          rest e = ((App e <$> simpleExpr) >>= rest) <|> pure e
 
-         -- Any expression other than an operator tree or an application chain.
+         -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
          simpleExpr :: SParser (Raw Expr)
          simpleExpr =
             -- matrix before list
