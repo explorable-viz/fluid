@@ -266,18 +266,18 @@ expr_ =
 
       -- Left-associative tree of applications of one or more simple terms.
       appChain :: SParser (Raw Expr)
-      appChain = fix simpleExpr >>= rest
+      appChain = simpleExpr >>= rest
          where
          rest :: Raw Expr -> SParser (Raw Expr)
          rest e@(Constr α c es) = ctrArgs <|> pure e
             where
             ctrArgs :: SParser (Raw Expr)
-            ctrArgs = fix simpleExpr >>= \e' -> rest (Constr α c (es <> (e' : empty)))
-         rest e = ((App e <$> fix simpleExpr) >>= rest) <|> pure e
+            ctrArgs = simpleExpr >>= \e' -> rest (Constr α c (es <> (e' : empty)))
+         rest e = ((App e <$> simpleExpr) >>= rest) <|> pure e
 
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
-         simpleExpr :: Endo (SParser (Raw Expr))
-         simpleExpr _ =
+         simpleExpr :: SParser (Raw Expr)
+         simpleExpr =
             -- matrix before list
             matrix
                <|> try nil
