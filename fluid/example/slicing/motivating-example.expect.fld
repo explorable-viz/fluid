@@ -4,9 +4,9 @@ let country_gdp c_name countries_list cities = let city_gdp = sum [city.gdp|coun
 let all_countries = [{name : ⸨"Germany"⸩, cities : ["Berlin", "Hamburg", "Munich"], farms : ⸨100⸩}
                    , {name : "UK", cities : ["London"], farms : 200}
                    ] in
-let all_cities = [{name : "Berlin", gdp : ⸨100⸩, country : "Germany"}
-                , {name : "Munich", gdp : ⸨80⸩, country : "Germany"}
-                , {name : "Hamburg", gdp : ⸨60⸩, country : "Germany"}
-                , {name : "London", gdp : 200, country : "UK"}
+let all_cities = [{name : "Berlin", gdp : ⸨100⸩}
+                , {name : "Munich", gdp : ⸨80⸩}
+                , {name : "Hamburg", gdp : ⸨60⸩}
+                , {name : "London", gdp : 200}
                 ] in
 country_gdp ⸨"Germany"⸩ all_countries all_cities
