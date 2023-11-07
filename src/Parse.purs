@@ -277,14 +277,10 @@ expr_ =
 
          simpleExprOrProjection :: SParser (Raw Expr)
          simpleExprOrProjection =
-            projectionOpt <$> simpleExpr <*> projections
+            simpleExpr >>= wibble
             where
-            projections :: SParser (List Var)
-            projections = pure Nil
-
-            projectionOpt :: Raw Expr -> List Var -> Raw Expr
-            projectionOpt e Nil = e
-            projectionOpt e (x : xs) = projectionOpt (Project e x) xs
+            wibble :: Raw Expr -> SParser (Raw Expr)
+            wibble e = (Project e <$> (token.reservedOp str.dot *> ident)) <|> pure e
 
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
          simpleExpr :: SParser (Raw Expr)
