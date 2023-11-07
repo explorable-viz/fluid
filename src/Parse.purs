@@ -244,11 +244,7 @@ expr_ =
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: Endo (SParser (Raw Expr))
    appChain expr' =
-      matchAs <|>
-      ifElse <|>
-      lambda <|>
-      defsExpr <|>
-      (simpleExpr >>= rest)
+      matchAs <|> ifElse <|> lambda <|> defsExpr <|> (simpleExpr >>= rest)
       where
       rest :: Raw Expr -> SParser (Raw Expr)
       rest e@(Constr α c es) = ctrArgs <|> pure e
