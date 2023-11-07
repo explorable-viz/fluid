@@ -266,18 +266,25 @@ expr_ =
 
       -- Left-associative tree of applications of one or more simple terms.
       appChain :: SParser (Raw Expr)
-      appChain = simpleExpr >>= rest
+      appChain = simpleExprOrProjection >>= rest
          where
          rest :: Raw Expr -> SParser (Raw Expr)
          rest e@(Constr α c es) = ctrArgs <|> pure e
             where
             ctrArgs :: SParser (Raw Expr)
-            ctrArgs = simpleExpr >>= \e' -> rest (Constr α c (es <> (e' : empty)))
-         rest e = ((App e <$> simpleExpr) >>= rest) <|> pure e
+            ctrArgs = simpleExprOrProjection >>= \e' -> rest (Constr α c (es <> (e' : empty)))
+         rest e = ((App e <$> simpleExprOrProjection) >>= rest) <|> pure e
 
-         projectionOpt :: Raw Expr -> List Var -> Raw Expr
-         projectionOpt e Nil = e
-         projectionOpt e (x : xs) = projectionOpt (Project e x) xs
+         simpleExprOrProjection :: SParser (Raw Expr)
+         simpleExprOrProjection =
+            projectionOpt <$> simpleExpr <*> projections
+            where
+            projections :: SParser (List Var)
+            projections = pure Nil
+
+            projectionOpt :: Raw Expr -> List Var -> Raw Expr
+            projectionOpt e Nil = e
+            projectionOpt e (x : xs) = projectionOpt (Project e x) xs
 
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
          simpleExpr :: SParser (Raw Expr)
