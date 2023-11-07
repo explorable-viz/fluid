@@ -90,7 +90,7 @@ type FigSpec =
 
 type Fig =
    { spec :: FigSpec
-   , γ0 :: Env 𝔹 -- ambient env (default imports)
+   , γ0 :: Env 𝔹 -- ambient env
    , γ :: Env 𝔹 -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
    , s0 :: S.Expr 𝔹 -- program that was originally "split"
    , s :: S.Expr 𝔹 -- body of example
@@ -126,8 +126,10 @@ type LinkedOutputsFig =
 
 type LinkedInputsFig =
    { spec :: LinkedInputsFigSpec
-   , γ :: Env 𝔹
-   , s :: S.Expr 𝔹
+   , γ0 :: Env 𝔹 -- ambient env
+   , γ :: Env 𝔹 -- local env (additional let bindings at beginning of ex)
+   , s0 :: S.Expr 𝔹 -- program that was originally "split"
+   , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹
    , t :: Trace
    , v0 :: Val 𝔹 -- common output
@@ -203,15 +205,27 @@ linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file } = do
-   { γ } <- defaultImports >>= initialConfig
-   let γ0 = botOf <$> γ
+   { γ: γ' } <- defaultImports >>= initialConfig
+   let γ0 = botOf <$> γ'
    s' <- open file
    let s0 = botOf s'
    { γ: γ1, s } <- splitDefs γ0 s0
    e <- desug s
-   let γ0γ = γ0 <+> γ1
-   t × v <- eval γ0γ e bot
-   pure { spec, γ0, γ: γ0 <+> γ1, s0, s, e, t, v }
+   let γ = γ0 <+> γ1
+   t × v <- eval γ e bot
+   pure { spec, γ0, γ, s0, s, e, t, v }
+
+loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
+loadLinkedInputsFig spec@{ file } = do
+   { γ: γ' } <- defaultImports >>= initialConfig
+   let γ0 = botOf <$> γ'
+   s' <- open $ File "linked-inputs/" <> file
+   let s0 = botOf s'
+   { γ: γ1, s } <- splitDefs γ0 s0
+   e <- desug s
+   let γ = γ0 <+> γ1
+   t × v <- eval γ e bot
+   pure { spec, γ0, γ, s0, s, e, t, v0: v }
 
 loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
 loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
@@ -231,17 +245,3 @@ loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
    t2 × v2 <- eval γ e2 bot
    let v0 = get x γ
    pure { spec, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
-
-loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
-loadLinkedInputsFig spec@{ file } = do
-   let
-      dir = File "linked-inputs/"
-      name = dir <> file
-   { γ: γ' } <- defaultImports >>= initialConfig
-   s' <- open name
-   let
-      γ = botOf <$> γ'
-      s = botOf s'
-   e <- desug s
-   t × v <- eval γ e bot
-   pure { spec, γ, s, e, t, v0: v }
