@@ -2,7 +2,6 @@ module Test.Util where
 
 import Prelude hiding (absurd)
 
-import App.Fig (LinkFigSpec)
 import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
@@ -161,29 +160,6 @@ testGraph s gconfig spec@{ δv } benchmarking = do
       do
          g' <- benchmark "Naive-Fwd" $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
          when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
-
-type TestSpec =
-   { file :: String
-   , fwd_expect :: String
-   }
-
-type TestBwdSpec =
-   { file :: String
-   , bwd_expect_file :: String
-   , δv :: Selector Val -- relative to bot
-   , fwd_expect :: String
-   }
-
-type TestWithDatasetSpec =
-   { dataset :: String
-   , file :: String
-   }
-
-type TestLinkSpec =
-   { spec :: LinkFigSpec
-   , δv1 :: Selector Val
-   , v2_expect :: String
-   }
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean

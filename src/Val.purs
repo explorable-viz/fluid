@@ -11,7 +11,7 @@ import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
-import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
+import Data.Set (Set, empty, fromFoldable, singleton, toUnfoldable)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict, get)
@@ -23,7 +23,7 @@ import Foreign.Object (keys) as O
 import Graph (Vertex(..))
 import Graph.GraphWriter (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
-import Util (type (×), Endo, definitely, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
+import Util (type (×), (!), (×), (≜), (≞), (∈), (∩), (∪), Endo, definitely, error, orElse, throw, unsafeUpdateAt)
 import Util.Pretty (Doc, beside, text)
 
 data Val a
@@ -84,10 +84,10 @@ append = unionWith (const identity)
 infixl 5 append as <+>
 
 append_inv :: forall a. Set Var -> Env a -> Env a × Env a
-append_inv xs γ = filterKeys (_ `not <<< member` xs) γ × restrict γ xs
+append_inv xs γ = filterKeys (_ `not <<< (∈)` xs) γ × restrict γ xs
 
 restrict :: forall a. Dict a -> Set Var -> Dict a
-restrict γ xs = filterKeys (_ `member` xs) γ
+restrict γ xs = filterKeys (_ ∈ xs) γ
 
 reaches :: forall a. RecDefs a -> Endo (Set Var)
 reaches ρ xs = go (toUnfoldable xs) empty
@@ -96,15 +96,14 @@ reaches ρ xs = go (toUnfoldable xs) empty
 
    go :: List Var -> Endo (Set Var)
    go Nil acc = acc
-   go (x : xs') acc | x `member` acc = go xs' acc
+   go (x : xs') acc | x ∈ acc = go xs' acc
    go (x : xs') acc | otherwise =
-      go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
-         (singleton x `union` acc)
+      go (toUnfoldable (fv σ ∩ dom_ρ) <> xs') (singleton x ∪ acc)
       where
       σ = get x ρ
 
 for :: forall a. RecDefs a -> Elim a -> RecDefs a
-for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.keys ρ))
+for ρ σ = ρ `restrict` reaches ρ (fv σ ∩ fromFoldable (O.keys ρ))
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))

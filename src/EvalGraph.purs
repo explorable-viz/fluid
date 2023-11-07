@@ -17,7 +17,7 @@ import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Set (Set, empty, insert, intersection, singleton, union)
+import Data.Set (Set, empty, insert, singleton)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
@@ -32,7 +32,7 @@ import Graph.Slice (bwdSlice, fwdSlice)
 import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Util (type (×), check, concatM, error, orElse, successful, throw, with, (×))
+import Util (type (×), (×), (∪), (∩), check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 import Val (Fun(..), Val(..)) as V
@@ -73,7 +73,7 @@ matchMany Nil κ = pure (D.empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
    γ' × κ' × βs <- matchMany vs κ
-   pure $ γ `D.disjointUnion` γ' × κ' × (αs `union` βs)
+   pure $ γ `D.disjointUnion` γ' × κ' × (αs ∪ βs)
 matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
@@ -84,7 +84,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `for` σ
       in
-         V.Fun <$> new αs <@> V.Closure (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
+         V.Fun <$> new αs <@> V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
 
 {-# Evaluation #-}
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
@@ -211,7 +211,7 @@ graphGC { g, n, γ } e = do
          pure (eα × vα)
    let
       --      dom = vertices progCxt `union` vertices eα
-      fwd αs = vertices (fwdSlice αs g') `intersection` vertices vα
-      bwd αs = vertices (bwdSlice αs g') `intersection` sinks g'
-   --   trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
+      fwd αs = vertices (fwdSlice αs g') ∩ vertices vα
+      bwd αs = vertices (bwdSlice αs g') ∩ sinks g'
+   --   trace (show (S.size $ sinks g' \\ dom) <> " sinks not in inputs.") \_ ->
    pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }

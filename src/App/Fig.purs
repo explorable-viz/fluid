@@ -99,7 +99,7 @@ type Fig =
    , v :: Val 𝔹
    }
 
-type LinkFigSpec =
+type LinkedOutputsFigSpec =
    { divId :: HTMLId
    , file1 :: File
    , file2 :: File
@@ -107,8 +107,10 @@ type LinkFigSpec =
    , x :: Var
    }
 
-type LinkFig =
-   { spec :: LinkFigSpec
+type LinkedInputsFigSpec = FigSpec
+
+type LinkedOutputsFig =
+   { spec :: LinkedOutputsFigSpec
    , γ :: Env 𝔹 -- prog context environment (modules + dataset)
    , s1 :: S.Expr 𝔹
    , s2 :: S.Expr 𝔹
@@ -122,34 +124,42 @@ type LinkFig =
    , dataFile :: String -- TODO: provide surface expression instead and prettyprint
    }
 
-type LinkResult =
+type LinkedInputsFig =
+   { spec :: LinkedInputsFigSpec
+   }
+
+type LinkedOutputsResult =
    { v' :: Val 𝔹 -- will represent either v1' or v2'
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
+type LinkedInputsResult =
+   { v' :: Val 𝔹 -- will represent either v1' or v2'
+   , v0' :: Val 𝔹
+   }
+
+drawLinkedOutputsFig :: LinkedOutputsFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
+drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
    log $ "Redrawing " <> divId
    v1' × v2' × δv1 × δv2 × v0 <- case δv of
       Left δv1 -> do
          let v1' = δv1 v1
-         { v', v0' } <- linkResult x γ e1 e2 t1 t2 v1'
+         { v', v0' } <- linkedOutputsResult x γ e1 e2 t1 t2 v1'
          pure $ v1' × v' × const v1' × identity × v0'
       Right δv2 -> do
          let v2' = δv2 v2
-         { v', v0' } <- linkResult x γ e2 e1 t2 t1 v2'
+         { v', v0' } <- linkedOutputsResult x γ e2 e1 t2 t1 v2'
          pure $ v' × v2' × identity × const v2' × v0'
-   drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+   drawView divId (\selector -> drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkedOutputsFig fig ed1 ed2 ed3 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
    drawCode ed1 $ prettyP s1
    drawCode ed2 $ prettyP s2
    drawCode ed3 $ dataFile
 
 drawCode :: EditorView -> String -> Effect Unit
-drawCode ed s = do
-   tr <- update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
-   dispatch ed tr
+drawCode ed s =
+   dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
@@ -175,8 +185,8 @@ figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
 
-linkResult :: forall m. MonadError Error m => Var -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> m LinkResult
-linkResult x γ0γ e1 e2 t1 _ v1 = do
+linkedOutputsResult :: forall m. MonadError Error m => Var -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> m LinkedOutputsResult
+linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
    let
       γ0γ' × _ = evalBwd (erase <$> γ0γ) (erase e1) v1 t1
       γ0' × γ' = append_inv (S.singleton x) γ0γ'
@@ -198,10 +208,10 @@ loadFig spec@{ file } = do
    t × v <- eval γ0γ e bot
    pure { spec, γ0, γ: γ0 <+> γ1, s0, s, e, t, v }
 
-loadLinkFig :: forall m. MonadAff m => MonadError Error m => LinkFigSpec -> m LinkFig
-loadLinkFig spec@{ file1, file2, dataFile, x } = do
+loadLinkedOutputsFig :: forall m. MonadAff m => MonadError Error m => LinkedOutputsFigSpec -> m LinkedOutputsFig
+loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
    let
-      dir = File "linking/"
+      dir = File "linked-outputs/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- views share ambient environment γ
    { γ } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= initialConfig
@@ -210,9 +220,12 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       γ0 = botOf <$> γ
       s1 = botOf s1'
       s2 = botOf s2'
-   dataFile' <- loadFile (Folder "fluid/example/linking") dataFile -- TODO: use surface expression instead
+   dataFile' <- loadFile (Folder "fluid/example/linked-outputs") dataFile -- TODO: use surface expression instead
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
    t1 × v1 <- eval γ0 e1 bot
    t2 × v2 <- eval γ0 e2 bot
    let v0 = get x γ0
    pure { spec, γ: γ0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
+
+loadLinkedInputsFig :: forall m. MonadAff m => MonadError Error m => LinkedInputsFigSpec -> m LinkedInputsFig
+loadLinkedInputsFig spec = pure { spec }

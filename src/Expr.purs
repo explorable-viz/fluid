@@ -9,7 +9,7 @@ import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (second)
-import Data.Set (Set, difference, empty, singleton, union, unions)
+import Data.Set (Set, empty, singleton, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
@@ -17,7 +17,7 @@ import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Dict (apply2) as D
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
-import Util (type (+), type (×), both, error, throw, (×), (≜), (≞))
+import Util (type (+), type (×), (∪), (×), (≜), (≞), (\\), both, error, throw)
 import Util.Pair (Pair, toTuple)
 
 -- Deviate from POPL paper by having closures depend on originating lambda or letrec
@@ -81,15 +81,15 @@ instance FV (Expr a) where
    fv (Record _ xes) = unions (fv <$> xes)
    fv (Dictionary _ ees) = unions ((unions <<< (fv # both) <<< toTuple) <$> ees)
    fv (Constr _ _ es) = unions (fv <$> es)
-   fv (Matrix _ e1 _ e2) = union (fv e1) (fv e2)
+   fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
    fv (Project e _) = fv e
-   fv (App e1 e2) = fv e1 `union` fv e2
-   fv (Let def e) = fv def `union` (fv e `difference` bv def)
-   fv (LetRec _ ρ e) = unions (fv <$> ρ) `union` fv e
+   fv (App e1 e2) = fv e1 ∪ fv e2
+   fv (Let def e) = fv def ∪ (fv e \\ bv def)
+   fv (LetRec _ ρ e) = unions (fv <$> ρ) ∪ fv e
 
 instance FV (Elim a) where
-   fv (ElimVar x κ) = fv κ `difference` singleton x
+   fv (ElimVar x κ) = fv κ \\ singleton x
    fv (ElimConstr m) = unions (fv <$> m)
    fv (ElimRecord _ κ) = fv κ
 
@@ -102,14 +102,14 @@ instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
 
 instance FV a => FV (Dict a) where
-   fv ρ = (unions $ (fv <$> ρ)) `difference` (S.fromFoldable $ keys ρ)
+   fv ρ = unions (fv <$> ρ) \\ S.fromFoldable (keys ρ)
 
 class BV a where
    bv :: a -> Set Var
 
 -- Bound variables, defined only for singleton eliminators.
 instance BV (Elim a) where
-   bv (ElimVar x κ) = singleton x `union` bv κ
+   bv (ElimVar x κ) = singleton x ∪ bv κ
    bv (ElimConstr m) = bv (snd (asSingletonMap m))
    bv (ElimRecord _ κ) = bv κ
 

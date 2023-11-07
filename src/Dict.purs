@@ -5,6 +5,8 @@ module Dict
    ( module Foreign.Object
    , Dict
    , (\\)
+   , (∩)
+   , (∪)
    , apply
    , apply2
    , lift2
@@ -29,12 +31,12 @@ import Data.List (List, head)
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set)
-import Data.Set (fromFoldable, member) as S
+import Data.Set (fromFoldable) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, keys, toAscUnfoldable, values) as O
 import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, lookup, member, singleton, size, toArrayWithKey, union, unionWith, update)
-import Util (Endo, type (×), (×), assert, definitely, error)
+import Util (Endo, type (×), (×), (∈), assert, definitely, error)
 
 type Dict a = O.Object a
 
@@ -57,6 +59,8 @@ intersection = intersectionWith const
 difference :: forall a b. Dict a -> Dict b -> Dict a
 difference m1 m2 = foldl (flip delete) m1 (O.keys m2)
 
+infixr 7 intersection as ∩
+infixr 6 union as ∪
 infix 5 difference as \\
 
 keys :: forall a. Dict a -> Set String
@@ -75,7 +79,7 @@ disjointUnion :: forall a. Dict a -> Endo (Dict a)
 disjointUnion = unionWith (\_ _ -> error "not disjoint")
 
 disjointUnion_inv :: forall a. Set String -> Dict a -> Dict a × Dict a
-disjointUnion_inv ks m = filterKeys (_ `S.member` ks) m × filterKeys (_ `not <<< S.member` ks) m
+disjointUnion_inv ks m = filterKeys (_ ∈ ks) m × filterKeys (_ `not <<< (∈)` ks) m
 
 toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
 toUnfoldable = O.toAscUnfoldable

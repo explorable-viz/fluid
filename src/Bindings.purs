@@ -2,9 +2,9 @@ module Bindings where
 
 import Prelude
 import Data.List (List(..), (:))
-import Data.Set (Set, empty, singleton, union)
+import Data.Set (Set, empty, singleton)
 import Data.Tuple (Tuple(..), fst, snd)
-import Util (type (×), definitely, whenever)
+import Util (type (×), (∪), definitely, whenever)
 
 type Var = String
 
@@ -24,7 +24,7 @@ val = snd
 
 keys :: forall a. List (Bind a) -> Set Var
 keys Nil = empty
-keys (x ↦ _ : ρ) = singleton x `union` keys ρ
+keys (x ↦ _ : ρ) = singleton x ∪ keys ρ
 
 infix 7 Tuple as ↦
 infixl 4 mustGeq as ⪂
