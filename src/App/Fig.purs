@@ -21,7 +21,6 @@ import DataType (cBarChart, cCons, cLineChart, cNil)
 import Desugarable (desug)
 import Dict (get)
 import Effect (Effect)
-import Effect.Aff.Class (class MonadAff)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -35,6 +34,7 @@ import Pretty (prettyP)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
+import Test.Util (AffError)
 import Trace (Trace)
 import Util (type (×), type (+), (×), absurd, error, orElse)
 import Val (class Ann, Env, Val(..), append_inv, (<+>))
@@ -111,7 +111,7 @@ type LinkedInputsFigSpec = FigSpec
 
 type LinkedOutputsFig =
    { spec :: LinkedOutputsFigSpec
-   , γ :: Env 𝔹 -- prog context environment (modules + dataset)
+   , γ :: Env 𝔹
    , s1 :: S.Expr 𝔹
    , s2 :: S.Expr 𝔹
    , e1 :: Expr 𝔹
@@ -126,6 +126,11 @@ type LinkedOutputsFig =
 
 type LinkedInputsFig =
    { spec :: LinkedInputsFigSpec
+   , γ :: Env 𝔹
+   , s :: S.Expr 𝔹
+   , e :: Expr 𝔹
+   , t :: Trace
+   , v0 :: Val 𝔹 -- common output
    }
 
 type LinkedOutputsResult =
@@ -196,7 +201,7 @@ linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
    _ × v2' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e2) true
    pure { v': neg v2', v0' }
 
-loadFig :: forall m. MonadAff m => MonadError Error m => FigSpec -> m Fig
+loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file } = do
    { γ } <- defaultImports >>= initialConfig
    let γ0 = botOf <$> γ
@@ -208,24 +213,35 @@ loadFig spec@{ file } = do
    t × v <- eval γ0γ e bot
    pure { spec, γ0, γ: γ0 <+> γ1, s0, s, e, t, v }
 
-loadLinkedOutputsFig :: forall m. MonadAff m => MonadError Error m => LinkedOutputsFigSpec -> m LinkedOutputsFig
+loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
 loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
    let
       dir = File "linked-outputs/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- views share ambient environment γ
-   { γ } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= initialConfig
+   { γ: γ' } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
-      γ0 = botOf <$> γ
+      γ = botOf <$> γ'
       s1 = botOf s1'
       s2 = botOf s2'
    dataFile' <- loadFile (Folder "fluid/example/linked-outputs") dataFile -- TODO: use surface expression instead
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
-   t1 × v1 <- eval γ0 e1 bot
-   t2 × v2 <- eval γ0 e2 bot
-   let v0 = get x γ0
-   pure { spec, γ: γ0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
+   t1 × v1 <- eval γ e1 bot
+   t2 × v2 <- eval γ e2 bot
+   let v0 = get x γ
+   pure { spec, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
 
-loadLinkedInputsFig :: forall m. MonadAff m => MonadError Error m => LinkedInputsFigSpec -> m LinkedInputsFig
-loadLinkedInputsFig spec = pure { spec }
+loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
+loadLinkedInputsFig spec@{ file } = do
+   let
+      dir = File "linked-inputs/"
+      name = dir <> file
+   { γ: γ' } <- defaultImports >>= initialConfig
+   s' <- open name
+   let
+      γ = botOf <$> γ'
+      s = botOf s'
+   e <- desug s
+   t × v <- eval γ e bot
+   pure { spec, γ, s, e, t, v0: v }
