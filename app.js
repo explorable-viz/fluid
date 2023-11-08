@@ -30685,7 +30685,7 @@
       const yAxis = axisLeft(y2).tickValues(ticks);
       svg.append("g").call(yAxis);
       const barFill = "#dcdcdc";
-      svg.selectAll("rect").data([...data.entries()]).enter().append("rect").attr("x", ([, d]) => x2(d.x._1)).attr("y", ([, d]) => y2(d.y._1 + 1)).attr("width", x2.bandwidth()).attr("height", ([, d]) => height - y2(d.y._1)).attr("fill", ([, d]) => d.y._2 ? colorShade(barFill, -40) : barFill).attr("class", ([, d]) => d.y._2 ? "bar-selected" : "bar-unselected").on("mousedown", (e, d) => {
+      svg.selectAll("rect").data([...data.entries()]).enter().append("rect").attr("x", ([, d]) => x2(d.x._1)).attr("y", ([, d]) => y2(d.y._1)).attr("width", x2.bandwidth()).attr("height", ([, d]) => height - y2(d.y._1)).attr("fill", ([, d]) => d.y._2 ? colorShade(barFill, -40) : barFill).attr("class", ([, d]) => d.y._2 ? "bar-selected" : "bar-unselected").on("mousedown", (e, d) => {
         console.log(`mousedown ${d[0]}`);
         listener(e);
       });
@@ -30725,11 +30725,79 @@
     Just
   )).__data__)(0)))(functorVal.map(boolNot))));
 
-  // output-es/App.LineChart/foreign.js
+  // output-es/App.BubbleChart/foreign.js
   function curry42(f) {
     return (x1) => (x2) => (x3) => (x4) => f(x1, x2, x3, x4);
   }
   function colorShade2(col, amt) {
+    col = col.replace(/^#/, "");
+    if (col.length === 3)
+      col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2];
+    let [r, g, b] = col.match(/.{2}/g);
+    [r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt];
+    r = Math.max(Math.min(255, r), 0).toString(16);
+    g = Math.max(Math.min(255, g), 0).toString(16);
+    b = Math.max(Math.min(255, b), 0).toString(16);
+    const rr = (r.length < 2 ? "0" : "") + r;
+    const gg = (g.length < 2 ? "0" : "") + g;
+    const bb = (b.length < 2 ? "0" : "") + b;
+    return `#${rr}${gg}${bb}`;
+  }
+  function drawBubbleChart_(id3, childIndex, {
+    caption,
+    data
+  }, listener) {
+    return () => {
+      const childId = id3 + "-" + childIndex;
+      const margin = { top: 15, right: 0, bottom: 40, left: 30 }, width = 200 - margin.left - margin.right, height = 185 - margin.top - margin.bottom;
+      const div = select_default2("#" + id3);
+      div.selectAll("#" + childId).remove();
+      const svg = div.append("svg").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).attr("id", childId).append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
+      const tip = d3_tip_default().attr("class", "d3-tip").offset([0, 0]).html((_, d) => d.y_1);
+      svg.call(tip);
+      const x_max = Math.ceil(Math.max(...data.map((d) => d.x._1 + d.z._1)));
+      const y_max = Math.ceil(Math.max(...data.map((d) => d.y._1 + d.z._1)));
+      const z_max = Math.ceil(Math.max(...data.map((d) => d.z._1)));
+      const x2 = linear2().domain([0, x_max]).range([0, width]);
+      svg.append("g").attr("transform", "translate(0," + height + ")").call(axisBottom(x2)).selectAll("text").style("text-anchor", "middle");
+      const y2 = linear2().domain([0, y_max]).range([height, 0]);
+      svg.append("g").call(axisLeft(y2));
+      const z = linear2().domain([1, z_max]).range([1, 30]);
+      const dotFill = "#dcdcdc";
+      svg.append("g").selectAll("dot").data([...data.entries()]).enter().append("circle").attr("cx", ([, d]) => x2(d.x._1)).attr("cy", ([, d]) => y2(d.y._1)).attr("r", ([, d]) => z(d.z._1)).attr("stroke", "black").style("fill", ([, d]) => d.y._2 ? colorShade2(dotFill, -40) : dotFill).style("class", ([, d]) => d.y._2 ? "dot-selected" : "dot-unselected").on("mousedown", (e, d) => {
+        console.log(`mousedown ${d[0]}`);
+        listener(e);
+      });
+      svg.append("text").text(caption._1).attr("x", width / 2).attr("y", height + 35).attr("class", "title-text").attr("dominant-baseline", "bottom").attr("text-anchor", "middle");
+    };
+  }
+  var drawBubbleChart = curry42(drawBubbleChart_);
+
+  // output-es/App.BubbleChart/index.js
+  var reflectDictVal\u{1D539}BubbleChar = { from: () => (r) => ({ x: get_intOrNumber("x")(r), y: get_intOrNumber("y")(r), z: get_intOrNumber("z")(r) }) };
+  var reflectDictVal\u{1D539}BubbleChar1 = {
+    from: () => (r) => ({
+      caption: (() => {
+        const $2 = $$get("caption")(r);
+        if ($2.tag === "Str") {
+          return $Tuple($2._2, $2._1);
+        }
+        return typeError($2)("Str");
+      })(),
+      data: arrayMap(record2(reflectDictVal\u{1D539}BubbleChar.from()))(reflectValBooleanArrayVal.from()($$get("data")(r)))
+    })
+  };
+  var bubbleChartHandler = (ev) => constrArg("BubbleChart")(0)(field("data")(listElement(definitely("index within bounds")(index2(definitely("absurd")(nullable(
+    _target(ev),
+    Nothing,
+    Just
+  )).__data__)(0)))(functorVal.map(boolNot))));
+
+  // output-es/App.LineChart/foreign.js
+  function curry43(f) {
+    return (x1) => (x2) => (x3) => (x4) => f(x1, x2, x3, x4);
+  }
+  function colorShade3(col, amt) {
     col = col.replace(/^#/, "");
     if (col.length === 3)
       col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2];
@@ -30769,7 +30837,7 @@
       const smallRadius = 2;
       for (const n_plot of plots.entries()) {
         const [i, plot] = n_plot, col = color2(names.indexOf(plot.name._1));
-        svg.selectAll("markers").data([...plot.data.entries()].map(([j, ns]) => [[i, j], ns])).enter().append("g").append("circle").attr("r", ([, d]) => d.y._2 ? smallRadius * 2 : smallRadius).attr("cx", ([, d]) => x2(d.x._1)).attr("cy", ([, d]) => y2(d.y._1)).attr("fill", col).attr("stroke", ([, d]) => d.y._2 ? colorShade2(col, -30) : col).on("mousedown", (e, d) => {
+        svg.selectAll("markers").data([...plot.data.entries()].map(([j, ns]) => [[i, j], ns])).enter().append("g").append("circle").attr("r", ([, d]) => d.y._2 ? smallRadius * 2 : smallRadius).attr("cx", ([, d]) => x2(d.x._1)).attr("cy", ([, d]) => y2(d.y._1)).attr("fill", col).attr("stroke", ([, d]) => d.y._2 ? colorShade3(col, -30) : col).on("mousedown", (e, d) => {
           console.log(`mousedown ${d[0]}`);
           listener(e);
         });
@@ -30787,7 +30855,7 @@
       svg.append("text").text(caption._1).attr("x", width / 2).attr("y", height + 35).attr("class", "title-text").attr("dominant-baseline", "bottom").attr("text-anchor", "middle");
     };
   }
-  var drawLineChart = curry42(drawLineChart_);
+  var drawLineChart = curry43(drawLineChart_);
 
   // output-es/App.LineChart/index.js
   var reflectDictValBooleanPoin = { from: () => (r) => ({ x: get_intOrNumber("x")(r), y: get_intOrNumber("y")(r) }) };
@@ -30842,7 +30910,7 @@
   };
 
   // output-es/App.MatrixView/foreign.js
-  function curry43(f) {
+  function curry44(f) {
     return (x1) => (x2) => (x3) => (x4) => f(x1, x2, x3, x4);
   }
   function drawMatrix_(id3, childIndex, {
@@ -30873,7 +30941,7 @@
       });
     };
   }
-  var drawMatrix = curry43(drawMatrix_);
+  var drawMatrix = curry44(drawMatrix_);
 
   // output-es/App.MatrixView/index.js
   var matrixViewHandler = (ev) => {
@@ -30887,10 +30955,10 @@
   var matrixRep2 = (v) => $Tuple(arrayMap((v1) => arrayMap($$int.unpack)(v1))(v._1), $Tuple(v._2._1._1, v._2._2._1));
 
   // output-es/App.TableView/foreign.js
-  function curry44(f) {
+  function curry45(f) {
     return (x1) => (x2) => (x3) => (x4) => f(x1, x2, x3, x4);
   }
-  function colorShade3(col, amt) {
+  function colorShade4(col, amt) {
     col = col.replace(/^#/, "");
     if (col.length === 3)
       col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2];
@@ -30924,14 +30992,14 @@
         const rows = HTMLtable.append("tbody").selectAll("tr").data(table).enter().append("tr");
         rows.selectAll("td").data((d) => colNames.map((k) => {
           return { "value": d[k], "name": k };
-        })).enter().append("td").attr("data-th", (d) => d.name).attr("class", (d) => d.value._2 ? "cell-selected" : null).attr("bgcolor", (d) => d.value._2 ? colorShade3(cellFill, -40) : cellFill).text((d) => d.value._1).on(
+        })).enter().append("td").attr("data-th", (d) => d.name).attr("class", (d) => d.value._2 ? "cell-selected" : null).attr("bgcolor", (d) => d.value._2 ? colorShade4(cellFill, -40) : cellFill).text((d) => d.value._1).on(
           "mouseover",
           (e, d) => listener(e)
         );
       }
     };
   }
-  var drawTable = curry44(drawTable_);
+  var drawTable = curry45(drawTable_);
 
   // output-es/App.TableView/index.js
   var waterRecord = (r) => ({
@@ -37526,6 +37594,9 @@
           if (v1._2 === "LineChart") {
             return $View("LineChartFig", reflectDictValBooleanLine1.from()(record1.unpack(v1._3._1)._1));
           }
+          if (v1._2 === "BubbleChart") {
+            return $View("BubbleChartFig", reflectDictVal\u{1D539}BubbleChar1.from()(record1.unpack(v1._3._1)._1));
+          }
           if (v1._2 === "Nil" || v1._2 === ":") {
             return $View("WaterTableView", { title: v, table: arrayMap(record2(waterRecord))(reflectValBooleanArrayVal.from()(v1)) });
           }
@@ -37689,6 +37760,9 @@
     }
     if (v3.tag === "BarChartFig") {
       return bindE(eventListener((x2) => v1(barChartHandler(x2))))(drawBarChart(v)(v2)(v3._1));
+    }
+    if (v3.tag === "BubbleChartFig") {
+      return bindE(eventListener((x2) => v1(bubbleChartHandler(x2))))(drawBubbleChart(v)(v2)(v3._1));
     }
     fail();
   };
