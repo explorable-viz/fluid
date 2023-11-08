@@ -1,7 +1,6 @@
 module PLDI2024 where
 
 import Prelude
-import App (linkedOutputsFig1)
 import App.Fig (LinkedOutputsFigSpec, drawLinkedOutputsFigs, loadLinkedOutputsFig)
 import Effect (Effect)
 import Module (File(..))
@@ -17,4 +16,4 @@ waterFig =
 
 main :: Effect Unit
 main = do
-   drawLinkedOutputsFigs [ loadLinkedOutputsFig linkedOutputsFig1 ]
+   drawLinkedOutputsFigs [ loadLinkedOutputsFig waterFig ]
