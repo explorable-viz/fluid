@@ -105,7 +105,7 @@ f_name = "name" :: FieldName
 f_plots = "plots" :: FieldName
 f_x = "x" :: FieldName
 f_y = "y" :: FieldName
-
+f_z = "z" :: FieldName
 dataTypes :: List DataType
 dataTypes = L.fromFoldable
    [
@@ -146,7 +146,7 @@ dataTypes = L.fromFoldable
         ]
    , dataType "Plot"
         [ cBarChart × 1 -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
-        , cBubbleChart × 1 -- Record<caption: Str>
+        , cBubbleChart × 1 -- Record<caption: Str, data: List<Record<x: Number, y: Number, z: Number>>>
         , cLineChart × 1 -- Record<caption: Str, plots: List<LinePlot>>
         , cLinePlot × 1 -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
         ]
