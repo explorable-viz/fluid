@@ -152,7 +152,7 @@ type LinkedOutputsResult =
 
 type LinkedInputsResult =
    { v' :: Val 𝔹 -- selection on other input
-     -- will also want selection that arose on shared output
+   -- will also want selection that arose on shared output
    }
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit

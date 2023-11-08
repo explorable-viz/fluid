@@ -17,6 +17,7 @@ main :: Effect Unit
 --main = run tests
 
 main = run $ linkedInputsSuite linkedInputs_cases
+
 --main = run scratchpad
 
 scratchpad :: TestSuite
