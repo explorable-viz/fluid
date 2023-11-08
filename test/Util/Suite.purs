@@ -2,7 +2,7 @@ module Test.Util.Many where
 
 import Prelude
 
-import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
+import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
 import Data.Array (zip)
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
@@ -79,6 +79,7 @@ linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = zip (specs <#> name) (specs <#> asTest)
    where
    name { spec } = "linked-inputs/" <> show spec.file
-   asTest { spec } = do
-      {} <- loadLinkedInputsFig spec
-      pure unit
+   asTest { spec, δv1, v2_expect } = do
+      { γ, e, t } <- loadLinkedInputsFig spec
+      { v': v2' } <- linkedInputsResult spec.x1 spec.x2 γ e t δv1
+      checkPretty "linked input" v2_expect v2'

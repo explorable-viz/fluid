@@ -146,13 +146,13 @@ type LinkedInputsFig =
    }
 
 type LinkedOutputsResult =
-   { v' :: Val 𝔹 -- will represent either v1' or v2'
-   , v0' :: Val 𝔹
+   { v' :: Val 𝔹 -- selection on other output
+   , v0' :: Val 𝔹 -- selection that arose on shared input
    }
 
 type LinkedInputsResult =
-   { v' :: Val 𝔹 -- will represent either v1' or v2'
-   , v0' :: Val 𝔹
+   { v' :: Val 𝔹 -- selection on other input
+     -- will also want selection that arose on shared output
    }
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
@@ -239,10 +239,16 @@ linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
       γ0γ' × _ = evalBwd (erase <$> γ0γ) (erase e1) v1 t1
       γ0' × γ' = append_inv (S.singleton x) γ0γ'
    v0' <- lookup x γ' # orElse absurd
-   -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
-   -- (topOf γ0) combined with negation of the dataset environment slice
+   -- make γ0 and e2 fully available
    _ × v2' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e2) true
    pure { v': neg v2', v0' }
+
+linkedInputsResult :: forall m. MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
+linkedInputsResult x1 x2 γ _ _ _ = do
+   -- TODO: replace with environment selection; fwd De Morgan; bwd; retrieve x2 from env
+   _ <- lookup x1 γ # orElse absurd
+   v2 <- lookup x2 γ # orElse absurd
+   pure { v': v2 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file } = do
