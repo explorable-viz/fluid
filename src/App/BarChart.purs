@@ -21,13 +21,13 @@ newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × �
 
 foreign import drawBarChart :: Renderer BarChart
 
-instance Reflect (Dict (Val Boolean)) BarChartRecord where
+instance Reflect (Dict (Val 𝔹)) BarChartRecord where
    from r = BarChartRecord
       { x: string.unpack (get f_x r)
       , y: get_intOrNumber f_y r
       }
 
-instance Reflect (Dict (Val Boolean)) BarChart where
+instance Reflect (Dict (Val 𝔹)) BarChart where
    from r = BarChart
       { caption: string.unpack (get f_caption r)
       , data: record from <$> from (get f_data r)
