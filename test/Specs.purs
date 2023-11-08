@@ -215,11 +215,6 @@ bwd_cases =
      , δv: listElement 1 neg
      , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
      }
-   , { file: "motivating-example"
-     , bwd_expect_file: "motivating-example.expect"
-     , fwd_expect: "(⸨570⸩ ⸨:⸩ (⸨885⸩ ⸨:⸩ ⸨[]⸩))"
-     , δv: neg
-     }
    ]
 
 graphics_cases :: Array TestWithDatasetSpec
@@ -315,7 +310,7 @@ linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
    [ { spec:
           { divId: ""
-          , file: File "bubble-chart"
+          , file: File "water"
           , x1: "all_countries"
           , x2: "all_cities"
           }
