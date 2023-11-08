@@ -127,6 +127,16 @@ bwd_cases =
    , { file: "dict/get", bwd_expect_file: "dict/get.expect", δv: neg, fwd_expect: "⸨0⸩" }
    , { file: "dict/map", bwd_expect_file: "dict/map.expect", δv: neg, fwd_expect: "⸨20⸩" }
    , { file: "divide", bwd_expect_file: "divide.expect", δv: neg, fwd_expect: "⸨40.22222222222222⸩" }
+   , { file: "dtw/compute-dtw"
+     , bwd_expect_file: "dtw/compute-dtw.expect"
+     , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
+     , δv: listElement 1 neg
+     }
+   , { file: "dtw/average-series"
+     , bwd_expect_file: "dtw/average-series.expect"
+     , fwd_expect: "(2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
+     , δv: listElement 2 neg
+     }
    , { file: "filter"
      , bwd_expect_file: "filter.expect"
      , δv: listCell 0 neg
@@ -163,6 +173,16 @@ bwd_cases =
      , δv: listCell 0 neg >>> listCell 1 neg
      , fwd_expect: "(5 ⸨:⸩ (6 ⸨:⸩ []))"
      }
+   , { file: "matrix-update"
+     , bwd_expect_file: "matrix-update.expect"
+     , fwd_expect:
+          "15, 13, 6, 9, 16,\n\
+          \12, ⸨4000⸩, 15, 4, 13,\n\
+          \14, 9, 20, 8, 1,\n\
+          \4, 10, 3, 7, 19,\n\
+          \3, 11, 15, 2, 9"
+     , δv: matrixElement 2 2 neg
+     }
    , { file: "multiply", bwd_expect_file: "multiply.expect", δv: neg, fwd_expect: "⸨0⸩" }
    , { file: "nth", bwd_expect_file: "nth.expect", δv: neg, fwd_expect: "⸨4⸩" }
    , { file: "section-5-example"
@@ -195,30 +215,10 @@ bwd_cases =
      , δv: listElement 1 neg
      , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
      }
-   , { file: "matrix-update"
-     , bwd_expect_file: "matrix-update.expect"
-     , fwd_expect:
-          "15, 13, 6, 9, 16,\n\
-          \12, ⸨4000⸩, 15, 4, 13,\n\
-          \14, 9, 20, 8, 1,\n\
-          \4, 10, 3, 7, 19,\n\
-          \3, 11, 15, 2, 9"
-     , δv: matrixElement 2 2 neg
-     }
-   , { file: "dtw/compute-dtw"
-     , bwd_expect_file: "dtw/compute-dtw.expect"
-     , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
-     , δv: listElement 1 neg
-     }
    , { file: "motivating-example"
      , bwd_expect_file: "motivating-example.expect"
      , fwd_expect: "⸨570⸩"
      , δv: neg
-     }
-   , { file: "dtw/average-series"
-     , bwd_expect_file: "dtw/average-series.expect"
-     , fwd_expect: "(2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
-     , δv: listElement 2 neg
      }
    ]
 
