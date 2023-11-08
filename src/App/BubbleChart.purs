@@ -16,7 +16,7 @@ import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.Internal.Types (EventTarget)
 
-newtype BubbleChart = BubbleChart { caption :: String × 𝔹, data :: Array BubbleChartRecord}
+newtype BubbleChart = BubbleChart { caption :: String × 𝔹, data :: Array BubbleChartRecord }
 newtype BubbleChartRecord = BubbleChartRecord { x :: Number × 𝔹, y :: Number × 𝔹, z :: Number × 𝔹 }
 
 foreign import drawBubbleChart :: Renderer BubbleChart
@@ -25,8 +25,9 @@ instance Reflect (Dict (Val 𝔹)) BubbleChartRecord where
    from r = BubbleChartRecord
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
-      , z: get_intOrNumber f_z r 
+      , z: get_intOrNumber f_z r
       }
+
 instance Reflect (Dict (Val 𝔹)) BubbleChart where
    from r = BubbleChart
       { caption: string.unpack (get f_caption r)
@@ -37,13 +38,14 @@ bubbleChartHandler :: Handler
 bubbleChartHandler ev = toggleDot $ unsafeDotIndex $ target ev
    where
    toggleDot :: Int -> Selector Val
-   toggleDot i = 
+   toggleDot i =
       constrArg cBubbleChart 0
          $ field f_data
          $ listElement i
          $ neg
+
    unsafeDotIndex :: Maybe EventTarget -> Int
-   unsafeDotIndex tgt_opt = 
+   unsafeDotIndex tgt_opt =
       let
          tgt = definitely' $ tgt_opt
       in

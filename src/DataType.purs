@@ -106,6 +106,7 @@ f_plots = "plots" :: FieldName
 f_x = "x" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
+
 dataTypes :: List DataType
 dataTypes = L.fromFoldable
    [

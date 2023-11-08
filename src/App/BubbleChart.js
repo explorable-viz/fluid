@@ -70,7 +70,7 @@ function drawBubbleChart_ (
 
       const x_max = Math.ceil(Math.max(...data.map(d => d.x._1 + d.z._1)))
       const y_max = Math.ceil(Math.max(...data.map(d => d.y._1 + d.z._1)))
-
+      const z_max = Math.ceil(Math.max(...data.map(d => d.z._1)))
       const x = d3.scaleLinear()
          .domain([0,x_max])
          .range([0, width])
@@ -86,6 +86,10 @@ function drawBubbleChart_ (
       svg.append('g')
          .call(d3.axisLeft(y))
       
+      const z = d3.scaleLinear()
+         .domain([1, z_max])
+         .range([1, 30])
+      
       const dotFill = '#dcdcdc'
       svg.append('g')
          .selectAll('dot')
@@ -95,9 +99,10 @@ function drawBubbleChart_ (
             .attr('cx', ([, d]) => x(d.x._1))
             .attr('cy', ([, d]) => y(d.y._1))
             .attr('r', ([, d]) => z(d.z._1))
+            .attr('stroke', 'black')
             .style('fill', ([, d]) => d.y._2 ? colorShade(dotFill, -40) : dotFill)
             .style('class', ([, d]) => d.y._2 ? 'dot-selected' : 'dot-unselected')
-            .on('moustdown', (e, d) => {
+            .on('mousedown', (e, d) => {
                console.log(`mousedown ${d[0]}`)
                listener(e)
             })
