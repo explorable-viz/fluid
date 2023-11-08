@@ -15,6 +15,7 @@ import Util (type (×), (×))
 
 main :: Effect Unit
 main = run tests
+
 --main = run $ linkedInputsMany linkedInputs_cases
 --main = run scratchpad
 
