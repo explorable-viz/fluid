@@ -12,7 +12,7 @@
     "clean-bench": "rm -rf dist/benches && mkdir -p dist/benches && cp -r fluid dist/benches && cp web/index.html dist/benches && cp -r web/css dist/benches",
     "clean-examples": "rm -rf dist/examples && mkdir -p dist/examples && cp -r fluid dist/examples && cp web/index.html dist/examples && cp -r web/css dist/examples",
     "build-examples": "yarn clean-examples && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Example.Example --to dist/examples/app.js",
-    "build-tests": "yarn clean-tests && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Main --to dist/tests/app.js",
+    "build-tests": "yarn clean-tests && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Test --to dist/tests/app.js",
     "build-bench": "yarn clean-bench && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Benchmark --to dist/benches/app.js",
     "tests": "karma start karma.conf.tests.js",
     "bench": "npx http-serve dist/benches -a 127.0.0.1",
