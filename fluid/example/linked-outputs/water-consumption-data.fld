@@ -1,4 +1,4 @@
 [
-    {country: "Germany", cities: 1000, farms: 150, industry:500 , energy: 450, popMil: 81},
+    {country: "Germany", cities: 900, farms: 150, industry:500 , energy: 450, popMil: 81},
     {country: "UK", cities: 800, farms: 200, industry: 400, energy: 700, popMil: 67}
 ]
