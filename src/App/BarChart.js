@@ -80,12 +80,12 @@ function drawBarChart_ (
             .style('text-anchor', 'middle')
 
       // y-axis
-      const nearest = 100,
+      const nearest = 1,
             y_max = Math.ceil(Math.max(...data.map(d => d.y._1)) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
-      const tickEvery = nearest / 2,
+      const tickEvery = y_max / 4,
             ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(n => n * tickEvery)
       const yAxis = d3.axisLeft(y)
          .tickValues(ticks)
