@@ -217,7 +217,7 @@ bwd_cases =
      }
    , { file: "motivating-example"
      , bwd_expect_file: "motivating-example.expect"
-     , fwd_expect: "⸨570⸩"
+     , fwd_expect: "(⸨570⸩ ⸨:⸩ (⸨885⸩ ⸨:⸩ ⸨[]⸩))"
      , δv: neg
      }
    ]
