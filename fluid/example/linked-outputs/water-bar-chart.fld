@@ -1,4 +1,4 @@
-let totalFor country = 
+let totalFor country =
     sum [row.cities + row.farms + row.industry + row.energy | row <- data, row.country == country];
 let countryData = [ {x: country.country, y: totalFor country.country}
                    | country <- data]
