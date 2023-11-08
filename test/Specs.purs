@@ -2,6 +2,7 @@ module Test.Specs where
 
 import Prelude
 
+import App (linkedOutputsFig1)
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
@@ -258,13 +259,7 @@ linkedOutputs_cases =
           \7, 15, 15, 8, 20,\n\
           \3, 10, 12, 3, 11"
      }
-   , { spec:
-          { divId: ""
-          , file1: File "bar-chart"
-          , file2: File "line-chart"
-          , dataFile: File "renewables"
-          , x: "data"
-          }
+   , { spec: linkedOutputsFig1
      , δv1: constrArg cBarChart 0
           $ field f_data
           $ listElement 1
