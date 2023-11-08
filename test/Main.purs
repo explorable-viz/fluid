@@ -2,6 +2,7 @@ module Test.Main where
 
 import Prelude hiding (add)
 
+import App.Util.Select (listElement)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
@@ -14,17 +15,17 @@ import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
 main :: Effect Unit
-main = run tests
+-- main = run tests
 
---main = run $ linkedInputsSuite linkedInputs_cases
---main = run scratchpad
+-- main = run $ linkedInputsSuite linkedInputs_cases
+main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite
    [ { file: "motivating-example"
      , bwd_expect_file: "motivating-example.expect"
-     , fwd_expect: "⸨570⸩"
-     , δv: neg
+     , fwd_expect: "(570 : (⸨885⸩ : []))"
+     , δv: listElement 1 neg
      }
    ]
 
