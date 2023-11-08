@@ -316,12 +316,10 @@ linkedInputs_cases =
    [ { spec:
           { divId: ""
           , file: File "bubble-chart"
-          , xs: [ "data" ]
+          , x1: "all_countries"
+          , x2: "all_cities"
           }
      , δv1: listElement 2 neg
-     , v2_expect:
-          "BubbleChart {\
-          \caption : \"Caption to go here\", \
-          \}"
+     , v2_expect: ""
      }
    ]

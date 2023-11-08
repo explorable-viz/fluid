@@ -96,7 +96,7 @@ type FigSpec =
 type Fig =
    { spec :: FigSpec
    , γ0 :: Env 𝔹 -- ambient env
-   , γ :: Env 𝔹 -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
+   , γ :: Env 𝔹 -- loaded dataset, if any, plus additional let bindings at beginning of ex
    , s0 :: S.Expr 𝔹 -- program that was originally "split"
    , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹 -- desugared s
@@ -112,7 +112,12 @@ type LinkedOutputsFigSpec =
    , x :: Var
    }
 
-type LinkedInputsFigSpec = FigSpec
+type LinkedInputsFigSpec =
+   { divId :: HTMLId
+   , file :: File
+   , x1 :: Var -- variables to be considered "inputs"
+   , x2 :: Var
+   }
 
 type LinkedOutputsFig =
    { spec :: LinkedOutputsFigSpec
@@ -132,7 +137,7 @@ type LinkedOutputsFig =
 type LinkedInputsFig =
    { spec :: LinkedInputsFigSpec
    , γ0 :: Env 𝔹 -- ambient env
-   , γ :: Env 𝔹 -- local env (additional let bindings at beginning of ex)
+   , γ :: Env 𝔹 -- additional let bindings at beginning of ex; must include vars defined in spec
    , s0 :: S.Expr 𝔹 -- program that was originally "split"
    , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹
