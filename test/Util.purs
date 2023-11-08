@@ -2,7 +2,6 @@ module Test.Util where
 
 import Prelude hiding (absurd)
 
-import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -33,6 +32,8 @@ import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Spec.Assertions (fail)
 import Util (type (×), successful, (×))
 import Val (class Ann, Env, Val(..))
+
+type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 
 type TestConfig =
    { δv :: Selector Val

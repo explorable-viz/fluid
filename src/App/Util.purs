@@ -14,13 +14,13 @@ import Lattice (𝔹)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
 import Util (type (×))
+import Test.Util (Selector)
 import Val (Val(..))
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
-type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
 
