@@ -1,0 +1,7 @@
+let ratioFor country = 
+    sum [row.popMil / row.farms | row <- data, row.country == country];
+let countryData = [{x: country.country, y: ratioFor country.country} | country <- data]
+in BarChart {
+    caption: "Ratio of farmland consumption to population in millions",
+    data: countryData
+}

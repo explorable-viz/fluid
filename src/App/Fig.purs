@@ -6,7 +6,7 @@ import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
-import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
+import App.TableView (WaterTable(..), drawTable, waterRecord, tableViewHandler)
 import App.Util (HTMLId, OnSel, doNothing, from, record)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
@@ -47,13 +47,13 @@ codeMirrorDiv = ("codemirror-" <> _)
 
 data View
    = MatrixFig MatrixView
-   | EnergyTableView EnergyTable
+   | WaterTableView WaterTable
    | LineChartFig LineChart
    | BarChartFig BarChart
 
 drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
 drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
-drawView divId onSel n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
+drawView divId onSel n (WaterTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
 drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
 drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
 
@@ -65,7 +65,7 @@ view _ (Constr _ c (u1 : Nil)) | c == cBarChart =
 view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
    LineChartFig (unsafePartial $ record from u1)
 view title u@(Constr _ c _) | c == cNil || c == cCons =
-   EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from u })
+   WaterTableView (WaterTable { title, table: unsafePartial $ record waterRecord <$> from u })
 view title u@(Matrix _ _) =
    MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
 view _ _ = error absurd
