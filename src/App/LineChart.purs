@@ -2,7 +2,7 @@ module App.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Selector, from, get_intOrNumber, record)
+import App.Util (class Reflect, Handler, Renderer, from, get_intOrNumber, record)
 import App.Util.Select (constrArg, field, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
@@ -10,6 +10,7 @@ import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x,
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
 import Primitive (string)
+import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), (!), definitely')
 import Val (Val(..))

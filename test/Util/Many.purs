@@ -3,12 +3,11 @@ module Test.Util.Many where
 import Prelude
 
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
-import App.Util (Selector)
 import Data.Array (zip)
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
 import Test.Benchmark.Util (BenchRow)
-import Test.Util (checkPretty, test)
+import Test.Util (Selector, checkPretty, test)
 import Util (type (×), (×))
 import Val (Val)
 

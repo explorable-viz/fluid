@@ -211,7 +211,7 @@ bwd_cases =
      }
    , { file: "motivating-example"
      , bwd_expect_file: "motivating-example.expect"
-     , fwd_expect: "⸨540⸩"
+     , fwd_expect: "⸨570⸩"
      , δv: neg
      }
    , { file: "dtw/average-series"

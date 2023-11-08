@@ -2,13 +2,14 @@ module App.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Selector, from, get_intOrNumber, record)
+import App.Util (class Reflect, Handler, Renderer, from, get_intOrNumber, record)
 import App.Util.Select (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
 import Primitive (string)
+import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (!), definitely')
 import Val (Val)

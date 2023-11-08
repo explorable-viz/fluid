@@ -3,17 +3,18 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror (EditorView, dispatch, getContentsLength, update)
+import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
-import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
+import App.Util (HTMLId, OnSel, doNothing, from, record)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.List (List(..), (:), singleton)
+import Data.Newtype (unwrap)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
@@ -21,6 +22,7 @@ import DataType (cBarChart, cCons, cLineChart, cNil)
 import Desugarable (desug)
 import Dict (get)
 import Effect (Effect)
+import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -34,11 +36,14 @@ import Pretty (prettyP)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
-import Test.Util (AffError)
+import Test.Util (AffError, Selector)
 import Trace (Trace)
-import Util (type (×), type (+), (×), absurd, error, orElse)
+import Util (type (+), type (×), Endo, absurd, error, orElse, (×))
 import Val (class Ann, Env, Val(..), append_inv, (<+>))
 import Web.Event.EventTarget (eventListener)
+
+codeMirrorDiv :: Endo String
+codeMirrorDiv = ("codemirror-" <> _)
 
 data View
    = MatrixFig MatrixView
@@ -164,6 +169,18 @@ drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, s1, s2, e1, e2, t1, t2, v1, v
    drawCode ed2 $ prettyP s2
    drawCode ed3 $ dataFile
 
+drawLinkedOutputsFigs :: Array (Aff LinkedOutputsFig) -> Effect Unit
+drawLinkedOutputsFigs loadFigs =
+   flip runAff_ (sequence loadFigs)
+      case _ of
+         Left err -> log $ show err
+         Right figs -> do
+            sequence_ $ figs <#> \fig -> do
+               ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
+               ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
+               ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
+               drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ botOf)
+
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
@@ -176,6 +193,25 @@ drawFig fig@{ spec: { divId }, s0 } ed δv = do
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
    drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
    drawCode ed $ prettyP s0
+
+drawFigs :: Array (Aff Fig) -> Effect Unit
+drawFigs loadFigs =
+   flip runAff_ (sequence loadFigs)
+      case _ of
+         Left err -> log $ show err
+         Right figs -> sequence_ $ figs <#> \fig -> do
+            ed <- addEditorView $ codeMirrorDiv fig.spec.divId
+            drawFig fig ed botOf
+
+drawFiles :: Array (Folder × File) -> Effect Unit
+drawFiles files =
+   sequence_ $ files <#> \(folder × file) ->
+      flip runAff_ (loadFile folder file)
+         case _ of
+            Left err -> log $ show err
+            Right src -> do
+               ed <- addEditorView $ codeMirrorDiv $ unwrap file
+               drawCode ed src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)

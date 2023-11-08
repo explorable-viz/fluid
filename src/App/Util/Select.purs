@@ -2,7 +2,6 @@ module App.Util.Select where
 
 import Prelude hiding (absurd)
 
-import App.Util (Selector)
 import Bindings (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
@@ -11,6 +10,7 @@ import DataType (Ctr, cCons, cNil)
 import Foreign.Object (update)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
+import Test.Util (Selector)
 import Util (Endo, absurd, error, definitely')
 import Val (DictRep(..), Val(..), matrixPut)
 

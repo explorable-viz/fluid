@@ -14,12 +14,11 @@ import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
 main :: Effect Unit
--- main = run $ linkedInputsMany linkedInputs_cases
-
-main = run scratchpad
+main = run tests
+--main = run $ linkedInputsMany linkedInputs_cases
+--main = run scratchpad
 
 scratchpad :: TestSuite
--- scratchpad = tests
 scratchpad = asTestSuite $ bwdMany
    [ { file: "motivating-example"
      , bwd_expect_file: "motivating-example.expect"
