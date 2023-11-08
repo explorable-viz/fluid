@@ -181,10 +181,6 @@ drawLinkedOutputsFigs loadFigs =
                ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
                drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ botOf)
 
-drawCode :: EditorView -> String -> Effect Unit
-drawCode ed s =
-   dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
-
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
    log $ "Redrawing " <> divId
@@ -202,6 +198,10 @@ drawFigs loadFigs =
          Right figs -> sequence_ $ figs <#> \fig -> do
             ed <- addEditorView $ codeMirrorDiv fig.spec.divId
             drawFig fig ed botOf
+
+drawCode :: EditorView -> String -> Effect Unit
+drawCode ed s =
+   dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
 drawFiles :: Array (Folder × File) -> Effect Unit
 drawFiles files =
