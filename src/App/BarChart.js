@@ -99,7 +99,7 @@ function drawBarChart_ (
          .enter()
          .append('rect')
             .attr('x', ([, d]) => x(d.x._1))
-            .attr('y', ([, d]) => y(d.y._1 + 1))  // ouch: bars overplot x-axis!
+            .attr('y', ([, d]) => (y(d.y._1)))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
             .attr('height', ([, d]) => height - y(d.y._1))
             .attr('fill', ([, d]) => d.y._2 ? colorShade(barFill, -40) : barFill)
