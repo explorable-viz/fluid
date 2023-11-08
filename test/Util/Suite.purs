@@ -43,15 +43,15 @@ type TestLinkedInputsSpec =
    , v2_expect :: String
    }
 
-many :: Array TestSpec -> BenchSuite
-many specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
+suite :: Array TestSpec -> BenchSuite
+suite specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
    where
    one { file, fwd_expect } = do
       progCxt <- defaultImports
       test (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
-bwdMany :: Array TestBwdSpec -> BenchSuite
-bwdMany specs (n × is_bench) = zip (specs <#> (\spec -> "slicing/" <> spec.file)) (specs <#> one)
+bwdSuite :: Array TestBwdSpec -> BenchSuite
+bwdSuite specs (n × is_bench) = zip (specs <#> (\spec -> "slicing/" <> spec.file)) (specs <#> one)
    where
    folder = File "slicing/"
    one { file, bwd_expect_file, δv, fwd_expect } = do
@@ -59,15 +59,15 @@ bwdMany specs (n × is_bench) = zip (specs <#> (\spec -> "slicing/" <> spec.file
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
       test (folder <> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetMany :: Array TestWithDatasetSpec -> BenchSuite
-withDatasetMany specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
+withDatasetSuite :: Array TestWithDatasetSpec -> BenchSuite
+withDatasetSuite specs (n × is_bench) = zip (specs <#> _.file) (specs <#> one)
    where
    one { dataset, file } = do
       progCxt <- defaultImports >>= datasetAs (File dataset) "data"
       test (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
-linkedOutputsMany :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
-linkedOutputsMany specs = zip (specs <#> name) (specs <#> one)
+linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
+linkedOutputsSuite specs = zip (specs <#> name) (specs <#> one)
    where
    name spec = "linked-outputs/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
    one { spec, δv1, v2_expect } = do
@@ -75,8 +75,8 @@ linkedOutputsMany specs = zip (specs <#> name) (specs <#> one)
       { v': v2' } <- linkedOutputsResult spec.x γ e1 e2 t1 t2 (δv1 v1)
       checkPretty "linked output" v2_expect v2'
 
-linkedInputsMany :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
-linkedInputsMany specs = zip (specs <#> name) (specs <#> one)
+linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
+linkedInputsSuite specs = zip (specs <#> name) (specs <#> one)
    where
    name { spec } = "linked-inputs/" <> show spec.file
    one { spec } = do
