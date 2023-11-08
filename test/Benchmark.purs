@@ -1,4 +1,4 @@
-module Test.Benchmark.Main where
+module Test.Benchmark where
 
 import Prelude
 import Data.Array (concat)
@@ -9,7 +9,7 @@ import Effect.Aff (launchAff_)
 import Effect.Class.Console (logShow)
 import Test.Benchmark.Util (BenchAcc(..))
 import Test.Specs (misc_cases, bwd_cases, desugar_cases, graphics_cases)
-import Test.Util.Many (BenchSuite, many, bwdMany, withDatasetMany)
+import Test.Util.Many (BenchSuite, bwdSuite, suite, withDatasetSuite)
 import Util (definitely, (×))
 
 main :: Effect Unit
@@ -19,8 +19,8 @@ main = launchAff_ do
 
 benchmarks :: Array BenchSuite
 benchmarks =
-   [ many desugar_cases
-   , many misc_cases
-   , bwdMany bwd_cases
-   , withDatasetMany graphics_cases
+   [ suite desugar_cases
+   , suite misc_cases
+   , bwdSuite bwd_cases
+   , withDatasetSuite graphics_cases
    ]

@@ -1,4 +1,4 @@
-module PLDI2024.Main where
+module PLDI2024 where
 
 import Prelude hiding (absurd)
 

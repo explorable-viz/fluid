@@ -1,4 +1,4 @@
-module App.Main where
+module App where
 
 import Prelude hiding (absurd)
 

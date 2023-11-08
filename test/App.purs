@@ -1,8 +1,8 @@
-module Test.App.Main where
+module Test.App where
 
 import Prelude
+import App (fig1, fig2, linkedOutputsFig1)
 import App.Fig (FigSpec, LinkedOutputsFigSpec, loadFig, loadLinkedOutputsFig)
-import App.Main (fig1, fig2, linkedOutputsFig1)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Util.Mocha (run)
