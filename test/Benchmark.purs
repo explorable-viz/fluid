@@ -1,4 +1,4 @@
-module Test.Benchmark.Main where
+module Test.Benchmark where
 
 import Prelude
 import Data.Array (concat)
