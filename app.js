@@ -37715,7 +37715,7 @@
     };
   };
 
-  // output-es/App.Main/index.js
+  // output-es/App/index.js
   var sequence = /* @__PURE__ */ (() => traversableArray.traverse(applicativeAff)(identity10))();
   var sequence_2 = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity5);
   var botOf2 = /* @__PURE__ */ (() => functorVal.map((v) => false))();
