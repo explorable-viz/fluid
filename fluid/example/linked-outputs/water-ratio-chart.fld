@@ -1,4 +1,4 @@
-let countryData = [{x: country.cities, y: country.farms, z: country.popMil} | country <- data]
+let countryData = [{x: country.cities, y: country.farms, z: country.popMil, c: country.continent} | country <- data]
 in BubbleChart {
     caption: "Ratio of farmland consumption to population in millions",
     data: countryData
