@@ -107,6 +107,7 @@ f_x = "x" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
 f_colour = "c" :: FieldName
+
 dataTypes :: List DataType
 dataTypes = L.fromFoldable
    [
