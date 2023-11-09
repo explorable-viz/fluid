@@ -7,7 +7,7 @@ import App.BubbleChart (BubbleChart, bubbleChartHandler, drawBubbleChart)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
-import App.TableView (WaterTable(..), drawTable, waterRecord, tableViewHandler)
+import App.TableView (Table(..), drawTable, tableViewHandler)
 import App.Util (HTMLId, OnSel, doNothing, from, record)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
@@ -21,7 +21,7 @@ import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
 import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cNil)
 import Desugarable (desug)
-import Dict (get)
+import Dict (Dict, get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
@@ -48,14 +48,14 @@ codeMirrorDiv = ("codemirror-" <> _)
 
 data View
    = MatrixFig MatrixView
-   | WaterTableView WaterTable
+   | TableView (Table (Dict (Val 𝔹)))
    | LineChartFig LineChart
    | BarChartFig BarChart
    | BubbleChartFig BubbleChart
 
 drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
 drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
-drawView divId onSel n (WaterTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
+drawView divId onSel n (TableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
 drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
 drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
 drawView divId onSel n (BubbleChartFig vw) = drawBubbleChart divId n vw =<< eventListener (onSel <<< bubbleChartHandler)
@@ -70,7 +70,7 @@ view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
 view _ (Constr _ c (u1 : Nil)) | c == cBubbleChart =
    BubbleChartFig (unsafePartial $ record from u1)
 view title u@(Constr _ c _) | c == cNil || c == cCons =
-   WaterTableView (WaterTable { title, table: unsafePartial $ record waterRecord <$> from u })
+   TableView (Table { title, table: unsafePartial $ record identity <$> from u })
 view title u@(Matrix _ _) =
    MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
 view _ _ = error absurd

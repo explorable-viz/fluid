@@ -10,10 +10,16 @@ import Util ((×))
 -- Will changes to PLDI figures but for now same as those on f.luid.org main page.
 linkedOutputsFig1 :: LinkedOutputsFigSpec
 linkedOutputsFig1 =
+   -- { divId: "fig-1"
+   -- , file1: File "water-bar-chart"
+   -- , file2: File "water-ratio-chart"
+   -- , dataFile: File "water-consumption-data"
+   -- , x: "data"
+   -- }
    { divId: "fig-1"
-   , file1: File "water-bar-chart"
-   , file2: File "water-ratio-chart"
-   , dataFile: File "water-consumption-data"
+   , file1: File "bar-chart"
+   , file2: File "line-chart"
+   , dataFile: File "renewables"
    , x: "data"
    }
 
