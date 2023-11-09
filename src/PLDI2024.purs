@@ -1,7 +1,7 @@
 module PLDI2024 where
 
 import Prelude
-import App.Fig (LinkedOutputsFigSpec, drawLinkedOutputsFigs, loadLinkedOutputsFig)
+import App.Fig (LinkedOutputsFigSpec, drawLinkedOutputsFigs, loadLinkedOutputsFig, FigSpec)
 import Effect (Effect)
 import Module (File(..))
 
@@ -13,13 +13,12 @@ waterFig =
    , dataFile: File "water-consumption-data"
    , x: "data"
    }
-
--- { divId: "fig-1"
--- , file1: File "bar-chart"
--- , file2: File "line-chart"
--- , dataFile: File "renewables"
--- , x: "data"
--- }
+--   { divId: "fig-1"
+--   , file1: File "bar-chart"
+--   , file2: File "line-chart"
+--   , dataFile: File "renewables"
+--   , x: "data"
+--   }
 
 fig1 :: FigSpec
 fig1 =
