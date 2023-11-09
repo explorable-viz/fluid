@@ -35,7 +35,7 @@ import Val (class Ann, Env, Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 
-type TestConfig =
+type SelectionSpec =
    { δv :: Selector Val
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
    , bwd_expect :: String
@@ -50,15 +50,15 @@ logging = false
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
 
-test ∷ forall m. File -> ProgCxt Unit -> TestConfig -> (Int × Boolean) -> AffError m BenchRow
-test file progCxt tconfig (n × benchmarking) = do
+test ∷ forall m. File -> ProgCxt Unit -> SelectionSpec -> (Int × Boolean) -> AffError m BenchRow
+test file progCxt spec (n × benchmarking) = do
    gconfig <- initialConfig progCxt
    s <- open file
    testPretty s
    _ × row_accum <- runWriterT
       ( replicateM n $ do
-           testTrace s gconfig.γ tconfig
-           testGraph s gconfig tconfig benchmarking
+           testTrace s gconfig.γ spec
+           testGraph s gconfig spec benchmarking
       )
    pure $ row_accum `divRow` n
 
@@ -77,7 +77,7 @@ checkPretty msg expect x =
       logAs "\nReceived" $ "\n" <> prettyP x
       fail msg
 
-validate :: forall m. String -> TestConfig -> SE.Expr 𝔹 -> Val 𝔹 -> EffectError m Unit
+validate :: forall m. String -> SelectionSpec -> SE.Expr 𝔹 -> Val 𝔹 -> EffectError m Unit
 validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
    unless (null bwd_expect) $
       checkPretty (method <> "-based bwd_expect") bwd_expect s𝔹
@@ -85,7 +85,7 @@ validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
       when logging $ logAs (method <> "-based fwd ⚬ bwd") (prettyP v𝔹)
       checkPretty (method <> "-based fwd_expect") fwd_expect v𝔹
 
-testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> TestConfig -> AffError m Unit
+testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> SelectionSpec -> AffError m Unit
 testTrace s γα spec@{ δv } = do
    let method = "T"
 
@@ -120,7 +120,7 @@ testTrace s γα spec@{ δv } = do
 
    validate method spec s𝔹 v𝔹'
 
-testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> Boolean -> AffError m Unit
+testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } benchmarking = do
    let method = "G"
    GC desug𝔹 <- desugGC s

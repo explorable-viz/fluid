@@ -1,3 +1,0 @@
-let city = { name: "Germany" };
-    country = { cities: [ "Germany" ] }
-in BubbleChart { caption: "TODO" }

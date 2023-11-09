@@ -1,4 +1,4 @@
-module Test.Main where
+module Test.Test where
 
 import Prelude hiding (add)
 
@@ -15,10 +15,10 @@ import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
 main :: Effect Unit
--- main = run tests
+main = run tests
 
--- main = run $ linkedInputsSuite linkedInputs_cases
-main = run scratchpad
+--main = run $ linkedInputsSuite linkedInputs_cases
+--main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite

@@ -101,7 +101,7 @@ type FigSpec =
 type Fig =
    { spec :: FigSpec
    , γ0 :: Env 𝔹 -- ambient env
-   , γ :: Env 𝔹 -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
+   , γ :: Env 𝔹 -- loaded dataset, if any, plus additional let bindings at beginning of ex
    , s0 :: S.Expr 𝔹 -- program that was originally "split"
    , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹 -- desugared s
@@ -117,7 +117,12 @@ type LinkedOutputsFigSpec =
    , x :: Var
    }
 
-type LinkedInputsFigSpec = FigSpec
+type LinkedInputsFigSpec =
+   { divId :: HTMLId
+   , file :: File
+   , x1 :: Var -- variables to be considered "inputs"
+   , x2 :: Var
+   }
 
 type LinkedOutputsFig =
    { spec :: LinkedOutputsFigSpec
@@ -137,7 +142,7 @@ type LinkedOutputsFig =
 type LinkedInputsFig =
    { spec :: LinkedInputsFigSpec
    , γ0 :: Env 𝔹 -- ambient env
-   , γ :: Env 𝔹 -- local env (additional let bindings at beginning of ex)
+   , γ :: Env 𝔹 -- additional let bindings at beginning of ex; must include vars defined in spec
    , s0 :: S.Expr 𝔹 -- program that was originally "split"
    , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹
@@ -146,13 +151,13 @@ type LinkedInputsFig =
    }
 
 type LinkedOutputsResult =
-   { v' :: Val 𝔹 -- will represent either v1' or v2'
-   , v0' :: Val 𝔹
+   { v' :: Val 𝔹 -- selection on other output
+   , v0' :: Val 𝔹 -- selection that arose on shared input
    }
 
 type LinkedInputsResult =
-   { v' :: Val 𝔹 -- will represent either v1' or v2'
-   , v0' :: Val 𝔹
+   { v' :: Val 𝔹 -- selection on other input
+   -- will also want selection that arose on shared output
    }
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
@@ -186,10 +191,6 @@ drawLinkedOutputsFigs loadFigs =
                ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
                drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ botOf)
 
-drawCode :: EditorView -> String -> Effect Unit
-drawCode ed s =
-   dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
-
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
    log $ "Redrawing " <> divId
@@ -207,6 +208,10 @@ drawFigs loadFigs =
          Right figs -> sequence_ $ figs <#> \fig -> do
             ed <- addEditorView $ codeMirrorDiv fig.spec.divId
             drawFig fig ed botOf
+
+drawCode :: EditorView -> String -> Effect Unit
+drawCode ed s =
+   dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
 drawFiles :: Array (Folder × File) -> Effect Unit
 drawFiles files =
@@ -239,10 +244,16 @@ linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
       γ0γ' × _ = evalBwd (erase <$> γ0γ) (erase e1) v1 t1
       γ0' × γ' = append_inv (S.singleton x) γ0γ'
    v0' <- lookup x γ' # orElse absurd
-   -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
-   -- (topOf γ0) combined with negation of the dataset environment slice
+   -- make γ0 and e2 fully available
    _ × v2' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e2) true
    pure { v': neg v2', v0' }
+
+linkedInputsResult :: forall m. MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
+linkedInputsResult x1 x2 γ _ _ _ = do
+   -- TODO: replace with environment selection; fwd De Morgan; bwd; retrieve x2 from env
+   _ <- lookup x1 γ # orElse absurd
+   v2 <- lookup x2 γ # orElse absurd
+   pure { v': v2 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file } = do
