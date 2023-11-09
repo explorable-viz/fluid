@@ -13,6 +13,7 @@ waterFig =
    , dataFile: File "water-consumption-data"
    , x: "data"
    }
+
 --   { divId: "fig-1"
 --   , file1: File "bar-chart"
 --   , file2: File "line-chart"
