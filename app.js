@@ -16898,6 +16898,9 @@
   // node_modules/d3-scale-chromatic/src/categorical/Pastel1.js
   var Pastel1_default = colors_default("fbb4aeb3cde3ccebc5decbe4fed9a6ffffcce5d8bdfddaecf2f2f2");
 
+  // node_modules/d3-scale-chromatic/src/categorical/Set1.js
+  var Set1_default = colors_default("e41a1c377eb84daf4a984ea3ff7f00ffff33a65628f781bf999999");
+
   // node_modules/d3-shape/src/constant.js
   function constant_default4(x2) {
     return function constant() {
@@ -18192,7 +18195,7 @@
   }, listener) {
     return () => {
       const childId = id3 + "-" + childIndex;
-      const margin = { top: 15, right: 0, bottom: 40, left: 30 }, width = 200 - margin.left - margin.right, height = 185 - margin.top - margin.bottom;
+      const margin = { top: 15, right: 0, bottom: 40, left: 30 }, width = 350 - margin.left - margin.right, height = 185 - margin.top - margin.bottom;
       const div = select_default2("#" + id3);
       div.selectAll("#" + childId).remove();
       const svg = div.append("svg").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).attr("id", childId).append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
@@ -18270,7 +18273,7 @@
   }, listener) {
     return () => {
       const childId = id3 + "-" + childIndex;
-      const margin = { top: 15, right: 0, bottom: 40, left: 30 }, width = 200 - margin.left - margin.right, height = 185 - margin.top - margin.bottom;
+      const margin = { top: 15, right: 0, bottom: 40, left: 40 }, width = 350 - margin.left - margin.right, height = 185 - margin.top - margin.bottom;
       const div = select_default2("#" + id3);
       div.selectAll("#" + childId).remove();
       const svg = div.append("svg").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).attr("id", childId).append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
@@ -18284,8 +18287,9 @@
       const y2 = linear2().domain([0, y_max]).range([height, 0]);
       svg.append("g").call(axisLeft(y2));
       const z = linear2().domain([1, z_max]).range([1, 30]);
+      const c = ordinal().domain([...new Set(...data.map((d) => d.c._1))]).range(Set1_default);
       const dotFill = "#dcdcdc";
-      svg.append("g").selectAll("dot").data([...data.entries()]).enter().append("circle").attr("cx", ([, d]) => x2(d.x._1)).attr("cy", ([, d]) => y2(d.y._1)).attr("r", ([, d]) => z(d.z._1)).attr("stroke", "black").style("fill", ([, d]) => d.y._2 ? colorShade2(dotFill, -40) : dotFill).style("class", ([, d]) => d.y._2 ? "dot-selected" : "dot-unselected").on("mousedown", (e, d) => {
+      svg.append("g").selectAll("dot").data([...data.entries()]).enter().append("circle").attr("cx", ([, d]) => x2(d.x._1)).attr("cy", ([, d]) => y2(d.y._1)).attr("r", ([, d]) => z(d.z._1)).attr("stroke", "black").style("fill", ([, d]) => d.y._2 ? colorShade2(c(d.c._1), -40) : c(d.c._1)).style("class", ([, d]) => d.y._2 ? "dot-selected" : "dot-unselected").on("mousedown", (e, d) => {
         console.log(`mousedown ${d[0]}`);
         listener(e);
       });
@@ -18295,7 +18299,20 @@
   var drawBubbleChart = curry42(drawBubbleChart_);
 
   // output-es/App.BubbleChart/index.js
-  var reflectDictVal\u{1D539}BubbleChar = { from: () => (r) => ({ x: get_intOrNumber("x")(r), y: get_intOrNumber("y")(r), z: get_intOrNumber("z")(r) }) };
+  var reflectDictVal\u{1D539}BubbleChar = {
+    from: () => (r) => ({
+      x: get_intOrNumber("x")(r),
+      y: get_intOrNumber("y")(r),
+      z: get_intOrNumber("z")(r),
+      c: (() => {
+        const $2 = $$get("c")(r);
+        if ($2.tag === "Str") {
+          return $Tuple($2._2, $2._1);
+        }
+        return typeError($2)("Str");
+      })()
+    })
+  };
   var reflectDictVal\u{1D539}BubbleChar1 = {
     from: () => (r) => ({
       caption: (() => {
