@@ -30973,7 +30973,7 @@
     return `#${rr}${gg}${bb}`;
   }
   function isUsed(r) {
-    return Object.keys(r).some((k) => r[k]._2);
+    return Object.keys(r).some((k) => r[k]._1);
   }
   function drawTable_(id3, childIndex, {
     title: title2,
@@ -30992,7 +30992,7 @@
         const rows = HTMLtable.append("tbody").selectAll("tr").data(table).enter().append("tr");
         rows.selectAll("td").data((d) => colNames.map((k) => {
           return { "value": d[k], "name": k };
-        })).enter().append("td").attr("data-th", (d) => d.name).attr("class", (d) => d.value._2 ? "cell-selected" : null).attr("bgcolor", (d) => d.value._2 ? colorShade4(cellFill, -40) : cellFill).text((d) => d.value._1).on(
+        })).enter().append("td").attr("data-th", (d) => d.name).attr("class", (d) => d.value._1 ? "cell-selected" : null).attr("bgcolor", (d) => d.value._1 ? colorShade4(cellFill, -40) : cellFill).text((d) => d.value._2).on(
           "mouseover",
           (e, d) => listener(e)
         );
@@ -31000,52 +31000,6 @@
     };
   }
   var drawTable = curry45(drawTable_);
-
-  // output-es/App.TableView/index.js
-  var waterRecord = (r) => ({
-    country: (() => {
-      const $1 = $$get("country")(r);
-      if ($1.tag === "Str") {
-        return $Tuple($1._2, $1._1);
-      }
-      return typeError($1)("Str");
-    })(),
-    cities: (() => {
-      const $1 = $$get("cities")(r);
-      if ($1.tag === "Int") {
-        return $Tuple($1._2, $1._1);
-      }
-      return typeError($1)("Int");
-    })(),
-    farms: (() => {
-      const $1 = $$get("farms")(r);
-      if ($1.tag === "Int") {
-        return $Tuple($1._2, $1._1);
-      }
-      return typeError($1)("Int");
-    })(),
-    industry: (() => {
-      const $1 = $$get("industry")(r);
-      if ($1.tag === "Int") {
-        return $Tuple($1._2, $1._1);
-      }
-      return typeError($1)("Int");
-    })(),
-    energy: (() => {
-      const $1 = $$get("energy")(r);
-      if ($1.tag === "Int") {
-        return $Tuple($1._2, $1._1);
-      }
-      return typeError($1)("Int");
-    })(),
-    popMil: (() => {
-      const $1 = $$get("popMil")(r);
-      if ($1.tag === "Int") {
-        return $Tuple($1._2, $1._1);
-      }
-      return typeError($1)("Int");
-    })()
-  });
 
   // output-es/Control.Monad.Error.Class/index.js
   var monadThrowEffect = { throwError: throwException, Monad0: () => monadEffect };
@@ -37576,6 +37530,7 @@
 
   // output-es/App.Fig/index.js
   var $View = (tag, _1) => ({ tag, _1 });
+  var identity24 = (x2) => x2;
   var matrixRep3 = /* @__PURE__ */ matrixRep(annBoolean);
   var botOf = /* @__PURE__ */ (() => functorVal.map((v) => false))();
   var boundedLattice3 = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeBoo, BoundedMeetSemilattice1: () => boundedMeetSemilatticeBoo };
@@ -37583,7 +37538,6 @@
   var erase2 = /* @__PURE__ */ (() => functorVal.map((v) => unit))();
   var sequence_ = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity2);
   var length4 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
-  var identity24 = (x2) => x2;
   var sequence1 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeAff)(identity7))();
   var loadFile2 = /* @__PURE__ */ loadFile(monadAffAff)(monadErrorAff);
   var view = (v) => (v1) => {
@@ -37600,17 +37554,17 @@
             return $View("BubbleChartFig", reflectDictVal\u{1D539}BubbleChar1.from()(record1.unpack(v1._3._1)._1));
           }
           if (v1._2 === "Nil" || v1._2 === ":") {
-            return $View("WaterTableView", { title: v, table: arrayMap(record2(waterRecord))(reflectValBooleanArrayVal.from()(v1)) });
+            return $View("TableView", { title: v, table: arrayMap(record2(identity24))(reflectValBooleanArrayVal.from()(v1)) });
           }
           return unsafePerformEffect(throwException(error("absurd")));
         }
         if (v1._2 === "Nil" || v1._2 === ":") {
-          return $View("WaterTableView", { title: v, table: arrayMap(record2(waterRecord))(reflectValBooleanArrayVal.from()(v1)) });
+          return $View("TableView", { title: v, table: arrayMap(record2(identity24))(reflectValBooleanArrayVal.from()(v1)) });
         }
         return unsafePerformEffect(throwException(error("absurd")));
       }
       if (v1._2 === "Nil" || v1._2 === ":") {
-        return $View("WaterTableView", { title: v, table: arrayMap(record2(waterRecord))(reflectValBooleanArrayVal.from()(v1)) });
+        return $View("TableView", { title: v, table: arrayMap(record2(identity24))(reflectValBooleanArrayVal.from()(v1)) });
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
@@ -37754,7 +37708,7 @@
     if (v3.tag === "MatrixFig") {
       return bindE(eventListener((x2) => v1(matrixViewHandler(x2))))(drawMatrix(v)(v2)(v3._1));
     }
-    if (v3.tag === "WaterTableView") {
+    if (v3.tag === "TableView") {
       return bindE(eventListener((x2) => v1((x$1) => x$1)))(drawTable(v)(v2)(v3._1));
     }
     if (v3.tag === "LineChartFig") {
