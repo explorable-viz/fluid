@@ -25,7 +25,6 @@ import Desugarable (desug)
 import Dict (Dict, get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
-import Effect.Aff.Class (class MonadAff)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -193,6 +192,33 @@ drawLinkedOutputsFigs loadFigs =
                ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
                drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ botOf)
 
+drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
+drawLinkedInputsFigs loadFigs =
+   flip runAff_ (sequence loadFigs)
+      case _ of
+         Left err -> log $ show err
+         Right figs -> do
+            sequence_ $ figs <#> \fig -> do
+               drawLinkedInputsFig fig (Left $ botOf)
+
+drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
+drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t, v0 } δv = do
+   log $ "Redrawing " <> divId
+   δv1 × δv2 × v1' × v2' <- case δv of
+      Left δv1 -> do
+         v1 <- lookup x1 γ # orElse absurd
+         let v1' = δv1 v1
+         { v' } <- linkedInputsResult x1 x2 γ e t δv1
+         pure $ δv1 × identity × v1' × v'
+      Right δv2 -> do
+         v2 <- lookup x2 γ # orElse absurd
+         let v2' = δv2 v2
+         { v' } <- linkedInputsResult x2 x1 γ e t δv2
+         pure $ identity × δv2 × v' × v2'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+   drawView divId doNothing 0 $ view "common output" v0
+
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
    log $ "Redrawing " <> divId
@@ -250,7 +276,7 @@ linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
    _ × v2' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e2) true
    pure { v': neg v2', v0' }
 
-linkedInputsResult :: forall m. MonadAff m => MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
+linkedInputsResult :: forall m. MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
 linkedInputsResult x1 x2 γ e1 tr δv = do
    -- TODO: replace with environment selection; fwd De Morgan; bwd; retrieve x2 from env
    let
