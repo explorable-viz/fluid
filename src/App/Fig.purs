@@ -9,7 +9,7 @@ import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (Table(..), drawTable, tableViewHandler)
 import App.Util (HTMLId, OnSel, doNothing, from, record)
-import App.Util.Select (deMorganEnv, envVal)
+import App.Util.Select (envVal)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
@@ -25,6 +25,8 @@ import Desugarable (desug)
 import Dict (Dict, get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -249,15 +251,14 @@ linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
    _ × v2' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e2) true
    pure { v': neg v2', v0' }
 
-linkedInputsResult :: forall m. MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
+linkedInputsResult :: forall m. MonadAff m => MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
 linkedInputsResult x1 x2 γ e1 tr δv = do
    -- TODO: replace with environment selection; fwd De Morgan; bwd; retrieve x2 from env
    let
       γ0 = envVal x1 δv γ
-      γ0' = deMorganEnv γ0
-   _ × v1 <- eval γ0' e1 true
+   _ × v1 <- eval (neg (botOf <$> γ0)) (topOf e1) true
    let
-      γ0γ × _ = evalBwd (erase <$> γ0') (erase e1) v1 tr
+      γ0γ × _ = evalBwd (erase <$> γ0) (erase e1) v1 tr
    v2 <- lookup x2 γ0γ # orElse absurd
    pure { v': v2 }
 
