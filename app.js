@@ -18205,7 +18205,7 @@
       svg.append("g").attr("transform", "translate(0," + height + ")").call(axisBottom(x2)).selectAll("text").style("text-anchor", "middle");
       const nearest = 1, y_max = Math.ceil(Math.max(...data.map((d) => d.y._1)) / nearest) * nearest;
       const y2 = linear2().domain([0, y_max]).range([height, 0]);
-      const tickEvery = y_max / 4, ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map((n) => n * tickEvery);
+      const tickEvery = 100, ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map((n) => n * tickEvery);
       const yAxis = axisLeft(y2).tickValues(ticks);
       svg.append("g").call(yAxis);
       const barFill = "#dcdcdc";
