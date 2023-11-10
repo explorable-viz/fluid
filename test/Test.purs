@@ -15,9 +15,9 @@ import Test.Util.Mocha (run)
 import Util (type (×), (×))
 
 main :: Effect Unit
--- main = run tests
+main = run tests
 
-main = run $ linkedInputsSuite linkedInputs_cases
+-- main = run $ linkedInputsSuite linkedInputs_cases
 
 --main = run scratchpad
 
@@ -38,4 +38,4 @@ asTestSuite suite = second void <$> suite (1 × false)
 tests :: TestSuite
 tests = concat (benchmarks <#> asTestSuite)
    <> linkedOutputsSuite linkedOutputs_cases
--- <> linkedInputsSuite linkedInputs_cases
+   <> linkedInputsSuite linkedInputs_cases
