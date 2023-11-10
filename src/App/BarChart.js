@@ -86,7 +86,7 @@ function drawBarChart_ (
          .domain([0, y_max])
          .range([height, 0])
       const tickEvery = 100,
-            ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(n => n * tickEvery)
+            ticks = Array.from(Array(Math.ceil(y_max / tickEvery + 1)).keys()).map(n => n * tickEvery)
       const yAxis = d3.axisLeft(y)
          .tickValues(ticks)
       svg.append('g')
