@@ -80,7 +80,7 @@ function drawBarChart_ (
             .style('text-anchor', 'middle')
 
       // y-axis
-      const nearest = 1,
+      const nearest = 100,
             y_max = Math.ceil(Math.max(...data.map(d => d.y._1)) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
