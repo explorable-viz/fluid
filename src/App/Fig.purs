@@ -19,7 +19,7 @@ import Data.List (List(..), (:), singleton)
 import Data.Newtype (unwrap)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (fst, uncurry)
+import Data.Tuple (fst, snd, uncurry)
 import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cNil)
 import Desugarable (desug)
 import Dict (Dict, get)
@@ -251,14 +251,11 @@ linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
    pure { v': neg v2', v0' }
 
 linkedInputsResult :: forall m. MonadAff m => MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
-linkedInputsResult x1 x2 γ e1 tr δv = do
-   -- TODO: replace with environment selection; fwd De Morgan; bwd; retrieve x2 from env
-   let
-      γ0 = envVal x1 δv γ
-   _ × v1 <- eval (neg (botOf <$> γ0)) (topOf e1) true
-   let
-      γ0γ × _ = evalBwd (erase <$> γ0) (erase e1) v1 tr
-   v2 <- lookup x2 γ0γ # orElse absurd
+linkedInputsResult x1 x2 γ e1 tr δv1 = do
+   let γ' = envVal x1 δv1 γ
+   v1 <- eval (neg γ') (topOf e1) true <#> snd >>> neg
+   let γ'' × _ = evalBwd (erase <$> γ) (erase e1) v1 tr
+   v2 <- lookup x2 γ'' # orElse absurd
    pure { v': v2 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
