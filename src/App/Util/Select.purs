@@ -3,16 +3,17 @@ module App.Util.Select where
 import Prelude hiding (absurd)
 
 import Bindings (Var)
+import Data.Foldable (foldl)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cCons, cNil)
-import Foreign.Object (update)
-import Lattice (𝔹)
+import Foreign.Object (keys, update)
+import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
 import Util (Endo, absurd, error, definitely')
-import Val (DictRep(..), Val(..), matrixPut)
+import Val (DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection helpers. TODO: turn into lenses/prisms.
 matrixElement :: Int -> Int -> Endo (Selector Val)
@@ -53,6 +54,13 @@ dictKey s δα = unsafePartial $ case _ of
 dictVal :: String -> Endo (Selector Val)
 dictVal s δv = unsafePartial $ case _ of
    Dictionary α (DictRep d) -> Dictionary α $ DictRep $ update (second δv >>> Just) s d
+
+envVal :: String -> Selector Val -> Selector Env
+envVal key δv γ =
+   update (δv >>> Just) key γ
+
+deMorganEnv :: Selector Env
+deMorganEnv γ = foldl (\γ' key -> update (neg >>> Just) key γ') γ (keys γ)
 
 listCell :: Int -> Endo 𝔹 -> Selector Val
 listCell n δα = unsafePartial $ case _ of
