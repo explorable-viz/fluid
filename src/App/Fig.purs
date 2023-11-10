@@ -255,7 +255,7 @@ linkedInputsResult x1 x2 γ e1 tr δv = do
    -- TODO: replace with environment selection; fwd De Morgan; bwd; retrieve x2 from env
    let
       γ0 = envVal x1 δv γ
-   _ × v1 <- eval (neg (botOf <$> γ0)) (topOf e1) true
+   _ × v1 <- eval (neg γ0) (topOf e1) true
    let
       γ0γ × _ = evalBwd (erase <$> γ0) (erase e1) v1 tr
    v2 <- lookup x2 γ0γ # orElse absurd
