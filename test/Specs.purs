@@ -315,6 +315,6 @@ linkedInputs_cases =
           , x2: "all_cities"
           }
      , δv1: listElement 0 neg
-     , v2_expect: "({name : \"Berlin\", water : 130} : ({name : \"Munich\", water : 80} : ({name : \"Hamburg\", water : ⸨60⸩} : ({name : \"London\", water : ⸨200⸩} : ({name : \"Birmingham\", water : ⸨50⸩} : ({name : \"Manchester\", water : ⸨35⸩} : []))))))"
+     , v2_expect: "({name : \"Berlin\", water : ⸨130⸩} : ({name : \"Munich\", water : ⸨80⸩} : ({name : \"Hamburg\", water : ⸨60⸩} : ({name : \"London\", water : 200} : ({name : \"Birmingham\", water : 50} : ({name : \"Manchester\", water : 35} : []))))))"
      }
    ]

@@ -56,8 +56,7 @@ dictVal s δv = unsafePartial $ case _ of
 
 envVal :: Var -> Selector Val -> Selector Env
 envVal x δv γ =
-   assert (x `member` γ) $
-   update (δv >>> Just) x γ
+   assert (x `member` γ) $ update (δv >>> Just) x γ
 
 listCell :: Int -> Endo 𝔹 -> Selector Val
 listCell n δα = unsafePartial $ case _ of
