@@ -18,8 +18,8 @@ waterFig =
 waterInFig :: LinkedInputsFigSpec
 waterInFig = 
    { divId: "fig-1"
-   , x1: "all_cities"
-   , x2: "all_countries"
+   , x2: "all_cities"
+   , x1: "all_countries"
    , file: File "water"
    }
 
