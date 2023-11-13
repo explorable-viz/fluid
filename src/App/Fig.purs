@@ -71,7 +71,7 @@ view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
 view _ (Constr _ c (u1 : Nil)) | c == cBubbleChart =
    BubbleChartFig (unsafePartial $ record from u1)
 view title u@(Constr _ c _) | c == cNil || c == cCons =
-   TableFig (Table { title, table: unsafePartial $ record identity <$> from u })
+   TableFig (TableView { title, table: unsafePartial $ record identity <$> from u })
 view title u@(Matrix _ _) =
    MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
 view _ _ = error absurd
@@ -216,8 +216,8 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
          { v', v0: v0' } <- linkedInputsResult x2 x1 γ e t δv2
          pure $ identity × δv2 × v' × v2' × v0'
    drawView divId doNothing 0 $ view "common output" v0'
-   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view "right view" v2'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
    log $ ("v0" <> prettyP v0')
    log $ ("v1'" <> prettyP v1')
    log $ ("v2'" <> prettyP v2')

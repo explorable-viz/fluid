@@ -7,7 +7,7 @@ import Dict (Dict)
 import Lattice (𝔹)
 import Val (Val)
 
-newtype TableView r = Table { title :: String, table :: Array r }
+newtype TableView r = TableView { title :: String, table :: Array r }
 
 foreign import drawTable :: Renderer (TableView (Dict (Val 𝔹)))
 
