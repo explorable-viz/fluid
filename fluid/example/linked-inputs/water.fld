@@ -14,7 +14,7 @@ let country_water countries_list cities c_name =
                         , city <- cities
                         , elem city.name country.cities];
             farm_water = sum [ country.farms * 3 | country <- countries_list, country.name == c_name ]
-        in city_water + farm_water;
+        in {name: c_name, water: city_water + farm_water};
 let all_waters countries cities =
     let c_names = [country.name | country <- countries]
     in map (country_water countries cities) c_names

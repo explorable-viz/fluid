@@ -25,7 +25,6 @@ import Desugarable (desug)
 import Dict (Dict, get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
-import Effect.Aff.Class (class MonadAff)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -159,7 +158,7 @@ type LinkedOutputsResult =
 
 type LinkedInputsResult =
    { v' :: Val 𝔹 -- selection on other input
-   -- will also want selection that arose on shared output
+   , v0 :: Val 𝔹 -- will also want selection that arose on shared output
    }
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
@@ -192,6 +191,36 @@ drawLinkedOutputsFigs loadFigs =
                ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
                ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
                drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ botOf)
+
+drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
+drawLinkedInputsFigs loadFigs =
+   flip runAff_ (sequence loadFigs)
+      case _ of
+         Left err -> log $ show err
+         Right figs -> do
+            sequence_ $ figs <#> \fig -> do
+               drawLinkedInputsFig fig (Left $ topOf)
+
+drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
+drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
+   log $ "Redrawing " <> divId
+   δv1 × δv2 × v1' × v2' × v0' <- case δv of
+      Left δv1 -> do
+         v1 <- lookup x1 γ # orElse absurd
+         let v1' = δv1 v1
+         { v', v0: v0' } <- linkedInputsResult x1 x2 γ e t δv1
+         pure $ δv1 × identity × v1' × v' × v0'
+      Right δv2 -> do
+         v2 <- lookup x2 γ # orElse absurd
+         let v2' = δv2 v2
+         { v', v0: v0' } <- linkedInputsResult x2 x1 γ e t δv2
+         pure $ identity × δv2 × v' × v2' × v0'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view "right view" v2'
+   drawView divId doNothing 0 $ view "common output" v0'
+   log $ ("v0" <> prettyP v0')
+   log $ ("v1'" <> prettyP v1')
+   log $ ("v2'" <> prettyP v2')
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
@@ -250,13 +279,13 @@ linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
    _ × v2' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e2) true
    pure { v': neg v2', v0' }
 
-linkedInputsResult :: forall m. MonadAff m => MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
+linkedInputsResult :: forall m. MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
 linkedInputsResult x1 x2 γ e1 tr δv1 = do
    let γ' = envVal x1 δv1 γ
    v1 <- eval (neg γ') (topOf e1) true <#> snd >>> neg
    let γ'' × _ = evalBwd (erase <$> γ) (erase e1) v1 tr
    v2 <- lookup x2 γ'' # orElse absurd
-   pure { v': v2 }
+   pure { v': v2, v0: v1 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file } = do

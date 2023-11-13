@@ -317,4 +317,13 @@ linkedInputs_cases =
      , δv1: listElement 0 neg
      , v2_expect: "({name : \"Berlin\", water : ⸨130⸩} : ({name : \"Munich\", water : ⸨80⸩} : ({name : \"Hamburg\", water : ⸨60⸩} : ({name : \"London\", water : 200} : ({name : \"Birmingham\", water : 50} : ({name : \"Manchester\", water : 35} : []))))))"
      }
+   , { spec:
+          { divId: ""
+          , file: File "water"
+          , x1: "all_cities"
+          , x2: "all_countries"
+          }
+     , δv1: listElement 1 neg
+     , v2_expect: "({cities : (\"Berlin\" : (\"Hamburg\" : (\"Munich\" : []))), farms : ⸨100⸩, name : ⸨\"Germany\"⸩} : ({cities : (\"London\" : (\"Birmingham\" : (\"Manchester\" : []))), farms : 200, name : \"UK\"} : []))"
+     }
    ]
