@@ -1,7 +1,8 @@
 module PLDI2024 where
 
 import Prelude
-import App.Fig (LinkedOutputsFigSpec, drawLinkedOutputsFigs, loadLinkedOutputsFig)
+
+import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, drawLinkedInputsFigs, loadLinkedInputsFig)
 import Effect (Effect)
 import Module (File(..))
 
@@ -14,6 +15,15 @@ waterFig =
    , x: "data"
    }
 
+waterInFig :: LinkedInputsFigSpec
+waterInFig = 
+   { divId: "fig-1"
+   , x1: "all_cities"
+   , x2: "all_countries"
+   , file: File "water"
+   }
+
 main :: Effect Unit
 main = do
-   drawLinkedOutputsFigs [ loadLinkedOutputsFig waterFig ]
+   -- drawLinkedOutputsFigs [ loadLinkedOutputsFig waterFig ]
+   drawLinkedInputsFigs [ loadLinkedInputsFig waterInFig ]

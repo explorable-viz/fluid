@@ -158,7 +158,7 @@ type LinkedOutputsResult =
 
 type LinkedInputsResult =
    { v' :: Val 𝔹 -- selection on other input
-   -- will also want selection that arose on shared output
+   , v0 :: Val 𝔹 -- will also want selection that arose on shared output
    }
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
@@ -199,25 +199,29 @@ drawLinkedInputsFigs loadFigs =
          Left err -> log $ show err
          Right figs -> do
             sequence_ $ figs <#> \fig -> do
-               drawLinkedInputsFig fig (Left $ botOf)
+               drawLinkedInputsFig fig (Left $ topOf)
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
-drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t, v0 } δv = do
+drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t} δv = do
    log $ "Redrawing " <> divId
-   δv1 × δv2 × v1' × v2' <- case δv of
+   δv1 × δv2 × v1' × v2' × v0' <- case δv of
       Left δv1 -> do
          v1 <- lookup x1 γ # orElse absurd
          let v1' = δv1 v1
-         { v' } <- linkedInputsResult x1 x2 γ e t δv1
-         pure $ δv1 × identity × v1' × v'
+         { v', v0: v0' } <- linkedInputsResult x1 x2 γ e t δv1
+         pure $ δv1 × identity × v1' × v' × v0'
       Right δv2 -> do
          v2 <- lookup x2 γ # orElse absurd
          let v2' = δv2 v2
-         { v' } <- linkedInputsResult x2 x1 γ e t δv2
-         pure $ identity × δv2 × v' × v2'
+         { v', v0: v0' } <- linkedInputsResult x2 x1 γ e t δv2
+         pure $ identity × δv2 × v' × v2' × v0'
    drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
-   drawView divId doNothing 0 $ view "common output" v0
+   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view "right view" v2'
+   drawView divId doNothing 0 $ view "common output" v0'
+   log $ ("v0" <> prettyP v0')
+   log $ ("v1'" <> prettyP v1')
+   log $ ("v2'" <> prettyP v2') 
+
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
@@ -282,7 +286,7 @@ linkedInputsResult x1 x2 γ e1 tr δv1 = do
    v1 <- eval (neg γ') (topOf e1) true <#> snd >>> neg
    let γ'' × _ = evalBwd (erase <$> γ) (erase e1) v1 tr
    v2 <- lookup x2 γ'' # orElse absurd
-   pure { v': v2 }
+   pure { v': v2, v0: v1 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file } = do
