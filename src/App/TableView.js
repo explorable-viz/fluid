@@ -58,6 +58,14 @@ function drawTable_ (
       table = table.filter(r => isUsed(r))
 
       if (table.length > 0) {
+         div.append('text')
+            .text(title)
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('class', 'title-text table-title')
+            .attr('dominant-baseline', 'middle')
+            .attr('text-anchor', 'left')
+
          const HTMLtable = div
             .append('table')
             .attr('id', childId)
