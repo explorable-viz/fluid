@@ -7,11 +7,11 @@ import * as d3tip from "d3-tip"
 function curry2 (f) {
    return x1 => x2 => f(x1, x2)
  }
- 
+
  function curry3 (f) {
    return x1 => x2 => x3 => f(x1, x2, x3)
  }
- 
+
  function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
  }
@@ -20,18 +20,18 @@ function curry2 (f) {
 function colorShade(col, amt) {
    col = col.replace(/^#/, '')
    if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
- 
+
    let [r, g, b] = col.match(/.{2}/g);
    ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
- 
+
    r = Math.max(Math.min(255, r), 0).toString(16)
    g = Math.max(Math.min(255, g), 0).toString(16)
    b = Math.max(Math.min(255, b), 0).toString(16)
- 
+
    const rr = (r.length < 2 ? '0' : '') + r
    const gg = (g.length < 2 ? '0' : '') + g
    const bb = (b.length < 2 ? '0' : '') + b
- 
+
    return `#${rr}${gg}${bb}`
 }
 
@@ -60,12 +60,12 @@ function drawBubbleChart_ (
          .attr('id', childId)
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
-      
+
       const tip = d3tip.default()
          .attr('class', 'd3-tip')
          .offset([0, 0])
          .html((_, d) => d.y_1)
-      
+
       svg.call(tip)
 
       const x_max = Math.ceil(Math.max(...data.map(d => d.x._1 + d.z._1)))
@@ -79,22 +79,21 @@ function drawBubbleChart_ (
          .call(d3.axisBottom(x))
          .selectAll('text')
          .style('text-anchor', 'middle')
-   
+
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height,0])
       svg.append('g')
          .call(d3.axisLeft(y))
-      
+
       const z = d3.scaleLinear()
          .domain([1, z_max])
          .range([1, 30])
-      
+
       const c = d3.scaleOrdinal()
          .domain([...new Set(...data.map(d => d.c._1))])
          .range(d3.schemeSet1)
 
-      const dotFill = '#dcdcdc'
       svg.append('g')
          .selectAll('dot')
          .data([...data.entries()])
@@ -110,7 +109,7 @@ function drawBubbleChart_ (
                console.log(`mousedown ${d[0]}`)
                listener(e)
             })
-   
+
       svg.append('text')
          .text(caption._1)
          .attr('x', width / 2)

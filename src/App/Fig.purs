@@ -257,16 +257,13 @@ drawFiles files =
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
 
-valViews :: forall m. MonadError Error m => Env 𝔹 -> Array Var -> m (Array View)
-valViews γ xs = sequence (flip varView γ <$> xs)
-
 -- For an output selection, views of corresponding input selections and output after round-trip.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
       γ0γ × e' × α = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t
    _ × v' <- eval γ0γ e' α
-   views <- valViews γ0γ xs
+   views <- sequence (flip varView γ0γ <$> xs)
    pure $ view "output" v' × views
 
 linkedOutputsResult :: forall m. MonadError Error m => Var -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> m LinkedOutputsResult
