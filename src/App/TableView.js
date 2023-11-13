@@ -86,7 +86,7 @@ function drawTable_ (
             .attr('class', d => d.value._1 ? 'cell-selected' : null)
             .attr('bgcolor', d => d.value._1 ? colorShade(cellFill, -40) : cellFill)
             .text(d => d.value._2)
-            .on('mouseover', (e, d) =>
+            .on('mousedown', (e, d) =>
                listener(e)
             )
       }
