@@ -202,7 +202,7 @@ drawLinkedInputsFigs loadFigs =
                drawLinkedInputsFig fig (Left $ topOf)
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
-drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t} δv = do
+drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
    log $ "Redrawing " <> divId
    δv1 × δv2 × v1' × v2' × v0' <- case δv of
       Left δv1 -> do
@@ -220,8 +220,7 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t} δv = do
    drawView divId doNothing 0 $ view "common output" v0'
    log $ ("v0" <> prettyP v0')
    log $ ("v1'" <> prettyP v1')
-   log $ ("v2'" <> prettyP v2') 
-
+   log $ ("v2'" <> prettyP v2')
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do

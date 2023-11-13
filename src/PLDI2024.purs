@@ -16,7 +16,7 @@ waterFig =
    }
 
 waterInFig :: LinkedInputsFigSpec
-waterInFig = 
+waterInFig =
    { divId: "fig-1"
    , x2: "all_cities"
    , x1: "all_countries"
