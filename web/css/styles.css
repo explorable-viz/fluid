@@ -98,6 +98,10 @@ table {
    outline-color: lightgray;
 }
 
+.table-title {
+   margin-left: 4mm;
+}
+
 th {
    font-size: 11px;
    border-bottom: 'thin solid';
