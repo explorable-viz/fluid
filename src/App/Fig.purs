@@ -7,7 +7,7 @@ import App.BubbleChart (BubbleChart, bubbleChartHandler, drawBubbleChart)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
-import App.TableView (Table(..), drawTable, tableViewHandler)
+import App.TableView (TableView(..), drawTable, tableViewHandler)
 import App.Util (HTMLId, OnSel, doNothing, from, record)
 import App.Util.Select (envVal)
 import Bindings (Var)
@@ -49,14 +49,14 @@ codeMirrorDiv = ("codemirror-" <> _)
 
 data View
    = MatrixFig MatrixView
-   | TableView (Table (Dict (Val 𝔹)))
+   | TableFig (TableView (Dict (Val 𝔹)))
    | LineChartFig LineChart
    | BarChartFig BarChart
    | BubbleChartFig BubbleChart
 
 drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
 drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
-drawView divId onSel n (TableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
+drawView divId onSel n (TableFig vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
 drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
 drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
 drawView divId onSel n (BubbleChartFig vw) = drawBubbleChart divId n vw =<< eventListener (onSel <<< bubbleChartHandler)
@@ -71,7 +71,7 @@ view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
 view _ (Constr _ c (u1 : Nil)) | c == cBubbleChart =
    BubbleChartFig (unsafePartial $ record from u1)
 view title u@(Constr _ c _) | c == cNil || c == cCons =
-   TableView (Table { title, table: unsafePartial $ record identity <$> from u })
+   TableFig (Table { title, table: unsafePartial $ record identity <$> from u })
 view title u@(Matrix _ _) =
    MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
 view _ _ = error absurd
