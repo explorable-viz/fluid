@@ -161,18 +161,23 @@ type LinkedInputsResult =
    , v0 :: Val 𝔹 -- will also want selection that arose on shared output
    }
 
+selectors :: Selector Val + Selector Val -> Selector Val × Selector Val
+selectors (Left δv) = δv × identity
+selectors (Right δv) = identity × δv
+
 drawLinkedOutputsFig :: LinkedOutputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, e1, e2, t1, t2, v1, v2 } δv = do
    log $ "Redrawing " <> divId
-   v1' × v2' × δv1 × δv2 × v0 <- case δv of
+   v1' × v2' × v0 <- case δv of
       Left δv1 -> do
          let v1' = δv1 v1
          { v', v0' } <- linkedOutputsResult x γ e1 e2 t1 t2 v1'
-         pure $ v1' × v' × δv1 × identity × v0'
+         pure $ v1' × v' × v0'
       Right δv2 -> do
          let v2' = δv2 v2
          { v', v0' } <- linkedOutputsResult x γ e2 e1 t2 t1 v2'
-         pure $ v' × v2' × identity × δv2 × v0'
+         pure $ v' × v2' × v0'
+   let δv1 × δv2 = selectors δv
    drawView divId (\selector -> drawLinkedOutputsFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
    drawView divId (\selector -> drawLinkedOutputsFig fig (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
