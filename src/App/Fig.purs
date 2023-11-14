@@ -276,15 +276,13 @@ linkedInputsResult :: forall m. MonadError Error m => LinkedInputsFig -> Selecto
 linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
    case _ of
       Left δv1 -> do
-         v1 <- lookup x1 γ # orElse absurd
-         let v1' = δv1 v1
          { v', v0 } <- result x1 x2 δv1
-         pure $ v1' × v' × v0
+         v1 <- lookup x1 γ # orElse absurd
+         pure $ δv1 v1 × v' × v0
       Right δv2 -> do
-         v2 <- lookup x2 γ # orElse absurd
-         let v2' = δv2 v2
          { v', v0 } <- result x2 x1 δv2
-         pure $ v' × v2' × v0
+         v2 <- lookup x2 γ # orElse absurd
+         pure $ v' × δv2 v2 × v0
    where
    result :: Var -> Var -> Selector Val -> m LinkedInputsResult
    result x x' δv = do
