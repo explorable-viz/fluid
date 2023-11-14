@@ -2,12 +2,11 @@ module Test.Specs where
 
 import Prelude
 
-import App (linkedOutputsFig1)
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
-import Test.Util.Many (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
+import Test.Util.Many (TestBwdSpec, TestLinkedInputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -225,6 +224,65 @@ graphics_cases =
    , { dataset: "dataset/renewables-restricted", file: "graphics/stacked-bar-chart" }
    ]
 
+linkedOutputs_spec1 :: TestLinkedOutputsSpec
+linkedOutputs_spec1 =
+   { spec:
+        { divId: "fig-1"
+        , file1: File "bar-chart"
+        , file2: File "line-chart"
+        , dataFile: File "renewables"
+        , x: "data"
+        }
+   , δv1: constrArg cBarChart 0
+        $ field f_data
+        $ listElement 1
+        $ field f_y neg
+   , v2_expect:
+        "LineChart {\
+        \caption : \"Output of USA relative to China\", \
+        \plots : \
+        \(LinePlot {\
+        \data : \
+        \({x : 2013, y : 2.5483870967741935} : \
+        \({x : 2014, y : 1.61} : \
+        \({x : 2015, y : ⸨1.6213592233009706⸩} : \
+        \({x : 2016, y : 1.4000000000000001} : \
+        \({x : 2017, y : 1.1208053691275166} : \
+        \({x : 2018, y : 0.9101123595505617} : [])))))), \
+        \name : \"Bio\"\
+        \} : \
+        \(LinePlot {\
+        \data : \
+        \({x : 2013, y : 0.3} : \
+        \({x : 2014, y : 0.28214285714285714} : \
+        \({x : 2015, y : ⸨0.8333333333333334⸩} : \
+        \({x : 2016, y : 0.26229508196721313} : \
+        \({x : 2017, y : 0.25559105431309903} : \
+        \({x : 2018, y : 0.2484472049689441} : [])))))), \
+        \name : \"Hydro\"\
+        \} : \
+        \(LinePlot {\
+        \data : \
+        \({x : 2013, y : 0.6080402010050252} : \
+        \({x : 2014, y : 0.6428571428571429} : \
+        \({x : 2015, y : ⸨0.5909090909090909⸩} : \
+        \({x : 2016, y : 0.5324675324675324} : \
+        \({x : 2017, y : 0.3893129770992366} : \
+        \({x : 2018, y : 0.3522727272727273} : [])))))), \
+        \name : \"Solar\"\
+        \} : \
+        \(LinePlot {\
+        \data : ({x : 2013, y : 0.6703296703296703} : \
+        \({x : 2014, y : 0.5739130434782609} : \
+        \({x : 2015, y : ⸨0.5103448275862069⸩} : \
+        \({x : 2016, y : 0.48520710059171596} : \
+        \({x : 2017, y : 0.4734042553191489} : \
+        \({x : 2018, y : 0.45714285714285713} : [])))))), \
+        \name : \"Wind\"\
+        \} : []))))\
+        \}"
+   }
+
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
@@ -254,56 +312,7 @@ linkedOutputs_cases =
           \7, 15, 15, 8, 20,\n\
           \3, 10, 12, 3, 11"
      }
-   , { spec: linkedOutputsFig1
-     , δv1: constrArg cBarChart 0
-          $ field f_data
-          $ listElement 1
-          $ field f_y neg
-     , v2_expect:
-          "LineChart {\
-          \caption : \"Output of USA relative to China\", \
-          \plots : \
-          \(LinePlot {\
-          \data : \
-          \({x : 2013, y : 2.5483870967741935} : \
-          \({x : 2014, y : 1.61} : \
-          \({x : 2015, y : ⸨1.6213592233009706⸩} : \
-          \({x : 2016, y : 1.4000000000000001} : \
-          \({x : 2017, y : 1.1208053691275166} : \
-          \({x : 2018, y : 0.9101123595505617} : [])))))), \
-          \name : \"Bio\"\
-          \} : \
-          \(LinePlot {\
-          \data : \
-          \({x : 2013, y : 0.3} : \
-          \({x : 2014, y : 0.28214285714285714} : \
-          \({x : 2015, y : ⸨0.8333333333333334⸩} : \
-          \({x : 2016, y : 0.26229508196721313} : \
-          \({x : 2017, y : 0.25559105431309903} : \
-          \({x : 2018, y : 0.2484472049689441} : [])))))), \
-          \name : \"Hydro\"\
-          \} : \
-          \(LinePlot {\
-          \data : \
-          \({x : 2013, y : 0.6080402010050252} : \
-          \({x : 2014, y : 0.6428571428571429} : \
-          \({x : 2015, y : ⸨0.5909090909090909⸩} : \
-          \({x : 2016, y : 0.5324675324675324} : \
-          \({x : 2017, y : 0.3893129770992366} : \
-          \({x : 2018, y : 0.3522727272727273} : [])))))), \
-          \name : \"Solar\"\
-          \} : \
-          \(LinePlot {\
-          \data : ({x : 2013, y : 0.6703296703296703} : \
-          \({x : 2014, y : 0.5739130434782609} : \
-          \({x : 2015, y : ⸨0.5103448275862069⸩} : \
-          \({x : 2016, y : 0.48520710059171596} : \
-          \({x : 2017, y : 0.4734042553191489} : \
-          \({x : 2018, y : 0.45714285714285713} : [])))))), \
-          \name : \"Wind\"\
-          \} : []))))\
-          \}"
-     }
+   , linkedOutputs_spec1
    ]
 
 linkedInputs_spec1 :: TestLinkedInputsSpec
