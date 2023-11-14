@@ -4,6 +4,7 @@ import Prelude
 
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
 import Data.Array (zip)
+import Data.Either (Either(..))
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
 import Test.Benchmark.Util (BenchRow)
@@ -72,8 +73,8 @@ withDatasetSuite specs (n × is_bench) = zip (specs <#> _.file) (specs <#> asTes
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
 linkedOutputsTest { spec, δv1, v2_expect } = do
-   { γ, e1, e2, t1, t2, v1 } <- loadLinkedOutputsFig spec
-   { v': v2' } <- linkedOutputsResult spec.x γ e1 e2 t1 t2 (δv1 v1)
+   fig <- loadLinkedOutputsFig spec
+   _ × v2' × _ <- linkedOutputsResult fig (Left δv1)
    checkPretty "linked output" v2_expect v2'
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
