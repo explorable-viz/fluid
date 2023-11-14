@@ -18,10 +18,6 @@
     "bench": "npx http-serve dist/benches -a 127.0.0.1",
     "examples": "npx http-serve dist/examples -a 127.0.0.1",
     "tests-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
-    "clean-app-tests": "rm -rf dist/app-tests && mkdir -p dist/app-tests && cp web/tests.html dist/app-tests",
-    "build-app-tests": "yarn clean-app-tests && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.App --to dist/app-tests/app.js",
-    "app-tests": "karma start karma.conf.app-tests.js",
-    "app-tests-browser": "karma start karma.conf.app-tests.js --browsers=Chrome --singleRun=false",
     "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs example/**/*.purs example/*.purs"
   },
   "dependencies": {
