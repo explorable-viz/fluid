@@ -191,19 +191,9 @@ drawLinkedOutputsFigs loadFigs =
                drawCode ed3 $ fig.dataFileStr
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
-drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
+drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
    log $ "Redrawing " <> divId
-   v1' × v2' × v0 <- case δv of
-      Left δv1 -> do
-         v1 <- lookup x1 γ # orElse absurd
-         let v1' = δv1 v1
-         { v', v0 } <- linkedInputsResult x1 x2 γ e t δv1
-         pure $ v1' × v' × v0
-      Right δv2 -> do
-         v2 <- lookup x2 γ # orElse absurd
-         let v2' = δv2 v2
-         { v', v0 } <- linkedInputsResult x2 x1 γ e t δv2
-         pure $ v' × v2' × v0
+   v1' × v2' × v0 <- linkedInputsResult' fig δv
    let δv1 × δv2 = selectors δv
    drawView divId doNothing 0 $ view "common output" v0
    drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
@@ -281,6 +271,20 @@ linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
       -- make γ0 and e2 fully available
       v' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e') true <#> snd >>> neg
       pure { v, v', v0' }
+
+linkedInputsResult' :: forall m. MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
+linkedInputsResult' { spec: { x1, x2 }, γ, e, t } =
+   case _ of
+      Left δv1 -> do
+         v1 <- lookup x1 γ # orElse absurd
+         let v1' = δv1 v1
+         { v', v0 } <- linkedInputsResult x1 x2 γ e t δv1
+         pure $ v1' × v' × v0
+      Right δv2 -> do
+         v2 <- lookup x2 γ # orElse absurd
+         let v2' = δv2 v2
+         { v', v0 } <- linkedInputsResult x2 x1 γ e t δv2
+         pure $ v' × v2' × v0
 
 linkedInputsResult :: forall m. MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
 linkedInputsResult x1 x2 γ e1 tr δv1 = do
