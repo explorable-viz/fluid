@@ -3,8 +3,8 @@ module Test.Util.Many where
 import Prelude
 
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
-import Data.Array (zip)
 import Data.Either (Either(..))
+import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
 import Test.Benchmark.Util (BenchRow)
@@ -45,7 +45,7 @@ type TestLinkedInputsSpec =
    }
 
 suite :: Array TestSpec -> BenchSuite
-suite specs (n × is_bench) = zip (specs <#> _.file) (specs <#> asTest)
+suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
    asTest { file, fwd_expect } = do
@@ -53,7 +53,7 @@ suite specs (n × is_bench) = zip (specs <#> _.file) (specs <#> asTest)
       test (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite
-bwdSuite specs (n × is_bench) = zip (specs <#> (_.file >>> ("slicing/" <> _))) (specs <#> asTest)
+bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& asTest)
    where
    folder = File "slicing/"
 
@@ -64,7 +64,7 @@ bwdSuite specs (n × is_bench) = zip (specs <#> (_.file >>> ("slicing/" <> _))) 
       test (folder <> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetSuite :: Array TestWithDatasetSpec -> BenchSuite
-withDatasetSuite specs (n × is_bench) = zip (specs <#> _.file) (specs <#> asTest)
+withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { dataset, file } = do
@@ -77,7 +77,7 @@ linkedOutputsTest { spec, δv1, v2_expect } = do
    checkPretty "linked output" v2_expect v2'
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
-linkedOutputsSuite specs = zip (specs <#> name) (specs <#> linkedOutputsTest)
+linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
    where
    name spec = "linked-outputs/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
 
@@ -87,6 +87,6 @@ linkedInputsTest { spec, δv1, v2_expect } = do
    checkPretty "linked input" v2_expect v2'
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
-linkedInputsSuite specs = zip (specs <#> name) (specs <#> linkedInputsTest)
+linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)
    where
    name { spec } = "linked-inputs/" <> show spec.file
