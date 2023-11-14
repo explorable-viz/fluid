@@ -121,8 +121,10 @@ type LinkedOutputsFigSpec =
 type LinkedInputsFigSpec =
    { divId :: HTMLId
    , file :: File
-   , x1 :: Var -- variables to be considered "inputs"
+   , x1 :: Var
+   , x1File :: File -- variables to be considered "inputs"
    , x2 :: Var
+   , x2File :: File
    }
 
 type LinkedOutputsFig =
@@ -195,6 +197,9 @@ drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect 
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
    log $ "Redrawing " <> divId
    v1' × v2' × v0 <- linkedInputsResult fig δv
+   log $ "v1': " <> prettyP v1'
+   log $ "v2': " <> prettyP v2'
+   log $ "v0: " <> prettyP v0
    let δv1 × δv2 = selectors δv
    drawView divId doNothing 0 $ view "common output" v0
    drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
@@ -306,7 +311,10 @@ loadFig spec@{ file } = do
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
-   { γ: γ' } <- defaultImports >>= initialConfig
+   let
+      dir = File "example/linked-inputs/"
+      datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
+   { γ: γ' } <- defaultImports >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
    let γ0 = botOf <$> γ'
    s' <- open $ File "linked-inputs/" <> file
    let s0 = botOf s'

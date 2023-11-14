@@ -1,13 +1,3 @@
-let countries = [{name: "Germany", farms: 100, popMil: 81},
-                     {name: "UK", farms: 200, popMil: 67}];
-    cities = [
-        {name: "Berlin", water: 130, country: "Germany"},
-        {name: "Munich", water: 80, country: "Germany"},
-        {name: "Hamburg", water: 60, country: "Germany"},
-        {name: "London", water: 200, country: "UK"},
-        {name: "Birmingham", water: 50, country: "UK"},
-        {name: "Manchester", water: 35, country: "UK"}
-    ];
 let country_water c_name =
         let city_water = sum [city.water | country <- countries
                         , c_name == country.name
