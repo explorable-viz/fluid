@@ -93,7 +93,7 @@ li:last-child {
 }
 
 table {
-   margin-left: 4mm;
+   margin: 4mm;
    outline: thin dotted;
    outline-color: lightgray;
 }
