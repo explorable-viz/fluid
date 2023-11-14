@@ -172,8 +172,8 @@ drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
    log $ "Redrawing " <> divId
    v1' × v2' × v0 <- linkedOutputsResult fig δv
    let δv1 × δv2 = split δv
-   drawView divId (\selector -> drawLinkedOutputsFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkedOutputsFig fig (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+   drawView divId (\δv' -> drawLinkedOutputsFig fig (Left $ δv1 >>> δv')) 2 $ view "left view" v1'
+   drawView divId (\δv' -> drawLinkedOutputsFig fig (Right $ δv2 >>> δv')) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
 
 drawLinkedOutputsFigs :: Array (Aff LinkedOutputsFig) -> Effect Unit
