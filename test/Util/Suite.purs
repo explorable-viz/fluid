@@ -84,8 +84,8 @@ linkedOutputsSuite specs = zip (specs <#> name) (specs <#> linkedOutputsTest)
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
 linkedInputsTest { spec, δv1, v2_expect } = do
-   { γ, e, t } <- loadLinkedInputsFig spec
-   { v': v2' } <- linkedInputsResult spec.x1 spec.x2 γ e t δv1
+   fig <- loadLinkedInputsFig spec
+   _ × v2' × _ <- linkedInputsResult fig (Left δv1)
    checkPretty "linked input" v2_expect v2'
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
