@@ -315,7 +315,7 @@ linkedInputs_cases =
           , x2: "all_cities"
           }
      , δv1: listElement 0 neg
-     , v2_expect: "({name : \"Berlin\", water : ⸨130⸩} : ({name : \"Munich\", water : ⸨80⸩} : ({name : \"Hamburg\", water : ⸨60⸩} : ({name : \"London\", water : 200} : ({name : \"Birmingham\", water : 50} : ({name : \"Manchester\", water : 35} : []))))))"
+     , v2_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : []))))))"
      }
    , { spec:
           { divId: "fig-1"
@@ -324,6 +324,6 @@ linkedInputs_cases =
           , x2: "all_countries"
           }
      , δv1: listElement 0 neg
-     , v2_expect: "({cities : (\"Berlin\" : (\"Hamburg\" : (\"Munich\" : []))), farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({cities : (\"London\" : (\"Birmingham\" : (\"Manchester\" : []))), farms : 200, name : \"UK\", popMil : 67} : []))"
+     , v2_expect: "({farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : []))"
      }
    ]
