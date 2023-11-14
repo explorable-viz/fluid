@@ -24,7 +24,7 @@ jobs:
   deploy:
     runs-on: ubuntu-22.04
     needs: test
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/release'
     steps:
     - uses: actions/checkout@v4
     - name: build

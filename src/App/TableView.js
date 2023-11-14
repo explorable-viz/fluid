@@ -58,6 +58,14 @@ function drawTable_ (
       table = table.filter(r => isUsed(r))
 
       if (table.length > 0) {
+         div.append('text')
+            .text(title)
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('class', 'title-text table-title')
+            .attr('dominant-baseline', 'middle')
+            .attr('text-anchor', 'left')
+
          const HTMLtable = div
             .append('table')
             .attr('id', childId)
@@ -86,7 +94,7 @@ function drawTable_ (
             .attr('class', d => d.value._1 ? 'cell-selected' : null)
             .attr('bgcolor', d => d.value._1 ? colorShade(cellFill, -40) : cellFill)
             .text(d => d.value._2)
-            .on('mouseover', (e, d) =>
+            .on('mousedown', (e, d) =>
                listener(e)
             )
       }

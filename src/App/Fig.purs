@@ -7,7 +7,7 @@ import App.BubbleChart (BubbleChart, bubbleChartHandler, drawBubbleChart)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
-import App.TableView (Table(..), drawTable, tableViewHandler)
+import App.TableView (TableView(..), drawTable, tableViewHandler)
 import App.Util (HTMLId, OnSel, doNothing, from, record)
 import App.Util.Select (envVal)
 import Bindings (Var)
@@ -49,14 +49,14 @@ codeMirrorDiv = ("codemirror-" <> _)
 
 data View
    = MatrixFig MatrixView
-   | TableView (Table (Dict (Val 𝔹)))
+   | TableFig (TableView (Dict (Val 𝔹)))
    | LineChartFig LineChart
    | BarChartFig BarChart
    | BubbleChartFig BubbleChart
 
 drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
 drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
-drawView divId onSel n (TableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
+drawView divId onSel n (TableFig vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
 drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
 drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
 drawView divId onSel n (BubbleChartFig vw) = drawBubbleChart divId n vw =<< eventListener (onSel <<< bubbleChartHandler)
@@ -71,7 +71,7 @@ view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
 view _ (Constr _ c (u1 : Nil)) | c == cBubbleChart =
    BubbleChartFig (unsafePartial $ record from u1)
 view title u@(Constr _ c _) | c == cNil || c == cCons =
-   TableView (Table { title, table: unsafePartial $ record identity <$> from u })
+   TableFig (TableView { title, table: unsafePartial $ record identity <$> from u })
 view title u@(Matrix _ _) =
    MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
 view _ _ = error absurd
@@ -215,9 +215,9 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
          let v2' = δv2 v2
          { v', v0: v0' } <- linkedInputsResult x2 x1 γ e t δv2
          pure $ identity × δv2 × v' × v2' × v0'
-   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view "right view" v2'
    drawView divId doNothing 0 $ view "common output" v0'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
    log $ ("v0" <> prettyP v0')
    log $ ("v1'" <> prettyP v1')
    log $ ("v2'" <> prettyP v2')
@@ -257,16 +257,13 @@ drawFiles files =
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
 
-valViews :: forall m. MonadError Error m => Env 𝔹 -> Array Var -> m (Array View)
-valViews γ xs = sequence (flip varView γ <$> xs)
-
 -- For an output selection, views of corresponding input selections and output after round-trip.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
       γ0γ × e' × α = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t
    _ × v' <- eval γ0γ e' α
-   views <- valViews γ0γ xs
+   views <- sequence (flip varView γ0γ <$> xs)
    pure $ view "output" v' × views
 
 linkedOutputsResult :: forall m. MonadError Error m => Var -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> m LinkedOutputsResult
