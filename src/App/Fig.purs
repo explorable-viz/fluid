@@ -137,7 +137,7 @@ type LinkedOutputsFig =
    , v1 :: Val 𝔹
    , v2 :: Val 𝔹
    , v0 :: Val 𝔹 -- common data named by spec.x
-   , dataFile :: String -- TODO: provide surface expression instead and prettyprint
+   , dataFileStr :: String -- TODO: provide surface expression instead and prettyprint
    }
 
 type LinkedInputsFig =
@@ -152,7 +152,8 @@ type LinkedInputsFig =
    }
 
 type LinkedOutputsResult =
-   { v' :: Val 𝔹 -- selection on other output
+   { v :: Val 𝔹
+   , v' :: Val 𝔹 -- selection on other output
    , v0' :: Val 𝔹 -- selection that arose on shared input
    }
 
@@ -166,17 +167,9 @@ selectors (Left δv) = δv × identity
 selectors (Right δv) = identity × δv
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> Selector Val + Selector Val -> Effect Unit
-drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, e1, e2, t1, t2, v1, v2 } δv = do
+drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
    log $ "Redrawing " <> divId
-   v1' × v2' × v0 <- case δv of
-      Left δv1 -> do
-         let v1' = δv1 v1
-         { v', v0' } <- linkedOutputsResult x γ e1 e2 t1 t2 v1'
-         pure $ v1' × v' × v0'
-      Right δv2 -> do
-         let v2' = δv2 v2
-         { v', v0' } <- linkedOutputsResult x γ e2 e1 t2 t1 v2'
-         pure $ v' × v2' × v0'
+   v1' × v2' × v0 <- linkedOutputsResult fig δv
    let δv1 × δv2 = selectors δv
    drawView divId (\selector -> drawLinkedOutputsFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
    drawView divId (\selector -> drawLinkedOutputsFig fig (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
@@ -195,7 +188,7 @@ drawLinkedOutputsFigs loadFigs =
                ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
                drawCode ed1 $ prettyP fig.s1
                drawCode ed2 $ prettyP fig.s2
-               drawCode ed3 $ fig.dataFile
+               drawCode ed3 $ fig.dataFileStr
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
@@ -269,15 +262,25 @@ figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    views <- sequence (flip varView γ0γ <$> xs)
    pure $ view "output" v' × views
 
-linkedOutputsResult :: forall m. MonadError Error m => Var -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> m LinkedOutputsResult
-linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
-   let
-      γ0γ' × _ = evalBwd (erase <$> γ0γ) (erase e1) v1 t1
-      γ0' × γ' = append_inv (S.singleton x) γ0γ'
-   v0' <- lookup x γ' # orElse absurd
-   -- make γ0 and e2 fully available
-   _ × v2' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e2) true
-   pure { v': neg v2', v0' }
+linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
+linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
+   case _ of
+      Left δv1 -> do
+         { v, v', v0' } <- result e1 e2 t1 (δv1 v1)
+         pure $ v × v' × v0'
+      Right δv2 -> do
+         { v, v', v0' } <- result e2 e1 t2 (δv2 v2)
+         pure $ v' × v × v0'
+   where
+   result :: Expr 𝔹 -> Expr 𝔹 -> Trace -> Val 𝔹 -> m LinkedOutputsResult
+   result e e' t v = do
+      let
+         γ0γ' × _ = evalBwd (erase <$> γ) (erase e) v t
+         γ0' × γ' = append_inv (S.singleton x) γ0γ'
+      v0' <- lookup x γ' # orElse absurd
+      -- make γ0 and e2 fully available
+      v' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e') true <#> snd >>> neg
+      pure { v, v', v0' }
 
 linkedInputsResult :: forall m. MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
 linkedInputsResult x1 x2 γ e1 tr δv1 = do
@@ -316,16 +319,17 @@ loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
    let
       dir = File "linked-outputs/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
+      dataFile' = File "example/" <> dir <> dataFile
    -- views share ambient environment γ
-   { γ: γ' } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= initialConfig
+   { γ: γ' } <- defaultImports >>= datasetAs dataFile' x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ = botOf <$> γ'
       s1 = botOf s1'
       s2 = botOf s2'
-   dataFile' <- loadFile (Folder "fluid/example/linked-outputs") dataFile -- TODO: use surface expression instead
+   dataFileStr <- loadFile (Folder "fluid") dataFile' -- TODO: use surface expression instead
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
    t1 × v1 <- eval γ e1 bot
    t2 × v2 <- eval γ e2 bot
    let v0 = get x γ
-   pure { spec, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
+   pure { spec, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFileStr }
