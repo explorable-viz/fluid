@@ -7,7 +7,7 @@ import Effect (Effect)
 import Module (File(..))
 import Test.Specs (linkedInputs_spec1)
 
--- TODO: delete once we support linked outputs and inputs in same example.
+-- Currently unused; delete once we support linked outputs/inputs in same example.
 linkedOutputs :: LinkedOutputsFigSpec
 linkedOutputs =
    { divId: "fig-1"
