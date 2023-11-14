@@ -195,18 +195,18 @@ drawLinkedOutputsFigs loadFigs =
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
    log $ "Redrawing " <> divId
-   δv1 × δv2 × v1' × v2' × v0' <- case δv of
+   δv1 × δv2 × v1' × v2' × v0 <- case δv of
       Left δv1 -> do
          v1 <- lookup x1 γ # orElse absurd
          let v1' = δv1 v1
-         { v', v0: v0' } <- linkedInputsResult x1 x2 γ e t δv1
-         pure $ δv1 × identity × v1' × v' × v0'
+         { v', v0 } <- linkedInputsResult x1 x2 γ e t δv1
+         pure $ δv1 × identity × v1' × v' × v0
       Right δv2 -> do
          v2 <- lookup x2 γ # orElse absurd
          let v2' = δv2 v2
-         { v', v0: v0' } <- linkedInputsResult x2 x1 γ e t δv2
-         pure $ identity × δv2 × v' × v2' × v0'
-   drawView divId doNothing 0 $ view "common output" v0'
+         { v', v0 } <- linkedInputsResult x2 x1 γ e t δv2
+         pure $ identity × δv2 × v' × v2' × v0
+   drawView divId doNothing 0 $ view "common output" v0
    drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
    drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
 
