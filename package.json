@@ -1,7 +1,6 @@
 {
   "license": "MIT",
   "scripts": {
-    "test-all": "rm -rf output && yarn build-tests && yarn tests && yarn build-app-tests && yarn app-tests",
     "clean-app": "rm -rf dist/app && mkdir -p dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app && cp -r web/pdf dist/app",
     "build-app": "yarn clean-app && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main App --to dist/app/app.js",
     "serve-app": "yarn build-app && npx http-serve dist/app -a 127.0.0.1 -c-1",
