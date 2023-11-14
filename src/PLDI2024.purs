@@ -5,9 +5,11 @@ import Prelude
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, drawLinkedInputsFigs, loadLinkedInputsFig)
 import Effect (Effect)
 import Module (File(..))
+import Test.Specs (linkedInputs_spec1)
 
-waterFig :: LinkedOutputsFigSpec
-waterFig =
+-- TODO: delete once we can support linked outputs and inputs in same example.
+linkedOutputs :: LinkedOutputsFigSpec
+linkedOutputs =
    { divId: "fig-1"
    , file1: File "water-bar-chart"
    , file2: File "water-ratio-chart"
@@ -15,15 +17,15 @@ waterFig =
    , x: "data"
    }
 
-waterInFig :: LinkedInputsFigSpec
-waterInFig =
+linkedInputs :: LinkedInputsFigSpec
+linkedInputs =
    { divId: "fig-1"
-   , x2: "all_cities"
    , x1: "all_countries"
+   , x2: "all_cities"
    , file: File "water"
    }
 
 main :: Effect Unit
 main = do
    -- drawLinkedOutputsFigs [ loadLinkedOutputsFig waterFig ]
-   drawLinkedInputsFigs [ loadLinkedInputsFig waterInFig ]
+   drawLinkedInputsFigs [ loadLinkedInputsFig linkedInputs_spec1.spec ]

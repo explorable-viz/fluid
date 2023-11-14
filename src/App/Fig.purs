@@ -22,7 +22,7 @@ import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cNil)
 import Desugarable (desug)
-import Dict (Dict, get)
+import Dict (get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
@@ -49,7 +49,7 @@ codeMirrorDiv = ("codemirror-" <> _)
 
 data View
    = MatrixFig MatrixView
-   | TableFig (TableView (Dict (Val 𝔹)))
+   | TableFig TableView
    | LineChartFig LineChart
    | BarChartFig BarChart
    | BubbleChartFig BubbleChart
