@@ -209,9 +209,6 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
    drawView divId doNothing 0 $ view "common output" v0'
    drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
    drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
-   -- log ("v0" <> prettyP v0')
-   -- log ("v1'" <> prettyP v1')
-   -- log ("v2'" <> prettyP v2')
 
 drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
 drawLinkedInputsFigs loadFigs =
