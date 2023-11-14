@@ -162,7 +162,7 @@ type LinkedInputsResult =
    }
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
+drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, e1, e2, t1, t2, v1, v2 } ed1 ed2 ed3 δv = do
    log $ "Redrawing " <> divId
    v1' × v2' × δv1 × δv2 × v0 <- case δv of
       Left δv1 -> do
@@ -176,9 +176,6 @@ drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, s1, s2, e1, e2, t1, t2, v1, v
    drawView divId (\selector -> drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
    drawView divId (\selector -> drawLinkedOutputsFig fig ed1 ed2 ed3 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
-   drawCode ed1 $ prettyP s1
-   drawCode ed2 $ prettyP s2
-   drawCode ed3 $ dataFile
 
 drawLinkedOutputsFigs :: Array (Aff LinkedOutputsFig) -> Effect Unit
 drawLinkedOutputsFigs loadFigs =
@@ -191,6 +188,9 @@ drawLinkedOutputsFigs loadFigs =
                ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
                ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
                drawLinkedOutputsFig fig ed1 ed2 ed3 (Left botOf)
+               drawCode ed1 $ prettyP fig.s1
+               drawCode ed2 $ prettyP fig.s2
+               drawCode ed3 $ fig.dataFile
 
 drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
 drawLinkedInputsFigs loadFigs =
