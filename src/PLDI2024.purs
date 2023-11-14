@@ -2,7 +2,7 @@ module PLDI2024 where
 
 import Prelude
 
-import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, drawLinkedInputsFigs, loadLinkedInputsFig)
+import App.Fig (LinkedOutputsFigSpec, drawLinkedInputsFigs, loadLinkedInputsFig)
 import Effect (Effect)
 import Module (File(..))
 import Test.Specs (linkedInputs_spec1)
@@ -15,14 +15,6 @@ linkedOutputs =
    , file2: File "water-ratio-chart"
    , dataFile: File "water-consumption-data"
    , x: "data"
-   }
-
-linkedInputs :: LinkedInputsFigSpec
-linkedInputs =
-   { divId: "fig-1"
-   , x1: "all_countries"
-   , x2: "all_cities"
-   , file: File "water"
    }
 
 main :: Effect Unit
