@@ -50,7 +50,7 @@ logging = false
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
 
-test ∷ forall m. File -> ProgCxt Unit -> SelectionSpec -> (Int × Boolean) -> AffError m BenchRow
+test ∷ forall m. File -> ProgCxt Unit -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file progCxt spec (n × benchmarking) = do
    gconfig <- initialConfig progCxt
    s <- open file
