@@ -152,14 +152,15 @@ type LinkedInputsFig =
    }
 
 type LinkedOutputsResult =
-   { v :: Val 𝔹
-   , v' :: Val 𝔹 -- selection on other output
+   { v :: Val 𝔹 -- selection on primary output
+   , v' :: Val 𝔹 -- resulting selection on other output
    , v0' :: Val 𝔹 -- selection that arose on shared input
    }
 
 type LinkedInputsResult =
-   { v' :: Val 𝔹 -- selection on other input
-   , v0 :: Val 𝔹 -- will also want selection that arose on shared output
+   { v :: Val 𝔹 -- selection on primary input
+   , v' :: Val 𝔹 -- resulting selection on other input
+   , v0 :: Val 𝔹 -- selection that arose on shared output
    }
 
 selectors :: Selector Val + Selector Val -> Selector Val × Selector Val
@@ -276,21 +277,20 @@ linkedInputsResult :: forall m. MonadError Error m => LinkedInputsFig -> Selecto
 linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
    case _ of
       Left δv1 -> do
-         { v', v0 } <- result x1 x2 δv1
-         v1 <- lookup x1 γ # orElse absurd
-         pure $ δv1 v1 × v' × v0
+         { v, v', v0 } <- result x1 x2 δv1
+         pure $ v × v' × v0
       Right δv2 -> do
-         { v', v0 } <- result x2 x1 δv2
-         v2 <- lookup x2 γ # orElse absurd
-         pure $ v' × δv2 v2 × v0
+         { v, v', v0 } <- result x2 x1 δv2
+         pure $ v' × v × v0
    where
    result :: Var -> Var -> Selector Val -> m LinkedInputsResult
    result x x' δv = do
       let γ' = envVal x δv γ
       v0 <- eval (neg γ') (topOf e) true <#> snd >>> neg
       let γ'' × _ = evalBwd (erase <$> γ) (erase e) v0 t
+      v <- lookup x γ' # orElse absurd
       v' <- lookup x' γ'' # orElse absurd
-      pure { v', v0 }
+      pure { v, v', v0 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file } = do
