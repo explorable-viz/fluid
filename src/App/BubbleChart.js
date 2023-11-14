@@ -45,18 +45,32 @@ function drawBubbleChart_ (
    listener
 ) {
    return () => {
+      var max_width = 350
+      var max_height = 185
+      const x_max = Math.ceil(Math.max(...data.map(d => d.x._1)))
+      const y_max = Math.ceil(Math.max(...data.map(d => d.y._1)))
+      const z_max = Math.ceil(Math.max(...data.map(d => d.z._1)))
+
       const childId = id + '-' + childIndex
-      const margin = {top: 15, right: 0, bottom: 40, left: 40},
-            width = 350 - margin.left - margin.right,
-            height = 185 - margin.top - margin.bottom
+      const margin = {top: 15, right: 0, bottom: 40, left: 40}
+      if (x_max + z_max + margin.left + margin.right > max_width) {
+         max_width = x_max +  z_max  + margin.left + margin.right
+      }
+      if (y_max + z_max + margin.top + margin.bottom > max_height) {
+         max_height = y_max + z_max + margin.top + margin.bottom
+         
+      }
+
+      const width = max_width - margin.left - margin.right,
+            height = max_height - margin.top - margin.bottom
       const div = d3.select('#' + id)
 
       div.selectAll('#' + childId).remove()
 
       const svg = div
          .append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
+            .attr('width', max_width + margin.left + margin.right)
+            .attr('height', max_height + margin.top + margin.bottom)
          .attr('id', childId)
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
@@ -68,11 +82,9 @@ function drawBubbleChart_ (
 
       svg.call(tip)
 
-      const x_max = Math.ceil(Math.max(...data.map(d => d.x._1 + d.z._1)))
-      const y_max = Math.ceil(Math.max(...data.map(d => d.y._1 + d.z._1)))
-      const z_max = Math.ceil(Math.max(...data.map(d => d.z._1)))
+
       const x = d3.scaleLinear()
-         .domain([0,x_max])
+         .domain([0,x_max + z_max + margin.left])
          .range([0, width])
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
@@ -81,7 +93,7 @@ function drawBubbleChart_ (
          .style('text-anchor', 'middle')
 
       const y = d3.scaleLinear()
-         .domain([0, y_max])
+         .domain([0, y_max + z_max + margin.top])
          .range([height,0])
       svg.append('g')
          .call(d3.axisLeft(y))
