@@ -73,8 +73,7 @@ withDatasetSuite specs (n × is_bench) = zip (specs <#> _.file) (specs <#> asTes
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
 linkedOutputsTest { spec, δv1, v2_expect } = do
-   fig <- loadLinkedOutputsFig spec
-   _ × v2' × _ <- linkedOutputsResult fig (Left δv1)
+   _ × v2' × _ <- loadLinkedOutputsFig spec >>= flip linkedOutputsResult (Left δv1)
    checkPretty "linked output" v2_expect v2'
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
@@ -84,8 +83,7 @@ linkedOutputsSuite specs = zip (specs <#> name) (specs <#> linkedOutputsTest)
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
 linkedInputsTest { spec, δv1, v2_expect } = do
-   { γ, e, t } <- loadLinkedInputsFig spec
-   { v': v2' } <- linkedInputsResult spec.x1 spec.x2 γ e t δv1
+   _ × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult (Left δv1)
    checkPretty "linked input" v2_expect v2'
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
