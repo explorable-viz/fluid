@@ -190,16 +190,16 @@ drawLinkedOutputsFigs loadFigs =
                ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
                ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
                ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
-               drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ botOf)
+               drawLinkedOutputsFig fig ed1 ed2 ed3 (Left botOf)
 
 drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
 drawLinkedInputsFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
-         Right figs -> do
-            sequence_ $ figs <#> \fig -> do
-               drawLinkedInputsFig fig (Left $ topOf)
+         Right figs ->
+            sequence_ $ figs <#> \fig ->
+               drawLinkedInputsFig fig (Left topOf)
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
