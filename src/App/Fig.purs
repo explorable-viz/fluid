@@ -192,15 +192,6 @@ drawLinkedOutputsFigs loadFigs =
                drawCode ed2 $ prettyP fig.s2
                drawCode ed3 $ fig.dataFile
 
-drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
-drawLinkedInputsFigs loadFigs =
-   flip runAff_ (sequence loadFigs)
-      case _ of
-         Left err -> log $ show err
-         Right figs ->
-            sequence_ $ figs <#> \fig ->
-               drawLinkedInputsFig fig (Left topOf)
-
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
    log $ "Redrawing " <> divId
@@ -221,6 +212,15 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
    log $ ("v0" <> prettyP v0')
    log $ ("v1'" <> prettyP v1')
    log $ ("v2'" <> prettyP v2')
+
+drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
+drawLinkedInputsFigs loadFigs =
+   flip runAff_ (sequence loadFigs)
+      case _ of
+         Left err -> log $ show err
+         Right figs ->
+            sequence_ $ figs <#> \fig ->
+               drawLinkedInputsFig fig (Left topOf)
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
