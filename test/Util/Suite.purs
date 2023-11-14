@@ -46,14 +46,17 @@ type TestLinkedInputsSpec =
 suite :: Array TestSpec -> BenchSuite
 suite specs (n × is_bench) = zip (specs <#> _.file) (specs <#> asTest)
    where
+   asTest :: TestSpec -> Aff BenchRow
    asTest { file, fwd_expect } = do
       progCxt <- defaultImports
       test (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite
-bwdSuite specs (n × is_bench) = zip (specs <#> (\spec -> "slicing/" <> spec.file)) (specs <#> asTest)
+bwdSuite specs (n × is_bench) = zip (specs <#> (_.file >>> ("slicing/" <> _))) (specs <#> asTest)
    where
    folder = File "slicing/"
+
+   asTest :: TestBwdSpec -> Aff BenchRow
    asTest { file, bwd_expect_file, δv, fwd_expect } = do
       progCxt <- defaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
@@ -62,24 +65,29 @@ bwdSuite specs (n × is_bench) = zip (specs <#> (\spec -> "slicing/" <> spec.fil
 withDatasetSuite :: Array TestWithDatasetSpec -> BenchSuite
 withDatasetSuite specs (n × is_bench) = zip (specs <#> _.file) (specs <#> asTest)
    where
+   asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { dataset, file } = do
       progCxt <- defaultImports >>= datasetAs (File dataset) "data"
       test (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
+linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
+linkedOutputsTest { spec, δv1, v2_expect } = do
+   { γ, e1, e2, t1, t2, v1 } <- loadLinkedOutputsFig spec
+   { v': v2' } <- linkedOutputsResult spec.x γ e1 e2 t1 t2 (δv1 v1)
+   checkPretty "linked output" v2_expect v2'
+
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
-linkedOutputsSuite specs = zip (specs <#> name) (specs <#> asTest)
+linkedOutputsSuite specs = zip (specs <#> name) (specs <#> linkedOutputsTest)
    where
    name spec = "linked-outputs/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
-   asTest { spec, δv1, v2_expect } = do
-      { γ, e1, e2, t1, t2, v1 } <- loadLinkedOutputsFig spec
-      { v': v2' } <- linkedOutputsResult spec.x γ e1 e2 t1 t2 (δv1 v1)
-      checkPretty "linked output" v2_expect v2'
+
+linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
+linkedInputsTest { spec, δv1, v2_expect } = do
+   { γ, e, t } <- loadLinkedInputsFig spec
+   { v': v2' } <- linkedInputsResult spec.x1 spec.x2 γ e t δv1
+   checkPretty "linked input" v2_expect v2'
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
-linkedInputsSuite specs = zip (specs <#> name) (specs <#> asTest)
+linkedInputsSuite specs = zip (specs <#> name) (specs <#> linkedInputsTest)
    where
    name { spec } = "linked-inputs/" <> show spec.file
-   asTest { spec, δv1, v2_expect } = do
-      { γ, e, t } <- loadLinkedInputsFig spec
-      { v': v2' } <- linkedInputsResult spec.x1 spec.x2 γ e t δv1
-      checkPretty "linked input" v2_expect v2'

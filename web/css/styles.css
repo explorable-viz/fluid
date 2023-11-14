@@ -98,8 +98,8 @@ table {
    outline-color: lightgray;
 }
 
-.table-title {
-   margin-left: 4mm;
+.table-caption {
+   text-align: left
 }
 
 th {

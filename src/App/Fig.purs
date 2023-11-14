@@ -22,7 +22,7 @@ import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cNil)
 import Desugarable (desug)
-import Dict (Dict, get)
+import Dict (get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
@@ -49,7 +49,7 @@ codeMirrorDiv = ("codemirror-" <> _)
 
 data View
    = MatrixFig MatrixView
-   | TableFig (TableView (Dict (Val 𝔹)))
+   | TableFig TableView
    | LineChartFig LineChart
    | BarChartFig BarChart
    | BubbleChartFig BubbleChart
@@ -161,24 +161,26 @@ type LinkedInputsResult =
    , v0 :: Val 𝔹 -- will also want selection that arose on shared output
    }
 
-drawLinkedOutputsFig :: LinkedOutputsFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
+selectors :: Selector Val + Selector Val -> Selector Val × Selector Val
+selectors (Left δv) = δv × identity
+selectors (Right δv) = identity × δv
+
+drawLinkedOutputsFig :: LinkedOutputsFig -> Selector Val + Selector Val -> Effect Unit
+drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, e1, e2, t1, t2, v1, v2 } δv = do
    log $ "Redrawing " <> divId
-   v1' × v2' × δv1 × δv2 × v0 <- case δv of
+   v1' × v2' × v0 <- case δv of
       Left δv1 -> do
          let v1' = δv1 v1
          { v', v0' } <- linkedOutputsResult x γ e1 e2 t1 t2 v1'
-         pure $ v1' × v' × const v1' × identity × v0'
+         pure $ v1' × v' × v0'
       Right δv2 -> do
          let v2' = δv2 v2
          { v', v0' } <- linkedOutputsResult x γ e2 e1 t2 t1 v2'
-         pure $ v' × v2' × identity × const v2' × v0'
-   drawView divId (\selector -> drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkedOutputsFig fig ed1 ed2 ed3 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+         pure $ v' × v2' × v0'
+   let δv1 × δv2 = selectors δv
+   drawView divId (\selector -> drawLinkedOutputsFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkedOutputsFig fig (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
-   drawCode ed1 $ prettyP s1
-   drawCode ed2 $ prettyP s2
-   drawCode ed3 $ dataFile
 
 drawLinkedOutputsFigs :: Array (Aff LinkedOutputsFig) -> Effect Unit
 drawLinkedOutputsFigs loadFigs =
@@ -187,40 +189,41 @@ drawLinkedOutputsFigs loadFigs =
          Left err -> log $ show err
          Right figs -> do
             sequence_ $ figs <#> \fig -> do
+               drawLinkedOutputsFig fig (Left botOf)
                ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
                ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
                ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
-               drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ botOf)
+               drawCode ed1 $ prettyP fig.s1
+               drawCode ed2 $ prettyP fig.s2
+               drawCode ed3 $ fig.dataFile
+
+drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
+drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
+   log $ "Redrawing " <> divId
+   v1' × v2' × v0 <- case δv of
+      Left δv1 -> do
+         v1 <- lookup x1 γ # orElse absurd
+         let v1' = δv1 v1
+         { v', v0 } <- linkedInputsResult x1 x2 γ e t δv1
+         pure $ v1' × v' × v0
+      Right δv2 -> do
+         v2 <- lookup x2 γ # orElse absurd
+         let v2' = δv2 v2
+         { v', v0 } <- linkedInputsResult x2 x1 γ e t δv2
+         pure $ v' × v2' × v0
+   let δv1 × δv2 = selectors δv
+   drawView divId doNothing 0 $ view "common output" v0
+   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
 
 drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
 drawLinkedInputsFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
-         Right figs -> do
-            sequence_ $ figs <#> \fig -> do
-               drawLinkedInputsFig fig (Left $ topOf)
-
-drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
-drawLinkedInputsFig fig@{ spec: { divId, x1, x2 }, γ, e, t } δv = do
-   log $ "Redrawing " <> divId
-   δv1 × δv2 × v1' × v2' × v0' <- case δv of
-      Left δv1 -> do
-         v1 <- lookup x1 γ # orElse absurd
-         let v1' = δv1 v1
-         { v', v0: v0' } <- linkedInputsResult x1 x2 γ e t δv1
-         pure $ δv1 × identity × v1' × v' × v0'
-      Right δv2 -> do
-         v2 <- lookup x2 γ # orElse absurd
-         let v2' = δv2 v2
-         { v', v0: v0' } <- linkedInputsResult x2 x1 γ e t δv2
-         pure $ identity × δv2 × v' × v2' × v0'
-   drawView divId doNothing 0 $ view "common output" v0'
-   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
-   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
-   log $ ("v0" <> prettyP v0')
-   log $ ("v1'" <> prettyP v1')
-   log $ ("v2'" <> prettyP v2')
+         Right figs ->
+            sequence_ $ figs <#> \fig ->
+               drawLinkedInputsFig fig (Left topOf)
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do

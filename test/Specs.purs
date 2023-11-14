@@ -306,24 +306,32 @@ linkedOutputs_cases =
      }
    ]
 
+linkedInputs_spec1 :: TestLinkedInputsSpec
+linkedInputs_spec1 =
+   { spec:
+        { divId: "fig-1"
+        , file: File "water"
+        , x1: "countries"
+        , x2: "cities"
+        }
+   , δv1: listElement 0 neg
+   , v2_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : []))))))"
+   }
+
+linkedInputs_spec2 :: TestLinkedInputsSpec
+linkedInputs_spec2 =
+   { spec:
+        { divId: "fig-1"
+        , file: File "water"
+        , x1: "cities"
+        , x2: "countries"
+        }
+   , δv1: listElement 0 neg
+   , v2_expect: "({farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : []))"
+   }
+
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
-   [ { spec:
-          { divId: "fig-1"
-          , file: File "water"
-          , x1: "countries"
-          , x2: "cities"
-          }
-     , δv1: listElement 0 neg
-     , v2_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : []))))))"
-     }
-   , { spec:
-          { divId: "fig-1"
-          , file: File "water"
-          , x1: "cities"
-          , x2: "countries"
-          }
-     , δv1: listElement 0 neg
-     , v2_expect: "({farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : []))"
-     }
+   [ linkedInputs_spec1
+   , linkedInputs_spec2
    ]
