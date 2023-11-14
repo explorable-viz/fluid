@@ -1,21 +1,27 @@
-let all_countries = [{name: "Germany", cities: ["Berlin", "Hamburg", "Munich"], farms: 100},
-                     {name: "UK", cities: ["London", "Birmingham", "Manchester"], farms: 200}];
-    all_cities = [
-        {name: "Berlin", water: 130},
-        {name: "Munich", water: 80},
-        {name: "Hamburg", water: 60},
-        {name: "London", water: 200},
-        {name: "Birmingham", water: 50},
-        {name: "Manchester", water: 35}
+let countries = [{name: "Germany", farms: 100, popMil: 81},
+                     {name: "UK", farms: 200, popMil: 67}];
+    cities = [
+        {name: "Berlin", water: 130, country: "Germany"},
+        {name: "Munich", water: 80, country: "Germany"},
+        {name: "Hamburg", water: 60, country: "Germany"},
+        {name: "London", water: 200, country: "UK"},
+        {name: "Birmingham", water: 50, country: "UK"},
+        {name: "Manchester", water: 35, country: "UK"}
     ];
-let country_water countries_list cities c_name =
-        let city_water = sum [city.water | country <- countries_list
+let country_water c_name =
+        let city_water = sum [city.water | country <- countries
                         , c_name == country.name
                         , city <- cities
-                        , elem city.name country.cities];
-            farm_water = sum [ country.farms * 3 | country <- countries_list, country.name == c_name ]
-        in {name: c_name, water: city_water + farm_water};
-let all_waters countries cities =
+                        , city.country == country.name];
+            farm_water = sum [ country.farms | country <- countries, country.name == c_name ]
+        in head [{name: c_name, water: city_water + country.farms, farms: country.farms, popMil: country.popMil } | country <- countries, country.name == c_name ];
+let waters =
     let c_names = [country.name | country <- countries]
-    in map (country_water countries cities) c_names
-in all_waters all_countries all_cities
+    in map country_water c_names;
+let countryData = 
+    let data_rec = waters
+    in [{x: country.water, y: country.farms, z: country.water `div` country.popMil, c: country.name} | country <- data_rec]
+in BubbleChart {
+    caption: "Test linkedinputs bubble chart",
+    data: countryData
+}
