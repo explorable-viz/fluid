@@ -335,7 +335,7 @@ linkedInputs_spec1 =
 linkedInputs_spec2 :: TestLinkedInputsSpec
 linkedInputs_spec2 =
    { spec:
-        { divId: "fig-1"
+        { divId: "fig-2"
         , file: File "water"
         , x1: "cities"
         , x1File: File "cities"

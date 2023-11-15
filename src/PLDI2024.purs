@@ -3,11 +3,9 @@ module PLDI2024 where
 import Prelude
 
 import App.Fig (LinkedOutputsFigSpec, drawLinkedInputsFig, loadLinkedInputsFig, runAffs_)
-import Data.Either (Either(..))
 import Effect (Effect)
-import Lattice (topOf)
 import Module (File(..))
-import Test.Specs (linkedInputs_spec1)
+import Test.Specs (linkedInputs_spec1, linkedInputs_spec2)
 
 -- Currently unused; delete once we support linked outputs/inputs in same example.
 linkedOutputs :: LinkedOutputsFigSpec
@@ -20,5 +18,6 @@ linkedOutputs =
    }
 
 main :: Effect Unit
-main =
-   runAffs_ (flip drawLinkedInputsFig (Left topOf)) [ loadLinkedInputsFig linkedInputs_spec1.spec ]
+main = do
+   runAffs_ (flip drawLinkedInputsFig (linkedInputs_spec1.δv)) [ loadLinkedInputsFig linkedInputs_spec1.spec ]
+   runAffs_ (flip drawLinkedInputsFig (linkedInputs_spec2.δv)) [ loadLinkedInputsFig linkedInputs_spec2.spec ]
