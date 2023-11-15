@@ -324,7 +324,9 @@ linkedInputs_spec1 =
         { divId: "fig-1"
         , file: File "water"
         , x1: "countries"
+        , x1File: File "countries"
         , x2: "cities"
+        , x2File: File "cities"
         }
    , δv: Left $ listElement 0 neg
    , v'_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : []))))))"
@@ -336,7 +338,9 @@ linkedInputs_spec2 =
         { divId: "fig-1"
         , file: File "water"
         , x1: "cities"
+        , x1File: File "cities"
         , x2: "countries"
+        , x2File: File "countries"
         }
    , δv: Left $ listElement 0 neg
    , v'_expect: "({farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : []))"
