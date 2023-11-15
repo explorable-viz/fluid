@@ -25,6 +25,7 @@ import Desugarable (desug)
 import Dict (get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -197,9 +198,6 @@ drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect 
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
    log $ "Redrawing " <> divId
    v1' × v2' × v0 <- linkedInputsResult fig δv
-   log $ "v1': " <> prettyP v1'
-   log $ "v2': " <> prettyP v2'
-   log $ "v0: " <> prettyP v0
    let δv1 × δv2 = split δv
    drawView divId doNothing 0 $ view "common output" v0
    drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
@@ -278,7 +276,7 @@ linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
       v' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e') true <#> snd >>> neg
       pure { v, v', v0' }
 
-linkedInputsResult :: forall m. MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
+linkedInputsResult :: forall m. MonadEffect m => MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
 linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
    case _ of
       Left δv1 -> do
@@ -292,6 +290,9 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
    result x x' δv = do
       let γ' = envVal x δv γ
       v0 <- eval (neg γ') (topOf e) true <#> snd >>> neg
+      liftEffect $ log $ "v0: " <> prettyP v0
+      -- log $ "v2': " <> prettyP v2'
+      -- log $ "v0: " <> prettyP v0
       let γ'' × _ = evalBwd (erase <$> γ) (erase e) v0 t
       v <- lookup x γ' # orElse absurd
       v' <- lookup x' γ'' # orElse absurd
