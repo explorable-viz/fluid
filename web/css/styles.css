@@ -104,6 +104,7 @@ table {
 
 th {
    font-size: 11px;
+   text-align: left;
    border-bottom: 'thin solid';
 }
 
@@ -112,7 +113,11 @@ td {
 }
 
 td:nth-child(1) {
-   color: lightgray
+   color: lightgray;
+}
+
+th:nth-child(1) {
+   color: lightgray;
 }
 
 nav ul {

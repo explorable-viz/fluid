@@ -60,7 +60,8 @@ function drawTable_ (
          table = table.filter(r => isUsed(r))
       }
 
-      table = table.map((r, n) => { return {__n: { _1: false, _2: n + 1 }, ...r} })
+      indexKey = "__n"
+      table = table.map((r, n) => { return {[ indexKey ]: { _1: false, _2: n + 1 }, ...r} })
 
       if (table.length > 0) {
          const HTMLtable = div
@@ -81,7 +82,7 @@ function drawTable_ (
          tableHead
             .append('tr')
             .selectAll('th')
-            .data(colNames)
+            .data(colNames.map(k => k == indexKey ? "#" : k))
             .enter()
             .append('th')
             .text(d => d)
