@@ -9,6 +9,7 @@ import Val (Val)
 
 newtype TableView = TableView
    { title :: String
+   , filter :: Boolean
    , table :: Array (Dict (Val 𝔹))
    }
 

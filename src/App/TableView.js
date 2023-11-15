@@ -45,6 +45,7 @@ function drawTable_ (
    childIndex,
    {
       title,   // String
+      filter,  // Boolean
       table    // Array of any record type with only primitive fields
    },
    listener
@@ -55,7 +56,9 @@ function drawTable_ (
       const div = d3.select('#' + id)
 
       div.selectAll('#' + childId).remove()
-      table = table.filter(r => isUsed(r))
+      if (filter) {
+         table = table.filter(r => isUsed(r))
+      }
 
       if (table.length > 0) {
          const HTMLtable = div
