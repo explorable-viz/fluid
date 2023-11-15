@@ -185,8 +185,8 @@ drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
    drawView divId (\δv' -> drawLinkedOutputsFig fig (Right $ δv2 >>> δv')) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
 
-drawLinkedOutputsFig' :: LinkedOutputsFig -> Effect Unit
-drawLinkedOutputsFig' fig = do
+drawLinkedOutputsFigWithCode :: LinkedOutputsFig -> Effect Unit
+drawLinkedOutputsFigWithCode fig = do
    drawLinkedOutputsFig fig (Left botOf)
    ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
    ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
@@ -213,8 +213,8 @@ drawFig fig@{ spec: { divId }, s0 } ed δv = do
    drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
    drawCode ed $ prettyP s0
 
-drawFig' :: Fig -> Effect Unit
-drawFig' fig =
+drawFigWithCode :: Fig -> Effect Unit
+drawFigWithCode fig =
    addEditorView (codeMirrorDiv fig.spec.divId) >>= flip (drawFig fig) botOf
 
 drawCode :: EditorView -> String -> Effect Unit
