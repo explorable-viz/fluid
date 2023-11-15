@@ -222,11 +222,8 @@ drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
-loadFile' :: Folder × File -> Aff (File × String)
-loadFile' (folder × file) = (file × _) <$> loadFile folder file
-
-drawFiles :: Array (Folder × File) -> Effect Unit
-drawFiles files = flip runAffs_ (files <#> loadFile') drawFile'
+loadFile' :: Folder -> File -> Aff (File × String)
+loadFile' folder file = (file × _) <$> loadFile folder file
 
 drawFile' :: File × String -> Effect Unit
 drawFile' (file × src) =
