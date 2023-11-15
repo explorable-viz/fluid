@@ -10,7 +10,7 @@ import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
-import Util (type (×), (×))
+import Util (type (×), (×), type (+))
 import Val (Val)
 
 -- benchmarks parameterised on number of iterations
@@ -41,8 +41,8 @@ type TestLinkedOutputsSpec =
 
 type TestLinkedInputsSpec =
    { spec :: LinkedInputsFigSpec
-   , δv1 :: Selector Val
-   , v2_expect :: String
+   , δv :: Selector Val + Selector Val
+   , v'_expect :: String
    }
 
 suite :: Array TestSpec -> BenchSuite
@@ -83,9 +83,9 @@ linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
    name spec = "linked-outputs/" <> unwrap spec.spec.file1 <> " <-> " <> unwrap spec.spec.file2
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
-linkedInputsTest { spec, δv1, v2_expect } = do
-   v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult (Left δv1)
-   checkPretty "linked input" v2_expect (if isLeft (Left δv1) then v2' else v1')
+linkedInputsTest { spec, δv, v'_expect } = do
+   v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
+   checkPretty "linked input" v'_expect (if isLeft δv then v2' else v1')
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)
