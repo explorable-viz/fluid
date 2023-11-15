@@ -222,8 +222,8 @@ drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
-drawFile' :: File × String -> Effect Unit
-drawFile' (file × src) =
+drawFile :: File × String -> Effect Unit
+drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
