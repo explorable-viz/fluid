@@ -226,9 +226,11 @@ loadFile' :: Folder × File -> Aff (File × String)
 loadFile' (folder × file) = (file × _) <$> loadFile folder file
 
 drawFiles :: Array (Folder × File) -> Effect Unit
-drawFiles files =
-   flip runAffs_ (files <#> loadFile') \(file × src) ->
-     addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
+drawFiles files = flip runAffs_ (files <#> loadFile') drawFile'
+
+drawFile' :: File × String -> Effect Unit
+drawFile' (file × src) =
+   addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
