@@ -167,8 +167,8 @@ withShowError :: forall a. (a -> Effect Unit) -> Error + a → Effect Unit
 withShowError _ (Left err) = log $ show err
 withShowError f (Right x) = f x
 
-wurble :: forall a. Array (Aff a) -> (a -> Effect Unit) -> Effect Unit
-wurble as f = flip runAff_ (sequence as) $ withShowError ((_ <#> f) >>> sequence_)
+runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
+runAffs_ f as = flip runAff_ (sequence as) $ withShowError ((_ <#> f) >>> sequence_)
 
 split :: Selector Val + Selector Val -> Selector Val × Selector Val
 split (Left δv) = δv × identity
@@ -184,7 +184,7 @@ drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
    drawView divId doNothing 1 $ view "common data" v0
 
 drawLinkedOutputsFigs :: Array (Aff LinkedOutputsFig) -> Effect Unit
-drawLinkedOutputsFigs loadFigs = wurble loadFigs \fig -> do
+drawLinkedOutputsFigs = runAffs_ \fig -> do
    drawLinkedOutputsFig fig (Left botOf)
    ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
    ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
@@ -203,8 +203,7 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
    drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
 
 drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
-drawLinkedInputsFigs loadFigs = wurble loadFigs \fig ->
-   drawLinkedInputsFig fig (Left topOf)
+drawLinkedInputsFigs = runAffs_ (flip drawLinkedInputsFig (Left topOf))
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
@@ -216,9 +215,8 @@ drawFig fig@{ spec: { divId }, s0 } ed δv = do
    drawCode ed $ prettyP s0
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
-drawFigs loadFigs = wurble loadFigs \fig -> do
-   ed <- addEditorView $ codeMirrorDiv fig.spec.divId
-   drawFig fig ed botOf
+drawFigs = runAffs_ \fig ->
+   addEditorView (codeMirrorDiv fig.spec.divId) >>= flip (drawFig fig) botOf
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s =
