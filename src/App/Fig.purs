@@ -25,7 +25,7 @@ import Desugarable (desug)
 import Dict (get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (class MonadEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -145,10 +145,9 @@ type LinkedOutputsFig =
 
 type LinkedInputsFig =
    { spec :: LinkedInputsFigSpec
-   , γ0 :: Env 𝔹 -- ambient env
    , γ :: Env 𝔹 -- additional let bindings at beginning of ex; must include vars defined in spec
    , s0 :: S.Expr 𝔹 -- program that was originally "split"
-   , s :: S.Expr 𝔹 -- body of example
+   -- , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹
    , t :: Trace
    , v0 :: Val 𝔹 -- common output
@@ -289,10 +288,7 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
    result :: Var -> Var -> Selector Val -> m LinkedInputsResult
    result x x' δv = do
       let γ' = envVal x δv γ
-      v0 <- eval (neg γ') (topOf e) true <#> snd >>> neg
-      liftEffect $ log $ "v0: " <> prettyP v0
-      -- log $ "v2': " <> prettyP v2'
-      -- log $ "v0: " <> prettyP v0
+      v0 <- eval (neg γ') (botOf e) true <#> snd >>> neg
       let γ'' × _ = evalBwd (erase <$> γ) (erase e) v0 t
       v <- lookup x γ' # orElse absurd
       v' <- lookup x' γ'' # orElse absurd
@@ -316,14 +312,12 @@ loadLinkedInputsFig spec@{ file } = do
       dir = File "example/linked-inputs/"
       datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
    { γ: γ' } <- defaultImports >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
-   let γ0 = botOf <$> γ'
+   let γ = botOf <$> γ'
    s' <- open $ File "linked-inputs/" <> file
    let s0 = botOf s'
-   { γ: γ1, s } <- splitDefs γ0 s0
-   e <- desug s
-   let γ = γ0 <+> γ1
+   e <- desug s0
    t × v <- eval γ e bot
-   pure { spec, γ0, γ, s0, s, e, t, v0: v }
+   pure { spec, γ, s0, e, t, v0: v }
 
 loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
 loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
