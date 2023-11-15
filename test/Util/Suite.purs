@@ -3,7 +3,7 @@ module Test.Util.Many where
 import Prelude
 
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
-import Data.Either (Either(..), isLeft)
+import Data.Either (isLeft)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
@@ -35,8 +35,8 @@ type TestWithDatasetSpec =
 
 type TestLinkedOutputsSpec =
    { spec :: LinkedOutputsFigSpec
-   , δv1 :: Selector Val
-   , v2_expect :: String
+   , δv :: Selector Val + Selector Val
+   , v'_expect :: String
    }
 
 type TestLinkedInputsSpec =
@@ -73,9 +73,9 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
       test (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
-linkedOutputsTest { spec, δv1, v2_expect } = do
-   _ × v2' × _ <- loadLinkedOutputsFig spec >>= flip linkedOutputsResult (Left δv1)
-   checkPretty "linked output" v2_expect v2'
+linkedOutputsTest { spec, δv, v'_expect } = do
+   v1' × v2' × _ <- loadLinkedOutputsFig spec >>= flip linkedOutputsResult δv
+   checkPretty "linked output" v'_expect (if isLeft δv then v2' else v1')
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
 linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)

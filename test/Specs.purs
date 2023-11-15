@@ -234,11 +234,12 @@ linkedOutputs_spec1 =
         , dataFile: File "renewables"
         , x: "data"
         }
-   , δv1: constrArg cBarChart 0
+   , δv: Left
+        $ constrArg cBarChart 0
         $ field f_data
         $ listElement 1
         $ field f_y neg
-   , v2_expect:
+   , v'_expect:
         "LineChart {\
         \caption : \"Output of USA relative to China\", \
         \plots : \
@@ -293,10 +294,11 @@ linkedOutputs_cases =
           , dataFile: File "pairs-data"
           , x: "data"
           }
-     , δv1: constrArg cPair 1
+     , δv: Left
+          $ constrArg cPair 1
           $ constrArg cPair 1
           $ constrArg cPair 0 neg
-     , v2_expect: "(3, (⸨5⸩, ⸨7⸩))"
+     , v'_expect: "(3, (⸨5⸩, ⸨7⸩))"
      }
    , { spec:
           { divId: ""
@@ -305,8 +307,8 @@ linkedOutputs_cases =
           , dataFile: File "convolution-data"
           , x: "data"
           }
-     , δv1: matrixElement 2 2 neg
-     , v2_expect:
+     , δv: Left $ matrixElement 2 2 neg
+     , v'_expect:
           "⸨18⸩, ⸨12⸩, ⸨13⸩, 9, 19,\n\
           \⸨20⸩, ⸨11⸩, ⸨24⸩, 9, 14,\n\
           \⸨15⸩, ⸨13⸩, ⸨20⸩, 11, 14,\n\
@@ -324,7 +326,7 @@ linkedInputs_spec1 =
         , x1: "countries"
         , x2: "cities"
         }
-   , δv: Left (listElement 0 neg)
+   , δv: Left $ listElement 0 neg
    , v'_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : []))))))"
    }
 
@@ -336,7 +338,7 @@ linkedInputs_spec2 =
         , x1: "cities"
         , x2: "countries"
         }
-   , δv: Left (listElement 0 neg)
+   , δv: Left $ listElement 0 neg
    , v'_expect: "({farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : []))"
    }
 
