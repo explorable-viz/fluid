@@ -60,7 +60,7 @@ function drawTable_ (
          table = table.filter(r => isUsed(r))
       }
 
-      table = table.map((r, n) => { return {__n: { _1: false, _2: 55 }, ...r} })
+      table = table.map((r, n) => { return {__n: { _1: false, _2: n + 1 }, ...r} })
 
       if (table.length > 0) {
          const HTMLtable = div
