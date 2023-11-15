@@ -224,9 +224,9 @@ drawCode ed s =
 
 drawFiles :: Array (Folder × File) -> Effect Unit
 drawFiles files =
-   sequence_ $ files <#> \(folder × file) ->
-      flip runAff_ (loadFile folder file) $ withShowError \src ->
-         addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
+   let qs = (files <#> \(folder × file) -> (file × _) <$> loadFile folder file) in
+   flip runAffs_ qs \(file × src) ->
+     addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
