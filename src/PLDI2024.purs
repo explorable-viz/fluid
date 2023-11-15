@@ -26,6 +26,8 @@ loadLinkedInputsTest :: forall m. TestLinkedInputsSpec -> AffError m (LinkedInpu
 loadLinkedInputsTest { spec, δv } = (_ × δv) <$> loadLinkedInputsFig spec
 
 main :: Effect Unit
-main = do
-   runAffs_ (uncurry drawLinkedInputsFig) [ loadLinkedInputsTest linkedInputs_spec1 ]
-   runAffs_ (uncurry drawLinkedInputsFig) [ loadLinkedInputsTest linkedInputs_spec2 ]
+main =
+   runAffs_ (uncurry drawLinkedInputsFig)
+      [ loadLinkedInputsTest linkedInputs_spec1
+      , loadLinkedInputsTest linkedInputs_spec2
+      ]
