@@ -1,8 +1,8 @@
-module Test.Util.Many where
+module Test.Util.Suite where
 
 import Prelude
 
-import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
+import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, LinkedInputsFig, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
 import Data.Either (isLeft)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
@@ -91,3 +91,6 @@ linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)
    where
    name { spec } = "linked-inputs/" <> unwrap spec.file
+
+loadLinkedInputsTest :: TestLinkedInputsSpec -> Aff (LinkedInputsFig × (Selector Val + Selector Val))
+loadLinkedInputsTest { spec, δv } = (_ × δv) <$> loadLinkedInputsFig spec
