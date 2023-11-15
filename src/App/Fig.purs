@@ -2,25 +2,20 @@ module App.Fig where
 
 import Prelude hiding (absurd)
 
-import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.BubbleChart (BubbleChart, bubbleChartHandler, drawBubbleChart)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.LineChart (LineChart, drawLineChart, lineChartHandler)
-import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
-import App.TableView (TableView(..), drawTable, tableViewHandler)
-import App.Util (HTMLId, OnSel, doNothing, from, record)
+import App.Util (HTMLId, doNothing)
 import App.Util.Select (envVal)
+import App.View (View, drawView, view)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
-import Data.List (List(..), (:), singleton)
+import Data.List (singleton)
 import Data.Newtype (unwrap)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (fst, snd, uncurry)
-import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cNil)
+import Data.Tuple (snd, uncurry)
 import Desugarable (desug)
 import Dict (get)
 import Effect (Effect)
@@ -36,46 +31,15 @@ import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), (×), AffError, Endo, absurd, error, orElse)
-import Val (class Ann, Env, Val(..), append_inv, (<+>))
-import Web.Event.EventTarget (eventListener)
+import Util (type (+), type (×), (×), AffError, Endo, absurd, orElse)
+import Val (class Ann, Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
-
-data View
-   = MatrixFig MatrixView
-   | TableFig TableView
-   | LineChartFig LineChart
-   | BarChartFig BarChart
-   | BubbleChartFig BubbleChart
-
-drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
-drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
-drawView divId onSel n (TableFig vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
-drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
-drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
-drawView divId onSel n (BubbleChartFig vw) = drawBubbleChart divId n vw =<< eventListener (onSel <<< bubbleChartHandler)
-
--- Convert sliced value to appropriate View, discarding top-level annotations for now.
--- 'from' is partial; encapsulate that here.
-view :: String -> Val 𝔹 -> View
-view _ (Constr _ c (u1 : Nil)) | c == cBarChart =
-   BarChartFig (unsafePartial $ record from u1)
-view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
-   LineChartFig (unsafePartial $ record from u1)
-view _ (Constr _ c (u1 : Nil)) | c == cBubbleChart =
-   BubbleChartFig (unsafePartial $ record from u1)
-view title u@(Constr _ c _) | c == cNil || c == cCons =
-   TableFig (TableView { title, table: unsafePartial $ record identity <$> from u })
-view title u@(Matrix _ _) =
-   MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
-view _ _ = error absurd
 
 -- An example of the form (let <defs> in expr) can be decomposed as follows.
 type SplitDefs a =
@@ -165,12 +129,10 @@ type LinkedInputsResult =
    , v0 :: Val 𝔹 -- selection that arose on shared output
    }
 
-withShowError :: forall a. (a -> Effect Unit) -> Error + a → Effect Unit
-withShowError _ (Left err) = log $ show err
-withShowError f (Right x) = f x
-
 runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
-runAffs_ f as = flip runAff_ (sequence as) $ withShowError ((_ <#> f) >>> sequence_)
+runAffs_ f as = flip runAff_ (sequence as) case _ of
+   Left err -> log $ show err
+   Right as' -> as' <#> f # sequence_
 
 split :: Selector Val + Selector Val -> Selector Val × Selector Val
 split (Left δv) = δv × identity
