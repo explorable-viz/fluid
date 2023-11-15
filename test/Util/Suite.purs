@@ -1,4 +1,4 @@
-module Test.Util.Many where
+module Test.Util.Suite where
 
 import Prelude
 

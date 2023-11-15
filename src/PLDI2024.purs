@@ -7,7 +7,7 @@ import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..))
 import Test.Specs (linkedInputs_spec1, linkedInputs_spec2)
-import Test.Util.Many (loadLinkedInputsTest)
+import Test.Util.Suite (loadLinkedInputsTest)
 
 -- Currently unused; delete once we support linked outputs/inputs in same example.
 linkedOutputs :: LinkedOutputsFigSpec
