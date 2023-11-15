@@ -2,10 +2,15 @@ module PLDI2024 where
 
 import Prelude
 
-import App.Fig (LinkedOutputsFigSpec, drawLinkedInputsFig, loadLinkedInputsFig, runAffs_)
+import App.Fig (LinkedOutputsFigSpec, LinkedInputsFig, drawLinkedInputsFig, loadLinkedInputsFig, runAffs_)
+import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..))
 import Test.Specs (linkedInputs_spec1, linkedInputs_spec2)
+import Test.Util (Selector)
+import Test.Util.Many (TestLinkedInputsSpec)
+import Util (type (×), (×), type (+), AffError)
+import Val (Val)
 
 -- Currently unused; delete once we support linked outputs/inputs in same example.
 linkedOutputs :: LinkedOutputsFigSpec
@@ -17,7 +22,10 @@ linkedOutputs =
    , x: "data"
    }
 
+loadLinkedInputsTest :: forall m. TestLinkedInputsSpec -> AffError m (LinkedInputsFig × (Selector Val + Selector Val))
+loadLinkedInputsTest { spec, δv } = (_ × δv) <$> loadLinkedInputsFig spec
+
 main :: Effect Unit
 main = do
-   runAffs_ (flip drawLinkedInputsFig (linkedInputs_spec1.δv)) [ loadLinkedInputsFig linkedInputs_spec1.spec ]
-   runAffs_ (flip drawLinkedInputsFig (linkedInputs_spec2.δv)) [ loadLinkedInputsFig linkedInputs_spec2.spec ]
+   runAffs_ (uncurry drawLinkedInputsFig) [ loadLinkedInputsTest linkedInputs_spec1 ]
+   runAffs_ (uncurry drawLinkedInputsFig) [ loadLinkedInputsTest linkedInputs_spec2 ]
