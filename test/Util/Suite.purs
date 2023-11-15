@@ -3,7 +3,8 @@ module Test.Util.Many where
 import Prelude
 
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
-import Data.Either (Either(..))
+import Data.Either (Either(..), isLeft)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
@@ -79,14 +80,14 @@ linkedOutputsTest { spec, δv1, v2_expect } = do
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
 linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
    where
-   name spec = "linked-outputs/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
+   name spec = "linked-outputs/" <> unwrap spec.spec.file1 <> " <-> " <> unwrap spec.spec.file2
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
 linkedInputsTest { spec, δv1, v2_expect } = do
-   _ × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult (Left δv1)
-   checkPretty "linked input" v2_expect v2'
+   v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult (Left δv1)
+   checkPretty "linked input" v2_expect (if isLeft (Left δv1) then v2' else v1')
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)
    where
-   name { spec } = "linked-inputs/" <> show spec.file
+   name { spec } = "linked-inputs/" <> unwrap spec.file
