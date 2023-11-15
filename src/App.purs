@@ -2,9 +2,9 @@ module App where
 
 import Prelude hiding (absurd)
 
-import App.Fig (FigSpec, drawFig', drawFile', drawLinkedOutputsFig', loadFig, loadFile', loadLinkedOutputsFig, runAffs_)
+import App.Fig (FigSpec, drawFig', drawFile', drawLinkedOutputsFig', loadFig, loadLinkedOutputsFig, runAffs_)
 import Effect (Effect)
-import Module (File(..), Folder(..))
+import Module (File(..), Folder(..), loadFile')
 import Test.Specs (linkedOutputs_spec1)
 
 fig1 :: FigSpec

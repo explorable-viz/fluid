@@ -38,9 +38,9 @@ import Pretty (prettyP)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
-import Test.Util (AffError, Selector)
+import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), (×), Endo, absurd, error, orElse)
+import Util (type (+), type (×), (×), AffError, Endo, absurd, error, orElse)
 import Val (class Ann, Env, Val(..), append_inv, (<+>))
 import Web.Event.EventTarget (eventListener)
 
@@ -221,9 +221,6 @@ drawFig' fig =
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
-
-loadFile' :: Folder -> File -> Aff (File × String)
-loadFile' folder file = (file × _) <$> loadFile folder file
 
 drawFile' :: File × String -> Effect Unit
 drawFile' (file × src) =
