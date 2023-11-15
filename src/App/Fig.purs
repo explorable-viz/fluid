@@ -222,10 +222,12 @@ drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
+loadFile' :: Folder × File -> Aff (File × String)
+loadFile' (folder × file) = (file × _) <$> loadFile folder file
+
 drawFiles :: Array (Folder × File) -> Effect Unit
 drawFiles files =
-   let qs = (files <#> \(folder × file) -> (file × _) <$> loadFile folder file) in
-   flip runAffs_ qs \(file × src) ->
+   flip runAffs_ (files <#> loadFile') \(file × src) ->
      addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
