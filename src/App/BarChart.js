@@ -46,8 +46,8 @@ function drawBarChart_ (
 ) {
    return () => {
       const childId = id + '-' + childIndex
-      const margin = {top: 15, right: 0, bottom: 40, left: 30},
-            width = 350 - margin.left - margin.right,
+      const margin = {top: 15, right: 0, bottom: 40, left: 40},
+            width = 200 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + id)
 
