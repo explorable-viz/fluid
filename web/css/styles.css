@@ -111,6 +111,10 @@ td {
    font-size: 11px;
 }
 
+td:nth-child(1) {
+   color: lightgray
+}
+
 nav ul {
    list-style: none;
 }
