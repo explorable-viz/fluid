@@ -55,13 +55,13 @@ function drawTable_ (
       const cellFill = '#ffffff'
       const div = d3.select('#' + id)
 
+      indexKey = "__n"
+      table = table.map((r, n) => { return {[ indexKey ]: { _1: false, _2: n + 1 }, ...r} })
+
       div.selectAll('#' + childId).remove()
       if (filter) {
          table = table.filter(r => isUsed(r))
       }
-
-      indexKey = "__n"
-      table = table.map((r, n) => { return {[ indexKey ]: { _1: false, _2: n + 1 }, ...r} })
 
       if (table.length > 0) {
          const HTMLtable = div
