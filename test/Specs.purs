@@ -329,7 +329,7 @@ linkedInputs_spec1 =
         , x2File: File "cities"
         }
    , δv: Left $ listElement 0 neg
-   , v'_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : []))))))"
+   , v'_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : ({country : \"Bulgaria\", name : \"Sofia\", water : 55} : ({country : \"Poland\", name : \"Warsaw\", water : 65} : ({country : \"Turkey\", name : \"Istanbul\", water : 375} : [])))))))))"
    }
 
 linkedInputs_spec2 :: TestLinkedInputsSpec
@@ -343,7 +343,7 @@ linkedInputs_spec2 =
         , x2File: File "countries"
         }
    , δv: Left $ listElement 0 neg
-   , v'_expect: "({farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : []))"
+   , v'_expect: "({farms : ⸨250⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : ({farms : 150, name : \"Bulgaria\", popMil : 7} : ({farms : 220, name : \"Poland\", popMil : 38} : ({farms : 270, name : \"Turkey\", popMil : 85} : [])))))"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
