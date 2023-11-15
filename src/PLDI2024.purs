@@ -2,7 +2,7 @@ module PLDI2024 where
 
 import Prelude
 
-import App.Fig (LinkedOutputsFigSpec, drawLinkedInputsFigs, loadLinkedInputsFig)
+import App.Fig (LinkedOutputsFigSpec, drawLinkedInputsFig', loadLinkedInputsFig, runAffs_)
 import Effect (Effect)
 import Module (File(..))
 import Test.Specs (linkedInputs_spec1)
@@ -18,6 +18,5 @@ linkedOutputs =
    }
 
 main :: Effect Unit
-main = do
-   -- drawLinkedOutputsFigs [ loadLinkedOutputsFig waterFig ]
-   drawLinkedInputsFigs [ loadLinkedInputsFig linkedInputs_spec1.spec ]
+main =
+   runAffs_ drawLinkedInputsFig' [ loadLinkedInputsFig linkedInputs_spec1.spec ]
