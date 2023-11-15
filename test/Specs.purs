@@ -3,6 +3,7 @@ module Test.Specs where
 import Prelude
 
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
+import Data.Either (Either(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
@@ -233,11 +234,12 @@ linkedOutputs_spec1 =
         , dataFile: File "renewables"
         , x: "data"
         }
-   , δv1: constrArg cBarChart 0
+   , δv: Left
+        $ constrArg cBarChart 0
         $ field f_data
         $ listElement 1
         $ field f_y neg
-   , v2_expect:
+   , v'_expect:
         "LineChart {\
         \caption : \"Output of USA relative to China\", \
         \plots : \
@@ -292,10 +294,11 @@ linkedOutputs_cases =
           , dataFile: File "pairs-data"
           , x: "data"
           }
-     , δv1: constrArg cPair 1
+     , δv: Left
+          $ constrArg cPair 1
           $ constrArg cPair 1
           $ constrArg cPair 0 neg
-     , v2_expect: "(3, (⸨5⸩, ⸨7⸩))"
+     , v'_expect: "(3, (⸨5⸩, ⸨7⸩))"
      }
    , { spec:
           { divId: ""
@@ -304,8 +307,8 @@ linkedOutputs_cases =
           , dataFile: File "convolution-data"
           , x: "data"
           }
-     , δv1: matrixElement 2 2 neg
-     , v2_expect:
+     , δv: Left $ matrixElement 2 2 neg
+     , v'_expect:
           "⸨18⸩, ⸨12⸩, ⸨13⸩, 9, 19,\n\
           \⸨20⸩, ⸨11⸩, ⸨24⸩, 9, 14,\n\
           \⸨15⸩, ⸨13⸩, ⸨20⸩, 11, 14,\n\
@@ -325,8 +328,8 @@ linkedInputs_spec1 =
         , x2: "cities"
         , x2File: File "cities"
         }
-   , δv1: listElement 0 neg
-   , v2_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : []))))))"
+   , δv: Left $ listElement 0 neg
+   , v'_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : []))))))"
    }
 
 linkedInputs_spec2 :: TestLinkedInputsSpec
@@ -339,8 +342,8 @@ linkedInputs_spec2 =
         , x2: "countries"
         , x2File: File "countries"
         }
-   , δv1: listElement 0 neg
-   , v2_expect: "({farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : []))"
+   , δv: Left $ listElement 0 neg
+   , v'_expect: "({farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : []))"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec

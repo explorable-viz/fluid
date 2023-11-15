@@ -27,7 +27,7 @@ import Parsing (runParser)
 import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util ((×), mapLeft)
+import Util (type (×), (×), AffError, mapLeft)
 import Util.Parse (SParser)
 
 -- Mainly serve as documentation
@@ -39,13 +39,16 @@ derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
 
-loadFile :: forall m. MonadAff m => MonadError Error m => Folder -> File -> m String
+loadFile :: forall m. Folder -> File -> AffError m String
 loadFile (Folder folder) (File file) = do
    let url = "./" <> folder <> "/" <> file <> ".fld"
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
       Left err -> throwError $ E.error $ printError err
       Right response -> pure response.body
+
+loadFile' :: forall m. Folder -> File -> AffError m (File × String)
+loadFile' folder file = (file × _) <$> loadFile folder file
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< mapLeft (E.error <<< show) <<< runParser src

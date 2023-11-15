@@ -39,9 +39,9 @@ import Pretty (prettyP)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
-import Test.Util (AffError, Selector)
+import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), Endo, absurd, error, orElse, (×))
+import Util (type (+), type (×), (×), AffError, Endo, absurd, error, orElse)
 import Val (class Ann, Env, Val(..), append_inv, (<+>))
 import Web.Event.EventTarget (eventListener)
 
@@ -165,6 +165,13 @@ type LinkedInputsResult =
    , v0 :: Val 𝔹 -- selection that arose on shared output
    }
 
+withShowError :: forall a. (a -> Effect Unit) -> Error + a → Effect Unit
+withShowError _ (Left err) = log $ show err
+withShowError f (Right x) = f x
+
+runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
+runAffs_ f as = flip runAff_ (sequence as) $ withShowError ((_ <#> f) >>> sequence_)
+
 split :: Selector Val + Selector Val -> Selector Val × Selector Val
 split (Left δv) = δv × identity
 split (Right δv) = identity × δv
@@ -178,20 +185,15 @@ drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
    drawView divId (\δv' -> drawLinkedOutputsFig fig (Right $ δv2 >>> δv')) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
 
-drawLinkedOutputsFigs :: Array (Aff LinkedOutputsFig) -> Effect Unit
-drawLinkedOutputsFigs loadFigs =
-   flip runAff_ (sequence loadFigs)
-      case _ of
-         Left err -> log $ show err
-         Right figs -> do
-            sequence_ $ figs <#> \fig -> do
-               drawLinkedOutputsFig fig (Left botOf)
-               ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
-               ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
-               ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
-               drawCode ed1 $ prettyP fig.s1
-               drawCode ed2 $ prettyP fig.s2
-               drawCode ed3 $ fig.dataFileStr
+drawLinkedOutputsFig' :: LinkedOutputsFig -> Effect Unit
+drawLinkedOutputsFig' fig = do
+   drawLinkedOutputsFig fig (Left botOf)
+   ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
+   ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
+   ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
+   drawCode ed1 $ prettyP fig.s1
+   drawCode ed2 $ prettyP fig.s2
+   drawCode ed3 $ fig.dataFileStr
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
@@ -202,14 +204,8 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
    drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
    drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
 
-drawLinkedInputsFigs :: Array (Aff LinkedInputsFig) -> Effect Unit
-drawLinkedInputsFigs loadFigs =
-   flip runAff_ (sequence loadFigs)
-      case _ of
-         Left err -> log $ show err
-         Right figs ->
-            sequence_ $ figs <#> \fig ->
-               drawLinkedInputsFig fig (Left topOf)
+drawLinkedInputsFig' :: LinkedInputsFig -> Effect Unit
+drawLinkedInputsFig' = flip drawLinkedInputsFig (Left topOf)
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
@@ -220,28 +216,17 @@ drawFig fig@{ spec: { divId }, s0 } ed δv = do
    drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
    drawCode ed $ prettyP s0
 
-drawFigs :: Array (Aff Fig) -> Effect Unit
-drawFigs loadFigs =
-   flip runAff_ (sequence loadFigs)
-      case _ of
-         Left err -> log $ show err
-         Right figs -> sequence_ $ figs <#> \fig -> do
-            ed <- addEditorView $ codeMirrorDiv fig.spec.divId
-            drawFig fig ed botOf
+drawFig' :: Fig -> Effect Unit
+drawFig' fig =
+   addEditorView (codeMirrorDiv fig.spec.divId) >>= flip (drawFig fig) botOf
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
-drawFiles :: Array (Folder × File) -> Effect Unit
-drawFiles files =
-   sequence_ $ files <#> \(folder × file) ->
-      flip runAff_ (loadFile folder file)
-         case _ of
-            Left err -> log $ show err
-            Right src -> do
-               ed <- addEditorView $ codeMirrorDiv $ unwrap file
-               drawCode ed src
+drawFile :: File × String -> Effect Unit
+drawFile (file × src) =
+   addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)

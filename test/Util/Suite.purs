@@ -3,13 +3,14 @@ module Test.Util.Many where
 import Prelude
 
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
-import Data.Either (Either(..))
+import Data.Either (isLeft)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
-import Util (type (×), (×))
+import Util (type (×), (×), type (+))
 import Val (Val)
 
 -- benchmarks parameterised on number of iterations
@@ -34,14 +35,14 @@ type TestWithDatasetSpec =
 
 type TestLinkedOutputsSpec =
    { spec :: LinkedOutputsFigSpec
-   , δv1 :: Selector Val
-   , v2_expect :: String
+   , δv :: Selector Val + Selector Val
+   , v'_expect :: String
    }
 
 type TestLinkedInputsSpec =
    { spec :: LinkedInputsFigSpec
-   , δv1 :: Selector Val
-   , v2_expect :: String
+   , δv :: Selector Val + Selector Val
+   , v'_expect :: String
    }
 
 suite :: Array TestSpec -> BenchSuite
@@ -72,21 +73,21 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
       test (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
-linkedOutputsTest { spec, δv1, v2_expect } = do
-   _ × v2' × _ <- loadLinkedOutputsFig spec >>= flip linkedOutputsResult (Left δv1)
-   checkPretty "linked output" v2_expect v2'
+linkedOutputsTest { spec, δv, v'_expect } = do
+   v1' × v2' × _ <- loadLinkedOutputsFig spec >>= flip linkedOutputsResult δv
+   checkPretty "linked output" v'_expect (if isLeft δv then v2' else v1')
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
 linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
    where
-   name spec = "linked-outputs/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
+   name spec = "linked-outputs/" <> unwrap spec.spec.file1 <> " <-> " <> unwrap spec.spec.file2
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
-linkedInputsTest { spec, δv1, v2_expect } = do
-   _ × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult (Left δv1)
-   checkPretty "linked input" v2_expect v2'
+linkedInputsTest { spec, δv, v'_expect } = do
+   v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
+   checkPretty "linked input" v'_expect (if isLeft δv then v2' else v1')
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)
    where
-   name { spec } = "linked-inputs/" <> show spec.file
+   name { spec } = "linked-inputs/" <> unwrap spec.file
