@@ -129,12 +129,10 @@ type LinkedInputsResult =
    , v0 :: Val 𝔹 -- selection that arose on shared output
    }
 
-withShowError :: forall a. (a -> Effect Unit) -> Error + a → Effect Unit
-withShowError _ (Left err) = log $ show err
-withShowError f (Right x) = f x
-
 runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
-runAffs_ f as = flip runAff_ (sequence as) $ withShowError ((_ <#> f) >>> sequence_)
+runAffs_ f as = flip runAff_ (sequence as) case _ of
+   Left err -> log $ show err
+   Right as' -> as' <#> f # sequence_
 
 split :: Selector Val + Selector Val -> Selector Val × Selector Val
 split (Left δv) = δv × identity
