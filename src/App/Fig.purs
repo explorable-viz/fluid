@@ -204,9 +204,6 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
    drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
    drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
 
-drawLinkedInputsFig' :: LinkedInputsFig -> Effect Unit
-drawLinkedInputsFig' = flip drawLinkedInputsFig (Left topOf)
-
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
    log $ "Redrawing " <> divId

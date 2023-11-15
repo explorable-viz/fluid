@@ -2,8 +2,10 @@ module PLDI2024 where
 
 import Prelude
 
-import App.Fig (LinkedOutputsFigSpec, drawLinkedInputsFig', loadLinkedInputsFig, runAffs_)
+import App.Fig (LinkedOutputsFigSpec, drawLinkedInputsFig, loadLinkedInputsFig, runAffs_)
+import Data.Either (Either(..))
 import Effect (Effect)
+import Lattice (topOf)
 import Module (File(..))
 import Test.Specs (linkedInputs_spec1)
 
@@ -19,4 +21,4 @@ linkedOutputs =
 
 main :: Effect Unit
 main =
-   runAffs_ drawLinkedInputsFig' [ loadLinkedInputsFig linkedInputs_spec1.spec ]
+   runAffs_ (flip drawLinkedInputsFig (Left topOf)) [ loadLinkedInputsFig linkedInputs_spec1.spec ]
