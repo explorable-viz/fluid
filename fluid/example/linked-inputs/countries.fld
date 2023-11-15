@@ -1,4 +1,7 @@
 [
-    {name: "Germany", farms: 100, popMil: 81},
-    {name: "UK", farms: 200, popMil: 67}
+    {name: "Germany", farms: 250, popMil: 81},
+    {name: "UK", farms: 200, popMil: 67},
+    {name: "Bulgaria", farms: 150, popMil: 7},
+    {name: "Poland", farms: 220, popMil: 38},
+    {name: "Turkey", farms: 270, popMil: 85}
 ]
