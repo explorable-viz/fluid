@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
-import Test.Util.Many (TestBwdSpec, TestLinkedInputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec)
+import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -335,7 +335,7 @@ linkedInputs_spec1 =
 linkedInputs_spec2 :: TestLinkedInputsSpec
 linkedInputs_spec2 =
    { spec:
-        { divId: "fig-1"
+        { divId: "fig-2"
         , file: File "water"
         , x1: "cities"
         , x1File: File "cities"

@@ -11,8 +11,8 @@ import Lattice (neg)
 import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
 import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
-import Test.Util.Many (BenchSuite, linkedInputsSuite, linkedOutputsSuite, bwdSuite)
 import Test.Util.Mocha (run)
+import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, bwdSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
