@@ -60,7 +60,7 @@ function drawTable_ (
          table = table.filter(r => isUsed(r))
       }
 
-      table = table.map((r, n) => { return {...r} })
+      table = table.map((r, n) => { return {__n: { _1: false, _2: 55 }, ...r} })
 
       if (table.length > 0) {
          const HTMLtable = div
@@ -94,11 +94,7 @@ function drawTable_ (
             .append('tr')
 
          rows.selectAll('td')
-            .data(d => {
-               return [
-                  { 'value': { _1: false, _2: 55 }, 'name': '__n' }, ...colNames.map(k => { return { 'value': d[k], 'name': k } })
-               ]
-            })
+            .data(d => colNames.map(k => { return { 'value': d[k], 'name': k } }))
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
