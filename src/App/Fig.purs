@@ -149,12 +149,9 @@ drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
 drawLinkedOutputsFigWithCode :: LinkedOutputsFig -> Effect Unit
 drawLinkedOutputsFigWithCode fig = do
    drawLinkedOutputsFig fig (Left botOf)
-   ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
-   ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
-   ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
-   drawCode ed1 $ prettyP fig.s1
-   drawCode ed2 $ prettyP fig.s2
-   drawCode ed3 $ fig.dataFileStr
+   addEditorView (codeMirrorDiv $ unwrap (fig.spec.file1)) >>= drawCode (prettyP fig.s1)
+   addEditorView (codeMirrorDiv $ unwrap (fig.spec.file2)) >>= drawCode (prettyP fig.s2)
+   addEditorView (codeMirrorDiv $ unwrap (fig.spec.dataFile)) >>= drawCode fig.dataFileStr
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
@@ -170,19 +167,19 @@ drawFig fig@{ spec: { divId }, s0 } ed δv = do
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
    drawView divId ((δv >>> _) >>> drawFig fig ed) (length views) v_view
-   drawCode ed $ prettyP s0
+   drawCode (prettyP s0) ed
 
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig =
    addEditorView (codeMirrorDiv fig.spec.divId) >>= flip (drawFig fig) botOf
 
-drawCode :: EditorView -> String -> Effect Unit
-drawCode ed s =
+drawCode :: String -> EditorView -> Effect Unit
+drawCode s ed =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
-   addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
+   addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
