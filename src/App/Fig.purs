@@ -142,8 +142,8 @@ drawLinkedOutputsFig :: LinkedOutputsFig -> Selector Val + Selector Val -> Effec
 drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
    v1' × v2' × v0 <- linkedOutputsResult fig δv
    let δv1 × δv2 = split δv
-   drawView divId (\δv' -> drawLinkedOutputsFig fig (Left $ δv1 >>> δv')) 2 $ view "left view" v1'
-   drawView divId (\δv' -> drawLinkedOutputsFig fig (Right $ δv2 >>> δv')) 0 $ view "right view" v2'
+   drawView divId ((δv1 >>> _) >>> Left >>> drawLinkedOutputsFig fig) 2 $ view "left view" v1'
+   drawView divId ((δv2 >>> _) >>> Right >>> drawLinkedOutputsFig fig) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
 
 drawLinkedOutputsFigWithCode :: LinkedOutputsFig -> Effect Unit
@@ -161,15 +161,15 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
    v1' × v2' × v0 <- linkedInputsResult fig δv
    let δv1 × δv2 = split δv
    drawView divId doNothing 0 $ view "common output" v0
-   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
-   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
+   drawView divId ((δv1 >>> _) >>> Left >>> drawLinkedInputsFig fig) 2 $ view x1 v1'
+   drawView divId ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) 1 $ view x2 v2'
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
    v_view × views <- figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
+   drawView divId ((δv >>> _) >>> drawFig fig ed) (length views) v_view
    drawCode ed $ prettyP s0
 
 drawFigWithCode :: Fig -> Effect Unit
