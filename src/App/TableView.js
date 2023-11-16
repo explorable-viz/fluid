@@ -85,7 +85,7 @@ function drawTable_ (
             .data(colNames)
             .enter()
             .append('th')
-            .text(d => d == indexKey ? "#▸" : d)
+            .text(d => d == indexKey ? (filter ? "▸" : "▾" ) : d)
 
          const rows = HTMLtable
             .append('tbody')
@@ -105,9 +105,7 @@ function drawTable_ (
             .on('mousedown', e => listener(e))
 
          sel = d3.select("th")
-         console.log(sel)
-         console.log("Empty: " + sel.empty())
-         sel.on("mouseover", (d, i) => console.log("here"))
+         sel.on("mouseover", (d, i) => console.log("TODO: toggle filter state persistently"))
       }
    }
 }
