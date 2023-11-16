@@ -111,7 +111,7 @@ function drawLineChart_ (
             .attr('fill', col)
             .attr('stroke', ([, d]) => d.y._2 ? colorShade(col, -30) : col)
             .on('mousedown', (e, d) => {
-               console.log(`mousedown ${d[0]}`)
+//               console.log(`mousedown ${d[0]}`)
                listener(e)
             })
       }

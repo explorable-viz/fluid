@@ -85,7 +85,7 @@ function drawTable_ (
             .data(colNames)
             .enter()
             .append('th')
-            .text(d => d == indexKey ? "#" : d)
+            .text(d => d == indexKey ? "#▸" : d)
 
          const rows = HTMLtable
             .append('tbody')
@@ -102,9 +102,11 @@ function drawTable_ (
             .attr('class', d => d.value._1 ? 'cell-selected' : null)
             .attr('bgcolor', d => d.value._1 ? colorShade(cellFill, -40) : cellFill)
             .text(d => d.value._2)
-            .on('mousedown', (e, d) =>
-               listener(e)
-            )
+            .on('mousedown', e => listener(e))
+
+         sel = d3.select("th").selectAll("tr:nth-child(1)")
+         assert(!sel.empty())
+         sel.on("mouseover", (d, i) => console.log("here"))
       }
    }
 }

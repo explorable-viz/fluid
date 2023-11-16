@@ -140,7 +140,7 @@ split (Right δv) = identity × δv
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
-   log $ "Redrawing " <> divId
+   -- log $ "Redrawing " <> divId
    v1' × v2' × v0 <- linkedOutputsResult fig δv
    let δv1 × δv2 = split δv
    drawView divId (\δv' -> drawLinkedOutputsFig fig (Left $ δv1 >>> δv')) 2 $ view "left view" v1'

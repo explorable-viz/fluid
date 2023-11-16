@@ -105,7 +105,7 @@ function drawBarChart_ (
             .attr('fill', ([, d]) => d.y._2 ? colorShade(barFill, -40) : barFill)
             .attr('class', ([, d]) => d.y._2 ? 'bar-selected' : 'bar-unselected')
             .on('mousedown', (e, d) => {
-               console.log(`mousedown ${d[0]}`)
+//               console.log(`mousedown ${d[0]}`)
                listener(e)
             })
 
