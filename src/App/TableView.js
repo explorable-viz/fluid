@@ -82,10 +82,10 @@ function drawTable_ (
          tableHead
             .append('tr')
             .selectAll('th')
-            .data(colNames.map(k => k == indexKey ? "#" : k))
+            .data(colNames)
             .enter()
             .append('th')
-            .text(d => d)
+            .text(d => d == indexKey ? "#" : d)
 
          const rows = HTMLtable
             .append('tbody')
