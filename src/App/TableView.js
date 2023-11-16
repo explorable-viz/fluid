@@ -105,7 +105,7 @@ function drawTable_ (
             .on('mousedown', e => listener(e))
 
          sel = d3.select("th").selectAll("tr:nth-child(1)")
-         assert(!sel.empty())
+         console.log(sel)
          sel.on("mouseover", (d, i) => console.log("here"))
       }
    }

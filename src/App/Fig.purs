@@ -140,7 +140,6 @@ split (Right δv) = identity × δv
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
-   -- log $ "Redrawing " <> divId
    v1' × v2' × v0 <- linkedOutputsResult fig δv
    let δv1 × δv2 = split δv
    drawView divId (\δv' -> drawLinkedOutputsFig fig (Left $ δv1 >>> δv')) 2 $ view "left view" v1'
@@ -159,7 +158,6 @@ drawLinkedOutputsFigWithCode fig = do
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
-   log $ "Redrawing " <> divId
    v1' × v2' × v0 <- linkedInputsResult fig δv
    let δv1 × δv2 = split δv
    drawView divId doNothing 0 $ view "common output" v0
@@ -168,7 +166,6 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
-   log $ "Redrawing " <> divId
    v_view × views <- figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
