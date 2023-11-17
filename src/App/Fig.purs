@@ -151,9 +151,11 @@ drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
 drawLinkedOutputsFigWithCode :: LinkedOutputsFig -> Effect Unit
 drawLinkedOutputsFigWithCode fig = do
    drawLinkedOutputsFig fig (Left botOf)
-   addEditorView (codeMirrorDiv $ unwrap (fig.spec.file1)) >>= drawCode (prettyP fig.s1)
-   addEditorView (codeMirrorDiv $ unwrap (fig.spec.file2)) >>= drawCode (prettyP fig.s2)
-   addEditorView (codeMirrorDiv $ unwrap (fig.spec.dataFile)) >>= drawCode fig.dataFileStr
+   sequence_ $ (\(File file × s) -> addEditorView (codeMirrorDiv file) >>= drawCode s) <$>
+      [ fig.spec.file1 × prettyP fig.s1
+      , fig.spec.file2 × prettyP fig.s2
+      , fig.spec.dataFile × fig.dataFileStr
+      ]
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
