@@ -2,21 +2,23 @@ module Test.Test where
 
 import Prelude hiding (add)
 
+import App.Util.Select (listElement)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
+import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
 import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
-import Test.Util.Many (BenchSuite, linkedInputsSuite, linkedOutputsSuite, bwdSuite)
 import Test.Util.Mocha (run)
+import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, bwdSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
---main = run tests
+main = run tests
 
-main = run $ linkedInputsSuite linkedInputs_cases
+-- main = run $ linkedInputsSuite linkedInputs_cases
 
 --main = run scratchpad
 
@@ -24,8 +26,8 @@ scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite
    [ { file: "motivating-example"
      , bwd_expect_file: "motivating-example.expect"
-     , fwd_expect: "⸨570⸩"
-     , δv: neg
+     , fwd_expect: "(570 : (⸨885⸩ : []))"
+     , δv: listElement 1 neg
      }
    ]
 
@@ -38,3 +40,4 @@ tests :: TestSuite
 tests = concat (benchmarks <#> asTestSuite)
    <> linkedOutputsSuite linkedOutputs_cases
    <> linkedInputsSuite linkedInputs_cases
+   <> app_tests

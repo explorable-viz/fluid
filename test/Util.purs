@@ -2,7 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd)
 
-import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List (elem)
@@ -12,7 +12,6 @@ import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
-import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -30,7 +29,7 @@ import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Util (type (×), successful, (×))
+import Util (type (×), (×), AffError, EffectError, successful)
 import Val (class Ann, Env, Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -41,16 +40,13 @@ type SelectionSpec =
    , bwd_expect :: String
    }
 
-type AffError m a = MonadAff m => MonadError Error m => m a
-type EffectError m a = MonadEffect m => MonadError Error m => m a
-
 logging :: Boolean
 logging = false
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
 
-test ∷ forall m. File -> ProgCxt Unit -> SelectionSpec -> (Int × Boolean) -> AffError m BenchRow
+test ∷ forall m. File -> ProgCxt Unit -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file progCxt spec (n × benchmarking) = do
    gconfig <- initialConfig progCxt
    s <- open file

@@ -9,7 +9,7 @@ import Effect.Aff (launchAff_)
 import Effect.Class.Console (logShow)
 import Test.Benchmark.Util (BenchAcc(..))
 import Test.Specs (misc_cases, bwd_cases, desugar_cases, graphics_cases)
-import Test.Util.Many (BenchSuite, bwdSuite, suite, withDatasetSuite)
+import Test.Util.Suite (BenchSuite, bwdSuite, suite, withDatasetSuite)
 import Util (definitely, (×))
 
 main :: Effect Unit

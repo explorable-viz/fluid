@@ -19,6 +19,8 @@ import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&), (***))
 import Data.Set as S
 import Data.Tuple (Tuple(..), fst, snd)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
@@ -30,6 +32,9 @@ infixr 6 type Tuple as × -- standard library has \/
 infixr 6 Tuple as ×
 
 infixr 6 type Either as + -- standard library has \/
+
+type AffError m a = MonadAff m => MonadError Error m => m a
+type EffectError m a = MonadEffect m => MonadError Error m => m a
 
 -- Rethink: has same name as Effect.Exception.error but without the type!
 error :: ∀ a. String -> a

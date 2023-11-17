@@ -46,7 +46,7 @@ function drawBarChart_ (
 ) {
    return () => {
       const childId = id + '-' + childIndex
-      const margin = {top: 15, right: 0, bottom: 40, left: 30},
+      const margin = {top: 15, right: 0, bottom: 40, left: 40},
             width = 200 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + id)
@@ -85,8 +85,8 @@ function drawBarChart_ (
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
-      const tickEvery = nearest / 2,
-            ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(n => n * tickEvery)
+      const tickEvery = 100,
+            ticks = Array.from(Array(Math.ceil(y_max / tickEvery + 1)).keys()).map(n => n * tickEvery)
       const yAxis = d3.axisLeft(y)
          .tickValues(ticks)
       svg.append('g')
@@ -99,7 +99,7 @@ function drawBarChart_ (
          .enter()
          .append('rect')
             .attr('x', ([, d]) => x(d.x._1))
-            .attr('y', ([, d]) => y(d.y._1 + 1))  // ouch: bars overplot x-axis!
+            .attr('y', ([, d]) => (y(d.y._1)))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
             .attr('height', ([, d]) => height - y(d.y._1))
             .attr('fill', ([, d]) => d.y._2 ? colorShade(barFill, -40) : barFill)

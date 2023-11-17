@@ -2,27 +2,25 @@ module App.Fig where
 
 import Prelude hiding (absurd)
 
-import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.LineChart (LineChart, drawLineChart, lineChartHandler)
-import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
-import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
-import App.Util (HTMLId, OnSel, doNothing, from, record)
+import App.Util (HTMLId, doNothing)
+import App.Util.Select (envVal)
+import App.View (View, drawView, view)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
-import Data.List (List(..), (:), singleton)
+import Data.List (singleton)
 import Data.Newtype (unwrap)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (fst, uncurry)
-import DataType (cBarChart, cCons, cLineChart, cNil)
+import Data.Tuple (snd, uncurry)
 import Desugarable (desug)
 import Dict (get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
+import Effect.Class (class MonadEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -33,42 +31,15 @@ import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
-import Test.Util (AffError, Selector)
+import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), Endo, absurd, error, orElse, (×))
-import Val (class Ann, Env, Val(..), append_inv, (<+>))
-import Web.Event.EventTarget (eventListener)
+import Util (type (+), type (×), (×), AffError, Endo, absurd, orElse)
+import Val (class Ann, Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
-
-data View
-   = MatrixFig MatrixView
-   | EnergyTableView EnergyTable
-   | LineChartFig LineChart
-   | BarChartFig BarChart
-
-drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
-drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
-drawView divId onSel n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
-drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
-drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
-
--- Convert sliced value to appropriate View, discarding top-level annotations for now.
--- 'from' is partial; encapsulate that here.
-view :: String -> Val 𝔹 -> View
-view _ (Constr _ c (u1 : Nil)) | c == cBarChart =
-   BarChartFig (unsafePartial $ record from u1)
-view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
-   LineChartFig (unsafePartial $ record from u1)
-view title u@(Constr _ c _) | c == cNil || c == cCons =
-   EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from u })
-view title u@(Matrix _ _) =
-   MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
-view _ _ = error absurd
 
 -- An example of the form (let <defs> in expr) can be decomposed as follows.
 type SplitDefs a =
@@ -115,8 +86,10 @@ type LinkedOutputsFigSpec =
 type LinkedInputsFigSpec =
    { divId :: HTMLId
    , file :: File
-   , x1 :: Var -- variables to be considered "inputs"
+   , x1 :: Var
+   , x1File :: File -- variables to be considered "inputs"
    , x2 :: Var
+   , x2File :: File
    }
 
 type LinkedOutputsFig =
@@ -131,60 +104,67 @@ type LinkedOutputsFig =
    , v1 :: Val 𝔹
    , v2 :: Val 𝔹
    , v0 :: Val 𝔹 -- common data named by spec.x
-   , dataFile :: String -- TODO: provide surface expression instead and prettyprint
+   , dataFileStr :: String -- TODO: provide surface expression instead and prettyprint
    }
 
 type LinkedInputsFig =
    { spec :: LinkedInputsFigSpec
-   , γ0 :: Env 𝔹 -- ambient env
    , γ :: Env 𝔹 -- additional let bindings at beginning of ex; must include vars defined in spec
    , s0 :: S.Expr 𝔹 -- program that was originally "split"
-   , s :: S.Expr 𝔹 -- body of example
+   -- , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹
    , t :: Trace
    , v0 :: Val 𝔹 -- common output
    }
 
 type LinkedOutputsResult =
-   { v' :: Val 𝔹 -- selection on other output
+   { v :: Val 𝔹 -- selection on primary output
+   , v' :: Val 𝔹 -- resulting selection on other output
    , v0' :: Val 𝔹 -- selection that arose on shared input
    }
 
 type LinkedInputsResult =
-   { v' :: Val 𝔹 -- selection on other input
-   -- will also want selection that arose on shared output
+   { v :: Val 𝔹 -- selection on primary input
+   , v' :: Val 𝔹 -- resulting selection on other input
+   , v0 :: Val 𝔹 -- selection that arose on shared output
    }
 
-drawLinkedOutputsFig :: LinkedOutputsFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkedOutputsFig fig@{ spec: { x, divId }, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
-   log $ "Redrawing " <> divId
-   v1' × v2' × δv1 × δv2 × v0 <- case δv of
-      Left δv1 -> do
-         let v1' = δv1 v1
-         { v', v0' } <- linkedOutputsResult x γ e1 e2 t1 t2 v1'
-         pure $ v1' × v' × const v1' × identity × v0'
-      Right δv2 -> do
-         let v2' = δv2 v2
-         { v', v0' } <- linkedOutputsResult x γ e2 e1 t2 t1 v2'
-         pure $ v' × v2' × identity × const v2' × v0'
-   drawView divId (\selector -> drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkedOutputsFig fig ed1 ed2 ed3 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
-   drawView divId doNothing 1 $ view "common data" v0
-   drawCode ed1 $ prettyP s1
-   drawCode ed2 $ prettyP s2
-   drawCode ed3 $ dataFile
+runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
+runAffs_ f as = flip runAff_ (sequence as) case _ of
+   Left err -> log $ show err
+   Right as' -> as' <#> f # sequence_
 
-drawLinkedOutputsFigs :: Array (Aff LinkedOutputsFig) -> Effect Unit
-drawLinkedOutputsFigs loadFigs =
-   flip runAff_ (sequence loadFigs)
-      case _ of
-         Left err -> log $ show err
-         Right figs -> do
-            sequence_ $ figs <#> \fig -> do
-               ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
-               ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
-               ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
-               drawLinkedOutputsFig fig ed1 ed2 ed3 (Left $ botOf)
+split :: Selector Val + Selector Val -> Selector Val × Selector Val
+split (Left δv) = δv × identity
+split (Right δv) = identity × δv
+
+drawLinkedOutputsFig :: LinkedOutputsFig -> Selector Val + Selector Val -> Effect Unit
+drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
+   log $ "Redrawing " <> divId
+   v1' × v2' × v0 <- linkedOutputsResult fig δv
+   let δv1 × δv2 = split δv
+   drawView divId (\δv' -> drawLinkedOutputsFig fig (Left $ δv1 >>> δv')) 2 $ view "left view" v1'
+   drawView divId (\δv' -> drawLinkedOutputsFig fig (Right $ δv2 >>> δv')) 0 $ view "right view" v2'
+   drawView divId doNothing 1 $ view "common data" v0
+
+drawLinkedOutputsFigWithCode :: LinkedOutputsFig -> Effect Unit
+drawLinkedOutputsFigWithCode fig = do
+   drawLinkedOutputsFig fig (Left botOf)
+   ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
+   ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
+   ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
+   drawCode ed1 $ prettyP fig.s1
+   drawCode ed2 $ prettyP fig.s2
+   drawCode ed3 $ fig.dataFileStr
+
+drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
+drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
+   log $ "Redrawing " <> divId
+   v1' × v2' × v0 <- linkedInputsResult fig δv
+   let δv1 × δv2 = split δv
+   drawView divId doNothing 0 $ view "common output" v0
+   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
+   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
@@ -195,34 +175,20 @@ drawFig fig@{ spec: { divId }, s0 } ed δv = do
    drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
    drawCode ed $ prettyP s0
 
-drawFigs :: Array (Aff Fig) -> Effect Unit
-drawFigs loadFigs =
-   flip runAff_ (sequence loadFigs)
-      case _ of
-         Left err -> log $ show err
-         Right figs -> sequence_ $ figs <#> \fig -> do
-            ed <- addEditorView $ codeMirrorDiv fig.spec.divId
-            drawFig fig ed botOf
+drawFigWithCode :: Fig -> Effect Unit
+drawFigWithCode fig =
+   addEditorView (codeMirrorDiv fig.spec.divId) >>= flip (drawFig fig) botOf
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
-drawFiles :: Array (Folder × File) -> Effect Unit
-drawFiles files =
-   sequence_ $ files <#> \(folder × file) ->
-      flip runAff_ (loadFile folder file)
-         case _ of
-            Left err -> log $ show err
-            Right src -> do
-               ed <- addEditorView $ codeMirrorDiv $ unwrap file
-               drawCode ed src
+drawFile :: File × String -> Effect Unit
+drawFile (file × src) =
+   addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
-
-valViews :: forall m. MonadError Error m => Env 𝔹 -> Array Var -> m (Array View)
-valViews γ xs = sequence (flip varView γ <$> xs)
 
 -- For an output selection, views of corresponding input selections and output after round-trip.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
@@ -230,25 +196,47 @@ figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
       γ0γ × e' × α = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t
    _ × v' <- eval γ0γ e' α
-   views <- valViews γ0γ xs
+   views <- sequence (flip varView γ0γ <$> xs)
    pure $ view "output" v' × views
 
-linkedOutputsResult :: forall m. MonadError Error m => Var -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> m LinkedOutputsResult
-linkedOutputsResult x γ0γ e1 e2 t1 _ v1 = do
-   let
-      γ0γ' × _ = evalBwd (erase <$> γ0γ) (erase e1) v1 t1
-      γ0' × γ' = append_inv (S.singleton x) γ0γ'
-   v0' <- lookup x γ' # orElse absurd
-   -- make γ0 and e2 fully available
-   _ × v2' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e2) true
-   pure { v': neg v2', v0' }
+linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
+linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
+   case _ of
+      Left δv1 -> do
+         { v, v', v0' } <- result e1 e2 t1 (δv1 v1)
+         pure $ v × v' × v0'
+      Right δv2 -> do
+         { v, v', v0' } <- result e2 e1 t2 (δv2 v2)
+         pure $ v' × v × v0'
+   where
+   result :: Expr 𝔹 -> Expr 𝔹 -> Trace -> Val 𝔹 -> m LinkedOutputsResult
+   result e e' t v = do
+      let
+         γ0γ' × _ = evalBwd (erase <$> γ) (erase e) v t
+         γ0' × γ' = append_inv (S.singleton x) γ0γ'
+      v0' <- lookup x γ' # orElse absurd
+      -- make γ0 and e2 fully available
+      v' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e') true <#> snd >>> neg
+      pure { v, v', v0' }
 
-linkedInputsResult :: forall m. MonadError Error m => Var -> Var -> Env 𝔹 -> Expr 𝔹 -> Trace -> Selector Val -> m LinkedInputsResult
-linkedInputsResult x1 x2 γ _ _ _ = do
-   -- TODO: replace with environment selection; fwd De Morgan; bwd; retrieve x2 from env
-   _ <- lookup x1 γ # orElse absurd
-   v2 <- lookup x2 γ # orElse absurd
-   pure { v': v2 }
+linkedInputsResult :: forall m. MonadEffect m => MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
+linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
+   case _ of
+      Left δv1 -> do
+         { v, v', v0 } <- result x1 x2 δv1
+         pure $ v × v' × v0
+      Right δv2 -> do
+         { v, v', v0 } <- result x2 x1 δv2
+         pure $ v' × v × v0
+   where
+   result :: Var -> Var -> Selector Val -> m LinkedInputsResult
+   result x x' δv = do
+      let γ' = envVal x δv γ
+      v0 <- eval (neg γ') (botOf e) true <#> snd >>> neg
+      let γ'' × _ = evalBwd (erase <$> γ) (erase e) v0 t
+      v <- lookup x γ' # orElse absurd
+      v' <- lookup x' γ'' # orElse absurd
+      pure { v, v', v0 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file } = do
@@ -264,31 +252,33 @@ loadFig spec@{ file } = do
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
-   { γ: γ' } <- defaultImports >>= initialConfig
-   let γ0 = botOf <$> γ'
+   let
+      dir = File "example/linked-inputs/"
+      datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
+   { γ: γ' } <- defaultImports >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
+   let γ = botOf <$> γ'
    s' <- open $ File "linked-inputs/" <> file
    let s0 = botOf s'
-   { γ: γ1, s } <- splitDefs γ0 s0
-   e <- desug s
-   let γ = γ0 <+> γ1
+   e <- desug s0
    t × v <- eval γ e bot
-   pure { spec, γ0, γ, s0, s, e, t, v0: v }
+   pure { spec, γ, s0, e, t, v0: v }
 
 loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
 loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
    let
       dir = File "linked-outputs/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
+      dataFile' = File "example/" <> dir <> dataFile
    -- views share ambient environment γ
-   { γ: γ' } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= initialConfig
+   { γ: γ' } <- defaultImports >>= datasetAs dataFile' x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ = botOf <$> γ'
       s1 = botOf s1'
       s2 = botOf s2'
-   dataFile' <- loadFile (Folder "fluid/example/linked-outputs") dataFile -- TODO: use surface expression instead
+   dataFileStr <- loadFile (Folder "fluid") dataFile' -- TODO: use surface expression instead
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
    t1 × v1 <- eval γ e1 bot
    t2 × v2 <- eval γ e2 bot
    let v0 = get x γ
-   pure { spec, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
+   pure { spec, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFileStr }

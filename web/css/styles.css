@@ -93,18 +93,31 @@ li:last-child {
 }
 
 table {
-   margin-left: 4mm;
+   margin: 4mm;
    outline: thin dotted;
    outline-color: lightgray;
 }
 
+.table-caption {
+   text-align: left
+}
+
 th {
    font-size: 11px;
+   text-align: left;
    border-bottom: 'thin solid';
 }
 
 td {
    font-size: 11px;
+}
+
+td:nth-child(1) {
+   color: lightgray;
+}
+
+th:nth-child(1) {
+   color: lightgray;
 }
 
 nav ul {

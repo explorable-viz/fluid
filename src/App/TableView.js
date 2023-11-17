@@ -36,7 +36,7 @@ function colorShade(col, amt) {
 
 // any record type with only primitive fields -> boolean
 function isUsed (r) {
-   return Object.keys(r).some(k => r[k]._2)
+   return Object.keys(r).some(k => r[k]._1)
 }
 
 // Generic to all tables.
@@ -45,6 +45,7 @@ function drawTable_ (
    childIndex,
    {
       title,   // String
+      filter,  // Boolean
       table    // Array of any record type with only primitive fields
    },
    listener
@@ -54,19 +55,34 @@ function drawTable_ (
       const cellFill = '#ffffff'
       const div = d3.select('#' + id)
 
+      indexKey = "__n"
+      table = table.map((r, n) => { return {[ indexKey ]: { _1: false, _2: n + 1 }, ...r} })
+
       div.selectAll('#' + childId).remove()
-      table = table.filter(r => isUsed(r))
+      if (filter) {
+         table = table.filter(r => isUsed(r))
+      }
 
       if (table.length > 0) {
          const HTMLtable = div
             .append('table')
             .attr('id', childId)
+
          const colNames = Object.keys(table[0])
 
-         HTMLtable.append('thead')
+         HTMLtable.append('caption')
+            .text(title)
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('class', 'title-text table-caption')
+            .attr('dominant-baseline', 'middle')
+            .attr('text-anchor', 'left')
+
+         const tableHead = HTMLtable.append('thead')
+         tableHead
             .append('tr')
             .selectAll('th')
-            .data(colNames)
+            .data(colNames.map(k => k == indexKey ? "#" : k))
             .enter()
             .append('th')
             .text(d => d)
@@ -83,10 +99,10 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => d.value._2 ? 'cell-selected' : null)
-            .attr('bgcolor', d => d.value._2 ? colorShade(cellFill, -40) : cellFill)
-            .text(d => d.value._1)
-            .on('mouseover', (e, d) =>
+            .attr('class', d => d.value._1 ? 'cell-selected' : null)
+            .attr('bgcolor', d => d.value._1 ? colorShade(cellFill, -40) : cellFill)
+            .text(d => d.value._2)
+            .on('mousedown', (e, d) =>
                listener(e)
             )
       }

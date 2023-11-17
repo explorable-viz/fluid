@@ -2,27 +2,18 @@ module App.TableView where
 
 import Prelude
 
-import App.Util (Handler, Renderer, get_intOrNumber)
-import Dict (Dict, get)
+import App.Util (Handler, Renderer)
+import Dict (Dict)
 import Lattice (𝔹)
-import Primitive (int, string)
-import Util (type (×))
 import Val (Val)
 
--- For each user-level datatype of interest, a representation containing appropriate implementation types.
--- Record types are hardcoded to a single specific example for now.
-type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
-newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
-
-foreign import drawTable :: Renderer EnergyTable
-
-energyRecord :: Dict (Val 𝔹) -> EnergyRecord
-energyRecord r =
-   { year: int.unpack (get "year" r)
-   , country: string.unpack (get "country" r)
-   , energyType: string.unpack (get "energyType" r)
-   , output: get_intOrNumber "output" r
+newtype TableView = TableView
+   { title :: String
+   , filter :: Boolean
+   , table :: Array (Dict (Val 𝔹))
    }
+
+foreign import drawTable :: Renderer (TableView)
 
 tableViewHandler :: Handler
 tableViewHandler = const identity

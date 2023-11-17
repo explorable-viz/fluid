@@ -2,19 +2,10 @@ module App where
 
 import Prelude hiding (absurd)
 
-import App.Fig (FigSpec, LinkedOutputsFigSpec, drawFiles, drawFigs, drawLinkedOutputsFigs, loadFig, loadLinkedOutputsFig)
+import App.Fig (FigSpec, drawFigWithCode, drawFile, drawLinkedOutputsFigWithCode, loadFig, loadLinkedOutputsFig, runAffs_)
 import Effect (Effect)
-import Module (File(..), Folder(..))
-import Util ((×))
-
-linkedOutputsFig1 :: LinkedOutputsFigSpec
-linkedOutputsFig1 =
-   { divId: "fig-1"
-   , file1: File "bar-chart"
-   , file2: File "line-chart"
-   , dataFile: File "renewables"
-   , x: "data"
-   }
+import Module (File(..), Folder(..), loadFile')
+import Test.Specs (linkedOutputs_spec1)
 
 fig1 :: FigSpec
 fig1 =
@@ -32,6 +23,6 @@ fig2 =
 
 main :: Effect Unit
 main = do
-   drawFiles [ Folder "fluid/lib" × File "convolution" ]
-   drawFigs [ loadFig fig1, loadFig fig2 ]
-   drawLinkedOutputsFigs [ loadLinkedOutputsFig linkedOutputsFig1 ]
+   runAffs_ drawFile [ loadFile' (Folder "fluid/lib") (File "convolution") ]
+   runAffs_ drawFigWithCode [ loadFig fig1, loadFig fig2 ]
+   runAffs_ drawLinkedOutputsFigWithCode [ loadLinkedOutputsFig linkedOutputs_spec1.spec ]

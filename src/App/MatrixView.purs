@@ -25,7 +25,7 @@ matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    ((int.unpack <$> _) <$> vss) × i × j
 
 matrixViewHandler :: Handler
-matrixViewHandler ev = flip (uncurry matrixElement) neg $ unsafePos $ target ev
+matrixViewHandler = flip (uncurry matrixElement) neg <<< unsafePos <<< target
    where
    -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
    unsafePos :: Maybe EventTarget -> Int × Int

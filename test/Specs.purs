@@ -2,12 +2,12 @@ module Test.Specs where
 
 import Prelude
 
-import App (linkedOutputsFig1)
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
+import Data.Either (Either(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
-import Test.Util.Many (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
+import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -215,11 +215,6 @@ bwd_cases =
      , δv: listElement 1 neg
      , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
      }
-   , { file: "motivating-example"
-     , bwd_expect_file: "motivating-example.expect"
-     , fwd_expect: "⸨570⸩"
-     , δv: neg
-     }
    ]
 
 graphics_cases :: Array TestWithDatasetSpec
@@ -230,6 +225,66 @@ graphics_cases =
    , { dataset: "dataset/renewables-restricted", file: "graphics/stacked-bar-chart" }
    ]
 
+linkedOutputs_spec1 :: TestLinkedOutputsSpec
+linkedOutputs_spec1 =
+   { spec:
+        { divId: "fig-1"
+        , file1: File "bar-chart"
+        , file2: File "line-chart"
+        , dataFile: File "renewables"
+        , x: "data"
+        }
+   , δv: Left
+        $ constrArg cBarChart 0
+        $ field f_data
+        $ listElement 1
+        $ field f_y neg
+   , v'_expect:
+        "LineChart {\
+        \caption : \"Output of USA relative to China\", \
+        \plots : \
+        \(LinePlot {\
+        \data : \
+        \({x : 2013, y : 2.5483870967741935} : \
+        \({x : 2014, y : 1.61} : \
+        \({x : 2015, y : ⸨1.6213592233009706⸩} : \
+        \({x : 2016, y : 1.4000000000000001} : \
+        \({x : 2017, y : 1.1208053691275166} : \
+        \({x : 2018, y : 0.9101123595505617} : [])))))), \
+        \name : \"Bio\"\
+        \} : \
+        \(LinePlot {\
+        \data : \
+        \({x : 2013, y : 0.3} : \
+        \({x : 2014, y : 0.28214285714285714} : \
+        \({x : 2015, y : ⸨0.8333333333333334⸩} : \
+        \({x : 2016, y : 0.26229508196721313} : \
+        \({x : 2017, y : 0.25559105431309903} : \
+        \({x : 2018, y : 0.2484472049689441} : [])))))), \
+        \name : \"Hydro\"\
+        \} : \
+        \(LinePlot {\
+        \data : \
+        \({x : 2013, y : 0.6080402010050252} : \
+        \({x : 2014, y : 0.6428571428571429} : \
+        \({x : 2015, y : ⸨0.5909090909090909⸩} : \
+        \({x : 2016, y : 0.5324675324675324} : \
+        \({x : 2017, y : 0.3893129770992366} : \
+        \({x : 2018, y : 0.3522727272727273} : [])))))), \
+        \name : \"Solar\"\
+        \} : \
+        \(LinePlot {\
+        \data : ({x : 2013, y : 0.6703296703296703} : \
+        \({x : 2014, y : 0.5739130434782609} : \
+        \({x : 2015, y : ⸨0.5103448275862069⸩} : \
+        \({x : 2016, y : 0.48520710059171596} : \
+        \({x : 2017, y : 0.4734042553191489} : \
+        \({x : 2018, y : 0.45714285714285713} : [])))))), \
+        \name : \"Wind\"\
+        \} : []))))\
+        \}"
+   }
+
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
@@ -239,10 +294,11 @@ linkedOutputs_cases =
           , dataFile: File "pairs-data"
           , x: "data"
           }
-     , δv1: constrArg cPair 1
+     , δv: Left
+          $ constrArg cPair 1
           $ constrArg cPair 1
           $ constrArg cPair 0 neg
-     , v2_expect: "(3, (⸨5⸩, ⸨7⸩))"
+     , v'_expect: "(3, (⸨5⸩, ⸨7⸩))"
      }
    , { spec:
           { divId: ""
@@ -251,75 +307,47 @@ linkedOutputs_cases =
           , dataFile: File "convolution-data"
           , x: "data"
           }
-     , δv1: matrixElement 2 2 neg
-     , v2_expect:
+     , δv: Left $ matrixElement 2 2 neg
+     , v'_expect:
           "⸨18⸩, ⸨12⸩, ⸨13⸩, 9, 19,\n\
           \⸨20⸩, ⸨11⸩, ⸨24⸩, 9, 14,\n\
           \⸨15⸩, ⸨13⸩, ⸨20⸩, 11, 14,\n\
           \7, 15, 15, 8, 20,\n\
           \3, 10, 12, 3, 11"
      }
-   , { spec: linkedOutputsFig1
-     , δv1: constrArg cBarChart 0
-          $ field f_data
-          $ listElement 1
-          $ field f_y neg
-     , v2_expect:
-          "LineChart {\
-          \caption : \"Output of USA relative to China\", \
-          \plots : \
-          \(LinePlot {\
-          \data : \
-          \({x : 2013, y : 2.5483870967741935} : \
-          \({x : 2014, y : 1.61} : \
-          \({x : 2015, y : ⸨1.6213592233009706⸩} : \
-          \({x : 2016, y : 1.4000000000000001} : \
-          \({x : 2017, y : 1.1208053691275166} : \
-          \({x : 2018, y : 0.9101123595505617} : [])))))), \
-          \name : \"Bio\"\
-          \} : \
-          \(LinePlot {\
-          \data : \
-          \({x : 2013, y : 0.3} : \
-          \({x : 2014, y : 0.28214285714285714} : \
-          \({x : 2015, y : ⸨0.8333333333333334⸩} : \
-          \({x : 2016, y : 0.26229508196721313} : \
-          \({x : 2017, y : 0.25559105431309903} : \
-          \({x : 2018, y : 0.2484472049689441} : [])))))), \
-          \name : \"Hydro\"\
-          \} : \
-          \(LinePlot {\
-          \data : \
-          \({x : 2013, y : 0.6080402010050252} : \
-          \({x : 2014, y : 0.6428571428571429} : \
-          \({x : 2015, y : ⸨0.5909090909090909⸩} : \
-          \({x : 2016, y : 0.5324675324675324} : \
-          \({x : 2017, y : 0.3893129770992366} : \
-          \({x : 2018, y : 0.3522727272727273} : [])))))), \
-          \name : \"Solar\"\
-          \} : \
-          \(LinePlot {\
-          \data : ({x : 2013, y : 0.6703296703296703} : \
-          \({x : 2014, y : 0.5739130434782609} : \
-          \({x : 2015, y : ⸨0.5103448275862069⸩} : \
-          \({x : 2016, y : 0.48520710059171596} : \
-          \({x : 2017, y : 0.4734042553191489} : \
-          \({x : 2018, y : 0.45714285714285713} : [])))))), \
-          \name : \"Wind\"\
-          \} : []))))\
-          \}"
-     }
+   , linkedOutputs_spec1
    ]
+
+linkedInputs_spec1 :: TestLinkedInputsSpec
+linkedInputs_spec1 =
+   { spec:
+        { divId: "fig-1"
+        , file: File "water"
+        , x1: "countries"
+        , x1File: File "countries"
+        , x2: "cities"
+        , x2File: File "cities"
+        }
+   , δv: Left $ listElement 0 neg
+   , v'_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : []))))))"
+   }
+
+linkedInputs_spec2 :: TestLinkedInputsSpec
+linkedInputs_spec2 =
+   { spec:
+        { divId: "fig-2"
+        , file: File "water"
+        , x1: "cities"
+        , x1File: File "cities"
+        , x2: "countries"
+        , x2File: File "countries"
+        }
+   , δv: Left $ listElement 0 neg
+   , v'_expect: "({farms : ⸨100⸩, name : \"Germany\", popMil : ⸨81⸩} : ({farms : 200, name : \"UK\", popMil : 67} : []))"
+   }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
-   [ { spec:
-          { divId: ""
-          , file: File "bubble-chart"
-          , x1: "all_countries"
-          , x2: "all_cities"
-          }
-     , δv1: listElement 2 neg
-     , v2_expect: "({name : \"Berlin\", water : 130} : ({name : \"Munich\", water : 80} : ({name : \"Hamburg\", water : 60} : ({name : \"London\", water : 200} : ({name : \"Birmingham\", water : 50} : ({name : \"Manchester\", water : 35} : []))))))"
-     }
+   [ linkedInputs_spec1
+   , linkedInputs_spec2
    ]
