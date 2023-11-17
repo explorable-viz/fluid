@@ -31,6 +31,4 @@ matrixViewHandler = target >>> unsafePos >>> flip (uncurry matrixElement) neg
    unsafePos :: Maybe EventTarget -> Int × Int
    unsafePos tgt_opt = xy ! 0 × xy ! 1
       where
-      tgt = definitely' $ tgt_opt
-      xy = (unsafeCoerce tgt).__data__ ! 0 :: Array Int
-
+      xy = (unsafeCoerce $ definitely' tgt_opt).__data__ ! 0 :: Array Int
