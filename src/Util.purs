@@ -31,6 +31,13 @@ type 𝔹 = Boolean
 infixr 6 type Tuple as × -- standard library has \/
 infixr 6 Tuple as ×
 
+-- Prefer this pattern to the variant in Data.Tuple.Nested.
+tuple3 :: forall a b c. a -> b -> c -> a × b × c
+tuple3 a b c = a × b × c
+
+uncurry3 :: forall a b c r. (a -> b -> c -> r) -> a × b × c -> r
+uncurry3 f (a × b × c) = f a b c
+
 infixr 6 type Either as + -- standard library has \/
 
 type AffError m a = MonadAff m => MonadError Error m => m a
