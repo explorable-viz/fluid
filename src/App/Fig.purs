@@ -109,9 +109,8 @@ type LinkedOutputsFig =
 
 type LinkedInputsFig =
    { spec :: LinkedInputsFigSpec
-   , γ :: Env 𝔹 -- additional let bindings at beginning of ex; must include vars defined in spec
-   , s0 :: S.Expr 𝔹 -- program that was originally "split"
-   -- , s :: S.Expr 𝔹 -- body of example
+   , γ :: Env 𝔹
+   , s :: S.Expr 𝔹
    , e :: Expr 𝔹
    , t :: Trace
    , v0 :: Val 𝔹 -- common output
@@ -257,11 +256,10 @@ loadLinkedInputsFig spec@{ file } = do
       datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
    { γ: γ' } <- defaultImports >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
    let γ = botOf <$> γ'
-   s' <- open $ File "linked-inputs/" <> file
-   let s0 = botOf s'
-   e <- desug s0
+   s <- botOf <$> open (File "linked-inputs/" <> file)
+   e <- desug s
    t × v <- eval γ e bot
-   pure { spec, γ, s0, e, t, v0: v }
+   pure { spec, γ, s, e, t, v0: v }
 
 loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
 loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do

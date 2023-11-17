@@ -8,7 +8,7 @@ let country_water c_name =
 let waters =
         let c_names = [country.name | country <- countries]
         in map country_water c_names;
-let countryData = 
+let countryData =
     let data_rec = waters
     in [{x: country.water, y: country.farms, z: country.water `div` country.popMil, c: country.name} | country <- data_rec]
 in BubbleChart {
