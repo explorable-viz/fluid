@@ -45,7 +45,7 @@ function drawBubbleChart_ (
    listener
 ) {
    return () => {
-      var max_width = 450
+      var max_width = 320
       var max_height = 185
       const x_max = Math.ceil(Math.max(...data.map(d => d.x._1)))
       const y_max = Math.ceil(Math.max(...data.map(d => d.y._1)))
