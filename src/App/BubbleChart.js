@@ -58,7 +58,7 @@ function drawBubbleChart_ (
       }
       if (y_max + z_max + margin.top + margin.bottom > max_height) {
          max_height = y_max + z_max + margin.top + margin.bottom
-         
+
       }
 
       const width = max_width - margin.left - margin.right,
@@ -114,11 +114,11 @@ function drawBubbleChart_ (
             .attr('cx', ([, d]) => x(d.x._1))
             .attr('cy', ([, d]) => y(d.y._1))
             .attr('r', ([, d]) => z(d.z._1))
-            .attr('stroke', 'black')
+            .attr('stroke', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -80) : colorShade(c(d.c._1), -40))
             .style('fill', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -40) : c(d.c._1))
             .style('class', ([, d]) => d.y._2 ? 'dot-selected' : 'dot-unselected')
             .on('mousedown', (e, d) => {
-               console.log(`mousedown ${d[0]}`)
+//               console.log(`mousedown ${d[0]}`)
                listener(e)
             })
 

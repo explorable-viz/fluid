@@ -45,8 +45,4 @@ barChartHandler ev = toggleBar $ unsafeBarIndex $ target ev
 
    -- [Unsafe] Datum associated with bar chart mouse event; 0-based index of selected bar.
    unsafeBarIndex :: Maybe EventTarget -> Int
-   unsafeBarIndex tgt_opt =
-      let
-         tgt = definitely' $ tgt_opt
-      in
-         (unsafeCoerce tgt).__data__ ! 0
+   unsafeBarIndex tgt_opt = (unsafeCoerce $ definitely' tgt_opt).__data__ ! 0

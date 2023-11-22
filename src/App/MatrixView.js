@@ -104,7 +104,7 @@ function drawMatrix_ (
 
       svg.selectAll('rect')
          .on('mousedown', (e, d) => {
-            console.log(`mousedown ${d[0]}`)
+//            console.log(`mousedown ${d[0]}`)
             listener(e)
          })
    }

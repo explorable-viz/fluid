@@ -82,10 +82,10 @@ function drawTable_ (
          tableHead
             .append('tr')
             .selectAll('th')
-            .data(colNames.map(k => k == indexKey ? "#" : k))
+            .data(colNames)
             .enter()
             .append('th')
-            .text(d => d)
+            .text(d => d == indexKey ? (filter ? "▸" : "▾" ) : d)
 
          const rows = HTMLtable
             .append('tbody')
@@ -102,9 +102,10 @@ function drawTable_ (
             .attr('class', d => d.value._1 ? 'cell-selected' : null)
             .attr('bgcolor', d => d.value._1 ? colorShade(cellFill, -40) : cellFill)
             .text(d => d.value._2)
-            .on('mousedown', (e, d) =>
-               listener(e)
-            )
+            .on('mousedown', e => listener(e))
+
+         sel = d3.select("th")
+         sel.on("mouseover", (d, i) => console.log("TODO: toggle filter state persistently"))
       }
    }
 }
