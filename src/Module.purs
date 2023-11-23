@@ -4,7 +4,7 @@ import Prelude
 
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
-import Bindings (Var, (↦))
+import Bindings (Bind, Var, (↦))
 import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
@@ -17,7 +17,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
-import Expr (ProgCxt(..))
+import Expr (Expr, Module)
 import Graph (empty) as G
 import Graph.GraphImpl (GraphImpl)
 import Graph.GraphWriter (alloc, runWithGraphAllocT)
@@ -25,12 +25,12 @@ import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
+import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
 import Util (type (×), (×), AffError, mapLeft)
 import Util.Parse (SParser)
 
--- Mainly serve as documentation
 newtype File = File String
 newtype Folder = Folder String
 
@@ -68,7 +68,7 @@ module_ file (ProgCxt r@{ mods }) = do
 
 defaultImports :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
 defaultImports =
-   pure (ProgCxt { mods: Nil, datasets: Nil })
+   pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
       >>= module_ (File "prelude")
       >>= module_ (File "graphics")
       >>= module_ (File "convolution")

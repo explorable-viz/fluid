@@ -2,13 +2,12 @@ module Expr where
 
 import Prelude hiding (absurd, top)
 
-import Bindings (Bind, Var)
+import Bindings (Var)
 import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
 import Data.Newtype (class Newtype, unwrap)
-import Data.Profunctor.Strong (second)
 import Data.Set (Set, empty, singleton, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
@@ -62,12 +61,6 @@ asExpr (ContExpr e) = e
 asExpr _ = error "Expression expected"
 
 newtype Module a = Module (List (VarDef a + RecDefs a))
-
--- Bunch of loaded modules (and datasets, reflecting current ad hoc approach to that).
-newtype ProgCxt a = ProgCxt
-   { mods :: List (Module a) -- in reverse order
-   , datasets :: List (Bind (Expr a))
-   }
 
 class FV a where
    fv :: a -> Set Var
@@ -212,9 +205,6 @@ derive instance Foldable Expr
 derive instance Traversable Expr
 derive instance Newtype (Module a) _
 derive instance Functor Module
-derive instance Newtype (ProgCxt a) _
-derive instance Functor ProgCxt
-derive instance Traversable ProgCxt
 
 derive instance Eq a => Eq (Expr a)
 derive instance Eq a => Eq (VarDef a)
@@ -228,7 +218,7 @@ instance Apply Expr where
    apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
    apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
    apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Record fα fxvs) (Record α xvs) = Record (fα α) (D.apply2 fxvs xvs)
+   apply (Record fα fxvs) (Record α xvs) = Record (fα α) (fxvs `D.apply2` xvs)
    apply (Dictionary fα fxvs) (Dictionary α xvs) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxvs xvs)
    apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
    apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
@@ -237,12 +227,12 @@ instance Apply Expr where
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
-   apply (LetRec fα fρ fe) (LetRec α ρ e) = LetRec (fα α) (D.apply2 fρ ρ) (fe <*> e)
+   apply (LetRec fα fρ fe) (LetRec α ρ e) = LetRec (fα α) (fρ `D.apply2` ρ) (fe <*> e)
    apply _ _ = error "Apply Expr: shape mismatch"
 
 instance Apply Elim where
    apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
-   apply (ElimConstr fk) (ElimConstr k) = ElimConstr (D.apply2 fk k)
+   apply (ElimConstr fk) (ElimConstr k) = ElimConstr (fk `D.apply2` k)
    apply (ElimRecord xs fk) (ElimRecord _ k) = ElimRecord xs (fk <*> k)
    apply _ _ = error "Apply Elim: shape mismatch"
 
@@ -261,7 +251,7 @@ instance Apply Module where
    apply (Module (Left fdef : fdefs)) (Module (Left def : defs)) =
       Module (Left (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
    apply (Module (Right fdef : fdefs)) (Module (Right def : defs)) =
-      Module (Right (D.apply2 fdef def) : unwrap (apply (Module fdefs) (Module defs)))
+      Module (Right (fdef `D.apply2` def) : unwrap (apply (Module fdefs) (Module defs)))
    apply _ _ = error "Apply Module: shape mismatch"
 
 instance Foldable Module where
@@ -282,18 +272,6 @@ instance Traversable Module where
       Module <$> ((Right <$> traverse (traverse f) ρ) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
 
    sequence = sequenceDefault
-
-instance Apply ProgCxt where
-   apply (ProgCxt { mods: fmods, datasets: fdatasets }) (ProgCxt { mods, datasets }) =
-      ProgCxt
-         { mods: fmods `zipWith (<*>)` mods
-         , datasets: (second (<*>) <$> fdatasets) `zipWith (<*>)` datasets
-         }
-
-instance Foldable ProgCxt where
-   foldl f acc (ProgCxt { mods }) = foldl (foldl f) acc mods
-   foldr f = foldrDefault f
-   foldMap f = foldMapDefaultL f
 
 derive instance Ord a => Ord (Expr a)
 derive instance Ord a => Ord (Elim a)
