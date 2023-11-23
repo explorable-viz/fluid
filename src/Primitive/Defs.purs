@@ -10,7 +10,7 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
-import Data.Set (insert, singleton)
+import Data.Set.NonEmpty (insert, singleton)
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)

@@ -18,7 +18,8 @@ import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Set (Set, empty, insert)
-import Data.Set as S
+import Data.Set as Set
+import Data.Set.NonEmpty (NonEmptySet, cons, singleton)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
@@ -55,7 +56,7 @@ match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × empty)
    | otherwise = pure (D.singleton x v × κ × empty)
 match (V.Constr α c vs) (ElimConstr m) = do
-   with "Pattern mismatch" $ S.singleton c `consistentWith` D.keys m
+   with "Pattern mismatch" $ Set.singleton c `consistentWith` D.keys m
    κ <- D.lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
@@ -63,9 +64,9 @@ match v (ElimConstr m) = do
    d <- dataTypeFor $ D.keys m
    throw $ patternMismatch (prettyP v) (show d)
 match (V.Record α xvs) (ElimRecord xs κ) = do
-   check (S.subset xs (S.fromFoldable $ D.keys xvs))
+   check (Set.subset xs (Set.fromFoldable $ D.keys xvs))
       $ patternMismatch (show (D.keys xvs)) (show xs)
-   let xs' = xs # S.toUnfoldable
+   let xs' = xs # Set.toUnfoldable
    γ × κ' × αs <- matchMany (flip D.get xvs <$> xs') κ
    pure $ γ × κ' × (insert α αs)
 match v (ElimRecord xs _) = throw (patternMismatch (prettyP v) (show xs))
@@ -80,7 +81,7 @@ matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
+closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> NonEmptySet Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -91,7 +92,7 @@ closeDefs γ ρ αs =
 {-# Evaluation #-}
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (V.Fun α (V.Closure γ1 ρ σ)) v = do
-   γ2 <- closeDefs γ1 ρ (S.singleton α)
+   γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
 apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs)) v =
@@ -102,11 +103,11 @@ apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs)) v =
    apply' :: forall t. ForeignOp' t -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         V.Fun <$> new (S.singleton α) <@> V.Foreign (ForeignOp (id × φ)) vs'
+         V.Fun <$> new (singleton α) <@> V.Foreign (ForeignOp (id × φ)) vs'
       else φ'.op' vs'
 apply (V.Fun α (V.PartialConstr c vs)) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   if length vs < n - 1 then V.Fun <$> new (S.singleton α) <@> V.PartialConstr c (snoc vs v)
+   if length vs < n - 1 then V.Fun <$> new (singleton α) <@> V.PartialConstr c (snoc vs v)
    else pure $ V.Constr α c (snoc vs v)
    where
    n = successful (arity c)
@@ -115,22 +116,22 @@ apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = lookup' x γ
 eval γ (Op op) _ = lookup' op γ
-eval _ (Int α n) αs = V.Int <$> new (insert α αs) <@> n
-eval _ (Float α n) αs = V.Float <$> new (insert α αs) <@> n
-eval _ (Str α s) αs = V.Str <$> new (insert α αs) <@> s
+eval _ (Int α n) αs = V.Int <$> new (α `cons` αs) <@> n
+eval _ (Float α n) αs = V.Float <$> new (α `cons` αs) <@> n
+eval _ (Str α s) αs = V.Str <$> new (α `cons` αs) <@> s
 eval γ (Record α xes) αs = do
    xvs <- traverse (flip (eval γ) αs) xes
-   V.Record <$> new (insert α αs) <@> xvs
+   V.Record <$> new (α `cons` αs) <@> xvs
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> string.unpack) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   V.Dictionary <$> new (insert α αs) <@> DictRep d
+   V.Dictionary <$> new (α `cons` αs) <@> DictRep d
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   V.Constr <$> new (insert α αs) <@> c <@> vs
+   V.Constr <$> new (α `cons` αs) <@> c <@> vs
 eval γ (Matrix α e (x × y) e') αs = do
    v <- eval γ e' αs
    let (i' × β) × (j' × β') = fst (intPair.unpack v)
@@ -143,9 +144,9 @@ eval γ (Matrix α e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
          A.singleton (eval (γ <+> γ') e αs)
-   V.Matrix <$> new (insert α αs) <@> MatrixRep (vss × (i' × β) × (j' × β'))
+   V.Matrix <$> new (α `cons` αs) <@> MatrixRep (vss × (i' × β) × (j' × β'))
 eval γ (Lambda α σ) αs =
-   V.Fun <$> new (insert α αs) <@> V.Closure (γ `restrict` fv σ) D.empty σ
+   V.Fun <$> new (α `cons` αs) <@> V.Closure (γ `restrict` fv σ) D.empty σ
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
@@ -160,7 +161,7 @@ eval γ (Let (VarDef σ e) e') αs = do
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
 eval γ (LetRec (RecDefs α ρ) e) αs = do
-   γ' <- closeDefs γ ρ (insert α αs)
+   γ' <- closeDefs γ ρ (α `cons` αs)
    eval (γ <+> γ') e (insert α αs)
 
 eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
@@ -173,7 +174,7 @@ eval_module γ = go D.empty
       γ'' × _ × α' <- match v σ
       go (y' <+> γ'') (Module ds) α'
    go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
-      γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
+      γ'' <- closeDefs (γ <+> γ') ρ (α `cons` αs)
       go (γ' <+> γ'') (Module ds) αs
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
@@ -209,7 +210,7 @@ graphGC { g, n, γ } e = do
    (g' × _) × eα × vα <-
       runWithGraphAllocT (g × n) do
          eα <- alloc e
-         vα <- eval γ eα S.empty
+         vα <- eval γ eα Set.empty
          pure (eα × vα)
    let
       -- dom = vertices progCxt `union` vertices eα

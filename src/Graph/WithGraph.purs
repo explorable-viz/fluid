@@ -10,6 +10,7 @@ import Data.List (List(..), (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set)
+import Data.Set.NonEmpty (NonEmptySet, toSet)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
@@ -28,7 +29,7 @@ class Monad m <= MonadAlloc m where
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
 class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
-   new :: Set Vertex -> m Vertex
+   new :: NonEmptySet Vertex -> m Vertex
 
 -- List of adjacency map entries to serve as a fromFoldable input.
 type AdjMapEntries = List (Vertex × Set Vertex)
@@ -46,7 +47,7 @@ instance Monad m => MonadAlloc (AllocT m) where
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
    new αs = do
       α <- fresh
-      extend α αs
+      extend α (toSet αs)
       pure α
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
