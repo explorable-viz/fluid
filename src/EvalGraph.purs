@@ -105,7 +105,7 @@ apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs)) v =
 apply (V.Fun α (V.PartialConstr c vs)) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    if length vs < n - 1 then V.Fun <$> new (singleton α) <@> V.PartialConstr c (snoc vs v)
-   else pure $ V.Constr α c (snoc vs v)
+   else V.Constr <$> new (singleton α) <@> c <@> snoc vs v
    where
    n = successful (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"

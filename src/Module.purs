@@ -11,6 +11,7 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
+import Data.Set as Set
 import Debug (trace)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -86,5 +87,5 @@ initialConfig progCxt = do
       progCxt' <- alloc progCxt
       γ <- eval_progCxt progCxt'
       pure (progCxt' × γ)
-   trace (show (sinks g \\ vertices progCxt')) \_ ->
+   trace (show (Set.size $ sinks g \\ vertices progCxt')) \_ ->
       pure { g, n, progCxt: progCxt', γ }
