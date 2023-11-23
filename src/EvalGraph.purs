@@ -17,12 +17,11 @@ import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Set (Set, empty, insert, union)
+import Data.Set (Set, empty, insert)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
-import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
@@ -34,7 +33,7 @@ import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import ProgCxt (ProgCxt(..))
-import Util (type (×), (×), (∪), (∩), (\\), check, concatM, error, orElse, successful, throw, with)
+import Util (type (×), (×), (∪), (∩), check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 import Val (Fun(..), Val(..)) as V
@@ -205,15 +204,15 @@ graphGC
    => GraphConfig g
    -> Raw Expr
    -> m (GraphEval g)
-graphGC { g, progCxt, n, γ } e = do
+graphGC { g, n, γ } e = do
    (g' × _) × eα × vα <-
       runWithGraphAllocT (g × n) do
          eα <- alloc e
          vα <- eval γ eα S.empty
          pure (eα × vα)
    let
-      dom = vertices progCxt `union` vertices eα
+      -- dom = vertices progCxt `union` vertices eα
       fwd αs = vertices (fwdSlice αs g') ∩ vertices vα
       bwd αs = vertices (bwdSlice αs g') ∩ sinks g'
-   trace (show (sinks g' \\ dom)) \_ ->
-      pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }
+   -- trace (show (sinks g' \\ dom)) \_ ->
+   pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }

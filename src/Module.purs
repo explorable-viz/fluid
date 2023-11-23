@@ -11,12 +11,14 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
+import Debug (trace)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Graph (empty) as G
+import Graph (sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (alloc, runWithGraphAllocT)
 import Lattice (Raw)
@@ -26,7 +28,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), (×), AffError, mapLeft)
+import Util (type (×), (×), (\\), AffError, mapLeft)
 import Util.Parse (SParser)
 
 newtype File = File String
@@ -84,4 +86,6 @@ initialConfig progCxt = do
       progCxt' <- alloc progCxt
       γ <- eval_progCxt progCxt'
       pure (progCxt' × γ)
-   pure { g, n, progCxt: progCxt', γ }
+   let dom = vertices progCxt'
+   trace (show (sinks g \\ dom)) \_ ->
+      pure { g, n, progCxt: progCxt', γ }
