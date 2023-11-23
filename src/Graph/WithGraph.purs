@@ -1,22 +1,4 @@
-module Graph.WithGraph
-   ( AdjMapEntries
-   , AllocT
-   , WithGraphAllocT
-   , WithGraph
-   , WithGraphT
-   , class MonadAlloc
-   , class MonadWithGraphAlloc
-   , class MonadWithGraph
-   , alloc
-   , extend
-   , fresh
-   , new
-   , runAlloc
-   , runAllocT
-   , runWithGraph
-   , runWithGraphT
-   , runWithGraphAllocT
-   ) where
+module Graph.WithGraph where
 
 import Prelude
 
