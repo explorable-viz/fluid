@@ -159,7 +159,7 @@ eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
-eval γ (LetRec α (RecDefs ρ) e) αs = do
+eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
@@ -172,8 +172,8 @@ eval_module γ = go D.empty
       v <- eval (γ <+> y') e αs
       γ'' × _ × α' <- match v σ
       go (y' <+> γ'') (Module ds) α'
-   go γ' (Module (Right (RecDefs ρ) : ds)) αs = do
-      γ'' <- closeDefs (γ <+> γ') ρ αs
+   go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
+      γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       go (γ' <+> γ'') (Module ds) αs
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)

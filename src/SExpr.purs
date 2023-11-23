@@ -151,12 +151,12 @@ varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
 recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
-recDefsFwd xcs = E.RecDefs <$> D.fromFoldable <$> traverse recDefFwd xcss
+recDefsFwd xcs = E.RecDefs top <$> D.fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = map RecDef (groupBy (eq `on` fst) xcs) :: NonEmptyList (RecDef a)
 
 recDefsBwd :: forall a. BoundedJoinSemilattice a => E.RecDefs a -> Raw RecDefs -> RecDefs a
-recDefsBwd (E.RecDefs ρ) xcs = join (go (groupBy (eq `on` fst) xcs))
+recDefsBwd (E.RecDefs _ ρ) xcs = join (go (groupBy (eq `on` fst) xcs))
    where
    go :: NonEmptyList (Raw RecDefs) -> NonEmptyList (RecDefs a)
    go (NonEmptyList (xcs1 :| xcss)) =
@@ -198,7 +198,7 @@ exprFwd (ListNonEmpty α s l) = econs α <$> desug s <*> desug l
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desug s1) <*> desug s2
 exprFwd (ListComp α s qs) = listCompFwd (α × qs × s)
 exprFwd (Let ds s) = varDefsFwd (ds × s)
-exprFwd (LetRec xcs s) = E.LetRec top <$> recDefsFwd xcs <*> desug s
+exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desug s
 
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
@@ -233,7 +233,7 @@ exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
 exprBwd e (ListComp _ s qs) =
    let α × qs' × s' = listCompBwd e (qs × s) in ListComp α s' qs'
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
-exprBwd (E.LetRec _ xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBwd e s)
+exprBwd (E.LetRec xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBwd e s)
 exprBwd _ _ = error absurd
 
 -- ListRest

@@ -34,11 +34,11 @@ data Expr a
    | Project (Expr a) Var
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
-   | LetRec a (RecDefs a) (Expr a)
+   | LetRec (RecDefs a) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
-data RecDefs a = RecDefs (Dict (Elim a))
+data RecDefs a = RecDefs a (Dict (Elim a))
 
 data Elim a
    = ElimVar Var (Cont a)
@@ -79,7 +79,7 @@ instance FV (Expr a) where
    fv (Project e _) = fv e
    fv (App e1 e2) = fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
-   fv (LetRec _ ρ e) = fv ρ ∪ fv e
+   fv (LetRec ρ e) = fv ρ ∪ fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ \\ singleton x
@@ -95,7 +95,7 @@ instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
 
 instance FV (RecDefs a) where
-   fv (RecDefs ρ) = fv ρ
+   fv (RecDefs _ ρ) = fv ρ
 
 instance FV a => FV (Dict a) where
    fv ρ = unions (fv <$> ρ) \\ S.fromFoldable (keys ρ)
@@ -154,11 +154,11 @@ instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
    expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
 instance JoinSemilattice a => JoinSemilattice (RecDefs a) where
-   maybeJoin (RecDefs ρ) (RecDefs ρ') = RecDefs <$> maybeJoin ρ ρ'
-   join e = definedJoin e
+   maybeJoin (RecDefs α ρ) (RecDefs α' ρ') = RecDefs (α ∨ α') <$> maybeJoin ρ ρ'
+   join ρ = definedJoin ρ
 
 instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
-   expand (RecDefs ρ) (RecDefs ρ') = RecDefs (expand ρ ρ')
+   expand (RecDefs α ρ) (RecDefs _ ρ') = RecDefs α (expand ρ ρ')
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (Var x) (Var x') = Var <$> (x ≞ x')
@@ -175,7 +175,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (Project e x) (Project e' x') = Project <$> maybeJoin e e' <*> (x ≞ x')
    maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
-   maybeJoin (LetRec α ρ e) (LetRec α' ρ' e') = LetRec (α ∨ α') <$> maybeJoin ρ ρ' <*> maybeJoin e e'
+   maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
    maybeJoin _ _ = throw "Incompatible expressions"
 
    join e = definedJoin e
@@ -195,7 +195,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
-   expand (LetRec α ρ e) (LetRec _ ρ' e') = LetRec α (expand ρ ρ') (expand e e')
+   expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
    expand _ _ = error "Incompatible expressions"
 
 -- ======================
@@ -235,7 +235,7 @@ instance Apply Expr where
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
-   apply (LetRec fα fρ fe) (LetRec α ρ e) = LetRec (fα α) (fρ <*> ρ) (fe <*> e)
+   apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
    apply _ _ = error "Apply Expr: shape mismatch"
 
 instance Apply Elim where
@@ -254,7 +254,7 @@ instance Apply VarDef where
    apply (VarDef fσ fe) (VarDef σ e) = VarDef (fσ <*> σ) (fe <*> e)
 
 instance Apply RecDefs where
-   apply (RecDefs fρ) (RecDefs ρ) = RecDefs (fρ `D.apply2` ρ)
+   apply (RecDefs fα fρ) (RecDefs α ρ) = RecDefs (fα α) (fρ `D.apply2` ρ)
 
 -- Apply instance for Either no good here as doesn't assume fixed shape.
 instance Apply Module where
@@ -279,8 +279,8 @@ instance Traversable Module where
    traverse _ (Module Nil) = pure (Module Nil)
    traverse f (Module (Left def : ds)) =
       Module <$> ((Left <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
-   traverse f (Module (Right (RecDefs ρ) : ds)) =
-      Module <$> ((Right <$> (RecDefs <$> traverse (traverse f) ρ)) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
+   traverse f (Module (Right def : ds)) =
+      Module <$> ((Right <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
 
    sequence = sequenceDefault
 
