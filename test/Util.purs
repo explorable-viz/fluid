@@ -22,10 +22,9 @@ import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan, bwdSliceDual, fwdSliceDual) as G
 import Lattice (Raw, 𝔹, botOf, erase, topOf)
-import Module (File, initialConfig, open, parse)
+import Module (File, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
-import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Spec.Assertions (fail)
@@ -46,9 +45,8 @@ logging = false
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
 
-test ∷ forall m. File -> ProgCxt Unit -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
-test file progCxt spec (n × benchmarking) = do
-   gconfig <- initialConfig progCxt
+test ∷ forall m. File -> GraphConfig GraphImpl -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test file gconfig spec (n × benchmarking) = do
    s <- open file
    testPretty s
    _ × row_accum <- runWriterT
