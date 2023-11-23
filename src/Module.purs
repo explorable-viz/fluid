@@ -4,20 +4,18 @@ import Prelude
 
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
-import Bindings (Bind, Var, (↦))
+import Bindings (Var, (↦))
 import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
-import Data.Newtype (class Newtype)
-import Data.Traversable (traverse)
+import Data.Newtype (class Newtype, unwrap)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
-import Expr (Expr, Module)
 import Graph (empty) as G
 import Graph.GraphImpl (GraphImpl)
 import Graph.GraphWriter (alloc, runWithGraphAllocT)
@@ -84,7 +82,6 @@ initialConfig :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig G
 initialConfig progCxt = do
    (g × n) × progCxt' × γ <- runWithGraphAllocT (G.empty × 0) do
       progCxt' <- alloc progCxt
-      primitives' <- traverse alloc primitives
-      γ <- eval_progCxt primitives' progCxt'
+      γ <- eval_progCxt (unwrap progCxt').primitives progCxt'
       pure (progCxt' × γ)
    pure { g, n, progCxt: progCxt', γ }

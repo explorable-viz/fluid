@@ -3,10 +3,10 @@ module ProgCxt where
 import Prelude
 
 import Bindings (Bind)
-import Data.List (List, foldl, zipWith)
+import Data.List (List, zipWith)
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
-import Data.Traversable (class Foldable, class Traversable, foldMapDefaultL, foldrDefault)
+import Data.Traversable (class Foldable, class Traversable)
 import Dict (apply2)
 import Expr (Expr, Module)
 import Val (Env)
@@ -24,6 +24,7 @@ newtype ProgCxt a = ProgCxt
 derive instance Newtype (ProgCxt a) _
 derive instance Functor ProgCxt
 derive instance Traversable ProgCxt
+derive instance Foldable ProgCxt
 
 instance Apply ProgCxt where
    apply (ProgCxt fζ) (ProgCxt ζ) =
@@ -32,8 +33,3 @@ instance Apply ProgCxt where
          , mods: fζ.mods `zipWith (<*>)` ζ.mods
          , datasets: (second (<*>) <$> fζ.datasets) `zipWith (<*>)` ζ.datasets
          }
-
-instance Foldable ProgCxt where
-   foldl f acc (ProgCxt { mods }) = foldl (foldl f) acc mods
-   foldr f = foldrDefault f
-   foldMap f = foldMapDefaultL f
