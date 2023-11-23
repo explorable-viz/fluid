@@ -10,7 +10,7 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
-import Data.Set (empty, insert, singleton)
+import Data.Set (insert, singleton)
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
@@ -144,8 +144,8 @@ matrixUpdate =
    ForeignOp ("matrixUpdate" × mkExists (ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
-   op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
-      | c == cPair = Matrix <$> new empty <@> (matrixPut i j (const v) r)
+   op (Matrix α r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
+      | c == cPair = Matrix <$> new (singleton α) <@> (matrixPut i j (const v) r)
    op _ = throw "Matrix, pair of integers and value expected"
 
    fwd :: OpFwd ((Int × Int) × Raw Val)
