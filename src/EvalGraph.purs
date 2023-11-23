@@ -17,7 +17,7 @@ import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Set (Set, empty, insert, singleton)
+import Data.Set (Set, empty, insert)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
@@ -89,7 +89,7 @@ closeDefs γ ρ αs =
 {-# Evaluation #-}
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (V.Fun α (V.Closure γ1 ρ σ)) v = do
-   γ2 <- closeDefs γ1 ρ (singleton α)
+   γ2 <- closeDefs γ1 ρ (S.singleton α)
    γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
 apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs)) v =
@@ -100,11 +100,11 @@ apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs)) v =
    apply' :: forall t. ForeignOp' t -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         V.Fun <$> new (singleton α) <@> V.Foreign (ForeignOp (id × φ)) vs'
+         V.Fun <$> new (S.singleton α) <@> V.Foreign (ForeignOp (id × φ)) vs'
       else φ'.op' vs'
 apply (V.Fun α (V.PartialConstr c vs)) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   if length vs < n - 1 then V.Fun <$> new (singleton α) <@> V.PartialConstr c (snoc vs v)
+   if length vs < n - 1 then V.Fun <$> new (S.singleton α) <@> V.PartialConstr c (snoc vs v)
    else pure $ V.Constr α c (snoc vs v)
    where
    n = successful (arity c)
@@ -210,8 +210,8 @@ graphGC { g, n, γ } e = do
          vα <- eval γ eα S.empty
          pure (eα × vα)
    let
-      --      dom = vertices progCxt `union` vertices eα
+      -- dom = vertices progCxt `union` vertices eα
       fwd αs = vertices (fwdSlice αs g') ∩ vertices vα
       bwd αs = vertices (bwdSlice αs g') ∩ sinks g'
-   --   trace (show (S.size $ sinks g' \\ dom) <> " sinks not in inputs.") \_ ->
+   -- trace (show (sinks g' \\ dom)) \_ ->
    pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }
