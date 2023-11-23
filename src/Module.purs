@@ -10,7 +10,7 @@ import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
@@ -82,6 +82,6 @@ initialConfig :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig G
 initialConfig progCxt = do
    (g × n) × progCxt' × γ <- runWithGraphAllocT (G.empty × 0) do
       progCxt' <- alloc progCxt
-      γ <- eval_progCxt (unwrap progCxt').primitives progCxt'
+      γ <- eval_progCxt progCxt'
       pure (progCxt' × γ)
    pure { g, n, progCxt: progCxt', γ }

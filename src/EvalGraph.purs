@@ -176,8 +176,8 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-eval_progCxt :: forall m. MonadWithGraphAlloc m => Env Vertex -> ProgCxt Vertex -> m (Env Vertex)
-eval_progCxt primitives (ProgCxt { mods, datasets }) =
+eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
+eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
    where
    addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
