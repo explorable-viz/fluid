@@ -17,7 +17,7 @@ import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Set (Set, empty, insert, size, union)
+import Data.Set (Set, empty, insert, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
@@ -28,8 +28,8 @@ import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, sinks, vertices)
-import Graph.GraphWriter (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Graph.Slice (bwdSlice, fwdSlice)
+import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
@@ -215,5 +215,5 @@ graphGC { g, progCxt, n, γ } e = do
       dom = vertices progCxt `union` vertices eα
       fwd αs = vertices (fwdSlice αs g') ∩ vertices vα
       bwd αs = vertices (bwdSlice αs g') ∩ sinks g'
-   trace (show (size $ sinks g' \\ dom)) \_ ->
+   trace (show (sinks g' \\ dom)) \_ ->
       pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }

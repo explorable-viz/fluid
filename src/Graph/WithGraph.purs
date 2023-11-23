@@ -1,4 +1,4 @@
-module Graph.GraphWriter
+module Graph.WithGraph
    ( AdjMapEntries
    , AllocT
    , WithGraphAllocT

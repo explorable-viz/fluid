@@ -21,7 +21,7 @@ import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
-import Graph.GraphWriter (class MonadWithGraphAlloc)
+import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
 import Util (type (×), (!), (×), (≜), (≞), (∈), (∩), (∪), Endo, definitely, error, orElse, throw, unsafeUpdateAt)
 import Util.Pretty (Doc, beside, text)

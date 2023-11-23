@@ -20,7 +20,7 @@ import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, looku
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
-import Graph.GraphWriter (new)
+import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, (∧), (∨))
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P

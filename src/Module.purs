@@ -18,7 +18,7 @@ import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Graph (empty) as G
 import Graph.GraphImpl (GraphImpl)
-import Graph.GraphWriter (alloc, runWithGraphAllocT)
+import Graph.WithGraph (alloc, runWithGraphAllocT)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
