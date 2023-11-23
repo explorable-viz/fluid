@@ -28,7 +28,7 @@ import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (×), (∪), absurd, both, check, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, forDefs, lookup', restrict, (<+>))
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -64,7 +64,7 @@ matchMany _ _ = error absurd
 
 closeDefs :: forall a. Env a -> Dict (Elim a) -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
-   let ρ' = ρ `for` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
+   let ρ' = ρ `forDefs` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
 
 checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = do

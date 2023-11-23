@@ -20,7 +20,7 @@ import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Set (Set, empty, insert)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet, cons, singleton)
-import Data.Traversable (sequence, traverse)
+import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
@@ -37,7 +37,7 @@ import Primitive (string, intPair)
 import ProgCxt (ProgCxt(..))
 import Util (type (×), (×), (∪), (∩), check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, forDefs, lookup', restrict, (<+>))
 import Val (Fun(..), Val(..)) as V
 
 type GraphConfig g =
@@ -83,11 +83,8 @@ matchMany _ _ = error "absurd"
 
 closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> NonEmptySet Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
-   flip traverse ρ \σ ->
-      let
-         ρ' = ρ `for` σ
-      in
-         V.Fun <$> new αs <@> V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
+   for ρ \σ ->
+      let ρ' = ρ `forDefs` σ in V.Fun <$> new αs <@> V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
 
 {-# Evaluation #-}
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)

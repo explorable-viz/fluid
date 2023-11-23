@@ -102,8 +102,8 @@ reaches ρ xs = go (toUnfoldable xs) empty
       where
       σ = get x ρ
 
-for :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
-for ρ σ = ρ `restrict` reaches ρ (fv σ ∩ fromFoldable (O.keys ρ))
+forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
+forDefs ρ σ = ρ `restrict` reaches ρ (fv σ ∩ fromFoldable (O.keys ρ))
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
