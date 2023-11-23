@@ -12,8 +12,10 @@ import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
+import Debug (trace)
 import Effect.Exception (Error)
 import Graph (Vertex(..), class Graph, fromFoldable)
+import Lattice (Raw)
 import Util (type (×), (×))
 
 class Monad m <= MonadWithGraph m where
@@ -40,7 +42,10 @@ type WithGraph = WithGraphT Identity
 instance Monad m => MonadAlloc (AllocT m) where
    fresh = do
       n <- modify $ (+) 1
-      pure (Vertex $ show n)
+      if n == 756 then trace "here!" \_ ->
+         pure (Vertex $ show n)
+      else
+         pure (Vertex $ show n)
 
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
    new αs = do
@@ -55,7 +60,7 @@ instance Monad m => MonadWithGraph (WithGraphT m) where
 instance Monad m => MonadWithGraph (WithGraphAllocT m) where
    extend α = lift <<< extend α
 
-alloc :: forall m t a. MonadAlloc m => Traversable t => t a -> m (t Vertex)
+alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
 alloc = traverse (const fresh)
 
 -- TODO: make synonymous with runStateT/runState?
