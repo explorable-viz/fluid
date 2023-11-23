@@ -38,7 +38,7 @@ data Expr a
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs a = Dict (Elim a)
+data RecDefs a = RecDefs (Dict (Elim a))
 
 data Elim a
    = ElimVar Var (Cont a)
@@ -79,7 +79,7 @@ instance FV (Expr a) where
    fv (Project e _) = fv e
    fv (App e1 e2) = fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
-   fv (LetRec _ ρ e) = unions (fv <$> ρ) ∪ fv e
+   fv (LetRec _ ρ e) = fv ρ ∪ fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ \\ singleton x
@@ -93,6 +93,9 @@ instance FV (Cont a) where
 
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
+
+instance FV (RecDefs a) where
+   fv (RecDefs ρ) = fv ρ
 
 instance FV a => FV (Dict a) where
    fv ρ = unions (fv <$> ρ) \\ S.fromFoldable (keys ρ)
@@ -150,6 +153,13 @@ instance JoinSemilattice a => JoinSemilattice (VarDef a) where
 instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
    expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
+instance JoinSemilattice a => JoinSemilattice (RecDefs a) where
+   maybeJoin (RecDefs ρ) (RecDefs ρ') = RecDefs <$> maybeJoin ρ ρ'
+   join e = definedJoin e
+
+instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
+   expand (RecDefs ρ) (RecDefs ρ') = RecDefs (expand ρ ρ')
+
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (Var x) (Var x') = Var <$> (x ≞ x')
    maybeJoin (Op op) (Op op') = Op <$> (op ≞ op')
@@ -203,13 +213,11 @@ derive instance Traversable Elim
 derive instance Functor Expr
 derive instance Foldable Expr
 derive instance Traversable Expr
+derive instance Functor RecDefs
+derive instance Foldable RecDefs
+derive instance Traversable RecDefs
 derive instance Newtype (Module a) _
 derive instance Functor Module
-
-derive instance Eq a => Eq (Expr a)
-derive instance Eq a => Eq (VarDef a)
-derive instance Eq a => Eq (Elim a)
-derive instance Eq a => Eq (Cont a)
 
 -- For terms of a fixed shape.
 instance Apply Expr where
@@ -227,7 +235,7 @@ instance Apply Expr where
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
-   apply (LetRec fα fρ fe) (LetRec α ρ e) = LetRec (fα α) (fρ `D.apply2` ρ) (fe <*> e)
+   apply (LetRec fα fρ fe) (LetRec α ρ e) = LetRec (fα α) (fρ <*> ρ) (fe <*> e)
    apply _ _ = error "Apply Expr: shape mismatch"
 
 instance Apply Elim where
@@ -245,21 +253,24 @@ instance Apply Cont where
 instance Apply VarDef where
    apply (VarDef fσ fe) (VarDef σ e) = VarDef (fσ <*> σ) (fe <*> e)
 
+instance Apply RecDefs where
+   apply (RecDefs fρ) (RecDefs ρ) = RecDefs (fρ `D.apply2` ρ)
+
 -- Apply instance for Either no good here as doesn't assume fixed shape.
 instance Apply Module where
    apply (Module Nil) (Module Nil) = Module Nil
    apply (Module (Left fdef : fdefs)) (Module (Left def : defs)) =
       Module (Left (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
    apply (Module (Right fdef : fdefs)) (Module (Right def : defs)) =
-      Module (Right (fdef `D.apply2` def) : unwrap (apply (Module fdefs) (Module defs)))
+      Module (Right (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
    apply _ _ = error "Apply Module: shape mismatch"
 
 instance Foldable Module where
    foldl _ acc (Module Nil) = acc
    foldl f acc (Module (Left def : defs)) =
-      foldl (foldl (foldl (foldl f))) (foldl f acc def) defs
+      foldl (foldl (foldl f)) (foldl f acc def) defs
    foldl f acc (Module (Right def : defs)) =
-      foldl (foldl (foldl (foldl f))) (foldl (foldl f) acc def) defs
+      foldl (foldl (foldl f)) (foldl f acc def) defs
 
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
@@ -268,12 +279,19 @@ instance Traversable Module where
    traverse _ (Module Nil) = pure (Module Nil)
    traverse f (Module (Left def : ds)) =
       Module <$> ((Left <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
-   traverse f (Module (Right ρ : ds)) =
-      Module <$> ((Right <$> traverse (traverse f) ρ) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
+   traverse f (Module (Right (RecDefs ρ) : ds)) =
+      Module <$> ((Right <$> (RecDefs <$> traverse (traverse f) ρ)) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
 
    sequence = sequenceDefault
+
+derive instance Eq a => Eq (Expr a)
+derive instance Eq a => Eq (Elim a)
+derive instance Eq a => Eq (Cont a)
+derive instance Eq a => Eq (VarDef a)
+derive instance Eq a => Eq (RecDefs a)
 
 derive instance Ord a => Ord (Expr a)
 derive instance Ord a => Ord (Elim a)
 derive instance Ord a => Ord (Cont a)
 derive instance Ord a => Ord (VarDef a)
+derive instance Ord a => Ord (RecDefs a)

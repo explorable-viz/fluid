@@ -12,7 +12,6 @@ import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
-import Debug (trace)
 import Effect.Exception (Error)
 import Graph (Vertex(..), class Graph, fromFoldable)
 import Lattice (Raw)
@@ -42,10 +41,7 @@ type WithGraph = WithGraphT Identity
 instance Monad m => MonadAlloc (AllocT m) where
    fresh = do
       n <- modify $ (+) 1
-      if n == 756 then trace "here!" \_ ->
-         pure (Vertex $ show n)
-      else
-         pure (Vertex $ show n)
+      pure (Vertex $ show n)
 
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
    new αs = do

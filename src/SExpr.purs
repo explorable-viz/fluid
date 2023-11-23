@@ -25,7 +25,7 @@ import Dict (Dict, asSingletonMap, get)
 import Dict (fromFoldable, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
+import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, maybeJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, error, successful, unimplemented, (×))
@@ -151,22 +151,21 @@ varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
 recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
-recDefsFwd xcs = D.fromFoldable <$> traverse recDefFwd xcss
+recDefsFwd xcs = E.RecDefs <$> D.fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = map RecDef (groupBy (eq `on` fst) xcs) :: NonEmptyList (RecDef a)
 
 recDefsBwd :: forall a. BoundedJoinSemilattice a => E.RecDefs a -> Raw RecDefs -> RecDefs a
-recDefsBwd ρ xcs = join (go (groupBy (eq `on` fst) xcs))
+recDefsBwd (E.RecDefs ρ) xcs = join (go (groupBy (eq `on` fst) xcs))
    where
    go :: NonEmptyList (Raw RecDefs) -> NonEmptyList (RecDefs a)
    go (NonEmptyList (xcs1 :| xcss)) =
-      let
-         x = fst (head xcs1)
-         xcss' = case xcss of
-            Nil -> Nil
-            xcs2 : xcss'' -> toList (go (NonEmptyList (xcs2 :| xcss'')))
-      in
-         NonEmptyList (unwrap (recDefBwd (x ↦ get x ρ) (RecDef xcs1)) :| xcss')
+      NonEmptyList (unwrap (recDefBwd (x ↦ get x ρ) (RecDef xcs1)) :| xcss')
+      where
+      x = fst (head xcs1)
+      xcss' = case xcss of
+         Nil -> Nil
+         xcs2 : xcss'' -> toList (go (NonEmptyList (xcs2 :| xcss'')))
 
 -- RecDef
 recDefFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDef a -> m (Bind (Elim a))

@@ -22,9 +22,10 @@ import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
+import Dict (Dict)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, sinks, vertices)
 import Graph.Slice (bwdSlice, fwdSlice)
@@ -79,7 +80,7 @@ matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> RecDefs Vertex -> Set Vertex -> m (Env Vertex)
+closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -158,7 +159,7 @@ eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
-eval γ (LetRec α ρ e) αs = do
+eval γ (LetRec α (RecDefs ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
@@ -171,7 +172,7 @@ eval_module γ = go D.empty
       v <- eval (γ <+> y') e αs
       γ'' × _ × α' <- match v σ
       go (y' <+> γ'') (Module ds) α'
-   go γ' (Module (Right ρ : ds)) αs = do
+   go γ' (Module (Right (RecDefs ρ) : ds)) αs = do
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
