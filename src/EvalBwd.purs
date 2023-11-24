@@ -15,11 +15,11 @@ import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable, singleton) as S
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
-import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
+import Dict (Dict, disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
-import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), bv)
 import GaloisConnection (GaloisConnection(..))
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
@@ -30,12 +30,12 @@ import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, append_inv, (<+>))
 
-closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
+closeDefsBwd :: forall a. Ann a => Env a -> Env a × Dict (Elim a) × a
 closeDefsBwd γ =
    case foldrWithIndex joinDefs (empty × empty × empty × bot) γ of
       ρ' × γ' × ρ × α -> γ' × (ρ ∨ ρ') × α
    where
-   joinDefs :: Var -> Val a -> Endo (RecDefs a × Env a × RecDefs a × a)
+   joinDefs :: Var -> Val a -> Endo (Dict (Elim a) × Env a × Dict (Elim a) × a)
    joinDefs f _ (ρ_acc × γ' × ρ × α) =
       case get f γ of
          V.Fun α_f (V.Closure γ_f ρ_f σ_f) ->
@@ -187,8 +187,8 @@ evalBwd' v (T.Let (T.VarDef w t1) t2) =
    γ1 × γ2 = append_inv (bv w) γ1γ2
    v' × σ = matchBwd γ2 ContNone α2 w
    γ1' × e1 × α1 = evalBwd' v' t1
-evalBwd' v (T.LetRec ρ t) =
-   (γ1 ∨ γ1') × LetRec (α ∨ α') ρ' e × (α ∨ α')
+evalBwd' v (T.LetRec (RecDefs _ ρ) t) =
+   (γ1 ∨ γ1') × LetRec (RecDefs (α ∨ α') ρ') e × (α ∨ α')
    where
    γ1γ2 × e × α = evalBwd' v t
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2

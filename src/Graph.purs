@@ -39,7 +39,7 @@ class Vertices a where
    vertices :: a -> Set Vertex
 
 instance (Functor f, Foldable f) => Vertices (f Vertex) where
-   vertices vα = unions (singleton <$> vα)
+   vertices = (singleton <$> _) >>> unions
 
 selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
 selectαs v𝔹 vα = unions ((if _ then singleton else const S.empty) <$> v𝔹 <*> vα)

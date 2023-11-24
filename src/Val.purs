@@ -17,11 +17,11 @@ import DataType (Ctr)
 import Dict (Dict, get)
 import Dict (apply2, intersectionWith) as D
 import Effect.Exception (Error)
-import Expr (Elim, RecDefs, fv)
+import Expr (Elim, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
-import Graph.GraphWriter (class MonadWithGraphAlloc)
+import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
 import Util (type (×), (!), (×), (≜), (≞), (∈), (∩), (∪), Endo, definitely, error, orElse, throw, unsafeUpdateAt)
 import Util.Pretty (Doc, beside, text)
@@ -37,7 +37,7 @@ data Val a
    | Fun a (Fun a)
 
 data Fun a
-   = Closure (Env a) (RecDefs a) (Elim a)
+   = Closure (Env a) (Dict (Elim a)) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated
    | PartialConstr Ctr (List (Val a)) -- never saturated
 
@@ -89,7 +89,7 @@ append_inv xs γ = filterKeys (_ `not <<< (∈)` xs) γ × restrict γ xs
 restrict :: forall a. Dict a -> Set Var -> Dict a
 restrict γ xs = filterKeys (_ ∈ xs) γ
 
-reaches :: forall a. RecDefs a -> Endo (Set Var)
+reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (toUnfoldable xs) empty
    where
    dom_ρ = fromFoldable $ O.keys ρ
@@ -102,8 +102,8 @@ reaches ρ xs = go (toUnfoldable xs) empty
       where
       σ = get x ρ
 
-for :: forall a. RecDefs a -> Elim a -> RecDefs a
-for ρ σ = ρ `restrict` reaches ρ (fv σ ∩ fromFoldable (O.keys ρ))
+forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
+forDefs ρ σ = ρ `restrict` reaches ρ (fv σ ∩ fromFoldable (O.keys ρ))
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
@@ -161,7 +161,7 @@ instance Apply Val where
    apply _ _ = error "Apply Expr: shape mismatch"
 
 instance Apply Fun where
-   apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (D.apply2 fγ γ) (D.apply2 fρ ρ) (fσ <*> σ)
+   apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (D.apply2 fγ γ) (fρ `D.apply2` ρ) (fσ <*> σ)
    apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
    apply (PartialConstr c fvs) (PartialConstr c' vs) = PartialConstr (c ≜ c') (zipWith (<*>) fvs vs)
    apply _ _ = error "Apply Fun: shape mismatch"
