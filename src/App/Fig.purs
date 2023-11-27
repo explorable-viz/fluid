@@ -68,7 +68,6 @@ type FigSpec =
 type Fig =
    { spec :: FigSpec
    , s0 :: Raw S.Expr -- program that was originally "split"
-   , s :: Raw S.Expr -- body of example
    , gc :: TracedEval 𝔹
    }
 
@@ -241,10 +240,8 @@ loadFig spec@{ file } = do
    s' <- open file
    let s0 = botOf s'
    { γ: γ1, s } <- splitDefs γ0 s0
-   e <- desug s
-   let γ = γ0 <+> γ1
-   gc <- traceGC γ e
-   pure { spec, s0, s, gc }
+   gc <- desug s >>= traceGC (γ0 <+> γ1)
+   pure { spec, s0, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
