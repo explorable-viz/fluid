@@ -24,9 +24,10 @@ import Effect.Class (class MonadEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
-import EvalBwd (evalBwd)
+import EvalBwd (TracedEval, evalBwd, traceGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
+import GaloisConnection (GaloisConnection(..))
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
@@ -66,13 +67,9 @@ type FigSpec =
 
 type Fig =
    { spec :: FigSpec
-   , γ0 :: Raw Env -- ambient env
-   , γ :: Raw Env -- loaded dataset, if any, plus additional let bindings at beginning of ex
    , s0 :: Raw S.Expr -- program that was originally "split"
    , s :: Raw S.Expr -- body of example
-   , e :: Raw Expr -- desugared s
-   , t :: Trace
-   , v :: Raw Val
+   , gc :: TracedEval 𝔹
    }
 
 type LinkedOutputsFigSpec =
@@ -191,9 +188,10 @@ varView x γ = view x <$> (lookup x γ # orElse absurd)
 
 -- For an output selection, views of corresponding input selections and output after round-trip.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
-figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
-   let γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv (botOf v)) t
-   _ × v' <- eval γ0γ e' α
+figViews { spec: { xs }, gc: { gc: GC { bwd, fwd }, v } } δv = do
+   let
+      γ0γ × e' × α = bwd (δv (botOf v))
+      v' = fwd (γ0γ × e' × α)
    views <- sequence (flip varView γ0γ <$> xs)
    pure $ view "output" v' × views
 
@@ -245,8 +243,8 @@ loadFig spec@{ file } = do
    { γ: γ1, s } <- splitDefs γ0 s0
    e <- desug s
    let γ = γ0 <+> γ1
-   t × v <- eval γ e bot
-   pure { spec, γ0, γ, s0, s, e, t, v }
+   gc <- traceGC γ e
+   pure { spec, s0, s, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
