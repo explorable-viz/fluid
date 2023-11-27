@@ -192,8 +192,7 @@ varView x γ = view x <$> (lookup x γ # orElse absurd)
 -- For an output selection, views of corresponding input selections and output after round-trip.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
-   let
-      γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv (botOf v)) t
+   let γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv (botOf v)) t
    _ × v' <- eval γ0γ e' α
    views <- sequence (flip varView γ0γ <$> xs)
    pure $ view "output" v' × views
