@@ -21,7 +21,7 @@ import Util.Pair (Pair(..))
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
    join :: a -> a -> a
-   -- soft failure for joining incompatible eliminators, used to desugar function clauses
+   -- soft failure for joining incompatible eliminators, used to desugar function clauses; see #776
    maybeJoin :: forall m. MonadError Error m => a -> a -> m a
 
 class MeetSemilattice a where
@@ -95,7 +95,7 @@ instance (Functor t, BooleanLattice a') => TopOf (t a) (t a') where
 erase :: forall t a. Functor t => t a -> Raw t
 erase = (<$>) (const unit)
 
--- Give ∧ and ∨ same associativity and precedence as * and +
+-- Same associativity and precedence as * and +
 infixl 7 meet as ∧
 infixl 6 join as ∨
 
