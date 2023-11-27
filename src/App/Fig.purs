@@ -191,8 +191,7 @@ figViews { spec: { xs }, gc: { gc: GC { bwd, fwd }, v } } δv = do
    let
       γ0γ × e' × α = bwd (δv (botOf v))
       v' = fwd (γ0γ × e' × α)
-   views <- sequence (flip varView γ0γ <$> xs)
-   pure $ view "output" v' × views
+   (view "output" v' × _) <$> sequence (flip varView γ0γ <$> xs)
 
 linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
 linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
