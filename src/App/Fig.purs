@@ -27,7 +27,7 @@ import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import Expr (Expr)
 import Foreign.Object (lookup)
-import Lattice (𝔹, bot, botOf, erase, neg, topOf)
+import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -66,13 +66,13 @@ type FigSpec =
 
 type Fig =
    { spec :: FigSpec
-   , γ0 :: Env 𝔹 -- ambient env
-   , γ :: Env 𝔹 -- loaded dataset, if any, plus additional let bindings at beginning of ex
-   , s0 :: S.Expr 𝔹 -- program that was originally "split"
-   , s :: S.Expr 𝔹 -- body of example
-   , e :: Expr 𝔹 -- desugared s
+   , γ0 :: Raw Env -- ambient env
+   , γ :: Raw Env -- loaded dataset, if any, plus additional let bindings at beginning of ex
+   , s0 :: Raw S.Expr -- program that was originally "split"
+   , s :: Raw S.Expr -- body of example
+   , e :: Raw Expr -- desugared s
    , t :: Trace
-   , v :: Val 𝔹
+   , v :: Raw Val
    }
 
 type LinkedOutputsFigSpec =
@@ -193,7 +193,7 @@ varView x γ = view x <$> (lookup x γ # orElse absurd)
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
-      γ0γ × e' × α = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t
+      γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv (botOf v)) t
    _ × v' <- eval γ0γ e' α
    views <- sequence (flip varView γ0γ <$> xs)
    pure $ view "output" v' × views
