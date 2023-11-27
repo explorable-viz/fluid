@@ -129,7 +129,7 @@ instance JoinSemilattice a => JoinSemilattice (Dict a) where
    join = D.unionWith (∨) -- faster than definedJoin
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
 
-instance Neg a => Neg (Dict a) where
+instance (Functor f, Neg a) => Neg (f a) where
    neg = (<$>) neg
 
 mayFailUpdate :: forall a m. MonadError Error m => JoinSemilattice a => Dict a -> Var × a -> m (Dict a)

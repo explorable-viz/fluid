@@ -257,9 +257,6 @@ instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
    expand (PartialConstr c vs) (PartialConstr c' us) = PartialConstr (c ≜ c') (expand vs us)
    expand _ _ = error "Incompatible values"
 
-instance Neg a => Neg (Val a) where
-   neg = (<$>) neg
-
 derive instance Eq a => Eq (Val a)
 derive instance Eq a => Eq (DictRep a)
 derive instance Eq a => Eq (MatrixRep a)
