@@ -4,6 +4,7 @@ import Prelude hiding (absurd, join, top)
 
 import Bindings (Var)
 import Control.Apply (lift2)
+import Control.Biapply ((<<$>>))
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
@@ -12,8 +13,8 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
 import Data.Traversable (sequence)
-import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
 import Dict ((\\), (∪), intersectionWith, unionWith) as D
+import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
 import Effect.Exception (Error)
 import Util (type (×), Endo, assert, successfulWith, throw, (×))
 import Util.Pair (Pair(..))
@@ -115,6 +116,14 @@ instance (BoundedJoinSemilattice a, BoundedJoinSemilattice b) => BoundedJoinSemi
 instance (BoundedMeetSemilattice a, BoundedMeetSemilattice b) => BoundedMeetSemilattice (a × b) where
    top = top × top
 
+instance (Neg a, Neg b) => Neg (a × b) where
+   neg x = neg <<$>> neg x
+else instance (Functor f, Neg a) => Neg (f a) where
+   neg x = neg <$> x
+
+instance (BooleanLattice a, BooleanLattice b) => BooleanLattice (a × b)
+else instance (BoundedLattice (f a), Neg (f a)) => BooleanLattice (f a)
+
 instance JoinSemilattice a => JoinSemilattice (Pair a) where
    join ab = definedJoin ab
    maybeJoin (Pair a a') (Pair b b') = Pair <$> maybeJoin a b <*> maybeJoin a' b'
@@ -128,9 +137,6 @@ instance JoinSemilattice a => JoinSemilattice (List a) where
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
    join = D.unionWith (∨) -- faster than definedJoin
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
-
-instance (Functor f, Neg a) => Neg (f a) where
-   neg = (<$>) neg
 
 mayFailUpdate :: forall a m. MonadError Error m => JoinSemilattice a => Dict a -> Var × a -> m (Dict a)
 mayFailUpdate m (k × v) =

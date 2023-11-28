@@ -27,7 +27,7 @@ import Eval (eval, eval_module)
 import EvalBwd (TracedEval, evalBwd, traceGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
-import GaloisConnection (GaloisConnection(..))
+import GaloisConnection (dual)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
@@ -187,10 +187,11 @@ varView x γ = view x <$> (lookup x γ # orElse absurd)
 
 -- For an output selection, views of corresponding input selections and output after round-trip.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
-figViews { spec: { xs }, gc: { gc: GC { bwd, fwd }, v } } δv = do
+figViews { spec: { xs }, gc: { gc, v } } δv = do
    let
-      γ0γ × e' × α = bwd (δv (botOf v))
-      v' = fwd (γ0γ × e' × α)
+      γ0γ × e' × α = (unwrap gc).bwd (δv (botOf v))
+      gc' = dual gc
+      v' = (unwrap gc').bwd (γ0γ × e' × α)
    (view "output" v' × _) <$> sequence (flip varView γ0γ <$> xs)
 
 linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)

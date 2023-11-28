@@ -3,18 +3,18 @@ module GaloisConnection where
 import Prelude
 
 import Data.Newtype (class Newtype)
-import Lattice (class BooleanLattice, neg)
+import Lattice (class Neg, neg)
 import Util (Endo)
 
 newtype GaloisConnection a b = GC { fwd :: a -> b, bwd :: b -> a }
 
 derive instance Newtype (GaloisConnection a b) _
 
-deMorgan :: forall a b. BooleanLattice a => BooleanLattice b => Endo (a -> b)
+deMorgan :: forall a b. Neg a => Neg b => Endo (a -> b)
 deMorgan = (neg >>> _) >>> (_ >>> neg)
 
 -- Could unify deMorgan and dual but would need to reify notion of opposite category.
-dual :: forall a b. BooleanLattice a => BooleanLattice b => GaloisConnection a b -> GaloisConnection b a
+dual :: forall a b. Neg a => Neg b => GaloisConnection a b -> GaloisConnection b a
 dual (GC { fwd, bwd }) = GC { fwd: deMorgan bwd, bwd: deMorgan fwd }
 
 instance Semigroupoid GaloisConnection where
