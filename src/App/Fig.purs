@@ -190,8 +190,7 @@ figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Ar
 figViews { spec: { xs }, gc: { gc, v } } δv = do
    let
       γ0γ × e' × α = (unwrap gc).bwd (δv (botOf v))
-      gc' = dual gc
-      v' = (unwrap gc').bwd (γ0γ × e' × α)
+      v' = (unwrap $ dual gc).bwd (γ0γ × e' × α)
    (view "output" v' × _) <$> sequence (flip varView γ0γ <$> xs)
 
 linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)

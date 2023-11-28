@@ -4,9 +4,9 @@ import Prelude hiding (absurd, join, top)
 
 import Bindings (Var)
 import Control.Apply (lift2)
-import Control.Biapply ((<<$>>))
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (zipWith) as A
+import Data.Bifunctor (bimap)
 import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
@@ -117,7 +117,7 @@ instance (BoundedMeetSemilattice a, BoundedMeetSemilattice b) => BoundedMeetSemi
    top = top × top
 
 instance (Neg a, Neg b) => Neg (a × b) where
-   neg x = neg <<$>> neg x
+   neg x = bimap neg neg x
 else instance (Functor f, Neg a) => Neg (f a) where
    neg x = neg <$> x
 
