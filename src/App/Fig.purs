@@ -185,7 +185,7 @@ drawFile (file × src) =
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
 
--- For an output selection, views of corresponding input selections and output after round-trip.
+-- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
 figViews { spec: { xs }, gc: { gc, v } } δv = do
    let

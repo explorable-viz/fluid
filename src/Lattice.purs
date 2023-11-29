@@ -47,6 +47,9 @@ class BotOf t u | t -> u where
 class TopOf t u | t -> u where
    topOf :: t -> u
 
+relativeComplement :: forall a. Neg a => MeetSemilattice a => a -> a -> a
+relativeComplement a = neg >>> (_ ∧ a)
+
 instance JoinSemilattice Boolean where
    join = (||)
    maybeJoin x y = pure (join x y)
@@ -99,6 +102,7 @@ erase = (<$>) (const unit)
 -- Same associativity and precedence as * and +
 infixl 7 meet as ∧
 infixl 6 join as ∨
+infixl 6 relativeComplement as -
 
 type 𝔹 = Boolean
 type Raw (f :: Type -> Type) = f Unit
