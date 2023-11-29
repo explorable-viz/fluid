@@ -16,7 +16,7 @@ import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
-import Data.Profunctor.Strong ((&&&), (***))
+import Data.Profunctor.Strong (class Strong, (&&&), (***))
 import Data.Set as S
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Aff.Class (class MonadAff)
@@ -160,7 +160,7 @@ dup x = x × x
 unzip :: forall t a b. Functor t => t (a × b) -> t a × t b
 unzip = map fst &&& map snd
 
-both :: forall a b. (a -> b) -> a × a -> b × b
+both :: forall a b c. Category a => Strong a => a b c -> a (b × b) (c × c)
 both f = f *** f
 
 assoc1 :: forall a b c. (a × b) × c -> a × (b × c)
