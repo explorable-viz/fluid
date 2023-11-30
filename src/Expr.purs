@@ -16,7 +16,7 @@ import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Dict (apply2) as D
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
-import Util (type (+), type (×), (∪), (×), (≜), (≞), (\\), both, error, throw)
+import Util (type (+), type (×), both, error, shapeMismatch, throw, (\\), (×), (∪), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
 -- Deviate from POPL paper by having closures depend on originating lambda or letrec
@@ -236,19 +236,19 @@ instance Apply Expr where
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
-   apply _ _ = error "Apply Expr: shape mismatch"
+   apply _ _ = shapeMismatch unit
 
 instance Apply Elim where
    apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
    apply (ElimConstr fk) (ElimConstr k) = ElimConstr (fk `D.apply2` k)
    apply (ElimRecord xs fk) (ElimRecord _ k) = ElimRecord xs (fk <*> k)
-   apply _ _ = error "Apply Elim: shape mismatch"
+   apply _ _ = shapeMismatch unit
 
 instance Apply Cont where
    apply ContNone ContNone = ContNone
    apply (ContExpr f) (ContExpr e) = ContExpr (f <*> e)
    apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
-   apply _ _ = error "Apply Cont: shape mismatch"
+   apply _ _ = shapeMismatch unit
 
 instance Apply VarDef where
    apply (VarDef fσ fe) (VarDef σ e) = VarDef (fσ <*> σ) (fe <*> e)
@@ -263,7 +263,7 @@ instance Apply Module where
       Module (Left (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
    apply (Module (Right fdef : fdefs)) (Module (Right def : defs)) =
       Module (Right (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
-   apply _ _ = error "Apply Module: shape mismatch"
+   apply _ _ = shapeMismatch unit
 
 instance Foldable Module where
    foldl _ acc (Module Nil) = acc

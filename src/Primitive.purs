@@ -15,111 +15,105 @@ import Lattice (class BoundedJoinSemilattice, Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), (×), error)
-import Val (class Ann, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
+import Val (BaseVal(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
--- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
--- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
--- work with the required higher-rank polymorphism.
+-- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
+-- work with required higher-rank polymorphism.
 type ToFrom d a =
-   { pack :: d × a -> Val a
-   , unpack :: Val a -> d × a
+   { pack :: d -> BaseVal a
+   , unpack :: BaseVal a -> d
    }
 
-typeError :: forall a b. Val a -> String -> b
+unpack :: forall d a. ToFrom d a -> Val a -> d × a
+unpack toFrom (Val α v) = toFrom.unpack v × α
+
+pack :: forall d a. ToFrom d a -> d × a -> Val a
+pack toFrom (v × α) = Val α (toFrom.pack v)
+
+typeError :: forall a b. BaseVal a -> String -> b
 typeError v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
 
 int :: forall a. ToFrom Int a
 int =
-   { pack: \(n × α) -> Int α n
-   , unpack
+   { pack: Int
+   , unpack: case _ of
+        Int n -> n
+        v -> typeError v "Int"
    }
-   where
-   unpack (Int α n) = n × α
-   unpack v = typeError v "Int"
 
 number :: forall a. ToFrom Number a
 number =
-   { pack: \(n × α) -> Float α n
-   , unpack
+   { pack: Float
+   , unpack: case _ of
+        Float n -> n
+        v -> typeError v "Float"
    }
-   where
-   unpack (Float α n) = n × α
-   unpack v = typeError v "Float"
 
 string :: forall a. ToFrom String a
 string =
-   { pack: \(str × α) -> Str α str
-   , unpack
+   { pack: Str
+   , unpack: case _ of
+        Str str -> str
+        v -> typeError v "Str"
    }
-   where
-   unpack (Str α str) = str × α
-   unpack v = typeError v "Str"
 
 intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
    { pack: case _ of
-        Left n × α -> Int α n
-        Right n × α -> Float α n
-   , unpack
+        Left n -> Int n
+        Right n -> Float n
+   , unpack: case _ of
+        Int n -> Left n
+        Float n -> Right n
+        v -> typeError v "Int or Float"
    }
-   where
-   unpack (Int α n) = Left n × α
-   unpack (Float α n) = Right n × α
-   unpack v = typeError v "Int or Float"
 
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
    { pack: case _ of
-        Left n × α -> Int α n
-        Right (Left n) × α -> Float α n
-        Right (Right str) × α -> Str α str
-   , unpack
+        Left n -> Int n
+        Right (Left n) -> Float n
+        Right (Right str) -> Str str
+   , unpack: case _ of
+        Int n -> Left n
+        Float n -> Right (Left n)
+        Str str -> Right (Right str)
+        v -> typeError v "Int, Float or Str"
    }
-   where
-   unpack (Int α n) = Left n × α
-   unpack (Float α n) = Right (Left n) × α
-   unpack (Str α str) = Right (Right str) × α
-   unpack v = typeError v "Int, Float or Str"
 
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
-   { pack: \((nβ × mβ') × α) -> Constr α cPair (int.pack nβ : int.pack mβ' : Nil)
-   , unpack
+   { pack: \(nβ × mβ') -> Constr cPair (pack int nβ : pack int mβ' : Nil)
+   , unpack: case _ of
+        Constr c (v : v' : Nil) | c == cPair -> unpack int v × unpack int v'
+        v -> typeError v "Pair"
    }
-   where
-   unpack (Constr α c (v : v' : Nil)) | c == cPair = (int.unpack v × int.unpack v') × α
-   unpack v = typeError v "Pair"
 
-matrixRep :: forall a. Ann a => ToFrom (MatrixRep a) a
+matrixRep :: forall a. ToFrom (MatrixRep a) a
 matrixRep =
-   { pack: \(m × α) -> Matrix α m
-   , unpack
+   { pack: Matrix
+   , unpack: case _ of
+        Matrix m -> m
+        v -> typeError v "Matrix"
    }
-   where
-   unpack (Matrix α m) = m × α
-   unpack v = typeError v "Matrix"
 
-record :: forall a. Ann a => ToFrom (Dict (Val a)) a
-record =
-   { pack: \(xvs × α) -> Record α xvs
-   , unpack
+record2 :: forall a. ToFrom (Dict (Val a)) a
+record2 =
+   { pack: Record
+   , unpack: case _ of
+        Record xvs -> xvs
+        v -> typeError v "Record"
    }
-   where
-   unpack (Record α xvs) = xvs × α
-   unpack v = typeError v "Record"
 
 boolean :: forall a. ToFrom Boolean a
 boolean =
-   { pack: case _ of
-        true × α -> Constr α cTrue Nil
-        false × α -> Constr α cFalse Nil
-   , unpack
+   { pack: if _ then Constr cTrue Nil else Constr cFalse Nil
+   , unpack: case _ of
+        Constr c Nil
+           | c == cTrue -> true
+           | c == cFalse -> false
+        v -> typeError v "Boolean"
    }
-   where
-   unpack (Constr α c Nil)
-      | c == cTrue = true × α
-      | c == cFalse = false × α
-   unpack v = typeError v "Boolean"
 
 class IsZero a where
    isZero :: a -> Boolean
@@ -155,87 +149,71 @@ type BinaryZero i o a =
 
 unary :: forall i o a'. BoundedJoinSemilattice a' => String -> (forall a. Unary i o a) -> Bind (Val a')
 unary id f =
-   id × Fun bot (Foreign (ForeignOp (id × op)) Nil)
+   id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
    op :: Exists ForeignOp'
    op = mkExists $
       ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
 
    op' :: Partial => OpGraph
-   op' (v : Nil) =
-      f.o.pack <$> ((f.fwd x × _) <$> new (singleton α))
-      where
-      x × α = f.i.unpack v
+   op' (Val α v : Nil) =
+      pack f.o <$> ((f.fwd (f.i.unpack v) × _) <$> new (singleton α))
 
-   fwd :: Partial => OpFwd (Raw Val)
-   fwd (v : Nil) = pure $ erase v × f.o.pack (f.fwd x × α)
-      where
-      x × α = f.i.unpack v
+   fwd :: Partial => OpFwd (Raw BaseVal)
+   fwd (Val α v : Nil) = pure $ erase v × pack f.o (f.fwd (f.i.unpack v) × α)
 
-   bwd :: Partial => OpBwd (Raw Val)
-   bwd (u × v) = f.i.pack (x × α) : Nil
-      where
-      _ × α = f.o.unpack v
-      (x × _) = f.i.unpack u
+   bwd :: Partial => OpBwd (Raw BaseVal)
+   bwd (u × Val α _) = pack f.i (f.i.unpack u × α) : Nil
 
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
 binary id f =
-   id × Fun bot (Foreign (ForeignOp (id × op)) Nil)
+   id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
    op :: Exists ForeignOp'
    op = mkExists $
       ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
 
    op' :: Partial => OpGraph
-   op' (v1 : v2 : Nil) =
-      f.o.pack <$> ((f.fwd x y × _) <$> new (singleton α # insert β))
-      where
-      (x × α) × (y × β) = f.i1.unpack v1 × f.i2.unpack v2
+   op' (Val α v1 : Val β v2 : Nil) =
+      pack f.o <$> ((f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × _) <$> new (singleton α # insert β))
 
-   fwd :: Partial => OpFwd (Raw Val × Raw Val)
-   fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × f.o.pack (f.fwd x y × (α ∧ β))
-      where
-      (x × α) × (y × β) = f.i1.unpack v1 × f.i2.unpack v2
+   fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
+   fwd (Val α v1 : Val β v2 : Nil) =
+      pure $ (erase v1 × erase v2) × pack f.o (f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × (α ∧ β))
 
-   bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) = f.i1.pack (x × α) : f.i2.pack (y × α) : Nil
-      where
-      _ × α = f.o.unpack v
-      (x × _) × (y × _) = f.i1.unpack u1 × f.i2.unpack u2
+   bwd :: Partial => OpBwd (Raw BaseVal × Raw BaseVal)
+   bwd ((u1 × u2) × Val α _) = pack f.i1 (f.i1.unpack u1 × α) : pack f.i2 (f.i2.unpack u2 × α) : Nil
 
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => String -> (forall a. BinaryZero i o a) -> Bind (Val a')
 binaryZero id f =
-   id × Fun bot (Foreign (ForeignOp (id × op)) Nil)
+   id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
    op :: Exists ForeignOp'
    op = mkExists $
       ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
 
    op' :: Partial => OpGraph
-   op' (v1 : v2 : Nil) =
-      let
-         αs =
-            if isZero x then singleton α
-            else if isZero y then singleton β
-            else singleton α # insert β
-      in
-         f.o.pack <$> ((f.fwd x y × _) <$> new αs)
+   op' (Val α v1 : Val β v2 : Nil) =
+      pack f.o <$> ((f.fwd x y × _) <$> new αs)
       where
-      (x × α) × (y × β) = f.i.unpack v1 × f.i.unpack v2
+      x × y = f.i.unpack v1 × f.i.unpack v2
+      αs =
+         if isZero x then singleton α
+         else if isZero y then singleton β
+         else singleton α # insert β
 
-   fwd :: Partial => OpFwd (Raw Val × Raw Val)
-   fwd (v1 : v2 : Nil) =
+   fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
+   fwd (Val α v1 : Val β v2 : Nil) =
       pure $ (erase v1 × erase v2) ×
-         f.o.pack (f.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+         pack f.o (f.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
-      (x × α) × (y × β) = f.i.unpack v1 × f.i.unpack v2
+      x × y = f.i.unpack v1 × f.i.unpack v2
 
-   bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) = f.i.pack (x × β1) : f.i.pack (y × β2) : Nil
+   bwd :: Partial => OpBwd (Raw BaseVal × Raw BaseVal)
+   bwd ((u1 × u2) × Val α _) = pack f.i (x × β1) : pack f.i (y × β2) : Nil
       where
-      _ × α = f.o.unpack v
-      (x × _) × (y × _) = f.i.unpack u1 × f.i.unpack u2
+      x × y = f.i.unpack u1 × f.i.unpack u2
       β1 × β2 =
          if isZero x then α × bot
          else if isZero y then bot × α

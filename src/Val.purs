@@ -22,19 +22,21 @@ import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
-import Util (type (×), (!), (×), (≜), (≞), (∈), (∩), (∪), Endo, definitely, error, orElse, throw, unsafeUpdateAt)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, (∨))
+import Util (type (×), (!), (×), (≜), (≞), (∈), (∩), (∪), Endo, definitely, orElse, shapeMismatch, unsafeUpdateAt)
 import Util.Pretty (Doc, beside, text)
 
-data Val a
-   = Int a Int
-   | Float a Number
-   | Str a String
-   | Constr a Ctr (List (Val a)) -- always saturated
-   | Record a (Dict (Val a)) -- always saturated
-   | Dictionary a (DictRep a)
-   | Matrix a (MatrixRep a)
-   | Fun a (Fun a)
+data Val a = Val a (BaseVal a)
+
+data BaseVal a
+   = Int Int
+   | Float Number
+   | Str String
+   | Constr Ctr (List (Val a)) -- always saturated
+   | Record (Dict (Val a)) -- always saturated
+   | Dictionary (DictRep a)
+   | Matrix (MatrixRep a)
+   | Fun (Fun a)
 
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
@@ -145,26 +147,32 @@ derive instance Functor MatrixRep
 derive instance Functor Val
 derive instance Foldable Val
 derive instance Traversable Val
+derive instance Functor BaseVal
+derive instance Foldable BaseVal
+derive instance Traversable BaseVal
 derive instance Functor Fun
 derive instance Foldable Fun
 derive instance Traversable Fun
 
 instance Apply Val where
-   apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
-   apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
-   apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
-   apply (Record fα fxvs) (Record α xvs) = Record (fα α) (D.apply2 fxvs xvs)
-   apply (Dictionary fα fxvs) (Dictionary α xvs) = Dictionary (fα α) (fxvs <*> xvs)
-   apply (Matrix fα fm) (Matrix α m) = Matrix (fα α) (fm <*> m)
-   apply (Fun fα ff) (Fun α f) = Fun (fα α) (ff <*> f)
-   apply _ _ = error "Apply Expr: shape mismatch"
+   apply (Val fα fv) (Val α v) = Val (fα α) (fv <*> v)
+
+instance Apply BaseVal where
+   apply (Int n) (Int n') = Int (n ≜ n')
+   apply (Float n) (Float n') = Float (n ≜ n')
+   apply (Str s) (Str s') = Str (s ≜ s')
+   apply (Constr c fes) (Constr c' es) = Constr (c ≜ c') (zipWith (<*>) fes es)
+   apply (Record fxvs) (Record xvs) = Record (D.apply2 fxvs xvs)
+   apply (Dictionary fxvs) (Dictionary xvs) = Dictionary (fxvs <*> xvs)
+   apply (Matrix fm) (Matrix m) = Matrix (fm <*> m)
+   apply (Fun ff) (Fun f) = Fun (ff <*> f)
+   apply _ _ = shapeMismatch unit
 
 instance Apply Fun where
    apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (D.apply2 fγ γ) (fρ `D.apply2` ρ) (fσ <*> σ)
    apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
    apply (PartialConstr c fvs) (PartialConstr c' vs) = PartialConstr (c ≜ c') (zipWith (<*>) fvs vs)
-   apply _ _ = error "Apply Fun: shape mismatch"
+   apply _ _ = shapeMismatch unit
 
 -- Should require equal domains?
 instance Apply DictRep where
@@ -209,15 +217,20 @@ instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
    join v = definedJoin v
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
-   maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
-   maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
-   maybeJoin (Str α s) (Str α' s') = Str (α ∨ α') <$> (s ≞ s')
-   maybeJoin (Record α xvs) (Record α' xvs') = Record (α ∨ α') <$> maybeJoin xvs xvs'
-   maybeJoin (Dictionary α d) (Dictionary α' d') = Dictionary (α ∨ α') <$> maybeJoin d d'
-   maybeJoin (Constr α c vs) (Constr α' c' us) = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin (Matrix α m) (Matrix α' m') = Matrix (α ∨ α') <$> maybeJoin m m'
-   maybeJoin (Fun α φ) (Fun α' φ') = Fun (α ∨ α') <$> maybeJoin φ φ'
-   maybeJoin _ _ = throw "Incompatible values"
+   maybeJoin (Val α u) (Val α' v) = Val (α ∨ α') <$> maybeJoin u v
+
+   join v = definedJoin v
+
+instance JoinSemilattice a => JoinSemilattice (BaseVal a) where
+   maybeJoin (Int n) (Int n') = Int <$> (n ≞ n')
+   maybeJoin (Float n) (Float n') = Float <$> (n ≞ n')
+   maybeJoin (Str s) (Str s') = Str <$> (s ≞ s')
+   maybeJoin (Record xvs) (Record xvs') = Record <$> maybeJoin xvs xvs'
+   maybeJoin (Dictionary d) (Dictionary d') = Dictionary <$> maybeJoin d d'
+   maybeJoin (Constr c vs) (Constr c' us) = Constr <$> (c ≞ c') <*> maybeJoin vs us
+   maybeJoin (Matrix m) (Matrix m') = Matrix <$> maybeJoin m m'
+   maybeJoin (Fun φ) (Fun φ') = Fun <$> maybeJoin φ φ'
+   maybeJoin _ _ = shapeMismatch unit
 
    join v = definedJoin v
 
@@ -228,7 +241,7 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
       Foreign φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin (PartialConstr c vs) (PartialConstr c' us) =
       PartialConstr <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin _ _ = throw "Incompatible functions"
+   maybeJoin _ _ = shapeMismatch unit
 
    join v = definedJoin v
 
@@ -240,32 +253,34 @@ instance BoundedJoinSemilattice a => Expandable (MatrixRep a) (Raw MatrixRep) wh
       MatrixRep (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
 
 instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
-   expand (Int α n) (Int _ n') = Int α (n ≜ n')
-   expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Str α s) (Str _ s') = Str α (s ≜ s')
-   expand (Record α xvs) (Record _ xvs') = Record α (expand xvs xvs')
-   expand (Dictionary α d) (Dictionary _ d') = Dictionary α (expand d d')
-   expand (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand vs us)
-   expand (Matrix α m) (Matrix _ m') = Matrix α (expand m m')
-   expand (Fun α φ) (Fun _ φ') = Fun α (expand φ φ')
-   expand _ _ = error "Incompatible values"
+   expand (Val α u) (Val _ v) = Val α (expand u v)
+
+instance BoundedJoinSemilattice a => Expandable (BaseVal a) (Raw BaseVal) where
+   expand (Int n) (Int n') = Int (n ≜ n')
+   expand (Float n) (Float n') = Float (n ≜ n')
+   expand (Str s) (Str s') = Str (s ≜ s')
+   expand (Record xvs) (Record xvs') = Record (expand xvs xvs')
+   expand (Dictionary d) (Dictionary d') = Dictionary (expand d d')
+   expand (Constr c vs) (Constr c' us) = Constr (c ≜ c') (expand vs us)
+   expand (Matrix m) (Matrix m') = Matrix (expand m m')
+   expand (Fun φ) (Fun φ') = Fun (expand φ φ')
+   expand _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
    expand (Closure γ ρ σ) (Closure γ' ρ' σ') =
       Closure (expand γ γ') (expand ρ ρ') (expand σ σ')
    expand (Foreign φ vs) (Foreign _ vs') = Foreign φ (expand vs vs') -- TODO: require φ == φ'
    expand (PartialConstr c vs) (PartialConstr c' us) = PartialConstr (c ≜ c') (expand vs us)
-   expand _ _ = error "Incompatible values"
-
-instance Neg a => Neg (Val a) where
-   neg = (<$>) neg
+   expand _ _ = shapeMismatch unit
 
 derive instance Eq a => Eq (Val a)
+derive instance Eq a => Eq (BaseVal a)
 derive instance Eq a => Eq (DictRep a)
 derive instance Eq a => Eq (MatrixRep a)
 derive instance Eq a => Eq (Fun a)
 
 derive instance Ord a => Ord (Val a)
+derive instance Ord a => Ord (BaseVal a)
 derive instance Ord a => Ord (DictRep a)
 derive instance Ord a => Ord (MatrixRep a)
 derive instance Ord a => Ord (Fun a)

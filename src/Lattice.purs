@@ -6,14 +6,15 @@ import Bindings (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (zipWith) as A
+import Data.Bifunctor (bimap)
 import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
 import Data.Traversable (sequence)
-import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
 import Dict ((\\), (∪), intersectionWith, unionWith) as D
+import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
 import Effect.Exception (Error)
 import Util (type (×), Endo, assert, successfulWith, throw, (×))
 import Util.Pair (Pair(..))
@@ -21,7 +22,7 @@ import Util.Pair (Pair(..))
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
    join :: a -> a -> a
-   -- soft failure for joining incompatible eliminators, used to desugar function clauses
+   -- soft failure for joining incompatible eliminators, used to desugar function clauses; see #776
    maybeJoin :: forall m. MonadError Error m => a -> a -> m a
 
 class MeetSemilattice a where
@@ -45,6 +46,9 @@ class BotOf t u | t -> u where
 
 class TopOf t u | t -> u where
    topOf :: t -> u
+
+relativeComplement :: forall a. Neg a => MeetSemilattice a => a -> a -> a
+relativeComplement a = neg >>> (_ ∧ a)
 
 instance JoinSemilattice Boolean where
    join = (||)
@@ -95,9 +99,10 @@ instance (Functor t, BooleanLattice a') => TopOf (t a) (t a') where
 erase :: forall t a. Functor t => t a -> Raw t
 erase = (<$>) (const unit)
 
--- Give ∧ and ∨ same associativity and precedence as * and +
+-- Same associativity and precedence as * and +
 infixl 7 meet as ∧
 infixl 6 join as ∨
+infixl 6 relativeComplement as -
 
 type 𝔹 = Boolean
 type Raw (f :: Type -> Type) = f Unit
@@ -115,6 +120,14 @@ instance (BoundedJoinSemilattice a, BoundedJoinSemilattice b) => BoundedJoinSemi
 instance (BoundedMeetSemilattice a, BoundedMeetSemilattice b) => BoundedMeetSemilattice (a × b) where
    top = top × top
 
+instance (Neg a, Neg b) => Neg (a × b) where
+   neg x = bimap neg neg x
+else instance (Functor f, Neg a) => Neg (f a) where
+   neg x = neg <$> x
+
+instance (BooleanLattice a, BooleanLattice b) => BooleanLattice (a × b)
+else instance (BoundedLattice (f a), Neg (f a)) => BooleanLattice (f a)
+
 instance JoinSemilattice a => JoinSemilattice (Pair a) where
    join ab = definedJoin ab
    maybeJoin (Pair a a') (Pair b b') = Pair <$> maybeJoin a b <*> maybeJoin a' b'
@@ -128,9 +141,6 @@ instance JoinSemilattice a => JoinSemilattice (List a) where
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
    join = D.unionWith (∨) -- faster than definedJoin
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
-
-instance Neg a => Neg (Dict a) where
-   neg = (<$>) neg
 
 mayFailUpdate :: forall a m. MonadError Error m => JoinSemilattice a => Dict a -> Var × a -> m (Dict a)
 mayFailUpdate m (k × v) =

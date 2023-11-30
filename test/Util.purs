@@ -29,7 +29,7 @@ import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Spec.Assertions (fail)
 import Util (type (×), (×), AffError, EffectError, successful)
-import Val (class Ann, Env, Val(..))
+import Val (class Ann, BaseVal(..), Env, Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 
@@ -158,7 +158,7 @@ testGraph s gconfig spec@{ δv } benchmarking = do
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
-isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
+isGraphical (Val _ (Constr c _)) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
 isGraphical _ = false
 
 -- Like version in Test.Spec.Assertions but with error message.

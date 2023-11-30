@@ -9,11 +9,11 @@ import Data.Maybe (Maybe)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
-import Primitive (string)
+import Primitive (string, unpack)
 import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), (!), definitely')
-import Val (Val(..))
+import Val (BaseVal(..), Val(..))
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 
@@ -31,18 +31,18 @@ instance Reflect (Dict (Val Boolean)) Point where
 
 instance Reflect (Dict (Val Boolean)) LinePlot where
    from r = LinePlot
-      { name: string.unpack (get f_name r)
+      { name: unpack string (get f_name r)
       , data: record from <$> from (get f_data r)
       }
 
 instance Reflect (Dict (Val Boolean)) LineChart where
    from r = LineChart
-      { caption: string.unpack (get f_caption r)
+      { caption: unpack string (get f_caption r)
       , plots: from <$> (from (get f_plots r) :: Array (Val 𝔹)) :: Array LinePlot
       }
 
 instance Reflect (Val Boolean) LinePlot where
-   from (Constr _ c (u1 : Nil)) | c == cLinePlot = record from u1
+   from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
 lineChartHandler :: Handler
 lineChartHandler ev = togglePoint $ unsafePos $ target ev

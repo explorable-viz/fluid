@@ -16,7 +16,7 @@ import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
-import Data.Profunctor.Strong ((&&&), (***))
+import Data.Profunctor.Strong (class Strong, (&&&), (***))
 import Data.Set as S
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Aff.Class (class MonadAff)
@@ -46,6 +46,9 @@ type EffectError m a = MonadEffect m => MonadError Error m => m a
 -- Rethink: has same name as Effect.Exception.error but without the type!
 error :: ∀ a. String -> a
 error msg = unsafePerformEffect (throw msg)
+
+shapeMismatch :: forall a. Unit -> a
+shapeMismatch _ = error "Shape mismatch"
 
 throw :: forall m a. MonadThrow Error m => String -> m a
 throw = throwError <<< E.error
@@ -160,7 +163,7 @@ dup x = x × x
 unzip :: forall t a b. Functor t => t (a × b) -> t a × t b
 unzip = map fst &&& map snd
 
-both :: forall a b. (a -> b) -> a × a -> b × b
+both :: forall a b c. Category a => Strong a => a b c -> a (b × b) (c × c)
 both f = f *** f
 
 assoc1 :: forall a b c. (a × b) × c -> a × (b × c)

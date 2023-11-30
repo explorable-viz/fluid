@@ -24,10 +24,10 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
-import EvalBwd (evalBwd)
+import EvalBwd (TracedEval, evalBwd, traceGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
-import Lattice (𝔹, bot, botOf, erase, neg, topOf)
+import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -66,13 +66,8 @@ type FigSpec =
 
 type Fig =
    { spec :: FigSpec
-   , γ0 :: Env 𝔹 -- ambient env
-   , γ :: Env 𝔹 -- loaded dataset, if any, plus additional let bindings at beginning of ex
-   , s0 :: S.Expr 𝔹 -- program that was originally "split"
-   , s :: S.Expr 𝔹 -- body of example
-   , e :: Expr 𝔹 -- desugared s
-   , t :: Trace
-   , v :: Val 𝔹
+   , s0 :: Raw S.Expr -- program that was originally "split"
+   , gc :: TracedEval 𝔹
    }
 
 type LinkedOutputsFigSpec =
@@ -189,14 +184,14 @@ drawFile (file × src) =
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
 
--- For an output selection, views of corresponding input selections and output after round-trip.
+-- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
-figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
+figViews { spec: { xs }, gc: { gc, v } } δv = do
    let
-      γ0γ × e' × α = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t
-   _ × v' <- eval γ0γ e' α
-   views <- sequence (flip varView γ0γ <$> xs)
-   pure $ view "output" v' × views
+      γ0γ × e' × α = (unwrap gc).bwd (δv (botOf v))
+      v' = (unwrap gc).fwd (γ0γ × e' × α)
+   --      v' = (unwrap $ dual gc).bwd (γ0γ × e' × α)
+   (view "output" v' × _) <$> sequence (flip varView γ0γ <$> xs)
 
 linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
 linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
@@ -245,10 +240,8 @@ loadFig spec@{ file } = do
    s' <- open file
    let s0 = botOf s'
    { γ: γ1, s } <- splitDefs γ0 s0
-   e <- desug s
-   let γ = γ0 <+> γ1
-   t × v <- eval γ e bot
-   pure { spec, γ0, γ, s0, s, e, t, v }
+   gc <- desug s >>= traceGC (γ0 <+> γ1)
+   pure { spec, s0, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
