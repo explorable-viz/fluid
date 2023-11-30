@@ -15,6 +15,14 @@ function curry4(f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function fst(p) {
+   return p._1
+}
+
+function snd(p) {
+   return p._2
+}
+
 // https://stackoverflow.com/questions/5560248
 function colorShade(col, amt) {
    col = col.replace(/^#/, '')
@@ -35,15 +43,15 @@ function colorShade(col, amt) {
 }
 
 function max_y (linePlot) {
-   return Math.max(...linePlot.data.map(point => point.y._1))
+   return Math.max(...linePlot.data.map(point => fst(point.y)))
 }
 
 function min_x (linePlot) {
-   return Math.min(...linePlot.data.map(point => point.x._1))
+   return Math.min(...linePlot.data.map(point => fst(point.x)))
 }
 
 function max_x (linePlot) {
-   return Math.max(...linePlot.data.map(point => point.x._1))
+   return Math.max(...linePlot.data.map(point => fst(point.x)))
 }
 
 function drawLineChart_ (
@@ -63,7 +71,7 @@ function drawLineChart_ (
             y_max = Math.max(...plots.map(max_y)),
             x_min = Math.min(...plots.map(min_x)),
             x_max = Math.max(...plots.map(max_x)),
-            names = plots.map(plot => plot.name._1)
+            names = plots.map(plot => fst(plot.name))
       const div = d3.select('#' + id)
 
       div.selectAll('#' + childId).remove()
@@ -80,8 +88,8 @@ function drawLineChart_ (
             y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
 
       const line1 = d3.line()
-         .x(d => x(d.x._1))
-         .y(d => y(d.y._1))
+         .x(d => x(fst(d.x)))
+         .y(d => y(fst(d.y)))
 
       const color = d3.scaleOrdinal(d3.schemePastel1)
 
@@ -91,7 +99,7 @@ function drawLineChart_ (
          .append('g')
          .append('path')
          .attr('fill', 'none')
-         .attr('stroke', ([, d]) => color(names.indexOf(d.name._1)))
+         .attr('stroke', ([, d]) => color(names.indexOf(fst(d.name))))
          .attr('stroke-width', 1)
          .attr('class', 'line')
          .attr('d', ([_, d]) => line1(d.data))
@@ -99,17 +107,17 @@ function drawLineChart_ (
       const smallRadius = 2
       for (const n_plot of plots.entries()) {
          const [i, plot] = n_plot,
-               col = color(names.indexOf(plot.name._1))
+               col = color(names.indexOf(fst(plot.name)))
          svg.selectAll('markers')
             .data([...plot.data.entries()].map(([j, ns]) => [[i, j], ns]))
             .enter()
             .append('g')
             .append('circle')
-            .attr('r', ([, d]) => d.y._2 ? smallRadius * 2 : smallRadius)
-            .attr('cx', ([, d]) => x(d.x._1))
-            .attr('cy', ([, d]) => y(d.y._1))
+            .attr('r', ([, d]) => snd(d.y) ? smallRadius * 2 : smallRadius)
+            .attr('cx', ([, d]) => x(fst(d.x)))
+            .attr('cy', ([, d]) => y(fst(d.y)))
             .attr('fill', col)
-            .attr('stroke', ([, d]) => d.y._2 ? colorShade(col, -30) : col)
+            .attr('stroke', ([, d]) => snd(d.y) ? colorShade(col, -30) : col)
             .on('mousedown', (e, d) => {
 //               console.log(`mousedown ${d[0]}`)
                listener(e)
@@ -156,7 +164,7 @@ function drawLineChart_ (
          .attr('cy', legendLineHeight / 2 - smallRadius / 2)
 
       svg.append('text')
-         .text(caption._1)
+         .text(fst(caption))
          .attr('x', width / 2)
          .attr('y', height + 35)
          .attr('class', 'title-text')
