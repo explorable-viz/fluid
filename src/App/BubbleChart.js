@@ -112,7 +112,7 @@ function drawBubbleChart_ (
             .attr('z', ([, d]) => d.z._1)
             .attr('country', ([, d]) => d.c._1)
             .attr('stroke', 'black')
-            .style('fill', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -40) : c(d.c._1))
+            .style('fill', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -100) : c(d.c._1))
             .style('class', ([, d]) => d.y._2 ? 'dot-selected' : 'dot-unselected')
             .on('mousedown', (e, d) => {
                console.log(`mousedown ${d[0]}`)

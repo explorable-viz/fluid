@@ -4,14 +4,13 @@ let country_water c_name =
                         , city <- cities
                         , city.country == country.name];
             farm_water = sum [ country.farms | country <- countries, country.name == c_name ]
-        in head [{name: c_name, water: city_water + country.farms, farms: country.farms, popMil: country.popMil } | country <- countries, country.name == c_name ];
+        in head [{name: c_name, water: city_water + country.farms, farms: country.farms, popMil: country.popMil } 
+                | country <- countries, country.name == c_name ];
 let waters =
-        let c_names = [country.name | country <- countries]
-        in map country_water c_names;
-let countryData = 
-    let data_rec = waters
-    in [{x: country.water, y: country.farms, z: country.water `div` country.popMil, c: country.name} | country <- data_rec]
+    let c_names = [country.name | country <- countries]
+        in map country_water c_names
 in BubbleChart {
     caption: "Test linkedinputs bubble chart",
-    data: countryData
+    data: [{x: country.water, y: country.farms, z: country.water `div` country.popMil, c: country.name} | country <- waters]
 }
+
