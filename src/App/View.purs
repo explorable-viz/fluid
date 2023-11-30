@@ -43,7 +43,7 @@ view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
 view _ (Constr _ c (u1 : Nil)) | c == cBubbleChart =
    BubbleChartFig (unsafePartial $ record from u1)
 view title u@(Constr _ c _) | c == cNil || c == cCons =
-   TableFig (TableView { title, filter: true, table: unsafePartial $ record identity <$> from u })
+   TableFig (TableView { title, filter: false, table: unsafePartial $ record identity <$> from u })
 view title u@(Matrix _ _) =
    MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
 view _ _ = error absurd

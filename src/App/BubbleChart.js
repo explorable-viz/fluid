@@ -45,21 +45,21 @@ function drawBubbleChart_ (
    listener
 ) {
    return () => {
-      var max_width = 350
+      var max_width = 320
       var max_height = 185
       const x_max = Math.ceil(Math.max(...data.map(d => d.x._1)))
       const y_max = Math.ceil(Math.max(...data.map(d => d.y._1)))
       const z_max = Math.ceil(Math.max(...data.map(d => d.z._1)))
-
+      const x_z_max = Math.ceil(Math.max(...data.map(d => d.x._1 + d.z._1)))
       const childId = id + '-' + childIndex
-      const margin = {top: 15, right: 0, bottom: 40, left: 40}
-      if (x_max + z_max + margin.left + margin.right > max_width) {
-         max_width = x_max +  z_max  + margin.left + margin.right
-      }
-      if (y_max + z_max + margin.top + margin.bottom > max_height) {
-         max_height = y_max + z_max + margin.top + margin.bottom
-
-      }
+      const margin = {top: 15, right: 20, bottom: 40, left: 40}
+      // if (x_max + z_max + margin.left + margin.right > max_width) {
+      //    max_width = x_max +  z_max  + margin.left + margin.right
+      // }
+      // if (y_max + z_max + margin.top + margin.bottom > max_height) {
+      //    max_height = y_max + z_max + margin.top + margin.bottom
+         
+      // }
 
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
@@ -84,7 +84,7 @@ function drawBubbleChart_ (
 
 
       const x = d3.scaleLinear()
-         .domain([0,x_max + z_max + margin.left])
+         .domain([0,x_z_max + margin.right])
          .range([0, width])
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
@@ -102,8 +102,10 @@ function drawBubbleChart_ (
          .domain([1, z_max])
          .range([1, 30])
 
+      unique_countries = data.map(d => d.c._1)
+      console.log(unique_countries)
       const c = d3.scaleOrdinal()
-         .domain([...new Set(...data.map(d => d.c._1))])
+         .domain(unique_countries)
          .range(d3.schemeSet1)
 
       svg.append('g')
@@ -114,13 +116,23 @@ function drawBubbleChart_ (
             .attr('cx', ([, d]) => x(d.x._1))
             .attr('cy', ([, d]) => y(d.y._1))
             .attr('r', ([, d]) => z(d.z._1))
-            .attr('stroke', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -80) : colorShade(c(d.c._1), -40))
-            .style('fill', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -40) : c(d.c._1))
-            .style('class', ([, d]) => d.y._2 ? 'dot-selected' : 'dot-unselected')
+            .attr('stroke', 'black')
+            .style('fill', ([, d]) => (d.x._2 || d.y._2 || d.z._2) ? colorShade(c(d.c._1), -40) : c(d.c._1))
+            .style('class', ([, d]) => (d.x._2 || d.y._2 || d.z._2) ? 'dot-selected' : 'dot-unselected')
             .on('mousedown', (e, d) => {
 //               console.log(`mousedown ${d[0]}`)
                listener(e)
             })
+      svg.selectAll("mylabels")
+         .data(unique_countries)
+         .enter()
+         .append("text")
+         .attr("x", max_width - 40)
+         .attr("y", (d, i) => i * 20 + 10)
+         .style("fill", d => c(d))
+         .text(d => d)
+         .attr("text-anchor", "left")
+         .attr("alignment-baseline", "middle")
 
       svg.append('text')
          .text(caption._1)
