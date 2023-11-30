@@ -98,15 +98,6 @@ intPair2 =
         v -> typeError2 v "Pair"
    }
 
-matrixRep :: forall a. ToFrom (MatrixRep a) a
-matrixRep =
-   { pack: \(m × α) -> Val α (Matrix m)
-   , unpack
-   }
-   where
-   unpack (Val α (Matrix m)) = m × α
-   unpack v = typeError v "Matrix"
-
 matrixRep2 :: forall a. ToFrom2 (MatrixRep a) a
 matrixRep2 =
    { pack: Matrix
@@ -115,15 +106,6 @@ matrixRep2 =
         v -> typeError2 v "Matrix"
    }
 
-record :: forall a. ToFrom (Dict (Val a)) a
-record =
-   { pack: \(xvs × α) -> Val α (Record xvs)
-   , unpack
-   }
-   where
-   unpack (Val α (Record xvs)) = xvs × α
-   unpack v = typeError v "Record"
-
 record2 :: forall a. ToFrom2 (Dict (Val a)) a
 record2 =
    { pack: Record
@@ -131,19 +113,6 @@ record2 =
         Record xvs -> xvs
         v -> typeError2 v "Record"
    }
-
-boolean :: forall a. ToFrom Boolean a
-boolean =
-   { pack: case _ of
-        true × α -> Val α (Constr cTrue Nil)
-        false × α -> Val α (Constr cFalse Nil)
-   , unpack
-   }
-   where
-   unpack (Val α (Constr c Nil))
-      | c == cTrue = true × α
-      | c == cFalse = false × α
-   unpack v = typeError v "Boolean"
 
 boolean2 :: forall a. ToFrom2 Boolean a
 boolean2 =
