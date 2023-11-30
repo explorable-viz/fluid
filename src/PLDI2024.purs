@@ -23,7 +23,8 @@ linkedOutputs =
    }
 
 linkedInputs_spec_pres :: TestLinkedInputsSpec
-linkedInputs_spec_pres =    { spec:
+linkedInputs_spec_pres =
+   { spec:
         { divId: "fig-3"
         , file: File "water"
         , x1: "countries"
@@ -39,6 +40,6 @@ main :: Effect Unit
 main =
    runAffs_ (uncurry drawLinkedInputsFig)
       [ loadLinkedInputsTest linkedInputs_spec1
-      , loadLinkedInputsTest linkedInputs_spec2 
+      , loadLinkedInputsTest linkedInputs_spec2
       , loadLinkedInputsTest linkedInputs_spec_pres
       ]
