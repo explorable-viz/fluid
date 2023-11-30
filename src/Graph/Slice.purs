@@ -11,7 +11,7 @@ import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert, singleton)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks, vertices)
-import Graph.GraphWriter (WithGraph, extend, runWithGraph)
+import Graph.WithGraph (WithGraph, extend, runWithGraph)
 import Util (type (×), (×), (∈), (\\))
 import Val (Val)
 

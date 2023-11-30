@@ -16,10 +16,10 @@ import Data.Set (subset)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
-import Dict (disjointUnion, get, empty, lookup, keys)
+import Dict (Dict, disjointUnion, empty, get, keys, lookup)
 import Dict (fromFoldable, singleton, unzip) as D
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
@@ -28,7 +28,7 @@ import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (×), (∪), absurd, both, check, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, forDefs, lookup', restrict, (<+>))
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -62,9 +62,9 @@ matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
-closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
+closeDefs :: forall a. Env a -> Dict (Elim a) -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
-   let ρ' = ρ `for` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
+   let ρ' = ρ `forDefs` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
 
 checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = do
@@ -157,10 +157,10 @@ eval γ (Let (VarDef σ e) e') α = do
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
    t' × v' <- eval (γ <+> γ') e' α' -- (α ∧ α') for consistency with functions? (similarly for module defs)
    pure $ T.Let (T.VarDef w t) t' × v'
-eval γ (LetRec α ρ e) α' = do
+eval γ (LetRec (RecDefs α ρ) e) α' = do
    let γ' = closeDefs γ ρ (α ∧ α')
    t × v <- eval (γ <+> γ') e (α ∧ α')
-   pure $ T.LetRec (erase <$> ρ) t × v
+   pure $ T.LetRec (RecDefs unit $ erase <$> ρ) t × v
 
 eval_module :: forall a m. MonadError Error m => Ann a => Env a -> Module a -> a -> m (Env a)
 eval_module γ = go empty
@@ -171,5 +171,5 @@ eval_module γ = go empty
       _ × v <- eval (γ <+> y') e α
       γ'' × _ × α' × _ <- match v σ
       go (y' <+> γ'') (Module ds) α'
-   go γ' (Module (Right ρ : ds)) α =
-      go (γ' <+> closeDefs (γ <+> γ') ρ α) (Module ds) α
+   go γ' (Module (Right (RecDefs α ρ) : ds)) α' =
+      go (γ' <+> closeDefs (γ <+> γ') ρ (α ∧ α')) (Module ds) α'

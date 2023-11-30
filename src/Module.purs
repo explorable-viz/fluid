@@ -11,26 +11,27 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
-import Data.Traversable (traverse)
+import Data.Set as Set
+import Debug (trace)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
-import Expr (ProgCxt(..))
 import Graph (empty) as G
+import Graph (sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.GraphWriter (alloc, runWithGraphAllocT)
+import Graph.WithGraph (alloc, runWithGraphAllocT)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
+import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), (×), AffError, mapLeft)
+import Util (type (×), (×), (\\), AffError, mapLeft)
 import Util.Parse (SParser)
 
--- Mainly serve as documentation
 newtype File = File String
 newtype Folder = Folder String
 
@@ -68,7 +69,7 @@ module_ file (ProgCxt r@{ mods }) = do
 
 defaultImports :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
 defaultImports =
-   pure (ProgCxt { mods: Nil, datasets: Nil })
+   pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
       >>= module_ (File "prelude")
       >>= module_ (File "graphics")
       >>= module_ (File "convolution")
@@ -84,7 +85,7 @@ initialConfig :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig G
 initialConfig progCxt = do
    (g × n) × progCxt' × γ <- runWithGraphAllocT (G.empty × 0) do
       progCxt' <- alloc progCxt
-      primitives' <- traverse alloc primitives
-      γ <- eval_progCxt primitives' progCxt'
+      γ <- eval_progCxt progCxt'
       pure (progCxt' × γ)
-   pure { g, n, progCxt: progCxt', γ }
+   trace (show (Set.size $ sinks g \\ vertices progCxt')) \_ ->
+      pure { g, n, progCxt: progCxt', γ }

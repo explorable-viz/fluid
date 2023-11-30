@@ -25,12 +25,13 @@ data View
    | BarChartFig BarChart
    | BubbleChartFig BubbleChart
 
-drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
-drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
-drawView divId onSel n (TableFig vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
-drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
-drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
-drawView divId onSel n (BubbleChartFig vw) = drawBubbleChart divId n vw =<< eventListener (onSel <<< bubbleChartHandler)
+drawView :: HTMLId -> Int -> OnSel -> View -> Effect Unit
+drawView divId n onSel = case _ of
+   MatrixFig vw -> drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
+   TableFig vw -> drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
+   LineChartFig vw -> drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
+   BarChartFig vw -> drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
+   BubbleChartFig vw -> drawBubbleChart divId n vw =<< eventListener (onSel <<< bubbleChartHandler)
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.
