@@ -112,10 +112,7 @@ function drawBarChart_ (
             .attr('height', ([, d]) => height - y(fst(d.y)))
             .attr('fill', ([, d]) => snd(d.y) ? colorShade(barFill, -40) : barFill)
             .attr('class', ([, d]) => snd(d.y) ? 'bar-selected' : 'bar-unselected')
-            .on('mousedown', (e, d) => {
-//               console.log(`mousedown ${d[0]}`)
-               listener(e)
-            })
+            .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')
          .text(fst(caption))

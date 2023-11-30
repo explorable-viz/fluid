@@ -15,7 +15,7 @@ import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Primitive as P
 import Util (absurd, error)
-import Val (Val(..))
+import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (eventListener)
 
 data View
@@ -36,14 +36,14 @@ drawView divId n onSel = case _ of
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.
 view :: String -> Val 𝔹 -> View
-view _ (Constr _ c (u1 : Nil)) | c == cBarChart =
+view _ (Val _ (Constr c (u1 : Nil))) | c == cBarChart =
    BarChartFig (unsafePartial $ record from u1)
-view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
+view _ (Val _ (Constr c (u1 : Nil))) | c == cLineChart =
    LineChartFig (unsafePartial $ record from u1)
-view _ (Constr _ c (u1 : Nil)) | c == cBubbleChart =
+view _ (Val _ (Constr c (u1 : Nil))) | c == cBubbleChart =
    BubbleChartFig (unsafePartial $ record from u1)
-view title u@(Constr _ c _) | c == cNil || c == cCons =
+view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
    TableFig (TableView { title, filter: true, table: unsafePartial $ record identity <$> from u })
-view title u@(Matrix _ _) =
+view title u@(Val _ (Matrix _)) =
    MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
 view _ _ = error absurd

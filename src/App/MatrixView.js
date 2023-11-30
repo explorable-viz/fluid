@@ -111,10 +111,7 @@ function drawMatrix_ (
          .attr('text-anchor', 'left')
 
       svg.selectAll('rect')
-         .on('mousedown', (e, d) => {
-//            console.log(`mousedown ${d[0]}`)
-            listener(e)
-         })
+         .on('mousedown', e => { listener(e) })
    }
 }
 

@@ -118,10 +118,7 @@ function drawLineChart_ (
             .attr('cy', ([, d]) => y(fst(d.y)))
             .attr('fill', col)
             .attr('stroke', ([, d]) => snd(d.y) ? colorShade(col, -30) : col)
-            .on('mousedown', (e, d) => {
-//               console.log(`mousedown ${d[0]}`)
-               listener(e)
-            })
+            .on('mousedown', (e, d) => { listener(e) })
       }
 
       svg.append('g')

@@ -116,10 +116,7 @@ function drawBubbleChart_ (
             .attr('stroke', ([, d]) => d.y._2 ? colorShade(c(fst(d.c)), -80) : colorShade(c(fst(d.c)), -40))
             .style('fill', ([, d]) => d.y._2 ? colorShade(c(fst(d.c)), -40) : c(fst(d.c)))
             .style('class', ([, d]) => d.y._2 ? 'dot-selected' : 'dot-unselected')
-            .on('mousedown', (e, d) => {
-//               console.log(`mousedown ${d[0]}`)
-               listener(e)
-            })
+            .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')
          .text(fst(caption))

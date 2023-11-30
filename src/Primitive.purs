@@ -15,7 +15,7 @@ import Lattice (class BoundedJoinSemilattice, Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), (×), error)
-import Val (class Ann, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
+import Val (class Ann, BaseVal(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -30,93 +30,93 @@ typeError v typeName = error (typeName <> " expected; got " <> prettyP (erase v)
 
 int :: forall a. ToFrom Int a
 int =
-   { pack: \(n × α) -> Int α n
+   { pack: \(n × α) -> Val α (Int n)
    , unpack
    }
    where
-   unpack (Int α n) = n × α
+   unpack (Val α (Int n)) = n × α
    unpack v = typeError v "Int"
 
 number :: forall a. ToFrom Number a
 number =
-   { pack: \(n × α) -> Float α n
+   { pack: \(n × α) -> Val α (Float n)
    , unpack
    }
    where
-   unpack (Float α n) = n × α
+   unpack (Val α (Float n)) = n × α
    unpack v = typeError v "Float"
 
 string :: forall a. ToFrom String a
 string =
-   { pack: \(str × α) -> Str α str
+   { pack: \(str × α) -> Val α (Str str)
    , unpack
    }
    where
-   unpack (Str α str) = str × α
+   unpack (Val α (Str str)) = str × α
    unpack v = typeError v "Str"
 
 intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
    { pack: case _ of
-        Left n × α -> Int α n
-        Right n × α -> Float α n
+        Left n × α -> Val α (Int n)
+        Right n × α -> Val α (Float n)
    , unpack
    }
    where
-   unpack (Int α n) = Left n × α
-   unpack (Float α n) = Right n × α
+   unpack (Val α (Int n)) = Left n × α
+   unpack (Val α (Float n)) = Right n × α
    unpack v = typeError v "Int or Float"
 
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
    { pack: case _ of
-        Left n × α -> Int α n
-        Right (Left n) × α -> Float α n
-        Right (Right str) × α -> Str α str
+        Left n × α -> Val α (Int n)
+        Right (Left n) × α -> Val α (Float n)
+        Right (Right str) × α -> Val α (Str str)
    , unpack
    }
    where
-   unpack (Int α n) = Left n × α
-   unpack (Float α n) = Right (Left n) × α
-   unpack (Str α str) = Right (Right str) × α
+   unpack (Val α (Int n)) = Left n × α
+   unpack (Val α (Float n)) = Right (Left n) × α
+   unpack (Val α (Str str)) = Right (Right str) × α
    unpack v = typeError v "Int, Float or Str"
 
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
-   { pack: \((nβ × mβ') × α) -> Constr α cPair (int.pack nβ : int.pack mβ' : Nil)
+   { pack: \((nβ × mβ') × α) -> Val α (Constr cPair (int.pack nβ : int.pack mβ' : Nil))
    , unpack
    }
    where
-   unpack (Constr α c (v : v' : Nil)) | c == cPair = (int.unpack v × int.unpack v') × α
+   unpack (Val α (Constr c (v : v' : Nil))) | c == cPair = (int.unpack v × int.unpack v') × α
    unpack v = typeError v "Pair"
 
 matrixRep :: forall a. Ann a => ToFrom (MatrixRep a) a
 matrixRep =
-   { pack: \(m × α) -> Matrix α m
+   { pack: \(m × α) -> Val α (Matrix m)
    , unpack
    }
    where
-   unpack (Matrix α m) = m × α
+   unpack (Val α (Matrix m)) = m × α
    unpack v = typeError v "Matrix"
 
 record :: forall a. Ann a => ToFrom (Dict (Val a)) a
 record =
-   { pack: \(xvs × α) -> Record α xvs
+   { pack: \(xvs × α) -> Val α (Record xvs)
    , unpack
    }
    where
-   unpack (Record α xvs) = xvs × α
+   unpack (Val α (Record xvs)) = xvs × α
    unpack v = typeError v "Record"
 
 boolean :: forall a. ToFrom Boolean a
 boolean =
    { pack: case _ of
-        true × α -> Constr α cTrue Nil
-        false × α -> Constr α cFalse Nil
+        true × α -> Val α (Constr cTrue Nil)
+        false × α -> Val α (Constr cFalse Nil)
    , unpack
    }
    where
-   unpack (Constr α c Nil)
+   unpack (Val α (Constr c Nil))
       | c == cTrue = true × α
       | c == cFalse = false × α
    unpack v = typeError v "Boolean"
@@ -155,7 +155,7 @@ type BinaryZero i o a =
 
 unary :: forall i o a'. BoundedJoinSemilattice a' => String -> (forall a. Unary i o a) -> Bind (Val a')
 unary id f =
-   id × Fun bot (Foreign (ForeignOp (id × op)) Nil)
+   id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
    op :: Exists ForeignOp'
    op = mkExists $
@@ -180,7 +180,7 @@ unary id f =
 
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
 binary id f =
-   id × Fun bot (Foreign (ForeignOp (id × op)) Nil)
+   id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
    op :: Exists ForeignOp'
    op = mkExists $
@@ -206,7 +206,7 @@ binary id f =
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => String -> (forall a. BinaryZero i o a) -> Bind (Val a')
 binaryZero id f =
-   id × Fun bot (Foreign (ForeignOp (id × op)) Nil)
+   id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
    op :: Exists ForeignOp'
    op = mkExists $

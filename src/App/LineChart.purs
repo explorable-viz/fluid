@@ -13,7 +13,7 @@ import Primitive (string)
 import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), (!), definitely')
-import Val (Val(..))
+import Val (BaseVal(..), Val(..))
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 
@@ -42,7 +42,7 @@ instance Reflect (Dict (Val Boolean)) LineChart where
       }
 
 instance Reflect (Val Boolean) LinePlot where
-   from (Constr _ c (u1 : Nil)) | c == cLinePlot = record from u1
+   from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
 lineChartHandler :: Handler
 lineChartHandler ev = togglePoint $ unsafePos $ target ev

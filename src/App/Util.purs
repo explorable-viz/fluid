@@ -15,7 +15,7 @@ import Primitive (as, intOrNumber)
 import Primitive (record) as P
 import Util (type (×))
 import Test.Util (Selector)
-import Val (Val(..))
+import Val (BaseVal(..), Val(..))
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 
@@ -39,5 +39,5 @@ class Reflect a b where
 
 -- Discard any constructor-level annotations.
 instance Reflect (Val Boolean) (Array (Val Boolean)) where
-   from (Constr _ c Nil) | c == cNil = []
-   from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
+   from (Val _ (Constr c Nil)) | c == cNil = []
+   from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2

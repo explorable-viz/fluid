@@ -37,8 +37,8 @@ import Primitive (string, intPair)
 import ProgCxt (ProgCxt(..))
 import Util (type (×), (×), (∪), (∩), check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, forDefs, lookup', restrict, (<+>))
-import Val (Fun(..), Val(..)) as V
+import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
+import Val (BaseVal(..), Fun(..)) as V
 
 type GraphConfig g =
    { progCxt :: ProgCxt Vertex
@@ -55,7 +55,7 @@ match :: forall m. MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env 
 match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × empty)
    | otherwise = pure (D.singleton x v × κ × empty)
-match (V.Constr α c vs) (ElimConstr m) = do
+match (Val α (V.Constr c vs)) (ElimConstr m) = do
    with "Pattern mismatch" $ Set.singleton c `consistentWith` D.keys m
    κ <- D.lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × αs <- matchMany vs κ
@@ -63,7 +63,7 @@ match (V.Constr α c vs) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor $ D.keys m
    throw $ patternMismatch (prettyP v) (show d)
-match (V.Record α xvs) (ElimRecord xs κ) = do
+match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
    check (Set.subset xs (Set.fromFoldable $ D.keys xvs))
       $ patternMismatch (show (D.keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
@@ -84,15 +84,15 @@ matchMany _ _ = error "absurd"
 closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> NonEmptySet Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    for ρ \σ ->
-      let ρ' = ρ `forDefs` σ in V.Fun <$> new αs <@> V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
+      let ρ' = ρ `forDefs` σ in Val <$> new αs <@> V.Fun (V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ)
 
 {-# Evaluation #-}
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
-apply (V.Fun α (V.Closure γ1 ρ σ)) v = do
+apply (Val α (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
-apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs)) v =
+apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    runExists apply' φ
    where
    vs' = snoc vs v
@@ -100,12 +100,12 @@ apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs)) v =
    apply' :: forall t. ForeignOp' t -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         V.Fun <$> new (singleton α) <@> V.Foreign (ForeignOp (id × φ)) vs'
+         Val <$> new (singleton α) <@> (V.Fun (V.Foreign (ForeignOp (id × φ)) vs'))
       else φ'.op' vs'
-apply (V.Fun α (V.PartialConstr c vs)) v = do
+apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   if length vs < n - 1 then V.Fun <$> new (singleton α) <@> V.PartialConstr c (snoc vs v)
-   else V.Constr <$> new (singleton α) <@> c <@> snoc vs v
+   if length vs < n - 1 then Val <$> new (singleton α) <@> V.Fun (V.PartialConstr c (snoc vs v))
+   else Val <$> new (singleton α) <@> V.Constr c (snoc vs v)
    where
    n = successful (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
@@ -113,22 +113,22 @@ apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = lookup' x γ
 eval γ (Op op) _ = lookup' op γ
-eval _ (Int α n) αs = V.Int <$> new (α `cons` αs) <@> n
-eval _ (Float α n) αs = V.Float <$> new (α `cons` αs) <@> n
-eval _ (Str α s) αs = V.Str <$> new (α `cons` αs) <@> s
+eval _ (Int α n) αs = Val <$> new (α `cons` αs) <@> V.Int n
+eval _ (Float α n) αs = Val <$> new (α `cons` αs) <@> V.Float n
+eval _ (Str α s) αs = Val <$> new (α `cons` αs) <@> V.Str s
 eval γ (Record α xes) αs = do
    xvs <- traverse (flip (eval γ) αs) xes
-   V.Record <$> new (α `cons` αs) <@> xvs
+   Val <$> new (α `cons` αs) <@> V.Record xvs
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> string.unpack) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   V.Dictionary <$> new (α `cons` αs) <@> DictRep d
+   Val <$> new (α `cons` αs) <@> V.Dictionary (DictRep d)
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   V.Constr <$> new (α `cons` αs) <@> c <@> vs
+   Val <$> new (α `cons` αs) <@> V.Constr c vs
 eval γ (Matrix α e (x × y) e') αs = do
    v <- eval γ e' αs
    let (i' × β) × (j' × β') = fst (intPair.unpack v)
@@ -139,15 +139,15 @@ eval γ (Matrix α e (x × y) e') αs = do
       i <- A.range 1 i'
       A.singleton $ sequence do
          j <- A.range 1 j'
-         let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
+         let γ' = D.singleton x (Val β (V.Int i)) `D.disjointUnion` (D.singleton y (Val β' (V.Int j)))
          A.singleton (eval (γ <+> γ') e αs)
-   V.Matrix <$> new (α `cons` αs) <@> MatrixRep (vss × (i' × β) × (j' × β'))
+   Val <$> new (α `cons` αs) <@> V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
 eval γ (Lambda α σ) αs =
-   V.Fun <$> new (α `cons` αs) <@> V.Closure (γ `restrict` fv σ) D.empty σ
+   Val <$> new (α `cons` αs) <@> V.Fun (V.Closure (γ `restrict` fv σ) D.empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
-      V.Record _ xvs -> lookup' x xvs
+      Val _ (V.Record xvs) -> lookup' x xvs
       _ -> throw $ "Found " <> prettyP v <> ", expected record"
 eval γ (App e e') αs = do
    v <- eval γ e αs

@@ -28,8 +28,8 @@ import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestP
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
-import Val (Fun(..), Val(..)) as V
-import Val (class Ann, class Highlightable, DictRep(..), ForeignOp(..), Fun, MatrixRep(..), Val, highlightIf)
+import Val (BaseVal(..), Fun(..)) as V
+import Val (class Ann, class Highlightable, BaseVal, DictRep(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), highlightIf)
 
 class Pretty p where
    pretty :: p -> Doc
@@ -135,14 +135,14 @@ removeDocWS (Doc d) = Doc
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op op) = parentheses (text op)
-   pretty (Int ann n) = (highlightIf ann $ text (show n))
-   pretty (Float ann n) = (highlightIf ann $ text (show n))
-   pretty (Str ann str) = (highlightIf ann $ (text ("\"" <> str <> "\"")))
-   pretty (Constr ann c x) = (prettyConstr ann c x)
-   pretty (Record ann xss) = (highlightIf ann $ curlyBraces (prettyOperator (.-.) xss))
-   pretty (Dictionary ann sss) = (highlightIf ann $ dictBrackets (pretty sss))
-   pretty (Matrix ann e (x × y) e') =
-      highlightIf ann $ arrayBrackets
+   pretty (Int α n) = highlightIf α $ text (show n)
+   pretty (Float α n) = highlightIf α $ text (show n)
+   pretty (Str α str) = highlightIf α $ (text ("\"" <> str <> "\""))
+   pretty (Constr α c x) = highlightIf α $ prettyConstr c x
+   pretty (Record α xss) = highlightIf α $ curlyBraces (prettyOperator (.-.) xss)
+   pretty (Dictionary α sss) = highlightIf α $ dictBrackets (pretty sss)
+   pretty (Matrix α e (x × y) e') =
+      highlightIf α $ arrayBrackets
          ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
               .<>. text str.in_
               .<>. pretty e'
@@ -297,6 +297,7 @@ parens = between (text "(") (text ")")
 class ToList a where
    toList2 :: a -> List a
 
+{-
 class ToPair a where
    toPair :: a -> a × a
 
@@ -307,7 +308,7 @@ instance ToPair (E.Expr a) where
 instance ToPair (Val a) where
    toPair (V.Constr _ c (v : v' : Nil)) | c == cPair = v × v'
    toPair _ = error absurd
-
+-}
 instance Pretty String where
    pretty = text
 
@@ -333,34 +334,32 @@ prettyParensOpt x =
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
-prettyConstr :: forall d a. Pretty d => Highlightable a => a -> Ctr -> List d -> Doc
-prettyConstr α c (x : y : ys)
-   | c == cPair = assert (null ys) $ (highlightIf α $ parens (hcomma [ pretty x, pretty y ]))
-prettyConstr α c ys
-   | c == cNil = assert (null ys) $ (highlightIf α nil)
-prettyConstr α c (x : y : ys)
-   | c == cCons = assert (null ys) $ parens (hcat [ pretty x, (highlightIf α $ text str.colon), pretty y ])
-prettyConstr α c (x : Nil) = (highlightIf α (prettyCtr c .<>. pretty x))
-prettyConstr α c xs = hcat ((highlightIf α (prettyCtr c)) : (prettyParensOpt <$> xs))
+prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
+prettyConstr c (x : y : ys)
+   | c == cPair = assert (null ys) $ parens (hcomma [ pretty x, pretty y ])
+prettyConstr c ys
+   | c == cNil = assert (null ys) nil
+prettyConstr c (x : y : ys)
+   | c == cCons = assert (null ys) $ parens (hcat [ pretty x, text str.colon, pretty y ])
+prettyConstr c (x : Nil) = prettyCtr c .<>. pretty x
+prettyConstr c xs = hcat (prettyCtr c : (prettyParensOpt <$> xs))
 
 prettyRecordOrDict
-   :: forall d b a
+   :: forall d b
     . Pretty d
-   => Highlightable a
    => Doc
    -> Endo Doc
    -> (b -> Doc)
-   -> a
    -> List (b × d)
    -> Doc
-prettyRecordOrDict sep bracify prettyKey α xvs =
+prettyRecordOrDict sep bracify prettyKey xvs =
    xvs <#> first prettyKey <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
-      # hcomma >>> bracify >>> highlightIf α
+      # hcomma >>> bracify
 
-prettyDict :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
+prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
 prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colonEq)
 
-prettyRecord :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
+prettyRecord :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
 prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon)
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
@@ -368,12 +367,12 @@ prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
-   pretty (E.Int α n) = (highlightIf α (text (show n)))
+   pretty (E.Int α n) = highlightIf α (text (show n))
    pretty (E.Float _ n) = text (show n)
    pretty (E.Str _ str) = text (show str)
-   pretty (E.Record α xes) = prettyRecord text α (xes # D.toUnfoldable)
-   pretty (E.Dictionary α ees) = prettyDict pretty α (ees <#> toTuple)
-   pretty (E.Constr α c es) = prettyConstr α c es
+   pretty (E.Record α xes) = highlightIf α $ prettyRecord text (xes # D.toUnfoldable)
+   pretty (E.Dictionary α ees) = highlightIf α $ prettyDict pretty (ees <#> toTuple)
+   pretty (E.Constr α c es) = highlightIf α $ prettyConstr c es
    pretty (E.Matrix α e1 (i × j) e2) = (highlightIf α (prettyMatrix e1 i j e2))
    pretty (E.Lambda _ σ) = hcat [ text str.fun, pretty σ ]
    pretty (E.Op op) = parens (text op)
@@ -422,22 +421,24 @@ instance Highlightable a => Pretty (Elim a) where
    pretty (ElimRecord xs κ) = hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance Highlightable a => Pretty (Val a) where
-   pretty (V.Int α n) = (highlightIf α (text (show n)))
-   pretty (V.Float α n) = (highlightIf α (text (show n)))
-   pretty (V.Str α str) = (highlightIf α (text (show str)))
-   pretty (V.Record α xvs) = prettyRecord text α (xvs # D.toUnfoldable)
-   pretty (V.Dictionary α (DictRep svs)) = prettyDict
-      (\(s × β) -> highlightIf β (text (show s)))
-      α
-      (svs # D.toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)
-   pretty (V.Constr α c vs) = prettyConstr α c vs
-   pretty (V.Matrix _ (MatrixRep (vss × _ × _))) = vert comma (((<$>) pretty >>> hcomma) <$> vss)
-   pretty (V.Fun α φ) = pretty (α × φ)
+   pretty (Val α v) = highlightIf α $ pretty v
 
-instance Highlightable a => Pretty (a × Fun a) where
-   pretty (α × V.Closure _ _ _) = (highlightIf α $ text "<closure>")
-   pretty (_ × V.Foreign φ _) = pretty φ
-   pretty (α × V.PartialConstr c vs) = prettyConstr α c vs
+instance Highlightable a => Pretty (BaseVal a) where
+   pretty (V.Int n) = text (show n)
+   pretty (V.Float n) = text (show n)
+   pretty (V.Str str) = text (show str)
+   pretty (V.Record xvs) = prettyRecord text (xvs # D.toUnfoldable)
+   pretty (V.Dictionary (DictRep svs)) = prettyDict
+      (\(s × β) -> highlightIf β (text (show s)))
+      (svs # D.toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)
+   pretty (V.Constr c vs) = prettyConstr c vs
+   pretty (V.Matrix (MatrixRep (vss × _ × _))) = vert comma (((<$>) pretty >>> hcomma) <$> vss)
+   pretty (V.Fun φ) = pretty φ
+
+instance Highlightable a => Pretty (Fun a) where
+   pretty (V.Closure _ _ _) = text "<closure>"
+   pretty (V.Foreign φ _) = pretty φ
+   pretty (V.PartialConstr c vs) = prettyConstr c vs
 
 instance Pretty ForeignOp where
    pretty (ForeignOp (s × _)) = text s
