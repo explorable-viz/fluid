@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (HTMLId, doNothing)
+import App.Util (HTMLId, Sel(..), doNothing, toSel)
 import App.Util.Select (envVal)
 import App.View (View, drawView, view)
 import Bindings (Var)
@@ -27,6 +27,7 @@ import Eval (eval, eval_module)
 import EvalBwd (TracedEval, evalBwd, traceGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
+import GaloisConnection (dual)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
@@ -137,9 +138,9 @@ drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
    v1' × v2' × v0 <- linkedOutputsResult fig δv
    let δv1 × δv2 = split δv
    sequence_ $ uncurry3 (drawView divId) <$>
-      [ 2 × ((δv1 >>> _) >>> Left >>> drawLinkedOutputsFig fig) × view "left view" v1'
-      , 0 × ((δv2 >>> _) >>> Right >>> drawLinkedOutputsFig fig) × view "right view" v2'
-      , 1 × doNothing × view "common data" v0
+      [ 2 × ((δv1 >>> _) >>> Left >>> drawLinkedOutputsFig fig) × view "left view" (v1' <#> toSel)
+      , 0 × ((δv2 >>> _) >>> Right >>> drawLinkedOutputsFig fig) × view "right view" (v2' <#> toSel)
+      , 1 × doNothing × view "common data" (v0 <#> toSel)
       ]
 
 drawLinkedOutputsFigWithCode :: LinkedOutputsFig -> Effect Unit
@@ -156,9 +157,9 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
    v1' × v2' × v0 <- linkedInputsResult fig δv
    let δv1 × δv2 = split δv
    sequence_ $ uncurry3 (drawView divId) <$>
-      [ 0 × doNothing × view "common output" v0
-      , 2 × ((δv1 >>> _) >>> Left >>> drawLinkedInputsFig fig) × view x1 v1'
-      , 1 × ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) × view x2 v2'
+      [ 0 × doNothing × view "common output" (v0 <#> toSel)
+      , 2 × ((δv1 >>> _) >>> Left >>> drawLinkedInputsFig fig) × view x1 (v1' <#> toSel)
+      , 1 × ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) × view x2 (v2' <#> toSel)
       ]
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
@@ -182,15 +183,21 @@ drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
-varView x γ = view x <$> (lookup x γ # orElse absurd)
+varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
+
+asSel :: 𝔹 -> 𝔹 -> Sel
+asSel false false = None
+asSel false true = Secondary
+asSel true false = Primary -- "costless output", but ignore those for now
+asSel true true = Primary
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
 figViews { spec: { xs }, gc: { gc, v } } δv = do
    let
-      γ0γ × e' × α = (unwrap gc).bwd (δv (botOf v))
-      v' = (unwrap gc).fwd (γ0γ × e' × α)
-   --      v' = (unwrap $ dual gc).bwd (γ0γ × e' × α)
+      v1 = δv (botOf v)
+      γ0γ × e' × α = (unwrap gc).bwd v1
+      v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ0γ × e' × α)
    (view "output" v' × _) <$> sequence (flip varView γ0γ <$> xs)
 
 linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
