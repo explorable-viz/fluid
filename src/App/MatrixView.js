@@ -15,6 +15,14 @@ function curry4(f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function fst(p) {
+   return p._1
+}
+
+function snd(p) {
+   return p._2
+}
+
 // https://stackoverflow.com/questions/5560248
 function colorShade(col, amt) {
    col = col.replace(/^#/, '')
@@ -81,12 +89,12 @@ function drawMatrix_ (
          .attr('x', (_, j) => w * j)
          .attr('width', w)
          .attr('height', h)
-         .attr('class', ([, n]) => n._2 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
+         .attr('class', ([, n]) => snd(n) ? 'matrix-cell-selected' : 'matrix-cell-unselected')
          .attr('stroke-width', strokeWidth)
 
       rect
          .append('text')
-         .text(([, n]) => n._1)
+         .text(([, n]) => fst(n))
          .attr('x', (_, j) => w * (j + 0.5))
          .attr('y', 0.5 * h)
          .attr('class', 'matrix-cell-text')
