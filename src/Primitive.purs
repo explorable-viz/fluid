@@ -50,15 +50,6 @@ int2 =
         v -> typeError2 v "Int"
    }
 
-number :: forall a. ToFrom Number a
-number =
-   { pack: \(n × α) -> Val α (Float n)
-   , unpack
-   }
-   where
-   unpack (Val α (Float n)) = n × α
-   unpack v = typeError v "Float"
-
 number2 :: forall a. ToFrom2 Number a
 number2 =
    { pack: Float
@@ -66,15 +57,6 @@ number2 =
         Float n -> n
         v -> typeError2 v "Float"
    }
-
-string :: forall a. ToFrom String a
-string =
-   { pack: \(str × α) -> Val α (Str str)
-   , unpack
-   }
-   where
-   unpack (Val α (Str str)) = str × α
-   unpack v = typeError v "Str"
 
 string2 :: forall a. ToFrom2 String a
 string2 =

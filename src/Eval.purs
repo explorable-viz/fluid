@@ -22,7 +22,7 @@ import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
 import Pretty (prettyP)
-import Primitive (intPair, string)
+import Primitive (intPair, string2, unpack2)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (×), (∪), absurd, both, check, error, orElse, successful, throw, with)
@@ -117,7 +117,7 @@ eval γ (Record α xes) α' = do
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
    let
-      ss × αs = vs <#> string.unpack # unzip
+      ss × αs = vs <#> unpack2 string2 # unzip
       d = D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (DictRep d))
 eval γ (Constr α c es) α' = do

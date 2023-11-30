@@ -9,7 +9,7 @@ import Data.Maybe (Maybe)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
-import Primitive (string)
+import Primitive (string2, unpack2)
 import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), (!), definitely')
@@ -31,13 +31,13 @@ instance Reflect (Dict (Val Boolean)) Point where
 
 instance Reflect (Dict (Val Boolean)) LinePlot where
    from r = LinePlot
-      { name: string.unpack (get f_name r)
+      { name: unpack2 string2 (get f_name r)
       , data: record from <$> from (get f_data r)
       }
 
 instance Reflect (Dict (Val Boolean)) LineChart where
    from r = LineChart
-      { caption: string.unpack (get f_caption r)
+      { caption: unpack2 string2 (get f_caption r)
       , plots: from <$> (from (get f_plots r) :: Array (Val 𝔹)) :: Array LinePlot
       }
 

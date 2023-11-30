@@ -33,12 +33,12 @@ import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Lattice (Raw)
 import Pretty (prettyP)
-import Primitive (string, intPair)
+import Primitive (intPair, string2, unpack2)
 import ProgCxt (ProgCxt(..))
 import Util (type (×), (×), (∪), (∩), check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
 import Val (BaseVal(..), Fun(..)) as V
+import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
 
 type GraphConfig g =
    { progCxt :: ProgCxt Vertex
@@ -122,7 +122,7 @@ eval γ (Record α xes) αs = do
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
-      ss × βs = (vs <#> string.unpack) # unzip
+      ss × βs = (vs <#> unpack2 string2) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    Val <$> new (α `cons` αs) <@> V.Dictionary (DictRep d)
 eval γ (Constr α c es) αs = do

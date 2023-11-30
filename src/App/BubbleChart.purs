@@ -8,7 +8,7 @@ import Data.Maybe (Maybe)
 import DataType (cBubbleChart, f_caption, f_colour, f_data, f_x, f_y, f_z)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
-import Primitive (string)
+import Primitive (string2, unpack2)
 import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), definitely', (!))
@@ -26,12 +26,12 @@ instance Reflect (Dict (Val 𝔹)) BubbleChartRecord where
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
       , z: get_intOrNumber f_z r
-      , c: string.unpack $ get f_colour r
+      , c: unpack2 string2 $ get f_colour r
       }
 
 instance Reflect (Dict (Val 𝔹)) BubbleChart where
    from r = BubbleChart
-      { caption: string.unpack (get f_caption r)
+      { caption: unpack2 string2 (get f_caption r)
       , data: record from <$> from (get f_data r)
       }
 
