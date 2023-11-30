@@ -140,28 +140,28 @@ bwd_cases =
    , { file: "filter"
      , bwd_expect_file: "filter.expect"
      , δv: listCell 0 neg
-     , fwd_expect: "(⸨8⸩ ⸨:⸩ (7 : []))"
+     , fwd_expect: "⸨(⸨8⸩ : (7 : []))⸩"
      }
    , { file: "intersperse"
      , bwd_expect_file: "intersperse-1.expect"
      , δv: listCell 1 neg
-     , fwd_expect: "(1 : (0 ⸨:⸩ (2 : (0 : (3 : [])))))"
+     , fwd_expect: "(1 : ⸨(0 : (2 : (0 : (3 : []))))⸩)"
      }
    , { file: "intersperse"
      , bwd_expect_file: "intersperse-2.expect"
      , δv: listCell 2 neg
-     , fwd_expect: "(1 ⸨:⸩ (0 : (2 ⸨:⸩ (0 : (3 : [])))))"
+     , fwd_expect: "⸨(1 : (0 : ⸨(2 : (0 : (3 : [])))⸩))⸩"
      }
    , { file: "length", bwd_expect_file: "length.expect", δv: neg, fwd_expect: "⸨5⸩" }
    , { file: "list-comp"
      , bwd_expect_file: "list-comp-1.expect"
      , δv: listCell 1 neg
-     , fwd_expect: "(6.2 : (260 ⸨:⸩ (19.9 : (91 : []))))"
+     , fwd_expect: "(6.2 : ⸨(260 : (19.9 : (91 : [])))⸩)"
      }
    , { file: "list-comp"
      , bwd_expect_file: "list-comp-2.expect"
      , δv: listCell 2 neg
-     , fwd_expect: "(6.2 : (260 : (19.9 ⸨:⸩ (91 : []))))"
+     , fwd_expect: "(6.2 : (260 : ⸨(19.9 : (91 : []))⸩))"
      }
    , { file: "lookup"
      , bwd_expect_file: "lookup.expect"
@@ -171,7 +171,7 @@ bwd_cases =
    , { file: "map"
      , bwd_expect_file: "map.expect"
      , δv: listCell 0 neg >>> listCell 1 neg
-     , fwd_expect: "(5 ⸨:⸩ (6 ⸨:⸩ []))"
+     , fwd_expect: "⸨(5 : ⸨(6 : [])⸩)⸩"
      }
    , { file: "matrix-update"
      , bwd_expect_file: "matrix-update.expect"
@@ -188,7 +188,7 @@ bwd_cases =
    , { file: "section-5-example"
      , bwd_expect_file: "section-5-example-1.expect"
      , δv: listCell 0 neg
-     , fwd_expect: "(88 ⸨:⸩ (6 : (4 : [])))"
+     , fwd_expect: "⸨(88 : (6 : (4 : [])))⸩"
      }
    , { file: "section-5-example"
      , bwd_expect_file: "section-5-example-2.expect"
@@ -198,12 +198,12 @@ bwd_cases =
    , { file: "section-5-example"
      , bwd_expect_file: "section-5-example-3.expect"
      , δv: listCell 2 neg
-     , fwd_expect: "(88 : (6 : (4 ⸨:⸩ [])))"
+     , fwd_expect: "(88 : (6 : ⸨(4 : [])⸩))"
      }
    , { file: "zeros"
      , bwd_expect_file: "zeros-1.expect"
      , δv: listCell 0 neg >>> listCell 2 neg
-     , fwd_expect: "(0 ⸨:⸩ (0 : ⸨[]⸩))"
+     , fwd_expect: "⸨(0 : (0 : ⸨[]⸩))⸩"
      }
    , { file: "zeros"
      , bwd_expect_file: "zeros-2.expect"
