@@ -53,7 +53,7 @@ function drawBubbleChart_ (
    listener
 ) {
    return () => {
-      var max_width = 350
+      var max_width = 320
       var max_height = 185
       const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
@@ -61,12 +61,12 @@ function drawBubbleChart_ (
 
       const childId = id + '-' + childIndex
       const margin = {top: 15, right: 0, bottom: 40, left: 40}
-      if (x_max + z_max + margin.left + margin.right > max_width) {
-         max_width = x_max +  z_max  + margin.left + margin.right
-      }
-      if (y_max + z_max + margin.top + margin.bottom > max_height) {
-         max_height = y_max + z_max + margin.top + margin.bottom
-      }
+      // if (x_max + z_max + margin.left + margin.right > max_width) {
+      //    max_width = x_max +  z_max  + margin.left + margin.right
+      // }
+      // if (y_max + z_max + margin.top + margin.bottom > max_height) {
+      //    max_height = y_max + z_max + margin.top + margin.bottom
+      // }
 
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
@@ -83,7 +83,7 @@ function drawBubbleChart_ (
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
       const x = d3.scaleLinear()
-         .domain([0,x_max + z_max + margin.left])
+         .domain([0,x_z_max + margin.right])
          .range([0, width])
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
@@ -101,8 +101,10 @@ function drawBubbleChart_ (
          .domain([1, z_max])
          .range([1, 30])
 
+      unique_countries = data.map(d => fst(d.c))
+      console.log(unique_countries)
       const c = d3.scaleOrdinal()
-         .domain([...new Set(...data.map(d => fst(d.c)))])
+         .domain(unique_countries)
          .range(d3.schemeSet1)
 
       svg.append('g')
@@ -113,10 +115,21 @@ function drawBubbleChart_ (
             .attr('cx', ([, d]) => x(fst(d.x)))
             .attr('cy', ([, d]) => y(fst(d.y)))
             .attr('r', ([, d]) => z(fst(d.z)))
-            .attr('stroke', ([, d]) => snd(d.y) ? colorShade(c(fst(d.c)), -80) : colorShade(c(fst(d.c)), -40))
-            .style('fill', ([, d]) => snd(d.y) ? colorShade(c(fst(d.c)), -40) : c(fst(d.c)))
-            .style('class', ([, d]) => snd(d.y) ? 'dot-selected' : 'dot-unselected')
+            .attr('stroke', 'black')
+            .style('fill', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? colorShade(c(fst(d.c)), -40) : c(fst(d.c)))
+            .style('class', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? 'dot-selected' : 'dot-unselected')
             .on('mousedown', (e, d) => { listener(e) })
+
+      svg.selectAll("mylabels")
+         .data(unique_countries)
+         .enter()
+         .append("text")
+         .attr("x", max_width - 40)
+         .attr("y", (d, i) => i * 20 + 10)
+         .style("fill", d => c(d))
+         .text(d => d)
+         .attr("text-anchor", "left")
+         .attr("alignment-baseline", "middle")
 
       svg.append('text')
          .text(fst(caption))
