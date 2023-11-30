@@ -27,7 +27,6 @@ import Eval (eval, eval_module)
 import EvalBwd (TracedEval, evalBwd, traceGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
-import GaloisConnection (dual)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
@@ -190,7 +189,8 @@ figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Ar
 figViews { spec: { xs }, gc: { gc, v } } δv = do
    let
       γ0γ × e' × α = (unwrap gc).bwd (δv (botOf v))
-      v' = (unwrap $ dual gc).bwd (γ0γ × e' × α)
+      v' = (unwrap gc).fwd (γ0γ × e' × α)
+   --      v' = (unwrap $ dual gc).bwd (γ0γ × e' × α)
    (view "output" v' × _) <$> sequence (flip varView γ0γ <$> xs)
 
 linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
