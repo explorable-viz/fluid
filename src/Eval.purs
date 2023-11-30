@@ -117,7 +117,7 @@ eval γ (Record α xes) α' = do
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
    let
-      ss × αs = (vs <#> \u -> string.unpack u) # unzip
+      ss × αs = vs <#> string.unpack # unzip
       d = D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (DictRep d))
 eval γ (Constr α c es) α' = do
