@@ -1,22 +1,4 @@
-module Graph.GraphWriter
-   ( AdjMapEntries
-   , AllocT
-   , WithGraphAllocT
-   , WithGraph
-   , WithGraphT
-   , class MonadAlloc
-   , class MonadWithGraphAlloc
-   , class MonadWithGraph
-   , alloc
-   , extend
-   , fresh
-   , new
-   , runAlloc
-   , runAllocT
-   , runWithGraph
-   , runWithGraphT
-   , runWithGraphAllocT
-   ) where
+module Graph.WithGraph where
 
 import Prelude
 
@@ -28,10 +10,13 @@ import Data.List (List(..), (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set)
+import Data.Set.NonEmpty (NonEmptySet, toSet)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
+import Debug (trace)
 import Effect.Exception (Error)
 import Graph (Vertex(..), class Graph, fromFoldable)
+import Lattice (Raw)
 import Util (type (×), (×))
 
 class Monad m <= MonadWithGraph m where
@@ -45,7 +30,7 @@ class Monad m <= MonadAlloc m where
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
 class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
-   new :: Set Vertex -> m Vertex
+   new :: NonEmptySet Vertex -> m Vertex
 
 -- List of adjacency map entries to serve as a fromFoldable input.
 type AdjMapEntries = List (Vertex × Set Vertex)
@@ -58,12 +43,15 @@ type WithGraph = WithGraphT Identity
 instance Monad m => MonadAlloc (AllocT m) where
    fresh = do
       n <- modify $ (+) 1
-      pure (Vertex $ show n)
+      if n == 193 then trace "Here!" \_ ->
+         pure (Vertex $ show n)
+      else
+         pure (Vertex $ show n)
 
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
    new αs = do
       α <- fresh
-      extend α αs
+      extend α (toSet αs)
       pure α
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
@@ -73,7 +61,7 @@ instance Monad m => MonadWithGraph (WithGraphT m) where
 instance Monad m => MonadWithGraph (WithGraphAllocT m) where
    extend α = lift <<< extend α
 
-alloc :: forall m t a. MonadAlloc m => Traversable t => t a -> m (t Vertex)
+alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
 alloc = traverse (const fresh)
 
 -- TODO: make synonymous with runStateT/runState?

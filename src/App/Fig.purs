@@ -35,7 +35,7 @@ import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), (×), AffError, Endo, absurd, orElse)
+import Util (type (+), type (×), AffError, Endo, absurd, orElse, uncurry3, (×))
 import Val (class Ann, Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
@@ -109,9 +109,8 @@ type LinkedOutputsFig =
 
 type LinkedInputsFig =
    { spec :: LinkedInputsFigSpec
-   , γ :: Env 𝔹 -- additional let bindings at beginning of ex; must include vars defined in spec
-   , s0 :: S.Expr 𝔹 -- program that was originally "split"
-   -- , s :: S.Expr 𝔹 -- body of example
+   , γ :: Env 𝔹
+   , s :: S.Expr 𝔹
    , e :: Expr 𝔹
    , t :: Trace
    , v0 :: Val 𝔹 -- common output
@@ -140,52 +139,52 @@ split (Right δv) = identity × δv
 
 drawLinkedOutputsFig :: LinkedOutputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
-   log $ "Redrawing " <> divId
    v1' × v2' × v0 <- linkedOutputsResult fig δv
    let δv1 × δv2 = split δv
-   drawView divId (\δv' -> drawLinkedOutputsFig fig (Left $ δv1 >>> δv')) 2 $ view "left view" v1'
-   drawView divId (\δv' -> drawLinkedOutputsFig fig (Right $ δv2 >>> δv')) 0 $ view "right view" v2'
-   drawView divId doNothing 1 $ view "common data" v0
+   sequence_ $ uncurry3 (drawView divId) <$>
+      [ 2 × ((δv1 >>> _) >>> Left >>> drawLinkedOutputsFig fig) × view "left view" v1'
+      , 0 × ((δv2 >>> _) >>> Right >>> drawLinkedOutputsFig fig) × view "right view" v2'
+      , 1 × doNothing × view "common data" v0
+      ]
 
 drawLinkedOutputsFigWithCode :: LinkedOutputsFig -> Effect Unit
 drawLinkedOutputsFigWithCode fig = do
    drawLinkedOutputsFig fig (Left botOf)
-   ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
-   ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
-   ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
-   drawCode ed1 $ prettyP fig.s1
-   drawCode ed2 $ prettyP fig.s2
-   drawCode ed3 $ fig.dataFileStr
+   sequence_ $ (\(File file × s) -> addEditorView (codeMirrorDiv file) >>= drawCode s) <$>
+      [ fig.spec.file1 × prettyP fig.s1
+      , fig.spec.file2 × prettyP fig.s2
+      , fig.spec.dataFile × fig.dataFileStr
+      ]
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
-   log $ "Redrawing " <> divId
    v1' × v2' × v0 <- linkedInputsResult fig δv
    let δv1 × δv2 = split δv
-   drawView divId doNothing 0 $ view "common output" v0
-   drawView divId (\selector -> drawLinkedInputsFig fig (Left $ δv1 >>> selector)) 2 $ view x1 v1'
-   drawView divId (\selector -> drawLinkedInputsFig fig (Right $ δv2 >>> selector)) 1 $ view x2 v2'
+   sequence_ $ uncurry3 (drawView divId) <$>
+      [ 0 × doNothing × view "common output" v0
+      , 2 × ((δv1 >>> _) >>> Left >>> drawLinkedInputsFig fig) × view x1 v1'
+      , 1 × ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) × view x2 v2'
+      ]
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
-   log $ "Redrawing " <> divId
    v_view × views <- figViews fig δv
    sequence_ $
-      uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
-   drawCode ed $ prettyP s0
+      uncurry (flip (drawView divId) doNothing) <$> zip (range 0 (length views - 1)) views
+   drawView divId (length views) ((δv >>> _) >>> drawFig fig ed) v_view
+   drawCode (prettyP s0) ed
 
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig =
    addEditorView (codeMirrorDiv fig.spec.divId) >>= flip (drawFig fig) botOf
 
-drawCode :: EditorView -> String -> Effect Unit
-drawCode ed s =
+drawCode :: String -> EditorView -> Effect Unit
+drawCode s ed =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
-   addEditorView (codeMirrorDiv $ unwrap file) >>= flip drawCode src
+   addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
@@ -258,11 +257,10 @@ loadLinkedInputsFig spec@{ file } = do
       datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
    { γ: γ' } <- defaultImports >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
    let γ = botOf <$> γ'
-   s' <- open $ File "linked-inputs/" <> file
-   let s0 = botOf s'
-   e <- desug s0
+   s <- botOf <$> open (File "linked-inputs/" <> file)
+   e <- desug s
    t × v <- eval γ e bot
-   pure { spec, γ, s0, e, t, v0: v }
+   pure { spec, γ, s, e, t, v0: v }
 
 loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
 loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do

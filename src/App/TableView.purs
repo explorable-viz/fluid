@@ -13,7 +13,7 @@ newtype TableView = TableView
    , table :: Array (Dict (Val 𝔹))
    }
 
-foreign import drawTable :: Renderer (TableView)
+foreign import drawTable :: Renderer TableView
 
 tableViewHandler :: Handler
 tableViewHandler = const identity

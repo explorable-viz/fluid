@@ -25,13 +25,10 @@ matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    ((int.unpack <$> _) <$> vss) × i × j
 
 matrixViewHandler :: Handler
-matrixViewHandler = flip (uncurry matrixElement) neg <<< unsafePos <<< target
+matrixViewHandler = target >>> unsafePos >>> flip (uncurry matrixElement) neg
    where
    -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
    unsafePos :: Maybe EventTarget -> Int × Int
-   unsafePos tgt_opt =
-      let
-         tgt = definitely' $ tgt_opt
-         xy = (unsafeCoerce tgt).__data__ ! 0 :: Array Int
-      in
-         xy ! 0 × xy ! 1
+   unsafePos tgt_opt = xy ! 0 × xy ! 1
+      where
+      xy = (unsafeCoerce $ definitely' tgt_opt).__data__ ! 0 :: Array Int

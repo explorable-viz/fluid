@@ -7,7 +7,7 @@ import Data.Either (isLeft)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
-import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
+import Module (File(..), Folder(..), datasetAs, defaultImports, initialConfig, loadFile)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
 import Util (type (×), (×), type (+))
@@ -50,8 +50,8 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
    asTest { file, fwd_expect } = do
-      progCxt <- defaultImports
-      test (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
+      gconfig <- defaultImports >>= initialConfig
+      test (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& asTest)
@@ -60,17 +60,17 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& a
 
    asTest :: TestBwdSpec -> Aff BenchRow
    asTest { file, bwd_expect_file, δv, fwd_expect } = do
-      progCxt <- defaultImports
+      gconfig <- defaultImports >>= initialConfig
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
-      test (folder <> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
+      test (folder <> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetSuite :: Array TestWithDatasetSpec -> BenchSuite
 withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { dataset, file } = do
-      progCxt <- defaultImports >>= datasetAs (File dataset) "data"
-      test (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
+      gconfig <- defaultImports >>= datasetAs (File dataset) "data" >>= initialConfig
+      test (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
 linkedOutputsTest { spec, δv, v'_expect } = do

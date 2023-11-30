@@ -52,7 +52,14 @@ function drawBubbleChart_ (
       const z_max = Math.ceil(Math.max(...data.map(d => d.z._1)))
       const x_z_max = Math.ceil(Math.max(...data.map(d => d.x._1 + d.z._1)))
       const childId = id + '-' + childIndex
-      const margin = {top: 15, right: 40, bottom: 40, left: 40}
+      const margin = {top: 15, right: 0, bottom: 40, left: 40}
+      if (x_max + z_max + margin.left + margin.right > max_width) {
+         max_width = x_max +  z_max  + margin.left + margin.right
+      }
+      if (y_max + z_max + margin.top + margin.bottom > max_height) {
+         max_height = y_max + z_max + margin.top + margin.bottom
+         
+      }
 
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
@@ -109,13 +116,11 @@ function drawBubbleChart_ (
             .attr('cx', ([, d]) => x(d.x._1))
             .attr('cy', ([, d]) => y(d.y._1))
             .attr('r', ([, d]) => z(d.z._1))
-            .attr('z', ([, d]) => d.z._1)
-            .attr('country', ([, d]) => d.c._1)
             .attr('stroke', 'black')
-            .style('fill', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -100) : c(d.c._1))
+            .style('fill', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -40) : c(d.c._1))
             .style('class', ([, d]) => d.y._2 ? 'dot-selected' : 'dot-unselected')
             .on('mousedown', (e, d) => {
-               console.log(`mousedown ${d[0]}`)
+//               console.log(`mousedown ${d[0]}`)
                listener(e)
             })
       svg.selectAll("mylabels")
