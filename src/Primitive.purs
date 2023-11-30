@@ -15,7 +15,7 @@ import Lattice (class BoundedJoinSemilattice, Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), (×), error)
-import Val (class Ann, BaseVal(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
+import Val (BaseVal(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -25,8 +25,22 @@ type ToFrom d a =
    , unpack :: Val a -> d × a
    }
 
+type ToFrom2 d a =
+   { pack :: d -> BaseVal a
+   , unpack :: BaseVal a -> d
+   }
+
+unpack2 :: forall d a. ToFrom2 d a -> Val a -> d × a
+unpack2 toFrom (Val α v) = toFrom.unpack v × α
+
+pack2 :: forall d a. ToFrom2 d a -> d × a -> Val a
+pack2 toFrom (v × α) = Val α (toFrom.pack v)
+
 typeError :: forall a b. Val a -> String -> b
 typeError v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
+
+typeError2 :: forall a b. BaseVal a -> String -> b
+typeError2 v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
 
 int :: forall a. ToFrom Int a
 int =
@@ -37,6 +51,14 @@ int =
    unpack (Val α (Int n)) = n × α
    unpack v = typeError v "Int"
 
+int2 :: forall a. ToFrom2 Int a
+int2 =
+   { pack: Int
+   , unpack: case _ of
+        Int n -> n
+        v -> typeError2 v "Int"
+   }
+
 number :: forall a. ToFrom Number a
 number =
    { pack: \(n × α) -> Val α (Float n)
@@ -46,6 +68,14 @@ number =
    unpack (Val α (Float n)) = n × α
    unpack v = typeError v "Float"
 
+number2 :: forall a. ToFrom2 Number a
+number2 =
+   { pack: Float
+   , unpack: case _ of
+        Float n -> n
+        v -> typeError2 v "Float"
+   }
+
 string :: forall a. ToFrom String a
 string =
    { pack: \(str × α) -> Val α (Str str)
@@ -54,6 +84,14 @@ string =
    where
    unpack (Val α (Str str)) = str × α
    unpack v = typeError v "Str"
+
+string2 :: forall a. ToFrom2 String a
+string2 =
+   { pack: Str
+   , unpack: case _ of
+        Str str -> str
+        v -> typeError2 v "Str"
+   }
 
 intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
@@ -66,6 +104,17 @@ intOrNumber =
    unpack (Val α (Int n)) = Left n × α
    unpack (Val α (Float n)) = Right n × α
    unpack v = typeError v "Int or Float"
+
+intOrNumber2 :: forall a. ToFrom2 (Int + Number) a
+intOrNumber2 =
+   { pack: case _ of
+        Left n -> Int n
+        Right n -> Float n
+   , unpack: case _ of
+        Int n -> Left n
+        Float n -> Right n
+        v -> typeError2 v "Int or Float"
+   }
 
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
@@ -81,6 +130,19 @@ intOrNumberOrString =
    unpack (Val α (Str str)) = Right (Right str) × α
    unpack v = typeError v "Int, Float or Str"
 
+intOrNumberOrString2 :: forall a. ToFrom2 (Int + Number + String) a
+intOrNumberOrString2 =
+   { pack: case _ of
+        Left n -> Int n
+        Right (Left n) -> Float n
+        Right (Right str) -> Str str
+   , unpack: case _ of
+        Int n -> Left n
+        Float n -> Right (Left n)
+        Str str -> Right (Right str)
+        v -> typeError2 v "Int, Float or Str"
+   }
+
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
    { pack: \((nβ × mβ') × α) -> Val α (Constr cPair (int.pack nβ : int.pack mβ' : Nil))
@@ -90,7 +152,15 @@ intPair =
    unpack (Val α (Constr c (v : v' : Nil))) | c == cPair = (int.unpack v × int.unpack v') × α
    unpack v = typeError v "Pair"
 
-matrixRep :: forall a. Ann a => ToFrom (MatrixRep a) a
+intPair2 :: forall a. ToFrom2 ((Int × a) × (Int × a)) a
+intPair2 =
+   { pack: \(nβ × mβ') -> Constr cPair (int.pack nβ : int.pack mβ' : Nil)
+   , unpack: case _ of
+        Constr c (v : v' : Nil) | c == cPair -> int.unpack v × int.unpack v'
+        v -> typeError2 v "Pair"
+   }
+
+matrixRep :: forall a. ToFrom (MatrixRep a) a
 matrixRep =
    { pack: \(m × α) -> Val α (Matrix m)
    , unpack
@@ -99,7 +169,15 @@ matrixRep =
    unpack (Val α (Matrix m)) = m × α
    unpack v = typeError v "Matrix"
 
-record :: forall a. Ann a => ToFrom (Dict (Val a)) a
+matrixRep2 :: forall a. ToFrom2 (MatrixRep a) a
+matrixRep2 =
+   { pack: Matrix
+   , unpack: case _ of
+        Matrix m -> m
+        v -> typeError2 v "Matrix"
+   }
+
+record :: forall a. ToFrom (Dict (Val a)) a
 record =
    { pack: \(xvs × α) -> Val α (Record xvs)
    , unpack
@@ -107,6 +185,14 @@ record =
    where
    unpack (Val α (Record xvs)) = xvs × α
    unpack v = typeError v "Record"
+
+record2 :: forall a. ToFrom2 (Dict (Val a)) a
+record2 =
+   { pack: Record
+   , unpack: case _ of
+        Record xvs -> xvs
+        v -> typeError2 v "Record"
+   }
 
 boolean :: forall a. ToFrom Boolean a
 boolean =
@@ -120,6 +206,16 @@ boolean =
       | c == cTrue = true × α
       | c == cFalse = false × α
    unpack v = typeError v "Boolean"
+
+boolean2 :: forall a. ToFrom2 Boolean a
+boolean2 =
+   { pack: if _ then Constr cTrue Nil else Constr cFalse Nil
+   , unpack: case _ of
+        Constr c Nil
+           | c == cTrue -> true
+           | c == cFalse -> false
+        v -> typeError2 v "Boolean"
+   }
 
 class IsZero a where
    isZero :: a -> Boolean
