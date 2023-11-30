@@ -17,14 +17,8 @@ import Pretty (prettyP)
 import Util (type (+), type (×), (×), error)
 import Val (BaseVal(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
--- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
--- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
--- work with the required higher-rank polymorphism.
-type ToFrom d a =
-   { pack :: d × a -> Val a
-   , unpack :: Val a -> d × a
-   }
-
+-- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
+-- work with required higher-rank polymorphism.
 type ToFrom2 d a =
    { pack :: d -> BaseVal a
    , unpack :: BaseVal a -> d
