@@ -66,18 +66,6 @@ string2 =
         v -> typeError2 v "Str"
    }
 
-intOrNumber :: forall a. ToFrom (Int + Number) a
-intOrNumber =
-   { pack: case _ of
-        Left n × α -> Val α (Int n)
-        Right n × α -> Val α (Float n)
-   , unpack
-   }
-   where
-   unpack (Val α (Int n)) = Left n × α
-   unpack (Val α (Float n)) = Right n × α
-   unpack v = typeError v "Int or Float"
-
 intOrNumber2 :: forall a. ToFrom2 (Int + Number) a
 intOrNumber2 =
    { pack: case _ of
@@ -88,20 +76,6 @@ intOrNumber2 =
         Float n -> Right n
         v -> typeError2 v "Int or Float"
    }
-
-intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
-intOrNumberOrString =
-   { pack: case _ of
-        Left n × α -> Val α (Int n)
-        Right (Left n) × α -> Val α (Float n)
-        Right (Right str) × α -> Val α (Str str)
-   , unpack
-   }
-   where
-   unpack (Val α (Int n)) = Left n × α
-   unpack (Val α (Float n)) = Right (Left n) × α
-   unpack (Val α (Str str)) = Right (Right str) × α
-   unpack v = typeError v "Int, Float or Str"
 
 intOrNumberOrString2 :: forall a. ToFrom2 (Int + Number + String) a
 intOrNumberOrString2 =
