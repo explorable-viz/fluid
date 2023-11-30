@@ -231,8 +231,8 @@ instance (IsZero a, IsZero b) => IsZero (a + b) where
 
 -- Need to be careful about type variables escaping higher-rank quantification.
 type Unary i o a =
-   { i :: ToFrom i a
-   , o :: ToFrom o a
+   { i :: ToFrom2 i a
+   , o :: ToFrom2 o a
    , fwd :: i -> o
    }
 
@@ -244,8 +244,8 @@ type Binary i1 i2 o a =
    }
 
 type BinaryZero i o a =
-   { i :: ToFrom i a
-   , o :: ToFrom o a
+   { i :: ToFrom2 i a
+   , o :: ToFrom2 o a
    , fwd :: i -> i -> o
    }
 
@@ -258,21 +258,20 @@ unary id f =
       ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
 
    op' :: Partial => OpGraph
-   op' (v : Nil) =
-      f.o.pack <$> ((f.fwd x × _) <$> new (singleton α))
+   op' (Val α v : Nil) =
+      pack2 f.o <$> ((f.fwd x × _) <$> new (singleton α))
       where
-      x × α = f.i.unpack v
+      x = f.i.unpack v
 
    fwd :: Partial => OpFwd (Raw Val)
-   fwd (v : Nil) = pure $ erase v × f.o.pack (f.fwd x × α)
+   fwd (Val α v : Nil) = pure $ Val unit (erase v) × pack2 f.o (f.fwd x × α)
       where
-      x × α = f.i.unpack v
+      x = f.i.unpack v
 
    bwd :: Partial => OpBwd (Raw Val)
-   bwd (u × v) = f.i.pack (x × α) : Nil
+   bwd (Val _ u × Val α _) = pack2 f.i (x × α) : Nil
       where
-      _ × α = f.o.unpack v
-      (x × _) = f.i.unpack u
+      x = f.i.unpack u
 
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
 binary id f =
@@ -309,29 +308,26 @@ binaryZero id f =
       ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
 
    op' :: Partial => OpGraph
-   op' (v1 : v2 : Nil) =
-      let
-         αs =
-            if isZero x then singleton α
-            else if isZero y then singleton β
-            else singleton α # insert β
-      in
-         f.o.pack <$> ((f.fwd x y × _) <$> new αs)
+   op' (Val α v1 : Val β v2 : Nil) =
+      pack2 f.o <$> ((f.fwd x y × _) <$> new αs)
       where
-      (x × α) × (y × β) = f.i.unpack v1 × f.i.unpack v2
+      x × y = f.i.unpack v1 × f.i.unpack v2
+      αs =
+         if isZero x then singleton α
+         else if isZero y then singleton β
+         else singleton α # insert β
 
-   fwd :: Partial => OpFwd (Raw Val × Raw Val)
-   fwd (v1 : v2 : Nil) =
+   fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
+   fwd (Val α v1 : Val β v2 : Nil) =
       pure $ (erase v1 × erase v2) ×
-         f.o.pack (f.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+         pack2 f.o (f.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
-      (x × α) × (y × β) = f.i.unpack v1 × f.i.unpack v2
+      x × y = f.i.unpack v1 × f.i.unpack v2
 
-   bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) = f.i.pack (x × β1) : f.i.pack (y × β2) : Nil
+   bwd :: Partial => OpBwd (Raw BaseVal × Raw BaseVal)
+   bwd ((u1 × u2) × Val α _) = pack2 f.i (x × β1) : pack2 f.i (y × β2) : Nil
       where
-      _ × α = f.o.unpack v
-      (x × _) × (y × _) = f.i.unpack u1 × f.i.unpack u2
+      x × y = f.i.unpack u1 × f.i.unpack u2
       β1 × β2 =
          if isZero x then α × bot
          else if isZero y then bot × α

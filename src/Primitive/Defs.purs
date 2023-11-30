@@ -1,6 +1,7 @@
 module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
+
 import Bindings (Bind)
 import Data.Exists (mkExists)
 import Data.Foldable (foldl, foldM)
@@ -24,7 +25,7 @@ import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, (∧), (∨))
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
+import Primitive (binary, binaryZero, boolean, int2, intOrNumber, intOrNumber2, intOrNumberOrString, number2, string, string2, unary, union, union1, unionStr)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, throw, unimplemented, (×))
 import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
@@ -35,18 +36,18 @@ extern (ForeignOp (id × φ)) = id × Val bot (Fun ((Foreign (ForeignOp (id × �
 primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Val bot (Fun (PartialConstr cCons Nil))
-   , unary "ceiling" { i: number, o: int, fwd: ceil }
+   , unary "ceiling" { i: number2, o: int2, fwd: ceil }
    , extern debugLog
    , extern dims
    , extern error_
-   , unary "floor" { i: number, o: int, fwd: floor }
-   , unary "log" { i: intOrNumber, o: number, fwd: log }
-   , unary "numToStr" { i: intOrNumber, o: string, fwd: numToStr }
+   , unary "floor" { i: number2, o: int2, fwd: floor }
+   , unary "log" { i: intOrNumber2, o: number2, fwd: log }
+   , unary "numToStr" { i: intOrNumber2, o: string2, fwd: numToStr }
    , binary "+" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: plus }
    , binary "-" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: minus }
-   , binaryZero "*" { i: intOrNumber, o: intOrNumber, fwd: times }
-   , binaryZero "**" { i: intOrNumber, o: intOrNumber, fwd: pow }
-   , binaryZero "/" { i: intOrNumber, o: intOrNumber, fwd: divide }
+   , binaryZero "*" { i: intOrNumber2, o: intOrNumber2, fwd: times }
+   , binaryZero "**" { i: intOrNumber2, o: intOrNumber2, fwd: pow }
+   , binaryZero "/" { i: intOrNumber2, o: intOrNumber2, fwd: divide }
    , binary "==" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: equals }
    , binary "/=" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: notEquals }
    , binary "<" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThan }
@@ -62,11 +63,11 @@ primitives = D.fromFoldable
    , extern dict_get
    , extern dict_intersectionWith
    , extern dict_map
-   , binaryZero "div" { i: int, o: int, fwd: div }
    , extern matrixUpdate
-   , binaryZero "mod" { i: int, o: int, fwd: mod }
-   , binaryZero "quot" { i: int, o: int, fwd: quot }
-   , binaryZero "rem" { i: int, o: int, fwd: rem }
+   , binaryZero "div" { i: int2, o: int2, fwd: div }
+   , binaryZero "mod" { i: int2, o: int2, fwd: mod }
+   , binaryZero "quot" { i: int2, o: int2, fwd: quot }
+   , binaryZero "rem" { i: int2, o: int2, fwd: rem }
    ]
 
 error_ :: ForeignOp
