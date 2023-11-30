@@ -42,15 +42,6 @@ typeError v typeName = error (typeName <> " expected; got " <> prettyP (erase v)
 typeError2 :: forall a b. BaseVal a -> String -> b
 typeError2 v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
 
-int :: forall a. ToFrom Int a
-int =
-   { pack: \(n × α) -> Val α (Int n)
-   , unpack
-   }
-   where
-   unpack (Val α (Int n)) = n × α
-   unpack v = typeError v "Int"
-
 int2 :: forall a. ToFrom2 Int a
 int2 =
    { pack: Int
@@ -145,18 +136,18 @@ intOrNumberOrString2 =
 
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
-   { pack: \((nβ × mβ') × α) -> Val α (Constr cPair (int.pack nβ : int.pack mβ' : Nil))
+   { pack: \((nβ × mβ') × α) -> Val α (Constr cPair (pack2 int2 nβ : pack2 int2 mβ' : Nil))
    , unpack
    }
    where
-   unpack (Val α (Constr c (v : v' : Nil))) | c == cPair = (int.unpack v × int.unpack v') × α
+   unpack (Val α (Constr c (v : v' : Nil))) | c == cPair = (unpack2 int2 v × unpack2 int2 v') × α
    unpack v = typeError v "Pair"
 
 intPair2 :: forall a. ToFrom2 ((Int × a) × (Int × a)) a
 intPair2 =
-   { pack: \(nβ × mβ') -> Constr cPair (int.pack nβ : int.pack mβ' : Nil)
+   { pack: \(nβ × mβ') -> Constr cPair (pack2 int2 nβ : pack2 int2 mβ' : Nil)
    , unpack: case _ of
-        Constr c (v : v' : Nil) | c == cPair -> int.unpack v × int.unpack v'
+        Constr c (v : v' : Nil) | c == cPair -> unpack2 int2 v × unpack2 int2 v'
         v -> typeError2 v "Pair"
    }
 
