@@ -14,7 +14,7 @@ import Data.Profunctor.Strong (first)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (subset)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (fst, snd)
+import Data.Tuple (snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict, disjointUnion, empty, get, keys, lookup)
 import Dict (fromFoldable, singleton, unzip) as D
@@ -22,7 +22,7 @@ import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
 import Pretty (prettyP)
-import Primitive (intPair, string2, unpack2)
+import Primitive (intPair2, string2, unpack2)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (×), (∪), absurd, both, check, error, orElse, successful, throw, with)
@@ -125,8 +125,8 @@ eval γ (Constr α c es) α' = do
    ts × vs <- traverse (flip (eval γ) α') es <#> unzip
    pure (T.Constr c ts × Val (α ∧ α') (V.Constr c vs))
 eval γ (Matrix α e (x × y) e') α' = do
-   t × v <- eval γ e' α'
-   let (i' × β) × (j' × β') = fst (intPair.unpack v)
+   t × Val _ v <- eval γ e' α'
+   let (i' × β) × (j' × β') = intPair2.unpack v
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
       ( sequence do

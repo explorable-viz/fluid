@@ -90,15 +90,6 @@ intOrNumberOrString2 =
         v -> typeError2 v "Int, Float or Str"
    }
 
-intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
-intPair =
-   { pack: \((nβ × mβ') × α) -> Val α (Constr cPair (pack2 int2 nβ : pack2 int2 mβ' : Nil))
-   , unpack
-   }
-   where
-   unpack (Val α (Constr c (v : v' : Nil))) | c == cPair = (unpack2 int2 v × unpack2 int2 v') × α
-   unpack v = typeError v "Pair"
-
 intPair2 :: forall a. ToFrom2 ((Int × a) × (Int × a)) a
 intPair2 =
    { pack: \(nβ × mβ') -> Constr cPair (pack2 int2 nβ : pack2 int2 mβ' : Nil)

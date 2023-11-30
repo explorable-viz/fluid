@@ -21,7 +21,6 @@ import Data.Set (Set, empty, insert)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet, cons, singleton)
 import Data.Traversable (for, sequence, traverse)
-import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
@@ -33,7 +32,7 @@ import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Lattice (Raw)
 import Pretty (prettyP)
-import Primitive (intPair, string2, unpack2)
+import Primitive (intPair2, string2, unpack2)
 import ProgCxt (ProgCxt(..))
 import Util (type (×), (×), (∪), (∩), check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
@@ -130,8 +129,8 @@ eval γ (Constr α c es) αs = do
    vs <- traverse (flip (eval γ) αs) es
    Val <$> new (α `cons` αs) <@> V.Constr c vs
 eval γ (Matrix α e (x × y) e') αs = do
-   v <- eval γ e' αs
-   let (i' × β) × (j' × β') = fst (intPair.unpack v)
+   Val _ v <- eval γ e' αs
+   let (i' × β) × (j' × β') = intPair2.unpack v
    check
       (i' × j' >= 1 × 1)
       ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
