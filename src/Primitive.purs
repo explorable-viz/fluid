@@ -237,9 +237,9 @@ type Unary i o a =
    }
 
 type Binary i1 i2 o a =
-   { i1 :: ToFrom i1 a
-   , i2 :: ToFrom i2 a
-   , o :: ToFrom o a
+   { i1 :: ToFrom2 i1 a
+   , i2 :: ToFrom2 i2 a
+   , o :: ToFrom2 o a
    , fwd :: i1 -> i2 -> o
    }
 
@@ -259,19 +259,13 @@ unary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v : Nil) =
-      pack2 f.o <$> ((f.fwd x × _) <$> new (singleton α))
-      where
-      x = f.i.unpack v
+      pack2 f.o <$> ((f.fwd (f.i.unpack v) × _) <$> new (singleton α))
 
-   fwd :: Partial => OpFwd (Raw Val)
-   fwd (Val α v : Nil) = pure $ Val unit (erase v) × pack2 f.o (f.fwd x × α)
-      where
-      x = f.i.unpack v
+   fwd :: Partial => OpFwd (Raw BaseVal)
+   fwd (Val α v : Nil) = pure $ erase v × pack2 f.o (f.fwd (f.i.unpack v) × α)
 
-   bwd :: Partial => OpBwd (Raw Val)
-   bwd (Val _ u × Val α _) = pack2 f.i (x × α) : Nil
-      where
-      x = f.i.unpack u
+   bwd :: Partial => OpBwd (Raw BaseVal)
+   bwd (u × Val α _) = pack2 f.i (f.i.unpack u × α) : Nil
 
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
 binary id f =
@@ -282,21 +276,15 @@ binary id f =
       ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
 
    op' :: Partial => OpGraph
-   op' (v1 : v2 : Nil) =
-      f.o.pack <$> ((f.fwd x y × _) <$> new (singleton α # insert β))
-      where
-      (x × α) × (y × β) = f.i1.unpack v1 × f.i2.unpack v2
+   op' (Val α v1 : Val β v2 : Nil) =
+      pack2 f.o <$> ((f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × _) <$> new (singleton α # insert β))
 
-   fwd :: Partial => OpFwd (Raw Val × Raw Val)
-   fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × f.o.pack (f.fwd x y × (α ∧ β))
-      where
-      (x × α) × (y × β) = f.i1.unpack v1 × f.i2.unpack v2
+   fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
+   fwd (Val α v1 : Val β v2 : Nil) =
+      pure $ (erase v1 × erase v2) × pack2 f.o (f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × (α ∧ β))
 
-   bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) = f.i1.pack (x × α) : f.i2.pack (y × α) : Nil
-      where
-      _ × α = f.o.unpack v
-      (x × _) × (y × _) = f.i1.unpack u1 × f.i2.unpack u2
+   bwd :: Partial => OpBwd (Raw BaseVal × Raw BaseVal)
+   bwd ((u1 × u2) × Val α _) = pack2 f.i1 (f.i1.unpack u1 × α) : pack2 f.i2 (f.i2.unpack u2 × α) : Nil
 
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => String -> (forall a. BinaryZero i o a) -> Bind (Val a')

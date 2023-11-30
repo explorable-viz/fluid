@@ -25,7 +25,7 @@ import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, (∧), (∨))
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (binary, binaryZero, boolean, int2, intOrNumber, intOrNumber2, intOrNumberOrString, number2, string, string2, unary, union, union1, unionStr)
+import Primitive (binary, binaryZero, boolean2, int2, intOrNumber2, intOrNumberOrString2, number2, string2, unary, union, union1, unionStr)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, throw, unimplemented, (×))
 import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
@@ -43,18 +43,18 @@ primitives = D.fromFoldable
    , unary "floor" { i: number2, o: int2, fwd: floor }
    , unary "log" { i: intOrNumber2, o: number2, fwd: log }
    , unary "numToStr" { i: intOrNumber2, o: string2, fwd: numToStr }
-   , binary "+" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: plus }
-   , binary "-" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: minus }
+   , binary "+" { i1: intOrNumber2, i2: intOrNumber2, o: intOrNumber2, fwd: plus }
+   , binary "-" { i1: intOrNumber2, i2: intOrNumber2, o: intOrNumber2, fwd: minus }
    , binaryZero "*" { i: intOrNumber2, o: intOrNumber2, fwd: times }
    , binaryZero "**" { i: intOrNumber2, o: intOrNumber2, fwd: pow }
    , binaryZero "/" { i: intOrNumber2, o: intOrNumber2, fwd: divide }
-   , binary "==" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: equals }
-   , binary "/=" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: notEquals }
-   , binary "<" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThan }
-   , binary ">" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThan }
-   , binary "<=" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThanEquals }
-   , binary ">=" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
-   , binary "++" { i1: string, i2: string, o: string, fwd: concat }
+   , binary "==" { i1: intOrNumberOrString2, i2: intOrNumberOrString2, o: boolean2, fwd: equals }
+   , binary "/=" { i1: intOrNumberOrString2, i2: intOrNumberOrString2, o: boolean2, fwd: notEquals }
+   , binary "<" { i1: intOrNumberOrString2, i2: intOrNumberOrString2, o: boolean2, fwd: lessThan }
+   , binary ">" { i1: intOrNumberOrString2, i2: intOrNumberOrString2, o: boolean2, fwd: greaterThan }
+   , binary "<=" { i1: intOrNumberOrString2, i2: intOrNumberOrString2, o: boolean2, fwd: lessThanEquals }
+   , binary ">=" { i1: intOrNumberOrString2, i2: intOrNumberOrString2, o: boolean2, fwd: greaterThanEquals }
+   , binary "++" { i1: string2, i2: string2, o: string2, fwd: concat }
    , extern matrixLookup
    , extern dict_difference
    , extern dict_disjointUnion
