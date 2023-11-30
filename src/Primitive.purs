@@ -30,9 +30,6 @@ unpack2 toFrom (Val α v) = toFrom.unpack v × α
 pack2 :: forall d a. ToFrom2 d a -> d × a -> Val a
 pack2 toFrom (v × α) = Val α (toFrom.pack v)
 
-typeError :: forall a b. Val a -> String -> b
-typeError v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
-
 typeError2 :: forall a b. BaseVal a -> String -> b
 typeError2 v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
 
