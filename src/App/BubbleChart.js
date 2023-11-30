@@ -113,9 +113,9 @@ function drawBubbleChart_ (
             .attr('cx', ([, d]) => x(fst(d.x)))
             .attr('cy', ([, d]) => y(fst(d.y)))
             .attr('r', ([, d]) => z(fst(d.z)))
-            .attr('stroke', ([, d]) => d.y._2 ? colorShade(c(fst(d.c)), -80) : colorShade(c(fst(d.c)), -40))
-            .style('fill', ([, d]) => d.y._2 ? colorShade(c(fst(d.c)), -40) : c(fst(d.c)))
-            .style('class', ([, d]) => d.y._2 ? 'dot-selected' : 'dot-unselected')
+            .attr('stroke', ([, d]) => snd(d.y) ? colorShade(c(fst(d.c)), -80) : colorShade(c(fst(d.c)), -40))
+            .style('fill', ([, d]) => snd(d.y) ? colorShade(c(fst(d.c)), -40) : c(fst(d.c)))
+            .style('class', ([, d]) => snd(d.y) ? 'dot-selected' : 'dot-unselected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')

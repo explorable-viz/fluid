@@ -68,7 +68,7 @@ function drawTable_ (
       const div = d3.select('#' + id)
 
       indexKey = "__n"
-      table = table.map((r, n) => { return {[ indexKey ]: { _1: false, _2: n + 1 }, ...r} })
+      table = table.map((r, n) => { return {[ indexKey ]: n + 1, ...r} })
 
       div.selectAll('#' + childId).remove()
       if (filter) {
@@ -111,9 +111,9 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => val_α(d.value) ? 'cell-selected' : null)
-            .attr('bgcolor', d => val_α(d.value) ? colorShade(cellFill, -40) : cellFill)
-            .text(d => prim(val_v(d.value)))
+            .attr('class', d => d.name != indexKey && val_α(d.value) ? 'cell-selected' : null)
+            .attr('bgcolor', d => d.name != indexKey && val_α(d.value) ? colorShade(cellFill, -40) : cellFill)
+            .text(d => d.name != indexKey ? prim(val_v(d.value)) : d.value)
             .on('mousedown', e => listener(e))
 
          sel = d3.select("th")

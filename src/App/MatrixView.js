@@ -23,6 +23,18 @@ function snd(p) {
    return p._2
 }
 
+function intMatrix_nss (v) {
+   return v._1
+}
+
+function intMatrix_i_max (v) {
+   return v._2._1
+}
+
+function intMatrix_j_max (v) {
+   return v._2._2
+}
+
 // https://stackoverflow.com/questions/5560248
 function colorShade(col, amt) {
    col = col.replace(/^#/, '')
@@ -46,8 +58,8 @@ function drawMatrix_ (
    id,
    childIndex,
    {
-      title,                                               // String
-      matrix: { _1: nss, _2: { _1: i_max, _2: j_max } }    // IntMatrix
+      title,    // String
+      matrix    // IntMatrix
    },
    listener
 ) {
@@ -56,7 +68,7 @@ function drawMatrix_ (
       const strokeWidth = 0.5
       const w = 30, h = 30
       const div = d3.select('#' + id)
-      const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
+      const [width, height] = [w * intMatrix_j_max(matrix) + strokeWidth, h * intMatrix_i_max(matrix) + strokeWidth]
       const hMargin = w / 2
       const vMargin = h / 2
 
@@ -71,7 +83,7 @@ function drawMatrix_ (
       // group for each row
       const grp = svg
          .selectAll('g')
-         .data([...nss.entries()].map(([i, ns]) => [i + 1, ns]))
+         .data([...intMatrix_nss(matrix).entries()].map(([i, ns]) => [i + 1, ns]))
          .enter()
          .append('g')
          .attr(
