@@ -6,15 +6,14 @@ import Bindings (Var)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)
-import Data.Tuple (fst)
 import DataType (cCons, cNil)
 import Dict (Dict, get)
 import Effect (Effect)
 import Lattice (𝔹)
-import Primitive (as, intOrNumber)
-import Primitive (record) as P
-import Util (type (×))
+import Primitive (as, intOrNumber2, unpack2)
+import Primitive as P
 import Test.Util (Selector)
+import Util (type (×))
 import Val (BaseVal(..), Val(..))
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
@@ -28,11 +27,11 @@ doNothing :: OnSel
 doNothing = const $ pure unit
 
 get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
-get_intOrNumber x r = first as (intOrNumber.unpack (get x r))
+get_intOrNumber x r = first as (unpack2 intOrNumber2 (get x r))
 
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a
-record toRecord u = toRecord (fst (P.record.unpack u))
+record toRecord (Val _ v) = toRecord (P.record2.unpack v)
 
 class Reflect a b where
    from :: Partial => a -> b

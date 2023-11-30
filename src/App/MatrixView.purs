@@ -7,7 +7,7 @@ import App.Util.Select (matrixElement)
 import Data.Maybe (Maybe)
 import Data.Tuple (uncurry)
 import Lattice (𝔹, neg)
-import Primitive (int)
+import Primitive (int2, unpack2)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), (!), definitely')
 import Val (Array2, MatrixRep(..))
@@ -22,7 +22,7 @@ foreign import drawMatrix :: Renderer MatrixView
 
 matrixRep :: MatrixRep 𝔹 -> IntMatrix
 matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
-   ((int.unpack <$> _) <$> vss) × i × j
+   ((unpack2 int2 <$> _) <$> vss) × i × j
 
 matrixViewHandler :: Handler
 matrixViewHandler = target >>> unsafePos >>> flip (uncurry matrixElement) neg
