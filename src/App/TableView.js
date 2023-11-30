@@ -15,6 +15,18 @@ function curry4(f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function val_α(v) {
+   return v._1
+}
+
+function val_v(v) {
+   return v._2
+}
+
+function prim (v) {
+   return v._1
+}
+
 // https://stackoverflow.com/questions/5560248
 function colorShade(col, amt) {
    col = col.replace(/^#/, '')
@@ -36,7 +48,7 @@ function colorShade(col, amt) {
 
 // any record type with only primitive fields -> boolean
 function isUsed (r) {
-   return Object.keys(r).some(k => r[k]._1)
+   return Object.keys(r).some(k => val_α(r[k]))
 }
 
 // Generic to all tables.
@@ -99,9 +111,9 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => d.value._1 ? 'cell-selected' : null)
-            .attr('bgcolor', d => d.value._1 ? colorShade(cellFill, -40) : cellFill)
-            .text(d => d.value._2)
+            .attr('class', d => val_α(d.value) ? 'cell-selected' : null)
+            .attr('bgcolor', d => val_α(d.value) ? colorShade(cellFill, -40) : cellFill)
+            .text(d => prim(val_v(d.value)))
             .on('mousedown', e => listener(e))
 
          sel = d3.select("th")
