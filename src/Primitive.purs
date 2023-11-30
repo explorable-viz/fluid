@@ -19,57 +19,57 @@ import Val (BaseVal(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBw
 
 -- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
 -- work with required higher-rank polymorphism.
-type ToFrom2 d a =
+type ToFrom d a =
    { pack :: d -> BaseVal a
    , unpack :: BaseVal a -> d
    }
 
-unpack2 :: forall d a. ToFrom2 d a -> Val a -> d × a
-unpack2 toFrom (Val α v) = toFrom.unpack v × α
+unpack :: forall d a. ToFrom d a -> Val a -> d × a
+unpack toFrom (Val α v) = toFrom.unpack v × α
 
-pack2 :: forall d a. ToFrom2 d a -> d × a -> Val a
-pack2 toFrom (v × α) = Val α (toFrom.pack v)
+pack :: forall d a. ToFrom d a -> d × a -> Val a
+pack toFrom (v × α) = Val α (toFrom.pack v)
 
-typeError2 :: forall a b. BaseVal a -> String -> b
-typeError2 v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
+typeError :: forall a b. BaseVal a -> String -> b
+typeError v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
 
-int2 :: forall a. ToFrom2 Int a
-int2 =
+int :: forall a. ToFrom Int a
+int =
    { pack: Int
    , unpack: case _ of
         Int n -> n
-        v -> typeError2 v "Int"
+        v -> typeError v "Int"
    }
 
-number2 :: forall a. ToFrom2 Number a
-number2 =
+number :: forall a. ToFrom Number a
+number =
    { pack: Float
    , unpack: case _ of
         Float n -> n
-        v -> typeError2 v "Float"
+        v -> typeError v "Float"
    }
 
-string2 :: forall a. ToFrom2 String a
-string2 =
+string :: forall a. ToFrom String a
+string =
    { pack: Str
    , unpack: case _ of
         Str str -> str
-        v -> typeError2 v "Str"
+        v -> typeError v "Str"
    }
 
-intOrNumber2 :: forall a. ToFrom2 (Int + Number) a
-intOrNumber2 =
+intOrNumber :: forall a. ToFrom (Int + Number) a
+intOrNumber =
    { pack: case _ of
         Left n -> Int n
         Right n -> Float n
    , unpack: case _ of
         Int n -> Left n
         Float n -> Right n
-        v -> typeError2 v "Int or Float"
+        v -> typeError v "Int or Float"
    }
 
-intOrNumberOrString2 :: forall a. ToFrom2 (Int + Number + String) a
-intOrNumberOrString2 =
+intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
+intOrNumberOrString =
    { pack: case _ of
         Left n -> Int n
         Right (Left n) -> Float n
@@ -78,41 +78,41 @@ intOrNumberOrString2 =
         Int n -> Left n
         Float n -> Right (Left n)
         Str str -> Right (Right str)
-        v -> typeError2 v "Int, Float or Str"
+        v -> typeError v "Int, Float or Str"
    }
 
-intPair2 :: forall a. ToFrom2 ((Int × a) × (Int × a)) a
-intPair2 =
-   { pack: \(nβ × mβ') -> Constr cPair (pack2 int2 nβ : pack2 int2 mβ' : Nil)
+intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
+intPair =
+   { pack: \(nβ × mβ') -> Constr cPair (pack int nβ : pack int mβ' : Nil)
    , unpack: case _ of
-        Constr c (v : v' : Nil) | c == cPair -> unpack2 int2 v × unpack2 int2 v'
-        v -> typeError2 v "Pair"
+        Constr c (v : v' : Nil) | c == cPair -> unpack int v × unpack int v'
+        v -> typeError v "Pair"
    }
 
-matrixRep2 :: forall a. ToFrom2 (MatrixRep a) a
-matrixRep2 =
+matrixRep :: forall a. ToFrom (MatrixRep a) a
+matrixRep =
    { pack: Matrix
    , unpack: case _ of
         Matrix m -> m
-        v -> typeError2 v "Matrix"
+        v -> typeError v "Matrix"
    }
 
-record2 :: forall a. ToFrom2 (Dict (Val a)) a
+record2 :: forall a. ToFrom (Dict (Val a)) a
 record2 =
    { pack: Record
    , unpack: case _ of
         Record xvs -> xvs
-        v -> typeError2 v "Record"
+        v -> typeError v "Record"
    }
 
-boolean2 :: forall a. ToFrom2 Boolean a
-boolean2 =
+boolean :: forall a. ToFrom Boolean a
+boolean =
    { pack: if _ then Constr cTrue Nil else Constr cFalse Nil
    , unpack: case _ of
         Constr c Nil
            | c == cTrue -> true
            | c == cFalse -> false
-        v -> typeError2 v "Boolean"
+        v -> typeError v "Boolean"
    }
 
 class IsZero a where
@@ -129,21 +129,21 @@ instance (IsZero a, IsZero b) => IsZero (a + b) where
 
 -- Need to be careful about type variables escaping higher-rank quantification.
 type Unary i o a =
-   { i :: ToFrom2 i a
-   , o :: ToFrom2 o a
+   { i :: ToFrom i a
+   , o :: ToFrom o a
    , fwd :: i -> o
    }
 
 type Binary i1 i2 o a =
-   { i1 :: ToFrom2 i1 a
-   , i2 :: ToFrom2 i2 a
-   , o :: ToFrom2 o a
+   { i1 :: ToFrom i1 a
+   , i2 :: ToFrom i2 a
+   , o :: ToFrom o a
    , fwd :: i1 -> i2 -> o
    }
 
 type BinaryZero i o a =
-   { i :: ToFrom2 i a
-   , o :: ToFrom2 o a
+   { i :: ToFrom i a
+   , o :: ToFrom o a
    , fwd :: i -> i -> o
    }
 
@@ -157,13 +157,13 @@ unary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v : Nil) =
-      pack2 f.o <$> ((f.fwd (f.i.unpack v) × _) <$> new (singleton α))
+      pack f.o <$> ((f.fwd (f.i.unpack v) × _) <$> new (singleton α))
 
    fwd :: Partial => OpFwd (Raw BaseVal)
-   fwd (Val α v : Nil) = pure $ erase v × pack2 f.o (f.fwd (f.i.unpack v) × α)
+   fwd (Val α v : Nil) = pure $ erase v × pack f.o (f.fwd (f.i.unpack v) × α)
 
    bwd :: Partial => OpBwd (Raw BaseVal)
-   bwd (u × Val α _) = pack2 f.i (f.i.unpack u × α) : Nil
+   bwd (u × Val α _) = pack f.i (f.i.unpack u × α) : Nil
 
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
 binary id f =
@@ -175,14 +175,14 @@ binary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack2 f.o <$> ((f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × _) <$> new (singleton α # insert β))
+      pack f.o <$> ((f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × _) <$> new (singleton α # insert β))
 
    fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
    fwd (Val α v1 : Val β v2 : Nil) =
-      pure $ (erase v1 × erase v2) × pack2 f.o (f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × (α ∧ β))
+      pure $ (erase v1 × erase v2) × pack f.o (f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × (α ∧ β))
 
    bwd :: Partial => OpBwd (Raw BaseVal × Raw BaseVal)
-   bwd ((u1 × u2) × Val α _) = pack2 f.i1 (f.i1.unpack u1 × α) : pack2 f.i2 (f.i2.unpack u2 × α) : Nil
+   bwd ((u1 × u2) × Val α _) = pack f.i1 (f.i1.unpack u1 × α) : pack f.i2 (f.i2.unpack u2 × α) : Nil
 
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => String -> (forall a. BinaryZero i o a) -> Bind (Val a')
@@ -195,7 +195,7 @@ binaryZero id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack2 f.o <$> ((f.fwd x y × _) <$> new αs)
+      pack f.o <$> ((f.fwd x y × _) <$> new αs)
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
       αs =
@@ -206,12 +206,12 @@ binaryZero id f =
    fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
    fwd (Val α v1 : Val β v2 : Nil) =
       pure $ (erase v1 × erase v2) ×
-         pack2 f.o (f.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+         pack f.o (f.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
 
    bwd :: Partial => OpBwd (Raw BaseVal × Raw BaseVal)
-   bwd ((u1 × u2) × Val α _) = pack2 f.i (x × β1) : pack2 f.i (y × β2) : Nil
+   bwd ((u1 × u2) × Val α _) = pack f.i (x × β1) : pack f.i (y × β2) : Nil
       where
       x × y = f.i.unpack u1 × f.i.unpack u2
       β1 × β2 =

@@ -8,7 +8,7 @@ import Data.Maybe (Maybe)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
-import Primitive (string2, unpack2)
+import Primitive (string, unpack)
 import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (!), definitely')
@@ -23,13 +23,13 @@ foreign import drawBarChart :: Renderer BarChart
 
 instance Reflect (Dict (Val 𝔹)) BarChartRecord where
    from r = BarChartRecord
-      { x: unpack2 string2 (get f_x r)
+      { x: unpack string (get f_x r)
       , y: get_intOrNumber f_y r
       }
 
 instance Reflect (Dict (Val 𝔹)) BarChart where
    from r = BarChart
-      { caption: unpack2 string2 (get f_caption r)
+      { caption: unpack string (get f_caption r)
       , data: record from <$> from (get f_data r)
       }
 

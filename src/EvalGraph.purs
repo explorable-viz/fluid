@@ -32,7 +32,7 @@ import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Lattice (Raw)
 import Pretty (prettyP)
-import Primitive (intPair2, string2, unpack2)
+import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Util (type (×), (×), (∪), (∩), check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
@@ -121,7 +121,7 @@ eval γ (Record α xes) αs = do
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
-      ss × βs = (vs <#> unpack2 string2) # unzip
+      ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    Val <$> new (α `cons` αs) <@> V.Dictionary (DictRep d)
 eval γ (Constr α c es) αs = do
@@ -130,7 +130,7 @@ eval γ (Constr α c es) αs = do
    Val <$> new (α `cons` αs) <@> V.Constr c vs
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ v <- eval γ e' αs
-   let (i' × β) × (j' × β') = intPair2.unpack v
+   let (i' × β) × (j' × β') = intPair.unpack v
    check
       (i' × j' >= 1 × 1)
       ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")

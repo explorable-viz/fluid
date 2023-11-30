@@ -10,7 +10,7 @@ import DataType (cCons, cNil)
 import Dict (Dict, get)
 import Effect (Effect)
 import Lattice (𝔹)
-import Primitive (as, intOrNumber2, unpack2)
+import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Test.Util (Selector)
 import Util (type (×))
@@ -27,7 +27,7 @@ doNothing :: OnSel
 doNothing = const $ pure unit
 
 get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
-get_intOrNumber x r = first as (unpack2 intOrNumber2 (get x r))
+get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a

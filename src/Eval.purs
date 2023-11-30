@@ -22,7 +22,7 @@ import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
 import Pretty (prettyP)
-import Primitive (intPair2, string2, unpack2)
+import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (×), (∪), absurd, both, check, error, orElse, successful, throw, with)
@@ -117,7 +117,7 @@ eval γ (Record α xes) α' = do
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
    let
-      ss × αs = vs <#> unpack2 string2 # unzip
+      ss × αs = vs <#> unpack string # unzip
       d = D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (DictRep d))
 eval γ (Constr α c es) α' = do
@@ -126,7 +126,7 @@ eval γ (Constr α c es) α' = do
    pure (T.Constr c ts × Val (α ∧ α') (V.Constr c vs))
 eval γ (Matrix α e (x × y) e') α' = do
    t × Val _ v <- eval γ e' α'
-   let (i' × β) × (j' × β') = intPair2.unpack v
+   let (i' × β) × (j' × β') = intPair.unpack v
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
       ( sequence do
