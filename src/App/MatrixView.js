@@ -23,6 +23,18 @@ function snd(p) {
    return p._2
 }
 
+function Sel_isNone (v) {
+   return v.tag == "None"
+}
+
+function Sel_isPrimary (v) {
+   return v.tag == "Primary"
+}
+
+function Sel_isSecondary (v) {
+   return v.tag == "Secondary"
+}
+
 function intMatrix_nss (v) {
    return v._1
 }
@@ -101,7 +113,12 @@ function drawMatrix_ (
          .attr('x', (_, j) => w * j)
          .attr('width', w)
          .attr('height', h)
-         .attr('class', ([, n]) => snd(n) ? 'matrix-cell-selected' : 'matrix-cell-unselected')
+         .attr('class', ([, n]) =>
+            Sel_isPrimary(snd(n))
+            ? 'matrix-cell-selected'
+            : Sel_isSecondary(snd(n))
+               ? 'matrix-cell-selected-secondary'
+               : 'matrix-cell-unselected')
          .attr('stroke-width', strokeWidth)
 
       rect

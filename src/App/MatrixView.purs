@@ -2,11 +2,11 @@ module App.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (Handler, Renderer)
+import App.Util (Handler, Renderer, Sel)
 import App.Util.Select (matrixElement)
 import Data.Maybe (Maybe)
 import Data.Tuple (uncurry)
-import Lattice (𝔹, neg)
+import Lattice (neg)
 import Primitive (int, unpack)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), (!), definitely')
@@ -15,12 +15,12 @@ import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 
 --  (Rendered) matrices are required to have element type Int for now.
-type IntMatrix = Array2 (Int × 𝔹) × Int × Int
+type IntMatrix = Array2 (Int × Sel) × Int × Int
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import drawMatrix :: Renderer MatrixView
 
-matrixRep :: MatrixRep 𝔹 -> IntMatrix
+matrixRep :: MatrixRep Sel -> IntMatrix
 matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    ((unpack int <$> _) <$> vss) × i × j
 

@@ -23,6 +23,17 @@ type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
 
+data Sel = None | Primary | Secondary
+
+to𝔹 :: Sel -> 𝔹
+to𝔹 None = false
+to𝔹 Primary = true
+to𝔹 Secondary = false
+
+toSel :: 𝔹 -> Sel
+toSel false = None
+toSel true = Primary
+
 doNothing :: OnSel
 doNothing = const $ pure unit
 

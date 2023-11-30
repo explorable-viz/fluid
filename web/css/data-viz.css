@@ -19,6 +19,11 @@
    stroke: DarkGray;
 }
 
+.matrix-cell-selected-secondary {
+   fill: rgb(206, 236, 206);
+   stroke: DarkGray;
+}
+
 .matrix-cell-unselected {
    fill: White;
    stroke: DarkGray;
