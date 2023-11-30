@@ -6,17 +6,25 @@ import * as d3tip from "d3-tip"
 // This prelude currently duplicated across all FFI implementations.
 function curry2 (f) {
    return x1 => x2 => f(x1, x2)
- }
+}
 
- function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
- }
+function curry3 (f) {
+  return x1 => x2 => x3 => f(x1, x2, x3)
+}
 
- function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
- }
+function curry4 (f) {
+  return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
+}
 
- // https://stackoverflow.com/questions/5560248
+function fst(p) {
+   return p._1
+}
+
+function snd(p) {
+   return p._2
+}
+
+// https://stackoverflow.com/questions/5560248
 function colorShade(col, amt) {
    col = col.replace(/^#/, '')
    if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
@@ -47,9 +55,9 @@ function drawBubbleChart_ (
    return () => {
       var max_width = 350
       var max_height = 185
-      const x_max = Math.ceil(Math.max(...data.map(d => d.x._1)))
-      const y_max = Math.ceil(Math.max(...data.map(d => d.y._1)))
-      const z_max = Math.ceil(Math.max(...data.map(d => d.z._1)))
+      const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
+      const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
+      const z_max = Math.ceil(Math.max(...data.map(d => fst(d.z))))
 
       const childId = id + '-' + childIndex
       const margin = {top: 15, right: 0, bottom: 40, left: 40}
@@ -58,7 +66,6 @@ function drawBubbleChart_ (
       }
       if (y_max + z_max + margin.top + margin.bottom > max_height) {
          max_height = y_max + z_max + margin.top + margin.bottom
-
       }
 
       const width = max_width - margin.left - margin.right,
@@ -74,14 +81,6 @@ function drawBubbleChart_ (
          .attr('id', childId)
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
-
-      const tip = d3tip.default()
-         .attr('class', 'd3-tip')
-         .offset([0, 0])
-         .html((_, d) => d.y_1)
-
-      svg.call(tip)
-
 
       const x = d3.scaleLinear()
          .domain([0,x_max + z_max + margin.left])
@@ -103,7 +102,7 @@ function drawBubbleChart_ (
          .range([1, 30])
 
       const c = d3.scaleOrdinal()
-         .domain([...new Set(...data.map(d => d.c._1))])
+         .domain([...new Set(...data.map(d => fst(d.c)))])
          .range(d3.schemeSet1)
 
       svg.append('g')
@@ -111,11 +110,11 @@ function drawBubbleChart_ (
          .data([...data.entries()])
          .enter()
          .append('circle')
-            .attr('cx', ([, d]) => x(d.x._1))
-            .attr('cy', ([, d]) => y(d.y._1))
-            .attr('r', ([, d]) => z(d.z._1))
-            .attr('stroke', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -80) : colorShade(c(d.c._1), -40))
-            .style('fill', ([, d]) => d.y._2 ? colorShade(c(d.c._1), -40) : c(d.c._1))
+            .attr('cx', ([, d]) => x(fst(d.x)))
+            .attr('cy', ([, d]) => y(fst(d.y)))
+            .attr('r', ([, d]) => z(fst(d.z)))
+            .attr('stroke', ([, d]) => d.y._2 ? colorShade(c(fst(d.c)), -80) : colorShade(c(fst(d.c)), -40))
+            .style('fill', ([, d]) => d.y._2 ? colorShade(c(fst(d.c)), -40) : c(fst(d.c)))
             .style('class', ([, d]) => d.y._2 ? 'dot-selected' : 'dot-unselected')
             .on('mousedown', (e, d) => {
 //               console.log(`mousedown ${d[0]}`)
@@ -123,7 +122,7 @@ function drawBubbleChart_ (
             })
 
       svg.append('text')
-         .text(caption._1)
+         .text(fst(caption))
          .attr('x', width / 2)
          .attr('y', height + 35)
          .attr('class', 'title-text')

@@ -16,6 +16,14 @@ function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function fst(p) {
+   return p._1
+}
+
+function snd(p) {
+   return p._2
+}
+
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
@@ -64,14 +72,14 @@ function drawBarChart_ (
       const tip = d3tip.default()
          .attr('class', 'd3-tip')
          .offset([0, 0])
-         .html((_, d) => d.y._1)
+         .html((_, d) => fst(d.y))
 
       svg.call(tip)
 
       // x-axis
       const x = d3.scaleBand()
          .range([0, width])
-         .domain(data.map(d => d.x._1))
+         .domain(data.map(d => fst(d.x)))
          .padding(0.2)
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
@@ -81,7 +89,7 @@ function drawBarChart_ (
 
       // y-axis
       const nearest = 100,
-            y_max = Math.ceil(Math.max(...data.map(d => d.y._1)) / nearest) * nearest
+            y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
@@ -98,19 +106,19 @@ function drawBarChart_ (
          .data([...data.entries()])
          .enter()
          .append('rect')
-            .attr('x', ([, d]) => x(d.x._1))
-            .attr('y', ([, d]) => (y(d.y._1)))  // ouch: bars overplot x-axis!
+            .attr('x', ([, d]) => x(fst(d.x)))
+            .attr('y', ([, d]) => (y(fst(d.y))))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
-            .attr('height', ([, d]) => height - y(d.y._1))
-            .attr('fill', ([, d]) => d.y._2 ? colorShade(barFill, -40) : barFill)
-            .attr('class', ([, d]) => d.y._2 ? 'bar-selected' : 'bar-unselected')
+            .attr('height', ([, d]) => height - y(fst(d.y)))
+            .attr('fill', ([, d]) => snd(d.y) ? colorShade(barFill, -40) : barFill)
+            .attr('class', ([, d]) => snd(d.y) ? 'bar-selected' : 'bar-unselected')
             .on('mousedown', (e, d) => {
 //               console.log(`mousedown ${d[0]}`)
                listener(e)
             })
 
       svg.append('text')
-         .text(caption._1)
+         .text(fst(caption))
          .attr('x', width / 2)
          .attr('y', height + 35)
          .attr('class', 'title-text')
