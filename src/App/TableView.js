@@ -80,7 +80,7 @@ function drawTable_ (
             .append('table')
             .attr('id', childId)
 
-         const colNames = Object.keys(table[0])
+         const colNames = Object.keys(table[0]).sort()
 
          HTMLtable.append('caption')
             .text(title)
