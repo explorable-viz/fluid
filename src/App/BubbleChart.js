@@ -58,9 +58,9 @@ function drawBubbleChart_ (
       const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
       const z_max = Math.ceil(Math.max(...data.map(d => fst(d.z))))
-
+      const x_z_max = Math.ceil(Math.max(...data.map(d => fst(d.z) + fst(d.x))))
       const childId = id + '-' + childIndex
-      const margin = {top: 15, right: 0, bottom: 40, left: 40}
+      const margin = {top: 15, right: 20, bottom: 40, left: 40}
       // if (x_max + z_max + margin.left + margin.right > max_width) {
       //    max_width = x_max +  z_max  + margin.left + margin.right
       // }
