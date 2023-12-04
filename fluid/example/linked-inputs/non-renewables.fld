@@ -1,0 +1,5 @@
+[
+   { country: "China", nuclear: 57.0, gdpPerCap: 12.556  },
+   { country: "USA", nuclear: 95.8, gdpPerCap: 70.248 },
+   { country: "Germany", nuclear: 4.3, gdpPerCap: 51.203}
+]
