@@ -9,7 +9,7 @@ import Data.Tuple (uncurry)
 import Effect (Effect)
 import Lattice (neg)
 import Module (File(..))
-import Test.Specs (linkedInputs_spec1, linkedInputs_spec2)
+import Test.Specs (linkedInputs_spec1, linkedInputs_spec2, linkedInputs_spec3)
 import Test.Util.Suite (loadLinkedInputsTest, TestLinkedInputsSpec)
 
 -- Currently unused; delete once we support linked outputs/inputs in same example.
@@ -41,5 +41,5 @@ main =
    runAffs_ (uncurry drawLinkedInputsFig)
       [ loadLinkedInputsTest linkedInputs_spec1
       , loadLinkedInputsTest linkedInputs_spec2
-      , loadLinkedInputsTest linkedInputs_spec_pres
+      , loadLinkedInputsTest linkedInputs_spec3
       ]

@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
-import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec)
+import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -344,6 +344,20 @@ linkedInputs_spec2 =
         }
    , δv: Left $ listElement 3 (field "water" neg) >>> listElement 4 (field "water" neg) >>> listElement 5 (field "water" neg)
    , v'_expect: "({farms : 250, name : \"Germany\", popMil : 81} : ({farms : ⸨200⸩, name : \"UK\", popMil : ⸨67⸩} : ({farms : 150, name : \"Bulgaria\", popMil : 7} : ({farms : 220, name : \"Poland\", popMil : 38} : ({farms : 270, name : \"Turkey\", popMil : 85} : [])))))"
+   }
+
+linkedInputs_spec3 :: TestLinkedInputsSpec
+linkedInputs_spec3 =
+   { spec:
+        { divId: "fig-3"
+        , file: File "energy"
+        , x1: "renewables"
+        , x1File: File "renewables"
+        , x2: "non_renewables"
+        , x2File: File "non-renewables"
+        }
+   , δv: Right $ listElement 0 (field "nuclear" neg)
+   , v'_expect: ""
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
