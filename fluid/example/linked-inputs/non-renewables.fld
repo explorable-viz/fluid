@@ -1,5 +1,5 @@
 [
-   { country: "China", nuclear: 57.0, gas: 102.71, coal: 970, petrol: 1.72, gdpPerCap: 12.556  },
-   { country: "USA", nuclear: 95.8, gas: 497, coal:198, petrol: 39, gdpPerCap: 70.248 },
-   { country: "Germany", nuclear: 4.3, gas: 30.13, coal: 45, petrol: 4.38, gdpPerCap: 51.203}
+   { country: "China", nuclear: 27.17, gas: 64.16, coal: 877.97, petrol: 6.68, gdpPerCap: 8.016  },
+   { country: "USA", nuclear: 98.67, gas: 458.87, coal:302.59, petrol: 39.42, gdpPerCap: 56.762 },
+   { country: "Germany", nuclear: 10.8, gas: 27.51, coal: 52.40, petrol: 1.69, gdpPerCap: 41.103}
 ]

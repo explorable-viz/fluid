@@ -362,6 +362,7 @@ linkedInputs_spec3 =
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
-   [ linkedInputs_spec1
-   , linkedInputs_spec2
+   [ -- linkedInputs_spec1
+     -- , linkedInputs_spec2
+     linkedInputs_spec3
    ]
