@@ -37,7 +37,7 @@ import SExpr (desugarModuleFwd)
 import Test.Util (Selector)
 import Trace (Trace)
 import Util (type (+), type (×), AffError, Endo, absurd, orElse, uncurry3, (×))
-import Val (class Ann, Env, Val, append_inv, (<+>))
+import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
@@ -49,13 +49,13 @@ type SplitDefs a =
    }
 
 -- Decompose as above.
-splitDefs :: forall a m. Ann a => MonadError Error m => Env a -> S.Expr a -> m (SplitDefs a)
+splitDefs :: forall m. MonadError Error m => Raw Env -> Raw S.Expr -> m (Raw SplitDefs)
 splitDefs γ0 s' = do
    let defs × s = unsafePartial $ unpack s'
    γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
    pure { γ, s }
    where
-   unpack :: Partial => S.Expr a -> (S.VarDefs a + S.RecDefs a) × S.Expr a
+   unpack :: Partial => Raw S.Expr -> (Raw S.VarDefs + Raw S.RecDefs) × Raw S.Expr
    unpack (S.LetRec defs s) = Right defs × s
    unpack (S.Let defs s) = Left defs × s
 
@@ -182,15 +182,6 @@ drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
 
-varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
-varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
-
-asSel :: 𝔹 -> 𝔹 -> Sel
-asSel false false = None
-asSel false true = Secondary
-asSel true false = Primary -- "costless output", but ignore those for now
-asSel true true = Primary
-
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
 figViews { spec: { xs }, gc: { gc, v } } δv = do
@@ -199,6 +190,15 @@ figViews { spec: { xs }, gc: { gc, v } } δv = do
       γ0γ × e' × α = (unwrap gc).bwd v1
       v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ0γ × e' × α)
    (view "output" v' × _) <$> sequence (flip varView γ0γ <$> xs)
+
+varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
+varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
+
+asSel :: 𝔹 -> 𝔹 -> Sel
+asSel false false = None
+asSel false true = Secondary
+asSel true false = Primary -- "costless output", but ignore those for now
+asSel true true = Primary
 
 linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
 linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
