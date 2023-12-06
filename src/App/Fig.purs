@@ -6,13 +6,14 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (HTMLId, Sel(..), doNothing, toSel)
 import App.Util.Select (envVal)
 import App.View (View, drawView, view)
-import Bindings (Var)
+import Bindings (Bind, Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.List (singleton)
 import Data.Newtype (unwrap)
+import Data.Profunctor.Strong (second)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd, uncurry)
@@ -36,7 +37,7 @@ import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), AffError, Endo, absurd, orElse, uncurry3, (×))
+import Util (type (+), type (×), AffError, Endo, absurd, concatM, orElse, uncurry3, (×))
 import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
@@ -63,6 +64,7 @@ type FigSpec =
    { divId :: HTMLId
    , file :: File
    , xs :: Array Var -- variables to be considered "inputs"
+   , inputs :: Array (Bind File)
    }
 
 type Fig =
@@ -241,8 +243,9 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
       pure { v, v', v0 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
-loadFig spec@{ file } = do
-   gconfig <- defaultImports >>= initialConfig
+loadFig spec@{ file, inputs } = do
+   let inputs' = inputs <#> second (File "example/" <> _)
+   gconfig <- defaultImports >>= concatM (uncurry (flip datasetAs) <$> inputs') >>= initialConfig
    let γ0 = botOf <$> gconfig.γ
    s' <- open file
    let s0 = botOf s'

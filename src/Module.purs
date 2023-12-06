@@ -11,6 +11,7 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
+import Debug (trace)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
@@ -75,8 +76,9 @@ defaultImports =
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => File -> Var -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs file x (ProgCxt r@{ datasets }) = do
-   eα <- parseProgram (Folder "fluid") file >>= desug
-   pure $ ProgCxt r { datasets = x ↦ eα : datasets }
+   trace file \_ -> do
+      eα <- parseProgram (Folder "fluid") file >>= desug
+      pure $ ProgCxt r { datasets = x ↦ eα : datasets }
 
 initialConfig :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig GraphImpl)
 initialConfig progCxt = do

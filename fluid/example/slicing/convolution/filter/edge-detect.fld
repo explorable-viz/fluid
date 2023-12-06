@@ -1,0 +1,5 @@
+let filter =
+   let edgeDetect = [[0,  1, 0],
+                     [1, -4, 1],
+                     [0,  1, 0]] in
+   [| nth2 i j edgeDetect | (i, j) in (3, 3) |];
