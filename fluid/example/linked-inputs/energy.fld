@@ -4,13 +4,13 @@ let joined_country c_name =
                               , country_year.year == 2018 ];
             totalNonRenewables = sum [ country.nuclear + country.gas + country.coal + country.petrol
                                      | country <- non_renewables, country.country == c_name ]
-        in head [{name: c_name, totalCap: totalRenewables + totalNonRenewables, renewables: totalRenewables, non_renewables: totalNonRenewables, gdpPerCap: country.gdpPerCap} 
+        in head [{name: c_name, totalCap: totalRenewables + totalNonRenewables, renewables: totalRenewables, carbonInt: country.carbonInt, gdpPerCap: country.gdpPerCap} 
                 | country <- non_renewables, country.country == c_name ];
 let energies =
     let c_names = [country.country | country <- non_renewables]
         in map joined_country c_names
 in BubbleChart {
     caption: "Test linkedinputs bubble chart",
-    data: [{x: country.renewables / country.totalCap, y: country.non_renewables / country.totalCap, z: country.gdpPerCap, c: country.name} | country <- energies]
+    data: [{x: country.renewables / country.totalCap, y: country.carbonInt, z: country.gdpPerCap, c: country.name} | country <- energies]
 }
 
