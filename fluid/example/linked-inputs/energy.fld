@@ -11,6 +11,6 @@ let energies =
         in map joined_country c_names
 in BubbleChart {
     caption: "Test linkedinputs bubble chart",
-    data: [{x: country.renewables, y: country.non_renewables, z: country.gdpPerCap, c: country.name} | country <- energies]
+    data: [{x: country.renewables / country.totalCap, y: country.non_renewables / country.totalCap, z: country.gdpPerCap, c: country.name} | country <- energies]
 }
 

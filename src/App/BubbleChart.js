@@ -55,18 +55,14 @@ function drawBubbleChart_ (
    return () => {
       var max_width = 320
       var max_height = 185
+      const max_z_rad = Math.min(max_width, max_height) / 10
       const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
+      const x_min = Math.floor(Math.min(...data.map(d => fst(d.x))))
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
+      const y_min = Math.floor(Math.min(...data.map(d => fst(d.y))))
       const z_max = Math.ceil(Math.max(...data.map(d => fst(d.z))))
-      const x_z_max = Math.ceil(Math.max(...data.map(d => fst(d.z) + fst(d.x))))
       const childId = id + '-' + childIndex
       const margin = {top: 15, right: 20, bottom: 40, left: 40}
-      // if (x_max + z_max + margin.left + margin.right > max_width) {
-      //    max_width = x_max +  z_max  + margin.left + margin.right
-      // }
-      // if (y_max + z_max + margin.top + margin.bottom > max_height) {
-      //    max_height = y_max + z_max + margin.top + margin.bottom
-      // }
 
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
@@ -83,8 +79,8 @@ function drawBubbleChart_ (
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
       const x = d3.scaleLinear()
-         .domain([0,x_z_max + margin.right])
-         .range([0, width])
+         .domain([Math.min(0, x_min),x_max])
+         .range([0, width - max_z_rad])
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
          .call(d3.axisBottom(x))
@@ -92,14 +88,14 @@ function drawBubbleChart_ (
          .style('text-anchor', 'middle')
 
       const y = d3.scaleLinear()
-         .domain([0, y_max + z_max + margin.top])
-         .range([height,0])
+         .domain([Math.min(0, y_min), y_max])
+         .range([height, 0])
       svg.append('g')
          .call(d3.axisLeft(y))
 
       const z = d3.scaleLinear()
          .domain([1, z_max])
-         .range([1, 30])
+         .range([1, max_z_rad])
 
       unique_countries = data.map(d => fst(d.c))
       console.log(unique_countries)
