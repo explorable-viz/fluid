@@ -25,9 +25,11 @@ import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
 import EvalBwd (TracedEval, evalBwd, traceGC)
+import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
 import GaloisConnection (dual)
+import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
@@ -69,6 +71,7 @@ type Fig =
    { spec :: FigSpec
    , s0 :: Raw S.Expr -- program that was originally "split"
    , gc :: TracedEval 𝔹
+   , gc2 :: GraphEval GraphImpl
    }
 
 type LinkedOutputsFigSpec =
@@ -242,13 +245,14 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file } = do
-   { γ: γ' } <- defaultImports >>= initialConfig
-   let γ0 = botOf <$> γ'
+   gconfig <- defaultImports >>= initialConfig
+   let γ0 = botOf <$> gconfig.γ
    s' <- open file
    let s0 = botOf s'
    { γ: γ1, s } <- splitDefs γ0 s0
    gc <- desug s >>= traceGC (γ0 <+> γ1)
-   pure { spec, s0, gc }
+   gc2 <- desug s >>= graphGC gconfig
+   pure { spec, s0, gc, gc2 }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do

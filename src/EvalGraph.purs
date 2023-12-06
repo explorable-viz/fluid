@@ -1,13 +1,4 @@
-module EvalGraph
-   ( GraphConfig
-   , apply
-   , eval
-   , eval_module
-   , eval_progCxt
-   , graphGC
-   , match
-   , patternMismatch
-   ) where
+module EvalGraph where
 
 import Prelude hiding (apply, add)
 
