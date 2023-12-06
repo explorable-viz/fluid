@@ -158,13 +158,19 @@ bwd_cases =
      , fwd_expect: "⸨40.22222222222222⸩"
      }
    , { file: "dtw/compute-dtw"
-     , imports: []
+     , imports:
+          [ "lib/fnum"
+          , "lib/dtw"
+          ]
      , bwd_expect_file: "dtw/compute-dtw.expect"
      , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
      , δv: listElement 1 neg
      }
    , { file: "dtw/average-series"
-     , imports: []
+     , imports:
+          [ "lib/fnum"
+          , "lib/dtw"
+          ]
      , bwd_expect_file: "dtw/average-series.expect"
      , fwd_expect: "(2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
      , δv: listElement 2 neg

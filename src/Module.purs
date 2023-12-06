@@ -72,7 +72,7 @@ defaultImports =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil }) >>=
       modules (File <<< ("lib/" <> _) <$> imports)
    where
-   imports = [ "prelude", "graphics", "fnum", "dtw" ]
+   imports = [ "prelude", "graphics" ]
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => File -> Var -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs file x (ProgCxt r@{ datasets }) = do
