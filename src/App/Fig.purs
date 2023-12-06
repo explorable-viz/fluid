@@ -20,7 +20,7 @@ import Desugarable (desug)
 import Dict (get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (class MonadEffect) --, liftEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -221,11 +221,11 @@ linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
       pure { v, v', v0' }
 
 linkedInputsResult :: forall m. MonadEffect m => MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
-linkedInputsResult { spec: { x1, x2, file }, γ, e, t } =
+linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
    case _ of
       Left δv1 -> do
          { v, v', v0 } <- result x1 x2 δv1
-         liftEffect $ log $ (show file) <> "v0: " <> prettyP v0
+         -- liftEffect $ log $ (show file) <> "v0: " <> prettyP v0
          pure $ v × v' × v0
       Right δv2 -> do
          { v, v', v0 } <- result x2 x1 δv2
