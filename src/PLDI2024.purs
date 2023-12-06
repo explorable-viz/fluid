@@ -9,7 +9,7 @@ import Data.Tuple (uncurry)
 import Effect (Effect)
 import Lattice (neg)
 import Module (File(..))
-import Test.Specs (linkedInputs_spec1, linkedInputs_spec2, linkedInputs_spec3)
+import Test.Specs (linkedInputs_spec1, linkedInputs_spec2)
 import Test.Util.Suite (loadLinkedInputsTest, TestLinkedInputsSpec)
 
 -- Currently unused; delete once we support linked outputs/inputs in same example.
@@ -34,6 +34,20 @@ linkedInputs_spec_pres =
         }
    , δv: Left $ listElement 0 (field "farms" neg) >>> listElement 1 (field "farms" neg)
    , v'_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : ({country : \"Bulgaria\", name : \"Sofia\", water : 55} : ({country : \"Poland\", name : \"Warsaw\", water : 65} : ({country : \"Turkey\", name : \"Istanbul\", water : 375} : [])))))))))"
+   }
+
+linkedInputs_spec3 :: TestLinkedInputsSpec
+linkedInputs_spec3 =
+   { spec:
+        { divId: "fig-3"
+        , file: File "energy"
+        , x1: "renewables"
+        , x1File: File "renewables"
+        , x2: "non_renewables"
+        , x2File: File "non-renewables"
+        }
+   , δv: Right $ listElement 0 (field "nuclear" neg)
+   , v'_expect: "" -- no point with expected value here
    }
 
 main :: Effect Unit

@@ -346,23 +346,8 @@ linkedInputs_spec2 =
    , v'_expect: "({farms : 250, name : \"Germany\", popMil : 81} : ({farms : ⸨200⸩, name : \"UK\", popMil : ⸨67⸩} : ({farms : 150, name : \"Bulgaria\", popMil : 7} : ({farms : 220, name : \"Poland\", popMil : 38} : ({farms : 270, name : \"Turkey\", popMil : 85} : [])))))"
    }
 
-linkedInputs_spec3 :: TestLinkedInputsSpec
-linkedInputs_spec3 =
-   { spec:
-        { divId: "fig-3"
-        , file: File "energy"
-        , x1: "renewables"
-        , x1File: File "renewables"
-        , x2: "non_renewables"
-        , x2File: File "non-renewables"
-        }
-   , δv: Right $ listElement 0 (field "nuclear" neg)
-   , v'_expect: ""
-   }
-
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
-   [ -- linkedInputs_spec1
-     -- , linkedInputs_spec2
-     linkedInputs_spec3
+   [ linkedInputs_spec1
+   , linkedInputs_spec2
    ]
