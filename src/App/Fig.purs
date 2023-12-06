@@ -189,9 +189,9 @@ figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Ar
 figViews { spec: { xs }, gc: { gc, v } } δv = do
    let
       v1 = δv (botOf v)
-      γ0γ × e' × α = (unwrap gc).bwd v1
-      v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ0γ × e' × α)
-   (view "output" v' × _) <$> sequence (flip varView γ0γ <$> xs)
+      γ × e × α = (unwrap gc).bwd v1
+      v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e × α)
+   (view "output" v' × _) <$> sequence (flip varView γ <$> xs)
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
