@@ -7,10 +7,10 @@ import Data.Either (isLeft)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
-import Module (File(..), Folder(..), datasetAs, defaultImports, initialConfig, loadFile)
+import Module (File(..), Folder(..), datasetAs, defaultImports, initialConfig, loadFile, module_)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
-import Util (type (×), (×), type (+))
+import Util (type (+), type (×), concatM, (×))
 import Val (Val)
 
 -- benchmarks parameterised on number of iterations
@@ -23,6 +23,7 @@ type TestSpec =
 
 type TestBwdSpec =
    { file :: String
+   , imports :: Array String
    , bwd_expect_file :: String
    , δv :: Selector Val -- relative to bot
    , fwd_expect :: String
@@ -59,8 +60,8 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& a
    folder = File "slicing/"
 
    asTest :: TestBwdSpec -> Aff BenchRow
-   asTest { file, bwd_expect_file, δv, fwd_expect } = do
-      gconfig <- defaultImports >>= initialConfig
+   asTest { file, imports, bwd_expect_file, δv, fwd_expect } = do
+      gconfig <- defaultImports >>= concatM (module_ <<< File <$> imports) >>= initialConfig
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
       test (folder <> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 

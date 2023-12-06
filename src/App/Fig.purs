@@ -247,10 +247,8 @@ loadFig spec@{ file, inputs } = do
    let inputs' = inputs <#> second (File "example/" <> _)
    gconfig <- defaultImports >>= concatM ((module_ <<< snd) <$> inputs') >>= initialConfig
    let γ0 = botOf <$> gconfig.γ
-   s' <- open file
-   let s0 = botOf s'
-   { γ: γ1, s } <- splitDefs γ0 s0
-   gc <- desug s >>= traceGC (γ0 <+> γ1)
+   s0 <- open file
+   gc <- desug s0 >>= traceGC γ0
    pure { spec, s0, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
