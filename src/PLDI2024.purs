@@ -2,7 +2,7 @@ module PLDI2024 where
 
 import Prelude
 
-import App.Fig (LinkedOutputsFigSpec, drawLinkedInputsFig, runAffs_)
+import App.Fig (drawLinkedInputsFig, runAffs_)
 import App.Util.Select (field, listElement)
 import Data.Either (Either(..))
 import Data.Tuple (uncurry)
@@ -11,16 +11,6 @@ import Lattice (neg)
 import Module (File(..))
 import Test.Specs (linkedInputs_spec1, linkedInputs_spec2)
 import Test.Util.Suite (loadLinkedInputsTest, TestLinkedInputsSpec)
-
--- Currently unused; delete once we support linked outputs/inputs in same example.
-linkedOutputs :: LinkedOutputsFigSpec
-linkedOutputs =
-   { divId: "fig-1"
-   , file1: File "water-bar-chart"
-   , file2: File "water-ratio-chart"
-   , dataFile: File "water-consumption-data"
-   , x: "data"
-   }
 
 linkedInputs_spec_pres :: TestLinkedInputsSpec
 linkedInputs_spec_pres =

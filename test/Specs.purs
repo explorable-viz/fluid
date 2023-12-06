@@ -75,7 +75,8 @@ bwd_cases =
    , { file: "array/dims", imports: [], bwd_expect_file: "array/dims.expect", δv: neg, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩" }
    , { file: "convolution/edgeDetect"
      , imports:
-          [ "example/slicing/convolution/filter/edge-detect"
+          [ "lib/convolution"
+          , "example/slicing/convolution/filter/edge-detect"
           , "example/slicing/convolution/test-image"
           ]
      , bwd_expect_file: "convolution/edgeDetect.expect"
@@ -89,7 +90,8 @@ bwd_cases =
      }
    , { file: "convolution/emboss"
      , imports:
-          [ "example/slicing/convolution/filter/emboss"
+          [ "lib/convolution"
+          , "example/slicing/convolution/filter/emboss"
           , "example/slicing/convolution/test-image"
           ]
      , bwd_expect_file: "convolution/emboss.expect"
@@ -103,7 +105,8 @@ bwd_cases =
      }
    , { file: "convolution/gaussian"
      , imports:
-          [ "example/slicing/convolution/filter/gaussian"
+          [ "lib/convolution"
+          , "example/slicing/convolution/filter/gaussian"
           , "example/slicing/convolution/test-image"
           ]
      , bwd_expect_file: "convolution/gaussian.expect"
@@ -272,9 +275,10 @@ linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
         { divId: "fig-1"
+        , dataFile: File "renewables"
+        , imports: []
         , file1: File "bar-chart"
         , file2: File "line-chart"
-        , dataFile: File "renewables"
         , x: "data"
         }
    , δv: Left
@@ -332,9 +336,10 @@ linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
           { divId: ""
+          , dataFile: File "pairs-data"
+          , imports: []
           , file1: File "pairs-1"
           , file2: File "pairs-2"
-          , dataFile: File "pairs-data"
           , x: "data"
           }
      , δv: Left
@@ -345,9 +350,10 @@ linkedOutputs_cases =
      }
    , { spec:
           { divId: ""
+          , dataFile: File "convolution-data"
+          , imports: [ "lib/convolution" ]
           , file1: File "convolution-1"
           , file2: File "convolution-2"
-          , dataFile: File "convolution-data"
           , x: "data"
           }
      , δv: Left $ matrixElement 2 2 neg

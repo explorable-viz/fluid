@@ -1,5 +1,0 @@
-[
-    {country: "Germany", cities: 900, farms: 150, industry:500 , energy: 450, popMil: 81, continent: "Europe"},
-    {country: "UK", cities: 800, farms: 200, industry: 400, energy: 700, popMil: 67, continent: "Europe"},
-    {country: "Kenya", cities:650, farms: 300, industry: 300, energy: 600, popMil: 67, continent: "Africa"}
-]

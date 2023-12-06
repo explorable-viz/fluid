@@ -6,14 +6,13 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (HTMLId, Sel(..), doNothing, toSel)
 import App.Util.Select (envVal)
 import App.View (View, drawView, view)
-import Bindings (Bind, Var)
+import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.List (singleton)
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (second)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd, uncurry)
@@ -21,7 +20,7 @@ import Desugarable (desug)
 import Dict (get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (class MonadEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -63,8 +62,8 @@ splitDefs γ0 s' = do
 type FigSpec =
    { divId :: HTMLId
    , file :: File
+   , imports :: Array String
    , xs :: Array Var -- variables to be considered "inputs"
-   , inputs :: Array (Bind File)
    }
 
 type Fig =
@@ -75,9 +74,10 @@ type Fig =
 
 type LinkedOutputsFigSpec =
    { divId :: HTMLId
+   , imports :: Array String
+   , dataFile :: File
    , file1 :: File
    , file2 :: File
-   , dataFile :: File
    , x :: Var
    }
 
@@ -227,7 +227,6 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
    case _ of
       Left δv1 -> do
          { v, v', v0 } <- result x1 x2 δv1
-         liftEffect $ log $ "v0: " <> prettyP v0
          pure $ v × v' × v0
       Right δv2 -> do
          { v, v', v0 } <- result x2 x1 δv2
@@ -243,9 +242,8 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
       pure { v, v', v0 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
-loadFig spec@{ file, inputs } = do
-   let inputs' = inputs <#> second (File "example/" <> _)
-   gconfig <- defaultImports >>= concatM ((module_ <<< snd) <$> inputs') >>= initialConfig
+loadFig spec@{ file, imports } = do
+   gconfig <- defaultImports >>= concatM (module_ <<< File <$> imports) >>= initialConfig
    let γ0 = botOf <$> gconfig.γ
    s0 <- open file
    gc <- desug s0 >>= traceGC γ0
@@ -264,13 +262,13 @@ loadLinkedInputsFig spec@{ file } = do
    pure { spec, γ, s, e, t, v0: v }
 
 loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
-loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
+loadLinkedOutputsFig spec@{ dataFile, imports, file1, file2, x } = do
    let
       dir = File "linked-outputs/"
-      name1 × name2 = (dir <> file1) × (dir <> file2)
       dataFile' = File "example/" <> dir <> dataFile
+      name1 × name2 = (dir <> file1) × (dir <> file2)
    -- views share ambient environment γ
-   { γ: γ' } <- defaultImports >>= datasetAs dataFile' x >>= initialConfig
+   { γ: γ' } <- defaultImports >>= concatM (module_ <<< File <$> imports) >>= datasetAs dataFile' x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ = botOf <$> γ'

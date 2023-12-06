@@ -64,12 +64,15 @@ module_ file (ProgCxt r@{ mods }) = do
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 
+modules :: forall m. MonadAff m => MonadError Error m => Array File -> Raw ProgCxt -> m (Raw ProgCxt)
+modules files = concatM (files <#> module_)
+
 defaultImports :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
 defaultImports =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil }) >>=
-      concatM ((module_ <<< (File "lib/" <> _) <<< File) <$> imports)
+      modules (File <<< ("lib/" <> _) <$> imports)
    where
-   imports = [ "prelude", "graphics", "convolution", "fnum", "dtw" ]
+   imports = [ "prelude", "graphics", "fnum", "dtw" ]
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => File -> Var -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs file x (ProgCxt r@{ datasets }) = do
