@@ -30,7 +30,7 @@ import Expr (Expr)
 import Foreign.Object (lookup)
 import GaloisConnection (dual)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
-import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
+import Module (File(..), Folder(..), datasetAs, defaultImports, initialConfig, loadFile, module_, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -245,7 +245,7 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ file, inputs } = do
    let inputs' = inputs <#> second (File "example/" <> _)
-   gconfig <- defaultImports >>= concatM (uncurry (flip datasetAs) <$> inputs') >>= initialConfig
+   gconfig <- defaultImports >>= concatM ((module_ <<< snd) <$> inputs') >>= initialConfig
    let γ0 = botOf <$> gconfig.γ
    s' <- open file
    let s0 = botOf s'

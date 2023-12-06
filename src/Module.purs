@@ -61,24 +61,24 @@ open = parseProgram (Folder "fluid/example")
 
 module_ :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ file (ProgCxt r@{ mods }) = do
-   src <- loadFile (Folder "fluid/lib") file
-   mod <- parse src P.module_ >>= desugarModuleFwd
-   pure $ ProgCxt r { mods = mod : mods }
+   src <- loadFile (Folder "fluid") file
+   trace src \_ -> do
+      mod <- parse src P.module_ >>= desugarModuleFwd
+      pure $ ProgCxt r { mods = mod : mods }
 
 defaultImports :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
 defaultImports =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= module_ (File "prelude")
-      >>= module_ (File "graphics")
-      >>= module_ (File "convolution")
-      >>= module_ (File "fnum")
-      >>= module_ (File "dtw")
+      >>= module_ (File "lib/prelude")
+      >>= module_ (File "lib/graphics")
+      >>= module_ (File "lib/convolution")
+      >>= module_ (File "lib/fnum")
+      >>= module_ (File "lib/dtw")
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => File -> Var -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs file x (ProgCxt r@{ datasets }) = do
-   trace file \_ -> do
-      eα <- parseProgram (Folder "fluid") file >>= desug
-      pure $ ProgCxt r { datasets = x ↦ eα : datasets }
+   eα <- parseProgram (Folder "fluid") file >>= desug
+   pure $ ProgCxt r { datasets = x ↦ eα : datasets }
 
 initialConfig :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig GraphImpl)
 initialConfig progCxt = do
