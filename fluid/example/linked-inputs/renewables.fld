@@ -17,10 +17,10 @@
    { year: 2013, country: "Germany", energyType: "Solar", output: 36.71},
    { year: 2013, country: "Germany", energyType: "Wind", output: 33.48},
 
-   { year: 2013, country: "Nigeria", energyType: "Bio", output: 0.01},
-   { year: 2013, country: "Nigeria", energyType: "Hydro", output: 2.11},
-   { year: 2013, country: "Nigeria", energyType: "Solar", output: 0.0},
-   { year: 2013, country: "Nigeria", energyType: "Wind", output: 0.0},
+   { year: 2013, country: "Egypt", energyType: "Bio", output: 0.07},
+   { year: 2013, country: "Egypt", energyType: "Hydro", output: 2.8},
+   { year: 2013, country: "Egypt", energyType: "Solar", output: 0.03},
+   { year: 2013, country: "Egypt", energyType: "Wind", output: 0.56},
 
    { year: 2013, country: "USA", energyType: "Bio", output: 11.17},
    { year: 2013, country: "USA", energyType: "Hydro", output: 83.01},
@@ -42,10 +42,10 @@
    { year: 2014, country: "Germany", energyType: "Solar", output: 37.9},
    { year: 2014, country: "Germany", energyType: "Wind", output: 38.61},
 
-   { year: 2014, country: "Nigeria", energyType: "Bio", output: 0.01},
-   { year: 2014, country: "Nigeria", energyType: "Hydro", output: 2.11},
-   { year: 2014, country: "Nigeria", energyType: "Solar", output: 0.0},
-   { year: 2014, country: "Nigeria", energyType: "Wind", output: 0.0},
+   { year: 2014, country: "Egypt", energyType: "Bio", output: 0.07},
+   { year: 2014, country: "Egypt", energyType: "Hydro", output: 2.8},
+   { year: 2014, country: "Egypt", energyType: "Solar", output: 0.03},
+   { year: 2014, country: "Egypt", energyType: "Wind", output: 0.56},
 
    { year: 2014, country: "USA", energyType: "Bio", output: 11.3},
    { year: 2014, country: "USA", energyType: "Hydro", output: 83.49},
@@ -67,10 +67,10 @@
    { year: 2015, country: "Germany", energyType: "Solar", output: 39.22},
    { year: 2015, country: "Germany", energyType: "Wind", output: 44.58},
 
-   { year: 2015, country: "Nigeria", energyType: "Bio", output: 0.01},
-   { year: 2015, country: "Nigeria", energyType: "Hydro", output: 2.11},
-   { year: 2015, country: "Nigeria", energyType: "Solar", output: 0.01},
-   { year: 2015, country: "Nigeria", energyType: "Wind", output: 0.0},
+   { year: 2015, country: "Egypt", energyType: "Bio", output: 0.07},
+   { year: 2015, country: "Egypt", energyType: "Hydro", output: 2.8},
+   { year: 2015, country: "Egypt", energyType: "Solar", output: 0.04},
+   { year: 2015, country: "Egypt", energyType: "Wind", output: 0.75},
 
    { year: 2015, country: "USA", energyType: "Bio", output: 11.85},
    { year: 2015, country: "USA", energyType: "Hydro", output: 83.5},
@@ -92,10 +92,10 @@
    { year: 2016, country: "Germany", energyType: "Solar", output: 40.68},
    { year: 2016, country: "Germany", energyType: "Wind", output: 49.44},
 
-   { year: 2016, country: "Nigeria", energyType: "Bio", output: 0.01},
-   { year: 2016, country: "Nigeria", energyType: "Hydro", output: 2.11},
-   { year: 2016, country: "Nigeria", energyType: "Solar", output: 0.01},
-   { year: 2016, country: "Nigeria", energyType: "Wind", output: 0.0},
+   { year: 2016, country: "Egypt", energyType: "Bio", output: 0.07},
+   { year: 2016, country: "Egypt", energyType: "Hydro", output: 2.8},
+   { year: 2016, country: "Egypt", energyType: "Solar", output: 0.06},
+   { year: 2016, country: "Egypt", energyType: "Wind", output: 0.75},
 
    { year: 2016, country: "USA", energyType: "Bio", output: 11.78},
    { year: 2016, country: "USA", energyType: "Hydro", output: 83.82},
@@ -117,10 +117,10 @@
    { year: 2017, country: "Germany", energyType: "Solar", output: 42.29},
    { year: 2017, country: "Germany", energyType: "Wind", output: 55.58},
 
-   { year: 2017, country: "Nigeria", energyType: "Bio", output: 0.01},
-   { year: 2017, country: "Nigeria", energyType: "Hydro", output: 2.11},
-   { year: 2017, country: "Nigeria", energyType: "Solar", output: 0.02},
-   { year: 2017, country: "Nigeria", energyType: "Wind", output: 0.0},
+   { year: 2017, country: "Egypt", energyType: "Bio", output: 0.07},
+   { year: 2017, country: "Egypt", energyType: "Hydro", output: 2.8},
+   { year: 2017, country: "Egypt", energyType: "Solar", output: 0.18},
+   { year: 2017, country: "Egypt", energyType: "Wind", output: 0.75},
 
    { year: 2017, country: "USA", energyType: "Bio", output: 11.72},
    { year: 2017, country: "USA", energyType: "Hydro", output: 83.79},
@@ -142,10 +142,10 @@
    { year: 2018, country: "Germany", energyType: "Solar", output: 45.16},
    { year: 2018, country: "Germany", energyType: "Wind", output: 58.72},
 
-   { year: 2018, country: "Nigeria", energyType: "Bio", output: 0.01},
-   { year: 2018, country: "Nigeria", energyType: "Hydro", output: 2.11},
-   { year: 2018, country: "Nigeria", energyType: "Solar", output: 0.02},
-   { year: 2018, country: "Nigeria", energyType: "Wind", output: 0.0},
+   { year: 2018, country: "Egypt", energyType: "Bio", output: 0.07},
+   { year: 2018, country: "Egypt", energyType: "Hydro", output: 2.83},
+   { year: 2018, country: "Egypt", energyType: "Solar", output: 0.76},
+   { year: 2018, country: "Egypt", energyType: "Wind", output: 1.13},
 
    { year: 2018, country: "USA", energyType: "Bio", output: 11.5},
    { year: 2018, country: "USA", energyType: "Hydro", output: 83.88},

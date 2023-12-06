@@ -3,11 +3,11 @@ import pandas as pd
 data = pd.read_csv("~/Downloads/yearly_full_release_long_format.csv")
 data.fillna(0, inplace=True)
 years = [2013, 2014, 2015, 2016, 2017, 2018]
-countries = ['Brazil', 'China', 'Germany', 'Nigeria', 'United States of America']
+countries = ['Brazil', 'China', 'Germany', 'Egypt', 'United States of America']
 
 print("Non-Renewables Data")
-for country in countries:
-    for year in years:
+for year in years:
+    for country in countries:
         nuclear = data.loc[(data['Area'] == country) & (data['Category'] == 'Capacity') & (data['Year'] == year) & (data['Variable'] == 'Nuclear')]['Value'].values[0]
         gas = data.loc[(data['Area'] == country) & (data['Category'] == 'Capacity') & (data['Year'] == year) & (data['Variable'] == 'Gas')]['Value'].values[0]
         coal = data.loc[(data['Area'] == country) & (data['Category'] == 'Capacity') & (data['Year'] == year) & (data['Variable'] == 'Coal')]['Value'].values[0]
@@ -16,6 +16,7 @@ for country in countries:
         row = '{ country: \"' + country + '\", year: ' + str(year) +', nuclear: '+ str(nuclear) + ', gas: ' + str(gas) +', coal: ' + str(coal) + ', petrol: ' + str(petrol) + ', carbonInt: ' + str(carbInt) + '},'
         row = row.replace("United States of America", "USA")
         print(row)
+    print()
 
 print("Renewables Data")
 

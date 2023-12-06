@@ -5,7 +5,7 @@ let joined_country c_name =
             totalNonRenewables = sum [ country.nuclear + country.gas + country.coal + country.petrol
                                      | country <- non_renewables, country.country == c_name, country.year == 2018 ]
         in head [{name: c_name, totalCap: totalRenewables + totalNonRenewables, renewables: totalRenewables, carbonInt: country.carbonInt, gdpPerCap: country.gdpPerCap} 
-                | country <- non_renewables, country.country == c_name ];
+                | country <- non_renewables, country.country == c_name, country.year == 2018];
 let energies =
     let c_names = [country.country | country <- non_renewables]
         in map joined_country c_names
