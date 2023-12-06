@@ -7,24 +7,24 @@ import Data.Either (isLeft)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
-import Module (File(..), Folder(..), datasetAs, defaultImports, initialConfig, loadFile, module_)
+import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
-import Util (type (+), type (×), concatM, (×))
+import Util (type (+), type (×), (×))
 import Val (Val)
 
 -- benchmarks parameterised on number of iterations
 type BenchSuite = (Int × Boolean) -> Array (String × Aff BenchRow)
 
 type TestSpec =
-   { file :: String
-   , imports :: Array String
+   { imports :: Array String
+   , file :: String
    , fwd_expect :: String
    }
 
 type TestBwdSpec =
-   { file :: String
-   , imports :: Array String
+   { imports :: Array String
+   , file :: String
    , bwd_expect_file :: String
    , δv :: Selector Val -- relative to bot
    , fwd_expect :: String
@@ -32,6 +32,7 @@ type TestBwdSpec =
 
 type TestWithDatasetSpec =
    { dataset :: String
+   , imports :: Array String
    , file :: String
    }
 
@@ -52,7 +53,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
    asTest { file, fwd_expect } = do
-      gconfig <- defaultImports >>= initialConfig
+      gconfig <- prelude >>= initialConfig
       test (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite
@@ -61,8 +62,8 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& a
    folder = File "slicing/"
 
    asTest :: TestBwdSpec -> Aff BenchRow
-   asTest { file, imports, bwd_expect_file, δv, fwd_expect } = do
-      gconfig <- defaultImports >>= concatM (module_ <<< File <$> imports) >>= initialConfig
+   asTest { imports, file, bwd_expect_file, δv, fwd_expect } = do
+      gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
       test (folder <> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
@@ -70,8 +71,8 @@ withDatasetSuite :: Array TestWithDatasetSpec -> BenchSuite
 withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
-   asTest { dataset, file } = do
-      gconfig <- defaultImports >>= datasetAs (File dataset) "data" >>= initialConfig
+   asTest { imports, dataset, file } = do
+      gconfig <- prelude >>= modules (File <$> imports) >>= datasetAs (File dataset) "data" >>= initialConfig
       test (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit

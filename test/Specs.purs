@@ -271,10 +271,10 @@ bwd_cases =
 
 graphics_cases :: Array TestWithDatasetSpec
 graphics_cases =
-   [ { dataset: "dataset/renewables-restricted", file: "graphics/background" }
-   , { dataset: "dataset/renewables-restricted", file: "graphics/grouped-bar-chart" }
-   , { dataset: "dataset/renewables-restricted", file: "graphics/line-chart" }
-   , { dataset: "dataset/renewables-restricted", file: "graphics/stacked-bar-chart" }
+   [ { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/background" }
+   , { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/grouped-bar-chart" }
+   , { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/line-chart" }
+   , { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/stacked-bar-chart" }
    ]
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec

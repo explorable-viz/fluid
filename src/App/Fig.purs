@@ -29,14 +29,14 @@ import Expr (Expr)
 import Foreign.Object (lookup)
 import GaloisConnection (dual)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
-import Module (File(..), Folder(..), datasetAs, defaultImports, initialConfig, loadFile, module_, open)
+import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), AffError, Endo, absurd, concatM, orElse, uncurry3, (×))
+import Util (type (+), type (×), AffError, Endo, absurd, orElse, uncurry3, (×))
 import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
@@ -61,8 +61,8 @@ splitDefs γ0 s' = do
 
 type FigSpec =
    { divId :: HTMLId
-   , file :: File
    , imports :: Array String
+   , file :: File
    , xs :: Array Var -- variables to be considered "inputs"
    }
 
@@ -242,8 +242,8 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
       pure { v, v', v0 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
-loadFig spec@{ file, imports } = do
-   gconfig <- defaultImports >>= concatM (module_ <<< File <$> imports) >>= initialConfig
+loadFig spec@{ imports, file } = do
+   gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
    let γ0 = botOf <$> gconfig.γ
    s0 <- open file
    gc <- desug s0 >>= traceGC γ0
@@ -254,7 +254,7 @@ loadLinkedInputsFig spec@{ file } = do
    let
       dir = File "example/linked-inputs/"
       datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
-   { γ: γ' } <- defaultImports >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
+   { γ: γ' } <- prelude >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
    let γ = botOf <$> γ'
    s <- botOf <$> open (File "linked-inputs/" <> file)
    e <- desug s
@@ -262,13 +262,13 @@ loadLinkedInputsFig spec@{ file } = do
    pure { spec, γ, s, e, t, v0: v }
 
 loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
-loadLinkedOutputsFig spec@{ dataFile, imports, file1, file2, x } = do
+loadLinkedOutputsFig spec@{ imports, dataFile, file1, file2, x } = do
    let
       dir = File "linked-outputs/"
       dataFile' = File "example/" <> dir <> dataFile
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- views share ambient environment γ
-   { γ: γ' } <- defaultImports >>= concatM (module_ <<< File <$> imports) >>= datasetAs dataFile' x >>= initialConfig
+   { γ: γ' } <- prelude >>= modules (File <$> imports) >>= datasetAs dataFile' x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ = botOf <$> γ'
