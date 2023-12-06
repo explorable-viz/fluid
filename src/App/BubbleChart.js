@@ -97,7 +97,8 @@ function drawBubbleChart_ (
          .domain([1, z_max])
          .range([1, max_z_rad])
 
-      unique_countries = data.map(d => fst(d.c))
+      unique_countries = [...new Set(data.map(d => fst(d.c)))]
+      console.log(data)
       console.log(unique_countries)
       const c = d3.scaleOrdinal()
          .domain(unique_countries)
