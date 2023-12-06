@@ -11,7 +11,6 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
-import Debug (trace)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
@@ -27,7 +26,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), (×), AffError, mapLeft)
+import Util (type (×), AffError, concatM, mapLeft, (×))
 import Util.Parse (SParser)
 
 newtype File = File String
@@ -62,18 +61,15 @@ open = parseProgram (Folder "fluid/example")
 module_ :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ file (ProgCxt r@{ mods }) = do
    src <- loadFile (Folder "fluid") file
-   trace src \_ -> do
-      mod <- parse src P.module_ >>= desugarModuleFwd
-      pure $ ProgCxt r { mods = mod : mods }
+   mod <- parse src P.module_ >>= desugarModuleFwd
+   pure $ ProgCxt r { mods = mod : mods }
 
 defaultImports :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
 defaultImports =
-   pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= module_ (File "lib/prelude")
-      >>= module_ (File "lib/graphics")
-      >>= module_ (File "lib/convolution")
-      >>= module_ (File "lib/fnum")
-      >>= module_ (File "lib/dtw")
+   pure (ProgCxt { primitives, mods: Nil, datasets: Nil }) >>=
+      concatM ((module_ <<< (File "lib/" <> _) <<< File) <$> mods)
+   where
+   mods = [ "prelude", "graphics", "convolution", "fnum", "dtw" ]
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => File -> Var -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs file x (ProgCxt r@{ datasets }) = do
