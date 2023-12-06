@@ -112,7 +112,7 @@ function drawBubbleChart_ (
             .attr('cy', ([, d]) => y(fst(d.y)))
             .attr('r', ([, d]) => z(fst(d.z)))
             .attr('stroke', 'black')
-            .style('fill', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? colorShade(c(fst(d.c)), -40) : c(fst(d.c)))
+            .style('fill', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? colorShade(c(fst(d.c)), -500) : c(fst(d.c)))
             .style('class', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? 'dot-selected' : 'dot-unselected')
             .on('mousedown', (e, d) => { listener(e) })
 
