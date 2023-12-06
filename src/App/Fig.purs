@@ -244,9 +244,8 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file } = do
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
-   let γ0 = botOf <$> gconfig.γ
    s0 <- open file
-   gc <- desug s0 >>= traceGC γ0
+   gc <- desug s0 >>= traceGC (botOf <$> gconfig.γ)
    pure { spec, s0, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
