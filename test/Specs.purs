@@ -11,56 +11,61 @@ import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDa
 
 misc_cases :: Array TestSpec
 misc_cases =
-   [ { file: "arithmetic", fwd_expect: "42" }
-   , { file: "array", fwd_expect: "(1, (3, 3))" }
-   , { file: "compose", fwd_expect: "5" }
+   [ { file: "arithmetic", imports: [], fwd_expect: "42" }
+   , { file: "array", imports: [], fwd_expect: "(1, (3, 3))" }
+   , { file: "compose", imports: [], fwd_expect: "5" }
    , { file: "dicts"
+     , imports: []
      , fwd_expect:
           "{d : {||}, e : {|\"a\" := 5, \"ab\" := 6|}, e_ab : 6, f : {|\"a\" := 6, \"ab\" := 7|}, g : {|\"a\" := 5|}, h : {|\"fst\" := 4, \"snd\" := (6 : (7 : []))|}}"
      }
    , { file: "div-mod-quot-rem"
+     , imports: []
      , fwd_expect:
           "((1 : (-1 : (-2 : (2 : [])))) : \
           \((2 : (2 : (1 : (1 : [])))) : \
           \((1 : (-1 : (-1 : (1 : [])))) : \
           \((2 : (2 : (-2 : (-2 : [])))) : []))))"
      }
-   , { file: "factorial", fwd_expect: "40320" }
-   , { file: "filter", fwd_expect: "(8 : (7 : []))" }
-   , { file: "first-class-constr", fwd_expect: "((10 : []) : ((12 : []) : ((20 : []) : [])))" }
+   , { file: "factorial", imports: [], fwd_expect: "40320" }
+   , { file: "filter", imports: [], fwd_expect: "(8 : (7 : []))" }
+   , { file: "first-class-constr", imports: [], fwd_expect: "((10 : []) : ((12 : []) : ((20 : []) : [])))" }
    , { file: "flatten"
+     , imports: []
      , fwd_expect: "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
      }
-   , { file: "foldr-sumSquares", fwd_expect: "661" }
-   , { file: "lexicalScoping", fwd_expect: "\"6\"" }
-   , { file: "length", fwd_expect: "2" }
-   , { file: "lookup", fwd_expect: "Some \"sarah\"" }
-   , { file: "map", fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))" }
-   , { file: "mergeSort", fwd_expect: "(1 : (2 : (3 : [])))" }
-   , { file: "normalise", fwd_expect: "(33, 66)" }
-   , { file: "pattern-match", fwd_expect: "4" }
-   , { file: "range", fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
-   , { file: "records", fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
-   , { file: "record-lookup", fwd_expect: "True" }
-   , { file: "reverse", fwd_expect: "(2 : (1 : []))" }
+   , { file: "foldr-sumSquares", imports: [], fwd_expect: "661" }
+   , { file: "lexicalScoping", imports: [], fwd_expect: "\"6\"" }
+   , { file: "length", imports: [], fwd_expect: "2" }
+   , { file: "lookup", imports: [], fwd_expect: "Some \"sarah\"" }
+   , { file: "map", imports: [], fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))" }
+   , { file: "mergeSort", imports: [], fwd_expect: "(1 : (2 : (3 : [])))" }
+   , { file: "normalise", imports: [], fwd_expect: "(33, 66)" }
+   , { file: "pattern-match", imports: [], fwd_expect: "4" }
+   , { file: "range", imports: [], fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
+   , { file: "records", imports: [], fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
+   , { file: "record-lookup", imports: [], fwd_expect: "True" }
+   , { file: "reverse", imports: [], fwd_expect: "(2 : (1 : []))" }
    ]
 
 desugar_cases :: Array TestSpec
 desugar_cases =
    [ { file: "desugar/list-comp-1"
+     , imports: []
      , fwd_expect: "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
      }
    , { file: "desugar/list-comp-2"
+     , imports: []
      , fwd_expect:
           "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
           \(9 : (9 : (12 : (12 : (12 : (10 : (10 : (10 : (8 : (8 : (8 : [])))))))))))))))))))))))))))"
      }
-   , { file: "desugar/list-comp-3", fwd_expect: "(9 : (8 : []))" }
-   , { file: "desugar/list-comp-4", fwd_expect: "(5 : (4 : (3 : [])))" }
-   , { file: "desugar/list-comp-5", fwd_expect: "(5 : (4 : (3 : [])))" }
-   , { file: "desugar/list-comp-6", fwd_expect: "(5 : [])" }
-   , { file: "desugar/list-comp-7", fwd_expect: "([] : [])" }
-   , { file: "desugar/list-enum", fwd_expect: "(3 : (4 : (5 : (6 : (7 : [])))))" }
+   , { file: "desugar/list-comp-3", imports: [], fwd_expect: "(9 : (8 : []))" }
+   , { file: "desugar/list-comp-4", imports: [], fwd_expect: "(5 : (4 : (3 : [])))" }
+   , { file: "desugar/list-comp-5", imports: [], fwd_expect: "(5 : (4 : (3 : [])))" }
+   , { file: "desugar/list-comp-6", imports: [], fwd_expect: "(5 : [])" }
+   , { file: "desugar/list-comp-7", imports: [], fwd_expect: "([] : [])" }
+   , { file: "desugar/list-enum", imports: [], fwd_expect: "(3 : (4 : (5 : (6 : (7 : [])))))" }
    ]
 
 bwd_cases :: Array TestBwdSpec
@@ -97,7 +102,10 @@ bwd_cases =
           \1, 0, -1, -1, -2"
      }
    , { file: "convolution/gaussian"
-     , imports: [ "example/slicing/convolution/filter/gaussian" ]
+     , imports:
+          [ "example/slicing/convolution/filter/gaussian"
+          , "example/slicing/convolution/test-image"
+          ]
      , bwd_expect_file: "convolution/gaussian.expect"
      , δv: matrixElement 1 1 neg
      , fwd_expect:

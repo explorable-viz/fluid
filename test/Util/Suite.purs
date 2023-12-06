@@ -18,6 +18,7 @@ type BenchSuite = (Int × Boolean) -> Array (String × Aff BenchRow)
 
 type TestSpec =
    { file :: String
+   , imports :: Array String
    , fwd_expect :: String
    }
 

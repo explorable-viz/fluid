@@ -20,7 +20,7 @@ main = run tests
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite
-   [ { file: "compose", fwd_expect: "5" }
+   [ { file: "compose", imports: [], fwd_expect: "5" }
    ]
 
 type TestSuite = Array (String × Aff Unit)
