@@ -20,7 +20,7 @@ import Desugarable (desug)
 import Dict (get)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (class MonadEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
@@ -29,7 +29,7 @@ import Expr (Expr)
 import Foreign.Object (lookup)
 import GaloisConnection (dual)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
-import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
+import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -37,7 +37,7 @@ import SExpr (desugarModuleFwd)
 import Test.Util (Selector)
 import Trace (Trace)
 import Util (type (+), type (×), AffError, Endo, absurd, orElse, uncurry3, (×))
-import Val (class Ann, Env, Val, append_inv, (<+>))
+import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
@@ -49,18 +49,19 @@ type SplitDefs a =
    }
 
 -- Decompose as above.
-splitDefs :: forall a m. Ann a => MonadError Error m => Env a -> S.Expr a -> m (SplitDefs a)
+splitDefs :: forall m. MonadError Error m => Raw Env -> Raw S.Expr -> m (Raw SplitDefs)
 splitDefs γ0 s' = do
    let defs × s = unsafePartial $ unpack s'
    γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
    pure { γ, s }
    where
-   unpack :: Partial => S.Expr a -> (S.VarDefs a + S.RecDefs a) × S.Expr a
+   unpack :: Partial => Raw S.Expr -> (Raw S.VarDefs + Raw S.RecDefs) × Raw S.Expr
    unpack (S.LetRec defs s) = Right defs × s
    unpack (S.Let defs s) = Left defs × s
 
 type FigSpec =
    { divId :: HTMLId
+   , imports :: Array String
    , file :: File
    , xs :: Array Var -- variables to be considered "inputs"
    }
@@ -73,9 +74,10 @@ type Fig =
 
 type LinkedOutputsFigSpec =
    { divId :: HTMLId
+   , imports :: Array String
+   , dataFile :: File
    , file1 :: File
    , file2 :: File
-   , dataFile :: File
    , x :: Var
    }
 
@@ -182,15 +184,6 @@ drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
 
-varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
-varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
-
-asSel :: 𝔹 -> 𝔹 -> Sel
-asSel false false = None
-asSel false true = Secondary
-asSel true false = Primary -- "costless output", but ignore those for now
-asSel true true = Primary
-
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
 figViews { spec: { xs }, gc: { gc, v } } δv = do
@@ -199,6 +192,15 @@ figViews { spec: { xs }, gc: { gc, v } } δv = do
       γ0γ × e' × α = (unwrap gc).bwd v1
       v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ0γ × e' × α)
    (view "output" v' × _) <$> sequence (flip varView γ0γ <$> xs)
+
+varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
+varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
+
+asSel :: 𝔹 -> 𝔹 -> Sel
+asSel false false = None
+asSel false true = Secondary
+asSel true false = Primary -- "costless output", but ignore those for now
+asSel true true = Primary
 
 linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
 linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
@@ -225,7 +227,6 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
    case _ of
       Left δv1 -> do
          { v, v', v0 } <- result x1 x2 δv1
-         liftEffect $ log $ "v0: " <> prettyP v0
          pure $ v × v' × v0
       Right δv2 -> do
          { v, v', v0 } <- result x2 x1 δv2
@@ -241,13 +242,10 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
       pure { v, v', v0 }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
-loadFig spec@{ file } = do
-   { γ: γ' } <- defaultImports >>= initialConfig
-   let γ0 = botOf <$> γ'
-   s' <- open file
-   let s0 = botOf s'
-   { γ: γ1, s } <- splitDefs γ0 s0
-   gc <- desug s >>= traceGC (γ0 <+> γ1)
+loadFig spec@{ imports, file } = do
+   gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
+   s0 <- open file
+   gc <- desug s0 >>= traceGC (botOf <$> gconfig.γ)
    pure { spec, s0, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
@@ -255,7 +253,7 @@ loadLinkedInputsFig spec@{ file } = do
    let
       dir = File "example/linked-inputs/"
       datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
-   { γ: γ' } <- defaultImports >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
+   { γ: γ' } <- prelude >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
    let γ = botOf <$> γ'
    s <- botOf <$> open (File "linked-inputs/" <> file)
    e <- desug s
@@ -263,13 +261,13 @@ loadLinkedInputsFig spec@{ file } = do
    pure { spec, γ, s, e, t, v0: v }
 
 loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
-loadLinkedOutputsFig spec@{ file1, file2, dataFile, x } = do
+loadLinkedOutputsFig spec@{ imports, dataFile, file1, file2, x } = do
    let
       dir = File "linked-outputs/"
-      name1 × name2 = (dir <> file1) × (dir <> file2)
       dataFile' = File "example/" <> dir <> dataFile
+      name1 × name2 = (dir <> file1) × (dir <> file2)
    -- views share ambient environment γ
-   { γ: γ' } <- defaultImports >>= datasetAs dataFile' x >>= initialConfig
+   { γ: γ' } <- prelude >>= modules (File <$> imports) >>= datasetAs dataFile' x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ = botOf <$> γ'

@@ -186,6 +186,10 @@ let lastN n xs =
 let nth n (x : xs) =
    if n == 0 then x else nth (n - 1) xs;
 
+-- Matrix Int -> Int -> Int -> Int
+let nth2 i j xss =
+   nth (j - 1) (nth (i - 1) xss);
+
 -- Partial; requires k to be in the map.
 -- Int -> List (Int, b) -> b
 let lookup k [] = error "Key not found in map";
