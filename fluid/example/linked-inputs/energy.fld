@@ -1,7 +1,7 @@
 let joined_country c_name =
         let totalRenewables = sum [ country_year.output | country_year <- renewables
                               , c_name == country_year.country
-                              , country_year.year == 2018 ];
+                              , country_year.year == 2015 ];
             totalNonRenewables = sum [ country.nuclear + country.gas + country.coal + country.petrol
                                      | country <- non_renewables, country.country == c_name ]
         in head [{name: c_name, totalCap: totalRenewables + totalNonRenewables, renewables: totalRenewables, carbonInt: country.carbonInt, gdpPerCap: country.gdpPerCap} 

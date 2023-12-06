@@ -46,7 +46,7 @@ linkedInputs_spec3 =
         , x1: "non_renewables"
         , x1File: File "non-renewables"
         }
-   , δv: Left $ listElement 0 (field "nuclear" neg)
+   , δv: Left $ listElement 2 (field "nuclear" neg)
    , v'_expect: "" -- no point with expected value here
    }
 
