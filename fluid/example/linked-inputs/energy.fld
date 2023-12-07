@@ -7,7 +7,7 @@ let joined_country c_name =
         in head [{name: c_name, totalCap: totalRenewables + totalNonRenewables, non_renewables: totalNonRenewables, carbonInt: country.carbonInt, gdpPerCap: country.gdpPerCap} 
                 | country <- non_renewables, country.country == c_name, country.year == 2018];
 let energies =
-    let c_names = [country.country | country <- non_renewables]
+    let c_names = nub [country.country | country <- non_renewables]
         in map joined_country c_names
 in BubbleChart {
     caption: "Test linkedinputs bubble chart",
