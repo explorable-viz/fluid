@@ -12,6 +12,7 @@ import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDa
 misc_cases :: Array TestSpec
 misc_cases =
    [ { file: "arithmetic", imports: [], fwd_expect: "42" }
+   , { file: "nub", imports: [], fwd_expect: "(1 : (2 : (3 : (4 : []))))" }
    , { file: "array", imports: [], fwd_expect: "(1, (3, 3))" }
    , { file: "compose", imports: [], fwd_expect: "5" }
    , { file: "dicts"
