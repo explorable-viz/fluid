@@ -8,7 +8,6 @@ import Control.Monad.Writer.Trans (runWriterT)
 import Data.List (elem)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
-import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
@@ -123,19 +122,17 @@ testGraph s gconfig spec@{ δv } benchmarking = do
       let e = desug.fwd s
       benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
 
-   let αs_out = selectαs (δv (botOf vα)) vα
-   αs_in <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd αs_out)
-   let e𝔹 = select𝔹s eα αs_in
-
-   αs_out' <- benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd αs_in)
-   let v𝔹' = select𝔹s vα αs_out'
+   let v𝔹 = δv (botOf vα)
+   γ𝔹 × e𝔹 <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
+   v𝔹' <- benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹))
 
    GC desug𝔹 <- desugGC s
    validate method spec (desug𝔹.bwd e𝔹) v𝔹'
-   αs_out `shouldSatisfy "fwd ⚬ bwd round-trip"` (flip subset αs_out')
+   PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
    recordGraphSize g
 
    when benchmarking do
+      let αs_in = selectαs e𝔹 eα
       do
          let αs = selectαs (δv (botOf vα)) vα
          g' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
@@ -143,9 +140,9 @@ testGraph s gconfig spec@{ δv } benchmarking = do
          when logging (logAs "BwdDlFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
          when logging (logAs "BwdDlCmp/ input slice" (prettyP $ (select𝔹s eα (sinks g'') <#> not)))
       do
-         let αs = vertices vα
-         αs' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd αs)
-         when logging (logAs "BwdAll/input slice" (prettyP $ select𝔹s eα αs'))
+         let v𝔹_all = select𝔹s vα (vertices vα)
+         _ × e𝔹' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd v𝔹_all)
+         when logging (logAs "BwdAll/input slice" (prettyP e𝔹'))
 
       do
          g' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
