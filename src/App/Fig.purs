@@ -189,9 +189,9 @@ drawFile (file × src) =
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
-figViews { spec: { xs }, gc: { gc, v } } δv = do
+figViews { spec: { xs }, gc2: { gc, vα } } δv = do
    let
-      v1 = δv (botOf v)
+      v1 = δv (botOf vα)
       γ × e = (unwrap gc).bwd v1
       v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e)
    (view "output" v' × _) <$> sequence (flip varView γ <$> xs)
