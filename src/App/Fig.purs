@@ -25,9 +25,11 @@ import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
 import EvalBwd (TracedEval, evalBwd, traceGC)
+import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
 import GaloisConnection (dual)
+import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules, open)
 import Partial.Unsafe (unsafePartial)
@@ -70,6 +72,7 @@ type Fig =
    { spec :: FigSpec
    , s0 :: Raw S.Expr -- program that was originally "split"
    , gc :: TracedEval 𝔹
+   , gc2 :: GraphEval GraphImpl
    }
 
 type LinkedOutputsFigSpec =
@@ -189,8 +192,8 @@ figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Ar
 figViews { spec: { xs }, gc: { gc, v } } δv = do
    let
       v1 = δv (botOf v)
-      γ × e × α = (unwrap gc).bwd v1
-      v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e × α)
+      γ × e = (unwrap gc).bwd v1
+      v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e)
    (view "output" v' × _) <$> sequence (flip varView γ <$> xs)
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
@@ -246,7 +249,8 @@ loadFig spec@{ imports, file } = do
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
    s0 <- open file
    gc <- desug s0 >>= traceGC (botOf <$> gconfig.γ)
-   pure { spec, s0, gc }
+   gc2 <- desug s0 >>= graphGC gconfig
+   pure { spec, s0, gc, gc2 }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
