@@ -25,7 +25,9 @@ for year in years:
         gdp_country = gdp_country.replace("United States of America", "United States")
         gdp_country = gdp_country.replace("Egypt", "Egypt, Arab Rep.")
         gdp = '%.3f'%(gdp_data.loc[(gdp_data['Country Name'] == gdp_country)][str(year)].values[0] / 1000)
-        row = '   { country: \"' + country + '\", year: ' + str(year) +', nuclear: '+ str(nuclear) + ', gas: ' + str(gas) +', coal: ' + str(coal) + ', petrol: ' + str(petrol) + ', carbonInt: ' + str(carbInt) + ', gdpPerCap: ' + gdp + '},'
+        row = '   { country: \"' + country + '\", year: ' + str(year) +', nuclear: '+ str(nuclear) + ', gas: ' + str(gas) +', coal: ' + str(coal) + ', petrol: ' + str(petrol) + ', carbonInt: ' + str(carbInt) + ', gdpPerCap: ' + gdp + '}'
+        if not (country == countries[-1] and year == years[-1]):
+            row += ","
         row = row.replace("United States of America", "USA")
         non_renewables_str += row
         non_renewables_str += "\n"
@@ -50,7 +52,11 @@ for year in years:
         hydrorow = hydrorow.replace("United States of America", "USA")
         solarrow = '   { year: ' + str(year) + ', country: \"' + country +'\", energyType: \"Solar\", output: ' + str(solar) + '},\n'
         solarrow = solarrow.replace("United States of America", "USA")
-        windrow = '   { year: ' + str(year) + ', country: \"' + country +'\", energyType: \"Wind\", output: ' + str(wind) + '},\n'
+        windrow = '   { year: ' + str(year) + ', country: \"' + country +'\", energyType: \"Wind\", output: ' + str(wind) + '}'
+        if not (country == countries[-1] and year == years[-1]):
+            windrow += ",\n"
+        else:
+            windrow += "\n"
         windrow = windrow.replace("United States of America", "USA")
         
         renewables_str += biorow
