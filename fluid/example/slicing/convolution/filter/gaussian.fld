@@ -1,0 +1,5 @@
+let filter =
+   let gaussian = [[1,  4, 1],
+                   [4, 16, 4],
+                   [1,  4, 1]] in
+   [| nth2 i j gaussian | (i, j) in (3, 3) |];

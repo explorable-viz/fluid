@@ -1,13 +1,4 @@
-module EvalGraph
-   ( GraphConfig
-   , apply
-   , eval
-   , eval_module
-   , eval_progCxt
-   , graphGC
-   , match
-   , patternMismatch
-   ) where
+module EvalGraph where
 
 import Prelude hiding (apply, add)
 
@@ -46,7 +37,6 @@ type GraphConfig g =
    , γ :: Env Vertex
    }
 
-{-# Matching #-}
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
@@ -85,7 +75,6 @@ closeDefs γ ρ αs =
    for ρ \σ ->
       let ρ' = ρ `forDefs` σ in Val <$> new αs <@> V.Fun (V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ)
 
-{-# Evaluation #-}
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)

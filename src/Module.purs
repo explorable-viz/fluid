@@ -26,7 +26,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), (×), AffError, mapLeft)
+import Util (type (×), AffError, concatM, mapLeft, (×))
 import Util.Parse (SParser)
 
 newtype File = File String
@@ -60,18 +60,16 @@ open = parseProgram (Folder "fluid/example")
 
 module_ :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ file (ProgCxt r@{ mods }) = do
-   src <- loadFile (Folder "fluid/lib") file
+   src <- loadFile (Folder "fluid") file
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 
-defaultImports :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
-defaultImports =
-   pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= module_ (File "prelude")
-      >>= module_ (File "graphics")
-      >>= module_ (File "convolution")
-      >>= module_ (File "fnum")
-      >>= module_ (File "dtw")
+modules :: forall m. MonadAff m => MonadError Error m => Array File -> Raw ProgCxt -> m (Raw ProgCxt)
+modules files = concatM (files <#> module_)
+
+prelude :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
+prelude =
+   pure (ProgCxt { primitives, mods: Nil, datasets: Nil }) >>= modules [ File "lib/prelude" ]
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => File -> Var -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs file x (ProgCxt r@{ datasets }) = do

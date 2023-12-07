@@ -11,6 +11,11 @@ fig1 :: FigSpec
 fig1 =
    { divId: "fig-conv-1"
    , file: File "slicing/convolution/emboss"
+   , imports:
+        [ "lib/convolution"
+        , "example/slicing/convolution/test-image"
+        , "example/slicing/convolution/filter/emboss"
+        ]
    , xs: [ "image", "filter" ]
    }
 
@@ -18,6 +23,11 @@ fig2 :: FigSpec
 fig2 =
    { divId: "fig-conv-2"
    , file: File "slicing/convolution/emboss-wrap"
+   , imports:
+        [ "lib/convolution"
+        , "example/slicing/convolution/test-image"
+        , "example/slicing/convolution/filter/emboss"
+        ]
    , xs: [ "image", "filter" ]
    }
 

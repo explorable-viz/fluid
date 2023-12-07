@@ -18,7 +18,7 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
+import Graph (selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan, bwdSliceDual, fwdSliceDual) as G
 import Lattice (Raw, 𝔹, botOf, erase, topOf)
@@ -29,7 +29,7 @@ import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Spec.Assertions (fail)
 import Util (type (×), (×), AffError, EffectError, successful)
-import Val (class Ann, BaseVal(..), Env, Val(..))
+import Val (class Ann, BaseVal(..), Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 
@@ -51,7 +51,7 @@ test file gconfig spec (n × benchmarking) = do
    testPretty s
    _ × row_accum <- runWriterT
       ( replicateM n $ do
-           testTrace s gconfig.γ spec
+           testTrace s gconfig spec
            testGraph s gconfig spec benchmarking
       )
    pure $ row_accum `divRow` n
@@ -79,15 +79,15 @@ validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
       when logging $ logAs (method <> "-based fwd ⚬ bwd") (prettyP v𝔹)
       checkPretty (method <> "-based fwd_expect") fwd_expect v𝔹
 
-testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> SelectionSpec -> AffError m Unit
-testTrace s γα spec@{ δv } = do
+testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
+testTrace s gconfig spec@{ δv } = do
    let method = "T"
 
    { gc: GC eval, v } <- do
       GC desug <- desugGC s
       let
          e = desug.fwd s
-         γ = erase <$> γα
+         γ = erase <$> gconfig.γ
       benchmark (method <> "-Eval") $ \_ -> traceGC γ e
 
    let v𝔹 = δv (botOf v)
@@ -117,7 +117,6 @@ testTrace s γα spec@{ δv } = do
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } benchmarking = do
    let method = "G"
-   GC desug𝔹 <- desugGC s
 
    { gc: GC eval, eα, g, vα } <- do
       GC desug <- desugGC s
@@ -131,6 +130,7 @@ testGraph s gconfig spec@{ δv } benchmarking = do
    αs_out' <- benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd αs_in)
    let v𝔹' = select𝔹s vα αs_out'
 
+   GC desug𝔹 <- desugGC s
    validate method spec (desug𝔹.bwd e𝔹) v𝔹'
    αs_out `shouldSatisfy "fwd ⚬ bwd round-trip"` (flip subset αs_out')
    recordGraphSize g
