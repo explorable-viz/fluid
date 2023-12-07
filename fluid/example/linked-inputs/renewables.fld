@@ -1,6 +1,3 @@
--- The original dataset sometimes has '~0' instead of '0'.
--- Including only 3 countries here. Also, have reduced the Hydro value for China 2015 from 296 to 96 (ouch)
--- to make the charts fit nicely into grant proposal. Fix this once proposal submitted!
 [
    { year: 2013, country: "Brazil", energyType: "Bio", output: 11.6},
    { year: 2013, country: "Brazil", energyType: "Hydro", output: 86.02},

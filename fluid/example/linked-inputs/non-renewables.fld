@@ -1,11 +1,9 @@
--- gdp data from https://www.macrotrends.net/ gdp pages for the individual countries
--- fuel data from https://ember-climate.org/data-catalogue/yearly-electricity-data/
 [
    { country: "Brazil", year: 2013, nuclear: 1.99, gas: 9.36, coal: 3.35, petrol: 3.73, carbonInt: 152.07, gdpPerCap: 12.259},
    { country: "China", year: 2013, nuclear: 14.66, gas: 42.42, coal: 787.18, petrol: 7.6, carbonInt: 636.49, gdpPerCap: 7.020},
-   { country: "Germany", year: 2013, nuclear: 12.07, gas: 26.98, coal: 50.72, petrol: 1.67, carbonInt: 477.51, gdpPerCap: 46.229},
-   { country: "Egypt", year: 2013, nuclear: 0.0, gas: 24.47, coal: 0.0, petrol: 0.0, carbonInt: 483.86, gdpPerCap: 3.089 },
-   { country: "USA", year: 2013, nuclear: 99.24, gas: 436.28, coal: 328.77, petrol: 46.76, carbonInt: 470.6, gdpPerCap: 53.291},
+   { country: "Germany", year: 2013, nuclear: 12.07, gas: 26.98, coal: 50.72, petrol: 1.67, carbonInt: 477.51, gdpPerCap: 46.299},
+   { country: "Egypt", year: 2013, nuclear: 0.0, gas: 24.47, coal: 0.0, petrol: 0.0, carbonInt: 483.86, gdpPerCap: 3.089},
+   { country: "USA", year: 2013, nuclear: 99.24, gas: 436.28, coal: 328.77, petrol: 46.76, carbonInt: 470.62, gdpPerCap: 53.291},
 
    { country: "Brazil", year: 2014, nuclear: 1.99, gas: 9.89, coal: 3.35, petrol: 3.73, carbonInt: 175.35, gdpPerCap: 12.071},
    { country: "China", year: 2014, nuclear: 20.08, gas: 55.58, coal: 818.37, petrol: 7.01, carbonInt: 617.37, gdpPerCap: 7.636},
@@ -34,6 +32,6 @@
    { country: "Brazil", year: 2018, nuclear: 1.99, gas: 11.24, coal: 2.83, petrol: 3.93, carbonInt: 125.04, gdpPerCap: 9.121},
    { country: "China", year: 2018, nuclear: 44.66, gas: 81.13, coal: 976.66, petrol: 6.3, carbonInt: 574.63, gdpPerCap: 9.905},
    { country: "Germany", year: 2018, nuclear: 10.8, gas: 29.59, coal: 47.32, petrol: 1.69, carbonInt: 411.3, gdpPerCap: 47.939},
-   { country: "Egypt", year: 2018, nuclear: 0.0, gas: 48.59, coal: 0.0, petrol: 0.64, carbonInt: 466.09, gdpPerCap: 2.530},
+   { country: "Egypt", year: 2018, nuclear: 0.0, gas: 48.59, coal: 0.0, petrol: 0.64, carbonInt: 466.09, gdpPerCap: 2.531},
    { country: "USA", year: 2018, nuclear: 99.43, gas: 505.88, coal: 261.86, petrol: 34.78, carbonInt: 412.06, gdpPerCap: 62.823}
 ]
