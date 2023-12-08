@@ -8,7 +8,6 @@ import Control.Monad.Writer.Trans (runWriterT)
 import Data.List (elem)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
-import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
@@ -17,10 +16,10 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
-import GaloisConnection (GaloisConnection(..))
+import GaloisConnection (GaloisConnection(..), dual)
 import Graph (selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan, bwdSliceDual, fwdSliceDual) as G
+import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan, bwdSliceDual) as G
 import Lattice (Raw, 𝔹, botOf, erase, topOf)
 import Module (File, open, parse)
 import Parse (program)
@@ -91,7 +90,7 @@ testTrace s gconfig spec@{ δv } = do
       benchmark (method <> "-Eval") $ \_ -> traceGC γ e
 
    let v𝔹 = δv (botOf v)
-   γ𝔹 × e𝔹 × _ <- do
+   γ𝔹 × e𝔹 <- do
       unless (isGraphical v𝔹) $
          when logging (logAs "Selection for bwd" (prettyP v𝔹))
       benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
@@ -101,60 +100,59 @@ testTrace s gconfig spec@{ δv } = do
    v𝔹' <- do
       let e𝔹' = desug𝔹.fwd s𝔹
       PrettyShow e𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= e𝔹))
-      benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹' × top))
+      benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹'))
    PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
 
    let
       v𝔹_top = topOf v
-      γ𝔹_top × e𝔹_top × _ = eval.bwd v𝔹_top
+      γ𝔹_top × e𝔹_top = eval.bwd v𝔹_top
       s𝔹_top = desug𝔹.bwd e𝔹_top
       e𝔹_top' = desug𝔹.fwd s𝔹_top
-      v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top' × top)
+      v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top')
    PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-trip (eval ⚬ desugar)"` (unwrap >>> (_ >= v𝔹_top))
 
    validate method spec s𝔹 v𝔹'
 
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
-testGraph s gconfig spec@{ δv } benchmarking = do
+testGraph s gconfig spec@{ δv } _ = do
    let method = "G"
 
-   { gc: GC eval, eα, g, vα } <- do
+   { gc: gc@(GC eval), {-γα, -} eα, g, vα } <- do
       GC desug <- desugGC s
       let e = desug.fwd s
       benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
+   -- check (vertices g >= vertices eα ∪ vertices γα) "Graph includes all input vertices"
 
-   let αs_out = selectαs (δv (botOf vα)) vα
-   αs_in <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd αs_out)
-   let e𝔹 = select𝔹s eα αs_in
-
-   αs_out' <- benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd αs_in)
-   let v𝔹' = select𝔹s vα αs_out'
+   let v𝔹 = δv (botOf vα)
+   γ𝔹 × e𝔹 <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
+   v𝔹' <- benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹))
 
    GC desug𝔹 <- desugGC s
    validate method spec (desug𝔹.bwd e𝔹) v𝔹'
-   αs_out `shouldSatisfy "fwd ⚬ bwd round-trip"` (flip subset αs_out')
+   PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
    recordGraphSize g
 
-   when benchmarking do
-      do
-         let αs = selectαs (δv (botOf vα)) vα
-         g' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
-         g'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (G.bwdSliceDual vα αs g)
-         when logging (logAs "BwdDlFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
-         when logging (logAs "BwdDlCmp/ input slice" (prettyP $ (select𝔹s eα (sinks g'') <#> not)))
-      do
-         let αs = vertices vα
-         αs' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd αs)
-         when logging (logAs "BwdAll/input slice" (prettyP $ select𝔹s eα αs'))
+   --   when benchmarking do
+   let αs_in = selectαs e𝔹 eα
+   do
+      let αs = selectαs v𝔹 vα
+      g' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
+      g'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (G.bwdSliceDual vα αs g)
+      when logging (logAs "BwdDlFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
+      when logging (logAs "BwdDlCmp/ input slice" (prettyP $ select𝔹s eα (sinks g'') <#> not))
+   do
+      let v𝔹_all = select𝔹s vα (vertices vα)
+      _ × e𝔹' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd v𝔹_all)
+      when logging (logAs "BwdAll/input slice" (prettyP e𝔹'))
 
-      do
-         g' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
-         g'' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure (G.fwdSliceDual αs_in g)
-         when logging (logAs "FwdDlBwdOp/output slice" (prettyP $ select𝔹s vα (vertices g')))
-         when logging (logAs "FwdDlCmp/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
-      do
-         g' <- benchmark "Naive-Fwd" $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
-         when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
+   do
+      g' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
+      v𝔹'' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure ((unwrap (dual gc)).bwd (γ𝔹 × e𝔹))
+      when logging (logAs "FwdDlBwdOp/output slice" (prettyP $ select𝔹s vα (vertices g')))
+      when logging (logAs "FwdDlCmp/output slice" (prettyP v𝔹''))
+   do
+      g' <- benchmark "Naive-Fwd" $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
+      when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
