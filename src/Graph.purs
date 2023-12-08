@@ -8,6 +8,7 @@ import Data.List (fromFoldable) as L
 import Data.Newtype (class Newtype)
 import Data.Set (Set, singleton, unions)
 import Data.Set (empty, map) as S
+import Dict (Dict)
 import Util (Endo, (×), type (×), (∈))
 
 type Edge = Vertex × Vertex
@@ -40,6 +41,9 @@ class Vertices a where
 
 instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
+
+instance (Functor f, Foldable f) => Vertices (Dict (f Vertex)) where
+   vertices = (vertices <$> _) >>> unions
 
 selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
 selectαs v𝔹 vα = unions ((if _ then singleton else const S.empty) <$> v𝔹 <*> vα)

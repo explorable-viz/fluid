@@ -121,6 +121,7 @@ testGraph s gconfig spec@{ δv } benchmarking = do
       GC desug <- desugGC s
       let e = desug.fwd s
       benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
+   -- check (vertices g >= vertices eα ∪ vertices γα) "Graph includes all input vertices"
 
    let v𝔹 = δv (botOf vα)
    γ𝔹 × e𝔹 <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
@@ -134,7 +135,7 @@ testGraph s gconfig spec@{ δv } benchmarking = do
    when benchmarking do
       let αs_in = selectαs e𝔹 eα
       do
-         let αs = selectαs (δv (botOf vα)) vα
+         let αs = selectαs v𝔹 vα
          g' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
          g'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (G.bwdSliceDual vα αs g)
          when logging (logAs "BwdDlFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
