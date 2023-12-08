@@ -91,10 +91,10 @@ outMap α_αs = do
    addEdges :: List (Vertex × NonEmptySet Vertex) × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : rest) × acc) = do
-      ok <- OST.peek α acc <#> case _ of
+      _ <- OST.peek α acc <#> case _ of
          Nothing -> true
          Just βs' -> S.isEmpty βs'
-      if ok then do
+      if true then do
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (rest × acc')
       else error $ "Duplicate key " <> α

@@ -16,7 +16,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
-import GaloisConnection (GaloisConnection(..) {-, dual-} )
+import GaloisConnection (GaloisConnection(..), dual)
 import Graph (selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan, bwdSliceDual) as G
@@ -117,7 +117,7 @@ testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig Grap
 testGraph s gconfig spec@{ δv } _ = do
    let method = "G"
 
-   { gc: {-gc@(-}  GC eval {-)-} , {-γα, -} eα, g, vα } <- do
+   { gc: gc@(GC eval), {-γα, -} eα, g, vα } <- do
       GC desug <- desugGC s
       let e = desug.fwd s
       benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
@@ -147,9 +147,9 @@ testGraph s gconfig spec@{ δv } _ = do
 
    do
       g' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
-      --      v𝔹'' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure ((unwrap (dual gc)).bwd (γ𝔹 × e𝔹))
+      v𝔹'' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure ((unwrap (dual gc)).bwd (γ𝔹 × e𝔹))
       when logging (logAs "FwdDlBwdOp/output slice" (prettyP $ select𝔹s vα (vertices g')))
-   --      when logging (logAs "FwdDlCmp/output slice" (prettyP v𝔹''))
+      when logging (logAs "FwdDlCmp/output slice" (prettyP v𝔹''))
    do
       g' <- benchmark "Naive-Fwd" $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
       when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
