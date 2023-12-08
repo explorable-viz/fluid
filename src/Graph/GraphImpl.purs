@@ -4,6 +4,7 @@ module Graph.GraphImpl
    ) where
 
 import Prelude
+
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
 import Data.Array as A
@@ -21,7 +22,7 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, Vertex(..), op, outN)
-import Util (type (×), (×), (∩), (∪), (\\), definitely)
+import Util (type (×), definitely, error, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -53,7 +54,7 @@ instance Graph GraphImpl where
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: S.empty, sources: S.empty, vertices: S.empty }
 
-   -- Last entry will take priority if keys are duplicated in α_αs
+   -- Last entry will take priority if keys are duplicated in α_αs.
    fromFoldable α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
       out = runST (outMap α_αs')
@@ -87,9 +88,14 @@ outMap α_αs = do
    tailRecM addEdges (α_αs × out)
    where
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((α × βs) : rest) × acc) = do
-      acc' <- OST.poke (unwrap α) βs acc >>= flip (foldM addIfMissing) βs
-      pure $ Loop (rest × acc')
+   addEdges (((Vertex α × βs) : rest) × acc) = do
+      ok <- OST.peek α acc <#> case _ of
+         Nothing -> true
+         Just βs' -> S.isEmpty βs'
+      if ok then do
+         acc' <- OST.poke α βs acc >>= flip (foldM addIfMissing) βs
+         pure $ Loop (rest × acc')
+      else error $ "Duplicate key " <> α
 
 inMap :: List (Vertex × Set Vertex) -> forall r. ST r (MutableAdjMap r)
 inMap α_αs = do
