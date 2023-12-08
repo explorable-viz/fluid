@@ -53,6 +53,7 @@ instance Graph GraphImpl where
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: S.empty, sources: S.empty, vertices: S.empty }
 
+   -- Last entry will take priority if keys are duplicated in α_αs
    fromFoldable α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
       out = runST (outMap α_αs')
@@ -95,6 +96,7 @@ inMap α_αs = do
    in_ <- OST.new
    tailRecM addEdges (α_αs × in_)
    where
+   addEdges :: List (Vertex × Set Vertex) × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
       acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α

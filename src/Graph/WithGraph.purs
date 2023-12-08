@@ -42,9 +42,6 @@ type WithGraph = WithGraphT Identity
 instance Monad m => MonadAlloc (AllocT m) where
    fresh = do
       n <- modify $ (+) 1
-      --      if n == 443 then trace "Here!" \_ ->
-      --         pure (Vertex $ show n)
-      --      else
       pure (Vertex $ show n)
 
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
