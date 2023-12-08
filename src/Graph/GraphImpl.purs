@@ -10,7 +10,6 @@ import Control.Monad.ST (ST)
 import Data.Array as A
 import Data.Foldable (foldM)
 import Data.List (List(..), (:))
-import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
 import Data.Set (Set, insert, singleton)
@@ -58,10 +57,9 @@ instance Graph GraphImpl where
    -- Last entry will take priority if keys are duplicated in α_αs.
    fromEdgeList _ α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      out = runST (outMap α_αs')
-      in_ = runST (inMap α_αs')
+      out = runST (outMap α_αs)
+      in_ = runST (inMap α_αs)
       vertices = S.fromFoldable $ S.map Vertex $ D.keys out
-      α_αs' = L.fromFoldable α_αs -- doesn't seem to adversely affect performance
 
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices

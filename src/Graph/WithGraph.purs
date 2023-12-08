@@ -6,8 +6,7 @@ import Control.Monad.Except (class MonadError)
 import Control.Monad.State (StateT, runStateT, modify, modify_)
 import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
-import Data.List (List(..), (:))
-import Data.List.Lazy (range)
+import Data.List (List(..), (:), range)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set)
@@ -15,6 +14,7 @@ import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
+import Debug (trace)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), fromEdgeList, vertices)
 import Lattice (Raw)
@@ -67,7 +67,8 @@ runAllocT n m = do
    a × n' <- runStateT m n
    -- TODO: duplicated vertex construction should be avoidable
    let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
-   pure (n' × fresh_αs × a)
+   trace (show (n + 1) <> ".." <> show n') \_ ->
+      pure (n' × fresh_αs × a)
 
 runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
 runAlloc n = runAllocT n >>> unwrap
