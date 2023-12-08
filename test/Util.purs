@@ -121,7 +121,6 @@ testGraph s gconfig spec@{ δv } _ = do
       GC desug <- desugGC s
       let e = desug.fwd s
       benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
-   -- check (vertices g >= vertices eα ∪ vertices γα) "Graph includes all input vertices"
 
    let v𝔹 = δv (botOf vα)
    γ𝔹 × e𝔹 <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
@@ -132,7 +131,6 @@ testGraph s gconfig spec@{ δv } _ = do
    PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
    recordGraphSize g
 
-   --   when benchmarking do
    let αs_in = selectαs e𝔹 eα
    do
       let αs = selectαs v𝔹 vα
