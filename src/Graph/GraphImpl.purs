@@ -15,6 +15,7 @@ import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
 import Data.Set (Set, insert, singleton)
 import Data.Set as S
+import Data.Set.NonEmpty (NonEmptySet, toSet)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Dict as D
@@ -82,27 +83,28 @@ addIfMissing acc (Vertex β) = do
       Nothing -> OST.poke β S.empty acc
       Just _ -> pure acc
 
-outMap :: List (Vertex × Set Vertex) -> forall r. ST r (MutableAdjMap r)
+outMap :: List (Vertex × NonEmptySet Vertex) -> forall r. ST r (MutableAdjMap r)
 outMap α_αs = do
    out <- OST.new
    tailRecM addEdges (α_αs × out)
    where
+   addEdges :: List (Vertex × NonEmptySet Vertex) × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : rest) × acc) = do
       ok <- OST.peek α acc <#> case _ of
          Nothing -> true
          Just βs' -> S.isEmpty βs'
       if ok then do
-         acc' <- OST.poke α βs acc >>= flip (foldM addIfMissing) βs
+         acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (rest × acc')
       else error $ "Duplicate key " <> α
 
-inMap :: List (Vertex × Set Vertex) -> forall r. ST r (MutableAdjMap r)
+inMap :: List (Vertex × NonEmptySet Vertex) -> forall r. ST r (MutableAdjMap r)
 inMap α_αs = do
    in_ <- OST.new
    tailRecM addEdges (α_αs × in_)
    where
-   addEdges :: List (Vertex × Set Vertex) × MutableAdjMap _ -> ST _ _
+   addEdges :: List (Vertex × NonEmptySet Vertex) × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
       acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α

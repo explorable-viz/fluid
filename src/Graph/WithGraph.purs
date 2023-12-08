@@ -9,8 +9,7 @@ import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
-import Data.Set (Set)
-import Data.Set.NonEmpty (NonEmptySet, toSet)
+import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
@@ -20,7 +19,7 @@ import Util (type (×), (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
-   extend :: Vertex -> Set Vertex -> m Unit
+   extend :: Vertex -> NonEmptySet Vertex -> m Unit
 
 class Monad m <= MonadAlloc m where
    fresh :: m Vertex
@@ -32,7 +31,7 @@ class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAllo
    new :: NonEmptySet Vertex -> m Vertex
 
 -- List of adjacency map entries to serve as a fromFoldable input.
-type AdjMapEntries = List (Vertex × Set Vertex)
+type AdjMapEntries = List (Vertex × NonEmptySet Vertex)
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
 type WithGraphAllocT m = AllocT (WithGraphT m)
@@ -47,7 +46,7 @@ instance Monad m => MonadAlloc (AllocT m) where
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
    new αs = do
       α <- fresh
-      extend α (toSet αs)
+      extend α αs
       pure α
 
 instance Monad m => MonadWithGraph (WithGraphT m) where

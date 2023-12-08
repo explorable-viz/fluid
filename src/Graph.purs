@@ -8,6 +8,7 @@ import Data.List (fromFoldable) as L
 import Data.Newtype (class Newtype)
 import Data.Set (Set, singleton, unions)
 import Data.Set (empty, map) as S
+import Data.Set.NonEmpty (NonEmptySet)
 import Dict (Dict)
 import Util (Endo, (×), type (×), (∈))
 
@@ -32,7 +33,7 @@ class (Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × Set Vertex) -> g
+   fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × NonEmptySet Vertex) -> g
 
 newtype Vertex = Vertex String
 

@@ -7,8 +7,9 @@ import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map, lookup)
 import Data.Map as M
-import Data.Maybe (maybe)
-import Data.Set (Set, empty, insert, singleton)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Set (Set, empty, insert)
+import Data.Set.NonEmpty (cons, fromSet, singleton, toSet)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph)
@@ -27,9 +28,13 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
       if α ∈ visited then
          pure $ Loop (visited × αs)
       else do
-         let βs = outN g0 α
-         extend α βs
-         pure $ Loop ((visited # insert α) × (L.fromFoldable βs <> αs))
+         let visited' = visited # insert α
+         case fromSet (outN g0 α) of
+            Nothing ->
+               pure $ Loop (visited' × αs)
+            Just βs -> do
+               extend α βs
+               pure $ Loop (visited' × (L.fromFoldable βs <> αs))
 
 -- | De Morgan dual of backward slicing (◁_G)° ≡ Forward slicing on the opposite graph (▷_{G_op})
 bwdSliceDualAsFwdOp :: forall g. Graph g => Set Vertex -> g -> g
@@ -46,12 +51,12 @@ fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
    go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
    go (h × Nil) = pure $ Done h
    go (h × ((α × β) : es)) = do
-      let βs = maybe (singleton β) (insert β) (lookup α h)
-      if βs == outN g0 α then do
+      let βs = maybe (singleton β) (cons β) (lookup α h)
+      if toSet βs == outN g0 α then do
          extend α βs
          pure $ Loop (M.delete α h × (inEdges' g0 α <> es))
       else
-         pure $ Loop (M.insert α βs h × es)
+         pure $ Loop (M.insert α (toSet βs) h × es)
 
 -- | Forward slicing (▷_G) ≡ De Morgan dual of backward slicing on the opposite graph (◁_{G_op})°
 -- Also doesn't do the final negation..
@@ -61,8 +66,8 @@ fwdSliceAsDeMorgan αs0 g0 =
 
 -- | De Morgan dual of forward slicing (▷_G)°
 -- Doesn't do the final negation..
-fwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceDual αs0 g0 = fwdSlice (sinks g0 \\ αs0) g0
+--fwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
+--fwdSliceDual αs0 g0 = fwdSlice (sinks g0 \\ αs0) g0
 
 -- | De Morgan dual of forward slicing (▷_G)° ≡ Backward slicing on the opposite graph (◁_{G_op})
 fwdSliceDualAsBwdOp :: forall g. Graph g => Set Vertex -> g -> g
