@@ -11,7 +11,6 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
-import Data.List (singleton)
 import Data.Newtype (unwrap)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
@@ -23,8 +22,8 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Class (class MonadEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
-import Eval (eval, eval_module)
-import EvalBwd (TracedEval, evalBwd, traceGC)
+import Eval (eval)
+import EvalBwd (evalBwd)
 import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
@@ -32,10 +31,8 @@ import GaloisConnection (dual)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules, open)
-import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import SExpr (desugarModuleFwd)
+import SExpr (Expr) as S
 import Test.Util (Selector)
 import Trace (Trace)
 import Util (type (+), type (×), AffError, Endo, absurd, orElse, uncurry3, (×))
@@ -54,7 +51,7 @@ type FigSpec =
 type Fig =
    { spec :: FigSpec
    , s0 :: Raw S.Expr -- program that was originally "split"
-   , gc2 :: GraphEval GraphImpl
+   , gc :: GraphEval GraphImpl
    }
 
 type LinkedOutputsFigSpec =
@@ -171,7 +168,7 @@ drawFile (file × src) =
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
-figViews { spec: { xs }, gc2: { gc, vα } } δv =
+figViews { spec: { xs }, gc: { gc, vα } } δv =
    (view "output" v' × _) <$> sequence (flip varView γ <$> xs)
    where
    v1 = δv (botOf vα)
@@ -230,9 +227,8 @@ loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file } = do
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
    s0 <- open file
-   gc <- desug s0 >>= traceGC (botOf <$> gconfig.γ)
-   gc2 <- desug s0 >>= graphGC gconfig
-   pure { spec, s0, gc, gc2 }
+   gc <- desug s0 >>= graphGC gconfig
+   pure { spec, s0, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
