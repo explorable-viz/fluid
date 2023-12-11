@@ -44,23 +44,6 @@ import Val (Env, Val, append_inv, (<+>))
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
 
--- An example of the form (let <defs> in expr) can be decomposed as follows.
-type SplitDefs a =
-   { γ :: Env a -- local env (additional let bindings at beginning of ex)
-   , s :: S.Expr a -- body of example
-   }
-
--- Decompose as above.
-splitDefs :: forall m. MonadError Error m => Raw Env -> Raw S.Expr -> m (Raw SplitDefs)
-splitDefs γ0 s' = do
-   let defs × s = unsafePartial $ unpack s'
-   γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
-   pure { γ, s }
-   where
-   unpack :: Partial => Raw S.Expr -> (Raw S.VarDefs + Raw S.RecDefs) × Raw S.Expr
-   unpack (S.LetRec defs s) = Right defs × s
-   unpack (S.Let defs s) = Left defs × s
-
 type FigSpec =
    { divId :: HTMLId
    , imports :: Array String
@@ -71,7 +54,6 @@ type FigSpec =
 type Fig =
    { spec :: FigSpec
    , s0 :: Raw S.Expr -- program that was originally "split"
-   , gc :: TracedEval 𝔹
    , gc2 :: GraphEval GraphImpl
    }
 
