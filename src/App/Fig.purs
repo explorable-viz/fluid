@@ -146,17 +146,17 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
       , 1 × ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) × view x2 (v2' <#> toSel)
       ]
 
-drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId }, s0 } ed δv = do
+drawFig :: Fig -> Selector Val -> Effect Unit
+drawFig fig@{ spec: { divId } } δv = do
    v_view × views <- figViews fig δv
    sequence_ $
       uncurry (flip (drawView divId) doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (length views) ((δv >>> _) >>> drawFig fig ed) v_view
-   drawCode (prettyP s0) ed
+   drawView divId (length views) ((δv >>> _) >>> drawFig fig) v_view
 
 drawFigWithCode :: Fig -> Effect Unit
-drawFigWithCode fig =
-   addEditorView (codeMirrorDiv fig.spec.divId) >>= flip (drawFig fig) botOf
+drawFigWithCode fig = do
+   drawFig fig botOf
+   drawCode (prettyP fig.s0) =<< addEditorView (codeMirrorDiv fig.spec.divId)
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
