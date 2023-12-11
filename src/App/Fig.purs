@@ -189,12 +189,12 @@ drawFile (file × src) =
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
-figViews { spec: { xs }, gc2: { gc, vα } } δv = do
-   let
-      v1 = δv (botOf vα)
-      γ × e = (unwrap gc).bwd v1
-      v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e)
+figViews { spec: { xs }, gc2: { gc, vα } } δv =
    (view "output" v' × _) <$> sequence (flip varView γ <$> xs)
+   where
+   v1 = δv (botOf vα)
+   γ × e = (unwrap gc).bwd v1
+   v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e)
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))

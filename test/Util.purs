@@ -137,7 +137,7 @@ testGraph s gconfig spec@{ δv } _ = do
       g' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
       g'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (G.bwdSliceDual vα αs g)
       when logging (logAs "BwdDlFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
-      when logging (logAs "BwdDlCmp/ input slice" (prettyP $ select𝔹s eα (sinks g'') <#> not))
+      when logging (logAs "BwdDlCmp/input slice" (prettyP $ select𝔹s eα (sinks g'') <#> not))
    do
       let v𝔹_all = select𝔹s vα (vertices vα)
       _ × e𝔹' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd v𝔹_all)
