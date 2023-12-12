@@ -203,6 +203,6 @@ traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (
 traceGC γ e = do
    t × v <- eval γ e bot
    let
-      bwd v' = let γ' × e' × _ = evalBwd γ e v' t in γ' × e'
+      bwd v' = let γ' × e' × _ = evalBwd' v' t in γ' × e'
       fwd (γ' × e') = snd $ successful $ eval γ' e' top
    pure $ { gc: GC { fwd, bwd }, v }
