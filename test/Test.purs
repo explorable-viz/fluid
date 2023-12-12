@@ -2,15 +2,18 @@ module Test.Test where
 
 import Prelude hiding (add)
 
+import App.Util.Select (constr)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
+import DataType (cSome)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Lattice (neg)
 import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
 import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, suite)
+import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
@@ -19,8 +22,13 @@ main = run tests
 --main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite
-   [ { file: "compose", imports: [], fwd_expect: "5" }
+scratchpad = asTestSuite $ bwdSuite
+   [ { file: "lookup"
+     , imports: []
+     , bwd_expect_file: "lookup.expect"
+     , δv: constr cSome neg
+     , fwd_expect: "⸨Some \"Germany\"⸩"
+     }
    ]
 
 type TestSuite = Array (String × Aff Unit)
