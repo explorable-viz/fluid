@@ -16,7 +16,6 @@ You can edit this file as you like.
   , "either"
   , "exceptions"
   , "exists"
-  , "filterable"
   , "foldable-traversable"
   , "foreign-object"
   , "http-methods"

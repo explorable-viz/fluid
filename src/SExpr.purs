@@ -5,7 +5,6 @@ import Prelude hiding (absurd, top)
 import Bindings (Bind, Var, varAnon, (↦), keys)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Either (Either(..))
-import Data.Filterable (filterMap)
 import Data.Foldable (foldM, foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
@@ -22,7 +21,7 @@ import Data.Traversable (traverse)
 import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Desugarable (class Desugarable, desugBwd, desug)
-import Dict (Dict, asSingletonMap, get, lookup)
+import Dict (Dict, asSingletonMap, get)
 import Dict (fromFoldable, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -209,7 +208,7 @@ exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
 exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry desugBwd <$> zip es ss)
 exprBwd (E.Record α xes) (Record _ xss) =
-   Record α $ xss # filterMap (\(x ↦ s) -> lookup x xes <#> \s' -> x ↦ desugBwd s' s)
+   Record α $ xss <#> \(x ↦ s) -> x ↦ desugBwd (get x xes) s
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (desugBwd e s) (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
