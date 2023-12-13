@@ -5,6 +5,7 @@ import Prelude
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
 import Data.Either (Either(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
+import ICFP2024 (linkedInputs_spec4)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
@@ -406,4 +407,5 @@ linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
    [ linkedInputs_spec1
    , linkedInputs_spec2
+   , linkedInputs_spec4
    ]
