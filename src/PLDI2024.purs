@@ -31,12 +31,12 @@ linkedInputs_spec3 =
    { spec:
         { divId: "fig-3"
         , file: File "energy"
-        , x1: "renewables"
-        , x1File: File "renewables"
-        , x2: "non_renewables"
-        , x2File: File "non-renewables"
+        , x2: "renewables"
+        , x2File: File "renewables"
+        , x1: "non_renewables"
+        , x1File: File "non-renewables"
         }
-   , δv: Left $ listElement 108 (field "output" neg)
+   , δv: Left $ listElement 27 (field "nuclear" neg)
    , v'_expect: "" -- no point with expected value here
    }
 
