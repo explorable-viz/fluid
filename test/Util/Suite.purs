@@ -4,9 +4,12 @@ import Prelude
 
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, LinkedInputsFig, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
 import Data.Either (isLeft)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
@@ -45,7 +48,7 @@ type TestLinkedOutputsSpec =
 type TestLinkedInputsSpec =
    { spec :: LinkedInputsFigSpec
    , δv :: Selector Val + Selector Val
-   , v'_expect :: String
+   , v'_expect :: Maybe String
    }
 
 suite :: Array TestSpec -> BenchSuite
@@ -88,7 +91,9 @@ linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
 linkedInputsTest { spec, δv, v'_expect } = do
    v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
-   checkPretty "linked input" v'_expect (if isLeft δv then v2' else v1')
+   case v'_expect of
+      Just v' -> checkPretty "linked input" v' (if isLeft δv then v2' else v1')
+      _ -> liftEffect $ log "No Expected val"
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)

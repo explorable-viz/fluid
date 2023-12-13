@@ -4,6 +4,7 @@ import Prelude
 
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
@@ -385,7 +386,7 @@ linkedInputs_spec1 =
         , x2File: File "cities"
         }
    , δv: Left $ listElement 0 (field "farms" neg)
-   , v'_expect: "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : ({country : \"Bulgaria\", name : \"Sofia\", water : 55} : ({country : \"Poland\", name : \"Warsaw\", water : 65} : ({country : \"Turkey\", name : \"Istanbul\", water : 375} : [])))))))))"
+   , v'_expect: Just "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : ({country : \"Bulgaria\", name : \"Sofia\", water : 55} : ({country : \"Poland\", name : \"Warsaw\", water : 65} : ({country : \"Turkey\", name : \"Istanbul\", water : 375} : [])))))))))"
    }
 
 linkedInputs_spec2 :: TestLinkedInputsSpec
@@ -399,11 +400,41 @@ linkedInputs_spec2 =
         , x2File: File "countries"
         }
    , δv: Left $ listElement 3 (field "water" neg) >>> listElement 4 (field "water" neg) >>> listElement 5 (field "water" neg)
-   , v'_expect: "({farms : 250, name : \"Germany\", popMil : 81} : ({farms : ⸨200⸩, name : \"UK\", popMil : ⸨67⸩} : ({farms : 150, name : \"Bulgaria\", popMil : 7} : ({farms : 220, name : \"Poland\", popMil : 38} : ({farms : 270, name : \"Turkey\", popMil : 85} : [])))))"
+   , v'_expect: Just "({farms : 250, name : \"Germany\", popMil : 81} : ({farms : ⸨200⸩, name : \"UK\", popMil : ⸨67⸩} : ({farms : 150, name : \"Bulgaria\", popMil : 7} : ({farms : 220, name : \"Poland\", popMil : 38} : ({farms : 270, name : \"Turkey\", popMil : 85} : [])))))"
+   }
+
+linkedInputs_spec3 :: TestLinkedInputsSpec
+linkedInputs_spec3 =
+   { spec:
+        { divId: "fig-3"
+        , file: File "energy"
+        , x2: "renewables"
+        , x2File: File "renewables"
+        , x1: "non_renewables"
+        , x1File: File "non-renewables"
+        }
+   , δv: Left $ listElement 27 (field "nuclear" neg >>> field "petrol" neg >>> field "gas" neg >>> field "coal" neg >>> field "gdpPerCap" neg >>> field "carbonInt" neg)
+   , v'_expect: Nothing -- No expected value due to the size of the list
+   }
+
+linkedInputs_spec4 :: TestLinkedInputsSpec
+linkedInputs_spec4 =
+   { spec:
+        { divId: "fig-2"
+        , file: File "energy"
+        , x1: "non_renewables"
+        , x1File: File "non-renewables"
+        , x2: "renewables"
+        , x2File: File "renewables"
+        }
+   , δv: Left $ listElement 27 (field "nuclear" neg)
+   , v'_expect: Nothing
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
    [ linkedInputs_spec1
    , linkedInputs_spec2
+   , linkedInputs_spec3
+   , linkedInputs_spec4
    ]
