@@ -8,7 +8,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldM, foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), (:), (\\), length, sortBy, zip, zipWith)
+import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\))
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, singleton)
 import Data.List.NonEmpty (singleton) as NE

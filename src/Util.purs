@@ -69,7 +69,7 @@ whenever true = Just
 
 definitely :: forall a. String -> Maybe a -> a
 definitely _ (Just a) = a
-definitely msg Nothing = error msg
+definitely msg Nothing = error ("definitely " <> msg)
 
 definitely' :: forall a. Maybe a -> a
 definitely' = definitely absurd

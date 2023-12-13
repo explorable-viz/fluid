@@ -1,7 +1,6 @@
 module EvalBwd where
 
-import Prelude hiding (absurd)
-
+import Prelude hiding (absurd, top)
 import Bindings (Var, varAnon)
 import Control.Monad.Except (class MonadError)
 import Data.Exists (mkExists, runExists)
@@ -21,7 +20,7 @@ import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), bv)
 import GaloisConnection (GaloisConnection(..))
-import Lattice (Raw, bot, botOf, expand, (∨))
+import Lattice (Raw, (∨), bot, botOf, expand, top)
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
@@ -196,7 +195,7 @@ evalBwd' v (T.LetRec (RecDefs _ ρ) t) =
 evalBwd' _ _ = error absurd
 
 type TracedEval a =
-   { gc :: GaloisConnection (Env a × Expr a × a) (Val a)
+   { gc :: GaloisConnection (Env a × Expr a) (Val a)
    , v :: Raw Val
    }
 
@@ -204,6 +203,6 @@ traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (
 traceGC γ e = do
    t × v <- eval γ e bot
    let
-      bwd v' = evalBwd γ e v' t
-      fwd (γ' × e' × α) = snd $ successful $ eval γ' e' α
+      bwd v' = let γ' × e' × _ = evalBwd' v' t in γ' × e'
+      fwd (γ' × e') = snd $ successful $ eval γ' e' top
    pure $ { gc: GC { fwd, bwd }, v }

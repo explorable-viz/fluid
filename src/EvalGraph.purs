@@ -8,20 +8,20 @@ import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Set (Set, empty, insert)
+import Data.Set (Set, empty, insert, unions)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet, cons, singleton)
 import Data.Traversable (for, sequence, traverse)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
-import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
+import Dict (apply, disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, Vertex, sinks, vertices)
+import Graph (class Graph, Vertex, selectαs, select𝔹s, vertices)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
-import Lattice (Raw)
+import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
@@ -177,7 +177,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       pure $ γ <+> D.singleton x v
 
 type GraphEval g =
-   { gc :: GaloisConnection (Set Vertex) (Set Vertex)
+   { gc :: GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹)
    , γα :: Env Vertex
    , eα :: Expr Vertex
    , g :: g
@@ -199,7 +199,17 @@ graphGC { g, n, γ } e = do
          pure (eα × vα)
    let
       -- dom = vertices progCxt `union` vertices eα
-      fwd αs = vertices (fwdSlice αs g') ∩ vertices vα
-      bwd αs = vertices (bwdSlice αs g') ∩ sinks g'
+      fwd :: Env 𝔹 × Expr 𝔹 -> Val 𝔹
+      fwd (γ𝔹 × e𝔹) = select𝔹s vα (vertices (fwdSlice αs g'))
+         where
+         -- restrict to vertices g' because unused inputs won't appear in the graph
+         αs = (selectαs e𝔹 eα ∪ unions ((selectαs <$> γ𝔹) `D.apply` γ)) ∩ vertices g'
+
+      bwd :: Val 𝔹 -> Env 𝔹 × Expr 𝔹
+      bwd v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα (vertices (bwdSlice αs g'))
+         where
+         βs = vertices (bwdSlice αs g')
+         αs = selectαs v𝔹 vα
+
    -- trace (show (sinks g' \\ dom)) \_ ->
    pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }
