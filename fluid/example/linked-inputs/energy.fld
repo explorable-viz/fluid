@@ -9,10 +9,10 @@ let energies countries year =
             let non_ren_x = head (filter (check_country year c_name) non_renewables);
             let totalNonRens = sumNonRenewables non_ren_x
             in {
-                    name: c_name, 
+                    name: c_name,
                     totalCap: totalRens + totalNonRens,
-                    non_renewables: totalNonRens, 
-                    carbonInt: non_ren_x.carbonInt, 
+                    non_renewables: totalNonRens,
+                    carbonInt: non_ren_x.carbonInt,
                     gdpPerCap: non_ren_x.gdpPerCap
                 }
     in map joined_country countries
@@ -20,9 +20,8 @@ in BubbleChart {
     caption: "Renewables against carbon intensity of output, GDP as radius",
     data: [{
                 x: country.non_renewables / country.totalCap,
-                y: country.carbonInt, 
-                z: country.gdpPerCap, 
+                y: country.carbonInt,
+                z: country.gdpPerCap,
                 c: country.name
            }| country <- energies ["Brazil", "China", "Egypt", "Germany", "USA"] 2018]
 }
-
