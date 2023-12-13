@@ -2,13 +2,11 @@ let sumNonRenewables x = x.nuclear + x.petrol + x.gas + x.coal;
 
 let check_country yearp name x = ((x.country == name) `and` (x.year == yearp));
 
-let country_filter year name list = filter (check_country year name) list;
-
 let energies countries year =
     let joined_country c_name =
-            let filtered = country_filter year c_name renewables;
+            let filtered = filter (check_country year c_name) renewables;
             let totalRens = sum (map (fun x = x.output) filtered);
-            let non_ren_x = head (country_filter year c_name non_renewables);
+            let non_ren_x = head (filter (check_country year c_name) non_renewables);
             let totalNonRens = sumNonRenewables non_ren_x
             in {
                     name: c_name, 
