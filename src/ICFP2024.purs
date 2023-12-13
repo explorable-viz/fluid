@@ -1,4 +1,4 @@
-module PLDI2024 where
+module ICFP2024 where
 
 import Prelude
 
