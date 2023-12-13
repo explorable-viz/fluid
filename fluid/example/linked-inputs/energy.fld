@@ -17,8 +17,12 @@ let energies countries year =
                 }
     in map joined_country countries
 in BubbleChart {
-    caption: "Test linkedinputs bubble chart",
-    data: [{x: country.non_renewables / country.totalCap, y: country.carbonInt, z: country.gdpPerCap, c: country.name} 
-          | country <- energies ["Brazil", "China", "Egypt", "Germany", "USA"] 2018]
+    caption: "Renewables against carbon intensity of output, GDP as radius",
+    data: [{
+                x: country.non_renewables / country.totalCap,
+                y: country.carbonInt, 
+                z: country.gdpPerCap, 
+                c: country.name
+           }| country <- energies ["Brazil", "China", "Egypt", "Germany", "USA"] 2018]
 }
 
