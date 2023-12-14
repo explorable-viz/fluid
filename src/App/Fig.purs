@@ -11,7 +11,6 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
-import Data.List (singleton)
 import Data.Newtype (unwrap)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
@@ -23,8 +22,8 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Class (class MonadEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
-import Eval (eval, eval_module)
-import EvalBwd (TracedEval, evalBwd, traceGC)
+import Eval (eval)
+import EvalBwd (evalBwd)
 import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
@@ -32,10 +31,8 @@ import GaloisConnection (dual)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules, open)
-import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import SExpr (desugarModuleFwd)
+import SExpr (Expr) as S
 import Test.Util (Selector)
 import Trace (Trace)
 import Util (type (+), type (×), AffError, Endo, absurd, orElse, uncurry3, (×))
@@ -43,23 +40,6 @@ import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
-
--- An example of the form (let <defs> in expr) can be decomposed as follows.
-type SplitDefs a =
-   { γ :: Env a -- local env (additional let bindings at beginning of ex)
-   , s :: S.Expr a -- body of example
-   }
-
--- Decompose as above.
-splitDefs :: forall m. MonadError Error m => Raw Env -> Raw S.Expr -> m (Raw SplitDefs)
-splitDefs γ0 s' = do
-   let defs × s = unsafePartial $ unpack s'
-   γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
-   pure { γ, s }
-   where
-   unpack :: Partial => Raw S.Expr -> (Raw S.VarDefs + Raw S.RecDefs) × Raw S.Expr
-   unpack (S.LetRec defs s) = Right defs × s
-   unpack (S.Let defs s) = Left defs × s
 
 type FigSpec =
    { divId :: HTMLId
@@ -71,8 +51,7 @@ type FigSpec =
 type Fig =
    { spec :: FigSpec
    , s0 :: Raw S.Expr -- program that was originally "split"
-   , gc :: TracedEval 𝔹
-   , gc2 :: GraphEval GraphImpl
+   , gc :: GraphEval GraphImpl
    }
 
 type LinkedOutputsFigSpec =
@@ -167,17 +146,17 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
       , 1 × ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) × view x2 (v2' <#> toSel)
       ]
 
-drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId }, s0 } ed δv = do
+drawFig :: Fig -> Selector Val -> Effect Unit
+drawFig fig@{ spec: { divId } } δv = do
    v_view × views <- figViews fig δv
    sequence_ $
       uncurry (flip (drawView divId) doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (length views) ((δv >>> _) >>> drawFig fig ed) v_view
-   drawCode (prettyP s0) ed
+   drawView divId (length views) ((δv >>> _) >>> drawFig fig) v_view
 
 drawFigWithCode :: Fig -> Effect Unit
-drawFigWithCode fig =
-   addEditorView (codeMirrorDiv fig.spec.divId) >>= flip (drawFig fig) botOf
+drawFigWithCode fig = do
+   drawFig fig botOf
+   drawCode (prettyP fig.s0) =<< addEditorView (codeMirrorDiv fig.spec.divId)
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
@@ -189,12 +168,12 @@ drawFile (file × src) =
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
-figViews { spec: { xs }, gc2: { gc, vα } } δv = do
-   let
-      v1 = δv (botOf vα)
-      γ × e = (unwrap gc).bwd v1
-      v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e)
+figViews { spec: { xs }, gc: { gc, vα } } δv =
    (view "output" v' × _) <$> sequence (flip varView γ <$> xs)
+   where
+   v1 = δv (botOf vα)
+   γ × e = (unwrap gc).bwd v1
+   v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e)
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
@@ -248,9 +227,8 @@ loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file } = do
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
    s0 <- open file
-   gc <- desug s0 >>= traceGC (botOf <$> gconfig.γ)
-   gc2 <- desug s0 >>= graphGC gconfig
-   pure { spec, s0, gc, gc2 }
+   gc <- desug s0 >>= graphGC gconfig
+   pure { spec, s0, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do

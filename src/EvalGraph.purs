@@ -25,7 +25,7 @@ import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
-import Util (type (×), (×), (∪), check, concatM, error, orElse, successful, throw, with)
+import Util (type (×), (×), (∪), (∩), check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -202,7 +202,8 @@ graphGC { g, n, γ } e = do
       fwd :: Env 𝔹 × Expr 𝔹 -> Val 𝔹
       fwd (γ𝔹 × e𝔹) = select𝔹s vα (vertices (fwdSlice αs g'))
          where
-         αs = selectαs e𝔹 eα ∪ unions ((selectαs <$> γ𝔹) `D.apply` γ)
+         -- restrict to vertices g' because unused inputs won't appear in the graph
+         αs = (selectαs e𝔹 eα ∪ unions ((selectαs <$> γ𝔹) `D.apply` γ)) ∩ vertices g'
 
       bwd :: Val 𝔹 -> Env 𝔹 × Expr 𝔹
       bwd v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα (vertices (bwdSlice αs g'))

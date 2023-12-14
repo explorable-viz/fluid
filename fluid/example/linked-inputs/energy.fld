@@ -1,16 +1,27 @@
-let joined_country c_name =
-        let totalRenewables = sum [ country_year.output | country_year <- renewables
-                              , c_name == country_year.country
-                              , country_year.year == 2018 ];
-            totalNonRenewables = sum [ country.nuclear + country.gas + country.coal + country.petrol
-                                     | country <- non_renewables, country.country == c_name ]
-        in head [{name: c_name, totalCap: totalRenewables + totalNonRenewables, renewables: totalRenewables, non_renewables: totalNonRenewables, gdpPerCap: country.gdpPerCap} 
-                | country <- non_renewables, country.country == c_name ];
-let energies =
-    let c_names = [country.country | country <- non_renewables]
-        in map joined_country c_names
-in BubbleChart {
-    caption: "Test linkedinputs bubble chart",
-    data: [{x: country.renewables, y: country.non_renewables, z: country.gdpPerCap, c: country.name} | country <- energies]
-}
+let sumNonRenewables x = x.nuclear + x.petrol + x.gas + x.coal;
 
+let check_country yearp name x = ((x.country == name) `and` (x.year == yearp));
+
+let energies countries year =
+    let joined_country c_name =
+            let filtered = filter (check_country year c_name) renewables;
+            let totalRens = sum (map (fun x = x.output) filtered);
+            let non_ren_x = head (filter (check_country year c_name) non_renewables);
+            let totalNonRens = sumNonRenewables non_ren_x
+            in {
+                    name: c_name,
+                    totalCap: totalRens + totalNonRens,
+                    non_renewables: totalNonRens,
+                    carbonInt: non_ren_x.carbonInt,
+                    gdpPerCap: non_ren_x.gdpPerCap
+                }
+    in map joined_country countries
+in BubbleChart {
+    caption: "Renewables against carbon intensity of output, GDP as radius",
+    data: [{
+                x: country.non_renewables / country.totalCap,
+                y: country.carbonInt,
+                z: country.gdpPerCap,
+                c: country.name
+           }| country <- energies ["Brazil", "China", "Egypt", "Germany", "USA"] 2018]
+}
