@@ -119,7 +119,7 @@ function drawBubbleChart_ (
       console.log(unique_countries)
       const c = d3.scaleOrdinal()
          .domain(unique_countries)
-         .range(d3.schemeCategory10)
+         .range(d3.schemeSet3)
 
       svg.append('g')
          .selectAll('dot')
@@ -129,7 +129,7 @@ function drawBubbleChart_ (
             .attr('cx', ([, d]) => x(fst(d.x)))
             .attr('cy', ([, d]) => y(fst(d.y)))
             .attr('r', ([, d]) => z(fst(d.z)))
-            .attr('stroke', 'black')
+            .attr('stroke', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? 'black' : colorShade(c(fst(d.c)), -30))
             .style('fill', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? colorShade(c(fst(d.c)), -50) : c(fst(d.c)))
             .style('class', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? 'dot-selected' : 'dot-unselected')
             .on('mousedown', (e, d) => { listener(e) })
