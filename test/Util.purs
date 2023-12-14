@@ -152,7 +152,7 @@ testGraph s gconfig spec@{ δv } _ = do
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
-isGraphical (Val _ (Constr c _)) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
+isGraphical (Val _ (Constr c _)) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement" ]
 isGraphical _ = false
 
 -- Like version in Test.Spec.Assertions but with error message.
