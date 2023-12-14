@@ -19,7 +19,7 @@ import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), dual)
 import Graph (selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan, bwdSliceDual) as G
+import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan) as G
 import Lattice (Raw, 𝔹, botOf, erase, expand, topOf)
 import Module (File, open, parse)
 import Parse (program)
@@ -135,9 +135,9 @@ testGraph s gconfig spec@{ δv } _ = do
    do
       let αs = selectαs v𝔹 vα
       g' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
-      g'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (G.bwdSliceDual vα αs g)
+      _ × e𝔹'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure ((unwrap (dual gc)).fwd v𝔹)
       when logging (logAs "BwdDlFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
-      when logging (logAs "BwdDlCmp/input slice" (prettyP $ select𝔹s eα (sinks g'') <#> not))
+      when logging (logAs "BwdDlCmp/input slice" (prettyP e𝔹''))
    do
       let v𝔹_all = select𝔹s vα (vertices vα)
       _ × e𝔹' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd v𝔹_all)

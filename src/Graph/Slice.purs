@@ -40,10 +40,6 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
 bwdSliceDualAsFwdOp :: forall g. Graph g => Set Vertex -> g -> g
 bwdSliceDualAsFwdOp αs0 g0 = fwdSlice αs0 (op g0)
 
--- | De Morgan dual of Backward slicing ◁_G° - missing final negation
-bwdSliceDual :: forall g. Graph g => Val Vertex -> Set Vertex -> g -> g
-bwdSliceDual vα αs0 g0 = bwdSlice (vertices vα \\ αs0) g0
-
 -- | Forward slicing (▷_G)
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
