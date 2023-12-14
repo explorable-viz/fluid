@@ -94,7 +94,7 @@ outMap α_αs = do
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (rest × acc')
       else
-         error "Inconsistent edge information"
+         error $ "Inconsistent edge information for " <> show α
 
 inMap :: List (Vertex × NonEmptySet Vertex) -> forall r. ST r (MutableAdjMap r)
 inMap α_αs = do
