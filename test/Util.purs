@@ -26,7 +26,7 @@ import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Util (type (×), (×), AffError, EffectError, successful)
+import Util (type (×), AffError, EffectError, check, successful, (×))
 import Val (class Ann, BaseVal(..), Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -134,6 +134,7 @@ testGraph s gconfig spec@{ δv } _ = do
    do
       _ × e𝔹' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (eval_op.fwd v𝔹)
       _ × e𝔹'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (eval_dual.fwd v𝔹)
+      -- check (e𝔹' == e𝔹'') "Two constructions of dual agree"
       when logging (logAs "BwdDlFwdOp/input slice" (prettyP e𝔹'))
       when logging (logAs "BwdDlCmp/input slice" (prettyP e𝔹''))
    do
@@ -144,6 +145,7 @@ testGraph s gconfig spec@{ δv } _ = do
    do
       v𝔹'' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
       v𝔹''' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
+      check (v𝔹'' == v𝔹'') "Two constructions of dual agree"
       when logging (logAs "FwdDlBwdOp/output slice" (prettyP v𝔹''))
       when logging (logAs "FwdDlCmp/output slice" (prettyP v𝔹'''))
    do
