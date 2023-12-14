@@ -152,6 +152,8 @@ testGraph s gconfig spec@{ δv } _ = do
    do
       v𝔹'' <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
       when logging (logAs "FwdAsDeMorgan/output slice" (prettyP v𝔹''))
+      -- Also broken
+      -- check (v𝔹' == v𝔹'') "Agrees with direct fwd"
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
