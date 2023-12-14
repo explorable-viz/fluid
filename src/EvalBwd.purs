@@ -20,7 +20,7 @@ import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), bv)
 import GaloisConnection (GaloisConnection(..))
-import Lattice (Raw, (∨), bot, botOf, expand, top)
+import Lattice (Raw, 𝔹, (∨), bot, botOf, expand, top)
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
@@ -194,12 +194,12 @@ evalBwd' v (T.LetRec (RecDefs _ ρ) t) =
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
-type TracedEval a =
-   { gc :: GaloisConnection (Env a × Expr a) (Val a)
+type TracedEval =
+   { gc :: GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹)
    , v :: Raw Val
    }
 
-traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (TracedEval a)
+traceGC :: forall m. MonadError Error m => Raw Env -> Raw Expr -> m TracedEval
 traceGC γ e = do
    t × v <- eval γ e bot
    let
