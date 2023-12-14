@@ -14,11 +14,10 @@ import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
-import Debug (trace)
 import Effect.Exception (Error)
-import Graph (class Graph, Vertex(..), fromEdgeList, vertices)
+import Graph (class Graph, Vertex(..), fromEdgeList)
 import Lattice (Raw)
-import Util (type (×), (×), (∪))
+import Util (type (×), (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -67,19 +66,18 @@ runAllocT n m = do
    a × n' <- runStateT m n
    -- TODO: duplicated vertex construction should be avoidable
    let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
-   trace (show (n + 1) <> ".." <> show n') \_ ->
-      pure (n' × fresh_αs × a)
+   pure (n' × fresh_αs × a)
 
 runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
 runAlloc n = runAllocT n >>> unwrap
 
 runWithGraphT :: forall g m a. Monad m => Graph g => g -> WithGraphT m a -> m (g × a)
-runWithGraphT g m = runStateT m Nil <#> swap <#> first (fromEdgeList (vertices g))
+runWithGraphT _ m = runStateT m Nil <#> swap <#> first fromEdgeList
 
 runWithGraph :: forall g a. Graph g => g -> WithGraph a -> g × a
 runWithGraph g = runWithGraphT g >>> unwrap
 
 runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT (g × n) m = do
-   (n' × αs × a) × g_adds <- runStateT (runAllocT n m) Nil
-   pure $ ((g <> fromEdgeList (vertices g ∪ αs) g_adds) × n') × a
+   (n' × _ × a) × g_adds <- runStateT (runAllocT n m) Nil
+   pure $ ((g <> fromEdgeList g_adds) × n') × a

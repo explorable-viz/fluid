@@ -33,7 +33,7 @@ class (Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   fromEdgeList :: Set Vertex -> List (Vertex × NonEmptySet Vertex) -> g
+   fromEdgeList :: List (Vertex × NonEmptySet Vertex) -> g
 
 newtype Vertex = Vertex String
 

@@ -55,7 +55,7 @@ instance Graph GraphImpl where
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: S.empty, sources: S.empty, vertices: S.empty }
 
    -- Last entry will take priority if keys are duplicated in α_αs.
-   fromEdgeList _ α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
+   fromEdgeList α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
       out = runST (outMap α_αs)
       in_ = runST (inMap α_αs)
