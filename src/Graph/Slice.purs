@@ -35,10 +35,6 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
                extend α βs
                pure $ Loop (visited' × (L.fromFoldable βs <> αs))
 
--- | De Morgan dual of backward slicing (◁_G)° ≡ Forward slicing on the opposite graph (▷_{G_op})
-bwdSliceDualAsFwdOp :: forall g. Graph g => Set Vertex -> g -> g
-bwdSliceDualAsFwdOp αs0 g0 = fwdSlice αs0 (op g0)
-
 -- | Forward slicing (▷_G)
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)

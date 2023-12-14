@@ -131,8 +131,9 @@ testGraph s gconfig spec@{ δv } _ = do
    PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
    recordGraphSize g
 
-   let αs_in = selectαs e𝔹 eα
-       eval_dual = unwrap (dual gc)
+   let
+      αs_in = selectαs e𝔹 eα
+      eval_dual = unwrap (dual gc)
    do
       _ × e𝔹' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (eval_op.fwd v𝔹)
       _ × e𝔹'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (eval_dual.fwd v𝔹)
