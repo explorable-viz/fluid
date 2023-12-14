@@ -119,7 +119,7 @@ function drawBubbleChart_ (
       console.log(unique_countries)
       const c = d3.scaleOrdinal()
          .domain(unique_countries)
-         .range(d3.schemeSet3)
+         .range(d3.schemePastel1)
 
       svg.append('g')
          .selectAll('dot')
