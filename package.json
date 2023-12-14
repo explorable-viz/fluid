@@ -17,7 +17,7 @@
     "bench": "npx http-serve dist/benches -a 127.0.0.1",
     "examples": "npx http-serve dist/examples -a 127.0.0.1",
     "tests-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
-    "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs example/**/*.purs example/*.purs"
+    "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",

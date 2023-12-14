@@ -65,6 +65,7 @@ function drawTable_ (
    return () => {
       const childId = id + '-' + childIndex
       const cellFill = '#ffffff'
+      const selectedFill = '#93E9BE'
       const div = d3.select('#' + id)
 
       indexKey = "__n"
@@ -112,7 +113,7 @@ function drawTable_ (
             .append('td')
             .attr('data-th', d => d.name)
             .attr('class', d => d.name != indexKey && val_α(d.value) ? 'cell-selected' : null)
-            .attr('bgcolor', d => d.name != indexKey && val_α(d.value) ? colorShade(cellFill, -40) : cellFill)
+            .attr('bgcolor', d => d.name != indexKey && val_α(d.value) ? selectedFill : cellFill)
             .text(d => d.name != indexKey ? prim(val_v(d.value)) : d.value)
             .on('mousedown', e => listener(e))
 

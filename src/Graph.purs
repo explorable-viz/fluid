@@ -33,7 +33,7 @@ class (Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × NonEmptySet Vertex) -> g
+   fromEdgeList :: List (Vertex × NonEmptySet Vertex) -> g
 
 newtype Vertex = Vertex String
 

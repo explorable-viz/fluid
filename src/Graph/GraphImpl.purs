@@ -10,8 +10,7 @@ import Control.Monad.ST (ST)
 import Data.Array as A
 import Data.Foldable (foldM)
 import Data.List (List(..), (:))
-import Data.List (fromFoldable) as L
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
 import Data.Set (Set, insert, singleton)
 import Data.Set as S
@@ -56,12 +55,11 @@ instance Graph GraphImpl where
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: S.empty, sources: S.empty, vertices: S.empty }
 
    -- Last entry will take priority if keys are duplicated in α_αs.
-   fromFoldable α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
+   fromEdgeList α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      out = runST (outMap α_αs')
-      in_ = runST (inMap α_αs')
+      out = runST (outMap α_αs)
+      in_ = runST (inMap α_αs)
       vertices = S.fromFoldable $ S.map Vertex $ D.keys out
-      α_αs' = L.fromFoldable α_αs -- doesn't seem to adversely affect performance
 
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices
@@ -91,13 +89,12 @@ outMap α_αs = do
    addEdges :: List (Vertex × NonEmptySet Vertex) × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : rest) × acc) = do
-      _ <- OST.peek α acc <#> case _ of
-         Nothing -> true
-         Just βs' -> S.isEmpty βs'
-      if true then do
+      ok <- OST.peek α acc <#> maybe true (\βs' -> βs' == S.empty || βs' == toSet βs)
+      if ok then do
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (rest × acc')
-      else error $ "Duplicate key " <> α
+      else
+         error $ "Inconsistent edge information for " <> show α
 
 inMap :: List (Vertex × NonEmptySet Vertex) -> forall r. ST r (MutableAdjMap r)
 inMap α_αs = do

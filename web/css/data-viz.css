@@ -3,7 +3,7 @@
 }
 
 .bar-selected {
-   stroke: Coral;
+   stroke: Teal;
 }
 
 .bar-unselected {
@@ -11,7 +11,8 @@
 }
 
 .cell-selected {
-   border: 1px solid Coral;
+   border-radius: 2px;
+   border: 1px solid teal;
 }
 
 .matrix-cell-selected {
