@@ -10,7 +10,7 @@ import Control.Monad.ST (ST)
 import Data.Array as A
 import Data.Foldable (foldM)
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
 import Data.Set (Set, insert, singleton)
 import Data.Set as S
@@ -89,9 +89,7 @@ outMap α_αs = do
    addEdges :: List (Vertex × NonEmptySet Vertex) × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : rest) × acc) = do
-      ok <- OST.peek α acc <#> case _ of
-         Nothing -> true
-         Just βs' -> βs' == toSet βs
+      ok <- OST.peek α acc <#> maybe true (\βs' -> βs' == S.empty || βs' == toSet βs)
       if ok then do
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (rest × acc')
