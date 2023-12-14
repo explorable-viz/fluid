@@ -89,7 +89,7 @@ outMap α_αs = do
    addEdges :: List (Vertex × NonEmptySet Vertex) × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : rest) × acc) = do
-      ok <- OST.peek α acc <#> maybe true (\βs' -> βs' == S.empty)
+      ok <- OST.peek α acc <#> maybe true (\βs' -> βs' == S.empty || βs' == toSet βs)
       if ok then do
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (rest × acc')
