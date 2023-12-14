@@ -78,6 +78,6 @@ runWithGraph :: forall g a. Graph g => g -> WithGraph a -> g × a
 runWithGraph g = runWithGraphT g >>> unwrap
 
 runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m ((g × Int) × a)
-runWithGraphAllocT (g × n) m = do
+runWithGraphAllocT (_ × n) m = do
    (n' × _ × a) × g_adds <- runStateT (runAllocT n m) Nil
-   pure $ ((g <> fromEdgeList g_adds) × n') × a
+   pure $ ((fromEdgeList g_adds) × n') × a

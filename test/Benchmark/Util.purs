@@ -15,7 +15,7 @@ import Data.Tuple (snd)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Graph (class Graph, size)
-import Pretty (class Pretty, pretty, prettyP)
+import Pretty (class Pretty, prettyP)
 import Test.Util.Microtime (microtime)
 import Util (type (×), EffectError, (×))
 

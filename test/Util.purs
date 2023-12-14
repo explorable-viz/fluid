@@ -131,19 +131,18 @@ testGraph s gconfig spec@{ δv } _ = do
    recordGraphSize g
 
    let eval_dual = unwrap (dual gc)
-   void $ graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
-   void $ graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
-   -- These commented-out properties seem badly broken, see #818
-   -- check (e𝔹' == e𝔹'') "Two constructions of dual agree"
+   _ <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
+   _ <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
+   -- check (e𝔹' == e𝔹'') "Two constructions of dual agree" (see #818)
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
-   void $ graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
-   void $ graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
+   _ <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
+   _ <- graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
    -- check (v𝔹'' == v𝔹''') "Two constructions of dual agree"
 
-   void $ benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
-
--- check (v𝔹' == v𝔹'') "Agrees with direct fwd"
+   _ <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
+   -- check (v𝔹' == v𝔹'') "Agrees with direct fwd"
+   pure unit
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
