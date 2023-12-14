@@ -431,6 +431,20 @@ linkedInputs_spec4 =
    , v'_expect: Nothing
    }
 
+linkedInputs_spec5 :: TestLinkedInputsSpec
+linkedInputs_spec5 =
+   { spec:
+        { divId: "fig-1"
+        , file: File "energy"
+        , x2: "non_renewables"
+        , x2File: File "non-renewables"
+        , x1: "renewables"
+        , x1File: File "renewables"
+        }
+   , δv: Left $ listElement 118 (field "output" neg)
+   , v'_expect: Nothing
+   }
+
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
    [ linkedInputs_spec1
