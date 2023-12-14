@@ -17,11 +17,13 @@ let energies countries year =
                 }
     in map joined_country countries
 in BubbleChart {
-    caption: "Renewables against carbon intensity of output, GDP as radius",
+    caption: "Carbon intensity against proportion of energy from renewables",
     data: [{
                 x: country.non_renewables / country.totalCap,
                 y: country.carbonInt,
                 z: country.gdpPerCap,
                 c: country.name
-           }| country <- energies ["Brazil", "China", "Egypt", "Germany", "USA"] 2018]
+           }| country <- energies ["Brazil", "China", "Egypt", "Germany", "USA"] 2018],
+    xlabel: "Renewables/TotalEnergyCap",
+    ylabel: "CarbonInt"
 }
