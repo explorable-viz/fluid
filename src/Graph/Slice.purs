@@ -11,10 +11,9 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set, empty, insert)
 import Data.Set.NonEmpty (cons, fromSet, singleton, toSet)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks, vertices)
+import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks)
 import Graph.WithGraph (WithGraph, extend, runWithGraph)
 import Util (type (×), (×), (∈), (\\))
-import Val (Val)
 
 type PendingVertices = Map Vertex (Set Vertex)
 
