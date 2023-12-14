@@ -6,14 +6,16 @@ import Control.Monad.Except (class MonadError)
 import Control.Monad.State (StateT, runStateT, modify, modify_)
 import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), range)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
+import Data.Set (Set)
+import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
-import Graph (Vertex(..), class Graph, fromFoldable)
+import Graph (class Graph, Vertex(..), fromEdgeList)
 import Lattice (Raw)
 import Util (type (×), (×))
 
@@ -59,20 +61,23 @@ instance Monad m => MonadWithGraph (WithGraphAllocT m) where
 alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
 alloc = traverse (const fresh)
 
--- TODO: make synonymous with runStateT/runState?
-runAllocT :: forall m a. Monad m => Int -> AllocT m a -> m (Int × a)
-runAllocT n c = runStateT c n <#> swap
+runAllocT :: forall m a. Monad m => Int -> AllocT m a -> m (Int × Set Vertex × a)
+runAllocT n m = do
+   a × n' <- runStateT m n
+   -- TODO: duplicated vertex construction should be avoidable
+   let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
+   pure (n' × fresh_αs × a)
 
-runAlloc :: forall a. Int -> Alloc a -> Int × a
+runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
 runAlloc n = runAllocT n >>> unwrap
 
-runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
-runWithGraphT c = runStateT c Nil <#> swap <#> first fromFoldable
+runWithGraphT :: forall g m a. Monad m => Graph g => g -> WithGraphT m a -> m (g × a)
+runWithGraphT _ m = runStateT m Nil <#> swap <#> first fromEdgeList
 
-runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
-runWithGraph = runWithGraphT >>> unwrap
+runWithGraph :: forall g a. Graph g => g -> WithGraph a -> g × a
+runWithGraph g = runWithGraphT g >>> unwrap
 
 runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT (g × n) m = do
-   (n' × a) × g_adds <- runStateT (runAllocT n m) Nil
-   pure $ ((g <> fromFoldable g_adds) × n') × a
+   (n' × _ × a) × g_adds <- runStateT (runAllocT n m) Nil
+   pure $ ((g <> fromEdgeList g_adds) × n') × a
