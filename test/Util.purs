@@ -17,9 +17,9 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), dual)
-import Graph (selectαs, select𝔹s, sinks, vertices)
+import Graph (selectαs, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceAsDeMorgan) as G
+import Graph.Slice (fwdSliceAsDeMorgan) as G
 import Lattice (Raw, 𝔹, botOf, erase, expand, topOf)
 import Module (File, open, parse)
 import Parse (program)
@@ -117,7 +117,7 @@ testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig Grap
 testGraph s gconfig spec@{ δv } _ = do
    let method = "G"
 
-   { gc: gc@(GC eval), gc_op, eα, g, vα } <- do
+   { gc: gc@(GC eval), gc_op: GC eval_op, eα, g, vα } <- do
       { gc: GC desug } <- desugGC s
       let e = desug.fwd s
       benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
@@ -132,11 +132,11 @@ testGraph s gconfig spec@{ δv } _ = do
    recordGraphSize g
 
    let αs_in = selectαs e𝔹 eα
+       eval_dual = unwrap (dual gc)
    do
-      let αs = selectαs v𝔹 vα
-      g' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
-      _ × e𝔹'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure ((unwrap (dual gc)).fwd v𝔹)
-      when logging (logAs "BwdDlFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
+      _ × e𝔹' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (eval_op.fwd v𝔹)
+      _ × e𝔹'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (eval_dual.fwd v𝔹)
+      when logging (logAs "BwdDlFwdOp/input slice" (prettyP e𝔹'))
       when logging (logAs "BwdDlCmp/input slice" (prettyP e𝔹''))
    do
       let v𝔹_all = select𝔹s vα (vertices vα)
@@ -144,8 +144,8 @@ testGraph s gconfig spec@{ δv } _ = do
       when logging (logAs "BwdAll/input slice" (prettyP e𝔹'))
 
    do
-      v𝔹'' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure ((unwrap gc_op).bwd (γ𝔹 × e𝔹))
-      v𝔹''' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure ((unwrap (dual gc)).bwd (γ𝔹 × e𝔹))
+      v𝔹'' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
+      v𝔹''' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
       when logging (logAs "FwdDlBwdOp/output slice" (prettyP v𝔹''))
       when logging (logAs "FwdDlCmp/output slice" (prettyP v𝔹'''))
    do
