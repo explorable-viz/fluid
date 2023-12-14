@@ -18,7 +18,7 @@ import Dict (apply, disjointUnion, fromFoldable, empty, get, keys, lookup, singl
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, Vertex, selectαs, select𝔹s, vertices)
+import Graph (class Graph, Vertex, op, selectαs, select𝔹s, vertices)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Lattice (𝔹, Raw)
@@ -178,6 +178,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
 
 type GraphEval g =
    { gc :: GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹)
+   , gc_op :: GaloisConnection (Val 𝔹) (Env 𝔹 × Expr 𝔹)
    , γα :: Env Vertex
    , eα :: Expr Vertex
    , g :: g
@@ -199,17 +200,24 @@ graphGC { g, n, γ } e = do
          pure (eα × vα)
    let
       -- dom = vertices progCxt `union` vertices eα
-      fwd :: Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      fwd (γ𝔹 × e𝔹) = select𝔹s vα (vertices (fwdSlice αs g'))
+      fwd :: g -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
+      fwd g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (fwdSlice αs g0))
          where
          -- restrict to vertices g' because unused inputs won't appear in the graph
-         αs = (selectαs e𝔹 eα ∪ unions ((selectαs <$> γ𝔹) `D.apply` γ)) ∩ vertices g'
+         αs = (selectαs e𝔹 eα ∪ unions ((selectαs <$> γ𝔹) `D.apply` γ)) ∩ vertices g0
 
-      bwd :: Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      bwd v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα (vertices (bwdSlice αs g'))
+      bwd :: g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
+      bwd g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα (vertices (bwdSlice αs g0))
          where
-         βs = vertices (bwdSlice αs g')
+         βs = vertices (bwdSlice αs g0)
          αs = selectαs v𝔹 vα
 
    -- trace (show (sinks g' \\ dom)) \_ ->
-   pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }
+   pure
+      { gc: GC { fwd: fwd g', bwd: bwd g' }
+      , gc_op: GC { fwd: bwd (op g'), bwd: fwd (op g') }
+      , γα: γ
+      , eα
+      , g: g'
+      , vα
+      }

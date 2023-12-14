@@ -11,14 +11,12 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set, empty, insert)
 import Data.Set.NonEmpty (cons, fromSet, singleton, toSet)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks, vertices)
+import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN)
 import Graph.WithGraph (WithGraph, extend, runWithGraph)
-import Util (type (×), (×), (∈), (\\))
-import Val (Val)
+import Util (type (×), (×), (∈))
 
 type PendingVertices = Map Vertex (Set Vertex)
 
--- | Backward slicing (◁_G)
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 bwdSlice αs0 g0 = fst $ runWithGraph g0 $ tailRecM go (empty × L.fromFoldable αs0)
    where
@@ -36,15 +34,6 @@ bwdSlice αs0 g0 = fst $ runWithGraph g0 $ tailRecM go (empty × L.fromFoldable 
                extend α βs
                pure $ Loop (visited' × (L.fromFoldable βs <> αs))
 
--- | De Morgan dual of backward slicing (◁_G)° ≡ Forward slicing on the opposite graph (▷_{G_op})
-bwdSliceDualAsFwdOp :: forall g. Graph g => Set Vertex -> g -> g
-bwdSliceDualAsFwdOp αs0 g0 = fwdSlice αs0 (op g0)
-
--- | De Morgan dual of Backward slicing ◁_G° - missing final negation
-bwdSliceDual :: forall g. Graph g => Val Vertex -> Set Vertex -> g -> g
-bwdSliceDual vα αs0 g0 = bwdSlice (vertices vα \\ αs0) g0
-
--- | Forward slicing (▷_G)
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs0 g0 = fst $ runWithGraph g0 $ tailRecM go (M.empty × inEdges g0 αs0)
    where
@@ -57,18 +46,3 @@ fwdSlice αs0 g0 = fst $ runWithGraph g0 $ tailRecM go (M.empty × inEdges g0 α
          pure $ Loop (M.delete α h × (inEdges' g0 α <> es))
       else
          pure $ Loop (M.insert α (toSet βs) h × es)
-
--- | Forward slicing (▷_G) ≡ De Morgan dual of backward slicing on the opposite graph (◁_{G_op})°
--- Also doesn't do the final negation..
-fwdSliceAsDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceAsDeMorgan αs0 g0 =
-   bwdSlice (sinks g0 \\ αs0) (op g0)
-
--- | De Morgan dual of forward slicing (▷_G)°
--- Doesn't do the final negation..
---fwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
---fwdSliceDual αs0 g0 = fwdSlice (sinks g0 \\ αs0) g0
-
--- | De Morgan dual of forward slicing (▷_G)° ≡ Backward slicing on the opposite graph (◁_{G_op})
-fwdSliceDualAsBwdOp :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceDualAsBwdOp αs0 g0 = bwdSlice αs0 (op g0)
