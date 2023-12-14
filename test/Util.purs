@@ -134,6 +134,7 @@ testGraph s gconfig spec@{ δv } _ = do
    do
       _ × e𝔹' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (eval_op.fwd v𝔹)
       _ × e𝔹'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (eval_dual.fwd v𝔹)
+      -- Want to assert this but seems to be badly broken, see #818
       -- check (e𝔹' == e𝔹'') "Two constructions of dual agree"
       when logging (logAs "BwdDlFwdOp/input slice" (prettyP e𝔹'))
       when logging (logAs "BwdDlCmp/input slice" (prettyP e𝔹''))
