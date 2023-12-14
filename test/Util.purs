@@ -17,9 +17,8 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), dual)
-import Graph (selectαs, select𝔹s, vertices)
+import Graph (select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (fwdSliceAsDeMorgan) as G
 import Lattice (Raw, 𝔹, botOf, erase, expand, topOf)
 import Module (File, open, parse)
 import Parse (program)
@@ -117,7 +116,7 @@ testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig Grap
 testGraph s gconfig spec@{ δv } _ = do
    let method = "G"
 
-   { gc: gc@(GC eval), gc_op: GC eval_op, eα, g, vα } <- do
+   { gc: gc@(GC eval), gc_op: GC eval_op, g, vα } <- do
       { gc: GC desug } <- desugGC s
       let e = desug.fwd s
       benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
@@ -131,9 +130,7 @@ testGraph s gconfig spec@{ δv } _ = do
    PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
    recordGraphSize g
 
-   let
-      αs_in = selectαs e𝔹 eα
-      eval_dual = unwrap (dual gc)
+   let eval_dual = unwrap (dual gc)
    do
       _ × e𝔹' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (eval_op.fwd v𝔹)
       _ × e𝔹'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (eval_dual.fwd v𝔹)
@@ -150,8 +147,8 @@ testGraph s gconfig spec@{ δv } _ = do
       when logging (logAs "FwdDlBwdOp/output slice" (prettyP v𝔹''))
       when logging (logAs "FwdDlCmp/output slice" (prettyP v𝔹'''))
    do
-      g' <- benchmark "Naive-Fwd" $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
-      when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
+      v𝔹'' <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
+      when logging (logAs "FwdAsDeMorgan/output slice" (prettyP v𝔹''))
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean

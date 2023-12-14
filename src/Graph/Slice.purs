@@ -11,13 +11,12 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set, empty, insert)
 import Data.Set.NonEmpty (cons, fromSet, singleton, toSet)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks)
+import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN)
 import Graph.WithGraph (WithGraph, extend, runWithGraph)
-import Util (type (×), (×), (∈), (\\))
+import Util (type (×), (×), (∈))
 
 type PendingVertices = Map Vertex (Set Vertex)
 
--- | Backward slicing (◁_G)
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs0)
    where
@@ -35,7 +34,6 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
                extend α βs
                pure $ Loop (visited' × (L.fromFoldable βs <> αs))
 
--- | Forward slicing (▷_G)
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
    where
@@ -48,9 +46,3 @@ fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
          pure $ Loop (M.delete α h × (inEdges' g0 α <> es))
       else
          pure $ Loop (M.insert α (toSet βs) h × es)
-
--- | Forward slicing (▷_G) ≡ De Morgan dual of backward slicing on the opposite graph (◁_{G_op})°
--- Also doesn't do the final negation..
-fwdSliceAsDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceAsDeMorgan αs0 g0 =
-   bwdSlice (sinks g0 \\ αs0) (op g0)
