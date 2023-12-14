@@ -11,22 +11,19 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
-import Effect.Class (class MonadEffect)
-import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), dual)
-import Graph (select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (Raw, 𝔹, botOf, erase, expand, topOf)
 import Module (File, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
-import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
+import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, logging, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Util (type (×), AffError, EffectError, check, successful, (×))
+import Util (type (×), AffError, EffectError, successful, (×))
 import Val (class Ann, BaseVal(..), Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -36,12 +33,6 @@ type SelectionSpec =
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
    , bwd_expect :: String
    }
-
-logging :: Boolean
-logging = false
-
-logAs :: forall m. MonadEffect m => String -> String -> m Unit
-logAs tag s = log $ tag <> ": " <> s
 
 test ∷ forall m. File -> GraphConfig GraphImpl -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file gconfig spec (n × benchmarking) = do
@@ -131,29 +122,18 @@ testGraph s gconfig spec@{ δv } _ = do
    recordGraphSize g
 
    let eval_dual = unwrap (dual gc)
-   do
-      _ × e𝔹' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (eval_op.fwd v𝔹)
-      _ × e𝔹'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (eval_dual.fwd v𝔹)
-      -- Want to assert this but seems to be badly broken, see #818
-      -- check (e𝔹' == e𝔹'') "Two constructions of dual agree"
-      when logging (logAs "BwdDlFwdOp/input slice" (prettyP e𝔹'))
-      when logging (logAs "BwdDlCmp/input slice" (prettyP e𝔹''))
-   do
-      let v𝔹_all = select𝔹s vα (vertices vα)
-      _ × e𝔹' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd v𝔹_all)
-      when logging (logAs "BwdAll/input slice" (prettyP e𝔹'))
+   void $ benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (eval_op.fwd v𝔹)
+   void $ benchmark (method <> "-BwdDlCmp") $ \_ -> pure (eval_dual.fwd v𝔹)
+   -- These commented-out properties seem badly broken, see #818
+   -- check (e𝔹' == e𝔹'') "Two constructions of dual agree"
+   void $ benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd (topOf vα))
 
-   do
-      v𝔹'' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
-      v𝔹''' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
-      check (v𝔹'' == v𝔹'') "Two constructions of dual agree"
-      when logging (logAs "FwdDlBwdOp/output slice" (prettyP v𝔹''))
-      when logging (logAs "FwdDlCmp/output slice" (prettyP v𝔹'''))
-   do
-      v𝔹'' <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
-      when logging (logAs "FwdAsDeMorgan/output slice" (prettyP v𝔹''))
+   void $ benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
+   void $ benchmark (method <> "-FwdDlCmp") $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
+   -- check (v𝔹'' == v𝔹''') "Two constructions of dual agree"
 
--- Also broken
+   void $ benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
+
 -- check (v𝔹' == v𝔹'') "Agrees with direct fwd"
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
