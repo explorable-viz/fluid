@@ -68,29 +68,39 @@ validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
       when logging $ logAs (method <> "-based fwd ⚬ bwd") (prettyP v𝔹)
       checkPretty (method <> "-based fwd_expect") fwd_expect v𝔹
 
+traceMethod :: String
+traceMethod = "T"
+
+traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> (Unit -> m a) -> EffectError m a
+traceBenchmark name = benchmark (traceMethod <> "-" <> name)
+
+graphMethod :: String
+graphMethod = "G"
+
+graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> (Unit -> m a) -> EffectError m a
+graphBenchmark name = benchmark (graphMethod <> "-" <> name)
+
 testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
 testTrace s gconfig spec@{ δv } = do
-   let method = "T"
-
    { gc: GC eval, v } <- do
       { gc: GC desug } <- desugGC s
       let
          e = desug.fwd s
          γ = erase <$> gconfig.γ
-      benchmark (method <> "-Eval") $ \_ -> traceGC γ e
+      traceBenchmark "Eval" $ \_ -> traceGC γ e
 
    let v𝔹 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
       unless (isGraphical v𝔹) $
          when logging (logAs "Selection for bwd" (prettyP v𝔹))
-      benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
+      traceBenchmark "Bwd" $ \_ -> pure (eval.bwd v𝔹)
 
    { gc: GC desug𝔹, e } <- desugGC s
    let s𝔹 = desug𝔹.bwd e𝔹
    v𝔹' <- do
       let e𝔹' = desug𝔹.fwd s𝔹
       PrettyShow e𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= expand e𝔹 e))
-      benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹'))
+      traceBenchmark "Fwd" $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹'))
    PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
 
    let
@@ -101,35 +111,34 @@ testTrace s gconfig spec@{ δv } = do
       v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top')
    PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-trip (eval ⚬ desugar)"` (unwrap >>> (_ >= v𝔹_top))
 
-   validate method spec s𝔹 v𝔹'
+   validate traceMethod spec s𝔹 v𝔹'
 
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } _ = do
-   let method = "G"
 
    { gc: gc@(GC eval), gc_op: GC eval_op, g, vα } <- do
       { gc: GC desug } <- desugGC s
       let e = desug.fwd s
-      benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
+      graphBenchmark "Eval" $ \_ -> graphGC gconfig e
 
    let v𝔹 = δv (botOf vα)
-   γ𝔹 × e𝔹 <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
-   v𝔹' <- benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹))
+   γ𝔹 × e𝔹 <- graphBenchmark "Bwd" $ \_ -> pure (eval.bwd v𝔹)
+   v𝔹' <- graphBenchmark "Fwd" $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹))
 
    { gc: GC desug𝔹 } <- desugGC s
-   validate method spec (desug𝔹.bwd e𝔹) v𝔹'
+   validate graphMethod spec (desug𝔹.bwd e𝔹) v𝔹'
    PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
    recordGraphSize g
 
    let eval_dual = unwrap (dual gc)
-   void $ benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (eval_op.fwd v𝔹)
-   void $ benchmark (method <> "-BwdDlCmp") $ \_ -> pure (eval_dual.fwd v𝔹)
+   void $ graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
+   void $ graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
    -- These commented-out properties seem badly broken, see #818
    -- check (e𝔹' == e𝔹'') "Two constructions of dual agree"
-   void $ benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd (topOf vα))
+   void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
-   void $ benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
-   void $ benchmark (method <> "-FwdDlCmp") $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
+   void $ graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
+   void $ graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
    -- check (v𝔹'' == v𝔹''') "Two constructions of dual agree"
 
    void $ benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
