@@ -49,6 +49,8 @@ function drawBubbleChart_ (
    {
       caption, // String
       data,   // Array BubbleRecord
+      xlabel,
+      ylabel,
    },
    listener
 ) {
@@ -87,13 +89,15 @@ function drawBubbleChart_ (
          .attr("y", -margin.left + 20)
          .style("text-anchor", "end")
          .style("font-size", "8px")
-         .text("carbonInt")
+         .text(fst(ylabel))
+
       svg.append("text")
          .attr("x", width)
          .attr("y", height + 25)
          .style("text-anchor", "end")
          .style("font-size", "8px")
-         .text("Renewable energy cap/ total energy cap")
+         .text(fst(xlabel))
+
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
          .call(d3.axisBottom(x))

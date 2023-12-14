@@ -11,5 +11,7 @@ let waters =
         in map country_water c_names
 in BubbleChart {
     caption: "Test linkedinputs bubble chart",
-    data: [{x: country.water, y: country.farms, z: country.water `div` country.popMil, c: country.name} | country <- waters]
+    data: [{x: country.water, y: country.farms, z: country.water `div` country.popMil, c: country.name} | country <- waters],
+    xlabel: "country water consumption",
+    ylabel: "water from farms"
 }
