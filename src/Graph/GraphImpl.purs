@@ -89,14 +89,14 @@ outMap α_αs = do
    addEdges :: List (Vertex × NonEmptySet Vertex) × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : rest) × acc) = do
-      βs' <- OST.peek α acc <#> case _ of
-         Nothing -> S.empty
-         Just βs' -> βs' \\ toSet βs
-      if S.isEmpty βs' then do
+      ok <- OST.peek α acc <#> case _ of
+         Nothing -> true
+         Just βs' -> βs' == toSet βs
+      if ok then do
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (rest × acc')
       else
-         error $ "Losing edges to " <> show βs'
+         error "Inconsistent edge information"
 
 inMap :: List (Vertex × NonEmptySet Vertex) -> forall r. ST r (MutableAdjMap r)
 inMap α_αs = do
