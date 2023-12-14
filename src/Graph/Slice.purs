@@ -59,11 +59,6 @@ fwdSliceAsDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
 fwdSliceAsDeMorgan αs0 g0 =
    bwdSlice (sinks g0 \\ αs0) (op g0)
 
--- | De Morgan dual of forward slicing (▷_G)°
--- Doesn't do the final negation..
---fwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
---fwdSliceDual αs0 g0 = fwdSlice (sinks g0 \\ αs0) g0
-
 -- | De Morgan dual of forward slicing (▷_G)° ≡ Backward slicing on the opposite graph (◁_{G_op})
 fwdSliceDualAsBwdOp :: forall g. Graph g => Set Vertex -> g -> g
 fwdSliceDualAsBwdOp αs0 g0 = bwdSlice αs0 (op g0)
