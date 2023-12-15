@@ -214,9 +214,6 @@ prettyClause sep (Clause (ps × e)) = prettyPattConstr empty (toList ps) .<>. se
 instance Ann a => Pretty (Clauses a) where
    pretty (Clauses cs) = intersperse' (toList (map (prettyClause (text str.equals)) (cs))) (text str.semiColon)
 
-instance Ann a => Pretty (Branch a) where
-   pretty (x × Clause (ps × e)) = text x .<>. prettyClause (text str.equals) (Clause (ps × e))
-
 instance Ann a => Pretty (NonEmptyList (Branch a)) where
    pretty h = intersperse' (toList (map pretty h)) (text str.semiColon)
 
@@ -270,12 +267,6 @@ dictBrackets = between (text str.dictLBracket) (text str.dictRBracket)
 parentheses :: Endo Doc
 parentheses = between (text str.lparenth) (text str.rparenth)
 
--- slashes :: Endo Doc
--- slashes = between (text str.slash) (text str.slash)
-
--- backTicks :: Endo Doc
--- backTicks = between (text str.backtick) (text str.backtick)
-
 curlyBraces :: Endo Doc
 curlyBraces = between (text str.curlylBrace) (text str.curlyrBrace)
 
@@ -297,18 +288,6 @@ parens = between (text "(") (text ")")
 class ToList a where
    toList2 :: a -> List a
 
-{-
-class ToPair a where
-   toPair :: a -> a × a
-
-instance ToPair (E.Expr a) where
-   toPair (E.Constr _ c (e : e' : Nil)) | c == cPair = e × e'
-   toPair _ = error absurd
-
-instance ToPair (Val a) where
-   toPair (V.Constr _ c (v : v' : Nil)) | c == cPair = v × v'
-   toPair _ = error absurd
--}
 instance Pretty String where
    pretty = text
 
@@ -406,14 +385,17 @@ instance Pretty (Dict (S.Set Vertex)) where
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = hcat [ text x, text str.equals, pretty σ ]
+else instance Ann a => Pretty (Branch a) where
+   pretty (x × Clause (ps × e)) = text x .<>. prettyClause (text str.equals) (Clause (ps × e))
+else instance Highlightable a => Pretty (Ctr × Cont a) where
+   pretty (c × κ) = hcat [ text (showCtr c), text str.rArrow, pretty κ ]
+else instance (Pretty a, Pretty b) => Pretty (a × b) where
+   pretty (a × b) = parentheses $ pretty a .<>. text str.comma .<>. pretty b
 
 instance Highlightable a => Pretty (Cont a) where
    pretty ContNone = empty
    pretty (ContExpr e) = pretty e
    pretty (ContElim σ) = pretty σ
-
-instance Highlightable a => Pretty (Ctr × Cont a) where
-   pretty (c × κ) = hcat [ text (showCtr c), text str.rArrow, pretty κ ]
 
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hcat [ text x, text str.rArrow, pretty κ ]
