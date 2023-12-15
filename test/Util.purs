@@ -91,8 +91,7 @@ testTrace s gconfig spec@{ δv } = do
 
    let v𝔹 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
-      unless (isGraphical v𝔹) $
-         when logging (logAs "Selection for bwd" (prettyP v𝔹))
+      when logging (logAs "Selection for bwd" (prettyP v𝔹))
       traceBenchmark "Bwd" $ \_ -> pure (eval.bwd v𝔹)
 
    { gc: GC desug𝔹, e } <- desugGC s

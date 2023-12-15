@@ -9,13 +9,11 @@ import Data.Array (fromFoldable)
 import Data.Identity (Identity)
 import Data.List (List(..), range, reverse, (:))
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet, map)
 import Data.String (joinWith)
 import Data.Traversable (class Traversable, traverse)
-import Data.Tuple (swap)
 import Debug (trace)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), fromEdgeList)
@@ -61,6 +59,12 @@ instance Monad m => MonadWithGraph (WithGraphT m) where
 instance Monad m => MonadWithGraph (WithGraphAllocT m) where
    extend α = lift <<< extend α
 
+showEdges :: List (Vertex × NonEmptySet Vertex) -> String
+showEdges edges = joinWith "\n" $ showEdge <$> fromFoldable (reverse edges)
+   where
+   showEdge :: Vertex × NonEmptySet Vertex -> String
+   showEdge (α × αs) = unwrap α <> " |-> " <> joinWith ", " (fromFoldable $ unwrap `map` αs)
+
 alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
 alloc = traverse (const fresh)
 
@@ -74,20 +78,16 @@ runAllocT n m = do
 runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
 runAlloc n = runAllocT n >>> unwrap
 
-runWithGraphT :: forall g m a. Monad m => Graph g => g -> WithGraphT m a -> m (g × a)
-runWithGraphT _ m = runStateT m Nil <#> swap <#> first fromEdgeList
+runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
+runWithGraphT m = do
+   a × edges <- runStateT m Nil
+   trace (showEdges edges) \_ ->
+      pure $ (fromEdgeList edges) × a
 
-runWithGraph :: forall g a. Graph g => g -> WithGraph a -> g × a
-runWithGraph g = runWithGraphT g >>> unwrap
+runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
+runWithGraph = runWithGraphT >>> unwrap
 
-showEdges :: List (Vertex × NonEmptySet Vertex) -> String
-showEdges edges = joinWith "\n" $ showEdge <$> fromFoldable (reverse edges)
-   where
-   showEdge :: Vertex × NonEmptySet Vertex -> String
-   showEdge (α × αs) = unwrap α <> " |-> " <> joinWith ", " (fromFoldable $ unwrap `map` αs)
-
-runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m ((g × Int) × a)
-runWithGraphAllocT (_ × n) m = do
+runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
+runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
-   trace (showEdges edges) \_ -> do
-      pure $ (fromEdgeList edges × n') × a
+   pure $ (fromEdgeList edges × n') × a

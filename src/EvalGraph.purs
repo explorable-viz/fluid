@@ -192,9 +192,9 @@ graphGC
    => GraphConfig g
    -> Raw Expr
    -> m (GraphEval g)
-graphGC { g, n, γ } e = do
+graphGC { n, γ } e = do
    (g' × _) × eα × vα <-
-      runWithGraphAllocT (g × n) do
+      runWithGraphAllocT n do
          eα <- alloc e
          vα <- eval γ eα Set.empty
          pure (eα × vα)

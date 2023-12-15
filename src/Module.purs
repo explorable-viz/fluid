@@ -16,7 +16,6 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
-import Graph (empty) as G
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (alloc, runWithGraphAllocT)
 import Lattice (Raw)
@@ -78,7 +77,7 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 
 initialConfig :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig GraphImpl)
 initialConfig progCxt = do
-   (g × n) × progCxt' × γ <- runWithGraphAllocT (G.empty × 0) do
+   (g × n) × progCxt' × γ <- runWithGraphAllocT 0 do
       progCxt' <- alloc progCxt
       γ <- eval_progCxt progCxt'
       pure (progCxt' × γ)
