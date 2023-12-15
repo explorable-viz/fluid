@@ -8,6 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
+import Lattice (topOf)
 import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
@@ -55,7 +56,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    asTest :: TestSpec -> Aff BenchRow
    asTest { file, fwd_expect } = do
       gconfig <- prelude >>= initialConfig
-      test (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
+      test (File file) gconfig { δv: topOf, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& asTest)

@@ -210,7 +210,8 @@ graphGC { n, γ } e = do
       bwd g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα (vertices (bwdSlice αs g0))
          where
          βs = vertices (bwdSlice αs g0)
-         αs = selectαs v𝔹 vα
+         -- restrict to vertices g' because unused outputs won't appear in the graph
+         αs = selectαs v𝔹 vα ∩ vertices g0
 
    -- trace (show (sinks g' \\ dom)) \_ ->
    pure
