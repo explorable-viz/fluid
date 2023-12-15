@@ -20,7 +20,7 @@ import Test.Util.Microtime (microtime)
 import Util (type (×), EffectError, (×))
 
 logging :: Boolean
-logging = false
+logging = true
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
