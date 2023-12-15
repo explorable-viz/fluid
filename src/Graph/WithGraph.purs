@@ -1,19 +1,22 @@
 module Graph.WithGraph where
 
-import Prelude
+import Prelude hiding (map)
 
 import Control.Monad.Except (class MonadError)
 import Control.Monad.State (StateT, runStateT, modify, modify_)
 import Control.Monad.Trans.Class (lift)
+import Data.Array (fromFoldable)
 import Data.Identity (Identity)
-import Data.List (List(..), (:), range)
+import Data.List (List(..), range, reverse, (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Set.NonEmpty (NonEmptySet)
+import Data.Set.NonEmpty (NonEmptySet, map)
+import Data.String (joinWith)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
+import Debug (trace)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), fromEdgeList)
 import Lattice (Raw)
@@ -77,7 +80,14 @@ runWithGraphT _ m = runStateT m Nil <#> swap <#> first fromEdgeList
 runWithGraph :: forall g a. Graph g => g -> WithGraph a -> g × a
 runWithGraph g = runWithGraphT g >>> unwrap
 
+showEdges :: List (Vertex × NonEmptySet Vertex) -> String
+showEdges edges = joinWith "\n" $ showEdge <$> fromFoldable (reverse edges)
+   where
+   showEdge :: Vertex × NonEmptySet Vertex -> String
+   showEdge (α × αs) = unwrap α <> " |-> " <> joinWith ", " (fromFoldable $ unwrap `map` αs)
+
 runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT (_ × n) m = do
-   (n' × _ × a) × g_adds <- runStateT (runAllocT n m) Nil
-   pure $ ((fromEdgeList g_adds) × n') × a
+   (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
+   trace (showEdges edges) \_ ->
+      pure $ ((fromEdgeList edges) × n') × a
