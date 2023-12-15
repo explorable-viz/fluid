@@ -14,7 +14,6 @@ import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet, map)
 import Data.String (joinWith)
 import Data.Traversable (class Traversable, traverse)
-import Debug (trace)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), fromEdgeList)
 import Lattice (Raw)
@@ -81,8 +80,7 @@ runAlloc n = runAllocT n >>> unwrap
 runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
 runWithGraphT m = do
    a × edges <- runStateT m Nil
-   trace (showEdges edges) \_ ->
-      pure $ (fromEdgeList edges) × a
+   pure $ (fromEdgeList edges) × a
 
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
