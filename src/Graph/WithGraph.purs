@@ -89,5 +89,5 @@ showEdges edges = joinWith "\n" $ showEdge <$> fromFoldable (reverse edges)
 runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT (_ × n) m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
-   trace (showEdges edges) \_ ->
-      pure $ ((fromEdgeList edges) × n') × a
+   trace (showEdges edges) \_ -> do
+      pure $ (fromEdgeList edges × n') × a
