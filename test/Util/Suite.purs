@@ -8,8 +8,6 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
 import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
@@ -93,7 +91,7 @@ linkedInputsTest { spec, δv, v'_expect } = do
    v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
    case v'_expect of
       Just v' -> checkPretty "linked input" v' (if isLeft δv then v2' else v1')
-      _ -> liftEffect $ log "No Expected val"
+      _ -> pure unit
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)

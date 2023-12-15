@@ -10,17 +10,17 @@ import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
 import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, suite)
+import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, withDatasetSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
---main = run tests
+main = run tests
 
-main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite
-   [ { file: "range", imports: [], fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
+scratchpad = asTestSuite $ withDatasetSuite
+   [ { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/grouped-bar-chart" }
    ]
 
 type TestSuite = Array (String × Aff Unit)

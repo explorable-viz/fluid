@@ -414,7 +414,7 @@ linkedInputs_spec3 =
         , x1File: File "non-renewables"
         }
    , δv: Left $ listElement 27 (field "nuclear" neg >>> field "petrol" neg >>> field "gas" neg >>> field "coal" neg >>> field "gdpPerCap" neg >>> field "carbonInt" neg)
-   , v'_expect: Nothing -- No expected value due to the size of the list
+   , v'_expect: Nothing
    }
 
 linkedInputs_spec4 :: TestLinkedInputsSpec

@@ -9,12 +9,21 @@ import Data.Int (toNumber)
 import Data.List (fold)
 import Data.Map (Map, singleton, unionWith, keys, values)
 import Data.Map (empty) as M
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over2)
 import Data.Tuple (snd)
 import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class.Console (log)
 import Graph (class Graph, size)
+import Pretty (class Pretty, prettyP)
 import Test.Util.Microtime (microtime)
-import Util (type (×), (×))
+import Util (type (×), EffectError, (×))
+
+logging :: Boolean
+logging = false
+
+logAs :: forall m. MonadEffect m => String -> String -> m Unit
+logAs tag s = log $ tag <> ": " <> s
 
 newtype BenchAcc = BenchAcc (NonEmptyArray (String × BenchRow))
 
@@ -42,13 +51,24 @@ instance Semigroup BenchRow where
 instance Monoid BenchRow where
    mempty = BenchRow M.empty
 
-benchmark :: forall m a. MonadEffect m => MonadWriter BenchRow m => String -> (Unit -> m a) -> m a
-benchmark name prog = do
+benchmarkLog :: forall m a. MonadWriter BenchRow m => Pretty a => String -> (Unit -> m a) -> EffectError m a
+benchmarkLog name = benchmark' name (Just prettyP)
+
+benchmark :: forall m a. MonadWriter BenchRow m => String -> (Unit -> m a) -> EffectError m a
+benchmark name = benchmark' name Nothing
+
+benchmark' :: forall m a. MonadWriter BenchRow m => String -> Maybe (a -> String) -> (Unit -> m a) -> EffectError m a
+benchmark' name show_opt m = do
+   when logging $ log ("**** " <> name)
    t1 <- preciseTime
-   r <- prog unit
+   x <- m unit
    t2 <- preciseTime
+   when logging $
+      case show_opt of
+         Nothing -> pure unit
+         Just show -> logAs name (show x)
    tell (BenchRow $ singleton name (t2 `sub` t1))
-   pure r
+   pure x
    where
    preciseTime :: m Number
    preciseTime = liftEffect microtime
