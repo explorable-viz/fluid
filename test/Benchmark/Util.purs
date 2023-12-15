@@ -20,7 +20,7 @@ import Test.Util.Microtime (microtime)
 import Util (type (×), EffectError, (×))
 
 logging :: Boolean
-logging = false
+logging = true
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
@@ -59,6 +59,7 @@ benchmark name = benchmark' name Nothing
 
 benchmark' :: forall m a. MonadWriter BenchRow m => String -> Maybe (a -> String) -> (Unit -> m a) -> EffectError m a
 benchmark' name show_opt m = do
+   when logging $ log ("**** " <> name)
    t1 <- preciseTime
    x <- m unit
    t2 <- preciseTime
