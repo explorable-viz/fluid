@@ -23,7 +23,7 @@ import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, logging, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Util (type (×), AffError, EffectError, successful, (×))
+import Util (type (×), AffError, EffectError, check, successful, (×))
 import Val (class Ann, BaseVal(..), Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -130,9 +130,9 @@ testGraph s gconfig spec@{ δv } _ = do
    recordGraphSize g
 
    let eval_dual = unwrap (dual gc)
-   _ <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
-   _ <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
-   -- check (e𝔹' == e𝔹'') "Two constructions of dual agree" (see #818)
+   e𝔹' <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
+   e𝔹'' <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
+   check (e𝔹' == e𝔹'') "Two constructions of dual agree"
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
    _ <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
