@@ -130,9 +130,9 @@ testGraph s gconfig spec@{ δv } _ = do
    recordGraphSize g
 
    let eval_dual = unwrap (dual gc)
-   e𝔹' <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
-   e𝔹'' <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
-   check (e𝔹' == e𝔹'') "Two constructions of bwd dual agree"
+   in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
+   in2 <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
+   check (in1 == in2) "Two constructions of bwd dual agree"
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
    _ <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
