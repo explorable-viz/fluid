@@ -6,6 +6,7 @@ import Data.Set (Set, empty, singleton)
 import Data.Tuple (Tuple(..), fst, snd)
 import Util (type (×), (∪), definitely, whenever)
 
+-- Not easy as a newtype as there is no Coercible instance for Set.
 type Var = String
 
 varAnon = "_" :: Var
