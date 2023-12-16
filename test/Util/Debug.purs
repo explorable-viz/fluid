@@ -5,7 +5,7 @@ debug
       }
 
 debug =
-   { logging: true
+   { logging: false
    }
 
 checking

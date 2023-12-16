@@ -14,11 +14,12 @@ import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet, map)
 import Data.String (joinWith)
 import Data.Traversable (class Traversable, traverse)
+import Debug (class DebugWarning, trace)
 import Effect.Exception (Error)
-import Graph (class Graph, Vertex(..), fromEdgeList, toEdgeList)
+import Graph (class Graph, Vertex(..), fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
 import Test.Util.Debug (checking)
-import Util (type (×), assertWhen, (×))
+import Util (type (×), Endo, assertWhen, (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -86,10 +87,15 @@ runWithGraphT m = do
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
-runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
+-- spyWith doesn't seem to work
+spyWhen :: forall a. DebugWarning => Boolean -> (a -> String) -> Endo a
+spyWhen false _ x = x
+spyWhen true show x = trace (show x) (const x)
+
+runWithGraphAllocT :: forall g m a. DebugWarning => Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
    let g = fromEdgeList edges
    -- comparing edge lists requires sorting; causes stack overflow on large graph
    assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
-      pure ((g × n') × a)
+      pure ((spyWhen true showGraph g × n') × a)
