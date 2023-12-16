@@ -23,8 +23,8 @@ import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Test.Util.Debug (debug)
-import Util (type (×), AffError, EffectError, check, successful, (×))
+import Test.Util.Debug (checking, debug)
+import Util (AffError, EffectError, Thunk, type (×), (×), check, successful)
 import Val (class Ann, BaseVal(..), Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -72,7 +72,7 @@ validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
 traceMethod :: String
 traceMethod = "T"
 
-traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> (Unit -> m a) -> EffectError m a
+traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
 traceBenchmark name = benchmark (traceMethod <> "-" <> name)
 
 graphMethod :: String
@@ -133,7 +133,7 @@ testGraph s gconfig spec@{ δv } _ = do
    let eval_dual = unwrap (dual gc)
    in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
    in2 <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
-   when debug.check.bwdDuals $
+   when checking.bwdDuals $
       check (in1 == in2) "Two constructions of bwd dual agree"
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 

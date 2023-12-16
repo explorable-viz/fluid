@@ -25,6 +25,11 @@ import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
 
+type Thunk a = Unit -> a -- similar to Lazy but without datatype
+
+force :: forall a. Thunk a -> a
+force = (_ $ unit)
+
 type 𝔹 = Boolean
 
 -- Surely × should have higher precedence than + by convention..
@@ -57,9 +62,9 @@ assert :: ∀ a. Boolean -> a -> a
 assert true = identity
 assert false = \_ -> error "Assertion failure"
 
-assertWhen :: ∀ a. Boolean -> Boolean -> a -> a
-assertWhen false _ = identity
-assertWhen true p = assert p
+assertWhen :: ∀ a. Boolean -> Thunk Boolean -> a -> a
+assertWhen false = const identity
+assertWhen true = force >>> assert
 
 absurd :: String
 absurd = "absurd"

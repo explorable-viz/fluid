@@ -17,7 +17,7 @@ import Data.Traversable (class Traversable, traverse)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), fromEdgeList, toEdgeList)
 import Lattice (Raw)
-import Test.Util.Debug (debug)
+import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, (×))
 
 class Monad m <= MonadWithGraph m where
@@ -91,5 +91,5 @@ runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
    let g = fromEdgeList edges
    -- comparing edge lists requires sorting; causes stack overflow on large graph
-   assertWhen debug.check.edgeListIso (g == fromEdgeList (toEdgeList g)) $
+   assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
       pure ((g × n') × a)
