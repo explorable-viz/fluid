@@ -199,20 +199,20 @@ graphGC { n, γ } e = do
          vα <- eval γ eα Set.empty
          pure (eα × vα)
    let
-      -- restrict to vertices g0 because unused inputs/outputs won't appear in the graph
-      inputToOutput :: (Set Vertex -> Endo g) -> g -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      inputToOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (slice αs g0))
+      -- restrict to vertices g0 because unused inputs/outputs won't appear in graph
+      toOutput :: (Set Vertex -> Endo g) -> g -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
+      toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (slice αs g0))
          where
          αs = (selectαs e𝔹 eα ∪ unions ((selectαs <$> γ𝔹) `D.apply` γ)) ∩ vertices g0
 
-      outputToInput :: (Set Vertex -> Endo g) -> g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      outputToInput slice g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα βs
+      toInput :: (Set Vertex -> Endo g) -> g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
+      toInput slice g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα βs
          where
          βs = vertices (slice αs g0)
          αs = selectαs v𝔹 vα ∩ vertices g0
    pure
-      { gc: GC { fwd: inputToOutput fwdSlice g', bwd: outputToInput bwdSlice g' }
-      , gc_op: GC { fwd: outputToInput fwdSlice (op g'), bwd: inputToOutput bwdSlice (op g') }
+      { gc: GC { fwd: toOutput fwdSlice g', bwd: toInput bwdSlice g' }
+      , gc_op: GC { fwd: toInput fwdSlice (op g'), bwd: toOutput bwdSlice (op g') }
       , γα: γ
       , eα
       , g: g'
