@@ -13,7 +13,7 @@ tracing
       }
 
 tracing =
-   { graphCreation: true
+   { graphCreation: false
    }
 
 checking
