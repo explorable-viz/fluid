@@ -16,7 +16,7 @@ import Debug (class DebugWarning)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
-import Test.Util.Debug (checking)
+import Test.Util.Debug (checking, tracing)
 import Util (type (×), (×), assertWhen, spyWhen)
 
 class Monad m <= MonadWithGraph m where
@@ -85,4 +85,4 @@ runWithGraphAllocT n m = do
    let g = fromEdgeList edges
    -- comparing edge lists requires sorting; causes stack overflow on large graph
    assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
-      pure ((spyWhen true showGraph g × n') × a)
+      pure ((spyWhen tracing.graphCreation showGraph g × n') × a)
