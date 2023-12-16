@@ -6,16 +6,14 @@ import Control.Monad.Except (class MonadError)
 import Control.Monad.State (StateT, runStateT, modify, modify_)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (fromFoldable)
-import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List(..), range, reverse, sortBy, (:))
+import Data.List (List(..), range, reverse, (:))
 import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet, map)
 import Data.String (joinWith)
 import Data.Traversable (class Traversable, traverse)
-import Data.Tuple (fst)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), fromEdgeList, toEdgeList)
 import Lattice (Raw)
@@ -91,6 +89,7 @@ runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT
 runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
    let g = fromEdgeList edges
-   assert (sortBy (compare `on` fst) edges == sortBy (compare `on` fst) (toEdgeList g))
-      $ pure
-      $ (g × n') × a
+   let g' = fromEdgeList (toEdgeList g)
+   assert (g == g') $ -- comparing edge lists requires sorting, which stack-overflows on large graphs
+
+      pure ((g × n') × a)

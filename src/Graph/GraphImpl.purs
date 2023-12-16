@@ -34,6 +34,9 @@ data GraphImpl = GraphImpl
    , vertices :: Set Vertex
    }
 
+instance Eq GraphImpl where
+   eq (GraphImpl g) (GraphImpl g') = g.out == g'.out
+
 instance Semigroup GraphImpl where
    append (GraphImpl g) (GraphImpl g') = GraphImpl
       { out: D.unionWith (∪) g.out g'.out

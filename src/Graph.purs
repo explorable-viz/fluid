@@ -2,25 +2,25 @@ module Graph where
 
 import Prelude hiding (add)
 
---import Control.Monad.Rec.Class (Step(..), tailRec)
+import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
---import Data.Array (uncons)
+import Data.Array (uncons)
 import Data.Foldable (class Foldable)
-import Data.List (List {-(..), (:)-} , concat)
+import Data.List (List(..), (:), concat)
 import Data.List (fromFoldable) as L
---import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Set (Set, singleton, unions)
 import Data.Set (empty, map) as S
-import Data.Set.NonEmpty (NonEmptySet {-, fromSet-} )
+import Data.Set.NonEmpty (NonEmptySet, fromSet)
 import Dict (Dict)
-import Util (type (×), Endo, {-definitely, -} error, (\\), (×), (∈))
+import Util (type (×), Endo, definitely, (\\), (×), (∈))
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × NonEmptySet Vertex -- convenience for to/fromEdgeList
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
-class (Vertices g, Semigroup g) <= Graph g where
+class (Eq g, Vertices g, Semigroup g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
    -- | outN and iN satisfy
@@ -71,9 +71,6 @@ inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
-   error $ show (A.fromFoldable (vertices g \\ sinks g))
-
-{-
    tailRec go (A.fromFoldable (vertices g \\ sinks g) × Nil)
    where
    go :: Array Vertex × List HyperEdge -> Step _ (List HyperEdge)
@@ -81,7 +78,7 @@ toEdgeList g =
       Nothing -> Done acc
       Just { head: α, tail: αs } ->
          Loop (αs × (α × definitely "non-empty" (fromSet (outN g α))) : acc)
--}
+
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
