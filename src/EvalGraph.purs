@@ -25,7 +25,7 @@ import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
-import Util (type (×), (×), (∪), (∩), check, concatM, error, orElse, successful, throw, with)
+import Util (type (×), Endo, check, concatM, error, orElse, successful, throw, with, (×), (∩), (∪))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -199,24 +199,20 @@ graphGC { n, γ } e = do
          vα <- eval γ eα Set.empty
          pure (eα × vα)
    let
-      -- dom = vertices progCxt `union` vertices eα
-      fwd :: g -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      fwd g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (fwdSlice αs g0))
+      -- restrict to vertices g0 because unused inputs/outputs won't appear in the graph
+      inputToOutput :: (Set Vertex -> Endo g) -> g -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
+      inputToOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (slice αs g0))
          where
-         -- restrict to vertices g' because unused inputs won't appear in the graph
          αs = (selectαs e𝔹 eα ∪ unions ((selectαs <$> γ𝔹) `D.apply` γ)) ∩ vertices g0
 
-      bwd :: g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      bwd g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα βs
+      outputToInput :: (Set Vertex -> Endo g) -> g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
+      outputToInput slice g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα βs
          where
-         βs = vertices (bwdSlice αs g0)
-         -- restrict to vertices g' because unused outputs won't appear in the graph
+         βs = vertices (slice αs g0)
          αs = selectαs v𝔹 vα ∩ vertices g0
-
-   -- trace (show (sinks g' \\ dom)) \_ ->
    pure
-      { gc: GC { fwd: fwd g', bwd: bwd g' }
-      , gc_op: GC { fwd: bwd (op g'), bwd: fwd (op g') }
+      { gc: GC { fwd: inputToOutput fwdSlice g', bwd: outputToInput bwdSlice g' }
+      , gc_op: GC { fwd: outputToInput fwdSlice (op g'), bwd: inputToOutput bwdSlice (op g') }
       , γα: γ
       , eα
       , g: g'
