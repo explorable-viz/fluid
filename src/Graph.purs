@@ -6,18 +6,20 @@ import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
 import Data.Array (uncons)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), (:), concat)
+import Data.List (List(..), concat, reverse, (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, singleton, unions)
 import Data.Set (empty, map) as S
 import Data.Set.NonEmpty (NonEmptySet, fromSet)
+import Data.Set.NonEmpty as NES
+import Data.String (joinWith)
 import Dict (Dict)
 import Util (type (×), Endo, definitely, (\\), (×), (∈))
 
 type Edge = Vertex × Vertex
-type HyperEdge = Vertex × NonEmptySet Vertex -- convenience for to/fromEdgeList
+type HyperEdge = Vertex × NonEmptySet Vertex -- mostly a convenience
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
 class (Eq g, Vertices g, Semigroup g) <= Graph g where
@@ -80,7 +82,11 @@ toEdgeList g =
          Loop (αs × (α × definitely "non-empty" (fromSet (outN g α))) : acc)
 
 showGraph :: forall g. Graph g => g -> String
-showGraph = toEdgeList >>> show
+showGraph g = joinWith "\n" (showEdge <$> A.fromFoldable (reverse (toEdgeList g)))
+   where
+   showEdge :: HyperEdge -> String
+   showEdge (α × αs) =
+      unwrap α <> " |-> " <> joinWith ", " (A.fromFoldable $ unwrap `NES.map` αs)
 
 derive instance Eq Vertex
 derive instance Ord Vertex
