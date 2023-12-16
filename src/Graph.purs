@@ -83,10 +83,10 @@ toEdgeList g =
 
 showGraph :: forall g. Graph g => g -> String
 showGraph g =
-   "digraph G {\n" <> joinWith "\n" lines <> "\n}"
+   joinWith "\n" $ [ "digraph G {" ] <> (indent <$> lines) <> [ "}" ]
    where
    lines :: Array String
-   lines = indent <$> ([ "rankdir = RL" ] <> edges)
+   lines = [ "rankdir = RL" ] <> edges
 
    edges :: Array String
    edges = showEdge <$> A.fromFoldable (reverse (toEdgeList g))
