@@ -82,10 +82,17 @@ toEdgeList g =
          Loop (αs × (α × definitely "non-empty" (fromSet (outN g α))) : acc)
 
 showGraph :: forall g. Graph g => g -> String
-showGraph g = "digraph G {\n" <> joinWith "\n" ([ "rankdir = RL" ] <> edges) <> "\n}"
+showGraph g =
+   "digraph G {\n" <> joinWith "\n" lines <> "\n}"
    where
+   lines :: Array String
+   lines = indent <$> ([ "rankdir = RL" ] <> edges)
+
    edges :: Array String
    edges = showEdge <$> A.fromFoldable (reverse (toEdgeList g))
+
+   indent :: Endo String
+   indent = ("   " <> _)
 
    showEdge :: HyperEdge -> String
    showEdge (α × αs) =
