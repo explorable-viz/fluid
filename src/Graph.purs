@@ -82,11 +82,13 @@ toEdgeList g =
          Loop (αs × (α × definitely "non-empty" (fromSet (outN g α))) : acc)
 
 showGraph :: forall g. Graph g => g -> String
-showGraph g = joinWith "\n" (showEdge <$> A.fromFoldable (reverse (toEdgeList g)))
+showGraph g = "digraph G {\n" <> "rankdir = RL\n" <> edges <> "\n}"
    where
+   edges = joinWith "\n" (showEdge <$> A.fromFoldable (reverse (toEdgeList g)))
+
    showEdge :: HyperEdge -> String
    showEdge (α × αs) =
-      unwrap α <> " |-> " <> joinWith ", " (A.fromFoldable $ unwrap `NES.map` αs)
+      unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `NES.map` αs) <> "}"
 
 derive instance Eq Vertex
 derive instance Ord Vertex
