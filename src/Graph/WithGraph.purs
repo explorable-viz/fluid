@@ -12,12 +12,12 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
-import Debug (class DebugWarning, trace)
+import Debug (class DebugWarning)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
 import Test.Util.Debug (checking)
-import Util (type (×), Endo, assertWhen, (×))
+import Util (type (×), (×), assertWhen, spyWhen)
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -78,11 +78,6 @@ runWithGraphT m = do
 
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
-
--- spyWith doesn't seem to work
-spyWhen :: forall a. DebugWarning => Boolean -> (a -> String) -> Endo a
-spyWhen false _ x = x
-spyWhen true show x = trace (show x) (const x)
 
 runWithGraphAllocT :: forall g m a. DebugWarning => Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT n m = do
