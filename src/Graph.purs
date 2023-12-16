@@ -8,9 +8,9 @@ import Data.List (fromFoldable) as L
 import Data.Newtype (class Newtype)
 import Data.Set (Set, singleton, unions)
 import Data.Set (empty, map) as S
-import Data.Set.NonEmpty (NonEmptySet)
+import Data.Set.NonEmpty (NonEmptySet, fromSet)
 import Dict (Dict)
-import Util (Endo, (×), type (×), (∈))
+import Util (type (×), Endo, definitely, (\\), (×), (∈))
 
 type Edge = Vertex × Vertex
 
@@ -33,7 +33,7 @@ class (Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   fromEdgeList :: List (Vertex × NonEmptySet Vertex) -> g
+   fromEdgeList :: List (Vertex × NonEmptySet Vertex) -> g -- misnomer (actually ~hyperedges)
 
 newtype Vertex = Vertex String
 
@@ -63,6 +63,11 @@ inEdges' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 
 inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
+
+toEdgeList :: forall g. Graph g => g -> List (Vertex × NonEmptySet Vertex)
+toEdgeList g =
+   L.fromFoldable (vertices g \\ sinks g) <#> \α ->
+      α × definitely "non-empty" (fromSet (outN g α))
 
 derive instance Eq Vertex
 derive instance Ord Vertex

@@ -6,18 +6,21 @@ import Control.Monad.Except (class MonadError)
 import Control.Monad.State (StateT, runStateT, modify, modify_)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (fromFoldable)
+import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List(..), range, reverse, (:))
+import Data.List (List(..), range, reverse, sortBy, (:))
 import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet, map)
 import Data.String (joinWith)
 import Data.Traversable (class Traversable, traverse)
+import Data.Tuple (fst)
+import Debug (trace)
 import Effect.Exception (Error)
-import Graph (class Graph, Vertex(..), fromEdgeList)
+import Graph (class Graph, Vertex(..), fromEdgeList, toEdgeList)
 import Lattice (Raw)
-import Util (type (×), (×))
+import Util (type (×), assert, (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -88,4 +91,7 @@ runWithGraph = runWithGraphT >>> unwrap
 runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
-   pure $ (fromEdgeList edges × n') × a
+   let g = fromEdgeList edges
+   assert (sortBy (compare `on` fst) edges == sortBy (compare `on` fst) (toEdgeList g)) $
+      trace (showEdges (toEdgeList g)) \_ ->
+         pure $ (g × n') × a
