@@ -83,6 +83,6 @@ runWithGraphAllocT :: forall g m a. DebugWarning => Monad m => Graph g => Int ->
 runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
    let g = fromEdgeList edges
-   -- comparing edge lists requires sorting; causes stack overflow on large graph
+   -- comparing edge lists requires sorting, and causes stack overflow on large graph
    assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
       pure ((spyWhen tracing.graphCreation showGraph g × n') × a)

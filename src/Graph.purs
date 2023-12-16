@@ -103,4 +103,7 @@ derive instance Ord Vertex
 derive instance Newtype Vertex _
 
 instance Show Vertex where
-   show (Vertex α) = "Vertex " <> α
+   show = unwrap
+
+showVertices :: Set Vertex -> String
+showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `S.map` αs)) <> "}"
