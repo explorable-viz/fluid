@@ -2,9 +2,15 @@ module Test.Util.Debug where
 
 debug
    :: { logging :: Boolean
-      , checkBwdDuals :: Boolean
+      , check ::
+           { bwdDuals :: Boolean
+           , edgeListIso :: Boolean
+           }
       }
 debug =
    { logging: true
-   , checkBwdDuals: false
+   , check:
+        { bwdDuals: false
+        , edgeListIso: false
+        }
    }

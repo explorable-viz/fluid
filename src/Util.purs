@@ -57,6 +57,10 @@ assert :: ∀ a. Boolean -> a -> a
 assert true = identity
 assert false = \_ -> error "Assertion failure"
 
+assertWhen :: ∀ a. Boolean -> Boolean -> a -> a
+assertWhen false _ = identity
+assertWhen true p = assert p
+
 absurd :: String
 absurd = "absurd"
 

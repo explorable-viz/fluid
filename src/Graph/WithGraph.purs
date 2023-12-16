@@ -17,7 +17,8 @@ import Data.Traversable (class Traversable, traverse)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), fromEdgeList, toEdgeList)
 import Lattice (Raw)
-import Util (type (×), assert, (×))
+import Test.Util.Debug (debug)
+import Util (type (×), assertWhen, (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -89,7 +90,6 @@ runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT
 runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
    let g = fromEdgeList edges
-   let g' = fromEdgeList (toEdgeList g)
-   assert (g == g') $ -- comparing edge lists requires sorting, which stack-overflows on large graphs
-
+   -- comparing edge lists requires sorting; causes stack overflow on large graph
+   assertWhen debug.check.edgeListIso (g == fromEdgeList (toEdgeList g)) $
       pure ((g × n') × a)

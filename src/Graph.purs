@@ -79,6 +79,9 @@ toEdgeList g =
       Just { head: α, tail: αs } ->
          Loop (αs × (α × definitely "non-empty" (fromSet (outN g α))) : acc)
 
+showGraph :: forall g. Graph g => g -> String
+showGraph = toEdgeList >>> show
+
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _

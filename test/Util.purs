@@ -133,7 +133,7 @@ testGraph s gconfig spec@{ δv } _ = do
    let eval_dual = unwrap (dual gc)
    in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
    in2 <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
-   when debug.checkBwdDuals $
+   when debug.check.bwdDuals $
       check (in1 == in2) "Two constructions of bwd dual agree"
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
