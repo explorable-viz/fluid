@@ -82,7 +82,7 @@ toEdgeList g =
          Loop (αs × (α × definitely "non-empty" (fromSet (outN g α))) : acc)
 
 showGraph :: forall g. Graph g => g -> String
-showGraph g = "digraph G {\n" <> "rankdir = RL\n" <> joinWith "\n" edges <> "\n}"
+showGraph g = "digraph G {\n" <> joinWith "\n" ([ "rankdir = RL" ] <> edges) <> "\n}"
    where
    edges :: Array String
    edges = showEdge <$> A.fromFoldable (reverse (toEdgeList g))
