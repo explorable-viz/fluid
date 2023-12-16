@@ -1,13 +1,14 @@
 module Test.Util.Debug where
 
 debug
-   :: { logging :: Boolean -- logging to console
+   :: { logging :: Boolean -- logging via "log"; requires an effect context
       }
 
 debug =
    { logging: false
    }
 
+-- tracing via "trace"; no effect context required
 tracing
    :: { graphCreation :: Boolean
       }
