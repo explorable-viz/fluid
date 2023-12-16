@@ -2,17 +2,22 @@ module Graph where
 
 import Prelude hiding (add)
 
+--import Control.Monad.Rec.Class (Step(..), tailRec)
+import Data.Array (fromFoldable) as A
+--import Data.Array (uncons)
 import Data.Foldable (class Foldable)
-import Data.List (List, concat)
+import Data.List (List {-(..), (:)-} , concat)
 import Data.List (fromFoldable) as L
+--import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Set (Set, singleton, unions)
 import Data.Set (empty, map) as S
-import Data.Set.NonEmpty (NonEmptySet, fromSet)
+import Data.Set.NonEmpty (NonEmptySet {-, fromSet-} )
 import Dict (Dict)
-import Util (type (×), Endo, definitely, (\\), (×), (∈))
+import Util (type (×), Endo, {-definitely, -} error, (\\), (×), (∈))
 
 type Edge = Vertex × Vertex
+type HyperEdge = Vertex × NonEmptySet Vertex -- convenience for to/fromEdgeList
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
 class (Vertices g, Semigroup g) <= Graph g where
@@ -33,7 +38,7 @@ class (Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   fromEdgeList :: List (Vertex × NonEmptySet Vertex) -> g -- misnomer (actually ~hyperedges)
+   fromEdgeList :: List HyperEdge -> g
 
 newtype Vertex = Vertex String
 
@@ -64,11 +69,19 @@ inEdges' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 
-toEdgeList :: forall g. Graph g => g -> List (Vertex × NonEmptySet Vertex)
+toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
-   L.fromFoldable (vertices g \\ sinks g) <#> \α ->
-      α × definitely "non-empty" (fromSet (outN g α))
+   error $ show (A.fromFoldable (vertices g \\ sinks g))
 
+{-
+   tailRec go (A.fromFoldable (vertices g \\ sinks g) × Nil)
+   where
+   go :: Array Vertex × List HyperEdge -> Step _ (List HyperEdge)
+   go (αs' × acc) = case uncons αs' of
+      Nothing -> Done acc
+      Just { head: α, tail: αs } ->
+         Loop (αs × (α × definitely "non-empty" (fromSet (outN g α))) : acc)
+-}
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _

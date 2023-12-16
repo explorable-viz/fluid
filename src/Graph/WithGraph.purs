@@ -16,7 +16,6 @@ import Data.Set.NonEmpty (NonEmptySet, map)
 import Data.String (joinWith)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
-import Debug (trace)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), fromEdgeList, toEdgeList)
 import Lattice (Raw)
@@ -92,6 +91,6 @@ runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT
 runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
    let g = fromEdgeList edges
-   assert (sortBy (compare `on` fst) edges == sortBy (compare `on` fst) (toEdgeList g)) $
-      trace (showEdges (toEdgeList g)) \_ ->
-         pure $ (g × n') × a
+   assert (sortBy (compare `on` fst) edges == sortBy (compare `on` fst) (toEdgeList g))
+      $ pure
+      $ (g × n') × a

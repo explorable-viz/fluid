@@ -21,8 +21,9 @@ import Module (File, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
-import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, logging, recordGraphSize)
+import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
+import Test.Util.Debug (debug)
 import Util (type (×), AffError, EffectError, check, successful, (×))
 import Val (class Ann, BaseVal(..), Val(..))
 
@@ -65,7 +66,7 @@ validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
    unless (null bwd_expect) $
       checkPretty (method <> "-based bwd_expect") bwd_expect s𝔹
    unless (isGraphical v𝔹) do
-      when logging $ logAs (method <> "-based fwd ⚬ bwd") (prettyP v𝔹)
+      when debug.logging $ logAs (method <> "-based fwd ⚬ bwd") (prettyP v𝔹)
       checkPretty (method <> "-based fwd_expect") fwd_expect v𝔹
 
 traceMethod :: String
@@ -91,7 +92,7 @@ testTrace s gconfig spec@{ δv } = do
 
    let v𝔹 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
-      when logging (logAs "Selection for bwd" (prettyP v𝔹))
+      when debug.logging (logAs "Selection for bwd" (prettyP v𝔹))
       traceBenchmark "Bwd" $ \_ -> pure (eval.bwd v𝔹)
 
    { gc: GC desug𝔹, e } <- desugGC s
@@ -111,9 +112,6 @@ testTrace s gconfig spec@{ δv } = do
    PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-trip (eval ⚬ desugar)"` (unwrap >>> (_ >= v𝔹_top))
 
    validate traceMethod spec s𝔹 v𝔹'
-
-checkBwdDuals :: Boolean
-checkBwdDuals = false
 
 testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } _ = do
@@ -135,7 +133,7 @@ testGraph s gconfig spec@{ δv } _ = do
    let eval_dual = unwrap (dual gc)
    in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
    in2 <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
-   when checkBwdDuals $
+   when debug.checkBwdDuals $
       check (in1 == in2) "Two constructions of bwd dual agree"
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
