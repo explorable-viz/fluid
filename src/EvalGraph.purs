@@ -207,7 +207,7 @@ graphGC { n, γ } e = do
          αs = (selectαs e𝔹 eα ∪ unions ((selectαs <$> γ𝔹) `D.apply` γ)) ∩ vertices g0
 
       bwd :: g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      bwd g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα (vertices (bwdSlice αs g0))
+      bwd g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα βs
          where
          βs = vertices (bwdSlice αs g0)
          -- restrict to vertices g' because unused outputs won't appear in the graph

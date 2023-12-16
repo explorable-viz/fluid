@@ -5,19 +5,19 @@ import Prelude hiding (map)
 import Control.Monad.Except (class MonadError)
 import Control.Monad.State (StateT, runStateT, modify, modify_)
 import Control.Monad.Trans.Class (lift)
-import Data.Array (fromFoldable)
 import Data.Identity (Identity)
-import Data.List (List(..), range, reverse, (:))
+import Data.List (List(..), range, (:))
 import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Set.NonEmpty (NonEmptySet, map)
-import Data.String (joinWith)
+import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
+import Debug (class DebugWarning)
 import Effect.Exception (Error)
-import Graph (class Graph, Vertex(..), fromEdgeList)
+import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
-import Util (type (×), (×))
+import Test.Util.Debug (checking, tracing)
+import Util (type (×), (×), assertWhen, spyWhen)
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -33,7 +33,7 @@ class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAllo
    new :: NonEmptySet Vertex -> m Vertex
 
 -- List of adjacency map entries to serve as a fromFoldable input.
-type AdjMapEntries = List (Vertex × NonEmptySet Vertex)
+type AdjMapEntries = List HyperEdge
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
 type WithGraphAllocT m = AllocT (WithGraphT m)
@@ -58,12 +58,6 @@ instance Monad m => MonadWithGraph (WithGraphT m) where
 instance Monad m => MonadWithGraph (WithGraphAllocT m) where
    extend α = lift <<< extend α
 
-showEdges :: List (Vertex × NonEmptySet Vertex) -> String
-showEdges edges = joinWith "\n" $ showEdge <$> fromFoldable (reverse edges)
-   where
-   showEdge :: Vertex × NonEmptySet Vertex -> String
-   showEdge (α × αs) = unwrap α <> " |-> " <> joinWith ", " (fromFoldable $ unwrap `map` αs)
-
 alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
 alloc = traverse (const fresh)
 
@@ -85,7 +79,10 @@ runWithGraphT m = do
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
-runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
+runWithGraphAllocT :: forall g m a. DebugWarning => Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
-   pure $ (fromEdgeList edges × n') × a
+   let g = fromEdgeList edges
+   -- comparing edge lists requires sorting; causes stack overflow on large graph
+   assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
+      pure ((spyWhen tracing.graphCreation showGraph g × n') × a)

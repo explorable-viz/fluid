@@ -14,14 +14,14 @@ import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
 import Data.Set (Set, insert, singleton)
 import Data.Set as S
-import Data.Set.NonEmpty (NonEmptySet, toSet)
+import Data.Set.NonEmpty (toSet)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, Vertex(..), op, outN)
+import Graph (class Graph, class Vertices, Vertex(..), HyperEdge, op, outN)
 import Util (type (×), definitely, error, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
@@ -33,6 +33,9 @@ data GraphImpl = GraphImpl
    , sources :: Set Vertex
    , vertices :: Set Vertex
    }
+
+instance Eq GraphImpl where
+   eq (GraphImpl g) (GraphImpl g') = g.out == g'.out
 
 instance Semigroup GraphImpl where
    append (GraphImpl g) (GraphImpl g') = GraphImpl
@@ -81,12 +84,12 @@ addIfMissing acc (Vertex β) = do
       Nothing -> OST.poke β S.empty acc
       Just _ -> pure acc
 
-outMap :: List (Vertex × NonEmptySet Vertex) -> forall r. ST r (MutableAdjMap r)
+outMap :: List HyperEdge -> forall r. ST r (MutableAdjMap r)
 outMap α_αs = do
    out <- OST.new
    tailRecM addEdges (α_αs × out)
    where
-   addEdges :: List (Vertex × NonEmptySet Vertex) × MutableAdjMap _ -> ST _ _
+   addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : rest) × acc) = do
       ok <- OST.peek α acc <#> maybe true (\βs' -> βs' == S.empty || βs' == toSet βs)
@@ -96,12 +99,12 @@ outMap α_αs = do
       else
          error $ "Inconsistent edge information for " <> show α
 
-inMap :: List (Vertex × NonEmptySet Vertex) -> forall r. ST r (MutableAdjMap r)
+inMap :: List HyperEdge -> forall r. ST r (MutableAdjMap r)
 inMap α_αs = do
    in_ <- OST.new
    tailRecM addEdges (α_αs × in_)
    where
-   addEdges :: List (Vertex × NonEmptySet Vertex) × MutableAdjMap _ -> ST _ _
+   addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
       acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α

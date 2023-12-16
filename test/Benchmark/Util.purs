@@ -16,11 +16,9 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Graph (class Graph, size)
 import Pretty (class Pretty, prettyP)
+import Test.Util.Debug (debug)
 import Test.Util.Microtime (microtime)
 import Util (type (×), EffectError, (×))
-
-logging :: Boolean
-logging = false
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
@@ -59,11 +57,11 @@ benchmark name = benchmark' name Nothing
 
 benchmark' :: forall m a. MonadWriter BenchRow m => String -> Maybe (a -> String) -> (Unit -> m a) -> EffectError m a
 benchmark' name show_opt m = do
-   when logging $ log ("**** " <> name)
+   when debug.logging $ log ("**** " <> name)
    t1 <- preciseTime
    x <- m unit
    t2 <- preciseTime
-   when logging $
+   when debug.logging $
       case show_opt of
          Nothing -> pure unit
          Just show -> logAs name (show x)

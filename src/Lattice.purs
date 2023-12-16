@@ -113,6 +113,8 @@ instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) wher
 
 instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) where
    meet (a × a') (b × b') = meet a b × meet a' b'
+else instance (Functor f, Apply f, MeetSemilattice a) => MeetSemilattice (f a) where
+   meet a = (a `lift2 (∧)` _)
 
 instance (BoundedJoinSemilattice a, BoundedJoinSemilattice b) => BoundedJoinSemilattice (a × b) where
    bot = bot × bot
@@ -130,7 +132,7 @@ else instance (BoundedLattice (f a), Neg (f a)) => BooleanLattice (f a)
 
 instance JoinSemilattice a => JoinSemilattice (Pair a) where
    join ab = definedJoin ab
-   maybeJoin (Pair a a') (Pair b b') = Pair <$> maybeJoin a b <*> maybeJoin a' b'
+   maybeJoin (Pair a a') (Pair b b') = lift2 Pair (maybeJoin a b) (maybeJoin a' b')
 
 instance JoinSemilattice a => JoinSemilattice (List a) where
    join xs = definedJoin xs
@@ -172,7 +174,7 @@ instance (BotOf u t, Expandable t u) => Expandable (Dict t) (Dict u) where
          (kvs `D.intersectionWith expand` kvs') D.∪ ((kvs' D.\\ kvs) <#> botOf)
 
 instance Expandable t u => Expandable (List t) (List u) where
-   expand xs ys = zipWith expand xs ys
+   expand xs = zipWith expand xs
 
 instance Expandable t u => Expandable (Array t) (Array u) where
-   expand xs ys = A.zipWith expand xs ys
+   expand xs = A.zipWith expand xs

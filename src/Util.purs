@@ -19,11 +19,17 @@ import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (class Strong, (&&&), (***))
 import Data.Set as S
 import Data.Tuple (Tuple(..), fst, snd)
+import Debug (class DebugWarning, trace)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
+
+type Thunk a = Unit -> a -- similar to Lazy but without datatype
+
+force :: forall a. Thunk a -> a
+force = (_ $ unit)
 
 type 𝔹 = Boolean
 
@@ -56,6 +62,15 @@ throw = throwError <<< E.error
 assert :: ∀ a. Boolean -> a -> a
 assert true = identity
 assert false = \_ -> error "Assertion failure"
+
+assertWhen :: ∀ a. Boolean -> Thunk Boolean -> a -> a
+assertWhen false = const identity
+assertWhen true = force >>> assert
+
+-- spyWith doesn't seem to work
+spyWhen :: forall a. DebugWarning => Boolean -> (a -> String) -> Endo a
+spyWhen false _ x = x
+spyWhen true show x = trace (show x) (const x)
 
 absurd :: String
 absurd = "absurd"

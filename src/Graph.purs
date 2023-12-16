@@ -2,20 +2,27 @@ module Graph where
 
 import Prelude hiding (add)
 
+import Control.Monad.Rec.Class (Step(..), tailRec)
+import Data.Array (fromFoldable) as A
+import Data.Array (uncons)
 import Data.Foldable (class Foldable)
-import Data.List (List, concat)
+import Data.List (List(..), concat, reverse, (:))
 import Data.List (fromFoldable) as L
-import Data.Newtype (class Newtype)
+import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, singleton, unions)
 import Data.Set (empty, map) as S
-import Data.Set.NonEmpty (NonEmptySet)
+import Data.Set.NonEmpty (NonEmptySet, fromSet)
+import Data.Set.NonEmpty as NES
+import Data.String (joinWith)
 import Dict (Dict)
-import Util (Endo, (×), type (×), (∈))
+import Util (type (×), Endo, definitely, (\\), (×), (∈))
 
 type Edge = Vertex × Vertex
+type HyperEdge = Vertex × NonEmptySet Vertex -- mostly a convenience
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
-class (Vertices g, Semigroup g) <= Graph g where
+class (Eq g, Vertices g, Semigroup g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
    -- | outN and iN satisfy
@@ -33,7 +40,7 @@ class (Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   fromEdgeList :: List (Vertex × NonEmptySet Vertex) -> g
+   fromEdgeList :: List HyperEdge -> g
 
 newtype Vertex = Vertex String
 
@@ -63,6 +70,33 @@ inEdges' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 
 inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
+
+toEdgeList :: forall g. Graph g => g -> List HyperEdge
+toEdgeList g =
+   tailRec go (A.fromFoldable (vertices g \\ sinks g) × Nil)
+   where
+   go :: Array Vertex × List HyperEdge -> Step _ (List HyperEdge)
+   go (αs' × acc) = case uncons αs' of
+      Nothing -> Done acc
+      Just { head: α, tail: αs } ->
+         Loop (αs × (α × definitely "non-empty" (fromSet (outN g α))) : acc)
+
+showGraph :: forall g. Graph g => g -> String
+showGraph g =
+   joinWith "\n" $ [ "digraph G {" ] <> (indent <$> lines) <> [ "}" ]
+   where
+   lines :: Array String
+   lines = [ "rankdir = RL" ] <> edges
+
+   edges :: Array String
+   edges = showEdge <$> A.fromFoldable (reverse (toEdgeList g))
+
+   indent :: Endo String
+   indent = ("   " <> _)
+
+   showEdge :: HyperEdge -> String
+   showEdge (α × αs) =
+      unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `NES.map` αs) <> "}"
 
 derive instance Eq Vertex
 derive instance Ord Vertex

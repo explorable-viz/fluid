@@ -21,9 +21,10 @@ import Module (File, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
-import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, logging, recordGraphSize)
+import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Util (type (×), AffError, EffectError, successful, (×))
+import Test.Util.Debug (checking, debug)
+import Util (AffError, EffectError, Thunk, type (×), (×), check, successful)
 import Val (class Ann, BaseVal(..), Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -65,13 +66,13 @@ validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
    unless (null bwd_expect) $
       checkPretty (method <> "-based bwd_expect") bwd_expect s𝔹
    unless (isGraphical v𝔹) do
-      when logging $ logAs (method <> "-based fwd ⚬ bwd") (prettyP v𝔹)
+      when debug.logging $ logAs (method <> "-based fwd ⚬ bwd") (prettyP v𝔹)
       checkPretty (method <> "-based fwd_expect") fwd_expect v𝔹
 
 traceMethod :: String
 traceMethod = "T"
 
-traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> (Unit -> m a) -> EffectError m a
+traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
 traceBenchmark name = benchmark (traceMethod <> "-" <> name)
 
 graphMethod :: String
@@ -91,7 +92,7 @@ testTrace s gconfig spec@{ δv } = do
 
    let v𝔹 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
-      when logging (logAs "Selection for bwd" (prettyP v𝔹))
+      when debug.logging (logAs "Selection for bwd" (prettyP v𝔹))
       traceBenchmark "Bwd" $ \_ -> pure (eval.bwd v𝔹)
 
    { gc: GC desug𝔹, e } <- desugGC s
@@ -130,14 +131,15 @@ testGraph s gconfig spec@{ δv } _ = do
    recordGraphSize g
 
    let eval_dual = unwrap (dual gc)
-   _ <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
-   _ <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
-   -- check (e𝔹' == e𝔹'') "Two constructions of dual agree" (see #818)
+   in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
+   in2 <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
+   when checking.bwdDuals $
+      check (in1 == in2) "Two constructions of bwd dual agree"
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
    _ <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
    _ <- graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
-   -- check (v𝔹'' == v𝔹''') "Two constructions of dual agree"
+   -- check (v𝔹'' == v𝔹''') "Two constructions of fwd dual agree"
 
    _ <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
    -- check (v𝔹' == v𝔹'') "Agrees with direct fwd"
