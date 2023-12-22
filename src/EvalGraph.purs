@@ -26,7 +26,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking)
-import Util (type (×), Endo, check, concatM, error, orElse, spy, successful, throw, with, (×), (∩), (∪))
+import Util (type (×), (×), (∩), (∪), (\\), Endo, check, concatM, error, orElse, spy, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -216,7 +216,7 @@ graphGC { n, γ } e = do
          αs = selectαs v𝔹 vα ∩ vertices g0
 
    when checking.sinksAreInputs $
-      check (sinks g <= (inputs # spy "Non-input sinks" showVertices)) "Sinks are inputs"
+      check (((sinks g \\ inputs) # spy "Non-input sinks" showVertices) == Set.empty) "Sinks are inputs"
    pure
       { gc: GC { fwd: toOutput fwdSlice g, bwd: toInput bwdSlice g }
       , gc_op: GC { fwd: toInput fwdSlice (op g), bwd: toOutput bwdSlice (op g) }
