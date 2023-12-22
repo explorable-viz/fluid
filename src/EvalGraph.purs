@@ -199,9 +199,11 @@ graphGC { n, γ } e = do
          eα <- alloc e
          vα <- eval γ eα Set.empty
          pure (eα × vα)
-   let
-      inputs = vertices (γ × eα)
+   let inputs = vertices (γ × eα)
+   when checking.sinksAreInputs $
+      check ((sinks g \\ inputs) == Set.empty) "Every sink is an input"
 
+   let
       -- restrict αs to vertices g0 because unused inputs/outputs won't appear in graph
       toOutput :: (Set Vertex -> Endo g) -> g -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
       toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα βs
@@ -214,9 +216,6 @@ graphGC { n, γ } e = do
          where
          βs = vertices (slice αs g0) -- # spy "toInput result" ((_ ∩ inputs) >>> showVertices)
          αs = selectαs v𝔹 vα ∩ vertices g0
-
-   when checking.sinksAreInputs $
-      check ((sinks g \\ inputs) == Set.empty) "Every sink is an input"
    pure
       { gc: GC { fwd: toOutput fwdSlice g, bwd: toInput bwdSlice g }
       , gc_op: GC { fwd: toInput fwdSlice (op g), bwd: toOutput bwdSlice (op g) }
