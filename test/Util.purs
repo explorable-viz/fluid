@@ -144,7 +144,7 @@ testGraph s gconfig spec@{ δv } _ = do
 
    out3 <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
    when checking.naiveFwd $
-      check (out1 == out3) "Agrees with direct fwd"
+      check (out1 == out3) "Naive and direct fwd agree"
    pure unit
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).

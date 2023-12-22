@@ -5,7 +5,7 @@ debug
       }
 
 debug =
-   { logging: false
+   { logging: true
    }
 
 -- tracing via "trace"; no effect context required
@@ -36,7 +36,7 @@ checking
 
 checking =
    { bwdDuals: false
-   , fwdDuals: false
+   , fwdDuals: true
    , naiveFwd: true
    , edgeListIso: false
    , sinksAreInputs: false
