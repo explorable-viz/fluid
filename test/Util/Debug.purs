@@ -5,7 +5,7 @@ debug
       }
 
 debug =
-   { logging: false
+   { logging: true
    }
 
 -- tracing via "trace"; no effect context required
@@ -19,10 +19,10 @@ tracing
 
 tracing =
    { graphCreation: false
-   , graphBwdSliceInput: false
-   , graphBwdSliceOutput: false
-   , graphFwdSliceInput: false
-   , graphFwdSliceOutput: false
+   , graphBwdSliceInput: true
+   , graphBwdSliceOutput: true
+   , graphFwdSliceInput: true
+   , graphFwdSliceOutput: true
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
@@ -47,5 +47,5 @@ testing
 testing =
    { bwdDuals: false
    , fwdDuals: false
-   , naiveFwd: false
+   , naiveFwd: true
    }

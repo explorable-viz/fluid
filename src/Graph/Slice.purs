@@ -20,10 +20,11 @@ type PendingVertices = Map Vertex (Set Vertex)
 
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 bwdSlice αs_ g_ =
-   fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs)
+   fst (runWithGraph $ tailRecM go (empty × L.fromFoldable αs))
+      # spyWhen tracing.graphBwdSliceOutput "bwdSlice output graph" showGraph
    where
-   αs = spyWhen tracing.graphBwdSliceInput "bwdSlice input" showVertices αs_
-   g = spyWhen tracing.graphBwdSliceOutput "bwdSlice graph" showGraph g_
+   αs = αs_ # spyWhen tracing.graphBwdSliceInput "bwdSlice input αs" showVertices
+   g = g_ # spyWhen tracing.graphBwdSliceInput "bwdSlice input g" showGraph
 
    go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
    go (_ × Nil) = pure $ Done unit
@@ -41,10 +42,11 @@ bwdSlice αs_ g_ =
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs_ g_ =
-   fst $ runWithGraph $ tailRecM go (M.empty × inEdges g αs)
+   fst (runWithGraph $ tailRecM go (M.empty × inEdges g αs))
+      # spyWhen tracing.graphFwdSliceOutput "fwdSlice output graph" showGraph
    where
-   αs = spyWhen tracing.graphFwdSliceInput "fwdSlice" showVertices αs_
-   g = spyWhen tracing.graphFwdSliceOutput "fwdSlice graph" showGraph g_
+   αs = spyWhen tracing.graphFwdSliceInput "fwdSlice input αs" showVertices αs_
+   g = spyWhen tracing.graphFwdSliceInput "fwdSlice input g" showGraph g_
 
    go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
    go (h × Nil) = pure $ Done h
