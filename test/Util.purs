@@ -9,6 +9,7 @@ import Data.List (elem)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
+import Data.Tuple (snd)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
 import Effect.Exception (Error)
@@ -121,30 +122,30 @@ testGraph s gconfig spec@{ δv } _ = do
       let e = desug.fwd s
       graphBenchmark "Eval" $ \_ -> graphGC gconfig e
 
-   let v𝔹 = δv (botOf vα)
-   γ𝔹 × e𝔹 <- graphBenchmark "Bwd" $ \_ -> pure (eval.bwd v𝔹)
-   v𝔹' <- graphBenchmark "Fwd" $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹))
+   let out0 = δv (botOf vα)
+   in0 <- graphBenchmark "Bwd" $ \_ -> pure (eval.bwd out0)
+   out1 <- graphBenchmark "Fwd" $ \_ -> pure (eval.fwd in0)
 
    { gc: GC desug𝔹 } <- desugGC s
-   validate graphMethod spec (desug𝔹.bwd e𝔹) v𝔹'
-   PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
+   validate graphMethod spec (desug𝔹.bwd (snd in0)) out1
+   PrettyShow out1 `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
    recordGraphSize g
 
    let eval_dual = unwrap (dual gc)
-   in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd v𝔹)
-   in2 <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd v𝔹)
+   in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd out0)
+   in2 <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd out0)
    when checking.bwdDuals $
       check (in1 == in2) "Two constructions of bwd dual agree"
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
-   out1 <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
-   out2 <- graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
+   out2 <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd in0)
+   out3 <- graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd in0)
    when checking.fwdDuals $
-      check (out1 == out2) "Two constructions of fwd dual agree"
+      check (out2 == out3) "Two constructions of fwd dual agree"
 
-   out3 <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
+   out4 <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd in0)
    when checking.naiveFwd $
-      check (out3 == v𝔹') "Naive and direct fwd agree"
+      check (out4 == out1) "Naive and direct fwd agree"
    pure unit
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
