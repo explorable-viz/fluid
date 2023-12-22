@@ -6,7 +6,6 @@ import Bindings (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
-import Data.Either (Either(..))
 import Data.Exists (mkExists, runExists)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
 import Data.Maybe (Maybe(..))
@@ -19,7 +18,7 @@ import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict, disjointUnion, empty, get, keys, lookup)
 import Dict (fromFoldable, singleton, unzip) as D
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
@@ -161,15 +160,3 @@ eval γ (LetRec (RecDefs α ρ) e) α' = do
    let γ' = closeDefs γ ρ (α ∧ α')
    t × v <- eval (γ <+> γ') e (α ∧ α')
    pure $ T.LetRec (RecDefs unit $ erase <$> ρ) t × v
-
-eval_module :: forall a m. MonadError Error m => Ann a => Env a -> Module a -> a -> m (Env a)
-eval_module γ = go empty
-   where
-   go :: Env a -> Module a -> a -> m (Env a)
-   go γ' (Module Nil) _ = pure γ'
-   go y' (Module (Left (VarDef σ e) : ds)) α = do
-      _ × v <- eval (γ <+> y') e α
-      γ'' × _ × α' × _ <- match v σ
-      go (y' <+> γ'') (Module ds) α'
-   go γ' (Module (Right (RecDefs α ρ) : ds)) α' =
-      go (γ' <+> closeDefs (γ <+> γ') ρ (α ∧ α')) (Module ds) α'
