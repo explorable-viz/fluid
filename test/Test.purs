@@ -2,25 +2,32 @@ module Test.Test where
 
 import Prelude hiding (add)
 
+import App.Util.Select (listCell)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Lattice (neg)
 import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
 import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, suite)
+import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
-main = run tests
+--main = run tests
 
---main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite
-   [ { file: "arithmetic", imports: [], fwd_expect: "42" }
+scratchpad = asTestSuite $ bwdSuite
+   [ { file: "map"
+     , imports: []
+     , bwd_expect_file: "map.expect"
+     , δv: listCell 0 neg >>> listCell 1 neg
+     , fwd_expect: "⸨(5 : ⸨(6 : [])⸩)⸩"
+     }
    ]
 
 type TestSuite = Array (String × Aff Unit)

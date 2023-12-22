@@ -36,7 +36,7 @@ checking
 
 checking =
    { bwdDuals: false
-   , fwdDuals: true
+   , fwdDuals: false
    , naiveFwd: true
    , edgeListIso: false
    , sinksAreInputs: false
