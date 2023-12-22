@@ -85,4 +85,4 @@ runWithGraphAllocT n m = do
    let g = fromEdgeList edges
    -- comparing edge lists requires sorting, and causes stack overflow on large graph
    assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
-      pure ((spyWhen tracing.graphCreation showGraph g × n') × a)
+      pure ((spyWhen tracing.graphCreation "runWithGraphAllocT" showGraph g × n') × a)

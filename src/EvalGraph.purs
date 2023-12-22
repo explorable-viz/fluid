@@ -18,7 +18,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showVertices, sinks, vertices)
+import Graph (class Graph, Vertex, op, selectαs, select𝔹s, sinks, vertices)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Lattice (𝔹, Raw)
@@ -26,7 +26,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking)
-import Util (type (×), (×), (∩), (∪), (\\), Endo, check, concatM, error, orElse, spy, successful, throw, with)
+import Util (type (×), (×), (∩), (∪), (\\), Endo, check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -206,17 +206,17 @@ graphGC { n, γ } e = do
       toOutput :: (Set Vertex -> Endo g) -> g -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
       toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα βs
          where
-         βs = vertices (slice αs g0) # spy "toOutput result" showVertices
+         βs = vertices (slice αs g0) -- # spy "toOutput result" showVertices
          αs = selectαs (γ𝔹 × e𝔹) (γ × eα) ∩ vertices g0
 
       toInput :: (Set Vertex -> Endo g) -> g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
       toInput slice g0 v𝔹 = select𝔹s (γ × eα) βs
          where
-         βs = vertices (slice αs g0) # spy "toInput result" ((_ ∩ inputs) >>> showVertices)
+         βs = vertices (slice αs g0) -- # spy "toInput result" ((_ ∩ inputs) >>> showVertices)
          αs = selectαs v𝔹 vα ∩ vertices g0
 
    when checking.sinksAreInputs $
-      check (((sinks g \\ inputs) # spy "Non-input sinks" showVertices) == Set.empty) "Sinks are inputs"
+      check ((sinks g \\ inputs) == Set.empty) "Every sink is an input"
    pure
       { gc: GC { fwd: toOutput fwdSlice g, bwd: toInput bwdSlice g }
       , gc_op: GC { fwd: toInput fwdSlice (op g), bwd: toOutput bwdSlice (op g) }
