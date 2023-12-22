@@ -207,7 +207,7 @@ graphGC { n, γ } e = do
       toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα βs
          where
          βs = vertices (slice αs g0) # spy "toOutput result" showVertices
-         αs = (selectαs e𝔹 eα ∪ selectαs γ𝔹 γ) ∩ vertices g0
+         αs = selectαs (γ𝔹 × e𝔹) (γ × eα) ∩ vertices g0
 
       toInput :: (Set Vertex -> Endo g) -> g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
       toInput slice g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα βs
