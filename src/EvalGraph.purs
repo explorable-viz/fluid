@@ -210,7 +210,7 @@ graphGC { n, γ } e = do
          αs = selectαs (γ𝔹 × e𝔹) (γ × eα) ∩ vertices g0
 
       toInput :: (Set Vertex -> Endo g) -> g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      toInput slice g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα βs
+      toInput slice g0 v𝔹 = select𝔹s (γ × eα) βs
          where
          βs = vertices (slice αs g0) # spy "toInput result" ((_ ∩ inputs) >>> showVertices)
          αs = selectαs v𝔹 vα ∩ vertices g0
