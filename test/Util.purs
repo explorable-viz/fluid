@@ -25,7 +25,7 @@ import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Test.Util.Debug (checking, debug)
+import Test.Util.Debug (debug, testing)
 import Util (type (×), AffError, EffectError, Thunk, check, spy, successful, (×))
 import Val (class Ann, BaseVal(..), Val(..))
 
@@ -135,18 +135,18 @@ testGraph s gconfig spec@{ δv } _ = do
    let eval_dual = unwrap (dual gc)
    in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd out0)
    in2 <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd out0)
-   when checking.bwdDuals $
+   when testing.bwdDuals $
       check (in1 == in2) "Two constructions of bwd dual agree"
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
    out2 <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd in0)
    out3 <- graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd in0)
-   when checking.fwdDuals $
+   when testing.fwdDuals $
       check (out2 == out3) "Two constructions of fwd dual agree"
 
    let eval_dual_op = unwrap (dual (GC eval_op))
    out4 <- benchmark "Naive-Fwd" $ \_ -> pure (eval_dual_op.fwd in0)
-   when checking.naiveFwd $ do
+   when testing.naiveFwd $ do
       check (spy "Direct minus naive" prettyP (out1 `lift2 (-)` out4) == botOf out1) "Direct <= naive"
       check (spy "Naive minus direct" prettyP (out4 `lift2 (-)` out1) == botOf out1) "Naive <= direct"
    --      check (out4 == out1) "Naive and direct fwd agree"

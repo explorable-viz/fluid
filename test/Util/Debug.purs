@@ -5,7 +5,7 @@ debug
       }
 
 debug =
-   { logging: true
+   { logging: false
    }
 
 -- tracing via "trace"; no effect context required
@@ -25,19 +25,27 @@ tracing =
    , graphFwdSliceOutput: false
    }
 
--- TODO: partition into properties we want to test all the time vs. debug-only properties
-checking
-   :: { bwdDuals :: Boolean
-      , fwdDuals :: Boolean
-      , naiveFwd :: Boolean
-      , edgeListIso :: Boolean
+-- Invariants that are potentially expensive to check and that we might want to disable in production,
+-- that are not covered explicitly by tests.
+asserting
+   :: { edgeListIso :: Boolean
       , sinksAreInputs :: Boolean
       }
 
-checking =
+asserting =
+   { edgeListIso: false
+   , sinksAreInputs: false
+   }
+
+-- Ideally, should always be true, and only disabled when there are specific outstanding problems.
+testing
+   :: { bwdDuals :: Boolean
+      , fwdDuals :: Boolean
+      , naiveFwd :: Boolean
+      }
+
+testing =
    { bwdDuals: false
    , fwdDuals: false
-   , naiveFwd: true
-   , edgeListIso: false
-   , sinksAreInputs: false
+   , naiveFwd: false
    }
