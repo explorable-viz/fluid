@@ -143,7 +143,8 @@ testGraph s gconfig spec@{ δv } _ = do
    when checking.fwdDuals $
       check (out2 == out3) "Two constructions of fwd dual agree"
 
-   out4 <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd in0)
+   let eval_dual_op = unwrap (dual (GC eval_op))
+   out4 <- benchmark "Naive-Fwd" $ \_ -> pure (eval_dual_op.fwd in0)
    when checking.naiveFwd $
       check (out4 == out1) "Naive and direct fwd agree"
    pure unit
