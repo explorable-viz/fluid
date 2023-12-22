@@ -16,7 +16,8 @@ import Data.Set.NonEmpty (NonEmptySet, fromSet)
 import Data.Set.NonEmpty as NES
 import Data.String (joinWith)
 import Dict (Dict)
-import Util (type (×), Endo, definitely, (\\), (×), (∈))
+import Dict (apply) as D
+import Util (type (×), (\\), (×), (∈), (∪), Endo, definitely)
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × NonEmptySet Vertex -- mostly a convenience
@@ -47,14 +48,31 @@ newtype Vertex = Vertex String
 class Vertices a where
    vertices :: a -> Set Vertex
 
+class Selectαs a b | a -> b where
+   selectαs :: a -> b -> Set Vertex
+
 instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
+else instance (Vertices a, Vertices b) => Vertices (a × b) where
+   vertices (a × b) = vertices a ∪ vertices b
 
 instance (Functor f, Foldable f) => Vertices (Dict (f Vertex)) where
    vertices = (vertices <$> _) >>> unions
 
-selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
-selectαs v𝔹 vα = unions ((if _ then singleton else const S.empty) <$> v𝔹 <*> vα)
+instance (Apply f, Foldable f) => Selectαs (f Boolean) (f Vertex) where
+   selectαs v𝔹 vα = unions ((if _ then singleton else const S.empty) <$> v𝔹 <*> vα)
+
+instance
+   ( Apply f
+   , Foldable f
+   , Apply g
+   , Foldable g
+   ) =>
+   Selectαs (f Boolean × g Boolean) (f Vertex × g Vertex) where
+   selectαs (v𝔹 × v𝔹') (vα × vα') = selectαs v𝔹 vα ∪ selectαs v𝔹' vα'
+
+instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f Boolean)) (Dict (f Vertex)) where
+   selectαs γ𝔹 γα = unions ((selectαs <$> γ𝔹) `D.apply` γα)
 
 select𝔹s :: forall f. Functor f => f Vertex -> Set Vertex -> f Boolean
 select𝔹s vα αs = (_ ∈ αs) <$> vα

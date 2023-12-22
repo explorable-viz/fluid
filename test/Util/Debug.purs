@@ -17,12 +17,15 @@ tracing =
    { graphCreation: false
    }
 
+-- TODO: partition into properties we want to test all the time vs. debug-only properties
 checking
    :: { bwdDuals :: Boolean
       , edgeListIso :: Boolean
+      , sinksAreInputs :: Boolean
       }
 
 checking =
-   { bwdDuals: true
+   { bwdDuals: false
    , edgeListIso: false
+   , sinksAreInputs: true
    }

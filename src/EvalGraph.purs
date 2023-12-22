@@ -8,23 +8,24 @@ import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Set (Set, empty, insert, unions)
+import Data.Set (Set, empty, insert)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet, cons, singleton)
 import Data.Traversable (for, sequence, traverse)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
-import Dict (apply, disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
+import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showVertices, vertices)
+import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showVertices, sinks, vertices)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
+import Test.Util.Debug (checking)
 import Util (type (×), Endo, check, concatM, error, orElse, spy, successful, throw, with, (×), (∩), (∪))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
@@ -193,29 +194,34 @@ graphGC
    -> Raw Expr
    -> m (GraphEval g)
 graphGC { n, γ } e = do
-   (g' × _) × eα × vα <-
+   (g × _) × eα × vα <-
       runWithGraphAllocT n do
          eα <- alloc e
          vα <- eval γ eα Set.empty
          pure (eα × vα)
    let
-      -- restrict to vertices g0 because unused inputs/outputs won't appear in graph
+      inputs = vertices (γ × eα)
+
+      -- restrict αs to vertices g0 because unused inputs/outputs won't appear in graph
       toOutput :: (Set Vertex -> Endo g) -> g -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
       toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα βs
          where
-         βs = spy "result" showVertices $ vertices (slice αs g0)
-         αs = (selectαs e𝔹 eα ∪ unions ((selectαs <$> γ𝔹) `D.apply` γ)) ∩ vertices g0
+         βs = vertices (slice αs g0) # spy "toOutput result" showVertices
+         αs = (selectαs e𝔹 eα ∪ selectαs γ𝔹 γ) ∩ vertices g0
 
       toInput :: (Set Vertex -> Endo g) -> g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
       toInput slice g0 v𝔹 = (flip select𝔹s βs <$> γ) × select𝔹s eα βs
          where
-         βs = spy "result" showVertices $ vertices (slice αs g0)
+         βs = vertices (slice αs g0) # spy "toInput result" ((_ ∩ inputs) >>> showVertices)
          αs = selectαs v𝔹 vα ∩ vertices g0
+
+   when checking.sinksAreInputs $
+      check (sinks g <= (inputs # spy "Non-input sinks" showVertices)) "Sinks are inputs"
    pure
-      { gc: GC { fwd: toOutput fwdSlice g', bwd: toInput bwdSlice g' }
-      , gc_op: GC { fwd: toInput fwdSlice (op g'), bwd: toOutput bwdSlice (op g') }
+      { gc: GC { fwd: toOutput fwdSlice g, bwd: toInput bwdSlice g }
+      , gc_op: GC { fwd: toInput fwdSlice (op g), bwd: toOutput bwdSlice (op g) }
       , γα: γ
       , eα
-      , g: g'
+      , g
       , vα
       }
