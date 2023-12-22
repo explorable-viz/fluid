@@ -29,6 +29,7 @@ tracing =
 checking
    :: { bwdDuals :: Boolean
       , fwdDuals :: Boolean
+      , naiveFwd :: Boolean
       , edgeListIso :: Boolean
       , sinksAreInputs :: Boolean
       }
@@ -36,6 +37,7 @@ checking
 checking =
    { bwdDuals: false
    , fwdDuals: true
+   , naiveFwd: true
    , edgeListIso: false
    , sinksAreInputs: false
    }
