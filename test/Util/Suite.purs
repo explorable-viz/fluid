@@ -53,8 +53,8 @@ suite :: Array TestSpec -> BenchSuite
 suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
-   asTest { file, fwd_expect } = do
-      gconfig <- prelude >>= initialConfig
+   asTest { imports, file, fwd_expect } = do
+      gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
       test (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite

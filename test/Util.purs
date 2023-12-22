@@ -1,7 +1,8 @@
 module Test.Util where
 
-import Prelude hiding (absurd)
+import Prelude hiding ((-), absurd)
 
+import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -17,7 +18,7 @@ import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), dual)
 import Graph.GraphImpl (GraphImpl)
-import Lattice (Raw, 𝔹, botOf, erase, expand, topOf)
+import Lattice (Raw, 𝔹, (-), botOf, erase, expand, topOf)
 import Module (File, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
@@ -25,7 +26,7 @@ import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
 import Test.Util.Debug (checking, debug)
-import Util (AffError, EffectError, Thunk, type (×), (×), check, successful)
+import Util (type (×), AffError, EffectError, Thunk, check, spy, successful, (×))
 import Val (class Ann, BaseVal(..), Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -145,8 +146,10 @@ testGraph s gconfig spec@{ δv } _ = do
 
    let eval_dual_op = unwrap (dual (GC eval_op))
    out4 <- benchmark "Naive-Fwd" $ \_ -> pure (eval_dual_op.fwd in0)
-   when checking.naiveFwd $
-      check (out4 == out1) "Naive and direct fwd agree"
+   when checking.naiveFwd $ do
+      check (spy "Direct minus naive" prettyP (out1 `lift2 (-)` out4) == botOf out1) "Direct <= naive"
+      check (spy "Naive minus direct" prettyP (out4 `lift2 (-)` out1) == botOf out1) "Naive <= direct"
+   --      check (out4 == out1) "Naive and direct fwd agree"
    pure unit
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
