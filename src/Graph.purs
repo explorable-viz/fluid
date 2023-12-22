@@ -16,7 +16,8 @@ import Data.Set.NonEmpty (NonEmptySet, fromSet)
 import Data.Set.NonEmpty as NES
 import Data.String (joinWith)
 import Dict (Dict)
-import Util (type (×), Endo, definitely, (\\), (×), (∈))
+import Dict (apply) as D
+import Util (type (×), (\\), (×), (∈), (∪), Endo, definitely)
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × NonEmptySet Vertex -- mostly a convenience
@@ -47,17 +48,28 @@ newtype Vertex = Vertex String
 class Vertices a where
    vertices :: a -> Set Vertex
 
+class Selectαs a b | a -> b where
+   selectαs :: a -> b -> Set Vertex
+   select𝔹s :: b -> Set Vertex -> a
+
 instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
+else instance (Vertices a, Vertices b) => Vertices (a × b) where
+   vertices (a × b) = vertices a ∪ vertices b
 
 instance (Functor f, Foldable f) => Vertices (Dict (f Vertex)) where
    vertices = (vertices <$> _) >>> unions
 
-selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
-selectαs v𝔹 vα = unions ((if _ then singleton else const S.empty) <$> v𝔹 <*> vα)
+instance (Apply f, Foldable f) => Selectαs (f Boolean) (f Vertex) where
+   selectαs v𝔹 vα = unions ((if _ then singleton else const S.empty) <$> v𝔹 <*> vα)
+   select𝔹s vα αs = (_ ∈ αs) <$> vα
+else instance (Selectαs a b, Selectαs a' b') => Selectαs (a × a') (b × b') where
+   selectαs (v𝔹 × v𝔹') (vα × vα') = selectαs v𝔹 vα ∪ selectαs v𝔹' vα'
+   select𝔹s (vα × vα') αs = select𝔹s vα αs × select𝔹s vα' αs
 
-select𝔹s :: forall f. Functor f => f Vertex -> Set Vertex -> f Boolean
-select𝔹s vα αs = (_ ∈ αs) <$> vα
+instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f Boolean)) (Dict (f Vertex)) where
+   selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) `D.apply` dα)
+   select𝔹s dα αs = flip select𝔹s αs <$> dα
 
 outEdges' :: forall g. Graph g => g -> Vertex -> List Edge
 outEdges' g α = L.fromFoldable $ S.map (α × _) (outN g α)
@@ -103,4 +115,7 @@ derive instance Ord Vertex
 derive instance Newtype Vertex _
 
 instance Show Vertex where
-   show (Vertex α) = "Vertex " <> α
+   show = unwrap
+
+showVertices :: Set Vertex -> String
+showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `S.map` αs)) <> "}"

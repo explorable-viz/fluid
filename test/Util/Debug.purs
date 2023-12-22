@@ -11,18 +11,29 @@ debug =
 -- tracing via "trace"; no effect context required
 tracing
    :: { graphCreation :: Boolean
+      , graphBwdSliceInput :: Boolean
+      , graphBwdSliceOutput :: Boolean
+      , graphFwdSliceInput :: Boolean
+      , graphFwdSliceOutput :: Boolean
       }
 
 tracing =
    { graphCreation: false
+   , graphBwdSliceInput: false
+   , graphBwdSliceOutput: false
+   , graphFwdSliceInput: false
+   , graphFwdSliceOutput: false
    }
 
+-- TODO: partition into properties we want to test all the time vs. debug-only properties
 checking
    :: { bwdDuals :: Boolean
       , edgeListIso :: Boolean
+      , sinksAreInputs :: Boolean
       }
 
 checking =
    { bwdDuals: false
    , edgeListIso: false
+   , sinksAreInputs: false
    }

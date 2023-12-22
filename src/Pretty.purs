@@ -20,8 +20,8 @@ import Dict (Dict)
 import Dict (toUnfoldable) as D
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
-import Graph (Vertex(..))
-import Graph.GraphImpl (GraphImpl(..))
+import Graph (Vertex(..), showGraph)
+import Graph.GraphImpl (GraphImpl)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
@@ -429,13 +429,7 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
 
 instance Pretty GraphImpl where
-   pretty (GraphImpl g) =
-      text "GraphImpl \n  " .<>.
-         atop
-            ( text "{\n" .<>.
-                 atop (text "OUT: " .<>. pretty g.out) (text "IN: " .<>. pretty g.in)
-            )
-            (text "}")
+   pretty = showGraph >>> text
 
 instance Pretty (S.Set Vertex) where
    pretty αs = curlyBraces (hcomma (text <<< unwrap <$> (S.toUnfoldable αs :: List Vertex)))
