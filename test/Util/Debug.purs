@@ -28,12 +28,14 @@ tracing =
 -- TODO: partition into properties we want to test all the time vs. debug-only properties
 checking
    :: { bwdDuals :: Boolean
+      , fwdDuals :: Boolean
       , edgeListIso :: Boolean
       , sinksAreInputs :: Boolean
       }
 
 checking =
    { bwdDuals: false
+   , fwdDuals: true
    , edgeListIso: false
    , sinksAreInputs: false
    }

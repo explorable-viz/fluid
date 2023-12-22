@@ -137,9 +137,10 @@ testGraph s gconfig spec@{ δv } _ = do
       check (in1 == in2) "Two constructions of bwd dual agree"
    void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
 
-   _ <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
-   _ <- graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
-   -- check (v𝔹'' == v𝔹''') "Two constructions of fwd dual agree"
+   out1 <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd (γ𝔹 × e𝔹))
+   out2 <- graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd (γ𝔹 × e𝔹))
+   when checking.fwdDuals $
+      check (out1 == out2) "Two constructions of fwd dual agree"
 
    _ <- benchmark "Naive-Fwd" $ \_ -> pure ((unwrap (dual (GC eval_op))).fwd (γ𝔹 × e𝔹))
    -- check (v𝔹' == v𝔹'') "Agrees with direct fwd"
