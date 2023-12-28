@@ -12,6 +12,7 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (snd)
 import DataType (dataTypeFor, typeName)
+import Debug (class DebugWarning)
 import Desug (desugGC)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
@@ -37,7 +38,7 @@ type SelectionSpec =
    , bwd_expect :: String
    }
 
-test ∷ forall m. File -> GraphConfig GraphImpl -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test ∷ DebugWarning => forall m. File -> GraphConfig GraphImpl -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file gconfig spec (n × benchmarking) = do
    s <- open file
    testPretty s
@@ -115,7 +116,7 @@ testTrace s gconfig spec@{ δv } = do
 
    validate traceMethod spec s𝔹 v𝔹'
 
-testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
+testGraph :: DebugWarning => forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } _ = do
 
    { gc: gc@(GC eval), gc_op: GC eval_op, g, vα } <- do
