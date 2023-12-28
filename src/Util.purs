@@ -59,6 +59,16 @@ shapeMismatch _ = error "Shape mismatch"
 throw :: forall m a. MonadThrow Error m => String -> m a
 throw = throwError <<< E.error
 
+debug
+   :: { logging :: Boolean -- logging via "log"; requires an effect context
+      , tracing :: Boolean -- global flag, overriding individual tracing flags
+      }
+
+debug =
+   { logging: true
+   , tracing: true
+   }
+
 assert :: ∀ a. Boolean -> a -> a
 assert true = identity
 assert false = \_ -> error "Assertion failure"

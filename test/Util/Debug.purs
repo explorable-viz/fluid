@@ -1,13 +1,5 @@
 module Test.Util.Debug where
 
-debug
-   :: { logging :: Boolean -- logging via "log"; requires an effect context
-      }
-
-debug =
-   { logging: true
-   }
-
 -- tracing via "trace"; no effect context required
 tracing
    :: { graphCreation :: Boolean
@@ -37,7 +29,7 @@ checking =
    , sinksAreInputs: false
    }
 
--- Ideally, should always be true, and only disabled when there are specific outstanding problems.
+-- Should always be true, except when there are specific outstanding problems.
 testing
    :: { bwdDuals :: Boolean
       , fwdDuals :: Boolean
@@ -47,5 +39,5 @@ testing
 testing =
    { bwdDuals: false
    , fwdDuals: false
-   , naiveFwd: true
+   , naiveFwd: false
    }

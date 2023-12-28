@@ -25,8 +25,8 @@ import Pretty (class Pretty, PrettyShow(..), prettyP)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Test.Util.Debug (debug, testing)
-import Util (type (×), AffError, EffectError, Thunk, check, spy, successful, (×))
+import Test.Util.Debug (testing)
+import Util (type (×), AffError, EffectError, Thunk, check, debug, spy, successful, (×))
 import Val (class Ann, BaseVal(..), Val(..))
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
