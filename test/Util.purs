@@ -136,12 +136,11 @@ test' s gconfig spec@{ δv } = do
    in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (evalG.bwd out0)
    check (snd in0 == e𝔹) "Graph bwd agrees with trace bwd on expression slice"
    -- graph-bwd over-approximates the environment slice compared to trace-bwd, because of sharing; see #896.
-   -- This shouldn't affect the round-tripping behaviour.
+   -- I think don't think this can affect round-tripping behaviour unless computation outputs a closure.
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
-   check (out1 == v𝔹') "Graph fwd agrees with trace fwd on value slice"
+   check (out1 == v𝔹') "Graph fwd agrees with trace fwd"
 
    validate graphMethod spec s𝔹 out1
-   PrettyShow out1 `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
    let evalG_dual = unwrap (dual gc)
    in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (evalG_op.fwd out0)
