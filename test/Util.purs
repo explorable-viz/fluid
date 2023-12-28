@@ -38,14 +38,10 @@ type SelectionSpec =
    }
 
 test ∷ forall m. File -> GraphConfig GraphImpl -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
-test file gconfig spec (n × benchmarking) = do
+test file gconfig spec (n × _) = do
    s <- open file
    testPretty s
-   _ × row_accum <- runWriterT
-      ( replicateM n $ do
-           testTrace s gconfig spec
-           testGraph s gconfig spec benchmarking
-      )
+   _ × row_accum <- runWriterT (replicateM n (test' s gconfig spec))
    pure $ row_accum `divRow` n
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
@@ -107,62 +103,56 @@ benchNames =
    , fwdDlCmp: "FwdDlCmp"
    }
 
-testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
-testTrace s gconfig spec@{ δv } = do
+test' :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
+test' s gconfig spec@{ δv } = do
    { gc: GC desug, e } <- desugGC s
    { gc: GC evalT, v } <- do
       let γ = erase <$> gconfig.γ
       traceBenchmark benchNames.eval $ \_ -> traceGC γ e
 
-   let v𝔹 = δv (botOf v)
+   let out0 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
-      when debug.logging (logAs "Selection for bwd" (prettyP v𝔹))
-      traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd v𝔹)
+      when debug.logging (logAs "Selection for bwd" (prettyP out0))
+      traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd out0)
 
    let s𝔹 = desug.bwd e𝔹
    v𝔹' <- do
       let e𝔹' = desug.fwd s𝔹
       PrettyShow e𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= expand e𝔹 e))
       traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd (γ𝔹 × e𝔹'))
-   PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
+   PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
    let v𝔹_top = evalT.fwd ((topOf <$> gconfig.γ) × topOf e)
    PrettyShow v𝔹_top `shouldSatisfy "fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
    validate traceMethod spec s𝔹 v𝔹'
 
-testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
-testGraph s gconfig spec@{ δv } _ = do
-
-   { gc: gc@(GC eval), gc_op: GC eval_op, g, vα } <- do
-      { gc: GC desug } <- desugGC s
-      let e = desug.fwd s
+   { gc: gc@(GC evalG), gc_op: GC evalG_op, g, vα } <- do
       graphBenchmark benchNames.eval $ \_ -> graphGC gconfig e
 
    recordGraphSize g
 
-   let out0 = δv (botOf vα)
-   in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (eval.bwd out0)
-   out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (eval.fwd in0)
+   in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (evalG.bwd out0)
+   out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
 
    { gc: GC desug𝔹 } <- desugGC s
    validate graphMethod spec (desug𝔹.bwd (snd in0)) out1
    PrettyShow out1 `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
-   let eval_dual = unwrap (dual gc)
-   in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (eval_op.fwd out0)
-   in2 <- graphBenchmark benchNames.bwdDlCmp $ \_ -> pure (eval_dual.fwd out0)
+   let evalG_dual = unwrap (dual gc)
+   in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (evalG_op.fwd out0)
+   in2 <- graphBenchmark benchNames.bwdDlCmp $ \_ -> pure (evalG_dual.fwd out0)
    when testing.bwdDuals $
       check (in1 == in2) "Two constructions of bwd dual agree"
-   void $ graphBenchmark benchNames.bwdAll $ \_ -> pure (eval.bwd (topOf vα))
+   void $ graphBenchmark benchNames.bwdAll $ \_ -> pure (evalG.bwd (topOf vα))
 
-   out2 <- graphBenchmark benchNames.fwdDlBwdOp $ \_ -> pure (eval_op.bwd in0)
-   out3 <- graphBenchmark benchNames.fwdDlCmp $ \_ -> pure (eval_dual.bwd in0)
+   out2 <- graphBenchmark benchNames.fwdDlBwdOp $ \_ -> pure (evalG_op.bwd in0)
+   out3 <- graphBenchmark benchNames.fwdDlCmp $ \_ -> pure (evalG_dual.bwd in0)
    when testing.fwdDuals $
       check (out2 == out3) "Two constructions of fwd dual agree"
 
-   let eval_dual_op = unwrap (dual (GC eval_op))
-   out4 <- benchmark benchNames.naiveFwd $ \_ -> pure (eval_dual_op.fwd in0)
+   let evalG_dual_op = unwrap (dual (GC evalG_op))
+   out4 <- benchmark benchNames.naiveFwd $ \_ -> pure (evalG_dual_op.fwd in0)
    when testing.naiveFwd $ do
       check (spy "Direct minus naive" prettyP (out1 `lift2 (-)` out4) == botOf out1) "Direct <= naive"
       check (spy "Naive minus direct" prettyP (out4 `lift2 (-)` out1) == botOf out1) "Naive <= direct"
