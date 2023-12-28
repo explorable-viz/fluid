@@ -138,7 +138,7 @@ test' s gconfig spec@{ δv } = do
    -- corresponding property on environment doesn't hold; see #896
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
 
-   validate graphMethod spec (desug.bwd (snd in0)) out1
+   validate graphMethod spec s𝔹 out1
    PrettyShow out1 `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
    let evalG_dual = unwrap (dual gc)
