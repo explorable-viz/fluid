@@ -25,7 +25,7 @@ import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
-import Test.Util.Debug (asserting)
+import Test.Util.Debug (checking)
 import Util (type (×), (×), (∩), (∪), (\\), Endo, check, concatM, error, orElse, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
@@ -200,7 +200,7 @@ graphGC { n, γ } e = do
          vα <- eval γ eα Set.empty
          pure (eα × vα)
    let inputs = vertices (γ × eα)
-   when asserting.sinksAreInputs $
+   when checking.sinksAreInputs $
       check ((sinks g \\ inputs) == Set.empty) "Every sink is an input"
 
    let

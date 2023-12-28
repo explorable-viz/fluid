@@ -12,11 +12,10 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
-import Debug (class DebugWarning)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
-import Test.Util.Debug (asserting, tracing)
+import Test.Util.Debug (checking, tracing)
 import Util (type (×), (×), assertWhen, spyWhen)
 
 class Monad m <= MonadWithGraph m where
@@ -79,10 +78,10 @@ runWithGraphT m = do
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
-runWithGraphAllocT :: forall g m a. DebugWarning => Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
+runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT n m = do
    (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
    let g = fromEdgeList edges
    -- comparing edge lists requires sorting, and causes stack overflow on large graph
-   assertWhen asserting.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
+   assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
       pure ((spyWhen tracing.graphCreation "runWithGraphAllocT" showGraph g × n') × a)

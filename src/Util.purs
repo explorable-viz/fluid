@@ -19,7 +19,7 @@ import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (class Strong, (&&&), (***))
 import Data.Set as S
 import Data.Tuple (Tuple(..), fst, snd)
-import Debug (class DebugWarning, trace)
+import Debug (trace)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, message)
@@ -68,12 +68,12 @@ assertWhen false = const identity
 assertWhen true = force >>> assert
 
 -- Debug.spyWith doesn't seem to work
-spyWhen :: forall a. DebugWarning => Boolean -> String -> (a -> String) -> Endo a
+spyWhen :: forall a. Boolean -> String -> (a -> String) -> Endo a
 spyWhen false _ _ x = x
 spyWhen true msg show x = trace (msg <> ": " <> show x) (const x)
 
 -- Prefer this to Debug.spy (similar to spyWith).
-spy :: forall a. DebugWarning => String -> (a -> String) -> Endo a
+spy :: forall a. String -> (a -> String) -> Endo a
 spy = spyWhen true
 
 absurd :: String

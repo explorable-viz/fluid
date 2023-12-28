@@ -27,12 +27,12 @@ tracing =
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
 -- that are not covered explicitly by tests.
-asserting
+checking
    :: { edgeListIso :: Boolean
       , sinksAreInputs :: Boolean
       }
 
-asserting =
+checking =
    { edgeListIso: false
    , sinksAreInputs: false
    }

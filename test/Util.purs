@@ -12,7 +12,6 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (snd)
 import DataType (dataTypeFor, typeName)
-import Debug (class DebugWarning)
 import Desug (desugGC)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
@@ -38,7 +37,7 @@ type SelectionSpec =
    , bwd_expect :: String
    }
 
-test ∷ DebugWarning => forall m. File -> GraphConfig GraphImpl -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test ∷ forall m. File -> GraphConfig GraphImpl -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file gconfig spec (n × benchmarking) = do
    s <- open file
    testPretty s
@@ -116,13 +115,15 @@ testTrace s gconfig spec@{ δv } = do
 
    validate traceMethod spec s𝔹 v𝔹'
 
-testGraph :: DebugWarning => forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
+testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
 testGraph s gconfig spec@{ δv } _ = do
 
    { gc: gc@(GC eval), gc_op: GC eval_op, g, vα } <- do
       { gc: GC desug } <- desugGC s
       let e = desug.fwd s
       graphBenchmark "Eval" $ \_ -> graphGC gconfig e
+
+   recordGraphSize g
 
    let out0 = δv (botOf vα)
    in0 <- graphBenchmark "Bwd" $ \_ -> pure (eval.bwd out0)
@@ -131,7 +132,6 @@ testGraph s gconfig spec@{ δv } _ = do
    { gc: GC desug𝔹 } <- desugGC s
    validate graphMethod spec (desug𝔹.bwd (snd in0)) out1
    PrettyShow out1 `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
-   recordGraphSize g
 
    let eval_dual = unwrap (dual gc)
    in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd out0)
@@ -151,7 +151,6 @@ testGraph s gconfig spec@{ δv } _ = do
       check (spy "Direct minus naive" prettyP (out1 `lift2 (-)` out4) == botOf out1) "Direct <= naive"
       check (spy "Naive minus direct" prettyP (out4 `lift2 (-)` out1) == botOf out1) "Naive <= direct"
    --      check (out4 == out1) "Naive and direct fwd agree"
-   pure unit
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
