@@ -83,6 +83,30 @@ graphMethod = "G"
 graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> (Unit -> m a) -> EffectError m a
 graphBenchmark name = benchmark (graphMethod <> "-" <> name)
 
+benchNames
+   :: { eval :: String
+      , bwd :: String
+      , fwd :: String
+      , bwdDlFwdOp :: String
+      , bwdDlCmp :: String
+      , bwdAll :: String
+      , naiveFwd :: String
+      , fwdDlBwdOp :: String
+      , fwdDlCmp :: String
+      }
+
+benchNames =
+   { eval: "Eval"
+   , bwd: "Bwd"
+   , fwd: "Fwd"
+   , bwdDlFwdOp: "BwdDlFwdOp"
+   , bwdDlCmp: "BwdDlCmp"
+   , bwdAll: "BwdAll"
+   , naiveFwd: "Naive-Fwd"
+   , fwdDlBwdOp: "FwdDlBwdOp"
+   , fwdDlCmp: "FwdDlCmp"
+   }
+
 testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
 testTrace s gconfig spec@{ δv } = do
    { gc: GC eval, v } <- do
@@ -90,19 +114,19 @@ testTrace s gconfig spec@{ δv } = do
       let
          e = desug.fwd s
          γ = erase <$> gconfig.γ
-      traceBenchmark "Eval" $ \_ -> traceGC γ e
+      traceBenchmark benchNames.eval $ \_ -> traceGC γ e
 
    let v𝔹 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
       when debug.logging (logAs "Selection for bwd" (prettyP v𝔹))
-      traceBenchmark "Bwd" $ \_ -> pure (eval.bwd v𝔹)
+      traceBenchmark benchNames.bwd $ \_ -> pure (eval.bwd v𝔹)
 
    { gc: GC desug𝔹, e } <- desugGC s
    let s𝔹 = desug𝔹.bwd e𝔹
    v𝔹' <- do
       let e𝔹' = desug𝔹.fwd s𝔹
       PrettyShow e𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= expand e𝔹 e))
-      traceBenchmark "Fwd" $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹'))
+      traceBenchmark benchNames.fwd $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹'))
    PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
 
    let
@@ -121,36 +145,37 @@ testGraph s gconfig spec@{ δv } _ = do
    { gc: gc@(GC eval), gc_op: GC eval_op, g, vα } <- do
       { gc: GC desug } <- desugGC s
       let e = desug.fwd s
-      graphBenchmark "Eval" $ \_ -> graphGC gconfig e
+      graphBenchmark benchNames.eval $ \_ -> graphGC gconfig e
 
    recordGraphSize g
 
    let out0 = δv (botOf vα)
-   in0 <- graphBenchmark "Bwd" $ \_ -> pure (eval.bwd out0)
-   out1 <- graphBenchmark "Fwd" $ \_ -> pure (eval.fwd in0)
+   in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (eval.bwd out0)
+   out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (eval.fwd in0)
 
    { gc: GC desug𝔹 } <- desugGC s
    validate graphMethod spec (desug𝔹.bwd (snd in0)) out1
    PrettyShow out1 `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
    let eval_dual = unwrap (dual gc)
-   in1 <- graphBenchmark "BwdDlFwdOp" $ \_ -> pure (eval_op.fwd out0)
-   in2 <- graphBenchmark "BwdDlCmp" $ \_ -> pure (eval_dual.fwd out0)
+   in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (eval_op.fwd out0)
+   in2 <- graphBenchmark benchNames.bwdDlCmp $ \_ -> pure (eval_dual.fwd out0)
    when testing.bwdDuals $
       check (in1 == in2) "Two constructions of bwd dual agree"
-   void $ graphBenchmark "BwdAll" $ \_ -> pure (eval.bwd (topOf vα))
+   void $ graphBenchmark benchNames.bwdAll $ \_ -> pure (eval.bwd (topOf vα))
 
-   out2 <- graphBenchmark "FwdDlBwdOp" $ \_ -> pure (eval_op.bwd in0)
-   out3 <- graphBenchmark "FwdDlCmp" $ \_ -> pure (eval_dual.bwd in0)
+   out2 <- graphBenchmark benchNames.fwdDlBwdOp $ \_ -> pure (eval_op.bwd in0)
+   out3 <- graphBenchmark benchNames.fwdDlCmp $ \_ -> pure (eval_dual.bwd in0)
    when testing.fwdDuals $
       check (out2 == out3) "Two constructions of fwd dual agree"
 
    let eval_dual_op = unwrap (dual (GC eval_op))
-   out4 <- benchmark "Naive-Fwd" $ \_ -> pure (eval_dual_op.fwd in0)
+   out4 <- benchmark benchNames.naiveFwd $ \_ -> pure (eval_dual_op.fwd in0)
    when testing.naiveFwd $ do
       check (spy "Direct minus naive" prettyP (out1 `lift2 (-)` out4) == botOf out1) "Direct <= naive"
       check (spy "Naive minus direct" prettyP (out4 `lift2 (-)` out1) == botOf out1) "Naive <= direct"
-   --      check (out4 == out1) "Naive and direct fwd agree"
+
+--      check (out4 == out1) "Naive and direct fwd agree"
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
