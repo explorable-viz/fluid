@@ -10,7 +10,7 @@ import Data.List (elem)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
-import Data.Tuple (snd)
+import Data.Tuple (fst, snd)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
 import Effect.Exception (Error)
@@ -134,7 +134,8 @@ test' s gconfig spec@{ δv } = do
    recordGraphSize g
 
    in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (evalG.bwd out0)
-   check (in0 == γ𝔹 × e𝔹) "Graph bwd agrees with trace bwd"
+   check (snd in0 == e𝔹) "Graph bwd agrees with trace bwd on expression"
+   check (fst in0 == γ𝔹) "Graph bwd agrees with trace bwd on environment"
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
 
    { gc: GC desug𝔹 } <- desugGC s
