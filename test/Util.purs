@@ -110,29 +110,24 @@ benchNames =
 testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
 testTrace s gconfig spec@{ δv } = do
    { gc: GC desug, e } <- desugGC s
-   { gc: GC eval, v } <- do
+   { gc: GC evalT, v } <- do
       let γ = erase <$> gconfig.γ
       traceBenchmark benchNames.eval $ \_ -> traceGC γ e
 
    let v𝔹 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
       when debug.logging (logAs "Selection for bwd" (prettyP v𝔹))
-      traceBenchmark benchNames.bwd $ \_ -> pure (eval.bwd v𝔹)
+      traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd v𝔹)
 
    let s𝔹 = desug.bwd e𝔹
    v𝔹' <- do
       let e𝔹' = desug.fwd s𝔹
       PrettyShow e𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= expand e𝔹 e))
-      traceBenchmark benchNames.fwd $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹'))
+      traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd (γ𝔹 × e𝔹'))
    PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
 
-   let
-      v𝔹_top = topOf v
-      γ𝔹_top × e𝔹_top = eval.bwd v𝔹_top
-      s𝔹_top = desug.bwd e𝔹_top
-      e𝔹_top' = desug.fwd s𝔹_top
-      v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top')
-   PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-trip (eval ⚬ desugar)"` (unwrap >>> (_ >= v𝔹_top))
+   let v𝔹_top = evalT.fwd ((topOf <$> gconfig.γ) × topOf e)
+   PrettyShow v𝔹_top `shouldSatisfy "fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
    validate traceMethod spec s𝔹 v𝔹'
 
