@@ -66,7 +66,7 @@ debug
 
 debug =
    { logging: false
-   , tracing: true
+   , tracing: false
    }
 
 assert :: ∀ a. Boolean -> a -> a

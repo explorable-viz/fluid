@@ -25,7 +25,7 @@ import Graph.GraphImpl (GraphImpl)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
+import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val (BaseVal(..), Fun(..)) as V
@@ -366,7 +366,7 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty ρ = go (D.toUnfoldable ρ)
       where
       go :: List (Var × Elim a) -> Doc
-      go Nil = error absurd -- non-empty
+      go Nil = empty
       go (xσ : Nil) = pretty xσ
       go (xσ : δ) = atop (go δ .<>. semi) (pretty xσ)
 

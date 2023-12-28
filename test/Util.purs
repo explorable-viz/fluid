@@ -10,10 +10,9 @@ import Data.List (elem)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
-import Data.Tuple (fst, snd)
+import Data.Tuple (snd)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
-import Dict as D
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
@@ -135,12 +134,11 @@ test' s gconfig spec@{ δv } = do
    recordGraphSize g
 
    in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (evalG.bwd out0)
-   check (snd in0 == e𝔹) "Graph bwd agrees with trace bwd on expression"
---   check (spy "Graph result:" prettyP (D.get "map" (fst in0)) == spy "Trace result:" prettyP (D.get "map" γ𝔹)) "Graph bwd agrees with trace bwd on environment"
+   check (snd in0 == e𝔹) "Graph bwd agrees with trace bwd on expression slice"
+   -- corresponding property on environment doesn't hold; see #896
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
 
-   { gc: GC desug𝔹 } <- desugGC s
-   validate graphMethod spec (desug𝔹.bwd (snd in0)) out1
+   validate graphMethod spec (desug.bwd (snd in0)) out1
    PrettyShow out1 `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
    let evalG_dual = unwrap (dual gc)
