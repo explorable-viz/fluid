@@ -107,8 +107,10 @@ test' :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImp
 test' s gconfig spec@{ δv } = do
    let γ = erase <$> gconfig.γ
    { gc: GC desug, e } <- desugGC s
-   { gc: GC evalT, v } <- do
-      traceBenchmark benchNames.eval $ \_ -> traceGC γ e
+   { gc: GC evalT, v } <- traceBenchmark benchNames.eval $ \_ ->
+      traceGC γ e
+   { gc: gc@(GC evalG), gc_op: GC evalG_op, g, vα } <- graphBenchmark benchNames.eval $ \_ ->
+      graphGC gconfig e
 
    let out0 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
@@ -123,23 +125,24 @@ test' s gconfig spec@{ δv } = do
       traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd (γ𝔹 × e𝔹'))
    PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
-   let v𝔹_top = evalT.fwd ((topOf <$> gconfig.γ) × topOf e)
-   PrettyShow v𝔹_top `shouldSatisfy "fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
+   let in_top = (topOf <$> gconfig.γ) × topOf e
+   let out_top = evalT.fwd in_top
+   PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
    validate traceMethod spec s𝔹 v𝔹'
-
-   { gc: gc@(GC evalG), gc_op: GC evalG_op, g, vα } <- do
-      graphBenchmark benchNames.eval $ \_ -> graphGC gconfig e
 
    recordGraphSize g
 
    in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (evalG.bwd out0)
    check (snd in0 == e𝔹) "Graph bwd agrees with trace bwd on expression slice"
-   -- graph-bwd over-approximates the environment slice compared to trace-bwd, because of sharing; see #896.
-   -- I think don't think this can affect round-tripping behaviour unless computation outputs a closure.
+   -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
+   -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
    check (out1 == v𝔹') "Graph fwd agrees with trace fwd"
 
+   -- Already testing extensional equivalence above, but specifically test this case too.
+   let out_top' = evalG.fwd in_top
+   PrettyShow out_top' `shouldSatisfy "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
    validate graphMethod spec s𝔹 out1
 
    let evalG_dual = unwrap (dual gc)
