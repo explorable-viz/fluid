@@ -105,16 +105,16 @@ benchNames =
 
 test' :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
 test' s gconfig spec@{ δv } = do
+   let γ = erase <$> gconfig.γ
    { gc: GC desug, e } <- desugGC s
    { gc: GC evalT, v } <- do
-      let γ = erase <$> gconfig.γ
       traceBenchmark benchNames.eval $ \_ -> traceGC γ e
 
    let out0 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
       when debug.logging (logAs "Selection for bwd" (prettyP out0))
       γ𝔹 × e𝔹 <- traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd out0)
-      pure (γ𝔹 × expand e𝔹 e)
+      pure (expand γ𝔹 γ × expand e𝔹 e)
 
    let s𝔹 = desug.bwd e𝔹
    v𝔹' <- do
@@ -134,7 +134,7 @@ test' s gconfig spec@{ δv } = do
    recordGraphSize g
 
    in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (evalG.bwd out0)
-   check (snd in0 == e𝔹) "Graph bwd agrees with trace bwd"
+   check (in0 == γ𝔹 × e𝔹) "Graph bwd agrees with trace bwd"
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
 
    { gc: GC desug𝔹 } <- desugGC s
