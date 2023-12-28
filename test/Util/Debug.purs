@@ -1,6 +1,6 @@
 module Test.Util.Debug where
 
--- tracing via "trace"; no effect context required
+-- specific flags considered only when debug.tracing is true
 tracing
    :: { graphCreation :: Boolean
       , graphBwdSliceInput :: Boolean

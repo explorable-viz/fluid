@@ -61,12 +61,12 @@ throw = throwError <<< E.error
 
 debug
    :: { logging :: Boolean -- logging via "log"; requires an effect context
-      , tracing :: Boolean -- global flag, overriding individual tracing flags
+      , tracing :: Boolean -- tracing via "trace"; no effect context required
       }
 
 debug =
-   { logging: true
-   , tracing: true
+   { logging: false
+   , tracing: false
    }
 
 assert :: ∀ a. Boolean -> a -> a
@@ -79,8 +79,8 @@ assertWhen true = force >>> assert
 
 -- Debug.spyWith doesn't seem to work
 spyWhen :: forall a. Boolean -> String -> (a -> String) -> Endo a
-spyWhen false _ _ x = x
-spyWhen true msg show x = trace (msg <> ": " <> show x) (const x)
+spyWhen true msg show x | debug.tracing == true = trace (msg <> ": " <> show x) (const x)
+spyWhen _ _ _ x = x
 
 -- Prefer this to Debug.spy (similar to spyWith).
 spy :: forall a. String -> (a -> String) -> Endo a
