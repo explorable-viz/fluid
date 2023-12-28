@@ -224,7 +224,8 @@ instance Ann a => Pretty (FirstGroup a) where
    pretty (First h) = pretty (groupBy (\p q -> key p == key q) h)
 
 instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
-   pretty pss = intersperse' (map (prettyClause (text str.rArrow)) (map Clause (toList (helperMatch pss)))) (text str.semiColon)
+   pretty pss =
+      intersperse' (prettyClause (text str.rArrow) <$> (Clause <$> toList (helperMatch pss))) (text str.semiColon)
 
 instance Ann a => Pretty (VarDef a) where
    pretty (VarDef p s) = pretty p .<>. text str.equals .<>. pretty s
@@ -357,12 +358,12 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Op op) = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
       (pretty e')
-   pretty (E.LetRec ρ e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
+   pretty (E.LetRec (E.RecDefs _ ρ) e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
 
-instance Highlightable a => Pretty (E.RecDefs a) where
-   pretty (E.RecDefs _ ρ) = go (D.toUnfoldable ρ)
+instance Highlightable a => Pretty (Dict (Elim a)) where
+   pretty ρ = go (D.toUnfoldable ρ)
       where
       go :: List (Var × Elim a) -> Doc
       go Nil = error absurd -- non-empty
@@ -418,7 +419,9 @@ instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Fun φ) = pretty φ
 
 instance Highlightable a => Pretty (Fun a) where
-   pretty (V.Closure _ _ _) = text "<closure>"
+   pretty (V.Closure γ ρ σ) =
+      text "cl" .<>.
+         parentheses (pretty γ .<>. text str.comma .<>. pretty ρ .<>. text str.comma .<>. pretty σ)
    pretty (V.Foreign φ _) = pretty φ
    pretty (V.PartialConstr c vs) = prettyConstr c vs
 
