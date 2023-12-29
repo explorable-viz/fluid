@@ -59,17 +59,11 @@ checkPretty msg expect x =
       logAs "\nReceived" $ "\n" <> prettyP x
       fail msg
 
-traceMethod :: String
-traceMethod = "T"
-
 traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
-traceBenchmark name = benchmark (traceMethod <> "-" <> name)
-
-graphMethod :: String
-graphMethod = "G"
+traceBenchmark name = benchmark ("T" <> "-" <> name)
 
 graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> (Unit -> m a) -> EffectError m a
-graphBenchmark name = benchmark (graphMethod <> "-" <> name)
+graphBenchmark name = benchmark ("G" <> "-" <> name)
 
 benchNames
    :: { eval :: String
@@ -123,10 +117,10 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
    unless (null bwd_expect) $
-      checkPretty (traceMethod <> "-based bwd_expect") bwd_expect (snd in_s)
+      checkPretty ("bwd_expect") bwd_expect (snd in_s)
    unless (isGraphical out0') do
-      when debug.logging $ logAs (traceMethod <> "-based fwd ⚬ bwd") (prettyP out0')
-      checkPretty (traceMethod <> "-based fwd_expect") fwd_expect out0'
+      when debug.logging $ logAs ("fwd ⚬ bwd") (prettyP out0')
+      checkPretty ("fwd_expect") fwd_expect out0'
 
    recordGraphSize g
 
