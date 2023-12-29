@@ -111,7 +111,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd in0')
    PrettyShow out0' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
-   let in_top = (topOf <$> gconfig.γ) × topOf e
+   let in_top = topOf gconfig.γ × topOf e
    let out_top = evalT.fwd in_top
    when testing.fwdPreservesTop $
       PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
