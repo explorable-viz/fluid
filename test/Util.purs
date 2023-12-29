@@ -109,7 +109,7 @@ test' s gconfig spec@{ δv } = do
    { gc: GC desug, e } <- desugGC s
    { gc: GC evalT, v } <- traceBenchmark benchNames.eval $ \_ ->
       traceGC γ e
-   { gc: gc@(GC evalG), gc_op: GC evalG_op, g, vα } <- graphBenchmark benchNames.eval $ \_ ->
+   { gc: GC evalG, gc_op: GC evalG_op, g, vα } <- graphBenchmark benchNames.eval $ \_ ->
       graphGC gconfig e
 
    let out0 = δv (botOf v)
@@ -147,7 +147,7 @@ test' s gconfig spec@{ δv } = do
       PrettyShow out_top' `shouldSatisfy "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
    validate graphMethod spec s𝔹 out1
 
-   let evalG_dual = unwrap (dual gc)
+   let evalG_dual = unwrap (dual (GC evalG))
    in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (evalG_op.fwd out0)
    in2 <- graphBenchmark benchNames.bwdDlCmp $ \_ -> pure (evalG_dual.fwd out0)
    when testing.bwdDuals $
