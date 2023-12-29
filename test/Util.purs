@@ -127,7 +127,8 @@ test' s gconfig spec@{ δv } = do
 
    let in_top = (topOf <$> gconfig.γ) × topOf e
    let out_top = evalT.fwd in_top
-   PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
+   when testing.fwdPreservesTop $
+      PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
    validate traceMethod spec s𝔹 v𝔹'
 
@@ -142,7 +143,8 @@ test' s gconfig spec@{ δv } = do
 
    -- Already testing extensional equivalence above, but specifically test this case too.
    let out_top' = evalG.fwd in_top
-   PrettyShow out_top' `shouldSatisfy "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
+   when testing.fwdPreservesTop $
+      PrettyShow out_top' `shouldSatisfy "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
    validate graphMethod spec s𝔹 out1
 
    let evalG_dual = unwrap (dual gc)

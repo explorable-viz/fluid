@@ -35,10 +35,11 @@ instance Category GaloisConnection where
 -- Galois connections have products. Data.Profunctor requires pre-/post-composability with arbitrary functions
 -- (which may not have adjoints), similar to how Haskell's Control.Arrow requires an injection from arbitrary
 -- functions. So for now side-step Data.Profunctor[.Strong] and define products directly.
-splitStrong :: forall a b c d
-   . GaloisConnection a b
-  -> GaloisConnection c d
-  -> GaloisConnection (a × c) (b × d)
+splitStrong
+   :: forall a b c d
+    . GaloisConnection a b
+   -> GaloisConnection c d
+   -> GaloisConnection (a × c) (b × d)
 splitStrong (GC { fwd: fwd1, bwd: bwd1 }) (GC { fwd: fwd2, bwd: bwd2 }) =
    GC { fwd: fwd1 Strong.*** fwd2, bwd: bwd1 Strong.*** bwd2 }
 
@@ -58,6 +59,6 @@ fst :: forall a b. BoundedMeetSemilattice b => GaloisConnection (a × b) a
 fst = GC { fwd: Tuple.fst, bwd: \a -> a × top }
 
 snd :: forall a b. BoundedMeetSemilattice a => GaloisConnection (a × b) b
-snd = GC { fwd: Tuple.snd, bwd: \b -> top × b}
+snd = GC { fwd: Tuple.snd, bwd: \b -> top × b }
 
 infixr 3 splitStrong as ***

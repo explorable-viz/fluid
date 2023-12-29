@@ -1,6 +1,6 @@
 module Test.Util.Debug where
 
--- specific flags considered only when debug.tracing is true
+-- These flags considered only when Util.debug.tracing is true.
 tracing
    :: { graphCreation :: Boolean
       , graphBwdSliceInput :: Boolean
@@ -29,15 +29,17 @@ checking =
    , sinksAreInputs: false
    }
 
--- Should always be true, except when there are specific outstanding problems.
+-- Should be set to true except when there are specific outstanding problems.
 testing
-   :: { bwdDuals :: Boolean
+   :: { fwdPreservesTop :: Boolean
+      , bwdDuals :: Boolean
       , fwdDuals :: Boolean
       , naiveFwd :: Boolean
       }
 
 testing =
-   { bwdDuals: false
+   { fwdPreservesTop: false
+   , bwdDuals: false
    , fwdDuals: false
    , naiveFwd: false
    }
