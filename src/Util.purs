@@ -19,7 +19,7 @@ import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (class Strong, (&&&), (***))
 import Data.Set as S
 import Data.Tuple (Tuple(..), fst, snd)
-import Debug (class DebugWarning, trace)
+import Debug (trace)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, message)
@@ -59,6 +59,16 @@ shapeMismatch _ = error "Shape mismatch"
 throw :: forall m a. MonadThrow Error m => String -> m a
 throw = throwError <<< E.error
 
+debug
+   :: { logging :: Boolean -- logging via "log"; requires an effect context
+      , tracing :: Boolean -- tracing via "trace"; no effect context required
+      }
+
+debug =
+   { logging: false
+   , tracing: true
+   }
+
 assert :: ∀ a. Boolean -> a -> a
 assert true = identity
 assert false = \_ -> error "Assertion failure"
@@ -68,12 +78,12 @@ assertWhen false = const identity
 assertWhen true = force >>> assert
 
 -- Debug.spyWith doesn't seem to work
-spyWhen :: forall a. DebugWarning => Boolean -> String -> (a -> String) -> Endo a
-spyWhen false _ _ x = x
-spyWhen true msg show x = trace (msg <> ": " <> show x) (const x)
+spyWhen :: forall a. Boolean -> String -> (a -> String) -> Endo a
+spyWhen true msg show x | debug.tracing == true = trace (msg <> ": " <> show x) (const x)
+spyWhen _ _ _ x = x
 
 -- Prefer this to Debug.spy (similar to spyWith).
-spy :: forall a. DebugWarning => String -> (a -> String) -> Endo a
+spy :: forall a. String -> (a -> String) -> Endo a
 spy = spyWhen true
 
 absurd :: String

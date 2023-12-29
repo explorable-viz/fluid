@@ -16,9 +16,8 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Graph (class Graph, size)
 import Pretty (class Pretty, prettyP)
-import Test.Util.Debug (debug)
 import Test.Util.Microtime (microtime)
-import Util (type (×), EffectError, (×))
+import Util (type (×), EffectError, (×), debug)
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s

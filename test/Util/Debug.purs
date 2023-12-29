@@ -1,14 +1,6 @@
 module Test.Util.Debug where
 
-debug
-   :: { logging :: Boolean -- logging via "log"; requires an effect context
-      }
-
-debug =
-   { logging: false
-   }
-
--- tracing via "trace"; no effect context required
+-- These flags considered only when Util.debug.tracing is true.
 tracing
    :: { graphCreation :: Boolean
       , graphBwdSliceInput :: Boolean
@@ -25,15 +17,29 @@ tracing =
    , graphFwdSliceOutput: false
    }
 
--- TODO: partition into properties we want to test all the time vs. debug-only properties
+-- Invariants that are potentially expensive to check and that we might want to disable in production,
+-- that are not covered explicitly by tests.
 checking
-   :: { bwdDuals :: Boolean
-      , edgeListIso :: Boolean
+   :: { edgeListIso :: Boolean
       , sinksAreInputs :: Boolean
       }
 
 checking =
-   { bwdDuals: false
-   , edgeListIso: false
+   { edgeListIso: false
    , sinksAreInputs: false
+   }
+
+-- Should be set to true except when there are specific outstanding problems.
+testing
+   :: { fwdPreservesTop :: Boolean
+      , bwdDuals :: Boolean
+      , fwdDuals :: Boolean
+      , naiveFwd :: Boolean
+      }
+
+testing =
+   { fwdPreservesTop: false
+   , bwdDuals: false
+   , fwdDuals: false
+   , naiveFwd: false
    }
