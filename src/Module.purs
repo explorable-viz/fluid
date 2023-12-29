@@ -17,8 +17,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
-import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (alloc, runWithGraphAllocT)
+import Graph.WithGraph (alloc, runAllocT, wibble)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
@@ -77,12 +76,11 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
    eα <- parseProgram (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = x ↦ eα : datasets }
 
-initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m (GraphConfig GraphImpl)
+initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
-   (g × n) × progCxt' × γ <- runWithGraphAllocT 0 do
+   n × _ × progCxt' × γ <- runAllocT 0 do
       progCxt' <- alloc progCxt
-      γ <- eval_progCxt progCxt'
-      pure (progCxt' × γ)
-   --   trace (show (sinks g \\ vertices progCxt')) \_ ->
+      γ <- wibble (eval_progCxt progCxt')
+      pure (progCxt' × γ `restrict` (fv e))
    -- restricting to free vars makes γ more managable, but precludes mapping back to surface syntax for now
-   pure { g, n, progCxt: progCxt', γ: γ `restrict` (fv e) }
+   pure { n, progCxt: progCxt', γ }
