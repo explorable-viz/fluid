@@ -12,7 +12,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
-import Data.Set (Set, toUnfoldable) as S
+import Data.Set (toUnfoldable) as S
 import Data.String (Pattern(..), Replacement(..), contains) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
@@ -20,7 +20,7 @@ import Dict (Dict)
 import Dict (toUnfoldable) as D
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
-import Graph (Vertex(..), showGraph)
+import Graph (showGraph)
 import Graph.GraphImpl (GraphImpl)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
@@ -102,16 +102,15 @@ prettyAppChain s = prettySimple s
 
 prettyBinApp :: forall a. Ann a => Int -> Expr a -> Doc
 prettyBinApp n (BinaryApp s op s') =
-   let
-      prec' = getPrec op
-   in
-      case getPrec op of
-         -1 -> prettyBinApp prec' s .<>. (text ("`" <> op <> "`")) .<>. prettyBinApp prec' s'
-         _ ->
-            if prec' <= n then
-               parentheses (prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s')
-            else
-               prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s'
+   case getPrec op of
+      -1 -> prettyBinApp prec' s .<>. (text ("`" <> op <> "`")) .<>. prettyBinApp prec' s'
+      _ ->
+         if prec' <= n then
+            parentheses (prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s')
+         else
+            prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s'
+   where
+   prec' = getPrec op
 prettyBinApp _ s = prettyAppChain s
 
 getPrec :: String -> Int
@@ -375,14 +374,8 @@ instance Highlightable a => Pretty (Dict (Val a)) where
       where
       go :: List (Var × Val a) -> Doc
       go Nil = empty
-      go ((x × v) : rest) = parens (text x .<>. text str.comma .<>. pretty v) .<>. text str.comma .<>. go rest
-
-instance Pretty (Dict (S.Set Vertex)) where
-   pretty d = brackets $ go (D.toUnfoldable d)
-      where
-      go :: List (String × S.Set Vertex) -> Doc
-      go Nil = empty
-      go ((α × βs) : rest) = text α .<>. text " ↦ " .<>. pretty (βs :: S.Set Vertex) .<>. text str.comma .<>. go rest
+      go ((x × v) : rest) =
+         parens (text x .<>. text str.comma .<>. pretty v) .<>. text str.comma .<>. go rest
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = hcat [ text x, text str.equals, pretty σ ]
@@ -433,8 +426,3 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
 
 instance Pretty GraphImpl where
    pretty = showGraph >>> text
-
-instance Pretty (S.Set Vertex) where
-   pretty αs = curlyBraces (hcomma (text <<< unwrap <$> (S.toUnfoldable αs :: List Vertex)))
-      where
-      unwrap (Vertex α) = α

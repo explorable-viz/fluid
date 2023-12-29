@@ -11,10 +11,10 @@ tracing
 
 tracing =
    { graphCreation: false
-   , graphBwdSliceInput: true
-   , graphBwdSliceOutput: true
-   , graphFwdSliceInput: true
-   , graphFwdSliceOutput: true
+   , graphBwdSliceInput: false
+   , graphBwdSliceOutput: false
+   , graphFwdSliceInput: false
+   , graphFwdSliceOutput: false
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
