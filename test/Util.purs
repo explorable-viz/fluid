@@ -41,7 +41,7 @@ test ∷ forall m. File -> GraphConfig GraphImpl -> SelectionSpec -> Int × Bool
 test file gconfig spec (n × _) = do
    s <- open file
    testPretty s
-   _ × row_accum <- runWriterT (replicateM n (test' s gconfig spec))
+   _ × row_accum <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ row_accum `divRow` n
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
@@ -103,8 +103,8 @@ benchNames =
    , fwdDlCmp: "FwdDlCmp"
    }
 
-test' :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
-test' s gconfig spec@{ δv } = do
+testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
+testProperties s gconfig spec@{ δv } = do
    let γ = erase <$> gconfig.γ
    { gc: GC desug, e } <- desugGC s
    { gc: GC evalT, v } <- traceBenchmark benchNames.eval $ \_ ->
