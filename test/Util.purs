@@ -44,21 +44,6 @@ test file gconfig spec (n × _) = do
    _ × row_accum <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ row_accum `divRow` n
 
-testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
-testPretty s = do
-   s' <- parse (prettyP s) program
-   unless (eq (erase s) (erase s')) do
-      logAs "Original" $ show (erase s)
-      logAs "New" $ show (erase s')
-      fail "parse/prettyP round trip"
-
-checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
-checkPretty msg expect x =
-   unless (expect `eq` prettyP x) $ do
-      logAs "\nExpected" $ "\n" <> expect
-      logAs "\nReceived" $ "\n" <> prettyP x
-      fail msg
-
 traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
 traceBenchmark name = benchmark ("T" <> "-" <> name)
 
@@ -111,7 +96,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd in0')
    PrettyShow out0' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
-   let in_top = topOf (fst in_e) × topOf (snd in_e) -- topOf doesn't lift to pairs as intended
+   let in_top = topOf (fst in_e) × topOf (snd in_e) -- doesn't lift to pairs as intended
    let out_top = evalT.fwd in_top
    when testing.fwdPreservesTop $
       PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
@@ -166,3 +151,18 @@ shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -
 shouldSatisfy msg v pred =
    unless (pred v) $
       fail (show v <> " doesn't satisfy predicate: " <> msg)
+
+testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
+testPretty s = do
+   s' <- parse (prettyP s) program
+   unless (eq (erase s) (erase s')) do
+      logAs "Original" $ show (erase s)
+      logAs "New" $ show (erase s')
+      fail "parse/prettyP round trip"
+
+checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
+checkPretty msg expect x =
+   unless (expect `eq` prettyP x) $ do
+      logAs "\nExpected" $ "\n" <> expect
+      logAs "\nReceived" $ "\n" <> prettyP x
+      fail msg
