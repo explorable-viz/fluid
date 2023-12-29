@@ -12,16 +12,17 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst, snd)
 import DataType (dataTypeFor, typeName)
-import Desug (desugGC)
+import Desug (Desugaring, desugGC)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), (***), dual)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (Raw, 𝔹, (-), botOf, erase, topOf)
-import Module (File, open, parse)
+import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
+import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
@@ -37,9 +38,11 @@ type SelectionSpec =
    , bwd_expect :: String
    }
 
-test ∷ forall m. File -> GraphConfig GraphImpl -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
-test file gconfig spec (n × _) = do
+test ∷ forall m. File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test file progCxt spec (n × _) = do
    s <- open file
+   { e } :: Desugaring Unit <- desugGC s
+   gconfig <- initialConfig e progCxt
    testPretty s
    _ × row_accum <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ row_accum `divRow` n

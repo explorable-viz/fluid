@@ -16,6 +16,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
+import Expr (class FV, fv)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (alloc, runWithGraphAllocT)
 import Lattice (Raw)
@@ -27,6 +28,7 @@ import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
 import Util (type (×), AffError, concatM, mapLeft, (×))
 import Util.Parse (SParser)
+import Val (restrict)
 
 newtype File = File String
 newtype Folder = Folder String
@@ -75,11 +77,12 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
    eα <- parseProgram (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = x ↦ eα : datasets }
 
-initialConfig :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig GraphImpl)
-initialConfig progCxt = do
+initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m (GraphConfig GraphImpl)
+initialConfig e progCxt = do
    (g × n) × progCxt' × γ <- runWithGraphAllocT 0 do
       progCxt' <- alloc progCxt
       γ <- eval_progCxt progCxt'
       pure (progCxt' × γ)
    --   trace (show (sinks g \\ vertices progCxt')) \_ ->
-   pure { g, n, progCxt: progCxt', γ }
+   -- restricting to free vars makes γ more managable, but precludes mapping back to surface syntax for now
+   pure { g, n, progCxt: progCxt', γ: γ `restrict` (fv e) }

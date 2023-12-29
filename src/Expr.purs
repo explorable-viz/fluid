@@ -100,6 +100,9 @@ instance FV (RecDefs a) where
 instance FV a => FV (Dict a) where
    fv ρ = unions (fv <$> ρ) \\ S.fromFoldable (keys ρ)
 
+instance (FV a, FV b) => FV (a × b) where
+   fv (x × y) = fv x ∪ fv y
+
 class BV a where
    bv :: a -> Set Var
 
