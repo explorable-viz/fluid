@@ -16,7 +16,7 @@ import Desug (desugGC)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
-import GaloisConnection (GaloisConnection(..), dual)
+import GaloisConnection (GaloisConnection(..), (***), dual)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (Raw, 𝔹, (-), botOf, erase, topOf)
 import Module (File, open, parse)
@@ -117,19 +117,20 @@ test' s gconfig spec@{ δv } = do
       when debug.logging (logAs "Selection for bwd" (prettyP out0))
       traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd out0)
 
-   let s𝔹 = desug.bwd e𝔹
-   v𝔹' <- do
+   let GC desug' = identity *** (GC desug)
+   let _ × s𝔹 = desug'.bwd (γ𝔹 × e𝔹)
+   out0' <- do
       let e𝔹' = desug.fwd s𝔹
       PrettyShow e𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= e𝔹))
       traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd (γ𝔹 × e𝔹'))
-   PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
+   PrettyShow out0' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
    let in_top = (topOf <$> gconfig.γ) × topOf e
    let out_top = evalT.fwd in_top
    when testing.fwdPreservesTop $
       PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
-   validate traceMethod spec s𝔹 v𝔹'
+   validate traceMethod spec s𝔹 out0'
 
    recordGraphSize g
 
@@ -138,7 +139,7 @@ test' s gconfig spec@{ δv } = do
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
-   check (out1 == v𝔹') "Graph fwd agrees with trace fwd"
+   check (out1 == out0') "Graph fwd agrees with trace fwd"
 
    -- Already testing extensional equivalence above, but specifically test this case too.
    let out_top' = evalG.fwd in_top
