@@ -3,7 +3,7 @@ module Graph.WithGraph where
 import Prelude hiding (map)
 
 import Control.Monad.Except (class MonadError)
-import Control.Monad.State (StateT, runStateT, modify, modify_)
+import Control.Monad.State (StateT, evalStateT, mapStateT, modify, modify_, runStateT)
 import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
@@ -16,7 +16,7 @@ import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), (×), assertWhen, spyWhen)
+import Util (type (×), assertWhen, spyWhen, (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -73,7 +73,7 @@ runAlloc n = runAllocT n >>> unwrap
 runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
 runWithGraphT m = do
    a × edges <- runStateT m Nil
-   pure $ (fromEdgeList edges) × a
+   pure (fromEdgeList edges × a)
 
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
@@ -85,3 +85,6 @@ runWithGraphAllocT n m = do
    -- comparing edge lists requires sorting, and causes stack overflow on large graph
    assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
       pure ((spyWhen tracing.graphCreation "runWithGraphAllocT" showGraph g × n') × a)
+
+wibble :: forall m a. Monad m => WithGraphAllocT m a -> AllocT m a
+wibble = mapStateT (flip evalStateT Nil)

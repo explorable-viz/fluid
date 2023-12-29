@@ -18,7 +18,8 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, Vertex, op, selectαs, select𝔹s, sinks, vertices)
+import Graph (Vertex, op, selectαs, select𝔹s, sinks, vertices)
+import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Lattice (𝔹, Raw)
@@ -31,9 +32,8 @@ import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
 
-type GraphConfig g =
+type GraphConfig =
    { progCxt :: ProgCxt Vertex
-   , g :: g
    , n :: Int
    , γ :: Env Vertex
    }
@@ -187,12 +187,11 @@ type GraphEval g =
    }
 
 graphGC
-   :: forall g m
+   :: forall m
     . MonadError Error m
-   => Graph g
-   => GraphConfig g
+   => GraphConfig
    -> Raw Expr
-   -> m (GraphEval g)
+   -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
    (g × _) × eα × vα <-
       runWithGraphAllocT n do
@@ -205,13 +204,13 @@ graphGC { n, γ } e = do
 
    let
       -- restrict αs to vertices g0 because unused inputs/outputs won't appear in graph
-      toOutput :: (Set Vertex -> Endo g) -> g -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
+      toOutput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
       toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα βs
          where
          βs = vertices (slice αs g0) -- # spy "toOutput result" showVertices
          αs = selectαs (γ𝔹 × e𝔹) (γ × eα) ∩ vertices g0
 
-      toInput :: (Set Vertex -> Endo g) -> g -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
+      toInput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
       toInput slice g0 v𝔹 = select𝔹s (γ × eα) βs
          where
          βs = vertices (slice αs g0) -- # spy "toInput result" ((_ ∩ inputs) >>> showVertices)

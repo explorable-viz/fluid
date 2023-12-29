@@ -26,6 +26,16 @@ import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
 
+debug
+   :: { logging :: Boolean -- logging via "log"; requires an effect context
+      , tracing :: Boolean -- tracing via "trace"; no effect context required
+      }
+
+debug =
+   { logging: false
+   , tracing: false
+   }
+
 type Thunk a = Unit -> a -- similar to Lazy but without datatype
 
 force :: forall a. Thunk a -> a
@@ -58,16 +68,6 @@ shapeMismatch _ = error "Shape mismatch"
 
 throw :: forall m a. MonadThrow Error m => String -> m a
 throw = throwError <<< E.error
-
-debug
-   :: { logging :: Boolean -- logging via "log"; requires an effect context
-      , tracing :: Boolean -- tracing via "trace"; no effect context required
-      }
-
-debug =
-   { logging: false
-   , tracing: true
-   }
 
 assert :: ∀ a. Boolean -> a -> a
 assert true = identity

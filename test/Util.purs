@@ -17,7 +17,6 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), (***), dual)
-import Graph.GraphImpl (GraphImpl)
 import Lattice (Raw, 𝔹, (-), botOf, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
@@ -77,7 +76,7 @@ benchNames =
    , fwdDlCmp: "FwdDlCmp"
    }
 
-testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
+testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let γ = spy "Env" prettyP (erase <$> gconfig.γ)
    { gc: GC desug, e } <- desugGC s
