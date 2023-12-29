@@ -59,14 +59,6 @@ checkPretty msg expect x =
       logAs "\nReceived" $ "\n" <> prettyP x
       fail msg
 
-validate :: forall m. String -> SelectionSpec -> SE.Expr 𝔹 -> Val 𝔹 -> EffectError m Unit
-validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
-   unless (null bwd_expect) $
-      checkPretty (method <> "-based bwd_expect") bwd_expect s𝔹
-   unless (isGraphical v𝔹) do
-      when debug.logging $ logAs (method <> "-based fwd ⚬ bwd") (prettyP v𝔹)
-      checkPretty (method <> "-based fwd_expect") fwd_expect v𝔹
-
 traceMethod :: String
 traceMethod = "T"
 
@@ -104,7 +96,7 @@ benchNames =
    }
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
-testProperties s gconfig spec@{ δv, bwd_expect, fwd_expect } = do
+testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let γ = erase <$> gconfig.γ
    { gc: GC desug, e } <- desugGC s
    { gc: GC evalT, v } <- traceBenchmark benchNames.eval $ \_ ->
@@ -149,7 +141,12 @@ testProperties s gconfig spec@{ δv, bwd_expect, fwd_expect } = do
    let out_top' = evalG.fwd in_top
    when testing.fwdPreservesTop $
       PrettyShow out_top' `shouldSatisfy "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
-   validate graphMethod spec (snd in_s) out1
+
+   unless (null bwd_expect) $
+      checkPretty (graphMethod <> "-based bwd_expect") bwd_expect (snd in_s)
+   unless (isGraphical out1) do
+      when debug.logging $ logAs (graphMethod <> "-based fwd ⚬ bwd") (prettyP out1)
+      checkPretty (graphMethod <> "-based fwd_expect") fwd_expect out1
 
    let GC evalG_dual = dual (GC evalG)
    in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (evalG_op.fwd out0)
