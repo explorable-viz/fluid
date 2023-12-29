@@ -118,7 +118,7 @@ test' s gconfig spec@{ δv } = do
       traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd out0)
 
    let GC desug' = identity *** (GC desug)
-   let _ × s𝔹 = desug'.bwd (γ𝔹 × e𝔹)
+       _ × s𝔹 = desug'.bwd (γ𝔹 × e𝔹)
    out0' <- do
       let e𝔹' = desug.fwd s𝔹
       PrettyShow e𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= e𝔹))
@@ -147,7 +147,7 @@ test' s gconfig spec@{ δv } = do
       PrettyShow out_top' `shouldSatisfy "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
    validate graphMethod spec s𝔹 out1
 
-   let evalG_dual = unwrap (dual (GC evalG))
+   let GC evalG_dual = dual (GC evalG)
    in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (evalG_op.fwd out0)
    in2 <- graphBenchmark benchNames.bwdDlCmp $ \_ -> pure (evalG_dual.fwd out0)
    when testing.bwdDuals $
@@ -159,7 +159,7 @@ test' s gconfig spec@{ δv } = do
    when testing.fwdDuals $
       check (out2 == out3) "Two constructions of fwd dual agree"
 
-   let evalG_dual_op = unwrap (dual (GC evalG_op))
+   let GC evalG_dual_op = dual (GC evalG_op)
    out4 <- benchmark benchNames.naiveFwd $ \_ -> pure (evalG_dual_op.fwd in0)
    when testing.naiveFwd $ do
       check (spy "Direct minus naive" prettyP (out1 `lift2 (-)` out4) == botOf out1) "Direct <= naive"
