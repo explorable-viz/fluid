@@ -104,7 +104,7 @@ benchNames =
    }
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> AffError m Unit
-testProperties s gconfig spec@{ δv } = do
+testProperties s gconfig spec@{ δv, bwd_expect, fwd_expect } = do
    let γ = erase <$> gconfig.γ
    { gc: GC desug, e } <- desugGC s
    { gc: GC evalT, v } <- traceBenchmark benchNames.eval $ \_ ->
@@ -130,7 +130,11 @@ testProperties s gconfig spec@{ δv } = do
    when testing.fwdPreservesTop $
       PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
-   validate traceMethod spec (snd in_s) out0'
+   unless (null bwd_expect) $
+      checkPretty (traceMethod <> "-based bwd_expect") bwd_expect (snd in_s)
+   unless (isGraphical out0') do
+      when debug.logging $ logAs (traceMethod <> "-based fwd ⚬ bwd") (prettyP out0')
+      checkPretty (traceMethod <> "-based fwd_expect") fwd_expect out0'
 
    recordGraphSize g
 
