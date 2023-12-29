@@ -113,15 +113,15 @@ test' s gconfig spec@{ δv } = do
       graphGC gconfig e
 
    let out0 = δv (botOf v)
-   γ𝔹 × e𝔹 <- do
+   in_e <- do
       when debug.logging (logAs "Selection for bwd" (prettyP out0))
       traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd out0)
 
    let GC desug' = identity *** (GC desug)
-   let _ × s𝔹 = desug'.bwd (γ𝔹 × e𝔹)
+   let in_s = desug'.bwd in_e
    out0' <- do
-      let in0' = desug'.fwd (γ𝔹 × s𝔹)
-      PrettyShow in0' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= γ𝔹 × e𝔹))
+      let in0' = desug'.fwd in_s
+      PrettyShow in0' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= in_e))
       traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd in0')
    PrettyShow out0' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
@@ -130,12 +130,12 @@ test' s gconfig spec@{ δv } = do
    when testing.fwdPreservesTop $
       PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
-   validate traceMethod spec s𝔹 out0'
+   validate traceMethod spec (snd in_s) out0'
 
    recordGraphSize g
 
    in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (evalG.bwd out0)
-   check (snd in0 == e𝔹) "Graph bwd agrees with trace bwd on expression slice"
+   check (snd in0 == snd in_e) "Graph bwd agrees with trace bwd on expression slice"
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
@@ -145,7 +145,7 @@ test' s gconfig spec@{ δv } = do
    let out_top' = evalG.fwd in_top
    when testing.fwdPreservesTop $
       PrettyShow out_top' `shouldSatisfy "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
-   validate graphMethod spec s𝔹 out1
+   validate graphMethod spec (snd in_s) out1
 
    let GC evalG_dual = dual (GC evalG)
    in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (evalG_op.fwd out0)
