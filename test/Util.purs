@@ -18,7 +18,7 @@ import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), dual)
 import Graph.GraphImpl (GraphImpl)
-import Lattice (Raw, 𝔹, (-), botOf, erase, expand, topOf)
+import Lattice (Raw, 𝔹, (-), botOf, erase, topOf)
 import Module (File, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
@@ -115,8 +115,7 @@ test' s gconfig spec@{ δv } = do
    let out0 = δv (botOf v)
    γ𝔹 × e𝔹 <- do
       when debug.logging (logAs "Selection for bwd" (prettyP out0))
-      γ𝔹 × e𝔹 <- traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd out0)
-      pure (expand γ𝔹 γ × expand e𝔹 e)
+      traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd out0)
 
    let s𝔹 = desug.bwd e𝔹
    v𝔹' <- do

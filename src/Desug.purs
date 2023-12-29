@@ -7,7 +7,7 @@ import Desugarable (desug, desugBwd)
 import Effect.Exception (Error)
 import Expr (Expr)
 import GaloisConnection (GaloisConnection(..))
-import Lattice (class BoundedLattice, Raw, expand)
+import Lattice (class BoundedLattice, Raw)
 import SExpr (Expr) as S
 import Util (successful)
 
@@ -27,4 +27,4 @@ desugGC s = pure $ { gc: GC { fwd, bwd }, e }
    where
    e = successful $ desug s
    fwd s' = successful $ desug s'
-   bwd e' = desugBwd (expand e' e) s
+   bwd e' = desugBwd e' s
