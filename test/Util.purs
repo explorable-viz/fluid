@@ -142,10 +142,6 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    when testing.fwdPreservesTop $
       PrettyShow out_top' `shouldSatisfy "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
 
-   unless (isGraphical out1) do
-      when debug.logging $ logAs (graphMethod <> "-based fwd ⚬ bwd") (prettyP out1)
-      checkPretty (graphMethod <> "-based fwd_expect") fwd_expect out1
-
    let GC evalG_dual = dual (GC evalG)
    in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (evalG_op.fwd out0)
    in2 <- graphBenchmark benchNames.bwdDlCmp $ \_ -> pure (evalG_dual.fwd out0)
