@@ -16,8 +16,8 @@ import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Dict (apply2) as D
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
-import Util (type (+), type (×), both, error, shapeMismatch, throw, (\\), (×), (∪), (≜), (≞))
-import Util.Pair (Pair, toTuple)
+import Util (type (+), type (×), error, shapeMismatch, throw, (\\), (×), (∪), (≜), (≞))
+import Util.Pair (Pair(..))
 
 -- Deviate from POPL paper by having closures depend on originating lambda or letrec
 data Expr a
@@ -72,7 +72,7 @@ instance FV (Expr a) where
    fv (Float _ _) = empty
    fv (Str _ _) = empty
    fv (Record _ xes) = unions (fv <$> xes)
-   fv (Dictionary _ ees) = unions ((unions <<< (fv # both) <<< toTuple) <$> ees)
+   fv (Dictionary _ ees) = unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
    fv (Constr _ _ es) = unions (fv <$> es)
    fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
