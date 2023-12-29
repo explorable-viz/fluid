@@ -201,7 +201,7 @@ linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
          γ0' × γ' = append_inv (S.singleton x) γ0γ'
       v0' <- lookup x γ' # orElse absurd
       -- make γ0 and e2 fully available
-      v' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e') true <#> snd >>> neg
+      v' <- eval (neg ((botOf γ0') <+> γ')) (topOf e') true <#> snd >>> neg
       pure { v, v', v0' }
 
 linkedInputsResult :: forall m. MonadEffect m => MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
@@ -236,7 +236,7 @@ loadLinkedInputsFig spec@{ file } = do
       dir = File "example/linked-inputs/"
       datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
    { γ: γ' } <- prelude >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
-   let γ = botOf <$> γ'
+   let γ = botOf γ'
    s <- botOf <$> open (File "linked-inputs/" <> file)
    e <- desug s
    t × v <- eval γ e bot
@@ -252,7 +252,7 @@ loadLinkedOutputsFig spec@{ imports, dataFile, file1, file2, x } = do
    { γ: γ' } <- prelude >>= modules (File <$> imports) >>= datasetAs dataFile' x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
-      γ = botOf <$> γ'
+      γ = botOf γ'
       s1 = botOf s1'
       s2 = botOf s2'
    dataFileStr <- loadFile (Folder "fluid") dataFile' -- TODO: use surface expression instead

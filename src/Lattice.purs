@@ -88,7 +88,7 @@ definedJoin :: forall a. JoinSemilattice a => a -> a -> a
 definedJoin x y = successfulWith "Join undefined" (maybeJoin x y)
 
 instance (Functor f, BoundedJoinSemilattice a) => BotOf (Unit × Raw f) (a × f a) where
-   botOf = const bot *** botOf
+   botOf = const bot *** botOf -- for dictionary selections
 else instance BotOf (f a) (f a') => BotOf (Dict (f a)) (Dict (f a')) where
    botOf = (<$>) botOf
 else instance (Functor f, BoundedJoinSemilattice a') => BotOf (f a) (f a') where
@@ -97,7 +97,7 @@ else instance (BotOf a b, BotOf c d) => BotOf (a × c) (b × d) where
    botOf = botOf *** botOf
 
 instance (Functor f, BoundedMeetSemilattice a) => TopOf (Unit × Raw f) (a × f a) where
-   topOf = const top *** topOf
+   topOf = const top *** ((<$>) (const top)) -- for dictionary selections
 else instance TopOf (f a) (f a') => TopOf (Dict (f a)) (Dict (f a')) where
    topOf = (<$>) topOf
 else instance (Functor f, BoundedMeetSemilattice a') => TopOf (f a) (f a') where

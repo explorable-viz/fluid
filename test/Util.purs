@@ -10,7 +10,7 @@ import Data.List (elem)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
-import Data.Tuple (snd)
+import Data.Tuple (fst, snd)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
 import Effect.Exception (Error)
@@ -111,7 +111,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd in0')
    PrettyShow out0' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
-   let in_top = topOf γ × topOf e
+   let in_top = topOf (fst in_e) × topOf (snd in_e) -- topOf doesn't lift to pairs as intended
    let out_top = evalT.fwd in_top
    when testing.fwdPreservesTop $
       PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
