@@ -375,7 +375,7 @@ instance Highlightable a => Pretty (Dict (Val a)) where
       go :: List (Var × Val a) -> Doc
       go Nil = empty
       go ((x × v) : rest) =
-         parens (text x .<>. text str.comma .<>. pretty v) .<>. text str.comma .<>. go rest
+         (text x .<>. text str.rArrow .<>. pretty v .<>. text str.comma) `atop` go rest
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = hcat [ text x, text str.equals, pretty σ ]
