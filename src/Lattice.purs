@@ -93,6 +93,8 @@ else instance BotOf (f a) (f a') => BotOf (Dict (f a)) (Dict (f a')) where
    botOf = (<$>) botOf
 else instance (Functor f, BoundedJoinSemilattice a') => BotOf (f a) (f a') where
    botOf = (<$>) (const bot)
+else instance (BotOf a b, BotOf c d) => BotOf (a × c) (b × d) where
+   botOf = botOf *** botOf
 
 instance (Functor f, BoundedMeetSemilattice a) => TopOf (Unit × Raw f) (a × f a) where
    topOf = const top *** topOf
@@ -100,6 +102,8 @@ else instance TopOf (f a) (f a') => TopOf (Dict (f a)) (Dict (f a')) where
    topOf = (<$>) topOf
 else instance (Functor f, BoundedMeetSemilattice a') => TopOf (f a) (f a') where
    topOf = (<$>) (const top)
+else instance (TopOf a b, TopOf c d) => TopOf (a × c) (b × d) where
+   topOf = topOf *** topOf
 
 -- Specialises botOf and topOf but omits the lattice constraint.
 erase :: forall f a. Functor f => f a -> Raw f
