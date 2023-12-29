@@ -120,9 +120,9 @@ test' s gconfig spec@{ δv } = do
    let GC desug' = identity *** (GC desug)
    let _ × s𝔹 = desug'.bwd (γ𝔹 × e𝔹)
    out0' <- do
-      let e𝔹' = snd (desug'.fwd (γ𝔹 × s𝔹))
-      PrettyShow (γ𝔹 × e𝔹') `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= γ𝔹 × e𝔹))
-      traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd (γ𝔹 × e𝔹'))
+      let in0' = desug'.fwd (γ𝔹 × s𝔹)
+      PrettyShow in0' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= γ𝔹 × e𝔹))
+      traceBenchmark benchNames.fwd $ \_ -> pure (evalT.fwd in0')
    PrettyShow out0' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
    let in_top = (topOf <$> gconfig.γ) × topOf e
