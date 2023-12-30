@@ -29,7 +29,7 @@ class Monad m <= MonadAlloc m where
 
 -- Fix exceptions at Error, the type of JavaScript exceptions, because Aff requires Error, and
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
-class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
+class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadAllocWithGraph m where
    -- Extend with a freshly allocated vertex.
    new :: NonEmptySet Vertex -> m Vertex
 
@@ -37,7 +37,7 @@ class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAllo
 type AdjMapEntries = List HyperEdge
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
-type WithGraphAllocT m = AllocT (WithGraphT m)
+type AllocWithGraphT m = AllocT (WithGraphT m)
 type WithGraphT = StateT AdjMapEntries
 type WithGraph = WithGraphT Identity
 
@@ -46,7 +46,7 @@ instance Monad m => MonadAlloc (AllocT m) where
       n <- modify $ (+) 1
       pure (Vertex $ show n)
 
-instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
+instance MonadError Error m => MonadAllocWithGraph (AllocWithGraphT m) where
    new αs = do
       α <- fresh
       extend α αs
@@ -70,14 +70,14 @@ runWithGraphT m = do
    g × a <- runStateT m Nil <#> swap <#> first fromEdgeList
    -- comparing edge lists requires sorting, which causes stack overflow on large graphs
    assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
-      pure ((spyWhen tracing.graphCreation "runWithGraphAllocT" showGraph g) × a)
+      pure ((spyWhen tracing.graphCreation "runAllocWithGraphT" showGraph g) × a)
 
-runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
-runWithGraphAllocT n m = do
+runAllocWithGraphT :: forall g m a. Monad m => Graph g => Int -> AllocWithGraphT m a -> m ((g × Int) × a)
+runAllocWithGraphT n m = do
    g × n' × _ × a <- runWithGraphT (runAllocT n m)
    pure ((g × n') × a)
 
-wibble :: forall g m a. Monad m => Graph g => WithGraphAllocT m a -> AllocT m (g × a)
+wibble :: forall g m a. Monad m => Graph g => AllocWithGraphT m a -> AllocT m (g × a)
 wibble = mapStateT (runWithGraphT >>> (_ <#> assoc2))
 
 -- ======================
@@ -89,5 +89,5 @@ runAlloc n = runAllocT n >>> unwrap
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
-instance Monad m => MonadWithGraph (WithGraphAllocT m) where
+instance Monad m => MonadWithGraph (AllocWithGraphT m) where
    extend α = lift <<< extend α

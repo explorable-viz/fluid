@@ -18,7 +18,7 @@ import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
 import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (alloc, runWithGraphAllocT)
+import Graph.WithGraph (alloc, runAllocWithGraphT)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
@@ -80,7 +80,7 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
    (_ × n) × progCxt' × γ <-
-      runWithGraphAllocT 0
+      runAllocWithGraphT 0
          ( do
               progCxt' <- alloc progCxt
               γ <- eval_progCxt progCxt'
