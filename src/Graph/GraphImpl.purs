@@ -26,6 +26,7 @@ import Util (type (×), definitely, error, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
+
 data GraphImpl = GraphImpl
    { out :: AdjMap
    , in :: AdjMap
@@ -58,10 +59,10 @@ instance Graph GraphImpl where
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: S.empty, sources: S.empty, vertices: S.empty }
 
    -- Last entry will take priority if keys are duplicated in α_αs.
-   fromEdgeList α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
+   fromEdgeList es = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      out = runST (outMap α_αs)
-      in_ = runST (inMap α_αs)
+      out = runST (outMap es)
+      in_ = runST (inMap es)
       vertices = S.fromFoldable $ S.map Vertex $ D.keys out
 
 instance Vertices GraphImpl where
@@ -84,32 +85,33 @@ addIfMissing acc (Vertex β) = do
       Nothing -> OST.poke β S.empty acc
       Just _ -> pure acc
 
-outMap :: List HyperEdge -> forall r. ST r (MutableAdjMap r)
-outMap α_αs = do
+outMap :: forall r. List HyperEdge -> ST r (MutableAdjMap r)
+outMap es = do
    out <- OST.new
-   tailRecM addEdges (α_αs × out)
+   tailRecM addEdges (es × out)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((Vertex α × βs) : rest) × acc) = do
-      ok <- OST.peek α acc <#> maybe true (\βs' -> βs' == S.empty || βs' == toSet βs)
+   addEdges (((Vertex α × βs) : es') × acc) = do
+      ok <- OST.peek α acc <#> maybe true (_ == S.empty)
       if ok then do
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
-         pure $ Loop (rest × acc')
+         pure $ Loop (es' × acc')
       else
-         error $ "Inconsistent edge information for " <> show α
+         error $ "Duplicate edge list entry for " <> show α
 
-inMap :: List HyperEdge -> forall r. ST r (MutableAdjMap r)
-inMap α_αs = do
+inMap :: forall r. List HyperEdge -> ST r (MutableAdjMap r)
+inMap es = do
    in_ <- OST.new
-   tailRecM addEdges (α_αs × in_)
+   tailRecM addEdges (es × in_)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((α × βs) : rest) × acc) = do
+   addEdges (((α × βs) : es') × acc) = do
       acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α
-      pure $ Loop (rest × acc')
+      pure $ Loop (es' × acc')
 
+   addEdge :: Vertex -> MutableAdjMap _ -> Vertex -> ST _ _
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc

@@ -21,7 +21,7 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, op, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
-import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
+import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT)
 import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
@@ -32,6 +32,7 @@ import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
 
+-- Needs a better name.
 type GraphConfig =
    { progCxt :: ProgCxt Vertex
    , n :: Int
@@ -193,11 +194,10 @@ graphGC
    -> Raw Expr
    -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
-   (g × _) × eα × vα <-
-      runWithGraphAllocT n do
-         eα <- alloc e
-         vα <- eval γ eα Set.empty
-         pure (eα × vα)
+   _ × _ × g × eα × vα <- runAllocT n do
+      eα <- alloc e
+      g × vα <- runWithGraphT (eval γ eα Set.empty)
+      pure (g × eα × vα)
    let inputs = vertices (γ × eα)
    when checking.sinksAreInputs $
       check ((sinks g \\ inputs) == Set.empty) "Every sink is an input"
