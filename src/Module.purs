@@ -17,7 +17,8 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
-import Graph.WithGraph (alloc, runAllocT, wibble)
+import Graph.GraphImpl (GraphImpl)
+import Graph.WithGraph (alloc, runWithGraphAllocT)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
@@ -78,9 +79,12 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
-   n × _ × progCxt' × γ <- runAllocT 0 do
-      progCxt' <- alloc progCxt
-      γ <- wibble (eval_progCxt progCxt')
-      pure (progCxt' × γ `restrict` (fv e))
+   (_ × n) × progCxt' × γ <-
+      runWithGraphAllocT 0
+         ( do
+              progCxt' <- alloc progCxt
+              γ <- eval_progCxt progCxt'
+              pure (progCxt' × γ `restrict` (fv e))
+         ) :: m ((GraphImpl × _) × _)
    -- restricting to free vars makes γ more managable, but precludes mapping back to surface syntax for now
    pure { n, progCxt: progCxt', γ }

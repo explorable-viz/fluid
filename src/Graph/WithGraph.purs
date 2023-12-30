@@ -3,7 +3,7 @@ module Graph.WithGraph where
 import Prelude hiding (map)
 
 import Control.Monad.Except (class MonadError)
-import Control.Monad.State (StateT, evalStateT, mapStateT, modify, modify_, runStateT)
+import Control.Monad.State (StateT, modify, modify_, runStateT)
 import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
@@ -56,9 +56,6 @@ instance Monad m => MonadWithGraph (WithGraphT m) where
    extend α αs =
       void $ modify_ $ (:) (α × αs)
 
-instance Monad m => MonadWithGraph (WithGraphAllocT m) where
-   extend α = lift <<< extend α
-
 alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
 alloc = traverse (const fresh)
 
@@ -67,9 +64,6 @@ runAllocT n m = do
    a × n' <- runStateT m n
    let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
    pure (n' × fresh_αs × a)
-
-runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
-runAlloc n = runAllocT n >>> unwrap
 
 runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
 runWithGraphT m = do
@@ -83,8 +77,14 @@ runWithGraphAllocT n m = do
    g × n' × _ × a <- runWithGraphT (runAllocT n m)
    pure ((g × n') × a)
 
+-- ======================
+-- Boilerplate
+-- ======================
+runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
+runAlloc n = runAllocT n >>> unwrap
+
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
-wibble :: forall m a. Monad m => WithGraphAllocT m a -> AllocT m a
-wibble = mapStateT (flip evalStateT Nil)
+instance Monad m => MonadWithGraph (WithGraphAllocT m) where
+   extend α = lift <<< extend α

@@ -32,6 +32,7 @@ import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
 
+-- Needs a better name.
 type GraphConfig =
    { progCxt :: ProgCxt Vertex
    , n :: Int
