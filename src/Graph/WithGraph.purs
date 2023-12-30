@@ -33,13 +33,12 @@ class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAllo
    -- Extend with a freshly allocated vertex.
    new :: NonEmptySet Vertex -> m Vertex
 
--- List of adjacency map entries to serve as a fromFoldable input.
-type AdjMapEntries = List HyperEdge
+-- List of adjacency map entries to serve as input to fromEdgeList.
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
 type AllocWithGraphT m = AllocT (WithGraphT m)
 type WithGraphAllocT m = WithGraphT (AllocT m)
-type WithGraphT = StateT AdjMapEntries
+type WithGraphT = StateT (List HyperEdge)
 type WithGraph = WithGraphT Identity
 
 instance Monad m => MonadAlloc (AllocT m) where
