@@ -38,6 +38,7 @@ type AdjMapEntries = List HyperEdge
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
 type AllocWithGraphT m = AllocT (WithGraphT m)
+type WithGraphAllocT m = WithGraphT (AllocT m)
 type WithGraphT = StateT AdjMapEntries
 type WithGraph = WithGraphT Identity
 
