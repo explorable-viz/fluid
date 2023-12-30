@@ -18,7 +18,7 @@ import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), assertWhen, spyWhen, (×))
+import Util (type (×), assertWhen, assoc1, assoc2, spyWhen, (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -77,13 +77,8 @@ runWithGraphAllocT n m = do
    g × n' × _ × a <- runWithGraphT (runAllocT n m)
    pure ((g × n') × a)
 
---wibble :: forall m a. Monad m => WithGraphAllocT m a -> AllocT m a
---wibble = mapStateT (flip evalStateT Nil)
-
 wibble :: forall g m a. Monad m => Graph g => WithGraphAllocT m a -> AllocT m (g × a)
-wibble = do
-   let q = ?_ :: WithGraphT m (a × Int) -> m ((g × a) × Int)
-   mapStateT q
+wibble = mapStateT (runWithGraphT >>> (_ <#> assoc2))
 
 -- ======================
 -- Boilerplate
