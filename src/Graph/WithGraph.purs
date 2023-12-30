@@ -2,9 +2,8 @@ module Graph.WithGraph where
 
 import Prelude hiding (map)
 
-import Control.Monad.Except (class MonadError)
-import Control.Monad.State (StateT, mapStateT, modify, modify_, runStateT)
-import Control.Monad.Trans.Class (lift)
+import Control.Monad.Except (class MonadError, lift)
+import Control.Monad.State (StateT, modify, modify_, runStateT)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
 import Data.Newtype (unwrap)
@@ -18,7 +17,7 @@ import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), assertWhen, assoc2, spyWhen, (×))
+import Util (type (×), assertWhen, spyWhen, (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -33,10 +32,8 @@ class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAllo
    -- Extend with a freshly allocated vertex.
    new :: NonEmptySet Vertex -> m Vertex
 
--- List of adjacency map entries to serve as input to fromEdgeList.
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
-type AllocWithGraphT m = AllocT (WithGraphT m)
 type WithGraphAllocT m = WithGraphT (AllocT m)
 type WithGraphT = StateT (List HyperEdge)
 type WithGraph = WithGraphT Identity
@@ -46,7 +43,7 @@ instance Monad m => MonadAlloc (AllocT m) where
       n <- modify $ (+) 1
       pure (Vertex $ show n)
 
-instance MonadError Error m => MonadWithGraphAlloc (AllocWithGraphT m) where
+instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
    new αs = do
       α <- fresh
       extend α αs
@@ -72,9 +69,6 @@ runWithGraphT m = do
    assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
       pure ((spyWhen tracing.graphCreation "runWithGraphT" showGraph g) × a)
 
-wibble :: forall g m a. Monad m => Graph g => AllocWithGraphT m a -> AllocT m (g × a)
-wibble = mapStateT (runWithGraphT >>> (_ <#> assoc2))
-
 -- ======================
 -- Boilerplate
 -- ======================
@@ -84,5 +78,5 @@ runAlloc n = runAllocT n >>> unwrap
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
-instance Monad m => MonadWithGraph (AllocWithGraphT m) where
-   extend α = lift <<< extend α
+instance Monad m => MonadAlloc (WithGraphAllocT m) where
+   fresh = lift fresh
