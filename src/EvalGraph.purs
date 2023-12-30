@@ -194,7 +194,7 @@ graphGC
    -> Raw Expr
    -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
-   _ × _ × (g × eα × vα) <- runAllocT n do
+   _ × _ × g × eα × vα <- runAllocT n do
       eα <- alloc e
       g × vα <- wibble (eval γ eα Set.empty) :: AllocT m (GraphImpl × _)
       pure (g × eα × vα)
