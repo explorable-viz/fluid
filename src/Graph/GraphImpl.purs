@@ -92,11 +92,11 @@ outMap es = do
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((Vertex α × βs) : rest) × acc) = do
+   addEdges (((Vertex α × βs) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (\βs' -> βs' == S.empty || βs' == toSet βs)
       if ok then do
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
-         pure $ Loop (rest × acc')
+         pure $ Loop (es' × acc')
       else
          error $ "Inconsistent edge information for " <> show α
 
@@ -107,9 +107,9 @@ inMap es = do
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((α × βs) : rest) × acc) = do
+   addEdges (((α × βs) : es') × acc) = do
       acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α
-      pure $ Loop (rest × acc')
+      pure $ Loop (es' × acc')
 
    addEdge :: Vertex -> MutableAdjMap _ -> Vertex -> ST _ _
    addEdge α acc (Vertex β) = do
