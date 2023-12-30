@@ -26,6 +26,7 @@ import Util (type (×), definitely, error, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
+
 data GraphImpl = GraphImpl
    { out :: AdjMap
    , in :: AdjMap
@@ -58,10 +59,10 @@ instance Graph GraphImpl where
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: S.empty, sources: S.empty, vertices: S.empty }
 
    -- Last entry will take priority if keys are duplicated in α_αs.
-   fromEdgeList α_αs = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
+   fromEdgeList es = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      out = runST (outMap α_αs)
-      in_ = runST (inMap α_αs)
+      out = runST (outMap es)
+      in_ = runST (inMap es)
       vertices = S.fromFoldable $ S.map Vertex $ D.keys out
 
 instance Vertices GraphImpl where
@@ -110,6 +111,7 @@ inMap es = do
       acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α
       pure $ Loop (rest × acc')
 
+   addEdge :: Vertex -> MutableAdjMap _ -> Vertex -> ST _ (MutableAdjMap _)
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc
