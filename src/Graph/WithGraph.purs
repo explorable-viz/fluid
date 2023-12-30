@@ -8,6 +8,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
 import Data.Newtype (unwrap)
+import Data.Profunctor.Strong (second)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet)
@@ -70,12 +71,10 @@ runAllocT n m = do
 runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
 runAlloc n = runAllocT n >>> unwrap
 
-runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
-runWithGraphT m = do
-   a × edges <- runStateT m Nil
-   pure (fromEdgeList edges × a)
+runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (a × g)
+runWithGraphT m = runStateT m Nil <#> second fromEdgeList
 
-runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
+runWithGraph :: forall g a. Graph g => WithGraph a -> a × g
 runWithGraph = runWithGraphT >>> unwrap
 
 runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
@@ -88,3 +87,9 @@ runWithGraphAllocT n m = do
 
 wibble :: forall m a. Monad m => WithGraphAllocT m a -> AllocT m a
 wibble = mapStateT (flip evalStateT Nil)
+{-
+wibble' :: forall g m a. Monad m => Graph g => WithGraphAllocT m a -> AllocT m (g × a)
+wibble' m = do
+   let q = ?_ :: WithGraphT m (a × Int) -> m ((g × a) × Int)
+   mapStateT q m
+-}
