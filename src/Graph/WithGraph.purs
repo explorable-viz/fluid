@@ -29,7 +29,7 @@ class Monad m <= MonadAlloc m where
 
 -- Fix exceptions at Error, the type of JavaScript exceptions, because Aff requires Error, and
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
-class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadAllocWithGraph m where
+class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
    new :: NonEmptySet Vertex -> m Vertex
 
@@ -47,7 +47,7 @@ instance Monad m => MonadAlloc (AllocT m) where
       n <- modify $ (+) 1
       pure (Vertex $ show n)
 
-instance MonadError Error m => MonadAllocWithGraph (AllocWithGraphT m) where
+instance MonadError Error m => MonadWithGraphAlloc (AllocWithGraphT m) where
    new αs = do
       α <- fresh
       extend α αs
