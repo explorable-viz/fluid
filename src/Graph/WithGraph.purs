@@ -3,7 +3,7 @@ module Graph.WithGraph where
 import Prelude hiding (map)
 
 import Control.Monad.Except (class MonadError)
-import Control.Monad.State (StateT, modify, modify_, runStateT)
+import Control.Monad.State (StateT, mapState, mapStateT, modify, modify_, runStateT)
 import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
@@ -76,6 +76,14 @@ runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT
 runWithGraphAllocT n m = do
    g × n' × _ × a <- runWithGraphT (runAllocT n m)
    pure ((g × n') × a)
+
+--wibble :: forall m a. Monad m => WithGraphAllocT m a -> AllocT m a
+--wibble = mapStateT (flip evalStateT Nil)
+
+wibble :: forall g m a. Monad m => Graph g => WithGraphAllocT m a -> AllocT m (g × a)
+wibble = do
+   let q = ?_ :: WithGraphT m (a × Int) -> m ((g × a) × Int)
+   mapStateT q
 
 -- ======================
 -- Boilerplate
