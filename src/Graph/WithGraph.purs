@@ -3,7 +3,7 @@ module Graph.WithGraph where
 import Prelude hiding (map)
 
 import Control.Monad.Except (class MonadError)
-import Control.Monad.State (StateT, mapState, mapStateT, modify, modify_, runStateT)
+import Control.Monad.State (StateT, mapStateT, modify, modify_, runStateT)
 import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
@@ -18,7 +18,7 @@ import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), assertWhen, assoc1, assoc2, spyWhen, (×))
+import Util (type (×), assertWhen, assoc2, spyWhen, (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.

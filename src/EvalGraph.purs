@@ -21,7 +21,7 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, op, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
-import Graph.WithGraph (class MonadAlloc, class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphAllocT, runWithGraphT)
+import Graph.WithGraph (class MonadWithGraphAlloc, AllocT, alloc, new, runAllocT, wibble)
 import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
@@ -194,9 +194,9 @@ graphGC
    -> Raw Expr
    -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
-   g × eα × vα <- do
-      n' × _ × eα <- runAllocT n (alloc e)
-      (g × _) × vα <- runWithGraphAllocT n' (eval γ eα Set.empty)
+   _ × _ × (g × eα × vα) <- runAllocT n do
+      eα <- alloc e
+      g × vα <- wibble (eval γ eα Set.empty) :: AllocT m (GraphImpl × _)
       pure (g × eα × vα)
    let inputs = vertices (γ × eα)
    when checking.sinksAreInputs $
