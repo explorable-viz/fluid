@@ -50,8 +50,7 @@ instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
       pure α
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
-   extend α αs =
-      void $ modify_ $ (:) (α × αs)
+   extend α αs = void $ modify_ $ (:) (α × αs)
 
 alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
 alloc = traverse (const fresh)
@@ -62,11 +61,11 @@ runAllocT n m = do
    let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
    pure (n' × fresh_αs × a)
 
-runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
-runWithGraphT m = do
-   g × a <- runStateT m Nil <#> swap <#> first (fromEdgeList Set.empty)
+runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
+runWithGraphT αs m = do
+   g × a <- runStateT m Nil <#> swap <#> first (fromEdgeList αs)
    -- comparing edge lists requires sorting, which causes stack overflow on large graphs
-   assertWhen checking.edgeListIso (\_ -> g == fromEdgeList Set.empty (toEdgeList g)) $
+   assertWhen checking.edgeListIso (\_ -> g == fromEdgeList αs (toEdgeList g)) $
       pure ((spyWhen tracing.graphCreation "runWithGraphT" showGraph g) × a)
 
 -- ======================
@@ -75,8 +74,8 @@ runWithGraphT m = do
 runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
 runAlloc n = runAllocT n >>> unwrap
 
-runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
-runWithGraph = runWithGraphT >>> unwrap
+runWithGraph :: forall g a. Graph g => Set Vertex -> WithGraph a -> g × a
+runWithGraph αs = runWithGraphT αs >>> unwrap
 
 instance Monad m => MonadAlloc (WithGraphAllocT m) where
    fresh = lift fresh

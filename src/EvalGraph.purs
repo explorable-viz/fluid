@@ -194,11 +194,11 @@ graphGC
    -> Raw Expr
    -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
-   _ × _ × g × eα × vα <- runAllocT n do
+   _ × _ × g × inputs × eα × vα <- runAllocT n do
       eα <- alloc e
-      g × vα <- runWithGraphT (eval γ eα Set.empty)
-      pure (g × eα × vα)
-   let inputs = vertices (γ × eα)
+      let inputs = vertices (γ × eα)
+      g × vα <- runWithGraphT inputs (eval γ eα Set.empty)
+      pure (g × inputs × eα × vα)
    when checking.sinksAreInputs $
       check ((sinks g \\ inputs) == Set.empty) "Every sink is an input"
 
