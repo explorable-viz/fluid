@@ -85,9 +85,9 @@ addIfMissing acc (Vertex β) = do
       Just _ -> pure acc
 
 outMap :: List HyperEdge -> forall r. ST r (MutableAdjMap r)
-outMap α_αs = do
+outMap es = do
    out <- OST.new
-   tailRecM addEdges (α_αs × out)
+   tailRecM addEdges (es × out)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
@@ -100,9 +100,9 @@ outMap α_αs = do
          error $ "Inconsistent edge information for " <> show α
 
 inMap :: List HyperEdge -> forall r. ST r (MutableAdjMap r)
-inMap α_αs = do
+inMap es = do
    in_ <- OST.new
-   tailRecM addEdges (α_αs × in_)
+   tailRecM addEdges (es × in_)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
