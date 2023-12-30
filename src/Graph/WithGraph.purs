@@ -71,12 +71,7 @@ runWithGraphT m = do
    g × a <- runStateT m Nil <#> swap <#> first fromEdgeList
    -- comparing edge lists requires sorting, which causes stack overflow on large graphs
    assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
-      pure ((spyWhen tracing.graphCreation "runAllocWithGraphT" showGraph g) × a)
-
-runAllocWithGraphT :: forall g m a. Monad m => Graph g => Int -> AllocWithGraphT m a -> m ((g × Int) × a)
-runAllocWithGraphT n m = do
-   g × n' × _ × a <- runWithGraphT (runAllocT n m)
-   pure ((g × n') × a)
+      pure ((spyWhen tracing.graphCreation "runWithGraphT" showGraph g) × a)
 
 wibble :: forall g m a. Monad m => Graph g => AllocWithGraphT m a -> AllocT m (g × a)
 wibble = mapStateT (runWithGraphT >>> (_ <#> assoc2))
