@@ -85,7 +85,7 @@ addIfMissing acc (Vertex β) = do
       Nothing -> OST.poke β S.empty acc
       Just _ -> pure acc
 
-outMap :: List HyperEdge -> forall r. ST r (MutableAdjMap r)
+outMap :: forall r. List HyperEdge -> ST r (MutableAdjMap r)
 outMap es = do
    out <- OST.new
    tailRecM addEdges (es × out)
@@ -100,7 +100,7 @@ outMap es = do
       else
          error $ "Inconsistent edge information for " <> show α
 
-inMap :: List HyperEdge -> forall r. ST r (MutableAdjMap r)
+inMap :: forall r. List HyperEdge -> ST r (MutableAdjMap r)
 inMap es = do
    in_ <- OST.new
    tailRecM addEdges (es × in_)
@@ -111,7 +111,7 @@ inMap es = do
       acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α
       pure $ Loop (rest × acc')
 
-   addEdge :: Vertex -> MutableAdjMap _ -> Vertex -> ST _ (MutableAdjMap _)
+   addEdge :: Vertex -> MutableAdjMap _ -> Vertex -> ST _ _
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc
