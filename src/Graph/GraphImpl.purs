@@ -22,7 +22,7 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, Vertex(..), HyperEdge, op, outN)
-import Util (type (×), definitely, error, spy, (\\), (×), (∩), (∪))
+import Util (type (×), definitely, error, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -61,7 +61,7 @@ instance Graph GraphImpl where
    -- Last entry will take priority if keys are duplicated in α_αs.
    fromEdgeList αs es = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      out = runST (outMap (spy "Input count: " (Set.size >>> show) αs) es)
+      out = runST (outMap αs es)
       in_ = runST (inMap αs es)
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
 
