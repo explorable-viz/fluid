@@ -8,11 +8,12 @@ import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (second)
+import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
+import Data.Tuple (swap)
 import Effect.Exception (Error)
 import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
@@ -64,32 +65,26 @@ alloc = traverse (const fresh)
 runAllocT :: forall m a. Monad m => Int -> AllocT m a -> m (Int × Set Vertex × a)
 runAllocT n m = do
    a × n' <- runStateT m n
-   -- TODO: duplicated vertex construction should be avoidable
    let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
    pure (n' × fresh_αs × a)
 
 runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
 runAlloc n = runAllocT n >>> unwrap
 
-runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (a × g)
-runWithGraphT m = runStateT m Nil <#> second fromEdgeList
-
-runWithGraph :: forall g a. Graph g => WithGraph a -> a × g
-runWithGraph = runWithGraphT >>> unwrap
+runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
+runWithGraphT m = do
+   g × a <- runStateT m Nil <#> swap <#> first fromEdgeList
+   -- comparing edge lists requires sorting, which causes stack overflow on large graphs
+   assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
+      pure ((spyWhen tracing.graphCreation "runWithGraphAllocT" showGraph g) × a)
 
 runWithGraphAllocT :: forall g m a. Monad m => Graph g => Int -> WithGraphAllocT m a -> m ((g × Int) × a)
 runWithGraphAllocT n m = do
-   (n' × _ × a) × edges <- runStateT (runAllocT n m) Nil
-   let g = fromEdgeList edges
-   -- comparing edge lists requires sorting, and causes stack overflow on large graph
-   assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
-      pure ((spyWhen tracing.graphCreation "runWithGraphAllocT" showGraph g × n') × a)
+   g × n' × _ × a <- runWithGraphT (runAllocT n m)
+   pure ((g × n') × a)
+
+runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
+runWithGraph = runWithGraphT >>> unwrap
 
 wibble :: forall m a. Monad m => WithGraphAllocT m a -> AllocT m a
 wibble = mapStateT (flip evalStateT Nil)
-{-
-wibble' :: forall g m a. Monad m => Graph g => WithGraphAllocT m a -> AllocT m (g × a)
-wibble' m = do
-   let q = ?_ :: WithGraphT m (a × Int) -> m ((g × a) × Int)
-   mapStateT q m
--}
