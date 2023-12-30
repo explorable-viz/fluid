@@ -78,7 +78,7 @@ benchNames =
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
-   let γ = spy "Env" prettyP (erase <$> gconfig.γ)
+   let γ = erase <$> gconfig.γ
    { gc: GC desug, e } <- desugGC s
    { gc: GC evalT, v } <- traceBenchmark benchNames.eval $ \_ ->
       traceGC γ e
