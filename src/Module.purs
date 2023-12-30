@@ -66,7 +66,7 @@ module_ file (ProgCxt r@{ mods }) = do
    pure $ ProgCxt r { mods = mod : mods }
 
 modules :: forall m. MonadAff m => MonadError Error m => Array File -> Raw ProgCxt -> m (Raw ProgCxt)
-modules files = concatM (files <#> module_)
+modules files = files <#> module_ # concatM
 
 prelude :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
 prelude =
