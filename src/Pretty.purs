@@ -167,9 +167,9 @@ prettyOperator sep (Cons s xss) = sep (prettyOperator sep (toList (singleton s))
 prettyOperator _ Nil = empty
 
 instance Ann a => Pretty (ListRest a) where
-   pretty (Next ann (Record _ xss) l) = ((highlightIf ann $ text str.comma)) .<>. ((highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
-   pretty (Next ann s l) = ((highlightIf ann $ text str.comma)) .<>. pretty s .<>. pretty l
-   pretty (End ann) = (highlightIf ann $ text str.rBracket)
+   pretty (Next ann (Record _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
+   pretty (Next ann s l) = highlightIf ann (text str.comma) .<>. pretty s .<>. pretty l
+   pretty (End ann) = highlightIf ann (text str.rBracket)
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil) = prettyPairs (Pair e e')
@@ -185,10 +185,10 @@ instance Pretty Pattern where
    pretty (PConstr c ps) = case uncons ps of
       Just { head: p, tail: Nil } -> pretty c .<>. pretty p
       _ ->
-         if c == cPair then (parentheses (prettyPattConstr (text str.comma) ps))
-         else if c == cCons then (parentheses (prettyPattConstr (text str.colon) ps))
-         else
-            parentheses (text c .<>. prettyPattConstr empty ps)
+         parentheses
+            if c == cPair then prettyPattConstr (text str.comma) ps
+            else if c == cCons then prettyPattConstr (text str.colon) ps
+            else text c .<>. prettyPattConstr empty ps
 
    pretty (PListEmpty) = brackets empty
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
