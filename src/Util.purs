@@ -32,7 +32,7 @@ debug
       }
 
 debug =
-   { logging: true
+   { logging: false
    , tracing: true
    }
 
