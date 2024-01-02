@@ -43,5 +43,5 @@ testing =
    { fwdPreservesTop: true
    , bwdDuals: false
    , fwdDuals: false
-   , naiveFwd: false
+   , naiveFwd: true
    }
