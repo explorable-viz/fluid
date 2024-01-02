@@ -84,9 +84,13 @@ addIfMissing acc (Vertex α) = do
       Nothing -> OST.poke α Set.empty acc
       Just _ -> pure acc
 
+init :: forall r. Set Vertex -> ST r (MutableAdjMap r)
+init αs =
+   OST.new >>= flip (foldM (\acc (Vertex α) -> OST.poke α Set.empty acc)) αs
+
 outMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
-outMap _ es = do
-   out <- OST.new
+outMap αs es = do
+   out <- init αs
    tailRecM addEdges (es × out)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
@@ -100,8 +104,8 @@ outMap _ es = do
          error $ "Duplicate edge list entry for " <> show α
 
 inMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
-inMap _ es = do
-   in_ <- OST.new
+inMap αs es = do
+   in_ <- init αs
    tailRecM addEdges (es × in_)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
@@ -114,7 +118,7 @@ inMap _ es = do
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc
-         Just αs -> OST.poke β (insert α αs) acc
+         Just αs' -> OST.poke β (insert α αs') acc
 
 instance Show GraphImpl where
    show (GraphImpl g) = "GraphImpl (" <> show g.out <> " × " <> show g.in <> ")"
