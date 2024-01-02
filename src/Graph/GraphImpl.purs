@@ -16,7 +16,6 @@ import Data.Set (Set, insert, singleton)
 import Data.Set as Set
 import Data.Set.NonEmpty (toSet)
 import Data.Tuple (fst, snd)
-import Debug (trace)
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (runST)
@@ -89,7 +88,9 @@ assertPresent acc (Vertex α) = do
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
    OST.peek β acc >>= case _ of
-      Nothing -> trace ("Adding missing vertex " <> show β) \_ -> OST.poke β Set.empty acc
+      Nothing ->
+         -- trace ("Adding missing vertex " <> show β) \_ ->
+         OST.poke β Set.empty acc
       Just _ -> pure acc
 
 init :: forall r. Set Vertex -> ST r (MutableAdjMap r)

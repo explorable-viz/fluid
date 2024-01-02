@@ -3,7 +3,7 @@ module Test.Util where
 import Prelude hiding ((-), absurd)
 
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadThrow)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List (elem)
@@ -17,7 +17,7 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), (***), dual)
-import Lattice (Raw, 𝔹, (-), botOf, erase, topOf)
+import Lattice (class Neg, Raw, 𝔹, botOf, erase, topOf, (-))
 import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
@@ -137,11 +137,13 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
 
    let GC evalG_dual_op = dual (GC evalG_op)
    out4 <- benchmark benchNames.naiveFwd $ \_ -> pure (evalG_dual_op.fwd in0)
-   when testing.naiveFwd $ do
-      check (spy "Direct minus naive" prettyP (out1 `lift2 (-)` out4) == botOf out1) "Direct <= naive"
-      check (spy "Naive minus direct" prettyP (out4 `lift2 (-)` out1) == botOf out1) "Naive <= direct"
+   when testing.naiveFwd $
+      checkEqual "Naive fwd" "Direct fwd" out4 out1
 
---      check (out4 == out1) "Naive and direct fwd agree"
+checkEqual :: forall m a. Eq a => Ann a => Neg a => MonadError Error m => String -> String -> Val a -> Val a -> m Unit
+checkEqual method1 method2 x y = do
+   check (spy (method1 <> " minus " <> method2) prettyP (x `lift2 (-)` y) == botOf x) (method1 <> " <= " <> method2)
+   check (spy (method2 <> " minus " <> method1) prettyP (y `lift2 (-)` x) == botOf x) (method2 <> " <= " <> method1)
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
