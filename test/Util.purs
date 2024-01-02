@@ -116,7 +116,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
-   check (out1 == out0') "Graph fwd agrees with trace fwd"
+   checkEqual ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
 
    -- Already testing extensional equivalence above, but specifically test this case too.
    let out_top' = evalG.fwd in_top
