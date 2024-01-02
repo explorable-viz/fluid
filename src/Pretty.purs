@@ -136,7 +136,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Op op) = parentheses (text op)
    pretty (Int α n) = highlightIf α $ text (show n)
    pretty (Float α n) = highlightIf α $ text (show n)
-   pretty (Str α str) = highlightIf α $ (text ("\"" <> str <> "\""))
+   pretty (Str α str) = highlightIf α $ text ("\"" <> str <> "\"")
    pretty (Constr α c x) = highlightIf α $ prettyConstr c x
    pretty (Record α xss) = highlightIf α $ curlyBraces (prettyOperator (.-.) xss)
    pretty (Dictionary α sss) = highlightIf α $ dictBrackets (pretty sss)
@@ -150,14 +150,14 @@ instance Ann a => Pretty (Expr a) where
    pretty (Project s x) = prettySimple s .<>. text str.dot .<>. text x
    pretty (App s s') = prettyAppChain (App s s')
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
-   pretty (MatchAs s cs) = ((text str.match .<>. pretty s .<>. text str.as)) .-. curlyBraces (pretty cs)
+   pretty (MatchAs s cs) = (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = text str.if_ .<>. pretty s1 .<>. text str.then_ .<>. pretty s2 .<>. text str.else_ .<>. pretty s3
-   pretty (ListEmpty ann) = (highlightIf ann $ brackets empty)
-   pretty (ListNonEmpty ann (Record _ xss) l) =
-      (((highlightIf ann $ text str.lBracket)) .<>. ((highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss)))) .-. pretty l
-   pretty (ListNonEmpty ann e l) = ((highlightIf ann $ text str.lBracket)) .<>. pretty e .<>. pretty l
+   pretty (ListEmpty α) = (highlightIf α $ brackets empty)
+   pretty (ListNonEmpty α (Record _ xss) l) =
+      (highlightIf α (text str.lBracket) .<>. highlightIf α (curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
+   pretty (ListNonEmpty α e l) = highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
-   pretty (ListComp ann s qs) = (highlightIf ann $ brackets (pretty s .<>. text str.bar .<>. pretty qs))
+   pretty (ListComp ann s qs) = highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
    pretty (Let ds s) = (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
    pretty (LetRec h s) = (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
 
