@@ -79,9 +79,9 @@ sinks' m = D.toArrayWithKey (×) m
 type MutableAdjMap r = STObject r (Set Vertex)
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
-addIfMissing acc (Vertex β) = do
-   OST.peek β acc >>= case _ of
-      Nothing -> OST.poke β Set.empty acc
+addIfMissing acc (Vertex α) = do
+   OST.peek α acc >>= case _ of
+      Nothing -> OST.poke α Set.empty acc
       Just _ -> pure acc
 
 outMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
