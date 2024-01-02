@@ -40,7 +40,7 @@ testing
       }
 
 testing =
-   { fwdPreservesTop: false
+   { fwdPreservesTop: true
    , bwdDuals: false
    , fwdDuals: false
    , naiveFwd: false
