@@ -126,14 +126,15 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let GC evalG_dual = dual (GC evalG)
    in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (evalG_op.fwd out0)
    in2 <- graphBenchmark benchNames.bwdDlCmp $ \_ -> pure (evalG_dual.fwd out0)
-   when testing.bwdDuals $
-      check (in1 == in2) "Two constructions of bwd dual agree"
+   when testing.bwdDuals $ do
+      -- should check environments too but currently requires more general checkEqual
+      checkEqual benchNames.bwdDlFwdOp benchNames.bwdDlCmp (snd in1) (snd in2)
    void $ graphBenchmark benchNames.bwdAll $ \_ -> pure (evalG.bwd (topOf vα))
 
    out2 <- graphBenchmark benchNames.fwdDlBwdOp $ \_ -> pure (evalG_op.bwd in0)
    out3 <- graphBenchmark benchNames.fwdDlCmp $ \_ -> pure (evalG_dual.bwd in0)
    when testing.fwdDuals $
-      check (out2 == out3) "Two constructions of fwd dual agree"
+      checkEqual benchNames.fwdDlBwdOp benchNames.fwdDlCmp out2 out3
 
    let GC evalG_dual_op = dual (GC evalG_op)
    out4 <- benchmark benchNames.naiveFwd $ \_ -> pure (evalG_dual_op.fwd in0)
