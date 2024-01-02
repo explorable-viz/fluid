@@ -16,6 +16,7 @@ import Data.Set (Set, insert, singleton)
 import Data.Set as Set
 import Data.Set.NonEmpty (toSet)
 import Data.Tuple (fst, snd)
+import Debug (trace)
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (runST)
@@ -58,7 +59,8 @@ instance Graph GraphImpl where
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: Set.empty, sources: Set.empty, vertices: Set.empty }
 
-   fromEdgeList αs es = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
+   fromEdgeList αs es =
+      GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
       out = runST (outMap αs es)
       in_ = runST (inMap αs es)
@@ -78,10 +80,16 @@ sinks' m = D.toArrayWithKey (×) m
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
+{-
+assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
+assertPresent acc (Vertex α) = do
+   present <- OST.peek α acc <#> isJust
+   pure $ assertWith (α <> " not an existing vertex") present unit
+-}
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
-addIfMissing acc (Vertex α) = do
-   OST.peek α acc >>= case _ of
-      Nothing -> OST.poke α Set.empty acc
+addIfMissing acc (Vertex β) = do
+   OST.peek β acc >>= case _ of
+      Nothing -> trace ("Adding missing vertex " <> show β) \_ -> OST.poke β Set.empty acc
       Just _ -> pure acc
 
 init :: forall r. Set Vertex -> ST r (MutableAdjMap r)
@@ -98,6 +106,7 @@ outMap αs es = do
    addEdges (((Vertex α × βs) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (_ == Set.empty)
       if ok then do
+         --         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (es' × acc')
       else
