@@ -347,13 +347,13 @@ prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
    pretty (E.Int α n) = highlightIf α (text (show n))
-   pretty (E.Float _ n) = text (show n)
-   pretty (E.Str _ str) = text (show str)
+   pretty (E.Float α n) = highlightIf α (text (show n))
+   pretty (E.Str α str) = highlightIf α (text (show str))
    pretty (E.Record α xes) = highlightIf α $ prettyRecord text (xes # D.toUnfoldable)
    pretty (E.Dictionary α ees) = highlightIf α $ prettyDict pretty (ees <#> toTuple)
    pretty (E.Constr α c es) = highlightIf α $ prettyConstr c es
    pretty (E.Matrix α e1 (i × j) e2) = (highlightIf α (prettyMatrix e1 i j e2))
-   pretty (E.Lambda _ σ) = hcat [ text str.fun, pretty σ ]
+   pretty (E.Lambda α σ) = hcat [ highlightIf α (text str.fun), pretty σ ]
    pretty (E.Op op) = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
       (pretty e')
