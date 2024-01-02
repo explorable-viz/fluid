@@ -11,7 +11,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set, empty, insert)
 import Data.Set.NonEmpty (cons, fromSet, singleton, toSet)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, showGraph, showVertices)
+import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, showGraph, showVertices, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph)
 import Test.Util.Debug (tracing)
 import Util (type (×), spyWhen, (×), (∈))
@@ -20,7 +20,7 @@ type PendingVertices = Map Vertex (Set Vertex)
 
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 bwdSlice αs_ g_ =
-   fst (runWithGraph empty $ tailRecM go (empty × L.fromFoldable αs))
+   fst (runWithGraph (vertices g) $ tailRecM go (empty × L.fromFoldable αs))
       # spyWhen tracing.graphBwdSliceOutput "bwdSlice output graph" showGraph
    where
    αs = αs_ # spyWhen tracing.graphBwdSliceInput "bwdSlice input αs" showVertices
@@ -42,7 +42,7 @@ bwdSlice αs_ g_ =
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs_ g_ =
-   fst (runWithGraph empty $ tailRecM go (M.empty × inEdges g αs))
+   fst (runWithGraph (vertices g) $ tailRecM go (M.empty × inEdges g αs))
       # spyWhen tracing.graphFwdSliceOutput "fwdSlice output graph" showGraph
    where
    αs = spyWhen tracing.graphFwdSliceInput "fwdSlice input αs" showVertices αs_

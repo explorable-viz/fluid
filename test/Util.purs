@@ -17,7 +17,7 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), (***), dual)
-import Lattice (class Neg, Raw, 𝔹, botOf, erase, topOf, (-))
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, 𝔹, botOf, erase, topOf, (-))
 import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
@@ -112,7 +112,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    recordGraphSize g
 
    in0 <- graphBenchmark benchNames.bwd $ \_ -> pure (evalG.bwd out0)
-   check (snd in0 == snd in_e) "Graph bwd agrees with trace bwd on expression slice"
+   checkEqual "Graph bwd" "Trace bwd" (snd in0) (snd in_e)
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
@@ -140,7 +140,20 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    when testing.naiveFwd $
       checkEqual "Naive fwd" "Direct fwd" out4 out1
 
-checkEqual :: forall m a. Eq a => Ann a => Neg a => MonadError Error m => String -> String -> Val a -> Val a -> m Unit
+checkEqual
+   :: forall m f a
+    . Apply f
+   => Eq (f a)
+   => Pretty (f a)
+   => MeetSemilattice a
+   => Neg a
+   => BotOf (f a) (f a)
+   => MonadError Error m
+   => String
+   -> String
+   -> f a
+   -> f a
+   -> m Unit
 checkEqual method1 method2 x y = do
    check (spy (method1 <> " minus " <> method2) prettyP (x `lift2 (-)` y) == botOf x) (method1 <> " <= " <> method2)
    check (spy (method2 <> " minus " <> method1) prettyP (y `lift2 (-)` x) == botOf x) (method2 <> " <= " <> method1)
