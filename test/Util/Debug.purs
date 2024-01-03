@@ -23,12 +23,10 @@ tracing =
 -- that are not covered explicitly by tests.
 checking
    :: { edgeListIso :: Boolean
-      , sinksAreInputs :: Boolean
       }
 
 checking =
    { edgeListIso: false
-   , sinksAreInputs: false
    }
 
 -- Should be set to true except when there are specific outstanding problems.

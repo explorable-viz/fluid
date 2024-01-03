@@ -46,9 +46,11 @@ fwdSlice αs_ g_ =
    go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
    go (h × Nil) = Done <$> pure h
    go (h × ((α × β) : es)) = Loop <$>
-      let βs = maybe (singleton β) (insert β) (lookup α h) in
-      if βs == outN g α then do
-         extend α βs
-         pure $ (M.delete α h × (inEdges' g α <> es))
-      else
-         pure $ (M.insert α βs h × es)
+      let
+         βs = maybe (singleton β) (insert β) (lookup α h)
+      in
+         if βs == outN g α then do
+            extend α βs
+            pure $ (M.delete α h × (inEdges' g α <> es))
+         else
+            pure $ (M.insert α βs h × es)
