@@ -17,7 +17,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, op, selectαs, select𝔹s, vertices)
+import Graph (Vertex, op, selectαs, select𝔹s, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT)
@@ -26,7 +26,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyWhen, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spy, spyWhen, successful, throw, validateWhen, with, (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -168,10 +168,14 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
    where
    addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
-   addModule mod γ = (γ <+> _) <$> eval_module γ mod empty
+   addModule mod γ = do
+      γ' <- eval_module γ mod empty
+      pure $ γ <+> (spy "addModule" (vertices >>> showVertices) γ')
 
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
-   addDataset (x ↦ e) γ = (\v -> γ <+> D.singleton x v) <$> eval γ e empty
+   addDataset (x ↦ e) γ = do
+      v <- eval γ e empty
+      pure $ γ <+> D.singleton x v
 
 type GraphEval g =
    { gc :: GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹)
