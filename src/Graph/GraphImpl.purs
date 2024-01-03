@@ -13,6 +13,7 @@ import Data.Newtype (unwrap)
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Tuple (fst, snd)
+import Debug (trace)
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (runST)
@@ -78,8 +79,9 @@ type MutableAdjMap r = STObject r (Set Vertex)
 
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
-   present <- OST.peek α acc <#> isJust
-   pure $ assertWith (α <> " not an existing vertex") present unit
+   trace ("Checking for " <> α) \_ -> do
+      present <- OST.peek α acc <#> isJust
+      pure $ assertWith (α <> " not an existing vertex") present unit
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
@@ -103,9 +105,10 @@ outMap αs es = do
    addEdges (((Vertex α × βs) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (_ == mempty)
       if ok then do
-         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
-         acc' <- OST.poke α βs acc >>= flip (foldM addIfMissing) βs
-         pure $ Loop (es' × acc')
+         trace ("Inserting " <> α) \_ -> do
+            sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
+            acc' <- OST.poke α βs acc >>= flip (foldM addIfMissing) βs
+            pure $ Loop (es' × acc')
       else
          error $ "Duplicate edge list entry for " <> show α
 

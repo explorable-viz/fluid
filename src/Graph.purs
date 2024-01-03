@@ -39,8 +39,8 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   -- | Construct a graph from initial set of vertices and list of hyperedges (α, βs). Each α is a new
-   -- | vertex to be added, and each β in βs already exists in the graph being constructed.
+   -- | Construct a graph from initial set of vertices and list of hyperedges (α, βs). Read right-to-left,
+   -- | each α is a new vertex to be added, and each β in βs already exists in the graph being constructed.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
 
 newtype Vertex = Vertex String -- so can use directly as dict key
