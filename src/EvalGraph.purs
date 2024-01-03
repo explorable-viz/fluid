@@ -201,16 +201,14 @@ graphGC { n, γ } e = do
 
    let
       toOutput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα βs
+      toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (slice αs g0))
          where
-         βs = vertices (slice αs g0)
          αs = selectαs (γ𝔹 × e𝔹) (γ × eα)
             # validateWhen checking.inputsInGraph "inputsInGraph" (_ ⊆ vertices g0)
 
       toInput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      toInput slice g0 v𝔹 = select𝔹s (γ × eα) βs
+      toInput slice g0 v𝔹 = select𝔹s (γ × eα) (vertices (slice αs g0))
          where
-         βs = vertices (slice αs g0)
          αs = selectαs v𝔹 vα
             # validateWhen checking.outputsInGraph "outputsInGraph" (_ ⊆ vertices g0)
    pure
