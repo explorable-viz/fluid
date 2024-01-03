@@ -93,14 +93,17 @@ toEdgeList g =
       Just { head: α, tail: αs } -> Loop (αs × (α × outN g α) : acc)
 
 showGraph :: forall g. Graph g => g -> String
-showGraph g =
+showGraph = toEdgeList >>> showEdgeList
+
+showEdgeList :: List HyperEdge -> String
+showEdgeList es =
    joinWith "\n" $ [ "digraph G {" ] <> (indent <$> lines) <> [ "}" ]
    where
    lines :: Array String
    lines = [ "rankdir = RL" ] <> edges
 
    edges :: Array String
-   edges = showEdge <$> A.fromFoldable (reverse (toEdgeList g))
+   edges = showEdge <$> A.fromFoldable (reverse es)
 
    indent :: Endo String
    indent = ("   " <> _)
