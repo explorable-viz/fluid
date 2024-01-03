@@ -23,8 +23,8 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Test.Util.Debug (testing)
-import Util (type (×), AffError, EffectError, Thunk, check, debug, spy, (×))
+import Test.Util.Debug (testing, tracing)
+import Util (type (×), AffError, EffectError, Thunk, check, debug, spyWhen, (×))
 import Val (class Ann, Val)
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -155,8 +155,8 @@ checkEqual
    -> f a
    -> m Unit
 checkEqual method1 method2 x y = do
-   check (spy (method1 <> " minus " <> method2) prettyP (x `lift2 (-)` y) == botOf x) (method1 <> " <= " <> method2)
-   check (spy (method2 <> " minus " <> method1) prettyP (y `lift2 (-)` x) == botOf x) (method2 <> " <= " <> method1)
+   check (spyWhen tracing.checkEqual (method1 <> " minus " <> method2) prettyP (x `lift2 (-)` y) == botOf x) (method1 <> " <= " <> method2)
+   check (spyWhen tracing.checkEqual (method2 <> " minus " <> method1) prettyP (y `lift2 (-)` x) == botOf x) (method2 <> " <= " <> method1)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit

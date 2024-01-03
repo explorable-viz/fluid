@@ -8,15 +8,17 @@ tracing
       , graphBwdSliceOutput :: Boolean
       , graphFwdSliceInput :: Boolean
       , graphFwdSliceOutput :: Boolean
+      , checkEqual :: Boolean
       }
 
 tracing =
    { graphCreation: false
-   , graphInputSize: true
+   , graphInputSize: false
    , graphBwdSliceInput: false
    , graphBwdSliceOutput: false
    , graphFwdSliceInput: false
    , graphFwdSliceOutput: false
+   , checkEqual: false
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
@@ -29,7 +31,7 @@ checking
 
 checking =
    { edgeListIso: false
-   , inputsInGraph: false
+   , inputsInGraph: true
    , outputsInGraph: true
    }
 

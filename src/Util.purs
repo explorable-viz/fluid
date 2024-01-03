@@ -83,6 +83,9 @@ assertWhen :: ∀ a. Boolean -> String -> Thunk Boolean -> Endo a
 assertWhen false _ = const identity
 assertWhen true msg = force >>> assertWith msg
 
+validate :: ∀ a. String -> (a -> Boolean) -> Endo a
+validate = validateWhen true
+
 validateWhen :: ∀ a. Boolean -> String -> (a -> Boolean) -> Endo a
 validateWhen b msg p a = assertWhen b msg (\_ -> p a) a
 
@@ -226,6 +229,7 @@ infixr 7 Set.intersection as ∩
 infixr 6 Set.union as ∪
 infix 5 Set.difference as \\
 infix 5 Set.member as ∈
+infixl 4 Set.subset as ⊆
 
 -- Simplify overloading.
 class Singleton f where
