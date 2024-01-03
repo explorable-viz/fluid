@@ -82,10 +82,17 @@ function drawScatterPlot_ (
       const x = d3.scaleLinear()
          .domain([Math.min(0, x_min), x_max])
          .range([0, width])
+      svg.append('g')
+         .attr('transform', "translate(0," + height + ")")
+         .call(d3.axisBottom(x))
+         .selectAll('text')
+         .style('text-anchor', 'middle')
+      
       const y = d3.scaleLinear()
          .domain(Math.min(0, y_min), y_max)
          .range([height, 0])
-      
+      svg.append('g')
+         .call(d3.axisLeft(y))
       unique_countries = [...new Set(data.map(d => fst(d.c)))]
       const c = d3.scaleOrdinal()
          .domain(unique_countries)
@@ -107,11 +114,12 @@ function drawScatterPlot_ (
       
 
          svg.append('g')
+            .selectAll('dot')
             .data([...data.entries()])
             .enter()
             .append('circle')
                .attr('cx', ([, d]) => x(fst(d.x)))
-               .attr('cx', ([, d]) => y(fst(d.y)))
+               .attr('cy', ([, d]) => y(fst(d.y)))
                .attr('r', 1.5)
                .attr('stroke', ([, d]) => snd(d.x) || snd(d.y) ? 'black' : 'gray')
                .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? colorShade(c(fst(d.c)), -50) : c(fst(d.c))) 
