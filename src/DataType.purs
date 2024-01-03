@@ -88,6 +88,7 @@ checkArity c n = void $
 -- Used internally by primitives, desugaring or rendering layer.
 cBarChart = "BarChart" :: Ctr -- Plot
 cBubbleChart = "BubbleChart" :: Ctr
+cScatterPlot = "ScatterPlot" :: Ctr
 cLineChart = "LineChart" :: Ctr
 cLinePlot = "LinePlot" :: Ctr
 cFalse = "False" :: Ctr -- Bool
@@ -151,6 +152,7 @@ dataTypes = L.fromFoldable
    , dataType "Plot"
         [ cBarChart × 1 -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
         , cBubbleChart × 1 -- Record<caption: Str, data: List<Record<x: Number, y: Number, z: Number>>>
+        , cScatterPlot × 1 -- Record<Caption: Str, data: List<Record<x: Number, y: Number>>>
         , cLineChart × 1 -- Record<caption: Str, plots: List<LinePlot>>
         , cLinePlot × 1 -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
         ]
