@@ -17,7 +17,10 @@ import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (class Strong, (&&&), (***))
-import Data.Set as S
+import Data.Set (Set)
+import Data.Set as Set
+import Data.Set.NonEmpty (NonEmptySet)
+import Data.Set.NonEmpty as NonEmptySet
 import Data.Tuple (Tuple(..), fst, snd)
 import Debug (trace)
 import Effect.Aff.Class (class MonadAff)
@@ -76,9 +79,15 @@ assertWith :: ∀ a. String -> Boolean -> Endo a
 assertWith _ true = identity
 assertWith msg false = \_ -> error ("Assertion failure: " <> msg)
 
-assertWhen :: ∀ a. Boolean -> Thunk Boolean -> Endo a
-assertWhen false = const identity
-assertWhen true = force >>> assert
+assertWhen :: ∀ a. Boolean -> String -> Thunk Boolean -> Endo a
+assertWhen false _ = const identity
+assertWhen true msg = force >>> assertWith msg
+
+validate :: ∀ a. String -> (a -> Boolean) -> Endo a
+validate = validateWhen true
+
+validateWhen :: ∀ a. Boolean -> String -> (a -> Boolean) -> Endo a
+validateWhen b msg p a = assertWhen b msg (\_ -> p a) a
 
 -- Debug.spyWith doesn't seem to work
 spyWhen :: forall a. Boolean -> String -> (a -> String) -> Endo a
@@ -216,7 +225,27 @@ derive instance Functor f => Functor (t <×| f)
 concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a
 concatM = foldr (>=>) pure
 
-infixr 7 S.intersection as ∩
-infixr 6 S.union as ∪
-infix 5 S.difference as \\
-infix 5 S.member as ∈
+infixr 7 Set.intersection as ∩
+infixr 6 Set.union as ∪
+infix 5 Set.difference as \\
+infix 5 Set.member as ∈
+infixl 4 Set.subset as ⊆
+
+-- Simplify overloading.
+class Singleton f where
+   singleton :: forall a. a -> f a
+
+instance Singleton Array where
+   singleton = pure
+
+instance Singleton List where
+   singleton = pure
+
+instance Singleton NonEmptyList where
+   singleton = pure
+
+instance Singleton Set where
+   singleton = Set.singleton
+
+instance Singleton NonEmptySet where
+   singleton = NonEmptySet.singleton

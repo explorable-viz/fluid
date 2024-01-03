@@ -2,9 +2,9 @@ module Bindings where
 
 import Prelude
 import Data.List (List(..), (:))
-import Data.Set (Set, empty, singleton)
+import Data.Set (Set, empty)
 import Data.Tuple (Tuple(..), fst, snd)
-import Util (type (×), (∪), definitely, whenever)
+import Util (type (×), (∪), definitely, singleton, whenever)
 
 -- Not easy as a newtype as there is no Coercible instance for Set.
 type Var = String

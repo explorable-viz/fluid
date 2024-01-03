@@ -6,12 +6,10 @@ import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
-import Data.List (elem)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst, snd)
-import DataType (dataTypeFor, typeName)
 import Desug (Desugaring, desugGC)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
@@ -25,9 +23,9 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
-import Test.Util.Debug (testing)
-import Util (type (×), AffError, EffectError, Thunk, check, debug, spy, successful, (×))
-import Val (class Ann, BaseVal(..), Val(..))
+import Test.Util.Debug (testing, tracing)
+import Util (type (×), AffError, EffectError, Thunk, check, debug, spyWhen, (×))
+import Val (class Ann, Val)
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 
@@ -103,9 +101,10 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    when testing.fwdPreservesTop $
       PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
+   -- empty string somewhat hacky encoding for "don't care"
    unless (null bwd_expect) $
       checkPretty ("bwd_expect") bwd_expect (snd in_s)
-   unless (isGraphical out0') do
+   unless (null fwd_expect) do
       when debug.logging $ logAs ("fwd ⚬ bwd") (prettyP out0')
       checkPretty ("fwd_expect") fwd_expect out0'
 
@@ -116,7 +115,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    out1 <- graphBenchmark benchNames.fwd $ \_ -> pure (evalG.fwd in0)
-   check (out1 == out0') "Graph fwd agrees with trace fwd"
+   checkEqual ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
 
    -- Already testing extensional equivalence above, but specifically test this case too.
    let out_top' = evalG.fwd in_top
@@ -127,13 +126,14 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    in1 <- graphBenchmark benchNames.bwdDlFwdOp $ \_ -> pure (evalG_op.fwd out0)
    in2 <- graphBenchmark benchNames.bwdDlCmp $ \_ -> pure (evalG_dual.fwd out0)
    when testing.bwdDuals $
-      check (in1 == in2) "Two constructions of bwd dual agree"
+      -- should check environments too but currently requires more general checkEqual
+      checkEqual benchNames.bwdDlFwdOp benchNames.bwdDlCmp (snd in1) (snd in2)
    void $ graphBenchmark benchNames.bwdAll $ \_ -> pure (evalG.bwd (topOf vα))
 
    out2 <- graphBenchmark benchNames.fwdDlBwdOp $ \_ -> pure (evalG_op.bwd in0)
    out3 <- graphBenchmark benchNames.fwdDlCmp $ \_ -> pure (evalG_dual.bwd in0)
    when testing.fwdDuals $
-      check (out2 == out3) "Two constructions of fwd dual agree"
+      checkEqual benchNames.fwdDlBwdOp benchNames.fwdDlCmp out2 out3
 
    let GC evalG_dual_op = dual (GC evalG_op)
    out4 <- benchmark benchNames.naiveFwd $ \_ -> pure (evalG_dual_op.fwd in0)
@@ -155,13 +155,8 @@ checkEqual
    -> f a
    -> m Unit
 checkEqual method1 method2 x y = do
-   check (spy (method1 <> " minus " <> method2) prettyP (x `lift2 (-)` y) == botOf x) (method1 <> " <= " <> method2)
-   check (spy (method2 <> " minus " <> method1) prettyP (y `lift2 (-)` x) == botOf x) (method2 <> " <= " <> method1)
-
--- Don't enforce fwd_expect values for graphics tests (values too complex).
-isGraphical :: forall a. Val a -> Boolean
-isGraphical (Val _ (Constr c _)) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement" ]
-isGraphical _ = false
+   check (spyWhen tracing.checkEqual (method1 <> " minus " <> method2) prettyP (x `lift2 (-)` y) == botOf x) (method1 <> " <= " <> method2)
+   check (spyWhen tracing.checkEqual (method2 <> " minus " <> method1) prettyP (y `lift2 (-)` x) == botOf x) (method2 <> " <= " <> method1)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit

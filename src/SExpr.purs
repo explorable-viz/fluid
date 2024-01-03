@@ -9,9 +9,7 @@ import Data.Foldable (foldM, foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\))
-import Data.List (singleton) as L
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, singleton)
-import Data.List.NonEmpty (singleton) as NE
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, (***))
@@ -28,7 +26,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, maybeJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, error, successful, unimplemented, (×))
+import Util (type (+), type (×), Endo, absurd, error, singleton, successful, unimplemented, (×))
 import Util.Pair (Pair(..))
 
 -- Surface language expressions.
@@ -220,7 +218,7 @@ exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
 exprBwd (E.App (E.Lambda _ σ) e) (MatchAs s bs) =
    MatchAs (desugBwd e s)
-      (first head <$> unwrap <$> unwrap (clausesBwd σ (Clauses (Clause <$> first NE.singleton <$> bs))))
+      (first head <$> unwrap <$> unwrap (clausesBwd σ (Clauses (Clause <$> first singleton <$> bs))))
 exprBwd (E.App (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (desugBwd e1 s1)
       (desugBwd (asExpr (get cTrue m)) s2)
@@ -379,7 +377,7 @@ orElseBwd (ContElim (ElimConstr m)) (π : πs) =
       κ' × α = unlessBwd m c
    in
       orElseBwd κ' (πs' <> πs) #
-         (\κ'' -> ContElim (ElimConstr (D.fromFoldable (singleton (c × κ''))))) *** (α ∨ _)
+         (\κ'' -> ContElim (ElimConstr (D.fromFoldable (singleton (c × κ'') :: List _)))) *** (α ∨ _)
 orElseBwd _ _ = error absurd
 
 -- In forward direction, extend singleton branch to set of branches where any missing constructors have
@@ -390,12 +388,12 @@ unlessFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
 unlessFwd (c × κ) α = D.fromFoldable ((c × κ) : cκs)
    where
    defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
-   cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
+   cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c)
 
 unlessBwd :: forall a. BoundedJoinSemilattice a => Dict (Cont a) -> Ctr -> Cont a × a
 unlessBwd m c =
    let
-      cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c
+      cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c
    in
       unsafePartial $ get c m × foldl (∨) bot ((bodyAnn <<< body) <$> cs)
    where

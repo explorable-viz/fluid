@@ -8,27 +8,31 @@ tracing
       , graphBwdSliceOutput :: Boolean
       , graphFwdSliceInput :: Boolean
       , graphFwdSliceOutput :: Boolean
+      , checkEqual :: Boolean
       }
 
 tracing =
    { graphCreation: false
-   , graphInputSize: true
+   , graphInputSize: false
    , graphBwdSliceInput: false
    , graphBwdSliceOutput: false
    , graphFwdSliceInput: false
    , graphFwdSliceOutput: false
+   , checkEqual: false
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
 -- that are not covered explicitly by tests.
 checking
    :: { edgeListIso :: Boolean
-      , sinksAreInputs :: Boolean
+      , inputsInGraph :: Boolean
+      , outputsInGraph :: Boolean
       }
 
 checking =
    { edgeListIso: false
-   , sinksAreInputs: false
+   , inputsInGraph: true
+   , outputsInGraph: true
    }
 
 -- Should be set to true except when there are specific outstanding problems.
@@ -42,6 +46,6 @@ testing
 testing =
    { fwdPreservesTop: true
    , bwdDuals: false
-   , fwdDuals: false
+   , fwdDuals: true
    , naiveFwd: true
    }

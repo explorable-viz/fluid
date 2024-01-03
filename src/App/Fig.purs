@@ -12,7 +12,6 @@ import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.Newtype (unwrap)
-import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd, uncurry)
 import Desugarable (desug)
@@ -35,7 +34,7 @@ import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), AffError, Endo, absurd, orElse, uncurry3, (×))
+import Util (type (+), type (×), (×), AffError, Endo, absurd, orElse, singleton, uncurry3)
 import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
@@ -198,7 +197,7 @@ linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
    result e e' t v = do
       let
          γ0γ' × _ = evalBwd (erase <$> γ) (erase e) v t
-         γ0' × γ' = append_inv (S.singleton x) γ0γ'
+         γ0' × γ' = append_inv (singleton x) γ0γ'
       v0' <- lookup x γ' # orElse absurd
       -- make γ0 and e2 fully available
       v' <- eval (neg ((botOf γ0') <+> γ')) (topOf e') true <#> snd >>> neg
