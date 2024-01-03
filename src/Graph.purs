@@ -43,7 +43,7 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    -- | vertex to be added, and each β in βs already exists in the graph being constructed.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
 
-newtype Vertex = Vertex String
+newtype Vertex = Vertex String -- so can use directly as dict key
 
 class Vertices a where
    vertices :: a -> Set Vertex
