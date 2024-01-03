@@ -5,7 +5,7 @@ import Prelude
 import App.Util (class Reflect, Renderer, Handler, from, get_intOrNumber, record)
 import App.Util.Select (constrArg, field, listElement)
 import Data.Maybe (Maybe)
-import DataType (cScatterPlot, f_caption, f_data, f_x, f_xlabel, f_y, f_ylabel)
+import DataType (cScatterPlot, f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
 import Primitive (string, unpack)
@@ -26,6 +26,7 @@ newtype ScatterPlot = ScatterPlot
 newtype ScatterRecord = ScatterRecord
    { x :: Number × 𝔹
    , y :: Number × 𝔹
+   , c :: String × 𝔹
    }
 
 foreign import drawScatterPlot :: Renderer ScatterPlot
@@ -34,6 +35,7 @@ instance Reflect (Dict (Val 𝔹)) ScatterRecord where
    from r = ScatterRecord
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
+      , c: unpack string $ get f_colour r
       }
 
 instance Reflect (Dict (Val 𝔹)) ScatterPlot where

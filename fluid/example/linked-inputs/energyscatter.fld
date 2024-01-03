@@ -13,15 +13,13 @@ let energies countries year =
                     totalCap: totalRens + totalNonRens,
                     non_renewables: totalNonRens,
                     carbonInt: non_ren_x.carbonInt,
-                    gdpPerCap: non_ren_x.gdpPerCap
                 }
     in map joined_country countries
-in BubbleChart {
+in ScatterPlot {
     caption: "Carbon intensity against proportion of energy from renewables",
     data: [{
                 x: country.non_renewables / country.totalCap,
                 y: country.carbonInt,
-                z: country.gdpPerCap,
                 c: country.name
            }| country <- energies ["Brazil", "China", "Egypt", "Germany", "USA"] 2018],
     xlabel: "Renewables/TotalEnergyCap",

@@ -86,6 +86,11 @@ function drawScatterPlot_ (
          .domain(Math.min(0, y_min), y_max)
          .range([height, 0])
       
+      unique_countries = [...new Set(data.map(d => fst(d.c)))]
+      const c = d3.scaleOrdinal()
+         .domain(unique_countries)
+         .range(d3.schemePastel1)
+
       svg.append("text")
          .attr("x", width)
          .attr("y", height + 25)
@@ -109,7 +114,7 @@ function drawScatterPlot_ (
                .attr('cx', ([, d]) => y(fst(d.y)))
                .attr('r', 1.5)
                .attr('stroke', ([, d]) => snd(d.x) || snd(d.y) ? 'black' : 'gray')
-               .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? 'green' : 'lime') 
+               .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? colorShade(c(fst(d.c)), -50) : c(fst(d.c))) 
                .style('class', ([, d]) => snd(d.x) || snd(d.y) ? 'dot-selected' : 'dot-unselected')
                .on('mousedown', (e, d) => {listener(e)})
          
