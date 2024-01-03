@@ -37,6 +37,10 @@ misc_cases =
      , fwd_expect: "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
      }
    , { file: "foldr-sumSquares", imports: [], fwd_expect: "661" }
+   , { file: "include-input-into-output"
+     , imports: [ "example/lib/some-constants" ]
+     , fwd_expect: "(1, 1)"
+     }
    , { file: "lexicalScoping", imports: [], fwd_expect: "\"6\"" }
    , { file: "length", imports: [], fwd_expect: "2" }
    , { file: "lookup", imports: [], fwd_expect: "Some \"sarah\"" }
@@ -414,7 +418,7 @@ linkedInputs_spec3 =
         , x1File: File "non-renewables"
         }
    , δv: Left $ listElement 27 (field "nuclear" neg >>> field "petrol" neg >>> field "gas" neg >>> field "coal" neg >>> field "gdpPerCap" neg >>> field "carbonInt" neg)
-   , v'_expect: Nothing -- No expected value due to the size of the list
+   , v'_expect: Nothing
    }
 
 linkedInputs_spec4 :: TestLinkedInputsSpec

@@ -16,9 +16,9 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
-import Graph (empty) as G
+import Expr (class FV, fv)
 import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (alloc, runWithGraphAllocT)
+import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
@@ -28,6 +28,7 @@ import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
 import Util (type (×), AffError, concatM, mapLeft, (×))
 import Util.Parse (SParser)
+import Val (restrict)
 
 newtype File = File String
 newtype Folder = Folder String
@@ -65,7 +66,7 @@ module_ file (ProgCxt r@{ mods }) = do
    pure $ ProgCxt r { mods = mod : mods }
 
 modules :: forall m. MonadAff m => MonadError Error m => Array File -> Raw ProgCxt -> m (Raw ProgCxt)
-modules files = concatM (files <#> module_)
+modules files = files <#> module_ # concatM
 
 prelude :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
 prelude =
@@ -76,11 +77,11 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
    eα <- parseProgram (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = x ↦ eα : datasets }
 
-initialConfig :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig GraphImpl)
-initialConfig progCxt = do
-   (g × n) × progCxt' × γ <- runWithGraphAllocT (G.empty × 0) do
+initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
+initialConfig e progCxt = do
+   n × _ × progCxt' × γ <- runAllocT 0 do
       progCxt' <- alloc progCxt
-      γ <- eval_progCxt progCxt'
-      pure (progCxt' × γ)
-   --   trace (show (sinks g \\ vertices progCxt')) \_ ->
-   pure { g, n, progCxt: progCxt', γ }
+      _ × γ <- runWithGraphT (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
+      pure (progCxt' × γ `restrict` (fv e))
+   -- restricting to free vars makes γ more managable, but precludes mapping back to surface syntax for now
+   pure { n, progCxt: progCxt', γ }

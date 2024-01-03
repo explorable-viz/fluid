@@ -1,12 +1,11 @@
 module Graph.WithGraph where
 
-import Prelude
+import Prelude hiding (map)
 
-import Control.Monad.Except (class MonadError)
-import Control.Monad.State (StateT, runStateT, modify, modify_)
-import Control.Monad.Trans.Class (lift)
+import Control.Monad.Except (class MonadError, lift)
+import Control.Monad.State (StateT, modify, modify_, runStateT)
 import Data.Identity (Identity)
-import Data.List (List(..), (:), range)
+import Data.List (List(..), range, (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set)
@@ -15,9 +14,10 @@ import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
-import Graph (class Graph, Vertex(..), fromEdgeList)
+import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
 import Lattice (Raw)
-import Util (type (×), (×))
+import Test.Util.Debug (checking, tracing)
+import Util (type (×), assertWhen, spyWhen, (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -32,12 +32,10 @@ class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAllo
    -- Extend with a freshly allocated vertex.
    new :: NonEmptySet Vertex -> m Vertex
 
--- List of adjacency map entries to serve as a fromFoldable input.
-type AdjMapEntries = List (Vertex × NonEmptySet Vertex)
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
-type WithGraphAllocT m = AllocT (WithGraphT m)
-type WithGraphT = StateT AdjMapEntries
+type WithGraphAllocT m = WithGraphT (AllocT m)
+type WithGraphT = StateT (List HyperEdge)
 type WithGraph = WithGraphT Identity
 
 instance Monad m => MonadAlloc (AllocT m) where
@@ -55,29 +53,30 @@ instance Monad m => MonadWithGraph (WithGraphT m) where
    extend α αs =
       void $ modify_ $ (:) (α × αs)
 
-instance Monad m => MonadWithGraph (WithGraphAllocT m) where
-   extend α = lift <<< extend α
-
 alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
 alloc = traverse (const fresh)
 
 runAllocT :: forall m a. Monad m => Int -> AllocT m a -> m (Int × Set Vertex × a)
 runAllocT n m = do
    a × n' <- runStateT m n
-   -- TODO: duplicated vertex construction should be avoidable
    let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
    pure (n' × fresh_αs × a)
 
+runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
+runWithGraphT m = do
+   g × a <- runStateT m Nil <#> swap <#> first fromEdgeList
+   -- comparing edge lists requires sorting, which causes stack overflow on large graphs
+   assertWhen checking.edgeListIso (\_ -> g == fromEdgeList (toEdgeList g)) $
+      pure ((spyWhen tracing.graphCreation "runWithGraphT" showGraph g) × a)
+
+-- ======================
+-- Boilerplate
+-- ======================
 runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
 runAlloc n = runAllocT n >>> unwrap
 
-runWithGraphT :: forall g m a. Monad m => Graph g => g -> WithGraphT m a -> m (g × a)
-runWithGraphT _ m = runStateT m Nil <#> swap <#> first fromEdgeList
+runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
+runWithGraph = runWithGraphT >>> unwrap
 
-runWithGraph :: forall g a. Graph g => g -> WithGraph a -> g × a
-runWithGraph g = runWithGraphT g >>> unwrap
-
-runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m ((g × Int) × a)
-runWithGraphAllocT (g × n) m = do
-   (n' × _ × a) × g_adds <- runStateT (runAllocT n m) Nil
-   pure $ ((g <> fromEdgeList g_adds) × n') × a
+instance Monad m => MonadAlloc (WithGraphAllocT m) where
+   fresh = lift fresh

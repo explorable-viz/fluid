@@ -8,9 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
-import Module (File(..), Folder(..), datasetAs, prelude, initialConfig, loadFile, modules)
+import Module (File(..), Folder(..), datasetAs, prelude, loadFile, modules)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
 import Util (type (+), type (×), (×))
@@ -55,8 +53,8 @@ suite :: Array TestSpec -> BenchSuite
 suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
-   asTest { file, fwd_expect } = do
-      gconfig <- prelude >>= initialConfig
+   asTest { imports, file, fwd_expect } = do
+      gconfig <- prelude >>= modules (File <$> imports)
       test (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite
@@ -66,7 +64,7 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& a
 
    asTest :: TestBwdSpec -> Aff BenchRow
    asTest { imports, file, bwd_expect_file, δv, fwd_expect } = do
-      gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
+      gconfig <- prelude >>= modules (File <$> imports)
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
       test (folder <> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
@@ -75,7 +73,7 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset, file } = do
-      gconfig <- prelude >>= modules (File <$> imports) >>= datasetAs (File dataset) "data" >>= initialConfig
+      gconfig <- prelude >>= modules (File <$> imports) >>= datasetAs (File dataset) "data"
       test (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
@@ -93,7 +91,7 @@ linkedInputsTest { spec, δv, v'_expect } = do
    v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
    case v'_expect of
       Just v' -> checkPretty "linked input" v' (if isLeft δv then v2' else v1')
-      _ -> liftEffect $ log "No Expected val"
+      _ -> pure unit
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)

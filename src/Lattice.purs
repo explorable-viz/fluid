@@ -87,16 +87,26 @@ instance Neg Unit where
 definedJoin :: forall a. JoinSemilattice a => a -> a -> a
 definedJoin x y = successfulWith "Join undefined" (maybeJoin x y)
 
-instance (Functor t, BoundedJoinSemilattice a) => BotOf (Unit × Raw t) (a × t a) where
-   botOf = const bot *** botOf
-else instance (Functor t, BoundedJoinSemilattice a') => BotOf (t a) (t a') where
+instance (Functor f, BoundedJoinSemilattice a) => BotOf (Unit × Raw f) (a × f a) where
+   botOf = const bot *** botOf -- for dictionary selections
+else instance BotOf (f a) (f a') => BotOf (Dict (f a)) (Dict (f a')) where
+   botOf = (<$>) botOf
+else instance (Functor f, BoundedJoinSemilattice a') => BotOf (f a) (f a') where
    botOf = (<$>) (const bot)
+else instance (BotOf a b, BotOf c d) => BotOf (a × c) (b × d) where
+   botOf = botOf *** botOf
 
-instance (Functor t, BooleanLattice a') => TopOf (t a) (t a') where
-   topOf = (<$>) (const bot >>> neg)
+instance (Functor f, BoundedMeetSemilattice a) => TopOf (Unit × Raw f) (a × f a) where
+   topOf = const top *** ((<$>) (const top)) -- for dictionary selections
+else instance TopOf (f a) (f a') => TopOf (Dict (f a)) (Dict (f a')) where
+   topOf = (<$>) topOf
+else instance (Functor f, BoundedMeetSemilattice a') => TopOf (f a) (f a') where
+   topOf = (<$>) (const top)
+else instance (TopOf a b, TopOf c d) => TopOf (a × c) (b × d) where
+   topOf = topOf *** topOf
 
 -- Specialises botOf and topOf but omits the lattice constraint.
-erase :: forall t a. Functor t => t a -> Raw t
+erase :: forall f a. Functor f => f a -> Raw f
 erase = (<$>) (const unit)
 
 -- Same associativity and precedence as * and +
@@ -113,6 +123,8 @@ instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) wher
 
 instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) where
    meet (a × a') (b × b') = meet a b × meet a' b'
+else instance (Functor f, Apply f, MeetSemilattice a) => MeetSemilattice (f a) where
+   meet a = (a `lift2 (∧)` _)
 
 instance (BoundedJoinSemilattice a, BoundedJoinSemilattice b) => BoundedJoinSemilattice (a × b) where
    bot = bot × bot
@@ -130,7 +142,7 @@ else instance (BoundedLattice (f a), Neg (f a)) => BooleanLattice (f a)
 
 instance JoinSemilattice a => JoinSemilattice (Pair a) where
    join ab = definedJoin ab
-   maybeJoin (Pair a a') (Pair b b') = Pair <$> maybeJoin a b <*> maybeJoin a' b'
+   maybeJoin (Pair a a') (Pair b b') = lift2 Pair (maybeJoin a b) (maybeJoin a' b')
 
 instance JoinSemilattice a => JoinSemilattice (List a) where
    join xs = definedJoin xs
@@ -172,7 +184,7 @@ instance (BotOf u t, Expandable t u) => Expandable (Dict t) (Dict u) where
          (kvs `D.intersectionWith expand` kvs') D.∪ ((kvs' D.\\ kvs) <#> botOf)
 
 instance Expandable t u => Expandable (List t) (List u) where
-   expand xs ys = zipWith expand xs ys
+   expand xs = zipWith expand xs
 
 instance Expandable t u => Expandable (Array t) (Array u) where
-   expand xs ys = A.zipWith expand xs ys
+   expand xs = A.zipWith expand xs

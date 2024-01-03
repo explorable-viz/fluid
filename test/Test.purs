@@ -16,11 +16,14 @@ import Util (type (×), (×))
 main :: Effect Unit
 main = run tests
 
--- main = run scratchpad
+--main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite
-   [ { file: "range", imports: [], fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
+   [ { file: "include-input-into-output"
+     , imports: [ "example/lib/some-constants" ]
+     , fwd_expect: "(1, 1)"
+     }
    ]
 
 type TestSuite = Array (String × Aff Unit)

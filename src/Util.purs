@@ -19,11 +19,27 @@ import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (class Strong, (&&&), (***))
 import Data.Set as S
 import Data.Tuple (Tuple(..), fst, snd)
+import Debug (trace)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
+
+debug
+   :: { logging :: Boolean -- logging via "log"; requires an effect context
+      , tracing :: Boolean -- tracing via "trace"; no effect context required
+      }
+
+debug =
+   { logging: false
+   , tracing: false
+   }
+
+type Thunk a = Unit -> a -- similar to Lazy but without datatype
+
+force :: forall a. Thunk a -> a
+force = (_ $ unit)
 
 type 𝔹 = Boolean
 
@@ -56,6 +72,19 @@ throw = throwError <<< E.error
 assert :: ∀ a. Boolean -> a -> a
 assert true = identity
 assert false = \_ -> error "Assertion failure"
+
+assertWhen :: ∀ a. Boolean -> Thunk Boolean -> a -> a
+assertWhen false = const identity
+assertWhen true = force >>> assert
+
+-- Debug.spyWith doesn't seem to work
+spyWhen :: forall a. Boolean -> String -> (a -> String) -> Endo a
+spyWhen true msg show x | debug.tracing == true = trace (msg <> ": " <> show x) (const x)
+spyWhen _ _ _ x = x
+
+-- Prefer this to Debug.spy (similar to spyWith).
+spy :: forall a. String -> (a -> String) -> Endo a
+spy = spyWhen true
 
 absurd :: String
 absurd = "absurd"

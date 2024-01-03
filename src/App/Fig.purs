@@ -201,7 +201,7 @@ linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
          γ0' × γ' = append_inv (S.singleton x) γ0γ'
       v0' <- lookup x γ' # orElse absurd
       -- make γ0 and e2 fully available
-      v' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e') true <#> snd >>> neg
+      v' <- eval (neg ((botOf γ0') <+> γ')) (topOf e') true <#> snd >>> neg
       pure { v, v', v0' }
 
 linkedInputsResult :: forall m. MonadEffect m => MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
@@ -225,9 +225,10 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file } = do
-   gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig
    s0 <- open file
-   gc <- desug s0 >>= graphGC gconfig
+   e <- desug s0
+   gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig e
+   gc <- graphGC gconfig e
    pure { spec, s0, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
@@ -235,10 +236,10 @@ loadLinkedInputsFig spec@{ file } = do
    let
       dir = File "example/linked-inputs/"
       datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
-   { γ: γ' } <- prelude >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig
-   let γ = botOf <$> γ'
    s <- botOf <$> open (File "linked-inputs/" <> file)
    e <- desug s
+   { γ: γ' } <- prelude >>= datasetAs datafile1 spec.x1 >>= datasetAs datafile2 spec.x2 >>= initialConfig e
+   let γ = botOf γ'
    t × v <- eval γ e bot
    pure { spec, γ, s, e, t, v0: v }
 
@@ -249,14 +250,12 @@ loadLinkedOutputsFig spec@{ imports, dataFile, file1, file2, x } = do
       dataFile' = File "example/" <> dir <> dataFile
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- views share ambient environment γ
-   { γ: γ' } <- prelude >>= modules (File <$> imports) >>= datasetAs dataFile' x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
-   let
-      γ = botOf <$> γ'
-      s1 = botOf s1'
-      s2 = botOf s2'
-   dataFileStr <- loadFile (Folder "fluid") dataFile' -- TODO: use surface expression instead
+   let s1 × s2 = botOf s1' × botOf s2'
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
+   { γ: γ' } <- prelude >>= modules (File <$> imports) >>= datasetAs dataFile' x >>= initialConfig (e1 × e2)
+   let γ = botOf γ'
+   dataFileStr <- loadFile (Folder "fluid") dataFile' -- TODO: use surface expression instead
    t1 × v1 <- eval γ e1 bot
    t2 × v2 <- eval γ e2 bot
    let v0 = get x γ
