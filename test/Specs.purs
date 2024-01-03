@@ -435,7 +435,7 @@ linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { divId: "fig-1"
-        , file: File "energy"
+        , file: File "energyscatter"
         , x2: "non_renewables"
         , x2File: File "non-renewables"
         , x1: "renewables"
@@ -451,4 +451,5 @@ linkedInputs_cases =
    , linkedInputs_spec2
    , linkedInputs_spec3
    , linkedInputs_spec4
+   , linkedInputs_spec5
    ]
