@@ -38,22 +38,22 @@ instance Reflect (Dict (Val 𝔹)) ScatterRecord where
 
 instance Reflect (Dict (Val 𝔹)) ScatterPlot where
    from r = ScatterPlot
-     { caption: unpack string (get f_caption r)
-     , data: record from <$> from (get f_data r)
-     , xlabel: unpack string (get f_xlabel r)
-     , ylabel: unpack string (get f_ylabel r)
-     }
+      { caption: unpack string (get f_caption r)
+      , data: record from <$> from (get f_data r)
+      , xlabel: unpack string (get f_xlabel r)
+      , ylabel: unpack string (get f_ylabel r)
+      }
 
 scatterPlotHandler :: Handler
 scatterPlotHandler ev = toggleDot $ unsafeDotIndex $ target ev
    where
    toggleDot :: Int -> Selector Val
-   toggleDot i = 
+   toggleDot i =
       constrArg cScatterPlot 0
          $ field f_data
          $ listElement i
          $ neg
-   
+
    unsafeDotIndex :: Maybe EventTarget -> Int
    unsafeDotIndex tgt_opt =
       let
