@@ -12,7 +12,7 @@ let energies countries year =
                     name: c_name,
                     totalCap: totalRens + totalNonRens,
                     non_renewables: totalNonRens,
-                    carbonInt: non_ren_x.carbonInt,
+                    carbonInt: non_ren_x.carbonInt
                 }
     in map joined_country countries
 in ScatterPlot {
@@ -21,7 +21,7 @@ in ScatterPlot {
                 x: country.non_renewables / country.totalCap,
                 y: country.carbonInt,
                 c: country.name
-           }| country <- energies ["Brazil", "China", "Egypt", "Germany", "USA"] 2018],
+           }| country <- energies ["USA"] 2018],
     xlabel: "Renewables/TotalEnergyCap",
     ylabel: "CarbonInt"
 }

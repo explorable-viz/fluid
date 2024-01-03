@@ -439,14 +439,14 @@ linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { divId: "fig-1"
-        , file: File "energy"
+        , file: File "energyscatter"
         , x2: "non_renewables"
-        , x2File: File "non-renewables"
+        , x2File: File "mini-non-renewables"
         , x1: "renewables"
-        , x1File: File "renewables"
+        , x1File: File "mini-renewables"
         }
-   , δv: Left $ listElement 118 (field "output" neg)
-   , v'_expect: Nothing
+   , δv: Left $ listElement 3 (field "output" neg)
+   , v'_expect: Just "({carbonInt : 412.06, coal : ⸨261.86⸩, country : \"USA\", gas : ⸨505.88⸩, gdpPerCap : 62.823, nuclear : ⸨99.43⸩, petrol : ⸨34.78⸩, year : 2018} : [])"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
@@ -455,4 +455,5 @@ linkedInputs_cases =
    , linkedInputs_spec2
    , linkedInputs_spec3
    , linkedInputs_spec4
+   , linkedInputs_spec5
    ]
