@@ -7,14 +7,13 @@ import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map, lookup)
 import Data.Map as M
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
-import Data.Set.NonEmpty (cons, fromSet, singleton, toSet)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, showGraph, showVertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph)
 import Test.Util.Debug (tracing)
-import Util (type (×), spyWhen, (×), (∈))
+import Util (type (×), (×), (∈), spyWhen, singleton)
 
 type PendingVertices = Map Vertex (Set Vertex)
 
@@ -32,13 +31,9 @@ bwdSlice αs_ g_ =
       if α ∈ visited then
          pure $ Loop (visited × αs')
       else do
-         let visited' = visited # insert α
-         case fromSet (outN g α) of
-            Nothing ->
-               pure $ Loop (visited' × αs')
-            Just βs -> do
-               extend α βs
-               pure $ Loop (visited' × (L.fromFoldable βs <> αs'))
+         let βs = outN g α
+         extend α βs
+         pure $ Loop (insert α visited × (L.fromFoldable βs <> αs'))
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs_ g_ =
@@ -51,9 +46,9 @@ fwdSlice αs_ g_ =
    go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
    go (h × Nil) = pure $ Done h
    go (h × ((α × β) : es)) = do
-      let βs = maybe (singleton β) (cons β) (lookup α h)
-      if toSet βs == outN g α then do
+      let βs = maybe (singleton β) (insert β) (lookup α h)
+      if βs == outN g α then do
          extend α βs
          pure $ Loop (M.delete α h × (inEdges' g α <> es))
       else
-         pure $ Loop (M.insert α (toSet βs) h × es)
+         pure $ Loop (M.insert α βs h × es)

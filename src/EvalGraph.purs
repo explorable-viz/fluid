@@ -4,13 +4,12 @@ import Prelude hiding (apply, add)
 
 import Bindings (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Array (range, singleton) as A
+import Data.Array (range) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Set (Set, empty, insert)
 import Data.Set as Set
-import Data.Set.NonEmpty (NonEmptySet, cons, singleton)
 import Data.Traversable (for, sequence, traverse)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
@@ -27,7 +26,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, spyWhen, successful, throw, with, (\\), (×), (∩), (∪))
+import Util (type (×), (\\), (×), (∩), (∪), Endo, check, concatM, error, orElse, singleton, spyWhen, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -72,7 +71,7 @@ matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> NonEmptySet Vertex -> m (Env Vertex)
+closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    for ρ \σ ->
       let ρ' = ρ `forDefs` σ in Val <$> new αs <@> V.Fun (V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ)
@@ -103,22 +102,22 @@ apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = lookup' x γ
 eval γ (Op op) _ = lookup' op γ
-eval _ (Int α n) αs = Val <$> new (α `cons` αs) <@> V.Int n
-eval _ (Float α n) αs = Val <$> new (α `cons` αs) <@> V.Float n
-eval _ (Str α s) αs = Val <$> new (α `cons` αs) <@> V.Str s
+eval _ (Int α n) αs = Val <$> new (insert α αs) <@> V.Int n
+eval _ (Float α n) αs = Val <$> new (insert α αs) <@> V.Float n
+eval _ (Str α s) αs = Val <$> new (insert α αs) <@> V.Str s
 eval γ (Record α xes) αs = do
    xvs <- traverse (flip (eval γ) αs) xes
-   Val <$> new (α `cons` αs) <@> V.Record xvs
+   Val <$> new (insert α αs) <@> V.Record xvs
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   Val <$> new (α `cons` αs) <@> V.Dictionary (DictRep d)
+   Val <$> new (insert α αs) <@> V.Dictionary (DictRep d)
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   Val <$> new (α `cons` αs) <@> V.Constr c vs
+   Val <$> new (insert α αs) <@> V.Constr c vs
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
@@ -127,13 +126,13 @@ eval γ (Matrix α e (x × y) e') αs = do
       ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    vss <- sequence do
       i <- A.range 1 i'
-      A.singleton $ sequence do
+      singleton $ sequence do
          j <- A.range 1 j'
          let γ' = D.singleton x (Val β (V.Int i)) `D.disjointUnion` (D.singleton y (Val β' (V.Int j)))
-         A.singleton (eval (γ <+> γ') e αs)
-   Val <$> new (α `cons` αs) <@> V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
+         singleton (eval (γ <+> γ') e αs)
+   Val <$> new (insert α αs) <@> V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
 eval γ (Lambda α σ) αs =
-   Val <$> new (α `cons` αs) <@> V.Fun (V.Closure (γ `restrict` fv σ) D.empty σ)
+   Val <$> new (insert α αs) <@> V.Fun (V.Closure (γ `restrict` fv σ) D.empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
@@ -148,7 +147,7 @@ eval γ (Let (VarDef σ e) e') αs = do
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
 eval γ (LetRec (RecDefs α ρ) e) αs = do
-   γ' <- closeDefs γ ρ (α `cons` αs)
+   γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
 eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
@@ -161,7 +160,7 @@ eval_module γ = go D.empty
       γ'' × _ × α' <- match v σ
       go (y' <+> γ'') (Module ds) α'
    go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
-      γ'' <- closeDefs (γ <+> γ') ρ (α `cons` αs)
+      γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       go (γ' <+> γ'') (Module ds) αs
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)

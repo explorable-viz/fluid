@@ -10,7 +10,6 @@ import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
@@ -21,7 +20,7 @@ import Util (type (×), assertWhen, spyWhen, (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
-   extend :: Vertex -> NonEmptySet Vertex -> m Unit
+   extend :: Vertex -> Set Vertex -> m Unit
 
 class Monad m <= MonadAlloc m where
    fresh :: m Vertex
@@ -30,7 +29,7 @@ class Monad m <= MonadAlloc m where
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
 class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
-   new :: NonEmptySet Vertex -> m Vertex
+   new :: Set Vertex -> m Vertex
 
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity

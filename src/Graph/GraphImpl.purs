@@ -12,9 +12,8 @@ import Data.Foldable (foldM)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
-import Data.Set (Set, insert, singleton)
+import Data.Set (Set, insert)
 import Data.Set as Set
-import Data.Set.NonEmpty (toSet)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Dict as D
@@ -22,7 +21,7 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, Vertex(..), HyperEdge, op, outN)
-import Util (type (×), definitely, error, (\\), (×), (∩), (∪))
+import Util (type (×), (\\), (×), (∩), (∪), definitely, error, singleton)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -108,7 +107,7 @@ outMap αs es = do
       ok <- OST.peek α acc <#> maybe true (_ == Set.empty)
       if ok then do
          --         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
-         acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
+         acc' <- OST.poke α βs acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (es' × acc')
       else
          error $ "Duplicate edge list entry for " <> show α

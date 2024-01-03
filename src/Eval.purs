@@ -7,10 +7,10 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Exists (mkExists, runExists)
-import Data.List (List(..), (:), length, range, singleton, unzip, zip)
+import Data.List (List(..), (:), length, range, unzip, zip)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
-import Data.Set (fromFoldable, toUnfoldable, singleton) as S
+import Data.Set (fromFoldable, toUnfoldable) as Set
 import Data.Set (subset)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (snd)
@@ -24,7 +24,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (×), (∪), absurd, both, check, error, orElse, successful, throw, with)
+import Util (type (×), (×), (∪), absurd, both, check, error, orElse, singleton, successful, throw, with)
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -37,7 +37,7 @@ match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
    | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
 match (Val α (V.Constr c vs)) (ElimConstr m) = do
-   with "Pattern mismatch" $ S.singleton c `consistentWith` keys m
+   with "Pattern mismatch" $ singleton c `consistentWith` keys m
    κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × α' × ws <- matchMany vs κ
    pure (γ × κ' × (α ∧ α') × MatchConstr c ws)
@@ -45,8 +45,8 @@ match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
 match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
-   check (subset xs (S.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
-   let xs' = xs # S.toUnfoldable
+   check (subset xs (Set.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
+   let xs' = xs # Set.toUnfoldable
    γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
    pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = throw $ patternMismatch (prettyP v) (show xs)
@@ -75,7 +75,7 @@ apply (Val β (V.Fun (V.Closure γ1 ρ σ)) × v) = do
    let γ2 = closeDefs γ1 ρ β
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
-   pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
+   pure $ T.AppClosure (Set.fromFoldable (keys ρ)) w t'' × v''
 apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs)) × v) = do
    t × v'' <- runExists apply' φ
    pure $ T.AppForeign (length vs + 1) t × v''
