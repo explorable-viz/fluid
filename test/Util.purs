@@ -11,6 +11,7 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst, snd)
 import Desug (Desugaring, desugGC)
+import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
@@ -39,6 +40,7 @@ test ∷ forall m. File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> Aff
 test file progCxt spec (n × _) = do
    s <- open file
    { e } :: Desugaring Unit <- desugGC s
+   when debug.logging $ log ("**** initialConfig")
    gconfig <- initialConfig e progCxt
    testPretty s
    _ × row_accum <- runWriterT (replicateM n (testProperties s gconfig spec))
