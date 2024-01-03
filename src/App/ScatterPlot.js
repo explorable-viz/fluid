@@ -55,8 +55,73 @@ function drawScatterPlot_ (
    listener
 ) {
    return () => {
+      var max_width = 340
+      var max_height = 190
+      const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
+      const x_min = Math.ceil(Math.min(...data.map(d => fst(d.x))))
+      const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
+      const y_min = Math.ceil(Math.min(...data.map(d => fst(d.y))))
+      
+      const childId = id + '-' + childIndex
+      const margin = {top: 20, right: 20, bottom: 40, left: 50}
 
+      const width = max_width - margin.left - margin.right,
+            height = max_height - margin.top - margin.bottom
+      const div = d3.select('#' + id)
+
+      div.selectAll('#' + childId).remove()
+
+      const svg = div
+         .append('svg')
+            .attr('width', max_width + margin.left + margin.right)
+            .attr('height', max_height + margin.top + margin.bottom)
+         .attr('id', childId)
+         .append('g')
+            .attr('transform', `translate(${margin.left}, ${margin.top})`)
+      
+      const x = d3.scaleLinear()
+         .domain([Math.min(0, x_min), x_max])
+         .range([0, width])
+      const y = d3.scaleLinear()
+         .domain(Math.min(0, y_min), y_max)
+         .range([height, 0])
+      
+      svg.append("text")
+         .attr("x", width)
+         .attr("y", height + 25)
+         .style("text-anchor", "end")
+         .style("font-size", "8px")
+         .text(fst(xlabel))
+      svg.append("text")
+         .attr("transform", "rotate(-90)")
+         .attr("x", -margin.top)
+         .attr("y", -margin.left + 20)
+         .style("text-anchor", "end")
+         .style("font-size", "8px")
+         .text(fst(ylabel))
+      
+
+         svg.append('g')
+            .data([...data.entries()])
+            .enter()
+            .append('circle')
+               .attr('cx', ([, d]) => x(fst(d.x)))
+               .attr('cx', ([, d]) => y(fst(d.y)))
+               .attr('r', 1.5)
+               .attr('stroke', ([, d]) => snd(d.x) || snd(d.y) ? 'black' : 'gray')
+               .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? 'green' : 'lime') 
+               .style('class', ([, d]) => snd(d.x) || snd(d.y) ? 'dot-selected' : 'dot-unselected')
+               .on('mousedown', (e, d) => {listener(e)})
+         
+         svg.append('text')
+            .text(fst(caption))
+            .attr('x', width/2)
+            .attr('y', height+40)
+            .attr('class', 'title-text')
+            .attr('dominant-baseline', 'bottom')
+            .attr('text-anchor', 'middle')
    }
+
 }
 
 export var drawScatterPlot = curry4(drawScatterPlot_)
