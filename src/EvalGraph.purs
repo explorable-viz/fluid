@@ -26,8 +26,8 @@ import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
-import Test.Util.Debug (checking)
-import Util (type (×), (×), (∩), (∪), (\\), Endo, check, concatM, error, orElse, successful, throw, with)
+import Test.Util.Debug (checking, tracing)
+import Util (type (×), Endo, check, concatM, error, orElse, spyWhen, successful, throw, with, (\\), (×), (∩), (∪))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -194,11 +194,11 @@ graphGC
    -> Raw Expr
    -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
-   _ × _ × g × eα × vα <- runAllocT n do
+   _ × _ × g × inputs × eα × vα <- runAllocT n do
       eα <- alloc e
-      g × vα <- runWithGraphT (eval γ eα Set.empty)
-      pure (g × eα × vα)
-   let inputs = vertices (γ × eα)
+      let inputs = vertices (γ × eα) # spyWhen tracing.graphInputSize "Input count" (Set.size >>> show)
+      g × vα <- runWithGraphT inputs (eval γ eα Set.empty)
+      pure (g × inputs × eα × vα)
    when checking.sinksAreInputs $
       check ((sinks g \\ inputs) == Set.empty) "Every sink is an input"
 

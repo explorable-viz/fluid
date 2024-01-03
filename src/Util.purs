@@ -33,7 +33,7 @@ debug
 
 debug =
    { logging: false
-   , tracing: false
+   , tracing: true
    }
 
 type Thunk a = Unit -> a -- similar to Lazy but without datatype
@@ -59,7 +59,7 @@ infixr 6 type Either as + -- standard library has \/
 type AffError m a = MonadAff m => MonadError Error m => m a
 type EffectError m a = MonadEffect m => MonadError Error m => m a
 
--- Rethink: has same name as Effect.Exception.error but without the type!
+-- Rethink: has same name as Effect.Exception.error but without the type :-o
 error :: ∀ a. String -> a
 error msg = unsafePerformEffect (throw msg)
 
@@ -69,11 +69,14 @@ shapeMismatch _ = error "Shape mismatch"
 throw :: forall m a. MonadThrow Error m => String -> m a
 throw = throwError <<< E.error
 
-assert :: ∀ a. Boolean -> a -> a
-assert true = identity
-assert false = \_ -> error "Assertion failure"
+assert :: ∀ a. Boolean -> Endo a
+assert = assertWith ""
 
-assertWhen :: ∀ a. Boolean -> Thunk Boolean -> a -> a
+assertWith :: ∀ a. String -> Boolean -> Endo a
+assertWith _ true = identity
+assertWith msg false = \_ -> error ("Assertion failure: " <> msg)
+
+assertWhen :: ∀ a. Boolean -> Thunk Boolean -> Endo a
 assertWhen false = const identity
 assertWhen true = force >>> assert
 
@@ -141,10 +144,10 @@ check false = throwError <<< E.error
 mayEq :: forall a. Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
 
-mustEq :: forall a. Eq a => Show a => a -> a -> a
+mustEq :: forall a. Eq a => Show a => a -> Endo a
 mustEq x x' = definitely (show x <> " equal to " <> show x') (x ≟ x')
 
-mustGeq :: forall a. Ord a => Show a => a -> a -> a
+mustGeq :: forall a. Ord a => Show a => a -> Endo a
 mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >= x') x)
 
 unionWithMaybe :: forall a b. Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)

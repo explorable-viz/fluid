@@ -13,7 +13,7 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
 import Data.Set (Set, insert, singleton)
-import Data.Set as S
+import Data.Set as Set
 import Data.Set.NonEmpty (toSet)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
@@ -56,14 +56,14 @@ instance Graph GraphImpl where
    sinks (GraphImpl g) = g.sinks
    sources (GraphImpl g) = g.sources
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
-   empty = GraphImpl { out: D.empty, in: D.empty, sinks: S.empty, sources: S.empty, vertices: S.empty }
+   empty = GraphImpl { out: D.empty, in: D.empty, sinks: Set.empty, sources: Set.empty, vertices: Set.empty }
 
-   -- Last entry will take priority if keys are duplicated in α_αs.
-   fromEdgeList es = GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
+   fromEdgeList αs es =
+      GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      out = runST (outMap es)
-      in_ = runST (inMap es)
-      vertices = S.fromFoldable $ S.map Vertex $ D.keys out
+      out = runST (outMap αs es)
+      in_ = runST (inMap αs es)
+      vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
 
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices
@@ -72,37 +72,50 @@ instance Vertices GraphImpl where
 -- This is better but still slow if there are thousands of sinks.
 sinks' :: AdjMap -> Set Vertex
 sinks' m = D.toArrayWithKey (×) m
-   # A.filter (snd >>> S.isEmpty)
+   # A.filter (snd >>> Set.isEmpty)
    <#> (fst >>> Vertex)
-   # S.fromFoldable
+   # Set.fromFoldable
 
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
+{-
+assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
+assertPresent acc (Vertex α) = do
+   present <- OST.peek α acc <#> isJust
+   pure $ assertWith (α <> " not an existing vertex") present unit
+-}
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
    OST.peek β acc >>= case _ of
-      Nothing -> OST.poke β S.empty acc
+      Nothing ->
+         -- trace ("Adding missing vertex " <> show β) \_ ->
+         OST.poke β Set.empty acc
       Just _ -> pure acc
 
-outMap :: forall r. List HyperEdge -> ST r (MutableAdjMap r)
-outMap es = do
-   out <- OST.new
+init :: forall r. Set Vertex -> ST r (MutableAdjMap r)
+init αs =
+   OST.new >>= flip (foldM (\acc (Vertex α) -> OST.poke α Set.empty acc)) αs
+
+outMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
+outMap αs es = do
+   out <- init αs
    tailRecM addEdges (es × out)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : es') × acc) = do
-      ok <- OST.peek α acc <#> maybe true (_ == S.empty)
+      ok <- OST.peek α acc <#> maybe true (_ == Set.empty)
       if ok then do
+         --         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
          acc' <- OST.poke α (toSet βs) acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (es' × acc')
       else
          error $ "Duplicate edge list entry for " <> show α
 
-inMap :: forall r. List HyperEdge -> ST r (MutableAdjMap r)
-inMap es = do
-   in_ <- OST.new
+inMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
+inMap αs es = do
+   in_ <- init αs
    tailRecM addEdges (es × in_)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
@@ -115,7 +128,7 @@ inMap es = do
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc
-         Just αs -> OST.poke β (insert α αs) acc
+         Just αs' -> OST.poke β (insert α αs') acc
 
 instance Show GraphImpl where
    show (GraphImpl g) = "GraphImpl (" <> show g.out <> " × " <> show g.in <> ")"

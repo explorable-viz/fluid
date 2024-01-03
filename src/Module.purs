@@ -17,6 +17,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
+import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT)
 import Lattice (Raw)
@@ -81,7 +82,8 @@ initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m
 initialConfig e progCxt = do
    n × _ × progCxt' × γ <- runAllocT 0 do
       progCxt' <- alloc progCxt
-      _ × γ <- runWithGraphT (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
+      -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
+      -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
+      _ × γ <- runWithGraphT (vertices progCxt') (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
       pure (progCxt' × γ `restrict` (fv e))
-   -- restricting to free vars makes γ more managable, but precludes mapping back to surface syntax for now
    pure { n, progCxt: progCxt', γ }
