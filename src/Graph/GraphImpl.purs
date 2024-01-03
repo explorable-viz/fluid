@@ -1,15 +1,13 @@
-module Graph.GraphImpl
-   ( GraphImpl(..)
-   , AdjMap
-   ) where
+module Graph.GraphImpl where
 
 import Prelude
 
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
-import Data.Array as A
-import Data.Foldable (foldM)
+import Data.Filterable (filter)
+import Data.Foldable (foldM, sequence_)
 import Data.List (List(..), (:))
+import Data.List as L
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
 import Data.Set (Set, insert)
@@ -21,7 +19,7 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, Vertex(..), HyperEdge, op, outN)
-import Util (type (×), (\\), (×), (∩), (∪), definitely, error, singleton)
+import Util (type (×), assertWith, definitely, error, singleton, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -71,19 +69,18 @@ instance Vertices GraphImpl where
 -- This is better but still slow if there are thousands of sinks.
 sinks' :: AdjMap -> Set Vertex
 sinks' m = D.toArrayWithKey (×) m
-   # A.filter (snd >>> Set.isEmpty)
+   # filter (snd >>> Set.isEmpty)
    <#> (fst >>> Vertex)
    # Set.fromFoldable
 
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
-{-
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
    pure $ assertWith (α <> " not an existing vertex") present unit
--}
+
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
    OST.peek β acc >>= case _ of
@@ -106,7 +103,7 @@ outMap αs es = do
    addEdges (((Vertex α × βs) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (_ == mempty)
       if ok then do
-         --         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
+         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
          acc' <- OST.poke α βs acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (es' × acc')
       else
