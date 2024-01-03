@@ -168,14 +168,10 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
    where
    addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
-   addModule mod γ = do
-      γ' <- eval_module γ mod empty
-      pure $ γ <+> γ'
+   addModule mod γ = (γ <+> _) <$> eval_module γ mod empty
 
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
-   addDataset (x ↦ e) γ = do
-      v <- eval γ e empty
-      pure $ γ <+> D.singleton x v
+   addDataset (x ↦ e) γ = (\v -> γ <+> D.singleton x v) <$> eval γ e empty
 
 type GraphEval g =
    { gc :: GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹)
