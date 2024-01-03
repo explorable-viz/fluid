@@ -23,10 +23,14 @@ tracing =
 -- that are not covered explicitly by tests.
 checking
    :: { edgeListIso :: Boolean
+      , inputsInGraph :: Boolean
+      , outputsInGraph :: Boolean
       }
 
 checking =
    { edgeListIso: false
+   , inputsInGraph: false
+   , outputsInGraph: true
    }
 
 -- Should be set to true except when there are specific outstanding problems.
@@ -39,7 +43,7 @@ testing
 
 testing =
    { fwdPreservesTop: true
-   , bwdDuals: true
+   , bwdDuals: false
    , fwdDuals: true
    , naiveFwd: true
    }

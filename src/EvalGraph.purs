@@ -1,6 +1,6 @@
 module EvalGraph where
 
-import Prelude hiding (apply, add)
+import Prelude hiding (apply)
 
 import Bindings (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
@@ -17,7 +17,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, op, selectαs, select𝔹s, vertices)
+import Graph (Vertex, op, selectαs, select𝔹s, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT)
@@ -25,8 +25,8 @@ import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
-import Test.Util.Debug (tracing)
-import Util (type (×), (×), (∩), (∪), Endo, check, concatM, error, orElse, singleton, spyWhen, successful, throw, with)
+import Test.Util.Debug (checking, tracing)
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spy, spyWhen, successful, throw, validateWhen, with, (\\), (×), (∪))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -196,22 +196,27 @@ graphGC { n, γ } e = do
    _ × _ × g × eα × vα <- runAllocT n do
       eα <- alloc e
       let inputs = vertices (γ × eα) # spyWhen tracing.graphInputSize "Input count" (Set.size >>> show)
-      g × vα <- runWithGraphT inputs (eval γ eα Set.empty)
+      g × vα <- runWithGraphT inputs (eval γ eα mempty)
       pure (g × eα × vα)
 
    let
-      -- restrict αs to vertices g0 because unused inputs/outputs won't appear in graph
       toOutput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
       toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα βs
          where
          βs = vertices (slice αs g0)
-         αs = selectαs (γ𝔹 × e𝔹) (γ × eα) ∩ vertices g0
+         αs = selectαs (γ𝔹 × e𝔹) (γ × eα)
+            # spy "Inputs not in (vertices g)" ((_ \\ vertices g0) >>> showVertices)
+            # spy "Inputs subset of (vertices g)" ((_ <= vertices g0) >>> show)
+            # validateWhen checking.inputsInGraph "inputsInGraph" (_ <= vertices g0)
 
       toInput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
       toInput slice g0 v𝔹 = select𝔹s (γ × eα) βs
          where
          βs = vertices (slice αs g0)
-         αs = selectαs v𝔹 vα ∩ vertices g0
+         αs = selectαs v𝔹 vα
+            # spy "Outputs not in (vertices g)" ((_ \\ vertices g0) >>> showVertices)
+            # spy "Outputs subset of (vertices g)" ((_ <= vertices g0) >>> show)
+            # validateWhen checking.outputsInGraph "outputsInGraph" (_ <= vertices g0)
    pure
       { gc: GC { fwd: toOutput fwdSlice g, bwd: toInput bwdSlice g }
       , gc_op: GC { fwd: toInput fwdSlice (op g), bwd: toOutput bwdSlice (op g) }

@@ -55,7 +55,7 @@ instance Graph GraphImpl where
    sinks (GraphImpl g) = g.sinks
    sources (GraphImpl g) = g.sources
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
-   empty = GraphImpl { out: D.empty, in: D.empty, sinks: Set.empty, sources: Set.empty, vertices: Set.empty }
+   empty = GraphImpl { out: D.empty, in: D.empty, sinks: mempty, sources: mempty, vertices: mempty }
 
    fromEdgeList αs es =
       GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
@@ -89,12 +89,12 @@ addIfMissing acc (Vertex β) = do
    OST.peek β acc >>= case _ of
       Nothing ->
          -- trace ("Adding missing vertex " <> show β) \_ ->
-         OST.poke β Set.empty acc
+         OST.poke β mempty acc
       Just _ -> pure acc
 
 init :: forall r. Set Vertex -> ST r (MutableAdjMap r)
 init αs =
-   OST.new >>= flip (foldM (\acc (Vertex α) -> OST.poke α Set.empty acc)) αs
+   OST.new >>= flip (foldM (\acc (Vertex α) -> OST.poke α mempty acc)) αs
 
 outMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
 outMap αs es = do
@@ -104,7 +104,7 @@ outMap αs es = do
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : es') × acc) = do
-      ok <- OST.peek α acc <#> maybe true (_ == Set.empty)
+      ok <- OST.peek α acc <#> maybe true (_ == mempty)
       if ok then do
          --         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
          acc' <- OST.poke α βs acc >>= flip (foldM addIfMissing) βs

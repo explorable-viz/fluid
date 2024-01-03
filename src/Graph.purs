@@ -61,7 +61,7 @@ instance (Functor f, Foldable f) => Vertices (Dict (f Vertex)) where
    vertices = (vertices <$> _) >>> unions
 
 instance (Apply f, Foldable f) => Selectαs (f Boolean) (f Vertex) where
-   selectαs v𝔹 vα = unions ((if _ then singleton else const Set.empty) <$> v𝔹 <*> vα)
+   selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
    select𝔹s vα αs = (_ ∈ αs) <$> vα
 else instance (Selectαs a b, Selectαs a' b') => Selectαs (a × a') (b × b') where
    selectαs (v𝔹 × v𝔹') (vα × vα') = selectαs v𝔹 vα ∪ selectαs v𝔹' vα'
