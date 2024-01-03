@@ -11,6 +11,7 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
+import Data.Set (isEmpty)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
@@ -27,7 +28,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), AffError, concatM, mapLeft, spy, (×))
+import Util (type (×), AffError, assertWhen, assertWith, concatM, mapLeft, spy, (\\), (×))
 import Util.Parse (SParser)
 import Val (restrict)
 
@@ -80,11 +81,12 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
-   n × _ × progCxt' × γ <- runAllocT 0 do
-      progCxt' <- alloc progCxt
-      let αs = spy "V" showVertices (vertices progCxt')
-      _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
-      -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
-      -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
-      pure (progCxt' × γ `restrict` (fv e))
-   pure { n, progCxt: progCxt', γ }
+   n' × fresh_αs × progCxt' <- runAllocT 0 (alloc progCxt)
+   assertWith "runAllocT" ((fresh_αs \\ vertices progCxt') # isEmpty) $ do
+      n × _ × γ <- runAllocT n' do
+         let αs = spy "V" showVertices (vertices progCxt')
+         _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
+         -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
+         -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
+         pure (γ `restrict` (fv e))
+      pure { n, progCxt: progCxt', γ }

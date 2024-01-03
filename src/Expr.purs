@@ -229,8 +229,8 @@ instance Apply Expr where
    apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
    apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
    apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Record fα fxvs) (Record α xvs) = Record (fα α) (fxvs `D.apply2` xvs)
-   apply (Dictionary fα fxvs) (Dictionary α xvs) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxvs xvs)
+   apply (Record fα fxes) (Record α xes) = Record (fα α) (fxes `D.apply2` xes)
+   apply (Dictionary fα fxes) (Dictionary α xes) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxes xes)
    apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
    apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
       Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)

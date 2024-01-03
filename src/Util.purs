@@ -66,7 +66,7 @@ type EffectError m a = MonadEffect m => MonadError Error m => m a
 error :: ∀ a. String -> a
 error msg = unsafePerformEffect (throw msg)
 
-shapeMismatch :: forall a. Unit -> a
+shapeMismatch :: forall a. Thunk a
 shapeMismatch _ = error "Shape mismatch"
 
 throw :: forall m a. MonadThrow Error m => String -> m a
