@@ -26,14 +26,14 @@ bwdSlice αs_ g_ =
    g = g_ # spyWhen tracing.graphBwdSliceInput "bwdSlice input g" showGraph
 
    go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
-   go (_ × Nil) = pure $ Done unit
-   go (visited × (α : αs')) =
+   go (_ × Nil) = Done <$> pure unit
+   go (visited × (α : αs')) = Loop <$>
       if α ∈ visited then
-         pure $ Loop (visited × αs')
+         pure $ (visited × αs')
       else do
          let βs = outN g α
          extend α βs
-         pure $ Loop (insert α visited × (L.fromFoldable βs <> αs'))
+         pure $ (insert α visited × (L.fromFoldable βs <> αs'))
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs_ g_ =
@@ -44,11 +44,11 @@ fwdSlice αs_ g_ =
    g = spyWhen tracing.graphFwdSliceInput "fwdSlice input g" showGraph g_
 
    go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
-   go (h × Nil) = pure $ Done h
-   go (h × ((α × β) : es)) = do
-      let βs = maybe (singleton β) (insert β) (lookup α h)
+   go (h × Nil) = Done <$> pure h
+   go (h × ((α × β) : es)) = Loop <$>
+      let βs = maybe (singleton β) (insert β) (lookup α h) in
       if βs == outN g α then do
          extend α βs
-         pure $ Loop (M.delete α h × (inEdges' g α <> es))
+         pure $ (M.delete α h × (inEdges' g α <> es))
       else
-         pure $ Loop (M.insert α βs h × es)
+         pure $ (M.insert α βs h × es)
