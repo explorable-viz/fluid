@@ -28,7 +28,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), AffError, assertWhen, assertWith, concatM, mapLeft, spy, (\\), (×))
+import Util (type (×), AffError, assertWith, concatM, mapLeft, spy, (\\), (×))
 import Util.Parse (SParser)
 import Val (restrict)
 
@@ -82,7 +82,7 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
    n' × fresh_αs × progCxt' <- runAllocT 0 (alloc progCxt)
-   assertWith "runAllocT" ((fresh_αs \\ vertices progCxt') # isEmpty) $ do
+   assertWith "runAllocT" (fresh_αs \\ vertices progCxt' # isEmpty) $ do
       n × _ × γ <- runAllocT n' do
          let αs = spy "V" showVertices (vertices progCxt')
          _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
