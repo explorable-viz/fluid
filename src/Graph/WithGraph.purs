@@ -80,7 +80,7 @@ alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT 
 alloc_check msg m = do
    n × αs × x <- runAllocT 0 m
    let report = spyWith (show n <> " allocations, unaccounted for") showVertices
-   check ((report (αs \\ vertices (spy "x" x))) # isEmpty) $ "alloc " <> msg <> " round-trip"
+   check (report (αs \\ vertices (spy "Allocated term" x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
 -- ======================
 -- Boilerplate

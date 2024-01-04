@@ -233,7 +233,8 @@ let range (m1, n1) (m2, n2) =
 
 -- Int -> Int -> Int (should probably be defined differently but this works for now)
 let abs x y = if x - y < 0 then negate (x - y) else (x - y);
--- Eq a=> [a] -> [a]
+
+-- Eq a => [a] -> [a]
 let nub l =
     let nub' [] x = [];
         nub' (x:xs) ls = if x `elem` ls then nub' xs ls else x : nub' xs (x:ls) in
