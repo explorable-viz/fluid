@@ -19,7 +19,7 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
-import Util (type (×), definitely, error, singleton, spy, (\\), (×), (∩), (∪))
+import Util (type (×), definitely, error, singleton, traceWhen, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -77,11 +77,11 @@ sinks' m = D.toArrayWithKey (×) m
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
+-- TODO: enable this assertion.
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
-   if not present then pure $ spy (α <> " not an existing vertex") unit
-   else pure unit
+   traceWhen (not present) (α <> " not an existing vertex")
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do

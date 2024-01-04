@@ -105,6 +105,10 @@ spy = spyWhen true
 spyWith :: forall a b. String -> (a -> b) -> Endo a
 spyWith = spyWhenWith true
 
+traceWhen :: forall m. Applicative m => Boolean -> String -> m Unit
+traceWhen true msg | debug.tracing == true = trace msg \_ -> pure unit
+traceWhen _ _ = pure unit
+
 absurd :: String
 absurd = "absurd"
 
