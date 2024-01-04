@@ -165,7 +165,7 @@ eval_module γ = go D.empty
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
 eval_progCxt (ProgCxt { primitives, mods, datasets }) =
-   flip concatM (spy "primitives" (vertices >>> showVertices) primitives) ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
+   flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
    where
    addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
    addModule mod γ = do

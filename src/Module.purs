@@ -18,7 +18,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
-import Graph (showVertices, vertices)
+import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT)
 import Lattice (Raw)
@@ -28,7 +28,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), AffError, assertWith, concatM, mapLeft, spy, (\\), (×))
+import Util (type (×), AffError, assertWith, concatM, mapLeft, (\\), (×))
 import Util.Parse (SParser)
 import Val (restrict)
 
@@ -82,9 +82,9 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
    n' × fresh_αs × progCxt' <- runAllocT 0 (alloc progCxt)
-   assertWith "runAllocT" (fresh_αs \\ vertices progCxt' # isEmpty) $ do
+   assertWith "alloc progCxt round-trip" (fresh_αs \\ vertices progCxt' # isEmpty) $ do
       n × _ × γ <- runAllocT n' do
-         let αs = spy "V" showVertices (vertices progCxt')
+         let αs = vertices progCxt'
          _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
          -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
          -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
