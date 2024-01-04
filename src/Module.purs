@@ -12,6 +12,7 @@ import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Traversable (traverse)
+import Data.Tuple (snd)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
@@ -20,7 +21,7 @@ import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (AllocT, alloc, runAllocT, runAllocT_check, runWithGraphT)
+import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
@@ -83,8 +84,9 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
    when checking.allocRoundTrip $ do
-      runAllocT_check "progCxt.mods" (traverse alloc ((unwrap progCxt).mods))
-      runAllocT_check "progCxt" (alloc progCxt)
+      alloc_check "progCxt.datasets" (traverse alloc ((unwrap progCxt).datasets <#> snd))
+      alloc_check "progCxt.mods" (traverse alloc (unwrap progCxt).mods)
+      alloc_check "progCxt" (alloc progCxt)
    n' × _ × progCxt' <- runAllocT 0 (alloc progCxt)
    n × _ × γ <- runAllocT n' do
       let αs = vertices progCxt'
