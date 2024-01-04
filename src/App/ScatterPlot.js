@@ -90,7 +90,7 @@ function drawScatterPlot_ (
          .style('text-anchor', 'middle')
       
       const y = d3.scaleLinear()
-         .domain(Math.min(0, y_min), y_max)
+         .domain([Math.min(0, y_min), y_max])
          .range([height, 0])
       svg.append('g')
          .call(d3.axisLeft(y))
