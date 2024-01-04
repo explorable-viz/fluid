@@ -29,11 +29,11 @@ bwdSlice αs_ g_ =
    go (_ × Nil) = Done <$> pure unit
    go (visited × (α : αs')) = Loop <$>
       if α ∈ visited then
-         pure $ (visited × αs')
+         pure (visited × αs')
       else do
          let βs = outN g α
          extend α βs
-         pure $ (insert α visited × (L.fromFoldable βs <> αs'))
+         pure (insert α visited × (L.fromFoldable βs <> αs'))
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs_ g_ =
@@ -51,6 +51,6 @@ fwdSlice αs_ g_ =
       in
          if βs == outN g α then do
             extend α βs
-            pure $ (M.delete α h × (inEdges' g α <> es))
+            pure (M.delete α h × (inEdges' g α <> es))
          else
-            pure $ (M.insert α βs h × es)
+            pure (M.insert α βs h × es)
