@@ -19,7 +19,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
-import Graph (vertices)
+import Graph (showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT)
 import Lattice (Raw)
@@ -29,7 +29,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), AffError, assertWith, concatM, mapLeft, (\\), (×))
+import Util (type (×), AffError, check, concatM, mapLeft, spy, (\\), (×))
 import Util.Parse (SParser)
 import Val (restrict)
 
@@ -82,14 +82,14 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
-   _ × fresh_αs' × x' <- runAllocT 0 $ traverse alloc (unwrap progCxt).primitives
-   assertWith "alloc primitives round-trip" (fresh_αs' \\ vertices x' # isEmpty) $ do
-      n' × fresh_αs × progCxt' <- runAllocT 0 (alloc progCxt)
-      assertWith "alloc progCxt round-trip" (fresh_αs \\ vertices progCxt' # isEmpty) $ do
-         n × _ × γ <- runAllocT n' do
-            let αs = vertices progCxt'
-            _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
-            -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
-            -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
-            pure (γ `restrict` (fv e))
-         pure { n, progCxt: progCxt', γ }
+   _ × fresh_αs' × x' <- runAllocT 0 $ traverse alloc ((unwrap progCxt).mods)
+   check ((spy "Unaccounted for" showVertices (fresh_αs' \\ vertices x')) # isEmpty) "alloc progCxt.datasets round-trip"
+   n' × fresh_αs × progCxt' <- runAllocT 0 (alloc progCxt)
+   check (fresh_αs \\ vertices progCxt' # isEmpty) "alloc progCxt round-trip"
+   n × _ × γ <- runAllocT n' do
+      let αs = vertices progCxt'
+      _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
+      -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
+      -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
+      pure (γ `restrict` (fv e))
+   pure { n, progCxt: progCxt', γ }

@@ -56,8 +56,7 @@ instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
 else instance (Vertices a, Vertices b) => Vertices (a × b) where
    vertices (a × b) = vertices a ∪ vertices b
-
-instance (Functor f, Foldable f) => Vertices (Dict (f Vertex)) where
+else instance (Functor g, Foldable g, Functor f, Foldable f) => Vertices (g (f Vertex)) where
    vertices = (vertices <$> _) >>> unions
 
 instance (Apply f, Foldable f) => Selectαs (f Boolean) (f Vertex) where

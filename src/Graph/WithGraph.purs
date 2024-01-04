@@ -51,7 +51,7 @@ instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
 instance Monad m => MonadWithGraph (WithGraphT m) where
    extend α αs = void $ modify_ $ (:) (α × αs)
 
-alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
+alloc :: forall m f. MonadAlloc m => Traversable f => Raw f -> m (f Vertex)
 alloc = traverse (const fresh)
 
 runAllocT :: forall m a. Monad m => Int -> AllocT m a -> m (Int × Set Vertex × a)
