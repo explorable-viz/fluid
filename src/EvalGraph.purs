@@ -17,7 +17,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, op, selectαs, select𝔹s, showVertices, vertices)
+import Graph (Vertex, op, selectαs, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT)
@@ -26,7 +26,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyWhenWith, spyWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyWhenWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -170,7 +170,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
    addModule mod γ = do
       γ' <- eval_module γ mod empty
-      pure $ γ <+> (spyWith "addModule" (vertices >>> showVertices) γ')
+      pure $ γ <+> γ'
 
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
    addDataset (x ↦ e) γ = do
