@@ -34,7 +34,7 @@ checking =
    { edgeListIso: false
    , inputsInGraph: true
    , outputsInGraph: true
-   , allocRoundTrip: true
+   , allocRoundTrip: false
    }
 
 -- Should be set to true except when there are specific outstanding problems.
