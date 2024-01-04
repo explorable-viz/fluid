@@ -64,9 +64,9 @@ runAllocT n m = do
 -- Verify round-tripping of x' = alloc x and vertices x'. (Only makes sense if m is of the form alloc x.)
 alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT m a -> m Unit
 alloc_check msg m = do
-   _ × αs × x <- runAllocT 0 m
+   n × αs × x <- runAllocT 0 m
    trace x \_ ->
-      check ((spyWith "Unaccounted for" showVertices (αs \\ vertices x)) # isEmpty) $
+      check ((spyWith ("Of " <> show n <> " allocations, unaccounted for") showVertices (αs \\ vertices x)) # isEmpty) $
          "alloc " <> msg <> " round-trip"
 
 runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
