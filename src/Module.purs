@@ -83,9 +83,11 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
    _ × fresh_αs' × x' <- runAllocT 0 $ traverse alloc ((unwrap progCxt).mods)
-   check ((spy "Unaccounted for" showVertices (fresh_αs' \\ vertices x')) # isEmpty) "alloc progCxt.datasets round-trip"
+   check ((spy "Unaccounted for" showVertices (fresh_αs' \\ vertices x')) # isEmpty)
+      "alloc progCxt.datasets round-trip"
    n' × fresh_αs × progCxt' <- runAllocT 0 (alloc progCxt)
-   check (fresh_αs \\ vertices progCxt' # isEmpty) "alloc progCxt round-trip"
+   check (fresh_αs \\ vertices progCxt' # isEmpty)
+      "alloc progCxt round-trip"
    n × _ × γ <- runAllocT n' do
       let αs = vertices progCxt'
       _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
