@@ -269,16 +269,16 @@ instance Apply Module where
    apply _ _ = shapeMismatch unit
 
 -- Foldable instance for Either only considers Right case.
-f' :: forall a b. (b -> a -> b) -> b -> VarDef a + RecDefs a -> b
-f' f acc (Left def) = foldl f acc def
-f' f acc (Right def) = foldl f acc def
+foldlModuleDef :: forall a b. (b -> a -> b) -> b -> VarDef a + RecDefs a -> b
+foldlModuleDef f acc (Left def) = foldl f acc def
+foldlModuleDef f acc (Right def) = foldl f acc def
 
 instance Foldable Module where
    foldl _ acc (Module Nil) = acc
    foldl f acc (Module (Left def : defs)) =
-      foldl (f' f) (foldl f acc def) defs
+      foldl (foldlModuleDef f) (foldl f acc def) defs
    foldl f acc (Module (Right def : defs)) =
-      foldl (f' f) (foldl f acc def) defs
+      foldl (foldlModuleDef f) (foldl f acc def) defs
 
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
