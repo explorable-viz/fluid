@@ -27,12 +27,14 @@ checking
    :: { edgeListIso :: Boolean
       , inputsInGraph :: Boolean
       , outputsInGraph :: Boolean
+      , allocRoundTrip :: Boolean
       }
 
 checking =
    { edgeListIso: false
    , inputsInGraph: true
    , outputsInGraph: true
+   , allocRoundTrip: true
    }
 
 -- Should be set to true except when there are specific outstanding problems.

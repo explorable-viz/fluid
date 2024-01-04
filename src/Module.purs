@@ -28,6 +28,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
+import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, mapLeft, (×))
 import Util.Parse (SParser)
 import Val (restrict)
@@ -81,8 +82,9 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
-   runAllocT_check "progCxt.mods" (traverse alloc ((unwrap progCxt).mods))
-   runAllocT_check "progCxt" (alloc progCxt)
+   when checking.allocRoundTrip $ do
+      runAllocT_check "progCxt.mods" (traverse alloc ((unwrap progCxt).mods))
+      runAllocT_check "progCxt" (alloc progCxt)
    n' × _ × progCxt' <- runAllocT 0 (alloc progCxt)
    n × _ × γ <- runAllocT n' do
       let αs = vertices progCxt'
