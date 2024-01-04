@@ -446,7 +446,7 @@ linkedInputs_spec5 =
         , x1File: File "mini-renewables"
         }
    , δv: Left $ listElement 3 (field "output" neg)
-   , v'_expect: Just "({carbonInt : 412.06, coal : ⸨261.86⸩, country : \"USA\", gas : ⸨505.88⸩, gdpPerCap : 62.823, nuclear : ⸨99.43⸩, petrol : ⸨34.78⸩, year : 2018} : [])"
+   , v'_expect: Just "({carbonInt : 412.06, coal_cap : 261.86, coal_gen : 1149.49, country : \"USA\", gas_cap : 505.88, gas_gen : 1469.13, gdpPerCap : 62.823, nuclear_cap : ⸨99.43⸩, nuclear_gen : ⸨807.08⸩, petrol_cap : 34.78, petrol_gen : 42.68, year : 2018} : [])"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec

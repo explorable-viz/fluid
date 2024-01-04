@@ -1,6 +1,6 @@
 [
-   { year: 2018, country: "USA", energyType: "Bio", output: 11.5},
-   { year: 2018, country: "USA", energyType: "Hydro", output: 83.88},
-   { year: 2018, country: "USA", energyType: "Solar", output: 51.99},
-   { year: 2018, country: "USA", energyType: "Wind", output: 94.67}
+   { year: 2018, country: "USA", energyType: "Bio", output: 61.83, capacity: 11.5},
+   { year: 2018, country: "USA", energyType: "Hydro", output: 286.62, capacity: 83.88},
+   { year: 2018, country: "USA", energyType: "Solar", output: 93.36, capacity: 51.99},
+   { year: 2018, country: "USA", energyType: "Wind", output: 272.67, capacity: 94.67}
 ]

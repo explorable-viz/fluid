@@ -1,3 +1,3 @@
 [
-   { country: "USA", year: 2018, nuclear: 99.43, gas: 505.88, coal: 261.86, petrol: 34.78, carbonInt: 412.06, gdpPerCap: 62.823}
+   { country: "USA", year: 2018, nuclear_gen: 807.08, nuclear_cap: 99.43, gas_gen: 1469.13, gas_cap: 505.88, coal_gen: 1149.49, coal_cap: 261.86, petrol_gen: 42.68, petrol_cap: 34.78, carbonInt: 412.06, gdpPerCap: 62.823}
 ]
