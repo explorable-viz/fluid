@@ -10,8 +10,9 @@ import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Set (isEmpty)
+import Data.Traversable (traverse)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
@@ -81,12 +82,14 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
-   n' × fresh_αs × progCxt' <- runAllocT 0 (alloc progCxt)
-   assertWith "alloc progCxt round-trip" (fresh_αs \\ vertices progCxt' # isEmpty) $ do
-      n × _ × γ <- runAllocT n' do
-         let αs = vertices progCxt'
-         _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
-         -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
-         -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
-         pure (γ `restrict` (fv e))
-      pure { n, progCxt: progCxt', γ }
+   _ × fresh_αs' × x' <- runAllocT 0 $ traverse alloc (unwrap progCxt).primitives
+   assertWith "alloc primitives round-trip" (fresh_αs' \\ vertices x' # isEmpty) $ do
+      n' × fresh_αs × progCxt' <- runAllocT 0 (alloc progCxt)
+      assertWith "alloc progCxt round-trip" (fresh_αs \\ vertices progCxt' # isEmpty) $ do
+         n × _ × γ <- runAllocT n' do
+            let αs = vertices progCxt'
+            _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
+            -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
+            -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
+            pure (γ `restrict` (fv e))
+         pure { n, progCxt: progCxt', γ }
