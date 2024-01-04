@@ -87,8 +87,8 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
 
    let out0 = δv (botOf v)
    in_e <- do
-      when debug.logging (logAs "Selection for bwd" (prettyP out0))
-      traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd out0)
+      let report = spyWhenWith tracing.bwdSelection "Selection for bwd" prettyP
+      traceBenchmark benchNames.bwd $ \_ -> pure (evalT.bwd (report out0))
 
    let GC desug' = identity *** (GC desug)
    let in_s = desug'.bwd in_e

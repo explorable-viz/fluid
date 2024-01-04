@@ -80,7 +80,7 @@ type MutableAdjMap r = STObject r (Set Vertex)
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
-   if not present then spy (α <> " not an existing vertex") $ pure unit
+   if not present then pure $ spy (α <> " not an existing vertex") unit
    else pure unit
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
