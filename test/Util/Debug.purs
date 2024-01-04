@@ -20,7 +20,7 @@ tracing =
    , graphFwdSliceInput: false
    , graphFwdSliceOutput: false
    , checkEqual: false
-   , bwdSelection: true
+   , bwdSelection: false
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
