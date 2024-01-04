@@ -20,7 +20,7 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN, showVertices)
-import Util (type (×), definitely, error, singleton, spy, (\\), (×), (∩), (∪))
+import Util (type (×), definitely, error, singleton, spyWith, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -96,7 +96,7 @@ init αs =
 
 outMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
 outMap αs es = do
-   out <- init (spy "initial vertices" showVertices αs)
+   out <- init (spyWith "initial vertices" showVertices αs)
    tailRecM addEdges (es × out)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _

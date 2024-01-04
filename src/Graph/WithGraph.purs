@@ -17,7 +17,7 @@ import Effect.Exception (Error)
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), assertWhen, check, spy, spyWhen, (×), (\\))
+import Util (type (×), assertWhen, check, spyWhenWith, spyWith, (\\), (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -66,15 +66,15 @@ alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT 
 alloc_check msg m = do
    _ × αs × x <- runAllocT 0 m
    trace x \_ ->
-      check ((spy "Unaccounted for" showVertices (αs \\ vertices x)) # isEmpty) $
+      check ((spyWith "Unaccounted for" showVertices (αs \\ vertices x)) # isEmpty) $
          "alloc " <> msg <> " round-trip"
 
 runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
 runWithGraphT αs m = do
-   g × a <- runStateT m Nil <#> swap <#> first (\es -> fromEdgeList αs (spy "edgeList" showEdgeList es))
+   g × a <- runStateT m Nil <#> swap <#> first (\es -> fromEdgeList αs (spyWith "edgeList" showEdgeList es))
    -- comparing edge lists requires sorting, which causes stack overflow on large graphs
    assertWhen checking.edgeListIso "edgeListIso" (\_ -> g == fromEdgeList αs (toEdgeList g)) $
-      pure ((spyWhen tracing.graphCreation "runWithGraphT" showGraph g) × a)
+      pure ((spyWhenWith tracing.graphCreation "runWithGraphT" showGraph g) × a)
 
 -- ======================
 -- Boilerplate

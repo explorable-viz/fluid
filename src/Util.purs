@@ -90,13 +90,20 @@ validateWhen :: ∀ a. Boolean -> String -> (a -> Boolean) -> Endo a
 validateWhen b msg p a = assertWhen b msg (\_ -> p a) a
 
 -- Debug.spyWith doesn't seem to work
-spyWhen :: forall a. Boolean -> String -> (a -> String) -> Endo a
-spyWhen true msg show x | debug.tracing == true = trace (msg <> ": " <> show x) (const x)
-spyWhen _ _ _ x = x
+spyWhen :: forall a. Boolean -> String -> Endo a
+spyWhen b msg = spyWhenWith b msg identity
+
+spyWhenWith :: forall a b. Boolean -> String -> (a -> b) -> Endo a
+spyWhenWith true msg f x | debug.tracing == true =
+   trace (msg <> ":") (const (trace (f x) (const x)))
+spyWhenWith _ _ _ x = x
 
 -- Prefer this to Debug.spy (similar to spyWith).
-spy :: forall a. String -> (a -> String) -> Endo a
+spy :: forall a. String -> Endo a
 spy = spyWhen true
+
+spyWith :: forall a b. String -> (a -> b) -> Endo a
+spyWith = spyWhenWith true
 
 absurd :: String
 absurd = "absurd"

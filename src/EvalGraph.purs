@@ -26,7 +26,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spy, spyWhen, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyWhenWith, spyWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -170,7 +170,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
    addModule mod γ = do
       γ' <- eval_module γ mod empty
-      pure $ γ <+> (spy "addModule" (vertices >>> showVertices) γ')
+      pure $ γ <+> (spyWith "addModule" (vertices >>> showVertices) γ')
 
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
    addDataset (x ↦ e) γ = do
@@ -195,7 +195,7 @@ graphGC
 graphGC { n, γ } e = do
    _ × _ × g × eα × vα <- runAllocT n do
       eα <- alloc e
-      let inputs = vertices (γ × eα) # spyWhen tracing.graphInputSize "Input count" (Set.size >>> show)
+      let inputs = vertices (γ × eα) # spyWhenWith tracing.graphInputSize "Input count" (Set.size >>> show)
       g × vα <- runWithGraphT inputs (eval γ eα mempty)
       pure (g × eα × vα)
 
