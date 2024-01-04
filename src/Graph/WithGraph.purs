@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), assertWhen, check, spy, spyWhenWith, spyWith, (\\), (×))
@@ -66,7 +66,7 @@ runAllocT n m = do
 
 runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
 runWithGraphT αs m = do
-   g × a <- runStateT m Nil <#> swap <#> first (fromEdgeList αs <<< spyWith "edgeList" showEdgeList)
+   g × a <- runStateT m Nil <#> swap <#> first (fromEdgeList αs)
    -- comparing edge lists requires sorting, which causes stack overflow on large graphs
    assertWhen checking.edgeListIso "edgeListIso" (\_ -> g == fromEdgeList αs (toEdgeList g)) $
       pure ((spyWhenWith tracing.graphCreation "runWithGraphT" showGraph g) × a)

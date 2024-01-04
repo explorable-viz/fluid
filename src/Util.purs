@@ -95,7 +95,7 @@ spyWhen b msg = spyWhenWith b msg identity
 
 spyWhenWith :: forall a b. Boolean -> String -> (a -> b) -> Endo a
 spyWhenWith true msg f x | debug.tracing == true =
-   trace (f x) (const (trace (msg <> ":") (const x)))
+   trace (msg <> ":") \_ -> trace (f x) (const x)
 spyWhenWith _ _ _ x = x
 
 -- Prefer this to Debug.spy (similar to spyWith).
