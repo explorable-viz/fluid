@@ -60,6 +60,7 @@ function drawScatterPlot_ (
       const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
       const x_min = Math.ceil(Math.min(...data.map(d => fst(d.x))))
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
+      console.log("Y_max:", y_max)
       const y_min = Math.ceil(Math.min(...data.map(d => fst(d.y))))
       
       const childId = id + '-' + childIndex
@@ -121,6 +122,7 @@ function drawScatterPlot_ (
                .attr('cx', ([, d]) => x(fst(d.x)))
                .attr('cy', ([, d]) => y(fst(d.y)))
                .attr('r', 1.5)
+               .attr('data-y', ([, d]) => fst(d.y))
                .attr('stroke', ([, d]) => snd(d.x) || snd(d.y) ? 'black' : 'gray')
                .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? colorShade(c(fst(d.c)), -50) : c(fst(d.c))) 
                .style('class', ([, d]) => snd(d.x) || snd(d.y) ? 'dot-selected' : 'dot-unselected')

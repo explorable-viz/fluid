@@ -411,7 +411,7 @@ linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
    { spec:
         { divId: "fig-3"
-        , file: File "energy"
+        , file: File "energyscatter"
         , x2: "renewables"
         , x2File: File "renewables"
         , x1: "non_renewables"
@@ -425,7 +425,7 @@ linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
    { spec:
         { divId: "fig-2"
-        , file: File "energy"
+        , file: File "energyscatter"
         , x1: "non_renewables"
         , x1File: File "non-renewables"
         , x2: "renewables"
@@ -439,7 +439,7 @@ linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { divId: "fig-1"
-        , file: File "energyscatter"
+        , file: File "mini-energyscatter"
         , x2: "non_renewables"
         , x2File: File "mini-non-renewables"
         , x1: "renewables"
