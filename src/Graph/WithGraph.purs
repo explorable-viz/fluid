@@ -12,6 +12,7 @@ import Data.Set (Set, isEmpty)
 import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
+import Debug (trace)
 import Effect.Exception (Error)
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
@@ -64,8 +65,9 @@ runAllocT n m = do
 alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT m a -> m Unit
 alloc_check msg m = do
    _ × αs × x <- runAllocT 0 m
-   check ((spy "Unaccounted for" showVertices (αs \\ vertices x)) # isEmpty) $
-      "alloc " <> msg <> " round-trip"
+   trace x \_ ->
+      check ((spy "Unaccounted for" showVertices (αs \\ vertices x)) # isEmpty) $
+         "alloc " <> msg <> " round-trip"
 
 runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
 runWithGraphT αs m = do
