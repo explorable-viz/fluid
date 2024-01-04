@@ -8,15 +8,15 @@ import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
-import Data.Set (Set)
+import Data.Set (Set, isEmpty)
 import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
-import Graph (class Graph, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, toEdgeList)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), assertWhen, spy, spyWhen, (×))
+import Util (type (×), assertWhen, check, spy, spyWhen, (×), (\\))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -59,6 +59,13 @@ runAllocT n m = do
    a × n' <- runStateT m n
    let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
    pure (n' × fresh_αs × a)
+
+-- Verify round-tripping of x' = alloc x and vertices x'. (Only makes sense if m is of the form alloc x.)
+runAllocT_check :: forall m a. Vertices a => MonadError Error m => String -> m (Int × Set Vertex × a) -> m Unit
+runAllocT_check msg m = do
+   _ × αs × x <- m
+   check ((spy "Unaccounted for" showVertices (αs \\ vertices x)) # isEmpty) $
+      "alloc " <> msg <> " round-trip"
 
 runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
 runWithGraphT αs m = do

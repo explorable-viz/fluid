@@ -11,7 +11,6 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype, unwrap)
-import Data.Set (isEmpty)
 import Data.Traversable (traverse)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -19,9 +18,9 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
-import Graph (showVertices, vertices)
+import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT)
+import Graph.WithGraph (AllocT, alloc, runAllocT, runAllocT_check, runWithGraphT)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
@@ -29,7 +28,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), AffError, check, concatM, mapLeft, spy, (\\), (×))
+import Util (type (×), AffError, concatM, mapLeft, (×))
 import Util.Parse (SParser)
 import Val (restrict)
 
@@ -82,12 +81,9 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
-   _ × fresh_αs' × x' <- runAllocT 0 $ traverse alloc ((unwrap progCxt).mods)
-   check ((spy "Unaccounted for" showVertices (fresh_αs' \\ vertices x')) # isEmpty)
-      "alloc progCxt.datasets round-trip"
-   n' × fresh_αs × progCxt' <- runAllocT 0 (alloc progCxt)
-   check (fresh_αs \\ vertices progCxt' # isEmpty)
-      "alloc progCxt round-trip"
+   runAllocT_check "progCxt.mods" (runAllocT 0 $ traverse alloc ((unwrap progCxt).mods))
+   runAllocT_check "progCxt" (runAllocT 0 (alloc progCxt))
+   n' × _ × progCxt' <- runAllocT 0 (alloc progCxt)
    n × _ × γ <- runAllocT n' do
       let αs = vertices progCxt'
       _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)

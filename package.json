@@ -11,9 +11,9 @@
     "clean-bench": "rm -rf dist/benches && mkdir -p dist/benches && cp -r fluid dist/benches && cp web/index.html dist/benches && cp -r web/css dist/benches",
     "build": "yarn tidy && yarn clean && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Test --to dist/tests/app.js",
     "build-bench": "yarn clean-bench && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Benchmark --to dist/benches/app.js",
-    "tests": "karma start karma.conf.tests.js",
+    "test": "karma start karma.conf.tests.js",
     "bench": "npx http-serve dist/benches -a 127.0.0.1",
-    "tests-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
+    "test-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
     "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs"
   },
   "dependencies": {
