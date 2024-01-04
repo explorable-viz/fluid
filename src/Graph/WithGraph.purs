@@ -61,9 +61,9 @@ runAllocT n m = do
    pure (n' × fresh_αs × a)
 
 -- Verify round-tripping of x' = alloc x and vertices x'. (Only makes sense if m is of the form alloc x.)
-runAllocT_check :: forall m a. Vertices a => MonadError Error m => String -> m (Int × Set Vertex × a) -> m Unit
+runAllocT_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT m a -> m Unit
 runAllocT_check msg m = do
-   _ × αs × x <- m
+   _ × αs × x <- runAllocT 0 m
    check ((spy "Unaccounted for" showVertices (αs \\ vertices x)) # isEmpty) $
       "alloc " <> msg <> " round-trip"
 
