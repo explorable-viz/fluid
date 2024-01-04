@@ -17,10 +17,10 @@ print("Non-Renewables energy_data")
 for year in years:
     non_renewables_str += "\n"
     for country in country_codes:
-        nuclear = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Capacity') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Nuclear')]['Value'].values[0]
-        gas = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Capacity') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Gas')]['Value'].values[0]
-        coal = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Capacity') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Coal')]['Value'].values[0]
-        petrol = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Capacity') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Other Fossil')]['Value'].values[0]
+        nuclear = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Electricity generation') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Nuclear')]['Value'].values[0]
+        gas = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Electricity generation') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Gas')]['Value'].values[0]
+        coal = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Electricity generation') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Coal')]['Value'].values[0]
+        petrol = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Electricity generation') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Other Fossil')]['Value'].values[0]
         carbInt = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Subcategory'] == 'CO2 intensity') & (energy_data['Year'] == year)]['Value'].values[0]
 
         # Horrible hack but we have to do it:
@@ -42,10 +42,10 @@ renewables_str = "["
 for year in years:
     for country in country_codes:
         renewables_str += "\n"
-        bio = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Capacity') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Bioenergy')]['Value'].values[0]
-        hydro = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Capacity') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Hydro')]['Value'].values[0]
-        solar = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Capacity') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Solar')]['Value'].values[0]
-        wind = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Capacity') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Wind')]['Value'].values[0]
+        bio = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Electricity generation') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Bioenergy') & energy_data['Unit'] == 'Twh']['Value'].values[0]
+        hydro = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Electricity generation') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Hydro') & energy_data['Unit'] == 'Twh']['Value'].values[0]
+        solar = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Electricity generation') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Solar') & energy_data['Unit'] == 'Twh']['Value'].values[0]
+        wind = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Category'] == 'Electricity generation') & (energy_data['Year'] == year) & (energy_data['Variable'] == 'Wind') & energy_data['Unit'] == 'Twh']['Value'].values[0]
         biorow = '   { year: ' + str(year) + ', country: \"' + country +'\", energyType: \"Bio\", output: ' + str(bio) + '},\n'
         hydrorow = '   { year: ' + str(year) + ', country: \"' + country +'\", energyType: \"Hydro\", output: ' + str(hydro) + '},\n'
         solarrow = '   { year: ' + str(year) + ', country: \"' + country +'\", energyType: \"Solar\", output: ' + str(solar) + '},\n'

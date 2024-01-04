@@ -17,7 +17,7 @@ linkedInputs_spec6 :: TestLinkedInputsSpec
 linkedInputs_spec6 =
    { spec:
         { divId: "fig-1"
-        , file: File "energyscatter"
+        , file: File "energy"
         , x2: "non_renewables"
         , x2File: File "non-renewables"
         , x1: "renewables"
