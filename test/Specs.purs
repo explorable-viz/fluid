@@ -417,7 +417,7 @@ linkedInputs_spec3 =
         , x1: "non_renewables"
         , x1File: File "non-renewables"
         }
-   , δv: Left $ listElement 27 (field "nuclear" neg >>> field "petrol" neg >>> field "gas" neg >>> field "coal" neg >>> field "gdpPerCap" neg >>> field "carbonInt" neg)
+   , δv: Left $ listElement 51 (field "nuclear" neg >>> field "petrol" neg >>> field "gas" neg >>> field "coal" neg >>> field "gdpPerCap" neg >>> field "carbonInt" neg)
    , v'_expect: Nothing
    }
 
@@ -431,7 +431,7 @@ linkedInputs_spec4 =
         , x2: "renewables"
         , x2File: File "renewables"
         }
-   , δv: Left $ listElement 27 (field "nuclear" neg)
+   , δv: Left $ listElement 51 (field "nuclear" neg)
    , v'_expect: Nothing
    }
 
