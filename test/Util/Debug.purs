@@ -10,6 +10,7 @@ tracing
       , graphFwdSliceOutput :: Boolean
       , checkEqual :: Boolean
       , bwdSelection :: Boolean
+      , fwdAfterBwd :: Boolean
       }
 
 tracing =
@@ -21,6 +22,7 @@ tracing =
    , graphFwdSliceOutput: false
    , checkEqual: false
    , bwdSelection: false
+   , fwdAfterBwd: false
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
