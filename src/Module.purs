@@ -10,8 +10,7 @@ import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
-import Data.Newtype (class Newtype, unwrap)
-import Data.Traversable (traverse)
+import Data.Newtype (class Newtype)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
@@ -82,9 +81,7 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
-   when checking.allocRoundTrip $ do
-      alloc_check "progCxt.mods" (traverse alloc (unwrap progCxt).mods)
-      alloc_check "progCxt" (alloc progCxt)
+   when checking.allocRoundTrip $ alloc_check "progCxt" (alloc progCxt)
    n' × _ × progCxt' <- runAllocT 0 (alloc progCxt)
    n × _ × γ <- runAllocT n' do
       let αs = vertices progCxt'

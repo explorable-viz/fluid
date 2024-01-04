@@ -13,14 +13,13 @@ import Data.Newtype (unwrap)
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Tuple (fst, snd)
-import Debug (trace)
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN, showVertices)
-import Util (type (×), definitely, error, singleton, spyWith, (\\), (×), (∩), (∪))
+import Util (type (×), definitely, error, singleton, spy, spyWith, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -81,7 +80,7 @@ type MutableAdjMap r = STObject r (Set Vertex)
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
-   if not present then trace (α <> " not an existing vertex") \_ -> pure unit
+   if not present then spy (α <> " not an existing vertex") $ pure unit
    else pure unit
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
