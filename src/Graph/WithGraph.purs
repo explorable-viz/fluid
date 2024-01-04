@@ -57,8 +57,12 @@ alloc = traverse (const fresh)
 runAllocT :: forall m a. Monad m => Int -> AllocT m a -> m (Int × Set Vertex × a)
 runAllocT n m = do
    a × n' <- runStateT m n
-   let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
+   let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range' (n + 1) n'
    pure (n' × fresh_αs × a)
+   where
+   -- built-in range function is singularly useless
+   range' :: Int -> Int -> List Int
+   range' n1 n2 = if n2 < n1 then Nil else range n1 n2
 
 runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
 runWithGraphT αs m = do
@@ -70,12 +74,13 @@ runWithGraphT αs m = do
 -- ======================
 -- Diagnostics
 -- ======================
+
 -- Verify round-tripping of x' = alloc x and vertices x'. (Only makes sense if m is ~ alloc x.)
 alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT m a -> m Unit
 alloc_check msg m = do
    n × αs × x <- runAllocT 0 m
-   check ((spyWith (show n <> " allocations, unaccounted for") showVertices (αs \\ vertices (spy "x" x))) # isEmpty) $
-      "alloc " <> msg <> " round-trip"
+   let report = spyWith (show n <> " allocations, unaccounted for") showVertices
+   check ((report (αs \\ vertices (spy "x" x))) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
 -- ======================
 -- Boilerplate
