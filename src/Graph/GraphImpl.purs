@@ -1,15 +1,13 @@
-module Graph.GraphImpl
-   ( GraphImpl(..)
-   , AdjMap
-   ) where
+module Graph.GraphImpl where
 
 import Prelude
 
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
-import Data.Array as A
-import Data.Foldable (foldM)
-import Data.List (List(..), (:))
+import Data.Filterable (filter)
+import Data.Foldable (foldM, sequence_)
+import Data.List (List(..), reverse, (:))
+import Data.List as L
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
 import Data.Set (Set, insert)
@@ -20,8 +18,8 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, Vertex(..), HyperEdge, op, outN)
-import Util (type (×), (\\), (×), (∩), (∪), definitely, error, singleton)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN, showVertices)
+import Util (type (×), definitely, error, singleton, spy, spyWith, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -60,8 +58,9 @@ instance Graph GraphImpl where
    fromEdgeList αs es =
       GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      out = runST (outMap αs es)
-      in_ = runST (inMap αs es)
+      es' = reverse es -- expensive but allows asserting membership invariants
+      out = runST (outMap αs es')
+      in_ = runST (inMap αs es')
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
 
 instance Vertices GraphImpl where
@@ -71,25 +70,23 @@ instance Vertices GraphImpl where
 -- This is better but still slow if there are thousands of sinks.
 sinks' :: AdjMap -> Set Vertex
 sinks' m = D.toArrayWithKey (×) m
-   # A.filter (snd >>> Set.isEmpty)
+   # filter (snd >>> Set.isEmpty)
    <#> (fst >>> Vertex)
    # Set.fromFoldable
 
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
-{-
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
-   pure $ assertWith (α <> " not an existing vertex") present unit
--}
+   if not present then spy (α <> " not an existing vertex") $ pure unit
+   else pure unit
+
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
    OST.peek β acc >>= case _ of
-      Nothing ->
-         -- trace ("Adding missing vertex " <> show β) \_ ->
-         OST.poke β mempty acc
+      Nothing -> OST.poke β mempty acc
       Just _ -> pure acc
 
 init :: forall r. Set Vertex -> ST r (MutableAdjMap r)
@@ -98,7 +95,7 @@ init αs =
 
 outMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
 outMap αs es = do
-   out <- init αs
+   out <- init (spyWith "initial vertices" showVertices αs)
    tailRecM addEdges (es × out)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
@@ -106,7 +103,7 @@ outMap αs es = do
    addEdges (((Vertex α × βs) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (_ == mempty)
       if ok then do
-         --         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
+         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
          acc' <- OST.poke α βs acc >>= flip (foldM addIfMissing) βs
          pure $ Loop (es' × acc')
       else

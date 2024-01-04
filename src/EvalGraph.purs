@@ -17,7 +17,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, op, selectαs, select𝔹s, vertices)
+import Graph (Vertex, op, selectαs, select𝔹s, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT)
@@ -26,7 +26,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyWhen, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyWhenWith, spyWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -170,7 +170,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
    addModule mod γ = do
       γ' <- eval_module γ mod empty
-      pure $ γ <+> γ'
+      pure $ γ <+> (spyWith "addModule" (vertices >>> showVertices) γ')
 
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
    addDataset (x ↦ e) γ = do
@@ -195,22 +195,20 @@ graphGC
 graphGC { n, γ } e = do
    _ × _ × g × eα × vα <- runAllocT n do
       eα <- alloc e
-      let inputs = vertices (γ × eα) # spyWhen tracing.graphInputSize "Input count" (Set.size >>> show)
+      let inputs = vertices (γ × eα) # spyWhenWith tracing.graphInputSize "Input count" (Set.size >>> show)
       g × vα <- runWithGraphT inputs (eval γ eα mempty)
       pure (g × eα × vα)
 
    let
       toOutput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα βs
+      toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (slice αs g0))
          where
-         βs = vertices (slice αs g0)
          αs = selectαs (γ𝔹 × e𝔹) (γ × eα)
             # validateWhen checking.inputsInGraph "inputsInGraph" (_ ⊆ vertices g0)
 
       toInput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      toInput slice g0 v𝔹 = select𝔹s (γ × eα) βs
+      toInput slice g0 v𝔹 = select𝔹s (γ × eα) (vertices (slice αs g0))
          where
-         βs = vertices (slice αs g0)
          αs = selectαs v𝔹 vα
             # validateWhen checking.outputsInGraph "outputsInGraph" (_ ⊆ vertices g0)
    pure

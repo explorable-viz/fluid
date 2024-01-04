@@ -19,7 +19,7 @@ import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT)
+import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
@@ -27,6 +27,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
+import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, mapLeft, (×))
 import Util.Parse (SParser)
 import Val (restrict)
@@ -80,10 +81,12 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
-   n × _ × progCxt' × γ <- runAllocT 0 do
-      progCxt' <- alloc progCxt
+   when checking.allocRoundTrip $ alloc_check "progCxt" (alloc progCxt)
+   n' × _ × progCxt' <- runAllocT 0 (alloc progCxt)
+   n × _ × γ <- runAllocT n' do
+      let αs = vertices progCxt'
+      _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
       -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
       -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
-      _ × γ <- runWithGraphT (vertices progCxt') (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
-      pure (progCxt' × γ `restrict` (fv e))
+      pure (γ `restrict` (fv e))
    pure { n, progCxt: progCxt', γ }

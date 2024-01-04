@@ -11,6 +11,7 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst, snd)
 import Desug (Desugaring, desugGC)
+import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
@@ -24,7 +25,7 @@ import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Spec.Assertions (fail)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Thunk, check, debug, spyWhen, (×))
+import Util (type (×), AffError, EffectError, Thunk, check, debug, spyWhenWith, (×))
 import Val (class Ann, Val)
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -39,6 +40,7 @@ test ∷ forall m. File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> Aff
 test file progCxt spec (n × _) = do
    s <- open file
    { e } :: Desugaring Unit <- desugGC s
+   when debug.logging $ log ("**** initialConfig")
    gconfig <- initialConfig e progCxt
    testPretty s
    _ × row_accum <- runWriterT (replicateM n (testProperties s gconfig spec))
@@ -155,8 +157,8 @@ checkEqual
    -> f a
    -> m Unit
 checkEqual method1 method2 x y = do
-   check (spyWhen tracing.checkEqual (method1 <> " minus " <> method2) prettyP (x `lift2 (-)` y) == botOf x) (method1 <> " <= " <> method2)
-   check (spyWhen tracing.checkEqual (method2 <> " minus " <> method1) prettyP (y `lift2 (-)` x) == botOf x) (method2 <> " <= " <> method1)
+   check (spyWhenWith tracing.checkEqual (method1 <> " minus " <> method2) prettyP (x `lift2 (-)` y) == botOf x) (method1 <> " <= " <> method2)
+   check (spyWhenWith tracing.checkEqual (method2 <> " minus " <> method1) prettyP (y `lift2 (-)` x) == botOf x) (method2 <> " <= " <> method1)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit

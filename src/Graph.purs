@@ -39,11 +39,11 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   -- | Construct a graph from initial set of vertices and list of hyperedges (α, βs). Each α is a new
-   -- | vertex to be added, and each β in βs already exists in the graph being constructed.
+   -- | Construct a graph from initial set of vertices and list of hyperedges (α, βs). Read right-to-left,
+   -- | each α is a new vertex to be added, and each β in βs already exists in the graph being constructed.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
 
-newtype Vertex = Vertex String
+newtype Vertex = Vertex String -- so can use directly as dict key
 
 class Vertices a where
    vertices :: a -> Set Vertex
@@ -56,8 +56,7 @@ instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
 else instance (Vertices a, Vertices b) => Vertices (a × b) where
    vertices (a × b) = vertices a ∪ vertices b
-
-instance (Functor f, Foldable f) => Vertices (Dict (f Vertex)) where
+else instance (Functor g, Foldable g, Functor f, Foldable f) => Vertices (g (f Vertex)) where
    vertices = (vertices <$> _) >>> unions
 
 instance (Apply f, Foldable f) => Selectαs (f Boolean) (f Vertex) where
@@ -93,14 +92,17 @@ toEdgeList g =
       Just { head: α, tail: αs } -> Loop (αs × (α × outN g α) : acc)
 
 showGraph :: forall g. Graph g => g -> String
-showGraph g =
+showGraph = toEdgeList >>> showEdgeList
+
+showEdgeList :: List HyperEdge -> String
+showEdgeList es =
    joinWith "\n" $ [ "digraph G {" ] <> (indent <$> lines) <> [ "}" ]
    where
    lines :: Array String
    lines = [ "rankdir = RL" ] <> edges
 
    edges :: Array String
-   edges = showEdge <$> A.fromFoldable (reverse (toEdgeList g))
+   edges = showEdge <$> A.fromFoldable (reverse es)
 
    indent :: Endo String
    indent = ("   " <> _)
