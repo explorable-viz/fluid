@@ -21,13 +21,13 @@ for year in years:
     non_renewables_str += "\n"
     for country in country_codes:
         nuclear_gen = energy_data.loc[loc_cond(country, 'Electricity generation', year, 'Nuclear', 'TWh')]['Value'].values[0]
-        nuclear_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Nuclear', 'GW')]['Value'].values[0]
+        nuclear_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Nuclear', 'GW')]['Value'].values[0] * 8.76
         gas_gen = energy_data.loc[loc_cond(country, 'Electricity generation', year, 'Gas', 'TWh')]['Value'].values[0]
-        gas_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Gas', 'GW')]['Value'].values[0]
+        gas_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Gas', 'GW')]['Value'].values[0] * 8.76
         coal_gen = energy_data.loc[loc_cond(country, 'Electricity generation', year, 'Coal', 'TWh')]['Value'].values[0]
-        coal_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Coal', 'GW')]['Value'].values[0]
+        coal_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Coal', 'GW')]['Value'].values[0] * 8.76
         petrol_gen = energy_data.loc[loc_cond(country, 'Electricity generation', year, 'Other Fossil', 'TWh')]['Value'].values[0]
-        petrol_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Other Fossil', 'GW')]['Value'].values[0]
+        petrol_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Other Fossil', 'GW')]['Value'].values[0] * 8.76
         carbInt = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Subcategory'] == 'CO2 intensity') & (energy_data['Year'] == year)]['Value'].values[0]
 
         # Horrible hack but we have to do it:
@@ -55,13 +55,13 @@ for year in years:
     for country in country_codes:
         renewables_str += "\n"
         bio_gen = energy_data.loc[loc_cond(country, 'Electricity generation', year, 'Bioenergy', 'TWh')]['Value'].values[0]
-        bio_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Bioenergy', 'GW')]['Value'].values[0]
+        bio_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Bioenergy', 'GW')]['Value'].values[0] * 8.76
         hydro_gen = energy_data.loc[loc_cond(country, 'Electricity generation', year, 'Hydro', 'TWh')]['Value'].values[0]
-        hydro_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Hydro', 'GW')]['Value'].values[0]
+        hydro_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Hydro', 'GW')]['Value'].values[0] * 8.76
         solar_gen = energy_data.loc[loc_cond(country, 'Electricity generation', year, 'Solar', 'TWh')]['Value'].values[0]
-        solar_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Solar', 'GW')]['Value'].values[0]
+        solar_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Solar', 'GW')]['Value'].values[0] * 8.76
         wind_gen = energy_data.loc[loc_cond(country, 'Electricity generation', year, 'Wind', 'TWh')]['Value'].values[0]
-        wind_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Wind', 'GW')]['Value'].values[0]
+        wind_cap = energy_data.loc[loc_cond(country, 'Capacity', year, 'Wind', 'GW')]['Value'].values[0] * 8.76
         biorow = '   { year: ' + str(year) + ', country: \"' + country +'\", energyType: \"Bio\", output: ' + str(bio_gen) + ', capacity: ' + str(bio_cap) + '},\n'
         hydrorow = '   { year: ' + str(year) + ', country: \"' + country +'\", energyType: \"Hydro\", output: ' + str(hydro_gen) + ', capacity: ' + str(hydro_cap) + '},\n'
         solarrow = '   { year: ' + str(year) + ', country: \"' + country +'\", energyType: \"Solar\", output: ' + str(solar_gen) + ', capacity: ' + str(solar_cap) + '},\n'

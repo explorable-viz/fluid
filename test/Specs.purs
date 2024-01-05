@@ -417,7 +417,7 @@ linkedInputs_spec3 =
         , x1: "non_renewables"
         , x1File: File "non-renewables"
         }
-   , δv: Left $ listElement 51 (field "nuclear" neg >>> field "petrol" neg >>> field "gas" neg >>> field "coal" neg >>> field "gdpPerCap" neg >>> field "carbonInt" neg)
+   , δv: Left $ listElement 51 (field "coal_cap" neg)
    , v'_expect: Nothing
    }
 
@@ -426,12 +426,12 @@ linkedInputs_spec4 =
    { spec:
         { divId: "fig-2"
         , file: File "energyscatter"
-        , x1: "non_renewables"
-        , x1File: File "non-renewables"
-        , x2: "renewables"
-        , x2File: File "renewables"
+        , x1: "renewables"
+        , x1File: File "renewables"
+        , x2: "non_renewables"
+        , x2File: File "non-renewables"
         }
-   , δv: Left $ listElement 51 (field "nuclear" neg)
+   , δv: Left $ listElement 204 (field "capacity" neg)
    , v'_expect: Nothing
    }
 
@@ -440,12 +440,12 @@ linkedInputs_spec5 =
    { spec:
         { divId: "fig-1"
         , file: File "mini-energyscatter"
-        , x2: "non_renewables"
-        , x2File: File "mini-non-renewables"
-        , x1: "renewables"
-        , x1File: File "mini-renewables"
+        , x1: "non_renewables"
+        , x1File: File "non-renewables"
+        , x2: "renewables"
+        , x2File: File "renewables"
         }
-   , δv: Left $ listElement 3 (field "output" neg)
+   , δv: Left $ listElement 59 (field "coal_cap" neg)
    , v'_expect: Just "({carbonInt : 412.06, coal_cap : 261.86, coal_gen : 1149.49, country : \"USA\", gas_cap : 505.88, gas_gen : 1469.13, gdpPerCap : 62.823, nuclear_cap : ⸨99.43⸩, nuclear_gen : ⸨807.08⸩, petrol_cap : 34.78, petrol_gen : 42.68, year : 2018} : [])"
    }
 

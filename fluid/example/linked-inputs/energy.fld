@@ -11,9 +11,9 @@ let energies countries year =
             let totalNonRens = sumNonRenewables non_ren_x
             in {
                     name: c_name,
-                    totalCap: totalRens + totalNonRens,
+                    totalCap: totalRensCap + totalNonRens,
                     non_renewables: totalNonRens,
-                    renCapFactor: (totalRensOut + non_ren_x.nuclear_gen) / (8.76 * (totalRensCap + non_ren_x.nuclear_cap))
+                    renCapFactor: totalRensOut / totalRensCap,
                     gdpPerCap: non_ren_x.gdpPerCap
                 }
     in map joined_country countries

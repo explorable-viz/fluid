@@ -10,7 +10,7 @@ import Data.Tuple (uncurry)
 import Effect (Effect)
 import Lattice (neg)
 import Module (File(..))
-import Test.Specs (linkedInputs_spec3, linkedInputs_spec4)
+import Test.Specs (linkedInputs_spec3, linkedInputs_spec4, linkedInputs_spec5)
 import Test.Util.Suite (TestLinkedInputsSpec, loadLinkedInputsTest)
 
 linkedInputs_spec6 :: TestLinkedInputsSpec
@@ -30,7 +30,7 @@ linkedInputs_spec6 =
 main :: Effect Unit
 main =
    runAffs_ (uncurry drawLinkedInputsFig)
-      [ loadLinkedInputsTest linkedInputs_spec6
+      [ loadLinkedInputsTest linkedInputs_spec5
       , loadLinkedInputsTest linkedInputs_spec3
       , loadLinkedInputsTest linkedInputs_spec4
       ]
