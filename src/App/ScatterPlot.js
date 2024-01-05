@@ -56,7 +56,7 @@ function drawScatterPlot_ (
 ) {
    return () => {
       var max_width = 340
-      var max_height = 190
+      var max_height = 340
       const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
       const x_min = Math.ceil(Math.min(...data.map(d => fst(d.x))))
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
@@ -121,10 +121,11 @@ function drawScatterPlot_ (
             .append('circle')
                .attr('cx', ([, d]) => x(fst(d.x)))
                .attr('cy', ([, d]) => y(fst(d.y)))
-               .attr('r', 15)
+               .attr('r', 2)
                .attr('data-y', ([, d]) => fst(d.y))
-               .attr('stroke', ([, d]) => snd(d.x) || snd(d.y) ? 'black' : 'gray')
-               .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? colorShade(c(fst(d.c)), -50) : c(fst(d.c))) 
+               .attr('stroke', 'black')
+               .attr('stroke-width', 0.5)
+               .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? 'black': 'white') 
                .style('class', ([, d]) => snd(d.x) || snd(d.y) ? 'dot-selected' : 'dot-unselected')
                .on('mousedown', (e, d) => {listener(e)})
          
