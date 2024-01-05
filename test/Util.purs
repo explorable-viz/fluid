@@ -93,14 +93,14 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let in_s = desug'.bwd in_e
    out0' <- do
       let in0' = desug'.fwd in_s
-      PrettyShow in0' `checkSatisfies "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= in_e))
+      unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in0')
       traceBenchmark benchNames.fwd \_ -> pure (evalT.fwd in0')
-   PrettyShow out0' `checkSatisfies "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
+   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out0')
 
    let in_top = topOf (fst in_e) × topOf (snd in_e) -- doesn't lift to pairs as intended
    let out_top = evalT.fwd in_top
    when testing.fwdPreservesTop $
-      PrettyShow out_top `checkSatisfies "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
+      unwrap >>> (_ == topOf v) # checkSatisfies "trace fwd preserves ⊤" (PrettyShow out_top)
 
    -- empty string somewhat hacky encoding for "don't care"
    unless (null bwd_expect) $
@@ -121,7 +121,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    -- Already testing extensional equivalence above, but specifically test this case too.
    let out_top' = evalG.fwd in_top
    when testing.fwdPreservesTop $
-      PrettyShow out_top' `checkSatisfies "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
+      unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
 
    let GC evalG_dual = dual (GC evalG)
    in1 <- graphBenchmark benchNames.bwdDlFwdOp \_ -> pure (evalG_op.fwd out0)
