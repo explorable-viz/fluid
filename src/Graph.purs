@@ -11,16 +11,14 @@ import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, singleton, unions)
-import Data.Set (empty, map) as S
-import Data.Set.NonEmpty (NonEmptySet, fromSet)
-import Data.Set.NonEmpty as NES
+import Data.Set as Set
 import Data.String (joinWith)
 import Dict (Dict)
 import Dict (apply) as D
-import Util (type (×), (\\), (×), (∈), (∪), Endo, definitely)
+import Util (type (×), (\\), (×), (∈), (∪), Endo)
 
 type Edge = Vertex × Vertex
-type HyperEdge = Vertex × NonEmptySet Vertex -- mostly a convenience
+type HyperEdge = Vertex × Set Vertex -- mostly a convenience
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
 class (Eq g, Vertices g, Semigroup g) <= Graph g where
@@ -41,11 +39,11 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   -- | Construct a graph from initial set of vertices and list of hyperedges (α, βs). Each α is a new
-   -- | vertex to be added, and each β in βs already exists in the graph being constructed.
+   -- | Construct a graph from initial set of vertices and list of hyperedges (α, βs). Read right-to-left,
+   -- | each α is a new vertex to be added, and each β in βs already exists in the graph being constructed.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
 
-newtype Vertex = Vertex String
+newtype Vertex = Vertex String -- so can use directly as dict key
 
 class Vertices a where
    vertices :: a -> Set Vertex
@@ -58,12 +56,11 @@ instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
 else instance (Vertices a, Vertices b) => Vertices (a × b) where
    vertices (a × b) = vertices a ∪ vertices b
-
-instance (Functor f, Foldable f) => Vertices (Dict (f Vertex)) where
+else instance (Functor g, Foldable g, Functor f, Foldable f) => Vertices (g (f Vertex)) where
    vertices = (vertices <$> _) >>> unions
 
 instance (Apply f, Foldable f) => Selectαs (f Boolean) (f Vertex) where
-   selectαs v𝔹 vα = unions ((if _ then singleton else const S.empty) <$> v𝔹 <*> vα)
+   selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
    select𝔹s vα αs = (_ ∈ αs) <$> vα
 else instance (Selectαs a b, Selectαs a' b') => Selectαs (a × a') (b × b') where
    selectαs (v𝔹 × v𝔹') (vα × vα') = selectαs v𝔹 vα ∪ selectαs v𝔹' vα'
@@ -74,13 +71,13 @@ instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f Boolean)) (Dict 
    select𝔹s dα αs = flip select𝔹s αs <$> dα
 
 outEdges' :: forall g. Graph g => g -> Vertex -> List Edge
-outEdges' g α = L.fromFoldable $ S.map (α × _) (outN g α)
+outEdges' g α = L.fromFoldable $ Set.map (α × _) (outN g α)
 
 outEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 outEdges g αs = concat (outEdges' g <$> L.fromFoldable αs)
 
 inEdges' :: forall g. Graph g => g -> Vertex -> List Edge
-inEdges' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
+inEdges' g α = L.fromFoldable $ Set.map (_ × α) (inN g α)
 
 inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
@@ -92,25 +89,27 @@ toEdgeList g =
    go :: Array Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
       Nothing -> Done acc
-      Just { head: α, tail: αs } ->
-         Loop (αs × (α × definitely "non-empty" (fromSet (outN g α))) : acc)
+      Just { head: α, tail: αs } -> Loop (αs × (α × outN g α) : acc)
 
 showGraph :: forall g. Graph g => g -> String
-showGraph g =
+showGraph = toEdgeList >>> showEdgeList
+
+showEdgeList :: List HyperEdge -> String
+showEdgeList es =
    joinWith "\n" $ [ "digraph G {" ] <> (indent <$> lines) <> [ "}" ]
    where
    lines :: Array String
    lines = [ "rankdir = RL" ] <> edges
 
    edges :: Array String
-   edges = showEdge <$> A.fromFoldable (reverse (toEdgeList g))
+   edges = showEdge <$> A.fromFoldable (reverse es)
 
    indent :: Endo String
    indent = ("   " <> _)
 
    showEdge :: HyperEdge -> String
    showEdge (α × αs) =
-      unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `NES.map` αs) <> "}"
+      unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `Set.map` αs) <> "}"
 
 derive instance Eq Vertex
 derive instance Ord Vertex
@@ -120,4 +119,4 @@ instance Show Vertex where
    show = unwrap
 
 showVertices :: Set Vertex -> String
-showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `S.map` αs)) <> "}"
+showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"

@@ -17,7 +17,10 @@ import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (class Strong, (&&&), (***))
-import Data.Set as S
+import Data.Set (Set)
+import Data.Set as Set
+import Data.Set.NonEmpty (NonEmptySet)
+import Data.Set.NonEmpty as NonEmptySet
 import Data.Tuple (Tuple(..), fst, snd)
 import Debug (trace)
 import Effect.Aff.Class (class MonadAff)
@@ -33,7 +36,7 @@ debug
 
 debug =
    { logging: false
-   , tracing: true
+   , tracing: false
    }
 
 type Thunk a = Unit -> a -- similar to Lazy but without datatype
@@ -63,7 +66,7 @@ type EffectError m a = MonadEffect m => MonadError Error m => m a
 error :: ∀ a. String -> a
 error msg = unsafePerformEffect (throw msg)
 
-shapeMismatch :: forall a. Unit -> a
+shapeMismatch :: forall a. Thunk a
 shapeMismatch _ = error "Shape mismatch"
 
 throw :: forall m a. MonadThrow Error m => String -> m a
@@ -76,18 +79,31 @@ assertWith :: ∀ a. String -> Boolean -> Endo a
 assertWith _ true = identity
 assertWith msg false = \_ -> error ("Assertion failure: " <> msg)
 
-assertWhen :: ∀ a. Boolean -> Thunk Boolean -> Endo a
-assertWhen false = const identity
-assertWhen true = force >>> assert
+assertWhen :: ∀ a. Boolean -> String -> Thunk Boolean -> Endo a
+assertWhen false _ = const identity
+assertWhen true msg = force >>> assertWith msg
+
+validate :: ∀ a. String -> (a -> Boolean) -> Endo a
+validate = validateWhen true
+
+validateWhen :: ∀ a. Boolean -> String -> (a -> Boolean) -> Endo a
+validateWhen b msg p a = assertWhen b msg (\_ -> p a) a
 
 -- Debug.spyWith doesn't seem to work
-spyWhen :: forall a. Boolean -> String -> (a -> String) -> Endo a
-spyWhen true msg show x | debug.tracing == true = trace (msg <> ": " <> show x) (const x)
-spyWhen _ _ _ x = x
+spyWhen :: forall a. Boolean -> String -> Endo a
+spyWhen b msg = spyWhenWith b msg identity
+
+spyWhenWith :: forall a b. Boolean -> String -> (a -> b) -> Endo a
+spyWhenWith true msg f x | debug.tracing == true =
+   trace (f x) (const (trace (msg <> ":") (const x)))
+spyWhenWith _ _ _ x = x
 
 -- Prefer this to Debug.spy (similar to spyWith).
-spy :: forall a. String -> (a -> String) -> Endo a
+spy :: forall a. String -> Endo a
 spy = spyWhen true
+
+spyWith :: forall a b. String -> (a -> b) -> Endo a
+spyWith = spyWhenWith true
 
 absurd :: String
 absurd = "absurd"
@@ -216,7 +232,27 @@ derive instance Functor f => Functor (t <×| f)
 concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a
 concatM = foldr (>=>) pure
 
-infixr 7 S.intersection as ∩
-infixr 6 S.union as ∪
-infix 5 S.difference as \\
-infix 5 S.member as ∈
+infixr 7 Set.intersection as ∩
+infixr 6 Set.union as ∪
+infix 5 Set.difference as \\
+infix 5 Set.member as ∈
+infixl 4 Set.subset as ⊆
+
+-- Simplify overloading.
+class Singleton f where
+   singleton :: forall a. a -> f a
+
+instance Singleton Array where
+   singleton = pure
+
+instance Singleton List where
+   singleton = pure
+
+instance Singleton NonEmptyList where
+   singleton = pure
+
+instance Singleton Set where
+   singleton = Set.singleton
+
+instance Singleton NonEmptySet where
+   singleton = NonEmptySet.singleton

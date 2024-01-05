@@ -5,5 +5,5 @@ set -x -e
 # if globstar not a valid shell option name on MacOS, install bash >=4.0
 shopt -s extglob nullglob globstar
 yarn purs-tidy check src/**/*.purs test/**/*.purs
-yarn build-tests
-yarn tests
+yarn build
+yarn test

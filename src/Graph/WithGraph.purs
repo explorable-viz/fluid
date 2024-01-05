@@ -8,20 +8,19 @@ import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
-import Data.Set (Set)
+import Data.Set (Set, isEmpty)
 import Data.Set as Set
-import Data.Set.NonEmpty (NonEmptySet)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
-import Graph (class Graph, Vertex(..), HyperEdge, fromEdgeList, showGraph, toEdgeList)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), assertWhen, spyWhen, (×))
+import Util (type (×), assertWhen, check, spy, spyWhenWith, spyWith, (\\), (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
-   extend :: Vertex -> NonEmptySet Vertex -> m Unit
+   extend :: Vertex -> Set Vertex -> m Unit
 
 class Monad m <= MonadAlloc m where
    fresh :: m Vertex
@@ -30,7 +29,7 @@ class Monad m <= MonadAlloc m where
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
 class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
-   new :: NonEmptySet Vertex -> m Vertex
+   new :: Set Vertex -> m Vertex
 
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
@@ -52,21 +51,36 @@ instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
 instance Monad m => MonadWithGraph (WithGraphT m) where
    extend α αs = void $ modify_ $ (:) (α × αs)
 
-alloc :: forall m t. MonadAlloc m => Traversable t => Raw t -> m (t Vertex)
+alloc :: forall m f. MonadAlloc m => Traversable f => Raw f -> m (f Vertex)
 alloc = traverse (const fresh)
 
 runAllocT :: forall m a. Monad m => Int -> AllocT m a -> m (Int × Set Vertex × a)
 runAllocT n m = do
    a × n' <- runStateT m n
-   let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range (n + 1) n'
+   let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range' (n + 1) n'
    pure (n' × fresh_αs × a)
+   where
+   -- built-in range function is singularly useless
+   range' :: Int -> Int -> List Int
+   range' n1 n2 = if n2 < n1 then Nil else range n1 n2
 
 runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
 runWithGraphT αs m = do
-   g × a <- runStateT m Nil <#> swap <#> first (fromEdgeList αs)
+   g × a <- runStateT m Nil <#> swap <#> first (\es -> fromEdgeList αs (spyWith "edgeList" showEdgeList es))
    -- comparing edge lists requires sorting, which causes stack overflow on large graphs
-   assertWhen checking.edgeListIso (\_ -> g == fromEdgeList αs (toEdgeList g)) $
-      pure ((spyWhen tracing.graphCreation "runWithGraphT" showGraph g) × a)
+   assertWhen checking.edgeListIso "edgeListIso" (\_ -> g == fromEdgeList αs (toEdgeList g)) $
+      pure ((spyWhenWith tracing.graphCreation "runWithGraphT" showGraph g) × a)
+
+-- ======================
+-- Diagnostics
+-- ======================
+
+-- Verify round-tripping of x' = alloc x and vertices x'. (Only makes sense if m is ~ alloc x.)
+alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT m a -> m Unit
+alloc_check msg m = do
+   n × αs × x <- runAllocT 0 m
+   let report = spyWith (show n <> " allocations, unaccounted for") showVertices
+   check (report (αs \\ vertices (spy "Allocated term" x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
 -- ======================
 -- Boilerplate
