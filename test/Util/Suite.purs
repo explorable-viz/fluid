@@ -13,7 +13,7 @@ import Module (File(..), Folder(..), datasetAs, prelude, loadFile, modules)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkEqual, checkPretty, test)
 import Util (type (+), type (×), (×))
-import Val (Val, lookup')
+import Val (Val)
 
 -- benchmarks parameterised on number of iterations
 type BenchSuite = (Int × Boolean) -> Array (String × Aff BenchRow)
@@ -88,16 +88,14 @@ linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
    name spec = "linked-outputs/" <> unwrap spec.spec.file1 <> " <-> " <> unwrap spec.spec.file2
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
-linkedInputsTest { spec: spec@{ x1, x2 }, δv, v'_expect } = do
-   v1' × v2' × _ × γ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
+linkedInputsTest { spec: spec, δv, v'_expect } = do
+   v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
    case v'_expect of
       Just δv' -> case δv of
          Left _ -> do
-            unselected <- lookup' x2 γ
-            checkEqual "Computed v" "Expected v" v2' (δv' $ botOf unselected)
+            checkEqual "Computed v" "Expected v" v2' (δv' $ botOf v2')
          Right _ -> do
-            unselected <- lookup' x1 γ
-            checkEqual "Computed v" "Expected v" v1' (δv' $ botOf unselected)
+            checkEqual "Computed v" "Expected v" v1' (δv' $ botOf v1')
       _ -> pure unit
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
