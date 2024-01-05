@@ -127,7 +127,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    in1 <- graphBenchmark benchNames.bwdDlFwdOp \_ -> pure (evalG_op.fwd out0)
    in2 <- graphBenchmark benchNames.bwdDlCmp \_ -> pure (evalG_dual.fwd out0)
    when testing.bwdDuals $
-      -- should check environments too but currently requires more general checkEqual
+      -- checking environments would require more general checkEqual
       checkEqual benchNames.bwdDlFwdOp benchNames.bwdDlCmp (snd in1) (snd in2)
    void $ graphBenchmark benchNames.bwdAll \_ -> pure (evalG.bwd (topOf vα))
 
