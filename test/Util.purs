@@ -156,10 +156,10 @@ checkEqual
    -> f a
    -> f a
    -> m Unit
-checkEqual method1 method2 x y = do
+checkEqual op1 op2 x y = do
    let report = flip (spyWhenWith tracing.checkEqual) prettyP
-   check (report (method1 <> " minus " <> method2) (x `lift2 (-)` y) == botOf x) (method1 <> " <= " <> method2)
-   check (report (method2 <> " minus " <> method1)  (y `lift2 (-)` x) == botOf x) (method2 <> " <= " <> method1)
+   check (report (op1 <> " minus " <> op2) (x `lift2 (-)` y) == botOf x) (op1 <> " <= " <> op2)
+   check (report (op2 <> " minus " <> op1)  (y `lift2 (-)` x) == botOf x) (op2 <> " <= " <> op1)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
