@@ -118,7 +118,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd in0)
    checkEqual ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
 
-   -- Already testing extensional equivalence above, but specifically test this case too.
+   -- Already testing extensional equivalence above, but specifically test this too.
    let out_top' = evalG.fwd in_top
    when testing.fwdPreservesTop $
       unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
