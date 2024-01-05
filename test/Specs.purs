@@ -446,7 +446,7 @@ linkedInputs_spec5 =
         , x2File: File "mini-renewables"
         }
    , δv: Left $ listElement 0 (field "coal_cap" neg)
-   , v'_expect: Just "({capacity : ⸨100.74⸩, country : \"USA\", energyType : \"Bio\", output : 61.83, year : 2018} : ({capacity : ⸨734.7887999999999⸩, country : \"USA\", energyType : \"Hydro\", output : 286.62, year : 2018} : ({capacity : ⸨455.43240000000003⸩, country : \"USA\", energyType : \"Solar\", output : 93.36, year : 2018} : ({capacity : ⸨829.3092⸩, country : \"USA\", energyType : \"Wind\", output : 272.67, year : 2018} : []))))"
+   , v'_expect: Just "({capacity : ⸨100.74⸩, country : \"USA\", energyType : \"Bio\", output : 61.83, year : 2018} : ({capacity : ⸨734.79⸩, country : \"USA\", energyType : \"Hydro\", output : 286.62, year : 2018} : ({capacity : ⸨455.43⸩, country : \"USA\", energyType : \"Solar\", output : 93.36, year : 2018} : ({capacity : ⸨829.31⸩, country : \"USA\", energyType : \"Wind\", output : 272.67, year : 2018} : []))))"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
