@@ -14,11 +14,11 @@ tracing
       }
 
 tracing =
-   { graphCreation: false
+   { graphCreation: true
    , graphInputSize: false
    , graphBwdSliceInput: false
    , graphBwdSliceOutput: false
-   , graphFwdSliceInput: false
+   , graphFwdSliceInput: true
    , graphFwdSliceOutput: false
    , checkEqual: false
    , bwdSelection: false

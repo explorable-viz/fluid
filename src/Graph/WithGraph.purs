@@ -13,10 +13,10 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showGraph, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), assertWhen, check, spy, spyWhenWith, spyWith, (\\), (×))
+import Util (type (×), Endo, assertWhen, check, spy, spyWhenWith, spyWith, (\\), (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -66,10 +66,15 @@ runAllocT n m = do
 
 runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
 runWithGraphT αs m = do
-   g × a <- runStateT m Nil <#> swap <#> first (fromEdgeList αs)
+   g × a <- runStateT m Nil
+      <#> swap
+      <#> first (fromEdgeList (report "inputs" showVertices αs) <<< report "edge list" showEdgeList)
    -- comparing edge lists requires sorting, which causes stack overflow on large graphs
    assertWhen checking.edgeListIso "edgeListIso" (\_ -> g == fromEdgeList αs (toEdgeList g)) $
-      pure ((spyWhenWith tracing.graphCreation "runWithGraphT" showGraph g) × a)
+      pure (g × a)
+   where
+   report :: forall c b. String -> (c -> b) -> Endo c
+   report msg = spyWhenWith tracing.graphCreation ("runWithGraphT/" <> msg)
 
 -- ======================
 -- Diagnostics
