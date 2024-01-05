@@ -3,7 +3,7 @@ module Test.Util where
 import Prelude hiding ((-), absurd)
 
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
@@ -23,9 +23,8 @@ import Pretty (class Pretty, PrettyShow(..), prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
-import Test.Spec.Assertions (fail)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Thunk, check, debug, spyWhenWith, (×))
+import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhenWith, (×), throw)
 import Val (class Ann, Val)
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -94,14 +93,14 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let in_s = desug'.bwd in_e
    out0' <- do
       let in0' = desug'.fwd in_s
-      PrettyShow in0' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= in_e))
+      PrettyShow in0' `checkSatisfies "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= in_e))
       traceBenchmark benchNames.fwd \_ -> pure (evalT.fwd in0')
-   PrettyShow out0' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
+   PrettyShow out0' `checkSatisfies "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= out0))
 
    let in_top = topOf (fst in_e) × topOf (snd in_e) -- doesn't lift to pairs as intended
    let out_top = evalT.fwd in_top
    when testing.fwdPreservesTop $
-      PrettyShow out_top `shouldSatisfy "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
+      PrettyShow out_top `checkSatisfies "trace fwd preserves ⊤"` (unwrap >>> (_ == topOf v))
 
    -- empty string somewhat hacky encoding for "don't care"
    unless (null bwd_expect) $
@@ -122,7 +121,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    -- Already testing extensional equivalence above, but specifically test this case too.
    let out_top' = evalG.fwd in_top
    when testing.fwdPreservesTop $
-      PrettyShow out_top' `shouldSatisfy "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
+      PrettyShow out_top' `checkSatisfies "graph fwd preserves ⊤"` (unwrap >>> (_ == out_top))
 
    let GC evalG_dual = dual (GC evalG)
    in1 <- graphBenchmark benchNames.bwdDlFwdOp \_ -> pure (evalG_op.fwd out0)
@@ -159,13 +158,7 @@ checkEqual
 checkEqual op1 op2 x y = do
    let report = flip (spyWhenWith tracing.checkEqual) prettyP
    check (report (op1 <> " minus " <> op2) (x `lift2 (-)` y) == botOf x) (op1 <> " <= " <> op2)
-   check (report (op2 <> " minus " <> op1)  (y `lift2 (-)` x) == botOf x) (op2 <> " <= " <> op1)
-
--- Like version in Test.Spec.Assertions but with error message.
-shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
-shouldSatisfy msg v pred =
-   unless (pred v) $
-      fail (show v <> " doesn't satisfy predicate: " <> msg)
+   check (report (op2 <> " minus " <> op1) (y `lift2 (-)` x) == botOf x) (op2 <> " <= " <> op1)
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
@@ -173,11 +166,11 @@ testPretty s = do
    unless (eq (erase s) (erase s')) do
       logAs "Original" $ show (erase s)
       logAs "New" $ show (erase s')
-      fail "parse/prettyP round trip"
+      throw "parse/prettyP round trip"
 
 checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
 checkPretty msg expect x =
    unless (expect `eq` prettyP x) $ do
       logAs "\nExpected" $ "\n" <> expect
       logAs "\nReceived" $ "\n" <> prettyP x
-      fail msg
+      throw msg

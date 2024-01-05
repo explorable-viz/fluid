@@ -155,11 +155,17 @@ successfulWith msg = successful <<< with msg
 -- If the property fails, add an extra error message.
 with :: forall a m. MonadError Error m => String -> Endo (m a)
 with msg m = catchError m \e ->
-   let msg' = message e in throwError $ E.error $ msg' <> if msg == "" then "" else ("\n" <> msg)
+   let msg' = message e in throw $ msg' <> if msg == "" then "" else ("\n" <> msg)
 
-check :: forall m. MonadError Error m => Boolean -> String -> m Unit
+check :: forall m. MonadThrow Error m => Boolean -> String -> m Unit
 check true = const $ pure unit
-check false = throwError <<< E.error
+check false = throw
+
+-- Like shouldSatisfy in Test.Spec.Assertions but with error message.
+checkSatisfies :: forall m a. MonadThrow Error m => Show a => String -> a -> (a -> Boolean) -> m Unit
+checkSatisfies msg x pred =
+   unless (pred x) $
+      throw (show x <> " doesn't satisfy " <> msg)
 
 mayEq :: forall a. Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
@@ -173,7 +179,7 @@ mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >
 unionWithMaybe :: forall a b. Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
-mayFailEq :: forall a m. MonadError Error m => Show a => Eq a => a -> a -> m a
+mayFailEq :: forall a m. MonadThrow Error m => Show a => Eq a => a -> a -> m a
 mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
 
 infixl 4 mayEq as ≟
