@@ -441,12 +441,12 @@ linkedInputs_spec5 =
         { divId: "fig-1"
         , file: File "mini-energyscatter"
         , x1: "non_renewables"
-        , x1File: File "non-renewables"
+        , x1File: File "mini-non-renewables"
         , x2: "renewables"
-        , x2File: File "renewables"
+        , x2File: File "mini-renewables"
         }
-   , δv: Left $ listElement 59 (field "coal_cap" neg)
-   , v'_expect: Just "({carbonInt : 412.06, coal_cap : 261.86, coal_gen : 1149.49, country : \"USA\", gas_cap : 505.88, gas_gen : 1469.13, gdpPerCap : 62.823, nuclear_cap : ⸨99.43⸩, nuclear_gen : ⸨807.08⸩, petrol_cap : 34.78, petrol_gen : 42.68, year : 2018} : [])"
+   , δv: Left $ listElement 0 (field "coal_cap" neg)
+   , v'_expect: Just "({capacity : ⸨100.74⸩, country : \"USA\", energyType : \"Bio\", output : 61.83, year : 2018} : ({capacity : ⸨734.7887999999999⸩, country : \"USA\", energyType : \"Hydro\", output : 286.62, year : 2018} : ({capacity : ⸨455.43240000000003⸩, country : \"USA\", energyType : \"Solar\", output : 93.36, year : 2018} : ({capacity : ⸨829.3092⸩, country : \"USA\", energyType : \"Wind\", output : 272.67, year : 2018} : []))))"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec

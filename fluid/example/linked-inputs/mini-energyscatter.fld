@@ -2,27 +2,25 @@ let sumNonRenewables x = x.nuclear_cap + x.petrol_cap + x.gas_cap + x.coal_cap;
 
 let check_country yearp name x = ((x.country == name) `and` (x.year == yearp));
 
-let energies year =
-    let joined_country c_name =
-            let filtered = filter (check_country year c_name) renewables;
-            let totalRensOut = sum (map (fun x = x.output) filtered);
-            let totalRensCap = sum (map (fun x = x.capacity) filtered);
-            let non_ren_x = head (filter (check_country year c_name) non_renewables);
-            let totalNonRens = sumNonRenewables non_ren_x
-            in {
-                    name: c_name,
-                    totalCap: totalRensCap + totalNonRens,
-                    non_renewables: totalNonRens,
-                    renCapFactor: totalRensOut / totalRensCap
-                }
-    in map joined_country ["USA"]
+let energy year c_name =
+    let filteredRen = filter (check_country year c_name) renewables;
+    let totalRensOut = sum (map (fun x = x.output) filteredRen);
+    let totalRensCap = sum (map (fun x = x.capacity) filteredRen);
+    let non_ren_x = head (filter (check_country year c_name) non_renewables);
+    let totalNonRens = sumNonRenewables non_ren_x
+    in {
+            name: c_name,
+            totalCap: totalRensCap + totalNonRens,
+            non_renewables: totalNonRens,
+            renCapFactor: totalRensOut / totalRensCap
+        }
 in ScatterPlot {
     caption: "Carbon intensity against proportion of energy from renewables",
     data: [{
                 x: country.non_renewables / country.totalCap,
                 y: country.renCapFactor,
                 c: country.name
-           }| country <- energies 2018],
+           }| country <- map (energy 2018) ["USA"]],
     xlabel: "Renewables/TotalEnergyCap",
-    ylabel: "Renewable Capacity Factor"
+    ylabel: "Clean Capacity Factor"
 }

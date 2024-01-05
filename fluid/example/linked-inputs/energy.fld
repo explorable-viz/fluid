@@ -2,21 +2,19 @@ let sumNonRenewables x = x.nuclear_cap + x.petrol_cap + x.gas_cap + x.coal_cap;
 
 let check_country yearp name x = ((x.country == name) `and` (x.year == yearp));
 
-let energies countries year =
-    let joined_country c_name =
-            let filtered = filter (check_country year c_name) renewables;
-            let totalRensOut = sum (map (fun x = x.output) filtered);
-            let totalRensCap = sum (map (fun x = x.capacity) filtered);
-            let non_ren_x = head (filter (check_country year c_name) non_renewables);
-            let totalNonRens = sumNonRenewables non_ren_x
-            in {
-                    name: c_name,
-                    totalCap: totalRensCap + totalNonRens,
-                    non_renewables: totalNonRens,
-                    renCapFactor: totalRensOut / totalRensCap,
-                    gdpPerCap: non_ren_x.gdpPerCap
-                }
-    in map joined_country countries
+let energies year countries =
+    let filtered = filter (check_country year c_name) renewables;
+    let totalRensOut = sum (map (fun x = x.output) filtered);
+    let totalRensCap = sum (map (fun x = x.capacity) filtered);
+    let non_ren_x = head (filter (check_country year c_name) non_renewables);
+    let totalNonRens = sumNonRenewables non_ren_x
+    in {
+            name: c_name,
+            totalCap: totalRensCap + totalNonRens,
+            non_renewables: totalNonRens,
+            renCapFactor: totalRensOut / totalRensCap,
+            gdpPerCap: non_ren_x.gdpPerCap
+        }
 in BubbleChart {
     caption: "Carbon intensity against proportion of energy from renewables",
     data: [{
@@ -24,7 +22,7 @@ in BubbleChart {
                 y: country.renCapFactor,
                 z: country.gdpPerCap,
                 c: country.name
-           }| country <- energies ["BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"] 2018],
+           }| country <- map (energies 2018) ["BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"]],
     xlabel: "Renewables/TotalEnergyCap",
     ylabel: "Clean Capacity Factor"
 }

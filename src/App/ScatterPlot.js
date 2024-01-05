@@ -121,7 +121,7 @@ function drawScatterPlot_ (
             .append('circle')
                .attr('cx', ([, d]) => x(fst(d.x)))
                .attr('cy', ([, d]) => y(fst(d.y)))
-               .attr('r', 1.5)
+               .attr('r', 15)
                .attr('data-y', ([, d]) => fst(d.y))
                .attr('stroke', ([, d]) => snd(d.x) || snd(d.y) ? 'black' : 'gray')
                .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? colorShade(c(fst(d.c)), -50) : c(fst(d.c))) 
