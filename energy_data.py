@@ -5,8 +5,8 @@ energy_data = pd.read_csv("~/Downloads/yearly_full_release_long_format.csv")
 energy_data.fillna(0, inplace=True)
 gdp_data = pd.read_csv("~/Downloads/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_5994720.csv", header=2)
 gdp_data.fillna(0, inplace=True)
-years = [2018] #[2013, 2014, 2015, 2016, 2017, 2018]
-country_codes = ["USA"] #["BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"]
+years = [2013, 2014, 2015, 2016, 2017, 2018]
+country_codes = ["BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"]
 mini = True
 prefix = os.path.expanduser("~/Documents/fluid/fluid/example/linked-inputs/")
 if mini:
