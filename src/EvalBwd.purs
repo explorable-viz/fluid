@@ -1,17 +1,18 @@
 module EvalBwd where
 
 import Prelude hiding (absurd, top)
+
 import Bindings (Var, varAnon)
+import Control.Apply (lift2)
 import Control.Monad.Except (class MonadError)
 import Data.Exists (mkExists, runExists)
 import Data.Foldable (foldr)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
-import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (second)
-import Data.Set (fromFoldable, singleton) as S
+import Data.Set (fromFoldable) as Set
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
 import Dict (Dict, disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
@@ -24,7 +25,7 @@ import Lattice (Raw, 𝔹, (∨), bot, botOf, expand, top)
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (!), (×), (∪), Endo, absurd, definitely', error, nonEmpty, successful)
+import Util (type (×), (!), (×), (∪), Endo, absurd, definitely', error, nonEmpty, singleton, successful)
 import Util.Pair (zip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), append_inv, (<+>))
@@ -43,7 +44,7 @@ closeDefsBwd γ =
 
 matchBwd :: forall a. Ann a => Env a -> Cont a -> a -> Match -> Val a × Elim a
 matchBwd γ κ _ (MatchVar x v)
-   | keys γ == S.singleton x = get x γ × ElimVar x κ
+   | keys γ == singleton x = get x γ × ElimVar x κ
    | otherwise = botOf v × ElimVar x κ
 matchBwd γ κ _ (MatchVarAnon v)
    | isEmpty γ = botOf v × ElimVar varAnon κ
@@ -52,7 +53,7 @@ matchBwd ρ κ α (MatchConstr c ws) = Val α (V.Constr c vs) × ElimConstr (D.s
    where
    vs × κ' = matchManyBwd ρ κ α (reverse ws)
 matchBwd ρ κ α (MatchRecord xws) = Val α (V.Record (zip xs vs # D.fromFoldable)) ×
-   ElimRecord (S.fromFoldable $ keys xws) κ'
+   ElimRecord (Set.fromFoldable $ keys xws) κ'
    where
    xs × ws = xws # D.toUnfoldable # unzip
    vs × κ' = matchManyBwd ρ κ α (ws # reverse)
@@ -144,17 +145,14 @@ evalBwd' (Val α (V.Constr _ vs)) (T.Constr c ts) =
 evalBwd' (Val α (V.Matrix (MatrixRep (vss × (_ × βi) × (_ × βj))))) (T.Matrix tss (x × y) (i' × j') t') =
    (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
    where
-   NonEmptyList ijs = nonEmpty do
-      i <- range 1 i'
-      j <- range 1 j'
-      L.singleton (i × j)
+   NonEmptyList ijs = nonEmpty $ singleton =<< (range 1 i' `lift2 (×)` range 1 j')
 
    evalBwd_elem :: (Int × Int) -> Env a × Expr a × a × a × a
    evalBwd_elem (i × j) =
       case evalBwd' (vss ! (i - 1) ! (j - 1)) (tss ! (i - 1) ! (j - 1)) of
          γ'' × e × α' ->
             let
-               γ × γ' = append_inv (S.singleton x ∪ S.singleton y) γ''
+               γ × γ' = append_inv (singleton x ∪ singleton y) γ''
                γ0 = (D.singleton x (Val bot (V.Int i')) `disjointUnion` D.singleton y (Val bot (V.Int j'))) <+> γ'
             in
                unsafePartial $
@@ -190,7 +188,7 @@ evalBwd' v (T.LetRec (RecDefs _ ρ) t) =
    (γ1 ∨ γ1') × LetRec (RecDefs (α ∨ α') ρ') e × (α ∨ α')
    where
    γ1γ2 × e × α = evalBwd' v t
-   γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2
+   γ1 × γ2 = append_inv (Set.fromFoldable $ keys ρ) γ1γ2
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
