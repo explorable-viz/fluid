@@ -8,7 +8,7 @@ import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
 import Data.Newtype (class Newtype, unwrap)
-import Data.Set (Set, empty, singleton, unions)
+import Data.Set (Set, empty, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
@@ -16,7 +16,7 @@ import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Dict (apply2) as D
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
-import Util (type (+), type (×), error, shapeMismatch, throw, (\\), (×), (∪), (≜), (≞))
+import Util (type (+), type (×), error, shapeMismatch, singleton, throw, (\\), (×), (∪), (≜), (≞))
 import Util.Pair (Pair(..))
 
 -- Deviate from POPL paper by having closures depend on originating lambda or letrec

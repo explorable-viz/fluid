@@ -34,7 +34,7 @@ import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), (×), AffError, Endo, absurd, orElse, singleton, uncurry3)
+import Util (type (+), type (×), AffError, Endo, absurd, orElse, singleton, uncurry3, (×))
 import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
