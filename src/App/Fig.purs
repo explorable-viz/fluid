@@ -137,7 +137,7 @@ drawLinkedOutputsFigWithCode fig = do
 
 drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
 drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
-   v1' × v2' × v0 <- linkedInputsResult fig δv
+   v1' × v2' × v0 × _ <- linkedInputsResult fig δv
    let δv1 × δv2 = split δv
    sequence_ $ uncurry3 (drawView divId) <$>
       [ 0 × doNothing × view "common output" (v0 <#> toSel)
@@ -203,15 +203,15 @@ linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
       v' <- eval (neg ((botOf γ0') <+> γ')) (topOf e') true <#> snd >>> neg
       pure { v, v', v0' }
 
-linkedInputsResult :: forall m. MonadEffect m => MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
+linkedInputsResult :: forall m. MonadEffect m => MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹 × Env 𝔹)
 linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
    case _ of
       Left δv1 -> do
          { v, v', v0 } <- result x1 x2 δv1
-         pure $ v × v' × v0
+         pure $ v × v' × v0 × γ
       Right δv2 -> do
          { v, v', v0 } <- result x2 x1 δv2
-         pure $ v' × v × v0
+         pure $ v' × v × v0 × γ
    where
    result :: Var -> Var -> Selector Val -> m LinkedInputsResult
    result x x' δv = do

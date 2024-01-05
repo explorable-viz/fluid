@@ -3,16 +3,17 @@ module Test.Util.Suite where
 import Prelude
 
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, LinkedInputsFig, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
-import Data.Either (isLeft)
+import Data.Either (Either(..), isLeft)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
+import Lattice (botOf)
 import Module (File(..), Folder(..), datasetAs, prelude, loadFile, modules)
 import Test.Benchmark.Util (BenchRow)
-import Test.Util (Selector, checkPretty, test)
+import Test.Util (Selector, checkEqual, checkPretty, test)
 import Util (type (+), type (×), (×))
-import Val (Val)
+import Val (Val, lookup')
 
 -- benchmarks parameterised on number of iterations
 type BenchSuite = (Int × Boolean) -> Array (String × Aff BenchRow)
@@ -46,7 +47,7 @@ type TestLinkedOutputsSpec =
 type TestLinkedInputsSpec =
    { spec :: LinkedInputsFigSpec
    , δv :: Selector Val + Selector Val
-   , v'_expect :: Maybe String
+   , v'_expect :: Maybe (Selector Val)
    }
 
 suite :: Array TestSpec -> BenchSuite
@@ -87,10 +88,16 @@ linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
    name spec = "linked-outputs/" <> unwrap spec.spec.file1 <> " <-> " <> unwrap spec.spec.file2
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
-linkedInputsTest { spec, δv, v'_expect } = do
-   v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
+linkedInputsTest { spec: spec@{ x1, x2 }, δv, v'_expect } = do
+   v1' × v2' × _ × γ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
    case v'_expect of
-      Just v' -> checkPretty "linked input" v' (if isLeft δv then v2' else v1')
+      Just δv' -> case δv of
+         Left _ -> do
+            unselected <- lookup' x2 γ
+            checkEqual "Computed v" "Expected v" v2' (δv' $ botOf unselected)
+         Right _ -> do
+            unselected <- lookup' x1 γ
+            checkEqual "Computed v" "Expected v" v1' (δv' $ botOf unselected)
       _ -> pure unit
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)

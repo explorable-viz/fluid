@@ -390,7 +390,7 @@ linkedInputs_spec1 =
         , x2File: File "cities"
         }
    , δv: Left $ listElement 0 (field "farms" neg)
-   , v'_expect: Just "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : ({country : \"Bulgaria\", name : \"Sofia\", water : 55} : ({country : \"Poland\", name : \"Warsaw\", water : 65} : ({country : \"Turkey\", name : \"Istanbul\", water : 375} : [])))))))))"
+   , v'_expect: Just $ listElement 0 (field "water" neg) >>> listElement 1 (field "water" neg) >>> listElement 2 (field "water" neg) --"({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : ({country : \"Bulgaria\", name : \"Sofia\", water : 55} : ({country : \"Poland\", name : \"Warsaw\", water : 65} : ({country : \"Turkey\", name : \"Istanbul\", water : 375} : [])))))))))"
    }
 
 linkedInputs_spec2 :: TestLinkedInputsSpec
@@ -404,7 +404,7 @@ linkedInputs_spec2 =
         , x2File: File "countries"
         }
    , δv: Left $ listElement 3 (field "water" neg) >>> listElement 4 (field "water" neg) >>> listElement 5 (field "water" neg)
-   , v'_expect: Just "({farms : 250, name : \"Germany\", popMil : 81} : ({farms : ⸨200⸩, name : \"UK\", popMil : ⸨67⸩} : ({farms : 150, name : \"Bulgaria\", popMil : 7} : ({farms : 220, name : \"Poland\", popMil : 38} : ({farms : 270, name : \"Turkey\", popMil : 85} : [])))))"
+   , v'_expect: Just $ listElement 1 (field "farms" neg >>> field "popMil" neg) --"({farms : 250, name : \"Germany\", popMil : 81} : ({farms : ⸨200⸩, name : \"UK\", popMil : ⸨67⸩} : ({farms : 150, name : \"Bulgaria\", popMil : 7} : ({farms : 220, name : \"Poland\", popMil : 38} : ({farms : 270, name : \"Turkey\", popMil : 85} : [])))))"
    }
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
@@ -446,7 +446,7 @@ linkedInputs_spec5 =
         , x2File: File "mini-renewables"
         }
    , δv: Left $ listElement 0 (field "coal_cap" neg)
-   , v'_expect: Just "({capacity : ⸨100.74⸩, country : \"USA\", energyType : \"Bio\", output : 61.83, year : 2018} : ({capacity : ⸨734.79⸩, country : \"USA\", energyType : \"Hydro\", output : 286.62, year : 2018} : ({capacity : ⸨455.43⸩, country : \"USA\", energyType : \"Solar\", output : 93.36, year : 2018} : ({capacity : ⸨829.31⸩, country : \"USA\", energyType : \"Wind\", output : 272.67, year : 2018} : []))))"
+   , v'_expect: Just $ listElement 0 (field "capacity" neg) >>> listElement 1 (field "capacity" neg) >>> listElement 2 (field "capacity" neg) >>> listElement 3 (field "capacity" neg) --"({capacity : ⸨100.74⸩, country : \"USA\", energyType : \"Bio\", output : 61.83, year : 2018} : ({capacity : ⸨734.79⸩, country : \"USA\", energyType : \"Hydro\", output : 286.62, year : 2018} : ({capacity : ⸨455.43⸩, country : \"USA\", energyType : \"Solar\", output : 93.36, year : 2018} : ({capacity : ⸨829.31⸩, country : \"USA\", energyType : \"Wind\", output : 272.67, year : 2018} : []))))"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
