@@ -88,7 +88,7 @@ inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 -- Topologically sorted edge list determining graph.
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
-   tailRec go (topologicalSort g × Nil)
+   tailRec go (reverse (topologicalSort g) × Nil)
    where
    go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
