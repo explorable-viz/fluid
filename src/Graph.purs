@@ -15,7 +15,7 @@ import Data.Set as Set
 import Data.String (joinWith)
 import Dict (Dict)
 import Dict (apply) as D
-import Util (type (×), (\\), (×), (∈), (∪), Endo)
+import Util (type (×), (×), (∈), (∪), Endo)
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience
@@ -86,7 +86,7 @@ inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 -- Produce edge list sufficient to determine graph, i.e. such that first argument to fromEdgeList can be empty.
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
-   tailRec go (A.fromFoldable (vertices g \\ sinks g) × Nil)
+   tailRec go (A.fromFoldable (vertices g) × Nil)
    where
    go :: Array Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
