@@ -85,7 +85,7 @@ inEdges' g α = L.fromFoldable $ Set.map (_ × α) (inN g α)
 inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 
--- Produce edge list sufficient to determine graph, i.e. such that first argument to fromEdgeList can be empty.
+-- Topologically sorted edge list determining graph.
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
    tailRec go (topologicalSort g × Nil)

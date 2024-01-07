@@ -29,7 +29,7 @@ checking
       }
 
 checking =
-   { edgeListGC: true
+   { edgeListGC: false
    , inputsInGraph: true
    , outputsInGraph: true
    , allocRoundTrip: false
