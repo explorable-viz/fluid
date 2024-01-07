@@ -195,10 +195,10 @@ graphGC
    -> Raw Expr
    -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
-   _ × _ × g × eα × vα <- runAllocT n do
+   _ × _ × g × eα × vα <- flip runAllocT n do
       eα <- alloc e
       let report = spyFunWhenWithM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
-      g × vα <- report (flip runWithGraphT (eval γ eα mempty)) (vertices (γ × eα))
+      g × vα <- report (runWithGraphT (eval γ eα mempty)) (vertices (γ × eα))
       pure (g × eα × vα)
 
    let

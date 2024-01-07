@@ -82,10 +82,10 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
    when checking.allocRoundTrip $ alloc_check "progCxt" (alloc progCxt)
-   n' × _ × progCxt' <- runAllocT 0 (alloc progCxt)
-   n × _ × γ <- runAllocT n' do
+   n' × _ × progCxt' <- runAllocT (alloc progCxt) 0
+   n × _ × γ <- flip runAllocT n' do
       let αs = vertices progCxt'
-      _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
+      _ × γ <- runWithGraphT (eval_progCxt progCxt') αs :: AllocT m (GraphImpl × _)
       -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
       -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
       pure (γ `restrict` (fv e))
