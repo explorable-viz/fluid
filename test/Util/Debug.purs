@@ -23,6 +23,7 @@ tracing =
 -- that are not covered explicitly by tests.
 checking
    :: { edgeListGC :: Boolean
+      , edgeListSorted :: Boolean
       , inputsInGraph :: Boolean
       , outputsInGraph :: Boolean
       , allocRoundTrip :: Boolean
@@ -30,6 +31,7 @@ checking
 
 checking =
    { edgeListGC: true
+   , edgeListSorted: true
    , inputsInGraph: true
    , outputsInGraph: true
    , allocRoundTrip: false

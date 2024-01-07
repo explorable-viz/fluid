@@ -22,7 +22,8 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, Direction(..), HyperEdge, Vertex(..), op, outN)
-import Util (type (×), assertWith, definitely, error, singleton, (\\), (×), (∩), (∪))
+import Test.Util.Debug (checking)
+import Util (type (×), assertWhen, definitely, error, singleton, (×))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -37,15 +38,6 @@ data GraphImpl = GraphImpl
 
 instance Eq GraphImpl where
    eq (GraphImpl g) (GraphImpl g') = g.out == g'.out
-
-instance Semigroup GraphImpl where
-   append (GraphImpl g) (GraphImpl g') = GraphImpl
-      { out: D.unionWith (∪) g.out g'.out
-      , in: D.unionWith (∪) g.in g'.in
-      , sinks: (g.sinks ∩ g'.sinks) ∪ (g.sinks \\ g'.vertices) ∪ (g'.sinks \\ g.vertices)
-      , sources: (g.sources ∩ g'.sources) ∪ (g.sources \\ g'.vertices) ∪ (g'.sources \\ g.vertices)
-      , vertices: g.vertices ∪ g'.vertices
-      }
 
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Graph GraphImpl where
@@ -87,11 +79,10 @@ sinks' m = D.toArrayWithKey (×) m
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
--- TODO: enable this assertion.
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
-   assertWith (α <> " is an existing vertex") present $ pure unit
+   assertWhen checking.edgeListSorted (α <> " is an existing vertex") (\_ -> present) $ pure unit
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do

@@ -22,9 +22,10 @@ data Direction = Fwd | Bwd -- specify whether an edge list is (topologically) so
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
-class (Eq g, Vertices g, Semigroup g) <= Graph g where
+class (Eq g, Vertices g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
+
    -- | outN and iN satisfy
    -- |   inN G = outN (op G)
    outN :: g -> Vertex -> Set Vertex
@@ -40,6 +41,7 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
+
    -- | Construct a graph from initial set of sinks and topologically sorted list of hyperedges (α, βs). Read
    -- | right-to-left, each α is a new vertex to be added, and each β in βs already exists in the graph being
    -- | constructed. Upper adjoint to toEdgeList. If "direction" is bwd, hyperedges are assumed to be in
