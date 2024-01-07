@@ -6,7 +6,7 @@ import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
 import Data.Filterable (filter)
 import Data.Foldable (foldM, sequence_)
-import Data.Graph (fromMap) as G
+import Data.Graph as G
 import Data.List (List(..), reverse, (:))
 import Data.List as L
 import Data.Map as M
@@ -66,10 +66,12 @@ instance Graph GraphImpl where
       in_ = runST (inMap αs es')
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
 
-   toPSGraph (GraphImpl g) =
-      G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _))))
+   -- PureScript also provides a graph implementation. Delegate to that for now.
+   topologicalSort (GraphImpl g) =
+      G.topologicalSort (G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _)))))
       where
-      kvs = D.toUnfoldable (g.out <#> Set.toUnfoldable) :: Array (String × List Vertex)
+      kvs :: Array (String × List Vertex)
+      kvs = D.toUnfoldable (g.out <#> Set.toUnfoldable)
 
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices

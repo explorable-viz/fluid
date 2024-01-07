@@ -6,7 +6,6 @@ import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
 import Data.Array (uncons)
 import Data.Foldable (class Foldable)
-import Data.Graph (Graph) as G
 import Data.List (List(..), concat, reverse, (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
@@ -46,8 +45,7 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    -- | Upper adjoint to toEdgeList.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
 
-   -- PureScript also provides a graph implementation. We use its topological sort to implement fromEdgeList.
-   toPSGraph :: g -> G.Graph Vertex Unit
+   topologicalSort :: g -> List Vertex
 
 newtype Vertex = Vertex String -- so can use directly as dict key
 
