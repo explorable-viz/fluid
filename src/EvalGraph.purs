@@ -11,6 +11,7 @@ import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Set (Set, empty, insert)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
+import Data.Tuple (curry)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
@@ -212,10 +213,13 @@ graphGC { n, γ } e = do
          αs = selectαs v𝔹 vα
             # validateWhen checking.outputsInGraph "outputsInGraph" (_ ⊆ vertices g0)
    pure
-      { gc: GC { fwd: toOutput fwdSlice g, bwd: toInput bwdSlice g }
-      , gc_op: GC { fwd: toInput fwdSlice (op g), bwd: toOutput bwdSlice (op g) }
+      { gc: GC { fwd: toOutput fwdSlice' g, bwd: toInput bwdSlice' g }
+      , gc_op: GC { fwd: toInput fwdSlice' (op g), bwd: toOutput bwdSlice' (op g) }
       , γα: γ
       , eα
       , g
       , vα
       }
+   where
+   fwdSlice' = curry fwdSlice
+   bwdSlice' = curry bwdSlice

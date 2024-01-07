@@ -17,8 +17,8 @@ import Util (type (×), singleton, spyWhenWith, (×), (∈))
 
 type PendingVertices = Map Vertex (Set Vertex)
 
-bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-bwdSlice αs_ g_ =
+bwdSlice :: forall g. Graph g => Set Vertex × g -> g
+bwdSlice (αs_ × g_) =
    fst (runWithGraph αs $ tailRecM go (empty × L.fromFoldable αs))
       # spyWhenWith tracing.graphBwdSliceOutput "bwdSlice output graph" showGraph
    where
@@ -35,8 +35,8 @@ bwdSlice αs_ g_ =
          extend α βs
          pure (insert α visited × (L.fromFoldable βs <> αs'))
 
-fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-fwdSlice αs_ g_ =
+fwdSlice :: forall g. Graph g => (Set Vertex × g) -> g
+fwdSlice (αs_ × g_) =
    fst (runWithGraph αs $ tailRecM go (M.empty × inEdges g αs))
       # spyWhenWith tracing.graphFwdSliceOutput "fwdSlice output graph" showGraph
    where
