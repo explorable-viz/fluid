@@ -6,6 +6,7 @@ import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
 import Data.Array (uncons)
 import Data.Foldable (class Foldable)
+import Data.Graph (Graph) as G
 import Data.List (List(..), concat, reverse, (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
@@ -20,7 +21,8 @@ import Util (type (×), (×), (∈), (∪), Endo)
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience
 
--- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
+-- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
+-- | is different from Data.Graph.
 class (Eq g, Vertices g, Semigroup g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
@@ -43,6 +45,9 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    -- | each α is a new vertex to be added, and each β in βs already exists in the graph being constructed.
    -- | Upper adjoint to toEdgeList.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
+
+   -- PureScript also provides a graph implementation. We use its topological sort to implement fromEdgeList.
+   toPSGraph :: g -> G.Graph Vertex Unit
 
 newtype Vertex = Vertex String -- so can use directly as dict key
 

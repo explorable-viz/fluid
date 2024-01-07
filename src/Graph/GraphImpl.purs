@@ -6,10 +6,13 @@ import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
 import Data.Filterable (filter)
 import Data.Foldable (foldM, sequence_)
+import Data.Graph (fromMap) as G
 import Data.List (List(..), reverse, (:))
 import Data.List as L
+import Data.Map as M
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
+import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Tuple (fst, snd)
@@ -62,6 +65,11 @@ instance Graph GraphImpl where
       out = runST (outMap αs es')
       in_ = runST (inMap αs es')
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
+
+   toPSGraph (GraphImpl g) =
+      G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _))))
+      where
+      kvs = D.toUnfoldable (g.out <#> Set.toUnfoldable) :: Array (String × List Vertex)
 
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices
