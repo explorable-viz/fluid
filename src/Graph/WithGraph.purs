@@ -68,13 +68,13 @@ runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m 
 runWithGraphT αs m = do
    g × a <- runStateT m Nil
       <#> swap
-      <#> first (fromEdgeList (report "inputs" showVertices αs) <<< report "edge list" showEdgeList)
+      <#> first (fromEdgeList αs <<< report "edge list" showEdgeList)
    -- comparing edge lists requires sorting, which causes stack overflow on large graphs
    assertWhen checking.edgeListIso "edgeListIso" (\_ -> g == fromEdgeList αs (toEdgeList g)) $
       pure (g × a)
    where
    report :: forall c b. String -> (c -> b) -> Endo c
-   report msg = spyWhenWith tracing.graphCreation ("runWithGraphT/" <> msg)
+   report msg = spyWhenWith tracing.runWithGraphT ("runWithGraphT " <> msg)
 
 -- ======================
 -- Diagnostics
