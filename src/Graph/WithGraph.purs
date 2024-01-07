@@ -16,7 +16,7 @@ import Effect.Exception (Error)
 import Graph (class Graph, class Vertices, Direction(..), HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenWithM, spyWhenWith, spyWith, (\\), (×))
+import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenWith, spyFunWhenWithM, spyWhenWith, spyWith, (\\), (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -90,6 +90,9 @@ alloc_check msg m = do
 runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Direction -> Set Vertex -> m (g × a)
 runWithGraphT_spy m = runWithGraphT m
    >>> spyFunWhenWithM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
+
+runWithGraph_spy :: forall g a.Graph g => WithGraph a -> Direction -> Set Vertex -> g × a
+runWithGraph_spy m dir = runWithGraphT_spy m dir >>> unwrap
 
 -- ======================
 -- Boilerplate
