@@ -411,13 +411,13 @@ linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
    { spec:
         { divId: "fig-3"
-        , file: File "energy"
+        , file: File "energyscatter"
         , x2: "renewables"
         , x2File: File "renewables"
         , x1: "non_renewables"
         , x1File: File "non-renewables"
         }
-   , δv: Left $ listElement 27 (field "nuclear" neg >>> field "petrol" neg >>> field "gas" neg >>> field "coal" neg >>> field "gdpPerCap" neg >>> field "carbonInt" neg)
+   , δv: Left $ listElement 51 (field "coal_cap" neg)
    , v'_expect: Nothing
    }
 
@@ -425,13 +425,13 @@ linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
    { spec:
         { divId: "fig-2"
-        , file: File "energy"
-        , x1: "non_renewables"
-        , x1File: File "non-renewables"
-        , x2: "renewables"
-        , x2File: File "renewables"
+        , file: File "energyscatter"
+        , x1: "renewables"
+        , x1File: File "renewables"
+        , x2: "non_renewables"
+        , x2File: File "non-renewables"
         }
-   , δv: Left $ listElement 27 (field "nuclear" neg)
+   , δv: Left $ listElement 204 (field "capacity" neg)
    , v'_expect: Nothing
    }
 
@@ -439,14 +439,14 @@ linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { divId: "fig-1"
-        , file: File "energy"
-        , x2: "non_renewables"
-        , x2File: File "non-renewables"
-        , x1: "renewables"
-        , x1File: File "renewables"
+        , file: File "mini-energyscatter"
+        , x1: "non_renewables"
+        , x1File: File "mini-non-renewables"
+        , x2: "renewables"
+        , x2File: File "mini-renewables"
         }
-   , δv: Left $ listElement 118 (field "output" neg)
-   , v'_expect: Nothing
+   , δv: Left $ listElement 0 (field "coal_cap" neg)
+   , v'_expect: Just "({capacity : ⸨100.74⸩, country : \"USA\", energyType : \"Bio\", output : 61.83, year : 2018} : ({capacity : ⸨734.79⸩, country : \"USA\", energyType : \"Hydro\", output : 286.62, year : 2018} : ({capacity : ⸨455.43⸩, country : \"USA\", energyType : \"Solar\", output : 93.36, year : 2018} : ({capacity : ⸨829.31⸩, country : \"USA\", energyType : \"Wind\", output : 272.67, year : 2018} : []))))"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
@@ -455,4 +455,5 @@ linkedInputs_cases =
    , linkedInputs_spec2
    , linkedInputs_spec3
    , linkedInputs_spec4
+   , linkedInputs_spec5
    ]

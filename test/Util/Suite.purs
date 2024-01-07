@@ -55,7 +55,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    asTest :: TestSpec -> Aff BenchRow
    asTest { imports, file, fwd_expect } = do
       gconfig <- prelude >>= modules (File <$> imports)
-      test (File file) gconfig { δv: identity, fwd_expect, bwd_expect: "" } (n × is_bench)
+      test (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& asTest)
@@ -74,7 +74,7 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset, file } = do
       gconfig <- prelude >>= modules (File <$> imports) >>= datasetAs (File dataset) "data"
-      test (File file) gconfig { δv: identity, fwd_expect: "", bwd_expect: "" } (n × is_bench)
+      test (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
 linkedOutputsTest { spec, δv, v'_expect } = do
