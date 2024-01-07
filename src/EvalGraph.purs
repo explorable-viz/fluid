@@ -12,7 +12,7 @@ import Data.Profunctor.Strong ((***))
 import Data.Set (Set, empty, insert)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
-import Data.Tuple (curry, fst)
+import Data.Tuple (curry)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
@@ -22,13 +22,13 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
-import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT)
+import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhenWith, spyFunWhenWithM, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhenWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -197,8 +197,7 @@ graphGC
 graphGC { n, γ } e = do
    _ × _ × g × eα × vα <- flip runAllocT n do
       eα <- alloc e
-      let report = spyFunWhenWithM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
-      g × vα <- report (runWithGraphT (eval γ eα mempty)) (vertices (γ × eα))
+      g × vα <- runWithGraphT_spy (eval γ eα mempty) (vertices (γ × eα))
       pure (g × eα × vα)
 
    let

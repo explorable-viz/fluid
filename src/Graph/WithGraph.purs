@@ -11,12 +11,12 @@ import Data.Profunctor.Strong (first)
 import Data.Set (Set, isEmpty)
 import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
-import Data.Tuple (swap)
+import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, assertWhen, check, spy, spyWhenWith, spyWith, (\\), (×))
+import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenWithM, spyWhenWith, spyWith, (\\), (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -86,6 +86,10 @@ alloc_check msg m = do
    n × αs × x <- runAllocT m 0
    let report = spyWith (show n <> " allocations, unaccounted for") showVertices
    check (report (αs \\ vertices (spy "Allocated term" x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
+
+runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
+runWithGraphT_spy =
+   runWithGraphT >>> spyFunWhenWithM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
 
 -- ======================
 -- Boilerplate
