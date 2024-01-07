@@ -4,9 +4,8 @@ import Prelude hiding (add)
 
 import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
-import Data.Array (uncons)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), concat, reverse, (:))
+import Data.List (List(..), concat, reverse, uncons, (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -89,9 +88,9 @@ inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 -- Produce edge list sufficient to determine graph, i.e. such that first argument to fromEdgeList can be empty.
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
-   tailRec go (A.fromFoldable (vertices g) × Nil)
+   tailRec go (topologicalSort g × Nil)
    where
-   go :: Array Vertex × List HyperEdge -> Step _ (List HyperEdge)
+   go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
       Nothing -> Done acc
       Just { head: α, tail: αs } -> Loop (αs × (α × outN g α) : acc)
