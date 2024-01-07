@@ -22,7 +22,7 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, Direction(..), HyperEdge, Vertex(..), op, outN)
-import Util (type (×), definitely, error, singleton, traceWhen, (\\), (×), (∩), (∪))
+import Util (type (×), assertWith, definitely, error, singleton, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -91,7 +91,7 @@ type MutableAdjMap r = STObject r (Set Vertex)
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
-   traceWhen (not present) (α <> " not an existing vertex")
+   assertWith (α <> " is an existing vertex") present $ pure unit
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
