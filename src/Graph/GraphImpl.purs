@@ -21,7 +21,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
+import Graph (class Graph, class Vertices, Direction(..), HyperEdge, Vertex(..), op, outN)
 import Util (type (×), definitely, error, singleton, traceWhen, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
@@ -58,10 +58,10 @@ instance Graph GraphImpl where
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: mempty, sources: mempty, vertices: mempty }
 
-   fromEdgeList αs es =
+   fromEdgeList dir αs es =
       GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      es' = reverse es -- expensive but allows asserting membership invariants
+      es' = if dir == Fwd then reverse es else es
       out = runST (outMap αs es')
       in_ = runST (inMap αs es')
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
