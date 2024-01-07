@@ -94,9 +94,13 @@ spyWhen :: forall a. Boolean -> String -> Endo a
 spyWhen b msg = spyWhenWith b msg identity
 
 spyWhenWith :: forall a b. Boolean -> String -> (a -> b) -> Endo a
-spyWhenWith true msg f x | debug.tracing == true =
-   trace (msg <> ":") \_ -> trace (f x) (const x)
+spyWhenWith true msg show x | debug.tracing == true =
+   trace (msg <> ":") \_ -> trace (show x) (const x)
 spyWhenWith _ _ _ x = x
+
+spyFunWhenWith :: forall a b c d1 d2. Boolean -> String -> (a × b -> d1) -> (c -> d2) -> Endo (a × b -> c)
+spyFunWhenWith b s showIn showOut f (x × y) =
+   f ((x × y) # spyWhenWith b (s <> " inputs") showIn) # spyWhenWith b (s <> " outputs") showOut
 
 -- Prefer this to Debug.spy (similar to spyWith).
 spy :: forall a. String -> Endo a
