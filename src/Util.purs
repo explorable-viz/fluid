@@ -52,7 +52,7 @@ type 𝔹 = Boolean
 infixr 6 type Tuple as × -- standard library has \/
 infixr 6 Tuple as ×
 
--- Prefer this pattern to the variant in Data.Tuple.Nested.
+-- Similar to Data.Tuple.Nested but without terminating unit.
 tuple3 :: forall a b c. a -> b -> c -> a × b × c
 tuple3 a b c = a × b × c
 

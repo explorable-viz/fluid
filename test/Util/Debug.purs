@@ -22,14 +22,14 @@ tracing =
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
 -- that are not covered explicitly by tests.
 checking
-   :: { edgeListIso :: Boolean
+   :: { edgeListGC :: Boolean
       , inputsInGraph :: Boolean
       , outputsInGraph :: Boolean
       , allocRoundTrip :: Boolean
       }
 
 checking =
-   { edgeListIso: false
+   { edgeListGC: true
    , inputsInGraph: true
    , outputsInGraph: true
    , allocRoundTrip: false

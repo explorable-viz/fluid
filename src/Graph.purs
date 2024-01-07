@@ -39,8 +39,9 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   -- | Construct a graph from initial set of vertices and list of hyperedges (α, βs). Read right-to-left,
+   -- | Construct a graph from initial set of sinks and list of hyperedges (α, βs). Read right-to-left,
    -- | each α is a new vertex to be added, and each β in βs already exists in the graph being constructed.
+   -- | Upper adjoint to toEdgeList.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
 
 newtype Vertex = Vertex String -- so can use directly as dict key
@@ -82,6 +83,7 @@ inEdges' g α = L.fromFoldable $ Set.map (_ × α) (inN g α)
 inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 
+-- Produce edge list sufficient to determine graph, i.e. such that first argument to fromEdgeList can be empty.
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
    tailRec go (A.fromFoldable (vertices g \\ sinks g) × Nil)
