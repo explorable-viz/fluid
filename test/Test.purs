@@ -20,10 +20,7 @@ main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite
-   [ { file: "include-input-into-output"
-     , imports: [ "example/lib/some-constants" ]
-     , fwd_expect: "(1, 1)"
-     }
+   [ { file: "arithmetic", imports: [], fwd_expect: "42" }
    ]
 
 type TestSuite = Array (String × Aff Unit)
