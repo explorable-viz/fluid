@@ -3,7 +3,7 @@ module Test.Util.Debug where
 -- These flags considered only when Util.debug.tracing is true.
 tracing
    :: { graphCreation :: Boolean
-      , graphInputSize :: Boolean
+      , runWithGraphT :: Boolean
       , graphBwdSlice :: Boolean
       , graphFwdSlice :: Boolean
       , checkEqual :: Boolean
@@ -13,7 +13,7 @@ tracing
 
 tracing =
    { graphCreation: true
-   , graphInputSize: false
+   , runWithGraphT: true
    , graphBwdSlice: false
    , graphFwdSlice: true
    , checkEqual: false

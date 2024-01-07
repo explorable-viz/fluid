@@ -12,7 +12,7 @@ import Data.Profunctor.Strong ((***))
 import Data.Set (Set, empty, insert)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
-import Data.Tuple (curry)
+import Data.Tuple (curry, fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
@@ -28,7 +28,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhenWith, spyWhenWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhenWith, spyFunWhenWithM, successful, throw, validateWhen, with, (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -197,8 +197,8 @@ graphGC
 graphGC { n, γ } e = do
    _ × _ × g × eα × vα <- runAllocT n do
       eα <- alloc e
-      let inputs = vertices (γ × eα) # spyWhenWith tracing.graphInputSize "Input count" (Set.size >>> show)
-      g × vα <- runWithGraphT inputs (eval γ eα mempty)
+      let report = spyFunWhenWithM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
+      g × vα <- report (flip runWithGraphT (eval γ eα mempty)) (vertices (γ × eα))
       pure (g × eα × vα)
 
    let

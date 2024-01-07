@@ -10,11 +10,13 @@ import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
+import Data.Identity (Identity)
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap, wrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (class Strong, (&&&), (***))
 import Data.Set (Set)
@@ -98,9 +100,13 @@ spyWhenWith true msg show x | debug.tracing == true =
    trace (msg <> ":") \_ -> trace (show x) (const x)
 spyWhenWith _ _ _ x = x
 
-spyFunWhenWith :: forall a b c d1 d2. Boolean -> String -> (a × b -> d1) -> (c -> d2) -> Endo (a × b -> c)
-spyFunWhenWith b s showIn showOut f (x × y) =
-   f ((x × y) # spyWhenWith b (s <> " input") showIn) # spyWhenWith b (s <> " output") showOut
+spyFunWhenWith :: forall a b c1 c2. Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> b)
+spyFunWhenWith b s showIn showOut f =
+   unwrap <<< spyFunWhenWithM b s showIn showOut (wrap <<< f :: a -> Identity b)
+
+spyFunWhenWithM :: forall a b c1 c2 m. Functor m => Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> m b)
+spyFunWhenWithM b s showIn showOut f x =
+   f (x # spyWhenWith b (s <> " input") showIn) <#> spyWhenWith b (s <> " output") showOut
 
 -- Prefer this to Debug.spy (similar to spyWith).
 spy :: forall a. String -> Endo a
