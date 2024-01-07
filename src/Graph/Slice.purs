@@ -11,14 +11,14 @@ import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, Direction(..), inEdges, inEdges', outN)
-import Graph.WithGraph (WithGraph, extend, runWithGraph)
+import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Util (type (×), singleton, (×), (∈))
 
 type PendingVertices = Map Vertex (Set Vertex)
 
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) =
-   fst (runWithGraph (tailRecM go (empty × L.fromFoldable αs)) Bwd αs)
+   fst (runWithGraph_spy (tailRecM go (empty × L.fromFoldable αs)) Bwd αs)
    where
    go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
    go (_ × Nil) = Done <$> pure unit
@@ -32,7 +32,7 @@ bwdSlice (αs × g) =
 
 fwdSlice :: forall g. Graph g => (Set Vertex × g) -> g
 fwdSlice (αs × g) =
-   fst (runWithGraph (tailRecM go (M.empty × inEdges g αs)) Fwd αs)
+   fst (runWithGraph_spy (tailRecM go (M.empty × inEdges g αs)) Fwd αs)
    where
    go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
    go (h × Nil) = Done <$> pure h
