@@ -69,8 +69,8 @@ runWithGraphT m dir αs = do
    g × a <- runStateT m Nil
       <#> swap
       <#> first (fromEdgeList dir αs <<< report "edge list" showEdgeList)
-   -- comparing edge lists requires sorting, which causes stack overflow on large graphs
-   assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList Fwd mempty (toEdgeList g)) $
+   -- only checking one direction for now
+   assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList Bwd mempty (toEdgeList g)) $
       pure (g × a)
    where
    report :: forall c b. String -> (c -> b) -> Endo c
