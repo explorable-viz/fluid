@@ -19,7 +19,7 @@ import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, fv)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT)
+import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import Parse (module_, program) as P
 import Parsing (runParser)
@@ -82,11 +82,11 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
    when checking.allocRoundTrip $ alloc_check "progCxt" (alloc progCxt)
-   n' × _ × progCxt' <- runAllocT 0 (alloc progCxt)
-   n × _ × γ <- runAllocT n' do
+   n × _ × progCxt' × γ <- flip runAllocT 0 do
+      progCxt' <- alloc progCxt
       let αs = vertices progCxt'
-      _ × γ <- runWithGraphT αs (eval_progCxt progCxt') :: AllocT m (GraphImpl × _)
+      _ × γ <- runWithGraphT_spy (eval_progCxt progCxt') αs :: AllocT m (GraphImpl × _)
       -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
       -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
-      pure (γ `restrict` (fv e))
+      pure (progCxt' × γ `restrict` (fv e))
    pure { n, progCxt: progCxt', γ }

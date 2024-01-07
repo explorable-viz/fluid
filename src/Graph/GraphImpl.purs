@@ -6,10 +6,13 @@ import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
 import Data.Filterable (filter)
 import Data.Foldable (foldM, sequence_)
+import Data.Graph as G
 import Data.List (List(..), reverse, (:))
 import Data.List as L
+import Data.Map as M
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
+import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Tuple (fst, snd)
@@ -18,8 +21,8 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN, showVertices)
-import Util (type (×), definitely, error, singleton, spy, spyWith, (\\), (×), (∩), (∪))
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
+import Util (type (×), definitely, error, singleton, traceWhen, (\\), (×), (∩), (∪))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -63,6 +66,13 @@ instance Graph GraphImpl where
       in_ = runST (inMap αs es')
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
 
+   -- PureScript also provides a graph implementation. Delegate to that for now.
+   topologicalSort (GraphImpl g) =
+      G.topologicalSort (G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _)))))
+      where
+      kvs :: Array (String × List Vertex)
+      kvs = D.toUnfoldable (g.out <#> Set.toUnfoldable)
+
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices
 
@@ -77,11 +87,11 @@ sinks' m = D.toArrayWithKey (×) m
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
+-- TODO: enable this assertion.
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
-   if not present then spy (α <> " not an existing vertex") $ pure unit
-   else pure unit
+   traceWhen (not present) (α <> " not an existing vertex")
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
@@ -95,7 +105,7 @@ init αs =
 
 outMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
 outMap αs es = do
-   out <- init (spyWith "initial vertices" showVertices αs)
+   out <- init αs
    tailRecM addEdges (es × out)
    where
    addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _

@@ -10,11 +10,13 @@ import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
+import Data.Identity (Identity(..))
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (class Strong, (&&&), (***))
 import Data.Set (Set)
@@ -50,7 +52,7 @@ type 𝔹 = Boolean
 infixr 6 type Tuple as × -- standard library has \/
 infixr 6 Tuple as ×
 
--- Prefer this pattern to the variant in Data.Tuple.Nested.
+-- Similar to Data.Tuple.Nested but without terminating unit.
 tuple3 :: forall a b c. a -> b -> c -> a × b × c
 tuple3 a b c = a × b × c
 
@@ -94,9 +96,17 @@ spyWhen :: forall a. Boolean -> String -> Endo a
 spyWhen b msg = spyWhenWith b msg identity
 
 spyWhenWith :: forall a b. Boolean -> String -> (a -> b) -> Endo a
-spyWhenWith true msg f x | debug.tracing == true =
-   trace (f x) (const (trace (msg <> ":") (const x)))
+spyWhenWith true msg show x | debug.tracing == true =
+   trace (msg <> ":") \_ -> trace (show x) (const x)
 spyWhenWith _ _ _ x = x
+
+spyFunWhenWith :: forall a b c1 c2. Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> b)
+spyFunWhenWith b s showIn showOut f =
+   unwrap <<< spyFunWhenWithM b s showIn showOut (Identity <<< f)
+
+spyFunWhenWithM :: forall a b c1 c2 m. Functor m => Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> m b)
+spyFunWhenWithM b s showIn showOut f x =
+   f (x # spyWhenWith b (s <> " input") showIn) <#> spyWhenWith b (s <> " output") showOut
 
 -- Prefer this to Debug.spy (similar to spyWith).
 spy :: forall a. String -> Endo a
@@ -104,6 +114,10 @@ spy = spyWhen true
 
 spyWith :: forall a b. String -> (a -> b) -> Endo a
 spyWith = spyWhenWith true
+
+traceWhen :: forall m. Applicative m => Boolean -> String -> m Unit
+traceWhen true msg | debug.tracing == true = trace msg \_ -> pure unit
+traceWhen _ _ = pure unit
 
 absurd :: String
 absurd = "absurd"
@@ -151,11 +165,17 @@ successfulWith msg = successful <<< with msg
 -- If the property fails, add an extra error message.
 with :: forall a m. MonadError Error m => String -> Endo (m a)
 with msg m = catchError m \e ->
-   let msg' = message e in throwError $ E.error $ msg' <> if msg == "" then "" else ("\n" <> msg)
+   let msg' = message e in throw $ msg' <> if msg == "" then "" else ("\n" <> msg)
 
-check :: forall m. MonadError Error m => Boolean -> String -> m Unit
+check :: forall m. MonadThrow Error m => Boolean -> String -> m Unit
 check true = const $ pure unit
-check false = throwError <<< E.error
+check false = throw
+
+-- Like shouldSatisfy in Test.Spec.Assertions but with error message.
+checkSatisfies :: forall m a. MonadThrow Error m => Show a => String -> a -> (a -> Boolean) -> m Unit
+checkSatisfies msg x pred =
+   unless (pred x) $
+      throw (show x <> " doesn't satisfy " <> msg)
 
 mayEq :: forall a. Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
@@ -169,7 +189,7 @@ mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >
 unionWithMaybe :: forall a b. Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
-mayFailEq :: forall a m. MonadError Error m => Show a => Eq a => a -> a -> m a
+mayFailEq :: forall a m. MonadThrow Error m => Show a => Eq a => a -> a -> m a
 mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
 
 infixl 4 mayEq as ≟

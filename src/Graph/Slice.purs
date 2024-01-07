@@ -10,47 +10,37 @@ import Data.Map as M
 import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, showGraph, showVertices)
+import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN)
 import Graph.WithGraph (WithGraph, extend, runWithGraph)
-import Test.Util.Debug (tracing)
-import Util (type (×), singleton, spyWhenWith, (×), (∈))
+import Util (type (×), singleton, (×), (∈))
 
 type PendingVertices = Map Vertex (Set Vertex)
 
-bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-bwdSlice αs_ g_ =
-   fst (runWithGraph αs $ tailRecM go (empty × L.fromFoldable αs))
-      # spyWhenWith tracing.graphBwdSliceOutput "bwdSlice output graph" showGraph
+bwdSlice :: forall g. Graph g => Set Vertex × g -> g
+bwdSlice (αs × g) =
+   fst (runWithGraph (tailRecM go (empty × L.fromFoldable αs)) αs)
    where
-   αs = αs_ # spyWhenWith tracing.graphBwdSliceInput "bwdSlice input αs" showVertices
-   g = g_ # spyWhenWith tracing.graphBwdSliceInput "bwdSlice input g" showGraph
-
    go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
    go (_ × Nil) = Done <$> pure unit
    go (visited × (α : αs')) = Loop <$>
       if α ∈ visited then
-         pure $ (visited × αs')
+         pure (visited × αs')
       else do
          let βs = outN g α
          extend α βs
-         pure $ (insert α visited × (L.fromFoldable βs <> αs'))
+         pure (insert α visited × (L.fromFoldable βs <> αs'))
 
-fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-fwdSlice αs_ g_ =
-   fst (runWithGraph αs $ tailRecM go (M.empty × inEdges g αs))
-      # spyWhenWith tracing.graphFwdSliceOutput "fwdSlice output graph" showGraph
+fwdSlice :: forall g. Graph g => (Set Vertex × g) -> g
+fwdSlice (αs × g) =
+   fst (runWithGraph (tailRecM go (M.empty × inEdges g αs)) αs)
    where
-   αs = spyWhenWith tracing.graphFwdSliceInput "fwdSlice input αs" showVertices αs_
-   g = spyWhenWith tracing.graphFwdSliceInput "fwdSlice input g" showGraph g_
-
    go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
    go (h × Nil) = Done <$> pure h
    go (h × ((α × β) : es)) = Loop <$>
-      let
-         βs = maybe (singleton β) (insert β) (lookup α h)
-      in
-         if βs == outN g α then do
-            extend α βs
-            pure $ (M.delete α h × (inEdges' g α <> es))
-         else
-            pure $ (M.insert α βs h × es)
+      if βs == outN g α then do
+         extend α βs
+         pure (M.delete α h × (inEdges' g α <> es))
+      else
+         pure (M.insert α βs h × es)
+      where
+      βs = maybe (singleton β) (insert β) (lookup α h)

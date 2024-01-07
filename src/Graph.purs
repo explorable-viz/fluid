@@ -4,9 +4,8 @@ import Prelude hiding (add)
 
 import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
-import Data.Array (uncons)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), concat, reverse, (:))
+import Data.List (List(..), concat, reverse, uncons, (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -15,12 +14,13 @@ import Data.Set as Set
 import Data.String (joinWith)
 import Dict (Dict)
 import Dict (apply) as D
-import Util (type (×), (\\), (×), (∈), (∪), Endo)
+import Util (type (×), (×), (∈), (∪), Endo)
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience
 
--- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
+-- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
+-- | is different from Data.Graph.
 class (Eq g, Vertices g, Semigroup g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
@@ -39,9 +39,12 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   -- | Construct a graph from initial set of vertices and list of hyperedges (α, βs). Read right-to-left,
+   -- | Construct a graph from initial set of sinks and list of hyperedges (α, βs). Read right-to-left,
    -- | each α is a new vertex to be added, and each β in βs already exists in the graph being constructed.
+   -- | Upper adjoint to toEdgeList.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
+
+   topologicalSort :: g -> List Vertex
 
 newtype Vertex = Vertex String -- so can use directly as dict key
 
@@ -82,11 +85,12 @@ inEdges' g α = L.fromFoldable $ Set.map (_ × α) (inN g α)
 inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 
+-- Topologically sorted edge list determining graph.
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
-   tailRec go (A.fromFoldable (vertices g \\ sinks g) × Nil)
+   tailRec go (reverse (topologicalSort g) × Nil)
    where
-   go :: Array Vertex × List HyperEdge -> Step _ (List HyperEdge)
+   go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
       Nothing -> Done acc
       Just { head: α, tail: αs } -> Loop (αs × (α × outN g α) : acc)
