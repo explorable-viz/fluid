@@ -4,10 +4,8 @@ module Test.Util.Debug where
 tracing
    :: { graphCreation :: Boolean
       , graphInputSize :: Boolean
-      , graphBwdSliceInput :: Boolean
-      , graphBwdSliceOutput :: Boolean
-      , graphFwdSliceInput :: Boolean
-      , graphFwdSliceOutput :: Boolean
+      , graphBwdSlice :: Boolean
+      , graphFwdSlice :: Boolean
       , checkEqual :: Boolean
       , bwdSelection :: Boolean
       , fwdAfterBwd :: Boolean
@@ -16,10 +14,8 @@ tracing
 tracing =
    { graphCreation: true
    , graphInputSize: false
-   , graphBwdSliceInput: false
-   , graphBwdSliceOutput: false
-   , graphFwdSliceInput: true
-   , graphFwdSliceOutput: false
+   , graphBwdSlice: false
+   , graphFwdSlice: true
    , checkEqual: false
    , bwdSelection: false
    , fwdAfterBwd: false

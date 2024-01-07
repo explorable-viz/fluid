@@ -100,7 +100,7 @@ spyWhenWith _ _ _ x = x
 
 spyFunWhenWith :: forall a b c d1 d2. Boolean -> String -> (a × b -> d1) -> (c -> d2) -> Endo (a × b -> c)
 spyFunWhenWith b s showIn showOut f (x × y) =
-   f ((x × y) # spyWhenWith b (s <> " inputs") showIn) # spyWhenWith b (s <> " outputs") showOut
+   f ((x × y) # spyWhenWith b (s <> " input") showIn) # spyWhenWith b (s <> " output") showOut
 
 -- Prefer this to Debug.spy (similar to spyWith).
 spy :: forall a. String -> Endo a

@@ -8,6 +8,7 @@ import Data.Array (range) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
+import Data.Profunctor.Strong ((***))
 import Data.Set (Set, empty, insert)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
@@ -18,7 +19,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, op, selectαs, select𝔹s, vertices)
+import Graph (Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT)
@@ -27,7 +28,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyWhenWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhenWith, spyWhenWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -221,5 +222,6 @@ graphGC { n, γ } e = do
       , vα
       }
    where
-   fwdSlice' = curry fwdSlice
-   bwdSlice' = curry bwdSlice
+   showArgs = showVertices *** showGraph
+   fwdSlice' = curry (spyFunWhenWith tracing.graphFwdSlice "fwdSlice" showArgs showGraph fwdSlice)
+   bwdSlice' = curry (spyFunWhenWith tracing.graphBwdSlice "bwdSlice" showArgs showGraph bwdSlice)
