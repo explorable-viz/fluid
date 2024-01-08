@@ -14,13 +14,13 @@ import Graph (class Graph, Edge, Vertex, Direction(..), inEdges, inEdges', outN)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Util (type (×), singleton, (×), (∈))
 
-type PendingVertices = Map Vertex (Set Vertex)
+type BwdConfig = Set Vertex × List Vertex
 
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) =
    fst (runWithGraph_spy (tailRecM go (empty × L.fromFoldable αs)) Bwd αs)
    where
-   go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
+   go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
    go (_ × Nil) = Done <$> pure unit
    go (visited × (α : αs')) = Loop <$>
       if α ∈ visited then
@@ -30,11 +30,14 @@ bwdSlice (αs × g) =
          extend α βs
          pure (insert α visited × (L.fromFoldable βs <> αs'))
 
-fwdSlice :: forall g. Graph g => (Set Vertex × g) -> g
+type PendingVertices = Map Vertex (Set Vertex)
+type FwdConfig = PendingVertices × List Edge
+
+fwdSlice :: forall g. Graph g => Set Vertex × g -> g
 fwdSlice (αs × g) =
    fst (runWithGraph_spy (tailRecM go (M.empty × inEdges g αs)) Fwd αs)
    where
-   go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
+   go :: FwdConfig -> WithGraph (Step FwdConfig PendingVertices)
    go (h × Nil) = Done <$> pure h
    go (h × ((α × β) : es)) = Loop <$>
       if βs == outN g α then do
