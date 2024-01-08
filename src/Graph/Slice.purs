@@ -49,11 +49,11 @@ fwdSlice (αs × g) =
    where
    go :: FwdConfig -> WithGraph (Step FwdConfig Unit)
    go { es: Nil } = pure $ Done unit
-   go { pending: h, es: (α × β) : es } =
+   go { pending, es: (α × β) : es } =
       if βs == outN g α then do
          extend α βs
-         pure $ Loop { pending: M.delete α h, es: inEdges' g α <> es }
+         pure $ Loop { pending: M.delete α pending, es: inEdges' g α <> es }
       else
-         pure $ Loop { pending: M.insert α βs h, es }
+         pure $ Loop { pending: M.insert α βs pending, es }
       where
-      βs = maybe (singleton β) (insert β) (lookup α h)
+      βs = maybe (singleton β) (insert β) (lookup α pending)
