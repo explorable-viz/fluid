@@ -10,28 +10,32 @@ import Data.Map as M
 import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, Direction(..), inEdges, inEdges', outN)
+import Graph (class Graph, Direction(..), Edge, Vertex, HyperEdge, inEdges, inEdges', outN)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Util (type (×), singleton, (×), (∈))
 
 type BwdConfig =
    { visited :: Set Vertex
    , αs :: List Vertex
+   , pending :: List HyperEdge
    }
 
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) =
-   fst (runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs }) Bwd αs)
+   fst (runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs, pending: Nil }) Bwd αs)
    where
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
-   go { αs: Nil } = Done <$> pure unit
-   go { visited, αs: α : αs' } = Loop <$>
+   go { αs: Nil, pending: Nil } = pure $ Done unit
+   go { visited, αs: Nil, pending: (α × βs) : pending } = do
+      extend α βs
+      pure $ Loop { visited, αs: Nil, pending }
+   go { visited, αs: α : αs', pending } =
       if α ∈ visited then
-         pure { visited, αs: αs' }
+         pure $ Loop { visited, αs: αs', pending }
       else do
          let βs = outN g α
          extend α βs
-         pure { visited: insert α visited, αs: L.fromFoldable βs <> αs' }
+         pure $ Loop { visited: insert α visited, αs: L.fromFoldable βs <> αs', pending }
 
 type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig =
