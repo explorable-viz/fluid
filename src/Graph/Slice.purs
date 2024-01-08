@@ -14,21 +14,24 @@ import Graph (class Graph, Edge, Vertex, Direction(..), inEdges, inEdges', outN)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Util (type (×), singleton, (×), (∈))
 
-type BwdConfig = Set Vertex × List Vertex
+type BwdConfig =
+   { visited :: Set Vertex
+   , αs :: List Vertex
+   }
 
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) =
-   fst (runWithGraph_spy (tailRecM go (empty × L.fromFoldable αs)) Bwd αs)
+   fst (runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs }) Bwd αs)
    where
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
-   go (_ × Nil) = Done <$> pure unit
-   go (visited × (α : αs')) = Loop <$>
+   go { αs: Nil } = Done <$> pure unit
+   go { visited, αs: α : αs' } = Loop <$>
       if α ∈ visited then
-         pure (visited × αs')
+         pure { visited, αs: αs' }
       else do
          let βs = outN g α
          extend α βs
-         pure (insert α visited × (L.fromFoldable βs <> αs'))
+         pure { visited: insert α visited, αs: L.fromFoldable βs <> αs' }
 
 type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig = PendingVertices × List Edge
