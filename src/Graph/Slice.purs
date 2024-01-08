@@ -26,16 +26,16 @@ bwdSlice (αs × g) =
    where
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
    go { αs: Nil, pending: Nil } = pure $ Done unit
-   go { visited, αs: Nil, pending: (α × βs) : pending } = do
+   go config@{ αs: Nil, pending: (α × βs) : pending } = do
       extend α βs
-      pure $ Loop { visited, αs: Nil, pending }
-   go { visited, αs: α : αs', pending } =
+      pure $ Loop $ config { pending = pending }
+   go config@{ visited, αs: α : αs' } =
       if α ∈ visited then
-         pure $ Loop { visited, αs: αs', pending }
+         pure $ Loop $ config { αs = αs' }
       else do
          let βs = outN g α
          extend α βs
-         pure $ Loop { visited: insert α visited, αs: L.fromFoldable βs <> αs', pending }
+         pure $ Loop $ config { visited = insert α visited, αs = L.fromFoldable βs <> αs' }
 
 type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig =
