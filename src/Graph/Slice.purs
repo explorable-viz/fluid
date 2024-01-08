@@ -34,19 +34,22 @@ bwdSlice (αs × g) =
          pure { visited: insert α visited, αs: L.fromFoldable βs <> αs' }
 
 type PendingVertices = Map Vertex (Set Vertex)
-type FwdConfig = PendingVertices × List Edge
+type FwdConfig =
+   { pending :: PendingVertices
+   , es :: List Edge
+   }
 
 fwdSlice :: forall g. Graph g => Set Vertex × g -> g
 fwdSlice (αs × g) =
-   fst (runWithGraph_spy (tailRecM go (M.empty × inEdges g αs)) Fwd αs)
+   fst (runWithGraph_spy (tailRecM go { pending: M.empty, es: inEdges g αs }) Fwd αs)
    where
    go :: FwdConfig -> WithGraph (Step FwdConfig PendingVertices)
-   go (h × Nil) = Done <$> pure h
-   go (h × ((α × β) : es)) = Loop <$>
+   go { pending: h, es: Nil } = Done <$> pure h
+   go { pending: h, es: (α × β) : es } = Loop <$>
       if βs == outN g α then do
          extend α βs
-         pure (M.delete α h × (inEdges' g α <> es))
+         pure { pending: M.delete α h, es: inEdges' g α <> es }
       else
-         pure (M.insert α βs h × es)
+         pure { pending: M.insert α βs h, es }
       where
       βs = maybe (singleton β) (insert β) (lookup α h)
