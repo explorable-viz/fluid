@@ -47,13 +47,13 @@ fwdSlice :: forall g. Graph g => Set Vertex × g -> g
 fwdSlice (αs × g) =
    fst (runWithGraph_spy (tailRecM go { pending: M.empty, es: inEdges g αs }) Fwd αs)
    where
-   go :: FwdConfig -> WithGraph (Step FwdConfig PendingVertices)
-   go { pending: h, es: Nil } = Done <$> pure h
-   go { pending: h, es: (α × β) : es } = Loop <$>
+   go :: FwdConfig -> WithGraph (Step FwdConfig Unit)
+   go { es: Nil } = pure $ Done unit
+   go { pending: h, es: (α × β) : es } =
       if βs == outN g α then do
          extend α βs
-         pure { pending: M.delete α h, es: inEdges' g α <> es }
+         pure $ Loop { pending: M.delete α h, es: inEdges' g α <> es }
       else
-         pure { pending: M.insert α βs h, es }
+         pure $ Loop { pending: M.insert α βs h, es }
       where
       βs = maybe (singleton β) (insert β) (lookup α h)
