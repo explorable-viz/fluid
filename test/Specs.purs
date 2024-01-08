@@ -417,7 +417,7 @@ linkedInputs_spec3 =
         , x1: "non_renewables"
         , x1File: File "non-renewables"
         }
-   , δv: Left $ listElement 51 (field "coal_cap" neg)
+   , δv: Left $ listElement 1 (field "coal_cap" neg)
    , v'_expect: Nothing
    }
 
@@ -431,7 +431,7 @@ linkedInputs_spec4 =
         , x2: "non_renewables"
         , x2File: File "non-renewables"
         }
-   , δv: Left $ listElement 204 (field "capacity" neg)
+   , δv: Left $ listElement 4 (field "capacity" neg)
    , v'_expect: Nothing
    }
 
