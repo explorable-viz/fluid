@@ -20,21 +20,6 @@ type BwdConfig =
    , pending :: List HyperEdge
    }
 
-{-
-bwdSlice :: forall g. Graph g => Set Vertex × g -> g
-bwdSlice (αs × g) =
-   fst (runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs }) Fwd empty)
-   where
-   go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
-   go { αs: Nil } = pure $ Done unit
-   go { visited, αs: α : αs' } =
-      if α ∈ visited then
-         pure $ Loop { visited, αs: αs' }
-      else do
-         let βs = outN g α
-         extend α βs
-         pure $ Loop { visited: insert α visited, αs: L.fromFoldable βs <> αs' }
--}
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) =
    fst (runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs, pending: Nil }) Fwd empty)
