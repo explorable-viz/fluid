@@ -12,8 +12,8 @@ tracing
 
 tracing =
    { runWithGraphT: true
-   , graphBwdSlice: false
-   , graphFwdSlice: true
+   , graphBwdSlice: true
+   , graphFwdSlice: false
    , checkEqual: false
    , bwdSelection: false
    , fwdAfterBwd: false
@@ -31,7 +31,7 @@ checking
 
 checking =
    { edgeListGC: true
-   , edgeListSorted: false
+   , edgeListSorted: true
    , inputsInGraph: true
    , outputsInGraph: true
    , allocRoundTrip: false

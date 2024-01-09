@@ -12,7 +12,7 @@ import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
 import Graph (class Graph, Direction(..), Edge, Vertex, HyperEdge, inEdges, inEdges', outN)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
-import Util (type (×), singleton, (×), (∈))
+import Util (type (×), singleton, spyWith, (×), (∈))
 
 type BwdConfig =
    { visited :: Set Vertex
@@ -20,22 +20,35 @@ type BwdConfig =
    , pending :: List HyperEdge
    }
 
+{-
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) =
-   fst (runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs, pending: Nil }) Bwd αs)
+   fst (runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs }) Fwd empty)
    where
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
-   go { αs: Nil, pending: Nil } = pure $ Done unit
-   go config@{ αs: Nil, pending: (α × βs) : pending } = do
-      extend α βs
-      pure $ Loop $ config { pending = pending }
-   go config@{ visited, αs: α : αs' } =
+   go { αs: Nil } = pure $ Done unit
+   go { visited, αs: α : αs' } =
       if α ∈ visited then
-         pure $ Loop $ config { αs = αs' }
+         pure $ Loop { visited, αs: αs' }
       else do
          let βs = outN g α
          extend α βs
-         pure $ Loop $ config { visited = insert α visited, αs = L.fromFoldable βs <> αs' }
+         pure $ Loop { visited: insert α visited, αs: L.fromFoldable βs <> αs' }
+-}
+bwdSlice :: forall g. Graph g => Set Vertex × g -> g
+bwdSlice (αs × g) = fst (runWithGraph_spy (go { visited: empty, αs: L.fromFoldable αs, pending: Nil }) Fwd empty)
+   where
+   go :: BwdConfig -> WithGraph Unit
+   go { αs: Nil, pending: Nil } = pure unit
+   go { visited, αs: Nil, pending: (α × βs) : pending } = do
+      if (spyWith "popping" show α ∈ visited) then
+         go { visited, αs: Nil, pending }
+      else do
+         extend (spyWith "adding" show α) βs
+         go { visited: insert α visited, αs: Nil, pending }
+   go { visited, αs: α : αs', pending } = do
+      let βs = outN g (spyWith "pushing" show α)
+      go { visited, αs: L.fromFoldable βs <> αs', pending: (α × βs) : pending }
 
 type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig =

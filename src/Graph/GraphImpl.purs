@@ -21,7 +21,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, Direction(..), HyperEdge, Vertex(..), op, outN)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, singleton, (×))
 
@@ -50,17 +50,17 @@ instance Graph GraphImpl where
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: mempty, sources: mempty, vertices: mempty }
 
-   fromEdgeList dir αs es =
+   fromEdgeList _ αs es =
       GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      es' = if dir == Fwd then reverse es else es
+      es' = reverse es
       out = runST (outMap αs es')
       in_ = runST (inMap αs es')
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
 
    -- PureScript also provides a graph implementation. Delegate to that for now.
    topologicalSort (GraphImpl g) =
-      G.topologicalSort (G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _)))))
+      reverse (G.topologicalSort (G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _))))))
       where
       kvs :: Array (String × List Vertex)
       kvs = D.toUnfoldable (g.out <#> Set.toUnfoldable)
