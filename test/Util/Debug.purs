@@ -12,8 +12,8 @@ tracing
 
 tracing =
    { runWithGraphT: true
-   , graphBwdSlice: false
-   , graphFwdSlice: true
+   , graphBwdSlice: true
+   , graphFwdSlice: false
    , checkEqual: false
    , bwdSelection: false
    , fwdAfterBwd: false
@@ -23,6 +23,7 @@ tracing =
 -- that are not covered explicitly by tests.
 checking
    :: { edgeListGC :: Boolean
+      , edgeListSorted :: Boolean
       , inputsInGraph :: Boolean
       , outputsInGraph :: Boolean
       , allocRoundTrip :: Boolean
@@ -30,6 +31,7 @@ checking
 
 checking =
    { edgeListGC: true
+   , edgeListSorted: true
    , inputsInGraph: true
    , outputsInGraph: true
    , allocRoundTrip: false

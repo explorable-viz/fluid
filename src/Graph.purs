@@ -18,12 +18,14 @@ import Util (type (×), (×), (∈), (∪), Endo)
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience
+data Direction = Fwd | Bwd -- specify whether an edge list is (topologically) sorted or reverse-sorted
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
-class (Eq g, Vertices g, Semigroup g) <= Graph g where
+class (Eq g, Vertices g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
+
    -- | outN and iN satisfy
    -- |   inN G = outN (op G)
    outN :: g -> Vertex -> Set Vertex
@@ -39,10 +41,12 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   -- | Construct a graph from initial set of sinks and list of hyperedges (α, βs). Read right-to-left,
-   -- | each α is a new vertex to be added, and each β in βs already exists in the graph being constructed.
-   -- | Upper adjoint to toEdgeList.
-   fromEdgeList :: Set Vertex -> List HyperEdge -> g
+
+   -- | Construct a graph from initial set of sinks and topologically sorted list of hyperedges (α, βs). Read
+   -- | right-to-left, each α is a new vertex to be added, and each β in βs already exists in the graph being
+   -- | constructed. Upper adjoint to toEdgeList. If "direction" is bwd, hyperedges are assumed to be in
+   -- | reverse topological order.
+   fromEdgeList :: Direction -> Set Vertex -> List HyperEdge -> g
 
    topologicalSort :: g -> List Vertex
 
@@ -88,7 +92,7 @@ inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 -- Topologically sorted edge list determining graph.
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
-   tailRec go (reverse (topologicalSort g) × Nil)
+   tailRec go (topologicalSort g × Nil)
    where
    go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
@@ -115,12 +119,17 @@ showEdgeList es =
    showEdge (α × αs) =
       unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `Set.map` αs) <> "}"
 
+showVertices :: Set Vertex -> String
+showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
+
+-- ======================
+-- boilerplate
+-- ======================
+derive instance Eq Direction
+
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
 
 instance Show Vertex where
    show = unwrap
-
-showVertices :: Set Vertex -> String
-showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"

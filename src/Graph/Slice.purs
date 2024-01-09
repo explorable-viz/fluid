@@ -10,37 +10,64 @@ import Data.Map as M
 import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN)
-import Graph.WithGraph (WithGraph, extend, runWithGraph)
+import Graph (class Graph, Direction(..), Edge, Vertex, HyperEdge, inEdges, inEdges', outN)
+import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Util (type (×), singleton, (×), (∈))
 
-type PendingVertices = Map Vertex (Set Vertex)
+type BwdConfig =
+   { visited :: Set Vertex
+   , αs :: List Vertex
+   , pending :: List HyperEdge
+   }
 
+{-
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) =
-   fst (runWithGraph (tailRecM go (empty × L.fromFoldable αs)) αs)
+   fst (runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs }) Fwd empty)
    where
-   go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
-   go (_ × Nil) = Done <$> pure unit
-   go (visited × (α : αs')) = Loop <$>
+   go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
+   go { αs: Nil } = pure $ Done unit
+   go { visited, αs: α : αs' } =
       if α ∈ visited then
-         pure (visited × αs')
+         pure $ Loop { visited, αs: αs' }
       else do
          let βs = outN g α
          extend α βs
-         pure (insert α visited × (L.fromFoldable βs <> αs'))
-
-fwdSlice :: forall g. Graph g => (Set Vertex × g) -> g
-fwdSlice (αs × g) =
-   fst (runWithGraph (tailRecM go (M.empty × inEdges g αs)) αs)
+         pure $ Loop { visited: insert α visited, αs: L.fromFoldable βs <> αs' }
+-}
+bwdSlice :: forall g. Graph g => Set Vertex × g -> g
+bwdSlice (αs × g) =
+   fst (runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs, pending: Nil }) Fwd empty)
    where
-   go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
-   go (h × Nil) = Done <$> pure h
-   go (h × ((α × β) : es)) = Loop <$>
+   go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
+   go { αs: Nil, pending: Nil } = pure $ Done unit
+   go { visited, αs: Nil, pending: (α × βs) : pending } = do
+      if α ∈ visited then
+         pure $ Loop { visited, αs: Nil, pending }
+      else do
+         extend α βs
+         pure $ Loop { visited: insert α visited, αs: Nil, pending }
+   go { visited, αs: α : αs', pending } = do
+      let βs = outN g α
+      pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: (α × βs) : pending }
+
+type PendingVertices = Map Vertex (Set Vertex)
+type FwdConfig =
+   { pending :: PendingVertices
+   , es :: List Edge
+   }
+
+fwdSlice :: forall g. Graph g => Set Vertex × g -> g
+fwdSlice (αs × g) =
+   fst (runWithGraph_spy (tailRecM go { pending: M.empty, es: inEdges g αs }) Fwd αs)
+   where
+   go :: FwdConfig -> WithGraph (Step FwdConfig Unit)
+   go { es: Nil } = pure $ Done unit
+   go { pending, es: (α × β) : es } =
       if βs == outN g α then do
          extend α βs
-         pure (M.delete α h × (inEdges' g α <> es))
+         pure $ Loop { pending: M.delete α pending, es: inEdges' g α <> es }
       else
-         pure (M.insert α βs h × es)
+         pure $ Loop { pending: M.insert α βs pending, es }
       where
-      βs = maybe (singleton β) (insert β) (lookup α h)
+      βs = maybe (singleton β) (insert β) (lookup α pending)

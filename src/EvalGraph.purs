@@ -19,7 +19,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
+import Graph (Direction(..), Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -197,7 +197,7 @@ graphGC
 graphGC { n, γ } e = do
    _ × _ × g × eα × vα <- flip runAllocT n do
       eα <- alloc e
-      g × vα <- runWithGraphT_spy (eval γ eα mempty) (vertices (γ × eα))
+      g × vα <- runWithGraphT_spy (eval γ eα mempty) Fwd (vertices (γ × eα))
       pure (g × eα × vα)
 
    let

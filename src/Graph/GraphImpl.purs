@@ -22,7 +22,8 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
-import Util (type (×), definitely, error, singleton, traceWhen, (\\), (×), (∩), (∪))
+import Test.Util.Debug (checking)
+import Util (type (×), assertWhen, definitely, error, singleton, (×))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -38,15 +39,6 @@ data GraphImpl = GraphImpl
 instance Eq GraphImpl where
    eq (GraphImpl g) (GraphImpl g') = g.out == g'.out
 
-instance Semigroup GraphImpl where
-   append (GraphImpl g) (GraphImpl g') = GraphImpl
-      { out: D.unionWith (∪) g.out g'.out
-      , in: D.unionWith (∪) g.in g'.in
-      , sinks: (g.sinks ∩ g'.sinks) ∪ (g.sinks \\ g'.vertices) ∪ (g'.sinks \\ g.vertices)
-      , sources: (g.sources ∩ g'.sources) ∪ (g.sources \\ g'.vertices) ∪ (g'.sources \\ g.vertices)
-      , vertices: g.vertices ∪ g'.vertices
-      }
-
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Graph GraphImpl where
    outN (GraphImpl g) α = D.lookup (unwrap α) g.out # definitely "in graph"
@@ -58,17 +50,17 @@ instance Graph GraphImpl where
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
    empty = GraphImpl { out: D.empty, in: D.empty, sinks: mempty, sources: mempty, vertices: mempty }
 
-   fromEdgeList αs es =
+   fromEdgeList _ αs es =
       GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      es' = reverse es -- expensive but allows asserting membership invariants
+      es' = reverse es
       out = runST (outMap αs es')
       in_ = runST (inMap αs es')
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
 
    -- PureScript also provides a graph implementation. Delegate to that for now.
    topologicalSort (GraphImpl g) =
-      G.topologicalSort (G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _)))))
+      reverse (G.topologicalSort (G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _))))))
       where
       kvs :: Array (String × List Vertex)
       kvs = D.toUnfoldable (g.out <#> Set.toUnfoldable)
@@ -87,11 +79,10 @@ sinks' m = D.toArrayWithKey (×) m
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
--- TODO: enable this assertion.
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
-   traceWhen (not present) (α <> " not an existing vertex")
+   assertWhen checking.edgeListSorted (α <> " is an existing vertex") (\_ -> present) $ pure unit
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
