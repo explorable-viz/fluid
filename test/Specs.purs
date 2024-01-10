@@ -237,6 +237,12 @@ bwd_cases =
      }
    , { file: "multiply", imports: [], bwd_expect_file: "multiply.expect", δv: neg, fwd_expect: "⸨0⸩" }
    , { file: "nth", imports: [], bwd_expect_file: "nth.expect", δv: neg, fwd_expect: "⸨4⸩" }
+   , { file: "output-not-source"
+     , imports: []
+     , bwd_expect_file: "output-not-source.expect"
+     , fwd_expect: "(⸨3⸩, ⸨True⸩)"
+     , δv: constrArg cPair 1 neg -- selection on just first component will be discarded by bwdSlice; see #818.
+     }
    , { file: "section-5-example"
      , imports: []
      , bwd_expect_file: "section-5-example-1.expect"

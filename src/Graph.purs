@@ -19,7 +19,6 @@ import Util (type (×), Endo, (×), (∈), (∪))
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience
-data Direction = Fwd | Bwd -- specify whether an edge list is (topologically) sorted or reverse-sorted
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
@@ -47,7 +46,7 @@ class (Eq g, Vertices g) <= Graph g where
    -- | right-to-left, each α is a new vertex to be added, and each β in βs already exists in the graph being
    -- | constructed. Upper adjoint to toEdgeList. If "direction" is bwd, hyperedges are assumed to be in
    -- | reverse topological order.
-   fromEdgeList :: Direction -> Set Vertex -> List HyperEdge -> g
+   fromEdgeList :: Set Vertex -> List HyperEdge -> g
 
    topologicalSort :: g -> List Vertex
 
@@ -127,8 +126,6 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 -- ======================
 -- boilerplate
 -- ======================
-derive instance Eq Direction
-
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _

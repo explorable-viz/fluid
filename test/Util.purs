@@ -22,7 +22,7 @@ import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
-import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
+import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, (×), throw)
 import Val (class Ann, Val)
@@ -163,14 +163,10 @@ checkEqual op1 op2 x y = do
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
    s' <- parse (prettyP s) program
-   unless (eq (erase s) (erase s')) do
-      logAs "Original" $ show (erase s)
-      logAs "New" $ show (erase s')
-      throw "parse/prettyP round trip"
+   unless (eq (erase s) (erase s')) $
+      throw ("parse/prettyP round trip:\nOriginal\n" <> show (erase s) <> "\nNew\n" <> show (erase s'))
 
 checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
 checkPretty msg expect x =
-   unless (expect `eq` prettyP x) $ do
-      logAs "\nExpected" $ "\n" <> expect
-      logAs "\nReceived" $ "\n" <> prettyP x
-      throw msg
+   unless (expect `eq` prettyP x) $
+      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
