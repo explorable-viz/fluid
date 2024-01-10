@@ -16,9 +16,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util (type (×), (×))
 
 main :: Effect Unit
-main = run tests
+--main = run tests
 
---main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite
@@ -44,6 +44,7 @@ scratchpad = asTestSuite
         <> suite
            [ { file: "mergeSort", imports: [], fwd_expect: "(1 : (2 : (3 : [])))" }
            , { file: "nub", imports: [], fwd_expect: "(1 : (2 : (3 : (4 : []))))" }
+           , { file: "output-not-source", imports: [], fwd_expect: "(3, true)" }
            , { file: "range", imports: [], fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
            ]
         <> withDatasetSuite
