@@ -199,8 +199,8 @@ graphGC { n, γ } e = do
       eα <- alloc e
       let inputs = vertices (γ × eα)
       g × outα <- runWithGraphT_spy (eval γ eα mempty) Fwd inputs
-      when checking.inputsInGraph $ check (inputs ⊆ vertices g) "inputsInGraph"
-      when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputsInGraph"
+      when checking.inputsAreSinks $ check (inputs ⊆ sinks g) "inputs are sinks"
+      when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × eα × outα)
 
    let inα = γ × eα

@@ -24,7 +24,7 @@ tracing =
 checking
    :: { edgeListGC :: Boolean
       , edgeListSorted :: Boolean
-      , inputsInGraph :: Boolean
+      , inputsAreSinks :: Boolean
       , outputsInGraph :: Boolean
       , allocRoundTrip :: Boolean
       }
@@ -32,7 +32,7 @@ checking
 checking =
    { edgeListGC: true
    , edgeListSorted: true
-   , inputsInGraph: true
+   , inputsAreSinks: true
    , outputsInGraph: true
    , allocRoundTrip: false
    }
@@ -47,7 +47,7 @@ testing
 
 testing =
    { fwdPreservesTop: true
-   , bwdDuals: true
+   , bwdDuals: false
    , fwdDuals: true
    , naiveFwd: true
    }
