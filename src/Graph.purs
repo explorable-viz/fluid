@@ -78,11 +78,8 @@ instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f 
    selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) `D.apply` dα)
    select𝔹s dα αs = flip select𝔹s αs <$> dα
 
-outEdges' :: forall g. Graph g => g -> Vertex -> List Edge
-outEdges' g α = L.fromFoldable $ Set.map (α × _) (outN g α)
-
 outEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
-outEdges g αs = concat (outEdges' g <$> L.fromFoldable αs)
+outEdges g = inEdges (op g)
 
 inEdges' :: forall g. Graph g => g -> Vertex -> List Edge
 inEdges' g α = L.fromFoldable $ Set.map (_ × α) (inN g α)
