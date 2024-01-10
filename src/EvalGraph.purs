@@ -202,9 +202,9 @@ graphGC { n, γ } e = do
 
    let
       toOutput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (slice αs g0))
+      toOutput slice g0 in_ = select𝔹s vα (vertices (slice αs g0))
          where
-         αs = selectαs (γ𝔹 × e𝔹) (γ × eα)
+         αs = selectαs in_ (γ × eα)
             # validateWhen checking.inputsInGraph "inputsInGraph" (_ ⊆ vertices g0)
 
       toInput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
@@ -223,4 +223,5 @@ graphGC { n, γ } e = do
    where
    fwdSlice' = curry (fwdSlice # spyFunWhen tracing.graphFwdSlice "fwdSlice" showArgs showGraph)
    bwdSlice' = curry (bwdSlice # spyFunWhen tracing.graphBwdSlice "bwdSlice" showArgs showGraph)
+
    showArgs = showVertices *** showGraph
