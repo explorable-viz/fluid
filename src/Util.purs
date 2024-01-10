@@ -26,7 +26,7 @@ import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet)
 import Data.Set.NonEmpty as NonEmptySet
 import Data.Tuple (Tuple(..), fst, snd)
-import Debug (trace)
+import Debug as Debug
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, message)
@@ -99,7 +99,7 @@ spy = spyWhen true
 
 spyWhen :: forall a b. Boolean -> String -> (a -> b) -> Endo a
 spyWhen true msg show x | debug.tracing == true =
-   trace (msg <> ":") \_ -> trace (show x) (const x)
+   Debug.trace (msg <> ":") \_ -> Debug.trace (show x) (const x)
 spyWhen _ _ _ x = x
 
 spyFunWhen :: forall a b c1 c2. Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> b)
@@ -110,8 +110,11 @@ spyFunWhenM :: forall a b c1 c2 m. Functor m => Boolean -> String -> (a -> c1) -
 spyFunWhenM b s showIn showOut f x =
    f (x # spyWhen b (s <> " input") showIn) <#> spyWhen b (s <> " output") showOut
 
+trace :: forall m. Applicative m => String -> m Unit
+trace = traceWhen true
+
 traceWhen :: forall m. Applicative m => Boolean -> String -> m Unit
-traceWhen true msg | debug.tracing == true = trace msg \_ -> pure unit
+traceWhen true msg | debug.tracing == true = Debug.trace msg \_ -> pure unit
 traceWhen _ _ = pure unit
 
 absurd :: String

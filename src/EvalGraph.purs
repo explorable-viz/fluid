@@ -19,7 +19,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Direction(..), Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
+import Graph (Direction(..), Vertex, op, selectαs, select𝔹s, showGraph, showVertices, sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -28,7 +28,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, with, (\\), (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -206,11 +206,11 @@ graphGC { n, γ } e = do
    let inα = γ × eα
    pure
       { gc: GC
-           { fwd: \in𝔹 -> select𝔹s outα (vertices (fwdSlice' (selectαs in𝔹 inα) g))
+           { fwd: \in𝔹 -> select𝔹s outα (vertices (fwdSlice' (selectαs in𝔹 inα ∪ (sinks g \\ vertices inα)) g))
            , bwd: \out𝔹 -> select𝔹s inα (vertices (bwdSlice' (selectαs out𝔹 outα) g))
            }
       , gc_op: GC
-           { fwd: \out𝔹 -> select𝔹s inα (vertices (fwdSlice' (selectαs out𝔹 outα) (op g)))
+           { fwd: \out𝔹 -> select𝔹s inα (vertices (fwdSlice' (selectαs out𝔹 outα ∪ (sources g \\ vertices outα)) (op g)))
            , bwd: \in𝔹 -> select𝔹s outα (vertices (bwdSlice' (selectαs in𝔹 inα) (op g)))
            }
       , γα: γ

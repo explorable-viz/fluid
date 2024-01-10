@@ -15,7 +15,7 @@ import Data.String (joinWith)
 import Dict (Dict)
 import Dict (apply) as D
 import Lattice (𝔹)
-import Util (type (×), (×), (∈), (∪), Endo)
+import Util (type (×), Endo, (×), (∈), (∪))
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience
@@ -88,7 +88,11 @@ inEdges' :: forall g. Graph g => g -> Vertex -> List Edge
 inEdges' g α = L.fromFoldable $ Set.map (_ × α) (inN g α)
 
 inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
-inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
+inEdges g αs = tailRec go (L.fromFoldable αs × Nil)
+   where
+   go :: List Vertex × List Edge -> Step _ (List Edge)
+   go (Nil × acc) = Done acc
+   go ((α : αs') × acc) = Loop (αs' × (inEdges' g α <> acc))
 
 -- Topologically sorted edge list determining graph.
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
