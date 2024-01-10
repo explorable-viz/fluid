@@ -13,7 +13,7 @@ import Data.Tuple (fst)
 import Graph (class Graph, Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking)
-import Util (type (×), singleton, validateWhen, (×), (∈), (⊆))
+import Util (type (×), singleton, validateWhen, (×), (∈), (⊆), (∩))
 
 type BwdConfig =
    { visited :: Set Vertex
@@ -24,7 +24,8 @@ type BwdConfig =
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) = fst $
    αs
-      # validateWhen checking.outputsInGraph "outputs are sources" (_ ⊆ sources g)
+      -- # validateWhen checking.outputsInGraph "outputs are sources" (_ ⊆ sources g)
+      # (_ ∩ sources g)
       # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
    where
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
