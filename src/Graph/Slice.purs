@@ -10,7 +10,7 @@ import Data.Map as M
 import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources)
+import Graph (class Graph, Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking)
 import Util (type (×), singleton, validateWhen, (×), (∈), (⊆), (∩))
@@ -24,7 +24,8 @@ type BwdConfig =
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) = fst $
    αs
-      -- # validateWhen checking.outputsInGraph "outputs are sources" (_ ⊆ sources g)
+      -- No outputsAreSources analog of inputAreSinks; we do however need to restrict to sources (see #818).
+      # validateWhen checking.outputsInGraph "inputs are sinks" (_ ⊆ vertices g)
       # (_ ∩ sources g)
       # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
    where
