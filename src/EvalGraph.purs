@@ -28,7 +28,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhenWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, validateWhen, with, (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -221,6 +221,6 @@ graphGC { n, γ } e = do
       , vα
       }
    where
-   fwdSlice' = curry (fwdSlice # spyFunWhenWith tracing.graphFwdSlice "fwdSlice" showArgs showGraph)
-   bwdSlice' = curry (bwdSlice # spyFunWhenWith tracing.graphBwdSlice "bwdSlice" showArgs showGraph)
+   fwdSlice' = curry (fwdSlice # spyFunWhen tracing.graphFwdSlice "fwdSlice" showArgs showGraph)
+   bwdSlice' = curry (bwdSlice # spyFunWhen tracing.graphBwdSlice "bwdSlice" showArgs showGraph)
    showArgs = showVertices *** showGraph

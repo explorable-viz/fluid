@@ -16,7 +16,7 @@ import Effect.Exception (Error)
 import Graph (class Graph, class Vertices, Direction(..), HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenWithM, spyWhenWith, spyWith, (\\), (×))
+import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (\\), (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -74,7 +74,7 @@ runWithGraphT m dir αs = do
       pure (g × a)
    where
    report :: forall c b. String -> (c -> b) -> Endo c
-   report msg = spyWhenWith tracing.runWithGraphT ("runWithGraphT " <> msg)
+   report msg = spyWhen tracing.runWithGraphT ("runWithGraphT " <> msg)
 
 -- ======================
 -- Diagnostics
@@ -84,12 +84,12 @@ runWithGraphT m dir αs = do
 alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT m a -> m Unit
 alloc_check msg m = do
    n × αs × x <- runAllocT m 0
-   let report = spyWith (show n <> " allocations, unaccounted for") showVertices
-   check (report (αs \\ vertices (spy "Allocated term" x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
+   let report = spy (show n <> " allocations, unaccounted for") showVertices
+   check (report (αs \\ vertices x) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
 runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Direction -> Set Vertex -> m (g × a)
 runWithGraphT_spy m = runWithGraphT m
-   >>> spyFunWhenWithM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
+   >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
 
 runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Direction -> Set Vertex -> g × a
 runWithGraph_spy m dir = runWithGraphT_spy m dir >>> unwrap

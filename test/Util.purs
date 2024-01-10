@@ -24,7 +24,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhenWith, (×), throw)
+import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, (×), throw)
 import Val (class Ann, Val)
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
@@ -86,7 +86,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
 
    let out0 = δv (botOf v)
    in_e <- do
-      let report = spyWhenWith tracing.bwdSelection "Selection for bwd" prettyP
+      let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
 
    let GC desug' = identity *** (GC desug)
@@ -106,7 +106,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    unless (null bwd_expect) $
       checkPretty ("bwd_expect") bwd_expect (snd in_s)
    unless (null fwd_expect) do
-      let report = spyWhenWith tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
+      let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
       checkPretty ("fwd_expect") fwd_expect (report out0')
 
    recordGraphSize g
@@ -156,7 +156,7 @@ checkEqual
    -> f a
    -> m Unit
 checkEqual op1 op2 x y = do
-   let report = flip (spyWhenWith tracing.checkEqual) prettyP
+   let report = flip (spyWhen tracing.checkEqual) prettyP
    check (report (op1 <> " minus " <> op2) (x `lift2 (-)` y) == botOf x) (op1 <> " <= " <> op2)
    check (report (op2 <> " minus " <> op1) (y `lift2 (-)` x) == botOf x) (op2 <> " <= " <> op1)
 

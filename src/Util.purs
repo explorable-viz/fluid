@@ -91,29 +91,22 @@ validate = validateWhen true
 validateWhen :: ∀ a. Boolean -> String -> (a -> Boolean) -> Endo a
 validateWhen b msg p a = assertWhen b msg (\_ -> p a) a
 
--- Debug.spyWith doesn't seem to work
-spyWhen :: forall a. Boolean -> String -> Endo a
-spyWhen b msg = spyWhenWith b msg identity
-
-spyWhenWith :: forall a b. Boolean -> String -> (a -> b) -> Endo a
-spyWhenWith true msg show x | debug.tracing == true =
-   trace (msg <> ":") \_ -> trace (show x) (const x)
-spyWhenWith _ _ _ x = x
-
-spyFunWhenWith :: forall a b c1 c2. Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> b)
-spyFunWhenWith b s showIn showOut f =
-   unwrap <<< spyFunWhenWithM b s showIn showOut (Identity <<< f)
-
-spyFunWhenWithM :: forall a b c1 c2 m. Functor m => Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> m b)
-spyFunWhenWithM b s showIn showOut f x =
-   f (x # spyWhenWith b (s <> " input") showIn) <#> spyWhenWith b (s <> " output") showOut
-
--- Prefer this to Debug.spy (similar to spyWith).
-spy :: forall a. String -> Endo a
+-- Prefer this to Debug.spy/spyWith (Debug.spyWith doesn't seem to work).
+spy :: forall a b. String -> (a -> b) -> Endo a
 spy = spyWhen true
 
-spyWith :: forall a b. String -> (a -> b) -> Endo a
-spyWith = spyWhenWith true
+spyWhen :: forall a b. Boolean -> String -> (a -> b) -> Endo a
+spyWhen true msg show x | debug.tracing == true =
+   trace (msg <> ":") \_ -> trace (show x) (const x)
+spyWhen _ _ _ x = x
+
+spyFunWhen :: forall a b c1 c2. Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> b)
+spyFunWhen b s showIn showOut f =
+   unwrap <<< spyFunWhenM b s showIn showOut (Identity <<< f)
+
+spyFunWhenM :: forall a b c1 c2 m. Functor m => Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> m b)
+spyFunWhenM b s showIn showOut f x =
+   f (x # spyWhen b (s <> " input") showIn) <#> spyWhen b (s <> " output") showOut
 
 traceWhen :: forall m. Applicative m => Boolean -> String -> m Unit
 traceWhen true msg | debug.tracing == true = trace msg \_ -> pure unit
