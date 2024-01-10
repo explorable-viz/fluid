@@ -221,7 +221,7 @@ graphGC { n, γ } e = do
       , vα
       }
    where
-   fwdSlice' = curry (fwdSlice # spyFunWhen tracing.graphFwdSlice "fwdSlice" showArgs showGraph)
-   bwdSlice' = curry (bwdSlice # spyFunWhen tracing.graphBwdSlice "bwdSlice" showArgs showGraph)
+   fwdSlice' = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
+   bwdSlice' = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
 
-   showArgs = showVertices *** showGraph
+   spyFun' b msg = spyFunWhen b msg (showVertices *** showGraph) showGraph
