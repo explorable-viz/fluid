@@ -11,9 +11,9 @@ tracing
       }
 
 tracing =
-   { runWithGraphT: true
+   { runWithGraphT: false
    , graphBwdSlice: true
-   , graphFwdSlice: false
+   , graphFwdSlice: true
    , checkEqual: false
    , bwdSelection: false
    , fwdAfterBwd: false
@@ -24,7 +24,7 @@ tracing =
 checking
    :: { edgeListGC :: Boolean
       , edgeListSorted :: Boolean
-      , inputsInGraph :: Boolean
+      , inputsAreSinks :: Boolean
       , outputsInGraph :: Boolean
       , allocRoundTrip :: Boolean
       }
@@ -32,7 +32,7 @@ checking
 checking =
    { edgeListGC: true
    , edgeListSorted: true
-   , inputsInGraph: true
+   , inputsAreSinks: true
    , outputsInGraph: true
    , allocRoundTrip: false
    }

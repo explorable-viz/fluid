@@ -13,7 +13,6 @@ import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDa
 misc_cases :: Array TestSpec
 misc_cases =
    [ { file: "arithmetic", imports: [], fwd_expect: "42" }
-   , { file: "nub", imports: [], fwd_expect: "(1 : (2 : (3 : (4 : []))))" }
    , { file: "array", imports: [], fwd_expect: "(1, (3, 3))" }
    , { file: "compose", imports: [], fwd_expect: "5" }
    , { file: "dicts"
@@ -47,6 +46,7 @@ misc_cases =
    , { file: "map", imports: [], fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))" }
    , { file: "mergeSort", imports: [], fwd_expect: "(1 : (2 : (3 : [])))" }
    , { file: "normalise", imports: [], fwd_expect: "(33, 66)" }
+   , { file: "nub", imports: [], fwd_expect: "(1 : (2 : (3 : (4 : []))))" }
    , { file: "pattern-match", imports: [], fwd_expect: "4" }
    , { file: "range", imports: [], fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
    , { file: "records", imports: [], fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }

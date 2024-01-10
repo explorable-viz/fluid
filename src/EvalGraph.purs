@@ -19,7 +19,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Direction(..), Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
+import Graph (Direction(..), Vertex, op, selectαs, select𝔹s, showGraph, showVertices, sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -28,7 +28,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhenWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, with, (\\), (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -195,32 +195,34 @@ graphGC
    -> Raw Expr
    -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
-   _ × _ × g × eα × vα <- flip runAllocT n do
+   _ × _ × g × eα × outα <- flip runAllocT n do
       eα <- alloc e
-      g × vα <- runWithGraphT_spy (eval γ eα mempty) Fwd (vertices (γ × eα))
-      pure (g × eα × vα)
+      let inputs = vertices (γ × eα)
+      g × outα <- runWithGraphT_spy (eval γ eα mempty) Fwd inputs
+      when checking.inputsAreSinks $ check (inputs ⊆ sinks g) "inputs are sinks"
+      when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
+      pure (g × eα × outα)
 
-   let
-      toOutput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (slice αs g0))
-         where
-         αs = selectαs (γ𝔹 × e𝔹) (γ × eα)
-            # validateWhen checking.inputsInGraph "inputsInGraph" (_ ⊆ vertices g0)
-
-      toInput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      toInput slice g0 v𝔹 = select𝔹s (γ × eα) (vertices (slice αs g0))
-         where
-         αs = selectαs v𝔹 vα
-            # validateWhen checking.outputsInGraph "outputsInGraph" (_ ⊆ vertices g0)
+   let inα = γ × eα
    pure
-      { gc: GC { fwd: toOutput fwdSlice' g, bwd: toInput bwdSlice' g }
-      , gc_op: GC { fwd: toInput fwdSlice' (op g), bwd: toOutput bwdSlice' (op g) }
+      { gc: GC
+           { fwd: \in𝔹 -> select𝔹s outα (vertices (fwdSlice' (selectαs in𝔹 inα ∪ (sinks g \\ vertices inα)) g))
+           , bwd: \out𝔹 -> select𝔹s inα (vertices (bwdSlice' (selectαs out𝔹 outα) g))
+           }
+      , gc_op: GC
+           { fwd: \out𝔹 -> select𝔹s inα (vertices (fwdSlice' (selectαs out𝔹 outα ∪ (sources g \\ vertices outα)) (op g)))
+           , bwd: \in𝔹 -> select𝔹s outα (vertices (bwdSlice' (selectαs in𝔹 inα) (op g)))
+           }
       , γα: γ
       , eα
       , g
-      , vα
+      , vα: outα
       }
    where
-   showArgs = showVertices *** showGraph
-   fwdSlice' = curry (spyFunWhenWith tracing.graphFwdSlice "fwdSlice" showArgs showGraph fwdSlice)
-   bwdSlice' = curry (spyFunWhenWith tracing.graphBwdSlice "bwdSlice" showArgs showGraph bwdSlice)
+   fwdSlice' :: Set Vertex -> Endo GraphImpl
+   fwdSlice' = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
+
+   bwdSlice' :: Set Vertex -> Endo GraphImpl
+   bwdSlice' = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
+
+   spyFun' b msg = spyFunWhen b msg (showVertices *** showGraph) showGraph

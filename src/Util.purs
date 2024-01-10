@@ -10,6 +10,8 @@ import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
+import Data.Functor.Compose (Compose)
+import Data.Functor.Product (Product)
 import Data.Identity (Identity(..))
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
@@ -24,7 +26,7 @@ import Data.Set as Set
 import Data.Set.NonEmpty (NonEmptySet)
 import Data.Set.NonEmpty as NonEmptySet
 import Data.Tuple (Tuple(..), fst, snd)
-import Debug (trace)
+import Debug as Debug
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error, message)
@@ -91,32 +93,28 @@ validate = validateWhen true
 validateWhen :: ∀ a. Boolean -> String -> (a -> Boolean) -> Endo a
 validateWhen b msg p a = assertWhen b msg (\_ -> p a) a
 
--- Debug.spyWith doesn't seem to work
-spyWhen :: forall a. Boolean -> String -> Endo a
-spyWhen b msg = spyWhenWith b msg identity
-
-spyWhenWith :: forall a b. Boolean -> String -> (a -> b) -> Endo a
-spyWhenWith true msg show x | debug.tracing == true =
-   trace (msg <> ":") \_ -> trace (show x) (const x)
-spyWhenWith _ _ _ x = x
-
-spyFunWhenWith :: forall a b c1 c2. Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> b)
-spyFunWhenWith b s showIn showOut f =
-   unwrap <<< spyFunWhenWithM b s showIn showOut (Identity <<< f)
-
-spyFunWhenWithM :: forall a b c1 c2 m. Functor m => Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> m b)
-spyFunWhenWithM b s showIn showOut f x =
-   f (x # spyWhenWith b (s <> " input") showIn) <#> spyWhenWith b (s <> " output") showOut
-
--- Prefer this to Debug.spy (similar to spyWith).
-spy :: forall a. String -> Endo a
+-- Prefer this to Debug.spy/spyWith (Debug.spyWith doesn't seem to work).
+spy :: forall a b. String -> (a -> b) -> Endo a
 spy = spyWhen true
 
-spyWith :: forall a b. String -> (a -> b) -> Endo a
-spyWith = spyWhenWith true
+spyWhen :: forall a b. Boolean -> String -> (a -> b) -> Endo a
+spyWhen true msg show x | debug.tracing == true =
+   Debug.trace (msg <> ":") \_ -> Debug.trace (show x) (const x)
+spyWhen _ _ _ x = x
+
+spyFunWhen :: forall a b c1 c2. Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> b)
+spyFunWhen b s showIn showOut f =
+   unwrap <<< spyFunWhenM b s showIn showOut (Identity <<< f)
+
+spyFunWhenM :: forall a b c1 c2 m. Functor m => Boolean -> String -> (a -> c1) -> (b -> c2) -> Endo (a -> m b)
+spyFunWhenM b s showIn showOut f x =
+   f (x # spyWhen b (s <> " input") showIn) <#> spyWhen b (s <> " output") showOut
+
+trace :: forall m. Applicative m => String -> m Unit
+trace = traceWhen true
 
 traceWhen :: forall m. Applicative m => Boolean -> String -> m Unit
-traceWhen true msg | debug.tracing == true = trace msg \_ -> pure unit
+traceWhen true msg | debug.tracing == true = Debug.trace msg \_ -> pure unit
 traceWhen _ _ = pure unit
 
 absurd :: String
@@ -168,8 +166,8 @@ with msg m = catchError m \e ->
    let msg' = message e in throw $ msg' <> if msg == "" then "" else ("\n" <> msg)
 
 check :: forall m. MonadThrow Error m => Boolean -> String -> m Unit
-check true = const $ pure unit
 check false = throw
+check true = const $ pure unit
 
 -- Like shouldSatisfy in Test.Spec.Assertions but with error message.
 checkSatisfies :: forall m a. MonadThrow Error m => Show a => String -> a -> (a -> Boolean) -> m Unit
@@ -247,6 +245,14 @@ infixr 6 type WithTypeLeft as <×|
 infixr 6 WithTypeLeft as <×|
 
 derive instance Functor f => Functor (t <×| f)
+
+infixr 9 type Compose as ○
+infixr 7 type Product as *
+
+slipl :: forall a b c d. (a -> b -> c -> d) -> c -> a -> b -> d
+slipl f c a b = f a b c
+
+infixl 8 slipl as ~~$
 
 -- Haven't found this yet in PureScript
 concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a

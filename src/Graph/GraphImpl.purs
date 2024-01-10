@@ -54,8 +54,9 @@ instance Graph GraphImpl where
       GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
       es' = reverse es
-      out = runST (outMap αs es')
-      in_ = runST (inMap αs es')
+      αs' = L.fromFoldable αs
+      out = runST (outMap αs' es')
+      in_ = runST (inMap αs' es')
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
 
    -- PureScript also provides a graph implementation. Delegate to that for now.
@@ -90,16 +91,23 @@ addIfMissing acc (Vertex β) = do
       Nothing -> OST.poke β mempty acc
       Just _ -> pure acc
 
-init :: forall r. Set Vertex -> ST r (MutableAdjMap r)
-init αs =
-   OST.new >>= flip (foldM (\acc (Vertex α) -> OST.poke α mempty acc)) αs
+init :: forall r. List Vertex -> ST r (MutableAdjMap r)
+init αs = do
+   obj <- OST.new
+   tailRecM go (αs × obj)
+   where
+   go :: List _ × MutableAdjMap r -> ST r (Step _ _)
+   go (Nil × acc) = pure $ Done acc
+   go ((Vertex α : αs') × acc) = do
+      acc' <- OST.poke α mempty acc
+      pure $ Loop (αs' × acc')
 
-outMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
+outMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
 outMap αs es = do
    out <- init αs
    tailRecM addEdges (es × out)
    where
-   addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
+   addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (_ == mempty)
@@ -110,18 +118,18 @@ outMap αs es = do
       else
          error $ "Duplicate edge list entry for " <> show α
 
-inMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
+inMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
 inMap αs es = do
    in_ <- init αs
    tailRecM addEdges (es × in_)
    where
-   addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
+   addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : es') × acc) = do
       acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α
       pure $ Loop (es' × acc')
 
-   addEdge :: Vertex -> MutableAdjMap _ -> Vertex -> ST _ _
+   addEdge :: Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc
