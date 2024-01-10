@@ -195,27 +195,28 @@ graphGC
    -> Raw Expr
    -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
-   _ × _ × g × eα × vα <- flip runAllocT n do
+   _ × _ × g × eα × outα <- flip runAllocT n do
       eα <- alloc e
       let inputs = vertices (γ × eα)
-      g × vα <- runWithGraphT_spy (eval γ eα mempty) Fwd inputs
+      g × outα <- runWithGraphT_spy (eval γ eα mempty) Fwd inputs
       when checking.inputsInGraph $ check (inputs ⊆ vertices g) "inputsInGraph"
-      when checking.outputsInGraph $ check (vertices vα ⊆ vertices g) "outputsInGraph"
-      pure (g × eα × vα)
+      when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputsInGraph"
+      pure (g × eα × outα)
 
+   let inα = γ × eα
    pure
       { gc: GC
-           { fwd: \in_ -> select𝔹s vα (vertices (fwdSlice' (selectαs in_ (γ × eα)) g))
-           , bwd: \out -> select𝔹s (γ × eα) (vertices (bwdSlice' (selectαs out vα) g))
+           { fwd: \in𝔹 -> select𝔹s outα (vertices (fwdSlice' (selectαs in𝔹 inα) g))
+           , bwd: \out𝔹 -> select𝔹s inα (vertices (bwdSlice' (selectαs out𝔹 outα) g))
            }
       , gc_op: GC
-           { fwd: \out -> select𝔹s (γ × eα) (vertices (fwdSlice' (selectαs out vα) (op g)))
-           , bwd: \in_ -> select𝔹s vα (vertices (bwdSlice' (selectαs in_ (γ × eα)) (op g)))
+           { fwd: \out𝔹 -> select𝔹s inα (vertices (fwdSlice' (selectαs out𝔹 outα) (op g)))
+           , bwd: \in𝔹 -> select𝔹s outα (vertices (bwdSlice' (selectαs in𝔹 inα) (op g)))
            }
       , γα: γ
       , eα
       , g
-      , vα
+      , vα: outα
       }
    where
    fwdSlice' :: Set Vertex -> Endo GraphImpl
