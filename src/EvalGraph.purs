@@ -203,22 +203,25 @@ graphGC { n, γ } e = do
       when checking.outputsInGraph $ check (vertices vα ⊆ vertices g) "outputsInGraph"
       pure (g × eα × vα)
 
-   let
-      toOutput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      toOutput slice g0 in_ = select𝔹s vα (vertices (slice (selectαs in_ (γ × eα)) g0))
-
-      toInput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      toInput slice g0 out = select𝔹s (γ × eα) (vertices (slice (selectαs out vα) g0))
    pure
-      { gc: GC { fwd: toOutput fwdSlice' g, bwd: toInput bwdSlice' g }
-      , gc_op: GC { fwd: toInput fwdSlice' (op g), bwd: toOutput bwdSlice' (op g) }
+      { gc: GC
+           { fwd: \in_ -> select𝔹s vα (vertices (fwdSlice' (selectαs in_ (γ × eα)) g))
+           , bwd: \out -> select𝔹s (γ × eα) (vertices (bwdSlice' (selectαs out vα) g))
+           }
+      , gc_op: GC
+           { fwd: \out -> select𝔹s (γ × eα) (vertices (fwdSlice' (selectαs out vα) (op g)))
+           , bwd: \in_ -> select𝔹s vα (vertices (bwdSlice' (selectαs in_ (γ × eα)) (op g)))
+           }
       , γα: γ
       , eα
       , g
       , vα
       }
    where
+   fwdSlice' :: Set Vertex -> Endo GraphImpl
    fwdSlice' = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
+
+   bwdSlice' :: Set Vertex -> Endo GraphImpl
    bwdSlice' = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
 
    spyFun' b msg = spyFunWhen b msg (showVertices *** showGraph) showGraph
