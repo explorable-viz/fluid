@@ -10,8 +10,8 @@ import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
-import Data.Functor.Compose (Compose(..))
-import Data.Functor.Product (Product(..))
+import Data.Functor.Compose (Compose)
+import Data.Functor.Product (Product)
 import Data.Identity (Identity(..))
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
@@ -163,8 +163,8 @@ with msg m = catchError m \e ->
    let msg' = message e in throw $ msg' <> if msg == "" then "" else ("\n" <> msg)
 
 check :: forall m. MonadThrow Error m => Boolean -> String -> m Unit
-check true = const $ pure unit
 check false = throw
+check true = const $ pure unit
 
 -- Like shouldSatisfy in Test.Spec.Assertions but with error message.
 checkSatisfies :: forall m a. MonadThrow Error m => Show a => String -> a -> (a -> Boolean) -> m Unit
@@ -245,6 +245,11 @@ derive instance Functor f => Functor (t <×| f)
 
 infixr 9 type Compose as ○
 infixr 7 type Product as *
+
+slipl :: forall a b c d. (a -> b -> c -> d) -> c -> a -> b -> d
+slipl f c a b = f a b c
+
+infixl 8 slipl as ~~$
 
 -- Haven't found this yet in PureScript
 concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a

@@ -28,7 +28,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, with, (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -197,21 +197,18 @@ graphGC
 graphGC { n, γ } e = do
    _ × _ × g × eα × vα <- flip runAllocT n do
       eα <- alloc e
-      g × vα <- runWithGraphT_spy (eval γ eα mempty) Fwd (vertices (γ × eα))
+      let inputs = vertices (γ × eα)
+      g × vα <- runWithGraphT_spy (eval γ eα mempty) Fwd inputs
+      when checking.inputsInGraph $ check (inputs ⊆ vertices g) "inputsInGraph"
+      when checking.outputsInGraph $ check (vertices vα ⊆ vertices g) "outputsInGraph"
       pure (g × eα × vα)
 
    let
       toOutput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      toOutput slice g0 in_ = select𝔹s vα (vertices (slice αs g0))
-         where
-         αs = selectαs in_ (γ × eα)
-            # validateWhen checking.inputsInGraph "inputsInGraph" (_ ⊆ vertices g0)
+      toOutput slice g0 in_ = select𝔹s vα (vertices (slice (selectαs in_ (γ × eα)) g0))
 
       toInput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      toInput slice g0 v𝔹 = select𝔹s (γ × eα) (vertices (slice αs g0))
-         where
-         αs = selectαs v𝔹 vα
-            # validateWhen checking.outputsInGraph "outputsInGraph" (_ ⊆ vertices g0)
+      toInput slice g0 out = select𝔹s (γ × eα) (vertices (slice (selectαs out vα) g0))
    pure
       { gc: GC { fwd: toOutput fwdSlice' g, bwd: toInput bwdSlice' g }
       , gc_op: GC { fwd: toInput fwdSlice' (op g), bwd: toOutput bwdSlice' (op g) }
