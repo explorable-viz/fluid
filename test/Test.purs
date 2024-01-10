@@ -2,9 +2,10 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Select (listCell, matrixElement)
+import App.Util.Select (constrArg)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
+import DataType (cPair)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
@@ -12,7 +13,7 @@ import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
 import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
+import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
@@ -21,36 +22,14 @@ main :: Effect Unit
 main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite
-   ( bwdSuite
-        [ { file: "filter"
-          , imports: []
-          , bwd_expect_file: "filter.expect"
-          , δv: listCell 0 neg
-          , fwd_expect: "⸨(⸨8⸩ : (7 : []))⸩"
-          }
-        , { file: "matrix-update"
-          , imports: []
-          , bwd_expect_file: "matrix-update.expect"
-          , fwd_expect:
-               "15, 13, 6, 9, 16,\n\
-               \12, ⸨4000⸩, 15, 4, 13,\n\
-               \14, 9, 20, 8, 1,\n\
-               \4, 10, 3, 7, 19,\n\
-               \3, 11, 15, 2, 9"
-          , δv: matrixElement 2 2 neg
-          }
-        ]
-        <> suite
-           [ { file: "mergeSort", imports: [], fwd_expect: "(1 : (2 : (3 : [])))" }
-           , { file: "nub", imports: [], fwd_expect: "(1 : (2 : (3 : (4 : []))))" }
-           , { file: "output-not-source", imports: [], fwd_expect: "(3, true)" }
-           , { file: "range", imports: [], fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
-           ]
-        <> withDatasetSuite
-           [ { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/line-chart" }
-           ]
-   )
+scratchpad = asTestSuite $ bwdSuite
+   [ { file: "output-not-source"
+     , imports: []
+     , bwd_expect_file: "output-not-source.expect"
+     , fwd_expect: "(⸨3⸩, True)"
+     , δv: constrArg cPair 0 neg
+     }
+   ]
 
 type TestSuite = Array (String × Aff Unit)
 

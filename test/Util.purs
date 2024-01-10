@@ -22,7 +22,7 @@ import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
-import Test.Benchmark.Util (BenchRow, benchmark, divRow, logAs, recordGraphSize)
+import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, (×), throw)
 import Val (class Ann, Val)
