@@ -39,8 +39,8 @@ debug
       }
 
 debug =
-   { logging: true
-   , tracing: true
+   { logging: false
+   , tracing: false
    }
 
 type Thunk a = Unit -> a -- similar to Lazy but without datatype

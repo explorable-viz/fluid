@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, Direction(..), HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (\\), (×))
@@ -64,13 +64,13 @@ runAllocT m n = do
    range' :: Int -> Int -> List Int
    range' n1 n2 = if n2 < n1 then Nil else range n1 n2
 
-runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> Direction -> Set Vertex -> m (g × a)
-runWithGraphT m dir αs = do
+runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
+runWithGraphT m αs = do
    g × a <- runStateT m Nil
       <#> swap
-      <#> first (fromEdgeList dir αs <<< report "edge list" showEdgeList)
-   -- only checking one direction for now
-   assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList Bwd mempty (toEdgeList g)) $
+      <#> first (fromEdgeList αs <<< report "edge list" showEdgeList)
+   -- only check one direction for now
+   assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList mempty (toEdgeList g)) $
       pure (g × a)
    where
    report :: forall c b. String -> (c -> b) -> Endo c
@@ -87,12 +87,12 @@ alloc_check msg m = do
    let report = spy (show n <> " allocations, unaccounted for") showVertices
    check (report (αs \\ vertices x) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
-runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Direction -> Set Vertex -> m (g × a)
-runWithGraphT_spy m = runWithGraphT m
+runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
+runWithGraphT_spy = runWithGraphT
    >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
 
-runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Direction -> Set Vertex -> g × a
-runWithGraph_spy m dir = runWithGraphT_spy m dir >>> unwrap
+runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Set Vertex -> g × a
+runWithGraph_spy m = runWithGraphT_spy m >>> unwrap
 
 -- ======================
 -- Boilerplate
@@ -100,8 +100,8 @@ runWithGraph_spy m dir = runWithGraphT_spy m dir >>> unwrap
 runAlloc :: forall a. Alloc a -> Int -> Int × Set Vertex × a
 runAlloc m = runAllocT m >>> unwrap
 
-runWithGraph :: forall g a. Graph g => WithGraph a -> Direction -> Set Vertex -> g × a
-runWithGraph m dir = runWithGraphT m dir >>> unwrap
+runWithGraph :: forall g a. Graph g => WithGraph a -> Set Vertex -> g × a
+runWithGraph m = runWithGraphT m >>> unwrap
 
 instance Monad m => MonadAlloc (WithGraphAllocT m) where
    fresh = lift fresh
