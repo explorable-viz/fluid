@@ -5,7 +5,7 @@ import Prelude hiding (add)
 import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
 import Data.Foldable (class Foldable)
-import Data.List (List(..), concat, reverse, uncons, (:))
+import Data.List (List(..), reverse, uncons, (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
