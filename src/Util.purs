@@ -10,6 +10,8 @@ import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
+import Data.Functor.Compose (Compose(..))
+import Data.Functor.Product (Product(..))
 import Data.Identity (Identity(..))
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
@@ -240,6 +242,9 @@ infixr 6 type WithTypeLeft as <×|
 infixr 6 WithTypeLeft as <×|
 
 derive instance Functor f => Functor (t <×| f)
+
+infixr 9 type Compose as ○
+infixr 7 type Product as *
 
 -- Haven't found this yet in PureScript
 concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a
