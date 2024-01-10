@@ -240,8 +240,8 @@ bwd_cases =
    , { file: "output-not-source"
      , imports: []
      , bwd_expect_file: "output-not-source.expect"
-     , fwd_expect: "(⸨3⸩, True)"
-     , δv: constrArg cPair 0 neg
+     , fwd_expect: "(⸨3⸩, ⸨True⸩)"
+     , δv: constrArg cPair 1 neg -- selection on just first component will be discarded by bwdSlice; see #818.
      }
    , { file: "section-5-example"
      , imports: []

@@ -17,17 +17,17 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util (type (×), (×))
 
 main :: Effect Unit
---main = run tests
+main = run tests
 
-main = run scratchpad
+--main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite
    [ { file: "output-not-source"
      , imports: []
      , bwd_expect_file: "output-not-source.expect"
-     , fwd_expect: "(⸨3⸩, True)"
-     , δv: constrArg cPair 0 neg
+     , fwd_expect: "(⸨3⸩, ⸨True⸩)"
+     , δv: constrArg cPair 1 neg
      }
    ]
 
