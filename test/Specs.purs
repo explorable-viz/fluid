@@ -431,7 +431,7 @@ linkedInputs_spec4 =
         , x2: "non_renewables"
         , x2File: File "non-renewables"
         }
-   , δv: Left $ listElement 4 (field "capacity" neg)
+   , δv: Left $ identity
    , v'_expect: Nothing
    }
 
