@@ -9,13 +9,14 @@ import App.View (View, drawView, view)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
+import Data.Array as A
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.Newtype (unwrap)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd, uncurry)
 import Desugarable (desug)
-import Dict (get)
+import Dict (Dict, get, keys)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class (class MonadEffect)
@@ -44,7 +45,7 @@ type FigSpec =
    { divId :: HTMLId
    , imports :: Array String
    , file :: File
-   , xs :: Array Var -- variables to be considered "inputs"
+   , ins :: Dict Unit -- variables to be considered "inputs"
    }
 
 data Direction = LinkedIns | LinkedOuts
@@ -163,8 +164,8 @@ drawFig fig@{ spec: { divId } } = do
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> m (View × Array View)
-figViews { spec: { xs }, gc: { gc }, out } =
-   (view "output" out' × _) <$> sequence (flip varView γ <$> xs)
+figViews { spec: { ins }, gc: { gc }, out } =
+   (view "output" out' × _) <$> sequence (flip varView γ <$> A.fromFoldable (keys ins))
    where
    γ × e = (unwrap gc).bwd out
    out' = asSel <$> out <*> (unwrap $ dual gc).bwd (γ × e)
