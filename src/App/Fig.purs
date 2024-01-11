@@ -145,25 +145,17 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
       , 1 × ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) × view x2 (v2' <#> toSel)
       ]
 
-drawFig :: Fig -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId } } δv = do
-   v_view × views <- figViews fig δv
-   sequence_ $
-      uncurry (flip (drawView divId) doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (length views) ((δv >>> _) >>> drawFig fig) v_view
-
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig = do
    drawFig fig botOf
    drawCode (prettyP fig.s) =<< addEditorView (codeMirrorDiv fig.spec.divId)
 
-drawCode :: String -> EditorView -> Effect Unit
-drawCode s ed =
-   dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
-
-drawFile :: File × String -> Effect Unit
-drawFile (file × src) =
-   addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
+drawFig :: Fig -> Selector Val -> Effect Unit
+drawFig fig@{ spec: { divId } } δv = do
+   out_view × in_views <- figViews fig δv
+   sequence_ $
+      uncurry (flip (drawView divId) doNothing) <$> zip (range 0 (length in_views - 1)) in_views
+   drawView divId (length in_views) ((δv >>> _) >>> drawFig fig) out_view
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
@@ -176,6 +168,14 @@ figViews { spec: { xs }, gc: { gc, vα } } δv =
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
+
+drawCode :: String -> EditorView -> Effect Unit
+drawCode s ed =
+   dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
+
+drawFile :: File × String -> Effect Unit
+drawFile (file × src) =
+   addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
 
 asSel :: 𝔹 -> 𝔹 -> Sel
 asSel false false = None
