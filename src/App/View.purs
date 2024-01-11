@@ -25,14 +25,14 @@ data View
    | BubbleChartFig BubbleChart
    | ScatterPlotFig ScatterPlot
 
-drawView :: HTMLId -> Int -> OnSel -> View -> Effect Unit
-drawView divId n onSel = case _ of
-   MatrixFig vw -> drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
-   TableFig vw -> drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
-   LineChartFig vw -> drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
-   BarChartFig vw -> drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
-   BubbleChartFig vw -> drawBubbleChart divId n vw =<< eventListener (onSel <<< bubbleChartHandler)
-   ScatterPlotFig vw -> drawScatterPlot divId n vw =<< eventListener (onSel <<< scatterPlotHandler)
+drawView :: HTMLId -> String -> OnSel -> View -> Effect Unit
+drawView divId suffix onSel = case _ of
+   MatrixFig vw -> drawMatrix divId suffix vw =<< eventListener (onSel <<< matrixViewHandler)
+   TableFig vw -> drawTable divId suffix vw =<< eventListener (onSel <<< tableViewHandler)
+   LineChartFig vw -> drawLineChart divId suffix vw =<< eventListener (onSel <<< lineChartHandler)
+   BarChartFig vw -> drawBarChart divId suffix vw =<< eventListener (onSel <<< barChartHandler)
+   BubbleChartFig vw -> drawBubbleChart divId suffix vw =<< eventListener (onSel <<< bubbleChartHandler)
+   ScatterPlotFig vw -> drawScatterPlot divId suffix vw =<< eventListener (onSel <<< scatterPlotHandler)
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.

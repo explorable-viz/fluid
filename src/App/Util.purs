@@ -19,7 +19,7 @@ import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 
 type HTMLId = String
-type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
+type Renderer a = HTMLId -> String -> a -> EventListener -> Effect Unit
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
 

@@ -45,7 +45,7 @@ function colorShade(col, amt) {
 
 function drawBubbleChart_ (
    id,
-   childIndex,
+   suffix,
    {
       caption, // String
       data,   // Array BubbleRecord
@@ -55,6 +55,7 @@ function drawBubbleChart_ (
    listener
 ) {
    return () => {
+      const childId = id + '-' + suffix
       var max_width = 340
       var max_height = 190
       const max_z_rad = Math.min(max_width, max_height) / 10
@@ -63,7 +64,6 @@ function drawBubbleChart_ (
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
       const y_min = Math.floor(Math.min(...data.map(d => fst(d.y))))
       const z_max = Math.ceil(Math.max(...data.map(d => fst(d.z))))
-      const childId = id + '-' + childIndex
       const margin = {top: 20, right: 20, bottom: 40, left: 50}
 
       const width = max_width - margin.left - margin.right,

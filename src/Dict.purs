@@ -9,7 +9,6 @@ module Dict
    , (∪)
    , apply
    , apply2
-   , lift2
    , asSingletonMap
    , difference
    , disjointUnion
@@ -19,9 +18,10 @@ module Dict
    , intersection
    , intersectionWith
    , keys
-   , values
+   , lift2
    , toUnfoldable
    , unzip
+   , values
    ) where
 
 import Prelude hiding (apply)
@@ -35,7 +35,7 @@ import Data.Set (fromFoldable) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, keys, toAscUnfoldable, values) as O
-import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, lookup, member, singleton, size, toArrayWithKey, union, unionWith, update)
+import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, lookup, mapWithKey, member, singleton, size, toArrayWithKey, union, unionWith, update)
 import Util (Endo, type (×), (×), (∈), assert, definitely, error)
 
 type Dict a = O.Object a
