@@ -8,12 +8,13 @@ import App.Util.Select (envVal)
 import App.View (View, drawView, view)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
+import Data.Array (elem)
 import Data.Either (Either(..))
 import Data.Newtype (unwrap)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd)
 import Desugarable (desug)
-import Dict (Dict, get, mapWithKey)
+import Dict (Dict, filterKeys, get, mapWithKey)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class (class MonadEffect)
@@ -38,19 +39,20 @@ import Val (Env, Val, append_inv, (<+>))
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
 
-type FigSpec a =
+type FigSpec =
    { divId :: HTMLId
    , imports :: Array String
    , file :: File
-   , ins :: Dict a -- variables to be considered "inputs"
+   , ins :: Array Var -- variables to be considered "inputs"
    }
 
 data Direction = LinkedIns | LinkedOuts
 
 type Fig =
-   { spec :: FigSpec (Val 𝔹)
+   { spec :: FigSpec
    , s :: Raw S.Expr
    , gc :: GraphEval GraphImpl
+   , in_ :: Env 𝔹 × Expr 𝔹
    , out :: Val 𝔹
    , dir :: Direction
    }
@@ -162,7 +164,7 @@ drawFig fig@{ spec: { divId } } = do
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: Fig -> View × Dict View
 figViews { spec: { ins }, gc: { gc }, out } =
-   view "output" out' × mapWithKey (\x _ -> view x (get x γ <#> toSel)) ins
+   view "output" out' × mapWithKey (\x _ -> view x (get x γ <#> toSel)) (filterKeys (_ `elem` ins) γ)
    where
    γ × e = (unwrap gc).bwd out
    out' = asSel <$> out <*> (unwrap $ dual gc).bwd (γ × e)
@@ -220,19 +222,13 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
       v' <- lookup x' γ'' # orElse absurd
       pure { v, v', v0 }
 
-loadFig :: forall m. FigSpec Unit -> AffError m Fig
-loadFig spec@{ imports, file, ins } = do
+loadFig :: forall m. FigSpec -> AffError m Fig
+loadFig spec@{ imports, file } = do
    s <- open file
    e <- desug s
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig e
    gc <- graphGC gconfig e
-   pure
-      { spec: spec { ins = mapWithKey (\x _ -> botOf (get x gc.γα)) ins }
-      , s
-      , gc
-      , out: botOf gc.vα
-      , dir: LinkedOuts
-      }
+   pure { spec, s, gc, in_: botOf gc.γα × topOf e, out: botOf gc.vα, dir: LinkedOuts }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do

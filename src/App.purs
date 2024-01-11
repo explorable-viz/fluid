@@ -3,13 +3,11 @@ module App where
 import Prelude hiding (absurd)
 
 import App.Fig (FigSpec, drawFigWithCode, drawFile, drawLinkedOutputsFigWithCode, loadFig, loadLinkedOutputsFig, runAffs_)
-import Dict as D
 import Effect (Effect)
 import Module (File(..), Folder(..), loadFile')
 import Test.Specs (linkedOutputs_spec1)
-import Util ((×))
 
-fig1 :: FigSpec Unit
+fig1 :: FigSpec
 fig1 =
    { divId: "fig-conv-1"
    , file: File "slicing/convolution/emboss"
@@ -18,10 +16,10 @@ fig1 =
         , "example/slicing/convolution/test-image"
         , "example/slicing/convolution/filter/emboss"
         ]
-   , ins: D.fromFoldable [ "image" × unit, "filter" × unit ]
+   , ins: [ "image", "filter" ]
    }
 
-fig2 :: FigSpec Unit
+fig2 :: FigSpec
 fig2 =
    { divId: "fig-conv-2"
    , file: File "slicing/convolution/emboss-wrap"
@@ -30,7 +28,7 @@ fig2 =
         , "example/slicing/convolution/test-image"
         , "example/slicing/convolution/filter/emboss"
         ]
-   , ins: D.fromFoldable [ "image" × unit, "filter" × unit ]
+   , ins: [ "image", "filter" ]
    }
 
 main :: Effect Unit

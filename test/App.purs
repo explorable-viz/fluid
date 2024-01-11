@@ -9,7 +9,7 @@ import Test.Specs (linkedOutputs_spec1)
 import Util (type (×), (×))
 
 -- For now just exercise figure creation code; will test via UI at some point.
-test_fig :: FigSpec Unit -> String × Aff Unit
+test_fig :: FigSpec -> String × Aff Unit
 test_fig spec = spec.divId × void (loadFig spec)
 
 test_linkedOutputsFig :: LinkedOutputsFigSpec -> String × Aff Unit
