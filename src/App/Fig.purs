@@ -155,7 +155,8 @@ drawFigWithCode fig = do
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
    let out_view × in_views = figViews fig
-   sequence_ $ mapWithKey (\x -> drawView divId x doNothing) in_views
+   sequence_ $
+      mapWithKey (flip (drawView divId) (\_ -> drawFig (fig { spec = fig.spec, dir = LinkedIns }))) in_views
    drawView divId "output" (\δv -> drawFig (fig { out = δv fig.out, dir = LinkedOuts })) out_view
 
 -- For an output selection, views of related outputs and mediating inputs.
