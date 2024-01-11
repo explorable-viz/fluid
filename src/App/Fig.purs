@@ -51,6 +51,7 @@ type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
    , gc :: GraphEval GraphImpl
+   , out :: Val 𝔹
    }
 
 type LinkedOutputsFigSpec =
@@ -147,22 +148,21 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
 
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig = do
-   drawFig fig botOf
+   drawFig fig
    drawCode (prettyP fig.s) =<< addEditorView (codeMirrorDiv fig.spec.divId)
 
-drawFig :: Fig -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId } } δv = do
-   out_view × in_views <- figViews fig δv
+drawFig :: Fig -> Effect Unit
+drawFig fig@{ spec: { divId } } = do
+   out_view × in_views <- figViews fig
    sequence_ $
       uncurry (flip (drawView divId) doNothing) <$> zip (range 0 (length in_views - 1)) in_views
-   drawView divId (length in_views) ((δv >>> _) >>> drawFig fig) out_view
+   drawView divId (length in_views) (\δv -> drawFig (fig { out = δv fig.out })) out_view
 
 -- For an output selection, views of related outputs and mediating inputs.
-figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
-figViews { spec: { xs }, gc: { gc, vα } } δv =
+figViews :: forall m. MonadError Error m => Fig -> m (View × Array View)
+figViews { spec: { xs }, gc: { gc }, out: v1 } =
    (view "output" v' × _) <$> sequence (flip varView γ <$> xs)
    where
-   v1 = δv (botOf vα)
    γ × e = (unwrap gc).bwd v1
    v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e)
 
@@ -228,7 +228,7 @@ loadFig spec@{ imports, file } = do
    e <- desug s
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig e
    gc <- graphGC gconfig e
-   pure { spec, s, gc }
+   pure { spec, s, gc, out: botOf gc.vα }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
