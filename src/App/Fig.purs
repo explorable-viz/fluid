@@ -47,11 +47,14 @@ type FigSpec =
    , xs :: Array Var -- variables to be considered "inputs"
    }
 
+data Direction = LinkedIns | LinkedOuts
+
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
    , gc :: GraphEval GraphImpl
    , out :: Val 𝔹
+   , dir :: Direction
    }
 
 type LinkedOutputsFigSpec =
@@ -156,15 +159,15 @@ drawFig fig@{ spec: { divId } } = do
    out_view × in_views <- figViews fig
    sequence_ $
       uncurry (flip (drawView divId) doNothing) <$> zip (range 0 (length in_views - 1)) in_views
-   drawView divId (length in_views) (\δv -> drawFig (fig { out = δv fig.out })) out_view
+   drawView divId (length in_views) (\δv -> drawFig (fig { out = δv fig.out, dir = LinkedOuts })) out_view
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: forall m. MonadError Error m => Fig -> m (View × Array View)
-figViews { spec: { xs }, gc: { gc }, out: v1 } =
-   (view "output" v' × _) <$> sequence (flip varView γ <$> xs)
+figViews { spec: { xs }, gc: { gc }, out } =
+   (view "output" out' × _) <$> sequence (flip varView γ <$> xs)
    where
-   γ × e = (unwrap gc).bwd v1
-   v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e)
+   γ × e = (unwrap gc).bwd out
+   out' = asSel <$> out <*> (unwrap $ dual gc).bwd (γ × e)
 
 varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
@@ -228,7 +231,7 @@ loadFig spec@{ imports, file } = do
    e <- desug s
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig e
    gc <- graphGC gconfig e
-   pure { spec, s, gc, out: botOf gc.vα }
+   pure { spec, s, gc, out: botOf gc.vα, dir: LinkedOuts }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
