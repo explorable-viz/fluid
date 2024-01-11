@@ -49,7 +49,7 @@ type FigSpec =
 
 type Fig =
    { spec :: FigSpec
-   , s0 :: Raw S.Expr -- program that was originally "split"
+   , s :: Raw S.Expr
    , gc :: GraphEval GraphImpl
    }
 
@@ -155,7 +155,7 @@ drawFig fig@{ spec: { divId } } δv = do
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig = do
    drawFig fig botOf
-   drawCode (prettyP fig.s0) =<< addEditorView (codeMirrorDiv fig.spec.divId)
+   drawCode (prettyP fig.s) =<< addEditorView (codeMirrorDiv fig.spec.divId)
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
@@ -224,11 +224,11 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file } = do
-   s0 <- open file
-   e <- desug s0
+   s <- open file
+   e <- desug s
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig e
    gc <- graphGC gconfig e
-   pure { spec, s0, gc }
+   pure { spec, s, gc }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
