@@ -156,13 +156,13 @@ drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
    let out_view × in_views = figViews fig
    sequence_ $
-      mapWithKey (flip (drawView divId) (\_ -> drawFig (fig { spec = fig.spec, dir = LinkedIns }))) in_views
+      mapWithKey (flip (drawView divId) (\_ -> drawFig (fig { spec = fig.spec, dir = LinkedOuts }))) in_views
    drawView divId "output" (\δv -> drawFig (fig { out = δv fig.out, dir = LinkedOuts })) out_view
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: Fig -> View × Dict View
 figViews { spec: { ins }, gc: { gc }, out } =
-   (view "output" out' × _) $ (mapWithKey (\x _ -> view x (get x γ <#> toSel)) ins)
+   view "output" out' × mapWithKey (\x _ -> view x (get x γ <#> toSel)) ins
    where
    γ × e = (unwrap gc).bwd out
    out' = asSel <$> out <*> (unwrap $ dual gc).bwd (γ × e)
