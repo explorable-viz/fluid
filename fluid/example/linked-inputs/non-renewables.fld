@@ -1,12 +1,13 @@
 [
-   { country: "BRA", year: 2018, nuclearGen: 14.79, nuclearCap: 17.43, gasGen: 52.36, gasCap: 98.46, coalGen: 19.94, coalCap: 24.79, petrolGen: 14.39, petrolCap: 34.43, gdpPerCap: 9.121},
-   { country: "CHN", year: 2018, nuclearGen: 295.0, nuclearCap: 391.22, gasGen: 215.5, gasCap: 710.70, coalGen: 4763.92, coalCap: 8555.54, petrolGen: 56.4, petrolCap: 55.19, gdpPerCap: 9.905},
-   { country: "DEU", year: 2018, nuclearGen: 76.0, nuclearCap: 94.61, gasGen: 81.56, gasCap: 259.21, coalGen: 228.16, coalCap: 414.52, petrolGen: 23.63, petrolCap: 14.80, gdpPerCap: 47.939},
-   { country: "FRA", year: 2018, nuclearGen: 412.94, nuclearCap: 553.02, gasGen: 30.61, gasCap: 75.95, coalGen: 8.31, coalCap: 32.76, petrolGen: 10.56, petrolCap: 16.56, gdpPerCap: 41.558},
-   { country: "EGY", year: 2018, nuclearGen: 0.0, nuclearCap: 0.00, gasGen: 166.61, gasCap: 425.65, coalGen: 0.0, coalCap: 0.00, petrolGen: 15.7, petrolCap: 5.61, gdpPerCap: 2.531},
-   { country: "IND", year: 2018, nuclearGen: 39.05, nuclearCap: 59.39, gasGen: 71.26, gasCap: 237.66, coalGen: 1198.86, coalCap: 1927.29, petrolGen: 6.4, petrolCap: 6.31, gdpPerCap: 1.974},
-   { country: "JPN", year: 2018, nuclearGen: 49.11, nuclearCap: 333.23, gasGen: 425.37, gasCap: 747.84, coalGen: 345.13, coalCap: 405.50, petrolGen: 53.78, petrolCap: 241.69, gdpPerCap: 39.751},
-   { country: "MEX", year: 2018, nuclearGen: 13.32, nuclearCap: 14.10, gasGen: 200.38, gasCap: 308.88, coalGen: 27.0, coalCap: 47.13, petrolGen: 33.19, petrolCap: 50.46, gdpPerCap: 10.130},
-   { country: "NGA", year: 2018, nuclearGen: 0.0, nuclearCap: 0.00, gasGen: 23.49, gasCap: 94.26, coalGen: 0.62, coalCap: 2.45, petrolGen: 0.0, petrolCap: 0.00, gdpPerCap: 2.126},
-   { country: "USA", year: 2018, nuclearGen: 807.08, nuclearCap: 871.01, gasGen: 1469.13, gasCap: 4431.51, coalGen: 1149.49, coalCap: 2293.89, petrolGen: 42.68, petrolCap: 304.67, gdpPerCap: 62.823}
+   { country: "USA", year: 2013, nuclearGen: 789.02, nuclearCap: 869.34, gasGen: 1124.84, gasCap: 3821.81, coalGen: 1581.11, coalCap: 2880.03, petrolGen: 40.26, petrolCap: 409.62},
+
+   { country: "USA", year: 2014, nuclearGen: 797.17, nuclearCap: 863.47, gasGen: 1126.61, gasCap: 3920.71, coalGen: 1581.71, coalCap: 2840.52, petrolGen: 43.69, petrolCap: 392.80},
+
+   { country: "USA", year: 2015, nuclearGen: 797.18, nuclearCap: 864.35, gasGen: 1333.48, gasCap: 4019.70, coalGen: 1352.4, coalCap: 2650.69, petrolGen: 44.44, petrolCap: 345.32},
+
+   { country: "USA", year: 2016, nuclearGen: 805.69, nuclearCap: 872.15, gasGen: 1378.31, gasCap: 4127.36, coalGen: 1239.15, coalCap: 2510.88, petrolGen: 39.5, petrolCap: 323.42},
+
+   { country: "USA", year: 2017, nuclearGen: 804.95, nuclearCap: 872.76, gasGen: 1296.44, gasCap: 4229.68, coalGen: 1205.84, coalCap: 2433.18, petrolGen: 37.89, petrolCap: 320.62},
+
+   { country: "USA", year: 2018, nuclearGen: 807.08, nuclearCap: 871.01, gasGen: 1469.13, gasCap: 4431.51, coalGen: 1149.49, coalCap: 2293.89, petrolGen: 42.68, petrolCap: 304.67}
 ]

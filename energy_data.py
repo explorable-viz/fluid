@@ -5,8 +5,8 @@ energy_data = pd.read_csv("~/Downloads/yearly_full_release_long_format.csv")
 energy_data.fillna(0, inplace=True)
 gdp_data = pd.read_csv("~/Downloads/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_6298251.csv", header=2)
 gdp_data.fillna(0, inplace=True)
-years =  [2018] # [2013, 2014, 2015, 2016, 2017, 2018]
-country_codes = ["BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"]
+years =  [2013, 2014, 2015, 2016, 2017, 2018]
+country_codes = ["USA"] # ["BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"]
 mini = False
 prefix = os.path.expanduser("~/Documents/fluid/fluid/example/linked-inputs/")
 if mini:
@@ -31,14 +31,11 @@ for year in years:
         # carbInt = energy_data.loc[(energy_data['Country code'] == country) & (energy_data['Subcategory'] == 'CO2 intensity') & (energy_data['Year'] == year)]['Value'].values[0]
 
         # Horrible hack but we have to do it:
-        gdp_country = country
-        gdp = '%.3f'%(gdp_data.loc[(gdp_data['Country Code'] == gdp_country)][str(year)].values[0] / 1000)
         row = ('   { country: \"' + country + '\", year: ' + str(year)+''
                ', nuclearGen: '+ str(nuclearGen) + ', nuclearCap: ' + str(nuclearCap)+''
                ', gasGen: ' + str(gasGen) + ', gasCap: ' + str(gasCap)+''
                ', coalGen: ' + str(coalGen) + ', coalCap: ' + str(coalCap)+''
-               ', petrolGen: ' + str(petrolGen) + ', petrolCap: ' + str(petrolCap)+''
-               ', gdpPerCap: ' + gdp + '}')
+               ', petrolGen: ' + str(petrolGen) + ', petrolCap: ' + str(petrolCap)+'}')
         if not (country == country_codes[-1] and year == years[-1]):
             row += ","
         non_renewables_str += row
