@@ -2,7 +2,7 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Select (constrArg)
+import App.Util.Selector (constrArg)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import DataType (cPair)

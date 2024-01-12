@@ -4,13 +4,14 @@ import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (HTMLId, Sel(..), doNothing, toSel)
-import App.Util.Select (envVal)
+import App.Util.Selector (envVal)
 import App.View (View, drawView, view)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (elem)
 import Data.Either (Either(..))
 import Data.Newtype (unwrap)
+import Data.Profunctor.Strong (first)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd)
 import Desugarable (desug)
@@ -157,14 +158,19 @@ drawFigWithCode fig = do
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
    let out_view × in_views = figViews fig
-   sequence_ $
-      mapWithKey (flip (drawView divId) (\_ -> drawFig (fig { spec = fig.spec, dir = LinkedOuts }))) in_views
-   drawView divId "output" (\δv -> drawFig (fig { out = δv fig.out, dir = LinkedOuts })) out_view
+   sequence_ $ mapWithKey (\x -> drawView divId x (onInSel x)) in_views
+   drawView divId "output" onOutSel out_view
+   where
+   onOutSel :: Selector Val -> Effect Unit
+   onOutSel δv = drawFig (fig { out = δv fig.out, dir = LinkedOuts })
+
+   onInSel :: Var -> Selector Val -> Effect Unit
+   onInSel x δv = drawFig (fig { in_ = first (envVal x δv) fig.in_, dir = LinkedOuts })
 
 -- For an output selection, views of related outputs and mediating inputs.
 figViews :: Fig -> View × Dict View
 figViews { spec: { ins }, gc: { gc }, out } =
-   view "output" out' × mapWithKey (\x _ -> view x (get x γ <#> toSel)) (filterKeys (_ `elem` ins) γ)
+   view "output" out' × mapWithKey (\x _ -> view x (get x γ <#> toSel)) (γ # filterKeys (_ `elem` ins))
    where
    γ × e = (unwrap gc).bwd out
    out' = asSel <$> out <*> (unwrap $ dual gc).bwd (γ × e)
