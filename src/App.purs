@@ -16,6 +16,7 @@ fig1 =
         , "example/slicing/convolution/test-image"
         , "example/slicing/convolution/filter/emboss"
         ]
+   , datasets: []
    , ins: [ "image", "filter" ]
    }
 
@@ -28,6 +29,7 @@ fig2 =
         , "example/slicing/convolution/test-image"
         , "example/slicing/convolution/filter/emboss"
         ]
+   , datasets: []
    , ins: [ "image", "filter" ]
    }
 
