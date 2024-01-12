@@ -67,15 +67,6 @@ type LinkedOutputsFigSpec =
    , x :: Var
    }
 
-type LinkedInputsFigSpec =
-   { divId :: HTMLId
-   , file :: File
-   , x1 :: Var
-   , x1File :: File -- variables to be considered "inputs"
-   , x2 :: Var
-   , x2File :: File
-   }
-
 type LinkedOutputsFig =
    { spec :: LinkedOutputsFigSpec
    , γ :: Env 𝔹
@@ -89,6 +80,15 @@ type LinkedOutputsFig =
    , v2 :: Val 𝔹
    , v0 :: Val 𝔹 -- common data named by spec.x
    , dataFileStr :: String -- TODO: provide surface expression instead and prettyprint
+   }
+
+type LinkedInputsFigSpec =
+   { divId :: HTMLId
+   , file :: File
+   , x1 :: Var
+   , x1File :: File -- variables to be considered "inputs"
+   , x2 :: Var
+   , x2File :: File
    }
 
 type LinkedInputsFig =
