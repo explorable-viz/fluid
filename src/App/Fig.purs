@@ -47,7 +47,7 @@ type FigSpec =
    , ins :: Array Var -- variables to be considered "inputs"
    }
 
-data Direction = LinkedIns | LinkedOuts
+data Direction = LinkedInputs | LinkedOutputs
 
 type Fig =
    { spec :: FigSpec
@@ -166,22 +166,22 @@ drawFig fig@{ spec: { divId } } = do
    drawView divId output onOutSel out_view
    where
    onOutSel :: Selector Val -> Effect Unit
-   onOutSel δv = drawFig (fig { out = δv fig.out, dir = LinkedOuts })
+   onOutSel δv = drawFig (fig { out = δv fig.out, dir = LinkedOutputs })
 
    onInSel :: Var -> Selector Val -> Effect Unit
-   onInSel x δv = drawFig (fig { in_ = first (envVal x δv) fig.in_, dir = LinkedOuts })
+   onInSel x δv = drawFig (fig { in_ = first (envVal x δv) fig.in_, dir = LinkedInputs })
 
 -- For an output selection, views of related outputs and mediating inputs. For an input selection, views of
 -- related inputs and mediating outputs. To use relatedInputs/relatedOutputs operators directly requires #892
 -- (to provide MeetSemilattice instance for Env).
 figViews :: Fig -> View × Dict View
-figViews { spec: { ins }, gc: { gc }, out, dir: LinkedOuts } =
+figViews { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
    view output (asSel <$> out <*> out') ×
       mapWithKey (\x _ -> view x (toSel <$> get x γ)) (γ # filterKeys (_ `elem` ins))
    where
    γ × e = (unwrap gc).bwd out
    out' = (unwrap (dual gc)).bwd (γ × e)
-figViews { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedIns } =
+figViews { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    view output (toSel <$> out) ×
       mapWithKey (\x _ -> view x (asSel <$> get x γ <*> get x γ')) (γ # filterKeys (_ `elem` ins))
    where
@@ -247,7 +247,7 @@ loadFig spec@{ imports, file } = do
    e <- desug s
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig e
    gc <- graphGC gconfig e
-   pure { spec, s, gc, in_: botOf gc.γα × topOf e, out: botOf gc.vα, dir: LinkedOuts }
+   pure { spec, s, gc, in_: botOf gc.γα × topOf e, out: botOf gc.vα, dir: LinkedOutputs }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
