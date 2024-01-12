@@ -74,7 +74,7 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
-      gconfig <- prelude >>= modules (File <$> imports) >>= datasetAs (File dataset) x
+      gconfig <- prelude >>= modules (File <$> imports) >>= datasetAs (x ↦ File dataset)
       test (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit

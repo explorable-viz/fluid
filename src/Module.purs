@@ -4,7 +4,7 @@ import Prelude
 
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
-import Bind (Var, (↦))
+import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
@@ -54,11 +54,11 @@ loadFile' folder file = (file × _) <$> loadFile folder file
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< mapLeft (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. MonadAff m => MonadError Error m => Folder -> File -> m (Raw S.Expr)
+parseProgram :: forall m. Folder -> File -> AffError m (Raw S.Expr)
 parseProgram folder file =
    loadFile folder file >>= flip parse P.program
 
-open :: forall m. MonadAff m => MonadError Error m => File -> m (Raw S.Expr)
+open :: forall m. File -> AffError m (Raw S.Expr)
 open = parseProgram (Folder "fluid/example")
 
 module_ :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
@@ -74,10 +74,13 @@ prelude :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
 prelude =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil }) >>= modules [ File "lib/prelude" ]
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => File -> Var -> Raw ProgCxt -> m (Raw ProgCxt)
-datasetAs file x (ProgCxt r@{ datasets }) = do
+datasetAs :: forall m. MonadAff m => MonadError Error m => Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs (x ↦ file) (ProgCxt r@{ datasets }) = do
    eα <- parseProgram (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = x ↦ eα : datasets }
+
+datasetsAs :: forall m. MonadAff m => MonadError Error m => Array (Bind File) -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetsAs files = files <#> datasetAs # concatM
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
