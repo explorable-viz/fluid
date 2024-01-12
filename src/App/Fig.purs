@@ -160,16 +160,21 @@ output :: String
 output = "output"
 
 drawFig :: Fig -> Effect Unit
-drawFig fig@{ spec: { divId } } = do
+drawFig fig@{ spec: { divId }, in_, out, dir } = do
    let out_view × in_views = figViews fig
    sequence_ $ mapWithKey (\x -> drawView divId x (onInSel x)) in_views
    drawView divId output onOutSel out_view
    where
    onOutSel :: Selector Val -> Effect Unit
-   onOutSel δv = drawFig (fig { out = δv fig.out, dir = LinkedOutputs })
+   onOutSel δv = drawFig (fig { out = δv out, in_ = in', dir = LinkedOutputs })
+      where
+      -- TODO: replace (expensive) botOf γ by per-variable botOf
+      in' = if dir == LinkedInputs then first botOf in_ else in_
 
    onInSel :: Var -> Selector Val -> Effect Unit
-   onInSel x δv = drawFig (fig { in_ = first (envVal x δv) fig.in_, dir = LinkedInputs })
+   onInSel x δv = drawFig (fig { in_ = first (envVal x δv) in_, out = out', dir = LinkedInputs })
+      where
+      out' = if dir == LinkedOutputs then botOf out else out
 
 -- For an output selection, views of related outputs and mediating inputs. For an input selection, views of
 -- related inputs and mediating outputs. To use relatedInputs/relatedOutputs operators directly requires #892
@@ -278,3 +283,9 @@ loadLinkedOutputsFig spec@{ imports, dataFile, file1, file2, x } = do
    t2 × v2 <- eval γ e2 bot
    let v0 = get x γ
    pure { spec, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFileStr }
+
+-- ======================
+-- boilerplate
+-- ======================
+
+derive instance Eq Direction
