@@ -2,7 +2,7 @@ module Lattice where
 
 import Prelude hiding (absurd, join, top)
 
-import Bindings (Var)
+import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (zipWith) as A

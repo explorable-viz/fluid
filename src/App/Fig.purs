@@ -6,7 +6,7 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (HTMLId, Sel(..), doNothing, toSel)
 import App.Util.Selector (envVal)
 import App.View (View, drawView, view)
-import Bindings (Var)
+import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (elem)
 import Data.Either (Either(..))

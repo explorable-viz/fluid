@@ -2,7 +2,7 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import Bindings (Var)
+import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first, second)

@@ -2,7 +2,7 @@ module App.Util where
 
 import Prelude hiding (absurd)
 
-import Bindings (Var)
+import Bind (Var)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)

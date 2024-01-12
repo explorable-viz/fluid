@@ -2,7 +2,7 @@ module EvalGraph where
 
 import Prelude hiding (apply)
 
-import Bindings (Bind, (↦), varAnon)
+import Bind (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range) as A
 import Data.Either (Either(..))

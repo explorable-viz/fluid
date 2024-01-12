@@ -2,7 +2,7 @@ module DataType where
 
 import Prelude hiding (absurd)
 
-import Bindings (Var)
+import Bind (Var)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.CodePoint.Unicode (isUpper)
 import Data.Function (on)

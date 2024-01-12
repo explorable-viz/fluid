@@ -4,7 +4,7 @@ import Prelude
 
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
-import Bindings (Var, (↦))
+import Bind (Var, (↦))
 import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))

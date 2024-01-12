@@ -2,7 +2,7 @@ module ProgCxt where
 
 import Prelude
 
-import Bindings (Bind)
+import Bind (Bind)
 import Data.List (List, zipWith)
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)

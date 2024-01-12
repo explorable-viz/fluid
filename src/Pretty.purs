@@ -2,7 +2,7 @@ module Pretty (class Pretty, PrettyShow(..), pretty, prettyP) where
 
 import Prelude hiding (absurd, between)
 
-import Bindings (Bind, key, val, Var, (↦))
+import Bind (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, null, uncons, (:))

@@ -1,7 +1,7 @@
 module Primitive where
 
 import Prelude hiding (absurd, apply, div, top)
-import Bindings (Bind)
+import Bind (Bind)
 import Data.Either (Either(..))
 import Data.Exists (Exists, mkExists)
 import Data.Int (toNumber)

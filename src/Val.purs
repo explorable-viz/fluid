@@ -2,7 +2,7 @@ module Val where
 
 import Prelude hiding (absurd, append)
 
-import Bindings (Var)
+import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Array ((!!))

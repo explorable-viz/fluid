@@ -2,7 +2,7 @@ module Expr where
 
 import Prelude hiding (absurd, top)
 
-import Bindings (Var)
+import Bind (Var)
 import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
