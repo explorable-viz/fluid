@@ -172,7 +172,8 @@ figViews :: Fig -> View × Dict View
 figViews { spec: { ins }, gc: { gc }, out } =
    view "output" out' × mapWithKey (\x _ -> view x (get x γ <#> toSel)) (γ # filterKeys (_ `elem` ins))
    where
-   out' = asSel <$> out <*> (unwrap (dual gc <<< gc)).bwd out
+   γ × e = (unwrap gc).bwd out
+   out' = asSel <$> out <*> (unwrap $ dual gc).bwd (γ × e)
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =

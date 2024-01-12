@@ -1,11 +1,12 @@
 module GaloisConnection where
 
 import Prelude hiding (top)
+
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong ((***)) as Strong
 import Data.Tuple (fst, snd) as Tuple
 import Data.Tuple (uncurry)
-import Lattice (class BoundedMeetSemilattice, class MeetSemilattice, class Neg, (∧), neg, top)
+import Lattice (class BooleanLattice, class BoundedMeetSemilattice, class MeetSemilattice, class Neg, neg, top, (∧))
 import Util (Endo, type (×), (×), dup)
 
 newtype GaloisConnection a b = GC { fwd :: a -> b, bwd :: b -> a }
@@ -19,11 +20,11 @@ deMorgan = (neg >>> _) >>> (_ >>> neg)
 dual :: forall a b. Neg a => Neg b => GaloisConnection a b -> GaloisConnection b a
 dual (GC { fwd, bwd }) = GC { fwd: deMorgan bwd, bwd: deMorgan fwd }
 
-relatedInputs :: forall a b. Neg a => Neg b => GaloisConnection a b -> GaloisConnection a a
-relatedInputs gc = gc >>> dual gc
+relatedInputs :: forall a b. Neg a => BooleanLattice b => GaloisConnection a b -> GaloisConnection a (a × b)
+relatedInputs gc = gc >>> diag >>> (dual gc *** identity)
 
-relatedOutputs :: forall a b. Neg a => Neg b => GaloisConnection a b -> GaloisConnection b b
-relatedOutputs gc = gc <<< dual gc
+relatedOutputs :: forall a b. BooleanLattice a => Neg b => GaloisConnection a b -> GaloisConnection b (b × a)
+relatedOutputs gc = (gc *** identity) <<< diag <<< dual gc
 
 instance Semigroupoid GaloisConnection where
    compose (GC { fwd: fwd1, bwd: bwd1 }) (GC { fwd: fwd2, bwd: bwd2 }) =
