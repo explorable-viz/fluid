@@ -155,11 +155,15 @@ drawFigWithCode fig = do
    drawFig fig
    drawCode (prettyP fig.s) =<< addEditorView (codeMirrorDiv fig.spec.divId)
 
+-- Pseudo-variable to use as name of output view.
+output :: String
+output = "output"
+
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
    let out_view × in_views = figViews fig
    sequence_ $ mapWithKey (\x -> drawView divId x (onInSel x)) in_views
-   drawView divId "output" onOutSel out_view
+   drawView divId output onOutSel out_view
    where
    onOutSel :: Selector Val -> Effect Unit
    onOutSel δv = drawFig (fig { out = δv fig.out, dir = LinkedOuts })
@@ -167,13 +171,22 @@ drawFig fig@{ spec: { divId } } = do
    onInSel :: Var -> Selector Val -> Effect Unit
    onInSel x δv = drawFig (fig { in_ = first (envVal x δv) fig.in_, dir = LinkedOuts })
 
--- For an output selection, views of related outputs and mediating inputs.
+-- For an output selection, views of related outputs and mediating inputs. For an input selection, views of
+-- related inputs and mediating outputs. To use relatedInputs/relatedOutputs operators directly requires #892
+-- (to provide MeetSemilattice instance for Env).
 figViews :: Fig -> View × Dict View
-figViews { spec: { ins }, gc: { gc }, out } =
-   view "output" out' × mapWithKey (\x _ -> view x (get x γ <#> toSel)) (γ # filterKeys (_ `elem` ins))
+figViews { spec: { ins }, gc: { gc }, out, dir: LinkedOuts } =
+   view output (asSel <$> out <*> out') ×
+      mapWithKey (\x _ -> view x (toSel <$> get x γ)) (γ # filterKeys (_ `elem` ins))
    where
    γ × e = (unwrap gc).bwd out
-   out' = asSel <$> out <*> (unwrap $ dual gc).bwd (γ × e)
+   out' = (unwrap (dual gc)).bwd (γ × e)
+figViews { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedIns } =
+   view output (toSel <$> out) ×
+      mapWithKey (\x _ -> view x (asSel <$> get x γ <*> get x γ')) (γ # filterKeys (_ `elem` ins))
+   where
+   out = (unwrap (dual gc)).bwd (γ × e)
+   γ' × _ = (unwrap gc).bwd out
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =

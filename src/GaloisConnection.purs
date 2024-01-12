@@ -23,7 +23,7 @@ dual (GC { fwd, bwd }) = GC { fwd: deMorgan bwd, bwd: deMorgan fwd }
 relatedInputs :: forall a b. Neg a => BooleanLattice b => GaloisConnection a b -> GaloisConnection a (a × b)
 relatedInputs gc = gc >>> diag >>> (dual gc *** identity)
 
-relatedOutputs :: forall a b. BooleanLattice a => Neg b => GaloisConnection a b -> GaloisConnection b (b × a)
+relatedOutputs :: forall a b. Neg a => MeetSemilattice a => Neg b => GaloisConnection a b -> GaloisConnection b (b × a)
 relatedOutputs gc = (gc *** identity) <<< diag <<< dual gc
 
 instance Semigroupoid GaloisConnection where
