@@ -76,8 +76,8 @@ datasetAs (x ↦ file) (ProgCxt r@{ datasets }) = do
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
 loadProgCxt mods datasets =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= ((File <$> [ "lib/prelude" ] <> mods) <#> module_ # concatM)
-      >>= ((second File <$> datasets) <#> datasetAs # concatM)
+      >>= concatM (File >>> module_ <$> [ "lib/prelude" ] <> mods)
+      >>= concatM (second File >>> datasetAs <$> datasets)
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
