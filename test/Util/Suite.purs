@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
-import Module (File(..), Folder(..), datasetAs, prelude, loadFile, modules)
+import Module (File(..), Folder(..), loadFile, loadProgCxt)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
 import Util (type (+), type (×), (×))
@@ -55,7 +55,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
    asTest { imports, file, fwd_expect } = do
-      gconfig <- prelude >>= modules (File <$> imports)
+      gconfig <- loadProgCxt imports []
       test (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite
@@ -65,7 +65,7 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& a
 
    asTest :: TestBwdSpec -> Aff BenchRow
    asTest { imports, file, bwd_expect_file, δv, fwd_expect } = do
-      gconfig <- prelude >>= modules (File <$> imports)
+      gconfig <- loadProgCxt imports []
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
       test (folder <> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
@@ -74,7 +74,7 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
-      gconfig <- prelude >>= modules (File <$> imports) >>= datasetAs (x ↦ File dataset)
+      gconfig <- loadProgCxt imports [ x ↦ dataset ]
       test (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit

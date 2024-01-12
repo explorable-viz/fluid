@@ -11,7 +11,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (elem)
 import Data.Either (Either(..))
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (first, second)
+import Data.Profunctor.Strong (first)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd)
 import Desugarable (desug)
@@ -29,7 +29,7 @@ import Foreign.Object (lookup)
 import GaloisConnection (dual)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
-import Module (File(..), Folder(..), datasetAs, datasetsAs, initialConfig, loadFile, modules, open, prelude)
+import Module (File(..), Folder(..), initialConfig, loadFile, loadProgCxt, open)
 import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
@@ -251,7 +251,7 @@ loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file, datasets } = do
    s <- open file
    e <- desug s
-   gconfig <- prelude >>= modules (File <$> imports) >>= datasetsAs (second File <$> datasets) >>= initialConfig e
+   gconfig <- loadProgCxt imports datasets >>= initialConfig e
    gc <- graphGC gconfig e
    pure { spec, s, gc, in_: botOf gc.γα × topOf e, out: botOf gc.vα, dir: LinkedOutputs }
 
@@ -262,7 +262,7 @@ loadLinkedInputsFig spec@{ file } = do
       datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
    s <- botOf <$> open (File "linked-inputs/" <> file)
    e <- desug s
-   { γ: γ' } <- prelude >>= datasetAs (spec.x1 ↦ datafile1) >>= datasetAs (spec.x2 ↦ datafile2) >>= initialConfig e
+   { γ: γ' } <- loadProgCxt [] [ spec.x1 ↦ unwrap datafile1, spec.x2 ↦ unwrap datafile2 ] >>= initialConfig e
    let γ = botOf γ'
    t × v <- eval γ e bot
    pure { spec, γ, s, e, t, v0: v }
@@ -277,7 +277,7 @@ loadLinkedOutputsFig spec@{ imports, dataFile, file1, file2, x } = do
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let s1 × s2 = botOf s1' × botOf s2'
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
-   { γ: γ' } <- prelude >>= modules (File <$> imports) >>= datasetAs (x ↦ dataFile') >>= initialConfig (e1 × e2)
+   { γ: γ' } <- loadProgCxt imports [ x ↦ unwrap dataFile' ] >>= initialConfig (e1 × e2)
    let γ = botOf γ'
    dataFileStr <- loadFile (Folder "fluid") dataFile' -- TODO: use surface expression instead
    t1 × v1 <- eval γ e1 bot

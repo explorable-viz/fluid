@@ -11,6 +11,7 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
+import Data.Profunctor.Strong (second)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
@@ -81,6 +82,10 @@ datasetAs (x ↦ file) (ProgCxt r@{ datasets }) = do
 
 datasetsAs :: forall m. MonadAff m => MonadError Error m => Array (Bind File) -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetsAs files = files <#> datasetAs # concatM
+
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt mods datasets =
+   prelude >>= modules (File <$> mods) >>= datasetsAs (second File <$> datasets)
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
