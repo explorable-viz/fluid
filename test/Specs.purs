@@ -3,6 +3,7 @@ module Test.Specs where
 import Prelude
 
 import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
+import Bind ((↦))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
@@ -283,10 +284,22 @@ bwd_cases =
 
 graphics_cases :: Array TestWithDatasetSpec
 graphics_cases =
-   [ { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/background" }
-   , { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/grouped-bar-chart" }
-   , { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/line-chart" }
-   , { imports: [ "lib/graphics" ], dataset: "dataset/renewables-restricted", file: "graphics/stacked-bar-chart" }
+   [ { imports: [ "lib/graphics" ]
+     , dataset: "data" ↦ "dataset/renewables-restricted"
+     , file: "graphics/background"
+     }
+   , { imports: [ "lib/graphics" ]
+     , dataset: "data" ↦ "dataset/renewables-restricted"
+     , file: "graphics/grouped-bar-chart"
+     }
+   , { imports: [ "lib/graphics" ]
+     , dataset: "data" ↦ "dataset/renewables-restricted"
+     , file: "graphics/line-chart"
+     }
+   , { imports: [ "lib/graphics" ]
+     , dataset: "data" ↦ "dataset/renewables-restricted"
+     , file: "graphics/stacked-bar-chart"
+     }
    ]
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec

@@ -3,6 +3,7 @@ module Test.Util.Suite where
 import Prelude
 
 import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, LinkedInputsFig, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
+import Bind (Bind, (↦))
 import Data.Either (isLeft)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
@@ -32,7 +33,7 @@ type TestBwdSpec =
    }
 
 type TestWithDatasetSpec =
-   { dataset :: String
+   { dataset :: Bind String
    , imports :: Array String
    , file :: String
    }
@@ -72,8 +73,8 @@ withDatasetSuite :: Array TestWithDatasetSpec -> BenchSuite
 withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
-   asTest { imports, dataset, file } = do
-      gconfig <- prelude >>= modules (File <$> imports) >>= datasetAs (File dataset) "data"
+   asTest { imports, dataset: x ↦ dataset, file } = do
+      gconfig <- prelude >>= modules (File <$> imports) >>= datasetAs (File dataset) x
       test (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
