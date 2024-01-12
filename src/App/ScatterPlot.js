@@ -45,7 +45,7 @@ function colorShade(col, amt) {
 
 function drawScatterPlot_ (
    id,
-   childIndex,
+   suffix,
    {
       caption, // String
       data, // Array ScatterRecord
@@ -55,14 +55,14 @@ function drawScatterPlot_ (
    listener
 ) {
    return () => {
+      const childId = id + '-' + suffix
       var max_width = 340
       var max_height = 190
       const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
       const x_min = Math.ceil(Math.min(...data.map(d => fst(d.x))))
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
       const y_min = Math.ceil(Math.min(...data.map(d => fst(d.y))))
-      
-      const childId = id + '-' + childIndex
+
       const margin = {top: 20, right: 20, bottom: 40, left: 50}
 
       const width = max_width - margin.left - margin.right,
@@ -78,7 +78,7 @@ function drawScatterPlot_ (
          .attr('id', childId)
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
-      
+
       const x = d3.scaleLinear()
          .domain([Math.min(0, x_min), x_max])
          .range([0, width])
@@ -87,7 +87,7 @@ function drawScatterPlot_ (
          .call(d3.axisBottom(x))
          .selectAll('text')
          .style('text-anchor', 'middle')
-      
+
       const y = d3.scaleLinear()
          .domain([Math.min(0, y_min), y_max])
          .range([height, 0])
@@ -111,7 +111,7 @@ function drawScatterPlot_ (
          .style("text-anchor", "end")
          .style("font-size", "8px")
          .text(fst(ylabel))
-      
+
 
          svg.append('g')
             .selectAll('dot')
@@ -124,10 +124,10 @@ function drawScatterPlot_ (
                .attr('data-y', ([, d]) => fst(d.y))
                .attr('stroke', 'black')
                .attr('stroke-width', 0.5)
-               .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? 'black': 'white') 
+               .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? 'black': 'white')
                .style('class', ([, d]) => snd(d.x) || snd(d.y) ? 'dot-selected' : 'dot-unselected')
                .on('mousedown', (e, d) => {listener(e)})
-         
+
          svg.append('text')
             .text(fst(caption))
             .attr('x', width/2)

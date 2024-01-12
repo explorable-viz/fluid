@@ -68,7 +68,7 @@ function colorShade(col, amt) {
 
 function drawMatrix_ (
    id,
-   childIndex,
+   suffix,
    {
       title,    // String
       matrix    // IntMatrix
@@ -76,7 +76,7 @@ function drawMatrix_ (
    listener
 ) {
    return () => {
-      const childId = id + '-' + childIndex
+      const childId = id + '-' + suffix
       const strokeWidth = 0.5
       const w = 30, h = 30
       const div = d3.select('#' + id)

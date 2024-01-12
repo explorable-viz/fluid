@@ -54,7 +54,7 @@ function isUsed (r) {
 // Generic to all tables.
 function drawTable_ (
    id,
-   childIndex,
+   suffix,
    {
       title,   // String
       filter,  // Boolean
@@ -63,7 +63,7 @@ function drawTable_ (
    listener
 ) {
    return () => {
-      const childId = id + '-' + childIndex
+      const childId = id + '-' + suffix
       const cellFill = '#ffffff'
       const selectedFill = '#93E9BE'
       const div = d3.select('#' + id)

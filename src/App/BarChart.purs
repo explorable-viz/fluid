@@ -3,7 +3,7 @@ module App.BarChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Handler, Renderer, from, get_intOrNumber, record)
-import App.Util.Select (constrArg, field, listElement)
+import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Dict (Dict, get)

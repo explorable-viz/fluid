@@ -3,7 +3,7 @@ module ICFP2024 where
 import Prelude
 
 import App.Fig (drawLinkedInputsFig, runAffs_)
-import App.Util.Select (field, listElement)
+import App.Util.Selector (field, listElement)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)

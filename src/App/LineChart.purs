@@ -3,7 +3,7 @@ module App.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Handler, Renderer, from, get_intOrNumber, record)
-import App.Util.Select (constrArg, field, listElement)
+import App.Util.Selector (constrArg, field, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)

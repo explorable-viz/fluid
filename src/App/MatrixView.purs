@@ -3,7 +3,7 @@ module App.MatrixView where
 import Prelude hiding (absurd)
 
 import App.Util (Handler, Renderer, Sel)
-import App.Util.Select (matrixElement)
+import App.Util.Selector (matrixElement)
 import Data.Maybe (Maybe)
 import Data.Tuple (uncurry)
 import Lattice (neg)

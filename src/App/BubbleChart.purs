@@ -3,7 +3,7 @@ module App.BubbleChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Renderer, Handler, from, get_intOrNumber, record)
-import App.Util.Select (constrArg, field, listElement)
+import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cBubbleChart, f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel, f_z)
 import Dict (Dict, get)

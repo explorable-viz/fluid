@@ -45,7 +45,7 @@ function colorShade (col, amt) {
 
 function drawBarChart_ (
    id,
-   childIndex,
+   suffix,
    {
       caption,    // String
       data,       // Array BarChartRecord
@@ -53,7 +53,7 @@ function drawBarChart_ (
    listener
 ) {
    return () => {
-      const childId = id + '-' + childIndex
+      const childId = id + '-' + suffix
       const margin = {top: 15, right: 0, bottom: 40, left: 40},
             width = 200 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom

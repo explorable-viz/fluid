@@ -56,7 +56,7 @@ function max_x (linePlot) {
 
 function drawLineChart_ (
    id,
-   childIndex,
+   suffix,
    {
       caption,   // String
       plots,     // Array LinePlot
@@ -64,7 +64,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const childId = id + '-' + childIndex
+      const childId = id + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom,

@@ -4,18 +4,18 @@ import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (HTMLId, Sel(..), doNothing, toSel)
-import App.Util.Select (envVal)
+import App.Util.Selector (envVal)
 import App.View (View, drawView, view)
 import Bindings (Var)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Array (range, zip)
+import Data.Array (elem)
 import Data.Either (Either(..))
-import Data.Foldable (length)
 import Data.Newtype (unwrap)
+import Data.Profunctor.Strong (first)
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (snd, uncurry)
+import Data.Tuple (snd)
 import Desugarable (desug)
-import Dict (get)
+import Dict (Dict, filterKeys, get, mapWithKey)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class (class MonadEffect)
@@ -44,13 +44,18 @@ type FigSpec =
    { divId :: HTMLId
    , imports :: Array String
    , file :: File
-   , xs :: Array Var -- variables to be considered "inputs"
+   , ins :: Array Var -- variables to be considered "inputs"
    }
+
+data Direction = LinkedInputs | LinkedOutputs
 
 type Fig =
    { spec :: FigSpec
-   , s0 :: Raw S.Expr -- program that was originally "split"
+   , s :: Raw S.Expr
    , gc :: GraphEval GraphImpl
+   , in_ :: Env 𝔹 × Expr 𝔹
+   , out :: Val 𝔹
+   , dir :: Direction
    }
 
 type LinkedOutputsFigSpec =
@@ -121,9 +126,9 @@ drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
    v1' × v2' × v0 <- linkedOutputsResult fig δv
    let δv1 × δv2 = split δv
    sequence_ $ uncurry3 (drawView divId) <$>
-      [ 2 × ((δv1 >>> _) >>> Left >>> drawLinkedOutputsFig fig) × view "left view" (v1' <#> toSel)
-      , 0 × ((δv2 >>> _) >>> Right >>> drawLinkedOutputsFig fig) × view "right view" (v2' <#> toSel)
-      , 1 × doNothing × view "common data" (v0 <#> toSel)
+      [ "2" × ((δv1 >>> _) >>> Left >>> drawLinkedOutputsFig fig) × view "left view" (v1' <#> toSel)
+      , "0" × ((δv2 >>> _) >>> Right >>> drawLinkedOutputsFig fig) × view "right view" (v2' <#> toSel)
+      , "1" × doNothing × view "common data" (v0 <#> toSel)
       ]
 
 drawLinkedOutputsFigWithCode :: LinkedOutputsFig -> Effect Unit
@@ -140,22 +145,53 @@ drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
    v1' × v2' × v0 <- linkedInputsResult fig δv
    let δv1 × δv2 = split δv
    sequence_ $ uncurry3 (drawView divId) <$>
-      [ 0 × doNothing × view "common output" (v0 <#> toSel)
-      , 2 × ((δv1 >>> _) >>> Left >>> drawLinkedInputsFig fig) × view x1 (v1' <#> toSel)
-      , 1 × ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) × view x2 (v2' <#> toSel)
+      [ "0" × doNothing × view "common output" (v0 <#> toSel)
+      , "2" × ((δv1 >>> _) >>> Left >>> drawLinkedInputsFig fig) × view x1 (v1' <#> toSel)
+      , "1" × ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) × view x2 (v2' <#> toSel)
       ]
-
-drawFig :: Fig -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId } } δv = do
-   v_view × views <- figViews fig δv
-   sequence_ $
-      uncurry (flip (drawView divId) doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (length views) ((δv >>> _) >>> drawFig fig) v_view
 
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig = do
-   drawFig fig botOf
-   drawCode (prettyP fig.s0) =<< addEditorView (codeMirrorDiv fig.spec.divId)
+   drawFig fig
+   drawCode (prettyP fig.s) =<< addEditorView (codeMirrorDiv fig.spec.divId)
+
+-- Pseudo-variable to use as name of output view.
+output :: String
+output = "output"
+
+drawFig :: Fig -> Effect Unit
+drawFig fig@{ spec: { divId }, in_, out, dir } = do
+   let out_view × in_views = figViews fig
+   sequence_ $ mapWithKey (\x -> drawView divId x (onInSel x)) in_views
+   drawView divId output onOutSel out_view
+   where
+   onOutSel :: Selector Val -> Effect Unit
+   onOutSel δv = drawFig (fig { out = δv out, in_ = in', dir = LinkedOutputs })
+      where
+      -- TODO: replace (expensive) botOf γ by per-variable botOf
+      in' = if dir == LinkedInputs then first botOf in_ else in_
+
+   onInSel :: Var -> Selector Val -> Effect Unit
+   onInSel x δv = drawFig (fig { in_ = first (envVal x δv) in_, out = out', dir = LinkedInputs })
+      where
+      out' = if dir == LinkedOutputs then botOf out else out
+
+-- For an output selection, views of related outputs and mediating inputs. For an input selection, views of
+-- related inputs and mediating outputs. To use relatedInputs/relatedOutputs operators directly requires #892
+-- (to provide MeetSemilattice instance for Env).
+figViews :: Fig -> View × Dict View
+figViews { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
+   view output (asSel <$> out <*> out') ×
+      mapWithKey (\x _ -> view x (toSel <$> get x γ)) (γ # filterKeys (_ `elem` ins))
+   where
+   γ × e = (unwrap gc).bwd out
+   out' = (unwrap (dual gc)).bwd (γ × e)
+figViews { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
+   view output (toSel <$> out) ×
+      mapWithKey (\x _ -> view x (asSel <$> get x γ <*> get x γ')) (γ # filterKeys (_ `elem` ins))
+   where
+   out = (unwrap (dual gc)).bwd (γ × e)
+   γ' × _ = (unwrap gc).bwd out
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
@@ -164,18 +200,6 @@ drawCode s ed =
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
-
--- For an output selection, views of related outputs and mediating inputs.
-figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
-figViews { spec: { xs }, gc: { gc, vα } } δv =
-   (view "output" v' × _) <$> sequence (flip varView γ <$> xs)
-   where
-   v1 = δv (botOf vα)
-   γ × e = (unwrap gc).bwd v1
-   v' = asSel <$> v1 <*> (unwrap $ dual gc).bwd (γ × e)
-
-varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
-varView x γ = view x <$> (lookup x γ # orElse absurd <#> (_ <#> toSel))
 
 asSel :: 𝔹 -> 𝔹 -> Sel
 asSel false false = None
@@ -224,11 +248,11 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file } = do
-   s0 <- open file
-   e <- desug s0
+   s <- open file
+   e <- desug s
    gconfig <- prelude >>= modules (File <$> imports) >>= initialConfig e
    gc <- graphGC gconfig e
-   pure { spec, s0, gc }
+   pure { spec, s, gc, in_: botOf gc.γα × topOf e, out: botOf gc.vα, dir: LinkedOutputs }
 
 loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
 loadLinkedInputsFig spec@{ file } = do
@@ -259,3 +283,9 @@ loadLinkedOutputsFig spec@{ imports, dataFile, file1, file2, x } = do
    t2 × v2 <- eval γ e2 bot
    let v0 = get x γ
    pure { spec, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFileStr }
+
+-- ======================
+-- boilerplate
+-- ======================
+
+derive instance Eq Direction

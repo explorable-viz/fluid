@@ -3,7 +3,7 @@ module App.ScatterPlot where
 import Prelude
 
 import App.Util (class Reflect, Renderer, Handler, from, get_intOrNumber, record)
-import App.Util.Select (constrArg, field, listElement)
+import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cScatterPlot, f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel)
 import Dict (Dict, get)
