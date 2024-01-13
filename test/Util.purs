@@ -23,10 +23,10 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, (×), throw)
+import Util (type (×), AffError, EffectError, Thunk, Endo, check, checkSatisfies, debug, spyWhen, throw, (×))
 import Val (class Ann, Val)
 
-type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
+type Selector f = Endo (f 𝔹) -- modifies selection state
 
 type SelectionSpec =
    { δv :: Selector Val

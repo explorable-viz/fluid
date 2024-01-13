@@ -13,7 +13,7 @@ import Data.Either (Either(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (snd)
+import Data.Tuple (curry, snd)
 import Desugarable (desug)
 import Dict (filterKeys, get, mapWithKey)
 import Effect (Effect)
@@ -34,7 +34,7 @@ import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), AffError, Endo, absurd, error, orElse, singleton, uncurry3, (×))
+import Util (type (+), type (×), AffError, Endo, absurd, orElse, singleton, uncurry3, (×))
 import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
@@ -168,8 +168,8 @@ selectOutput δv fig@{ dir, in_, out } = fig
    , dir = LinkedOutputs
    }
 
-selectInput :: Var -> Selector Val -> Endo Fig
-selectInput x δv fig@{ dir, in_, out } = fig
+selectInput :: Bind (Selector Val) -> Endo Fig
+selectInput (x ↦ δv) fig@{ dir, in_, out } = fig
    { in_ = first (envVal x δv) in_
    , out = if dir == LinkedOutputs then botOf out else out
    , dir = LinkedInputs
@@ -178,7 +178,7 @@ selectInput x δv fig@{ dir, in_, out } = fig
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
    let out_view × in_views = figResult fig # (view output *** mapWithKey view)
-   sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (selectInput x) fig)) in_views
+   sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
 
 figResult :: Fig -> Val Sel × Env Sel
@@ -190,9 +190,6 @@ figResult { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    (toSel <$> out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` ins))
    where
    (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
-
-linkedInputsResult2 :: forall m. MonadEffect m => MonadError Error m => Fig -> Bind (Selector Val) -> m (Env 𝔹 × Expr 𝔹)
-linkedInputsResult2 = error "todo"
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =

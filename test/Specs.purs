@@ -477,5 +477,5 @@ linkedInputs_cases =
    , linkedInputs_spec5
    ]
 
-linkedInputs_cases' :: Array TestLinkedInputsSpec2
-linkedInputs_cases' = []
+linkedInputs_cases2 :: Array TestLinkedInputsSpec2
+linkedInputs_cases2 = []
