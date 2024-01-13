@@ -160,22 +160,26 @@ drawFigWithCode fig = do
 output :: String
 output = "output"
 
-drawFig :: Fig -> Effect Unit
-drawFig fig@{ spec: { divId }, in_, out, dir } = do
-   let out_view × in_views = figViews fig
-   sequence_ $ mapWithKey (\x -> drawView divId x (onInSel x)) in_views
-   drawView divId output onOutSel out_view
-   where
-   onOutSel :: Selector Val -> Effect Unit
-   onOutSel δv = drawFig (fig { out = δv out, in_ = in', dir = LinkedOutputs })
-      where
-      -- TODO: replace (expensive) botOf γ by per-variable botOf
-      in' = if dir == LinkedInputs then first botOf in_ else in_
+-- TODO: replace (expensive) botOf γ by per-variable botOf
+selectOutput :: Selector Val -> Endo Fig
+selectOutput δv fig@{ dir, in_, out } = fig
+   { out = δv out
+   , in_ = if dir == LinkedInputs then first botOf in_ else in_
+   , dir = LinkedOutputs
+   }
 
-   onInSel :: Var -> Selector Val -> Effect Unit
-   onInSel x δv = drawFig (fig { in_ = first (envVal x δv) in_, out = out', dir = LinkedInputs })
-      where
-      out' = if dir == LinkedOutputs then botOf out else out
+selectInput :: Var -> Selector Val -> Endo Fig
+selectInput x δv fig@{ dir, in_, out } = fig
+   { in_ = first (envVal x δv) in_
+   , out = if dir == LinkedOutputs then botOf out else out
+   , dir = LinkedInputs
+   }
+
+drawFig :: Fig -> Effect Unit
+drawFig fig@{ spec: { divId } } = do
+   let out_view × in_views = figViews fig
+   sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (selectInput x) fig)) in_views
+   drawView divId output (drawFig <<< flip selectOutput fig) out_view
 
 figViews :: Fig -> View × Dict View
 figViews { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
@@ -188,6 +192,9 @@ figViews { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
       mapWithKey (\x _ -> view x (asSel <$> get x γ <*> get x γ')) (γ # filterKeys (_ `elem` ins))
    where
    (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
+
+linkedInputsResult2 :: forall m. MonadEffect m => MonadError Error m => Fig -> Bind (Selector Val) -> m (Env 𝔹 × Expr 𝔹)
+linkedInputsResult2 = error "todo"
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
@@ -241,9 +248,6 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
       v <- lookup x γ' # orElse absurd
       v' <- lookup x' γ'' # orElse absurd
       pure { v, v', v0 }
-
-linkedInputsResult2 :: forall m. MonadEffect m => MonadError Error m => Fig -> Bind (Selector Val) -> m (Env 𝔹 × Expr 𝔹)
-linkedInputsResult2 = error "todo"
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file, datasets } = do
