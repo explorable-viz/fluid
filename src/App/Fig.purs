@@ -26,7 +26,7 @@ import EvalBwd (evalBwd)
 import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
-import GaloisConnection (relatedInputs, relatedOutputs)
+import GaloisConnection (dual)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, loadFile, loadProgCxt, open)
@@ -177,17 +177,22 @@ drawFig fig@{ spec: { divId }, in_, out, dir } = do
       where
       out' = if dir == LinkedOutputs then botOf out else out
 
+-- For an output selection, views of related outputs and mediating inputs. For an input selection, views of
+-- related inputs and mediating outputs. To use relatedInputs/relatedOutputs operators directly requires #892
+-- (to provide MeetSemilattice instance for Env).
 figViews :: Fig -> View × Dict View
 figViews { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
    view output (asSel <$> out <*> out') ×
       mapWithKey (\x _ -> view x (toSel <$> get x γ)) (γ # filterKeys (_ `elem` ins))
    where
-   out' × γ × _ = (unwrap (relatedOutputs gc)).fwd out
+   γ × e = (unwrap gc).bwd out
+   out' = (unwrap (dual gc)).bwd (γ × e)
 figViews { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    view output (toSel <$> out) ×
       mapWithKey (\x _ -> view x (asSel <$> get x γ <*> get x γ')) (γ # filterKeys (_ `elem` ins))
    where
-   (γ' × _) × out = (unwrap (relatedInputs gc)).fwd (γ × e)
+   out = (unwrap (dual gc)).bwd (γ × e)
+   γ' × _ = (unwrap gc).bwd out
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
