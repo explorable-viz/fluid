@@ -104,7 +104,7 @@ linkedInputsTest { spec, δv, v'_expect } = do
 
 linkedInputsTest2 :: TestLinkedInputsSpec2 -> Aff Unit
 linkedInputsTest2 { spec, δ_in, in_expect } = do
-   _ × γ <- loadFig spec <#> selectInput δ_in >>> figResult
+   _ × γ <- loadFig (spec { file = spec.file }) <#> selectInput δ_in >>> figResult
    checkEq "selected" "expected" ((to𝔹 <$> _) <$> γ) (in_expect (botOf γ))
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
@@ -115,7 +115,7 @@ linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)
 linkedInputsSuite2 :: Array TestLinkedInputsSpec2 -> Array (String × Aff Unit)
 linkedInputsSuite2 specs = specs <#> (name &&& linkedInputsTest2)
    where
-   name { spec } = "linked-inputs/" <> unwrap spec.file
+   name { spec } = unwrap spec.file
 
 loadLinkedInputsTest :: TestLinkedInputsSpec -> Aff (LinkedInputsFig × (Selector Val + Selector Val))
 loadLinkedInputsTest { spec, δv } = (_ × δv) <$> loadLinkedInputsFig spec

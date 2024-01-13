@@ -2,7 +2,7 @@ module Test.Specs where
 
 import Prelude
 
-import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
+import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, envVal, field, listCell, listElement, matrixElement)
 import Bind ((↦))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -422,7 +422,7 @@ linkedInputs_spec1' =
         , ins: [ "countries", "cities" ]
         }
    , δ_in: "countries" ↦ listElement 0 (field "farms" neg)
-   , in_expect: botOf
+   , in_expect: envVal "countries" (listElement 0 (field "farms" neg)) >>> envVal "cities" botOf
    }
 
 linkedInputs_spec2 :: TestLinkedInputsSpec
@@ -483,8 +483,7 @@ linkedInputs_spec5 =
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
-   [ linkedInputs_spec1
-   , linkedInputs_spec2
+   [ linkedInputs_spec2
    , linkedInputs_spec3
    , linkedInputs_spec4
    , linkedInputs_spec5
