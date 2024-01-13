@@ -16,7 +16,7 @@ import Data.Traversable (sequence)
 import Dict ((\\), (∪), intersectionWith, unionWith) as D
 import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
 import Effect.Exception (Error)
-import Util (type (×), Endo, assert, successfulWith, throw, (×))
+import Util (type (×), Endo, assert, shapeMismatch, successfulWith, throw, (×))
 import Util.Pair (Pair(..))
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
@@ -150,7 +150,7 @@ instance JoinSemilattice a => JoinSemilattice (List a) where
    join xs = definedJoin xs
    maybeJoin xs ys
       | (length xs :: Int) == length ys = sequence (zipWith maybeJoin xs ys)
-      | otherwise = throw "Mismatched list lengths"
+      | otherwise = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
    join = D.unionWith (∨) -- faster than definedJoin
@@ -166,7 +166,7 @@ instance JoinSemilattice a => JoinSemilattice (Array a) where
    join xs = definedJoin xs
    maybeJoin xs ys
       | length xs == (length ys :: Int) = sequence (A.zipWith maybeJoin xs ys)
-      | otherwise = throw "Mismatched array lengths"
+      | otherwise = shapeMismatch unit
 
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
 
