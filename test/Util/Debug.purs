@@ -14,7 +14,7 @@ tracing =
    { runWithGraphT: false
    , graphBwdSlice: false
    , graphFwdSlice: false
-   , checkEq: false
+   , checkEq: true
    , bwdSelection: false
    , fwdAfterBwd: false
    }
