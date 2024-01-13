@@ -2,7 +2,6 @@ module Test.Util where
 
 import Prelude hiding ((-), absurd)
 
-import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -10,14 +9,13 @@ import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst, snd)
-import Dict as D
 import Desug (Desugaring, desugGC)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), (***), dual)
-import Lattice (Raw, 𝔹, botOf, erase, topOf, (-))
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, 𝔹, botOf, erase, topOf, (-))
 import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
@@ -26,7 +24,7 @@ import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, (×), throw)
-import Val (class Ann, Val, Env)
+import Val (class Ann, Val)
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 
@@ -128,7 +126,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    in1 <- graphBenchmark benchNames.bwdDlFwdOp \_ -> pure (evalG_op.fwd out0)
    in2 <- graphBenchmark benchNames.bwdDlCmp \_ -> pure (evalG_dual.fwd out0)
    when testing.bwdDuals $ do
-      checkEqEnv benchNames.bwdDlFwdOp benchNames.bwdDlCmp (fst in1) (fst in2)
+      checkEq benchNames.bwdDlFwdOp benchNames.bwdDlCmp (fst in1) (fst in2)
       checkEq benchNames.bwdDlFwdOp benchNames.bwdDlCmp (snd in1) (snd in2)
    void $ graphBenchmark benchNames.bwdAll \_ -> pure (evalG.bwd (topOf vα))
 
@@ -142,18 +140,11 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    when testing.naiveFwd $
       checkEq "Naive fwd" "Direct fwd" out4 out1
 
-checkEq :: forall m f. Apply f => Eq (f 𝔹) => Pretty (f 𝔹) => MonadError Error m => String -> String -> f 𝔹 -> f 𝔹 -> m Unit
+checkEq :: forall m a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => MonadError Error m => String -> String -> a -> a -> m Unit
 checkEq op1 op2 x y = do
    let report = flip (spyWhen tracing.checkEq) prettyP
-   check (report (op1 <> " minus " <> op2) (x `lift2 (-)` y) == botOf x) (op1 <> " <= " <> op2)
-   check (report (op2 <> " minus " <> op1) (y `lift2 (-)` x) == botOf x) (op2 <> " <= " <> op1)
-
--- TODO: subsume with above (although see #892).
-checkEqEnv :: forall m. MonadError Error m => String -> String -> Env 𝔹 -> Env 𝔹 -> m Unit
-checkEqEnv op1 op2 γ γ' = do
-   let report = flip (spyWhen tracing.checkEq) prettyP
-   check (report (op1 <> " minus " <> op2) (γ `D.lift2 (-)` γ') == botOf γ) (op1 <> " <= " <> op2)
-   check (report (op2 <> " minus " <> op1) (γ' `D.lift2 (-)` γ) == botOf γ) (op2 <> " <= " <> op1)
+   check (report (op1 <> " minus " <> op2) (x - y) == botOf x) (op1 <> " <= " <> op2)
+   check (report (op2 <> " minus " <> op1) (y - x) == botOf x) (op2 <> " <= " <> op1)
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do

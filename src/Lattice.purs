@@ -52,7 +52,7 @@ relativeComplement a = neg >>> (_ ∧ a)
 
 instance JoinSemilattice Boolean where
    join = (||)
-   maybeJoin x y = pure (join x y)
+   maybeJoin x y = pure (x ∨ y)
 
 instance MeetSemilattice Boolean where
    meet = (&&)
@@ -70,7 +70,7 @@ instance Neg Boolean where
 
 instance JoinSemilattice Unit where
    join _ = identity
-   maybeJoin x y = pure (join x y)
+   maybeJoin x y = pure (x ∨ y)
 
 instance MeetSemilattice Unit where
    meet _ = identity
@@ -123,6 +123,8 @@ instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) wher
 
 instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) where
    meet (a × a') (b × b') = meet a b × meet a' b'
+else instance MeetSemilattice a => MeetSemilattice (Dict a) where
+   meet = D.unionWith (∧)
 else instance (Functor f, Apply f, MeetSemilattice a) => MeetSemilattice (f a) where
    meet a = (a `lift2 (∧)` _)
 

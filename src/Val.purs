@@ -221,6 +221,7 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
 
    join v = definedJoin v
 
+-- Why not maybeJoin x y = sequence (maybeJoin <$> x <*> y)?
 instance JoinSemilattice a => JoinSemilattice (BaseVal a) where
    maybeJoin (Int n) (Int n') = Int <$> (n ≞ n')
    maybeJoin (Float n) (Float n') = Float <$> (n ≞ n')
