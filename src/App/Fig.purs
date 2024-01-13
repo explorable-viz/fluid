@@ -182,12 +182,12 @@ figViews { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
    view output (asSel <$> out <*> out') ×
       mapWithKey (\x _ -> view x (toSel <$> get x γ)) (γ # filterKeys (_ `elem` ins))
    where
-   out' × γ × _ = (unwrap (relatedOutputs gc)).fwd out
+   out' × γ × _ = (unwrap (relatedOutputs gc)).bwd out
 figViews { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    view output (toSel <$> out) ×
       mapWithKey (\x _ -> view x (asSel <$> get x γ <*> get x γ')) (γ # filterKeys (_ `elem` ins))
    where
-   (γ' × _) × out = (unwrap (relatedInputs gc)).fwd (γ × e)
+   (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
