@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Lattice (neg)
 import Module (File(..))
-import Test.Specs (linkedInputs_spec3, linkedInputs_spec4, linkedInputs_spec5)
+import Test.Specs (linkedInputs_spec3, linkedInputs_spec5)
 import Test.Util.Suite (TestLinkedInputsSpec, linkedInputsTest2)
 
 linkedInputs_spec6 :: TestLinkedInputsSpec
@@ -29,6 +29,6 @@ linkedInputs_spec6 =
 main :: Effect Unit
 main = runAffs_ drawFig $ linkedInputsTest2 <$>
    [ linkedInputs_spec3
-   , linkedInputs_spec4
+   --   , linkedInputs_spec4
    , linkedInputs_spec5
    ]
