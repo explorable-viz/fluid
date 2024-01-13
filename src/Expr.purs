@@ -125,7 +125,7 @@ instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
       ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
-   maybeJoin _ _ = throw "Incompatible eliminators"
+   maybeJoin _ _ = shapeMismatch unit
 
    join σ = definedJoin σ
 
@@ -133,13 +133,13 @@ instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
    expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
    expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
-   expand _ _ = error "Incompatible eliminators"
+   expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
    maybeJoin ContNone ContNone = pure ContNone
    maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
-   maybeJoin _ _ = throw "Incompatible continuations"
+   maybeJoin _ _ = shapeMismatch unit
 
    join κ = definedJoin κ
 
@@ -147,7 +147,7 @@ instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
    expand ContNone ContNone = ContNone
    expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
    expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
-   expand _ _ = error "Incompatible continuations"
+   expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (VarDef a) where
    join def = definedJoin def
@@ -179,7 +179,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
-   maybeJoin _ _ = throw "Incompatible expressions"
+   maybeJoin _ _ = shapeMismatch unit
 
    join e = definedJoin e
 
@@ -199,7 +199,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
-   expand _ _ = error "Incompatible expressions"
+   expand _ _ = shapeMismatch unit
 
 -- ======================
 -- boilerplate
