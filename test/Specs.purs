@@ -7,7 +7,7 @@ import Bind ((↦))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
-import Lattice (botOf, neg)
+import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec2)
 
@@ -417,8 +417,8 @@ linkedInputs_spec1 =
               )
    }
 
-linkedInputs_spec2' :: TestLinkedInputsSpec2
-linkedInputs_spec2' =
+linkedInputs_spec2 :: TestLinkedInputsSpec2
+linkedInputs_spec2 =
    { spec:
         { divId: "fig-2"
         , imports: []
@@ -429,21 +429,13 @@ linkedInputs_spec2' =
    , δ_in: "cities" ↦ listElement 3 (field "water" neg)
         >>> listElement 4 (field "water" neg)
         >>> listElement 5 (field "water" neg)
-   , in_expect: botOf
-   }
-
-linkedInputs_spec2 :: TestLinkedInputsSpec
-linkedInputs_spec2 =
-   { spec:
-        { divId: "fig-2"
-        , file: File "water"
-        , x1: "cities"
-        , x1File: File "cities"
-        , x2: "countries"
-        , x2File: File "countries"
-        }
-   , δv: Left $ listElement 3 (field "water" neg) >>> listElement 4 (field "water" neg) >>> listElement 5 (field "water" neg)
-   , v'_expect: Just "({farms : 250, name : \"Germany\", popMil : 81} : ({farms : ⸨200⸩, name : \"UK\", popMil : ⸨67⸩} : ({farms : 150, name : \"Bulgaria\", popMil : 7} : ({farms : 220, name : \"Poland\", popMil : 38} : ({farms : 270, name : \"Turkey\", popMil : 85} : [])))))"
+   , in_expect:
+        envVal "countries" (listElement 1 (field "farms" neg >>> field "popMil" neg))
+           >>> envVal "cities"
+              ( listElement 3 (field "water" neg)
+                   >>> listElement 4 (field "water" neg)
+                   >>> listElement 5 (field "water" neg)
+              )
    }
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
@@ -498,5 +490,5 @@ linkedInputs_cases =
 linkedInputs_cases2 :: Array TestLinkedInputsSpec2
 linkedInputs_cases2 =
    [ linkedInputs_spec1
-   , linkedInputs_spec2'
+   , linkedInputs_spec2
    ]
