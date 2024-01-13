@@ -5,17 +5,17 @@ import Prelude hiding (absurd)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (HTMLId, Sel, asSel, doNothing, toSel)
 import App.Util.Selector (envVal)
-import App.View (View, drawView, view)
+import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (elem)
 import Data.Either (Either(..))
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (first)
+import Data.Profunctor.Strong (first, (***))
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd)
 import Desugarable (desug)
-import Dict (Dict, filterKeys, get, mapWithKey)
+import Dict (filterKeys, get, mapWithKey)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class (class MonadEffect)
@@ -177,29 +177,17 @@ selectInput x δv fig@{ dir, in_, out } = fig
 
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
-   let out_view × in_views = figViews fig
+   let out_view × in_views = figResult fig # (view output *** mapWithKey view)
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (selectInput x) fig)) in_views
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
 
-figBlah :: Fig -> Val Sel × Env Sel
-figBlah { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
+figResult :: Fig -> Val Sel × Env Sel
+figResult { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
    (asSel <$> out <*> out') × map (toSel <$> _) (γ # filterKeys (_ `elem` ins))
    where
    out' × γ × _ = (unwrap (relatedOutputs gc)).bwd out
-figBlah { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
+figResult { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    (toSel <$> out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` ins))
-   where
-   (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
-
-figViews :: Fig -> View × Dict View
-figViews { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
-   view output (asSel <$> out <*> out') ×
-      mapWithKey (\x v -> view x (toSel <$> v)) (γ # filterKeys (_ `elem` ins))
-   where
-   out' × γ × _ = (unwrap (relatedOutputs gc)).bwd out
-figViews { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
-   view output (toSel <$> out) ×
-      mapWithKey (\x v -> view x (asSel <$> get x γ <*> v)) (γ' # filterKeys (_ `elem` ins))
    where
    (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
 
