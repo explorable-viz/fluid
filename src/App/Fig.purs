@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (HTMLId, Sel(..), doNothing, toSel)
+import App.Util (HTMLId, Sel, asSel, doNothing, toSel)
 import App.Util.Selector (envVal)
 import App.View (View, drawView, view)
 import Bind (Bind, Var, (↦))
@@ -181,15 +181,25 @@ drawFig fig@{ spec: { divId } } = do
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (selectInput x) fig)) in_views
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
 
+figBlah :: Fig -> Val Sel × Env 𝔹
+figBlah { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
+   (asSel <$> out <*> out') × (γ # filterKeys (_ `elem` ins))
+   where
+   out' × γ × _ = (unwrap (relatedOutputs gc)).bwd out
+figBlah { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
+   (toSel <$> out) × (γ' # filterKeys (_ `elem` ins))
+   where
+   (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
+
 figViews :: Fig -> View × Dict View
 figViews { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
    view output (asSel <$> out <*> out') ×
-      mapWithKey (\x _ -> view x (toSel <$> get x γ)) (γ # filterKeys (_ `elem` ins))
+      mapWithKey (\x v -> view x (toSel <$> v)) (γ # filterKeys (_ `elem` ins))
    where
    out' × γ × _ = (unwrap (relatedOutputs gc)).bwd out
 figViews { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    view output (toSel <$> out) ×
-      mapWithKey (\x _ -> view x (asSel <$> get x γ <*> get x γ')) (γ # filterKeys (_ `elem` ins))
+      mapWithKey (\x v -> view x (asSel <$> get x γ <*> v)) (γ' # filterKeys (_ `elem` ins))
    where
    (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
 
@@ -203,12 +213,6 @@ drawCode s ed =
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
-
-asSel :: 𝔹 -> 𝔹 -> Sel
-asSel false false = None
-asSel false true = Secondary
-asSel true false = Primary -- "costless output", but ignore those for now
-asSel true true = Primary
 
 linkedOutputsResult :: forall m. MonadError Error m => LinkedOutputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
 linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =

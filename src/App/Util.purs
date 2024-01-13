@@ -6,6 +6,7 @@ import Bind (Var)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)
+import Data.Tuple (uncurry)
 import DataType (cCons, cNil)
 import Dict (Dict, get)
 import Effect (Effect)
@@ -13,7 +14,7 @@ import Lattice (𝔹)
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Test.Util (Selector)
-import Util (type (×))
+import Util (type (×), dup)
 import Val (BaseVal(..), Val(..))
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
@@ -31,8 +32,13 @@ to𝔹 Primary = true
 to𝔹 Secondary = false
 
 toSel :: 𝔹 -> Sel
-toSel false = None
-toSel true = Primary
+toSel = dup >>> uncurry asSel
+
+asSel :: 𝔹 -> 𝔹 -> Sel
+asSel false false = None
+asSel false true = Secondary
+asSel true false = Primary -- "costless output", but ignore those for now
+asSel true true = Primary
 
 doNothing :: OnSel
 doNothing = const $ pure unit
