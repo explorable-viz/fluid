@@ -7,7 +7,7 @@ import Bind ((↦))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
-import Lattice (neg)
+import Lattice (botOf, neg)
 import Module (File(..))
 import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec2)
 
@@ -412,6 +412,19 @@ linkedInputs_spec1 =
    , v'_expect: Just "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : ({country : \"Bulgaria\", name : \"Sofia\", water : 55} : ({country : \"Poland\", name : \"Warsaw\", water : 65} : ({country : \"Turkey\", name : \"Istanbul\", water : 375} : [])))))))))"
    }
 
+linkedInputs_spec1' :: TestLinkedInputsSpec2
+linkedInputs_spec1' =
+   { spec:
+        { divId: "fig-1"
+        , imports: []
+        , datasets: [ "countries" ↦ "countries", "cities" ↦ "cities" ]
+        , file: File "water"
+        , ins: [ "countries", "cities" ]
+        }
+   , δ_in: "countries" ↦ listElement 0 (field "farms" neg)
+   , in_expect: botOf
+   }
+
 linkedInputs_spec2 :: TestLinkedInputsSpec
 linkedInputs_spec2 =
    { spec:
@@ -478,4 +491,6 @@ linkedInputs_cases =
    ]
 
 linkedInputs_cases2 :: Array TestLinkedInputsSpec2
-linkedInputs_cases2 = []
+linkedInputs_cases2 =
+   [ linkedInputs_spec1'
+   ]

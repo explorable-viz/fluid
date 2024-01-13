@@ -10,7 +10,6 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
-import Expr (Expr)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile, loadProgCxt)
 import Test.Benchmark.Util (BenchRow)
@@ -56,7 +55,7 @@ type TestLinkedInputsSpec =
 type TestLinkedInputsSpec2 =
    { spec :: FigSpec
    , δ_in :: Bind (Selector Val)
-   , in_expect :: Selector Env × Selector Expr
+   , in_expect :: Selector Env
    }
 
 suite :: Array TestSpec -> BenchSuite
@@ -104,9 +103,9 @@ linkedInputsTest { spec, δv, v'_expect } = do
       _ -> pure unit
 
 linkedInputsTest2 :: TestLinkedInputsSpec2 -> Aff Unit
-linkedInputsTest2 { spec, δ_in, in_expect: γ_expect × _ } = do
+linkedInputsTest2 { spec, δ_in, in_expect } = do
    _ × γ <- loadFig spec <#> selectInput δ_in >>> figResult
-   checkEq "selected" "expected" ((to𝔹 <$> _) <$> γ) (γ_expect (botOf γ))
+   checkEq "selected" "expected" ((to𝔹 <$> _) <$> γ) (in_expect (botOf γ))
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)
