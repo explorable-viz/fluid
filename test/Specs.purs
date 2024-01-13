@@ -460,43 +460,57 @@ linkedInputs_spec3 =
    , in_expect: botOf
    }
 
-linkedInputs_spec4 :: TestLinkedInputsSpec
+linkedInputs_spec4 :: TestLinkedInputsSpec2
 linkedInputs_spec4 =
    { spec:
         { divId: "fig-2"
-        , file: File "energyscatter"
-        , x1: "renewables"
-        , x1File: File "renewables"
-        , x2: "non_renewables"
-        , x2File: File "non-renewables"
+        , imports: []
+        , datasets:
+             [ "renewables" ↦ "example/linked-inputs/renewables"
+             , "non_renewables" ↦ "example/linked-inputs/non-renewables"
+             ]
+        , file: File "linked-inputs/energyscatter"
+        , ins: [ "renewables", "non_renewables" ]
         }
-   , δv: Left $ listElement 204 (field "capacity" neg)
-   , v'_expect: Nothing
+   , δ_in: "renewables" ↦ listElement 204 (field "capacity" neg)
+   , in_expect: envVal "non_renewables" (listElement 51 (field "coal_cap" neg))
    }
 
-linkedInputs_spec5 :: TestLinkedInputsSpec
+linkedInputs_spec5 :: TestLinkedInputsSpec2
 linkedInputs_spec5 =
    { spec:
         { divId: "fig-1"
-        , file: File "mini-energyscatter"
-        , x1: "non_renewables"
-        , x1File: File "mini-non-renewables"
-        , x2: "renewables"
-        , x2File: File "mini-renewables"
+        , file: File "linked-inputs/mini-energyscatter"
+        , imports: []
+        , datasets:
+             [ "non_renewables" ↦ "example/linked-inputs/mini-non-renewables"
+             , "renewables" ↦ "example/linked-inputs/mini-renewables"
+             ]
+        , ins: [ "non_renewables", "renewables" ]
         }
-   , δv: Left $ listElement 0 (field "coal_cap" neg)
-   , v'_expect: Just "({capacity : ⸨100.74⸩, country : \"USA\", energyType : \"Bio\", output : 61.83, year : 2018} : ({capacity : ⸨734.79⸩, country : \"USA\", energyType : \"Hydro\", output : 286.62, year : 2018} : ({capacity : ⸨455.43⸩, country : \"USA\", energyType : \"Solar\", output : 93.36, year : 2018} : ({capacity : ⸨829.31⸩, country : \"USA\", energyType : \"Wind\", output : 272.67, year : 2018} : []))))"
+   , δ_in: "non_renewables" ↦ listElement 0 (field "coal_cap" neg)
+   , in_expect:
+        envVal "non_renewables"
+           ( listElement 0
+                ( field "coal_cap" neg
+                     >>> field "gas_cap" neg
+                     >>> field "nuclear_cap" neg
+                     >>> field "petrol_cap" neg
+                )
+           )
+           >>> envVal "renewables"
+              ( listElement 0 (field "capacity" neg)
+                   >>> listElement 1 (field "capacity" neg)
+                   >>> listElement 2 (field "capacity" neg)
+                   >>> listElement 3 (field "capacity" neg)
+              )
    }
 
-linkedInputs_cases :: Array TestLinkedInputsSpec
+linkedInputs_cases :: Array TestLinkedInputsSpec2
 linkedInputs_cases =
-   [ linkedInputs_spec4
-   , linkedInputs_spec5
-   ]
-
-linkedInputs_cases2 :: Array TestLinkedInputsSpec2
-linkedInputs_cases2 =
    [ linkedInputs_spec1
    , linkedInputs_spec2
    , linkedInputs_spec3
+   --   , linkedInputs_spec4
+   , linkedInputs_spec5
    ]

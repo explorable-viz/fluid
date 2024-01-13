@@ -2,16 +2,15 @@ module ICFP2024 where
 
 import Prelude
 
-import App.Fig (drawLinkedInputsFig, runAffs_)
+import App.Fig (drawFig, runAffs_)
 import App.Util.Selector (field, listElement)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Tuple (uncurry)
 import Effect (Effect)
 import Lattice (neg)
 import Module (File(..))
 import Test.Specs (linkedInputs_spec3, linkedInputs_spec4, linkedInputs_spec5)
-import Test.Util.Suite (TestLinkedInputsSpec, loadLinkedInputsTest)
+import Test.Util.Suite (TestLinkedInputsSpec, linkedInputsTest2)
 
 linkedInputs_spec6 :: TestLinkedInputsSpec
 linkedInputs_spec6 =
@@ -28,9 +27,8 @@ linkedInputs_spec6 =
    }
 
 main :: Effect Unit
-main =
-   runAffs_ (uncurry drawLinkedInputsFig)
-      [ loadLinkedInputsTest linkedInputs_spec5
-      , loadLinkedInputsTest linkedInputs_spec3
-      , loadLinkedInputsTest linkedInputs_spec4
-      ]
+main = runAffs_ drawFig $ linkedInputsTest2 <$>
+   [ linkedInputs_spec3
+   , linkedInputs_spec4
+   , linkedInputs_spec5
+   ]
