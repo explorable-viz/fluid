@@ -181,13 +181,13 @@ drawFig fig@{ spec: { divId } } = do
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (selectInput x) fig)) in_views
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
 
-figBlah :: Fig -> Val Sel × Env 𝔹
+figBlah :: Fig -> Val Sel × Env Sel
 figBlah { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
-   (asSel <$> out <*> out') × (γ # filterKeys (_ `elem` ins))
+   (asSel <$> out <*> out') × map (toSel <$> _) (γ # filterKeys (_ `elem` ins))
    where
    out' × γ × _ = (unwrap (relatedOutputs gc)).bwd out
 figBlah { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
-   (toSel <$> out) × (γ' # filterKeys (_ `elem` ins))
+   (toSel <$> out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` ins))
    where
    (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
 
