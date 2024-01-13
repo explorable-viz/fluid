@@ -417,8 +417,8 @@ linkedInputs_spec1' =
    { spec:
         { divId: "fig-1"
         , imports: []
-        , datasets: [ "countries" ↦ "countries", "cities" ↦ "cities" ]
-        , file: File "water"
+        , datasets: [ "countries" ↦ "example/linked-inputs/countries", "cities" ↦ "example/linked-inputs/cities" ]
+        , file: File "linked-inputs/water"
         , ins: [ "countries", "cities" ]
         }
    , δ_in: "countries" ↦ listElement 0 (field "farms" neg)
