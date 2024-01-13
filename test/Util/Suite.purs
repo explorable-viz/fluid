@@ -2,7 +2,7 @@ module Test.Util.Suite where
 
 import Prelude
 
-import App.Fig (FigSpec, LinkedInputsFig, LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedInputsResult2, linkedOutputsResult, loadFig, loadLinkedInputsFig, loadLinkedOutputsFig)
+import App.Fig (Direction(..), FigSpec, LinkedInputsFig, LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedInputsResult2, linkedOutputsResult, loadFig, loadLinkedInputsFig, loadLinkedOutputsFig)
 import Bind (Bind, (↦))
 import Data.Either (isLeft)
 import Data.Maybe (Maybe(..))
@@ -104,7 +104,7 @@ linkedInputsTest { spec, δv, v'_expect } = do
 
 linkedInputsTest2 :: TestLinkedInputsSpec2 -> Aff Unit
 linkedInputsTest2 { spec, δ_in, in_expect: γ_expect × _ } = do
-   γ × _ <- loadFig spec >>= flip linkedInputsResult2 δ_in
+   γ × _ <- loadFig spec <#> (_ { dir = LinkedInputs}) >>= flip linkedInputsResult2 δ_in
    checkEq "selected" "expected" γ (γ_expect (botOf γ))
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
