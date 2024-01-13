@@ -6,7 +6,7 @@ import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong ((***)) as Strong
 import Data.Tuple (fst, snd) as Tuple
 import Data.Tuple (uncurry)
-import Lattice (class BooleanLattice, class BoundedMeetSemilattice, class MeetSemilattice, class Neg, neg, top, (∧))
+import Lattice (class BoundedMeetSemilattice, class MeetSemilattice, class Neg, neg, top, (∧))
 import Util (Endo, type (×), (×), dup)
 
 newtype GaloisConnection a b = GC { fwd :: a -> b, bwd :: b -> a }
@@ -20,7 +20,7 @@ deMorgan = (neg >>> _) >>> (_ >>> neg)
 dual :: forall a b. Neg a => Neg b => GaloisConnection a b -> GaloisConnection b a
 dual (GC { fwd, bwd }) = GC { fwd: deMorgan bwd, bwd: deMorgan fwd }
 
-relatedInputs :: forall a b. Neg a => BooleanLattice b => GaloisConnection a b -> GaloisConnection a (a × b)
+relatedInputs :: forall a b. Neg a => Neg b => MeetSemilattice b => GaloisConnection a b -> GaloisConnection a (a × b)
 relatedInputs gc = gc >>> diag >>> (dual gc *** identity)
 
 relatedOutputs :: forall a b. Neg a => MeetSemilattice a => Neg b => GaloisConnection a b -> GaloisConnection b (b × a)

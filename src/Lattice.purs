@@ -16,7 +16,7 @@ import Data.Traversable (sequence)
 import Dict ((\\), (∪), intersectionWith, unionWith) as D
 import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
 import Effect.Exception (Error)
-import Util (type (×), Endo, assert, shapeMismatch, successfulWith, throw, (×))
+import Util (type (×), Endo, assert, shapeMismatch, successfulWith, (×))
 import Util.Pair (Pair(..))
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
