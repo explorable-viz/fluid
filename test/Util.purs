@@ -142,9 +142,10 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
 
 checkEq :: forall m a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => MonadError Error m => String -> String -> a -> a -> m Unit
 checkEq op1 op2 x y = do
-   let report = flip (spyWhen tracing.checkEq) prettyP
-   check (report (op1 <> " minus " <> op2) (x - y) == botOf x) (op1 <> " <= " <> op2)
-   check (report (op2 <> " minus " <> op1) (y - x) == botOf x) (op2 <> " <= " <> op1)
+   let x_minus_y = x - y
+   let y_minus_x = y - x
+   check (x_minus_y == botOf x) (op1 <> " but not " <> op2 <> ":\n" <> prettyP x_minus_y)
+   check (y_minus_x == botOf x) (op2 <> " but not " <> op1 <> ":\n" <> prettyP y_minus_x)
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do

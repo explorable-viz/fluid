@@ -29,7 +29,7 @@ data Sel = None | Primary | Secondary
 to𝔹 :: Sel -> 𝔹
 to𝔹 None = false
 to𝔹 Primary = true
-to𝔹 Secondary = false
+to𝔹 Secondary = true
 
 toSel :: 𝔹 -> Sel
 toSel = dup >>> uncurry asSel

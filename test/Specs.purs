@@ -7,7 +7,7 @@ import Bind ((↦))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
-import Lattice (botOf, neg)
+import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec2)
 
@@ -422,7 +422,13 @@ linkedInputs_spec1' =
         , ins: [ "countries", "cities" ]
         }
    , δ_in: "countries" ↦ listElement 0 (field "farms" neg)
-   , in_expect: envVal "countries" (listElement 0 (field "farms" neg)) >>> envVal "cities" botOf
+   , in_expect:
+        envVal "countries" (listElement 0 (field "farms" neg >>> field "popMil" neg))
+           >>> envVal "cities"
+              ( listElement 0 (field "water" neg)
+                   >>> listElement 1 (field "water" neg)
+                   >>> listElement 2 (field "water" neg)
+              )
    }
 
 linkedInputs_spec2 :: TestLinkedInputsSpec
