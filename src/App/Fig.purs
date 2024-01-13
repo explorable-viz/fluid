@@ -34,7 +34,7 @@ import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), AffError, Endo, absurd, orElse, singleton, uncurry3, (×))
+import Util (type (+), type (×), AffError, Endo, absurd, error, orElse, singleton, uncurry3, (×))
 import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
@@ -246,6 +246,9 @@ linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
       v <- lookup x γ' # orElse absurd
       v' <- lookup x' γ'' # orElse absurd
       pure { v, v', v0 }
+
+linkedInputsResult2 :: forall m. MonadEffect m => MonadError Error m => Fig -> Bind (Selector Val) -> m (Env 𝔹 × Expr 𝔹)
+linkedInputsResult2 = error "todo"
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file, datasets } = do

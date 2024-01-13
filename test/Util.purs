@@ -10,13 +10,14 @@ import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst, snd)
+import Dict as D
 import Desug (Desugaring, desugGC)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..), (***), dual)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, 𝔹, botOf, erase, topOf, (-))
+import Lattice (Raw, 𝔹, botOf, erase, topOf, (-))
 import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
@@ -25,7 +26,7 @@ import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, (×), throw)
-import Val (class Ann, Val)
+import Val (class Ann, Val, Env)
 
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 
@@ -112,11 +113,11 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    recordGraphSize g
 
    in0 <- graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd out0)
-   checkEqual "Graph bwd" "Trace bwd" (snd in0) (snd in_e)
+   checkEq "Graph bwd" "Trace bwd" (snd in0) (snd in_e)
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd in0)
-   checkEqual ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
+   checkEq ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
 
    -- Already testing extensional equivalence above, but specifically test this too.
    let out_top' = evalG.fwd in_top
@@ -126,39 +127,33 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let GC evalG_dual = dual (GC evalG)
    in1 <- graphBenchmark benchNames.bwdDlFwdOp \_ -> pure (evalG_op.fwd out0)
    in2 <- graphBenchmark benchNames.bwdDlCmp \_ -> pure (evalG_dual.fwd out0)
-   when testing.bwdDuals $
-      -- checking environments would require more general checkEqual
-      checkEqual benchNames.bwdDlFwdOp benchNames.bwdDlCmp (snd in1) (snd in2)
+   when testing.bwdDuals $ do
+      checkEqEnv benchNames.bwdDlFwdOp benchNames.bwdDlCmp (fst in1) (fst in2)
+      checkEq benchNames.bwdDlFwdOp benchNames.bwdDlCmp (snd in1) (snd in2)
    void $ graphBenchmark benchNames.bwdAll \_ -> pure (evalG.bwd (topOf vα))
 
    out2 <- graphBenchmark benchNames.fwdDlBwdOp \_ -> pure (evalG_op.bwd in0)
    out3 <- graphBenchmark benchNames.fwdDlCmp \_ -> pure (evalG_dual.bwd in0)
    when testing.fwdDuals $
-      checkEqual benchNames.fwdDlBwdOp benchNames.fwdDlCmp out2 out3
+      checkEq benchNames.fwdDlBwdOp benchNames.fwdDlCmp out2 out3
 
    let GC evalG_dual_op = dual (GC evalG_op)
    out4 <- benchmark benchNames.naiveFwd \_ -> pure (evalG_dual_op.fwd in0)
    when testing.naiveFwd $
-      checkEqual "Naive fwd" "Direct fwd" out4 out1
+      checkEq "Naive fwd" "Direct fwd" out4 out1
 
-checkEqual
-   :: forall m f a
-    . Apply f
-   => Eq (f a)
-   => Pretty (f a)
-   => MeetSemilattice a
-   => Neg a
-   => BotOf (f a) (f a)
-   => MonadError Error m
-   => String
-   -> String
-   -> f a
-   -> f a
-   -> m Unit
-checkEqual op1 op2 x y = do
-   let report = flip (spyWhen tracing.checkEqual) prettyP
+checkEq :: forall m f. Apply f => Eq (f 𝔹) => Pretty (f 𝔹) => MonadError Error m => String -> String -> f 𝔹 -> f 𝔹 -> m Unit
+checkEq op1 op2 x y = do
+   let report = flip (spyWhen tracing.checkEq) prettyP
    check (report (op1 <> " minus " <> op2) (x `lift2 (-)` y) == botOf x) (op1 <> " <= " <> op2)
    check (report (op2 <> " minus " <> op1) (y `lift2 (-)` x) == botOf x) (op2 <> " <= " <> op1)
+
+-- TODO: subsume with above (although see #892).
+checkEqEnv :: forall m. MonadError Error m => String -> String -> Env 𝔹 -> Env 𝔹 -> m Unit
+checkEqEnv op1 op2 γ γ' = do
+   let report = flip (spyWhen tracing.checkEq) prettyP
+   check (report (op1 <> " minus " <> op2) (γ `D.lift2 (-)` γ') == botOf γ) (op1 <> " <= " <> op2)
+   check (report (op2 <> " minus " <> op1) (γ' `D.lift2 (-)` γ) == botOf γ) (op2 <> " <= " <> op1)
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do

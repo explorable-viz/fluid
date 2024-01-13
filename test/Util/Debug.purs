@@ -5,7 +5,7 @@ tracing
    :: { runWithGraphT :: Boolean
       , graphBwdSlice :: Boolean
       , graphFwdSlice :: Boolean
-      , checkEqual :: Boolean
+      , checkEq :: Boolean
       , bwdSelection :: Boolean
       , fwdAfterBwd :: Boolean
       }
@@ -14,7 +14,7 @@ tracing =
    { runWithGraphT: false
    , graphBwdSlice: true
    , graphFwdSlice: true
-   , checkEqual: false
+   , checkEq: false
    , bwdSelection: false
    , fwdAfterBwd: false
    }

@@ -2,21 +2,22 @@ module Test.Util.Suite where
 
 import Prelude
 
-import App.Fig (LinkedInputsFigSpec, LinkedOutputsFigSpec, LinkedInputsFig, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
+import App.Fig (FigSpec, LinkedInputsFig, LinkedInputsFigSpec, LinkedOutputsFigSpec, linkedInputsResult, linkedOutputsResult, loadLinkedInputsFig, loadLinkedOutputsFig)
 import Bind (Bind, (↦))
 import Data.Either (isLeft)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
+import Expr (Expr)
 import Module (File(..), Folder(..), loadFile, loadProgCxt)
 import Test.Benchmark.Util (BenchRow)
 import Test.Util (Selector, checkPretty, test)
 import Util (type (+), type (×), (×))
-import Val (Val)
+import Val (Val, Env)
 
 -- benchmarks parameterised on number of iterations
-type BenchSuite = (Int × Boolean) -> Array (String × Aff BenchRow)
+type BenchSuite = Int × Boolean -> Array (String × Aff BenchRow)
 
 type TestSpec =
    { imports :: Array String
@@ -48,6 +49,12 @@ type TestLinkedInputsSpec =
    { spec :: LinkedInputsFigSpec
    , δv :: Selector Val + Selector Val
    , v'_expect :: Maybe String
+   }
+
+type TestLinkedInputsSpec2 =
+   { spec :: FigSpec
+   , δ_in :: Bind (Selector Val)
+   , in_expect :: Selector Env × Selector Expr
    }
 
 suite :: Array TestSpec -> BenchSuite
@@ -94,10 +101,26 @@ linkedInputsTest { spec, δv, v'_expect } = do
       Just v' -> checkPretty "linked input" v' (if isLeft δv then v2' else v1')
       _ -> pure unit
 
+{-
+linkedInputsTest2 :: TestLinkedInputsSpec2 -> Aff Unit
+linkedInputsTest2 { spec, δ_in, in_expect: γ_expect × e_expect } = do
+   γ × e <- loadFig spec >>= flip linkedInputsResult2 δ_in
+   let v = get "blah" γ
+       v' = get "blah" (γ_expect (botOf γ))
+   checkEq "" "" v v'
+--   let q = (γ `flip mapWithKey` \x -> let v = get x γ in checkEqual "selected" "expected" v (get x (γ_expect (botOf γ)))) :: Dict _
+   pure unit
+-}
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
 linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)
    where
    name { spec } = "linked-inputs/" <> unwrap spec.file
 
+{-
+linkedInputsSuite2 :: Array TestLinkedInputsSpec2 -> Array (String × Aff Unit)
+linkedInputsSuite2 specs = specs <#> (name &&& linkedInputsTest2)
+   where
+   name { spec } = "linked-inputs/" <> unwrap spec.file
+-}
 loadLinkedInputsTest :: TestLinkedInputsSpec -> Aff (LinkedInputsFig × (Selector Val + Selector Val))
 loadLinkedInputsTest { spec, δv } = (_ × δv) <$> loadLinkedInputsFig spec

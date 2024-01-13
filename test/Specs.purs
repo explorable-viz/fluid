@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (neg)
 import Module (File(..))
-import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
+import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec2)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -476,3 +476,6 @@ linkedInputs_cases =
    , linkedInputs_spec4
    , linkedInputs_spec5
    ]
+
+linkedInputs_cases' :: Array TestLinkedInputsSpec2
+linkedInputs_cases' = []
