@@ -18,7 +18,6 @@ import Desugarable (desug)
 import Dict (filterKeys, get, mapWithKey)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
-import Effect.Class (class MonadEffect)
 import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
@@ -45,7 +44,7 @@ type FigSpec =
    , imports :: Array String
    , datasets :: Array (Bind String)
    , file :: File
-   , ins :: Array Var -- variables to be considered "inputs"
+   , inputs :: Array Var
    }
 
 data Direction = LinkedInputs | LinkedOutputs
@@ -81,24 +80,6 @@ type LinkedOutputsFig =
    , v2 :: Val 𝔹
    , v0 :: Val 𝔹 -- common data named by spec.x
    , dataFileStr :: String -- TODO: provide surface expression instead and prettyprint
-   }
-
-type LinkedInputsFigSpec =
-   { divId :: HTMLId
-   , file :: File
-   , x1 :: Var
-   , x1File :: File -- variables to be considered "inputs"
-   , x2 :: Var
-   , x2File :: File
-   }
-
-type LinkedInputsFig =
-   { spec :: LinkedInputsFigSpec
-   , γ :: Env 𝔹
-   , s :: S.Expr 𝔹
-   , e :: Expr 𝔹
-   , t :: Trace
-   , v0 :: Val 𝔹 -- common output
    }
 
 type LinkedOutputsResult =
@@ -141,16 +122,6 @@ drawLinkedOutputsFigWithCode fig = do
       , fig.spec.dataFile × fig.dataFileStr
       ]
 
-drawLinkedInputsFig :: LinkedInputsFig -> Selector Val + Selector Val -> Effect Unit
-drawLinkedInputsFig fig@{ spec: { divId, x1, x2 } } δv = do
-   v1' × v2' × v0 <- linkedInputsResult fig δv
-   let δv1 × δv2 = split δv
-   sequence_ $ uncurry3 (drawView divId) <$>
-      [ "0" × doNothing × view "common output" (v0 <#> toSel)
-      , "2" × ((δv1 >>> _) >>> Left >>> drawLinkedInputsFig fig) × view x1 (v1' <#> toSel)
-      , "1" × ((δv2 >>> _) >>> Right >>> drawLinkedInputsFig fig) × view x2 (v2' <#> toSel)
-      ]
-
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig = do
    drawFig fig
@@ -182,12 +153,12 @@ drawFig fig@{ spec: { divId } } = do
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
 
 figResult :: Fig -> Val Sel × Env Sel
-figResult { spec: { ins }, gc: { gc }, out, dir: LinkedOutputs } =
-   (asSel <$> out <*> out') × map (toSel <$> _) (γ # filterKeys (_ `elem` ins))
+figResult { spec: { inputs }, gc: { gc }, out, dir: LinkedOutputs } =
+   (asSel <$> out <*> out') × map (toSel <$> _) (γ # filterKeys (_ `elem` inputs))
    where
    out' × γ × _ = (unwrap (relatedOutputs gc)).bwd out
-figResult { spec: { ins }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
-   (toSel <$> out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` ins))
+figResult { spec: { inputs }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
+   (toSel <$> out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` inputs))
    where
    (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
 
@@ -219,25 +190,6 @@ linkedOutputsResult { spec: { x }, γ, e1, e2, t1, t2, v1, v2 } =
       v' <- eval (neg ((botOf γ0') <+> γ')) (topOf e') true <#> snd >>> neg
       pure { v, v', v0' }
 
-linkedInputsResult :: forall m. MonadEffect m => MonadError Error m => LinkedInputsFig -> Selector Val + Selector Val -> m (Val 𝔹 × Val 𝔹 × Val 𝔹)
-linkedInputsResult { spec: { x1, x2 }, γ, e, t } =
-   case _ of
-      Left δv1 -> do
-         { v, v', v0 } <- result x1 x2 δv1
-         pure $ v × v' × v0
-      Right δv2 -> do
-         { v, v', v0 } <- result x2 x1 δv2
-         pure $ v' × v × v0
-   where
-   result :: Var -> Var -> Selector Val -> m LinkedInputsResult
-   result x x' δv = do
-      let γ' = envVal x δv γ
-      v0 <- eval (neg γ') (botOf e) true <#> snd >>> neg
-      let γ'' × _ = evalBwd (erase <$> γ) (erase e) v0 t
-      v <- lookup x γ' # orElse absurd
-      v' <- lookup x' γ'' # orElse absurd
-      pure { v, v', v0 }
-
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ imports, file, datasets } = do
    s <- open file
@@ -245,18 +197,6 @@ loadFig spec@{ imports, file, datasets } = do
    gconfig <- loadProgCxt imports datasets >>= initialConfig e
    gc <- graphGC gconfig e
    pure { spec, s, gc, in_: botOf gc.γα × topOf e, out: botOf gc.vα, dir: LinkedOutputs }
-
-loadLinkedInputsFig :: forall m. LinkedInputsFigSpec -> AffError m LinkedInputsFig
-loadLinkedInputsFig spec@{ file } = do
-   let
-      dir = File "example/linked-inputs/"
-      datafile1 × datafile2 = (dir <> spec.x1File) × (dir <> spec.x2File)
-   s <- botOf <$> open (File "linked-inputs/" <> file)
-   e <- desug s
-   { γ: γ' } <- loadProgCxt [] [ spec.x1 ↦ unwrap datafile1, spec.x2 ↦ unwrap datafile2 ] >>= initialConfig e
-   let γ = botOf γ'
-   t × v <- eval γ e bot
-   pure { spec, γ, s, e, t, v0: v }
 
 loadLinkedOutputsFig :: forall m. LinkedOutputsFigSpec -> AffError m LinkedOutputsFig
 loadLinkedOutputsFig spec@{ imports, dataFile, file1, file2, x } = do

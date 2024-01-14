@@ -8,7 +8,7 @@ import Data.Either (Either(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Lattice (botOf, neg)
 import Module (File(..))
-import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec2)
+import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -397,7 +397,7 @@ linkedOutputs_cases =
    , linkedOutputs_spec1
    ]
 
-linkedInputs_spec1 :: TestLinkedInputsSpec2
+linkedInputs_spec1 :: TestLinkedInputsSpec
 linkedInputs_spec1 =
    { spec:
         { divId: "fig-1"
@@ -407,7 +407,7 @@ linkedInputs_spec1 =
              , "cities" ↦ "example/linked-inputs/cities"
              ]
         , file: File "linked-inputs/water"
-        , ins: [ "countries", "cities" ]
+        , inputs: [ "countries", "cities" ]
         }
    , δ_in: "countries" ↦ listElement 0 (field "farms" neg)
    , in_expect:
@@ -419,7 +419,7 @@ linkedInputs_spec1 =
               )
    }
 
-linkedInputs_spec2 :: TestLinkedInputsSpec2
+linkedInputs_spec2 :: TestLinkedInputsSpec
 linkedInputs_spec2 =
    { spec:
         { divId: "fig-2"
@@ -429,7 +429,7 @@ linkedInputs_spec2 =
              , "cities" ↦ "example/linked-inputs/cities"
              ]
         , file: File "linked-inputs/water"
-        , ins: [ "countries", "cities" ]
+        , inputs: [ "countries", "cities" ]
         }
    , δ_in: "cities" ↦ listElement 3 (field "water" neg)
         >>> listElement 4 (field "water" neg)
@@ -443,7 +443,7 @@ linkedInputs_spec2 =
               )
    }
 
-linkedInputs_spec3 :: TestLinkedInputsSpec2
+linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
    { spec:
         { divId: "fig-3"
@@ -453,13 +453,13 @@ linkedInputs_spec3 =
              , "non_renewables" ↦ "example/linked-inputs/non-renewables"
              ]
         , file: File "linked-inputs/energyscatter"
-        , ins: [ "renewables", "non_renewables" ]
+        , inputs: [ "renewables", "non_renewables" ]
         }
    , δ_in: "renewables" ↦ listElement 51 (field "coal_cap" neg)
    , in_expect: botOf
    }
 
-linkedInputs_spec4 :: TestLinkedInputsSpec2
+linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
    { spec:
         { divId: "fig-2"
@@ -469,7 +469,7 @@ linkedInputs_spec4 =
              , "non_renewables" ↦ "example/linked-inputs/non-renewables"
              ]
         , file: File "linked-inputs/energyscatter"
-        , ins: [ "renewables", "non_renewables" ]
+        , inputs: [ "renewables", "non_renewables" ]
         }
    , δ_in: "renewables" ↦ listElement 204 (field "capacity" neg)
    , in_expect:
@@ -489,7 +489,7 @@ linkedInputs_spec4 =
               )
    }
 
-linkedInputs_spec5 :: TestLinkedInputsSpec2
+linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { divId: "fig-1"
@@ -499,7 +499,7 @@ linkedInputs_spec5 =
              [ "non_renewables" ↦ "example/linked-inputs/mini-non-renewables"
              , "renewables" ↦ "example/linked-inputs/mini-renewables"
              ]
-        , ins: [ "non_renewables", "renewables" ]
+        , inputs: [ "non_renewables", "renewables" ]
         }
    , δ_in: "non_renewables" ↦ listElement 0 (field "coal_cap" neg)
    , in_expect:
@@ -519,7 +519,7 @@ linkedInputs_spec5 =
               )
    }
 
-linkedInputs_cases :: Array TestLinkedInputsSpec2
+linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
    [ linkedInputs_spec1
    , linkedInputs_spec2

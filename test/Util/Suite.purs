@@ -2,11 +2,10 @@ module Test.Util.Suite where
 
 import Prelude
 
-import App.Fig (FigSpec, LinkedInputsFig, LinkedInputsFigSpec, LinkedOutputsFigSpec, Fig, figResult, linkedInputsResult, linkedOutputsResult, loadFig, loadLinkedInputsFig, loadLinkedOutputsFig, selectInput)
+import App.Fig (FigSpec, LinkedOutputsFigSpec, Fig, figResult, linkedOutputsResult, loadFig, loadLinkedOutputsFig, selectInput)
 import App.Util (to𝔹)
 import Bind (Bind, (↦))
 import Data.Either (isLeft)
-import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
@@ -47,12 +46,6 @@ type TestLinkedOutputsSpec =
    }
 
 type TestLinkedInputsSpec =
-   { spec :: LinkedInputsFigSpec
-   , δv :: Selector Val + Selector Val
-   , v'_expect :: Maybe String
-   }
-
-type TestLinkedInputsSpec2 =
    { spec :: FigSpec
    , δ_in :: Bind (Selector Val)
    , in_expect :: Selector Env
@@ -95,29 +88,14 @@ linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
    where
    name spec = "linked-outputs/" <> unwrap spec.spec.file1 <> " <-> " <> unwrap spec.spec.file2
 
-linkedInputsTest :: TestLinkedInputsSpec -> Aff Unit
-linkedInputsTest { spec, δv, v'_expect } = do
-   v1' × v2' × _ <- loadLinkedInputsFig spec >>= flip linkedInputsResult δv
-   case v'_expect of
-      Just v' -> checkPretty "linked input" v' (if isLeft δv then v2' else v1')
-      _ -> pure unit
-
-linkedInputsTest2 :: TestLinkedInputsSpec2 -> Aff Fig
-linkedInputsTest2 { spec, δ_in, in_expect } = do
+linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
+linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectInput δ_in
    let _ × γ = figResult fig
    checkEq "selected" "expected" ((to𝔹 <$> _) <$> γ) (in_expect (botOf γ))
    pure fig
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
-linkedInputsSuite specs = specs <#> (name &&& linkedInputsTest)
-   where
-   name { spec } = "linked-inputs/" <> unwrap spec.file
-
-linkedInputsSuite2 :: Array TestLinkedInputsSpec2 -> Array (String × Aff Unit)
-linkedInputsSuite2 specs = specs <#> (name &&& (linkedInputsTest2 >>> void))
+linkedInputsSuite specs = specs <#> (name &&& (linkedInputsTest >>> void))
    where
    name { spec } = unwrap spec.file
-
-loadLinkedInputsTest :: TestLinkedInputsSpec -> Aff (LinkedInputsFig × (Selector Val + Selector Val))
-loadLinkedInputsTest { spec, δv } = (_ × δv) <$> loadLinkedInputsFig spec
