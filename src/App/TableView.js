@@ -60,7 +60,7 @@ function colorShade(col, amt) {
 
 // any record type with only primitive fields -> boolean
 function isUsed (r) {
-   return Object.keys(r).some(k => val_α(r[k]))
+   return Object.keys(r).some(k => !Sel_isNone(val_α(r[k])))
 }
 
 // Generic to all tables.
