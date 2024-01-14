@@ -19,7 +19,7 @@
 .cell-selected-secondary {
    border-radius: 2px;
    border: 1px solid teal;
-   background-color: rgb(206, 236, 206);
+   background-color: rgb(216, 246, 216);
 }
 
 .cell-unselected {

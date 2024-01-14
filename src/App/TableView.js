@@ -58,9 +58,9 @@ function colorShade(col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
-// any record type with only primitive fields -> boolean
+// any record type with only primitive fields -> Sel
 function isUsed (r) {
-   return Object.keys(r).some(k => !Sel_isNone(val_α(r[k])))
+   return Object.keys(r).some(k => k != indexKey && !Sel_isNone(val_α(r[k])))
 }
 
 // Generic to all tables.
