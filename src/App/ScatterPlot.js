@@ -137,7 +137,8 @@ function drawScatterPlot_ (
                .attr('stroke', 'black')
                .attr('stroke-width', 0.5)
                .style('fill', ([, d]) => Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'white': 'black')
-               .style('class', ([, d]) => Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'dot-unselected' : 'dot-selected')
+               .style('class', ([, d]) =>
+                  Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'dot-unselected' : 'dot-selected')
                .on('mousedown', (e, d) => {listener(e)})
 
          svg.append('text')
