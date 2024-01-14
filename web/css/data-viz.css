@@ -13,6 +13,18 @@
 .cell-selected {
    border-radius: 2px;
    border: 1px solid teal;
+   background-color: #93E9BE;
+}
+
+.cell-selected-secondary {
+   border-radius: 2px;
+   border: 1px solid teal;
+   background-color: rgb(206, 236, 206);
+}
+
+.cell-unselected {
+   border-radius: 2px;
+   background-color: #ffffff;
 }
 
 .matrix-cell-selected {

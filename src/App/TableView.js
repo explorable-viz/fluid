@@ -15,6 +15,18 @@ function curry4(f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function Sel_isNone (v) {
+   return v.tag == "None"
+}
+
+function Sel_isPrimary (v) {
+   return v.tag == "Primary"
+}
+
+function Sel_isSecondary (v) {
+   return v.tag == "Secondary"
+}
+
 function val_α(v) {
    return v._1
 }
@@ -64,8 +76,6 @@ function drawTable_ (
 ) {
    return () => {
       const childId = id + '-' + suffix
-      const cellFill = '#ffffff'
-      const selectedFill = '#93E9BE'
       const div = d3.select('#' + id)
 
       indexKey = "__n"
@@ -112,8 +122,11 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => d.name != indexKey && val_α(d.value) ? 'cell-selected' : null)
-            .attr('bgcolor', d => d.name != indexKey && val_α(d.value) ? selectedFill : cellFill)
+            .attr('class', d => d.name != indexKey && Sel_isPrimary(val_α(d.value))
+               ? 'cell-selected'
+               : d.name != indexKey && Sel_isSecondary(val_α(d.value))
+                  ? 'cell-selected-secondary'
+                  : 'cell-unselected')
             .text(d => d.name != indexKey ? prim(val_v(d.value)) : d.value)
             .on('mousedown', e => listener(e))
 

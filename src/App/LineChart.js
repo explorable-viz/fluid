@@ -15,6 +15,18 @@ function curry4(f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function Sel_isNone (v) {
+   return v.tag == "None"
+}
+
+function Sel_isPrimary (v) {
+   return v.tag == "Primary"
+}
+
+function Sel_isSecondary (v) {
+   return v.tag == "Secondary"
+}
+
 function fst(p) {
    return p._1
 }
@@ -113,11 +125,11 @@ function drawLineChart_ (
             .enter()
             .append('g')
             .append('circle')
-            .attr('r', ([, d]) => snd(d.y) ? smallRadius * 2 : smallRadius)
+            .attr('r', ([, d]) => Sel_isNone(snd(d.y)) ? smallRadius : smallRadius * 2)
             .attr('cx', ([, d]) => x(fst(d.x)))
             .attr('cy', ([, d]) => y(fst(d.y)))
             .attr('fill', col)
-            .attr('stroke', ([, d]) => snd(d.y) ? colorShade(col, -30) : col)
+            .attr('stroke', ([, d]) => Sel_isNone(snd(d.y)) ? col : colorShade(col, -30))
             .on('mousedown', (e, d) => { listener(e) })
       }
 

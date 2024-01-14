@@ -2,13 +2,13 @@ module App.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, from, get_intOrNumber, record)
+import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict, get)
-import Lattice (𝔹, neg)
+import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
@@ -17,31 +17,31 @@ import Val (BaseVal(..), Val(..))
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 
-newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
-newtype LinePlot = LinePlot { name :: String × 𝔹, data :: Array Point }
-newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
+newtype LineChart = LineChart { caption :: String × Sel, plots :: Array LinePlot }
+newtype LinePlot = LinePlot { name :: String × Sel, data :: Array Point }
+newtype Point = Point { x :: Number × Sel, y :: Number × Sel }
 
 foreign import drawLineChart :: Renderer LineChart
 
-instance Reflect (Dict (Val Boolean)) Point where
+instance Reflect (Dict (Val Sel)) Point where
    from r = Point
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
       }
 
-instance Reflect (Dict (Val Boolean)) LinePlot where
+instance Reflect (Dict (Val Sel)) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
       , data: record from <$> from (get f_data r)
       }
 
-instance Reflect (Dict (Val Boolean)) LineChart where
+instance Reflect (Dict (Val Sel)) LineChart where
    from r = LineChart
       { caption: unpack string (get f_caption r)
-      , plots: from <$> (from (get f_plots r) :: Array (Val 𝔹)) :: Array LinePlot
+      , plots: from <$> (from (get f_plots r) :: Array (Val Sel)) :: Array LinePlot
       }
 
-instance Reflect (Val Boolean) LinePlot where
+instance Reflect (Val Sel) LinePlot where
    from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
 lineChartHandler :: Handler
