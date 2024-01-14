@@ -472,7 +472,21 @@ linkedInputs_spec4 =
         , ins: [ "renewables", "non_renewables" ]
         }
    , δ_in: "renewables" ↦ listElement 204 (field "capacity" neg)
-   , in_expect: envVal "non_renewables" (listElement 51 (field "coal_cap" neg))
+   , in_expect:
+        envVal "non_renewables"
+           ( listElement 51
+                ( field "coal_cap" neg
+                     >>> field "gas_cap" neg
+                     >>> field "nuclear_cap" neg
+                     >>> field "petrol_cap" neg
+                )
+           )
+           >>> envVal "renewables"
+              ( listElement 204 (field "capacity" neg >>> field "output" neg)
+                   >>> listElement 205 (field "capacity" neg >>> field "output" neg)
+                   >>> listElement 206 (field "capacity" neg >>> field "output" neg)
+                   >>> listElement 207 (field "capacity" neg >>> field "output" neg)
+              )
    }
 
 linkedInputs_spec5 :: TestLinkedInputsSpec2
@@ -510,6 +524,6 @@ linkedInputs_cases =
    [ linkedInputs_spec1
    , linkedInputs_spec2
    , linkedInputs_spec3
-   --   , linkedInputs_spec4
+   , linkedInputs_spec4
    , linkedInputs_spec5
    ]
