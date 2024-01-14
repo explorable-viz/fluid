@@ -16,6 +16,18 @@ function curry4 (f) {
   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function Sel_isNone (v) {
+   return v.tag == "None"
+}
+
+function Sel_isPrimary (v) {
+   return v.tag == "Primary"
+}
+
+function Sel_isSecondary (v) {
+   return v.tag == "Secondary"
+}
+
 function fst(p) {
    return p._1
 }
@@ -129,9 +141,15 @@ function drawBubbleChart_ (
             .attr('cx', ([, d]) => x(fst(d.x)))
             .attr('cy', ([, d]) => y(fst(d.y)))
             .attr('r', ([, d]) => z(fst(d.z)))
-            .attr('stroke', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? 'black' : colorShade(c(fst(d.c)), -30))
-            .style('fill', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? colorShade(c(fst(d.c)), -50) : c(fst(d.c)))
-            .style('class', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? 'dot-selected' : 'dot-unselected')
+            .attr('stroke', ([, d]) =>
+               Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) && Sel_isNone(snd(d.z))
+               ? colorShade(c(fst(d.c)), -30) : 'black')
+            .style('fill', ([, d]) =>
+               Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) && Sel_isNone(snd(d.z))
+               ? c(fst(d.c)): colorShade(c(fst(d.c)), -50))
+            .style('class', ([, d]) =>
+               Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) && Sel_isNone(snd(d.z))
+               ? 'dot-unselected' : 'dot-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.selectAll("mylabels")

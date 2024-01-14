@@ -16,6 +16,18 @@ function curry4 (f) {
   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function Sel_isNone (v) {
+   return v.tag == "None"
+}
+
+function Sel_isPrimary (v) {
+   return v.tag == "Primary"
+}
+
+function Sel_isSecondary (v) {
+   return v.tag == "Secondary"
+}
+
 function fst(p) {
    return p._1
 }
@@ -124,8 +136,9 @@ function drawScatterPlot_ (
                .attr('data-y', ([, d]) => fst(d.y))
                .attr('stroke', 'black')
                .attr('stroke-width', 0.5)
-               .style('fill', ([, d]) => snd(d.x) || snd(d.y) ? 'black': 'white')
-               .style('class', ([, d]) => snd(d.x) || snd(d.y) ? 'dot-selected' : 'dot-unselected')
+               .style('fill', ([, d]) => Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'white': 'black')
+               .style('class', ([, d]) =>
+                  Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'dot-unselected' : 'dot-selected')
                .on('mousedown', (e, d) => {listener(e)})
 
          svg.append('text')

@@ -16,6 +16,18 @@ function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function Sel_isNone (v) {
+   return v.tag == "None"
+}
+
+function Sel_isPrimary (v) {
+   return v.tag == "Primary"
+}
+
+function Sel_isSecondary (v) {
+   return v.tag == "Secondary"
+}
+
 function fst(p) {
    return p._1
 }
@@ -110,8 +122,8 @@ function drawBarChart_ (
             .attr('y', ([, d]) => (y(fst(d.y))))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
             .attr('height', ([, d]) => height - y(fst(d.y)))
-            .attr('fill', ([, d]) => snd(d.y) ? colorShade(barFill, -40) : barFill)
-            .attr('class', ([, d]) => snd(d.y) ? 'bar-selected' : 'bar-unselected')
+            .attr('fill', ([, d]) => Sel_isNone(snd(d.y)) ? barFill : colorShade(barFill, -40))
+            .attr('class', ([, d]) => Sel_isNone(snd(d.y)) ? 'bar-unselected' : 'bar-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')

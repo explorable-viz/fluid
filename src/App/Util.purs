@@ -43,17 +43,17 @@ asSel true true = Primary
 doNothing :: OnSel
 doNothing = const $ pure unit
 
-get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
+get_intOrNumber :: Var -> Dict (Val Sel) -> Number × Sel
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
 -- Assumes fields are all of primitive type.
-record :: forall a. (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a
+record :: forall a. (Dict (Val Sel) -> a) -> Val Sel -> a
 record toRecord (Val _ v) = toRecord (P.record2.unpack v)
 
 class Reflect a b where
    from :: Partial => a -> b
 
 -- Discard any constructor-level annotations.
-instance Reflect (Val Boolean) (Array (Val Boolean)) where
+instance Reflect (Val Sel) (Array (Val Sel)) where
    from (Val _ (Constr c Nil)) | c == cNil = []
    from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2

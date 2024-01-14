@@ -8,7 +8,7 @@ import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixRep, matrixViewHandler)
 import App.ScatterPlot (ScatterPlot, drawScatterPlot, scatterPlotHandler)
 import App.TableView (TableView(..), drawTable, tableViewHandler)
-import App.Util (HTMLId, OnSel, Sel, from, record, to𝔹)
+import App.Util (HTMLId, OnSel, Sel, from, record)
 import Data.List (List(..), (:))
 import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cNil, cScatterPlot)
 import Effect (Effect)
@@ -38,15 +38,15 @@ drawView divId suffix onSel = case _ of
 -- 'from' is partial; encapsulate that here.
 view :: String -> Val Sel -> View
 view _ (Val _ (Constr c (u1 : Nil))) | c == cBarChart =
-   BarChartFig (unsafePartial $ record from $ to𝔹 <$> u1)
+   BarChartFig (unsafePartial $ record from $ u1)
 view _ (Val _ (Constr c (u1 : Nil))) | c == cLineChart =
-   LineChartFig (unsafePartial $ record from $ to𝔹 <$> u1)
+   LineChartFig (unsafePartial $ record from $ u1)
 view _ (Val _ (Constr c (u1 : Nil))) | c == cBubbleChart =
-   BubbleChartFig (unsafePartial $ record from $ to𝔹 <$> u1)
+   BubbleChartFig (unsafePartial $ record from $ u1)
 view _ (Val _ (Constr c (u1 : Nil))) | c == cScatterPlot =
-   ScatterPlotFig (unsafePartial $ record from $ to𝔹 <$> u1)
+   ScatterPlotFig (unsafePartial $ record from $ u1)
 view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
-   TableFig (TableView { title, filter: true, table: unsafePartial $ record identity <$> from (to𝔹 <$> u) })
+   TableFig (TableView { title, filter: true, table: unsafePartial $ record identity <$> from u })
 view title (Val _ (Matrix r)) =
    MatrixFig (MatrixView { title, matrix: matrixRep r })
 view _ _ = error absurd
