@@ -20,11 +20,23 @@ deMorgan = (neg >>> _) >>> (_ >>> neg)
 dual :: forall a b. Neg a => Neg b => GaloisConnection a b -> GaloisConnection b a
 dual (GC { fwd, bwd }) = GC { fwd: deMorgan bwd, bwd: deMorgan fwd }
 
-relatedInputs :: forall a b. Neg a => Neg b => MeetSemilattice b => GaloisConnection a b -> GaloisConnection a (a × b)
-relatedInputs gc = gc >>> diag >>> (dual gc *** identity)
+relatedInputs
+   :: forall a b
+    . Neg a
+   => Neg b
+   => MeetSemilattice b
+   => GaloisConnection a b
+   -> GaloisConnection (a × b) a
+relatedInputs gc = (gc *** identity) >>> dual diag >>> dual gc
 
-relatedOutputs :: forall a b. Neg a => MeetSemilattice a => Neg b => GaloisConnection a b -> GaloisConnection b (b × a)
-relatedOutputs gc = (gc *** identity) <<< diag <<< dual gc
+relatedOutputs
+   :: forall a b
+    . Neg a
+   => MeetSemilattice a
+   => Neg b
+   => GaloisConnection a b
+   -> GaloisConnection (b × a) b
+relatedOutputs gc = gc <<< dual diag <<< (dual gc *** identity)
 
 instance Semigroupoid GaloisConnection where
    compose (GC { fwd: fwd1, bwd: bwd1 }) (GC { fwd: fwd2, bwd: bwd2 }) =

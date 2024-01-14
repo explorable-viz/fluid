@@ -12,8 +12,8 @@ tracing
 
 tracing =
    { runWithGraphT: false
-   , graphBwdSlice: true
-   , graphFwdSlice: true
+   , graphBwdSlice: false
+   , graphFwdSlice: false
    , checkEq: false
    , bwdSelection: false
    , fwdAfterBwd: false

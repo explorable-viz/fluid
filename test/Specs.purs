@@ -2,14 +2,13 @@ module Test.Specs where
 
 import Prelude
 
-import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
+import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, envVal, field, listCell, listElement, matrixElement)
 import Bind ((↦))
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
-import Lattice (neg)
+import Lattice (botOf, neg)
 import Module (File(..))
-import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec2)
+import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -402,70 +401,122 @@ linkedInputs_spec1 :: TestLinkedInputsSpec
 linkedInputs_spec1 =
    { spec:
         { divId: "fig-1"
-        , file: File "water"
-        , x1: "countries"
-        , x1File: File "countries"
-        , x2: "cities"
-        , x2File: File "cities"
+        , imports: []
+        , datasets:
+             [ "countries" ↦ "example/linked-inputs/countries"
+             , "cities" ↦ "example/linked-inputs/cities"
+             ]
+        , file: File "linked-inputs/water"
+        , inputs: [ "countries", "cities" ]
         }
-   , δv: Left $ listElement 0 (field "farms" neg)
-   , v'_expect: Just "({country : \"Germany\", name : \"Berlin\", water : ⸨130⸩} : ({country : \"Germany\", name : \"Munich\", water : ⸨80⸩} : ({country : \"Germany\", name : \"Hamburg\", water : ⸨60⸩} : ({country : \"UK\", name : \"London\", water : 200} : ({country : \"UK\", name : \"Birmingham\", water : 50} : ({country : \"UK\", name : \"Manchester\", water : 35} : ({country : \"Bulgaria\", name : \"Sofia\", water : 55} : ({country : \"Poland\", name : \"Warsaw\", water : 65} : ({country : \"Turkey\", name : \"Istanbul\", water : 375} : [])))))))))"
+   , δ_in: "countries" ↦ listElement 0 (field "farms" neg)
+   , in_expect:
+        envVal "countries" (listElement 0 (field "farms" neg >>> field "popMil" neg))
+           >>> envVal "cities"
+              ( listElement 0 (field "water" neg)
+                   >>> listElement 1 (field "water" neg)
+                   >>> listElement 2 (field "water" neg)
+              )
    }
 
 linkedInputs_spec2 :: TestLinkedInputsSpec
 linkedInputs_spec2 =
    { spec:
         { divId: "fig-2"
-        , file: File "water"
-        , x1: "cities"
-        , x1File: File "cities"
-        , x2: "countries"
-        , x2File: File "countries"
+        , imports: []
+        , datasets:
+             [ "countries" ↦ "example/linked-inputs/countries"
+             , "cities" ↦ "example/linked-inputs/cities"
+             ]
+        , file: File "linked-inputs/water"
+        , inputs: [ "countries", "cities" ]
         }
-   , δv: Left $ listElement 3 (field "water" neg) >>> listElement 4 (field "water" neg) >>> listElement 5 (field "water" neg)
-   , v'_expect: Just "({farms : 250, name : \"Germany\", popMil : 81} : ({farms : ⸨200⸩, name : \"UK\", popMil : ⸨67⸩} : ({farms : 150, name : \"Bulgaria\", popMil : 7} : ({farms : 220, name : \"Poland\", popMil : 38} : ({farms : 270, name : \"Turkey\", popMil : 85} : [])))))"
+   , δ_in: "cities" ↦ listElement 3 (field "water" neg)
+        >>> listElement 4 (field "water" neg)
+        >>> listElement 5 (field "water" neg)
+   , in_expect:
+        envVal "countries" (listElement 1 (field "farms" neg >>> field "popMil" neg))
+           >>> envVal "cities"
+              ( listElement 3 (field "water" neg)
+                   >>> listElement 4 (field "water" neg)
+                   >>> listElement 5 (field "water" neg)
+              )
    }
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
    { spec:
         { divId: "fig-3"
-        , file: File "energyscatter"
-        , x2: "renewables"
-        , x2File: File "renewables"
-        , x1: "non_renewables"
-        , x1File: File "non-renewables"
+        , imports: []
+        , datasets:
+             [ "renewables" ↦ "example/linked-inputs/renewables"
+             , "non_renewables" ↦ "example/linked-inputs/non-renewables"
+             ]
+        , file: File "linked-inputs/energyscatter"
+        , inputs: [ "renewables", "non_renewables" ]
         }
-   , δv: Left $ listElement 51 (field "coal_cap" neg)
-   , v'_expect: Nothing
+   , δ_in: "renewables" ↦ listElement 51 (field "coal_cap" neg)
+   , in_expect: botOf
    }
 
 linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
    { spec:
         { divId: "fig-2"
-        , file: File "energyscatter"
-        , x1: "renewables"
-        , x1File: File "renewables"
-        , x2: "non_renewables"
-        , x2File: File "non-renewables"
+        , imports: []
+        , datasets:
+             [ "renewables" ↦ "example/linked-inputs/renewables"
+             , "non_renewables" ↦ "example/linked-inputs/non-renewables"
+             ]
+        , file: File "linked-inputs/energyscatter"
+        , inputs: [ "renewables", "non_renewables" ]
         }
-   , δv: Left $ listElement 204 (field "capacity" neg)
-   , v'_expect: Nothing
+   , δ_in: "renewables" ↦ listElement 204 (field "capacity" neg)
+   , in_expect:
+        envVal "non_renewables"
+           ( listElement 51
+                ( field "coal_cap" neg
+                     >>> field "gas_cap" neg
+                     >>> field "nuclear_cap" neg
+                     >>> field "petrol_cap" neg
+                )
+           )
+           >>> envVal "renewables"
+              ( listElement 204 (field "capacity" neg >>> field "output" neg)
+                   >>> listElement 205 (field "capacity" neg >>> field "output" neg)
+                   >>> listElement 206 (field "capacity" neg >>> field "output" neg)
+                   >>> listElement 207 (field "capacity" neg >>> field "output" neg)
+              )
    }
 
 linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { divId: "fig-1"
-        , file: File "mini-energyscatter"
-        , x1: "non_renewables"
-        , x1File: File "mini-non-renewables"
-        , x2: "renewables"
-        , x2File: File "mini-renewables"
+        , file: File "linked-inputs/mini-energyscatter"
+        , imports: []
+        , datasets:
+             [ "non_renewables" ↦ "example/linked-inputs/mini-non-renewables"
+             , "renewables" ↦ "example/linked-inputs/mini-renewables"
+             ]
+        , inputs: [ "non_renewables", "renewables" ]
         }
-   , δv: Left $ listElement 0 (field "coal_cap" neg)
-   , v'_expect: Just "({capacity : ⸨100.74⸩, country : \"USA\", energyType : \"Bio\", output : 61.83, year : 2018} : ({capacity : ⸨734.79⸩, country : \"USA\", energyType : \"Hydro\", output : 286.62, year : 2018} : ({capacity : ⸨455.43⸩, country : \"USA\", energyType : \"Solar\", output : 93.36, year : 2018} : ({capacity : ⸨829.31⸩, country : \"USA\", energyType : \"Wind\", output : 272.67, year : 2018} : []))))"
+   , δ_in: "non_renewables" ↦ listElement 0 (field "coal_cap" neg)
+   , in_expect:
+        envVal "non_renewables"
+           ( listElement 0
+                ( field "coal_cap" neg
+                     >>> field "gas_cap" neg
+                     >>> field "nuclear_cap" neg
+                     >>> field "petrol_cap" neg
+                )
+           )
+           >>> envVal "renewables"
+              ( listElement 0 (field "capacity" neg)
+                   >>> listElement 1 (field "capacity" neg)
+                   >>> listElement 2 (field "capacity" neg)
+                   >>> listElement 3 (field "capacity" neg)
+              )
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
@@ -476,6 +527,3 @@ linkedInputs_cases =
    , linkedInputs_spec4
    , linkedInputs_spec5
    ]
-
-linkedInputs_cases' :: Array TestLinkedInputsSpec2
-linkedInputs_cases' = []

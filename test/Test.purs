@@ -13,13 +13,13 @@ import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
 import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite)
+import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
 main = run tests
 
---main = run scratchpad
+--main = run $ linkedInputsSuite linkedInputs_cases
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite
@@ -29,11 +29,6 @@ scratchpad = asTestSuite $ bwdSuite
      , fwd_expect: "(⸨3⸩, ⸨True⸩)"
      , δv: constrArg cPair 1 neg
      }
-   ]
-
-scratchpad2 :: TestSuite
-scratchpad2 = asTestSuite $ suite
-   [ { file: "nub", imports: [], fwd_expect: "(1 : (2 : (3 : (4 : []))))" }
    ]
 
 type TestSuite = Array (String × Aff Unit)
