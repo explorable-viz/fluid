@@ -149,9 +149,9 @@ drawFig fig@{ spec: { divId } } = do
 
 figResult :: Fig -> Val Sel × Env Sel
 figResult { spec: { inputs }, gc: { gc }, out, dir: LinkedOutputs } =
-   (asSel <$> out <*> out') × map (toSel <$> _) (spy "Here" prettyP (γ # filterKeys (_ `elem` inputs)))
+   (asSel <$> out <*> out') × map (toSel <$> _) (spy "Mediating inputs" prettyP (γ # filterKeys (_ `elem` inputs)))
    where
-   out' × γ × _ = (unwrap (relatedOutputs gc)).bwd out
+   out' × γ × _ = (unwrap (relatedOutputs gc)).bwd (spy "Selected outputs" prettyP out)
 figResult { spec: { inputs }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    (toSel <$> out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` inputs))
    where
