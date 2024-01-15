@@ -1,4 +1,4 @@
-let sumNonRenewables x = x.nuclear_cap + x.petrol_cap + x.gas_cap + x.coal_cap;
+let sumNonRenewables x = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap;
 
 let check_country yearp name x = ((x.country == name) `and` (x.year == yearp));
 
@@ -12,10 +12,10 @@ let energy year c_name =
             name: c_name,
             totalCap: totalRensCap + totalNonRens,
             non_renewables: totalNonRens,
-            renCapFactor: totalRensOut / totalRensCap
+            renCapFactor: (totalRensOut + non_ren_x.nuclearGen) / (totalRensCap + non_ren_x.nuclearCap)
         }
 in ScatterPlot {
-    caption: "Carbon intensity against proportion of energy from renewables",
+    caption: "Clean energy efficiency against proportion of renewable energy cap",
     data: [{
                 x: country.non_renewables / country.totalCap,
                 y: country.renCapFactor,

@@ -9,6 +9,8 @@ import Data.Either (isLeft)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile, loadProgCxt)
 import Test.Benchmark.Util (BenchRow)
@@ -98,6 +100,7 @@ linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectInput δ_in
    let _ × γ = figResult fig
+   liftEffect $ log spec.divId
    checkEq "selected" "expected" ((to𝔹 <$> _) <$> γ) (in_expect (botOf γ))
    pure fig
 
