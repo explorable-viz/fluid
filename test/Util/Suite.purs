@@ -47,8 +47,8 @@ type TestLinkedOutputsSpec =
 
 type TestLinkedOutputsSpec2 =
    { spec :: FigSpec
-   , δ_out :: Bind (Selector Val)
-   , out_expect :: Selector Env
+   , δ_out :: Selector Val
+   , out_expect :: Selector Val
    }
 
 type TestLinkedInputsSpec =

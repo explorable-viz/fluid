@@ -5,7 +5,7 @@ import Prelude
 import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, envVal, field, listCell, listElement, matrixElement)
 import Bind ((↦))
 import Data.Either (Either(..))
-import DataType (cBarChart, cLineChart, cLinePlot, cPair, cSome, f_data, f_plots, f_y)
+import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, cSome, f_data, f_plots, f_y)
 import Lattice (botOf, neg)
 import Module (File(..))
 import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec2)
@@ -310,15 +310,18 @@ linkedOutputs_spec1' =
         , file: File "bar-chart-line-chart"
         , inputs: [ "renewables_data" ]
         }
-   , δ_out: "bar chart" ↦ constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))
-   , out_expect: envVal "line chart"
-        ( constrArg cLineChart 0
-             ( field f_plots
-                  ( listElement 0 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                       >>> listElement 1 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                       >>> listElement 2 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                       >>> listElement 3 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                       >>> listElement 4 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+   , δ_out: constrArg cMultiPlot 0
+        (dictVal "bar chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))))
+   , out_expect: constrArg cMultiPlot 0
+        ( dictVal "line chart"
+             ( constrArg cLineChart 0
+                  ( field f_plots
+                       ( listElement 0 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                            >>> listElement 1 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                            >>> listElement 2 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                            >>> listElement 3 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                            >>> listElement 4 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                       )
                   )
              )
         )
@@ -384,6 +387,21 @@ linkedOutputs_spec1 =
         \} : []))))\
         \}"
    }
+
+linkedOutputs_cases2 :: Array TestLinkedOutputsSpec2
+linkedOutputs_cases2 =
+   [ { spec:
+          { divId: ""
+          , datasets: [ "data" ↦ "pairs-data" ]
+          , imports: []
+          , file: File "linked-outputs/pairs"
+          , inputs: [ "data" ]
+          }
+     , δ_out: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg)))
+     , out_expect: constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg >>> constrArg cPair 1 neg))
+     }
+   , linkedOutputs_spec1'
+   ]
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
