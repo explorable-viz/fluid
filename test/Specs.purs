@@ -392,7 +392,7 @@ linkedOutputs_cases2 :: Array TestLinkedOutputsSpec2
 linkedOutputs_cases2 =
    [ { spec:
           { divId: ""
-          , datasets: [ "data" ↦ "pairs-data" ]
+          , datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
