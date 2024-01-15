@@ -56,7 +56,7 @@ function drawScatterPlot_ (
 ) {
    return () => {
       var max_width = 340
-      var max_height = 190
+      var max_height = 340
       const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
       const x_min = Math.ceil(Math.min(...data.map(d => fst(d.x))))
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))

@@ -15,7 +15,7 @@ let energy year c_name =
             renCapFactor: totalRensOut / totalRensCap
         }
 in ScatterPlot {
-    caption: "Carbon intensity against proportion of energy from renewables",
+    caption: "Clean energy efficiency against proportion of renewable energy cap",
     data: [{
                 x: country.non_renewables / country.totalCap,
                 y: country.renCapFactor,
