@@ -18,8 +18,8 @@
 
 .cell-selected-secondary {
    border-radius: 2px;
-   border: 1px solid teal;
-   background-color: rgb(216, 246, 216);
+   border: 1px solid rgb(156, 156, 156);
+   background-color: rgb(226, 226, 226);
 }
 
 .cell-unselected {

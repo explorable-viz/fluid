@@ -1,4 +1,4 @@
-module App.BarChart where
+module App.View.BarChart where
 
 import Prelude hiding (absurd)
 

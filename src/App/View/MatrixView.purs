@@ -1,4 +1,4 @@
-module App.MatrixView where
+module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 

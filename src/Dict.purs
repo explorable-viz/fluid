@@ -21,6 +21,7 @@ module Dict
    , lift2
    , toUnfoldable
    , unzip
+   , update
    , values
    ) where
 
@@ -35,7 +36,7 @@ import Data.Set (fromFoldable) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, keys, toAscUnfoldable, values) as O
-import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, lookup, mapWithKey, member, singleton, size, toArrayWithKey, union, unionWith, update)
+import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, lookup, mapWithKey, member, singleton, size, toArrayWithKey, union, unionWith)
 import Util (Endo, type (×), (×), (∈), assert, definitely, error)
 
 type Dict a = O.Object a
@@ -72,8 +73,15 @@ values = O.values >>> L.fromFoldable
 asSingletonMap :: forall a. Dict a -> String × a
 asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
 
+keyExists :: Endo String
+keyExists k = "Key \"" <> k <> "\" exists in dictionary"
+
 get :: forall a. String -> Dict a -> a
-get k = definitely ("Key \"" <> k <> "\" exists in dictionary") <<< lookup k
+get k = lookup k >>> definitely (keyExists k)
+
+-- Prefer to built-in 'update' as no soft failure.
+update :: forall a. Endo a -> String -> Dict a -> Dict a
+update f k = alter (definitely (keyExists k) >>> f >>> Just) k
 
 disjointUnion :: forall a. Dict a -> Endo (Dict a)
 disjointUnion = unionWith (\_ _ -> error "not disjoint")
