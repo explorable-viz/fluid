@@ -496,7 +496,7 @@ linkedInputs_spec3 =
         , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "non_renewables" ]
         }
-   , δ_in: "non-renewables" ↦ listElement 51 (field "coal_cap" neg)
+   , δ_in: "non_renewables" ↦ listElement 51 (field "coal_cap" neg)
    , in_expect: botOf
    }
 
