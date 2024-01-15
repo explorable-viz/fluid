@@ -6,10 +6,13 @@ import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
 import Data.Filterable (filter)
 import Data.Foldable (foldM, sequence_)
+import Data.Graph as G
 import Data.List (List(..), reverse, (:))
 import Data.List as L
+import Data.Map as M
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap)
+import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Tuple (fst, snd)
@@ -18,8 +21,9 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN, showVertices)
-import Util (type (×), definitely, error, singleton, spy, spyWith, (\\), (×), (∩), (∪))
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
+import Test.Util.Debug (checking)
+import Util (type (×), assertWhen, definitely, error, singleton, (×))
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -35,15 +39,6 @@ data GraphImpl = GraphImpl
 instance Eq GraphImpl where
    eq (GraphImpl g) (GraphImpl g') = g.out == g'.out
 
-instance Semigroup GraphImpl where
-   append (GraphImpl g) (GraphImpl g') = GraphImpl
-      { out: D.unionWith (∪) g.out g'.out
-      , in: D.unionWith (∪) g.in g'.in
-      , sinks: (g.sinks ∩ g'.sinks) ∪ (g.sinks \\ g'.vertices) ∪ (g'.sinks \\ g.vertices)
-      , sources: (g.sources ∩ g'.sources) ∪ (g.sources \\ g'.vertices) ∪ (g'.sources \\ g.vertices)
-      , vertices: g.vertices ∪ g'.vertices
-      }
-
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Graph GraphImpl where
    outN (GraphImpl g) α = D.lookup (unwrap α) g.out # definitely "in graph"
@@ -58,10 +53,18 @@ instance Graph GraphImpl where
    fromEdgeList αs es =
       GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
-      es' = reverse es -- expensive but allows asserting membership invariants
-      out = runST (outMap αs es')
-      in_ = runST (inMap αs es')
+      es' = reverse es
+      αs' = L.fromFoldable αs
+      out = runST (outMap αs' es')
+      in_ = runST (inMap αs' es')
       vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
+
+   -- PureScript also provides a graph implementation. Delegate to that for now.
+   topologicalSort (GraphImpl g) =
+      reverse (G.topologicalSort (G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _))))))
+      where
+      kvs :: Array (String × List Vertex)
+      kvs = D.toUnfoldable (g.out <#> Set.toUnfoldable)
 
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices
@@ -80,8 +83,7 @@ type MutableAdjMap r = STObject r (Set Vertex)
 assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
 assertPresent acc (Vertex α) = do
    present <- OST.peek α acc <#> isJust
-   if not present then spy (α <> " not an existing vertex") $ pure unit
-   else pure unit
+   assertWhen checking.edgeListSorted (α <> " is an existing vertex") (\_ -> present) $ pure unit
 
 addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
@@ -89,16 +91,23 @@ addIfMissing acc (Vertex β) = do
       Nothing -> OST.poke β mempty acc
       Just _ -> pure acc
 
-init :: forall r. Set Vertex -> ST r (MutableAdjMap r)
-init αs =
-   OST.new >>= flip (foldM (\acc (Vertex α) -> OST.poke α mempty acc)) αs
+init :: forall r. List Vertex -> ST r (MutableAdjMap r)
+init αs = do
+   obj <- OST.new
+   tailRecM go (αs × obj)
+   where
+   go :: List _ × MutableAdjMap r -> ST r (Step _ _)
+   go (Nil × acc) = pure $ Done acc
+   go ((Vertex α : αs') × acc) = do
+      acc' <- OST.poke α mempty acc
+      pure $ Loop (αs' × acc')
 
-outMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
+outMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
 outMap αs es = do
-   out <- init (spyWith "initial vertices" showVertices αs)
+   out <- init αs
    tailRecM addEdges (es × out)
    where
-   addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
+   addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (_ == mempty)
@@ -109,18 +118,18 @@ outMap αs es = do
       else
          error $ "Duplicate edge list entry for " <> show α
 
-inMap :: forall r. Set Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
+inMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
 inMap αs es = do
    in_ <- init αs
    tailRecM addEdges (es × in_)
    where
-   addEdges :: List HyperEdge × MutableAdjMap _ -> ST _ _
+   addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : es') × acc) = do
       acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α
       pure $ Loop (es' × acc')
 
-   addEdge :: Vertex -> MutableAdjMap _ -> Vertex -> ST _ _
+   addEdge :: Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc

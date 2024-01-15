@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply, top)
 
-import Bindings (varAnon)
+import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)

@@ -2,7 +2,7 @@ module SExpr where
 
 import Prelude hiding (absurd, top)
 
-import Bindings (Bind, Var, varAnon, (↦), keys)
+import Bind (Bind, Var, varAnon, (↦), keys)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Either (Either(..))
 import Data.Foldable (foldM, foldl)

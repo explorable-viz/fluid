@@ -16,6 +16,18 @@ function curry4 (f) {
   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function Sel_isNone (v) {
+   return v.tag == "None"
+}
+
+function Sel_isPrimary (v) {
+   return v.tag == "Primary"
+}
+
+function Sel_isSecondary (v) {
+   return v.tag == "Secondary"
+}
+
 function fst(p) {
    return p._1
 }
@@ -45,7 +57,7 @@ function colorShade(col, amt) {
 
 function drawBubbleChart_ (
    id,
-   childIndex,
+   suffix,
    {
       caption, // String
       data,   // Array BubbleRecord
@@ -55,6 +67,7 @@ function drawBubbleChart_ (
    listener
 ) {
    return () => {
+      const childId = id + '-' + suffix
       var max_width = 340
       var max_height = 190
       const max_z_rad = Math.min(max_width, max_height) / 10
@@ -63,7 +76,6 @@ function drawBubbleChart_ (
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
       const y_min = Math.floor(Math.min(...data.map(d => fst(d.y))))
       const z_max = Math.ceil(Math.max(...data.map(d => fst(d.z))))
-      const childId = id + '-' + childIndex
       const margin = {top: 20, right: 20, bottom: 40, left: 50}
 
       const width = max_width - margin.left - margin.right,
@@ -129,9 +141,15 @@ function drawBubbleChart_ (
             .attr('cx', ([, d]) => x(fst(d.x)))
             .attr('cy', ([, d]) => y(fst(d.y)))
             .attr('r', ([, d]) => z(fst(d.z)))
-            .attr('stroke', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? 'black' : colorShade(c(fst(d.c)), -30))
-            .style('fill', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? colorShade(c(fst(d.c)), -50) : c(fst(d.c)))
-            .style('class', ([, d]) => snd(d.x) || snd(d.y) || snd(d.z) ? 'dot-selected' : 'dot-unselected')
+            .attr('stroke', ([, d]) =>
+               Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) && Sel_isNone(snd(d.z))
+               ? colorShade(c(fst(d.c)), -30) : 'black')
+            .style('fill', ([, d]) =>
+               Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) && Sel_isNone(snd(d.z))
+               ? c(fst(d.c)): colorShade(c(fst(d.c)), -50))
+            .style('class', ([, d]) =>
+               Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) && Sel_isNone(snd(d.z))
+               ? 'dot-unselected' : 'dot-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.selectAll("mylabels")

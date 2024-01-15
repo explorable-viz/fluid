@@ -2,7 +2,7 @@ module Parse where
 
 import Prelude hiding (absurd, add, between, join)
 
-import Bindings (Bind, Var, (↦))
+import Bind (Bind, Var, (↦))
 import Control.Alt ((<|>))
 import Control.Apply (lift2)
 import Control.Lazy (fix)

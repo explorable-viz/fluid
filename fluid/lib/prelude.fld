@@ -236,6 +236,6 @@ let abs x y = if x - y < 0 then negate (x - y) else (x - y);
 
 -- Eq a => [a] -> [a]
 let nub l =
-    let nub' [] x = [];
-        nub' (x:xs) ls = if x `elem` ls then nub' xs ls else x : nub' xs (x:ls) in
+    let nub' [] _ = [];
+        nub' (x : xs) ys = if x `elem` ys then nub' xs ys else x : nub' xs (x : ys) in
     nub' l [];

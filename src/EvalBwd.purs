@@ -2,7 +2,7 @@ module EvalBwd where
 
 import Prelude hiding (absurd, top)
 
-import Bindings (Var, varAnon)
+import Bind (Var, varAnon)
 import Control.Apply (lift2)
 import Control.Monad.Except (class MonadError)
 import Data.Exists (mkExists, runExists)

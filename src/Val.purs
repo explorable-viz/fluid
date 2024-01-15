@@ -2,7 +2,7 @@ module Val where
 
 import Prelude hiding (absurd, append)
 
-import Bindings (Var)
+import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Array ((!!))
@@ -221,6 +221,7 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
 
    join v = definedJoin v
 
+-- Why not maybeJoin x y = sequence (maybeJoin <$> x <*> y)?
 instance JoinSemilattice a => JoinSemilattice (BaseVal a) where
    maybeJoin (Int n) (Int n') = Int <$> (n ≞ n')
    maybeJoin (Float n) (Float n') = Float <$> (n ≞ n')

@@ -2,7 +2,7 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
 
-import Bindings (Bind)
+import Bind (Bind)
 import Data.Exists (mkExists)
 import Data.Foldable (foldl, foldM)
 import Data.FoldableWithIndex (foldWithIndexM)

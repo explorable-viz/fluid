@@ -4,9 +4,8 @@ import Prelude hiding (add)
 
 import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
-import Data.Array (uncons)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), concat, reverse, (:))
+import Data.List (List(..), reverse, uncons, (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -15,15 +14,18 @@ import Data.Set as Set
 import Data.String (joinWith)
 import Dict (Dict)
 import Dict (apply) as D
-import Util (type (×), (\\), (×), (∈), (∪), Endo)
+import Lattice (𝔹)
+import Util (type (×), Endo, (×), (∈), (∪))
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience
 
--- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
-class (Eq g, Vertices g, Semigroup g) <= Graph g where
+-- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
+-- | is different from Data.Graph.
+class (Eq g, Vertices g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
+
    -- | outN and iN satisfy
    -- |   inN G = outN (op G)
    outN :: g -> Vertex -> Set Vertex
@@ -39,9 +41,14 @@ class (Eq g, Vertices g, Semigroup g) <= Graph g where
    op :: Endo g
 
    empty :: g
-   -- | Construct a graph from initial set of vertices and list of hyperedges (α, βs). Read right-to-left,
-   -- | each α is a new vertex to be added, and each β in βs already exists in the graph being constructed.
+
+   -- | Construct a graph from initial set of sinks and topologically sorted list of hyperedges (α, βs). Read
+   -- | right-to-left, each α is a new vertex to be added, and each β in βs already exists in the graph being
+   -- | constructed. Upper adjoint to toEdgeList. If "direction" is bwd, hyperedges are assumed to be in
+   -- | reverse topological order.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
+
+   topologicalSort :: g -> List Vertex
 
 newtype Vertex = Vertex String -- so can use directly as dict key
 
@@ -59,34 +66,36 @@ else instance (Vertices a, Vertices b) => Vertices (a × b) where
 else instance (Functor g, Foldable g, Functor f, Foldable f) => Vertices (g (f Vertex)) where
    vertices = (vertices <$> _) >>> unions
 
-instance (Apply f, Foldable f) => Selectαs (f Boolean) (f Vertex) where
+instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f Vertex) where
    selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
    select𝔹s vα αs = (_ ∈ αs) <$> vα
 else instance (Selectαs a b, Selectαs a' b') => Selectαs (a × a') (b × b') where
    selectαs (v𝔹 × v𝔹') (vα × vα') = selectαs v𝔹 vα ∪ selectαs v𝔹' vα'
    select𝔹s (vα × vα') αs = select𝔹s vα αs × select𝔹s vα' αs
 
-instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f Boolean)) (Dict (f Vertex)) where
+instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f Vertex)) where
    selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) `D.apply` dα)
    select𝔹s dα αs = flip select𝔹s αs <$> dα
 
-outEdges' :: forall g. Graph g => g -> Vertex -> List Edge
-outEdges' g α = L.fromFoldable $ Set.map (α × _) (outN g α)
-
 outEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
-outEdges g αs = concat (outEdges' g <$> L.fromFoldable αs)
+outEdges g = inEdges (op g)
 
 inEdges' :: forall g. Graph g => g -> Vertex -> List Edge
 inEdges' g α = L.fromFoldable $ Set.map (_ × α) (inN g α)
 
 inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
-inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
+inEdges g αs = tailRec go (L.fromFoldable αs × Nil)
+   where
+   go :: List Vertex × List Edge -> Step _ (List Edge)
+   go (Nil × acc) = Done acc
+   go ((α : αs') × acc) = Loop (αs' × (inEdges' g α <> acc))
 
+-- Topologically sorted edge list determining graph.
 toEdgeList :: forall g. Graph g => g -> List HyperEdge
 toEdgeList g =
-   tailRec go (A.fromFoldable (vertices g \\ sinks g) × Nil)
+   tailRec go (topologicalSort g × Nil)
    where
-   go :: Array Vertex × List HyperEdge -> Step _ (List HyperEdge)
+   go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
       Nothing -> Done acc
       Just { head: α, tail: αs } -> Loop (αs × (α × outN g α) : acc)
@@ -111,12 +120,15 @@ showEdgeList es =
    showEdge (α × αs) =
       unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `Set.map` αs) <> "}"
 
+showVertices :: Set Vertex -> String
+showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
+
+-- ======================
+-- boilerplate
+-- ======================
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
 
 instance Show Vertex where
    show = unwrap
-
-showVertices :: Set Vertex -> String
-showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"

@@ -1,4 +1,4 @@
-module Bindings where
+module Bind where
 
 import Prelude
 import Data.List (List(..), (:))

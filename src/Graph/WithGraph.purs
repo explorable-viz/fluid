@@ -11,12 +11,12 @@ import Data.Profunctor.Strong (first)
 import Data.Set (Set, isEmpty)
 import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
-import Data.Tuple (swap)
+import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), assertWhen, check, spy, spyWhenWith, spyWith, (\\), (×))
+import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (\\), (×))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -54,8 +54,8 @@ instance Monad m => MonadWithGraph (WithGraphT m) where
 alloc :: forall m f. MonadAlloc m => Traversable f => Raw f -> m (f Vertex)
 alloc = traverse (const fresh)
 
-runAllocT :: forall m a. Monad m => Int -> AllocT m a -> m (Int × Set Vertex × a)
-runAllocT n m = do
+runAllocT :: forall m a. Monad m => AllocT m a -> Int -> m (Int × Set Vertex × a)
+runAllocT m n = do
    a × n' <- runStateT m n
    let fresh_αs = Set.fromFoldable $ (Vertex <<< show) <$> range' (n + 1) n'
    pure (n' × fresh_αs × a)
@@ -64,12 +64,17 @@ runAllocT n m = do
    range' :: Int -> Int -> List Int
    range' n1 n2 = if n2 < n1 then Nil else range n1 n2
 
-runWithGraphT :: forall g m a. Monad m => Graph g => Set Vertex -> WithGraphT m a -> m (g × a)
-runWithGraphT αs m = do
-   g × a <- runStateT m Nil <#> swap <#> first (\es -> fromEdgeList αs (spyWith "edgeList" showEdgeList es))
-   -- comparing edge lists requires sorting, which causes stack overflow on large graphs
-   assertWhen checking.edgeListIso "edgeListIso" (\_ -> g == fromEdgeList αs (toEdgeList g)) $
-      pure ((spyWhenWith tracing.graphCreation "runWithGraphT" showGraph g) × a)
+runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
+runWithGraphT m αs = do
+   g × a <- runStateT m Nil
+      <#> swap
+      <#> first (fromEdgeList αs <<< report "edge list" showEdgeList)
+   -- only check one direction for now
+   assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList mempty (toEdgeList g)) $
+      pure (g × a)
+   where
+   report :: forall c b. String -> (c -> b) -> Endo c
+   report msg = spyWhen tracing.runWithGraphT ("runWithGraphT " <> msg)
 
 -- ======================
 -- Diagnostics
@@ -78,18 +83,25 @@ runWithGraphT αs m = do
 -- Verify round-tripping of x' = alloc x and vertices x'. (Only makes sense if m is ~ alloc x.)
 alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT m a -> m Unit
 alloc_check msg m = do
-   n × αs × x <- runAllocT 0 m
-   let report = spyWith (show n <> " allocations, unaccounted for") showVertices
-   check (report (αs \\ vertices (spy "Allocated term" x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
+   n × αs × x <- runAllocT m 0
+   let report = spy (show n <> " allocations, unaccounted for") showVertices
+   check (report (αs \\ vertices x) # isEmpty) $ "alloc " <> msg <> " round-trip"
+
+runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
+runWithGraphT_spy = runWithGraphT
+   >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
+
+runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Set Vertex -> g × a
+runWithGraph_spy m = runWithGraphT_spy m >>> unwrap
 
 -- ======================
 -- Boilerplate
 -- ======================
-runAlloc :: forall a. Int -> Alloc a -> Int × Set Vertex × a
-runAlloc n = runAllocT n >>> unwrap
+runAlloc :: forall a. Alloc a -> Int -> Int × Set Vertex × a
+runAlloc m = runAllocT m >>> unwrap
 
-runWithGraph :: forall g a. Graph g => Set Vertex -> WithGraph a -> g × a
-runWithGraph αs = runWithGraphT αs >>> unwrap
+runWithGraph :: forall g a. Graph g => WithGraph a -> Set Vertex -> g × a
+runWithGraph m = runWithGraphT m >>> unwrap
 
 instance Monad m => MonadAlloc (WithGraphAllocT m) where
    fresh = lift fresh

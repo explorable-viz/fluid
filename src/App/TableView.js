@@ -15,6 +15,18 @@ function curry4(f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
+function Sel_isNone (v) {
+   return v.tag == "None"
+}
+
+function Sel_isPrimary (v) {
+   return v.tag == "Primary"
+}
+
+function Sel_isSecondary (v) {
+   return v.tag == "Secondary"
+}
+
 function val_α(v) {
    return v._1
 }
@@ -46,15 +58,15 @@ function colorShade(col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
-// any record type with only primitive fields -> boolean
+// any record type with only primitive fields -> Sel
 function isUsed (r) {
-   return Object.keys(r).some(k => val_α(r[k]))
+   return Object.keys(r).some(k => k != indexKey && !Sel_isNone(val_α(r[k])))
 }
 
 // Generic to all tables.
 function drawTable_ (
    id,
-   childIndex,
+   suffix,
    {
       title,   // String
       filter,  // Boolean
@@ -63,9 +75,7 @@ function drawTable_ (
    listener
 ) {
    return () => {
-      const childId = id + '-' + childIndex
-      const cellFill = '#ffffff'
-      const selectedFill = '#93E9BE'
+      const childId = id + '-' + suffix
       const div = d3.select('#' + id)
 
       indexKey = "__n"
@@ -112,8 +122,11 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => d.name != indexKey && val_α(d.value) ? 'cell-selected' : null)
-            .attr('bgcolor', d => d.name != indexKey && val_α(d.value) ? selectedFill : cellFill)
+            .attr('class', d => d.name != indexKey && Sel_isPrimary(val_α(d.value))
+               ? 'cell-selected'
+               : d.name != indexKey && Sel_isSecondary(val_α(d.value))
+                  ? 'cell-selected-secondary'
+                  : 'cell-unselected')
             .text(d => d.name != indexKey ? prim(val_v(d.value)) : d.value)
             .on('mousedown', e => listener(e))
 

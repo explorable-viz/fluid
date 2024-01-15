@@ -2,7 +2,7 @@ module Trace where
 
 import Prelude
 
-import Bindings (Var)
+import Bind (Var)
 import Data.Exists (Exists)
 import Data.List (List)
 import Data.Maybe (Maybe)

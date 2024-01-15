@@ -16,7 +16,8 @@ fig1 =
         , "example/slicing/convolution/test-image"
         , "example/slicing/convolution/filter/emboss"
         ]
-   , xs: [ "image", "filter" ]
+   , datasets: []
+   , inputs: [ "image", "filter" ]
    }
 
 fig2 :: FigSpec
@@ -28,7 +29,8 @@ fig2 =
         , "example/slicing/convolution/test-image"
         , "example/slicing/convolution/filter/emboss"
         ]
-   , xs: [ "image", "filter" ]
+   , datasets: []
+   , inputs: [ "image", "filter" ]
    }
 
 main :: Effect Unit

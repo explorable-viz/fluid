@@ -2,12 +2,12 @@ module App.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, from, get_intOrNumber, record)
-import App.Util.Select (constrArg, field, listElement)
+import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record)
+import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Dict (Dict, get)
-import Lattice (𝔹, neg)
+import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
@@ -16,18 +16,18 @@ import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 
-newtype BarChart = BarChart { caption :: String × 𝔹, data :: Array BarChartRecord }
-newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
+newtype BarChart = BarChart { caption :: String × Sel, data :: Array BarChartRecord }
+newtype BarChartRecord = BarChartRecord { x :: String × Sel, y :: Number × Sel }
 
 foreign import drawBarChart :: Renderer BarChart
 
-instance Reflect (Dict (Val 𝔹)) BarChartRecord where
+instance Reflect (Dict (Val Sel)) BarChartRecord where
    from r = BarChartRecord
       { x: unpack string (get f_x r)
       , y: get_intOrNumber f_y r
       }
 
-instance Reflect (Dict (Val 𝔹)) BarChart where
+instance Reflect (Dict (Val Sel)) BarChart where
    from r = BarChart
       { caption: unpack string (get f_caption r)
       , data: record from <$> from (get f_data r)

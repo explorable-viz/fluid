@@ -9,4 +9,3 @@
 set -e
 
 git config --local include.path "../.gitconfig.include"
-. script/install-hooks.sh

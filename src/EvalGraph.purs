@@ -2,31 +2,33 @@ module EvalGraph where
 
 import Prelude hiding (apply)
 
-import Bindings (Bind, (↦), varAnon)
+import Bind (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
+import Data.Profunctor.Strong ((***))
 import Data.Set (Set, empty, insert)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
+import Data.Tuple (curry)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, op, selectαs, select𝔹s, showVertices, vertices)
+import Graph (Vertex, op, selectαs, select𝔹s, showGraph, showVertices, sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
-import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT)
+import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (𝔹, Raw)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyWhenWith, spyWith, successful, throw, validateWhen, with, (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, with, (\\), (×), (∪), (⊆))
 import Util.Pair (unzip) as P
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
@@ -170,7 +172,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
    addModule mod γ = do
       γ' <- eval_module γ mod empty
-      pure $ γ <+> (spyWith "addModule" (vertices >>> showVertices) γ')
+      pure $ γ <+> γ'
 
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
    addDataset (x ↦ e) γ = do
@@ -193,29 +195,33 @@ graphGC
    -> Raw Expr
    -> m (GraphEval GraphImpl)
 graphGC { n, γ } e = do
-   _ × _ × g × eα × vα <- runAllocT n do
+   _ × _ × g × eα × outα <- flip runAllocT n do
       eα <- alloc e
-      let inputs = vertices (γ × eα) # spyWhenWith tracing.graphInputSize "Input count" (Set.size >>> show)
-      g × vα <- runWithGraphT inputs (eval γ eα mempty)
-      pure (g × eα × vα)
+      let inputs = vertices (γ × eα)
+      g × outα <- runWithGraphT_spy (eval γ eα mempty) inputs
+      when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
+      pure (g × eα × outα)
 
-   let
-      toOutput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Env 𝔹 × Expr 𝔹 -> Val 𝔹
-      toOutput slice g0 (γ𝔹 × e𝔹) = select𝔹s vα (vertices (slice αs g0))
-         where
-         αs = selectαs (γ𝔹 × e𝔹) (γ × eα)
-            # validateWhen checking.inputsInGraph "inputsInGraph" (_ ⊆ vertices g0)
-
-      toInput :: (Set Vertex -> Endo GraphImpl) -> GraphImpl -> Val 𝔹 -> Env 𝔹 × Expr 𝔹
-      toInput slice g0 v𝔹 = select𝔹s (γ × eα) (vertices (slice αs g0))
-         where
-         αs = selectαs v𝔹 vα
-            # validateWhen checking.outputsInGraph "outputsInGraph" (_ ⊆ vertices g0)
+   let inα = γ × eα
    pure
-      { gc: GC { fwd: toOutput fwdSlice g, bwd: toInput bwdSlice g }
-      , gc_op: GC { fwd: toInput fwdSlice (op g), bwd: toOutput bwdSlice (op g) }
+      { gc: GC
+           { fwd: \in𝔹 -> select𝔹s outα (vertices (fwdSlice' (selectαs in𝔹 inα ∪ (sinks g \\ vertices inα)) g))
+           , bwd: \out𝔹 -> select𝔹s inα (vertices (bwdSlice' (selectαs out𝔹 outα) g))
+           }
+      , gc_op: GC
+           { fwd: \out𝔹 -> select𝔹s inα (vertices (fwdSlice' (selectαs out𝔹 outα ∪ (sources g \\ vertices outα)) (op g)))
+           , bwd: \in𝔹 -> select𝔹s outα (vertices (bwdSlice' (selectαs in𝔹 inα) (op g)))
+           }
       , γα: γ
       , eα
       , g
-      , vα
+      , vα: outα
       }
+   where
+   fwdSlice' :: Set Vertex -> Endo GraphImpl
+   fwdSlice' = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
+
+   bwdSlice' :: Set Vertex -> Endo GraphImpl
+   bwdSlice' = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
+
+   spyFun' b msg = spyFunWhen b msg (showVertices *** showGraph) showGraph

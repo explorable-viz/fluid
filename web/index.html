@@ -38,21 +38,14 @@
 
 <div id="FLUID" class="grid grid-pad">
    <div class="col-3-12 align-right">
-      <h3 class="title lowercase">fluid</h3>
+      <h3 class="title lowercase">figure 1</h3>
    </div>
    <div class="col-9-12">
-      <p>Understanding charts, diagrams and other visual information means understanding what visual elements <i>represent</i>: how specific visual elements relate to the data they were computed from. <b>Fluid</b> is an experimental programming language, implemented in <a href="https://www.purescript.org/">PureScript</a>, whose outputs are automatically linked to inputs in a fine-grained way. A Fluid program is a regular functional program, but instead of simply producing an opaque value, Fluid uses a bidirectional dynamic analysis to equip that value with information about how its parts relate to specific parts of the input. We can use that information to automatically provide additional UI affordances, allowing users to explores those connections without the programmer having to build those features in explicitly. For example if the user selects a bar in a bar chart computed from a table of data, we can automatically provide a view of the underlying table containing only the data needed to compute the selected bar.
-   </div>
-
-   <div class="col-3-12 align-right">
-      <h3 class="title lowercase">data-linked visualisations </h3>
-   </div>
-   <div class="col-9-12">
-      <p></p>Try the data linking by selecting (clicking on) the bar for Germany in the left-hand chart below. When a view selection is active, we can automatically generate what we call a <b>data selection</b>: a restricted view of a dataset where only relevant rows are shown and relevant cells within those rows are highlighted. Now try selecting some of the data points for the years 2017 and 2018 in the right-hand chart. (Zoom in if it's hard to select the points.) The relationship between the output selection and the resulting input selection is <i>monotonic</i>: the more output you select, the more input is selected. (The UI doesn't support this yet, but it is also meaningful to select input and have the output selection be derived automatically.)
+      <p>Bar chart and line chart showing renewables data:
 
       <p><div class="parent"><div class="center" id="fig-1"></div></div></p>
 
-      <p>Hand-crafting transparency features like these would involve manually tracking the dependencies between input and output. Fluid does this automatically, allowing the programmer to simply express the bar chart and line chart as pure functions, using standard functional programming features such as higher-order functions and list comprehensions. Take a look at the source code below:
+      <p>Source code:</p>
          <details><summary>bar-chart.fld</summary>
             <div id="codemirror-bar-chart"></div>
          </details>
@@ -62,31 +55,17 @@
          <details><summary>renewables.fld</summary>
             <div id="codemirror-renewables"></div>
          </details>
-
-      <p>The mathematics of the bidirectional analysis is described by a <b>Galois connection</b>. This establishes that the forward and backward parts of the analysis are <i>adjoint</i>, meaning they almost invert each other in the following sense: the data selection computed by the backwards analysis for a given view selection, if fed into the forward analysis, will suffice for (at least) the original view selection. Similarly, the view selection computed by the forwards analysis, if fed into the backwards analysis, will require (no more than) the original data selection. (&#8220;Require no more, promise no less&#8221; is an apt slogan.) See our <a href="https://dl.acm.org/doi/10.1145/3498668">paper</a> for more on the formal setting.
    </div>
 
    <div class="col-3-12 align-right">
-      <h4 class="title lowercase">brushing and linking</h4>
+      <h3 class="title lowercase">figure 2</h3>
    </div>
    <div class="col-9-12">
-      <p>Because every selection has a complement, the Galois connection has a De Morgan dual. The action of the dual on Galois connections is <i>contravariant</i>: it inverts the direction of the bidirectional dependency analysis, by transposing the roles of the two adjoints. Why invert something that is already bidirectional? Well, the De Morgan dual also changes the meaning of the analyses: under the dual interpretation, the backwards analysis propagates the absence of demand, rather than demand, and the forwards analysis propagates resource unavailability, rather than availability.
-
-      <p>It turns out we can use this to link output selections to the related parts of other outputs generated from the same input, a feature is called <b>brushing and linking</b> in the data visualisation literature. Go back to the example above and select the bar for USA or China in the left-hand chart: all points relating to 2015 will be selected selected on the right. These are the parts of the right-hand chart which &#8220;compete for resources&#8221; with the selection on the left, the sense that they demand data which intersects in a non-empty way with the data demanded by the original selection. We compute the selection on the right not with the backwards analysis (which points in the wrong direction) nor with the forwards analysis (which computes the sufficiency relation), but instead with the De Morgan dual of the forwards analysis. The De Morgan dual of the forwards analysis determines the output on the right that we <i>wouldn't</i> be able to compute if the data demanded by the selection on the left were <i>unavailable</i>: in other words, it determines what the data selection is <i>necessary</i> for, rather than <i>sufficient</i> for. You can play this game in the other direction by selecting any point from 2015 on the right, which will highlight both USA and China on the left: again, because these bars both consume data which is also needed for the original point. (We could making this clearer in the UI by showing the data selection induced by USA and China, perhaps greyed out, and highlighting how it overlaps with the data needed by the original point.)
-
-      <p>Brushing and linking is a common feature in data visualisation, but existing approaches are ad hoc and somewhat limited. Building it into a language has the potential to make it pervasive and robust. Moreover, we can always provide a view of the specific data elements which explain <i>why</i> the two visual elements are linked, providing another level of transparency.
-   </div>
-
-   <div class="col-3-12 align-right">
-      <h3 class="title lowercase">infrastructure for <br>explorable explanations</h3>
-   </div>
-   <div class="col-9-12">
-      <p>Another future application is language infrastructure for <i>explorable explanations</i>, interactive web essays that explain challenging technical ideas. How might programming languages help with these? One idea would be a runtime which allows a user to drill down into a computed artefact such as an image, and explore the relationships between the stages of the computational pipeline using interactions like the ones above.
-
-      <p>Consider the following implementation of <a href="https://en.wikipedia.org/wiki/Kernel_(image_processing)#Convolution">matrix convolution</a>, an image processing technique which transforms an input matrix using a small matrix called a filter (or a kernel) to apply effects like blurring or embossing. Trying selecting different cells in the output (the matrix on right) to see how they demand cells in the input array and filter:
+      <p>Matrix convolution (zero-padding):
 
       <p><div class="parent"><div class="center" id="fig-conv-1"></div></div>
-      <p>In particular, notice how only certain parts of the input are relevant to a given output cell. Can some of the irrelevant inputs be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of output cells near the edge. (As mentioned above, it is not yet possible to select input elements and have the output selection be derived automatically.) Interactions like these would be more useful if we could show the actual computation involved for a given element, but even this simple extensional view already reveals interesting things about the implementation. Here is the pure functional code:
+
+      <p>Source code:</p>
       <details><summary>convolution.fld</summary>
          <div id="codemirror-convolution"></div>
       </details>
@@ -94,20 +73,14 @@
          <div id="codemirror-fig-conv-1"></div>
       </details>
 
-      <p>The library function <code>convolve</code> implements the convolution algorithm itself, and helper functions <code>zero</code>, <code>wrap</code> and <code>extend</code> implement specific policies (&#8220;methods&#8221;) for dealing with the boundary.
+      <p>Matrix convolution (wrap-around):
 
-      <p>Contrast the example above, which uses <code>zero</code> as the boundary method, with one which uses <code>wrap</code>. Then selecting an output cell near the edge has a quite different behaviour: instead of some of the filter elements becoming irrelevant, we can see visually that the input image behaves as though opposite sides were connected. These examples show how making the input-output relationships fine-grained rather than monolithic reveals quite a lot about what a computation actually does.
       <p><div class="parent"><div class="center" id="fig-conv-2"></div></div>
+
+      <p>Source code:</p>
       <details><summary>emboss-wrap.fld</summary>
          <div id="codemirror-fig-conv-2"></div>
       </details>
-   </div>
-
-   <div class="col-3-12 align-right">
-      <h3 class="title lowercase">project details</h3>
-   </div>
-   <div class="col-9-12">
-      <p>Fluid is being developed by <a href="https://dynamicaspects.org/research/">Roly Perera</a>, <a href="https://min-nguyen.github.io/">Minh Nguyen</a> and <a href="https://github.com/JosephBond">Joe Bond</a>. Our <a href="https://f.luid.org/0.3.1">pilot project</a> was funded by The Alan Turing Institute's AI for Science and Government programme. Follow us on <a href="https://github.com/explorable-viz/fluid">GitHub</a>, or get in touch by <a href = "mailto:roly.perera@bristol.ac.uk">email</a>.
    </div>
 </div>
 <script src="app.js"></script>

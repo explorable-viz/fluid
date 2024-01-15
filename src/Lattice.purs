@@ -2,7 +2,7 @@ module Lattice where
 
 import Prelude hiding (absurd, join, top)
 
-import Bindings (Var)
+import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (zipWith) as A
@@ -16,7 +16,7 @@ import Data.Traversable (sequence)
 import Dict ((\\), (∪), intersectionWith, unionWith) as D
 import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
 import Effect.Exception (Error)
-import Util (type (×), Endo, assert, successfulWith, throw, (×))
+import Util (type (×), Endo, assert, shapeMismatch, successfulWith, (×))
 import Util.Pair (Pair(..))
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
@@ -52,7 +52,7 @@ relativeComplement a = neg >>> (_ ∧ a)
 
 instance JoinSemilattice Boolean where
    join = (||)
-   maybeJoin x y = pure (join x y)
+   maybeJoin x y = pure (x ∨ y)
 
 instance MeetSemilattice Boolean where
    meet = (&&)
@@ -70,7 +70,7 @@ instance Neg Boolean where
 
 instance JoinSemilattice Unit where
    join _ = identity
-   maybeJoin x y = pure (join x y)
+   maybeJoin x y = pure (x ∨ y)
 
 instance MeetSemilattice Unit where
    meet _ = identity
@@ -123,6 +123,8 @@ instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) wher
 
 instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) where
    meet (a × a') (b × b') = meet a b × meet a' b'
+else instance MeetSemilattice a => MeetSemilattice (Dict a) where
+   meet = D.unionWith (∧)
 else instance (Functor f, Apply f, MeetSemilattice a) => MeetSemilattice (f a) where
    meet a = (a `lift2 (∧)` _)
 
@@ -148,7 +150,7 @@ instance JoinSemilattice a => JoinSemilattice (List a) where
    join xs = definedJoin xs
    maybeJoin xs ys
       | (length xs :: Int) == length ys = sequence (zipWith maybeJoin xs ys)
-      | otherwise = throw "Mismatched list lengths"
+      | otherwise = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
    join = D.unionWith (∨) -- faster than definedJoin
@@ -164,7 +166,7 @@ instance JoinSemilattice a => JoinSemilattice (Array a) where
    join xs = definedJoin xs
    maybeJoin xs ys
       | length xs == (length ys :: Int) = sequence (A.zipWith maybeJoin xs ys)
-      | otherwise = throw "Mismatched array lengths"
+      | otherwise = shapeMismatch unit
 
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
 

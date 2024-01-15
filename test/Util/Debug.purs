@@ -2,39 +2,39 @@ module Test.Util.Debug where
 
 -- These flags considered only when Util.debug.tracing is true.
 tracing
-   :: { graphCreation :: Boolean
-      , graphInputSize :: Boolean
-      , graphBwdSliceInput :: Boolean
-      , graphBwdSliceOutput :: Boolean
-      , graphFwdSliceInput :: Boolean
-      , graphFwdSliceOutput :: Boolean
-      , checkEqual :: Boolean
+   :: { runWithGraphT :: Boolean
+      , graphBwdSlice :: Boolean
+      , graphFwdSlice :: Boolean
+      , checkEq :: Boolean
+      , bwdSelection :: Boolean
+      , fwdAfterBwd :: Boolean
       }
 
 tracing =
-   { graphCreation: false
-   , graphInputSize: false
-   , graphBwdSliceInput: false
-   , graphBwdSliceOutput: false
-   , graphFwdSliceInput: false
-   , graphFwdSliceOutput: false
-   , checkEqual: false
+   { runWithGraphT: false
+   , graphBwdSlice: false
+   , graphFwdSlice: false
+   , checkEq: false
+   , bwdSelection: false
+   , fwdAfterBwd: false
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
 -- that are not covered explicitly by tests.
 checking
-   :: { edgeListIso :: Boolean
-      , inputsInGraph :: Boolean
+   :: { edgeListGC :: Boolean
+      , edgeListSorted :: Boolean
+      , inputsAreSinks :: Boolean
       , outputsInGraph :: Boolean
       , allocRoundTrip :: Boolean
       }
 
 checking =
-   { edgeListIso: false
-   , inputsInGraph: true
+   { edgeListGC: true
+   , edgeListSorted: true
+   , inputsAreSinks: true
    , outputsInGraph: true
-   , allocRoundTrip: true
+   , allocRoundTrip: false
    }
 
 -- Should be set to true except when there are specific outstanding problems.
@@ -47,7 +47,7 @@ testing
 
 testing =
    { fwdPreservesTop: true
-   , bwdDuals: false
+   , bwdDuals: true
    , fwdDuals: true
    , naiveFwd: true
    }
