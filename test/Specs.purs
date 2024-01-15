@@ -305,7 +305,7 @@ linkedOutputs_spec1' :: TestLinkedOutputsSpec2
 linkedOutputs_spec1' =
    { spec:
         { divId: "fig-1"
-        , datasets: [ "renewables" ↦ "dataset/renewables" ]
+        , datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
         , imports: []
         , file: File "bar-chart-line-chart"
         , inputs: [ "renewables_data" ]
