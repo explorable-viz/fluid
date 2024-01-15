@@ -18,13 +18,15 @@ import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (eventListener)
 
 data View
-   = MatrixFig MatrixView
-   | TableFig TableView
-   | LineChartFig LineChart
-   | BarChartFig BarChart
+   -- one for each constructor of the Fluid 'Plot' data type
+   = BarChartFig BarChart
    | BubbleChartFig BubbleChart
+   | LineChartFig LineChart
    | ScatterPlotFig ScatterPlot
    | MultiView (Dict View)
+   -- plus default visualisations for specific kinds of value
+   | MatrixFig MatrixView
+   | TableFig TableView
 
 drawView :: HTMLId -> String -> OnSel -> View -> Effect Unit
 drawView divId suffix onSel = case _ of
