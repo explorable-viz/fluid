@@ -88,12 +88,6 @@ type LinkedOutputsResult =
    , v0' :: Val 𝔹 -- selection that arose on shared input
    }
 
-type LinkedInputsResult =
-   { v :: Val 𝔹 -- selection on primary input
-   , v' :: Val 𝔹 -- resulting selection on other input
-   , v0 :: Val 𝔹 -- selection that arose on shared output
-   }
-
 runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
 runAffs_ f as = flip runAff_ (sequence as) case _ of
    Left err -> log $ show err
