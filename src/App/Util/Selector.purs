@@ -4,7 +4,6 @@ import Prelude hiding (absurd)
 
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
-import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cCons, cNil)
 import Dict (member, update)
@@ -26,7 +25,7 @@ listElement n δv = unsafePartial $ case _ of
 
 field :: Var -> Endo (Selector Val)
 field f δv = unsafePartial $ case _ of
-   Val α (Record r) -> Val α $ Record $ update (δv >>> Just) f r
+   Val α (Record r) -> Val α $ Record $ update δv f r
 
 constrArg :: Ctr -> Int -> Endo (Selector Val)
 constrArg c n δv = unsafePartial $ case _ of
@@ -47,15 +46,15 @@ dict δα = unsafePartial $ case _ of
 
 dictKey :: String -> Endo 𝔹 -> Selector Val
 dictKey s δα = unsafePartial $ case _ of
-   Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first δα >>> Just) s d
+   Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first δα) s d
 
 dictVal :: String -> Endo (Selector Val)
 dictVal s δv = unsafePartial $ case _ of
-   Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (second δv >>> Just) s d
+   Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (second δv) s d
 
 envVal :: Var -> Selector Val -> Selector Env
 envVal x δv γ =
-   assert (x `member` γ) $ update (δv >>> Just) x γ
+   assert (x `member` γ) $ update δv x γ
 
 listCell :: Int -> Endo 𝔹 -> Selector Val
 listCell n δα = unsafePartial $ case _ of

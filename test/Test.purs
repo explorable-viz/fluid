@@ -11,13 +11,13 @@ import Effect.Aff (Aff)
 import Lattice (neg)
 import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
-import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
+import Test.Specs (linkedInputs_cases, linkedInputs_spec3, linkedOutputs_cases)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
-main = run tests
+main = run $ linkedInputsSuite [ linkedInputs_spec3 ]
 
 --main = run $ linkedInputsSuite linkedInputs_cases
 

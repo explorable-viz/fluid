@@ -158,9 +158,10 @@ instance JoinSemilattice a => JoinSemilattice (Dict a) where
 
 mayFailUpdate :: forall a m. MonadError Error m => JoinSemilattice a => Dict a -> Var × a -> m (Dict a)
 mayFailUpdate m (k × v) =
+   -- TODO: reimplement in terms of single call to "alter"?
    case lookup k m of
       Nothing -> pure (insert k v m)
-      Just v' -> update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
+      Just v' -> update <$> (const <$> maybeJoin v' v) <@> k <@> m
 
 instance JoinSemilattice a => JoinSemilattice (Array a) where
    join xs = definedJoin xs
