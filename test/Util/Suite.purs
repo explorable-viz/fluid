@@ -2,7 +2,7 @@ module Test.Util.Suite where
 
 import Prelude
 
-import App.Fig (FigSpec, LinkedOutputsFigSpec, Fig, figResult, linkedOutputsResult, loadFig, loadLinkedOutputsFig, selectInput)
+import App.Fig (Fig, FigSpec, LinkedOutputsFigSpec, figResult, linkedOutputsResult, loadFig, loadLinkedOutputsFig, selectInput, selectOutput)
 import App.Util (to𝔹)
 import Bind (Bind, (↦))
 import Data.Either (isLeft)
@@ -89,10 +89,22 @@ linkedOutputsTest { spec, δv, v'_expect } = do
    v1' × v2' × _ <- loadLinkedOutputsFig spec >>= flip linkedOutputsResult δv
    checkPretty "linked output" v'_expect (if isLeft δv then v2' else v1')
 
+linkedOutputsTest2 :: TestLinkedOutputsSpec2 -> Aff Fig
+linkedOutputsTest2 { spec, δ_out, out_expect } = do
+   fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
+   let out × _ = figResult fig
+   checkEq "selected" "expected" (to𝔹 <$> out) (out_expect (botOf out))
+   pure fig
+
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
 linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
    where
    name spec = "linked-outputs/" <> unwrap spec.spec.file1 <> " <-> " <> unwrap spec.spec.file2
+
+linkedOutputsSuite2 :: Array TestLinkedOutputsSpec2 -> Array (String × Aff Unit)
+linkedOutputsSuite2 specs = specs <#> (name &&& (linkedOutputsTest2 >>> void))
+   where
+   name { spec } = unwrap spec.file
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
