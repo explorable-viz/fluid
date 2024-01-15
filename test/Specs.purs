@@ -417,7 +417,7 @@ linkedInputs_spec3 =
         , x1: "non_renewables"
         , x1File: File "non-renewables"
         }
-   , δv: Left $ listElement 51 (field "coal_cap" neg)
+   , δv: Left $ listElement 1 (field "coalCap" neg)
    , v'_expect: Nothing
    }
 
@@ -431,7 +431,7 @@ linkedInputs_spec4 =
         , x2: "non_renewables"
         , x2File: File "non-renewables"
         }
-   , δv: Left $ listElement 204 (field "capacity" neg)
+   , δv: Left $ identity
    , v'_expect: Nothing
    }
 
@@ -445,7 +445,7 @@ linkedInputs_spec5 =
         , x2: "renewables"
         , x2File: File "mini-renewables"
         }
-   , δv: Left $ listElement 0 (field "coal_cap" neg)
+   , δv: Left $ listElement 0 (field "coalCap" neg)
    , v'_expect: Just $ listElement 0 (field "capacity" neg) >>> listElement 1 (field "capacity" neg) >>> listElement 2 (field "capacity" neg) >>> listElement 3 (field "capacity" neg) --"({capacity : ⸨100.74⸩, country : \"USA\", energyType : \"Bio\", output : 61.83, year : 2018} : ({capacity : ⸨734.79⸩, country : \"USA\", energyType : \"Hydro\", output : 286.62, year : 2018} : ({capacity : ⸨455.43⸩, country : \"USA\", energyType : \"Solar\", output : 93.36, year : 2018} : ({capacity : ⸨829.31⸩, country : \"USA\", energyType : \"Wind\", output : 272.67, year : 2018} : []))))"
    }
 

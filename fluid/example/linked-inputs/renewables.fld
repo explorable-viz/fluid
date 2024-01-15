@@ -11,7 +11,7 @@
 
    { year: 2013, country: "DEU", energyType: "Bio", output: 45.51, capacity: 61.58},
    { year: 2013, country: "DEU", energyType: "Hydro", output: 23.0, capacity: 48.97},
-   { year: 2013, country: "DEU", energyType: "Solar", output: 31.01, capacity: 321.58},
+   { year: 2013, country: "DEU", energyType: "Solar", output: 30.62, capacity: 321.58},
    { year: 2013, country: "DEU", energyType: "Wind", output: 52.74, capacity: 293.28},
 
    { year: 2013, country: "FRA", energyType: "Bio", output: 5.68, capacity: 6.66},
@@ -61,7 +61,7 @@
 
    { year: 2014, country: "DEU", energyType: "Bio", output: 48.29, capacity: 63.60},
    { year: 2014, country: "DEU", energyType: "Hydro", output: 19.59, capacity: 48.88},
-   { year: 2014, country: "DEU", energyType: "Solar", output: 36.06, capacity: 332.00},
+   { year: 2014, country: "DEU", energyType: "Solar", output: 35.45, capacity: 332.00},
    { year: 2014, country: "DEU", energyType: "Wind", output: 58.5, capacity: 338.22},
 
    { year: 2014, country: "FRA", energyType: "Bio", output: 5.99, capacity: 7.18},
@@ -111,7 +111,7 @@
 
    { year: 2015, country: "DEU", energyType: "Bio", output: 50.33, capacity: 65.44},
    { year: 2015, country: "DEU", energyType: "Hydro", output: 18.98, capacity: 48.97},
-   { year: 2015, country: "DEU", energyType: "Solar", output: 38.73, capacity: 343.57},
+   { year: 2015, country: "DEU", energyType: "Solar", output: 38.08, capacity: 343.57},
    { year: 2015, country: "DEU", energyType: "Wind", output: 80.62, capacity: 390.52},
 
    { year: 2015, country: "FRA", energyType: "Bio", output: 6.53, capacity: 8.15},
@@ -161,7 +161,7 @@
 
    { year: 2016, country: "DEU", energyType: "Bio", output: 50.93, capacity: 67.28},
    { year: 2016, country: "DEU", energyType: "Hydro", output: 20.55, capacity: 49.32},
-   { year: 2016, country: "DEU", energyType: "Solar", output: 38.1, capacity: 356.36},
+   { year: 2016, country: "DEU", energyType: "Solar", output: 37.56, capacity: 356.36},
    { year: 2016, country: "DEU", energyType: "Wind", output: 79.92, capacity: 433.09},
 
    { year: 2016, country: "FRA", energyType: "Bio", output: 7.52, capacity: 9.11},
@@ -211,7 +211,7 @@
 
    { year: 2017, country: "DEU", energyType: "Bio", output: 50.92, capacity: 69.90},
    { year: 2017, country: "DEU", energyType: "Hydro", output: 20.15, capacity: 49.32},
-   { year: 2017, country: "DEU", energyType: "Solar", output: 39.4, capacity: 370.46},
+   { year: 2017, country: "DEU", energyType: "Solar", output: 38.76, capacity: 370.46},
    { year: 2017, country: "DEU", energyType: "Wind", output: 105.69, capacity: 486.88},
 
    { year: 2017, country: "FRA", energyType: "Bio", output: 7.78, capacity: 9.55},
@@ -261,12 +261,12 @@
 
    { year: 2018, country: "DEU", energyType: "Bio", output: 50.79, capacity: 75.34},
    { year: 2018, country: "DEU", energyType: "Hydro", output: 17.69, capacity: 46.69},
-   { year: 2018, country: "DEU", energyType: "Solar", output: 43.46, capacity: 395.60},
+   { year: 2018, country: "DEU", energyType: "Solar", output: 44.32, capacity: 395.60},
    { year: 2018, country: "DEU", energyType: "Wind", output: 109.95, capacity: 514.39},
 
    { year: 2018, country: "FRA", energyType: "Bio", output: 8.38, capacity: 11.48},
    { year: 2018, country: "FRA", energyType: "Hydro", output: 65.11, capacity: 210.24},
-   { year: 2018, country: "FRA", energyType: "Solar", output: 10.92, capacity: 84.71},
+   { year: 2018, country: "FRA", energyType: "Solar", output: 10.81, capacity: 84.71},
    { year: 2018, country: "FRA", energyType: "Wind", output: 28.6, capacity: 130.52},
 
    { year: 2018, country: "EGY", energyType: "Bio", output: 0.0, capacity: 0.61},
