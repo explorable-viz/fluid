@@ -14,7 +14,6 @@ import Data.List (List(..), (:))
 import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
 import Dict (Dict, mapWithKey)
 import Effect (Effect)
-import Util (absurd, error)
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (eventListener)
 
@@ -53,4 +52,3 @@ view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
    TableFig (TableView { title, filter: true, table: record identity <$> from u })
 view title (Val _ (Matrix r)) =
    MatrixFig (MatrixView { title, matrix: matrixRep r })
-view _ _ = error absurd
