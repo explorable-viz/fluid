@@ -6,7 +6,7 @@ import Bind (Var)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)
-import Data.Tuple (uncurry)
+import Data.Tuple (snd, uncurry)
 import DataType (cCons, cNil)
 import Dict (Dict, get)
 import Effect (Effect)
@@ -15,7 +15,7 @@ import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Test.Util (Selector)
 import Util (type (×), dup)
-import Val (BaseVal(..), Val(..))
+import Val (BaseVal(..), DictRep(..), Val(..))
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 
@@ -57,3 +57,7 @@ class Reflect a b where
 instance Reflect (Val Sel) (Array (Val Sel)) where
    from (Val _ (Constr c Nil)) | c == cNil = []
    from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
+
+-- Discard both constructor-level annotations and key annotations.
+instance Reflect (Val Sel) (Dict (Val Sel)) where
+   from (Val _ (Dictionary (DictRep d))) = d <#> snd

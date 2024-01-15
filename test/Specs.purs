@@ -5,10 +5,10 @@ import Prelude
 import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, envVal, field, listCell, listElement, matrixElement)
 import Bind ((↦))
 import Data.Either (Either(..))
-import DataType (cBarChart, cPair, cSome, f_data, f_y)
-import Lattice (botOf, neg)
+import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, cSome, f_data, f_plots, f_y)
+import Lattice (neg)
 import Module (File(..))
-import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
+import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec2)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -301,6 +301,32 @@ graphics_cases =
      }
    ]
 
+linkedOutputs_spec1' :: TestLinkedOutputsSpec2
+linkedOutputs_spec1' =
+   { spec:
+        { divId: "fig-1"
+        , datasets: [ "renewables" ↦ "dataset/renewables" ]
+        , imports: []
+        , file: File "bar-chart-line-chart"
+        , inputs: [ "renewables_data" ]
+        }
+   , δ_out: constrArg cMultiPlot 0
+        (dictVal "bar chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))))
+   , out_expect: constrArg cMultiPlot 0
+        ( dictVal "line chart"
+             ( constrArg cLineChart 0
+                  ( field f_plots
+                       ( listElement 0 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                            >>> listElement 1 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                            >>> listElement 2 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                            >>> listElement 3 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                            >>> listElement 4 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                       )
+                  )
+             )
+        )
+   }
+
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
@@ -361,6 +387,21 @@ linkedOutputs_spec1 =
         \} : []))))\
         \}"
    }
+
+linkedOutputs_cases2 :: Array TestLinkedOutputsSpec2
+linkedOutputs_cases2 =
+   [ { spec:
+          { divId: ""
+          , datasets: [ "data" ↦ "pairs-data" ]
+          , imports: []
+          , file: File "linked-outputs/pairs"
+          , inputs: [ "data" ]
+          }
+     , δ_out: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg)))
+     , out_expect: constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg >>> constrArg cPair 1 neg))
+     }
+   , linkedOutputs_spec1'
+   ]
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
@@ -455,8 +496,15 @@ linkedInputs_spec3 =
         , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "non_renewables" ]
         }
-   , δ_in: "renewables" ↦ listElement 51 (field "coalCap" neg)
-   , in_expect: botOf
+   , δ_in: "non_renewables" ↦ listElement 51 (field "coalCap" neg)
+   , in_expect:
+        envVal "non_renewables" (listElement 51 (field "coalCap" neg >>> field "gasCap" neg >>> field "nuclearCap" neg >>> field "petrolCap" neg)) >>>
+           envVal "renewables"
+              ( listElement 204 (field "capacity" neg)
+                   >>> listElement 205 (field "capacity" neg)
+                   >>> listElement 206 (field "capacity" neg)
+                   >>> listElement 207 (field "capacity" neg)
+              )
    }
 
 linkedInputs_spec4 :: TestLinkedInputsSpec

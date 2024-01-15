@@ -47,6 +47,12 @@ type TestLinkedOutputsSpec =
    , v'_expect :: String
    }
 
+type TestLinkedOutputsSpec2 =
+   { spec :: FigSpec
+   , δ_out :: Selector Val
+   , out_expect :: Selector Val
+   }
+
 type TestLinkedInputsSpec =
    { spec :: FigSpec
    , δ_in :: Bind (Selector Val)

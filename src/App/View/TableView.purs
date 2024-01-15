@@ -1,4 +1,4 @@
-module App.TableView where
+module App.View.TableView where
 
 import Prelude
 
