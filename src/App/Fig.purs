@@ -29,6 +29,7 @@ import GaloisConnection (relatedInputs, relatedOutputs)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, loadFile, loadProgCxt, open)
+import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
@@ -101,7 +102,7 @@ drawLinkedOutputsFig :: LinkedOutputsFig -> Selector Val + Selector Val -> Effec
 drawLinkedOutputsFig fig@{ spec: { divId } } δv = do
    v1' × v2' × v0 <- linkedOutputsResult fig δv
    let δv1 × δv2 = split δv
-   sequence_ $ uncurry3 (drawView divId) <$>
+   sequence_ $ unsafePartial $ uncurry3 (drawView divId) <$>
       [ "2" × ((δv1 >>> _) >>> Left >>> drawLinkedOutputsFig fig) × view "left view" (v1' <#> toSel)
       , "0" × ((δv2 >>> _) >>> Right >>> drawLinkedOutputsFig fig) × view "right view" (v2' <#> toSel)
       , "1" × doNothing × view "common data" (v0 <#> toSel)
@@ -142,7 +143,7 @@ selectInput (x ↦ δv) fig@{ dir, in_, out } = fig
 
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
-   let out_view × in_views = figResult fig # (view output *** mapWithKey view)
+   let out_view × in_views = figResult fig # unsafePartial (view output *** mapWithKey view)
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
 
