@@ -6,7 +6,7 @@ import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, envVal, fie
 import Bind ((↦))
 import Data.Either (Either(..))
 import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, cSome, f_data, f_plots, f_y)
-import Lattice (botOf, neg)
+import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec2)
 
@@ -497,7 +497,14 @@ linkedInputs_spec3 =
         , inputs: [ "renewables", "non_renewables" ]
         }
    , δ_in: "non_renewables" ↦ listElement 51 (field "coal_cap" neg)
-   , in_expect: botOf
+   , in_expect:
+        envVal "non_renewables" (listElement 51 (field "coal_cap" neg >>> field "gas_cap" neg >>> field "nuclear_cap" neg >>> field "petrol_cap" neg)) >>>
+           envVal "renewables"
+              ( listElement 204 (field "capacity" neg)
+                   >>> listElement 205 (field "capacity" neg)
+                   >>> listElement 206 (field "capacity" neg)
+                   >>> listElement 207 (field "capacity" neg)
+              )
    }
 
 linkedInputs_spec4 :: TestLinkedInputsSpec
