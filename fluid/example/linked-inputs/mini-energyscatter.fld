@@ -12,7 +12,7 @@ let energy year c_name =
             name: c_name,
             totalCap: totalRensCap + totalNonRens,
             non_renewables: totalNonRens,
-            renCapFactor: totalRensOut / totalRensCap
+            renCapFactor: (totalRensOut + non_ren_x.nuclearGen) / (totalRensCap + non_ren_x.nuclearCap)
         }
 in ScatterPlot {
     caption: "Carbon intensity against proportion of energy from renewables",

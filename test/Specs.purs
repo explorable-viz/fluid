@@ -478,6 +478,7 @@ linkedInputs_spec4 =
                 ( field "coalCap" neg
                      >>> field "gasCap" neg
                      >>> field "nuclearCap" neg
+                     >>> field "nuclearGen" neg
                      >>> field "petrolCap" neg
                 )
            )
