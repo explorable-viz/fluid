@@ -5,10 +5,10 @@ import Prelude
 import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, envVal, field, listCell, listElement, matrixElement)
 import Bind ((↦))
 import Data.Either (Either(..))
-import DataType (cBarChart, cPair, cSome, f_data, f_y)
+import DataType (cBarChart, cLineChart, cLinePlot, cPair, cSome, f_data, f_plots, f_y)
 import Lattice (botOf, neg)
 import Module (File(..))
-import Test.Util.Suite (TestBwdSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedInputsSpec)
+import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec2)
 
 misc_cases :: Array TestSpec
 misc_cases =
@@ -300,6 +300,29 @@ graphics_cases =
      , file: "graphics/stacked-bar-chart"
      }
    ]
+
+linkedOutputs_spec1' :: TestLinkedOutputsSpec2
+linkedOutputs_spec1' =
+   { spec:
+        { divId: "fig-1"
+        , datasets: [ "renewables" ↦ "dataset/renewables" ]
+        , imports: []
+        , file: File "bar-chart-line-chart"
+        , inputs: [ "renewables_data" ]
+        }
+   , δ_out: "bar chart" ↦ constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))
+   , out_expect: envVal "line chart"
+        ( constrArg cLineChart 0
+             ( field f_plots
+                  ( listElement 0 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                       >>> listElement 1 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                       >>> listElement 2 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                       >>> listElement 3 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                       >>> listElement 4 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                  )
+             )
+        )
+   }
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
