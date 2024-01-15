@@ -1,0 +1,3 @@
+let input = (1, (2, (3, 4))) in
+((fun (w, (x, (y, z))) -> (w, (x, (y, z)))) input,
+ (fun (w, (x, (y, z))) -> (w + x, (x + y, y + z))) input)

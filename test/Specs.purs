@@ -243,6 +243,12 @@ bwd_cases =
      , fwd_expect: "(⸨3⸩, ⸨True⸩)"
      , δv: constrArg cPair 1 neg -- selection on just first component will be discarded by bwdSlice; see #818.
      }
+   , { file: "pairs"
+     , imports: []
+     , bwd_expect_file: "pairs.expect"
+     , fwd_expect: "((1, (2, (⸨3⸩, 4))), (3, (5, 7)))"
+     , δv: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg)))
+     }
    , { file: "section-5-example"
      , imports: []
      , bwd_expect_file: "section-5-example-1.expect"

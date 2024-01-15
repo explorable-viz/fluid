@@ -19,15 +19,16 @@ import Util (type (×), (×))
 main :: Effect Unit
 --main = run tests
 
-main = run $ linkedOutputsSuite2 linkedOutputs_cases2
+--main = run $ linkedOutputsSuite2 linkedOutputs_cases2
+main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite
-   [ { file: "output-not-source"
+   [ { file: "pairs"
      , imports: []
-     , bwd_expect_file: "output-not-source.expect"
-     , fwd_expect: "(⸨3⸩, ⸨True⸩)"
-     , δv: constrArg cPair 1 neg
+     , bwd_expect_file: "pairs.expect"
+     , fwd_expect: "((1, (2, (⸨3⸩, 4))), (3, (5, 7)))"
+     , δv: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg)))
      }
    ]
 
