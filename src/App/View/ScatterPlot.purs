@@ -1,11 +1,11 @@
-module App.BubbleChart where
+module App.View.ScatterPlot where
 
-import Prelude hiding (absurd)
+import Prelude
 
 import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
-import DataType (cBubbleChart, f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel, f_z)
+import DataType (cScatterPlot, f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel)
 import Dict (Dict, get)
 import Lattice (neg)
 import Primitive (string, unpack)
@@ -16,44 +16,42 @@ import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.Internal.Types (EventTarget)
 
-newtype BubbleChart = BubbleChart
+newtype ScatterPlot = ScatterPlot
    { caption :: String × Sel
-   , data :: Array BubbleChartRecord
+   , data :: Array ScatterRecord
    , xlabel :: String × Sel
    , ylabel :: String × Sel
    }
 
-newtype BubbleChartRecord = BubbleChartRecord
+newtype ScatterRecord = ScatterRecord
    { x :: Number × Sel
    , y :: Number × Sel
-   , z :: Number × Sel
    , c :: String × Sel
    }
 
-foreign import drawBubbleChart :: Renderer BubbleChart
+foreign import drawScatterPlot :: Renderer ScatterPlot
 
-instance Reflect (Dict (Val Sel)) BubbleChartRecord where
-   from r = BubbleChartRecord
+instance Reflect (Dict (Val Sel)) ScatterRecord where
+   from r = ScatterRecord
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
-      , z: get_intOrNumber f_z r
       , c: unpack string $ get f_colour r
       }
 
-instance Reflect (Dict (Val Sel)) BubbleChart where
-   from r = BubbleChart
+instance Reflect (Dict (Val Sel)) ScatterPlot where
+   from r = ScatterPlot
       { caption: unpack string (get f_caption r)
       , data: record from <$> from (get f_data r)
       , xlabel: unpack string (get f_xlabel r)
       , ylabel: unpack string (get f_ylabel r)
       }
 
-bubbleChartHandler :: Handler
-bubbleChartHandler ev = toggleDot $ unsafeDotIndex $ target ev
+scatterPlotHandler :: Handler
+scatterPlotHandler ev = toggleDot $ unsafeDotIndex $ target ev
    where
    toggleDot :: Int -> Selector Val
    toggleDot i =
-      constrArg cBubbleChart 0
+      constrArg cScatterPlot 0
          $ field f_data
          $ listElement i
          $ neg

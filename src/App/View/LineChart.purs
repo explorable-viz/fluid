@@ -1,4 +1,4 @@
-module App.LineChart where
+module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
