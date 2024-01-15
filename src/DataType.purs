@@ -119,6 +119,13 @@ dataTypes = L.fromFoldable
         [ cTrue × 0
         , cFalse × 0
         ]
+   , dataType "InfNum"
+        [ "FNum" × 1
+        , "Infty" × 0
+        ]
+   , dataType "LinePlot"
+        [ cLinePlot × 1 -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
+        ]
    , dataType "List"
         [ cNil × 0
         , cCons × 2 -- any × List<any>
@@ -135,12 +142,18 @@ dataTypes = L.fromFoldable
    , dataType "Pair"
         [ "Pair" × 2 -- any × any
         ]
+   , dataType "Plot"
+        [ cBarChart × 1 -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
+        , cBubbleChart × 1 -- Record<caption: Str, data: List<Record<x: Number, y: Number, z: Number>>>
+        , cScatterPlot × 1 -- Record<Caption: Str, data: List<Record<x: Number, y: Number>>>
+        , cLineChart × 1 -- Record<caption: Str, plots: List<LinePlot>>
+        ]
    , dataType "Tree"
         [ "Empty" × 0
         , "NonEmpty" × 3 -- Tree<any> × any × Tree<any>
         ]
    ,
-     -- Graphics
+     -- Legacy graphics stuff
      dataType "Point"
         [ "Point" × 2 -- Float × Float
         ]
@@ -148,13 +161,6 @@ dataTypes = L.fromFoldable
         [ -- iso to Bool
           "Horiz" × 0
         , "Vert" × 0
-        ]
-   , dataType "Plot"
-        [ cBarChart × 1 -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
-        , cBubbleChart × 1 -- Record<caption: Str, data: List<Record<x: Number, y: Number, z: Number>>>
-        , cScatterPlot × 1 -- Record<Caption: Str, data: List<Record<x: Number, y: Number>>>
-        , cLineChart × 1 -- Record<caption: Str, plots: List<LinePlot>>
-        , cLinePlot × 1 -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
         ]
    , dataType "GraphicsElement"
         [ "Circle" × 4 -- Float (x), Float (y), Float (radius), Str (fill)
@@ -175,9 +181,5 @@ dataTypes = L.fromFoldable
         ]
    , dataType "Marker"
         [ "Arrowhead" × 0
-        ]
-   , dataType "InfNum"
-        [ "FNum" × 1
-        , "Infty" × 0
         ]
    ]

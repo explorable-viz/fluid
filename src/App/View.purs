@@ -9,8 +9,10 @@ import App.MatrixView (MatrixView(..), drawMatrix, matrixRep, matrixViewHandler)
 import App.ScatterPlot (ScatterPlot, drawScatterPlot, scatterPlotHandler)
 import App.TableView (TableView(..), drawTable, tableViewHandler)
 import App.Util (HTMLId, OnSel, Sel, from, record)
+import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cNil, cScatterPlot)
+import Dict (Dict, mapWithKey)
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
 import Util (absurd, error)
@@ -24,6 +26,7 @@ data View
    | BarChartFig BarChart
    | BubbleChartFig BubbleChart
    | ScatterPlotFig ScatterPlot
+   | MultiView (Dict View)
 
 drawView :: HTMLId -> String -> OnSel -> View -> Effect Unit
 drawView divId suffix onSel = case _ of
@@ -33,6 +36,7 @@ drawView divId suffix onSel = case _ of
    BarChartFig vw -> drawBarChart divId suffix vw =<< eventListener (onSel <<< barChartHandler)
    BubbleChartFig vw -> drawBubbleChart divId suffix vw =<< eventListener (onSel <<< bubbleChartHandler)
    ScatterPlotFig vw -> drawScatterPlot divId suffix vw =<< eventListener (onSel <<< scatterPlotHandler)
+   MultiView vws -> sequence_ $ mapWithKey (flip (drawView divId) onSel) vws
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.
