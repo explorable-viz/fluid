@@ -27,8 +27,8 @@ scratchpad = asTestSuite $ bwdSuite
    [ { file: "pairs"
      , imports: []
      , bwd_expect_file: "pairs.expect"
-     , fwd_expect: "((1, (2, (⸨3⸩, 4))), (3, (5, 7)))"
-     , δv: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg)))
+     , fwd_expect: "((2, (⸨3⸩, 4)), (5, 7))"
+     , δv: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 0 neg))
      }
    ]
 
