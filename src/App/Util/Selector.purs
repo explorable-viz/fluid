@@ -7,7 +7,7 @@ import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cCons, cNil)
-import Foreign.Object (member, update)
+import Dict (member, update)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
@@ -31,12 +31,11 @@ field f δv = unsafePartial $ case _ of
 constrArg :: Ctr -> Int -> Endo (Selector Val)
 constrArg c n δv = unsafePartial $ case _ of
    Val α (Constr c' us) | c == c' ->
-      let
-         us' = definitely' do
-            u1 <- us !! n
-            updateAt n (δv u1) us
-      in
-         Val α (Constr c us')
+      Val α (Constr c us')
+      where
+      us' = definitely' do
+         u1 <- us !! n
+         updateAt n (δv u1) us
 
 constr :: Ctr -> Endo 𝔹 -> Selector Val
 constr c' δα = unsafePartial $ case _ of

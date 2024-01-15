@@ -14,6 +14,7 @@ module Dict
    , disjointUnion
    , disjointUnion_inv
    , get
+   , set
    , insertWith
    , intersection
    , intersectionWith
@@ -72,8 +73,15 @@ values = O.values >>> L.fromFoldable
 asSingletonMap :: forall a. Dict a -> String × a
 asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
 
+keyExists :: Endo String
+keyExists k = "Key \"" <> k <> "\" exists in dictionary"
+
 get :: forall a. String -> Dict a -> a
-get k = definitely ("Key \"" <> k <> "\" exists in dictionary") <<< lookup k
+get k = lookup k >>> definitely (keyExists k)
+
+-- Prefer to 'update'.
+set :: forall a. a -> String -> Dict a -> Dict a
+set x k = alter (definitely (keyExists k) >>> const (Just x)) k
 
 disjointUnion :: forall a. Dict a -> Endo (Dict a)
 disjointUnion = unionWith (\_ _ -> error "not disjoint")
