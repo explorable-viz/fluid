@@ -6,7 +6,7 @@ import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, envVal, fie
 import Bind ((↦))
 import Data.Either (Either(..))
 import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, cSome, f_data, f_plots, f_y)
-import Lattice (botOf, neg)
+import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestBwdSpec, TestLinkedInputsSpec, TestLinkedOutputsSpec, TestSpec, TestWithDatasetSpec, TestLinkedOutputsSpec2)
 
@@ -392,13 +392,14 @@ linkedOutputs_cases2 :: Array TestLinkedOutputsSpec2
 linkedOutputs_cases2 =
    [ { spec:
           { divId: ""
-          , datasets: []
+          , datasets: [ "input" ↦ "example/linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
           , inputs: [ "input" ]
           }
-     , δ_out: constrArg cPair 0 (constrArg cPair 1 botOf) --(constrArg cPair 1 (constrArg cPair 0 neg)))
-     , out_expect: botOf -- constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg >>> constrArg cPair 1 neg))
+     , δ_out: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg)))
+     , out_expect: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg)))
+     -- constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg >>> constrArg cPair 1 neg))
      }
    --   , linkedOutputs_spec1'
    ]

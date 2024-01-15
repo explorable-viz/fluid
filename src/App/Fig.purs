@@ -34,7 +34,7 @@ import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
 import Trace (Trace)
-import Util (type (+), type (×), AffError, Endo, absurd, orElse, singleton, uncurry3, (×))
+import Util (type (+), type (×), AffError, Endo, absurd, orElse, singleton, spy, uncurry3, (×))
 import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
@@ -149,7 +149,7 @@ drawFig fig@{ spec: { divId } } = do
 
 figResult :: Fig -> Val Sel × Env Sel
 figResult { spec: { inputs }, gc: { gc }, out, dir: LinkedOutputs } =
-   (asSel <$> out <*> out') × map (toSel <$> _) (γ # filterKeys (_ `elem` inputs))
+   (asSel <$> out <*> out') × map (toSel <$> _) (spy "Here" prettyP (γ # filterKeys (_ `elem` inputs)))
    where
    out' × γ × _ = (unwrap (relatedOutputs gc)).bwd out
 figResult { spec: { inputs }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
