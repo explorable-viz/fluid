@@ -1,15 +1,18 @@
 module GaloisConnection where
 
-import Prelude hiding (top)
+import Prelude hiding (join, top)
 
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong ((***)) as Strong
 import Data.Tuple (fst, snd) as Tuple
 import Data.Tuple (uncurry)
-import Lattice (class BoundedMeetSemilattice, class MeetSemilattice, class Neg, neg, top, (∧))
+import Lattice (class BoundedMeetSemilattice, class JoinSemilattice, class Neg, neg, top, (∨))
 import Util (Endo, type (×), (×), dup)
 
-newtype GaloisConnection a b = GC { fwd :: a -> b, bwd :: b -> a }
+newtype GaloisConnection a b = GC
+   { fwd :: a -> b -- upper adjoint, meet-preserving
+   , bwd :: b -> a -- lower adjoint, join-preserving
+   }
 
 derive instance Newtype (GaloisConnection a b) _
 
@@ -20,23 +23,25 @@ deMorgan = (neg >>> _) >>> (_ >>> neg)
 dual :: forall a b. Neg a => Neg b => GaloisConnection a b -> GaloisConnection b a
 dual (GC { fwd, bwd }) = GC { fwd: deMorgan bwd, bwd: deMorgan fwd }
 
+-- TODO: restate in terms of (&&&).
 relatedInputs
    :: forall a b
     . Neg a
    => Neg b
-   => MeetSemilattice b
+   => JoinSemilattice b
    => GaloisConnection a b
    -> GaloisConnection (a × b) a
-relatedInputs gc = (gc *** identity) >>> dual diag >>> dual gc
+relatedInputs f = (f *** identity) >>> meet >>> dual f
 
 relatedOutputs
    :: forall a b
     . Neg a
-   => MeetSemilattice a
+   => JoinSemilattice a
    => Neg b
    => GaloisConnection a b
+   --   -> GaloisConnection a c -- "view" of inputs
    -> GaloisConnection (b × a) b
-relatedOutputs gc = gc <<< dual diag <<< (dual gc *** identity)
+relatedOutputs f = (dual f *** identity) >>> meet >>> f
 
 instance Semigroupoid GaloisConnection where
    compose (GC { fwd: fwd1, bwd: bwd1 }) (GC { fwd: fwd2, bwd: bwd2 }) =
@@ -62,16 +67,20 @@ first = (_ *** identity)
 second :: forall a b c. GaloisConnection a b -> GaloisConnection (c × a) (c × b)
 second = (identity *** _)
 
-fanout :: forall a b c. MeetSemilattice a => GaloisConnection a b -> GaloisConnection a c -> GaloisConnection a (b × c)
-fanout f g = diag >>> (f *** g)
+fanout :: forall a b c. Neg a => JoinSemilattice a => GaloisConnection a b -> GaloisConnection a c -> GaloisConnection a (b × c)
+fanout f g = join >>> (f *** g)
 
-diag :: forall a. MeetSemilattice a => GaloisConnection a (a × a)
-diag = GC { fwd: dup, bwd: uncurry (∧) }
+meet :: forall a. Neg a => JoinSemilattice a => GaloisConnection (a × a) a
+meet = dual join
 
-fst :: forall a b. BoundedMeetSemilattice b => GaloisConnection (a × b) a
-fst = GC { fwd: Tuple.fst, bwd: \a -> a × top }
+join :: forall a. JoinSemilattice a => GaloisConnection a (a × a)
+join = GC { fwd: dup, bwd: uncurry (∨) }
 
-snd :: forall a b. BoundedMeetSemilattice a => GaloisConnection (a × b) b
-snd = GC { fwd: Tuple.snd, bwd: \b -> top × b }
+unfst :: forall a b. BoundedMeetSemilattice b => GaloisConnection a (a × b)
+unfst = GC { fwd: \a -> a × top, bwd: Tuple.fst }
+
+unsnd :: forall a b. BoundedMeetSemilattice a => GaloisConnection b (a × b)
+unsnd = GC { fwd: \b -> top × b, bwd: Tuple.snd }
 
 infixr 3 splitStrong as ***
+infixr 3 fanout as &&&

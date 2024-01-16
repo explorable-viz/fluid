@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cCons, cNil)
+import DataType (Ctr, cCons, cMultiPlot, cNil)
 import Dict (member, update)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
@@ -14,6 +14,9 @@ import Util (Endo, absurd, assert, definitely', error)
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection helpers. TODO: turn into lenses/prisms.
+multiPlotHandler :: String -> Endo (Selector Val)
+multiPlotHandler x = constrArg cMultiPlot 0 <<< dictVal x
+
 matrixElement :: Int -> Int -> Endo (Selector Val)
 matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv r
 matrixElement _ _ _ _ = error absurd

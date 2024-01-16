@@ -9,25 +9,27 @@ import DataType (cPair)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
-import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
-import Test.Specs (linkedInputs_cases, linkedOutputs_cases)
+import Test.Specs.LinkedInputs (linkedInputs_cases)
+import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
-main = run tests
+--main = run tests
 
---main = run $ linkedInputsSuite linkedInputs_cases
+main = run $ linkedInputsSuite linkedInputs_cases
+
+--main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite
-   [ { file: "output-not-source"
+   [ { file: "pairs"
      , imports: []
-     , bwd_expect_file: "output-not-source.expect"
-     , fwd_expect: "(⸨3⸩, ⸨True⸩)"
-     , δv: constrArg cPair 1 neg
+     , bwd_expect_file: "pairs.expect"
+     , fwd_expect: "((⸨3⸩, 4), 7)"
+     , δv: constrArg cPair 0 (constrArg cPair 0 neg)
      }
    ]
 
@@ -40,4 +42,3 @@ tests :: TestSuite
 tests = concat (benchmarks <#> asTestSuite)
    <> linkedOutputsSuite linkedOutputs_cases
    <> linkedInputsSuite linkedInputs_cases
-   <> app_tests
