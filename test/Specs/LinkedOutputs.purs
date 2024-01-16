@@ -20,10 +20,10 @@ linkedOutputs_spec1' =
         , inputs: [ "renewables" ]
         }
    , δ_out: constrArg cMultiPlot 0
-        (dictVal "bar chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))))
+        (dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))))
    , out_expect: constrArg cMultiPlot 0
-        ( dictVal "bar chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg))))
-             >>> dictVal "line chart"
+        ( dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg))))
+             >>> dictVal "line-chart"
                 ( constrArg cLineChart 0
                      ( field f_plots
                           ( listElement 0 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))

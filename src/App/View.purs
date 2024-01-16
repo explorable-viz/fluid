@@ -2,6 +2,8 @@ module App.View where
 
 import Prelude hiding (absurd)
 
+import App.Util (HTMLId, OnSel, Sel, from, record)
+import App.Util.Selector (multiPlotHandler)
 import App.View.BarChart (BarChart) as View
 import App.View.BarChart (barChartHandler, drawBarChart)
 import App.View.BubbleChart (BubbleChart) as View
@@ -14,7 +16,6 @@ import App.View.ScatterPlot (ScatterPlot) as View
 import App.View.ScatterPlot (drawScatterPlot, scatterPlotHandler)
 import App.View.TableView (TableView(..)) as View
 import App.View.TableView (drawTable, tableViewHandler)
-import App.Util (HTMLId, OnSel, Sel, from, record)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
@@ -42,7 +43,7 @@ drawView divId suffix onSel = case _ of
    BarChart vw -> drawBarChart divId suffix vw =<< eventListener (onSel <<< barChartHandler)
    BubbleChart vw -> drawBubbleChart divId suffix vw =<< eventListener (onSel <<< bubbleChartHandler)
    ScatterPlot vw -> drawScatterPlot divId suffix vw =<< eventListener (onSel <<< scatterPlotHandler)
-   MultiView vws -> sequence_ $ mapWithKey (flip (drawView divId) onSel) vws
+   MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (onSel <<< multiPlotHandler x)) vws
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 view :: Partial => String -> Val Sel -> View

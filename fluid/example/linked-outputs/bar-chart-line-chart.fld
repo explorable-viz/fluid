@@ -1,5 +1,5 @@
 MultiPlot {|
-   "bar chart" :=
+   "bar-chart" :=
       let totalFor c rows =
          sum [ row.output | row <- rows, row.country == c ];
       let data2015 = [ row | row <- renewables, row.year == 2015 ];
@@ -9,7 +9,7 @@ MultiPlot {|
          caption: "Total output by country",
          data: countryData
       },
-   "line chart" :=
+   "line-chart" :=
       let series type country = [
          { x: row.year, y: row.output }
          | year <- [2013..2018], row <- renewables,
