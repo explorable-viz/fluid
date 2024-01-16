@@ -90,10 +90,11 @@ append_inv xs γ = filterKeys (_ `not <<< (∈)` xs) γ × restrict xs γ
 restrict :: forall a. Set Var -> Endo (Dict a)
 restrict xs = filterKeys (_ ∈ xs)
 
-restrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
-restrictGC γ xs = GC
-   { fwd: \γ' -> assert (D.keys γ' == D.keys γ) $ restrict xs γ'
-   , bwd: \γ' -> assert (D.keys γ' ⊆ D.keys γ) $ γ' D.∪ ((γ D.\\ γ') <#> topOf)
+-- Goes from smaller environment to larger (so "dual" to a projection).
+unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
+unrestrictGC γ xs = GC
+   { fwd: \γ' -> assert (D.keys γ' ⊆ D.keys γ) $ γ' D.∪ ((γ D.\\ γ') <#> topOf)
+   , bwd: \γ' -> assert (D.keys γ' == D.keys γ) $ restrict xs γ'
    }
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
