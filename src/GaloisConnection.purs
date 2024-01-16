@@ -27,7 +27,7 @@ relatedInputs
    => JoinSemilattice b
    => GaloisConnection a b
    -> GaloisConnection (a × b) a
-relatedInputs gc = (gc *** identity) >>> join >>> dual gc
+relatedInputs gc = (gc *** identity) >>> meet >>> dual gc
 
 relatedOutputs
    :: forall a b
@@ -36,7 +36,7 @@ relatedOutputs
    => Neg b
    => GaloisConnection a b
    -> GaloisConnection (b × a) b
-relatedOutputs gc = gc <<< join <<< (dual gc *** identity)
+relatedOutputs gc = gc <<< meet <<< (dual gc *** identity)
 
 instance Semigroupoid GaloisConnection where
    compose (GC { fwd: fwd1, bwd: bwd1 }) (GC { fwd: fwd2, bwd: bwd2 }) =
@@ -63,13 +63,13 @@ second :: forall a b c. GaloisConnection a b -> GaloisConnection (c × a) (c × 
 second = (identity *** _)
 
 fanout :: forall a b c. Neg a => JoinSemilattice a => GaloisConnection a b -> GaloisConnection a c -> GaloisConnection a (b × c)
-fanout f g = meet >>> (f *** g)
+fanout f g = join >>> (f *** g)
 
-meet :: forall a. Neg a => JoinSemilattice a => GaloisConnection a (a × a)
+meet :: forall a. Neg a => JoinSemilattice a => GaloisConnection (a × a) a
 meet = dual join
 
-join :: forall a. JoinSemilattice a => GaloisConnection (a × a) a
-join = GC { fwd: uncurry (∨), bwd: dup }
+join :: forall a. JoinSemilattice a => GaloisConnection a (a × a)
+join = GC { fwd: dup, bwd: uncurry (∨) }
 
 fst :: forall a b. BoundedMeetSemilattice b => GaloisConnection (a × b) a
 fst = GC { fwd: Tuple.fst, bwd: \a -> a × top }
