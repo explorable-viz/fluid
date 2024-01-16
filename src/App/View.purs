@@ -57,6 +57,6 @@ view title (Val _ (Constr c (u1 : Nil))) | c == cMultiPlot =
 view _ (Val _ (Constr c (u1 : Nil))) | c == cScatterPlot =
    ScatterPlot (record from u1)
 view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
-   TableView (View.TableView { title, filter: true, table: record identity <$> from u })
+   TableView (View.TableView { title, filter: false, table: record identity <$> from u })
 view title (Val _ (Matrix r)) =
    MatrixView (View.MatrixView { title, matrix: matrixRep r })
