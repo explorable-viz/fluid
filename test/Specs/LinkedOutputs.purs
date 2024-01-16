@@ -7,10 +7,10 @@ import Bind ((↦))
 import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_data, f_plots, f_y)
 import Lattice (neg)
 import Module (File(..))
-import Test.Util.Suite (TestLinkedOutputsSpec2)
+import Test.Util.Suite (TestLinkedOutputsSpec)
 
-linkedOutputs_spec1' :: TestLinkedOutputsSpec2
-linkedOutputs_spec1' =
+linkedOutputs_spec1 :: TestLinkedOutputsSpec
+linkedOutputs_spec1 =
    { spec:
         { divId: "fig-1"
         , datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
@@ -35,7 +35,7 @@ linkedOutputs_spec1' =
         )
    }
 
-linkedOutputs_cases :: Array TestLinkedOutputsSpec2
+linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
           { divId: ""
@@ -76,5 +76,5 @@ linkedOutputs_cases =
                      >>> matrixElement 3 3 neg
                 )
      }
-   , linkedOutputs_spec1'
+   , linkedOutputs_spec1
    ]
