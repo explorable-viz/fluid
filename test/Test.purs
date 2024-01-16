@@ -9,7 +9,6 @@ import DataType (cPair)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
-import Test.App (app_tests)
 import Test.Benchmark (benchmarks)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
@@ -18,10 +17,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util (type (×), (×))
 
 main :: Effect Unit
---main = run tests
+main = run tests
 
-main = run $ linkedOutputsSuite2 linkedOutputs_cases
-
+--main = run $ linkedOutputsSuite2 linkedOutputs_cases
 --main = run scratchpad
 
 scratchpad :: TestSuite
@@ -43,4 +41,3 @@ tests :: TestSuite
 tests = concat (benchmarks <#> asTestSuite)
    <> linkedOutputsSuite2 linkedOutputs_cases
    <> linkedInputsSuite linkedInputs_cases
-   <> app_tests

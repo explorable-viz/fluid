@@ -146,10 +146,10 @@ selectInput (x ↦ δv) fig@{ dir, in_, out } = fig
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
    let out_view × in_views = selectionResult fig # unsafePartial (view output *** mapWithKey view)
-   sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
+   sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
 
--- Long-hand for now; want to express as direct composition of Galois connections.
+-- TODO: express more directly as composition of Galois connections.
 unfocus :: Fig -> GaloisConnection (Env 𝔹) (Val 𝔹)
 unfocus { spec: { inputs }, gc: { gc: GC gc }, in_: γ × e } = GC
    { fwd: \γ' -> gc.fwd (unrestrict.fwd γ' × topOf e)
