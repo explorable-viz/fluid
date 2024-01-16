@@ -1,0 +1,12 @@
+(let filter' = [[0, 0, 0],
+               [3, 7, 1],
+               [0, 0, 0]];
+    filter  = [| nth2 i j filter' | (i, j) in (3, 3) |];
+    image  = [| nth2 i j data | (i, j) in (5, 5) |]
+in convolve image filter wrap,
+let filter' = [[0, 2, 0],
+               [0, 7, 0],
+               [0, 5, 0]];
+    filter  = [| nth2 i j filter' | (i, j) in (3, 3) |];
+    image  = [| nth2 i j data | (i, j) in (5, 5) |]
+in convolve image filter zero)
