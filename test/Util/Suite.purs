@@ -2,7 +2,7 @@ module Test.Util.Suite where
 
 import Prelude
 
-import App.Fig (Fig, FigSpec, LinkedOutputsFigSpec, figResult, linkedOutputsResult, loadFig, loadLinkedOutputsFig, selectInput, selectOutput)
+import App.Fig (Fig, FigSpec, LinkedOutputsFigSpec, selectionResult, linkedOutputsResult, loadFig, loadLinkedOutputsFig, selectInput, selectOutput)
 import App.Util (to𝔹)
 import Bind (Bind, (↦))
 import Data.Either (isLeft)
@@ -92,7 +92,7 @@ linkedOutputsTest { spec, δv, v'_expect } = do
 linkedOutputsTest2 :: TestLinkedOutputsSpec2 -> Aff Fig
 linkedOutputsTest2 { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
-   let out × _ = figResult fig
+   let out × _ = selectionResult fig
    checkEq "selected" "expected" (to𝔹 <$> out) (out_expect (botOf out))
    pure fig
 
@@ -109,7 +109,7 @@ linkedOutputsSuite2 specs = specs <#> (name &&& (linkedOutputsTest2 >>> void))
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectInput δ_in
-   let _ × γ = figResult fig
+   let _ × γ = selectionResult fig
    checkEq "selected" "expected" ((to𝔹 <$> _) <$> γ) (in_expect (botOf γ))
    pure fig
 

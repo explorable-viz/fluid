@@ -144,17 +144,17 @@ selectInput (x ↦ δv) fig@{ dir, in_, out } = fig
 
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
-   let out_view × in_views = figResult fig # unsafePartial (view output *** mapWithKey view)
+   let out_view × in_views = selectionResult fig # unsafePartial (view output *** mapWithKey view)
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
 
-figResult :: Fig -> Val Sel × Env Sel
-figResult { spec: { inputs }, gc: { gc }, out, dir: LinkedOutputs } =
+selectionResult :: Fig -> Val Sel × Env Sel
+selectionResult { spec: { inputs }, gc: { gc }, out, dir: LinkedOutputs } =
    (asSel <$> out <*> out') × map (toSel <$> _) (report (γ # filterKeys (_ `elem` inputs)))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    out' × γ × _ = (unwrap (relatedOutputs gc)).bwd (spy "Selected outputs" prettyP out)
-figResult { spec: { inputs }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
+selectionResult { spec: { inputs }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    (toSel <$> report out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` inputs))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
