@@ -93,7 +93,7 @@ linkedOutputsTest2 :: TestLinkedOutputsSpec2 -> Aff Fig
 linkedOutputsTest2 { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    let out × _ = selectionResult fig
-   checkEq "selected" "expected" (to𝔹 <$> out) (out_expect (botOf out))
+   checkEq "selected found" "expected" (to𝔹 <$> out) (out_expect (botOf out))
    pure fig
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
@@ -110,7 +110,7 @@ linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectInput δ_in
    let _ × γ = selectionResult fig
-   checkEq "selected" "expected" ((to𝔹 <$> _) <$> γ) (in_expect (botOf γ))
+   checkEq "selection found" "expected" ((to𝔹 <$> _) <$> γ) (in_expect (botOf γ))
    pure fig
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)

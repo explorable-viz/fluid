@@ -21,7 +21,7 @@ linkedOutputs_spec1' =
         }
    , δ_out: constrArg cMultiPlot 0
         (dictVal "bar chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))))
-   , out_expect: neg
+   , out_expect: constrArg cMultiPlot 0 (dictVal "line chart" neg)
    {-
 constrArg cMultiPlot 0
         ( dictVal "line chart"
