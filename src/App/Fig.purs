@@ -30,7 +30,7 @@ import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
 import Test.Util.Debug (tracing)
-import Util (type (+), type (×), AffError, Endo, spy, spyWhen, (×))
+import Util (type (×), AffError, Endo, spy, spyWhen, (×))
 import Val (Env, Val, unrestrictGC)
 
 codeMirrorDiv :: Endo String
@@ -59,10 +59,6 @@ runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
 runAffs_ f as = flip runAff_ (sequence as) case _ of
    Left err -> log $ show err
    Right as' -> as' <#> f # sequence_
-
-split :: Selector Val + Selector Val -> Selector Val × Selector Val
-split (Left δv) = δv × identity
-split (Right δv) = identity × δv
 
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig = do
