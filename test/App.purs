@@ -5,7 +5,7 @@ import Prelude
 import App (fig1, fig2)
 import App.Fig (FigSpec, LinkedOutputsFigSpec, loadFig, loadLinkedOutputsFig)
 import Effect.Aff (Aff)
-import Test.Specs (linkedOutputs_spec1)
+import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
 import Util (type (×), (×))
 
 -- For now just exercise figure creation code; will test via UI at some point.
