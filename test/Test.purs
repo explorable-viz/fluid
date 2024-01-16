@@ -19,8 +19,9 @@ import Util (type (×), (×))
 main :: Effect Unit
 --main = run tests
 
---main = run $ linkedOutputsSuite2 linkedOutputs_cases2
-main = run scratchpad
+main = run $ linkedOutputsSuite2 linkedOutputs_cases2
+
+--main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite

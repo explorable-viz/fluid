@@ -33,8 +33,9 @@ import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
+import Test.Util.Debug (tracing)
 import Trace (Trace)
-import Util (type (+), type (×), AffError, Endo, absurd, orElse, singleton, spy, uncurry3, (×))
+import Util (type (+), type (×), AffError, Endo, absurd, orElse, singleton, spy, spyWhen, uncurry3, (×))
 import Val (Env, Val, append_inv, (<+>))
 
 codeMirrorDiv :: Endo String
@@ -149,12 +150,14 @@ drawFig fig@{ spec: { divId } } = do
 
 figResult :: Fig -> Val Sel × Env Sel
 figResult { spec: { inputs }, gc: { gc }, out, dir: LinkedOutputs } =
-   (asSel <$> out <*> out') × map (toSel <$> _) (spy "Mediating inputs" prettyP (γ # filterKeys (_ `elem` inputs)))
+   (asSel <$> out <*> out') × map (toSel <$> _) (report (γ # filterKeys (_ `elem` inputs)))
    where
+   report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    out' × γ × _ = (unwrap (relatedOutputs gc)).bwd (spy "Selected outputs" prettyP out)
 figResult { spec: { inputs }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
-   (toSel <$> out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` inputs))
+   (toSel <$> report out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` inputs))
    where
+   report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
 
 drawCode :: String -> EditorView -> Effect Unit

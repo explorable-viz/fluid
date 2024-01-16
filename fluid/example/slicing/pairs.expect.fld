@@ -1,2 +1,0 @@
-let input = (⸨3⸩, 4) in
-((fun (y, z) = (y, z)) input, (fun (y, z) = y + z) input)
