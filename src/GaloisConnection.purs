@@ -9,7 +9,10 @@ import Data.Tuple (uncurry)
 import Lattice (class BoundedMeetSemilattice, class JoinSemilattice, class Neg, neg, top, (∨))
 import Util (Endo, type (×), (×), dup)
 
-newtype GaloisConnection a b = GC { fwd :: a -> b, bwd :: b -> a }
+newtype GaloisConnection a b = GC
+   { fwd :: a -> b -- upper adjoint, meet-preserving
+   , bwd :: b -> a -- lower adjoint, join-preserving
+   }
 
 derive instance Newtype (GaloisConnection a b) _
 
