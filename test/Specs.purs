@@ -392,10 +392,10 @@ linkedOutputs_cases2 :: Array TestLinkedOutputsSpec2
 linkedOutputs_cases2 =
    [ { spec:
           { divId: ""
-          , datasets: [ "input" ↦ "example/linked-outputs/pairs-data" ]
+          , datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
-          , inputs: [ "input" ]
+          , inputs: [ "data2" ]
           }
      , δ_out: constrArg cPair 0 neg
      , out_expect: constrArg cPair 0 neg

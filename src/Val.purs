@@ -22,7 +22,7 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, topOf, (∨))
-import Util (type (×), Endo, assert, definitely, orElse, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∈), (∩), (∪), (≜), (≞), (⊆))
+import Util (type (×), Endo, assert, assertWith, definitely, orElse, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∈), (∩), (∪), (≜), (≞), (⊆))
 import Util.Pretty (Doc, beside, text)
 
 data Val a = Val a (BaseVal a)
@@ -92,10 +92,11 @@ restrict xs = filterKeys (_ ∈ xs)
 
 -- Goes from smaller environment to larger (so "dual" to a projection).
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
-unrestrictGC γ xs = GC
-   { fwd: \γ' -> assert (D.keys γ' ⊆ D.keys γ) $ γ' D.∪ ((γ D.\\ γ') <#> topOf)
-   , bwd: \γ' -> assert (D.keys γ' == D.keys γ) $ restrict xs γ'
-   }
+unrestrictGC γ xs =
+   assertWith (show xs <> " are in environment ") (xs ⊆ D.keys γ) $ GC
+      { fwd: \γ' -> assert (D.keys γ' ⊆ D.keys γ) $ γ' D.∪ ((γ D.\\ γ') <#> topOf)
+      , bwd: \γ' -> assert (D.keys γ' == D.keys γ) $ restrict xs γ'
+      }
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (toUnfoldable xs) empty
