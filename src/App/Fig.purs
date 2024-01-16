@@ -12,6 +12,7 @@ import Data.Array (elem)
 import Data.Either (Either(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
+import Data.Set (Set)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (curry, snd)
 import Desugarable (desug)
@@ -25,7 +26,7 @@ import EvalBwd (evalBwd)
 import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
 import Foreign.Object (lookup)
-import GaloisConnection (relatedInputs, relatedOutputs)
+import GaloisConnection (GaloisConnection(..), relatedInputs, relatedOutputs)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, bot, botOf, erase, neg, topOf)
 import Module (File(..), Folder(..), initialConfig, loadFile, loadProgCxt, open)
@@ -36,7 +37,7 @@ import Test.Util (Selector)
 import Test.Util.Debug (tracing)
 import Trace (Trace)
 import Util (type (+), type (×), AffError, Endo, absurd, orElse, singleton, spy, spyWhen, uncurry3, (×))
-import Val (Env, Val, append_inv, (<+>))
+import Val (Env, Val, append_inv, unrestrictGC, (<+>))
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
@@ -147,6 +148,15 @@ drawFig fig@{ spec: { divId } } = do
    let out_view × in_views = selectionResult fig # unsafePartial (view output *** mapWithKey view)
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
+
+-- Do this long-hand first, then express as direct composition of Galois connections.
+wurble :: Raw Env -> Set Var -> Raw Expr -> GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹) -> GaloisConnection (Env 𝔹) (Val 𝔹)
+wurble γ xs e (GC gc) = GC
+   { fwd: \γ' -> gc.fwd (unrestrict.fwd γ' × topOf e)
+   , bwd: ?_
+   }
+   where
+   unrestrict = unwrap (unrestrictGC γ xs)
 
 selectionResult :: Fig -> Val Sel × Env Sel
 selectionResult { spec: { inputs }, gc: { gc }, out, dir: LinkedOutputs } =
