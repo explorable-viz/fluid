@@ -75,3 +75,4 @@ snd :: forall a b. BoundedMeetSemilattice a => GaloisConnection (a × b) b
 snd = GC { fwd: Tuple.snd, bwd: \b -> top × b }
 
 infixr 3 splitStrong as ***
+infixr 3 fanout as &&&
