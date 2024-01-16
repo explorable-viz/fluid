@@ -12,9 +12,9 @@ import Data.Array (elem)
 import Data.Either (Either(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
-import Data.Set (Set)
+import Data.Set as Set
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (curry, snd)
+import Data.Tuple (curry, fst, snd)
 import Desugarable (desug)
 import Dict (filterKeys, get, mapWithKey)
 import Effect (Effect)
@@ -149,21 +149,21 @@ drawFig fig@{ spec: { divId } } = do
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
 
--- Do this long-hand first, then express as direct composition of Galois connections.
-wurble :: Raw Env -> Set Var -> Raw Expr -> GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹) -> GaloisConnection (Env 𝔹) (Val 𝔹)
-wurble γ xs e (GC gc) = GC
+-- Long-hand for now; want to express as direct composition of Galois connections.
+unfocus :: Fig -> GaloisConnection (Env 𝔹) (Val 𝔹)
+unfocus { spec: { inputs }, gc: { gc: GC gc }, in_: γ × e } = GC
    { fwd: \γ' -> gc.fwd (unrestrict.fwd γ' × topOf e)
-   , bwd: ?_
+   , bwd: \v -> unrestrict.bwd (gc.bwd v # fst)
    }
    where
-   unrestrict = unwrap (unrestrictGC γ xs)
+   unrestrict = unwrap (unrestrictGC (erase <$> γ) (Set.fromFoldable inputs))
 
 selectionResult :: Fig -> Val Sel × Env Sel
-selectionResult { spec: { inputs }, gc: { gc }, out, dir: LinkedOutputs } =
-   (asSel <$> out <*> out') × map (toSel <$> _) (report γ # filterKeys (_ `elem` inputs))
+selectionResult fig@{ out, dir: LinkedOutputs } =
+   (asSel <$> out <*> out') × map (toSel <$> _) (report γ)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   out' × γ × _ = (unwrap (relatedOutputs gc)).bwd (spy "Selected outputs" prettyP out)
+   out' × γ = (unwrap (relatedOutputs (unfocus fig))).bwd (spy "Selected outputs" prettyP out)
 selectionResult { spec: { inputs }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    (toSel <$> report out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` inputs))
    where
