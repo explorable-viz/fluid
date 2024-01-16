@@ -63,7 +63,7 @@ matchMany _ _ = error absurd
 
 closeDefs :: forall a. Env a -> Dict (Elim a) -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
-   let ρ' = ρ `forDefs` σ in Val α (V.Fun $ V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ)
+   let ρ' = ρ `forDefs` σ in Val α (V.Fun $ V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
 
 checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = do
@@ -140,7 +140,7 @@ eval γ (Matrix α e (x × y) e') α' = do
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 eval γ (Lambda α σ) α' =
-   pure $ T.Const × Val (α ∧ α') (V.Fun (V.Closure (γ `restrict` fv σ) empty σ))
+   pure $ T.Const × Val (α ∧ α') (V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
 eval γ (Project e x) α = do
    t × v <- eval γ e α
    case v of

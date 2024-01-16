@@ -86,10 +86,10 @@ append = unionWith (const identity)
 infixl 5 append as <+>
 
 append_inv :: forall a. Set Var -> Env a -> Env a × Env a
-append_inv xs γ = filterKeys (_ `not <<< (∈)` xs) γ × restrict γ xs
+append_inv xs γ = filterKeys (_ `not <<< (∈)` xs) γ × restrict xs γ
 
-restrict :: forall a. Dict a -> Set Var -> Dict a
-restrict γ xs = filterKeys (_ ∈ xs) γ
+restrict :: forall a. Set Var -> Endo (Dict a)
+restrict xs = filterKeys (_ ∈ xs)
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (toUnfoldable xs) empty
@@ -105,7 +105,7 @@ reaches ρ xs = go (toUnfoldable xs) empty
       σ = get x ρ
 
 forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
-forDefs ρ σ = ρ `restrict` reaches ρ (fv σ ∩ fromFoldable (O.keys ρ))
+forDefs ρ σ = restrict (reaches ρ (fv σ ∩ fromFoldable (O.keys ρ))) ρ
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))

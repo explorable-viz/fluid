@@ -76,7 +76,7 @@ matchMany _ _ = error "absurd"
 closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    for ρ \σ ->
-      let ρ' = ρ `forDefs` σ in Val <$> new αs <@> V.Fun (V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ)
+      let ρ' = ρ `forDefs` σ in Val <$> new αs <@> V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α (V.Fun (V.Closure γ1 ρ σ))) v = do
@@ -134,7 +134,7 @@ eval γ (Matrix α e (x × y) e') αs = do
          singleton (eval (γ <+> γ') e αs)
    Val <$> new (insert α αs) <@> V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
 eval γ (Lambda α σ) αs =
-   Val <$> new (insert α αs) <@> V.Fun (V.Closure (γ `restrict` fv σ) D.empty σ)
+   Val <$> new (insert α αs) <@> V.Fun (V.Closure (restrict (fv σ) γ) D.empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
