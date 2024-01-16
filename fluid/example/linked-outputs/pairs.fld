@@ -1,3 +1,2 @@
 let q = 1 in
-((fun (w, (x, (y, z))) -> (w + q, (x + q, (y + q, z + q)))) input,
- (fun (w, (x, (y, z))) -> (w + x, (x + y, y + z))) input)
+(fun (y, z) -> (y + q, z + q)) input

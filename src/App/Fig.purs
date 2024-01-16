@@ -150,7 +150,7 @@ drawFig fig@{ spec: { divId } } = do
 
 selectionResult :: Fig -> Val Sel × Env Sel
 selectionResult { spec: { inputs }, gc: { gc }, out, dir: LinkedOutputs } =
-   (asSel <$> out <*> out') × map (toSel <$> _) (report (γ # filterKeys (_ `elem` inputs)))
+   (asSel <$> out <*> out') × map (toSel <$> _) (report γ # filterKeys (_ `elem` inputs))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    out' × γ × _ = (unwrap (relatedOutputs gc)).bwd (spy "Selected outputs" prettyP out)

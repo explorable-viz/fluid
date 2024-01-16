@@ -13,8 +13,8 @@ tracing
 
 tracing =
    { runWithGraphT: false
-   , graphBwdSlice: false
-   , graphFwdSlice: false
+   , graphBwdSlice: true
+   , graphFwdSlice: true
    , checkEq: false
    , bwdSelection: false
    , fwdAfterBwd: false

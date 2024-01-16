@@ -403,11 +403,9 @@ linkedOutputs_cases2 =
           , file: File "linked-outputs/pairs"
           , inputs: [ "input" ]
           }
-     , δ_out: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg)))
-     , out_expect: constrArg cPair 0 (constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg)))
-     -- constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg >>> constrArg cPair 1 neg))
-     } --
-   --   , linkedOutputs_spec1'
+     , δ_out: constrArg cPair 0 neg
+     , out_expect: constrArg cPair 0 neg
+     }
    ]
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
