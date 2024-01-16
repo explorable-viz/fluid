@@ -5,7 +5,7 @@ import Prelude
 import App.Util.Selector (constrArg, dictVal, field, listElement, matrixElement)
 import Bind ((↦))
 import Data.Either (Either(..))
-import DataType (cBarChart, cMultiPlot, cPair, f_data, f_y)
+import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_data, f_plots, f_y)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec2, TestLinkedOutputsSpec)
@@ -21,21 +21,19 @@ linkedOutputs_spec1' =
         }
    , δ_out: constrArg cMultiPlot 0
         (dictVal "bar chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))))
-   , out_expect: constrArg cMultiPlot 0 (dictVal "line chart" neg)
-   {-
-constrArg cMultiPlot 0
-        ( dictVal "line chart"
-             ( constrArg cLineChart 0
-                  ( field f_plots
-                       ( listElement 0 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                            >>> listElement 1 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                            >>> listElement 2 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                            >>> listElement 3 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                            >>> listElement 4 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                       )
-                  )
-             )
-        )-}
+   , out_expect: constrArg cMultiPlot 0
+        ( dictVal "bar chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg))))
+             >>> dictVal "line chart"
+                ( constrArg cLineChart 0
+                     ( field f_plots
+                          ( listElement 0 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                               >>> listElement 1 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                               >>> listElement 2 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                               >>> listElement 3 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                          )
+                     )
+                )
+        )
    }
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
@@ -99,8 +97,8 @@ linkedOutputs_spec1 =
         \}"
    }
 
-linkedOutputs_cases2 :: Array TestLinkedOutputsSpec2
-linkedOutputs_cases2 =
+linkedOutputs_cases :: Array TestLinkedOutputsSpec2
+linkedOutputs_cases =
    [ { spec:
           { divId: ""
           , datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
@@ -112,40 +110,33 @@ linkedOutputs_cases2 =
      , out_expect: constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg))
           >>> constrArg cPair 0 (constrArg cPair 0 neg >>> constrArg cPair 1 (constrArg cPair 0 neg))
      }
-   , linkedOutputs_spec1'
-   ]
-
-linkedOutputs_cases :: Array TestLinkedOutputsSpec
-linkedOutputs_cases =
-   [ { spec:
-          { divId: ""
-          , dataFile: File "pairs-data"
-          , imports: []
-          , file1: File "pairs-1"
-          , file2: File "pairs-2"
-          , x: "data"
-          }
-     , δv: Left
-          $ constrArg cPair 1
-          $ constrArg cPair 1
-          $ constrArg cPair 0 neg
-     , v'_expect: "(3, (⸨5⸩, ⸨7⸩))"
-     }
    , { spec:
           { divId: ""
-          , dataFile: File "convolution-data"
+          , datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
           , imports: [ "lib/convolution" ]
-          , file1: File "convolution-1"
-          , file2: File "convolution-2"
-          , x: "data"
+          , file: File "linked-outputs/convolution"
+          , inputs: [ "data" ]
           }
-     , δv: Left $ matrixElement 2 2 neg
-     , v'_expect:
-          "⸨18⸩, ⸨12⸩, ⸨13⸩, 9, 19,\n\
-          \⸨20⸩, ⸨11⸩, ⸨24⸩, 9, 14,\n\
-          \⸨15⸩, ⸨13⸩, ⸨20⸩, 11, 14,\n\
-          \7, 15, 15, 8, 20,\n\
-          \3, 10, 12, 3, 11"
+     , δ_out: constrArg cPair 0 (matrixElement 2 2 neg)
+     , out_expect:
+          constrArg cPair 0
+             ( matrixElement 2 1 neg
+                  >>> matrixElement 2 2 neg
+                  >>> matrixElement 2 3 neg
+                  >>> matrixElement 2 4 neg
+                  >>> matrixElement 2 5 neg
+             )
+             >>> constrArg cPair 1
+                ( matrixElement 1 1 neg
+                     >>> matrixElement 1 2 neg
+                     >>> matrixElement 1 3 neg
+                     >>> matrixElement 2 1 neg
+                     >>> matrixElement 2 2 neg
+                     >>> matrixElement 2 3 neg
+                     >>> matrixElement 3 1 neg
+                     >>> matrixElement 3 2 neg
+                     >>> matrixElement 3 3 neg
+                )
      }
-   , linkedOutputs_spec1
+   , linkedOutputs_spec1'
    ]
