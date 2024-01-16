@@ -37,10 +37,8 @@ function val_v(v) {
 
 function prim (v) {
    if (isNaN(parseFloat(v._1))) {
-      console.log("found nan")
       return v._1
    } else {
-      console.log(parseFloat(v._1).toFixed(2))
       return +parseFloat(v._1).toFixed(2)
    }
 }
