@@ -20,6 +20,7 @@ deMorgan = (neg >>> _) >>> (_ >>> neg)
 dual :: forall a b. Neg a => Neg b => GaloisConnection a b -> GaloisConnection b a
 dual (GC { fwd, bwd }) = GC { fwd: deMorgan bwd, bwd: deMorgan fwd }
 
+-- TODO: restate in terms of (&&&).
 relatedInputs
    :: forall a b
     . Neg a
@@ -27,7 +28,7 @@ relatedInputs
    => JoinSemilattice b
    => GaloisConnection a b
    -> GaloisConnection (a × b) a
-relatedInputs gc = (gc *** identity) >>> meet >>> dual gc
+relatedInputs f = (f *** identity) >>> meet >>> dual f
 
 relatedOutputs
    :: forall a b
@@ -35,8 +36,9 @@ relatedOutputs
    => JoinSemilattice a
    => Neg b
    => GaloisConnection a b
+--   -> GaloisConnection a c -- "view" of inputs
    -> GaloisConnection (b × a) b
-relatedOutputs gc = gc <<< meet <<< (dual gc *** identity)
+relatedOutputs f = (dual f *** identity) >>> meet >>> f
 
 instance Semigroupoid GaloisConnection where
    compose (GC { fwd: fwd1, bwd: bwd1 }) (GC { fwd: fwd2, bwd: bwd2 }) =
@@ -71,11 +73,11 @@ meet = dual join
 join :: forall a. JoinSemilattice a => GaloisConnection a (a × a)
 join = GC { fwd: dup, bwd: uncurry (∨) }
 
-fst :: forall a b. BoundedMeetSemilattice b => GaloisConnection (a × b) a
-fst = GC { fwd: Tuple.fst, bwd: \a -> a × top }
+unfst :: forall a b. BoundedMeetSemilattice b => GaloisConnection a (a × b)
+unfst = GC { fwd: \a -> a × top, bwd: Tuple.fst }
 
-snd :: forall a b. BoundedMeetSemilattice a => GaloisConnection (a × b) b
-snd = GC { fwd: Tuple.snd, bwd: \b -> top × b }
+unsnd :: forall a b. BoundedMeetSemilattice a => GaloisConnection b (a × b)
+unsnd = GC { fwd: \b -> top × b, bwd: Tuple.snd }
 
 infixr 3 splitStrong as ***
 infixr 3 fanout as &&&
