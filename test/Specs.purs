@@ -397,8 +397,9 @@ linkedOutputs_cases2 =
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           }
-     , δ_out: constrArg cPair 1 (constrArg cPair 0 neg)
-     , out_expect: constrArg cPair 0 neg
+     , δ_out: constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg))
+     , out_expect: constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg))
+          >>> constrArg cPair 0 (constrArg cPair 0 neg >>> constrArg cPair 1 (constrArg cPair 0 neg))
      }
    ]
 
