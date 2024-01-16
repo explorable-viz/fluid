@@ -66,9 +66,9 @@ linkedInputs_spec3 =
         , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "non_renewables" ]
         }
-   , δ_in: "non_renewables" ↦ listElement 51 (field "coal_cap" neg)
+   , δ_in: "non_renewables" ↦ listElement 51 (field "coalCap" neg)
    , in_expect:
-        envVal "non_renewables" (listElement 51 (field "coal_cap" neg >>> field "gas_cap" neg >>> field "nuclear_cap" neg >>> field "petrol_cap" neg)) >>>
+        envVal "non_renewables" (listElement 51 (field "coalCap" neg >>> field "gasCap" neg >>> field "nuclearCap" neg >>> field "petrolCap" neg)) >>>
            envVal "renewables"
               ( listElement 204 (field "capacity" neg)
                    >>> listElement 205 (field "capacity" neg)
@@ -93,10 +93,11 @@ linkedInputs_spec4 =
    , in_expect:
         envVal "non_renewables"
            ( listElement 51
-                ( field "coal_cap" neg
-                     >>> field "gas_cap" neg
-                     >>> field "nuclear_cap" neg
-                     >>> field "petrol_cap" neg
+                ( field "coalCap" neg
+                     >>> field "gasCap" neg
+                     >>> field "nuclearCap" neg
+                     >>> field "petrolCap" neg
+                     >>> field "nuclearGen" neg
                 )
            )
            >>> envVal "renewables"
@@ -119,14 +120,14 @@ linkedInputs_spec5 =
              ]
         , inputs: [ "non_renewables", "renewables" ]
         }
-   , δ_in: "non_renewables" ↦ listElement 0 (field "coal_cap" neg)
+   , δ_in: "non_renewables" ↦ listElement 0 (field "coalCap" neg)
    , in_expect:
         envVal "non_renewables"
            ( listElement 0
-                ( field "coal_cap" neg
-                     >>> field "gas_cap" neg
-                     >>> field "nuclear_cap" neg
-                     >>> field "petrol_cap" neg
+                ( field "coalCap" neg
+                     >>> field "gasCap" neg
+                     >>> field "nuclearCap" neg
+                     >>> field "petrolCap" neg
                 )
            )
            >>> envVal "renewables"
