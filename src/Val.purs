@@ -14,16 +14,15 @@ import Data.List (List(..), (:), zipWith)
 import Data.Set (Set, empty, fromFoldable, toUnfoldable)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
-import Dict (Dict, get)
-import Dict (apply2, intersectionWith) as D
+import Dict (Dict, filterKeys, get, lookup, unionWith)
+import Dict as D
 import Effect.Exception (Error)
 import Expr (Elim, fv)
-import Foreign.Object (filterKeys, lookup, unionWith)
-import Foreign.Object (keys) as O
+import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, (∨))
-import Util (type (×), (!), (×), (≜), (≞), (∈), (∩), (∪), Endo, definitely, orElse, shapeMismatch, singleton, unsafeUpdateAt)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, topOf, (∨))
+import Util (type (×), Endo, assert, definitely, orElse, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∈), (∩), (∪), (≜), (≞), (⊆))
 import Util.Pretty (Doc, beside, text)
 
 data Val a = Val a (BaseVal a)
@@ -91,10 +90,16 @@ append_inv xs γ = filterKeys (_ `not <<< (∈)` xs) γ × restrict xs γ
 restrict :: forall a. Set Var -> Endo (Dict a)
 restrict xs = filterKeys (_ ∈ xs)
 
+restrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
+restrictGC γ xs = GC
+   { fwd: \γ' -> assert (D.keys γ' == D.keys γ) $ restrict xs γ'
+   , bwd: \γ' -> assert (D.keys γ' ⊆ D.keys γ) $ γ' D.∪ ((γ D.\\ γ') <#> topOf)
+   }
+
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (toUnfoldable xs) empty
    where
-   dom_ρ = fromFoldable $ O.keys ρ
+   dom_ρ = fromFoldable $ D.keys ρ
 
    go :: List Var -> Endo (Set Var)
    go Nil acc = acc
@@ -105,7 +110,7 @@ reaches ρ xs = go (toUnfoldable xs) empty
       σ = get x ρ
 
 forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
-forDefs ρ σ = restrict (reaches ρ (fv σ ∩ fromFoldable (O.keys ρ))) ρ
+forDefs ρ σ = restrict (reaches ρ (fv σ ∩ fromFoldable (D.keys ρ))) ρ
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
