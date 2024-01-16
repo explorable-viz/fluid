@@ -395,9 +395,9 @@ linkedOutputs_cases2 =
           , datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
-          , inputs: [ "data2" ]
+          , inputs: [ "data" ]
           }
-     , δ_out: constrArg cPair 0 neg
+     , δ_out: constrArg cPair 1 (constrArg cPair 0 neg)
      , out_expect: constrArg cPair 0 neg
      }
    ]
