@@ -568,11 +568,29 @@ linkedInputs_spec5 =
               )
    }
 
+linkedInputs_spec_no_sel :: TestLinkedInputsSpec
+linkedInputs_spec_no_sel =
+   { spec:
+        { divId: "fig-3"
+        , file: File "linked-inputs/energyscatter"
+        , imports: []
+        , datasets:
+             [ "non_renewables" ↦ "example/linked-inputs/non-renewables"
+             , "renewables" ↦ "example/linked-inputs/renewables"
+             ]
+        , inputs: [ "non_renewables", "renewables" ]
+        }
+   , δ_in: "non_renewables" ↦ identity
+   , in_expect:
+        envVal "non_renewables" (identity)
+           >>> envVal "renewables" (identity)
+   }
+
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
    [ linkedInputs_spec1
    , linkedInputs_spec2
    , linkedInputs_spec3
    , linkedInputs_spec4
-   , linkedInputs_spec5
+   , linkedInputs_spec_no_sel
    ]
