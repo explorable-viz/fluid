@@ -4,12 +4,16 @@ import Prelude hiding (absurd)
 
 import Bind (Var)
 import Data.Array ((:)) as A
+import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)
+import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd, uncurry)
 import DataType (cCons, cNil)
 import Dict (Dict, get)
 import Effect (Effect)
+import Effect.Aff (Aff, runAff_)
+import Effect.Class.Console (log)
 import Lattice (𝔹)
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
@@ -61,3 +65,8 @@ instance Reflect (Val Sel) (Array (Val Sel)) where
 -- Discard both constructor-level annotations and key annotations.
 instance Reflect (Val Sel) (Dict (Val Sel)) where
    from (Val _ (Dictionary (DictRep d))) = d <#> snd
+
+runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
+runAffs_ f as = flip runAff_ (sequence as) case _ of
+   Left err -> log $ show err
+   Right as' -> as' <#> f # sequence_

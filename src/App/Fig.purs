@@ -8,17 +8,14 @@ import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
 import Data.Array (elem)
-import Data.Either (Either(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
 import Data.Set as Set
-import Data.Traversable (sequence, sequence_)
+import Data.Traversable (sequence_)
 import Data.Tuple (curry, fst)
 import Desugarable (desug)
 import Dict (filterKeys, get, mapWithKey)
 import Effect (Effect)
-import Effect.Aff (Aff, runAff_)
-import Effect.Console (log)
 import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
 import GaloisConnection (GaloisConnection(..), relatedInputs, relatedOutputs)
@@ -30,7 +27,7 @@ import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
 import Test.Util.Debug (tracing)
-import Util (type (+), type (×), AffError, Endo, spy, spyWhen, (×))
+import Util (type (×), AffError, Endo, spy, spyWhen, (×))
 import Val (Env, Val, unrestrictGC)
 
 codeMirrorDiv :: Endo String
@@ -54,15 +51,6 @@ type Fig =
    , out :: Val 𝔹
    , dir :: Direction
    }
-
-runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
-runAffs_ f as = flip runAff_ (sequence as) case _ of
-   Left err -> log $ show err
-   Right as' -> as' <#> f # sequence_
-
-split :: Selector Val + Selector Val -> Selector Val × Selector Val
-split (Left δv) = δv × identity
-split (Right δv) = identity × δv
 
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig = do
