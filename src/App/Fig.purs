@@ -27,7 +27,7 @@ import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util (Selector)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, spy, spyWhen, (×))
+import Util (type (×), AffError, Endo, spyWhen, (×))
 import Val (Env, Val, unrestrictGC)
 
 codeMirrorDiv :: Endo String
@@ -96,7 +96,7 @@ selectionResult fig@{ out, dir: LinkedOutputs } =
    (asSel <$> out <*> out') × map (toSel <$> _) (report γ)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   out' × γ = (unwrap (relatedOutputs (unfocus fig))).bwd (spy "Selected outputs" prettyP out)
+   out' × γ = (unwrap (relatedOutputs (unfocus fig))).bwd out
 selectionResult { spec: { inputs }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
    (toSel <$> report out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` inputs))
    where

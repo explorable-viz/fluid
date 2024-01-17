@@ -131,7 +131,7 @@ function drawTable_ (
             .on('mousedown', e => listener(e))
 
          sel = d3.select("th")
-         sel.on("mouseover", (d, i) => console.log("TODO: toggle filter state persistently"))
+         sel.on("mouseover", e => console.log("TODO: toggle filter state persistently"))
       }
    }
 }

@@ -9,7 +9,7 @@ import Data.Tuple (uncurry)
 import Lattice (neg)
 import Primitive (int, unpack)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (×), (!), definitely')
+import Util (type (×), definitely', spy, (!), (×))
 import Val (Array2, MatrixRep(..))
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -29,6 +29,6 @@ matrixViewHandler = target >>> unsafePos >>> flip (uncurry matrixElement) neg
    where
    -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
    unsafePos :: Maybe EventTarget -> Int × Int
-   unsafePos tgt_opt = xy ! 0 × xy ! 1
+   unsafePos tgt_opt = spy "event target" identity xy ! 0 × xy ! 1
       where
       xy = (unsafeCoerce $ definitely' tgt_opt).__data__ ! 0 :: Array Int
