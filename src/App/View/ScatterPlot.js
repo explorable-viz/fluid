@@ -68,8 +68,8 @@ function drawScatterPlot_ (
 ) {
    return () => {
       const childId = id + '-' + suffix
-      var max_width = 340
-      var max_height = 340
+      var max_width = 360
+      var max_height = 360
       const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
       const x_min = Math.ceil(Math.min(...data.map(d => fst(d.x))))
       const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
@@ -132,7 +132,7 @@ function drawScatterPlot_ (
             .append('circle')
                .attr('cx', ([, d]) => x(fst(d.x)))
                .attr('cy', ([, d]) => y(fst(d.y)))
-               .attr('r', 2)
+               .attr('r', 3)
                .attr('data-y', ([, d]) => fst(d.y))
                .attr('stroke', 'black')
                .attr('stroke-width', 0.5)

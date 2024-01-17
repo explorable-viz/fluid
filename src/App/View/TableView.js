@@ -36,8 +36,13 @@ function val_v(v) {
 }
 
 function prim (v) {
-   return v._1
+   if (isNaN(parseFloat(v._1))) {
+      return v._1
+   } else {
+      return +parseFloat(v._1).toFixed(2)
+   }
 }
+
 
 // https://stackoverflow.com/questions/5560248
 function colorShade(col, amt) {
