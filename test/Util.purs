@@ -111,9 +111,9 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    recordGraphSize g
 
    in0 <- graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd out0)
-   checkEq "Graph bwd" "Trace bwd" (snd in0) (snd in_e)
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
+   checkEq "Graph bwd" "Trace bwd" (snd in0) (snd in_e)
    out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd in0)
    checkEq ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
 

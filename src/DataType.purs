@@ -102,6 +102,7 @@ cSome = "Some" :: Ctr
 
 -- Field names used internally by rendering layer.
 f_caption = "caption" :: FieldName
+f_colour = "c" :: FieldName
 f_data = "data" :: FieldName
 f_name = "name" :: FieldName
 f_plots = "plots" :: FieldName
@@ -110,7 +111,6 @@ f_xlabel = "xlabel" :: FieldName
 f_ylabel = "ylabel" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
-f_colour = "c" :: FieldName
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable

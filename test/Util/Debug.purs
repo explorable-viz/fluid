@@ -8,6 +8,7 @@ tracing
       , checkEq :: Boolean
       , bwdSelection :: Boolean
       , fwdAfterBwd :: Boolean
+      , mediatingData :: Boolean
       }
 
 tracing =
@@ -17,6 +18,7 @@ tracing =
    , checkEq: false
    , bwdSelection: false
    , fwdAfterBwd: false
+   , mediatingData: true
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,

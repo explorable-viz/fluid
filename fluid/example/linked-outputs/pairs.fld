@@ -1,2 +1,3 @@
+let q = 1 in
 ((fun (w, (x, (y, z))) -> (w + x, (x + y, y + z))) data,
- (fun (w, (x, (y, z))) -> (w, (x, (y, z)))) data)
+ (fun (w, (x, (y, z))) -> (w + q, (x + q, (y + q, z + q)))) data)

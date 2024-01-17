@@ -2,20 +2,17 @@ module Test.Util.Suite where
 
 import Prelude
 
-import App.Fig (FigSpec, LinkedOutputsFigSpec, Fig, figResult, linkedOutputsResult, loadFig, loadLinkedOutputsFig, selectInput)
+import App.Fig (Fig, FigSpec, selectionResult, loadFig, selectInput, selectOutput)
 import App.Util (to𝔹)
 import Bind (Bind, (↦))
-import Data.Either (isLeft)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile, loadProgCxt)
 import Test.Benchmark.Util (BenchRow)
-import Test.Util (Selector, checkEq, checkPretty, test)
-import Util (type (+), type (×), (×))
+import Test.Util (Selector, checkEq, test)
+import Util (type (×), (×))
 import Val (Val, Env)
 
 -- benchmarks parameterised on number of iterations
@@ -42,12 +39,6 @@ type TestWithDatasetSpec =
    }
 
 type TestLinkedOutputsSpec =
-   { spec :: LinkedOutputsFigSpec
-   , δv :: Selector Val + Selector Val
-   , v'_expect :: String
-   }
-
-type TestLinkedOutputsSpec2 =
    { spec :: FigSpec
    , δ_out :: Selector Val
    , out_expect :: Selector Val
@@ -86,21 +77,22 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
       gconfig <- loadProgCxt imports [ x ↦ dataset ]
       test (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
-linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Unit
-linkedOutputsTest { spec, δv, v'_expect } = do
-   v1' × v2' × _ <- loadLinkedOutputsFig spec >>= flip linkedOutputsResult δv
-   checkPretty "linked output" v'_expect (if isLeft δv then v2' else v1')
+linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
+linkedOutputsTest { spec, δ_out, out_expect } = do
+   fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
+   let out × _ = selectionResult fig
+   checkEq "selected" "expected" (to𝔹 <$> out) (out_expect (botOf out))
+   pure fig
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
-linkedOutputsSuite specs = specs <#> (name &&& linkedOutputsTest)
+linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
    where
-   name spec = "linked-outputs/" <> unwrap spec.spec.file1 <> " <-> " <> unwrap spec.spec.file2
+   name { spec } = unwrap spec.file
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectInput δ_in
-   let _ × γ = figResult fig
-   liftEffect $ log spec.divId
+   let _ × γ = selectionResult fig
    checkEq "selected" "expected" ((to𝔹 <$> _) <$> γ) (in_expect (botOf γ))
    pure fig
 
