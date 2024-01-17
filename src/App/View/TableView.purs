@@ -3,10 +3,12 @@ module App.View.TableView where
 import Prelude
 
 import App.Util (Handler, Renderer, Sel)
+import App.Util.Selector (field, listElement)
 import Data.Maybe (Maybe)
 import Dict (Dict)
+import Lattice (neg)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (definitely', spy, (!))
+import Util (type (×), (×), definitely', spy)
 import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.Internal.Types (EventTarget)
@@ -20,10 +22,11 @@ newtype TableView = TableView
 foreign import drawTable :: Renderer TableView
 
 tableViewHandler :: Handler
-tableViewHandler = target >>> unsafePos >>> const identity
+tableViewHandler = target >>> unsafePos >>> \(n × x) -> listElement n (field x neg)
    where
-   -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
-   unsafePos :: Maybe EventTarget -> String
-   unsafePos tgt_opt = x
+   -- [Unsafe] 0-based index of selected record and name of field.
+   unsafePos :: Maybe EventTarget -> Int × String
+   unsafePos tgt_opt = 0 × cell.name
       where
-      x = (unsafeCoerce $ definitely' (spy "event data" identity tgt_opt)).__data__ ! 0 :: String
+      -- Not sure how to get heterogeneous tuple from JS, so resort to this abomination.
+      cell = spy "event data" identity (unsafeCoerce $ definitely' tgt_opt).__data__ :: { name :: String }
