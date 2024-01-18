@@ -26,7 +26,8 @@ tableViewHandler = target >>> unsafePos >>> \(n × x) -> listElement n (field x 
    where
    -- [Unsafe] 0-based index of selected record and name of field.
    unsafePos :: Maybe EventTarget -> Int × String
-   unsafePos tgt_opt = 0 × cell.name
+   unsafePos tgt_opt = (cell.__n - 1) × cell.name
       where
-      -- Not sure how to get heterogeneous tuple from JS, so resort to this abomination.
-      cell = spy "event data" identity (unsafeCoerce $ definitely' tgt_opt).__data__ :: { name :: String }
+      -- first field name must equal indexKey in TableView.purs
+      cell :: { __n :: Int, name :: String }
+      cell = spy "event data" identity (unsafeCoerce $ definitely' tgt_opt).__data__
