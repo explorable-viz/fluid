@@ -57,6 +57,4 @@ scatterPlotHandler ev = toggleDot $ unsafeDotIndex $ target ev
          $ neg
 
    unsafeDotIndex :: Maybe EventTarget -> Int
-   unsafeDotIndex tgt_opt = (unsafeCoerce tgt).__data__ ! 0
-      where
-      tgt = definitely' tgt_opt
+   unsafeDotIndex tgt_opt = (unsafeCoerce (definitely' tgt_opt)).__data__ ! 0

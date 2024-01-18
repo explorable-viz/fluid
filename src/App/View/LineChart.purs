@@ -60,9 +60,7 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
    -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
    -- within line plot.
    unsafePos :: Maybe EventTarget -> Int × Int
-   unsafePos tgt_opt =
-      let
-         tgt = definitely' $ tgt_opt
-         xy = (unsafeCoerce tgt).__data__ ! 0 :: Array Int
-      in
-         xy ! 0 × xy ! 1
+   unsafePos tgt_opt = xy ! 0 × xy ! 1
+      where
+      xy = (unsafeCoerce (definitely' tgt_opt)).__data__ ! 0 :: Array Int
+

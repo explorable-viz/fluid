@@ -21,6 +21,10 @@ newtype TableView = TableView
 
 foreign import drawTable :: Renderer TableView
 
+-- Unpack d3.js data associated with mouse event target.
+unsafeEventData :: forall a. Maybe EventTarget -> a
+unsafeEventData target = (unsafeCoerce $ definitely' target).__data__
+
 tableViewHandler :: Handler
 tableViewHandler = target >>> unsafePos >>> \(n × x) -> listElement n (field x neg)
    where
@@ -30,4 +34,4 @@ tableViewHandler = target >>> unsafePos >>> \(n × x) -> listElement n (field x 
       where
       -- first field name must equal indexKey in TableView.purs
       cell :: { __n :: Int, name :: String }
-      cell = (unsafeCoerce $ definitely' tgt_opt).__data__
+      cell = unsafeEventData tgt_opt

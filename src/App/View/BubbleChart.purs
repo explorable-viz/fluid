@@ -59,8 +59,4 @@ bubbleChartHandler ev = toggleDot $ unsafeDotIndex $ target ev
          $ neg
 
    unsafeDotIndex :: Maybe EventTarget -> Int
-   unsafeDotIndex tgt_opt =
-      let
-         tgt = definitely' $ tgt_opt
-      in
-         (unsafeCoerce tgt).__data__ ! 0
+   unsafeDotIndex tgt_opt = (unsafeCoerce (definitely' tgt_opt)).__data__ ! 0
