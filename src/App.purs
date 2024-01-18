@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (FigSpec, drawFigWithCode, drawFile, loadFig)
 import App.Util (runAffs_)
+import Bind ((↦))
 import Effect (Effect)
 import Module (File(..), Folder(..), loadFile')
 import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
@@ -47,8 +48,23 @@ fig3 =
    , inputs: [ "input_image" ]
    }
 
+energyScatter :: FigSpec
+energyScatter = fig4 { divId = "fig-4" }
+
+fig4 :: FigSpec
+fig4 =
+   { divId: ""
+   , imports: []
+   , datasets:
+        [ "renewables" ↦ "example/linked-inputs/renewables"
+        , "non_renewables" ↦ "example/linked-inputs/non-renewables"
+        ]
+   , file: File "linked-inputs/energyscatter"
+   , inputs: [ "renewables", "non_renewables" ]
+   }
+
 main :: Effect Unit
 main = do
    runAffs_ drawFile [ loadFile' (Folder "fluid/lib") (File "convolution") ]
-   runAffs_ drawFigWithCode [ loadFig fig1, loadFig fig2, loadFig fig3 ]
+   runAffs_ drawFigWithCode [ loadFig fig1, loadFig fig2, loadFig fig3, loadFig energyScatter ]
    runAffs_ drawFigWithCode [ loadFig linkedOutputs_spec1.spec ]
