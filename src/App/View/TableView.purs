@@ -8,7 +8,7 @@ import Data.Maybe (Maybe)
 import Dict (Dict)
 import Lattice (neg)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (×), definitely', spy)
+import Util (type (×), (×), definitely')
 import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.Internal.Types (EventTarget)
@@ -30,4 +30,4 @@ tableViewHandler = target >>> unsafePos >>> \(n × x) -> listElement n (field x 
       where
       -- first field name must equal indexKey in TableView.purs
       cell :: { __n :: Int, name :: String }
-      cell = spy "event data" identity (unsafeCoerce $ definitely' tgt_opt).__data__
+      cell = (unsafeCoerce $ definitely' tgt_opt).__data__
