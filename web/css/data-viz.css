@@ -24,6 +24,7 @@
 
 .cell-unselected {
    border-radius: 2px;
+   border: 1px solid #ffffff;
    background-color: #ffffff;
 }
 
