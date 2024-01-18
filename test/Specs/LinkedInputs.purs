@@ -2,6 +2,7 @@ module Test.Specs.LinkedInputs where
 
 import Prelude
 
+import App (energyScatter)
 import App.Util.Selector (envVal, field, listElement)
 import Bind ((↦))
 import Lattice (neg)
@@ -56,16 +57,7 @@ linkedInputs_spec2 =
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
-   { spec:
-        { divId: "fig-3"
-        , imports: []
-        , datasets:
-             [ "renewables" ↦ "example/linked-inputs/renewables"
-             , "non_renewables" ↦ "example/linked-inputs/non-renewables"
-             ]
-        , file: File "linked-inputs/energyscatter"
-        , inputs: [ "renewables", "non_renewables" ]
-        }
+   { spec: energyScatter { divId = "fig-3" }
    , δ_in: "non_renewables" ↦ listElement 51 (field "coalCap" neg)
    , in_expect:
         envVal "non_renewables" (listElement 51 (field "coalCap" neg >>> field "gasCap" neg >>> field "nuclearCap" neg >>> field "petrolCap" neg)) >>>
@@ -79,16 +71,7 @@ linkedInputs_spec3 =
 
 linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
-   { spec:
-        { divId: "fig-2"
-        , imports: []
-        , datasets:
-             [ "renewables" ↦ "example/linked-inputs/renewables"
-             , "non_renewables" ↦ "example/linked-inputs/non-renewables"
-             ]
-        , file: File "linked-inputs/energyscatter"
-        , inputs: [ "renewables", "non_renewables" ]
-        }
+   { spec: energyScatter { divId = "fig-2" }
    , δ_in: "renewables" ↦ listElement 204 (field "capacity" neg)
    , in_expect:
         envVal "non_renewables"
@@ -140,16 +123,7 @@ linkedInputs_spec5 =
 
 linkedInputs_spec_no_sel :: TestLinkedInputsSpec
 linkedInputs_spec_no_sel =
-   { spec:
-        { divId: "fig-3"
-        , file: File "linked-inputs/energyscatter"
-        , imports: []
-        , datasets:
-             [ "non_renewables" ↦ "example/linked-inputs/non-renewables"
-             , "renewables" ↦ "example/linked-inputs/renewables"
-             ]
-        , inputs: [ "non_renewables", "renewables" ]
-        }
+   { spec: energyScatter { divId = "fig-3" }
    , δ_in: "non_renewables" ↦ identity
    , in_expect:
         envVal "non_renewables" (identity)
