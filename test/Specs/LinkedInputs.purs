@@ -97,7 +97,7 @@ linkedInputs_spec4 =
                      >>> field "gasCap" neg
                      >>> field "nuclearCap" neg
                      >>> field "petrolCap" neg
-                     >>> field "nuclearGen" neg
+                     >>> field "nuclearOut" neg
                 )
            )
            >>> envVal "renewables"
