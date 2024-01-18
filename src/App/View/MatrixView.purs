@@ -2,14 +2,13 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (Handler, Renderer, Sel)
+import App.Util (Handler, Renderer, Sel, unsafeEventData)
 import App.Util.Selector (matrixElement)
 import Data.Maybe (Maybe)
 import Data.Tuple (uncurry)
 import Lattice (neg)
 import Primitive (int, unpack)
-import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (×), (!), definitely')
+import Util (type (×), (!), (×))
 import Val (Array2, MatrixRep(..))
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -25,10 +24,10 @@ matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    ((unpack int <$> _) <$> vss) × i × j
 
 matrixViewHandler :: Handler
-matrixViewHandler = target >>> unsafePos >>> flip (uncurry matrixElement) neg
+matrixViewHandler = target >>> pos >>> flip (uncurry matrixElement) neg
    where
    -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
-   unsafePos :: Maybe EventTarget -> Int × Int
-   unsafePos tgt_opt = xy ! 0 × xy ! 1
+   pos :: Maybe EventTarget -> Int × Int
+   pos tgt_opt = xy ! 0 × xy ! 1
       where
-      xy = (unsafeCoerce $ definitely' tgt_opt).__data__ ! 0 :: Array Int
+      xy = unsafeEventData tgt_opt ! 0 :: Array Int

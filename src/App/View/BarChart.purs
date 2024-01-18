@@ -2,7 +2,7 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record)
+import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
@@ -10,8 +10,7 @@ import Dict (Dict, get)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (!), definitely')
+import Util (type (×), (!))
 import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -34,7 +33,7 @@ instance Reflect (Dict (Val Sel)) BarChart where
       }
 
 barChartHandler :: Handler
-barChartHandler ev = toggleBar $ unsafeBarIndex $ target ev
+barChartHandler = target >>> barIndex >>> toggleBar
    where
    toggleBar :: Int -> Selector Val
    toggleBar i =
@@ -43,6 +42,6 @@ barChartHandler ev = toggleBar $ unsafeBarIndex $ target ev
          $ listElement i
          $ neg
 
-   -- [Unsafe] Datum associated with bar chart mouse event; 0-based index of selected bar.
-   unsafeBarIndex :: Maybe EventTarget -> Int
-   unsafeBarIndex tgt_opt = (unsafeCoerce $ definitely' tgt_opt).__data__ ! 0
+   -- [Unsafe] 0-based index of selected bar.
+   barIndex :: Maybe EventTarget -> Int
+   barIndex tgt_opt = unsafeEventData tgt_opt ! 0

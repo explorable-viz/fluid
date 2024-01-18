@@ -75,7 +75,7 @@ function drawTable_ (
    {
       title,   // String
       filter,  // Boolean
-      table    // Array of any record type with only primitive fields
+      table    // Homogeneous array of records with fields of primitive type
    },
    listener
 ) {
@@ -123,7 +123,9 @@ function drawTable_ (
             .append('tr')
 
          rows.selectAll('td')
-            .data(d => colNames.map(k => { return { 'value': d[k], 'name': k } }))
+            .data(d => colNames.map(
+               k => { return { [ indexKey ]: d[indexKey], 'value': d[k], 'name': k } })
+            )
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
@@ -136,7 +138,7 @@ function drawTable_ (
             .on('mousedown', e => listener(e))
 
          sel = d3.select("th")
-         sel.on("mouseover", (d, i) => console.log("TODO: toggle filter state persistently"))
+         sel.on("mouseover", e => console.log("TODO: toggle filter state persistently"))
       }
    }
 }

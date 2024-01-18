@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record)
+import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
@@ -11,8 +11,7 @@ import Dict (Dict, get)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (×), (!), definitely')
+import Util (type (×), (×), (!))
 import Val (BaseVal(..), Val(..))
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -45,7 +44,7 @@ instance Reflect (Val Sel) LinePlot where
    from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
 lineChartHandler :: Handler
-lineChartHandler ev = togglePoint $ unsafePos $ target ev
+lineChartHandler = target >>> pos >>> togglePoint
    where
    togglePoint :: Int × Int -> Selector Val
    togglePoint (i × j) =
@@ -57,12 +56,8 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
          $ listElement j
          $ neg
 
-   -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
-   -- within line plot.
-   unsafePos :: Maybe EventTarget -> Int × Int
-   unsafePos tgt_opt =
-      let
-         tgt = definitely' $ tgt_opt
-         xy = (unsafeCoerce tgt).__data__ ! 0 :: Array Int
-      in
-         xy ! 0 × xy ! 1
+   -- [Unsafe] 0-based indices of line plot and point within line plot.
+   pos :: Maybe EventTarget -> Int × Int
+   pos tgt_opt = xy ! 0 × xy ! 1
+      where
+      xy = unsafeEventData tgt_opt ! 0 :: Array Int

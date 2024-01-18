@@ -18,7 +18,7 @@ tracing =
    , checkEq: false
    , bwdSelection: false
    , fwdAfterBwd: false
-   , mediatingData: true
+   , mediatingData: false
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,
