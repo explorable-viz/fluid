@@ -2,7 +2,7 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record)
+import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cScatterPlot, f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel)
@@ -10,8 +10,7 @@ import Dict (Dict, get)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), definitely', (!))
+import Util (type (×), (!))
 import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.Internal.Types (EventTarget)
@@ -47,14 +46,14 @@ instance Reflect (Dict (Val Sel)) ScatterPlot where
       }
 
 scatterPlotHandler :: Handler
-scatterPlotHandler ev = toggleDot $ unsafeDotIndex $ target ev
+scatterPlotHandler = target >>> index >>> togglePoint
    where
-   toggleDot :: Int -> Selector Val
-   toggleDot i =
+   togglePoint :: Int -> Selector Val
+   togglePoint i =
       constrArg cScatterPlot 0
          $ field f_data
          $ listElement i
          $ neg
 
-   unsafeDotIndex :: Maybe EventTarget -> Int
-   unsafeDotIndex tgt_opt = (unsafeCoerce (definitely' tgt_opt)).__data__ ! 0
+   index :: Maybe EventTarget -> Int
+   index tgt_opt = unsafeEventData tgt_opt ! 0

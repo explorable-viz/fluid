@@ -21,12 +21,12 @@ newtype TableView = TableView
 foreign import drawTable :: Renderer TableView
 
 tableViewHandler :: Handler
-tableViewHandler = target >>> unsafePos >>> \(n × x) -> listElement n (field x neg)
+tableViewHandler = target >>> pos >>> \(n × x) -> listElement n (field x neg)
    where
    -- [Unsafe] 0-based index of selected record and name of field.
-   unsafePos :: Maybe EventTarget -> Int × String
-   unsafePos tgt_opt = (cell.__n - 1) × cell.name
+   pos :: Maybe EventTarget -> Int × String
+   pos tgt_opt = (cell.__n - 1) × cell.name
       where
-      -- first field name must equal indexKey in TableView.purs
+      -- first field name must equal indexKey in TableView.js
       cell :: { __n :: Int, name :: String }
       cell = unsafeEventData tgt_opt

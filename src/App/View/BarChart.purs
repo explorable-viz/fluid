@@ -33,7 +33,7 @@ instance Reflect (Dict (Val Sel)) BarChart where
       }
 
 barChartHandler :: Handler
-barChartHandler = toggleBar <<< barIndex <<< target
+barChartHandler = target >>> barIndex >>> toggleBar
    where
    toggleBar :: Int -> Selector Val
    toggleBar i =

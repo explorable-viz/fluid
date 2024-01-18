@@ -2,7 +2,7 @@ module App.View.BubbleChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record)
+import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cBubbleChart, f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel, f_z)
@@ -10,8 +10,7 @@ import Dict (Dict, get)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), definitely', (!))
+import Util (type (×), (!))
 import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.Internal.Types (EventTarget)
@@ -49,14 +48,14 @@ instance Reflect (Dict (Val Sel)) BubbleChart where
       }
 
 bubbleChartHandler :: Handler
-bubbleChartHandler ev = toggleDot $ unsafeDotIndex $ target ev
+bubbleChartHandler = target >>> bubbleIndex >>> toggleBubble
    where
-   toggleDot :: Int -> Selector Val
-   toggleDot i =
+   toggleBubble :: Int -> Selector Val
+   toggleBubble i =
       constrArg cBubbleChart 0
          $ field f_data
          $ listElement i
          $ neg
 
-   unsafeDotIndex :: Maybe EventTarget -> Int
-   unsafeDotIndex tgt_opt = (unsafeCoerce (definitely' tgt_opt)).__data__ ! 0
+   bubbleIndex :: Maybe EventTarget -> Int
+   bubbleIndex tgt_opt = unsafeEventData tgt_opt ! 0
