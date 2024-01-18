@@ -2,13 +2,12 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (Handler, Renderer, Sel)
+import App.Util (Handler, Renderer, Sel, unsafeEventData)
 import App.Util.Selector (field, listElement)
 import Data.Maybe (Maybe)
 import Dict (Dict)
 import Lattice (neg)
-import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (×), definitely')
+import Util (type (×), (×))
 import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.Internal.Types (EventTarget)
@@ -20,10 +19,6 @@ newtype TableView = TableView
    }
 
 foreign import drawTable :: Renderer TableView
-
--- Unpack d3.js data associated with mouse event target.
-unsafeEventData :: forall a. Maybe EventTarget -> a
-unsafeEventData target = (unsafeCoerce $ definitely' target).__data__
 
 tableViewHandler :: Handler
 tableViewHandler = target >>> unsafePos >>> \(n × x) -> listElement n (field x neg)

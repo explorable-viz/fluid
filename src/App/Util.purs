@@ -6,6 +6,7 @@ import Bind (Var)
 import Data.Array ((:)) as A
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
+import Data.Maybe (Maybe)
 import Data.Profunctor.Strong (first)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd, uncurry)
@@ -18,10 +19,11 @@ import Lattice (𝔹)
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Test.Util (Selector)
-import Util (type (×), dup)
+import Unsafe.Coerce (unsafeCoerce)
+import Util (type (×), definitely', dup)
 import Val (BaseVal(..), DictRep(..), Val(..))
 import Web.Event.Event (Event)
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (EventListener, EventTarget)
 
 type HTMLId = String
 type Renderer a = HTMLId -> String -> a -> EventListener -> Effect Unit
@@ -70,3 +72,7 @@ runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
 runAffs_ f as = flip runAff_ (sequence as) case _ of
    Left err -> log $ show err
    Right as' -> as' <#> f # sequence_
+
+-- Unpack d3.js data associated with mouse event target.
+unsafeEventData :: forall a. Maybe EventTarget -> a
+unsafeEventData target = (unsafeCoerce $ definitely' target).__data__
