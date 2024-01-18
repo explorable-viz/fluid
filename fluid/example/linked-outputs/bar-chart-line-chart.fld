@@ -20,7 +20,7 @@ MultiPlot {|
             LinePlot { name: type, data: plot }
             | type <- ["Bio", "Hydro", "Solar", "Wind"],
             let plot = zipWith (fun p1 p2 -> { x: p1.x, y: p1.y / p2.y })
-                                 (series type "USA") (series type "China")
+                               (series type "USA") (series type "China")
          ]
       }
 |}
