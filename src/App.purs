@@ -18,7 +18,7 @@ fig1 =
         , "example/slicing/convolution/filter/emboss"
         ]
    , datasets: []
-   , inputs: [ "image", "filter" ]
+   , inputs: [ "input_image", "filter" ]
    }
 
 fig2 :: FigSpec
@@ -31,11 +31,24 @@ fig2 =
         , "example/slicing/convolution/filter/emboss"
         ]
    , datasets: []
-   , inputs: [ "image", "filter" ]
+   , inputs: [ "input_image", "filter" ]
+   }
+
+fig3 :: FigSpec
+fig3 =
+   { divId: "fig-conv-3"
+   , file: File "slicing/convolution/emboss"
+   , imports:
+        [ "lib/convolution"
+        , "example/slicing/convolution/test-image"
+        , "example/slicing/convolution/filter/emboss"
+        ]
+   , datasets: []
+   , inputs: [ "input_image" ]
    }
 
 main :: Effect Unit
 main = do
    runAffs_ drawFile [ loadFile' (Folder "fluid/lib") (File "convolution") ]
-   runAffs_ drawFigWithCode [ loadFig fig1, loadFig fig2 ]
+   runAffs_ drawFigWithCode [ loadFig fig1, loadFig fig2, loadFig fig3 ]
    runAffs_ drawFigWithCode [ loadFig linkedOutputs_spec1.spec ]
