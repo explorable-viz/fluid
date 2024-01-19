@@ -3,14 +3,14 @@ let isCountry name x = name == x.country;
 let isYear year x = year == x.year;
 
 let energy year c_names =
-  let rens2018 = filter (isYear year) renewables;
-  let nonrens2018 = filter (isYear year) non_renewables;
+  let rens = filter (isYear year) renewables;
+  let nonrens = filter (isYear year) non_renewables;
   let energy_per_country c_name =
-    let filteredRen = filter (isCountry c_name) rens2018;
-    let non_ren_x = head (filter (isCountry c_name) nonrens2018);
-    let rensOut = sum (map (fun x -> x.output) filteredRen);
-    let rensCap = sum (map (fun x -> x.capacity) filteredRen);
-    let nonRensCap = nonRenewables non_ren_x
+    let filteredRen = filter (isCountry c_name) rens;
+        non_ren_x = head (filter (isCountry c_name) nonrens);
+        rensOut = sum (map (fun x -> x.output) filteredRen);
+        rensCap = sum (map (fun x -> x.capacity) filteredRen);
+        nonRensCap = nonRenewables non_ren_x
     in {
       name: c_name,
       totalCap: rensCap + nonRensCap,
