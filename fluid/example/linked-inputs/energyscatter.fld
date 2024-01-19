@@ -6,23 +6,29 @@ let energy year c_names =
   let rens = filter (isYear year) renewables;
   let nonrens = filter (isYear year) non_renewables;
   let energy_per_country c_name =
-    let filteredRen = filter (isCountry c_name) rens;
+    let rens' = filter (isCountry c_name) rens;
         non_ren_x = head (filter (isCountry c_name) nonrens);
-        rensOut = sum (map (fun x -> x.output) filteredRen);
-        rensCap = sum (map (fun x -> x.capacity) filteredRen);
+        rensOut = sum (map (fun x -> x.output) rens');
+        rensCap = sum (map (fun x -> x.capacity) rens');
         nonRensCap = nonRenewables non_ren_x
     in {
       name: c_name,
       totalCap: rensCap + nonRensCap,
       non_renewables: nonRensCap,
-      renCapFactor: (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
+      renCapFactor:
+        (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
     }
   in
-  map energy_per_country c_names
+  map energy_per_country c_names;
+let countries = [
+   "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"
+]
 in ScatterPlot {
-  caption: "Clean energy efficiency against proportion of renewable energy cap",
-  data: [{ x: ctry.non_renewables / ctry.totalCap, y: ctry.renCapFactor, c: ctry.name }
-    | ctry <- energy 2018 ["BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"]
+  caption: "Clean energy efficiency vs. proportion of renewable energy cap",
+  data: [{
+      x: ctry.non_renewables / ctry.totalCap,
+      y: ctry.renCapFactor, c: ctry.name
+    } | ctry <- energy 2018 countries
   ],
   xlabel: "Renewables/TotalEnergyCap",
   ylabel: "Clean Capacity Factor"
