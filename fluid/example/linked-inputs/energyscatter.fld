@@ -23,7 +23,7 @@ let countries = [
    "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"
 ]
 in ScatterPlot {
-  caption: "Clean energy efficiency vs. proportion of renewable energy cap",
+  caption: "Clean energy efficiency vs. proportion of renewable energy capacity",
   data: [{
       x: ctry.non_renewables / ctry.totalCap,
       y: ctry.renCapFactor, c: ctry.name
