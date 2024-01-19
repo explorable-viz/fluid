@@ -1,10 +1,10 @@
 let nonRenewables x = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap;
-let isCountry name x = name == x.country;
-let isYear year x = year == x.year;
+    isCountry name x = name == x.country;
+    isYear year x = year == x.year;
 
 let energy year c_names =
   let rens = filter (isYear year) renewables;
-  let nonrens = filter (isYear year) non_renewables;
+      nonrens = filter (isYear year) non_renewables;
   let energy_per_country c_name =
     let rens' = filter (isCountry c_name) rens;
         non_ren_x = head (filter (isCountry c_name) nonrens);
@@ -18,8 +18,7 @@ let energy year c_names =
       renCapFactor:
         (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
     }
-  in
-  map energy_per_country c_names;
+  in map energy_per_country c_names;
 let countries = [
    "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"
 ]
@@ -33,3 +32,5 @@ in ScatterPlot {
   xlabel: "Renewables/TotalEnergyCap",
   ylabel: "Clean Capacity Factor"
 }
+
+
