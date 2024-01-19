@@ -1,4 +1,4 @@
-let sumNonRenewables x = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap;
+let nonRenewables x = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap;
 let isCountry name x = name == x.country;
 let isYear year x = year == x.year;
 
@@ -10,7 +10,7 @@ let energy year c_names =
     let non_ren_x = head (filter (isCountry c_name) nonrens2018);
     let rensOut = sum (map (fun x -> x.output) filteredRen);
     let rensCap = sum (map (fun x -> x.capacity) filteredRen);
-    let nonRensCap = sumNonRenewables non_ren_x
+    let nonRensCap = nonRenewables non_ren_x
     in {
       name: c_name,
       totalCap: rensCap + nonRensCap,
