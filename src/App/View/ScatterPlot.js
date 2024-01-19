@@ -86,7 +86,7 @@ function drawScatterPlot_ (
       const svg = div
          .append('svg')
             .attr('width', max_width + margin.left + margin.right)
-            .attr('height', max_height + margin.top + margin.bottom)
+            .attr('height', max_height + margin.top)
          .attr('id', childId)
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
