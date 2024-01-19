@@ -1,31 +1,36 @@
-let sumNonRenewables x = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap;
-let country_check name x = name == x.country;
-let year_check year x = year == x.year;
+let nonRenewables x = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap;
+    isCountry name x = name == x.country;
+    isYear year x = year == x.year;
 
 let energy year c_names =
-  let rens2018 = filter (year_check year) renewables;
-  let nonrens2018 = filter (year_check year) non_renewables;
-  let energy_per_country c_name = 
-    let filteredRen = filter (country_check c_name) rens2018;
-    let non_ren_x = head (filter (country_check c_name) nonrens2018);
-    let rensOut = sum (map (fun x = x.output) filteredRen);
-    let rensCap = sum (map (fun x = x.capacity) filteredRen);
-    let nonRensCap = sumNonRenewables non_ren_x
+  let rens = filter (isYear year) renewables;
+      nonrens = filter (isYear year) non_renewables;
+  let energy_per_country c_name =
+    let rens' = filter (isCountry c_name) rens;
+        non_ren_x = head (filter (isCountry c_name) nonrens);
+        rensOut = sum (map (fun x -> x.output) rens');
+        rensCap = sum (map (fun x -> x.capacity) rens');
+        nonRensCap = nonRenewables non_ren_x
     in {
-        name: c_name,
-        totalCap: rensCap + nonRensCap,
-        non_renewables: nonRensCap,
-        renCapFactor: (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
-        }
-  in
-    map energy_per_country c_names
+      name: c_name,
+      totalCap: rensCap + nonRensCap,
+      non_renewables: nonRensCap,
+      renCapFactor:
+        (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
+    }
+  in map energy_per_country c_names;
+let countries = [
+   "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"
+]
 in ScatterPlot {
-    caption: "Clean energy efficiency against proportion of renewable energy cap",
-    data: [{
-                x: country.non_renewables / country.totalCap,
-                y: country.renCapFactor,
-                c: country.name
-           }| country <- energy 2018 ["BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"]],
-    xlabel: "Renewables/TotalEnergyCap",
-    ylabel: "Clean Capacity Factor"
+  caption: "Clean energy efficiency vs. proportion of renewable energy cap",
+  data: [{
+      x: ctry.non_renewables / ctry.totalCap,
+      y: ctry.renCapFactor, c: ctry.name
+    } | ctry <- energy 2018 countries
+  ],
+  xlabel: "Renewables/TotalEnergyCap",
+  ylabel: "Clean Capacity Factor"
 }
+
+
