@@ -30,7 +30,7 @@ type AdjMap = Dict (Set Vertex)
 
 data GraphImpl = GraphImpl
    { out :: AdjMap
-   , in :: AdjMap
+   , in_ :: AdjMap
    , sinks :: Set Vertex
    , sources :: Set Vertex
    , vertices :: Set Vertex
@@ -47,11 +47,11 @@ instance Graph GraphImpl where
    size (GraphImpl g) = D.size g.out
    sinks (GraphImpl g) = g.sinks
    sources (GraphImpl g) = g.sources
-   op (GraphImpl g) = GraphImpl { out: g.in, in: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
-   empty = GraphImpl { out: D.empty, in: D.empty, sinks: mempty, sources: mempty, vertices: mempty }
+   op (GraphImpl g) = GraphImpl { out: g.in_, in_: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
+   empty = GraphImpl { out: D.empty, in_: D.empty, sinks: mempty, sources: mempty, vertices: mempty }
 
    fromEdgeList αs es =
-      GraphImpl { out, in: in_, sinks: sinks' out, sources: sinks' in_, vertices }
+      GraphImpl { out, in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
       es' = reverse es
       αs' = L.fromFoldable αs
@@ -136,4 +136,4 @@ inMap αs es = do
          Just αs' -> OST.poke β (insert α αs') acc
 
 instance Show GraphImpl where
-   show (GraphImpl g) = "GraphImpl (" <> show g.out <> " × " <> show g.in <> ")"
+   show (GraphImpl g) = "GraphImpl (" <> show g.out <> " × " <> show g.in_ <> ")"
