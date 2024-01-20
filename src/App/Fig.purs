@@ -7,14 +7,13 @@ import App.Util (HTMLId, Sel, asSel, toSel)
 import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
-import Data.Array (elem)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
 import Data.Tuple (curry, fst)
 import Desugarable (desug)
-import Dict (filterKeys, get, mapWithKey)
+import Dict (get, mapWithKey)
 import Effect (Effect)
 import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
@@ -97,11 +96,11 @@ selectionResult fig@{ out, dir: LinkedOutputs } =
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    out' × γ = (unwrap (relatedOutputs (unfocus fig))).bwd out
-selectionResult { spec: { inputs }, gc: { gc }, in_: γ × e, dir: LinkedInputs } =
-   (toSel <$> report out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) (γ' # filterKeys (_ `elem` inputs))
+selectionResult fig@{ in_: γ × _, dir: LinkedInputs } =
+   (toSel <$> report out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) γ'
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   (γ' × _) × out = (unwrap (relatedInputs gc)).bwd (γ × e)
+   γ' × out = (unwrap (relatedInputs (unfocus fig))).bwd γ
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
