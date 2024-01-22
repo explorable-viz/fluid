@@ -29,9 +29,6 @@ import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, spyWhen, (×))
 import Val (Env, Val, unrestrictGC)
 
-codeMirrorDiv :: Endo String
-codeMirrorDiv = ("codemirror-" <> _)
-
 type FigSpec =
    { divId :: HTMLId
    , imports :: Array String
@@ -50,11 +47,6 @@ type Fig =
    , out :: Val 𝔹
    , dir :: Direction
    }
-
-drawFigWithCode :: Fig -> Effect Unit
-drawFigWithCode fig = do
-   drawFig fig
-   drawCode (prettyP fig.s) =<< addEditorView (codeMirrorDiv fig.spec.divId)
 
 -- Pseudo-variable to use as name of output view.
 output :: String
@@ -102,10 +94,6 @@ selectionResult fig@{ in_: γ × _, dir: LinkedInputs } =
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    γ' × out = (unwrap (relatedInputs (unfocus fig))).bwd γ
 
-drawCode :: String -> EditorView -> Effect Unit
-drawCode s ed =
-   dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
-
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
@@ -117,6 +105,18 @@ loadFig spec@{ imports, file, datasets } = do
    gconfig <- loadProgCxt imports datasets >>= initialConfig e
    gc <- graphGC gconfig e
    pure { spec, s, gc, in_: botOf gc.γα × topOf e, out: botOf gc.vα, dir: LinkedOutputs }
+
+codeMirrorDiv :: Endo String
+codeMirrorDiv = ("codemirror-" <> _)
+
+drawFigWithCode :: Fig -> Effect Unit
+drawFigWithCode fig = do
+   drawFig fig
+   drawCode (prettyP fig.s) =<< addEditorView (codeMirrorDiv fig.spec.divId)
+
+drawCode :: String -> EditorView -> Effect Unit
+drawCode s ed =
+   dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
 
 -- ======================
 -- boilerplate
