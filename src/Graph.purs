@@ -26,8 +26,7 @@ class (Eq g, Vertices g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
 
-   -- | outN and iN satisfy
-   -- |   inN G = outN (op G)
+   -- | inN G = outN (op G)
    outN :: g -> Vertex -> Set Vertex
    inN :: g -> Vertex -> Set Vertex
 
