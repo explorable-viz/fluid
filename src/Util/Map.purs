@@ -14,10 +14,10 @@ import Effect.Exception (Error)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Util (type (×), Endo, assert, definitely, error, orElse, (×))
-import Util.Set (class Set', (∈))
+import Util.Set (class Set, (∈))
 
 -- Generalises Map but also supports a fixed key type, like Dict. Doesn't support transforming element type.
-class Set' a k <= Map a k b | a -> k, a -> b where
+class Set a k <= Map a k b | a -> k, a -> b where
    maplet :: k -> b -> a
    keys :: a -> Set k
    values :: a -> List b

@@ -27,7 +27,7 @@ import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Bounde
 import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (≞), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, size, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
-import Util.Set (class Set', difference, empty, isEmpty, union, (\\), (∈), (∪))
+import Util.Set (class Set, difference, empty, isEmpty, union, (\\), (∈), (∪))
 
 data Val a = Val a (BaseVal a)
 
@@ -79,7 +79,7 @@ instance Ord ForeignOp where
 -- Environments.
 newtype Env a = Env (Dict (Val a))
 
-instance Set' (Env a) String where
+instance Set (Env a) String where
    empty = Env empty
    isEmpty (Env γ) = isEmpty γ
    member x (Env γ) = x ∈ γ

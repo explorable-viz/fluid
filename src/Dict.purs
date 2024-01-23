@@ -32,7 +32,7 @@ import Foreign.Object
    )
 import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, size, toUnfoldable, values)
 import Util.Map as Map
-import Util.Set (class Set', difference, (∈))
+import Util.Set (class Set, difference, (∈))
 
 newtype Dict a = Dict (O.Object a)
 
@@ -62,7 +62,7 @@ instance FoldableWithIndex String Dict where
    foldrWithIndex f = foldrWithIndexDefault f
    foldMapWithIndex f = foldMapWithIndexDefaultL f
 
-instance Set' (Dict a) String where
+instance Set (Dict a) String where
    empty = Dict empty
    isEmpty (Dict d) = isEmpty d
    member x (Dict d) = x ∈ d
