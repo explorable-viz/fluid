@@ -3,6 +3,7 @@ module Util.Map where
 import Prelude hiding (append)
 
 import Control.Monad.Error.Class (class MonadThrow)
+import Data.Foldable (foldl)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
@@ -30,6 +31,16 @@ instance Map' (Object a) String a where
    lookup = Object.lookup
    delete = Object.delete
    insert = Object.insert
+
+class MapBlah (f :: Type -> Type) a where
+   intersection :: forall b. f a -> f b -> f a
+   difference :: forall b. f a -> f b -> f a
+
+foreign import intersectionWith :: forall a b c. (a -> b -> c) -> Object a -> Object b -> Object c
+
+instance MapBlah Object a where
+   intersection = intersectionWith const
+   difference m1 m2 = foldl (flip delete) m1 (Object.keys m2)
 
 restrict :: forall a k b. Ord k => Map' a k b => Set k -> Endo a
 restrict xs = filterKeys (_ ∈ xs)
