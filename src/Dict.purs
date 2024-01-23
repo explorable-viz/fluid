@@ -4,30 +4,35 @@
 module Dict
    ( module Foreign.Object
    , Dict(..)
-   , asSingletonMap
-   , toUnfoldable
    ) where
 
 import Prelude hiding (apply)
 
 import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultL, foldlWithIndex, foldrWithIndexDefault)
-import Data.List (head)
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype)
 import Data.Traversable (class Foldable, class Traversable)
-import Data.Unfoldable (class Unfoldable)
-import Foreign.Object (Object, toAscUnfoldable) as O
-import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, isSubmap, lookup, mapWithKey, member, singleton, toArrayWithKey, union, unionWith)
-import Util (type (×), assert, definitely)
-import Util.Map (class Map', class MapBlah, intersectionWith, keys, maplet, size, values)
+import Foreign.Object (Object) as O
+import Foreign.Object
+   ( alter
+   , delete
+   , empty
+   , filter
+   , filterKeys
+   , fromFoldable
+   , insert
+   , isEmpty
+   , isSubmap
+   , lookup
+   , mapWithKey
+   , member
+   , singleton
+   , toArrayWithKey
+   , union
+   , unionWith
+   )
+import Util.Map (class Map', class MapBlah, intersectionWith, keys, maplet, size, toUnfoldable, values)
 import Util.Map as Map
 import Util.Set (class Set', difference, (∈))
-
-asSingletonMap :: forall a. Dict a -> String × a
-asSingletonMap m =
-   assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
-
-toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
-toUnfoldable = unwrap >>> O.toAscUnfoldable
 
 newtype Dict a = Dict (O.Object a)
 
@@ -74,6 +79,7 @@ instance Map' (Dict a) String a where
    lookup k (Dict d) = lookup k d
    delete k (Dict d) = Dict (delete k d)
    insert k v (Dict d) = Dict (insert k v d)
+   toUnfoldable (Dict d) = toUnfoldable d
 
 instance MapBlah Dict String where
    intersectionWith f (Dict d) (Dict d') = Dict (intersectionWith f d d')

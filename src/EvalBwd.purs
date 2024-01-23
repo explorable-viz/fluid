@@ -17,7 +17,7 @@ import Data.Set (fromFoldable) as Set
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
 import Dict (Dict)
-import Dict (fromFoldable, toUnfoldable) as D
+import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), bv)
@@ -27,7 +27,7 @@ import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (!), (×), Endo, absurd, definitely', error, nonEmpty, singleton, successful)
-import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, intersectionWith, keys, maplet, (<+>))
+import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, intersectionWith, keys, maplet, toUnfoldable, (<+>))
 import Util.Pair (zip) as P
 import Util.Set (empty, isEmpty, (∪))
 import Val (BaseVal(..), Fun(..)) as V
@@ -58,7 +58,7 @@ matchBwd ρ κ α (MatchConstr c ws) = Val α (V.Constr c vs) × ElimConstr (map
 matchBwd ρ κ α (MatchRecord xws) = Val α (V.Record (zip xs vs # D.fromFoldable # wrap)) ×
    ElimRecord (Set.fromFoldable $ keys xws) κ'
    where
-   xs × ws = xws # D.toUnfoldable # unzip
+   xs × ws = xws # toUnfoldable # unzip
    vs × κ' = matchManyBwd ρ κ α (ws # reverse)
 
 matchManyBwd :: forall a. Ann a => Env a -> Cont a -> a -> List Match -> List (Val a) × Cont a

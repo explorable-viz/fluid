@@ -24,7 +24,7 @@ import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, singleton, (×))
-import Util.Map (keys, lookup, size)
+import Util.Map (keys, lookup, size, toUnfoldable)
 import Util.Set (empty)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
@@ -66,7 +66,7 @@ instance Graph GraphImpl where
       reverse (G.topologicalSort (G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _))))))
       where
       kvs :: Array (String × List Vertex)
-      kvs = D.toUnfoldable (g.out <#> Set.toUnfoldable)
+      kvs = toUnfoldable (g.out <#> Set.toUnfoldable)
 
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices

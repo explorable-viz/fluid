@@ -17,7 +17,6 @@ import Data.String (Pattern(..), Replacement(..), contains) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
-import Dict (toUnfoldable) as D
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
@@ -26,6 +25,7 @@ import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
+import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val (BaseVal(..), Fun(..)) as V
@@ -349,7 +349,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Int α n) = highlightIf α (text (show n))
    pretty (E.Float α n) = highlightIf α (text (show n))
    pretty (E.Str α str) = highlightIf α (text (show str))
-   pretty (E.Record α xes) = highlightIf α $ prettyRecord text (xes # D.toUnfoldable)
+   pretty (E.Record α xes) = highlightIf α $ prettyRecord text (xes # toUnfoldable)
    pretty (E.Dictionary α ees) = highlightIf α $ prettyDict pretty (ees <#> toTuple)
    pretty (E.Constr α c es) = highlightIf α $ prettyConstr c es
    pretty (E.Matrix α e1 (i × j) e2) = (highlightIf α (prettyMatrix e1 i j e2))
@@ -362,7 +362,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
-   pretty ρ = go (D.toUnfoldable ρ)
+   pretty ρ = go (toUnfoldable ρ)
       where
       go :: List (Var × Elim a) -> Doc
       go Nil = empty
@@ -370,7 +370,7 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
       go (xσ : δ) = atop (go δ .<>. semi) (pretty xσ)
 
 instance Highlightable a => Pretty (Env a) where
-   pretty (Env γ) = brackets $ go (D.toUnfoldable γ)
+   pretty (Env γ) = brackets $ go (toUnfoldable γ)
       where
       go :: List (Var × Val a) -> Doc
       go Nil = empty
@@ -403,10 +403,10 @@ instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Int n) = text (show n)
    pretty (V.Float n) = text (show n)
    pretty (V.Str str) = text (show str)
-   pretty (V.Record xvs) = prettyRecord text (xvs # D.toUnfoldable)
+   pretty (V.Record xvs) = prettyRecord text (xvs # toUnfoldable)
    pretty (V.Dictionary (DictRep svs)) = prettyDict
       (\(s × β) -> highlightIf β (text (show s)))
-      (svs # D.toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)
+      (svs # toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)
    pretty (V.Constr c vs) = prettyConstr c vs
    pretty (V.Matrix (MatrixRep (vss × _ × _))) = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Fun φ) = pretty φ

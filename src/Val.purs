@@ -12,7 +12,8 @@ import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
 import Data.List (List(..), (:), zipWith)
 import Data.Newtype (class Newtype)
-import Data.Set (Set, fromFoldable, toUnfoldable)
+import Data.Set (Set)
+import Data.Set as Set
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict)
@@ -24,7 +25,7 @@ import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, topOf, (∨))
 import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (≞), (⊆))
-import Util.Map (class Map', delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, size, unionWith, values)
+import Util.Map (class Map', delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, size, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set', difference, empty, isEmpty, union, (\\), (∈), (∪))
 
@@ -95,6 +96,7 @@ instance Map' (Env a) String (Val a) where
    lookup k (Env γ) = lookup k γ
    delete k (Env γ) = Env (delete k γ)
    insert k v (Env γ) = Env (insert k v γ)
+   toUnfoldable (Env γ) = toUnfoldable γ
 
 -- Goes from smaller environment to larger (so "dual" to a projection).
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
@@ -105,20 +107,20 @@ unrestrictGC γ xs =
       }
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
-reaches ρ xs = go (toUnfoldable xs) empty
+reaches ρ xs = go (Set.toUnfoldable xs) empty
    where
-   dom_ρ = fromFoldable $ keys ρ
+   dom_ρ = Set.fromFoldable $ keys ρ
 
    go :: List Var -> Endo (Set Var)
    go Nil acc = acc
    go (x : xs') acc | x ∈ acc = go xs' acc
    go (x : xs') acc | otherwise =
-      go (toUnfoldable (fv σ ∩ dom_ρ) <> xs') (singleton x ∪ acc)
+      go (Set.toUnfoldable (fv σ ∩ dom_ρ) <> xs') (singleton x ∪ acc)
       where
       σ = get x ρ
 
 forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
-forDefs ρ σ = restrict (reaches ρ (fv σ ∩ fromFoldable (keys ρ))) ρ
+forDefs ρ σ = restrict (reaches ρ (fv σ ∩ Set.fromFoldable (keys ρ))) ρ
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))

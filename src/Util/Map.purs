@@ -4,15 +4,16 @@ import Prelude hiding (append)
 
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.Foldable (foldl)
-import Data.List (List)
+import Data.List (List, head)
 import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set)
 import Data.Set as Set
+import Data.Unfoldable (class Unfoldable)
 import Effect.Exception (Error)
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Util (type (×), (×), Endo, definitely, error, orElse)
+import Util (type (×), Endo, assert, definitely, error, orElse, (×))
 import Util.Set (class Set', (∈))
 
 -- Generalises Map but also supports a fixed key type, like Dict. Doesn't support transforming element type.
@@ -26,6 +27,7 @@ class Set' a k <= Map' a k b | a -> k, a -> b where
    lookup :: k -> a -> Maybe b
    delete :: k -> a -> a
    insert :: k -> b -> Endo a
+   toUnfoldable :: forall f. Unfoldable f => a -> f (k × b)
 
 instance Map' (Object a) String a where
    maplet = Object.singleton
@@ -37,6 +39,7 @@ instance Map' (Object a) String a where
    lookup = Object.lookup
    delete = Object.delete
    insert = Object.insert
+   toUnfoldable = Object.toAscUnfoldable
 
 -- More general than equivalent Set' methods because of non-uniform type.
 class MapBlah (f :: Type -> Type) k | f -> k where
@@ -94,3 +97,8 @@ update f k = alter (definitely (keyExists k) >>> f >>> Just) k
 
 insertWith :: forall a k b. Map' a k b => (b -> Endo b) -> k -> b -> Endo a
 insertWith f k v = alter (Just <<< maybe v (flip f v)) k
+
+asSingletonMap :: forall a k b. Map' a k b => a -> k × b
+asSingletonMap m =
+   assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
+
