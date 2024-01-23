@@ -20,15 +20,13 @@ import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, toAscUnfoldable) as O
 import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, isSubmap, lookup, mapWithKey, member, singleton, toArrayWithKey, union, unionWith)
 import Util (type (×), assert, definitely, (×))
-import Util.Map (class Map', class MapBlah, keys, maplet, size, values)
+import Util.Map (class Map', class MapBlah, intersectionWith, keys, maplet, size, values)
 import Util.Map as Map
 import Util.Set (class Set', difference, (∈))
 
--- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
-foreign import intersectionWith :: forall a b c. (a -> b -> c) -> O.Object a -> O.Object b -> O.Object c
-
 asSingletonMap :: forall a. Dict a -> String × a
-asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
+asSingletonMap m =
+   assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
 
 toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
 toUnfoldable = unwrap >>> O.toAscUnfoldable
