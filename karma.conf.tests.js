@@ -3,7 +3,8 @@ module.exports = function (config) {
       autoWatch: true,
       basePath: "",
       browsers: ["ChromeHeadlessNoSandbox"],
-      browserDisconnectTimeout: 120000,
+      browserDisconnectTimeout: 60000,
+      browserNoActivityTimeout: 60000,
       customLaunchers: {
          ChromeHeadlessNoSandbox: {
            base: 'ChromeHeadless',
@@ -15,7 +16,7 @@ module.exports = function (config) {
       },
       client: {
          mocha: {
-            timeout: 120000
+            timeout: 60000
          }
       },
       colors: true,
