@@ -227,7 +227,7 @@ dup :: forall a. a -> a × a
 dup x = x × x
 
 unzip :: forall t a b. Functor t => t (a × b) -> t a × t b
-unzip = map fst &&& map snd
+unzip = (fst <$> _) &&& (snd <$> _)
 
 both :: forall a b c. Category a => Strong a => a b c -> a (b × b) (c × c)
 both f = f *** f

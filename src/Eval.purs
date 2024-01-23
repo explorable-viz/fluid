@@ -7,7 +7,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Exists (mkExists, runExists)
-import Data.List (List(..), (:), length, range, unzip, zip)
+import Data.List (List(..), (:), length, range, zip)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import Data.Profunctor.Strong (first)
@@ -17,7 +17,7 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
-import Dict (fromFoldable, unzip) as D
+import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
@@ -25,7 +25,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (×), absurd, both, check, error, orElse, singleton, successful, throw, with)
+import Util (type (×), (×), absurd, both, check, error, orElse, singleton, successful, throw, unzip, with)
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set (empty, (∪))
@@ -116,7 +116,7 @@ eval _ (Int α n) α' = pure (T.Const × Val (α ∧ α') (V.Int n))
 eval _ (Float α n) α' = pure (T.Const × Val (α ∧ α') (V.Float n))
 eval _ (Str α str) α' = pure (T.Const × Val (α ∧ α') (V.Str str))
 eval γ (Record α xes) α' = do
-   xts × xvs <- traverse (flip (eval γ) α') xes <#> D.unzip
+   xts × xvs <- traverse (flip (eval γ) α') xes <#> unzip
    pure $ T.Record xts × Val (α ∧ α') (V.Record xvs)
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))

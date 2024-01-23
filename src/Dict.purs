@@ -6,7 +6,6 @@ module Dict
    , Dict(..)
    , asSingletonMap
    , toUnfoldable
-   , unzip
    ) where
 
 import Prelude hiding (apply)
@@ -15,11 +14,10 @@ import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultL
 import Data.List (head)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Traversable (class Foldable, class Traversable)
-import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, toAscUnfoldable) as O
 import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, isSubmap, lookup, mapWithKey, member, singleton, toArrayWithKey, union, unionWith)
-import Util (type (×), assert, definitely, (×))
+import Util (type (×), assert, definitely)
 import Util.Map (class Map', class MapBlah, intersectionWith, keys, maplet, size, values)
 import Util.Map as Map
 import Util.Set (class Set', difference, (∈))
@@ -30,9 +28,6 @@ asSingletonMap m =
 
 toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
 toUnfoldable = unwrap >>> O.toAscUnfoldable
-
-unzip :: forall a b. Dict (a × b) -> Dict a × Dict b
-unzip kvs = (kvs <#> fst) × (kvs <#> snd)
 
 newtype Dict a = Dict (O.Object a)
 

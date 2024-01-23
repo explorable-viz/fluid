@@ -18,7 +18,7 @@ import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict)
-import Dict (fromFoldable, unzip) as D
+import Dict (fromFoldable) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
@@ -28,7 +28,7 @@ import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
-import Util (type (+), type (×), Endo, error, orElse, singleton, throw, unimplemented, (×))
+import Util (type (+), type (×), Endo, error, orElse, singleton, throw, unimplemented, (×), unzip)
 import Util.Map (disjointUnion, insert, intersectionWith, lookup, maplet, (\\))
 import Util.Set (empty)
 import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
@@ -312,7 +312,7 @@ dict_map =
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)
    fwd (v : Val α (Dictionary (DictRep d)) : Nil) = do
-      ts × d' <- D.unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) d
+      ts × d' <- unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) d
       pure $ (erase v × ts) × Val α (Dictionary (DictRep d'))
    fwd _ = throw "Function and dictionary expected"
 
@@ -320,7 +320,7 @@ dict_map =
    bwd ((v × ts) × Val α (Dictionary (DictRep d'))) =
       (foldl (∨) (botOf v) us) : Val α (Dictionary (DictRep d)) : Nil
       where
-      us × d = D.unzip $ intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts d'
+      us × d = unzip $ intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts d'
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
