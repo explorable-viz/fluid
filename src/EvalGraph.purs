@@ -9,13 +9,13 @@ import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Profunctor.Strong ((***))
-import Data.Set (Set, empty, insert)
+import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (curry)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
-import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
+import Dict (fromFoldable, empty, get, keys, lookup) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
@@ -28,10 +28,11 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, with, (\\), (×), (∪), (⊆))
+import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, with, (×), (⊆))
 import Util.Pair (unzip) as P
+import Util.Set ((\\), (∪), disjointUnion, empty, lookup', maplet, restrict, (<+>))
 import Val (BaseVal(..), Fun(..)) as V
-import Val (DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
+import Val (DictRep(..), Env(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
 
 -- Needs a better name.
 type GraphConfig =
@@ -45,8 +46,8 @@ patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
 match :: forall m. MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 match v (ElimVar x κ)
-   | x == varAnon = pure (D.empty × κ × empty)
-   | otherwise = pure (D.singleton x v × κ × empty)
+   | x == varAnon = pure (empty × κ × empty)
+   | otherwise = pure (maplet x v × κ × empty)
 match (Val α (V.Constr c vs)) (ElimConstr m) = do
    with "Pattern mismatch" $ Set.singleton c `consistentWith` D.keys m
    κ <- D.lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
@@ -64,18 +65,18 @@ match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
 match v (ElimRecord xs _) = throw (patternMismatch (prettyP v) (show xs))
 
 matchMany :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
-matchMany Nil κ = pure (D.empty × κ × empty)
+matchMany Nil κ = pure (empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
    γ' × κ' × βs <- matchMany vs κ
-   pure $ γ `D.disjointUnion` γ' × κ' × (αs ∪ βs)
+   pure $ γ `disjointUnion` γ' × κ' × (αs ∪ βs)
 matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
 closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
-   for ρ \σ ->
+   Env <$> for ρ \σ ->
       let ρ' = ρ `forDefs` σ in Val <$> new αs <@> V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
@@ -130,7 +131,7 @@ eval γ (Matrix α e (x × y) e') αs = do
       i <- A.range 1 i'
       singleton $ sequence do
          j <- A.range 1 j'
-         let γ' = D.singleton x (Val β (V.Int i)) `D.disjointUnion` (D.singleton y (Val β' (V.Int j)))
+         let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
    Val <$> new (insert α αs) <@> V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
 eval γ (Lambda α σ) αs =
@@ -153,7 +154,7 @@ eval γ (LetRec (RecDefs α ρ) e) αs = do
    eval (γ <+> γ') e (insert α αs)
 
 eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
-eval_module γ = go D.empty
+eval_module γ = go empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
    go γ' (Module Nil) _ = pure γ'
@@ -177,7 +178,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
    addDataset (x ↦ e) γ = do
       v <- eval γ e empty
-      pure $ γ <+> D.singleton x v
+      pure $ γ <+> maplet x v
 
 type GraphEval g =
    { gc :: GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹)

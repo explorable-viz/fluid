@@ -13,11 +13,12 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
 import Data.Traversable (sequence)
-import Dict ((\\), (∪), intersectionWith, unionWith) as D
+import Dict ((\\), (∪), intersectionWith) as D
 import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
 import Effect.Exception (Error)
 import Util (type (×), Endo, assert, shapeMismatch, successfulWith, (×))
 import Util.Pair (Pair(..))
+import Util.Set (unionWith)
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
@@ -124,7 +125,7 @@ instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) wher
 instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) where
    meet (a × a') (b × b') = meet a b × meet a' b'
 else instance MeetSemilattice a => MeetSemilattice (Dict a) where
-   meet = D.unionWith (∧)
+   meet = unionWith (∧)
 else instance (Functor f, Apply f, MeetSemilattice a) => MeetSemilattice (f a) where
    meet a = (a `lift2 (∧)` _)
 
@@ -153,7 +154,7 @@ instance JoinSemilattice a => JoinSemilattice (List a) where
       | otherwise = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
-   join = D.unionWith (∨) -- faster than definedJoin
+   join = unionWith (∨) -- faster than definedJoin
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
 
 mayFailUpdate :: forall a m. MonadError Error m => JoinSemilattice a => Dict a -> Var × a -> m (Dict a)

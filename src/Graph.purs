@@ -15,7 +15,8 @@ import Data.String (joinWith)
 import Dict (Dict)
 import Dict (apply) as D
 import Lattice (𝔹)
-import Util (type (×), Endo, (×), (∈), (∪))
+import Util (type (×), Endo, (×))
+import Util.Set ((∈), (∪))
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience

@@ -29,7 +29,7 @@ import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, class Highlightable, BaseVal, DictRep(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), highlightIf)
+import Val (class Ann, class Highlightable, BaseVal, DictRep(..), Env(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), highlightIf)
 
 class Pretty p where
    pretty :: p -> Doc
@@ -369,8 +369,8 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
       go (xσ : Nil) = pretty xσ
       go (xσ : δ) = atop (go δ .<>. semi) (pretty xσ)
 
-instance Highlightable a => Pretty (Dict (Val a)) where
-   pretty γ = brackets $ go (D.toUnfoldable γ)
+instance Highlightable a => Pretty (Env a) where
+   pretty (Env γ) = brackets $ go (D.toUnfoldable γ)
       where
       go :: List (Var × Val a) -> Doc
       go Nil = empty

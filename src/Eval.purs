@@ -15,8 +15,8 @@ import Data.Set (subset)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
-import Dict (Dict, disjointUnion, empty, get, keys, lookup)
-import Dict (fromFoldable, singleton, unzip) as D
+import Dict (Dict, get, keys, lookup)
+import Dict (fromFoldable, unzip) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
@@ -24,10 +24,11 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (×), (∪), absurd, both, check, error, orElse, singleton, successful, throw, with)
+import Util (type (×), (×), absurd, both, check, error, orElse, singleton, successful, throw, with)
 import Util.Pair (unzip) as P
+import Util.Set (disjointUnion, empty, lookup', maplet, restrict, (∪), (<+>))
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
+import Val (class Ann, DictRep(..), Env(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -35,7 +36,7 @@ patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 match :: forall a m. MonadError Error m => Ann a => Val a -> Elim a -> m (Env a × Cont a × a × Match)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
-   | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
+   | otherwise = pure (maplet x v × κ × top × MatchVar x (erase v))
 match (Val α (V.Constr c vs)) (ElimConstr m) = do
    with "Pattern mismatch" $ singleton c `consistentWith` keys m
    κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
@@ -62,8 +63,10 @@ matchMany (_ : vs) (ContExpr _) = throw $
 matchMany _ _ = error absurd
 
 closeDefs :: forall a. Env a -> Dict (Elim a) -> a -> Env a
-closeDefs γ ρ α = ρ <#> \σ ->
-   let ρ' = ρ `forDefs` σ in Val α (V.Fun $ V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
+closeDefs γ ρ α = Env
+   ( ρ <#> \σ ->
+        let ρ' = ρ `forDefs` σ in Val α (V.Fun $ V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
+   )
 
 checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = do
@@ -132,7 +135,7 @@ eval γ (Matrix α e (x × y) e') α' = do
            i <- range 1 i'
            singleton $ sequence do
               j <- range 1 j'
-              let γ' = D.singleton x (Val β (V.Int i)) `disjointUnion` (D.singleton y (Val β' (V.Int j)))
+              let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
               singleton (eval (γ <+> γ') e α')
       )
    pure $ T.Matrix tss (x × y) (i' × j') t × Val (α ∧ α') (V.Matrix (MatrixRep (vss × (i' × β) × (j' × β'))))

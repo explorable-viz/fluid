@@ -4,7 +4,8 @@ import Prelude
 import Data.List (List(..), (:))
 import Data.Set (Set, empty)
 import Data.Tuple (Tuple(..), fst, snd)
-import Util (type (×), (∪), definitely, singleton, whenever)
+import Util (type (×), definitely, singleton, whenever)
+import Util.Set ((∪))
 
 -- Not easy as a newtype as there is no Coercible instance for Set.
 type Var = String
@@ -23,6 +24,7 @@ key = fst
 val :: forall a. Bind a -> a
 val = snd
 
+-- Want this to implement Util.Keys
 keys :: forall a. List (Bind a) -> Set Var
 keys Nil = empty
 keys (x ↦ _ : ρ) = singleton x ∪ keys ρ

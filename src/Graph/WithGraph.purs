@@ -16,7 +16,8 @@ import Effect.Exception (Error)
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (\\), (×))
+import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
+import Util.Set ((\\))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.

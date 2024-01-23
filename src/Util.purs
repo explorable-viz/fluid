@@ -16,7 +16,7 @@ import Data.Identity (Identity(..))
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map)
-import Data.Map (lookup, unionWith) as M
+import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
@@ -259,9 +259,6 @@ concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a
 concatM = foldr (>=>) pure
 
 infixr 7 Set.intersection as ∩
-infixr 6 Set.union as ∪
-infix 5 Set.difference as \\
-infix 5 Set.member as ∈
 infixl 4 Set.subset as ⊆
 
 -- Simplify overloading.

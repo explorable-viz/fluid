@@ -10,12 +10,13 @@ import Data.Foldable (foldr)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
 import Data.List.NonEmpty (NonEmptyList(..))
+import Data.Newtype (unwrap)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable) as Set
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
-import Dict (Dict, disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
+import Dict (Dict, insert, intersectionWith)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
@@ -25,14 +26,15 @@ import Lattice (Raw, 𝔹, (∨), bot, botOf, expand, top)
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (!), (×), (∪), Endo, absurd, definitely', error, nonEmpty, singleton, successful)
+import Util (type (×), (!), (×), Endo, absurd, definitely', error, nonEmpty, singleton, successful)
 import Util.Pair (zip) as P
+import Util.Set (append_inv, disjointUnion, disjointUnion_inv, empty, get, isEmpty, keys, maplet, (<+>), (∪))
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), append_inv, (<+>))
+import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × Dict (Elim a) × a
 closeDefsBwd γ =
-   case foldrWithIndex joinDefs (empty × empty × empty × bot) γ of
+   case foldrWithIndex joinDefs (empty × empty × empty × bot) (unwrap γ) of
       ρ' × γ' × ρ × α -> γ' × (ρ ∨ ρ') × α
    where
    joinDefs :: Var -> Val a -> Endo (Dict (Elim a) × Env a × Dict (Elim a) × a)
@@ -113,8 +115,8 @@ evalBwd γ e v t =
 
 -- Computes a partial slice which evalBwd expands to a full slice.
 evalBwd' :: forall a. Ann a => Val a -> Trace -> Env a × Expr a × a
-evalBwd' v (T.Var x) = D.singleton x v × Var x × bot
-evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
+evalBwd' v (T.Var x) = maplet x v × Var x × bot
+evalBwd' v (T.Op op) = maplet op v × Op op × bot
 evalBwd' (Val α (V.Str str)) T.Const = empty × Str α str × α
 evalBwd' (Val α (V.Int n)) T.Const = empty × Int α n × α
 evalBwd' (Val α (V.Float n)) T.Const = empty × Float α n × α
@@ -153,7 +155,7 @@ evalBwd' (Val α (V.Matrix (MatrixRep (vss × (_ × βi) × (_ × βj))))) (T.Ma
          γ'' × e × α' ->
             let
                γ × γ' = append_inv (singleton x ∪ singleton y) γ''
-               γ0 = (D.singleton x (Val bot (V.Int i')) `disjointUnion` D.singleton y (Val bot (V.Int j'))) <+> γ'
+               γ0 = (maplet x (Val bot (V.Int i')) `disjointUnion` maplet y (Val bot (V.Int j'))) <+> γ'
             in
                unsafePartial $
                   let

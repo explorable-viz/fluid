@@ -7,7 +7,6 @@ import Data.List (List, zipWith)
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
 import Data.Traversable (class Foldable, class Traversable)
-import Dict (apply2)
 import Expr (Expr, Module)
 import Val (Env)
 
@@ -29,7 +28,7 @@ derive instance Foldable ProgCxt
 instance Apply ProgCxt where
    apply (ProgCxt fζ) (ProgCxt ζ) =
       ProgCxt
-         { primitives: fζ.primitives `apply2` ζ.primitives
+         { primitives: fζ.primitives <*> ζ.primitives
          , mods: fζ.mods `zipWith (<*>)` ζ.mods
          , datasets: (second (<*>) <$> fζ.datasets) `zipWith (<*>)` ζ.datasets
          }

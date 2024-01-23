@@ -31,7 +31,7 @@ import SExpr (desugarModuleFwd)
 import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, mapLeft, (×))
 import Util.Parse (SParser)
-import Val (restrict)
+import Util.Set (restrict)
 
 newtype File = File String
 newtype Folder = Folder String
