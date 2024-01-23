@@ -13,11 +13,11 @@ import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
-import Dict (Dict, asSingletonMap)
+import Dict (Dict)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜), (≞))
 import Util.Pair (Pair(..))
-import Util.Map (keys)
+import Util.Map (keys, asMaplet)
 import Util.Set ((\\), (∪))
 
 -- Deviate from POPL paper by having closures depend on originating lambda or letrec
@@ -110,7 +110,7 @@ class BV a where
 -- Bound variables, defined only for singleton eliminators.
 instance BV (Elim a) where
    bv (ElimVar x κ) = singleton x ∪ bv κ
-   bv (ElimConstr m) = bv (snd (asSingletonMap m))
+   bv (ElimConstr m) = bv (snd (asMaplet m))
    bv (ElimRecord _ κ) = bv κ
 
 instance BV (VarDef a) where

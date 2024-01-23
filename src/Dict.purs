@@ -30,7 +30,7 @@ import Foreign.Object
    , union
    , unionWith
    )
-import Util.Map (class Map', class MapBlah, intersectionWith, keys, maplet, size, toUnfoldable, values)
+import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, size, toUnfoldable, values)
 import Util.Map as Map
 import Util.Set (class Set', difference, (∈))
 
@@ -69,7 +69,7 @@ instance Set' (Dict a) String where
    difference (Dict d) (Dict d') = Dict (difference d d')
    union (Dict d) (Dict d') = Dict (union d d')
 
-instance Map' (Dict a) String a where
+instance Map (Dict a) String a where
    maplet k v = Dict (maplet k v)
    keys (Dict d) = keys d
    values (Dict d) = values d
@@ -81,7 +81,7 @@ instance Map' (Dict a) String a where
    insert k v (Dict d) = Dict (insert k v d)
    toUnfoldable (Dict d) = toUnfoldable d
 
-instance MapBlah Dict String where
+instance MapF Dict String where
    intersectionWith f (Dict d) (Dict d') = Dict (intersectionWith f d d')
    difference (Dict d) (Dict d') = Dict (Map.difference d d')
    mapWithKey f (Dict d) = Dict (mapWithKey f d)

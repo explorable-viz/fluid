@@ -19,7 +19,7 @@ import Data.Traversable (traverse)
 import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Desugarable (class Desugarable, desugBwd, desug)
-import Dict (Dict, asSingletonMap)
+import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -27,7 +27,7 @@ import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, maybeJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, error, singleton, successful, unimplemented, (×))
-import Util.Map (get, maplet)
+import Util.Map (asMaplet, get, maplet)
 import Util.Pair (Pair(..))
 
 -- Surface language expressions.
@@ -353,7 +353,7 @@ orElseFwd ContNone _ = error absurd
 orElseFwd (ContExpr e) _ = ContExpr e
 orElseFwd (ContElim (ElimConstr m)) α = ContElim (ElimConstr (unlessFwd (c × orElseFwd κ α) α))
    where
-   c × κ = asSingletonMap m
+   c × κ = asMaplet m
 orElseFwd (ContElim (ElimRecord xs κ)) α = ContElim (ElimRecord xs (orElseFwd κ α))
 orElseFwd (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElseFwd κ α))
 
