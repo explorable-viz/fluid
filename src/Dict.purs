@@ -44,3 +44,11 @@ toUnfoldable = O.toAscUnfoldable
 
 unzip :: forall a b. Dict (a × b) -> Dict a × Dict b
 unzip kvs = (kvs <#> fst) × (kvs <#> snd)
+
+newtype Dict' a = Dict' (O.Object a)
+
+instance Functor Dict' where
+   map f (Dict' d) = Dict' (f <$> d)
+
+instance Apply Dict' where
+   apply (Dict' f) (Dict' x) = Dict' (intersectionWith ($) f x)
