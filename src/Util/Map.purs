@@ -29,6 +29,12 @@ class Set' a k <= Map' a k b | a -> k, a -> b where
    insert :: k -> b -> Endo a
    toUnfoldable :: forall f. Unfoldable f => a -> f (k × b)
 
+-- More general than equivalent Set' methods because of non-uniform type.
+class MapBlah (f :: Type -> Type) k | f -> k where
+   intersectionWith :: forall a b c. (a -> b -> c) -> f a -> f b -> f c
+   difference :: forall a b. f a -> f b -> f a
+   mapWithKey :: forall a b. (k -> a -> b) -> f a -> f b
+
 instance Map' (Object a) String a where
    maplet = Object.singleton
    keys = Object.keys >>> Set.fromFoldable
@@ -41,21 +47,15 @@ instance Map' (Object a) String a where
    insert = Object.insert
    toUnfoldable = Object.toAscUnfoldable
 
--- More general than equivalent Set' methods because of non-uniform type.
-class MapBlah (f :: Type -> Type) k | f -> k where
-   intersectionWith :: forall a b c. (a -> b -> c) -> f a -> f b -> f c
-   difference :: forall a b. f a -> f b -> f a
-   mapWithKey :: forall a b. (k -> a -> b) -> f a -> f b
+instance MapBlah Object String where
+   intersectionWith = intersectionWith_Object
+   difference m1 m2 = foldl (flip delete) m1 (Object.keys m2)
+   mapWithKey = Object.mapWithKey
 
 infixr 7 intersection as ∩
 infix 5 difference as \\
 
 foreign import intersectionWith_Object :: forall a b c. (a -> b -> c) -> Object a -> Object b -> Object c
-
-instance MapBlah Object String where
-   intersectionWith = intersectionWith_Object
-   difference m1 m2 = foldl (flip delete) m1 (Object.keys m2)
-   mapWithKey = Object.mapWithKey
 
 restrict :: forall a k b. Ord k => Map' a k b => Set k -> Endo a
 restrict xs = filterKeys (_ ∈ xs)
