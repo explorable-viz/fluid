@@ -6,7 +6,6 @@ module Dict
    , Dict
    , (\\)
    , (∩)
-   , (∪)
    , apply
    , apply2
    , asSingletonMap
@@ -54,7 +53,6 @@ difference :: forall a b. Dict a -> Dict b -> Dict a
 difference m1 m2 = foldl (flip delete) m1 (O.keys m2)
 
 infixr 7 intersection as ∩
-infixr 6 union as ∪
 infix 5 difference as \\
 
 values :: forall a. Dict a -> List a

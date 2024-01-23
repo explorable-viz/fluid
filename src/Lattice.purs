@@ -13,12 +13,13 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
 import Data.Traversable (sequence)
-import Dict ((\\), (∪), intersectionWith) as D
+import Dict ((\\), intersectionWith) as D
 import Dict (Dict, insert, toUnfoldable)
 import Effect.Exception (Error)
 import Util (type (×), Endo, assert, shapeMismatch, successfulWith, (×))
 import Util.Map (keys, lookup, unionWith, update)
 import Util.Pair (Pair(..))
+import Util.Set ((∪))
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
@@ -185,7 +186,7 @@ instance Expandable t u => Expandable (Pair t) (Pair u) where
 instance (BotOf u t, Expandable t u) => Expandable (Dict t) (Dict u) where
    expand kvs kvs' =
       assert (keys kvs `subset` keys kvs') $
-         (kvs `D.intersectionWith expand` kvs') D.∪ ((kvs' D.\\ kvs) <#> botOf)
+         (kvs `D.intersectionWith expand` kvs') ∪ ((kvs' D.\\ kvs) <#> botOf)
 
 instance Expandable t u => Expandable (List t) (List u) where
    expand xs = zipWith expand xs
