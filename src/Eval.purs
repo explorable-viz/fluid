@@ -9,6 +9,7 @@ import Data.Bifunctor (bimap)
 import Data.Exists (mkExists, runExists)
 import Data.List (List(..), (:), length, range, unzip, zip)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (wrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (fromFoldable, toUnfoldable) as Set
 import Data.Set (subset)
@@ -50,7 +51,7 @@ match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
    check (subset xs (Set.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
    γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
-   pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
+   pure (γ × κ' × (α ∧ α') × MatchRecord (wrap $ D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = throw $ patternMismatch (prettyP v) (show xs)
 
 matchMany :: forall a m. MonadError Error m => Ann a => List (Val a) -> Cont a -> m (Env a × Cont a × a × List Match)
@@ -121,7 +122,7 @@ eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
    let
       ss × αs = vs <#> unpack string # unzip
-      d = D.fromFoldable $ zip ss (zip αs us)
+      d = wrap $ D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (DictRep d))
 eval γ (Constr α c es) α' = do
    checkArity c (length es)

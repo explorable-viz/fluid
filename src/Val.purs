@@ -24,7 +24,7 @@ import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, topOf, (∨))
 import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (≞), (⊆))
-import Util.Map (class Map', delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, unionWith, values)
+import Util.Map (class Map', delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, size, unionWith, values)
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set', difference, empty, isEmpty, union, (\\), (∈), (∪))
 
@@ -89,6 +89,7 @@ instance Map' (Env a) String (Val a) where
    maplet k v = Env (maplet k v)
    keys (Env γ) = keys γ
    values (Env γ) = values γ
+   size (Env γ) = size γ
    filterKeys p (Env γ) = Env (filterKeys p γ)
    unionWith f (Env γ) (Env γ') = Env (unionWith f γ γ')
    lookup k (Env γ) = lookup k γ
@@ -177,14 +178,14 @@ instance Apply BaseVal where
    apply (Float n) (Float n') = Float (n ≜ n')
    apply (Str s) (Str s') = Str (s ≜ s')
    apply (Constr c fes) (Constr c' es) = Constr (c ≜ c') (zipWith (<*>) fes es)
-   apply (Record fxvs) (Record xvs) = Record (D.apply2 fxvs xvs)
+   apply (Record fxvs) (Record xvs) = Record (((<*>) <$> fxvs) <*> xvs)
    apply (Dictionary fxvs) (Dictionary xvs) = Dictionary (fxvs <*> xvs)
    apply (Matrix fm) (Matrix m) = Matrix (fm <*> m)
    apply (Fun ff) (Fun f) = Fun (ff <*> f)
    apply _ _ = shapeMismatch unit
 
 instance Apply Fun where
-   apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (fγ <*> γ) (fρ `D.apply2` ρ) (fσ <*> σ)
+   apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (fγ <*> γ) (((<*>) <$> fρ) <*> ρ) (fσ <*> σ)
    apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
    apply (PartialConstr c fvs) (PartialConstr c' vs) = PartialConstr (c ≜ c') (zipWith (<*>) fvs vs)
    apply _ _ = shapeMismatch unit
@@ -199,7 +200,7 @@ instance Apply MatrixRep where
       MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × ((n ≜ n') × fnα nα) × ((m ≜ m') × fmα mα)
 
 instance Apply Env where
-   apply (Env fγ) (Env γ) = Env (D.apply2 fγ γ)
+   apply (Env fγ) (Env γ) = Env (((<*>) <$> fγ) <*> γ)
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d

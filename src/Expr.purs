@@ -14,7 +14,6 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, asSingletonMap)
-import Dict (apply2) as D
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜), (≞))
 import Util.Pair (Pair(..))
@@ -231,7 +230,7 @@ instance Apply Expr where
    apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
    apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
    apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Record fα fxes) (Record α xes) = Record (fα α) (fxes `D.apply2` xes)
+   apply (Record fα fxes) (Record α xes) = Record (fα α) (((<*>) <$> fxes) <*> xes)
    apply (Dictionary fα fxes) (Dictionary α xes) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxes xes)
    apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
    apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
@@ -245,7 +244,7 @@ instance Apply Expr where
 
 instance Apply Elim where
    apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
-   apply (ElimConstr fk) (ElimConstr k) = ElimConstr (fk `D.apply2` k)
+   apply (ElimConstr fk) (ElimConstr k) = ElimConstr (((<*>) <$> fk) <*> k)
    apply (ElimRecord xs fk) (ElimRecord _ k) = ElimRecord xs (fk <*> k)
    apply _ _ = shapeMismatch unit
 
@@ -259,7 +258,7 @@ instance Apply VarDef where
    apply (VarDef fσ fe) (VarDef σ e) = VarDef (fσ <*> σ) (fe <*> e)
 
 instance Apply RecDefs where
-   apply (RecDefs fα fρ) (RecDefs α ρ) = RecDefs (fα α) (fρ `D.apply2` ρ)
+   apply (RecDefs fα fρ) (RecDefs α ρ) = RecDefs (fα α) (((<*>) <$> fρ) <*> ρ)
 
 -- Apply instance for Either no good here as doesn't assume fixed shape.
 instance Apply Module where

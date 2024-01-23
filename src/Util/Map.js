@@ -1,4 +1,4 @@
-export function intersectionWith (f) {
+export function intersectionWith_Object (f) {
    return function (m1) {
       return function (m2) {
          var m = {}

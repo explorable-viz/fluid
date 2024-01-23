@@ -10,14 +10,14 @@ import Data.Foldable (foldr)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Newtype (unwrap)
+import Data.Newtype (unwrap, wrap)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable) as Set
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
-import Dict (Dict, insert)
-import Dict (fromFoldable, singleton, toUnfoldable) as D
+import Dict (Dict)
+import Dict (fromFoldable, toUnfoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), bv)
@@ -27,7 +27,7 @@ import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (!), (×), Endo, absurd, definitely', error, nonEmpty, singleton, successful)
-import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, intersectionWith, keys, maplet, (<+>))
+import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, intersectionWith, keys, maplet, (<+>))
 import Util.Pair (zip) as P
 import Util.Set (empty, isEmpty, (∪))
 import Val (BaseVal(..), Fun(..)) as V
@@ -52,10 +52,10 @@ matchBwd γ κ _ (MatchVar x v)
 matchBwd γ κ _ (MatchVarAnon v)
    | isEmpty γ = botOf v × ElimVar varAnon κ
    | otherwise = error absurd
-matchBwd ρ κ α (MatchConstr c ws) = Val α (V.Constr c vs) × ElimConstr (D.singleton c κ')
+matchBwd ρ κ α (MatchConstr c ws) = Val α (V.Constr c vs) × ElimConstr (maplet c κ')
    where
    vs × κ' = matchManyBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws) = Val α (V.Record (zip xs vs # D.fromFoldable)) ×
+matchBwd ρ κ α (MatchRecord xws) = Val α (V.Record (zip xs vs # D.fromFoldable # wrap)) ×
    ElimRecord (Set.fromFoldable $ keys xws) κ'
    where
    xs × ws = xws # D.toUnfoldable # unzip
@@ -173,7 +173,7 @@ evalBwd' (Val α (V.Matrix (MatrixRep (vss × (_ × βi) × (_ × βj))))) (T.Ma
 evalBwd' v (T.Project t x) =
    γ × Project e x × α
    where
-   γ × e × α = evalBwd' (Val bot (V.Record (D.singleton x v))) t
+   γ × e × α = evalBwd' (Val bot (V.Record (maplet x v))) t
 evalBwd' v (T.App t1 t2 t3) =
    (γ ∨ γ') × App e e' × (α ∨ α')
    where

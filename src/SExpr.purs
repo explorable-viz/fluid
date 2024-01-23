@@ -10,7 +10,7 @@ import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, (***))
 import Data.Set (toUnfoldable) as S
@@ -20,14 +20,14 @@ import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Desugarable (class Desugarable, desugBwd, desug)
 import Dict (Dict, asSingletonMap)
-import Dict (fromFoldable, singleton) as D
+import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, maybeJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, error, singleton, successful, unimplemented, (×))
-import Util.Map (get)
+import Util.Map (get, maplet)
 import Util.Pair (Pair(..))
 
 -- Surface language expressions.
@@ -113,7 +113,7 @@ econs :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
 econs α e e' = E.Constr α cCons (e : e' : Nil)
 
 elimBool :: forall a. Cont a -> Cont a -> Elim a
-elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
+elimBool κ κ' = ElimConstr (wrap $ D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
 -- Module. Surface language supports "blocks" of variable declarations; core does not. Currently no backward.
 moduleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
@@ -150,7 +150,7 @@ varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
 recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
-recDefsFwd xcs = E.RecDefs top <$> D.fromFoldable <$> traverse recDefFwd xcss
+recDefsFwd xcs = E.RecDefs top <$> wrap <<< D.fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = map RecDef (groupBy (eq `on` fst) xcs) :: NonEmptyList (RecDef a)
 
@@ -181,7 +181,7 @@ exprFwd (Int α n) = pure (E.Int α n)
 exprFwd (Float α n) = pure (E.Float α n)
 exprFwd (Str α s) = pure (E.Str α s)
 exprFwd (Constr α c ss) = E.Constr α c <$> traverse desug ss
-exprFwd (Record α xss) = E.Record α <$> D.fromFoldable <$> traverse (traverse desug) xss
+exprFwd (Record α xss) = E.Record α <$> wrap <<< D.fromFoldable <$> traverse (traverse desug) xss
 exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desug) sss
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desug s <@> x × y <*> desug s'
 exprFwd (Lambda bs) = E.Lambda top <$> clausesFwd bs
@@ -287,11 +287,11 @@ listCompBwd _ _ = error absurd
 pattContFwd :: forall a m. MonadError Error m => Pattern -> Cont a -> m (Elim a)
 pattContFwd (PVar x) κ = pure (ElimVar x κ)
 pattContFwd (PConstr c ps) κ =
-   checkArity c (length ps) *> (ElimConstr <$> D.singleton c <$> pattArgsFwd (Left <$> ps) κ)
+   checkArity c (length ps) *> (ElimConstr <$> maplet c <$> pattArgsFwd (Left <$> ps) κ)
 pattContFwd (PRecord xps) κ =
    ElimRecord (keys xps) <$> pattArgsFwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
-pattContFwd PListEmpty κ = pure (ElimConstr (D.singleton cNil κ))
-pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
+pattContFwd PListEmpty κ = pure (ElimConstr (maplet cNil κ))
+pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> maplet cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
 
 pattContBwd :: forall a. Pattern -> Elim a -> Cont a
 pattContBwd (PVar _) (ElimVar _ κ) = κ
@@ -303,8 +303,8 @@ pattContBwd _ _ = error absurd
 
 -- ListRestPattern × Cont
 pattCont_ListRest_Fwd :: forall a m. MonadError Error m => ListRestPattern -> Cont a -> m (Elim a)
-pattCont_ListRest_Fwd PEnd κ = pure (ElimConstr (D.singleton cNil κ))
-pattCont_ListRest_Fwd (PNext p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
+pattCont_ListRest_Fwd PEnd κ = pure (ElimConstr (maplet cNil κ))
+pattCont_ListRest_Fwd (PNext p o) κ = ElimConstr <$> maplet cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
 
 pattCont_ListRest_Bwd :: forall a. Elim a -> ListRestPattern -> Cont a
 pattCont_ListRest_Bwd (ElimVar _ _) _ = error absurd
@@ -378,7 +378,7 @@ orElseBwd (ContElim (ElimConstr m)) (π : πs) =
       κ' × α = unlessBwd m c
    in
       orElseBwd κ' (πs' <> πs) #
-         (\κ'' -> ContElim (ElimConstr (D.fromFoldable (singleton (c × κ'') :: List _)))) *** (α ∨ _)
+         (\κ'' -> ContElim (ElimConstr (wrap $ D.fromFoldable (singleton (c × κ'') :: List _)))) *** (α ∨ _)
 orElseBwd _ _ = error absurd
 
 -- In forward direction, extend singleton branch to set of branches where any missing constructors have
@@ -386,7 +386,7 @@ orElseBwd _ _ = error absurd
 -- all synthesised branches, returning the original singleton branch for c, plus join of annotations on the
 -- empty lists used for bodies of synthesised branches.
 unlessFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
-unlessFwd (c × κ) α = D.fromFoldable ((c × κ) : cκs)
+unlessFwd (c × κ) α = wrap $ D.fromFoldable ((c × κ) : cκs)
    where
    defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
    cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c)

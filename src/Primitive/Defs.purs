@@ -12,13 +12,13 @@ import Data.List (List(..), (:))
 import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
+import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
-import Data.Set as Set
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict)
-import Dict (fromFoldable, singleton, unzip) as D
+import Dict (fromFoldable, unzip) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
@@ -29,7 +29,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, singleton, throw, unimplemented, (×))
-import Util.Map (disjointUnion, insert, intersectionWith, lookup, (\\))
+import Util.Map (disjointUnion, insert, intersectionWith, lookup, maplet, (\\))
 import Util.Set (empty)
 import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
 
@@ -37,7 +37,7 @@ extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
 extern (ForeignOp (id × φ)) = id × Val bot (Fun ((Foreign (ForeignOp (id × φ))) Nil))
 
 primitives :: Raw Env
-primitives = wrap $ D.fromFoldable
+primitives = wrap $ wrap $ D.fromFoldable
    [ ":" × Val bot (Fun (PartialConstr cCons Nil))
    , unary "ceiling" { i: number, o: int, fwd: ceil }
    , extern debugLog
@@ -265,7 +265,7 @@ dict_get =
 
    bwd :: Partial => OpBwd String
    bwd (s × v) =
-      Val bot (Str s) : Val bot (Dictionary (DictRep $ D.singleton s (bot × v))) : Nil
+      Val bot (Str s) : Val bot (Dictionary (DictRep $ maplet s (bot × v))) : Nil
 
 dict_intersectionWith :: ForeignOp
 dict_intersectionWith =

@@ -13,7 +13,6 @@ import Data.Set (Set, singleton, unions)
 import Data.Set as Set
 import Data.String (joinWith)
 import Dict (Dict)
-import Dict (apply) as D
 import Lattice (𝔹)
 import Util (type (×), Endo, (×))
 import Util.Set ((∈), (∪))
@@ -74,7 +73,7 @@ else instance (Selectαs a b, Selectαs a' b') => Selectαs (a × a') (b × b') 
    select𝔹s (vα × vα') αs = select𝔹s vα αs × select𝔹s vα' αs
 
 instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f Vertex)) where
-   selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) `D.apply` dα)
+   selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) <*> dα)
    select𝔹s dα αs = flip select𝔹s αs <$> dα
 
 outEdges :: forall g. Graph g => g -> Set Vertex -> List Edge

@@ -11,7 +11,7 @@ import Data.List (List(..), reverse, (:))
 import Data.List as L
 import Data.Map as M
 import Data.Maybe (Maybe(..), isJust, maybe)
-import Data.Newtype (unwrap)
+import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
@@ -24,7 +24,8 @@ import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, singleton, (×))
-import Util.Map (keys)
+import Util.Map (keys, lookup, size)
+import Util.Set (empty)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -42,22 +43,22 @@ instance Eq GraphImpl where
 
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Graph GraphImpl where
-   outN (GraphImpl g) α = D.lookup (unwrap α) g.out # definitely "in graph"
+   outN (GraphImpl g) α = lookup (unwrap α) g.out # definitely "in graph"
    inN g = outN (op g)
-   elem α (GraphImpl g) = isJust (D.lookup (unwrap α) g.out)
-   size (GraphImpl g) = D.size g.out
+   elem α (GraphImpl g) = isJust (lookup (unwrap α) g.out)
+   size (GraphImpl g) = size g.out
    sinks (GraphImpl g) = g.sinks
    sources (GraphImpl g) = g.sources
    op (GraphImpl g) = GraphImpl { out: g.in_, in_: g.out, sinks: g.sources, sources: g.sinks, vertices: g.vertices }
-   empty = GraphImpl { out: D.empty, in_: D.empty, sinks: mempty, sources: mempty, vertices: mempty }
+   empty = GraphImpl { out: empty, in_: empty, sinks: mempty, sources: mempty, vertices: mempty }
 
    fromEdgeList αs es =
       GraphImpl { out, in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
       es' = reverse es
       αs' = L.fromFoldable αs
-      out = runST (outMap αs' es')
-      in_ = runST (inMap αs' es')
+      out = wrap (runST (outMap αs' es'))
+      in_ = wrap (runST (inMap αs' es'))
       vertices = Set.fromFoldable $ Set.map Vertex $ keys out
 
    -- PureScript also provides a graph implementation. Delegate to that for now.
@@ -73,7 +74,7 @@ instance Vertices GraphImpl where
 -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
 -- This is better but still slow if there are thousands of sinks.
 sinks' :: AdjMap -> Set Vertex
-sinks' m = D.toArrayWithKey (×) m
+sinks' m = D.toArrayWithKey (×) (unwrap m)
    # filter (snd >>> Set.isEmpty)
    <#> (fst >>> Vertex)
    # Set.fromFoldable
@@ -135,6 +136,3 @@ inMap αs es = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc
          Just αs' -> OST.poke β (insert α αs') acc
-
-instance Show GraphImpl where
-   show (GraphImpl g) = "GraphImpl (" <> show g.out <> " × " <> show g.in_ <> ")"

@@ -13,7 +13,6 @@ import Data.Set as Set
 import Data.Traversable (sequence_)
 import Data.Tuple (curry, fst)
 import Desugarable (desug)
-import Dict (mapWithKey)
 import Effect (Effect)
 import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
@@ -27,7 +26,7 @@ import SExpr (Expr) as S
 import Test.Util (Selector)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, spyWhen, (×))
-import Util.Map (get)
+import Util.Map (get, mapWithKey)
 import Val (Env, Val, unrestrictGC)
 
 type FigSpec =
