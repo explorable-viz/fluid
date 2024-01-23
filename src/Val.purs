@@ -24,7 +24,7 @@ import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, topOf, (∨))
 import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (≞), (⊆))
-import Util.Map (class Map', delete, filterKeys, get, insert, keys, lookup, maplet, restrict, unionWith)
+import Util.Map (class Map', delete, filterKeys, get, insert, keys, lookup, maplet, restrict, unionWith, values)
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set', difference, empty, isEmpty, union, (\\), (∈), (∪))
 
@@ -88,6 +88,7 @@ instance Set' (Env a) String where
 instance Map' (Env a) String (Val a) where
    maplet k v = Env (maplet k v)
    keys (Env γ) = keys γ
+   values (Env γ) = values γ
    filterKeys p (Env γ) = Env (filterKeys p γ)
    unionWith f (Env γ) (Env γ') = Env (unionWith f γ γ')
    lookup k (Env γ) = lookup k γ

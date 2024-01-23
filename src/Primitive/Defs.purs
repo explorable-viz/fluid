@@ -17,7 +17,7 @@ import Data.Tuple (fst, snd)
 import Data.Set as Set
 import DataType (cCons, cPair)
 import Debug (trace)
-import Dict (Dict, (\\))
+import Dict (Dict)
 import Dict (fromFoldable, intersectionWith, singleton, unzip) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
@@ -29,7 +29,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, singleton, throw, unimplemented, (×))
-import Util.Map (disjointUnion, insert, lookup)
+import Util.Map (disjointUnion, insert, lookup, (\\))
 import Util.Set (empty)
 import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
 

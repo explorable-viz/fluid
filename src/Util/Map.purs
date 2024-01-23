@@ -4,6 +4,8 @@ import Prelude hiding (append)
 
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.Foldable (foldl)
+import Data.List (List)
+import Data.List as List
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
@@ -17,6 +19,7 @@ import Util.Set (class Set', (∈))
 class Set' a k <= Map' a k b | a -> k, a -> b where
    maplet :: k -> b -> a
    keys :: a -> Set k
+   values :: a -> List b
    filterKeys :: (k -> Boolean) -> Endo a
    unionWith :: (b -> Endo b) -> a -> Endo a
    lookup :: k -> a -> Maybe b
@@ -26,15 +29,20 @@ class Set' a k <= Map' a k b | a -> k, a -> b where
 instance Map' (Object a) String a where
    maplet = Object.singleton
    keys = Object.keys >>> Set.fromFoldable
+   values = Object.values >>> List.fromFoldable
    filterKeys = Object.filterKeys
    unionWith = Object.unionWith
    lookup = Object.lookup
    delete = Object.delete
    insert = Object.insert
 
+-- Generalise equivalent Set' methods by parameterising on element type.
 class MapBlah (f :: Type -> Type) a where
    intersection :: forall b. f a -> f b -> f a
    difference :: forall b. f a -> f b -> f a
+
+infixr 7 intersection as ∩
+infix 5 difference as \\
 
 foreign import intersectionWith :: forall a b c. (a -> b -> c) -> Object a -> Object b -> Object c
 
