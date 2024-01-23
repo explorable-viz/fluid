@@ -13,11 +13,12 @@ import Data.Set (map, fromFoldable, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
-import Dict (Dict, keys, lookup)
+import Dict (Dict)
 import Dict (fromFoldable) as O
 import Effect.Exception (Error)
 import Partial.Unsafe (unsafePartial)
 import Util (type (×), absurd, definitely', error, orElse, with, (=<<<), (×), (≞))
+import Util.Map (keys, lookup)
 
 type TypeName = String
 type FieldName = String

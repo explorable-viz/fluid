@@ -13,11 +13,12 @@ import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
-import Dict (Dict, keys, asSingletonMap)
+import Dict (Dict, asSingletonMap)
 import Dict (apply2) as D
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜), (≞))
 import Util.Pair (Pair(..))
+import Util.Map (keys)
 import Util.Set ((\\), (∪))
 
 -- Deviate from POPL paper by having closures depend on originating lambda or letrec

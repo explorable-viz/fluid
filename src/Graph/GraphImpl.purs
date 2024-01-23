@@ -24,6 +24,7 @@ import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, singleton, (×))
+import Util.Map (keys)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -57,7 +58,7 @@ instance Graph GraphImpl where
       αs' = L.fromFoldable αs
       out = runST (outMap αs' es')
       in_ = runST (inMap αs' es')
-      vertices = Set.fromFoldable $ Set.map Vertex $ D.keys out
+      vertices = Set.fromFoldable $ Set.map Vertex $ keys out
 
    -- PureScript also provides a graph implementation. Delegate to that for now.
    topologicalSort (GraphImpl g) =

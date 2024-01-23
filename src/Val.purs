@@ -105,7 +105,7 @@ unrestrictGC γ xs =
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (toUnfoldable xs) empty
    where
-   dom_ρ = fromFoldable $ D.keys ρ
+   dom_ρ = fromFoldable $ keys ρ
 
    go :: List Var -> Endo (Set Var)
    go Nil acc = acc
@@ -116,7 +116,7 @@ reaches ρ xs = go (toUnfoldable xs) empty
       σ = get x ρ
 
 forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
-forDefs ρ σ = restrict (reaches ρ (fv σ ∩ fromFoldable (D.keys ρ))) ρ
+forDefs ρ σ = restrict (reaches ρ (fv σ ∩ fromFoldable (keys ρ))) ρ
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
