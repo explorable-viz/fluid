@@ -16,7 +16,7 @@ import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable) as Set
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
-import Dict (Dict, insert, intersectionWith)
+import Dict (Dict, insert)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
@@ -27,7 +27,7 @@ import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (!), (×), Endo, absurd, definitely', error, nonEmpty, singleton, successful)
-import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, keys, maplet, (<+>))
+import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, intersectionWith, keys, maplet, (<+>))
 import Util.Pair (zip) as P
 import Util.Set (empty, isEmpty, (∪))
 import Val (BaseVal(..), Fun(..)) as V

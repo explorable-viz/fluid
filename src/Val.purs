@@ -24,7 +24,7 @@ import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, topOf, (∨))
 import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (≞), (⊆))
-import Util.Map (class Map', delete, filterKeys, get, insert, keys, lookup, maplet, restrict, unionWith, values)
+import Util.Map (class Map', delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, unionWith, values)
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set', difference, empty, isEmpty, union, (\\), (∈), (∪))
 
@@ -192,7 +192,7 @@ instance Apply Fun where
 -- Should require equal domains?
 instance Apply DictRep where
    apply (DictRep fxvs) (DictRep xvs) =
-      DictRep $ D.intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
+      DictRep $ intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
 
 instance Apply MatrixRep where
    apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (n' × nα) × (m' × mα))) =

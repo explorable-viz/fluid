@@ -7,22 +7,17 @@ module Dict
    , apply
    , apply2
    , asSingletonMap
-   , insertWith
-   , intersectionWith
    , lift2
    , toUnfoldable
    , unzip
-   , values
    ) where
 
 import Prelude hiding (apply)
 
-import Data.List (List, head)
-import Data.List (fromFoldable) as L
-import Data.Maybe (Maybe(..), maybe)
+import Data.List (head)
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
-import Foreign.Object (Object, toAscUnfoldable, values) as O
+import Foreign.Object (Object, toAscUnfoldable) as O
 import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, lookup, mapWithKey, member, singleton, size, toArrayWithKey, union, unionWith)
 import Util (type (×), assert, definitely, (×))
 
@@ -41,9 +36,6 @@ lift2 f d1 = apply2 ((f <$> _) <$> d1)
 -- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
 foreign import intersectionWith :: forall a b c. (a -> b -> c) -> Dict a -> Dict b -> Dict c
 
-values :: forall a. Dict a -> List a
-values = O.values >>> L.fromFoldable
-
 asSingletonMap :: forall a. Dict a -> String × a
 asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
 
@@ -52,6 +44,3 @@ toUnfoldable = O.toAscUnfoldable
 
 unzip :: forall a b. Dict (a × b) -> Dict a × Dict b
 unzip kvs = (kvs <#> fst) × (kvs <#> snd)
-
-insertWith :: forall a. (a -> a -> a) -> String -> a -> Dict a -> Dict a
-insertWith f k v = alter (Just <<< maybe v (flip f v)) k

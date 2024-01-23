@@ -18,7 +18,7 @@ import Data.Set as Set
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict)
-import Dict (fromFoldable, intersectionWith, singleton, unzip) as D
+import Dict (fromFoldable, singleton, unzip) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
@@ -29,7 +29,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, singleton, throw, unimplemented, (×))
-import Util.Map (disjointUnion, insert, lookup, (\\))
+import Util.Map (disjointUnion, insert, intersectionWith, lookup, (\\))
 import Util.Set (empty)
 import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
 
@@ -273,7 +273,7 @@ dict_intersectionWith =
    where
    op :: OpGraph
    op (v : Val α (Dictionary (DictRep d1)) : Val α' (Dictionary (DictRep d2)) : Nil) =
-      Val <$> new (singleton α # Set.insert α') <*> (Dictionary <$> (DictRep <$> sequence (D.intersectionWith apply' d1 d2)))
+      Val <$> new (singleton α # Set.insert α') <*> (Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2)))
       where
       apply' (β × u) (β' × u') = do
          β'' <- new (singleton β # Set.insert β')
@@ -284,7 +284,7 @@ dict_intersectionWith =
    fwd (v : Val α (Dictionary (DictRep d)) : Val α' (Dictionary (DictRep d')) : Nil) = do
       d'' <-
          sequence $
-            D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) d d'
+            intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) d d'
       pure $ (erase v × (d'' <#> snd >>> fst)) × Val (α ∧ α') (Dictionary (DictRep (d'' <#> second snd)))
    fwd _ = throw "Function and two dictionaries expected"
 
@@ -297,7 +297,7 @@ dict_intersectionWith =
       )
       where
       d' =
-         D.intersectionWith (\tt (β × v') -> β × apply2Bwd (tt × v')) tts βvs
+         intersectionWith (\tt (β × v') -> β × apply2Bwd (tt × v')) tts βvs
             :: Dict (_ × Val _ × Val _ × Val _)
 
 dict_map :: ForeignOp
@@ -320,7 +320,7 @@ dict_map =
    bwd ((v × ts) × Val α (Dictionary (DictRep d'))) =
       (foldl (∨) (botOf v) us) : Val α (Dictionary (DictRep d)) : Nil
       where
-      us × d = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts d'
+      us × d = D.unzip $ intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts d'
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

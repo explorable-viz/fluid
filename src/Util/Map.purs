@@ -6,7 +6,7 @@ import Control.Monad.Error.Class (class MonadThrow)
 import Data.Foldable (foldl)
 import Data.List (List)
 import Data.List as List
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set)
 import Data.Set as Set
 import Effect.Exception (Error)
@@ -84,3 +84,6 @@ alter f k m = case f (lookup k m) of
 
 update :: forall a k b. Show k => Map' a k b => Endo b -> k -> Endo a
 update f k = alter (definitely (keyExists k) >>> f >>> Just) k
+
+insertWith :: forall a k b. Map' a k b => (b -> Endo b) -> k -> b -> Endo a
+insertWith f k v = alter (Just <<< maybe v (flip f v)) k
