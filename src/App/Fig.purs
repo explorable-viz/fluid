@@ -27,7 +27,7 @@ import SExpr (Expr) as S
 import Test.Util (Selector)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, spyWhen, (×))
-import Util.Set (get)
+import Util.Map (get)
 import Val (Env, Val, unrestrictGC)
 
 type FigSpec =

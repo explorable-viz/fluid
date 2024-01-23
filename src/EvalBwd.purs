@@ -27,8 +27,9 @@ import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (!), (×), Endo, absurd, definitely', error, nonEmpty, singleton, successful)
+import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, keys, maplet, (<+>))
 import Util.Pair (zip) as P
-import Util.Set (append_inv, disjointUnion, disjointUnion_inv, empty, get, isEmpty, keys, maplet, (<+>), (∪))
+import Util.Set (empty, isEmpty, (∪))
 import Val (BaseVal(..), Fun(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..))
 

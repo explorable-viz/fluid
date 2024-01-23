@@ -19,7 +19,7 @@ import Data.Traversable (traverse)
 import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Desugarable (class Desugarable, desugBwd, desug)
-import Dict (Dict, asSingletonMap, get)
+import Dict (Dict, asSingletonMap)
 import Dict (fromFoldable, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -27,6 +27,7 @@ import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, maybeJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, error, singleton, successful, unimplemented, (×))
+import Util.Map (get)
 import Util.Pair (Pair(..))
 
 -- Surface language expressions.

@@ -11,9 +11,6 @@ module Dict
    , apply2
    , asSingletonMap
    , difference
-   , disjointUnion
-   , disjointUnion_inv
-   , get
    , insertWith
    , intersection
    , intersectionWith
@@ -21,7 +18,6 @@ module Dict
    , lift2
    , toUnfoldable
    , unzip
-   , update
    , values
    ) where
 
@@ -37,8 +33,7 @@ import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, keys, toAscUnfoldable, values) as O
 import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, lookup, mapWithKey, member, singleton, size, toArrayWithKey, union, unionWith)
-import Util (type (×), Endo, assert, definitely, error, (×))
-import Util.Set (keyExists, (∈))
+import Util (type (×), assert, definitely, (×))
 
 type Dict a = O.Object a
 
@@ -73,19 +68,6 @@ values = O.values >>> L.fromFoldable
 
 asSingletonMap :: forall a. Dict a -> String × a
 asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
-
-get :: forall a. String -> Dict a -> a
-get k = lookup k >>> definitely (keyExists k)
-
--- Prefer to built-in 'update' as no soft failure.
-update :: forall a. Endo a -> String -> Dict a -> Dict a
-update f k = alter (definitely (keyExists k) >>> f >>> Just) k
-
-disjointUnion :: forall a. Dict a -> Endo (Dict a)
-disjointUnion = unionWith (\_ _ -> error "not disjoint")
-
-disjointUnion_inv :: forall a. Set String -> Dict a -> Dict a × Dict a
-disjointUnion_inv ks m = filterKeys (_ ∈ ks) m × filterKeys (_ `not <<< (∈)` ks) m
 
 toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
 toUnfoldable = O.toAscUnfoldable

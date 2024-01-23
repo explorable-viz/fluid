@@ -15,7 +15,7 @@ import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (curry)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
-import Dict (fromFoldable, empty, get, keys, lookup) as D
+import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
@@ -29,8 +29,9 @@ import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, with, (×), (⊆))
+import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
-import Util.Set ((\\), (∪), disjointUnion, empty, lookup', maplet, restrict, (<+>))
+import Util.Set ((\\), (∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
 import Val (DictRep(..), Env(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
 
@@ -49,18 +50,18 @@ match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × empty)
    | otherwise = pure (maplet x v × κ × empty)
 match (Val α (V.Constr c vs)) (ElimConstr m) = do
-   with "Pattern mismatch" $ Set.singleton c `consistentWith` D.keys m
-   κ <- D.lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
+   with "Pattern mismatch" $ Set.singleton c `consistentWith` keys m
+   κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
-   d <- dataTypeFor $ D.keys m
+   d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
 match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
-   check (Set.subset xs (Set.fromFoldable $ D.keys xvs))
-      $ patternMismatch (show (D.keys xvs)) (show xs)
+   check (Set.subset xs (Set.fromFoldable $ keys xvs))
+      $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
-   γ × κ' × αs <- matchMany (flip D.get xvs <$> xs') κ
+   γ × κ' × αs <- matchMany (flip get xvs <$> xs') κ
    pure $ γ × κ' × (insert α αs)
 match v (ElimRecord xs _) = throw (patternMismatch (prettyP v) (show xs))
 
@@ -135,7 +136,7 @@ eval γ (Matrix α e (x × y) e') αs = do
          singleton (eval (γ <+> γ') e αs)
    Val <$> new (insert α αs) <@> V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
 eval γ (Lambda α σ) αs =
-   Val <$> new (insert α αs) <@> V.Fun (V.Closure (restrict (fv σ) γ) D.empty σ)
+   Val <$> new (insert α αs) <@> V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of

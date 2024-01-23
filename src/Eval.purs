@@ -15,7 +15,7 @@ import Data.Set (subset)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
-import Dict (Dict, get, keys, lookup)
+import Dict (Dict)
 import Dict (fromFoldable, unzip) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), asExpr, fv)
@@ -25,8 +25,9 @@ import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (×), absurd, both, check, error, orElse, singleton, successful, throw, with)
+import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
-import Util.Set (disjointUnion, empty, lookup', maplet, restrict, (∪), (<+>))
+import Util.Set (empty, (∪))
 import Val (BaseVal(..), Fun(..)) as V
 import Val (class Ann, DictRep(..), Env(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
 

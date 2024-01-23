@@ -14,11 +14,11 @@ import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
 import Data.Traversable (sequence)
 import Dict ((\\), (∪), intersectionWith) as D
-import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
+import Dict (Dict, lookup, insert, keys, toUnfoldable)
 import Effect.Exception (Error)
 import Util (type (×), Endo, assert, shapeMismatch, successfulWith, (×))
+import Util.Map (unionWith, update)
 import Util.Pair (Pair(..))
-import Util.Set (unionWith)
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where

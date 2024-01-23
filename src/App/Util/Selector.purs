@@ -10,7 +10,8 @@ import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
 import Util (Endo, absurd, assert, definitely', error)
-import Util.Set ((∈), update)
+import Util.Map (update)
+import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection helpers. TODO: turn into lenses/prisms.

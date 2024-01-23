@@ -15,7 +15,7 @@ import Data.Newtype (class Newtype)
 import Data.Set (Set, fromFoldable, toUnfoldable)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
-import Dict (Dict, get, lookup)
+import Dict (Dict)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Elim, fv)
@@ -24,8 +24,9 @@ import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, topOf, (∨))
 import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (≞), (⊆))
+import Util.Map (class Map', delete, filterKeys, get, insert, keys, lookup, maplet, restrict, unionWith)
 import Util.Pretty (Doc, beside, text)
-import Util.Set (class Map', class Set', delete, difference, empty, filterKeys, insert, isEmpty, keys, maplet, restrict, union, unionWith, (\\), (∈), (∪))
+import Util.Set (class Set', difference, empty, isEmpty, union, (\\), (∈), (∪))
 
 data Val a = Val a (BaseVal a)
 
@@ -79,6 +80,7 @@ newtype Env a = Env (Dict (Val a))
 
 instance Set' (Env a) String where
    empty = Env empty
+   isEmpty (Env γ) = isEmpty γ
    member x (Env γ) = x ∈ γ
    difference (Env γ) (Env γ') = Env (difference γ γ')
    union (Env γ) (Env γ') = Env (union γ γ')
@@ -89,7 +91,6 @@ instance Map' (Env a) String (Val a) where
    filterKeys p (Env γ) = Env (filterKeys p γ)
    unionWith f (Env γ) (Env γ') = Env (unionWith f γ γ')
    lookup k (Env γ) = lookup k γ
-   isEmpty (Env γ) = isEmpty γ
    delete k (Env γ) = Env (delete k γ)
    insert k v (Env γ) = Env (insert k v γ)
 
