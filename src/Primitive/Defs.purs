@@ -9,15 +9,16 @@ import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
+import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
-import Data.Set (insert)
+import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
-import Dict (Dict, (\\))
-import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, lookup, singleton, unzip) as D
+import Dict (Dict)
+import Dict (fromFoldable) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
@@ -27,14 +28,16 @@ import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
-import Util (type (+), type (×), Endo, error, orElse, singleton, throw, unimplemented, (×))
+import Util (type (+), type (×), Endo, error, orElse, singleton, throw, unimplemented, (×), unzip)
+import Util.Map (disjointUnion, insert, intersectionWith, lookup, maplet, (\\))
+import Util.Set (empty)
 import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
 extern (ForeignOp (id × φ)) = id × Val bot (Fun ((Foreign (ForeignOp (id × φ))) Nil))
 
 primitives :: Raw Env
-primitives = D.fromFoldable
+primitives = wrap $ wrap $ D.fromFoldable
    [ ":" × Val bot (Fun (PartialConstr cCons Nil))
    , unary "ceiling" { i: number, o: int, fwd: ceil }
    , extern debugLog
@@ -167,7 +170,7 @@ dict_difference =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) =
-      Val <$> new (singleton α # insert β) <@> Dictionary (DictRep (d \\ d'))
+      Val <$> new (singleton α # Set.insert β) <@> Dictionary (DictRep (d \\ d'))
    op _ = throw "Dictionaries expected."
 
    fwd :: OpFwd Unit
@@ -177,7 +180,7 @@ dict_difference =
 
    bwd :: Partial => OpBwd Unit
    bwd (_ × Val α (Dictionary d)) =
-      Val α (Dictionary d) : Val α (Dictionary (DictRep D.empty)) : Nil
+      Val α (Dictionary d) : Val α (Dictionary (DictRep empty)) : Nil
 
 dict_fromRecord :: ForeignOp
 dict_fromRecord =
@@ -204,12 +207,12 @@ dict_disjointUnion =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) = do
-      Val <$> new (singleton α # insert β) <@> Dictionary (DictRep (D.disjointUnion d d'))
+      Val <$> new (singleton α # Set.insert β) <@> Dictionary (DictRep (disjointUnion d d'))
    op _ = throw "Dictionaries expected"
 
    fwd :: OpFwd (Dict Unit × Dict Unit)
    fwd (Val α (Dictionary (DictRep d)) : Val α' (Dictionary (DictRep d')) : Nil) =
-      pure $ ((const unit <$> d) × (const unit <$> d')) × Val (α ∧ α') (Dictionary (DictRep $ D.disjointUnion d d'))
+      pure $ ((const unit <$> d) × (const unit <$> d')) × Val (α ∧ α') (Dictionary (DictRep $ disjointUnion d d'))
    fwd _ = throw "Dictionaries expected"
 
    bwd :: Partial => OpBwd (Dict Unit × Dict Unit)
@@ -241,9 +244,9 @@ dict_foldl =
       where
       v' × u' × d = foldl
          ( \(v1 × u' × d) (s × tt) ->
-              let v2 × u1 × u2 = apply2Bwd (tt × u') in (v1 ∨ v2) × u1 × D.insert s (bot × u2) d
+              let v2 × u1 × u2 = apply2Bwd (tt × u') in (v1 ∨ v2) × u1 × insert s (bot × u2) d
          )
-         (botOf v × u × D.empty)
+         (botOf v × u × empty)
          ts
 
 dict_get :: ForeignOp
@@ -252,17 +255,17 @@ dict_get =
    where
    op :: OpGraph
    op (Val _ (Str s) : Val _ (Dictionary (DictRep d)) : Nil) =
-      snd <$> D.lookup s d # orElse ("Key \"" <> s <> "\" not found")
+      snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
    op _ = throw "String and dictionary expected"
 
    fwd :: OpFwd String
    fwd (Val _ (Str s) : Val _ (Dictionary (DictRep d)) : Nil) =
-      (s × _) <$> (snd <$> D.lookup s d # orElse ("Key \"" <> s <> "\" not found"))
+      (s × _) <$> (snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found"))
    fwd _ = throw "String and dictionary expected"
 
    bwd :: Partial => OpBwd String
    bwd (s × v) =
-      Val bot (Str s) : Val bot (Dictionary (DictRep $ D.singleton s (bot × v))) : Nil
+      Val bot (Str s) : Val bot (Dictionary (DictRep $ maplet s (bot × v))) : Nil
 
 dict_intersectionWith :: ForeignOp
 dict_intersectionWith =
@@ -270,10 +273,10 @@ dict_intersectionWith =
    where
    op :: OpGraph
    op (v : Val α (Dictionary (DictRep d1)) : Val α' (Dictionary (DictRep d2)) : Nil) =
-      Val <$> new (singleton α # insert α') <*> (Dictionary <$> (DictRep <$> sequence (D.intersectionWith apply' d1 d2)))
+      Val <$> new (singleton α # Set.insert α') <*> (Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2)))
       where
       apply' (β × u) (β' × u') = do
-         β'' <- new (singleton β # insert β')
+         β'' <- new (singleton β # Set.insert β')
          (×) β'' <$> (G.apply v u >>= flip G.apply u')
    op _ = throw "Function and two dictionaries expected"
 
@@ -281,7 +284,7 @@ dict_intersectionWith =
    fwd (v : Val α (Dictionary (DictRep d)) : Val α' (Dictionary (DictRep d')) : Nil) = do
       d'' <-
          sequence $
-            D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) d d'
+            intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) d d'
       pure $ (erase v × (d'' <#> snd >>> fst)) × Val (α ∧ α') (Dictionary (DictRep (d'' <#> second snd)))
    fwd _ = throw "Function and two dictionaries expected"
 
@@ -294,7 +297,7 @@ dict_intersectionWith =
       )
       where
       d' =
-         D.intersectionWith (\tt (β × v') -> β × apply2Bwd (tt × v')) tts βvs
+         intersectionWith (\tt (β × v') -> β × apply2Bwd (tt × v')) tts βvs
             :: Dict (_ × Val _ × Val _ × Val _)
 
 dict_map :: ForeignOp
@@ -309,7 +312,7 @@ dict_map =
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)
    fwd (v : Val α (Dictionary (DictRep d)) : Nil) = do
-      ts × d' <- D.unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) d
+      ts × d' <- unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) d
       pure $ (erase v × ts) × Val α (Dictionary (DictRep d'))
    fwd _ = throw "Function and dictionary expected"
 
@@ -317,7 +320,7 @@ dict_map =
    bwd ((v × ts) × Val α (Dictionary (DictRep d'))) =
       (foldl (∨) (botOf v) us) : Val α (Dictionary (DictRep d)) : Nil
       where
-      us × d = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts d'
+      us × d = unzip $ intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts d'
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

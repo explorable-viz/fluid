@@ -93,7 +93,7 @@ linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectInput δ_in
    let _ × γ = selectionResult fig
-   checkEq "selected" "expected" ((to𝔹 <$> _) <$> γ) (in_expect (botOf γ))
+   checkEq "selected" "expected" (to𝔹 <$> γ) (in_expect (botOf γ))
    pure fig
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)

@@ -7,13 +7,12 @@ import App.Util (HTMLId, Sel, asSel, toSel)
 import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
-import Data.Newtype (unwrap)
+import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong (first, (***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
 import Data.Tuple (curry, fst)
 import Desugarable (desug)
-import Dict (get, mapWithKey)
 import Effect (Effect)
 import EvalGraph (GraphEval, graphGC)
 import Expr (Expr)
@@ -27,6 +26,7 @@ import SExpr (Expr) as S
 import Test.Util (Selector)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, spyWhen, (×))
+import Util.Map (get, mapWithKey)
 import Val (Env, Val, unrestrictGC)
 
 type FigSpec =
@@ -42,7 +42,7 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , gc :: GraphEval GraphImpl
+   , eval :: GraphEval GraphImpl
    , in_ :: Env 𝔹 × Expr 𝔹
    , out :: Val 𝔹
    , dir :: Direction
@@ -52,7 +52,7 @@ type Fig =
 output :: String
 output = "output"
 
--- TODO: replace (expensive) botOf γ by per-variable botOf
+-- TODO: replace (expensive) botOf in_ by per-variable botOf
 selectOutput :: Selector Val -> Endo Fig
 selectOutput δv fig@{ dir, in_, out } = fig
    { out = δv out
@@ -69,27 +69,27 @@ selectInput (x ↦ δv) fig@{ dir, in_, out } = fig
 
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
-   let out_view × in_views = selectionResult fig # unsafePartial (view output *** mapWithKey view)
+   let out_view × in_views = selectionResult fig # unsafePartial (view output *** unwrap >>> mapWithKey view)
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
 
--- TODO: express more directly as composition of Galois connections.
+-- Not easy to express as direct composition of Galois connections, because of topOf.
 unfocus :: Fig -> GaloisConnection (Env 𝔹) (Val 𝔹)
-unfocus { spec: { inputs }, gc: { gc: GC gc }, in_: γ × e } = GC
+unfocus { spec: { inputs }, eval: { gc: GC gc }, in_: γ × e } = GC
    { fwd: \γ' -> gc.fwd (unrestrict.fwd γ' × topOf e)
    , bwd: \v -> unrestrict.bwd (gc.bwd v # fst)
    }
    where
-   unrestrict = unwrap (unrestrictGC (erase <$> γ) (Set.fromFoldable inputs))
+   unrestrict = unwrap (unrestrictGC (erase γ) (Set.fromFoldable inputs))
 
 selectionResult :: Fig -> Val Sel × Env Sel
 selectionResult fig@{ out, dir: LinkedOutputs } =
-   (asSel <$> out <*> out') × map (toSel <$> _) (report γ)
+   (asSel <$> out <*> out') × map toSel (report γ)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    out' × γ = (unwrap (relatedOutputs (unfocus fig))).bwd out
 selectionResult fig@{ in_: γ × _, dir: LinkedInputs } =
-   (toSel <$> report out) × mapWithKey (\x v -> asSel <$> get x γ <*> v) γ'
+   (toSel <$> report out) × wrap (mapWithKey (\x v -> asSel <$> get x γ <*> v) (unwrap γ'))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    γ' × out = (unwrap (relatedInputs (unfocus fig))).bwd γ
@@ -103,8 +103,8 @@ loadFig spec@{ imports, file, datasets } = do
    s <- open file
    e <- desug s
    gconfig <- loadProgCxt imports datasets >>= initialConfig e
-   gc <- graphGC gconfig e
-   pure { spec, s, gc, in_: botOf gc.γα × topOf e, out: botOf gc.vα, dir: LinkedOutputs }
+   eval <- graphGC gconfig e
+   pure { spec, s, eval, in_: botOf eval.γα × topOf e, out: botOf eval.vα, dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)

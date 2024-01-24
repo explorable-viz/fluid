@@ -4,17 +4,19 @@ import Prelude hiding (absurd, append)
 
 import Bind (Var)
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Error.Class (class MonadError)
 import Data.Array ((!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
-import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
+import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
 import Data.List (List(..), (:), zipWith)
-import Data.Set (Set, empty, fromFoldable, toUnfoldable)
+import Data.Newtype (class Newtype)
+import Data.Set (Set)
+import Data.Set as Set
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
-import Dict (Dict, filterKeys, get, lookup, unionWith)
+import Dict (Dict)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Elim, fv)
@@ -22,8 +24,10 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, topOf, (∨))
-import Util (type (×), Endo, assert, assertWith, definitely, orElse, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∈), (∩), (∪), (≜), (≞), (⊆))
+import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (≞), (⊆))
+import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, size, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
+import Util.Set (class Set, difference, empty, isEmpty, union, (\\), (∈), (∪))
 
 data Val a = Val a (BaseVal a)
 
@@ -64,7 +68,7 @@ data ForeignOp' t = ForeignOp'
    , op_bwd :: OpBwd t
    }
 
-newtype ForeignOp = ForeignOp (String × Exists ForeignOp') -- string is unique identifier (for Eq)
+newtype ForeignOp = ForeignOp (String × Exists ForeignOp') -- string is unique identifier for Eq
 
 instance Eq ForeignOp where
    eq (ForeignOp (s × _)) (ForeignOp (s' × _)) = s == s'
@@ -73,46 +77,50 @@ instance Ord ForeignOp where
    compare (ForeignOp (s × _)) (ForeignOp (s' × _)) = compare s s'
 
 -- Environments.
-type Env a = Dict (Val a)
+newtype Env a = Env (Dict (Val a))
 
-lookup' :: forall a m. MonadThrow Error m => Var -> Dict a -> m a
-lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
+instance Set (Env a) String where
+   empty = Env empty
+   isEmpty (Env γ) = isEmpty γ
+   member x (Env γ) = x ∈ γ
+   difference (Env γ) (Env γ') = Env (difference γ γ')
+   union (Env γ) (Env γ') = Env (union γ γ')
 
--- Want a monoid instance but needs a newtype
-append :: forall a. Env a -> Endo (Env a)
-append = unionWith (const identity)
-
-infixl 5 append as <+>
-
-append_inv :: forall a. Set Var -> Env a -> Env a × Env a
-append_inv xs γ = filterKeys (_ `not <<< (∈)` xs) γ × restrict xs γ
-
-restrict :: forall a. Set Var -> Endo (Dict a)
-restrict xs = filterKeys (_ ∈ xs)
+instance Map (Env a) String (Val a) where
+   maplet k v = Env (maplet k v)
+   keys (Env γ) = keys γ
+   values (Env γ) = values γ
+   size (Env γ) = size γ
+   filterKeys p (Env γ) = Env (filterKeys p γ)
+   unionWith f (Env γ) (Env γ') = Env (unionWith f γ γ')
+   lookup k (Env γ) = lookup k γ
+   delete k (Env γ) = Env (delete k γ)
+   insert k v (Env γ) = Env (insert k v γ)
+   toUnfoldable (Env γ) = toUnfoldable γ
 
 -- Goes from smaller environment to larger (so "dual" to a projection).
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
 unrestrictGC γ xs =
-   assertWith (show xs <> " are in environment ") (xs ⊆ D.keys γ) $ GC
-      { fwd: \γ' -> assert (D.keys γ' ⊆ D.keys γ) $ γ' D.∪ ((γ D.\\ γ') <#> topOf)
-      , bwd: \γ' -> assert (D.keys γ' == D.keys γ) $ restrict xs γ'
+   assertWith (show xs <> " are in environment ") (xs ⊆ keys γ) $ GC
+      { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ ((topOf γ \\ γ'))
+      , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
       }
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
-reaches ρ xs = go (toUnfoldable xs) empty
+reaches ρ xs = go (Set.toUnfoldable xs) empty
    where
-   dom_ρ = fromFoldable $ D.keys ρ
+   dom_ρ = Set.fromFoldable $ keys ρ
 
    go :: List Var -> Endo (Set Var)
    go Nil acc = acc
    go (x : xs') acc | x ∈ acc = go xs' acc
    go (x : xs') acc | otherwise =
-      go (toUnfoldable (fv σ ∩ dom_ρ) <> xs') (singleton x ∪ acc)
+      go (Set.toUnfoldable (fv σ ∩ dom_ρ) <> xs') (singleton x ∪ acc)
       where
       σ = get x ρ
 
 forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
-forDefs ρ σ = restrict (reaches ρ (fv σ ∩ fromFoldable (D.keys ρ))) ρ
+forDefs ρ σ = restrict (reaches ρ (fv σ ∩ Set.fromFoldable (keys ρ))) ρ
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
@@ -152,14 +160,17 @@ instance Highlightable Vertex where
 derive instance Functor DictRep
 derive instance Functor MatrixRep
 derive instance Functor Val
-derive instance Foldable Val
-derive instance Traversable Val
-derive instance Functor BaseVal
-derive instance Foldable BaseVal
-derive instance Traversable BaseVal
+derive instance Functor Env
 derive instance Functor Fun
-derive instance Foldable Fun
+derive instance Functor BaseVal
+derive instance Traversable Val
+derive instance Traversable BaseVal
 derive instance Traversable Fun
+derive instance Traversable Env
+derive instance Foldable Val
+derive instance Foldable BaseVal
+derive instance Foldable Fun
+derive instance Foldable Env
 
 instance Apply Val where
    apply (Val fα fv) (Val α v) = Val (fα α) (fv <*> v)
@@ -169,14 +180,14 @@ instance Apply BaseVal where
    apply (Float n) (Float n') = Float (n ≜ n')
    apply (Str s) (Str s') = Str (s ≜ s')
    apply (Constr c fes) (Constr c' es) = Constr (c ≜ c') (zipWith (<*>) fes es)
-   apply (Record fxvs) (Record xvs) = Record (D.apply2 fxvs xvs)
+   apply (Record fxvs) (Record xvs) = Record (((<*>) <$> fxvs) <*> xvs)
    apply (Dictionary fxvs) (Dictionary xvs) = Dictionary (fxvs <*> xvs)
    apply (Matrix fm) (Matrix m) = Matrix (fm <*> m)
    apply (Fun ff) (Fun f) = Fun (ff <*> f)
    apply _ _ = shapeMismatch unit
 
 instance Apply Fun where
-   apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (D.apply2 fγ γ) (fρ `D.apply2` ρ) (fσ <*> σ)
+   apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (fγ <*> γ) (((<*>) <$> fρ) <*> ρ) (fσ <*> σ)
    apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
    apply (PartialConstr c fvs) (PartialConstr c' vs) = PartialConstr (c ≜ c') (zipWith (<*>) fvs vs)
    apply _ _ = shapeMismatch unit
@@ -184,11 +195,14 @@ instance Apply Fun where
 -- Should require equal domains?
 instance Apply DictRep where
    apply (DictRep fxvs) (DictRep xvs) =
-      DictRep $ D.intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
+      DictRep $ intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
 
 instance Apply MatrixRep where
    apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (n' × nα) × (m' × mα))) =
       MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × ((n ≜ n') × fnα nα) × ((m ≜ m') × fmα mα)
+
+instance Apply Env where
+   apply (Env fγ) (Env γ) = Env (((<*>) <$> fγ) <*> γ)
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
@@ -253,6 +267,10 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
 
    join v = definedJoin v
 
+instance JoinSemilattice a => JoinSemilattice (Env a) where
+   maybeJoin (Env γ) (Env γ') = Env <$> maybeJoin γ γ'
+   join v = definedJoin v
+
 instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
    expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')
 
@@ -281,14 +299,21 @@ instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
    expand (PartialConstr c vs) (PartialConstr c' us) = PartialConstr (c ≜ c') (expand vs us)
    expand _ _ = shapeMismatch unit
 
+instance BoundedJoinSemilattice a => Expandable (Env a) (Raw Env) where
+   expand (Env γ) (Env γ') = Env (expand γ γ')
+
 derive instance Eq a => Eq (Val a)
 derive instance Eq a => Eq (BaseVal a)
 derive instance Eq a => Eq (DictRep a)
 derive instance Eq a => Eq (MatrixRep a)
 derive instance Eq a => Eq (Fun a)
+derive instance Eq a => Eq (Env a)
 
 derive instance Ord a => Ord (Val a)
 derive instance Ord a => Ord (BaseVal a)
 derive instance Ord a => Ord (DictRep a)
 derive instance Ord a => Ord (MatrixRep a)
 derive instance Ord a => Ord (Fun a)
+derive instance Ord a => Ord (Env a)
+
+derive instance Newtype (Env a) _

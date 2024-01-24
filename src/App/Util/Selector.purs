@@ -6,11 +6,12 @@ import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cCons, cMultiPlot, cNil)
-import Dict (member, update)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
 import Util (Endo, absurd, assert, definitely', error)
+import Util.Map (update)
+import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection helpers. TODO: turn into lenses/prisms.
@@ -57,7 +58,7 @@ dictVal s δv = unsafePartial $ case _ of
 
 envVal :: Var -> Selector Val -> Selector Env
 envVal x δv γ =
-   assert (x `member` γ) $ update δv x γ
+   assert (x ∈ γ) $ update δv x γ
 
 listCell :: Int -> Endo 𝔹 -> Selector Val
 listCell n δα = unsafePartial $ case _ of

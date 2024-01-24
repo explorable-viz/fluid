@@ -13,9 +13,9 @@ import Data.Set (Set, singleton, unions)
 import Data.Set as Set
 import Data.String (joinWith)
 import Dict (Dict)
-import Dict (apply) as D
 import Lattice (𝔹)
-import Util (type (×), Endo, (×), (∈), (∪))
+import Util (type (×), Endo, (×))
+import Util.Set ((∈), (∪))
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience
@@ -73,7 +73,7 @@ else instance (Selectαs a b, Selectαs a' b') => Selectαs (a × a') (b × b') 
    select𝔹s (vα × vα') αs = select𝔹s vα αs × select𝔹s vα' αs
 
 instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f Vertex)) where
-   selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) `D.apply` dα)
+   selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) <*> dα)
    select𝔹s dα αs = flip select𝔹s αs <$> dα
 
 outEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
@@ -128,6 +128,4 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
-
-instance Show Vertex where
-   show = unwrap
+derive newtype instance Show Vertex

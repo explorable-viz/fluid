@@ -13,7 +13,8 @@ import Data.Tuple (fst)
 import Graph (class Graph, Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking)
-import Util (type (×), singleton, validateWhen, (×), (∈), (⊆), (∩))
+import Util (type (×), singleton, validateWhen, (×), (⊆), (∩))
+import Util.Set ((∈))
 
 type BwdConfig =
    { visited :: Set Vertex

@@ -7,16 +7,17 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Exists (mkExists, runExists)
-import Data.List (List(..), (:), length, range, unzip, zip)
+import Data.List (List(..), (:), length, range, zip)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (wrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (fromFoldable, toUnfoldable) as Set
 import Data.Set (subset)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
-import Dict (Dict, disjointUnion, empty, get, keys, lookup)
-import Dict (fromFoldable, singleton, unzip) as D
+import Dict (Dict)
+import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
@@ -24,10 +25,12 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (×), (∪), absurd, both, check, error, orElse, singleton, successful, throw, with)
+import Util (type (×), (×), absurd, both, check, error, orElse, singleton, successful, throw, unzip, with)
+import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
+import Util.Set (empty, (∪))
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs, lookup', restrict, (<+>))
+import Val (class Ann, DictRep(..), Env(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -35,7 +38,7 @@ patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 match :: forall a m. MonadError Error m => Ann a => Val a -> Elim a -> m (Env a × Cont a × a × Match)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
-   | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
+   | otherwise = pure (maplet x v × κ × top × MatchVar x (erase v))
 match (Val α (V.Constr c vs)) (ElimConstr m) = do
    with "Pattern mismatch" $ singleton c `consistentWith` keys m
    κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
@@ -48,7 +51,7 @@ match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
    check (subset xs (Set.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
    γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
-   pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
+   pure (γ × κ' × (α ∧ α') × MatchRecord (wrap $ D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = throw $ patternMismatch (prettyP v) (show xs)
 
 matchMany :: forall a m. MonadError Error m => Ann a => List (Val a) -> Cont a -> m (Env a × Cont a × a × List Match)
@@ -62,8 +65,10 @@ matchMany (_ : vs) (ContExpr _) = throw $
 matchMany _ _ = error absurd
 
 closeDefs :: forall a. Env a -> Dict (Elim a) -> a -> Env a
-closeDefs γ ρ α = ρ <#> \σ ->
-   let ρ' = ρ `forDefs` σ in Val α (V.Fun $ V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
+closeDefs γ ρ α = Env
+   ( ρ <#> \σ ->
+        let ρ' = ρ `forDefs` σ in Val α (V.Fun $ V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
+   )
 
 checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = do
@@ -111,13 +116,13 @@ eval _ (Int α n) α' = pure (T.Const × Val (α ∧ α') (V.Int n))
 eval _ (Float α n) α' = pure (T.Const × Val (α ∧ α') (V.Float n))
 eval _ (Str α str) α' = pure (T.Const × Val (α ∧ α') (V.Str str))
 eval γ (Record α xes) α' = do
-   xts × xvs <- traverse (flip (eval γ) α') xes <#> D.unzip
+   xts × xvs <- traverse (flip (eval γ) α') xes <#> unzip
    pure $ T.Record xts × Val (α ∧ α') (V.Record xvs)
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
    let
       ss × αs = vs <#> unpack string # unzip
-      d = D.fromFoldable $ zip ss (zip αs us)
+      d = wrap $ D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (DictRep d))
 eval γ (Constr α c es) α' = do
    checkArity c (length es)
@@ -132,7 +137,7 @@ eval γ (Matrix α e (x × y) e') α' = do
            i <- range 1 i'
            singleton $ sequence do
               j <- range 1 j'
-              let γ' = D.singleton x (Val β (V.Int i)) `disjointUnion` (D.singleton y (Val β' (V.Int j)))
+              let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
               singleton (eval (γ <+> γ') e α')
       )
    pure $ T.Matrix tss (x × y) (i' × j') t × Val (α ∧ α') (V.Matrix (MatrixRep (vss × (i' × β) × (j' × β'))))
