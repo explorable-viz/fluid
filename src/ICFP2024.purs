@@ -5,12 +5,10 @@ import Prelude
 import App.Fig (drawFig)
 import App.Util (runAffs_)
 import Effect (Effect)
-import Test.Specs.LinkedInputs (linkedInputs_spec4, linkedInputs_spec5, linkedInputs_spec_no_sel)
+import Test.Specs.LinkedInputs (linkedInputs_spec5)
 import Test.Util.Suite (linkedInputsTest)
 
 main :: Effect Unit
 main = runAffs_ drawFig $ linkedInputsTest <$>
-   [ linkedInputs_spec_no_sel
-   , linkedInputs_spec4
-   , linkedInputs_spec5
+   [ linkedInputs_spec5
    ]

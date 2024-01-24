@@ -37,10 +37,7 @@ import Util.Set (class Set, difference, (∈))
 newtype Dict a = Dict (O.Object a)
 
 derive instance Newtype (Dict a) _
-
--- Equivalent to Foreign.Object Eq instance but explicate for clarity.
-instance (Eq a) => Eq (Dict a) where
-   eq (Dict d) (Dict d') = isSubmap d d' && isSubmap d' d
+derive newtype instance Eq a => Eq (Dict a)
 
 -- More sensible than the Foreign.Object Ord instance.
 instance Ord a => Ord (Dict a) where

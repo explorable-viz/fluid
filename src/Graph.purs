@@ -128,6 +128,4 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
-
-instance Show Vertex where
-   show = unwrap
+derive newtype instance Show Vertex

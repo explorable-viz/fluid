@@ -68,7 +68,7 @@ data ForeignOp' t = ForeignOp'
    , op_bwd :: OpBwd t
    }
 
-newtype ForeignOp = ForeignOp (String × Exists ForeignOp') -- string is unique identifier (for Eq)
+newtype ForeignOp = ForeignOp (String × Exists ForeignOp') -- string is unique identifier for Eq
 
 instance Eq ForeignOp where
    eq (ForeignOp (s × _)) (ForeignOp (s' × _)) = s == s'

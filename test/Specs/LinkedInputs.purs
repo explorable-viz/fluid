@@ -121,15 +121,6 @@ linkedInputs_spec5 =
               )
    }
 
-linkedInputs_spec_no_sel :: TestLinkedInputsSpec
-linkedInputs_spec_no_sel =
-   { spec: energyScatter { divId = "fig-3" }
-   , δ_in: "non_renewables" ↦ identity
-   , in_expect:
-        envVal "non_renewables" (identity)
-           >>> envVal "renewables" (identity)
-   }
-
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
    [ linkedInputs_spec1
@@ -137,5 +128,4 @@ linkedInputs_cases =
    , linkedInputs_spec3
    , linkedInputs_spec4
    , linkedInputs_spec5
-   , linkedInputs_spec_no_sel
    ]

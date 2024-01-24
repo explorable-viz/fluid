@@ -78,7 +78,7 @@ keyExists k = "Key \"" <> show k <> "\" exists in map"
 get :: forall a k b. Show k => Map a k b => k -> a -> b
 get k = lookup k >>> definitely (keyExists k)
 
--- Want a monoid instance but needs a newtype
+-- Maybe push a semigroup requirement onto Map
 append :: forall a k b. Map a k b => a -> Endo a
 append = unionWith (const identity)
 
