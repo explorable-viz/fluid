@@ -12,11 +12,11 @@ let energy year c_names =
         rensCap = sum (map (fun x -> x.capacity) rens');
         nonRensCap = nonRenewables non_ren_x
     in {
-      name: c_name,
+      c: c_name,
       totalCap: rensCap + nonRensCap,
       non_renewables: nonRensCap,
-      renCapFactor:
-        (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
+      x: nonRensCap / (rensCap + nonRensCap),
+      y: (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
     }
   in map energyPerCountry c_names;
 let countries = [
@@ -25,8 +25,9 @@ let countries = [
 in ScatterPlot {
   caption: "Clean energy efficiency vs. proportion of renewable energy capacity",
   data: [{
-      x: country.non_renewables / country.totalCap,
-      y: country.renCapFactor, c: country.name
+      x: country.x,
+      y: country.y,
+      c: country.c
     } | country <- energy 2018 countries
   ],
   xlabel: "Renewables/TotalEnergyCap",
