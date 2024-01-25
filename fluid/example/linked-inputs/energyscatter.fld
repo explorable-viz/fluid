@@ -13,8 +13,6 @@ let energy year c_names =
         nonRensCap = nonRenewables non_ren_x
     in {
       c: c_name,
-      totalCap: rensCap + nonRensCap,
-      non_renewables: nonRensCap,
       x: nonRensCap / (rensCap + nonRensCap),
       y: (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
     }
