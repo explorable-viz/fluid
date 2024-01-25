@@ -17,9 +17,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util (type (×), (×))
 
 main :: Effect Unit
-main = run tests
+--main = run tests
 
---main = run $ linkedInputsSuite linkedInputs_cases
+main = run $ linkedInputsSuite linkedInputs_cases
 
 --main = run scratchpad
 

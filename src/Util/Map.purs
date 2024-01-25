@@ -73,7 +73,7 @@ lookup' :: forall m a k b. MonadThrow Error m => Show k => Map a k b => k -> a -
 lookup' k γ = lookup k γ # orElse (keyExists k)
 
 keyExists :: forall k. Show k => k -> String
-keyExists k = "Key \"" <> show k <> "\" exists in map"
+keyExists k = "Key " <> show k <> " exists in map"
 
 get :: forall a k b. Show k => Map a k b => k -> a -> b
 get k = lookup k >>> definitely (keyExists k)
