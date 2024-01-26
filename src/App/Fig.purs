@@ -73,7 +73,7 @@ drawFig fig@{ spec: { divId } } = do
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
 
--- Not easy to express as direct composition of Galois connections, because of topOf.
+-- Not easy to express as direct composition of Galois connections, because of direct use of e.
 unfocus :: Fig -> GaloisConnection (Env 𝔹) (Val 𝔹)
 unfocus { spec: { inputs }, eval: { gc: GC gc }, in_: γ × e } = GC
    { fwd: \γ' -> gc.fwd (unrestrict.fwd γ' × topOf e)

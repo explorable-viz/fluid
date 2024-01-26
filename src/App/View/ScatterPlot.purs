@@ -2,10 +2,11 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, Sel, from, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
+import App.View.LineChart (Point)
 import Data.Maybe (Maybe)
-import DataType (cScatterPlot, f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel)
+import DataType (cScatterPlot, f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)
@@ -18,25 +19,12 @@ import Web.Event.Internal.Types (EventTarget)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: String × Sel
-   , data :: Array ScatterRecord
+   , data :: Array Point
    , xlabel :: String × Sel
    , ylabel :: String × Sel
    }
 
-newtype ScatterRecord = ScatterRecord
-   { x :: Number × Sel
-   , y :: Number × Sel
-   , c :: String × Sel
-   }
-
 foreign import drawScatterPlot :: Renderer ScatterPlot
-
-instance Reflect (Dict (Val Sel)) ScatterRecord where
-   from r = ScatterRecord
-      { x: get_intOrNumber f_x r
-      , y: get_intOrNumber f_y r
-      , c: unpack string $ get f_colour r
-      }
 
 instance Reflect (Dict (Val Sel)) ScatterPlot where
    from r = ScatterPlot

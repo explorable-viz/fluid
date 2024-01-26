@@ -1,36 +1,26 @@
-let nonRenewables x = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap;
-    isCountry name x = name == x.country;
+let isCountry name x = name == x.country;
     isYear year x = year == x.year;
 
-let energy year c_names =
+let plot year countries =
   let rens = filter (isYear year) renewables;
-      nonrens = filter (isYear year) non_renewables;
-  let energy_per_country c_name =
-    let rens' = filter (isCountry c_name) rens;
-        non_ren_x = head (filter (isCountry c_name) nonrens);
+      nonRens = filter (isYear year) nonRenewables;
+  let plotCountry country =
+    let rens' = filter (isCountry country) rens;
         rensOut = sum (map (fun x -> x.output) rens');
         rensCap = sum (map (fun x -> x.capacity) rens');
-        nonRensCap = nonRenewables non_ren_x
+        x = head (filter (isCountry country) nonRens);
+        nonRensCap = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap
     in {
-      name: c_name,
-      totalCap: rensCap + nonRensCap,
-      non_renewables: nonRensCap,
-      renCapFactor:
-        (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
+      x: nonRensCap / (rensCap + nonRensCap),
+      y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
     }
-  in map energy_per_country c_names;
-let countries = [
-   "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"
-]
+  in map plotCountry countries
+
 in ScatterPlot {
   caption: "Clean energy efficiency vs. proportion of renewable energy capacity",
-  data: [{
-      x: ctry.non_renewables / ctry.totalCap,
-      y: ctry.renCapFactor, c: ctry.name
-    } | ctry <- energy 2018 countries
+  data: plot 2018 [
+    "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"
   ],
   xlabel: "Renewables/TotalEnergyCap",
   ylabel: "Clean Capacity Factor"
 }
-
-
