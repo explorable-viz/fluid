@@ -58,9 +58,9 @@ linkedInputs_spec2 =
 linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
    { spec: energyScatter { divId = "fig-3" }
-   , δ_in: "non_renewables" ↦ listElement 51 (field "coalCap" neg)
+   , δ_in: "nonRenewables" ↦ listElement 51 (field "coalCap" neg)
    , in_expect:
-        envVal "non_renewables" (listElement 51 (field "coalCap" neg >>> field "gasCap" neg >>> field "nuclearCap" neg >>> field "petrolCap" neg)) >>>
+        envVal "nonRenewables" (listElement 51 (field "coalCap" neg >>> field "gasCap" neg >>> field "nuclearCap" neg >>> field "petrolCap" neg)) >>>
            envVal "renewables"
               ( listElement 204 (field "capacity" neg)
                    >>> listElement 205 (field "capacity" neg)
@@ -74,7 +74,7 @@ linkedInputs_spec4 =
    { spec: energyScatter { divId = "fig-2" }
    , δ_in: "renewables" ↦ listElement 204 (field "capacity" neg)
    , in_expect:
-        envVal "non_renewables"
+        envVal "nonRenewables"
            ( listElement 51
                 ( field "coalCap" neg
                      >>> field "gasCap" neg
@@ -98,14 +98,14 @@ linkedInputs_spec5 =
         , file: File "linked-inputs/mini-energyscatter"
         , imports: []
         , datasets:
-             [ "non_renewables" ↦ "example/linked-inputs/mini-non-renewables"
+             [ "nonRenewables" ↦ "example/linked-inputs/mini-non-renewables"
              , "renewables" ↦ "example/linked-inputs/mini-renewables"
              ]
-        , inputs: [ "non_renewables", "renewables" ]
+        , inputs: [ "nonRenewables", "renewables" ]
         }
-   , δ_in: "non_renewables" ↦ listElement 0 (field "coalCap" neg)
+   , δ_in: "nonRenewables" ↦ listElement 0 (field "coalCap" neg)
    , in_expect:
-        envVal "non_renewables"
+        envVal "nonRenewables"
            ( listElement 0
                 ( field "coalCap" neg
                      >>> field "gasCap" neg

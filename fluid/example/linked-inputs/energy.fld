@@ -6,19 +6,19 @@ let energies year countries =
     let filtered = filter (check_country year c_name) renewables;
     let totalRensOut = sum (map (fun x = x.output) filtered);
     let totalRensCap = sum (map (fun x = x.capacity) filtered);
-    let non_ren_x = head (filter (check_country year c_name) non_renewables);
+    let non_ren_x = head (filter (check_country year c_name) nonRenewables);
     let totalNonRens = sumNonRenewables non_ren_x
     in {
             name: c_name,
             totalCap: totalRensCap + totalNonRens,
-            non_renewables: totalNonRens,
+            nonRenewables: totalNonRens,
             renCapFactor: totalRensOut / totalRensCap,
             gdpPerCap: non_ren_x.gdpPerCap
         }
 in BubbleChart {
     caption: "Carbon intensity against proportion of energy from renewables",
     data: [{
-                x: country.non_renewables / country.totalCap,
+                x: country.nonRenewables / country.totalCap,
                 y: country.renCapFactor,
                 z: country.gdpPerCap,
                 c: country.name

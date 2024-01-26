@@ -48,20 +48,20 @@ fig3 =
    , inputs: [ "input_image" ]
    }
 
-energyScatter :: FigSpec
-energyScatter = fig4 { divId = "fig-4" }
-
 fig4 :: FigSpec
 fig4 =
    { divId: ""
    , imports: []
    , datasets:
         [ "renewables" ↦ "example/linked-inputs/renewables"
-        , "non_renewables" ↦ "example/linked-inputs/non-renewables"
+        , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
         ]
    , file: File "linked-inputs/energyscatter"
-   , inputs: [ "renewables", "non_renewables" ]
+   , inputs: [ "renewables", "nonRenewables" ]
    }
+
+energyScatter :: FigSpec
+energyScatter = fig4 { divId = "fig-4" }
 
 main :: Effect Unit
 main = do

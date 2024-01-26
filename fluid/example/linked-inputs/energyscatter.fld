@@ -1,33 +1,28 @@
-let nonRenewables x = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap;
-    isCountry name x = name == x.country;
+let isCountry name x = name == x.country;
     isYear year x = year == x.year;
 
 let energy year c_names =
   let rens = filter (isYear year) renewables;
-      nonrens = filter (isYear year) non_renewables;
+      nonrens = filter (isYear year) nonRenewables;
   let energyPerCountry c_name =
     let rens' = filter (isCountry c_name) rens;
-        non_ren_x = head (filter (isCountry c_name) nonrens);
+        x = head (filter (isCountry c_name) nonrens);
         rensOut = sum (map (fun x -> x.output) rens');
         rensCap = sum (map (fun x -> x.capacity) rens');
-        nonRensCap = nonRenewables non_ren_x
+        nonRensCap = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap
     in {
       c: c_name,
       x: nonRensCap / (rensCap + nonRensCap),
-      y: (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
+      y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
     }
   in map energyPerCountry c_names;
+
 let countries = [
    "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"
 ]
 in ScatterPlot {
   caption: "Clean energy efficiency vs. proportion of renewable energy capacity",
-  data: [{
-      x: country.x,
-      y: country.y,
-      c: country.c
-    } | country <- energy 2018 countries
-  ],
+  data: energy 2018 countries,
   xlabel: "Renewables/TotalEnergyCap",
   ylabel: "Clean Capacity Factor"
 }

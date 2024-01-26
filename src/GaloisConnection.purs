@@ -39,7 +39,6 @@ relatedOutputs
    => JoinSemilattice a
    => Neg b
    => GaloisConnection a b
-   --   -> GaloisConnection a c -- "view" of inputs
    -> GaloisConnection (b × a) b
 relatedOutputs f = (dual f *** identity) >>> meet >>> f
 
