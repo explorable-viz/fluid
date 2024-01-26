@@ -1,21 +1,21 @@
 let isCountry name x = name == x.country;
     isYear year x = year == x.year;
 
-let energy year c_names =
+let energy year countries =
   let rens = filter (isYear year) renewables;
       nonRens = filter (isYear year) nonRenewables;
-  let energyPerCountry c_name =
-    let rens' = filter (isCountry c_name) rens;
-        x = head (filter (isCountry c_name) nonRens);
+  let energyPerCountry country =
+    let rens' = filter (isCountry country) rens;
         rensOut = sum (map (fun x -> x.output) rens');
         rensCap = sum (map (fun x -> x.capacity) rens');
+        x = head (filter (isCountry country) nonRens);
         nonRensCap = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap
     in {
-      c: c_name,
+      c: country,
       x: nonRensCap / (rensCap + nonRensCap),
       y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
     }
-  in map energyPerCountry c_names;
+  in map energyPerCountry countries;
 
 let countries = [
    "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"
