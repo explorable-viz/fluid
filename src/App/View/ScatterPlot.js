@@ -60,7 +60,7 @@ function drawScatterPlot_ (
    suffix,
    {
       caption, // String
-      data, // Array ScatterRecord
+      data,    // Array ScatterRecord
       xlabel,
       ylabel
    },
@@ -105,10 +105,6 @@ function drawScatterPlot_ (
          .range([height, 0])
       svg.append('g')
          .call(d3.axisLeft(y))
-      unique_countries = [...new Set(data.map(d => fst(d.c)))]
-      const c = d3.scaleOrdinal()
-         .domain(unique_countries)
-         .range(d3.schemePastel1)
 
       svg.append("text")
          .attr("x", width)
