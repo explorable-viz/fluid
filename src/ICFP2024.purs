@@ -10,6 +10,6 @@ import Test.Util.Suite (linkedInputsTest)
 
 main :: Effect Unit
 main = runAffs_ drawFig $ linkedInputsTest <$>
-   [ linkedInputs_spec3,
-     linkedInputs_spec4
+   [ linkedInputs_spec3
+   , linkedInputs_spec4
    ]

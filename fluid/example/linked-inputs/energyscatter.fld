@@ -11,7 +11,6 @@ let energy year countries =
         x = head (filter (isCountry country) nonRens);
         nonRensCap = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap
     in {
-      c: country,
       x: nonRensCap / (rensCap + nonRensCap),
       y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
     }
