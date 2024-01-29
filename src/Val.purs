@@ -242,11 +242,15 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
 
    join v = definedJoin v
 
--- Not equivalent to sequence (maybeJoin <$> x <*> y) because Dict implementation merges compatible maps
--- whereas Apply instance requires identical shapes.
+-- Not equivalent to sequence (maybeJoin <$> x <*> y) because Dict.maybeJoin only requires compatibility
+-- whereas Dict.apply requires domains to be equal.
 instance JoinSemilattice a => JoinSemilattice (BaseVal a) where
+   maybeJoin (Int n) (Int n') = Int <$> (n ≞ n')
+   maybeJoin (Float n) (Float n') = Float <$> (n ≞ n')
+   maybeJoin (Str s) (Str s') = Str <$> (s ≞ s')
    maybeJoin (Record xvs) (Record xvs') = Record <$> maybeJoin xvs xvs'
    maybeJoin (Dictionary d) (Dictionary d') = Dictionary <$> maybeJoin d d'
+   maybeJoin (Constr c vs) (Constr c' us) = Constr <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin (Matrix m) (Matrix m') = Matrix <$> maybeJoin m m'
    maybeJoin (Fun φ) (Fun φ') = Fun <$> maybeJoin φ φ'
    maybeJoin x y = sequence (maybeJoin <$> x <*> y)
