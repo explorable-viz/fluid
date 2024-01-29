@@ -12,24 +12,8 @@ import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultL
 import Data.Newtype (class Newtype)
 import Data.Traversable (class Foldable, class Traversable)
 import Foreign.Object (Object) as O
-import Foreign.Object
-   ( alter
-   , delete
-   , empty
-   , filter
-   , filterKeys
-   , fromFoldable
-   , insert
-   , isEmpty
-   , isSubmap
-   , lookup
-   , mapWithKey
-   , member
-   , singleton
-   , toArrayWithKey
-   , union
-   , unionWith
-   )
+import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, isSubmap, lookup, mapWithKey, member, singleton, toArrayWithKey, union, unionWith)
+import Util (assert)
 import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, size, toUnfoldable, values)
 import Util.Map as Map
 import Util.Set (class Set, difference, (∈))
@@ -48,7 +32,9 @@ instance Ord a => Ord (Dict a) where
       else GT
 
 instance Apply Dict where
-   apply (Dict f) (Dict x) = Dict (intersectionWith ($) f x)
+   apply (Dict f) (Dict x) =
+      assert (keys f == keys x) $
+         Dict (intersectionWith ($) f x)
 
 derive instance Functor Dict
 derive instance Foldable Dict
