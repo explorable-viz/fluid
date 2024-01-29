@@ -13,6 +13,7 @@ import Util (Endo)
 class Set a b | a -> b where
    empty :: a
    isEmpty :: a -> Boolean
+   size :: a -> Int
    difference :: a -> Endo a
    member :: b -> a -> Boolean
    union :: a -> Endo a
@@ -24,6 +25,7 @@ infixr 6 union as ∪
 instance Ord a => Set (Set a) a where
    empty = Set.empty
    isEmpty = Set.isEmpty
+   size = Set.size
    difference = Set.difference
    member = Set.member
    union = Set.union
@@ -31,6 +33,7 @@ instance Ord a => Set (Set a) a where
 instance Set (Object a) String where
    empty = Object.empty
    isEmpty = Object.isEmpty
+   size = Object.size
    difference x y = foldl (flip Object.delete) x (Object.keys y)
    member = Object.member
    union = Object.union

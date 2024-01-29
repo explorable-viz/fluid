@@ -14,14 +14,13 @@ import Effect.Exception (Error)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Util (type (×), Endo, assert, definitely, error, orElse, (×))
-import Util.Set (class Set, (∈))
+import Util.Set (class Set, (∈), size)
 
 -- Generalises Map but also supports a fixed key type, like Dict. Doesn't support transforming element type.
 class Set a k <= Map a k b | a -> k, a -> b where
    maplet :: k -> b -> a
    keys :: a -> Set k
    values :: a -> List b
-   size :: a -> Int
    filterKeys :: (k -> Boolean) -> Endo a
    unionWith :: (b -> Endo b) -> a -> Endo a
    lookup :: k -> a -> Maybe b
@@ -39,7 +38,6 @@ instance Map (Object a) String a where
    maplet = Object.singleton
    keys = Object.keys >>> Set.fromFoldable
    values = Object.values >>> List.fromFoldable
-   size = Object.size
    filterKeys = Object.filterKeys
    unionWith = Object.unionWith
    lookup = Object.lookup
