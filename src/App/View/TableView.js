@@ -86,6 +86,7 @@ function drawTable_ (
       indexKey = "__n"
       table = table.map((r, n) => { return {[ indexKey ]: n + 1, ...r} })
 
+      const unfilteredLength = table.length
       div.selectAll('#' + childId).remove()
       if (filter) {
          table = table.filter(r => isUsed(r))
@@ -99,7 +100,7 @@ function drawTable_ (
          const colNames = Object.keys(table[0]).sort()
 
          HTMLtable.append('caption')
-            .text(title)
+            .text(title + ' (' + table.length + ' of ' + unfilteredLength + ')' )
             .attr('x', 0)
             .attr('y', 0)
             .attr('class', 'title-text table-caption')

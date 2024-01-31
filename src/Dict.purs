@@ -12,27 +12,11 @@ import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultL
 import Data.Newtype (class Newtype)
 import Data.Traversable (class Foldable, class Traversable)
 import Foreign.Object (Object) as O
-import Foreign.Object
-   ( alter
-   , delete
-   , empty
-   , filter
-   , filterKeys
-   , fromFoldable
-   , insert
-   , isEmpty
-   , isSubmap
-   , lookup
-   , mapWithKey
-   , member
-   , singleton
-   , toArrayWithKey
-   , union
-   , unionWith
-   )
-import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, size, toUnfoldable, values)
+import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, isSubmap, lookup, mapWithKey, member, singleton, toArrayWithKey, union, unionWith)
+import Util (assertWith)
+import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, toUnfoldable, values)
 import Util.Map as Map
-import Util.Set (class Set, difference, (∈))
+import Util.Set (class Set, difference, size, (∈))
 
 newtype Dict a = Dict (O.Object a)
 
@@ -48,7 +32,9 @@ instance Ord a => Ord (Dict a) where
       else GT
 
 instance Apply Dict where
-   apply (Dict f) (Dict x) = Dict (intersectionWith ($) f x)
+   apply (Dict f) (Dict x) =
+      assertWith "domains are equal" (keys f == keys x) $
+         Dict (intersectionWith ($) f x)
 
 derive instance Functor Dict
 derive instance Foldable Dict
@@ -62,6 +48,7 @@ instance FoldableWithIndex String Dict where
 instance Set (Dict a) String where
    empty = Dict empty
    isEmpty (Dict d) = isEmpty d
+   size (Dict d) = size d
    member x (Dict d) = x ∈ d
    difference (Dict d) (Dict d') = Dict (difference d d')
    union (Dict d) (Dict d') = Dict (union d d')
@@ -70,7 +57,6 @@ instance Map (Dict a) String a where
    maplet k v = Dict (maplet k v)
    keys (Dict d) = keys d
    values (Dict d) = values d
-   size (Dict d) = size d
    filterKeys p (Dict d) = Dict (filterKeys p d)
    unionWith f (Dict d) (Dict d') = Dict (unionWith f d d')
    lookup k (Dict d) = lookup k d

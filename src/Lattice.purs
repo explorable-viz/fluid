@@ -2,7 +2,7 @@ module Lattice where
 
 import Prelude hiding (absurd, join, top)
 
-import Bind (Var)
+import Bind (Bind)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (zipWith) as A
@@ -156,9 +156,9 @@ instance JoinSemilattice a => JoinSemilattice (List a) where
 
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
    join = unionWith (∨) -- faster than definedJoin
-   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
+   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Bind a))
 
-mayFailUpdate :: forall a m. MonadError Error m => JoinSemilattice a => Dict a -> Var × a -> m (Dict a)
+mayFailUpdate :: forall a m. MonadError Error m => JoinSemilattice a => Dict a -> Bind a -> m (Dict a)
 mayFailUpdate m (k × v) =
    -- TODO: reimplement in terms of single call to "alter"?
    case lookup k m of
@@ -173,7 +173,7 @@ instance JoinSemilattice a => JoinSemilattice (Array a) where
 
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
 
--- Expandable (t :: Type -> Type) requires functor composition..
+-- Expandable (t :: Type -> Type) requires functor composition.
 class Expandable t u | t -> u where
    expand :: t -> u -> t
 
