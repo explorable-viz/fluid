@@ -11,7 +11,7 @@ let plot year countries =
         x = head (filter (isCountry country) nonRens);
         nonRensCap = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap
     in {
-      x: nonRensCap / (rensCap + nonRensCap),
+      x: rensCap / (rensCap + nonRensCap),
       y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
     }
   in map plotCountry countries
