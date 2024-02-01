@@ -49,6 +49,16 @@
    font-family: "Roboto", sans-serif;
 }
 
+.scatterplot-point-selected {
+   fill: LightGreen;
+   stroke: teal;
+}
+
+.scatterplot-point-unselected {
+   fill: white;
+   stroke: black;
+}
+
 .title-text {
    fill: Black;
    font-size: 9pt;
