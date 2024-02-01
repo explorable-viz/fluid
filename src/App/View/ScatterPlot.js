@@ -130,11 +130,9 @@ function drawScatterPlot_ (
                .attr('cy', ([, d]) => y(fst(d.y)))
                .attr('r', 3)
                .attr('data-y', ([, d]) => fst(d.y))
-               .attr('stroke', 'black')
                .attr('stroke-width', 0.5)
-               .style('fill', ([, d]) => Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'white': 'black')
-               .style('class', ([, d]) =>
-                  Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'dot-unselected' : 'dot-selected')
+               .attr('class', ([, d]) =>
+                  Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
                .on('mousedown', (e, d) => {listener(e)})
 
          svg.append('text')
