@@ -70,14 +70,8 @@ h4 {
 }
 
 a {
-   text-decoration: none;
    color: inherit;
    transition-timing-function: ease-out
-}
-
-a.not_decorated,
-a:hover {
-   text-decoration: none
 }
 
 ul {
