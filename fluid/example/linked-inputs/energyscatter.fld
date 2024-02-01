@@ -18,9 +18,7 @@ let plot year countries =
 
 in ScatterPlot {
   caption: "Clean energy efficiency vs. proportion of renewable energy capacity",
-  data: plot 2018 [
-    "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"
-  ],
+  data: plot 2018 [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ],
   xlabel: "Renewables/TotalEnergyCap",
   ylabel: "Clean Capacity Factor"
 }
