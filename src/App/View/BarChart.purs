@@ -26,7 +26,18 @@ newtype StackedBar = StackedBar
    , y :: Selectable Number
    }
 
+newtype Bar = Bar
+   { y :: Selectable String
+   , z :: Selectable Number
+   }
+
 foreign import drawBarChart :: Renderer BarChart
+
+instance Reflect (Dict (Val Sel)) BarChart where
+   from r = BarChart
+      { caption: unpack string (get f_caption r)
+      , data: record from <$> from (get f_data r)
+      }
 
 instance Reflect (Dict (Val Sel)) StackedBar where
    from r = StackedBar
@@ -34,10 +45,10 @@ instance Reflect (Dict (Val Sel)) StackedBar where
       , y: get_intOrNumber f_y r
       }
 
-instance Reflect (Dict (Val Sel)) BarChart where
-   from r = BarChart
-      { caption: unpack string (get f_caption r)
-      , data: record from <$> from (get f_data r)
+instance Reflect (Dict (Val Sel)) Bar where
+   from r = Bar
+      { y: unpack string (get f_x r)
+      , z: get_intOrNumber f_y r
       }
 
 barChartHandler :: Handler
