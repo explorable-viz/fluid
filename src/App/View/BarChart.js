@@ -60,7 +60,7 @@ function drawBarChart_ (
    suffix,
    {
       caption,    // String
-      data,       // Array BarChartRecord
+      data,       // Array StackedBar
    },
    listener
 ) {

@@ -18,18 +18,18 @@ import Web.Event.EventTarget (EventTarget)
 
 newtype BarChart = BarChart
    { caption :: Selectable String
-   , data :: Array BarChartRecord
+   , data :: Array StackedBar
    }
 
-newtype BarChartRecord = BarChartRecord
+newtype StackedBar = StackedBar
    { x :: Selectable String
    , y :: Selectable Number
    }
 
 foreign import drawBarChart :: Renderer BarChart
 
-instance Reflect (Dict (Val Sel)) BarChartRecord where
-   from r = BarChartRecord
+instance Reflect (Dict (Val Sel)) StackedBar where
+   from r = StackedBar
       { x: unpack string (get f_x r)
       , y: get_intOrNumber f_y r
       }

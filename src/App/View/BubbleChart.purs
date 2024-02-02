@@ -18,12 +18,12 @@ import Web.Event.Internal.Types (EventTarget)
 
 newtype BubbleChart = BubbleChart
    { caption :: Selectable String
-   , data :: Array BubbleChartRecord
+   , data :: Array Bubble
    , xlabel :: Selectable String
    , ylabel :: Selectable String
    }
 
-newtype BubbleChartRecord = BubbleChartRecord
+newtype Bubble = Bubble
    { x :: Selectable Number
    , y :: Selectable Number
    , z :: Selectable Number
@@ -32,8 +32,8 @@ newtype BubbleChartRecord = BubbleChartRecord
 
 foreign import drawBubbleChart :: Renderer BubbleChart
 
-instance Reflect (Dict (Val Sel)) BubbleChartRecord where
-   from r = BubbleChartRecord
+instance Reflect (Dict (Val Sel)) Bubble where
+   from r = Bubble
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
       , z: get_intOrNumber f_z r
