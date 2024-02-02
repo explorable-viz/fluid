@@ -59,6 +59,9 @@ barChartHandler = target >>> barIndex >>> toggleBar
       constrArg cBarChart 0
          $ field f_data
          $ listElement i
+         $ field f_bars
+         $ listElement 0
+         $ field f_z
          $ neg
 
    -- [Unsafe] 0-based index of selected bar.
