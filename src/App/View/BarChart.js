@@ -120,9 +120,9 @@ function drawBarChart_ (
          .enter()
          .append('rect')
             .attr('x', bar => { return x(bar.x) })
-            .attr('y', bar => { return height - y(bar.y) })  // ouch: bars overplot x-axis!
+            .attr('y', bar => { return y(bar.y + bar.height) })  // bars overplot x-axis..
             .attr('width', x.bandwidth())
-            .attr('height', bar => y(bar.height))
+            .attr('height', bar => { return height - y(bar.height) })
             .attr('fill', bar => Sel_isNone(bar.sel) ? barFill : colorShade(barFill, -40))
             .attr('class', bar => Sel_isNone(bar.sel) ? 'bar-unselected' : 'bar-selected')
             .on('mousedown', (e, d) => { listener(e) })
