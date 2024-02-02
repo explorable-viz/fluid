@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
-import DataType (cBarChart, f_caption, f_data, f_x, f_y)
+import DataType (cBarChart, f_bars, f_caption, f_data, f_x, f_y)
 import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)
@@ -23,7 +23,7 @@ newtype BarChart = BarChart
 
 newtype StackedBar = StackedBar
    { x :: Selectable String
-   , y :: Selectable Number
+   , bars :: Array Bar
    }
 
 newtype Bar = Bar
@@ -42,7 +42,7 @@ instance Reflect (Dict (Val Sel)) BarChart where
 instance Reflect (Dict (Val Sel)) StackedBar where
    from r = StackedBar
       { x: unpack string (get f_x r)
-      , y: get_intOrNumber f_y r
+      , bars: record from <$> from (get f_bars r)
       }
 
 instance Reflect (Dict (Val Sel)) Bar where
