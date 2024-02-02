@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util.Selector (constrArg, dictVal, field, listElement, matrixElement)
 import Bind ((↦))
-import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_data, f_plots, f_y)
+import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_bars, f_data, f_plots, f_y, f_z)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
@@ -19,9 +19,9 @@ linkedOutputs_spec1 =
         , inputs: [ "renewables" ]
         }
    , δ_out: constrArg cMultiPlot 0
-        (dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))))
+        (dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg)))))))
    , out_expect: constrArg cMultiPlot 0
-        ( dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg))))
+        ( dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg))))))
              >>> dictVal "line-chart"
                 ( constrArg cLineChart 0
                      ( field f_plots
