@@ -112,15 +112,19 @@ function drawBarChart_ (
          .append('g')
 
       stacks.selectAll('.bar')
-         .data(([, {x, bars}]) => bars.map(bar => { return {x: x, z: bar.z} }))
+         .data(([, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
+            const y = acc[acc.length - 1].y + bar.z
+            acc.push({x, y, height: bar.z})
+            return acc
+         }, [{x: x, y: 0, height: bars[0].z}]))
          .enter()
          .append('rect')
             .attr('x', bar => { return x(fst(bar.x)) })
-            .attr('y', bar => { return y(fst(bar.z)) })  // ouch: bars overplot x-axis!
+            .attr('y', bar => { return y(fst(bar.y)) })  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
-            .attr('height', bar => height - y(fst(bar.z)))
-            .attr('fill', bar => Sel_isNone(snd(bar.z)) ? barFill : colorShade(barFill, -40))
-            .attr('class', bar => Sel_isNone(snd(bar.z)) ? 'bar-unselected' : 'bar-selected')
+            .attr('height', bar => height - y(fst(bar.height)))
+            .attr('fill', bar => Sel_isNone(snd(bar.height)) ? barFill : colorShade(barFill, -40))
+            .attr('class', bar => Sel_isNone(snd(bar.height)) ? 'bar-unselected' : 'bar-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')
