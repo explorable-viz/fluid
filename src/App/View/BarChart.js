@@ -115,8 +115,8 @@ function drawBarChart_ (
          .data(([, {x, bars}]) => bars.map(bar => { return {x: x, z: bar.z} }))
          .enter()
          .append('rect')
-            .attr('x', ([, bar]) => x(fst(bar.x)))
-            .attr('y', ([, bar]) => y(fst(bar.z)))  // ouch: bars overplot x-axis!
+            .attr('x', bar => { return x(fst(bar.x)) })
+            .attr('y', bar => { return y(fst(bar.z)) })  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
             .attr('height', bar => height - y(fst(bar.z)))
             .attr('fill', bar => Sel_isNone(snd(bar.z)) ? barFill : colorShade(barFill, -40))
