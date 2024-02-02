@@ -1,7 +1,6 @@
 "use strict"
 
 import * as d3 from "d3"
-import * as d3tip from "d3-tip"
 
 // This prelude currently duplicated across all FFI implementations.
 function curry2 (f) {
@@ -81,13 +80,6 @@ function drawBarChart_ (
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-      const tip = d3tip.default()
-         .attr('class', 'd3-tip')
-         .offset([0, 0])
-         .html((_, d) => fst(d.y))
-
-      svg.call(tip)
-
       // x-axis
       const x = d3.scaleBand()
          .range([0, width])
@@ -101,7 +93,7 @@ function drawBarChart_ (
 
       // y-axis
       const nearest = 100,
-            y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))) / nearest) * nearest
+            y_max = Math.ceil(Math.max(...data.map(d => fst(d.bars[0].y))) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
@@ -119,11 +111,11 @@ function drawBarChart_ (
          .enter()
          .append('rect')
             .attr('x', ([, d]) => x(fst(d.x)))
-            .attr('y', ([, d]) => (y(fst(d.y))))  // ouch: bars overplot x-axis!
+            .attr('y', ([, d]) => (y(fst(d.bars[0].y))))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
-            .attr('height', ([, d]) => height - y(fst(d.y)))
-            .attr('fill', ([, d]) => Sel_isNone(snd(d.y)) ? barFill : colorShade(barFill, -40))
-            .attr('class', ([, d]) => Sel_isNone(snd(d.y)) ? 'bar-unselected' : 'bar-selected')
+            .attr('height', ([, d]) => height - y(fst(d.bars[0].y)))
+            .attr('fill', ([, d]) => Sel_isNone(snd(d.bars[0].y)) ? barFill : colorShade(barFill, -40))
+            .attr('class', ([, d]) => Sel_isNone(snd(d.bars[0].y)) ? 'bar-unselected' : 'bar-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')
