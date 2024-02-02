@@ -2,7 +2,7 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
@@ -10,14 +10,21 @@ import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Util (type (×), (!))
+import Util ((!))
 import Util.Map (get)
 import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 
-newtype BarChart = BarChart { caption :: String × Sel, data :: Array BarChartRecord }
-newtype BarChartRecord = BarChartRecord { x :: String × Sel, y :: Number × Sel }
+newtype BarChart = BarChart
+   { caption :: Selectable String
+   , data :: Array BarChartRecord
+   }
+
+newtype BarChartRecord = BarChartRecord
+   { x :: Selectable String
+   , y :: Selectable Number
+   }
 
 foreign import drawBarChart :: Renderer BarChart
 

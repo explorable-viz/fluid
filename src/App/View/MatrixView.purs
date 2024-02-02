@@ -2,7 +2,7 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (Handler, Renderer, Sel, unsafeEventData)
+import App.Util (Handler, Renderer, Sel, Selectable, unsafeEventData)
 import App.Util.Selector (matrixElement)
 import Data.Maybe (Maybe)
 import Data.Tuple (uncurry)
@@ -14,7 +14,7 @@ import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 
 --  (Rendered) matrices are required to have element type Int for now.
-type IntMatrix = Array2 (Int × Sel) × Int × Int
+type IntMatrix = Array2 (Selectable Int) × Int × Int
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import drawMatrix :: Renderer MatrixView

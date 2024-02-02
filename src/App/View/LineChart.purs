@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
@@ -17,9 +17,20 @@ import Val (BaseVal(..), Val(..))
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 
-newtype LineChart = LineChart { caption :: String × Sel, plots :: Array LinePlot }
-newtype LinePlot = LinePlot { name :: String × Sel, data :: Array Point }
-newtype Point = Point { x :: Number × Sel, y :: Number × Sel }
+newtype LineChart = LineChart
+   { caption :: Selectable String
+   , plots :: Array LinePlot
+   }
+
+newtype LinePlot = LinePlot
+   { name :: Selectable String
+   , data :: Array Point
+   }
+
+newtype Point = Point
+   { x :: Selectable Number
+   , y :: Selectable Number
+   }
 
 foreign import drawLineChart :: Renderer LineChart
 
