@@ -93,7 +93,7 @@ function drawBarChart_ (
 
       // y-axis
       const nearest = 100,
-            y_max = Math.ceil(Math.max(...data.map(d => fst(d.bars[0].y))) / nearest) * nearest
+            y_max = Math.ceil(Math.max(...data.map(d => fst(d.bars[0].z))) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
@@ -111,11 +111,11 @@ function drawBarChart_ (
          .enter()
          .append('rect')
             .attr('x', ([, d]) => x(fst(d.x)))
-            .attr('y', ([, d]) => (y(fst(d.bars[0].y))))  // ouch: bars overplot x-axis!
+            .attr('y', ([, d]) => (y(fst(d.bars[0].z))))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
-            .attr('height', ([, d]) => height - y(fst(d.bars[0].y)))
-            .attr('fill', ([, d]) => Sel_isNone(snd(d.bars[0].y)) ? barFill : colorShade(barFill, -40))
-            .attr('class', ([, d]) => Sel_isNone(snd(d.bars[0].y)) ? 'bar-unselected' : 'bar-selected')
+            .attr('height', ([, d]) => height - y(fst(d.bars[0].z)))
+            .attr('fill', ([, d]) => Sel_isNone(snd(d.bars[0].z)) ? barFill : colorShade(barFill, -40))
+            .attr('class', ([, d]) => Sel_isNone(snd(d.bars[0].z)) ? 'bar-unselected' : 'bar-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')
