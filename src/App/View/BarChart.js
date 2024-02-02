@@ -106,16 +106,21 @@ function drawBarChart_ (
 
       // bars
       const barFill = '#dcdcdc'
-      svg.selectAll('rect')
+      const stacks = svg.selectAll('.stack')
          .data([...data.entries()])
          .enter()
+         .append('g')
+
+      stacks.selectAll('.bar')
+         .data(([, {x, bars}]) => bars.map(bar => { return {x: x, z: bar.z} }))
+         .enter()
          .append('rect')
-            .attr('x', ([, d]) => x(fst(d.x)))
-            .attr('y', ([, d]) => (y(fst(d.bars[0].z))))  // ouch: bars overplot x-axis!
+            .attr('x', ([, bar]) => x(fst(bar.x)))
+            .attr('y', ([, bar]) => y(fst(bar.z)))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
-            .attr('height', ([, d]) => height - y(fst(d.bars[0].z)))
-            .attr('fill', ([, d]) => Sel_isNone(snd(d.bars[0].z)) ? barFill : colorShade(barFill, -40))
-            .attr('class', ([, d]) => Sel_isNone(snd(d.bars[0].z)) ? 'bar-unselected' : 'bar-selected')
+            .attr('height', bar => height - y(fst(bar.z)))
+            .attr('fill', bar => Sel_isNone(snd(bar.z)) ? barFill : colorShade(barFill, -40))
+            .attr('class', bar => Sel_isNone(snd(bar.z)) ? 'bar-unselected' : 'bar-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')
