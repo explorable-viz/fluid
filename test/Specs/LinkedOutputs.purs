@@ -35,6 +35,19 @@ linkedOutputs_spec1 =
         )
    }
 
+linkedOutputs_spec2 :: TestLinkedOutputsSpec
+linkedOutputs_spec2 =
+   { spec:
+        { divId: "fig-1"
+        , datasets: [ "nonRenewables" ↦ "example/linked-inputs/non-renewables" ]
+        , imports: []
+        , file: File "linked-outputs/stacked-bar-chart"
+        , inputs: [ "nonRenewables" ]
+        }
+   , δ_out: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg)))))
+   , out_expect: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg)))))
+   }
+
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
@@ -77,4 +90,5 @@ linkedOutputs_cases =
                 )
      }
    , linkedOutputs_spec1
+   , linkedOutputs_spec2
    ]
