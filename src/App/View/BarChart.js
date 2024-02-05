@@ -115,20 +115,20 @@ function drawBarChart_ (
          .append('g')
 
       stacks.selectAll('.bar')
-         .data(([, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
-            const prev = acc[acc.length - 1]
+         .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
+            const [, prev] = acc[acc.length - 1]
             const y = prev.y + prev.height
-            acc.push({x: fst(x), y, height: fst(bar.z), sel: snd(bar.z)})
+            acc.push([i, {x: fst(x), y, height: fst(bar.z), sel: snd(bar.z)}])
             return acc
-         }, [{x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]))
+         }, [[0, {x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]]))
          .enter()
          .append('rect')
-            .attr('x', bar => { return x(bar.x) })
-            .attr('y', bar => { return y(bar.y + bar.height) })  // bars overplot x-axis..
+            .attr('x', ([, bar]) => { return x(bar.x) })
+            .attr('y', ([, bar]) => { return y(bar.y + bar.height) })  // bars overplot x-axis..
             .attr('width', x.bandwidth())
-            .attr('height', bar => { return height - y(bar.height) })
-            .attr('fill', bar => Sel_isNone(bar.sel) ? barFill : colorShade(barFill, -40))
-            .attr('class', bar => Sel_isNone(bar.sel) ? 'bar-unselected' : 'bar-selected')
+            .attr('height', ([, bar]) => { return height - y(bar.height) })
+            .attr('fill', ([, bar]) => Sel_isNone(bar.sel) ? barFill : colorShade(barFill, -40))
+            .attr('class', ([, bar]) => Sel_isNone(bar.sel) ? 'bar-unselected' : 'bar-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')

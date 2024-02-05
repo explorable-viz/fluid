@@ -44,8 +44,8 @@ linkedOutputs_spec2 =
         , file: File "linked-outputs/stacked-bar-chart"
         , inputs: [ "nonRenewables" ]
         }
-   , δ_out: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg)))))
-   , out_expect: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg)))))
+   , δ_out: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 2 (field f_z neg)))))
+   , out_expect: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 2 (field f_z neg)))))
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
