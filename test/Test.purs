@@ -11,7 +11,7 @@ import Effect.Aff (Aff)
 import Lattice (neg)
 import Test.Benchmark (benchmarks)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
-import Test.Specs.LinkedOutputs (linkedOutputs_cases)
+import Test.Specs.LinkedOutputs (linkedOutputs_cases, linkedOutputs_spec2)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util (type (×), (×))
@@ -19,7 +19,7 @@ import Util (type (×), (×))
 main :: Effect Unit
 --main = run tests
 
-main = run $ linkedOutputsSuite linkedOutputs_cases
+main = run $ linkedOutputsSuite [ linkedOutputs_spec2 ]
 
 --main = run scratchpad
 
