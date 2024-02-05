@@ -114,7 +114,7 @@ function drawBarChart_ (
       stacks.selectAll('.bar')
          .data(([, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
             const y = acc[acc.length - 1].y + fst(bar.z)
-            acc.push({x, y, height: fst(bar.z)})
+            acc.push({x: fst(x), y, height: fst(bar.z), sel: snd(bar.z)})
             return acc
          }, [{x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]))
          .enter()
