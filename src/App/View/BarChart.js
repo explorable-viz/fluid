@@ -91,9 +91,12 @@ function drawBarChart_ (
          .selectAll('text')
             .style('text-anchor', 'middle')
 
+      function barHeight (bars) {
+         return bars.reduce((acc, bar) => { return fst(bar.z) + acc }, 0)
+      }
       // y-axis
       const nearest = 100,
-            y_max = Math.ceil(Math.max(...data.map(d => fst(d.bars[0].z))) / nearest) * nearest
+            y_max = Math.ceil(Math.max(...data.map(d => barHeight(d.bars))) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
@@ -113,7 +116,8 @@ function drawBarChart_ (
 
       stacks.selectAll('.bar')
          .data(([, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
-            const y = acc[acc.length - 1].y + fst(bar.z)
+            const prev = acc[acc.length - 1]
+            const y = prev.y + prev.height
             acc.push({x: fst(x), y, height: fst(bar.z), sel: snd(bar.z)})
             return acc
          }, [{x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]))
