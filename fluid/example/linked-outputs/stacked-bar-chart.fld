@@ -1,8 +1,10 @@
-let totalFor year rows =
-   let [ row ] = [ row | row <- rows, row.year == year, row.country == "BRA" ]
-   in row.nuclearOut + row.gasOut + row.coalOut + row.petrolOut
+let totalFor year country rows =
+   let [ row ] = [ row | row <- rows, row.year == year, row.country == country ]
+   in row.nuclearOut + row.gasOut + row.coalOut + row.petrolOut;
+let stack year countries = [ { y: country, z: totalFor year country nonRenewables }
+                      | country <- countries ]
 in BarChart {
    caption: "Non-renewables output by country",
-   data: [ { x: numToStr year, bars: [ { y: "BRA", z: totalFor year nonRenewables } ] }
-          | year <- [2014..2018] ]
+   data: [ { x: numToStr year, bars: stack year ["BRA", "EGY", "IND", "JPN"] }
+         | year <- [2014..2018] ]
 }
