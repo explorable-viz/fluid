@@ -54,6 +54,14 @@ function colorShade (col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
+// Heuristic saying how often to place a tick on an axis of length n.
+function tickEvery (n) {
+   const m = Math.floor(Math.log10(n))
+   return n <= 2 * 10 ** m
+      ? 2 * 10 ** (m - 1)
+      : 10 ** m
+}
+
 function drawBarChart_ (
    id,
    suffix,
@@ -100,8 +108,8 @@ function drawBarChart_ (
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
-      const tickEvery = 100,
-            ticks = Array.from(Array(Math.ceil(y_max / tickEvery + 1)).keys()).map(n => n * tickEvery)
+      const tickEvery_n = tickEvery(y_max),
+            ticks = Array.from(Array(Math.ceil(y_max / tickEvery_n + 1)).keys()).map(n => n * tickEvery_n)
       const yAxis = d3.axisLeft(y)
          .tickValues(ticks)
       svg.append('g')
