@@ -73,8 +73,8 @@ function drawBarChart_ (
 ) {
    return () => {
       const childId = id + '-' + suffix
-      const margin = {top: 15, right: 65, bottom: 40, left: 40},
-            width = 265 - margin.left - margin.right,
+      const margin = {top: 15, right: 75, bottom: 40, left: 40},
+            width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + id)
 
@@ -152,13 +152,13 @@ function drawBarChart_ (
             legendStart = width + margin.left / 2
             names = data[0].bars.map(bar => fst(bar.y))
       svg.append('rect')
-         .attr('transform', `translate(${legendStart}, ${legendLineHeight * (names.length - 1) + 2})`)
+         .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
          .attr('x', 0)
          .attr('y', 0)
          .attr('stroke', 'lightgray')
          .attr('fill', 'none')
          .attr('height', legendLineHeight * names.length)
-         .attr('width', margin.right - 20)
+         .attr('width', margin.right - 22)
 
       const legend = svg.selectAll('legend')
          .data(names)
