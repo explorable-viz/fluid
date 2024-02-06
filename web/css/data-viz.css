@@ -4,6 +4,7 @@
 
 .bar-selected {
    stroke: Teal;
+   z-index: 2147483647;
 }
 
 .bar-unselected {
