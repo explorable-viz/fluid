@@ -116,11 +116,11 @@ function drawBarChart_ (
          .call(yAxis)
 
       // bars
-      const barFill = '#dcdcdc'
       const stacks = svg.selectAll('.stack')
          .data([...data.entries()])
          .enter()
          .append('g')
+      const color = d3.scaleOrdinal(d3.schemePastel1)
 
       stacks.selectAll('.bar')
          .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
@@ -135,7 +135,10 @@ function drawBarChart_ (
             .attr('y', bar => { return y(bar.y + bar.height) })  // bars overplot x-axis..
             .attr('width', x.bandwidth())
             .attr('height', bar => { return height - y(bar.height) })
-            .attr('fill', bar => Sel_isNone(bar.sel) ? barFill : colorShade(barFill, -40))
+            .attr('fill', bar => {
+               const col = color(bar.j)
+               return Sel_isNone(bar.sel) ? col : colorShade(col, -40)
+            })
             .attr('class', bar => Sel_isNone(bar.sel) ? 'bar-unselected' : 'bar-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
