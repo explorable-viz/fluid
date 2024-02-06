@@ -10,7 +10,7 @@ import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Util ((!))
+import Util (type (×), (×), (!))
 import Util.Map (get)
 import Val (Val)
 import Web.Event.Event (target)
@@ -54,16 +54,16 @@ instance Reflect (Dict (Val Sel)) Bar where
 barChartHandler :: Handler
 barChartHandler = target >>> barIndex >>> toggleBar
    where
-   toggleBar :: Int -> Selector Val
-   toggleBar i =
+   toggleBar :: Int × Int -> Selector Val
+   toggleBar (i × j) =
       constrArg cBarChart 0
          $ field f_data
          $ listElement i
          $ field f_bars
-         $ listElement 0
+         $ listElement j
          $ field f_z
          $ neg
 
    -- [Unsafe] 0-based index of selected bar.
-   barIndex :: Maybe EventTarget -> Int
-   barIndex tgt_opt = unsafeEventData tgt_opt ! 0
+   barIndex :: Maybe EventTarget -> Int × Int
+   barIndex tgt_opt = (unsafeEventData tgt_opt ! 0) × 0
