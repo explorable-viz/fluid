@@ -66,6 +66,5 @@ barChartHandler = target >>> barSegment >>> toggleBar
          $ field f_z
          $ neg
 
-   -- [Unsafe] 0-based index of selected bar.
    barSegment :: Maybe EventTarget -> BarSegmentCoordinate
    barSegment = unsafeEventData

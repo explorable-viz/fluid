@@ -129,7 +129,7 @@ function drawBarChart_ (
             const y = prev.y + prev.height
             acc.push({i, j: prev.j + 1, x: fst(x), y, height: fst(bar.z), sel: snd(bar.z)})
             return acc
-         }, [{i: 0, j: 0, x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]))
+         }, [{i, j: 0, x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]))
          .enter()
          .append('rect')
             .attr('x', bar => { return x(bar.x) })
