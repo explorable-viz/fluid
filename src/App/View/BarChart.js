@@ -120,8 +120,8 @@ function drawBarChart_ (
          .data([...data.entries()])
          .enter()
          .append('g')
-      const color = d3.scaleOrdinal(d3.schemePastel2)
-      const strokeWidth = 2
+      const color = d3.scaleOrdinal(d3.schemeAccent)
+      const strokeWidth = 1
 
       stacks.selectAll('.bar')
          .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
@@ -136,11 +136,14 @@ function drawBarChart_ (
             .attr('y', bar => { return y(bar.y + bar.height) })
             .attr('width', x.bandwidth())
             .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
-            .attr('fill', bar => color(bar.j))
+            .attr('fill', bar => {
+               const col = color(bar.j)
+               return Sel_isNone(bar.sel) ? col : colorShade(col, -20)
+            })
             .attr('stroke-width', _ => strokeWidth)
             .attr('stroke', bar => {
                const col = color(bar.j)
-               return Sel_isNone(bar.sel) ? col : colorShade(col, -30)
+               return Sel_isNone(bar.sel) ? col : colorShade(col, -70)
             })
             .on('mousedown', (e, d) => { listener(e) })
 
