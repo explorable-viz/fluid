@@ -1,7 +1,6 @@
 "use strict"
 
 import * as d3 from "d3"
-import * as d3tip from "d3-tip"
 
 // This prelude currently duplicated across all FFI implementations.
 function curry2 (f) {
@@ -55,12 +54,20 @@ function colorShade (col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
+// Heuristic saying how often to place a tick on an axis of length n.
+function tickEvery (n) {
+   const m = Math.floor(Math.log10(n))
+   return n <= 2 * 10 ** m
+      ? 2 * 10 ** (m - 1)
+      : 10 ** m
+}
+
 function drawBarChart_ (
    id,
    suffix,
    {
       caption,    // String
-      data,       // Array BarChartRecord
+      data,       // Array StackedBar
    },
    listener
 ) {
@@ -81,13 +88,6 @@ function drawBarChart_ (
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-      const tip = d3tip.default()
-         .attr('class', 'd3-tip')
-         .offset([0, 0])
-         .html((_, d) => fst(d.y))
-
-      svg.call(tip)
-
       // x-axis
       const x = d3.scaleBand()
          .range([0, width])
@@ -99,31 +99,49 @@ function drawBarChart_ (
          .selectAll('text')
             .style('text-anchor', 'middle')
 
+      function barHeight (bars) {
+         return bars.reduce((acc, bar) => { return fst(bar.z) + acc }, 0)
+      }
       // y-axis
       const nearest = 100,
-            y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))) / nearest) * nearest
+            y_max = Math.ceil(Math.max(...data.map(d => barHeight(d.bars))) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
-      const tickEvery = 100,
-            ticks = Array.from(Array(Math.ceil(y_max / tickEvery + 1)).keys()).map(n => n * tickEvery)
+      const tickEvery_n = tickEvery(y_max),
+            ticks = Array.from(Array(Math.ceil(y_max / tickEvery_n + 1)).keys()).map(n => n * tickEvery_n)
       const yAxis = d3.axisLeft(y)
          .tickValues(ticks)
       svg.append('g')
          .call(yAxis)
 
       // bars
-      const barFill = '#dcdcdc'
-      svg.selectAll('rect')
+      const stacks = svg.selectAll('.stack')
          .data([...data.entries()])
          .enter()
+         .append('g')
+      const color = d3.scaleOrdinal(d3.schemePastel2)
+      const strokeWidth = 2
+
+      stacks.selectAll('.bar')
+         .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
+            const prev = acc[acc.length - 1]
+            const y = prev.y + prev.height
+            acc.push({i, j: prev.j + 1, x: fst(x), y, height: fst(bar.z), sel: snd(bar.z)})
+            return acc
+         }, [{i: 0, j: 0, x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]))
+         .enter()
          .append('rect')
-            .attr('x', ([, d]) => x(fst(d.x)))
-            .attr('y', ([, d]) => (y(fst(d.y))))  // ouch: bars overplot x-axis!
+            .attr('x', bar => { return x(bar.x) })
+            .attr('y', bar => { return y(bar.y + bar.height) })
             .attr('width', x.bandwidth())
-            .attr('height', ([, d]) => height - y(fst(d.y)))
-            .attr('fill', ([, d]) => Sel_isNone(snd(d.y)) ? barFill : colorShade(barFill, -40))
-            .attr('class', ([, d]) => Sel_isNone(snd(d.y)) ? 'bar-unselected' : 'bar-selected')
+            .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
+            .attr('fill', bar => color(bar.j))
+            .attr('stroke-width', _ => strokeWidth)
+            .attr('stroke', bar => {
+               const col = color(bar.j)
+               return Sel_isNone(bar.sel) ? col : colorShade(col, -30)
+            })
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')

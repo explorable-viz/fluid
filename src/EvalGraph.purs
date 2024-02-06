@@ -105,8 +105,8 @@ apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
-eval γ (Var x) _ = lookup' x γ
-eval γ (Op op) _ = lookup' op γ
+eval γ (Var x) _ = with "Variable lookup" $ lookup' x γ
+eval γ (Op op) _ = with "Variable lookup" $ lookup' op γ
 eval _ (Int α n) αs = Val <$> new (insert α αs) <@> V.Int n
 eval _ (Float α n) αs = Val <$> new (insert α αs) <@> V.Float n
 eval _ (Str α s) αs = Val <$> new (insert α αs) <@> V.Str s
@@ -141,7 +141,7 @@ eval γ (Lambda α σ) αs =
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
-      Val _ (V.Record xvs) -> lookup' x xvs
+      Val _ (V.Record xvs) -> with "Record lookup" (lookup' x xvs)
       _ -> throw $ "Found " <> prettyP v <> ", expected record"
 eval γ (App e e') αs = do
    v <- eval γ e αs

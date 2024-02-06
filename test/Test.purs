@@ -19,7 +19,7 @@ import Util (type (×), (×))
 main :: Effect Unit
 main = run tests
 
---main = run $ linkedInputsSuite linkedInputs_cases
+--main = run $ linkedOutputsSuite [ linkedOutputs_spec2 ]
 
 --main = run scratchpad
 

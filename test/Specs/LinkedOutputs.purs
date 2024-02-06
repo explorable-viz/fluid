@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util.Selector (constrArg, dictVal, field, listElement, matrixElement)
 import Bind ((↦))
-import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_data, f_plots, f_y)
+import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_bars, f_data, f_plots, f_y, f_z)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
@@ -19,9 +19,9 @@ linkedOutputs_spec1 =
         , inputs: [ "renewables" ]
         }
    , δ_out: constrArg cMultiPlot 0
-        (dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg)))))
+        (dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg)))))))
    , out_expect: constrArg cMultiPlot 0
-        ( dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_y neg))))
+        ( dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg))))))
              >>> dictVal "line-chart"
                 ( constrArg cLineChart 0
                      ( field f_plots
@@ -33,6 +33,19 @@ linkedOutputs_spec1 =
                      )
                 )
         )
+   }
+
+linkedOutputs_spec2 :: TestLinkedOutputsSpec
+linkedOutputs_spec2 =
+   { spec:
+        { divId: "fig-1"
+        , datasets: [ "nonRenewables" ↦ "example/linked-inputs/non-renewables" ]
+        , imports: []
+        , file: File "linked-outputs/stacked-bar-chart"
+        , inputs: [ "nonRenewables" ]
+        }
+   , δ_out: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 2 (field f_z neg)))))
+   , out_expect: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 2 (field f_z neg)))))
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
@@ -77,4 +90,5 @@ linkedOutputs_cases =
                 )
      }
    , linkedOutputs_spec1
+   , linkedOutputs_spec2
    ]

@@ -32,6 +32,7 @@ type OnSel = Selector Val -> Effect Unit -- redraw based on modified output sele
 type Handler = Event -> Selector Val
 
 data Sel = None | Primary | Secondary
+type Selectable a = a × Sel
 
 to𝔹 :: Sel -> 𝔹
 to𝔹 None = false
@@ -50,7 +51,7 @@ asSel true true = Primary
 doNothing :: OnSel
 doNothing = const $ pure unit
 
-get_intOrNumber :: Var -> Dict (Val Sel) -> Number × Sel
+get_intOrNumber :: Var -> Dict (Val Sel) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
 -- Assumes fields are all of primitive type.

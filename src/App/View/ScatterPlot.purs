@@ -2,7 +2,7 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, Handler, Renderer, Sel, from, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
 import App.View.LineChart (Point)
 import Data.Maybe (Maybe)
@@ -11,17 +11,17 @@ import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Util (type (×), (!))
+import Util ((!))
 import Util.Map (get)
 import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.Internal.Types (EventTarget)
 
 newtype ScatterPlot = ScatterPlot
-   { caption :: String × Sel
+   { caption :: Selectable String
    , data :: Array Point
-   , xlabel :: String × Sel
-   , ylabel :: String × Sel
+   , xlabel :: Selectable String
+   , ylabel :: Selectable String
    }
 
 foreign import drawScatterPlot :: Renderer ScatterPlot

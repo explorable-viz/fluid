@@ -160,10 +160,9 @@ successful = runExcept >>> case _ of
 successfulWith :: String -> forall a. MayFail a -> a
 successfulWith msg = successful <<< with msg
 
--- If the property fails, add an extra error message.
 with :: forall a m. MonadError Error m => String -> Endo (m a)
 with msg m = catchError m \e ->
-   let msg' = message e in throw $ msg' <> if msg == "" then "" else ("\n" <> msg)
+   throw $ message e <> if msg == "" then "" else ("\n" <> msg)
 
 check :: forall m. MonadThrow Error m => Boolean -> String -> m Unit
 check false = throw

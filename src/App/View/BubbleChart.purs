@@ -2,7 +2,7 @@ module App.View.BubbleChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Sel, from, get_intOrNumber, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cBubbleChart, f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel, f_z)
@@ -10,30 +10,30 @@ import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Util (type (×), (!))
+import Util ((!))
 import Util.Map (get)
 import Val (Val)
 import Web.Event.Event (target)
 import Web.Event.Internal.Types (EventTarget)
 
 newtype BubbleChart = BubbleChart
-   { caption :: String × Sel
-   , data :: Array BubbleChartRecord
-   , xlabel :: String × Sel
-   , ylabel :: String × Sel
+   { caption :: Selectable String
+   , data :: Array Bubble
+   , xlabel :: Selectable String
+   , ylabel :: Selectable String
    }
 
-newtype BubbleChartRecord = BubbleChartRecord
-   { x :: Number × Sel
-   , y :: Number × Sel
-   , z :: Number × Sel
-   , c :: String × Sel
+newtype Bubble = Bubble
+   { x :: Selectable Number
+   , y :: Selectable Number
+   , z :: Selectable Number
+   , c :: Selectable String
    }
 
 foreign import drawBubbleChart :: Renderer BubbleChart
 
-instance Reflect (Dict (Val Sel)) BubbleChartRecord where
-   from r = BubbleChartRecord
+instance Reflect (Dict (Val Sel)) Bubble where
+   from r = Bubble
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
       , z: get_intOrNumber f_z r

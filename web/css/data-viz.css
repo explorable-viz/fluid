@@ -3,11 +3,7 @@
 }
 
 .bar-selected {
-   stroke: Teal;
-}
-
-.bar-unselected {
-   stroke: unset;
+   z-index: 2147483647;
 }
 
 .cell-selected {

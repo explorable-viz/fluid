@@ -103,6 +103,7 @@ cNone = "None" :: Ctr -- Option
 cSome = "Some" :: Ctr
 
 -- Field names used internally by rendering layer.
+f_bars = "bars" :: FieldName
 f_caption = "caption" :: FieldName
 f_colour = "c" :: FieldName
 f_data = "data" :: FieldName
