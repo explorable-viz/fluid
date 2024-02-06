@@ -118,9 +118,9 @@ function drawBarChart_ (
          .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
             const prev = acc[acc.length - 1]
             const y = prev.y + prev.height
-            acc.push({i, x: fst(x), y, height: fst(bar.z), sel: snd(bar.z)})
+            acc.push({i, j: prev.j + 1, x: fst(x), y, height: fst(bar.z), sel: snd(bar.z)})
             return acc
-         }, [{i: 0, x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]))
+         }, [{i: 0, j: 0, x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]))
          .enter()
          .append('rect')
             .attr('x', bar => { return x(bar.x) })
