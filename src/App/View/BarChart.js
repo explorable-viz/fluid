@@ -135,11 +135,11 @@ function drawBarChart_ (
             .attr('y', bar => { return y(bar.y + bar.height) })  // bars overplot x-axis..
             .attr('width', x.bandwidth())
             .attr('height', bar => { return height - y(bar.height) - 1 })
-            .attr('fill', bar => {
+            .attr('fill', bar => color(bar.j))
+            .attr('stroke', bar => {
                const col = color(bar.j)
-               return Sel_isNone(bar.sel) ? col : colorShade(col, -40)
+               return Sel_isNone(bar.sel) ? col : colorShade(col, -30)
             })
-            .attr('class', bar => Sel_isNone(bar.sel) ? 'bar-unselected' : 'bar-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
       svg.append('text')
