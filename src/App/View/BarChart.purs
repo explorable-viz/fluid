@@ -10,7 +10,6 @@ import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Util (spy)
 import Util.Map (get)
 import Val (Val)
 import Web.Event.Event (target)
@@ -68,6 +67,4 @@ barChartHandler = target >>> barSegment >>> toggleBar
          $ neg
 
    barSegment :: Maybe EventTarget -> BarSegmentCoordinate
-   barSegment ev =
-      let q = unsafeEventData ev
-      in spy "q" identity q
+   barSegment = unsafeEventData
