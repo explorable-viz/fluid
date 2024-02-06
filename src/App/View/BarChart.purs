@@ -10,7 +10,7 @@ import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
-import Util (type (×), (×), (!))
+import Util (type (×), spy, (×))
 import Util.Map (get)
 import Val (Val)
 import Web.Event.Event (target)
@@ -66,4 +66,6 @@ barChartHandler = target >>> barIndex >>> toggleBar
 
    -- [Unsafe] 0-based index of selected bar.
    barIndex :: Maybe EventTarget -> Int × Int
-   barIndex tgt_opt = (unsafeEventData tgt_opt ! 0) × 0
+   barIndex tgt_opt = (spy "coords" identity coords).i × 0
+      where
+      coords = unsafeEventData tgt_opt :: { i :: Int } -- must match data binding in BarChart.js
