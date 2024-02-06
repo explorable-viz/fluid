@@ -73,8 +73,8 @@ function drawBarChart_ (
 ) {
    return () => {
       const childId = id + '-' + suffix
-      const margin = {top: 15, right: 0, bottom: 40, left: 40},
-            width = 200 - margin.left - margin.right,
+      const margin = {top: 15, right: 75, bottom: 40, left: 40},
+            width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + id)
 
@@ -120,8 +120,8 @@ function drawBarChart_ (
          .data([...data.entries()])
          .enter()
          .append('g')
-      const color = d3.scaleOrdinal(d3.schemePastel2)
-      const strokeWidth = 2
+      const color = d3.scaleOrdinal(d3.schemeAccent)
+      const strokeWidth = 1
 
       stacks.selectAll('.bar')
          .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
@@ -136,13 +136,52 @@ function drawBarChart_ (
             .attr('y', bar => { return y(bar.y + bar.height) })
             .attr('width', x.bandwidth())
             .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
-            .attr('fill', bar => color(bar.j))
+            .attr('fill', bar => {
+               const col = color(bar.j)
+               return Sel_isNone(bar.sel) ? col : colorShade(col, -20)
+            })
             .attr('stroke-width', _ => strokeWidth)
             .attr('stroke', bar => {
                const col = color(bar.j)
-               return Sel_isNone(bar.sel) ? col : colorShade(col, -30)
+               return Sel_isNone(bar.sel) ? col : colorShade(col, -70)
             })
             .on('mousedown', (e, d) => { listener(e) })
+
+      // TODO: enforce that all stacked bars have same set of segments
+      const legendLineHeight = 15,
+            legendStart = width + margin.left / 2
+            names = data[0].bars.map(bar => fst(bar.y))
+      svg.append('rect')
+         .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
+         .attr('x', 0)
+         .attr('y', 0)
+         .attr('stroke', 'lightgray')
+         .attr('fill', 'none')
+         .attr('height', legendLineHeight * names.length)
+         .attr('width', margin.right - 22)
+
+      const legend = svg.selectAll('legend')
+         .data(names)
+         .enter()
+         .append('g')
+         .attr('class', 'legend')
+         .attr('transform', (d, i) =>
+            `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
+         )
+
+      legend.append('text')
+         .text(d => d)
+         .attr('font-size', 11)
+         .attr('transform', 'translate(15, 9)') // align text with boxes
+
+      const legendSquareSize = 4
+
+      legend.append('rect')
+         .attr('fill', d => color(names.indexOf(d)))
+         .attr('width', legendSquareSize)
+         .attr('height', legendSquareSize)
+         .attr('x', legendLineHeight / 2 - legendSquareSize / 2)
+         .attr('y', legendLineHeight / 2 - legendSquareSize)
 
       svg.append('text')
          .text(fst(caption))
