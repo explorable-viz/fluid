@@ -31,7 +31,7 @@ multiPlot :: Endo (Selector Val)
 multiPlot = constrArg cMultiPlot 0
 
 multiPlotEntry :: String -> Endo (Selector Val)
-multiPlotEntry x = multiPlot <<< dictVal x
+multiPlotEntry x = dictVal x >>> multiPlot
 
 lineChart :: Endo (Selector Val)
 lineChart = constrArg cLineChart 0
@@ -44,6 +44,9 @@ barChart = constrArg cBarChart 0
 
 scatterPlot :: Endo (Selector Val)
 scatterPlot = constrArg cScatterPlot 0
+
+scatterPoint :: Int -> Endo (Selector Val)
+scatterPoint i = field f_data <<< listElement i
 
 barSegment :: Int -> Int -> Selector Val
 barSegment i j =

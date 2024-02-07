@@ -2,7 +2,7 @@ module Test.Specs.LinkedOutputs where
 
 import Prelude
 
-import App.Util.Selector (barChart, barSegment, dictVal, field, fst, lineChart, linePoint, listElement, matrixElement, multiPlot, multiPlotEntry, scatterPlot, snd)
+import App.Util.Selector (barChart, barSegment, field, fst, lineChart, linePoint, listElement, matrixElement, multiPlotEntry, scatterPlot, scatterPoint, snd)
 import Bind ((↦))
 import DataType (f_plots, f_y)
 import Lattice (neg)
@@ -48,7 +48,12 @@ linkedOutputs_spec2 =
    , δ_out: multiPlotEntry "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3))
    , out_expect:
         multiPlotEntry "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3))
-           >>> multiPlotEntry "scatter-plot" (scatterPlot ?_)
+           >>> multiPlotEntry "scatter-plot"
+              ( scatterPlot
+                   ( scatterPoint 4 (field f_y neg)
+                        >>> scatterPoint 6 (field f_y neg)
+                   )
+              )
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
