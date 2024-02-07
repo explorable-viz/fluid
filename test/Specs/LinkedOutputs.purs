@@ -2,9 +2,9 @@ module Test.Specs.LinkedOutputs where
 
 import Prelude
 
-import App.Util.Selector (constrArg, dictVal, field, listElement, matrixElement)
+import App.Util.Selector (barSegment, constrArg, dictVal, field, fst, listElement, matrixElement, snd)
 import Bind ((↦))
-import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_bars, f_data, f_plots, f_y, f_z)
+import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_data, f_plots, f_y)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
@@ -19,9 +19,9 @@ linkedOutputs_spec1 =
         , inputs: [ "renewables" ]
         }
    , δ_out: constrArg cMultiPlot 0
-        (dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg)))))))
+        (dictVal "bar-chart" (constrArg cBarChart 0 (barSegment 1 0)))
    , out_expect: constrArg cMultiPlot 0
-        ( dictVal "bar-chart" (constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 0 (field f_z neg))))))
+        ( dictVal "bar-chart" (constrArg cBarChart 0 (barSegment 1 0))
              >>> dictVal "line-chart"
                 ( constrArg cLineChart 0
                      ( field f_plots
@@ -44,8 +44,8 @@ linkedOutputs_spec2 =
         , file: File "linked-outputs/stacked-bar-chart"
         , inputs: [ "nonRenewables" ]
         }
-   , δ_out: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 2 (field f_z neg)))))
-   , out_expect: constrArg cBarChart 0 (field f_data (listElement 1 (field f_bars (listElement 2 (field f_z neg)))))
+   , δ_out: constrArg cBarChart 0 (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3)
+   , out_expect: constrArg cBarChart 0 (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3)
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
@@ -57,9 +57,9 @@ linkedOutputs_cases =
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           }
-     , δ_out: constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg))
-     , out_expect: constrArg cPair 1 (constrArg cPair 1 (constrArg cPair 0 neg))
-          >>> constrArg cPair 0 (constrArg cPair 0 neg >>> constrArg cPair 1 (constrArg cPair 0 neg))
+     , δ_out: snd (snd (fst neg))
+     , out_expect: snd (snd (fst neg))
+          >>> fst (fst neg >>> snd (fst neg))
      }
    , { spec:
           { divId: ""

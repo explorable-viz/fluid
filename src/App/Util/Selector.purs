@@ -5,8 +5,8 @@ import Prelude hiding (absurd)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cCons, cMultiPlot, cNil)
-import Lattice (𝔹)
+import DataType (Ctr, cCons, cMultiPlot, cNil, cPair, f_bars, f_data, f_z)
+import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
 import Util (Endo, absurd, assert, definitely', error)
@@ -17,6 +17,16 @@ import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 -- Selection helpers. TODO: turn into lenses/prisms.
 multiPlotHandler :: String -> Endo (Selector Val)
 multiPlotHandler x = constrArg cMultiPlot 0 <<< dictVal x
+
+fst :: Endo (Selector Val)
+fst = constrArg cPair 0
+
+snd :: Endo (Selector Val)
+snd = constrArg cPair 1
+
+barSegment :: Int -> Int -> Selector Val
+barSegment i j =
+   field f_data (listElement i (field f_bars (listElement j (field f_z neg))))
 
 matrixElement :: Int -> Int -> Endo (Selector Val)
 matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv r
