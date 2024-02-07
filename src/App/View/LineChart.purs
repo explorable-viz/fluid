@@ -63,7 +63,6 @@ lineChartHandler = target >>> pos >>> togglePoint
       constrArg cLineChart 0
          $ field f_plots
          $ listElement i
-         $ constrArg cLinePlot 0
          $ linePoint j
          $ neg
 

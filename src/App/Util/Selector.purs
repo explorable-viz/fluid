@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cCons, cLineChart, cMultiPlot, cNil, cPair, f_bars, f_data, f_plots, f_z)
+import DataType (Ctr, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, f_bars, f_data, f_plots, f_z)
 import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
@@ -22,7 +22,7 @@ lineChartPlot :: Int -> Endo (Selector Val)
 lineChartPlot i = constrArg cLineChart 0 <<< field f_plots <<< listElement i
 
 linePoint :: Int -> Endo (Selector Val)
-linePoint i = field f_data <<< listElement i
+linePoint i = constrArg cLinePlot 0 <<< field f_data <<< listElement i
 
 fst :: Endo (Selector Val)
 fst = constrArg cPair 0
