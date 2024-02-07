@@ -3,7 +3,7 @@ module App.View.BarChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
-import App.Util.Selector (barSegment, constrArg)
+import App.Util.Selector (barChart, barSegment, constrArg)
 import Data.Maybe (Maybe)
 import DataType (cBarChart, f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
@@ -53,10 +53,10 @@ instance Reflect (Dict (Val Sel)) Bar where
 type BarSegmentCoordinate = { i :: Int, j :: Int }
 
 barChartHandler :: Handler
-barChartHandler = target >>> barSegmentCoord >>> toggleBar
+barChartHandler = target >>> barSegmentCoord >>> toggleSegment
    where
-   toggleBar :: BarSegmentCoordinate -> Selector Val
-   toggleBar { i, j } = constrArg cBarChart 0 $ barSegment i j
+   toggleSegment :: BarSegmentCoordinate -> Selector Val
+   toggleSegment { i, j } = barChart $ barSegment i j
 
    barSegmentCoord :: Maybe EventTarget -> BarSegmentCoordinate
    barSegmentCoord = unsafeEventData

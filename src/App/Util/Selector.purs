@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, f_bars, f_data, f_plots, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, f_bars, f_data, f_z)
 import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
@@ -15,20 +15,26 @@ import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection helpers. TODO: turn into lenses/prisms.
-multiPlotHandler :: String -> Endo (Selector Val)
-multiPlotHandler x = constrArg cMultiPlot 0 <<< dictVal x
-
-lineChartPlot :: Int -> Endo (Selector Val)
-lineChartPlot i = constrArg cLineChart 0 <<< field f_plots <<< listElement i
-
-linePoint :: Int -> Endo (Selector Val)
-linePoint i = constrArg cLinePlot 0 <<< field f_data <<< listElement i
-
 fst :: Endo (Selector Val)
 fst = constrArg cPair 0
 
 snd :: Endo (Selector Val)
 snd = constrArg cPair 1
+
+multiPlot :: Endo (Selector Val)
+multiPlot = constrArg cMultiPlot 0
+
+multiPlotHandler :: String -> Endo (Selector Val)
+multiPlotHandler x = multiPlot <<< dictVal x
+
+lineChart :: Endo (Selector Val)
+lineChart = constrArg cLineChart 0
+
+linePoint :: Int -> Endo (Selector Val)
+linePoint i = constrArg cLinePlot 0 <<< field f_data <<< listElement i
+
+barChart :: Endo (Selector Val)
+barChart = constrArg cBarChart 0
 
 barSegment :: Int -> Int -> Selector Val
 barSegment i j =
