@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cCons, cMultiPlot, cNil, cPair, f_bars, f_data, f_z)
+import DataType (Ctr, cCons, cLineChart, cMultiPlot, cNil, cPair, f_bars, f_data, f_plots, f_z)
 import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
@@ -17,6 +17,12 @@ import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 -- Selection helpers. TODO: turn into lenses/prisms.
 multiPlotHandler :: String -> Endo (Selector Val)
 multiPlotHandler x = constrArg cMultiPlot 0 <<< dictVal x
+
+lineChartPlot :: Int -> Endo (Selector Val)
+lineChartPlot i = constrArg cLineChart 0 <<< field f_plots <<< listElement i
+
+linePoint :: Int -> Endo (Selector Val)
+linePoint i = field f_data <<< listElement i
 
 fst :: Endo (Selector Val)
 fst = constrArg cPair 0

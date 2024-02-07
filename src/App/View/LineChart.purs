@@ -3,7 +3,7 @@ module App.View.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
-import App.Util.Selector (constrArg, field, listElement)
+import App.Util.Selector (constrArg, field, linePoint, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
@@ -64,8 +64,7 @@ lineChartHandler = target >>> pos >>> togglePoint
          $ field f_plots
          $ listElement i
          $ constrArg cLinePlot 0
-         $ field f_data
-         $ listElement j
+         $ linePoint j
          $ neg
 
    -- [Unsafe] 0-based indices of line plot and point within line plot.

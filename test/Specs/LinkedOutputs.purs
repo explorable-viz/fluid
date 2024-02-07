@@ -2,9 +2,9 @@ module Test.Specs.LinkedOutputs where
 
 import Prelude
 
-import App.Util.Selector (barSegment, constrArg, dictVal, field, fst, listElement, matrixElement, snd)
+import App.Util.Selector (barSegment, constrArg, dictVal, field, fst, linePoint, listElement, matrixElement, snd)
 import Bind ((↦))
-import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_data, f_plots, f_y)
+import DataType (cBarChart, cLineChart, cLinePlot, cMultiPlot, cPair, f_plots, f_y)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
@@ -25,10 +25,10 @@ linkedOutputs_spec1 =
              >>> dictVal "line-chart"
                 ( constrArg cLineChart 0
                      ( field f_plots
-                          ( listElement 0 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                               >>> listElement 1 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                               >>> listElement 2 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
-                               >>> listElement 3 (constrArg cLinePlot 0 (field f_data (listElement 2 (field f_y neg))))
+                          ( listElement 0 (constrArg cLinePlot 0 (linePoint 2 (field f_y neg)))
+                               >>> listElement 1 (constrArg cLinePlot 0 (linePoint 2 (field f_y neg)))
+                               >>> listElement 2 (constrArg cLinePlot 0 (linePoint 2 (field f_y neg)))
+                               >>> listElement 3 (constrArg cLinePlot 0 (linePoint 2 (field f_y neg)))
                           )
                      )
                 )
