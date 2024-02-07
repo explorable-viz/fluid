@@ -30,8 +30,8 @@ bubbleChart = constrArg cBubbleChart 0
 multiPlot :: Endo (Selector Val)
 multiPlot = constrArg cMultiPlot 0
 
-multiPlotHandler :: String -> Endo (Selector Val)
-multiPlotHandler x = multiPlot <<< dictVal x
+multiPlotEntry :: String -> Endo (Selector Val)
+multiPlotEntry x = multiPlot <<< dictVal x
 
 lineChart :: Endo (Selector Val)
 lineChart = constrArg cLineChart 0

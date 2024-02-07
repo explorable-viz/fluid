@@ -3,10 +3,10 @@ module App.View.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
-import App.Util.Selector (constrArg, field, lineChart, linePoint, listElement)
+import App.Util.Selector (field, lineChart, linePoint, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
+import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)

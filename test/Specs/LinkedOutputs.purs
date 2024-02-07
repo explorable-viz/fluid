@@ -2,7 +2,7 @@ module Test.Specs.LinkedOutputs where
 
 import Prelude
 
-import App.Util.Selector (barChart, barSegment, dictVal, field, fst, lineChart, linePoint, listElement, matrixElement, multiPlot, snd)
+import App.Util.Selector (barChart, barSegment, dictVal, field, fst, lineChart, linePoint, listElement, matrixElement, multiPlot, multiPlotEntry, scatterPlot, snd)
 import Bind ((↦))
 import DataType (f_plots, f_y)
 import Lattice (neg)
@@ -18,20 +18,19 @@ linkedOutputs_spec1 =
         , file: File "linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         }
-   , δ_out: multiPlot (dictVal "bar-chart" (barChart (barSegment 1 0)))
-   , out_expect: multiPlot
-        ( dictVal "bar-chart" (barChart (barSegment 1 0))
-             >>> dictVal "line-chart"
-                ( lineChart
-                     ( field f_plots
-                          ( listElement 0 (linePoint 2 (field f_y neg))
-                               >>> listElement 1 (linePoint 2 (field f_y neg))
-                               >>> listElement 2 (linePoint 2 (field f_y neg))
-                               >>> listElement 3 (linePoint 2 (field f_y neg))
-                          )
-                     )
-                )
-        )
+   , δ_out: multiPlotEntry "bar-chart" (barChart (barSegment 1 0))
+   , out_expect:
+        multiPlotEntry "bar-chart" (barChart (barSegment 1 0))
+           >>> multiPlotEntry "line-chart"
+              ( lineChart
+                   ( field f_plots
+                        ( listElement 0 (linePoint 2 (field f_y neg))
+                             >>> listElement 1 (linePoint 2 (field f_y neg))
+                             >>> listElement 2 (linePoint 2 (field f_y neg))
+                             >>> listElement 3 (linePoint 2 (field f_y neg))
+                        )
+                   )
+              )
    }
 
 linkedOutputs_spec2 :: TestLinkedOutputsSpec
@@ -46,8 +45,10 @@ linkedOutputs_spec2 =
         , file: File "linked-outputs/stacked-bar-chart-scatter-plot"
         , inputs: [ "nonRenewables" ]
         }
-   , δ_out: multiPlot (dictVal "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3)))
-   , out_expect: multiPlot (dictVal "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3)))
+   , δ_out: multiPlotEntry "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3))
+   , out_expect:
+        multiPlotEntry "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3))
+           >>> multiPlotEntry "scatter-plot" (scatterPlot ?_)
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec

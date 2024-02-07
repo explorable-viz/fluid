@@ -3,9 +3,9 @@ module App.View.BarChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
-import App.Util.Selector (barChart, barSegment, constrArg)
+import App.Util.Selector (barChart, barSegment)
 import Data.Maybe (Maybe)
-import DataType (cBarChart, f_bars, f_caption, f_data, f_x, f_y, f_z)
+import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
 import Primitive (string, unpack)
 import Test.Util (Selector)
