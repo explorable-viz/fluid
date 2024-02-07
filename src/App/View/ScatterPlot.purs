@@ -3,10 +3,10 @@ module App.View.ScatterPlot where
 import Prelude
 
 import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, record, unsafeEventData)
-import App.Util.Selector (constrArg, field, listElement)
+import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point)
 import Data.Maybe (Maybe)
-import DataType (cScatterPlot, f_caption, f_data, f_xlabel, f_ylabel)
+import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
 import Lattice (neg)
 import Primitive (string, unpack)
@@ -38,11 +38,7 @@ scatterPlotHandler :: Handler
 scatterPlotHandler = target >>> index >>> togglePoint
    where
    togglePoint :: Int -> Selector Val
-   togglePoint i =
-      constrArg cScatterPlot 0
-         $ field f_data
-         $ listElement i
-         $ neg
+   togglePoint i = scatterPlot $ field f_data $ listElement i $ neg
 
    index :: Maybe EventTarget -> Int
    index tgt_opt = unsafeEventData tgt_opt ! 0

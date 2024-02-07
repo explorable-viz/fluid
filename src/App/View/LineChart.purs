@@ -3,7 +3,7 @@ module App.View.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
-import App.Util.Selector (constrArg, field, linePoint, listElement)
+import App.Util.Selector (constrArg, field, lineChart, linePoint, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
@@ -60,7 +60,7 @@ lineChartHandler = target >>> pos >>> togglePoint
    where
    togglePoint :: Int × Int -> Selector Val
    togglePoint (i × j) =
-      constrArg cLineChart 0
+      lineChart
          $ field f_plots
          $ listElement i
          $ linePoint j

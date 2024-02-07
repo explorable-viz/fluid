@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, f_bars, f_data, f_z)
+import DataType (Ctr, cBarChart, cBubbleChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
 import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
@@ -21,6 +21,12 @@ fst = constrArg cPair 0
 snd :: Endo (Selector Val)
 snd = constrArg cPair 1
 
+some :: Endo 𝔹 -> Selector Val
+some = constr cSome
+
+bubbleChart :: Endo (Selector Val)
+bubbleChart = constrArg cBubbleChart 0
+
 multiPlot :: Endo (Selector Val)
 multiPlot = constrArg cMultiPlot 0
 
@@ -35,6 +41,9 @@ linePoint i = constrArg cLinePlot 0 <<< field f_data <<< listElement i
 
 barChart :: Endo (Selector Val)
 barChart = constrArg cBarChart 0
+
+scatterPlot :: Endo (Selector Val)
+scatterPlot = constrArg cScatterPlot 0
 
 barSegment :: Int -> Int -> Selector Val
 barSegment i j =

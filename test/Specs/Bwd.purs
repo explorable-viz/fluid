@@ -2,8 +2,7 @@ module Test.Specs.Bwd where
 
 import Prelude
 
-import App.Util.Selector (constr, constrArg, dict, dictKey, dictVal, listCell, listElement, matrixElement)
-import DataType (cPair, cSome)
+import App.Util.Selector (dict, dictKey, dictVal, listCell, listElement, matrixElement, snd, some)
 import Lattice (neg)
 import Test.Util.Suite (TestBwdSpec)
 
@@ -148,7 +147,7 @@ bwd_cases =
    , { file: "lookup"
      , imports: []
      , bwd_expect_file: "lookup.expect"
-     , δv: constr cSome neg
+     , δv: some neg
      , fwd_expect: "⸨Some \"Germany\"⸩"
      }
    , { file: "map"
@@ -174,7 +173,7 @@ bwd_cases =
      , imports: []
      , bwd_expect_file: "output-not-source.expect"
      , fwd_expect: "(⸨3⸩, ⸨True⸩)"
-     , δv: constrArg cPair 1 neg -- selection on just first component will be discarded by bwdSlice; see #818.
+     , δv: snd neg -- selection on just first component will be discarded by bwdSlice; see #818.
      }
    , { file: "section-5-example"
      , imports: []
