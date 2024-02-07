@@ -38,13 +38,16 @@ linkedOutputs_spec2 :: TestLinkedOutputsSpec
 linkedOutputs_spec2 =
    { spec:
         { divId: "fig-1"
-        , datasets: [ "nonRenewables" ↦ "example/linked-inputs/non-renewables" ]
+        , datasets:
+             [ "renewables" ↦ "example/linked-inputs/renewables"
+             , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
+             ]
         , imports: []
-        , file: File "linked-outputs/stacked-bar-chart"
+        , file: File "linked-outputs/stacked-bar-chart-scatter-plot"
         , inputs: [ "nonRenewables" ]
         }
-   , δ_out: barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3)
-   , out_expect: barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3)
+   , δ_out: multiPlot (dictVal "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3)))
+   , out_expect: multiPlot (dictVal "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3)))
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
