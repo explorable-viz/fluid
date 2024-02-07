@@ -94,8 +94,8 @@ li:last-child {
 
 table {
    margin: 4mm;
-   outline: double;
-   outline-color: lightgray;
+   outline: dotted;
+   outline-color: lightgrey;
 }
 
 .table-caption {
