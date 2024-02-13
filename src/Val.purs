@@ -102,7 +102,7 @@ instance Map (Env a) String (Val a) where
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
 unrestrictGC γ xs =
    assertWith (show xs <> " are in environment ") (xs ⊆ keys γ) $ GC
-      { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ ((topOf γ \\ γ'))
+      { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ (topOf γ \\ γ')
       , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
       }
 

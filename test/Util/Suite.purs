@@ -10,8 +10,9 @@ import Data.Profunctor.Strong ((&&&))
 import Effect.Aff (Aff)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile, loadProgCxt)
-import Test.Benchmark.Util (BenchRow)
+import Test.Benchmark.Util (BenchRow, logTimeWhen)
 import Test.Util (Selector, checkEq, test)
+import Test.Util.Debug (timing)
 import Util (type (×), (×))
 import Val (Val, Env)
 
@@ -80,7 +81,7 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
-   let out × _ = selectionResult fig
+   out × _ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ -> pure $ selectionResult fig
    checkEq "selected" "expected" (to𝔹 <$> out) (out_expect (botOf out))
    pure fig
 
@@ -92,7 +93,7 @@ linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectInput δ_in
-   let _ × γ = selectionResult fig
+   _ × γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ -> pure $ selectionResult fig
    checkEq "selected" "expected" (to𝔹 <$> γ) (in_expect (botOf γ))
    pure fig
 

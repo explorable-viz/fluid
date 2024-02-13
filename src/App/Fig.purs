@@ -69,7 +69,10 @@ selectInput (x ↦ δv) fig@{ dir, in_, out } = fig
 
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
-   let out_view × in_views = selectionResult fig # unsafePartial (view output *** unwrap >>> mapWithKey view)
+   let
+      out_view × in_views =
+         selectionResult fig
+            # unsafePartial (view output *** unwrap >>> mapWithKey view)
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
 

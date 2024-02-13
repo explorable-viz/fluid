@@ -5,8 +5,8 @@ import Prelude hiding (absurd)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cCons, cMultiPlot, cNil)
-import Lattice (𝔹)
+import DataType (Ctr, cBarChart, cBubbleChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
+import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
 import Util (Endo, absurd, assert, definitely', error)
@@ -15,8 +15,42 @@ import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection helpers. TODO: turn into lenses/prisms.
-multiPlotHandler :: String -> Endo (Selector Val)
-multiPlotHandler x = constrArg cMultiPlot 0 <<< dictVal x
+fst :: Endo (Selector Val)
+fst = constrArg cPair 0
+
+snd :: Endo (Selector Val)
+snd = constrArg cPair 1
+
+some :: Endo 𝔹 -> Selector Val
+some = constr cSome
+
+bubbleChart :: Endo (Selector Val)
+bubbleChart = constrArg cBubbleChart 0
+
+multiPlot :: Endo (Selector Val)
+multiPlot = constrArg cMultiPlot 0
+
+multiPlotEntry :: String -> Endo (Selector Val)
+multiPlotEntry x = dictVal x >>> multiPlot
+
+lineChart :: Endo (Selector Val)
+lineChart = constrArg cLineChart 0
+
+linePoint :: Int -> Endo (Selector Val)
+linePoint i = constrArg cLinePlot 0 <<< field f_data <<< listElement i
+
+barChart :: Endo (Selector Val)
+barChart = constrArg cBarChart 0
+
+scatterPlot :: Endo (Selector Val)
+scatterPlot = constrArg cScatterPlot 0
+
+scatterPoint :: Int -> Endo (Selector Val)
+scatterPoint i = field f_data <<< listElement i
+
+barSegment :: Int -> Int -> Selector Val
+barSegment i j =
+   field f_data (listElement i (field f_bars (listElement j (field f_z neg))))
 
 matrixElement :: Int -> Int -> Endo (Selector Val)
 matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv r
