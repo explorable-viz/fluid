@@ -75,14 +75,12 @@ benchmark name = benchmark' name Nothing
 benchmark' :: forall m a. MonadWriter BenchRow m => String -> Maybe (a -> String) -> (Unit -> m a) -> EffectError m a
 benchmark' name show_opt m = do
    when debug.logging $ log ("**** " <> name)
-   t1 <- microtime'
-   x <- m unit
-   t2 <- microtime'
+   t × x <- time (m unit)
    when debug.logging $
       case show_opt of
          Nothing -> pure unit
          Just show -> logAs name (show x)
-   tell (BenchRow $ singleton name (t2 `sub` t1))
+   tell (BenchRow $ singleton name t)
    pure x
 
 recordGraphSize :: forall g m. Graph g => MonadWriter BenchRow m => g -> m Unit
