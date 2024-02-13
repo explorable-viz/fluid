@@ -59,5 +59,5 @@ timing
       }
 
 timing =
-   { selectionResult: true
+   { selectionResult: false
    }
