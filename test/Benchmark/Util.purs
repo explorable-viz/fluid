@@ -60,9 +60,8 @@ time m = do
    t2 <- microtime'
    pure (t2 `sub` t1 × x)
 
-logTimeWhen :: forall m a. MonadEffect m => Boolean -> String -> Endo (m a)
-logTimeWhen false _ m = m
-logTimeWhen true msg m = do
+logTime :: forall m a. MonadEffect m => String -> Endo (m a)
+logTime msg m = do
    t × x <- time m
    logAs msg (show t)
    pure x
