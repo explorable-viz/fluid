@@ -17,7 +17,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Graph (class Graph, size)
 import Pretty (class Pretty, prettyP)
-import Util (type (×), EffectError, Endo, debug, (×))
+import Util (type (×), EffectError, Thunk, debug, force, (×))
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
@@ -53,29 +53,30 @@ foreign import microtime :: Effect Number
 microtime' :: forall m. MonadEffect m => m Number
 microtime' = liftEffect microtime
 
-time :: forall m a. MonadEffect m => m a -> m (Number × a)
+time :: forall m a. MonadEffect m => Thunk (m a) -> m (Number × a)
 time m = do
    t1 <- microtime'
-   x <- m
+   x <- force m
    t2 <- microtime'
    pure (t2 `sub` t1 × x)
 
-logTime :: forall m a. MonadEffect m => String -> Endo (m a)
-logTime msg m = do
+logTimeWhen :: forall m a. MonadEffect m => Boolean -> String -> Thunk (m a) -> m a
+logTimeWhen false _ m = force m
+logTimeWhen true msg m = do
    t × x <- time m
    logAs msg (show t)
    pure x
 
-benchmarkLog :: forall m a. MonadWriter BenchRow m => Pretty a => String -> (Unit -> m a) -> EffectError m a
+benchmarkLog :: forall m a. MonadWriter BenchRow m => Pretty a => String -> Thunk (m a) -> EffectError m a
 benchmarkLog name = benchmark' name (Just prettyP)
 
-benchmark :: forall m a. MonadWriter BenchRow m => String -> (Unit -> m a) -> EffectError m a
+benchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
 benchmark name = benchmark' name Nothing
 
-benchmark' :: forall m a. MonadWriter BenchRow m => String -> Maybe (a -> String) -> (Unit -> m a) -> EffectError m a
+benchmark' :: forall m a. MonadWriter BenchRow m => String -> Maybe (a -> String) -> Thunk (m a) -> EffectError m a
 benchmark' name show_opt m = do
    when debug.logging $ log ("**** " <> name)
-   t × x <- time (m unit)
+   t × x <- time m
    when debug.logging $
       case show_opt of
          Nothing -> pure unit

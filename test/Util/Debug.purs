@@ -53,3 +53,11 @@ testing =
    , fwdDuals: true
    , naiveFwd: true
    }
+
+timing
+   :: { selectionResult :: Boolean
+      }
+
+timing =
+   { selectionResult: true
+   }

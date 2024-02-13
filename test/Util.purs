@@ -47,7 +47,7 @@ test file progCxt spec (n × _) = do
 traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
 traceBenchmark name = benchmark ("T" <> "-" <> name)
 
-graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> (Unit -> m a) -> EffectError m a
+graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
 graphBenchmark name = benchmark ("G" <> "-" <> name)
 
 benchNames
