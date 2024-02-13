@@ -12,11 +12,11 @@ import Data.Map (empty) as M
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over2)
 import Data.Tuple (snd)
+import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Graph (class Graph, size)
 import Pretty (class Pretty, prettyP)
-import Test.Util.Microtime (microtime)
 import Util (type (×), EffectError, (×), debug)
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
@@ -47,6 +47,8 @@ instance Semigroup BenchRow where
 
 instance Monoid BenchRow where
    mempty = BenchRow M.empty
+
+foreign import microtime :: Effect Number
 
 benchmarkLog :: forall m a. MonadWriter BenchRow m => Pretty a => String -> (Unit -> m a) -> EffectError m a
 benchmarkLog name = benchmark' name (Just prettyP)
