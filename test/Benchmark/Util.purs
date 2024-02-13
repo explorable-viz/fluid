@@ -17,7 +17,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Graph (class Graph, size)
 import Pretty (class Pretty, prettyP)
-import Util (type (×), EffectError, (×), debug)
+import Util (type (×), EffectError, Endo, debug, (×))
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
 logAs tag s = log $ tag <> ": " <> s
@@ -50,6 +50,18 @@ instance Monoid BenchRow where
 
 foreign import microtime :: Effect Number
 
+microtime' :: forall m. MonadEffect m => m Number
+microtime' = liftEffect microtime
+
+timeWhen :: forall m a. MonadEffect m => Boolean -> String -> Endo (m a)
+timeWhen false _ m = m
+timeWhen true msg m = do
+   t1 <- microtime'
+   x <- m
+   t2 <- microtime'
+   logAs msg (show (t2 `sub` t1))
+   pure x
+
 benchmarkLog :: forall m a. MonadWriter BenchRow m => Pretty a => String -> (Unit -> m a) -> EffectError m a
 benchmarkLog name = benchmark' name (Just prettyP)
 
@@ -59,21 +71,18 @@ benchmark name = benchmark' name Nothing
 benchmark' :: forall m a. MonadWriter BenchRow m => String -> Maybe (a -> String) -> (Unit -> m a) -> EffectError m a
 benchmark' name show_opt m = do
    when debug.logging $ log ("**** " <> name)
-   t1 <- preciseTime
+   t1 <- microtime'
    x <- m unit
-   t2 <- preciseTime
+   t2 <- microtime'
    when debug.logging $
       case show_opt of
          Nothing -> pure unit
          Just show -> logAs name (show x)
    tell (BenchRow $ singleton name (t2 `sub` t1))
    pure x
-   where
-   preciseTime :: m Number
-   preciseTime = liftEffect microtime
 
 recordGraphSize :: forall g m. Graph g => MonadWriter BenchRow m => g -> m Unit
-recordGraphSize g = do
+recordGraphSize g =
    tell (BenchRow $ singleton "Graph-Nodes" (toNumber $ size g))
 
 divRow :: BenchRow -> Int -> BenchRow

@@ -1,3 +1,3 @@
-export function microtime() {
+export function microtime () {
     return performance.now()
 }
