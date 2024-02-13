@@ -53,13 +53,18 @@ foreign import microtime :: Effect Number
 microtime' :: forall m. MonadEffect m => m Number
 microtime' = liftEffect microtime
 
-timeWhen :: forall m a. MonadEffect m => Boolean -> String -> Endo (m a)
-timeWhen false _ m = m
-timeWhen true msg m = do
+time :: forall m a. MonadEffect m => m a -> m (Number × a)
+time m = do
    t1 <- microtime'
    x <- m
    t2 <- microtime'
-   logAs msg (show (t2 `sub` t1))
+   pure (t2 `sub` t1 × x)
+
+logTimeWhen :: forall m a. MonadEffect m => Boolean -> String -> Endo (m a)
+logTimeWhen false _ m = m
+logTimeWhen true msg m = do
+   t × x <- time m
+   logAs msg (show t)
    pure x
 
 benchmarkLog :: forall m a. MonadWriter BenchRow m => Pretty a => String -> (Unit -> m a) -> EffectError m a
