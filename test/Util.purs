@@ -86,7 +86,6 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       graphGC gconfig e
 
    let out0 = δv (botOf v)
-   let dualOut = δv (botOf v)
    in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))

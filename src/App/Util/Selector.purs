@@ -21,9 +21,6 @@ fst = constrArg cPair 0
 snd :: Endo (Selector Val)
 snd = constrArg cPair 1
 
-comp :: Endo (Selector Val)
-comp = neg
-
 some :: Endo 𝔹 -> Selector Val
 some = constr cSome
 
