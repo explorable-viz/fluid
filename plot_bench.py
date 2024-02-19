@@ -11,9 +11,9 @@ test_sets = {
 }
 
 bench_sets = {
-  'all': ['G-Demands','G-BwdAll','G-BwdDlFwdOp','G-BwdFlCmp','G-Eval','G-Suffices','Naive-Suffices','G-FwdDlBwdOp','G-Suff-Dual','G-Nodes','T-Demands','T-Eval','T-Suffices'],
+  'all': ['G-Demands','G-BwdAll','G-BwdDlFwdOp','G-BwdFlCmp','G-Eval','G-Suffices','Naive-Fwd','G-FwdDlBwdOp','G-Suff-Dual','G-Nodes','T-Demands','T-Eval','T-Suffices'],
   'bwd': ['T-Eval','T-Demands','G-Eval', 'G-Demands'],
-  'Suffices': ['T-Eval', 'T-Suffices', 'G-Eval', 'G-Suffices', 'Naive-Suffices'],
+  'fwd': ['T-Eval', 'T-Suffices', 'G-Eval', 'G-Suffices', 'Naive-Fwd'],
   'standard': ['T-Eval','T-Demands', 'T-Suffices', 'G-Eval', 'G-Demands', 'G-Suffices'],
 }
 
