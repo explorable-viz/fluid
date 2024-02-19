@@ -86,6 +86,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       graphGC gconfig e
 
    let out0 = δv (botOf v)
+   let dualOut = δv (botOf v)
    in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
@@ -102,7 +103,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    out0'' <- do
       let in0'' = desug'.fwd in_s
       traceBenchmark benchNames.demBy \_ -> pure (dualed.bwd in0'')
-   unwrap >>> (_ >= out0'') # checkSatisfies "Force evaluation" (PrettyShow out0'')
+   unwrap >>> (_ >= out0'') # checkSatisfies "Force evaluation of DemBy" (PrettyShow out0'')
 
    let in_top = topOf (fst in_e) × topOf (snd in_e) -- doesn't lift to pairs as intended
    let out_top = evalT.fwd in_top
