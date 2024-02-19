@@ -67,13 +67,13 @@ benchNames =
    { eval: "Eval"
    , bwd: "Demands"
    , demBy: "DemandedBy"
-   , fwd: "Fwd"
+   , fwd: "Suffices"
    , bwdDlFwdOp: "BwdDlFwdOp"
    , bwdDlCmp: "BwdDlCmp"
    , bwdAll: "BwdAll"
    , naiveFwd: "Naive-Fwd"
-   , fwdDlBwdOp: "FwdDlBwdOp"
-   , fwdDlCmp: "FwdDlCmp"
+   , fwdDlBwdOp: "DemandedBy"
+   , fwdDlCmp: "Suff-Dual"
    }
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
