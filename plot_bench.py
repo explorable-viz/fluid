@@ -11,10 +11,10 @@ test_sets = {
 }
 
 bench_sets = {
-  'all': ['G-Bwd','G-BwdAll','G-BwdDlFwdOp','G-BwdFlCmp','G-Eval','G-Fwd','Naive-Fwd','G-FwdDlBwdOp','G-FwdFlCmp','G-Nodes','T-Bwd','T-Eval','T-Fwd'],
-  'bwd': ['T-Eval','T-Bwd','G-Eval', 'G-Bwd'],
+  'all': ['G-Demands','G-BwdAll','G-BwdDlFwdOp','G-BwdFlCmp','G-Eval','G-Fwd','Naive-Fwd','G-FwdDlBwdOp','G-FwdFlCmp','G-Nodes','T-Demands','T-Eval','T-Fwd'],
+  'bwd': ['T-Eval','T-Demands','G-Eval', 'G-Demands'],
   'fwd': ['T-Eval', 'T-Fwd', 'G-Eval', 'G-Fwd', 'Naive-Fwd'],
-  'standard': ['T-Eval','T-Bwd', 'T-Fwd', 'G-Eval', 'G-Bwd', 'G-Fwd'],
+  'standard': ['T-Eval','T-Demands', 'T-Fwd', 'G-Eval', 'G-Demands', 'G-Fwd'],
 }
 
 def parse(test_names, column_order, cap, lab, dest='recent.png'):

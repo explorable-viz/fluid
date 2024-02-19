@@ -53,6 +53,7 @@ graphBenchmark name = benchmark ("G" <> "-" <> name)
 benchNames
    :: { eval :: String
       , bwd :: String
+      , demBy :: String
       , fwd :: String
       , bwdDlFwdOp :: String
       , bwdDlCmp :: String
@@ -64,7 +65,8 @@ benchNames
 
 benchNames =
    { eval: "Eval"
-   , bwd: "Bwd"
+   , bwd: "Demands"
+   , demBy: "DemandedBy"
    , fwd: "Fwd"
    , bwdDlFwdOp: "BwdDlFwdOp"
    , bwdDlCmp: "BwdDlCmp"
@@ -78,7 +80,7 @@ testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let γ = erase gconfig.γ
    { gc: GC desug, e } <- desugGC s
-   { gc: GC evalT, v } <- traceBenchmark benchNames.eval \_ ->
+   traced@{ gc: GC evalT, v } <- traceBenchmark benchNames.eval \_ ->
       traceGC γ e
    { gc: GC evalG, gc_op: GC evalG_op, g, vα } <- graphBenchmark benchNames.eval \_ ->
       graphGC gconfig e
@@ -95,6 +97,12 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in0')
       traceBenchmark benchNames.fwd \_ -> pure (evalT.fwd in0')
    unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out0')
+
+   let (GC dualed) = (dual traced.gc)
+   out0'' <- do
+      let in0'' = desug'.fwd in_s
+      traceBenchmark benchNames.demBy \_ -> pure (dualed.bwd in0'')
+   unwrap >>> (_ >= out0'') # checkSatisfies "Force evaluation" (PrettyShow out0'')
 
    let in_top = topOf (fst in_e) × topOf (snd in_e) -- doesn't lift to pairs as intended
    let out_top = evalT.fwd in_top
