@@ -13,7 +13,7 @@ test_sets = {
 bench_sets = {
   'all': ['G-Demands','G-Eval','G-Suffices','G-Suff-Dual','G-Nodes','T-Demands','T-Eval','T-Suffices'],
   'bwd': ['T-Eval','T-Demands','G-Eval', 'G-Demands'],
-  'fwd': ['T-Eval', 'T-Suffices', 'G-Eval', 'G-Suffices', 'Naive-Fwd'],
+  'fwd': ['T-Eval', 'T-Suffices', 'G-Eval', 'G-Suffices'],
   'standard': ['T-Eval','T-Demands', 'T-Suffices', 'G-Eval', 'G-Demands', 'G-Suffices'],
 }
 
