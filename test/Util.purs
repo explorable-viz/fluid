@@ -57,23 +57,21 @@ benchNames
       , fwd :: String
       , bwdDlFwdOp :: String
       , bwdDlCmp :: String
-      , bwdAll :: String
       , naiveFwd :: String
       , fwdDlBwdOp :: String
       , fwdDlCmp :: String
       }
 
 benchNames =
-   { eval: "Eval"
-   , bwd: "Demands"
-   , demBy: "DemandedBy"
-   , fwd: "Suffices"
-   , bwdDlFwdOp: "BwdDlFwdOp"
-   , bwdDlCmp: "BwdDlCmp"
-   , bwdAll: "BwdAll"
-   , naiveFwd: "Naive-Fwd"
-   , fwdDlBwdOp: "DemandedBy"
-   , fwdDlCmp: "Suff-Dual"
+   { eval: "Eval" -- Neeeded
+   , bwd: "Demands" -- Needed
+   , demBy: "DemandedBy" -- Needed
+   , fwd: "Suffices" -- Unsure
+   , bwdDlFwdOp: "BwdDlFwdOp" -- 
+   , bwdDlCmp: "BwdDlCmp" -- 
+   , naiveFwd: "Naive-Fwd" -- Not needed anymore
+   , fwdDlBwdOp: "DemandedBy" -- Needed
+   , fwdDlCmp: "Suff-Dual" -- Needed
    }
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
@@ -82,7 +80,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
    traced@{ gc: GC evalT, v } <- traceBenchmark benchNames.eval \_ ->
       traceGC γ e
-   { gc: GC evalG, gc_op: GC evalG_op, g, vα } <- graphBenchmark benchNames.eval \_ ->
+   { gc: GC evalG, gc_op: GC evalG_op, g, vα: _ } <- graphBenchmark benchNames.eval \_ ->
       graphGC gconfig e
 
    let out0 = δv (botOf v)
@@ -136,7 +134,6 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    when testing.bwdDuals $ do
       checkEq benchNames.bwdDlFwdOp benchNames.bwdDlCmp (fst in1) (fst in2)
       checkEq benchNames.bwdDlFwdOp benchNames.bwdDlCmp (snd in1) (snd in2)
-   void $ graphBenchmark benchNames.bwdAll \_ -> pure (evalG.bwd (topOf vα))
 
    out2 <- graphBenchmark benchNames.fwdDlBwdOp \_ -> pure (evalG_op.bwd in0)
    out3 <- graphBenchmark benchNames.fwdDlCmp \_ -> pure (evalG_dual.bwd in0)
