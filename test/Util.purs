@@ -55,8 +55,8 @@ benchNames
       , bwd :: String
       , demBy :: String
       , fwd :: String
-      , fwdDlBwdOp :: String
-      , fwdDlCmp :: String
+      , demBy_G_direct :: String
+      , demBy_G_suff_dual :: String
       }
 
 benchNames =
@@ -64,8 +64,8 @@ benchNames =
    , bwd: "Demands" -- Needed
    , demBy: "DemandedBy" -- Needed
    , fwd: "Suffices" -- Unsure
-   , fwdDlBwdOp: "DemandedBy" -- Needed
-   , fwdDlCmp: "Suff-Dual" -- Needed
+   , demBy_G_direct: "DemandedBy-Dir" -- Needed
+   , demBy_G_suff_dual: "DemandedBy-Suff" -- Needed
    }
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
@@ -124,10 +124,10 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
 
    let GC evalG_dual = dual (GC evalG)
 
-   out2 <- graphBenchmark benchNames.fwdDlBwdOp \_ -> pure (evalG_op.bwd in0)
-   out3 <- graphBenchmark benchNames.fwdDlCmp \_ -> pure (evalG_dual.bwd in0)
+   out2 <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
+   out3 <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)
    when testing.fwdDuals $
-      checkEq benchNames.fwdDlBwdOp benchNames.fwdDlCmp out2 out3
+      checkEq benchNames.demBy_G_direct benchNames.demBy_G_suff_dual out2 out3
 
 checkEq :: forall m a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => MonadError Error m => String -> String -> a -> a -> m Unit
 checkEq op1 op2 x y = do
