@@ -62,10 +62,10 @@ benchNames
 benchNames =
    { eval: "Eval" -- Neeeded
    , bwd: "Demands" -- Needed
-   , demBy: "DemandedBy" -- Needed
+   , demBy: "DemBy" -- Needed
    , fwd: "Suffices" -- Unsure
-   , demBy_G_direct: "DemandedBy-Dir" -- Needed
-   , demBy_G_suff_dual: "DemandedBy-Suff" -- Needed
+   , demBy_G_direct: "DemBy-Dir" -- Needed
+   , demBy_G_suff_dual: "DemBy-Suff" -- Needed
    }
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
