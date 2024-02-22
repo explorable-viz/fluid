@@ -31,6 +31,7 @@ type TestBwdSpec =
    , bwd_expect_file :: String
    , δv :: Selector Val -- relative to bot
    , fwd_expect :: String
+   , datasets :: Array (Bind String)
    }
 
 type TestWithDatasetSpec =
