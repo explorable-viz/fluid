@@ -55,25 +55,17 @@ benchNames
       , bwd :: String
       , demBy :: String
       , fwd :: String
-      , bwdDlFwdOp :: String
-      , bwdDlCmp :: String
-      , bwdAll :: String
-      , naiveFwd :: String
-      , fwdDlBwdOp :: String
-      , fwdDlCmp :: String
+      , demBy_G_direct :: String
+      , demBy_G_suff_dual :: String
       }
 
 benchNames =
-   { eval: "Eval"
-   , bwd: "Demands"
-   , demBy: "DemandedBy"
-   , fwd: "Suffices"
-   , bwdDlFwdOp: "BwdDlFwdOp"
-   , bwdDlCmp: "BwdDlCmp"
-   , bwdAll: "BwdAll"
-   , naiveFwd: "Naive-Fwd"
-   , fwdDlBwdOp: "DemandedBy"
-   , fwdDlCmp: "Suff-Dual"
+   { eval: "Eval" -- Neeeded
+   , bwd: "Demands" -- Needed
+   , demBy: "DemBy" -- Needed
+   , fwd: "Suffices" -- Unsure
+   , demBy_G_direct: "DemBy-Dir" -- Needed
+   , demBy_G_suff_dual: "DemBy-Suff" -- Needed
    }
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
@@ -82,7 +74,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
    traced@{ gc: GC evalT, v } <- traceBenchmark benchNames.eval \_ ->
       traceGC γ e
-   { gc: GC evalG, gc_op: GC evalG_op, g, vα } <- graphBenchmark benchNames.eval \_ ->
+   { gc: GC evalG, gc_op: GC evalG_op, g, vα: _ } <- graphBenchmark benchNames.eval \_ ->
       graphGC gconfig e
 
    let out0 = δv (botOf v)
@@ -131,22 +123,11 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
 
    let GC evalG_dual = dual (GC evalG)
-   in1 <- graphBenchmark benchNames.bwdDlFwdOp \_ -> pure (evalG_op.fwd out0)
-   in2 <- graphBenchmark benchNames.bwdDlCmp \_ -> pure (evalG_dual.fwd out0)
-   when testing.bwdDuals $ do
-      checkEq benchNames.bwdDlFwdOp benchNames.bwdDlCmp (fst in1) (fst in2)
-      checkEq benchNames.bwdDlFwdOp benchNames.bwdDlCmp (snd in1) (snd in2)
-   void $ graphBenchmark benchNames.bwdAll \_ -> pure (evalG.bwd (topOf vα))
 
-   out2 <- graphBenchmark benchNames.fwdDlBwdOp \_ -> pure (evalG_op.bwd in0)
-   out3 <- graphBenchmark benchNames.fwdDlCmp \_ -> pure (evalG_dual.bwd in0)
+   out2 <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
+   out3 <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)
    when testing.fwdDuals $
-      checkEq benchNames.fwdDlBwdOp benchNames.fwdDlCmp out2 out3
-
-   let GC evalG_dual_op = dual (GC evalG_op)
-   out4 <- benchmark benchNames.naiveFwd \_ -> pure (evalG_dual_op.fwd in0)
-   when testing.naiveFwd $
-      checkEq "Naive fwd" "Direct fwd" out4 out1
+      checkEq benchNames.demBy_G_direct benchNames.demBy_G_suff_dual out2 out3
 
 checkEq :: forall m a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => MonadError Error m => String -> String -> a -> a -> m Unit
 checkEq op1 op2 x y = do
