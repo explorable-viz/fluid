@@ -28,6 +28,7 @@ scratchpad = asTestSuite $ bwdSuite
      , bwd_expect_file: "pairs.expect"
      , fwd_expect: "((⸨3⸩, 4), 7)"
      , δv: fst (fst neg)
+     , datasets: []
      }
    ]
 
