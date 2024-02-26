@@ -6,11 +6,13 @@ import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
+-- import Data.Map (size)
 import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst, snd)
 import Desug (Desugaring, desugGC)
-import Effect.Class.Console (log)
+import Effect.Class (liftEffect)
+import Effect.Class.Console (log, logShow)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
@@ -21,7 +23,7 @@ import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
-import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
+import Test.Benchmark.Util (BenchRow(..), benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Thunk, Endo, check, checkSatisfies, debug, spyWhen, throw, (×))
 import Val (class Ann, Val)
@@ -41,8 +43,10 @@ test file progCxt spec (n × _) = do
    when debug.logging $ log ("**** initialConfig")
    gconfig <- initialConfig e progCxt
    testPretty s
-   _ × row_accum <- runWriterT (replicateM n (testProperties s gconfig spec))
-   pure $ row_accum `divRow` n
+   _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
+   let out@(BenchRow row_accum) = res `divRow` n
+   liftEffect $ logShow $ row_accum
+   pure $ out
 
 traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
 traceBenchmark name = benchmark ("T" <> "-" <> name)
