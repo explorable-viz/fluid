@@ -11,8 +11,7 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst, snd)
 import Desug (Desugaring, desugGC)
-import Effect.Class (liftEffect)
-import Effect.Class.Console (log, logShow)
+import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
@@ -23,7 +22,7 @@ import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
-import Test.Benchmark.Util (BenchRow(..), benchmark, divRow, recordGraphSize)
+import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Thunk, Endo, check, checkSatisfies, debug, spyWhen, throw, (×))
 import Val (class Ann, Val)
@@ -44,9 +43,7 @@ test file progCxt spec (n × _) = do
    gconfig <- initialConfig e progCxt
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
-   let out@(BenchRow row_accum) = res `divRow` n
-   liftEffect $ logShow $ row_accum
-   pure $ out
+   pure $ res `divRow` n
 
 traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
 traceBenchmark name = benchmark ("T" <> "-" <> name)
