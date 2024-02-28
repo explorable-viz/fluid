@@ -17,13 +17,11 @@ let minAndPrev (i, j) im1 jm1 ijm1 =
               ((i + 1, j ), minim)
           else ((i, j), minim);
 
-let extractPath indmatrix (i, j) =
-  let traverser (n, m) accum =
-      if (n == 1) `and` (m == 1)
-      then accum
-      else
-          traverser (indmatrix!(n, m)) ((n - 1, m - 1) : accum)
-  in traverser (i, j) Nil;
+let extractPath indmatrix (n, m) accum =
+    if (n == 1) `and` (m == 1)
+    then accum
+    else
+        extractPath indmatrix (indmatrix!(n, m)) ((n - 1, m - 1) : accum);
 
 let localMinUpdate seq1 seq2 cost (costmatrix, indmatrix) (i, j) =
     let iEntr = nth (i - 1) seq1;
@@ -46,4 +44,4 @@ let computeDTW seq1 seq2 cost window =
       indexing = nextIndices n m window;
       (finished, indices) = foldl (localMinUpdate seq1 seq2 cost) (initD, initI) indexing
   in
-  (finished, extractPath indices (n + 1, m + 1));
+  (finished, extractPath indices (n + 1, m + 1) Nil);
