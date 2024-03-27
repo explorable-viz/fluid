@@ -140,8 +140,8 @@ simplePattern pattern' =
       where
       listRest :: Endo (SParser ListRestPattern)
       listRest listRest' =
-         rBracket *> pure PEnd <|>
-            token.comma *> (PNext <$> pattern' <*> listRest')
+         rBracket *> pure PListEnd <|>
+            token.comma *> (PListNext <$> pattern' <*> listRest')
 
    -- Constructor name as a nullary constructor pattern.
    constr :: SParser Pattern

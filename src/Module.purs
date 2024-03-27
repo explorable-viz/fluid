@@ -7,6 +7,7 @@ import Affjax.Web (defaultRequest, printError, request)
 import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
@@ -29,7 +30,7 @@ import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
 import Test.Util.Debug (checking)
-import Util (type (×), AffError, concatM, mapLeft, (×))
+import Util (type (×), AffError, concatM, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 
@@ -53,7 +54,7 @@ loadFile' :: forall m. Folder -> File -> AffError m (File × String)
 loadFile' folder file = (file × _) <$> loadFile folder file
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
-parse src = liftEither <<< mapLeft (E.error <<< show) <<< runParser src
+parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
 parseProgram :: forall m. Folder -> File -> AffError m (Raw S.Expr)
 parseProgram folder file =

@@ -9,7 +9,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldM, foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\))
+import Data.List (List(..), drop, length, sortBy, take, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty ((:|))
@@ -19,6 +19,7 @@ import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (uncurry, fst, snd)
+import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataTypeFor)
 import Debug (trace)
 import Desugarable (class Desugarable, desugBwd, desug)
@@ -29,7 +30,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, maybeJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, assert, error, shapeMismatch, singleton, successful, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, definitelyFromLeft, error, shapeMismatch, singleton, successful, unimplemented, (×), (≜))
 import Util.Map (asMaplet, get, maplet)
 import Util.Pair (Pair(..))
 
@@ -69,8 +70,8 @@ data Pattern
    | PListNonEmpty Pattern ListRestPattern
 
 data ListRestPattern
-   = PEnd
-   | PNext Pattern ListRestPattern
+   = PListEnd
+   | PListNext Pattern ListRestPattern
 
 newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
 
@@ -306,14 +307,14 @@ pattContBwd _ _ = error absurd
 
 -- ListRestPattern × Cont
 pattCont_ListRest_Fwd :: forall a m. MonadError Error m => ListRestPattern -> Cont a -> m (Elim a)
-pattCont_ListRest_Fwd PEnd κ = pure (ElimConstr (maplet cNil κ))
-pattCont_ListRest_Fwd (PNext p o) κ = ElimConstr <$> maplet cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
+pattCont_ListRest_Fwd PListEnd κ = pure (ElimConstr (maplet cNil κ))
+pattCont_ListRest_Fwd (PListNext p o) κ = ElimConstr <$> maplet cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
 
 pattCont_ListRest_Bwd :: forall a. Elim a -> ListRestPattern -> Cont a
 pattCont_ListRest_Bwd (ElimVar _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimRecord _ _) _ = error absurd
-pattCont_ListRest_Bwd (ElimConstr m) PEnd = get cNil m
-pattCont_ListRest_Bwd (ElimConstr m) (PNext p o) = pattArgsBwd (Left p : Right o : Nil) (get cCons m)
+pattCont_ListRest_Bwd (ElimConstr m) PListEnd = get cNil m
+pattCont_ListRest_Bwd (ElimConstr m) (PListNext p o) = pattArgsBwd (Left p : Right o : Nil) (get cCons m)
 
 -- List (Pattern + ListRestPattern) × Cont
 pattArgsFwd :: forall a m. MonadError Error m => List (Pattern + ListRestPattern) -> Cont a -> m (Cont a)
@@ -332,8 +333,7 @@ clausesFwd (Clauses bs) = do
    -- REMOVE ME
    σ' <- clausesFwd_New (Clauses bs)
    trace
-      σ'
-      -- (orElse_NewFwd (ListEmpty bot) (first toList (unwrap (head bs))))
+      (σ' × orElse_NewFwd (ListEmpty bot) (first (toList >>> (Left <$> _)) (unwrap (head bs))))
       \_ -> do
          NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
          foldM maybeJoin σ σs
@@ -408,6 +408,58 @@ wurble ks@(((PConstr c _ : _) × _) : _) = do
    pure $ ContElim (ElimConstr (wrap (D.fromFoldable cκs)))
 wurble _ = error (shapeMismatch unit)
 
+-- First component π is stack of subpatterns active during processing of a single top-level pattern p,
+-- initially containing only p and ending up empty.
+type ClauseState a = List (Pattern + ListRestPattern) × Expr a
+
+pushPatt :: forall a. Pattern + ListRestPattern -> Endo (ClauseState a)
+pushPatt p = pushPatts (singleton p)
+
+pushPatts :: forall a. List (Pattern + ListRestPattern) -> Endo (ClauseState a)
+pushPatts π1 (π × s) = (π1 <> π) × s
+
+popPatts :: forall a. Int -> ClauseState a -> List (Pattern + ListRestPattern) × ClauseState a
+popPatts n (π × s) = take n π × drop n π × s
+
+withPatts
+   :: forall a
+    . List (Pattern + ListRestPattern)
+   -> (ClauseState a -> NonEmptyList (ClauseState a))
+   -> ClauseState a
+   -> NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
+withPatts π f k = popPatts (length π) <$> f (pushPatts π k)
+
+orElse_NewFwd :: forall a. Expr a -> ClauseState a -> NonEmptyList (ClauseState a)
+orElse_NewFwd _ (Nil × s) = singleton (Nil × s)
+orElse_NewFwd s' ((Left (PVar x) : π) × s) =
+   orElse_NewFwd s' (π × s) <#> pushPatt (Left (PVar x))
+orElse_NewFwd s' ((Left (PConstr c π) : π') × s) = ks `appendList` ks'
+   where
+   ks = withPatts (Left <$> π) (orElse_NewFwd s') (π' × s)
+      <#> (\(π1 × k) -> pushPatt (Left (PConstr c (definitelyFromLeft <$> π1))) k)
+   cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c
+   ks' = cs <#> \c' -> ((π' <#> anon) × s')
+      # pushPatt (Left (PConstr c' (replicate (successful (arity c')) (PVar varAnon))))
+orElse_NewFwd s' ((Left (PRecord xps) : π) × s) =
+   withPatts (Left <<< snd <$> xps) (orElse_NewFwd s') (π × s)
+      <#> (\(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (definitelyFromLeft <$> π1)))) k)
+orElse_NewFwd s' ((Left PListEmpty : π) × s) =
+   orElse_NewFwd s' (π × s) <#> pushPatt (Left PListEmpty)
+orElse_NewFwd s' ((Left (PListNonEmpty p o) : π) × s) =
+   withPatts (Left p : Right o : Nil) (orElse_NewFwd s') (π × s) <#> uncurry pushPatts
+orElse_NewFwd s' ((Right (PListNext p o) : π) × s) =
+   withPatts (Left p : Right o : Nil) (orElse_NewFwd s') (π × s) <#> uncurry pushPatts
+orElse_NewFwd s' ((Right PListEnd : π) × s) =
+   orElse_NewFwd s' (π × s) <#> pushPatt (Right PListEnd)
+
+anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
+anon (Left _) = Left (PVar varAnon)
+anon (Right o) = Right (anonListRest o)
+   where
+   anonListRest :: ListRestPattern -> ListRestPattern
+   anonListRest PListEnd = PListEnd
+   anonListRest (PListNext _ o') = PListNext (PVar varAnon) (anonListRest o')
+
 -- orElse
 orElseFwd :: forall a. Cont a -> a -> Cont a
 orElseFwd ContNone _ = error absurd
@@ -434,8 +486,8 @@ orElseBwd (ContElim (ElimConstr m)) (π : πs) =
          Left (PConstr c ps) -> c × (Left <$> ps)
          Left PListEmpty -> cNil × Nil
          Left (PListNonEmpty p o) -> cCons × (Left p : Right o : Nil)
-         Right PEnd -> cNil × Nil
-         Right (PNext p o) -> cCons × (Left p : Right o : Nil)
+         Right PListEnd -> cNil × Nil
+         Right (PListNext p o) -> cCons × (Left p : Right o : Nil)
       κ' × α = unlessBwd m c
    in
       orElseBwd κ' (πs' <> πs) #
