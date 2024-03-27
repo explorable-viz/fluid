@@ -256,9 +256,8 @@ listCompFwd (α × Nil × s) =
 listCompFwd (α × (Guard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
    E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
-listCompFwd (α × (Declaration (VarDef π s) : qs) × s') = do
-   e <- ContExpr <$> listCompFwd (α × qs × s')
-   σ <- pattContFwd π e
+listCompFwd (α × (Declaration (VarDef p s) : qs) × s') = do
+   σ <- clausesFwd (Clauses (singleton (Clause (singleton p × ListComp α s' qs))))
    E.App (E.Lambda α σ) <$> desug s
 listCompFwd (α × (Generator p s : qs) × s') = do
    e <- ContExpr <$> listCompFwd (α × qs × s')
