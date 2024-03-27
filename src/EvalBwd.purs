@@ -16,8 +16,8 @@ import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable) as Set
 import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
-import Dict (Dict)
-import Dict (fromFoldable) as D
+import Dict (Dict(..))
+import Dict (empty, fromFoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), bv)
@@ -185,7 +185,7 @@ evalBwd' v (T.Let (T.VarDef w t1) t2) =
    where
    γ1γ2 × e2 × α2 = evalBwd' v t2
    γ1 × γ2 = append_inv (bv w) γ1γ2
-   v' × σ = matchBwd γ2 ContNone α2 w
+   v' × σ = matchBwd γ2 (ContExpr (Record bot (Dict D.empty))) α2 w
    γ1' × e1 × α1 = evalBwd' v' t1
 evalBwd' v (T.LetRec (RecDefs _ ρ) t) =
    (γ1 ∨ γ1') × LetRec (RecDefs (α ∨ α') ρ') e × (α ∨ α')

@@ -25,7 +25,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (×), absurd, both, check, error, orElse, singleton, successful, throw, unzip, with)
+import Util (type (×), (×), both, check, orElse, singleton, successful, throw, unzip, with)
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set (empty, (∪))
@@ -62,7 +62,6 @@ matchMany (v : vs) (ContElim σ) = do
    pure $ γ `disjointUnion` γ' × κ'' × (α ∧ β) × (w : ws)
 matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
-matchMany _ _ = error absurd
 
 closeDefs :: forall a. Env a -> Dict (Elim a) -> a -> Env a
 closeDefs γ ρ α = Env

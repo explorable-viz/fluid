@@ -3,7 +3,6 @@ module Val where
 import Prelude hiding (absurd, append)
 
 import Bind (Var)
-import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array ((!!))
 import Data.Array (zipWith) as A
@@ -14,7 +13,7 @@ import Data.List (List(..), (:), zipWith)
 import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Traversable (class Traversable, sequence, sequenceDefault, traverse)
+import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
@@ -23,8 +22,8 @@ import Expr (Elim, fv)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, topOf, (∨))
-import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (≞), (⊆))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, expand, topOf, (∨))
+import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, isEmpty, size, union, (\\), (∈), (∪))
@@ -226,51 +225,39 @@ instance Traversable MatrixRep where
    sequence = sequenceDefault
 
 instance JoinSemilattice a => JoinSemilattice (DictRep a) where
-   maybeJoin (DictRep svs) (DictRep svs') = DictRep <$> maybeJoin svs svs'
-   join v = definedJoin v
+   join (DictRep svs) (DictRep svs') = DictRep (svs ∨ svs')
 
 instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
-   maybeJoin (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × βi') × (j' × βj'))) =
-      MatrixRep <$>
-         ( maybeJoin vss vss'
-              `lift2 (×)` (((_ × (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)` ((_ × (βj ∨ βj')) <$> (j ≞ j')))
-         )
-   join v = definedJoin v
+   join (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × βi') × (j' × βj'))) =
+      MatrixRep ((vss ∨ vss') × (((i ≜ i') × (βi ∨ βi')) × (((j ≜ j') × (βj ∨ βj')))))
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
-   maybeJoin (Val α u) (Val α' v) = Val (α ∨ α') <$> maybeJoin u v
+   join (Val α u) (Val α' v) = Val (α ∨ α') (u ∨ v)
 
-   join v = definedJoin v
-
--- Not equivalent to sequence (maybeJoin <$> x <*> y) because Dict.maybeJoin only requires compatibility
+-- Not equivalent to sequence (join <$> x <*> y) because Dict.join only requires compatibility
 -- whereas Dict.apply requires domains to be equal.
 instance JoinSemilattice a => JoinSemilattice (BaseVal a) where
-   maybeJoin (Int n) (Int n') = Int <$> (n ≞ n')
-   maybeJoin (Float n) (Float n') = Float <$> (n ≞ n')
-   maybeJoin (Str s) (Str s') = Str <$> (s ≞ s')
-   maybeJoin (Record xvs) (Record xvs') = Record <$> maybeJoin xvs xvs'
-   maybeJoin (Dictionary d) (Dictionary d') = Dictionary <$> maybeJoin d d'
-   maybeJoin (Constr c vs) (Constr c' us) = Constr <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin (Matrix m) (Matrix m') = Matrix <$> maybeJoin m m'
-   maybeJoin (Fun φ) (Fun φ') = Fun <$> maybeJoin φ φ'
-   maybeJoin x y = sequence (maybeJoin <$> x <*> y)
-
-   join v = definedJoin v
+   join (Int n) (Int n') = Int (n ≜ n')
+   join (Float n) (Float n') = Float (n ≜ n')
+   join (Str s) (Str s') = Str (s ≜ s')
+   join (Record xvs) (Record xvs') = Record (xvs ∨ xvs')
+   join (Dictionary d) (Dictionary d') = Dictionary (d ∨ d')
+   join (Constr c vs) (Constr c' us) = Constr (c ≜ c') (vs ∨ us)
+   join (Matrix m) (Matrix m') = Matrix (m ∨ m')
+   join (Fun φ) (Fun φ') = Fun (φ ∨ φ')
+   join x y = (∨) <$> x <*> y
 
 instance JoinSemilattice a => JoinSemilattice (Fun a) where
-   maybeJoin (Closure γ ρ σ) (Closure γ' ρ' σ') =
-      Closure <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
-   maybeJoin (Foreign φ vs) (Foreign _ vs') =
-      Foreign φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
-   maybeJoin (PartialConstr c vs) (PartialConstr c' us) =
-      PartialConstr <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin _ _ = shapeMismatch unit
-
-   join v = definedJoin v
+   join (Closure γ ρ σ) (Closure γ' ρ' σ') =
+      Closure (γ ∨ γ') (ρ ∨ ρ') (σ ∨ σ')
+   join (Foreign φ vs) (Foreign _ vs') =
+      Foreign φ (vs ∨ vs') -- TODO: require φ == φ'
+   join (PartialConstr c vs) (PartialConstr c' us) =
+      PartialConstr (c ≜ c') (vs ∨ us)
+   join _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Env a) where
-   maybeJoin (Env γ) (Env γ') = Env <$> maybeJoin γ γ'
-   join v = definedJoin v
+   join (Env γ) (Env γ') = Env (γ ∨ γ')
 
 instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
    expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')

@@ -7,7 +7,6 @@ import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError
 import Control.Monad.Except (Except, ExceptT, runExcept)
 import Control.MonadPlus (class Alternative, guard)
 import Data.Array ((!!), updateAt)
-import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
 import Data.Functor.Compose (Compose)
@@ -149,8 +148,13 @@ orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
 orElse s Nothing = throw s
 orElse _ (Just x) = pure x
 
-mapLeft :: forall a b c. (a -> c) -> Either a b -> Either c b
-mapLeft = flip bimap identity
+definitelyFromLeft :: forall a b. a + b -> a
+definitelyFromLeft (Left a) = a
+definitelyFromLeft (Right _) = error "isLeft: Right"
+
+definitelyFromRight :: forall a b. a + b -> b
+definitelyFromRight (Left _) = error "isRight: Left"
+definitelyFromRight (Right a) = a
 
 successful :: forall a. MayFail a -> a
 successful = runExcept >>> case _ of
@@ -220,6 +224,10 @@ infixl 8 unsafeIndex as !
 nonEmpty :: forall a. List a -> NonEmptyList a
 nonEmpty Nil = error absurd
 nonEmpty (x : xs) = NonEmptyList (x :| xs)
+
+-- Similar to NonEmptyList.appendFoldable but without copying the list
+appendList :: forall a. NonEmptyList a -> List a -> NonEmptyList a
+appendList (NonEmptyList (x :| xs)) ys = NonEmptyList (x :| (xs <> ys))
 
 -- Also defined in Data.Profunctor.Monoidal, but perhaps not "standard library"
 dup :: forall a. a -> a × a

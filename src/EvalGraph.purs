@@ -29,7 +29,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, error, orElse, singleton, spyFunWhen, successful, throw, with, (×), (⊆))
+import Util (type (×), Endo, check, concatM, orElse, singleton, spyFunWhen, successful, throw, with, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((\\), (∪), empty)
@@ -74,7 +74,6 @@ matchMany (v : vs) (ContElim σ) = do
    pure $ γ `disjointUnion` γ' × κ' × (αs ∪ βs)
 matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
-matchMany _ _ = error "absurd"
 
 closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =

@@ -204,8 +204,8 @@ prettyPattConstr _ (Cons p Nil) = pretty p
 prettyPattConstr sep (Cons p ps) = pretty p .<>. sep .<>. prettyPattConstr sep ps
 
 instance Pretty ListRestPattern where
-   pretty (PNext p l) = text str.comma .<>. pretty p .<>. pretty l
-   pretty PEnd = text str.rBracket
+   pretty (PListNext p l) = text str.comma .<>. pretty p .<>. pretty l
+   pretty PListEnd = text str.rBracket
 
 prettyClause :: forall a. Ann a => Doc -> Clause a -> Doc
 prettyClause sep (Clause (ps × e)) = prettyPattConstr empty (toList ps) .<>. sep .<>. pretty e
@@ -387,7 +387,6 @@ else instance (Pretty a, Pretty b) => Pretty (a × b) where
    pretty (a × b) = parentheses $ pretty a .<>. text str.comma .<>. pretty b
 
 instance Highlightable a => Pretty (Cont a) where
-   pretty ContNone = empty
    pretty (ContExpr e) = pretty e
    pretty (ContElim σ) = pretty σ
 

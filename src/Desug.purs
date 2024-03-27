@@ -20,6 +20,7 @@ type Desugaring a =
 desugGC
    :: forall a m
     . MonadError Error m
+   => Eq a
    => BoundedLattice a
    => Raw S.Expr
    -> m (Desugaring a)

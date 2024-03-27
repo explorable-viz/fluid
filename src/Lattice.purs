@@ -2,21 +2,16 @@ module Lattice where
 
 import Prelude hiding (absurd, join, top)
 
-import Bind (Bind)
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError)
 import Data.Array (zipWith) as A
 import Data.Bifunctor (bimap)
-import Data.Foldable (length, foldM)
+import Data.Foldable (length)
 import Data.List (List, zipWith)
-import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
-import Data.Traversable (sequence)
 import Dict (Dict)
-import Effect.Exception (Error)
-import Util (type (×), Endo, assert, shapeMismatch, successfulWith, (×))
-import Util.Map (insert, intersectionWith, keys, lookup, toUnfoldable, unionWith, update)
+import Util (type (×), Endo, assert, shapeMismatch, (×))
+import Util.Map (intersectionWith, keys, unionWith)
 import Util.Pair (Pair(..))
 import Util.Set ((∪))
 import Util.Map as Map
@@ -24,8 +19,6 @@ import Util.Map as Map
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
    join :: a -> a -> a
-   -- soft failure for joining incompatible eliminators, used to desugar function clauses; see #776
-   maybeJoin :: forall m. MonadError Error m => a -> a -> m a
 
 class MeetSemilattice a where
    meet :: a -> a -> a
@@ -54,7 +47,6 @@ relativeComplement a = neg >>> (_ ∧ a)
 
 instance JoinSemilattice Boolean where
    join = (||)
-   maybeJoin x y = pure (x ∨ y)
 
 instance MeetSemilattice Boolean where
    meet = (&&)
@@ -72,7 +64,6 @@ instance Neg Boolean where
 
 instance JoinSemilattice Unit where
    join _ = identity
-   maybeJoin x y = pure (x ∨ y)
 
 instance MeetSemilattice Unit where
    meet _ = identity
@@ -85,9 +76,6 @@ instance BoundedMeetSemilattice Unit where
 
 instance Neg Unit where
    neg = identity
-
-definedJoin :: forall a. JoinSemilattice a => a -> a -> a
-definedJoin x y = successfulWith "Join undefined" (maybeJoin x y)
 
 instance (Functor f, BoundedJoinSemilattice a) => BotOf (Unit × Raw f) (a × f a) where
    botOf = const bot *** botOf -- for dictionary selections
@@ -120,8 +108,7 @@ type 𝔹 = Boolean
 type Raw (f :: Type -> Type) = f Unit
 
 instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) where
-   join ab = definedJoin ab
-   maybeJoin (a × a') (b × b') = maybeJoin a b `lift2 (×)` maybeJoin a' b'
+   join (a × a') (b × b') = (a ∨ b) × (a' ∨ b')
 
 instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) where
    meet (a × a') (b × b') = meet a b × meet a' b'
@@ -145,30 +132,19 @@ instance (BooleanLattice a, BooleanLattice b) => BooleanLattice (a × b)
 else instance (BoundedLattice (f a), Neg (f a)) => BooleanLattice (f a)
 
 instance JoinSemilattice a => JoinSemilattice (Pair a) where
-   join ab = definedJoin ab
-   maybeJoin (Pair a a') (Pair b b') = lift2 Pair (maybeJoin a b) (maybeJoin a' b')
+   join (Pair a a') (Pair b b') = Pair (a ∨ b) (a' ∨ b')
 
 instance JoinSemilattice a => JoinSemilattice (List a) where
-   join xs = definedJoin xs
-   maybeJoin xs ys
-      | (length xs :: Int) == length ys = sequence (zipWith maybeJoin xs ys)
+   join xs ys
+      | (length xs :: Int) == length ys = zipWith (∨) xs ys
       | otherwise = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
-   join = unionWith (∨) -- faster than definedJoin
-   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Bind a))
-
-mayFailUpdate :: forall a m. MonadError Error m => JoinSemilattice a => Dict a -> Bind a -> m (Dict a)
-mayFailUpdate m (k × v) =
-   -- TODO: reimplement in terms of single call to "alter"?
-   case lookup k m of
-      Nothing -> pure (insert k v m)
-      Just v' -> update <$> (const <$> maybeJoin v' v) <@> k <@> m
+   join = unionWith (∨)
 
 instance JoinSemilattice a => JoinSemilattice (Array a) where
-   join xs = definedJoin xs
-   maybeJoin xs ys
-      | length xs == (length ys :: Int) = sequence (A.zipWith maybeJoin xs ys)
+   join xs ys
+      | length xs == (length ys :: Int) = A.zipWith (∨) xs ys
       | otherwise = shapeMismatch unit
 
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
