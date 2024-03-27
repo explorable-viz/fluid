@@ -30,7 +30,7 @@ import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, definitelyFromLeft, error, shapeMismatch, singleton, successful, throw, unimplemented, (×), (≜))
-import Util.Map (asMaplet, get)
+import Util.Map (get)
 import Util.Pair (Pair(..))
 
 -- Surface language expressions.
@@ -461,14 +461,6 @@ anon (Right o) = Right (anonListRest o)
    anonListRest (PListNext _ o') = PListNext (PVar varAnon) (anonListRest o')
 
 -- orElse
-orElseFwd :: forall a. Cont a -> a -> Cont a
-orElseFwd (ContExpr e) _ = ContExpr e
-orElseFwd (ContElim (ElimConstr m)) α = ContElim (ElimConstr (unlessFwd (c × orElseFwd κ α) α))
-   where
-   c × κ = asMaplet m
-orElseFwd (ContElim (ElimRecord xs κ)) α = ContElim (ElimRecord xs (orElseFwd κ α))
-orElseFwd (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElseFwd κ α))
-
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot
 orElseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
@@ -492,16 +484,8 @@ orElseBwd (ContElim (ElimConstr m)) (π : πs) =
          (\κ'' -> ContElim (ElimConstr (wrap $ D.fromFoldable (singleton (c × κ'') :: List _)))) *** (α ∨ _)
 orElseBwd _ _ = error absurd
 
--- In forward direction, extend singleton branch to set of branches where any missing constructors have
--- been mapped to the empty list, using anonymous variables in any generated patterns. Going backward, discard
--- all synthesised branches, returning the original singleton branch for c, plus join of annotations on the
--- empty lists used for bodies of synthesised branches.
-unlessFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
-unlessFwd (c × κ) α = wrap $ D.fromFoldable ((c × κ) : cκs)
-   where
-   defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
-   cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c)
-
+-- Going backward, discard all synthesised branches, returning the original singleton branch for c, plus
+-- join of annotations on empty lists used for bodies of synthesised branches.
 unlessBwd :: forall a. BoundedJoinSemilattice a => Dict (Cont a) -> Ctr -> Cont a × a
 unlessBwd m c =
    let
