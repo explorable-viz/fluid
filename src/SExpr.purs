@@ -379,6 +379,12 @@ popConstr :: forall a m. MonadError Error m => DataType -> ClausesState' a -> m 
 popConstr d (((Left (PConstr c π) : π') × π'' × s) : ks) =
    assert (length π == successful (arity c) && successful (dataTypeFor c) == d) $
       forConstr c (((Left <$> π) <> π') × π'' × s) <$> popConstr d ks
+popConstr d (((Left PListEmpty : π) × π' × s) : ks) =
+   assert (d == successful (dataTypeFor cNil)) $
+      forConstr cNil (π × π' × s) <$> popConstr d ks
+popConstr d (((Left (PListNonEmpty p o) : π) × π' × s) : ks) =
+   assert (d == successful (dataTypeFor cCons)) $
+      forConstr cCons ((Left p : Right o : π) × π' × s) <$> popConstr d ks
 popConstr _ Nil = pure Nil
 popConstr _ _ = throw (shapeMismatch unit)
 
