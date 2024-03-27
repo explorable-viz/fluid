@@ -130,8 +130,12 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
    flatten (Left ds') = Left <$> toList ds'
    flatten (Right δ) = pure (Right δ)
 
+-- Use of eliminators to establish module bindings is a bit naff, because we don't really have a notion of
+-- "rest of module" to use as continuation. So use empty record (unit tuple) as continuation, and disregard
+-- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
-varDefFwd (VarDef π s) = E.VarDef <$> pattContFwd π (ContNone :: Cont a) <*> desug s
+varDefFwd (VarDef p s) =
+   E.VarDef <$> clausesFwd (Clauses (singleton (Clause (singleton p × Record top Nil)))) <*> desug s
 
 -- VarDefs
 varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
