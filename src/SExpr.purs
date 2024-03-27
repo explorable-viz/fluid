@@ -4,6 +4,7 @@ import Prelude hiding (absurd, top)
 
 import Bind (Bind, Var, varAnon, (↦), keys)
 import Control.Monad.Error.Class (class MonadError)
+import Data.Bitraversable (rtraverse)
 import Data.Either (Either(..))
 import Data.Foldable (foldM, foldl)
 import Data.Function (applyN, on)
@@ -13,11 +14,13 @@ import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, (***))
+import Data.Set (Set)
 import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
-import Data.Traversable (traverse)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (uncurry, fst, snd)
-import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
+import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataTypeFor)
+import Debug (trace)
 import Desugarable (class Desugarable, desugBwd, desug)
 import Dict (Dict)
 import Dict (fromFoldable) as D
@@ -26,7 +29,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, maybeJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, error, singleton, successful, unimplemented, (×))
+import Util (type (+), type (×), Endo, absurd, assert, error, shapeMismatch, singleton, successful, unimplemented, (×), (≜))
 import Util.Map (asMaplet, get, maplet)
 import Util.Pair (Pair(..))
 
@@ -326,8 +329,14 @@ pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim 
 -- Clauses
 clausesFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Clauses a -> m (Elim a)
 clausesFwd (Clauses bs) = do
-   NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
-   foldM maybeJoin σ σs
+   -- REMOVE ME
+   σ' <- clausesFwd_New (Clauses bs)
+   trace
+      σ'
+      -- (orElse_NewFwd (ListEmpty bot) (first toList (unwrap (head bs))))
+      \_ -> do
+         NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
+         foldM maybeJoin σ σs
    where
    pattsExprFwd :: NonEmptyList Pattern × Expr a -> m (Elim a)
    pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desug s) >>= pattContFwd p
@@ -346,6 +355,58 @@ clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
       where
       next (E.Lambda _ τ) = pattsExprBwd (NonEmptyList (p' :| ps) × s) τ
       next _ = error absurd
+
+clausesFwd_New :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
+clausesFwd_New (Clauses cl) = asElim <$> wurble ks
+   where
+   ks = toList cl <#> \(Clause (NonEmptyList (p :| π) × s)) -> (p : Nil) × π × s
+
+-- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
+type ClauseState' a = List Pattern × List Pattern × Expr a
+type ClausesState' a = List (ClauseState' a)
+
+popArg :: forall a. ClausesState' a -> ClausesState' a
+popArg ((Nil × (p : π) × s) : ks) = ((p : Nil) × π × s) : popArg ks
+popArg Nil = Nil
+popArg _ = error (shapeMismatch unit)
+
+popVar :: forall a. Var -> ClausesState' a -> ClausesState' a
+popVar x (((PVar x' : π) × π' × s) : ks) = (π × π' × s) : popVar (x ≜ x') ks
+popVar _ Nil = Nil
+popVar _ _ = error (shapeMismatch unit)
+
+popConstr :: forall a. DataType -> ClausesState' a -> List (Ctr × ClausesState' a)
+popConstr d (((PConstr c π : π') × π'' × s) : ks) =
+   assert (length π == successful (arity c) && successful (dataTypeFor c) == d) $
+      popConstr d ks # forConstr (((π <> π') × π'' × s))
+   where
+   forConstr :: ClauseState' a -> Endo (List (Ctr × ClausesState' a))
+   forConstr k Nil = (c × (k : Nil)) : Nil
+   forConstr k ((c' × ks') : cks)
+      | c == c' = (c' × (k : ks')) : cks
+      | otherwise = (c' × ks') : forConstr k cks
+popConstr _ Nil = Nil
+popConstr _ _ = error (shapeMismatch unit)
+
+popRecord :: forall a. Set Var -> ClausesState' a -> ClausesState' a
+popRecord xs (((PRecord xps : π) × π' × s) : ks) =
+   assert (keys xps == xs) ((((xps <#> snd) <> π) × π' × s) : popRecord xs ks)
+popRecord _ Nil = Nil
+popRecord _ _ = error (shapeMismatch unit)
+
+wurble :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
+wurble ((Nil × Nil × s) : Nil) =
+   ContExpr <$> desug s
+wurble ks@((Nil × _) : _) =
+   ContExpr <$> E.Lambda top <$> asElim <$> wurble (popArg ks)
+wurble ks@(((PVar x : _) × _) : _) =
+   ContElim <$> ElimVar x <$> wurble (popVar x ks)
+wurble ks@(((PRecord xps : _) × _) : _) =
+   ContElim <$> ElimRecord (keys xps) <$> wurble (popRecord (keys xps) ks)
+wurble ks@(((PConstr c _ : _) × _) : _) = do
+   cκs <- sequence $ rtraverse wurble <$> popConstr (successful (dataTypeFor c)) ks
+   pure $ ContElim (ElimConstr (wrap (D.fromFoldable cκs)))
+wurble _ = error (shapeMismatch unit)
 
 -- orElse
 orElseFwd :: forall a. Cont a -> a -> Cont a
