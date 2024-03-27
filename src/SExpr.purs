@@ -408,7 +408,8 @@ wurble ks@(((PRecord xps : _) × _) : _) =
 wurble ks@(((PConstr c _ : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor c)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
-wurble ((_ × _) : _) = throw (shapeMismatch unit)
+wurble (((PListEmpty : _) × _) : _) = error unimplemented
+wurble (((PListNonEmpty _ _ : _) × _) : _) = error unimplemented
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and ending up empty.
