@@ -264,7 +264,7 @@ listCompFwd (α × (Declaration (VarDef p s) : qs) × s') = do
    σ <- clausesFwd (Clauses (singleton (Clause (singleton p × ListComp α s' qs))))
    E.App (E.Lambda α σ) <$> desug s
 listCompFwd (α × (Generator p s : qs) × s') = do
-   let ks = orElseFwd_New (ListEmpty α) ((Left p : Nil) × ListComp α s' qs)
+   let ks = orElseFwd (ListEmpty α) ((Left p : Nil) × ListComp α s' qs)
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
    E.App (E.App (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
 
@@ -314,7 +314,7 @@ pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim 
 -- Clauses
 clausesFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
 clausesFwd μ =
-   -- trace (orElseFwd_New (ListEmpty bot) (first (toList >>> (Left <$> _)) (unwrap (head bs)))) \_ ->
+   -- trace (orElseFwd (ListEmpty bot) (first (toList >>> (Left <$> _)) (unwrap (head bs)))) \_ ->
    clausesStateFwd (toClausesState μ) <#> asElim
 
 toClausesState :: forall a. Clauses a -> ClausesState' a
@@ -427,30 +427,30 @@ withPatts
    -> NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
 withPatts π f k = popPatts (length π) <$> f (pushPatts π k)
 
-orElseFwd_New :: forall a. Expr a -> ClauseState a -> NonEmptyList (ClauseState a)
-orElseFwd_New _ (Nil × s) = singleton (Nil × s)
-orElseFwd_New s' ((Left (PVar x) : π) × s) =
-   orElseFwd_New s' (π × s) <#> pushPatt (Left (PVar x))
-orElseFwd_New s' ((Left (PConstr c π) : π') × s) = ks `appendList` ks'
+orElseFwd :: forall a. Expr a -> ClauseState a -> NonEmptyList (ClauseState a)
+orElseFwd _ (Nil × s) = singleton (Nil × s)
+orElseFwd s' ((Left (PVar x) : π) × s) =
+   orElseFwd s' (π × s) <#> pushPatt (Left (PVar x))
+orElseFwd s' ((Left (PConstr c π) : π') × s) = ks `appendList` ks'
    where
-   ks = withPatts (Left <$> π) (orElseFwd_New s') (π' × s)
+   ks = withPatts (Left <$> π) (orElseFwd s') (π' × s)
       <#> (\(π1 × k) -> pushPatt (Left (PConstr c (definitelyFromLeft <$> π1))) k)
    cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c
    ks' = cs <#> \c' -> ((π' <#> anon) × s')
       # pushPatt (Left (PConstr c' (replicate (successful (arity c')) (PVar varAnon))))
-orElseFwd_New s' ((Left (PRecord xps) : π) × s) =
-   withPatts (Left <<< snd <$> xps) (orElseFwd_New s') (π × s)
+orElseFwd s' ((Left (PRecord xps) : π) × s) =
+   withPatts (Left <<< snd <$> xps) (orElseFwd s') (π × s)
       <#> (\(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (definitelyFromLeft <$> π1)))) k)
-orElseFwd_New s' ((Left PListEmpty : π) × s) = ks `appendList` (k : Nil)
+orElseFwd s' ((Left PListEmpty : π) × s) = ks `appendList` (k : Nil)
    where
-   ks = orElseFwd_New s' (π × s) <#> pushPatt (Left PListEmpty)
+   ks = orElseFwd s' (π × s) <#> pushPatt (Left PListEmpty)
    k = (((π <#> anon) × s') # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
-orElseFwd_New s' ((Left (PListNonEmpty p o) : π) × s) =
-   withPatts (Left p : Right o : Nil) (orElseFwd_New s') (π × s) <#> uncurry pushPatts
-orElseFwd_New s' ((Right (PListNext p o) : π) × s) =
-   withPatts (Left p : Right o : Nil) (orElseFwd_New s') (π × s) <#> uncurry pushPatts
-orElseFwd_New s' ((Right PListEnd : π) × s) =
-   orElseFwd_New s' (π × s) <#> pushPatt (Right PListEnd)
+orElseFwd s' ((Left (PListNonEmpty p o) : π) × s) =
+   withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s) <#> uncurry pushPatts
+orElseFwd s' ((Right (PListNext p o) : π) × s) =
+   withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s) <#> uncurry pushPatts
+orElseFwd s' ((Right PListEnd : π) × s) =
+   orElseFwd s' (π × s) <#> pushPatt (Right PListEnd)
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left (PVar varAnon)
