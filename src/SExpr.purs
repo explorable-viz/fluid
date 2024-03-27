@@ -20,7 +20,7 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (uncurry, fst, snd)
 import Data.Unfoldable (replicate)
-import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataTypeFor)
+import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desugBwd, desug)
 import Dict (Dict)
 import Dict (fromFoldable) as D
@@ -30,7 +30,7 @@ import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, definitelyFromLeft, error, shapeMismatch, singleton, successful, throw, unimplemented, (×), (≜))
-import Util.Map (asMaplet, get, maplet)
+import Util.Map (asMaplet, get)
 import Util.Pair (Pair(..))
 
 -- Surface language expressions.
@@ -290,15 +290,6 @@ listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((Generator 
 listCompBwd _ _ = error absurd
 
 -- Pattern × Cont
-pattContFwd :: forall a m. MonadError Error m => Pattern -> Cont a -> m (Elim a)
-pattContFwd (PVar x) κ = pure (ElimVar x κ)
-pattContFwd (PConstr c ps) κ =
-   checkArity c (length ps) *> (ElimConstr <$> maplet c <$> pattArgsFwd (Left <$> ps) κ)
-pattContFwd (PRecord xps) κ =
-   ElimRecord (keys xps) <$> pattArgsFwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
-pattContFwd PListEmpty κ = pure (ElimConstr (maplet cNil κ))
-pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> maplet cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
-
 pattContBwd :: forall a. Pattern -> Elim a -> Cont a
 pattContBwd (PVar _) (ElimVar _ κ) = κ
 pattContBwd (PConstr c ps) (ElimConstr m) = pattArgsBwd (Left <$> ps) (get c m)
@@ -308,10 +299,6 @@ pattContBwd (PRecord xps) (ElimRecord _ κ) = pattArgsBwd ((snd >>> Left) <$> so
 pattContBwd _ _ = error absurd
 
 -- ListRestPattern × Cont
-pattCont_ListRest_Fwd :: forall a m. MonadError Error m => ListRestPattern -> Cont a -> m (Elim a)
-pattCont_ListRest_Fwd PListEnd κ = pure (ElimConstr (maplet cNil κ))
-pattCont_ListRest_Fwd (PListNext p o) κ = ElimConstr <$> maplet cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
-
 pattCont_ListRest_Bwd :: forall a. Elim a -> ListRestPattern -> Cont a
 pattCont_ListRest_Bwd (ElimVar _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimRecord _ _) _ = error absurd
@@ -319,11 +306,6 @@ pattCont_ListRest_Bwd (ElimConstr m) PListEnd = get cNil m
 pattCont_ListRest_Bwd (ElimConstr m) (PListNext p o) = pattArgsBwd (Left p : Right o : Nil) (get cCons m)
 
 -- List (Pattern + ListRestPattern) × Cont
-pattArgsFwd :: forall a m. MonadError Error m => List (Pattern + ListRestPattern) -> Cont a -> m (Cont a)
-pattArgsFwd Nil κ = pure κ
-pattArgsFwd (Left p : πs) κ = ContElim <$> (pattArgsFwd πs κ >>= pattContFwd p)
-pattArgsFwd (Right o : πs) κ = ContElim <$> (pattArgsFwd πs κ >>= pattCont_ListRest_Fwd o)
-
 pattArgsBwd :: forall a. List (Pattern + ListRestPattern) -> Endo (Cont a)
 pattArgsBwd Nil κ = κ
 pattArgsBwd (Left p : πs) σ = pattArgsBwd πs (pattContBwd p (asElim σ))
