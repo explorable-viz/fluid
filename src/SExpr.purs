@@ -455,8 +455,10 @@ orElseFwd_New s' ((Left (PConstr c π) : π') × s) = ks `appendList` ks'
 orElseFwd_New s' ((Left (PRecord xps) : π) × s) =
    withPatts (Left <<< snd <$> xps) (orElseFwd_New s') (π × s)
       <#> (\(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (definitelyFromLeft <$> π1)))) k)
-orElseFwd_New s' ((Left PListEmpty : π) × s) =
-   orElseFwd_New s' (π × s) <#> pushPatt (Left PListEmpty)
+orElseFwd_New s' ((Left PListEmpty : π) × s) = ks `appendList` (k : Nil)
+   where
+   ks = orElseFwd_New s' (π × s) <#> pushPatt (Left PListEmpty)
+   k = (((π <#> anon) × s') # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
 orElseFwd_New s' ((Left (PListNonEmpty p o) : π) × s) =
    withPatts (Left p : Right o : Nil) (orElseFwd_New s') (π × s) <#> uncurry pushPatts
 orElseFwd_New s' ((Right (PListNext p o) : π) × s) =
