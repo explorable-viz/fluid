@@ -427,10 +427,12 @@ wurble ks@(((Left PListEmpty : _) × _) : _) = do
 wurble ks@(((Left (PListNonEmpty _ _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cCons)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
-wurble (((Right PListEnd : _) × _) : _) =
-   error unimplemented
-wurble (((Right (PListNext _ _) : _) × _) : _) =
-   error unimplemented
+wurble ks@(((Right PListEnd : _) × _) : _) = do
+   ckls <- popConstr (successful (dataTypeFor cNil)) ks
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
+wurble ks@(((Right (PListNext _ _) : _) × _) : _) = do
+   ckls <- popConstr (successful (dataTypeFor cCons)) ks
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and ending up empty.
