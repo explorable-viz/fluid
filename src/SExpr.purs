@@ -331,13 +331,8 @@ pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim 
 clausesFwd :: forall a m. Eq a => BoundedLattice a => MonadError Error m => JoinSemilattice a => Clauses a -> m (Elim a)
 clausesFwd (Clauses bs) = do
    -- REMOVE ME
-   σ' <- clausesFwd_New (Clauses bs)
-   trace
-      (σ' × orElse_NewFwd (ListEmpty bot) (first (toList >>> (Left <$> _)) (unwrap (head bs))))
-      \_ -> do
-         NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
-         τ <- foldM maybeJoin σ σs
-         assert (σ' == τ) $ pure τ
+   trace (orElse_NewFwd (ListEmpty bot) (first (toList >>> (Left <$> _)) (unwrap (head bs))))
+      \_ -> clausesFwd_New (Clauses bs)
    where
    pattsExprFwd :: NonEmptyList Pattern × Expr a -> m (Elim a)
    pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desug s) >>= pattContFwd p
