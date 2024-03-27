@@ -376,6 +376,7 @@ popVar _ Nil = pure Nil
 popVar _ _ = throw (shapeMismatch unit)
 
 popConstr :: forall a m. MonadError Error m => DataType -> ClausesState' a -> m (List (Ctr × ClausesState' a))
+popConstr _ ((Nil × _ × _) : _) = error absurd
 popConstr d (((Left (PConstr c π) : π') × π'' × s) : ks) =
    assert (length π == successful (arity c) && successful (dataTypeFor c) == d) $
       forConstr c (((Left <$> π) <> π') × π'' × s) <$> popConstr d ks
@@ -385,8 +386,14 @@ popConstr d (((Left PListEmpty : π) × π' × s) : ks) =
 popConstr d (((Left (PListNonEmpty p o) : π) × π' × s) : ks) =
    assert (d == successful (dataTypeFor cCons)) $
       forConstr cCons ((Left p : Right o : π) × π' × s) <$> popConstr d ks
+popConstr _ (((Left _ : _) × _) : _) = throw (shapeMismatch unit)
+popConstr d (((Right PListEnd : π) × π' × s) : ks) =
+   assert (d == successful (dataTypeFor cNil)) $
+      forConstr cNil (π × π' × s) <$> popConstr d ks
+popConstr d (((Right (PListNext p o) : π) × π' × s) : ks) =
+   assert (d == successful (dataTypeFor cCons)) $
+      forConstr cCons ((Left p : Right o : π) × π' × s) <$> popConstr d ks
 popConstr _ Nil = pure Nil
-popConstr _ _ = throw (shapeMismatch unit)
 
 forConstr :: forall a. Ctr -> ClauseState' a -> Endo (List (Ctr × ClausesState' a))
 forConstr c k Nil = (c × (k : Nil)) : Nil
