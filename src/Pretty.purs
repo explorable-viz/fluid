@@ -387,7 +387,6 @@ else instance (Pretty a, Pretty b) => Pretty (a × b) where
    pretty (a × b) = parentheses $ pretty a .<>. text str.comma .<>. pretty b
 
 instance Highlightable a => Pretty (Cont a) where
-   pretty ContNone = empty
    pretty (ContExpr e) = pretty e
    pretty (ContElim σ) = pretty σ
 

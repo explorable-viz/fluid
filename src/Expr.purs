@@ -48,9 +48,7 @@ data Elim a
 
 -- Continuation of an eliminator branch.
 data Cont a
-   = -- null continuation, used in let bindings/module variable bindings
-     ContNone
-   | ContExpr (Expr a)
+   = ContExpr (Expr a)
    | ContElim (Elim a)
 
 asElim :: forall a. Cont a -> Elim a
@@ -88,7 +86,6 @@ instance FV (Elim a) where
    fv (ElimRecord _ κ) = fv κ
 
 instance FV (Cont a) where
-   fv ContNone = empty
    fv (ContElim σ) = fv σ
    fv (ContExpr e) = fv e
 
@@ -117,7 +114,6 @@ instance BV (VarDef a) where
    bv (VarDef σ _) = bv σ
 
 instance BV (Cont a) where
-   bv ContNone = empty
    bv (ContElim σ) = bv σ
    bv (ContExpr _) = empty
 
@@ -137,7 +133,6 @@ instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
-   maybeJoin ContNone ContNone = pure ContNone
    maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _ = shapeMismatch unit
@@ -145,7 +140,6 @@ instance JoinSemilattice a => JoinSemilattice (Cont a) where
    join κ = definedJoin κ
 
 instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
-   expand ContNone ContNone = ContNone
    expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
    expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
    expand _ _ = shapeMismatch unit
@@ -249,7 +243,6 @@ instance Apply Elim where
    apply _ _ = shapeMismatch unit
 
 instance Apply Cont where
-   apply ContNone ContNone = ContNone
    apply (ContExpr f) (ContExpr e) = ContExpr (f <*> e)
    apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
    apply _ _ = shapeMismatch unit

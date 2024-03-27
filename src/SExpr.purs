@@ -480,7 +480,6 @@ anon (Right o) = Right (anonListRest o)
 
 -- orElse
 orElseFwd :: forall a. Cont a -> a -> Cont a
-orElseFwd ContNone _ = error absurd
 orElseFwd (ContExpr e) _ = ContExpr e
 orElseFwd (ContElim (ElimConstr m)) α = ContElim (ElimConstr (unlessFwd (c × orElseFwd κ α) α))
    where
@@ -490,7 +489,6 @@ orElseFwd (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElseFwd κ α))
 
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot
-orElseBwd ContNone _ = error absurd
 orElseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
    orElseBwd κ' πs # first (\κ'' -> ContElim (ElimVar x κ''))
 orElseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
