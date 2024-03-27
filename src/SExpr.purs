@@ -357,7 +357,7 @@ clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
       next _ = error absurd
 
 clausesFwd_New :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
-clausesFwd_New (Clauses cl) = asElim <$> wurble ks
+clausesFwd_New (Clauses cl) = asElim <$> clausesStateFwd ks
    where
    ks = toList cl <#> \(Clause (NonEmptyList (p :| π) × s)) -> (Left p : Nil) × π × s
 
@@ -408,31 +408,31 @@ popRecord _ Nil = pure Nil
 popRecord _ _ = throw (shapeMismatch unit)
 
 -- RENAME
-wurble :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
-wurble Nil = error absurd
-wurble ((Nil × Nil × s) : Nil) =
+clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
+clausesStateFwd Nil = error absurd
+clausesStateFwd ((Nil × Nil × s) : Nil) =
    ContExpr <$> desug s
-wurble ks@((Nil × _) : _) =
-   ContExpr <$> E.Lambda top <$> asElim <$> (wurble =<< popArg ks)
-wurble ks@(((Left (PVar x) : _) × _) : _) =
-   ContElim <$> ElimVar x <$> (wurble =<< popVar x ks)
-wurble ks@(((Left (PRecord xps) : _) × _) : _) =
-   ContElim <$> ElimRecord (keys xps) <$> (wurble =<< popRecord (keys xps) ks)
-wurble ks@(((Left (PConstr c _) : _) × _) : _) = do
+clausesStateFwd ks@((Nil × _) : _) =
+   ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArg ks)
+clausesStateFwd ks@(((Left (PVar x) : _) × _) : _) =
+   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVar x ks)
+clausesStateFwd ks@(((Left (PRecord xps) : _) × _) : _) =
+   ContElim <$> ElimRecord (keys xps) <$> (clausesStateFwd =<< popRecord (keys xps) ks)
+clausesStateFwd ks@(((Left (PConstr c _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor c)) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
-wurble ks@(((Left PListEmpty : _) × _) : _) = do
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
+clausesStateFwd ks@(((Left PListEmpty : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cNil)) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
-wurble ks@(((Left (PListNonEmpty _ _) : _) × _) : _) = do
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
+clausesStateFwd ks@(((Left (PListNonEmpty _ _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cCons)) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
-wurble ks@(((Right PListEnd : _) × _) : _) = do
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
+clausesStateFwd ks@(((Right PListEnd : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cNil)) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
-wurble ks@(((Right (PListNext _ _) : _) × _) : _) = do
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
+clausesStateFwd ks@(((Right (PListNext _ _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cCons)) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and ending up empty.
