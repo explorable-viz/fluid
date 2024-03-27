@@ -359,26 +359,26 @@ clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
 clausesFwd_New :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
 clausesFwd_New (Clauses cl) = asElim <$> wurble ks
    where
-   ks = toList cl <#> \(Clause (NonEmptyList (p :| π) × s)) -> (p : Nil) × π × s
+   ks = toList cl <#> \(Clause (NonEmptyList (p :| π) × s)) -> (Left p : Nil) × π × s
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
-type ClauseState' a = List Pattern × List Pattern × Expr a
+type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Expr a
 type ClausesState' a = List (ClauseState' a)
 
 popArg :: forall a m. MonadError Error m => ClausesState' a -> m (ClausesState' a)
-popArg ((Nil × (p : π) × s) : ks) = (((p : Nil) × π × s) : _) <$> popArg ks
+popArg ((Nil × (p : π) × s) : ks) = (((Left p : Nil) × π × s) : _) <$> popArg ks
 popArg Nil = pure Nil
 popArg _ = throw (shapeMismatch unit)
 
 popVar :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
-popVar x (((PVar x' : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVar (x ≜ x') ks
+popVar x (((Left (PVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVar (x ≜ x') ks
 popVar _ Nil = pure Nil
 popVar _ _ = throw (shapeMismatch unit)
 
 popConstr :: forall a m. MonadError Error m => DataType -> ClausesState' a -> m (List (Ctr × ClausesState' a))
-popConstr d (((PConstr c π : π') × π'' × s) : ks) =
+popConstr d (((Left (PConstr c π) : π') × π'' × s) : ks) =
    assert (length π == successful (arity c) && successful (dataTypeFor c) == d) $
-      forConstr ((π <> π') × π'' × s) <$> popConstr d ks
+      forConstr (((Left <$> π) <> π') × π'' × s) <$> popConstr d ks
    where
    forConstr :: ClauseState' a -> Endo (List (Ctr × ClausesState' a))
    forConstr k Nil = (c × (k : Nil)) : Nil
@@ -389,8 +389,8 @@ popConstr _ Nil = pure Nil
 popConstr _ _ = throw (shapeMismatch unit)
 
 popRecord :: forall a m. MonadError Error m => Set Var -> ClausesState' a -> m (ClausesState' a)
-popRecord xs (((PRecord xps : π) × π' × s) : ks) =
-   assert (keys xps == xs) $ ((((xps <#> snd) <> π) × π' × s) : _) <$> popRecord xs ks
+popRecord xs (((Left (PRecord xps) : π) × π' × s) : ks) =
+   assert (keys xps == xs) $ ((((xps <#> snd >>> Left) <> π) × π' × s) : _) <$> popRecord xs ks
 popRecord _ Nil = pure Nil
 popRecord _ _ = throw (shapeMismatch unit)
 
@@ -401,16 +401,20 @@ wurble ((Nil × Nil × s) : Nil) =
    ContExpr <$> desug s
 wurble ks@((Nil × _) : _) =
    ContExpr <$> E.Lambda top <$> asElim <$> (wurble =<< popArg ks)
-wurble ks@(((PVar x : _) × _) : _) =
+wurble ks@(((Left (PVar x) : _) × _) : _) =
    ContElim <$> ElimVar x <$> (wurble =<< popVar x ks)
-wurble ks@(((PRecord xps : _) × _) : _) =
+wurble ks@(((Left (PRecord xps) : _) × _) : _) =
    ContElim <$> ElimRecord (keys xps) <$> (wurble =<< popRecord (keys xps) ks)
-wurble ks@(((PConstr c _ : _) × _) : _) = do
+wurble ks@(((Left (PConstr c _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor c)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
-wurble (((PListEmpty : _) × _) : _) =
+wurble (((Left PListEmpty : _) × _) : _) =
    error unimplemented
-wurble (((PListNonEmpty _ _ : _) × _) : _) =
+wurble (((Left (PListNonEmpty _ _) : _) × _) : _) =
+   error unimplemented
+wurble (((Right PListEnd : _) × _) : _) =
+   error unimplemented
+wurble (((Right (PListNext _ _) : _) × _) : _) =
    error unimplemented
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
