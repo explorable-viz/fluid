@@ -27,7 +27,7 @@ import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, top, (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, definitelyFromLeft, error, shapeMismatch, singleton, successful, throw, unimplemented, (×), (≜))
 import Util.Map (get)
@@ -520,8 +520,7 @@ instance Functor Module where
       mapDefs g (Right ds) = Right $ (\(x × Clause (ps × s)) -> x × Clause (ps × (g <$> s))) <$> ds
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
-   join s = definedJoin s
-   maybeJoin _ = error unimplemented
+   join _ = error unimplemented
 
 derive instance Eq a => Eq (Expr a)
 derive instance Generic (Expr a) _

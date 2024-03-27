@@ -12,10 +12,10 @@ import Data.Set (Set, empty, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
-import DataType (Ctr, consistentWith)
+import DataType (Ctr)
 import Dict (Dict)
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
-import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜), (≞))
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), expand)
+import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
 import Util.Pair (Pair(..))
 import Util.Map (keys, asMaplet)
 import Util.Set ((\\), (∪))
@@ -118,13 +118,10 @@ instance BV (Cont a) where
    bv (ContExpr _) = empty
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
-   maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
-      ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
-   maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
-   maybeJoin _ _ = shapeMismatch unit
-
-   join σ = definedJoin σ
+   join (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (κ ∨ κ')
+   join (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (cκs ∨ cκs')
+   join (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (κ ∨ κ')
+   join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
@@ -133,11 +130,9 @@ instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
-   maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
-   maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
-   maybeJoin _ _ = shapeMismatch unit
-
-   join κ = definedJoin κ
+   join (ContExpr e) (ContExpr e') = ContExpr (e ∨ e')
+   join (ContElim σ) (ContElim σ') = ContElim (σ ∨ σ')
+   join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
    expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
@@ -145,38 +140,34 @@ instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
    expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (VarDef a) where
-   join def = definedJoin def
-   maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
+   join (VarDef σ e) (VarDef σ' e') = VarDef (σ ∨ σ') (e ∨ e')
 
 instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
    expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
 instance JoinSemilattice a => JoinSemilattice (RecDefs a) where
-   maybeJoin (RecDefs α ρ) (RecDefs α' ρ') = RecDefs (α ∨ α') <$> maybeJoin ρ ρ'
-   join ρ = definedJoin ρ
+   join (RecDefs α ρ) (RecDefs α' ρ') = RecDefs (α ∨ α') (ρ ∨ ρ')
 
 instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
    expand (RecDefs α ρ) (RecDefs _ ρ') = RecDefs α (expand ρ ρ')
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
-   maybeJoin (Var x) (Var x') = Var <$> (x ≞ x')
-   maybeJoin (Op op) (Op op') = Op <$> (op ≞ op')
-   maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
-   maybeJoin (Str α str) (Str α' str') = Str (α ∨ α') <$> (str ≞ str')
-   maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
-   maybeJoin (Record α xes) (Record α' xes') = Record (α ∨ α') <$> maybeJoin xes xes'
-   maybeJoin (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') <$> maybeJoin ees ees'
-   maybeJoin (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin es es'
-   maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
-      Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
-   maybeJoin (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') <$> maybeJoin σ σ'
-   maybeJoin (Project e x) (Project e' x') = Project <$> maybeJoin e e' <*> (x ≞ x')
-   maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
-   maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
-   maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
-   maybeJoin _ _ = shapeMismatch unit
-
-   join e = definedJoin e
+   join (Var x) (Var x') = Var (x ≜ x')
+   join (Op op) (Op op') = Op (op ≜ op')
+   join (Int α n) (Int α' n') = Int (α ∨ α') (n ≜ n')
+   join (Str α str) (Str α' str') = Str (α ∨ α') (str ≜ str')
+   join (Float α n) (Float α' n') = Float (α ∨ α') (n ≜ n')
+   join (Record α xes) (Record α' xes') = Record (α ∨ α') (xes ∨ xes')
+   join (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') (ees ∨ ees')
+   join (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') (c ≜ c') (es ∨ es') -- TODO: assert consistentWith
+   join (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
+      Matrix (α ∨ α') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
+   join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
+   join (Project e x) (Project e' x') = Project (e ∨ e') (x ≜ x')
+   join (App e1 e2) (App e1' e2') = App (e1 ∨ e1') (e2 ∨ e2')
+   join (Let def e) (Let def' e') = Let (def ∨ def') (e ∨ e')
+   join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
+   join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Var x) (Var x') = Var (x ≜ x')
