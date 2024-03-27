@@ -106,7 +106,7 @@ instance Desugarable Clauses Elim where
    desug = clausesFwd
    desugBwd = clausesBwd
 
-desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
+desugarModuleFwd :: forall a m. Eq a => MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
 desugarModuleFwd = moduleFwd
 
 -- helpers
@@ -120,7 +120,7 @@ elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (wrap $ D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
 -- Module. Surface language supports "blocks" of variable declarations; core does not. Currently no backward.
-moduleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
+moduleFwd :: forall a m. Eq a => MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
 moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten <$> ds))
    where
    varDefOrRecDefsFwd :: VarDef a + RecDefs a -> m (E.VarDef a + E.RecDefs a)
@@ -131,11 +131,11 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
    flatten (Left ds') = Left <$> toList ds'
    flatten (Right δ) = pure (Right δ)
 
-varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
+varDefFwd :: forall a m. Eq a => MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef π s) = E.VarDef <$> pattContFwd π (ContNone :: Cont a) <*> desug s
 
 -- VarDefs
-varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
+varDefsFwd :: forall a m. Eq a => MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
 varDefsFwd (NonEmptyList (d :| Nil) × s) =
    E.Let <$> varDefFwd d <*> desug s
 varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
@@ -153,7 +153,7 @@ varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
-recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
+recDefsFwd :: forall a m. Eq a => MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
 recDefsFwd xcs = E.RecDefs top <$> wrap <<< D.fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = map RecDef (groupBy (eq `on` fst) xcs) :: NonEmptyList (RecDef a)
@@ -171,14 +171,14 @@ recDefsBwd (E.RecDefs _ ρ) xcs = join (go (groupBy (eq `on` fst) xcs))
          xcs2 : xcss'' -> toList (go (NonEmptyList (xcs2 :| xcss'')))
 
 -- RecDef
-recDefFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDef a -> m (Bind (Elim a))
+recDefFwd :: forall a m. Eq a => MonadError Error m => BoundedLattice a => RecDef a -> m (Bind (Elim a))
 recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> clausesFwd (Clauses (snd <$> unwrap xcs))
 
 recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
 recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (clausesBwd σ (Clauses (snd <$> bs))))
 
 -- Expr
-exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
+exprFwd :: forall a m. Eq a => BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
 exprFwd (Var x) = pure (E.Var x)
 exprFwd (Op op) = pure (E.Op op)
 exprFwd (Int α n) = pure (E.Int α n)
@@ -240,7 +240,7 @@ exprBwd (E.LetRec xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBw
 exprBwd _ _ = error absurd
 
 -- ListRest
-listRestFwd :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
+listRestFwd :: forall a m. Eq a => MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
 listRestFwd (End α) = pure (enil α)
 listRestFwd (Next α s l) = econs α <$> desug s <*> desug l
 
@@ -251,7 +251,7 @@ listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
 listRestBwd _ _ = error absurd
 
 -- List Qualifier × Expr
-listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
+listCompFwd :: forall a m. Eq a => MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
 listCompFwd (α × Nil × s) =
    econs α <$> desug s <@> enil α
 listCompFwd (α × (Guard s : qs) × s') = do
@@ -328,7 +328,7 @@ pattArgsBwd (Left p : πs) σ = pattArgsBwd πs (pattContBwd p (asElim σ))
 pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim σ) o)
 
 -- Clauses
-clausesFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Clauses a -> m (Elim a)
+clausesFwd :: forall a m. Eq a => BoundedLattice a => MonadError Error m => JoinSemilattice a => Clauses a -> m (Elim a)
 clausesFwd (Clauses bs) = do
    -- REMOVE ME
    σ' <- clausesFwd_New (Clauses bs)
@@ -336,7 +336,8 @@ clausesFwd (Clauses bs) = do
       (σ' × orElse_NewFwd (ListEmpty bot) (first (toList >>> (Left <$> _)) (unwrap (head bs))))
       \_ -> do
          NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
-         foldM maybeJoin σ σs
+         τ <- foldM maybeJoin σ σs
+         assert (σ' == τ) $ pure τ
    where
    pattsExprFwd :: NonEmptyList Pattern × Expr a -> m (Elim a)
    pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desug s) >>= pattContFwd p
@@ -356,7 +357,7 @@ clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
       next (E.Lambda _ τ) = pattsExprBwd (NonEmptyList (p' :| ps) × s) τ
       next _ = error absurd
 
-clausesFwd_New :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
+clausesFwd_New :: forall a m. Eq a => BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
 clausesFwd_New (Clauses cl) = asElim <$> clausesStateFwd ks
    where
    ks = toList cl <#> \(Clause (NonEmptyList (p :| π) × s)) -> (Left p : Nil) × π × s
@@ -407,8 +408,7 @@ popRecord xs (((Left (PRecord xps) : π) × π' × s) : ks) =
 popRecord _ Nil = pure Nil
 popRecord _ _ = throw (shapeMismatch unit)
 
--- RENAME
-clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
+clausesStateFwd :: forall a m. Eq a => BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
 clausesStateFwd Nil = error absurd
 clausesStateFwd ((Nil × Nil × s) : Nil) =
    ContExpr <$> desug s
