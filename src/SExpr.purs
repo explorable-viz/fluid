@@ -414,10 +414,12 @@ wurble ks@(((Left (PRecord xps) : _) × _) : _) =
 wurble ks@(((Left (PConstr c _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor c)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
-wurble (((Left PListEmpty : _) × _) : _) =
-   error unimplemented
-wurble (((Left (PListNonEmpty _ _) : _) × _) : _) =
-   error unimplemented
+wurble ks@(((Left PListEmpty : _) × _) : _) = do
+   ckls <- popConstr (successful (dataTypeFor cNil)) ks
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
+wurble ks@(((Left (PListNonEmpty _ _) : _) × _) : _) = do
+   ckls <- popConstr (successful (dataTypeFor cCons)) ks
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
 wurble (((Right PListEnd : _) × _) : _) =
    error unimplemented
 wurble (((Right (PListNext _ _) : _) × _) : _) =
