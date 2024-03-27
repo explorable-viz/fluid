@@ -377,8 +377,8 @@ popVar _ _ = throw (shapeMismatch unit)
 
 popConstr :: forall a m. MonadError Error m => DataType -> ClausesState' a -> m (List (Ctr × ClausesState' a))
 popConstr d (((PConstr c π : π') × π'' × s) : ks) =
-   assert (length π == successful (arity c) && successful (dataTypeFor c) == d)
-      (forConstr ((π <> π') × π'' × s) <$> popConstr d ks)
+   assert (length π == successful (arity c) && successful (dataTypeFor c) == d) $
+      forConstr ((π <> π') × π'' × s) <$> popConstr d ks
    where
    forConstr :: ClauseState' a -> Endo (List (Ctr × ClausesState' a))
    forConstr k Nil = (c × (k : Nil)) : Nil
@@ -390,7 +390,7 @@ popConstr _ _ = throw (shapeMismatch unit)
 
 popRecord :: forall a m. MonadError Error m => Set Var -> ClausesState' a -> m (ClausesState' a)
 popRecord xs (((PRecord xps : π) × π' × s) : ks) =
-   assert (keys xps == xs) (((((xps <#> snd) <> π) × π' × s) : _) <$> popRecord xs ks)
+   assert (keys xps == xs) $ ((((xps <#> snd) <> π) × π' × s) : _) <$> popRecord xs ks
 popRecord _ Nil = pure Nil
 popRecord _ _ = throw (shapeMismatch unit)
 
