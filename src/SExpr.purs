@@ -396,6 +396,7 @@ popRecord _ _ = throw (shapeMismatch unit)
 
 -- RENAME
 wurble :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
+wurble Nil = error absurd
 wurble ((Nil × Nil × s) : Nil) =
    ContExpr <$> desug s
 wurble ks@((Nil × _) : _) =
@@ -407,7 +408,7 @@ wurble ks@(((PRecord xps : _) × _) : _) =
 wurble ks@(((PConstr c _ : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor c)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse wurble <$> ckls)
-wurble _ = throw (shapeMismatch unit)
+wurble ((_ × _) : _) = throw (shapeMismatch unit)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and ending up empty.
