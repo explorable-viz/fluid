@@ -6,7 +6,7 @@ import Bind (Bind, Var, varAnon, (↦), keys)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Bitraversable (rtraverse)
 import Data.Either (Either(..))
-import Data.Foldable (foldM, foldl)
+import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, length, sortBy, take, zip, zipWith, (:), (\\))
@@ -21,14 +21,13 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple (uncurry, fst, snd)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataTypeFor)
-import Debug (trace)
 import Desugarable (class Desugarable, desugBwd, desug)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, maybeJoin, top, (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, definedJoin, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, definitelyFromLeft, error, shapeMismatch, singleton, successful, throw, unimplemented, (×), (≜))
 import Util.Map (asMaplet, get, maplet)
@@ -328,16 +327,12 @@ pattArgsBwd (Left p : πs) σ = pattArgsBwd πs (pattContBwd p (asElim σ))
 pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim σ) o)
 
 -- Clauses
-clausesFwd :: forall a m. Eq a => BoundedLattice a => MonadError Error m => JoinSemilattice a => Clauses a -> m (Elim a)
-clausesFwd (Clauses bs) = do
-   -- REMOVE ME
-   trace (orElse_NewFwd (ListEmpty bot) (first (toList >>> (Left <$> _)) (unwrap (head bs))))
-      \_ -> clausesFwd_New (Clauses bs)
+clausesFwd :: forall a m. Eq a => BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
+clausesFwd (Clauses cl) =
+   -- trace (orElse_NewFwd (ListEmpty bot) (first (toList >>> (Left <$> _)) (unwrap (head bs)))) \_ ->
+   asElim <$> clausesStateFwd ks
    where
-   pattsExprFwd :: NonEmptyList Pattern × Expr a -> m (Elim a)
-   pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desug s) >>= pattContFwd p
-   pattsExprFwd (NonEmptyList (p :| p' : ps) × s) =
-      pattContFwd p =<< ContExpr <$> E.Lambda top <$> pattsExprFwd (NonEmptyList (p' :| ps) × s)
+   ks = toList cl <#> \(Clause (NonEmptyList (p :| π) × s)) -> (Left p : Nil) × π × s
 
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
 clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
@@ -351,11 +346,6 @@ clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
       where
       next (E.Lambda _ τ) = pattsExprBwd (NonEmptyList (p' :| ps) × s) τ
       next _ = error absurd
-
-clausesFwd_New :: forall a m. Eq a => BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
-clausesFwd_New (Clauses cl) = asElim <$> clausesStateFwd ks
-   where
-   ks = toList cl <#> \(Clause (NonEmptyList (p :| π) × s)) -> (Left p : Nil) × π × s
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
 type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Expr a
