@@ -450,11 +450,17 @@ orElseFwd s' ((Left (PListNonEmpty p o) : π) × s) = ks `appendList` (k' : Nil)
          ((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
          ((Left p' : Left p'' : Nil) × k) -> pushPatt (Left (PConstr cCons (p' : p'' : Nil))) k
    k' = (((π <#> anon) × s') # pushPatt (Left PListEmpty))
-orElseFwd s' ((Right (PListNext p o) : π) × s) =
-   withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s) <#> uncurry pushPatts
+orElseFwd s' ((Right (PListNext p o) : π) × s) = ks `appendList` (k' : Nil)
+   where
+   ks = withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s)
+      <#> unsafePartial case _ of
+         ((Left p' : Right o' : Nil) × k) -> pushPatt (Right (PListNext p' o')) k
+         ((Left p' : Left p'' : Nil) × k) -> pushPatt (Left (PConstr cCons (p' : p'' : Nil))) k
+   k' = (((π <#> anon) × s') # pushPatt (Right PListEnd))
 orElseFwd s' ((Right PListEnd : π) × s) = ks `appendList` (k : Nil)
    where
    ks = orElseFwd s' (π × s) <#> pushPatt (Right PListEnd)
+   -- This is the source of the uglification above; there are no variable patterns for list rest patterns
    k = (((π <#> anon) × s') # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
