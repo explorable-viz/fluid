@@ -14,14 +14,14 @@ import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, suite
 import Util (type (×), (×))
 
 main :: Effect Unit
-main = run tests
+--main = run tests
 
 --main = run $ linkedOutputsSuite linkedOutputs_cases
---main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite
-   [ { file: "arithmetic", imports: [], fwd_expect: "42" }
+   [ { file: "desugar/list-comp-8", imports: [], fwd_expect: "(5 : 4 : 3 : [])" }
    ]
 
 type TestSuite = Array (String × Aff Unit)

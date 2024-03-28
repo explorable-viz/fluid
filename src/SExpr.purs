@@ -29,7 +29,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, definitelyFromLeft, error, shapeMismatch, singleton, successful, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, error, shapeMismatch, singleton, spy, successful, throw, unimplemented, (×), (≜))
 import Util.Map (get)
 import Util.Pair (Pair(..))
 
@@ -265,7 +265,7 @@ listCompFwd (α × (Declaration (VarDef p s) : qs) × s') = do
    E.App (E.Lambda α σ) <$> desug s
 listCompFwd (α × (Generator p s : qs) × s') = do
    let ks = orElseFwd (ListEmpty α) ((Left p : Nil) × ListComp α s' qs)
-   σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
+   σ <- clausesStateFwd (toList (spy "ks" identity ks <#> second (Nil × _)))
    E.App (E.App (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
 
 listCompBwd
@@ -434,19 +434,22 @@ orElseFwd s' ((Left (PVar x) : π) × s) =
 orElseFwd s' ((Left (PConstr c π) : π') × s) = ks `appendList` ks'
    where
    ks = withPatts (Left <$> π) (orElseFwd s') (π' × s)
-      <#> (\(π1 × k) -> pushPatt (Left (PConstr c (definitelyFromLeft <$> π1))) k)
+      <#> (\(π1 × k) -> pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π1))) k)
    cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c
    ks' = cs <#> \c' -> ((π' <#> anon) × s')
       # pushPatt (Left (PConstr c' (replicate (successful (arity c')) (PVar varAnon))))
 orElseFwd s' ((Left (PRecord xps) : π) × s) =
    withPatts (Left <<< snd <$> xps) (orElseFwd s') (π × s)
-      <#> (\(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (definitelyFromLeft <$> π1)))) k)
+      <#> (\(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p) -> p) <$> π1)))) k)
 orElseFwd s' ((Left PListEmpty : π) × s) = ks `appendList` (k : Nil)
    where
    ks = orElseFwd s' (π × s) <#> pushPatt (Left PListEmpty)
    k = (((π <#> anon) × s') # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
-orElseFwd s' ((Left (PListNonEmpty p o) : π) × s) =
-   withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s) <#> uncurry pushPatts
+orElseFwd s' ((Left (PListNonEmpty p o) : π) × s) = ks -- `appendList` (k : Nil)
+   where
+   ks = withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s)
+      <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
+--   k = (((π <#> anon) × s') # pushPatt (Left PListEmpty))
 orElseFwd s' ((Right (PListNext p o) : π) × s) =
    withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s) <#> uncurry pushPatts
 orElseFwd s' ((Right PListEnd : π) × s) =
