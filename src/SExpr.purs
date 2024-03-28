@@ -69,7 +69,8 @@ data Pattern
    | PListNonEmpty Pattern ListRestPattern
 
 data ListRestPattern
-   = PListEnd
+   = PListVar Var -- currently unsupported in parser; only arise during desugaring
+   | PListEnd
    | PListNext Pattern ListRestPattern
 
 newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
@@ -302,6 +303,7 @@ pattContBwd _ _ = error absurd
 pattCont_ListRest_Bwd :: forall a. Elim a -> ListRestPattern -> Cont a
 pattCont_ListRest_Bwd (ElimVar _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimRecord _ _) _ = error absurd
+pattCont_ListRest_Bwd (ElimConstr _) (PListVar _) = error absurd
 pattCont_ListRest_Bwd (ElimConstr m) PListEnd = get cNil m
 pattCont_ListRest_Bwd (ElimConstr m) (PListNext p o) = pattArgsBwd (Left p : Right o : Nil) (get cCons m)
 
@@ -343,6 +345,7 @@ popArg _ = throw (shapeMismatch unit)
 
 popVar :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
 popVar x (((Left (PVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVar (x ≜ x') ks
+popVar x (((Right (PListVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVar (x ≜ x') ks
 popVar _ Nil = pure Nil
 popVar _ _ = throw (shapeMismatch unit)
 
@@ -364,6 +367,7 @@ popConstr d (((Right PListEnd : π) × π' × s) : ks) =
 popConstr d (((Right (PListNext p o) : π) × π' × s) : ks) =
    assert (d == successful (dataTypeFor cCons)) $
       forConstr cCons ((Left p : Right o : π) × π' × s) <$> popConstr d ks
+popConstr _ (((Right _ : _) × _) : _) = throw (shapeMismatch unit)
 popConstr _ Nil = pure Nil
 
 forConstr :: forall a. Ctr -> ClauseState' a -> Endo (List (Ctr × ClausesState' a))
@@ -397,6 +401,8 @@ clausesStateFwd ks@(((Left PListEmpty : _) × _) : _) = do
 clausesStateFwd ks@(((Left (PListNonEmpty _ _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cCons)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
+clausesStateFwd ks@(((Right (PListVar x) : _) × _) : _) =
+   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVar x ks)
 clausesStateFwd ks@(((Right PListEnd : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cNil)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
@@ -450,6 +456,8 @@ orElseFwd s' ((Left (PListNonEmpty p o) : π) × s) = ks `appendList` (k' : Nil)
          ((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
          ((Left p' : Left p'' : Nil) × k) -> pushPatt (Left (PConstr cCons (p' : p'' : Nil))) k
    k' = (((π <#> anon) × s') # pushPatt (Left PListEmpty))
+orElseFwd s' ((Right (PListVar x) : π) × s) =
+   orElseFwd s' (π × s) <#> pushPatt (Right (PListVar x))
 orElseFwd s' ((Right (PListNext p o) : π) × s) = ks `appendList` (k' : Nil)
    where
    ks = withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s)
@@ -460,16 +468,11 @@ orElseFwd s' ((Right (PListNext p o) : π) × s) = ks `appendList` (k' : Nil)
 orElseFwd s' ((Right PListEnd : π) × s) = ks `appendList` (k : Nil)
    where
    ks = orElseFwd s' (π × s) <#> pushPatt (Right PListEnd)
-   -- This is the source of the uglification above; there are no variable patterns for list rest patterns
-   k = (((π <#> anon) × s') # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
+   k = (((π <#> anon) × s') # pushPatt (Right (PListNext (PVar varAnon) (PListVar varAnon))))
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left (PVar varAnon)
-anon (Right o) = Right (anonListRest o)
-   where
-   anonListRest :: ListRestPattern -> ListRestPattern
-   anonListRest PListEnd = PListEnd
-   anonListRest (PListNext _ o') = PListNext (PVar varAnon) (anonListRest o')
+anon (Right _) = Right (PListVar varAnon)
 
 -- orElse
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
@@ -487,6 +490,7 @@ orElseBwd (ContElim (ElimConstr m)) (π : πs) =
          Left (PConstr c ps) -> c × (Left <$> ps)
          Left PListEmpty -> cNil × Nil
          Left (PListNonEmpty p o) -> cCons × (Left p : Right o : Nil)
+         Right (PListVar _) -> error absurd
          Right PListEnd -> cNil × Nil
          Right (PListNext p o) -> cCons × (Left p : Right o : Nil)
       κ' × α = unlessBwd m c

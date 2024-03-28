@@ -204,6 +204,7 @@ prettyPattConstr _ (Cons p Nil) = pretty p
 prettyPattConstr sep (Cons p ps) = pretty p .<>. sep .<>. prettyPattConstr sep ps
 
 instance Pretty ListRestPattern where
+   pretty (PListVar x) = text x
    pretty (PListNext p l) = text str.comma .<>. pretty p .<>. pretty l
    pretty PListEnd = text str.rBracket
 
