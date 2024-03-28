@@ -21,7 +21,7 @@ main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite
-   [ { file: "desugar/list-comp-8", imports: [], fwd_expect: "(5 : 4 : 3 : [])" }
+   [ { file: "desugar/list-comp-8", imports: [], fwd_expect: "(5 : (4 : (3 : [])))" }
    ]
 
 type TestSuite = Array (String × Aff Unit)
