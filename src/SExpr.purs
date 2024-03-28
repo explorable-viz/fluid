@@ -315,11 +315,24 @@ pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim 
 
 -- Clauses
 clausesFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
-clausesFwd μ = clausesStateFwd (toClausesState μ) <#> asElim
+clausesFwd μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
 
-toClausesState :: forall a. Clauses a -> ClausesState' a
-toClausesState (Clauses μ) =
-   toList μ <#> \(Clause (NonEmptyList (p :| π) × s)) -> (Left p : Nil) × π × s
+clausesBwd_New :: forall a. Elim a -> Raw Clauses -> Clauses a
+clausesBwd_New σ μ = toClausesStateBwd (clausesStateBwd (ContElim σ) (toClausesStateFwd μ))
+
+toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
+toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
+   where
+   toClauseStateFwd :: Clause a -> ClauseState' a
+   toClauseStateFwd (Clause (NonEmptyList (p :| π) × s)) = (Left p : Nil) × π × s
+
+toClausesStateBwd :: forall a. ClausesState' a -> Clauses a
+toClausesStateBwd Nil = error (shapeMismatch unit)
+toClausesStateBwd (k : ks) = Clauses (NonEmptyList (k :| ks) <#> toClauseStateBwd)
+   where
+   toClauseStateBwd :: ClauseState' a -> Clause a
+   toClauseStateBwd ((Left p : Nil) × π × s) = Clause (NonEmptyList (p :| π) × s)
+   toClauseStateBwd _ = error (shapeMismatch unit)
 
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
 clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
@@ -410,6 +423,9 @@ clausesStateFwd ks@(((Right (PListNext _ _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cCons)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
 
+clausesStateBwd :: forall a. Cont a -> Raw ClausesState' -> ClausesState' a
+clausesStateBwd = error "todo"
+
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and ending up empty.
 type ClauseState a = List (Pattern + ListRestPattern) × Expr a
@@ -480,7 +496,7 @@ orElseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
 orElseBwd (ContElim (ElimConstr m)) (π : πs) =
    let
       c × πs' = case π of
-         -- TODO: refactor so these two cases aren't necessary
+         -- TODO: refactor so absurd cases aren't necessary
          Left (PVar _) -> error absurd
          Left (PRecord _) -> error absurd
          Left (PConstr c ps) -> c × (Left <$> ps)
