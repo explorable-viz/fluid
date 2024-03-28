@@ -446,10 +446,9 @@ orElseFwd s' ((Left PListEmpty : π) × s) = ks `appendList` (k : Nil)
 orElseFwd s' ((Left (PListNonEmpty p o) : π) × s) = ks `appendList` (k' : Nil)
    where
    ks = withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s)
-      <#> unsafePartial
-         case _ of
-            ((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
-            ((Left p' : Left p'' : Nil) × k) -> pushPatt (Left (PConstr cCons (p' : p'' : Nil))) k
+      <#> unsafePartial case _ of
+         ((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
+         ((Left p' : Left p'' : Nil) × k) -> pushPatt (Left (PConstr cCons (p' : p'' : Nil))) k
    k' = (((π <#> anon) × s') # pushPatt (Left PListEmpty))
 orElseFwd s' ((Right (PListNext p o) : π) × s) =
    withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s) <#> uncurry pushPatts
