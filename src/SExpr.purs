@@ -29,7 +29,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, error, shapeMismatch, singleton, spy, successful, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, error, shapeMismatch, singleton, successful, throw, unimplemented, (×), (≜))
 import Util.Map (get)
 import Util.Pair (Pair(..))
 
@@ -266,7 +266,7 @@ listCompFwd (α × (Declaration (VarDef p s) : qs) × s') = do
    E.App (E.Lambda α σ) <$> desug s
 listCompFwd (α × (Generator p s : qs) × s') = do
    let ks = orElseFwd (ListEmpty α) ((Left p : Nil) × ListComp α s' qs)
-   σ <- clausesStateFwd (toList (spy "ks" identity ks <#> second (Nil × _)))
+   σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
    E.App (E.App (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
 
 listCompBwd
