@@ -452,8 +452,10 @@ orElseFwd s' ((Left (PListNonEmpty p o) : π) × s) = ks `appendList` (k' : Nil)
    k' = (((π <#> anon) × s') # pushPatt (Left PListEmpty))
 orElseFwd s' ((Right (PListNext p o) : π) × s) =
    withPatts (Left p : Right o : Nil) (orElseFwd s') (π × s) <#> uncurry pushPatts
-orElseFwd s' ((Right PListEnd : π) × s) =
-   orElseFwd s' (π × s) <#> pushPatt (Right PListEnd)
+orElseFwd s' ((Right PListEnd : π) × s) = ks `appendList` (k : Nil)
+   where
+   ks = orElseFwd s' (π × s) <#> pushPatt (Right PListEnd)
+   k = (((π <#> anon) × s') # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left (PVar varAnon)
