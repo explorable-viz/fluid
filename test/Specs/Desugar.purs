@@ -19,5 +19,7 @@ desugar_cases =
    , { file: "desugar/list-comp-5", imports: [], fwd_expect: "(5 : (4 : (3 : [])))" }
    , { file: "desugar/list-comp-6", imports: [], fwd_expect: "(5 : [])" }
    , { file: "desugar/list-comp-7", imports: [], fwd_expect: "([] : [])" }
+   , { file: "desugar/list-comp-8", imports: [], fwd_expect: "(5 : (4 : (3 : [])))" }
+   , { file: "desugar/list-comp-9", imports: [], fwd_expect: "(10 : (19 : []))" }
    , { file: "desugar/list-enum", imports: [], fwd_expect: "(3 : (4 : (5 : (6 : (7 : [])))))" }
    ]

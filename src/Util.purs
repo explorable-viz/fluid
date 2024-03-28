@@ -148,14 +148,6 @@ orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
 orElse s Nothing = throw s
 orElse _ (Just x) = pure x
 
-definitelyFromLeft :: forall a b. a + b -> a
-definitelyFromLeft (Left a) = a
-definitelyFromLeft (Right _) = error "isLeft: Right"
-
-definitelyFromRight :: forall a b. a + b -> b
-definitelyFromRight (Left _) = error "isRight: Left"
-definitelyFromRight (Right a) = a
-
 successful :: forall a. MayFail a -> a
 successful = runExcept >>> case _ of
    Right x -> x
