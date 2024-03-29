@@ -456,7 +456,7 @@ clausesStateBwd :: forall a. BoundedJoinSemilattice a => Cont a -> Raw ClausesSt
 clausesStateBwd _ Nil = error absurd
 clausesStateBwd (ContExpr e) ((Nil × Nil × s) : Nil) =
    (Nil × Nil × desugBwd e s) : Nil
-clausesStateBwd (ContExpr (E.Lambda _ σ)) ks =
+clausesStateBwd (ContExpr (E.Lambda _ σ)) ks@((Nil × _) : _) =
    popArgBwd (clausesStateBwd (ContElim σ) (defined (popArgFwd ks)))
 clausesStateBwd (ContExpr _) _ = error absurd
 clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Left (PVar _) : _) × _) : _) =
@@ -474,10 +474,18 @@ clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left PListEmpty : _) × _) : _) 
 clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left (PListNonEmpty _ _) : _) × _) : _) =
    popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
    where
-   kss = defined (popConstrFwd (defined (dataTypeFor cNil)) ks)
+   kss = defined (popConstrFwd (defined (dataTypeFor cCons)) ks)
 clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Right (PListVar _) : _) × _) : _) =
    popListVarBwd x (clausesStateBwd κ (defined (popListVarFwd x ks)))
-clausesStateBwd (ContElim _) _ = error "todo"
+clausesStateBwd (ContElim (ElimConstr m)) ks@(((Right PListEnd : _) × _) : _) =
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
+   where
+   kss = defined (popConstrFwd (defined (dataTypeFor cNil)) ks)
+clausesStateBwd (ContElim (ElimConstr m)) ks@(((Right (PListNext _ _) : _) × _) : _) =
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
+   where
+   kss = defined (popConstrFwd (defined (dataTypeFor cCons)) ks)
+clausesStateBwd (ContElim _) _ = error (shapeMismatch unit)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and ending up empty.
