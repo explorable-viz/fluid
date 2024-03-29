@@ -317,7 +317,7 @@ pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim 
 clausesFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
 clausesFwd μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
 
-clausesBwd_New :: forall a. Elim a -> Raw Clauses -> Clauses a
+clausesBwd_New :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
 clausesBwd_New σ μ = toClausesStateBwd (clausesStateBwd (ContElim σ) (toClausesStateFwd μ))
 
 toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
@@ -351,10 +351,15 @@ clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
 type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Expr a
 type ClausesState' a = List (ClauseState' a)
 
-popArg :: forall a m. MonadError Error m => ClausesState' a -> m (ClausesState' a)
-popArg ((Nil × (p : π) × s) : ks) = (((Left p : Nil) × π × s) : _) <$> popArg ks
-popArg Nil = pure Nil
-popArg _ = throw (shapeMismatch unit)
+popArgFwd :: forall a m. MonadError Error m => ClausesState' a -> m (ClausesState' a)
+popArgFwd ((Nil × (p : π) × s) : ks) = (((Left p : Nil) × π × s) : _) <$> popArgFwd ks
+popArgFwd Nil = pure Nil
+popArgFwd _ = throw (shapeMismatch unit)
+
+popArgBwd :: forall a. ClausesState' a -> ClausesState' a
+popArgBwd (((Left p : Nil) × π × s) : ks) = (Nil × (p : π) × s) : ks
+popArgBwd Nil = Nil
+popArgBwd _ = error absurd
 
 popVar :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
 popVar x (((Left (PVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVar (x ≜ x') ks
@@ -400,7 +405,7 @@ clausesStateFwd Nil = error absurd
 clausesStateFwd ((Nil × Nil × s) : Nil) =
    ContExpr <$> desug s
 clausesStateFwd ks@((Nil × _) : _) =
-   ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArg ks)
+   ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
 clausesStateFwd ks@(((Left (PVar x) : _) × _) : _) =
    ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVar x ks)
 clausesStateFwd ks@(((Left (PRecord xps) : _) × _) : _) =
@@ -425,8 +430,11 @@ clausesStateFwd ks@(((Right (PListNext _ _) : _) × _) : _) = do
 
 clausesStateBwd :: forall a. BoundedJoinSemilattice a => Cont a -> Raw ClausesState' -> ClausesState' a
 clausesStateBwd _ Nil = error absurd
-clausesStateBwd e ((Nil × Nil × s) : Nil) =
-   (Nil × Nil × desugBwd (asExpr e) s) : Nil
+clausesStateBwd (ContExpr e) ((Nil × Nil × s) : Nil) =
+   (Nil × Nil × desugBwd e s) : Nil
+clausesStateBwd (ContExpr (E.Lambda _ σ)) ks =
+   clausesStateBwd (ContElim σ) (popArgBwd ks)
+clausesStateBwd (ContExpr _) _ = error absurd
 clausesStateBwd _ _ = error "todo"
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
