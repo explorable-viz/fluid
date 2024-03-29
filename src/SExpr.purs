@@ -357,15 +357,23 @@ popArgFwd Nil = pure Nil
 popArgFwd _ = throw (shapeMismatch unit)
 
 popArgBwd :: forall a. ClausesState' a -> ClausesState' a
-popArgBwd (((Left p : Nil) × π × s) : ks) = (Nil × (p : π) × s) : ks
+popArgBwd (((Left p : Nil) × π × s) : ks) = (Nil × (p : π) × s) : popArgBwd ks
 popArgBwd Nil = Nil
 popArgBwd _ = error absurd
 
-popVar :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
-popVar x (((Left (PVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVar (x ≜ x') ks
-popVar x (((Right (PListVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVar (x ≜ x') ks
-popVar _ Nil = pure Nil
-popVar _ _ = throw (shapeMismatch unit)
+popVarFwd :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
+popVarFwd x (((Left (PVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popVarFwd (x ≜ x') ks
+popVarFwd _ Nil = pure Nil
+popVarFwd _ _ = throw (shapeMismatch unit)
+
+popListVarFwd :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
+popListVarFwd x (((Right (PListVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popListVarFwd (x ≜ x') ks
+popListVarFwd _ Nil = pure Nil
+popListVarFwd _ _ = throw (shapeMismatch unit)
+
+popVarBwd :: forall a. Var -> ClausesState' a -> ClausesState' a
+popVarBwd x ((π × π' × s) : ks) = ((Left (PVar x) : π) × π' × s) : popVarBwd x ks
+popVarBwd _ Nil = Nil
 
 popConstr :: forall a m. MonadError Error m => DataType -> ClausesState' a -> m (List (Ctr × ClausesState' a))
 popConstr _ ((Nil × _ × _) : _) = error absurd
@@ -407,7 +415,7 @@ clausesStateFwd ((Nil × Nil × s) : Nil) =
 clausesStateFwd ks@((Nil × _) : _) =
    ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
 clausesStateFwd ks@(((Left (PVar x) : _) × _) : _) =
-   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVar x ks)
+   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
 clausesStateFwd ks@(((Left (PRecord xps) : _) × _) : _) =
    ContElim <$> ElimRecord (keys xps) <$> (clausesStateFwd =<< popRecord (keys xps) ks)
 clausesStateFwd ks@(((Left (PConstr c _) : _) × _) : _) = do
@@ -420,7 +428,7 @@ clausesStateFwd ks@(((Left (PListNonEmpty _ _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cCons)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
 clausesStateFwd ks@(((Right (PListVar x) : _) × _) : _) =
-   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVar x ks)
+   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popListVarFwd x ks)
 clausesStateFwd ks@(((Right PListEnd : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cNil)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
@@ -435,7 +443,9 @@ clausesStateBwd (ContExpr e) ((Nil × Nil × s) : Nil) =
 clausesStateBwd (ContExpr (E.Lambda _ σ)) ks =
    clausesStateBwd (ContElim σ) (popArgBwd ks)
 clausesStateBwd (ContExpr _) _ = error absurd
-clausesStateBwd _ _ = error "todo"
+clausesStateBwd (ContElim (ElimVar x κ)) ks =
+   clausesStateBwd κ (popVarBwd x ks)
+clausesStateBwd (ContElim _) _ = error absurd
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and ending up empty.
