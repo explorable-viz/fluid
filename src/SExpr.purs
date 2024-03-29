@@ -423,8 +423,11 @@ clausesStateFwd ks@(((Right (PListNext _ _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor cCons)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
 
-clausesStateBwd :: forall a. Cont a -> Raw ClausesState' -> ClausesState' a
-clausesStateBwd = error "todo"
+clausesStateBwd :: forall a. BoundedJoinSemilattice a => Cont a -> Raw ClausesState' -> ClausesState' a
+clausesStateBwd _ Nil = error absurd
+clausesStateBwd e ((Nil × Nil × s) : Nil) =
+   (Nil × Nil × desugBwd (asExpr e) s) : Nil
+clausesStateBwd _ _ = error "todo"
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and ending up empty.
