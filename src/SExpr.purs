@@ -14,7 +14,6 @@ import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, second, (***))
-import Data.Set (Set)
 import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
@@ -356,7 +355,7 @@ popArgFwd ((Nil × (p : π) × s) : ks) = (((Left p : Nil) × π × s) : _) <$> 
 popArgFwd Nil = pure Nil
 popArgFwd _ = throw (shapeMismatch unit)
 
-popArgBwd :: forall a. ClausesState' a -> ClausesState' a
+popArgBwd :: forall a. Endo (ClausesState' a)
 popArgBwd (((Left p : Nil) × π × s) : ks) = (Nil × (p : π) × s) : popArgBwd ks
 popArgBwd Nil = Nil
 popArgBwd _ = error absurd
@@ -371,7 +370,7 @@ popListVarFwd x (((Right (PListVar x') : π) × π' × s) : ks) = ((π × π' ×
 popListVarFwd _ Nil = pure Nil
 popListVarFwd _ _ = throw (shapeMismatch unit)
 
-popVarBwd :: forall a. Var -> ClausesState' a -> ClausesState' a
+popVarBwd :: forall a. Var -> Endo (ClausesState' a)
 popVarBwd x ((π × π' × s) : ks) = ((Left (PVar x) : π) × π' × s) : popVarBwd x ks
 popVarBwd _ Nil = Nil
 
@@ -402,11 +401,17 @@ forConstr c k ((c' × ks') : cks)
    | c == c' = (c' × (k : ks')) : cks
    | otherwise = (c' × ks') : forConstr c k cks
 
-popRecord :: forall a m. MonadError Error m => Set Var -> ClausesState' a -> m (ClausesState' a)
-popRecord xs (((Left (PRecord xps) : π) × π' × s) : ks) =
-   assert (keys xps == xs) $ ((((xps <#> snd >>> Left) <> π) × π' × s) : _) <$> popRecord xs ks
-popRecord _ Nil = pure Nil
-popRecord _ _ = throw (shapeMismatch unit)
+popRecordFwd :: forall a m. MonadError Error m => List Var -> ClausesState' a -> m (ClausesState' a)
+popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
+   assert ((xps <#> fst) == xs) $ ((((xps <#> snd >>> Left) <> π) × π' × s) : _) <$> popRecordFwd xs ks
+popRecordFwd _ Nil = pure Nil
+popRecordFwd _ _ = throw (shapeMismatch unit)
+
+popRecordBwd :: forall a. List Var -> Endo (ClausesState' a)
+popRecordBwd xs ((π × π' × s) : ks) =
+   let xps = zip xs (unsafePartial (\(Left p) -> p) <$> take (length xs) π) in
+   ((Left (PRecord xps) : drop (length xs) π) × π' × s) : popRecordBwd xs ks
+popRecordBwd _ Nil = Nil
 
 clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
 clausesStateFwd Nil = error absurd
@@ -417,7 +422,7 @@ clausesStateFwd ks@((Nil × _) : _) =
 clausesStateFwd ks@(((Left (PVar x) : _) × _) : _) =
    ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
 clausesStateFwd ks@(((Left (PRecord xps) : _) × _) : _) =
-   ContElim <$> ElimRecord (keys xps) <$> (clausesStateFwd =<< popRecord (keys xps) ks)
+   ContElim <$> ElimRecord (keys xps) <$> (clausesStateFwd =<< popRecordFwd (xps <#> fst) ks)
 clausesStateFwd ks@(((Left (PConstr c _) : _) × _) : _) = do
    ckls <- popConstr (successful (dataTypeFor c)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> ckls)
@@ -445,6 +450,8 @@ clausesStateBwd (ContExpr (E.Lambda _ σ)) ks =
 clausesStateBwd (ContExpr _) _ = error absurd
 clausesStateBwd (ContElim (ElimVar x κ)) ks =
    clausesStateBwd κ (popVarBwd x ks)
+clausesStateBwd (ContElim (ElimRecord _ κ)) ks@(((Left (PRecord xps) : _) × _) : _) =
+   clausesStateBwd κ (popRecordBwd (xps <#> fst) ks)
 clausesStateBwd (ContElim _) _ = error absurd
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
