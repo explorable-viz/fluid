@@ -23,7 +23,7 @@ import Util.Map (keys, lookup)
 
 type TypeName = String
 type FieldName = String
-type Ctr = String -- newtype would be nicer but JS maps are also nice
+type Ctr = String -- newtype would require more general Dict keys
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
