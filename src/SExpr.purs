@@ -367,14 +367,18 @@ popVarFwd x (((Left (PVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) 
 popVarFwd _ Nil = pure Nil
 popVarFwd _ _ = throw (shapeMismatch unit)
 
+popVarBwd :: forall a. Var -> Endo (ClausesState' a)
+popVarBwd x ((π × π' × s) : ks) = ((Left (PVar x) : π) × π' × s) : popVarBwd x ks
+popVarBwd _ Nil = Nil
+
 popListVarFwd :: forall a m. MonadError Error m => Var -> ClausesState' a -> m (ClausesState' a)
 popListVarFwd x (((Right (PListVar x') : π) × π' × s) : ks) = ((π × π' × s) : _) <$> popListVarFwd (x ≜ x') ks
 popListVarFwd _ Nil = pure Nil
 popListVarFwd _ _ = throw (shapeMismatch unit)
 
-popVarBwd :: forall a. Var -> Endo (ClausesState' a)
-popVarBwd x ((π × π' × s) : ks) = ((Left (PVar x) : π) × π' × s) : popVarBwd x ks
-popVarBwd _ Nil = Nil
+popListVarBwd :: forall a. Var -> Endo (ClausesState' a)
+popListVarBwd x ((π × π' × s) : ks) = ((Left (PVar x) : π) × π' × s) : popListVarBwd x ks
+popListVarBwd _ Nil = Nil
 
 popConstrFwd :: forall a m. MonadError Error m => DataType -> ClausesState' a -> m (List (Ctr × ClausesState' a))
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
@@ -455,7 +459,7 @@ clausesStateBwd (ContExpr e) ((Nil × Nil × s) : Nil) =
 clausesStateBwd (ContExpr (E.Lambda _ σ)) ks =
    popArgBwd (clausesStateBwd (ContElim σ) (defined (popArgFwd ks)))
 clausesStateBwd (ContExpr _) _ = error absurd
-clausesStateBwd (ContElim (ElimVar x κ)) ks =
+clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Left (PVar _) : _) × _) : _) =
    popVarBwd x (clausesStateBwd κ (defined (popVarFwd x ks)))
 clausesStateBwd (ContElim (ElimRecord _ κ)) ks@(((Left (PRecord xps) : _) × _) : _) =
    popRecordBwd (xps <#> fst) (clausesStateBwd κ (defined (popRecordFwd (xps <#> fst) ks)))
@@ -467,6 +471,12 @@ clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left PListEmpty : _) × _) : _) 
    popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
    where
    kss = defined (popConstrFwd (defined (dataTypeFor cNil)) ks)
+clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left (PListNonEmpty _ _) : _) × _) : _) =
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
+   where
+   kss = defined (popConstrFwd (defined (dataTypeFor cNil)) ks)
+clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Right (PListVar _) : _) × _) : _) =
+   popListVarBwd x (clausesStateBwd κ (defined (popListVarFwd x ks)))
 clausesStateBwd (ContElim _) _ = error "todo"
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
