@@ -18,6 +18,7 @@ import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, toUnfold
 import Util.Map as Map
 import Util.Set (class Set, difference, size, (∈))
 
+-- Think we can generalise to keys of any type coercible to String.
 newtype Dict a = Dict (O.Object a)
 
 derive instance Newtype (Dict a) _

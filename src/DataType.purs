@@ -46,10 +46,10 @@ type CtrSig = Int
 typeName :: DataType -> TypeName
 typeName (DataType name _) = name
 
-instance Eq (DataType' Int) where
+instance Eq DataType where
    eq = eq `on` typeName
 
-instance Show (DataType' Int) where
+instance Show DataType where
    show = typeName
 
 dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType

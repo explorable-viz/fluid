@@ -133,9 +133,6 @@ definitely msg Nothing = error ("definitely " <> msg)
 definitely' :: forall a. Maybe a -> a
 definitely' = definitely absurd
 
-get :: forall k v. Ord k => k -> Map k v -> v
-get k = definitely' <<< M.lookup k
-
 onlyIf :: forall m a. Bind m => Alternative m => Boolean -> a -> m a
 onlyIf b a = do
    guard b
@@ -148,13 +145,13 @@ orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
 orElse s Nothing = throw s
 orElse _ (Just x) = pure x
 
-successful :: forall a. MayFail a -> a
-successful = runExcept >>> case _ of
+defined :: forall a. MayFail a -> a
+defined = runExcept >>> case _ of
    Right x -> x
    Left e -> error $ show e
 
-successfulWith :: String -> forall a. MayFail a -> a
-successfulWith msg = successful <<< with msg
+definedWith :: String -> forall a. MayFail a -> a
+definedWith msg = defined <<< with msg
 
 with :: forall a m. MonadError Error m => String -> Endo (m a)
 with msg m = catchError m \e ->

@@ -24,7 +24,6 @@ key = fst
 val :: forall a. Bind a -> a
 val = snd
 
--- Want this to implement Util.Keys
 keys :: forall a. List (Bind a) -> Set Var
 keys Nil = empty
 keys (x ↦ _ : ρ) = singleton x ∪ keys ρ

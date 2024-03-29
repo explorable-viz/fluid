@@ -29,7 +29,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, orElse, singleton, spyFunWhen, successful, throw, with, (×), (⊆))
+import Util (type (×), Endo, check, concatM, orElse, singleton, spyFunWhen, defined, throw, with, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((\\), (∪), empty)
@@ -100,7 +100,7 @@ apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
    if length vs < n - 1 then Val <$> new (singleton α) <@> V.Fun (V.PartialConstr c (snoc vs v))
    else Val <$> new (singleton α) <@> V.Constr c (snoc vs v)
    where
-   n = successful (arity c)
+   n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)

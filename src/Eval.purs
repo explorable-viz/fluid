@@ -25,7 +25,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (×), both, check, orElse, singleton, successful, throw, unzip, with)
+import Util (type (×), (×), both, check, orElse, singleton, defined, throw, unzip, with)
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set (empty, (∪))
@@ -96,7 +96,7 @@ apply (Val α (V.Fun (V.PartialConstr c vs)) × v) = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    pure $ T.AppConstr c × v'
    where
-   n = successful (arity c)
+   n = defined (arity c)
    v' =
       if length vs < n - 1 then Val α (V.Fun $ V.PartialConstr c (vs <> singleton v))
       else Val α (V.Constr c (vs <> singleton v))
