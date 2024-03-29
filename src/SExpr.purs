@@ -460,10 +460,14 @@ clausesStateBwd (ContElim (ElimVar x κ)) ks =
 clausesStateBwd (ContElim (ElimRecord _ κ)) ks@(((Left (PRecord xps) : _) × _) : _) =
    popRecordBwd (xps <#> fst) (clausesStateBwd κ (defined (popRecordFwd (xps <#> fst) ks)))
 clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left (PConstr c _) : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c m <@> ks')) kss)
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
    where
    kss = defined (popConstrFwd (defined (dataTypeFor c)) ks)
-clausesStateBwd (ContElim _) _ = error absurd
+clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left PListEmpty : _) × _) : _) =
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
+   where
+   kss = defined (popConstrFwd (defined (dataTypeFor cNil)) ks)
+clausesStateBwd (ContElim _) _ = error "todo"
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and ending up empty.
