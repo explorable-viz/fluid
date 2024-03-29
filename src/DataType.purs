@@ -39,8 +39,7 @@ showCtr c
    | isCtrOp c = "(" <> c <> ")"
    | otherwise = error absurd
 
-data DataType' a = DataType TypeName (Dict a)
-type DataType = DataType' CtrSig
+data DataType = DataType TypeName (Dict CtrSig)
 type CtrSig = Int
 
 typeName :: DataType -> TypeName
