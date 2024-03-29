@@ -28,7 +28,7 @@ import Dict as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, top, (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
@@ -492,13 +492,11 @@ clausesStateBwd (ContElim _) _ = error (shapeMismatch unit)
 type ClauseState a = List (Pattern + ListRestPattern) × Expr a
 
 pushPatt :: forall a. Pattern + ListRestPattern -> Endo (ClauseState a)
-pushPatt p = pushPatts (singleton p)
+pushPatt p (π × s) = (p : π) × s
 
-pushPatts :: forall a. List (Pattern + ListRestPattern) -> Endo (ClauseState a)
-pushPatts π1 (π × s) = (π1 <> π) × s
-
-popPatts :: forall a. Int -> ClauseState a -> List (Pattern + ListRestPattern) × ClauseState a
-popPatts n (π × s) = take n π × drop n π × s
+pushPattBwd :: forall a. Endo (ClauseState a)
+pushPattBwd ((_ : π) × s) = π × s
+pushPattBwd _ = error (shapeMismatch unit)
 
 withPatts
    :: forall a
@@ -506,7 +504,13 @@ withPatts
    -> (ClauseState a -> NonEmptyList (ClauseState a))
    -> ClauseState a
    -> NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
-withPatts π f k = popPatts (length π) <$> f (pushPatts π k)
+withPatts π f k = popPatts <$> f (pushPatts k)
+   where
+   pushPatts :: Endo (ClauseState a)
+   pushPatts (π' × s) = (π <> π') × s
+
+   popPatts :: ClauseState a -> List (Pattern + ListRestPattern) × ClauseState a
+   popPatts (π' × s) = take (length π) π' × drop (length π) π' × s
 
 orElseFwd :: forall a. Expr a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd _ (Nil × s) = singleton (Nil × s)
@@ -546,6 +550,12 @@ orElseFwd s' ((Right PListEnd : π) × s) = ks `appendList` (k : Nil)
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left (PVar varAnon)
 anon (Right _) = Right (PListVar varAnon)
+
+orElseBwd_New :: forall a. BoundedJoinSemilattice a => Raw Expr × Raw ClauseState -> NonEmptyList (ClauseState a) -> Expr a × ClauseState a
+orElseBwd_New (s' × (Nil × _)) (NonEmptyList (Nil × s :| Nil)) = botOf s' × (Nil × s)
+orElseBwd_New (s' × ((Left (PVar x) : π) × s)) ks =
+   orElseBwd_New (s' × (π × s)) (ks <#> pushPattBwd) # second (pushPatt (Left (PVar x)))
+orElseBwd_New _ _ = error "todo"
 
 -- orElse
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
