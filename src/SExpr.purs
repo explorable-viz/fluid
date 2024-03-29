@@ -512,7 +512,7 @@ orElseUnderFwd s' π k = popPatts <$> orElseFwd s' (pushPatts k)
 orElseUnderBwd
    :: forall a
     . NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
-   -> Expr a × List (Pattern + ListRestPattern)
+   -> Expr a × List (Pattern + ListRestPattern) × ClauseState a
 orElseUnderBwd = error "todo"
 
 orElseFwd :: forall a. Expr a -> ClauseState a -> NonEmptyList (ClauseState a)
@@ -554,16 +554,20 @@ anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left (PVar varAnon)
 anon (Right _) = Right (PListVar varAnon)
 
-orElseBwd_New :: forall a. BoundedJoinSemilattice a => Raw Expr × Raw ClauseState -> NonEmptyList (ClauseState a) -> Expr a × ClauseState a
+orElseBwd_New
+   :: forall a
+    . BoundedJoinSemilattice a
+   => Raw Expr × Raw ClauseState
+   -> NonEmptyList (ClauseState a)
+   -> Expr a × ClauseState a
 orElseBwd_New (s' × (Nil × _)) (NonEmptyList (Nil × s :| Nil)) = botOf s' × (Nil × s)
 orElseBwd_New (s' × ((Left (PVar x) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> pushPattBwd >>> snd) # second (pushPattFwd (Left (PVar x)))
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
-   s'' × ?_ × ?_
+   (s1 ∨ s2) × ?_
    where
-   ks' × s'' = ks <#> pushPattBwd # foldl (unsafePartial (wibble c)) (Nil × botOf s')
-   r = orElseUnderBwd (definitely' (fromList ks'))
-   cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
+   ps_ks × s1 = ks <#> pushPattBwd # foldl (unsafePartial (wibble c)) (Nil × botOf s')
+   s2 × z × k = orElseUnderBwd (definitely' (fromList ps_ks))
 orElseBwd_New _ _ = error "todo"
 
 wibble
@@ -573,9 +577,9 @@ wibble
    => Ctr
    -> List (List (Pattern + ListRestPattern) × ClauseState a) × Expr a
    -> (Pattern + ListRestPattern) × (List (Pattern + ListRestPattern) × Expr a)
-   -> List (_ × ClauseState a) × Expr a
-wibble c (ps_k × s1) (Left (PConstr c' π1) × π1' × s1') =
-   if c == c' then (((Left <$> π1) × π1' × s1') : ps_k) × s1 else ps_k × (s1 ∨ s1')
+   -> List (List (Pattern + ListRestPattern) × ClauseState a) × Expr a
+wibble c (ps_ks × s) (Left (PConstr c' π) × π' × s') =
+   if c' == c then (((Left <$> π) × π' × s') : ps_ks) × s else ps_ks × (s ∨ s')
 
 -- orElse
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
