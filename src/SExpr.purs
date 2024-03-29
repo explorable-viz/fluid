@@ -12,7 +12,7 @@ import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, length, sortBy, take, zip, zipWith, (:), (\\))
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
+import Data.List.NonEmpty (NonEmptyList(..), cons, fromList, groupBy, head, toList)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, second, (***))
@@ -30,7 +30,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely', error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
 
@@ -509,6 +509,12 @@ orElseUnderFwd s' π k = popPatts <$> orElseFwd s' (pushPatts k)
    pushPatts (π' × s) = (π <> π') × s
    popPatts (π' × s) = take (length π) π' × drop (length π) π' × s
 
+orElseUnderBwd
+   :: forall a
+    . NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
+   -> Expr a × List (Pattern + ListRestPattern)
+orElseUnderBwd = error "todo"
+
 orElseFwd :: forall a. Expr a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd _ (Nil × s) = singleton (Nil × s)
 orElseFwd s' ((Left (PVar x) : π) × s) =
@@ -552,13 +558,24 @@ orElseBwd_New :: forall a. BoundedJoinSemilattice a => Raw Expr × Raw ClauseSta
 orElseBwd_New (s' × (Nil × _)) (NonEmptyList (Nil × s :| Nil)) = botOf s' × (Nil × s)
 orElseBwd_New (s' × ((Left (PVar x) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> pushPattBwd >>> snd) # second (pushPattFwd (Left (PVar x)))
-{-
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
-   ?_
+   s'' × ?_ × ?_
    where
+   ks' × s'' = ks <#> pushPattBwd # foldl (unsafePartial (wibble c)) (Nil × botOf s')
+   r = orElseUnderBwd (definitely' (fromList ks'))
    cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
--}
 orElseBwd_New _ _ = error "todo"
+
+wibble
+   :: forall a
+    . BoundedJoinSemilattice a
+   => Partial
+   => Ctr
+   -> List (List (Pattern + ListRestPattern) × ClauseState a) × Expr a
+   -> (Pattern + ListRestPattern) × (List (Pattern + ListRestPattern) × Expr a)
+   -> List (_ × ClauseState a) × Expr a
+wibble c (ps_k × s1) (Left (PConstr c' π1) × π1' × s1') =
+   if c == c' then (((Left <$> π1) × π1' × s1') : ps_k) × s1 else ps_k × (s1 ∨ s1')
 
 -- orElse
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
