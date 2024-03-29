@@ -418,10 +418,10 @@ popRecordFwd _ _ = throw (shapeMismatch unit)
 
 popRecordBwd :: forall a. List Var -> Endo (ClausesState' a)
 popRecordBwd xs ((π × π' × s) : ks) =
-   let
-      xps = zip xs (unsafePartial (\(Left p) -> p) <$> take (length xs) π)
-   in
-      ((Left (PRecord xps) : drop (length xs) π) × π' × s) : popRecordBwd xs ks
+   ((Left (PRecord xps) : drop (length xs) π) × π' × s) : popRecordBwd xs ks
+   where
+   xps = zip xs (unsafePartial (\(Left p) -> p) <$> take (length xs) π)
+
 popRecordBwd _ Nil = Nil
 
 clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
