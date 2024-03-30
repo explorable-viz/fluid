@@ -12,7 +12,7 @@ import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, length, sortBy, take, zip, zipWith, (:), (\\))
-import Data.List.NonEmpty (NonEmptyList(..), cons, fromList, groupBy, head, toList)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, second, (***))
@@ -30,7 +30,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely', error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
 
@@ -221,7 +221,7 @@ exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (desugBwd e s) (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
    Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
-exprBwd (E.Lambda _ σ) (Lambda bs) = Lambda (clausesBwd σ bs)
+exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (clausesBwd_New σ μ)
 exprBwd (E.Project e _) (Project s x) = Project (desugBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
@@ -401,14 +401,14 @@ popConstrFwd d (((Right (PListNext p o) : π) × π' × s) : ks) =
 popConstrFwd _ (((Right _ : _) × _) : _) = throw (shapeMismatch unit)
 popConstrFwd _ Nil = pure Nil
 
-popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> ClausesState' a
-popConstrBwd = error "todo"
-
 forConstr :: forall a. Ctr -> ClauseState' a -> Endo (List (Ctr × ClausesState' a))
 forConstr c k Nil = (c × (k : Nil)) : Nil
 forConstr c k ((c' × ks') : cks)
    | c == c' = (c' × (k : ks')) : cks
    | otherwise = (c' × ks') : forConstr c k cks
+
+popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> ClausesState' a
+popConstrBwd = error "todo"
 
 popRecordFwd :: forall a m. MonadError Error m => List Var -> ClausesState' a -> m (ClausesState' a)
 popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
@@ -559,15 +559,17 @@ orElseBwd_New
     . BoundedJoinSemilattice a
    => Raw Expr × Raw ClauseState
    -> NonEmptyList (ClauseState a)
-   -> Expr a × ClauseState a
-orElseBwd_New (s' × (Nil × _)) (NonEmptyList (Nil × s :| Nil)) = botOf s' × (Nil × s)
+   -> Expr a × Expr a
+orElseBwd_New (s' × (Nil × _)) (NonEmptyList (Nil × s :| Nil)) = botOf s' × s
 orElseBwd_New (s' × ((Left (PVar x) : π) × s)) ks =
-   orElseBwd_New (s' × (π × s)) (ks <#> pushPattBwd >>> snd) # second (pushPattFwd (Left (PVar x)))
+   orElseBwd_New (s' × (π × s)) (ks <#> pushPattBwd >>> snd)
+{-
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
    (s1 ∨ s2) × ?_
    where
    ps_ks × s1 = ks <#> pushPattBwd # foldl (unsafePartial (wibble c)) (Nil × botOf s')
    s2 × z × k = orElseUnderBwd (definitely' (fromList ps_ks))
+-}
 orElseBwd_New _ _ = error "todo"
 
 wibble
