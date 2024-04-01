@@ -569,7 +569,8 @@ orElseBwd_New (_ × (Nil × _)) _ = error absurd
 orElseBwd_New (s' × ((Left (PVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PRecord xps) : π) × s)) ks =
-   orElseBwd_New (s' × (((Left <<< snd <$> xps) <> π) × s)) (ks <#> popPatt >>> snd <#> pushPatts π)
+   orElseBwd_New (s' × (((Left <<< snd <$> xps) <> π) × s)) (ks <#>
+      popPatt <#> unsafePartial \(Left(PRecord xps') × k) -> pushPatts (xps' <#> Left <<< snd) k)
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × _)) ks =
    orElseBwd_New (s' × ((?_ : π') × ?_)) ?_
    where
