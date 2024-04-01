@@ -1,13 +1,14 @@
 module Util.Parse where
 
 import Prelude hiding (absurd)
+
 import Control.Alt ((<|>))
 import Data.List (List(..))
 import Data.List (many, some) as L
-import Data.List.NonEmpty (NonEmptyList, cons', fromList, toList)
+import Data.List.NonEmpty (NonEmptyList, cons', toList)
 import Parsing (Parser)
 import Parsing.Combinators (try)
-import Util (definitely')
+import Util (nonEmpty)
 
 type SParser = Parser String
 
@@ -19,4 +20,4 @@ sepBy1_try :: forall a sep. SParser a -> SParser sep -> SParser (NonEmptyList a)
 sepBy1_try p sep = cons' <$> p <*> L.many (try $ sep *> p)
 
 some :: forall a. SParser a → SParser (NonEmptyList a)
-some p = definitely' <$> fromList <$> L.some p
+some p = nonEmpty <$> L.some p

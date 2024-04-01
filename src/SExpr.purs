@@ -11,10 +11,11 @@ import Data.Filterable (filterMap)
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, length, sortBy, take, zip, zipWith, (:), (\\))
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
+import Data.List (List(..), drop, filter, length, partition, sortBy, take, zip, zipWith, (:), (\\))
+import Data.List.NonEmpty (NonEmptyList(..), catMaybes, fromList, groupBy, head, toList)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.NonEmpty ((:|))
+import Data.NonEmpty (foldl1, (:|))
 import Data.Profunctor.Strong (first, second, (***))
 import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
@@ -30,7 +31,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, error, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
 
@@ -567,10 +568,17 @@ orElseBwd_New (s' × (Nil × _)) (NonEmptyList (Nil × s :| Nil)) = botOf s' × 
 orElseBwd_New (_ × (Nil × _)) _ = error absurd
 orElseBwd_New (s' × ((Left (PVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
-orElseBwd_New (s' × ((Left (PRecord _) : π) × s)) ks =
-   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd <#> pushPatts π)
-orElseBwd_New (_ × ((Left (PConstr _ _) : _) × _)) _ =
-   ?_
+orElseBwd_New (s' × ((Left (PRecord xps) : π) × s)) ks =
+   orElseBwd_New (s' × (((Left <<< snd <$> xps) <> π) × s)) (ks <#> popPatt >>> snd <#> pushPatts π)
+orElseBwd_New (s' × ((Left (PConstr c π) : π') × _)) ks =
+   orElseBwd_New (s' × ((?_ : π') × ?_)) ?_
+   where
+   cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
+   wurble :: forall a. ClauseState a -> Boolean
+   wurble ((Left (PConstr c' _) : _) × s'') = c == c'
+   wurble _ = false
+   { no: ks1, yes: ks2 } = partition wurble (toList ks)
+   ss' = ks1 <#> snd # nonEmpty # unwrap # foldl1 (∨)
 {-
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
    (s1 ∨ s2) × ?_
@@ -581,7 +589,8 @@ orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
 orElseBwd_New (s' × ((Left PListEmpty : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PListNonEmpty p o) : π) × s)) ks =
-   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd <#> pushPatts (Left p : Right o : Nil))
+   orElseBwd_New (s' × (π × s)) (ks <#>
+      popPatt <#> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k)
 orElseBwd_New (s' × ((Right (PListVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Right PListEnd : π) × s)) ks =

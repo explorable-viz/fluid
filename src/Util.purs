@@ -13,7 +13,7 @@ import Data.Functor.Compose (Compose)
 import Data.Functor.Product (Product)
 import Data.Identity (Identity(..))
 import Data.List (List(..), (:), intercalate)
-import Data.List.NonEmpty (NonEmptyList(..))
+import Data.List.NonEmpty (NonEmptyList(..), fromList)
 import Data.Map (Map)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
@@ -211,8 +211,7 @@ unsafeUpdateAt i x = updateAt i x >>> definitely "index within bounds"
 infixl 8 unsafeIndex as !
 
 nonEmpty :: forall a. List a -> NonEmptyList a
-nonEmpty Nil = error absurd
-nonEmpty (x : xs) = NonEmptyList (x :| xs)
+nonEmpty = definitely' <<< fromList
 
 -- Similar to NonEmptyList.appendFoldable but without copying the list
 appendList :: forall a. NonEmptyList a -> List a -> NonEmptyList a
