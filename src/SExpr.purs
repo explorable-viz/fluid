@@ -596,7 +596,8 @@ orElseBwd_New (s' × ((Right (PListVar _) : π) × s)) ks =
 orElseBwd_New (s' × ((Right PListEnd : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Right (PListNext p o) : π) × s)) ks =
-   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd <#> pushPatts (Left p : Right o : Nil))
+   orElseBwd_New (s' × (π × s)) (ks <#>
+      popPatt <#> unsafePartial \(Right (PListNext p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k)
 
 -- orElse
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
