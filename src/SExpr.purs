@@ -568,8 +568,9 @@ orElseBwd_New (s' × ((Left (PVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PRecord _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd <#> pushPatts π)
-{-
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
+   ?_
+{-
    (s1 ∨ s2) × ?_
    where
    ps_ks × s1 = ks <#> pushPattBwd # foldl (unsafePartial (wibble c)) (Nil × botOf s')
@@ -578,6 +579,12 @@ orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
 orElseBwd_New (s' × ((Left PListEmpty : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PListNonEmpty p o) : π) × s)) ks =
+   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd <#> pushPatts (Left p : Right o : Nil))
+orElseBwd_New (s' × ((Right (PListVar _) : π) × s)) ks =
+   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
+orElseBwd_New (s' × ((Right PListEnd : π) × s)) ks =
+   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
+orElseBwd_New (s' × ((Right (PListNext p o) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd <#> pushPatts (Left p : Right o : Nil))
 orElseBwd_New _ _ = error "todo"
 
