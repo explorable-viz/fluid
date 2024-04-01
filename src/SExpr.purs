@@ -575,6 +575,10 @@ orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
    ps_ks × s1 = ks <#> pushPattBwd # foldl (unsafePartial (wibble c)) (Nil × botOf s')
    s2 × z × k = orElseUnderBwd (definitely' (fromList ps_ks))
 -}
+orElseBwd_New (s' × ((Left PListEmpty : π) × s)) ks =
+   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
+orElseBwd_New (s' × ((Left (PListNonEmpty p o) : π) × s)) ks =
+   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd <#> pushPatts (Left p : Right o : Nil))
 orElseBwd_New _ _ = error "todo"
 
 -- orElse
