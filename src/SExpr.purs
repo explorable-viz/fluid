@@ -498,10 +498,10 @@ popPatt :: forall a. ClauseState a -> (Pattern + ListRestPattern) × ClauseState
 popPatt ((p : π) × s) = p × (π × s)
 popPatt _ = error (shapeMismatch unit)
 
-pushPatts :: List (Pattern + ListRestPattern) -> Endo (ClauseState a)
+pushPatts :: forall a. List (Pattern + ListRestPattern) -> Endo (ClauseState a)
 pushPatts π (π' × s) = (π <> π') × s
 
-popPatts :: Int -> ClauseState a -> List (Pattern + ListRestPattern) × ClauseState a
+popPatts :: forall a. Int -> ClauseState a -> List (Pattern + ListRestPattern) × ClauseState a
 popPatts n (π' × s) = take n π' × drop n π' × s
 
 orElseUnderFwd
@@ -510,7 +510,7 @@ orElseUnderFwd
    -> List (Pattern + ListRestPattern)
    -> ClauseState a
    -> NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
-orElseUnderFwd s' π k = popPatts (length π) <$> orElseFwd s' (pushPatts k)
+orElseUnderFwd s' π k = popPatts (length π) <$> orElseFwd s' (pushPatts π k)
 
 orElseUnderBwd
    :: forall a
@@ -567,7 +567,7 @@ orElseBwd_New (s' × (Nil × _)) (NonEmptyList (Nil × s :| Nil)) = botOf s' × 
 orElseBwd_New (s' × ((Left (PVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PRecord _) : π) × s)) ks =
-   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
+   orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd <#> pushPatts π)
 {-
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
    (s1 ∨ s2) × ?_
@@ -576,17 +576,6 @@ orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
    s2 × z × k = orElseUnderBwd (definitely' (fromList ps_ks))
 -}
 orElseBwd_New _ _ = error "todo"
-
-wibble
-   :: forall a
-    . BoundedJoinSemilattice a
-   => Partial
-   => Ctr
-   -> List (List (Pattern + ListRestPattern) × ClauseState a) × Expr a
-   -> (Pattern + ListRestPattern) × (List (Pattern + ListRestPattern) × Expr a)
-   -> List (List (Pattern + ListRestPattern) × ClauseState a) × Expr a
-wibble c (ps_ks × s) (Left (PConstr c' π) × π' × s') =
-   if c' == c then (((Left <$> π) × π' × s') : ps_ks) × s else ps_ks × (s ∨ s')
 
 -- orElse
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
