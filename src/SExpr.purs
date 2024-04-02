@@ -414,7 +414,24 @@ popConstrBwd kss (((Left (PConstr c π) : π') × π'' × _) : ks) =
    case forConstrBwd c kss of
       Nothing -> popConstrBwd kss ks
       Just ((_ × _ × s) × kss') -> ((Left (PConstr c π) : π') × π'' × s) : popConstrBwd kss' ks
-popConstrBwd _ (((_ : _) × _ × _) : _) = error "todo"
+popConstrBwd kss (((Left PListEmpty : π) × π' × _) : ks) =
+   case forConstrBwd cNil kss of
+      Nothing -> popConstrBwd kss ks
+      Just ((_ × _ × s) × kss') -> ((Left PListEmpty : π) × π' × s) : popConstrBwd kss' ks
+popConstrBwd kss (((Left (PListNonEmpty p o) : π) × π' × _) : ks) =
+   case forConstrBwd cCons kss of
+      Nothing -> popConstrBwd kss ks
+      Just ((_ × _ × s) × kss') -> ((Left (PListNonEmpty p o) : π) × π' × s) : popConstrBwd kss' ks
+popConstrBwd _ (((Left _ : _) × _ × _) : _) = error absurd
+popConstrBwd kss (((Right PListEnd : π) × π' × _) : ks) =
+   case forConstrBwd cNil kss of
+      Nothing -> popConstrBwd kss ks
+      Just ((_ × _ × s) × kss') -> ((Right PListEnd : π) × π' × s) : popConstrBwd kss' ks
+popConstrBwd kss (((Right (PListNext p o) : π) × π' × _) : ks) =
+   case forConstrBwd cCons kss of
+      Nothing -> popConstrBwd kss ks
+      Just ((_ × _ × s) × kss') -> ((Right (PListNext p o) : π) × π' × s) : popConstrBwd kss' ks
+popConstrBwd _ (((Right _ : _) × _ × _) : _) = error absurd
 popConstrBwd _ Nil = Nil
 
 forConstrBwd :: forall a. Ctr -> List (Ctr × ClausesState' a) -> Maybe (ClauseState' a × List (Ctr × ClausesState' a))
@@ -425,18 +442,6 @@ forConstrBwd c ((c' × ks) : kss)
         k : ks' -> Just (k × (c' × ks') : kss)
    | otherwise = second ((c' × ks) : _) <$> forConstrBwd c kss
 
-{-
-popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> ClausesState' a
-popConstrBwd ((_ × Nil) : _) = error absurd
-popConstrBwd ((c × ks) : cks) = ks' <> popConstrBwd cks
-   where
-   ks' = ks <#>
-      \(π × π' × s) ->
-         assert (length π >= n) $
-         (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> take n π)) : drop n π) × π' × s
-   n = defined (arity c)
-popConstrBwd Nil = Nil
--}
 popRecordFwd :: forall a m. MonadError Error m => List Var -> ClausesState' a -> m (ClausesState' a)
 popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
    assert ((xps <#> fst) == xs) $ ((((xps <#> snd >>> Left) <> π) × π' × s) : _) <$> popRecordFwd xs ks
