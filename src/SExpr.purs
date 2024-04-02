@@ -407,18 +407,35 @@ forConstr c k ((c' × ks') : cks)
    | c == c' = (c' × (k : ks')) : cks
    | otherwise = (c' × ks') : forConstr c k cks
 
+popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> Raw ClausesState' -> ClausesState' a
+popConstrBwd _ ((Nil × _ × _) : _) = error absurd
+popConstrBwd kss (((Left (PConstr c _) : _) × _ × _) : _) =
+   error "todo"
+   where
+   _ × _ = forConstrBwd c kss
+popConstrBwd _ (((_ : _) × _ × _) : _) = error "todo"
+popConstrBwd _ Nil = Nil
+
+forConstrBwd :: forall a. Ctr -> List (Ctr × ClausesState' a) -> ClauseState' a × List (Ctr × ClausesState' a)
+forConstrBwd _ Nil = error absurd
+forConstrBwd c ((c' × ks) : kss)
+   | c == c' = case ks of
+        Nil -> error absurd
+        k : ks' -> k × (c' × ks') : kss
+   | otherwise = second ((c' × ks) : _) (forConstrBwd c kss)
+
+{-
 popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> ClausesState' a
 popConstrBwd ((_ × Nil) : _) = error absurd
-popConstrBwd ((c × ks) : cks) =
-   ( ks <#>
-        ( \(π × π' × s) ->
-             (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> take n π)) : drop n π) × π' × s
-        )
-   ) <> popConstrBwd cks
+popConstrBwd ((c × ks) : cks) = ks' <> popConstrBwd cks
    where
+   ks' = ks <#>
+      \(π × π' × s) ->
+         assert (length π >= n) $
+         (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> take n π)) : drop n π) × π' × s
    n = defined (arity c)
 popConstrBwd Nil = Nil
-
+-}
 popRecordFwd :: forall a m. MonadError Error m => List Var -> ClausesState' a -> m (ClausesState' a)
 popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
    assert ((xps <#> fst) == xs) $ ((((xps <#> snd >>> Left) <> π) × π' × s) : _) <$> popRecordFwd xs ks
@@ -473,25 +490,25 @@ clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Left (PVar _) : _) × _) : _) =
 clausesStateBwd (ContElim (ElimRecord _ κ)) ks@(((Left (PRecord xps) : _) × _) : _) =
    popRecordBwd (xps <#> fst) (clausesStateBwd κ (defined (popRecordFwd (xps <#> fst) ks)))
 clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left (PConstr c _) : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
    where
    kss = defined (popConstrFwd (defined (dataTypeFor c)) ks)
 clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left PListEmpty : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
    where
    kss = defined (popConstrFwd (defined (dataTypeFor cNil)) ks)
 clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left (PListNonEmpty _ _) : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
    where
    kss = defined (popConstrFwd (defined (dataTypeFor cCons)) ks)
 clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Right (PListVar _) : _) × _) : _) =
    popListVarBwd x (clausesStateBwd κ (defined (popListVarFwd x ks)))
 clausesStateBwd (ContElim (ElimConstr m)) ks@(((Right PListEnd : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
    where
    kss = defined (popConstrFwd (defined (dataTypeFor cNil)) ks)
 clausesStateBwd (ContElim (ElimConstr m)) ks@(((Right (PListNext _ _) : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss)
+   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
    where
    kss = defined (popConstrFwd (defined (dataTypeFor cCons)) ks)
 clausesStateBwd (ContElim _) _ = error (shapeMismatch unit)
@@ -583,7 +600,6 @@ orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
       _ -> false
    ks_c' = nonEmpty ks_c <#>
       popPatt >>> unsafePartial \(Left (PConstr _ π'') × k) -> pushPatts (Left <$> π'') k
-
 orElseBwd_New (s' × ((Left PListEmpty : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PListNonEmpty p o) : π) × s)) ks =
