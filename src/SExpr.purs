@@ -11,9 +11,8 @@ import Data.Filterable (filterMap)
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, filter, length, partition, sortBy, take, zip, zipWith, (:), (\\))
-import Data.List.NonEmpty (NonEmptyList(..), catMaybes, fromList, groupBy, head, toList)
-import Data.Maybe (Maybe(..))
+import Data.List (List(..), drop, length, partition, sortBy, take, zip, zipWith, (:), (\\))
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty (foldl1, (:|))
 import Data.Profunctor.Strong (first, second, (***))
@@ -31,7 +30,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
 
@@ -569,11 +568,17 @@ orElseBwd_New (_ × (Nil × _)) _ = error absurd
 orElseBwd_New (s' × ((Left (PVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PRecord xps) : π) × s)) ks =
-   orElseBwd_New (s' × (((Left <<< snd <$> xps) <> π) × s)) (ks <#>
-      popPatt <#> unsafePartial \(Left(PRecord xps') × k) -> pushPatts (xps' <#> Left <<< snd) k)
+   orElseBwd_New (s' × (((Left <<< snd <$> xps) <> π) × s))
+      ( ks
+           <#> popPatt
+           <#> unsafePartial \(Left (PRecord xps') × k) -> pushPatts (xps' <#> Left <<< snd) k
+      )
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
-   orElseBwd_New (s' × (((Left <$> π) <> π') × s)) (nonEmpty ks_c <#>
-      popPatt <#> unsafePartial \(Left (PConstr _ π'') × k) -> pushPatts (Left <$> π'') k)
+   orElseBwd_New (s' × (((Left <$> π) <> π') × s))
+      ( nonEmpty ks_c
+           <#> popPatt
+           <#> unsafePartial \(Left (PConstr _ π'') × k) -> pushPatts (Left <$> π'') k
+      )
       # first ((_ :| (ks_not_c <#> snd)) >>> foldl1 (∨))
    where
    { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
@@ -582,15 +587,21 @@ orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
 orElseBwd_New (s' × ((Left PListEmpty : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PListNonEmpty p o) : π) × s)) ks =
-   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s)) (ks <#>
-      popPatt <#> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k)
+   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s))
+      ( ks
+           <#> popPatt
+           <#> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
+      )
 orElseBwd_New (s' × ((Right (PListVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Right PListEnd : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Right (PListNext p o) : π) × s)) ks =
-   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s)) (ks <#>
-      popPatt <#> unsafePartial \(Right (PListNext p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k)
+   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s))
+      ( ks
+           <#> popPatt
+           <#> unsafePartial \(Right (PListNext p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
+      )
 
 -- orElse
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
