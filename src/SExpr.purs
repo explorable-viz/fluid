@@ -596,7 +596,7 @@ orElseBwd_New (s' × ((Right (PListVar _) : π) × s)) ks =
 orElseBwd_New (s' × ((Right PListEnd : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Right (PListNext p o) : π) × s)) ks =
-   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s)) = ks'
+   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s)) ks'
    where
    ks' = ks <#>
       popPatt >>> unsafePartial \(Right (PListNext p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
