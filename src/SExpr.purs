@@ -13,6 +13,7 @@ import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, length, partition, sortBy, take, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty (foldl1, (:|))
 import Data.Profunctor.Strong (first, second, (***))
@@ -409,20 +410,20 @@ forConstr c k ((c' × ks') : cks)
 
 popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> Raw ClausesState' -> ClausesState' a
 popConstrBwd _ ((Nil × _ × _) : _) = error absurd
-popConstrBwd kss (((Left (PConstr c _) : _) × _ × _) : _) =
-   error "todo"
-   where
-   _ × _ = forConstrBwd c kss
+popConstrBwd kss (((Left (PConstr c _) : _) × _ × _) : ks) =
+   case forConstrBwd c kss of
+      Nothing -> popConstrBwd kss ks
+      Just (k × kss') -> k : popConstrBwd kss' ks
 popConstrBwd _ (((_ : _) × _ × _) : _) = error "todo"
 popConstrBwd _ Nil = Nil
 
-forConstrBwd :: forall a. Ctr -> List (Ctr × ClausesState' a) -> ClauseState' a × List (Ctr × ClausesState' a)
-forConstrBwd _ Nil = error absurd
+forConstrBwd :: forall a. Ctr -> List (Ctr × ClausesState' a) -> Maybe (ClauseState' a × List (Ctr × ClausesState' a))
+forConstrBwd _ Nil = Nothing
 forConstrBwd c ((c' × ks) : kss)
    | c == c' = case ks of
         Nil -> error absurd
-        k : ks' -> k × (c' × ks') : kss
-   | otherwise = second ((c' × ks) : _) (forConstrBwd c kss)
+        k : ks' -> Just (k × (c' × ks') : kss)
+   | otherwise = second ((c' × ks) : _) <$> forConstrBwd c kss
 
 {-
 popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> ClausesState' a
