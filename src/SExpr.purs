@@ -410,10 +410,10 @@ forConstr c k ((c' × ks') : cks)
 
 popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> Raw ClausesState' -> ClausesState' a
 popConstrBwd _ ((Nil × _ × _) : _) = error absurd
-popConstrBwd kss (((Left (PConstr c _) : _) × _ × _) : ks) =
+popConstrBwd kss (((Left (PConstr c π) : π') × π'' × _) : ks) =
    case forConstrBwd c kss of
       Nothing -> popConstrBwd kss ks
-      Just (k × kss') -> k : popConstrBwd kss' ks
+      Just ((_ × _ × s) × kss') -> ((Left (PConstr c π) : π') × π'' × s) : popConstrBwd kss' ks
 popConstrBwd _ (((_ : _) × _ × _) : _) = error "todo"
 popConstrBwd _ Nil = Nil
 
