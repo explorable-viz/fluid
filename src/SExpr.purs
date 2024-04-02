@@ -571,33 +571,25 @@ orElseBwd_New (s' × ((Left (PVar _) : π) × s)) ks =
 orElseBwd_New (s' × ((Left (PRecord xps) : π) × s)) ks =
    orElseBwd_New (s' × (((Left <<< snd <$> xps) <> π) × s)) (ks <#>
       popPatt <#> unsafePartial \(Left(PRecord xps') × k) -> pushPatts (xps' <#> Left <<< snd) k)
-orElseBwd_New (s' × ((Left (PConstr c π) : π') × _)) ks =
-   orElseBwd_New (s' × ((?_ : π') × ?_)) ?_
+orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
+   orElseBwd_New (s' × (((Left <$> π) <> π') × s)) (nonEmpty ks2)
+      # first (_ ∨ (ks1 <#> snd # foldl (∨) (botOf s')))
    where
-   cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
-   wurble :: forall a. ClauseState a -> Boolean
-   wurble ((Left (PConstr c' _) : _) × s'') = c == c'
+   wurble :: ClauseState a -> Boolean
+   wurble ((Left (PConstr c' _) : _) × _) = c == c'
    wurble _ = false
    { no: ks1, yes: ks2 } = partition wurble (toList ks)
-   ss' = ks1 <#> snd # nonEmpty # unwrap # foldl1 (∨)
-{-
-orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
-   (s1 ∨ s2) × ?_
-   where
-   ps_ks × s1 = ks <#> pushPattBwd # foldl (unsafePartial (wibble c)) (Nil × botOf s')
-   s2 × z × k = orElseUnderBwd (definitely' (fromList ps_ks))
--}
 orElseBwd_New (s' × ((Left PListEmpty : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PListNonEmpty p o) : π) × s)) ks =
-   orElseBwd_New (s' × (π × s)) (ks <#>
+   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s)) (ks <#>
       popPatt <#> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k)
 orElseBwd_New (s' × ((Right (PListVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Right PListEnd : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Right (PListNext p o) : π) × s)) ks =
-   orElseBwd_New (s' × (π × s)) (ks <#>
+   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s)) (ks <#>
       popPatt <#> unsafePartial \(Right (PListNext p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k)
 
 -- orElse
