@@ -572,13 +572,13 @@ orElseBwd_New (s' × ((Left (PRecord xps) : π) × s)) ks =
    orElseBwd_New (s' × (((Left <<< snd <$> xps) <> π) × s)) (ks <#>
       popPatt <#> unsafePartial \(Left(PRecord xps') × k) -> pushPatts (xps' <#> Left <<< snd) k)
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
-   orElseBwd_New (s' × (((Left <$> π) <> π') × s)) (nonEmpty ks2)
-      # first (_ ∨ (ks1 <#> snd # foldl (∨) (botOf s')))
+   orElseBwd_New (s' × (((Left <$> π) <> π') × s)) (nonEmpty ks_c <#>
+      popPatt <#> unsafePartial \(Left (PConstr _ π'') × k) -> pushPatts (Left <$> π'') k)
+      # first ((_ :| (ks_not_c <#> snd)) >>> foldl1 (∨))
    where
-   wurble :: ClauseState a -> Boolean
-   wurble ((Left (PConstr c' _) : _) × _) = c == c'
-   wurble _ = false
-   { no: ks1, yes: ks2 } = partition wurble (toList ks)
+   { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
+      (Left (PConstr c' _) : _) × _ -> c' == c
+      _ -> false
 orElseBwd_New (s' × ((Left PListEmpty : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PListNonEmpty p o) : π) × s)) ks =
