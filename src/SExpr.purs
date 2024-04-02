@@ -408,7 +408,16 @@ forConstr c k ((c' × ks') : cks)
    | otherwise = (c' × ks') : forConstr c k cks
 
 popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> ClausesState' a
-popConstrBwd = error "todo"
+popConstrBwd ((_ × Nil) : _) = error absurd
+popConstrBwd ((c × ks) : cks) =
+   ( ks <#>
+        ( \(π × π' × s) ->
+             (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> take n π)) : drop n π) × π' × s
+        )
+   ) <> popConstrBwd cks
+   where
+   n = defined (arity c)
+popConstrBwd Nil = Nil
 
 popRecordFwd :: forall a m. MonadError Error m => List Var -> ClausesState' a -> m (ClausesState' a)
 popRecordFwd xs (((Left (PRecord xps) : π) × π' × s) : ks) =
@@ -512,12 +521,6 @@ orElseUnderFwd
    -> NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
 orElseUnderFwd s' π k = popPatts (length π) <$> orElseFwd s' (pushPatts π k)
 
-orElseUnderBwd
-   :: forall a
-    . NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
-   -> Expr a × List (Pattern + ListRestPattern) × ClauseState a
-orElseUnderBwd = error "todo"
-
 orElseFwd :: forall a. Expr a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd _ (Nil × s) = singleton (Nil × s)
 orElseFwd s' ((Left (PVar x) : π) × s) =
@@ -568,40 +571,35 @@ orElseBwd_New (_ × (Nil × _)) _ = error absurd
 orElseBwd_New (s' × ((Left (PVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PRecord xps) : π) × s)) ks =
-   orElseBwd_New (s' × (((Left <<< snd <$> xps) <> π) × s))
-      ( ks
-           <#> popPatt
-           <#> unsafePartial \(Left (PRecord xps') × k) -> pushPatts (xps' <#> Left <<< snd) k
-      )
+   orElseBwd_New (s' × (((Left <<< snd <$> xps) <> π) × s)) ks'
+   where
+   ks' = ks <#> popPatt >>> unsafePartial \(Left (PRecord xps') × k) -> pushPatts (xps' <#> Left <<< snd) k
 orElseBwd_New (s' × ((Left (PConstr c π) : π') × s)) ks =
-   orElseBwd_New (s' × (((Left <$> π) <> π') × s))
-      ( nonEmpty ks_c
-           <#> popPatt
-           <#> unsafePartial \(Left (PConstr _ π'') × k) -> pushPatts (Left <$> π'') k
-      )
+   orElseBwd_New (s' × (((Left <$> π) <> π') × s)) ks_c'
       # first ((_ :| (ks_not_c <#> snd)) >>> foldl1 (∨))
    where
    { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
       (Left (PConstr c' _) : _) × _ -> c' == c
       _ -> false
+   ks_c' = nonEmpty ks_c <#>
+      popPatt >>> unsafePartial \(Left (PConstr _ π'') × k) -> pushPatts (Left <$> π'') k
+
 orElseBwd_New (s' × ((Left PListEmpty : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Left (PListNonEmpty p o) : π) × s)) ks =
-   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s))
-      ( ks
-           <#> popPatt
-           <#> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
-      )
+   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s)) ks'
+   where
+   ks' = ks <#>
+      popPatt >>> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
 orElseBwd_New (s' × ((Right (PListVar _) : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Right PListEnd : π) × s)) ks =
    orElseBwd_New (s' × (π × s)) (ks <#> popPatt >>> snd)
 orElseBwd_New (s' × ((Right (PListNext p o) : π) × s)) ks =
-   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s))
-      ( ks
-           <#> popPatt
-           <#> unsafePartial \(Right (PListNext p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
-      )
+   orElseBwd_New (s' × ((Left p : Right o : Nil <> π) × s)) = ks'
+   where
+   ks' = ks <#>
+      popPatt >>> unsafePartial \(Right (PListNext p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
 
 -- orElse
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
