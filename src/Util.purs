@@ -12,7 +12,7 @@ import Data.Foldable (class Foldable, foldr)
 import Data.Functor.Compose (Compose)
 import Data.Functor.Product (Product)
 import Data.Identity (Identity(..))
-import Data.List (List(..), (:), intercalate)
+import Data.List (List, intercalate)
 import Data.List.NonEmpty (NonEmptyList(..), fromList)
 import Data.Map (Map)
 import Data.Map as M

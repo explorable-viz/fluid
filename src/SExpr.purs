@@ -222,7 +222,7 @@ exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (desugBwd e s) (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
    Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
-exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (clausesBwd_New σ μ)
+exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (clausesBwd σ μ)
 exprBwd (E.Project e _) (Project s x) = Project (desugBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
@@ -319,8 +319,8 @@ pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim 
 clausesFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
 clausesFwd μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
 
-clausesBwd_New :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
-clausesBwd_New σ μ = toClausesStateBwd (clausesStateBwd (ContElim σ) (toClausesStateFwd μ))
+clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
+clausesBwd σ μ = toClausesStateBwd (clausesStateBwd (ContElim σ) (toClausesStateFwd μ))
 
 toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
 toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
@@ -335,19 +335,6 @@ toClausesStateBwd (k : ks) = Clauses (NonEmptyList (k :| ks) <#> toClauseStateBw
    toClauseStateBwd :: ClauseState' a -> Clause a
    toClauseStateBwd ((Left p : Nil) × π × s) = Clause (NonEmptyList (p :| π) × s)
    toClauseStateBwd _ = error (shapeMismatch unit)
-
-clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
-clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
-   where
-   clauseBwd :: Raw Clause -> Clause a
-   clauseBwd (Clause (πs × s)) = Clause (πs × pattsExprBwd (πs × s) σ)
-
-   pattsExprBwd :: NonEmptyList Pattern × Raw Expr -> Elim a -> Expr a
-   pattsExprBwd (NonEmptyList (p :| Nil) × s) σ' = desugBwd (asExpr (pattContBwd p σ')) s
-   pattsExprBwd (NonEmptyList (p :| p' : ps) × s) σ' = next (asExpr (pattContBwd p σ'))
-      where
-      next (E.Lambda _ τ) = pattsExprBwd (NonEmptyList (p' :| ps) × s) τ
-      next _ = error absurd
 
 -- Like ClauseState but for curried functions; extra component π' stores remaining top-level patterns.
 type ClauseState' a = List (Pattern + ListRestPattern) × List Pattern × Expr a
