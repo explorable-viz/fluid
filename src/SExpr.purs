@@ -275,13 +275,15 @@ listCompBwd
    -> a × List (Qualifier a) × Expr a
 listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (Nil × s) | c == cCons && c' == cNil =
    (α1 ∨ α2) × Nil × desugBwd e s
-listCompBwd (E.App (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) × s) =
-   case listCompBwd (asExpr (get cTrue m)) (qs × s) × asExpr (get cFalse m) of
+listCompBwd (E.App (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) × s0') =
+   case listCompBwd (asExpr (get cTrue m)) (qs × s0') × asExpr (get cFalse m) of
       (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
       _ -> error absurd
-listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef π s0) : qs) × s) =
-   case listCompBwd (asExpr (pattContBwd π σ)) (qs × s) of
-      α × qs' × s' -> (α ∨ α') × (ListCompDecl (VarDef π (desugBwd e s0)) : qs') × s'
+listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0') =
+   case desugBwd σ (Clauses (singleton (Clause (singleton p × ListComp unit s0' qs)))) of
+      Clauses (NonEmptyList (Clause (_ × ListComp α s' qs') :| Nil)) ->
+         (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
+      _ -> error absurd
 listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s) =
    case orElseBwd (ContElim σ) (Left p : Nil) of
       σ' × β -> case listCompBwd (asExpr (pattContBwd p (asElim σ'))) (qs × s) of
@@ -497,7 +499,7 @@ clausesStateBwd (ContElim (ElimConstr m)) ks@(((Right (PListNext _ _) : _) × _)
 clausesStateBwd (ContElim _) _ = error (shapeMismatch unit)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
--- initially containing only p and ending up empty.
+-- initially containing only p and empty when the recursion terminates.
 type ClauseState a = List (Pattern + ListRestPattern) × Expr a
 
 pushPatt :: forall a. Pattern + ListRestPattern -> Endo (ClauseState a)
@@ -505,7 +507,7 @@ pushPatt p (π × s) = (p : π) × s
 
 popPatt :: forall a. ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
 popPatt ((p : π) × s) = p × (π × s)
-popPatt _ = error (shapeMismatch unit)
+popPatt _ = error absurd
 
 pushPatts :: forall a. List (Pattern + ListRestPattern) -> Endo (ClauseState a)
 pushPatts π (π' × s) = (π <> π') × s
