@@ -84,9 +84,7 @@ newtype RecDef a = RecDef (NonEmptyList (Branch a))
 type RecDefs a = NonEmptyList (Branch a)
 
 -- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
--- Using a data type makes for easier overloading.
 data VarDef a = VarDef Pattern (Expr a)
-
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a
@@ -101,8 +99,15 @@ instance Desugarable Expr E.Expr where
    desugBwd = exprBwd
 
 instance Desugarable ListRest E.Expr where
-   desug = listRestFwd
-   desugBwd = listRestBwd
+   desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
+   desug (End α) = pure (enil α)
+   desug (Next α s l) = econs α <$> desug s <*> desug l
+
+   desugBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
+   desugBwd (E.Constr α _ _) (End _) = End α
+   desugBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
+      Next α (desugBwd e1 s) (desugBwd e2 l)
+   desugBwd _ _ = error absurd
 
 instance Desugarable Clauses Elim where
    desug :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
@@ -247,17 +252,6 @@ exprBwd e (ListComp _ s qs) =
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 exprBwd (E.LetRec xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBwd e s)
 exprBwd _ _ = error absurd
-
--- ListRest
-listRestFwd :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
-listRestFwd (End α) = pure (enil α)
-listRestFwd (Next α s l) = econs α <$> desug s <*> desug l
-
-listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
-listRestBwd (E.Constr α _ _) (End _) = End α
-listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
-   Next α (desugBwd e1 s) (desugBwd e2 l)
-listRestBwd _ _ = error absurd
 
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
