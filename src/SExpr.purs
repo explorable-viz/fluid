@@ -159,10 +159,9 @@ varDefsBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw VarDefs × R
 varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
    NonEmptyList (VarDef π (desugBwd e1 s1) :| Nil) × desugBwd e2 s2
 varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) =
-   let
-      NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2)
-   in
-      NonEmptyList (VarDef π (desugBwd e1 s1) :| d' : ds') × s2'
+   NonEmptyList (VarDef π (desugBwd e1 s1) :| d' : ds') × s2'
+   where
+   NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2)
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
 -- RecDefs
