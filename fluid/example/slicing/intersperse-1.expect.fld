@@ -1,4 +1,3 @@
-let intersperse [] _ = [];
-    intersperse [x] _ = [x];
+let intersperse [x] _ = [x];
     intersperse (x : (y : ys)) sep = (x : ⸨(sep : intersperse ((y : ys)) sep)⸩) in
 intersperse ⸨[⸩ 1 ⸨,⸩ 2, 3] 0
