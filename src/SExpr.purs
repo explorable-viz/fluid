@@ -105,8 +105,11 @@ instance Desugarable ListRest E.Expr where
    desugBwd = listRestBwd
 
 instance Desugarable Clauses Elim where
-   desug = clausesFwd
-   desugBwd = clausesBwd
+   desug :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
+   desug μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
+
+   desugBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
+   desugBwd σ μ = toClausesStateBwd (clausesStateBwd (ContElim σ) (toClausesStateFwd μ))
 
 desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
 desugarModuleFwd = moduleFwd
@@ -138,7 +141,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef p s) =
-   E.VarDef <$> clausesFwd (Clauses (singleton (Clause (singleton p × Record top Nil)))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Record top Nil)))) <*> desug s
 
 -- VarDefs
 varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
@@ -178,10 +181,10 @@ recDefsBwd (E.RecDefs _ ρ) xcs = join (go (groupBy (eq `on` fst) xcs))
 
 -- RecDef
 recDefFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDef a -> m (Bind (Elim a))
-recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> clausesFwd (Clauses (snd <$> unwrap xcs))
+recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (snd <$> unwrap xcs))
 
 recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
-recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (clausesBwd σ (Clauses (snd <$> bs))))
+recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (desugBwd σ (Clauses (snd <$> bs))))
 
 -- Expr
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
@@ -194,12 +197,12 @@ exprFwd (Constr α c ss) = E.Constr α c <$> traverse desug ss
 exprFwd (Record α xss) = E.Record α <$> wrap <<< D.fromFoldable <$> traverse (traverse desug) xss
 exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desug) sss
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desug s <@> x × y <*> desug s'
-exprFwd (Lambda bs) = E.Lambda top <$> clausesFwd bs
+exprFwd (Lambda bs) = E.Lambda top <$> desug bs
 exprFwd (Project s x) = E.Project <$> desug s <@> x
 exprFwd (App s1 s2) = E.App <$> desug s1 <*> desug s2
 exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (MatchAs s bs) =
-   E.App <$> (E.Lambda top <$> clausesFwd (Clauses (Clause <$> first singleton <$> bs))) <*> desug s
+   E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> bs))) <*> desug s
 exprFwd (IfElse s1 s2 s3) =
    E.App <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3))) <*> desug s1
 exprFwd (ListEmpty α) = pure (enil α)
@@ -222,14 +225,14 @@ exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (desugBwd e s) (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
    Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
-exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (clausesBwd σ μ)
+exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (desugBwd σ μ)
 exprBwd (E.Project e _) (Project s x) = Project (desugBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
 exprBwd (E.App (E.Lambda _ σ) e) (MatchAs s bs) =
    MatchAs (desugBwd e s)
-      (first head <$> unwrap <$> unwrap (clausesBwd σ (Clauses (Clause <$> first singleton <$> bs))))
+      (first head <$> unwrap <$> unwrap (desugBwd σ (Clauses (Clause <$> first singleton <$> bs))))
 exprBwd (E.App (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (desugBwd e1 s1)
       (desugBwd (asExpr (get cTrue m)) s2)
@@ -264,7 +267,7 @@ listCompFwd (α × (Guard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
    E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
 listCompFwd (α × (Declaration (VarDef p s) : qs) × s') = do
-   σ <- clausesFwd (Clauses (singleton (Clause (singleton p × ListComp α s' qs))))
+   σ <- desug (Clauses (singleton (Clause (singleton p × ListComp α s' qs))))
    E.App (E.Lambda α σ) <$> desug s
 listCompFwd (α × (Generator p s : qs) × s') = do
    let ks = orElseFwd (ListEmpty α) ((Left p : Nil) × ListComp α s' qs)
@@ -316,12 +319,6 @@ pattArgsBwd (Left p : πs) σ = pattArgsBwd πs (pattContBwd p (asElim σ))
 pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim σ) o)
 
 -- Clauses
-clausesFwd :: forall a m. BoundedLattice a => MonadError Error m => Clauses a -> m (Elim a)
-clausesFwd μ = clausesStateFwd (toClausesStateFwd μ) <#> asElim
-
-clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
-clausesBwd σ μ = toClausesStateBwd (clausesStateBwd (ContElim σ) (toClausesStateFwd μ))
-
 toClausesStateFwd :: forall a. Clauses a -> ClausesState' a
 toClausesStateFwd (Clauses μ) = toList μ <#> toClauseStateFwd
    where
