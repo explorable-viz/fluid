@@ -109,10 +109,10 @@ apply2Bwd ((t1 × t2) × v) =
       u1 × v1 × v2
 
 evalBwd :: forall a. Ann a => Raw Env -> Raw Expr -> Val a -> Trace -> Env a × Expr a × a
-evalBwd γ e v t =
-   expand γ' γ × expand e' e × α
+evalBwd _ _ v t =
+   {-expand γ' γ × expand e' e × α
    where
-   γ' × e' × α = evalBwd' v t
+   γ' × e' × α = -} evalBwd' v t
 
 -- Computes a partial slice which evalBwd expands to a full slice.
 evalBwd' :: forall a. Ann a => Val a -> Trace -> Env a × Expr a × a

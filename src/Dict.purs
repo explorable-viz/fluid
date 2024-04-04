@@ -13,7 +13,6 @@ import Data.Newtype (class Newtype)
 import Data.Traversable (class Foldable, class Traversable)
 import Foreign.Object (Object) as O
 import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, isSubmap, lookup, mapWithKey, member, singleton, toArrayWithKey, union, unionWith)
-import Util (assertWith)
 import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, toUnfoldable, values)
 import Util.Map as Map
 import Util.Set (class Set, difference, size, (∈))
@@ -33,9 +32,7 @@ instance Ord a => Ord (Dict a) where
       else GT
 
 instance Apply Dict where
-   apply (Dict f) (Dict x) =
-      assertWith "domains are equal" (keys f == keys x) $
-         Dict (intersectionWith ($) f x)
+   apply (Dict f) (Dict x) = Dict (intersectionWith ($) f x)
 
 derive instance Functor Dict
 derive instance Foldable Dict
