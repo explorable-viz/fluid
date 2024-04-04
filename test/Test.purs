@@ -7,7 +7,6 @@ import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Benchmark (benchmarks)
-import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Util.Mocha (run)
@@ -15,10 +14,9 @@ import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, suite
 import Util (type (×), (×))
 
 main :: Effect Unit
---main = run tests
+main = run tests
 
-main = run $ asTestSuite $ suite desugar_cases
-
+--main = run $ asTestSuite $ suite desugar_cases
 --main = run scratchpad
 
 scratchpad :: TestSuite

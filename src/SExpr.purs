@@ -11,7 +11,7 @@ import Data.Filterable (filterMap)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, length, partition, take, zip, zipWith, (:), (\\))
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, snoc, toList, unsnoc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty (foldl1, (:|))
@@ -516,23 +516,23 @@ orElseFwd α ((Left (PConstr c π) : π') × s) = ks `appendList` ks'
 orElseFwd α ((Left (PRecord xps) : π) × s) =
    orElseUnderFwd α (Left <<< snd <$> xps) (π × s)
       <#> \(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p) -> p) <$> π1)))) k
-orElseFwd α ((Left PListEmpty : π) × s) = ks `appendList` (k : Nil)
+orElseFwd α ((Left PListEmpty : π) × s) = ks `snoc` k
    where
    ks = orElseFwd α (π × s) <#> pushPatt (Left PListEmpty)
    k = (((π <#> anon) × ListEmpty α) # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
-orElseFwd α ((Left (PListNonEmpty p o) : π) × s) = ks `appendList` (k' : Nil)
+orElseFwd α ((Left (PListNonEmpty p o) : π) × s) = ks `snoc` k'
    where
    ks = orElseUnderFwd α (Left p : Right o : Nil) (π × s)
       <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
    k' = (((π <#> anon) × ListEmpty α) # pushPatt (Left PListEmpty))
 orElseFwd α ((Right (PListVar x) : π) × s) =
    orElseFwd α (π × s) <#> pushPatt (Right (PListVar x))
-orElseFwd α ((Right (PListNext p o) : π) × s) = ks `appendList` (k' : Nil)
+orElseFwd α ((Right (PListNext p o) : π) × s) = ks `snoc` k'
    where
    ks = orElseUnderFwd α (Left p : Right o : Nil) (π × s)
       <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Right (PListNext p' o')) k
    k' = (((π <#> anon) × ListEmpty α) # pushPatt (Right PListEnd))
-orElseFwd α ((Right PListEnd : π) × s) = ks `appendList` (k : Nil)
+orElseFwd α ((Right PListEnd : π) × s) = ks `snoc` k
    where
    ks = orElseFwd α (π × s) <#> pushPatt (Right PListEnd)
    k = (((π <#> anon) × ListEmpty α) # pushPatt (Right (PListNext (PVar varAnon) (PListVar varAnon))))
@@ -565,20 +565,20 @@ orElseBwd ((Left (PConstr c π) : π') × s) ks =
    ks_c' = nonEmpty ks_c <#>
       popPatt >>> unsafePartial \(Left (PConstr _ π'') × k) -> pushPatts (Left <$> π'') k
 orElseBwd ((Left PListEmpty : π) × s) ks =
-   orElseBwd (π × s) (ks <#> popPatt >>> snd)
+   orElseBwd (π × s) (nonEmpty (unsnoc ks).init <#> popPatt >>> snd)
 orElseBwd ((Left (PListNonEmpty p o) : π) × s) ks =
    orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
    where
-   ks' = ks <#>
+   ks' = nonEmpty (unsnoc ks).init <#>
       popPatt >>> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
 orElseBwd ((Right (PListVar _) : π) × s) ks =
    orElseBwd (π × s) (ks <#> popPatt >>> snd)
 orElseBwd ((Right PListEnd : π) × s) ks =
-   orElseBwd (π × s) (ks <#> popPatt >>> snd)
+   orElseBwd (π × s) (nonEmpty (unsnoc ks).init <#> popPatt >>> snd)
 orElseBwd ((Right (PListNext p o) : π) × s) ks =
    orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
    where
-   ks' = ks <#>
+   ks' = nonEmpty (unsnoc ks).init <#>
       popPatt >>> unsafePartial \(Right (PListNext p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
 
 -- ======================
