@@ -88,9 +88,9 @@ data VarDef a = VarDef Pattern (Expr a)
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a
-   = Guard (Expr a)
-   | Generator Pattern (Expr a)
-   | Declaration (VarDef a) -- could allow VarDefs instead
+   = ListCompGuard (Expr a)
+   | ListCompGen Pattern (Expr a)
+   | ListCompDecl (VarDef a) -- could allow VarDefs instead
 
 data Module a = Module (List (VarDefs a + RecDefs a))
 
@@ -256,13 +256,13 @@ exprBwd _ _ = error absurd
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
 listCompFwd (α × Nil × s) =
    econs α <$> desug s <@> enil α
-listCompFwd (α × (Guard s : qs) × s') = do
+listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
    E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
-listCompFwd (α × (Declaration (VarDef p s) : qs) × s') = do
+listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
    σ <- desug (Clauses (singleton (Clause (singleton p × ListComp α s' qs))))
    E.App (E.Lambda α σ) <$> desug s
-listCompFwd (α × (Generator p s : qs) × s') = do
+listCompFwd (α × (ListCompGen p s : qs) × s') = do
    let ks = orElseFwd (ListEmpty α) ((Left p : Nil) × ListComp α s' qs)
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
    E.App (E.App (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
@@ -275,17 +275,17 @@ listCompBwd
    -> a × List (Qualifier a) × Expr a
 listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (Nil × s) | c == cCons && c' == cNil =
    (α1 ∨ α2) × Nil × desugBwd e s
-listCompBwd (E.App (E.Lambda α' (ElimConstr m)) e) ((Guard s0 : qs) × s) =
+listCompBwd (E.App (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) × s) =
    case listCompBwd (asExpr (get cTrue m)) (qs × s) × asExpr (get cFalse m) of
-      (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (Guard (desugBwd e s0) : qs') × s'
+      (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
       _ -> error absurd
-listCompBwd (E.App (E.Lambda α' σ) e) ((Declaration (VarDef π s0) : qs) × s) =
+listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef π s0) : qs) × s) =
    case listCompBwd (asExpr (pattContBwd π σ)) (qs × s) of
-      α × qs' × s' -> (α ∨ α') × (Declaration (VarDef π (desugBwd e s0)) : qs') × s'
-listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((Generator p s0 : qs) × s) =
+      α × qs' × s' -> (α ∨ α') × (ListCompDecl (VarDef π (desugBwd e s0)) : qs') × s'
+listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s) =
    case orElseBwd (ContElim σ) (Left p : Nil) of
       σ' × β -> case listCompBwd (asExpr (pattContBwd p (asElim σ'))) (qs × s) of
-         α × qs' × s' -> (α ∨ α' ∨ β) × (Generator p (desugBwd e s0) : qs') × s'
+         α × qs' × s' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'
 listCompBwd _ _ = error absurd
 
 -- Pattern × Cont

@@ -239,9 +239,9 @@ instance Ann a => Pretty (List (Expr a)) where
    pretty Nil = empty
 
 instance Ann a => Pretty (List (Qualifier a)) where
-   pretty (Cons (Guard s) Nil) = pretty s
-   pretty (Cons (Declaration d) Nil) = text str.let_ .<>. pretty d
-   pretty (Cons (Generator p s) Nil) = pretty p .<>. text str.lArrow .<>. pretty s
+   pretty (Cons (ListCompGuard s) Nil) = pretty s
+   pretty (Cons (ListCompDecl d) Nil) = text str.let_ .<>. pretty d
+   pretty (Cons (ListCompGen p s) Nil) = pretty p .<>. text str.lArrow .<>. pretty s
    pretty (Cons q qs) = pretty (toList (singleton q)) .<>. text str.comma .<>. pretty qs
    pretty Nil = empty
 
