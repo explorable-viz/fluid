@@ -29,7 +29,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
 import Util.Set ((∈))
@@ -366,30 +366,35 @@ forConstr c k ((c' × ks') : cks)
    | c == c' = (c' × (k : ks')) : cks
    | otherwise = (c' × ks') : forConstr c k cks
 
+ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
+ctrFor (Left (PVar _)) = Nothing
+ctrFor (Left (PConstr c _)) = pure c
+ctrFor (Left (PRecord _)) = Nothing
+ctrFor (Left PListEmpty) = pure cNil
+ctrFor (Left (PListNonEmpty _ _)) = pure cCons
+ctrFor (Right (PListVar _)) = Nothing
+ctrFor (Right PListEnd) = pure cNil
+ctrFor (Right (PListNext _ _)) = pure cCons
+
+subpatts :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
+subpatts (Left (PVar _)) = Nil
+subpatts (Left (PConstr _ ps)) = Left <$> ps
+subpatts (Left (PRecord xps)) = Left <$> (xps <#> snd)
+subpatts (Left PListEmpty) = Nil
+subpatts (Left (PListNonEmpty p o)) = Left p : Right o : Nil
+subpatts (Right (PListVar _)) = Nil
+subpatts (Right PListEnd) = Nil
+subpatts (Right (PListNext p o)) = Left p : Right o : Nil
+
 popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> Raw ClausesState' -> ClausesState' a
 popConstrBwd _ ((Nil × _ × _) : _) = error absurd
-popConstrBwd kss (((Left (PConstr c π) : π') × π'' × _) : ks) =
-   case forConstrBwd c kss of
+popConstrBwd kss (((p : π') × π'' × _) : ks) =
+   case forConstrBwd (definitely' (ctrFor p)) kss of
       Nothing -> popConstrBwd kss ks
-      Just ((_ × _ × s) × kss') -> ((Left (PConstr c π) : π') × π'' × s) : popConstrBwd kss' ks
-popConstrBwd kss (((Left PListEmpty : π) × π' × _) : ks) =
-   case forConstrBwd cNil kss of
-      Nothing -> popConstrBwd kss ks
-      Just ((_ × _ × s) × kss') -> ((Left PListEmpty : π) × π' × s) : popConstrBwd kss' ks
-popConstrBwd kss (((Left (PListNonEmpty p o) : π) × π' × _) : ks) =
-   case forConstrBwd cCons kss of
-      Nothing -> popConstrBwd kss ks
-      Just ((_ × _ × s) × kss') -> ((Left (PListNonEmpty p o) : π) × π' × s) : popConstrBwd kss' ks
-popConstrBwd _ (((Left _ : _) × _ × _) : _) = error absurd
-popConstrBwd kss (((Right PListEnd : π) × π' × _) : ks) =
-   case forConstrBwd cNil kss of
-      Nothing -> popConstrBwd kss ks
-      Just ((_ × _ × s) × kss') -> ((Right PListEnd : π) × π' × s) : popConstrBwd kss' ks
-popConstrBwd kss (((Right (PListNext p o) : π) × π' × _) : ks) =
-   case forConstrBwd cCons kss of
-      Nothing -> popConstrBwd kss ks
-      Just ((_ × _ × s) × kss') -> ((Right (PListNext p o) : π) × π' × s) : popConstrBwd kss' ks
-popConstrBwd _ (((Right _ : _) × _ × _) : _) = error absurd
+      Just ((π1 × π2 × s) × kss')
+         | π1 == subpatts p <> π' && π2 == π'' ->
+              ((p : π') × π'' × s) : popConstrBwd kss' ks
+         | otherwise -> popConstrBwd kss ks
 popConstrBwd _ Nil = Nil
 
 forConstrBwd :: forall a. Ctr -> List (Ctr × ClausesState' a) -> Maybe (ClauseState' a × List (Ctr × ClausesState' a))
