@@ -2,7 +2,7 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Selector (listCell, listElement, some)
+import App.Util.Selector (listElement)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
@@ -12,7 +12,7 @@ import Test.Benchmark (benchmarks)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite)
+import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
@@ -23,16 +23,16 @@ main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad =
-   asTestSuite
-      ( suite
-           [ { file: "lookup", imports: [], fwd_expect: "Some \"sarah\"" }
-           , { file: "mergeSort", imports: [], fwd_expect: "(1 : (2 : (3 : [])))" }
-           , { file: "pattern-match", imports: [], fwd_expect: "4" }
-           , { file: "records", imports: [], fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
-           ]
-      ) <> asTestSuite
+   {-asTestSuite
+   ( suite
+        [ { file: "lookup", imports: [], fwd_expect: "Some \"sarah\"" }
+        , { file: "mergeSort", imports: [], fwd_expect: "(1 : (2 : (3 : [])))" }
+        , { file: "pattern-match", imports: [], fwd_expect: "4" }
+        , { file: "records", imports: [], fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
+        ]
+   ) <>-} asTestSuite
       ( bwdSuite
-           [ { file: "intersperse"
+           [ {- { file: "intersperse"
              , imports: []
              , bwd_expect_file: "intersperse-1.expect"
              , δv: listCell 1 neg
@@ -53,7 +53,7 @@ scratchpad =
              , fwd_expect: "⸨Some \"Germany\"⸩"
              , datasets: []
              }
-           , { file: "zipWith"
+           , -} { file: "zipWith"
              , imports: []
              , bwd_expect_file: "zipWith-1.expect"
              , δv: listElement 1 neg

@@ -27,11 +27,12 @@ import Dict as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, top, (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
+import Util.Set ((∈))
 
 -- Surface language expressions.
 data Expr a
@@ -199,12 +200,12 @@ exprFwd (Constr α c ss) = E.Constr α c <$> traverse desug ss
 exprFwd (Record α xss) = E.Record α <$> wrap <<< D.fromFoldable <$> traverse (traverse desug) xss
 exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desug) sss
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desug s <@> x × y <*> desug s'
-exprFwd (Lambda bs) = E.Lambda top <$> desug bs
+exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project s x) = E.Project <$> desug s <@> x
 exprFwd (App s1 s2) = E.App <$> desug s1 <*> desug s2
 exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> desug s1) <*> desug s2
-exprFwd (MatchAs s bs) =
-   E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> bs))) <*> desug s
+exprFwd (MatchAs s μ) =
+   E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
 exprFwd (IfElse s1 s2 s3) =
    E.App <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3))) <*> desug s1
 exprFwd (ListEmpty α) = pure (enil α)
@@ -222,7 +223,7 @@ exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
 exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry desugBwd <$> zip es ss)
 exprBwd (E.Record α xes) (Record _ xss) =
-   Record α $ xss <#> \(x ↦ s) -> x ↦ desugBwd (get x xes) s
+   Record α $ xss # filterMap \(x ↦ s) -> lookup x xes <#> \e -> x ↦ desugBwd e s
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (desugBwd e s) (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
@@ -232,13 +233,13 @@ exprBwd (E.Project e _) (Project s x) = Project (desugBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
-exprBwd (E.App (E.Lambda _ σ) e) (MatchAs s bs) =
+exprBwd (E.App (E.Lambda _ σ) e) (MatchAs s μ) =
    MatchAs (desugBwd e s)
-      (first head <$> unwrap <$> unwrap (desugBwd σ (Clauses (Clause <$> first singleton <$> bs))))
+      (first head <$> unwrap <$> unwrap (desugBwd σ (Clauses (Clause <$> first singleton <$> μ))))
 exprBwd (E.App (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (desugBwd e1 s1)
-      (desugBwd (asExpr (get cTrue m)) s2)
-      (desugBwd (asExpr (get cFalse m)) s3)
+      (if cTrue ∈ m then desugBwd (asExpr (get cTrue m)) s2 else botOf s2)
+      (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
 exprBwd (E.Constr α _ Nil) (ListEmpty _) = ListEmpty α
 exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
    ListNonEmpty α (desugBwd e1 s) (desugBwd e2 l)
@@ -395,7 +396,7 @@ forConstrBwd :: forall a. Ctr -> List (Ctr × ClausesState' a) -> Maybe (ClauseS
 forConstrBwd _ Nil = Nothing
 forConstrBwd c ((c' × ks) : kss)
    | c == c' = case ks of
-        Nil -> error absurd
+        Nil -> Nothing
         k : ks' -> Just (k × (c' × ks') : kss)
    | otherwise = second ((c' × ks) : _) <$> forConstrBwd c kss
 
@@ -599,7 +600,7 @@ instance Functor Module where
       where
       mapDefs :: forall a b. (a -> b) -> VarDefs a + RecDefs a -> VarDefs b + RecDefs b
       mapDefs g (Left ds) = Left $ map g <$> ds
-      mapDefs g (Right ds) = Right $ (\(x × Clause (ps × s)) -> x × Clause (ps × (g <$> s))) <$> ds
+      mapDefs g (Right ds) = Right $ (\(x × Clause (π × s)) -> x × Clause (π × (g <$> s))) <$> ds
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ = error unimplemented
