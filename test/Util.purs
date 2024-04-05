@@ -23,7 +23,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, debug, spy, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, debug, spyWhen, throw, (×))
 import Val (class Ann, Val)
 
 type Selector f = Endo (f 𝔹) -- modifies selection state
@@ -83,9 +83,9 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
 
    let GC desug' = identity *** (GC desug)
-   let in_s = spy "After desug/bwd" identity (desug'.bwd (spy "Before desug/bwd" identity in_e))
+   let in_s = desug'.bwd in_e
    out0' <- do
-      let in0' = spy "After desug/fwd" identity (desug'.fwd in_s)
+      let in0' = desug'.fwd in_s
       unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in0')
       traceBenchmark benchNames.fwd \_ -> pure (evalT.fwd in0')
    unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out0')

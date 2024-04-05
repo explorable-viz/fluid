@@ -74,6 +74,26 @@ data ListRestPattern
    | PListEnd
    | PListNext Pattern ListRestPattern
 
+ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
+ctrFor (Left (PVar _)) = Nothing
+ctrFor (Left (PConstr c _)) = pure c
+ctrFor (Left (PRecord _)) = Nothing
+ctrFor (Left PListEmpty) = pure cNil
+ctrFor (Left (PListNonEmpty _ _)) = pure cCons
+ctrFor (Right (PListVar _)) = Nothing
+ctrFor (Right PListEnd) = pure cNil
+ctrFor (Right (PListNext _ _)) = pure cCons
+
+subpatts :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
+subpatts (Left (PVar _)) = Nil
+subpatts (Left (PConstr _ ps)) = Left <$> ps
+subpatts (Left (PRecord xps)) = Left <$> (xps <#> snd)
+subpatts (Left PListEmpty) = Nil
+subpatts (Left (PListNonEmpty p o)) = Left p : Right o : Nil
+subpatts (Right (PListVar _)) = Nil
+subpatts (Right PListEnd) = Nil
+subpatts (Right (PListNext p o)) = Left p : Right o : Nil
+
 newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
 
 type Branch a = Var × Clause a
@@ -365,26 +385,6 @@ forConstr c k Nil = (c × (k : Nil)) : Nil
 forConstr c k ((c' × ks') : cks)
    | c == c' = (c' × (k : ks')) : cks
    | otherwise = (c' × ks') : forConstr c k cks
-
-ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
-ctrFor (Left (PVar _)) = Nothing
-ctrFor (Left (PConstr c _)) = pure c
-ctrFor (Left (PRecord _)) = Nothing
-ctrFor (Left PListEmpty) = pure cNil
-ctrFor (Left (PListNonEmpty _ _)) = pure cCons
-ctrFor (Right (PListVar _)) = Nothing
-ctrFor (Right PListEnd) = pure cNil
-ctrFor (Right (PListNext _ _)) = pure cCons
-
-subpatts :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
-subpatts (Left (PVar _)) = Nil
-subpatts (Left (PConstr _ ps)) = Left <$> ps
-subpatts (Left (PRecord xps)) = Left <$> (xps <#> snd)
-subpatts (Left PListEmpty) = Nil
-subpatts (Left (PListNonEmpty p o)) = Left p : Right o : Nil
-subpatts (Right (PListVar _)) = Nil
-subpatts (Right PListEnd) = Nil
-subpatts (Right (PListNext p o)) = Left p : Right o : Nil
 
 popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> Raw ClausesState' -> ClausesState' a
 popConstrBwd _ ((Nil × _ × _) : _) = error absurd

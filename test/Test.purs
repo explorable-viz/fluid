@@ -9,6 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Lattice (neg)
 import Test.Benchmark (benchmarks)
+import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Util.Mocha (run)
@@ -18,8 +19,9 @@ import Util (type (×), (×))
 main :: Effect Unit
 --main = run tests
 
---main = run $ asTestSuite $ suite desugar_cases
-main = run scratchpad
+main = run $ asTestSuite $ suite desugar_cases
+
+--main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad =
