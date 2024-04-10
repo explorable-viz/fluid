@@ -20,7 +20,7 @@ import Data.Profunctor.Strong (first, second)
 import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (curry, fst, snd, uncurry)
+import Data.Tuple (fst, snd, uncurry)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desugBwd, desug)
@@ -465,8 +465,7 @@ orElseFwd :: forall a. a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd α = case _ of
    Nil × s -> singleton (Nil × s)
    (p : π) × s -> case p of
-      Left (PVar _) ->
-         orElseFwd α (π × s) <#> pushPatt p
+      Left (PVar _) -> orElseFwd α (π × s) <#> pushPatt p
       Left (PConstr c _) -> ks `appendList` ks'
          where
          ks = under <#> \(π' × k) ->
@@ -474,9 +473,8 @@ orElseFwd α = case _ of
          cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
          ks' = cs <#> \c' -> ((π <#> anon) × ListEmpty α)
             # pushPatt (Left (PConstr c' (replicate (defined (arity c')) pVarAnon)))
-      Left (PRecord xps) ->
-         under <#> \(π' × k) ->
-            pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p') -> p') <$> π')))) k
+      Left (PRecord xps) -> under <#> \(π' × k) ->
+         pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p') -> p') <$> π')))) k
       Left PListEmpty -> ks `snoc` k
          where
          ks = orElseFwd α (π × s) <#> pushPatt (Left PListEmpty)
@@ -486,8 +484,7 @@ orElseFwd α = case _ of
          ks = under <#> unsafePartial \((Left p' : Right o' : Nil) × k) ->
             pushPatt (Left (PListNonEmpty p' o')) k
          k' = ((π <#> anon) × ListEmpty α) # pushPatt (Left PListEmpty)
-      Right (PListVar _) ->
-         orElseFwd α (π × s) <#> pushPatt p
+      Right (PListVar _) -> orElseFwd α (π × s) <#> pushPatt p
       Right (PListNext _ _) -> ks `snoc` k'
          where
          ks = under <#> unsafePartial \((Left p' : Right o' : Nil) × k) ->
@@ -516,52 +513,44 @@ orElseBwd
    => Raw ClauseState
    -> NonEmptyList (ClauseState a)
    -> a × Expr a
-orElseBwd k ks = case k of
-   Nil × _ -> case ks of
-      NonEmptyList (Nil × s :| Nil) -> bot × s
+orElseBwd (π0 × s) ks = case π0 of
+   Nil -> case ks of
+      NonEmptyList (Nil × s' :| Nil) -> bot × s'
       _ -> error absurd
-   (Left (PVar _) : π) × s ->
-      orElseBwd (π × s) (ks <#> popPatt >>> snd)
-   (Left (PRecord xps) : π) × s ->
-      orElseBwd (((Left <<< snd <$> xps) <> π) × s) ks'
+   Left (PVar _) : π -> orElseBwd (π × s) (ks <#> popPatt >>> snd)
+   Left (PRecord xps) : π -> orElseBwd (((Left <<< snd <$> xps) <> π) × s) ks'
       where
       ks' = ks <#> popPatt >>> unsafePartial \(Left (PRecord xps') × k) -> pushPatts (xps' <#> Left <<< snd) k
-   (Left (PConstr c π) : π') × s ->
-      orElseBwd (((Left <$> π) <> π') × s) ks_c'
-         # first ((_ :| (ks_not_c <#> snd >>> unsafePartial \(ListEmpty α) -> α)) >>> foldl1 (∨))
+   Left (PConstr c π) : π' -> orElseBwd (((Left <$> π) <> π') × s) ks_c'
+      # first ((_ :| (ks_not_c <#> snd >>> unsafePartial \(ListEmpty α) -> α)) >>> foldl1 (∨))
       where
       { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
          (Left (PConstr c' _) : _) × _ -> c' == c
          _ -> false
       ks_c' = nonEmpty ks_c <#>
          popPatt >>> unsafePartial \(Left (PConstr _ π'') × k) -> pushPatts (Left <$> π'') k
-   (Left PListEmpty : π) × s ->
-      orElseBwd (π × s) ks'
+   Left PListEmpty : π -> orElseBwd (π × s) ks'
       where
       ks' = popIfPresent (Left (PConstr cCons (replicate 2 pVarAnon)) : (π <#> anon)) ks <#> popPatt >>> snd
-   (Left (PListNonEmpty p o) : π) × s ->
-      orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
+   Left (PListNonEmpty p o) : π -> orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
       where
       ks' = popIfPresent (Left PListEmpty : (π <#> anon)) ks <#>
          popPatt >>> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
-   (Right (PListVar _) : π) × s ->
-      orElseBwd (π × s) (ks <#> popPatt >>> snd)
-   (Right PListEnd : π) × s ->
-      orElseBwd (π × s) ks'
+   Right (PListVar _) : π -> orElseBwd (π × s) (ks <#> popPatt >>> snd)
+   Right PListEnd : π -> orElseBwd (π × s) ks'
       where
       ks' = popIfPresent (Right (PListNext pVarAnon pListVarAnon) : (π <#> anon)) ks <#> popPatt >>> snd
-   (Right (PListNext p o) : π) × s ->
-      orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
+   Right (PListNext p o) : π -> orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
       where
       ks' = popIfPresent (Right PListEnd : (π <#> anon)) ks <#>
          popPatt >>> unsafePartial \(Right (PListNext p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
    where
    popPatt :: ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
-   popPatt ((p : π) × s) = p × (π × s)
+   popPatt ((p : π) × s') = p × (π × s')
    popPatt _ = error absurd
 
    popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> NonEmptyList (ClauseState a)
-   popIfPresent π ks = if π == π' then nonEmpty ks' else ks
+   popIfPresent π ks'' = if π == π' then nonEmpty ks' else ks''
       where
       { init: ks', last: π' × _ } = unsnoc ks
 
