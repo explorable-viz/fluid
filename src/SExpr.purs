@@ -75,6 +75,12 @@ data ListRestPattern
    | PListEnd
    | PListNext Pattern ListRestPattern
 
+pVarAnon :: Pattern
+pVarAnon = PVar varAnon
+
+pListVarAnon :: ListRestPattern
+pListVarAnon = PListVar varAnon
+
 ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
 ctrFor (Left (PVar _)) = Nothing
 ctrFor (Left (PConstr c _)) = pure c
@@ -477,14 +483,14 @@ orElseFwd α = case _ of
          <#> (\(π1 × k) -> pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π1))) k)
       cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
       ks' = cs <#> \c' -> ((π' <#> anon) × ListEmpty α)
-         # pushPatt (Left (PConstr c' (replicate (defined (arity c')) (PVar varAnon))))
+         # pushPatt (Left (PConstr c' (replicate (defined (arity c')) pVarAnon)))
    (Left (PRecord xps) : π) × s ->
       underFwd (Left <<< snd <$> xps) (π × s)
          <#> \(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p) -> p) <$> π1)))) k
    (Left PListEmpty : π) × s -> ks `snoc` k
       where
       ks = orElseFwd α (π × s) <#> pushPatt (Left PListEmpty)
-      k = (((π <#> anon) × ListEmpty α) # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
+      k = (((π <#> anon) × ListEmpty α) # pushPatt (Left (PConstr cCons (replicate 2 pVarAnon))))
    (Left (PListNonEmpty p o) : π) × s -> ks `snoc` k'
       where
       ks = underFwd (Left p : Right o : Nil) (π × s)
@@ -500,7 +506,7 @@ orElseFwd α = case _ of
    (Right PListEnd : π) × s -> ks `snoc` k
       where
       ks = orElseFwd α (π × s) <#> pushPatt (Right PListEnd)
-      k = (((π <#> anon) × ListEmpty α) # pushPatt (Right (PListNext (PVar varAnon) (PListVar varAnon))))
+      k = (((π <#> anon) × ListEmpty α) # pushPatt (Right (PListNext pVarAnon pListVarAnon)))
    where
    pushPatt :: Pattern + ListRestPattern -> Endo (ClauseState a)
    pushPatt p (π × s) = (p : π) × s
@@ -512,8 +518,8 @@ orElseFwd α = case _ of
    underFwd π k = popPatts (length π) <$> orElseFwd α (pushPatts π k)
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
-anon (Left _) = Left (PVar varAnon)
-anon (Right _) = Right (PListVar varAnon)
+anon (Left _) = Left pVarAnon
+anon (Right _) = Right pListVarAnon
 
 orElseBwd
    :: forall a
@@ -542,7 +548,7 @@ orElseBwd = curry case _ of
    ((Left PListEmpty : π) × s) × ks ->
       orElseBwd (π × s) ks'
       where
-      ks' = popIfPresent (Left (PConstr cCons (replicate 2 (PVar varAnon))) : (π <#> anon)) ks <#> popPatt >>> snd
+      ks' = popIfPresent (Left (PConstr cCons (replicate 2 pVarAnon)) : (π <#> anon)) ks <#> popPatt >>> snd
    ((Left (PListNonEmpty p o) : π) × s) × ks ->
       orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
       where
@@ -553,7 +559,7 @@ orElseBwd = curry case _ of
    ((Right PListEnd : π) × s) × ks ->
       orElseBwd (π × s) ks'
       where
-      ks' = popIfPresent (Right (PListNext (PVar varAnon) (PListVar varAnon)) : (π <#> anon)) ks <#> popPatt >>> snd
+      ks' = popIfPresent (Right (PListNext pVarAnon pListVarAnon) : (π <#> anon)) ks <#> popPatt >>> snd
    ((Right (PListNext p o) : π) × s) × ks ->
       orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
       where
