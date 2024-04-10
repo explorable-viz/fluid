@@ -368,23 +368,12 @@ popListVarBwd _ Nil = Nil
 
 popConstrFwd :: forall a m. MonadError Error m => DataType -> ClausesState' a -> m (List (Ctr × ClausesState' a))
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
-popConstrFwd d (((Left (PConstr c π) : π') × π'' × s) : ks) =
+popConstrFwd d (((p : π') × π'' × s) : ks) =
    assert (length π == defined (arity c) && defined (dataTypeFor c) == d) $
-      forConstr c (((Left <$> π) <> π') × π'' × s) <$> popConstrFwd d ks
-popConstrFwd d (((Left PListEmpty : π) × π' × s) : ks) =
-   assert (d == defined (dataTypeFor cNil)) $
-      forConstr cNil (π × π' × s) <$> popConstrFwd d ks
-popConstrFwd d (((Left (PListNonEmpty p o) : π) × π' × s) : ks) =
-   assert (d == defined (dataTypeFor cCons)) $
-      forConstr cCons ((Left p : Right o : π) × π' × s) <$> popConstrFwd d ks
-popConstrFwd _ (((Left _ : _) × _) : _) = throw (shapeMismatch unit)
-popConstrFwd d (((Right PListEnd : π) × π' × s) : ks) =
-   assert (d == defined (dataTypeFor cNil)) $
-      forConstr cNil (π × π' × s) <$> popConstrFwd d ks
-popConstrFwd d (((Right (PListNext p o) : π) × π' × s) : ks) =
-   assert (d == defined (dataTypeFor cCons)) $
-      forConstr cCons ((Left p : Right o : π) × π' × s) <$> popConstrFwd d ks
-popConstrFwd _ (((Right _ : _) × _) : _) = throw (shapeMismatch unit)
+      forConstr c ((π <> π') × π'' × s) <$> popConstrFwd d ks
+   where
+   π = subpatts p
+   c = definitely' (ctrFor p)
 popConstrFwd _ Nil = pure Nil
 
 forConstr :: forall a. Ctr -> ClauseState' a -> Endo (List (Ctr × ClausesState' a))
@@ -479,13 +468,13 @@ orElseFwd α = case _ of
       orElseFwd α (π × s) <#> pushPatt (Left (PVar x))
    (Left (PConstr c π) : π') × s -> ks `appendList` ks'
       where
-      ks = underFwd (Left <$> π) (π' × s)
+      ks = under (Left <$> π) (π' × s)
          <#> (\(π1 × k) -> pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π1))) k)
       cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
       ks' = cs <#> \c' -> ((π' <#> anon) × ListEmpty α)
          # pushPatt (Left (PConstr c' (replicate (defined (arity c')) pVarAnon)))
    (Left (PRecord xps) : π) × s ->
-      underFwd (Left <<< snd <$> xps) (π × s)
+      under (Left <<< snd <$> xps) (π × s)
          <#> \(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p) -> p) <$> π1)))) k
    (Left PListEmpty : π) × s -> ks `snoc` k
       where
@@ -493,14 +482,14 @@ orElseFwd α = case _ of
       k = (((π <#> anon) × ListEmpty α) # pushPatt (Left (PConstr cCons (replicate 2 pVarAnon))))
    (Left (PListNonEmpty p o) : π) × s -> ks `snoc` k'
       where
-      ks = underFwd (Left p : Right o : Nil) (π × s)
+      ks = under (Left p : Right o : Nil) (π × s)
          <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
       k' = (((π <#> anon) × ListEmpty α) # pushPatt (Left PListEmpty))
    (Right (PListVar x) : π) × s ->
       orElseFwd α (π × s) <#> pushPatt (Right (PListVar x))
    (Right (PListNext p o) : π) × s -> ks `snoc` k'
       where
-      ks = underFwd (Left p : Right o : Nil) (π × s)
+      ks = under (Left p : Right o : Nil) (π × s)
          <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Right (PListNext p' o')) k
       k' = (((π <#> anon) × ListEmpty α) # pushPatt (Right PListEnd))
    (Right PListEnd : π) × s -> ks `snoc` k
@@ -511,11 +500,11 @@ orElseFwd α = case _ of
    pushPatt :: Pattern + ListRestPattern -> Endo (ClauseState a)
    pushPatt p (π × s) = (p : π) × s
 
-   underFwd
+   under
       :: List (Pattern + ListRestPattern)
       -> ClauseState a
       -> NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
-   underFwd π k = popPatts (length π) <$> orElseFwd α (pushPatts π k)
+   under π k = popPatts (length π) <$> orElseFwd α (pushPatts π k)
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left pVarAnon
