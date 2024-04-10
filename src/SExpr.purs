@@ -470,7 +470,7 @@ orElseFwd α = case _ of
       Left (PConstr c _) -> ks `appendList` ks'
          where
          ks = under p0 (π' × s)
-            <#> (\(π1 × k) -> pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π1))) k)
+            <#> \(π1 × k) -> pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π1))) k
          cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
          ks' = cs <#> \c' -> ((π' <#> anon) × ListEmpty α)
             # pushPatt (Left (PConstr c' (replicate (defined (arity c')) pVarAnon)))
@@ -480,23 +480,23 @@ orElseFwd α = case _ of
       Left PListEmpty -> ks `snoc` k
          where
          ks = orElseFwd α (π' × s) <#> pushPatt (Left PListEmpty)
-         k = (((π' <#> anon) × ListEmpty α) # pushPatt (Left (PConstr cCons (replicate 2 pVarAnon))))
+         k = ((π' <#> anon) × ListEmpty α) # pushPatt (Left (PConstr cCons (replicate 2 pVarAnon)))
       Left (PListNonEmpty _ _) -> ks `snoc` k'
          where
          ks = under p0 (π' × s)
             <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
-         k' = (((π' <#> anon) × ListEmpty α) # pushPatt (Left PListEmpty))
+         k' = ((π' <#> anon) × ListEmpty α) # pushPatt (Left PListEmpty)
       Right (PListVar x) ->
          orElseFwd α (π' × s) <#> pushPatt (Right (PListVar x))
       Right (PListNext _ _) -> ks `snoc` k'
          where
          ks = under p0 (π' × s)
             <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Right (PListNext p' o')) k
-         k' = (((π' <#> anon) × ListEmpty α) # pushPatt (Right PListEnd))
+         k' = ((π' <#> anon) × ListEmpty α) # pushPatt (Right PListEnd)
       Right PListEnd -> ks `snoc` k
          where
          ks = orElseFwd α (π' × s) <#> pushPatt (Right PListEnd)
-         k = (((π' <#> anon) × ListEmpty α) # pushPatt (Right (PListNext pVarAnon pListVarAnon)))
+         k = ((π' <#> anon) × ListEmpty α) # pushPatt (Right (PListNext pVarAnon pListVarAnon))
    where
    pushPatt :: Pattern + ListRestPattern -> Endo (ClauseState a)
    pushPatt p (π × s) = (p : π) × s
