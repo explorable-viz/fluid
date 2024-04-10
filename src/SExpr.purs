@@ -307,7 +307,7 @@ listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0
 listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
    orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s')
       # unsafePartial case _ of
-         β × ListComp α s' qs' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'
+           β × ListComp α s' qs' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'
    where
    k = (Left p : Nil) × ListComp unit s0' qs
    ks = clausesStateBwd (ContElim σ) (toList (orElseFwd unit k <#> second (Nil × _)))
@@ -511,43 +511,44 @@ orElseUnderFwd
 orElseUnderFwd α π k = popPatts (length π) <$> orElseFwd α (pushPatts π k)
 
 orElseFwd :: forall a. a -> ClauseState a -> NonEmptyList (ClauseState a)
-orElseFwd _ (Nil × s) = singleton (Nil × s)
-orElseFwd α ((Left (PVar x) : π) × s) =
-   orElseFwd α (π × s) <#> pushPatt (Left (PVar x))
-orElseFwd α ((Left (PConstr c π) : π') × s) = ks `appendList` ks'
+orElseFwd α = case _ of
+   Nil × s -> singleton (Nil × s)
+   (Left (PVar x) : π) × s ->
+      orElseFwd α (π × s) <#> pushPatt (Left (PVar x))
+   (Left (PConstr c π) : π') × s -> ks `appendList` ks'
+      where
+      ks = orElseUnderFwd α (Left <$> π) (π' × s)
+         <#> (\(π1 × k) -> pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π1))) k)
+      cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
+      ks' = cs <#> \c' -> ((π' <#> anon) × ListEmpty α)
+         # pushPatt (Left (PConstr c' (replicate (defined (arity c')) (PVar varAnon))))
+   (Left (PRecord xps) : π) × s ->
+      orElseUnderFwd α (Left <<< snd <$> xps) (π × s)
+         <#> \(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p) -> p) <$> π1)))) k
+   (Left PListEmpty : π) × s -> ks `snoc` k
+      where
+      ks = orElseFwd α (π × s) <#> pushPatt (Left PListEmpty)
+      k = (((π <#> anon) × ListEmpty α) # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
+   (Left (PListNonEmpty p o) : π) × s -> ks `snoc` k'
+      where
+      ks = orElseUnderFwd α (Left p : Right o : Nil) (π × s)
+         <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
+      k' = (((π <#> anon) × ListEmpty α) # pushPatt (Left PListEmpty))
+   (Right (PListVar x) : π) × s ->
+      orElseFwd α (π × s) <#> pushPatt (Right (PListVar x))
+   (Right (PListNext p o) : π) × s -> ks `snoc` k'
+      where
+      ks = orElseUnderFwd α (Left p : Right o : Nil) (π × s)
+         <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Right (PListNext p' o')) k
+      k' = (((π <#> anon) × ListEmpty α) # pushPatt (Right PListEnd))
+   (Right PListEnd : π) × s -> ks `snoc` k
+      where
+      ks = orElseFwd α (π × s) <#> pushPatt (Right PListEnd)
+      k = (((π <#> anon) × ListEmpty α) # pushPatt (Right (PListNext (PVar varAnon) (PListVar varAnon))))
    where
-   ks = orElseUnderFwd α (Left <$> π) (π' × s)
-      <#> (\(π1 × k) -> pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π1))) k)
-   cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
-   ks' = cs <#> \c' -> ((π' <#> anon) × ListEmpty α)
-      # pushPatt (Left (PConstr c' (replicate (defined (arity c')) (PVar varAnon))))
-orElseFwd α ((Left (PRecord xps) : π) × s) =
-   orElseUnderFwd α (Left <<< snd <$> xps) (π × s)
-      <#> \(π1 × k) -> pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p) -> p) <$> π1)))) k
-orElseFwd α ((Left PListEmpty : π) × s) = ks `snoc` k
-   where
-   ks = orElseFwd α (π × s) <#> pushPatt (Left PListEmpty)
-   k = (((π <#> anon) × ListEmpty α) # pushPatt (Left (PConstr cCons (replicate 2 (PVar varAnon)))))
-orElseFwd α ((Left (PListNonEmpty p o) : π) × s) = ks `snoc` k'
-   where
-   ks = orElseUnderFwd α (Left p : Right o : Nil) (π × s)
-      <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Left (PListNonEmpty p' o')) k
-   k' = (((π <#> anon) × ListEmpty α) # pushPatt (Left PListEmpty))
-orElseFwd α ((Right (PListVar x) : π) × s) =
-   orElseFwd α (π × s) <#> pushPatt (Right (PListVar x))
-orElseFwd α ((Right (PListNext p o) : π) × s) = ks `snoc` k'
-   where
-   ks = orElseUnderFwd α (Left p : Right o : Nil) (π × s)
-      <#> unsafePartial \((Left p' : Right o' : Nil) × k) -> pushPatt (Right (PListNext p' o')) k
-   k' = (((π <#> anon) × ListEmpty α) # pushPatt (Right PListEnd))
-orElseFwd α ((Right PListEnd : π) × s) = ks `snoc` k
-   where
-   ks = orElseFwd α (π × s) <#> pushPatt (Right PListEnd)
-   k = (((π <#> anon) × ListEmpty α) # pushPatt (Right (PListNext (PVar varAnon) (PListVar varAnon))))
-
-anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
-anon (Left _) = Left (PVar varAnon)
-anon (Right _) = Right (PListVar varAnon)
+   anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
+   anon (Left _) = Left (PVar varAnon)
+   anon (Right _) = Right (PListVar varAnon)
 
 orElseBwd
    :: forall a
