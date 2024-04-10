@@ -115,7 +115,7 @@ codeMirrorDiv = ("codemirror-" <> _)
 drawFigWithCode :: Fig -> Effect Unit
 drawFigWithCode fig = do
    drawFig fig
-   drawCode (prettyP fig.s) =<< addEditorView (codeMirrorDiv fig.spec.divId)
+   addEditorView (codeMirrorDiv fig.spec.divId) >>= drawCode (prettyP fig.s)
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
