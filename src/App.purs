@@ -66,10 +66,10 @@ energyScatter = fig4 { divId = "fig-4" }
 main :: Effect Unit
 main = do
    runAffs_ drawFile
-      [  loadFile' (Folder "fluid/lib") (File "convolution"),
-         loadFile' (Folder "fluid/example/linked-outputs") (File "bar-chart-line-chart"),
-         loadFile' (Folder "fluid/example/linked-outputs") (File "renewables"),
-         loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss")
+      [ loadFile' (Folder "fluid/lib") (File "convolution")
+      , loadFile' (Folder "fluid/example/linked-outputs") (File "bar-chart-line-chart")
+      , loadFile' (Folder "fluid/example/linked-outputs") (File "renewables")
+      , loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss")
       ]
    runAffs_ drawFig [ loadFig fig1, loadFig fig2, loadFig fig3, loadFig energyScatter ]
    runAffs_ drawFig [ loadFig linkedOutputs_spec1.spec ]
