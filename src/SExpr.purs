@@ -11,7 +11,7 @@ import Data.Foldable (length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, partition, take, zip, zipWith, (:), (\\))
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, snoc, toList, unsnoc)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, unsnoc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.NonEmpty (foldl1, (:|))
@@ -463,9 +463,9 @@ popPatts n (π' × s) = take n π' × drop n π' × s
 unless :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 unless (Left (PVar _)) = Nil
 unless (Left (PRecord _)) = Nil
-unless (Left (PConstr c _)) = cs <#> \c' -> Left (PConstr c' (replicate (defined (arity c')) pVarAnon))
-   where
-   cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
+unless (Left (PConstr c _)) =
+   (S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c)
+      <#> \c' -> Left (PConstr c' (replicate (defined (arity c')) pVarAnon))
 unless (Left PListEmpty) = Left (PConstr cCons (replicate 2 pVarAnon)) : Nil
 unless (Left (PListNonEmpty _ _)) = Left PListEmpty : Nil
 unless (Right (PListVar _)) = Nil
@@ -488,21 +488,21 @@ orElseFwd α = case _ of
          where
          ks = orElseFwd α (π × s) <#> pushPatt (Left PListEmpty)
          ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
-      Left (PListNonEmpty _ _) -> ks `snoc` k'
+      Left (PListNonEmpty _ _) -> ks `appendList` ks'
          where
          ks = under <#> unsafePartial \((Left p' : Right o' : Nil) × k) ->
             pushPatt (Left (PListNonEmpty p' o')) k
-         k' = ((π <#> anon) × ListEmpty α) # pushPatt (Left PListEmpty)
+         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
       Right (PListVar _) -> orElseFwd α (π × s) <#> pushPatt p
-      Right (PListNext _ _) -> ks `snoc` k'
+      Right (PListNext _ _) -> ks `appendList` ks'
          where
          ks = under <#> unsafePartial \((Left p' : Right o' : Nil) × k) ->
             pushPatt (Right (PListNext p' o')) k
-         k' = ((π <#> anon) × ListEmpty α) # pushPatt (Right PListEnd)
-      Right PListEnd -> ks `snoc` k
+         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
+      Right PListEnd -> ks `appendList` ks'
          where
          ks = orElseFwd α (π × s) <#> pushPatt (Right PListEnd)
-         k = ((π <#> anon) × ListEmpty α) # pushPatt (Right (PListNext pVarAnon pListVarAnon))
+         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
       where
       under :: NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
       under = popPatts (length π') <$> orElseFwd α (pushPatts π' (π × s))
