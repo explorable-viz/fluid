@@ -431,26 +431,9 @@ clausesStateFwd ks@(((Left (PVar x) : _) × _) : _) =
 clausesStateFwd ks@(((Left (PRecord xps) : _) × _) : _) =
    ContElim <$> ElimRecord (B.keys xps) <$> (clausesStateFwd =<< popRecordFwd (xps <#> fst) ks)
 clausesStateFwd ks@(((Right (PListVar x) : _) × _) : _) =
-   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
-{-
+   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popListVarFwd x ks)
 clausesStateFwd ks@(((p : _) × _) : _) = do
    kss <- popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
--}
-clausesStateFwd ks@(((Left (PConstr c _) : _) × _) : _) = do
-   kss <- popConstrFwd (defined (dataTypeFor c)) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
-clausesStateFwd ks@(((Left PListEmpty : _) × _) : _) = do
-   kss <- popConstrFwd (defined (dataTypeFor cNil)) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
-clausesStateFwd ks@(((Left (PListNonEmpty _ _) : _) × _) : _) = do
-   kss <- popConstrFwd (defined (dataTypeFor cCons)) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
-clausesStateFwd ks@(((Right PListEnd : _) × _) : _) = do
-   kss <- popConstrFwd (defined (dataTypeFor cNil)) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
-clausesStateFwd ks@(((Right (PListNext _ _) : _) × _) : _) = do
-   kss <- popConstrFwd (defined (dataTypeFor cCons)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
 
 -- Recovers (subset of) clauses in order consistent with their original order.
@@ -465,28 +448,12 @@ clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Left (PVar _) : _) × _) : _) =
    popVarBwd x (clausesStateBwd κ (defined (popVarFwd x ks)))
 clausesStateBwd (ContElim (ElimRecord _ κ)) ks@(((Left (PRecord xps) : _) × _) : _) =
    popRecordBwd (xps <#> fst) (clausesStateBwd κ (defined (popRecordFwd (xps <#> fst) ks)))
-clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left (PConstr c _) : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
-   where
-   kss = defined (popConstrFwd (defined (dataTypeFor c)) ks)
-clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left PListEmpty : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
-   where
-   kss = defined (popConstrFwd (defined (dataTypeFor cNil)) ks)
-clausesStateBwd (ContElim (ElimConstr m)) ks@(((Left (PListNonEmpty _ _) : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
-   where
-   kss = defined (popConstrFwd (defined (dataTypeFor cCons)) ks)
 clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Right (PListVar _) : _) × _) : _) =
    popListVarBwd x (clausesStateBwd κ (defined (popListVarFwd x ks)))
-clausesStateBwd (ContElim (ElimConstr m)) ks@(((Right PListEnd : _) × _) : _) =
+clausesStateBwd (ContElim (ElimConstr m)) ks@(((p : _) × _) : _) =
    popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
    where
-   kss = defined (popConstrFwd (defined (dataTypeFor cNil)) ks)
-clausesStateBwd (ContElim (ElimConstr m)) ks@(((Right (PListNext _ _) : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
-   where
-   kss = defined (popConstrFwd (defined (dataTypeFor cCons)) ks)
+   kss = defined (popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks)
 clausesStateBwd (ContElim _) _ = error (shapeMismatch unit)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
@@ -598,8 +565,7 @@ orElseBwd = curry case _ of
    popPatt _ = error absurd
 
    popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> NonEmptyList (ClauseState a)
-   popIfPresent π ks =
-      if π == π' then nonEmpty ks' else ks
+   popIfPresent π ks = if π == π' then nonEmpty ks' else ks
       where
       { init: ks', last: π' × _ } = unsnoc ks
 
