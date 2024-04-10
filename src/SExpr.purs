@@ -1,7 +1,6 @@
 module SExpr where
 
-import Prelude hiding (absurd, top)
-
+import Prelude hiding (absurd, top, unless)
 import Bind (Bind, Var, varAnon, (↦))
 import Bind (keys) as B
 import Control.Monad.Error.Class (class MonadError)
@@ -461,24 +460,34 @@ pushPatts π (π' × s) = (π <> π') × s
 popPatts :: forall a. Int -> ClauseState a -> List (Pattern + ListRestPattern) × ClauseState a
 popPatts n (π' × s) = take n π' × drop n π' × s
 
+unless :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
+unless (Left (PVar _)) = Nil
+unless (Left (PRecord _)) = Nil
+unless (Left (PConstr c _)) = cs <#> \c' -> Left (PConstr c' (replicate (defined (arity c')) pVarAnon))
+   where
+   cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
+unless (Left PListEmpty) = Left (PConstr cCons (replicate 2 pVarAnon)) : Nil
+unless (Left (PListNonEmpty _ _)) = Left PListEmpty : Nil
+unless (Right (PListVar _)) = Nil
+unless (Right (PListNext _ _)) = Right PListEnd : Nil
+unless (Right PListEnd) = Right (PListNext pVarAnon pListVarAnon) : Nil
+
 orElseFwd :: forall a. a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd α = case _ of
    Nil × s -> singleton (Nil × s)
    (p : π) × s -> case p of
       Left (PVar _) -> orElseFwd α (π × s) <#> pushPatt p
+      Left (PRecord xps) -> under <#> \(π' × k) ->
+         pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p') -> p') <$> π')))) k
       Left (PConstr c _) -> ks `appendList` ks'
          where
          ks = under <#> \(π' × k) ->
             pushPatt (Left (PConstr c (unsafePartial (\(Left p') -> p') <$> π'))) k
-         cs = S.toUnfoldable (ctrs (defined (dataTypeFor c))) \\ singleton c
-         ks' = cs <#> \c' -> ((π <#> anon) × ListEmpty α)
-            # pushPatt (Left (PConstr c' (replicate (defined (arity c')) pVarAnon)))
-      Left (PRecord xps) -> under <#> \(π' × k) ->
-         pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p') -> p') <$> π')))) k
-      Left PListEmpty -> ks `snoc` k
+         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
+      Left PListEmpty -> ks `appendList` ks'
          where
          ks = orElseFwd α (π × s) <#> pushPatt (Left PListEmpty)
-         k = ((π <#> anon) × ListEmpty α) # pushPatt (Left (PConstr cCons (replicate 2 pVarAnon)))
+         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
       Left (PListNonEmpty _ _) -> ks `snoc` k'
          where
          ks = under <#> unsafePartial \((Left p' : Right o' : Nil) × k) ->
