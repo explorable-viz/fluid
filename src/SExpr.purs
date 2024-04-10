@@ -296,18 +296,18 @@ listCompBwd
 listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (Nil × s) | c == cCons && c' == cNil =
    (α1 ∨ α2) × Nil × desugBwd e s
 listCompBwd (E.App (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) × s0') =
-   case listCompBwd (asExpr (get cTrue m)) (qs × s0') × asExpr (get cFalse m) of
-      (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
-      _ -> error absurd
+   listCompBwd (asExpr (get cTrue m)) (qs × s0') × asExpr (get cFalse m)
+      # unsafePartial case _ of
+           (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
 listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0') =
-   case clausesStateBwd (ContElim σ) (((Left p : Nil) × Nil × ListComp unit s0' qs) : Nil) of
-      ((Left _ : Nil) × Nil × ListComp α s' qs') : Nil ->
-         (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
-      _ -> error absurd
+   clausesStateBwd (ContElim σ) (((Left p : Nil) × Nil × ListComp unit s0' qs) : Nil)
+      # unsafePartial case _ of
+           ((Left _ : Nil) × Nil × ListComp α s' qs') : Nil ->
+              (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
 listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
-   case orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s') of
-      β × ListComp α s' qs' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'
-      _ -> error absurd
+   orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s')
+      # unsafePartial case _ of
+         β × ListComp α s' qs' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'
    where
    k = (Left p : Nil) × ListComp unit s0' qs
    ks = clausesStateBwd (ContElim σ) (toList (orElseFwd unit k <#> second (Nil × _)))
