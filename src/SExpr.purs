@@ -30,7 +30,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely', error, nonEmpty, shapeMismatch, singleton, spy, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
 import Util.Set ((∈))
@@ -305,12 +305,12 @@ listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0
          (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
       _ -> error absurd
 listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
-   case orElseBwd k (nonEmpty (spy "# clauses into orElseBwd" ((length :: _ -> Int) >>> show) ks) <#> unsafePartial \(π × Nil × s') -> π × s') of
+   case orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s') of
       β × ListComp α s' qs' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'
       _ -> error absurd
    where
    k = (Left p : Nil) × ListComp unit s0' qs
-   ks = clausesStateBwd (ContElim (spy "σ" identity σ)) (spy "# clauses from orElseFwd" ((length :: _ -> Int) >>> show) (toList (orElseFwd unit k <#> second (Nil × _))))
+   ks = clausesStateBwd (ContElim σ) (toList (orElseFwd unit k <#> second (Nil × _)))
 listCompBwd _ _ = error absurd
 
 -- Clauses
@@ -576,7 +576,7 @@ orElseBwd ((Left PListEmpty : π) × s) ks =
    where
    ks' = popIfPresent (Left (PConstr cCons (replicate 2 (PVar varAnon))) : (π <#> anon)) ks <#> popPatt >>> snd
 orElseBwd ((Left (PListNonEmpty p o) : π) × s) ks =
-   orElseBwd ((Left p : Right o : Nil <> π) × s) (spy "length ks'" ((length :: _ -> Int) >>> show) ks')
+   orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
    where
    ks' = popIfPresent (Left PListEmpty : (π <#> anon)) ks <#>
       popPatt >>> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
