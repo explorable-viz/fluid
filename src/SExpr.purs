@@ -489,9 +489,6 @@ clausesStateBwd (ContElim _) _ = error (shapeMismatch unit)
 -- initially containing only p and empty when the recursion terminates.
 type ClauseState a = List (Pattern + ListRestPattern) × Expr a
 
-pushPatt :: forall a. Pattern + ListRestPattern -> Endo (ClauseState a)
-pushPatt p (π × s) = (p : π) × s
-
 popPatt :: forall a. ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
 popPatt ((p : π) × s) = p × (π × s)
 popPatt _ = error absurd
@@ -538,6 +535,9 @@ orElseFwd α = case _ of
       ks = orElseFwd α (π × s) <#> pushPatt (Right PListEnd)
       k = (((π <#> anon) × ListEmpty α) # pushPatt (Right (PListNext (PVar varAnon) (PListVar varAnon))))
    where
+   pushPatt :: Pattern + ListRestPattern -> Endo (ClauseState a)
+   pushPatt p (π × s) = (p : π) × s
+
    underFwd
       :: List (Pattern + ListRestPattern)
       -> ClauseState a
