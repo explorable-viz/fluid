@@ -516,16 +516,17 @@ orElseBwd
    => Raw ClauseState
    -> NonEmptyList (ClauseState a)
    -> a × Expr a
-orElseBwd k ks = case (k × ks) of
-   (Nil × _) × (NonEmptyList (Nil × s :| Nil)) -> bot × s
-   (Nil × _) × _ -> error absurd
-   ((Left (PVar _) : π) × s) × _ ->
+orElseBwd k ks = case k of
+   Nil × _ -> case ks of
+      NonEmptyList (Nil × s :| Nil) -> bot × s
+      _ -> error absurd
+   (Left (PVar _) : π) × s ->
       orElseBwd (π × s) (ks <#> popPatt >>> snd)
-   ((Left (PRecord xps) : π) × s) × _ ->
+   (Left (PRecord xps) : π) × s ->
       orElseBwd (((Left <<< snd <$> xps) <> π) × s) ks'
       where
       ks' = ks <#> popPatt >>> unsafePartial \(Left (PRecord xps') × k) -> pushPatts (xps' <#> Left <<< snd) k
-   ((Left (PConstr c π) : π') × s) × _ ->
+   (Left (PConstr c π) : π') × s ->
       orElseBwd (((Left <$> π) <> π') × s) ks_c'
          # first ((_ :| (ks_not_c <#> snd >>> unsafePartial \(ListEmpty α) -> α)) >>> foldl1 (∨))
       where
@@ -534,22 +535,22 @@ orElseBwd k ks = case (k × ks) of
          _ -> false
       ks_c' = nonEmpty ks_c <#>
          popPatt >>> unsafePartial \(Left (PConstr _ π'') × k) -> pushPatts (Left <$> π'') k
-   ((Left PListEmpty : π) × s) × _ ->
+   (Left PListEmpty : π) × s ->
       orElseBwd (π × s) ks'
       where
       ks' = popIfPresent (Left (PConstr cCons (replicate 2 pVarAnon)) : (π <#> anon)) ks <#> popPatt >>> snd
-   ((Left (PListNonEmpty p o) : π) × s) × _ ->
+   (Left (PListNonEmpty p o) : π) × s ->
       orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
       where
       ks' = popIfPresent (Left PListEmpty : (π <#> anon)) ks <#>
          popPatt >>> unsafePartial \(Left (PListNonEmpty p' o') × k) -> pushPatts (Left p' : Right o' : Nil) k
-   ((Right (PListVar _) : π) × s) × _ ->
+   (Right (PListVar _) : π) × s ->
       orElseBwd (π × s) (ks <#> popPatt >>> snd)
-   ((Right PListEnd : π) × s) × _ ->
+   (Right PListEnd : π) × s ->
       orElseBwd (π × s) ks'
       where
       ks' = popIfPresent (Right (PListNext pVarAnon pListVarAnon) : (π <#> anon)) ks <#> popPatt >>> snd
-   ((Right (PListNext p o) : π) × s) × _ ->
+   (Right (PListNext p o) : π) × s ->
       orElseBwd ((Left p : Right o : Nil <> π) × s) ks'
       where
       ks' = popIfPresent (Right PListEnd : (π <#> anon)) ks <#>
