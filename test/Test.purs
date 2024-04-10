@@ -14,10 +14,10 @@ import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, suite
 import Util (type (×), (×))
 
 main :: Effect Unit
---main = run tests
+main = run tests
 
 --main = run $ asTestSuite $ suite desugar_cases
-main = run scratchpad
+--main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite

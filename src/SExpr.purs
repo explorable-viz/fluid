@@ -280,8 +280,8 @@ listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
    E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
 listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
-   σ <- desug (Clauses (singleton (Clause (singleton p × ListComp α s' qs))))
-   E.App (E.Lambda α σ) <$> desug s
+   σ <- clausesStateFwd (((Left p : Nil) × Nil × ListComp α s' qs) : Nil)
+   E.App (E.Lambda α (asElim σ)) <$> desug s
 listCompFwd (α × (ListCompGen p s : qs) × s') = do
    let ks = orElseFwd α ((Left p : Nil) × ListComp α s' qs)
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
@@ -300,8 +300,8 @@ listCompBwd (E.App (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) × 
       (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
       _ -> error absurd
 listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0') =
-   case desugBwd σ (Clauses (singleton (Clause (singleton p × ListComp unit s0' qs)))) of
-      Clauses (NonEmptyList (Clause (_ × ListComp α s' qs') :| Nil)) ->
+   case clausesStateBwd (ContElim σ) (((Left p : Nil) × Nil × ListComp unit s0' qs) : Nil) of
+      ((Left _ : Nil) × Nil × ListComp α s' qs') : Nil ->
          (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
       _ -> error absurd
 listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
@@ -420,6 +420,7 @@ popRecordBwd xs ((π × π' × s) : ks) =
 
 popRecordBwd _ Nil = Nil
 
+-- Implementing Desugarable would require another newtype
 clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
 clausesStateFwd Nil = error absurd
 clausesStateFwd ((Nil × Nil × s) : Nil) =
