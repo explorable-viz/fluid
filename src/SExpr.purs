@@ -519,10 +519,10 @@ orElseBwd (π0 × s) ks = case π0 of
       _ -> error absurd
    p : π -> case p of
       Left (PVar _) -> orElseBwd (π × s) (ks <#> popPatt >>> snd)
-      Left (PRecord _) -> orElseBwd ((subpatts p <> π) × s) ks'
+      Left (PRecord _) -> under ks'
          where
          ks' = ks <#> popPatt >>> unsafePartial \(p'@(Left (PRecord _)) × k) -> pushPatts (subpatts p') k
-      Left (PConstr c _) -> orElseBwd ((subpatts p <> π) × s) ks_c'
+      Left (PConstr c _) -> under ks_c'
          # first ((_ :| (ks_not_c <#> snd >>> unsafePartial \(ListEmpty α) -> α)) >>> foldl1 (∨))
          where
          { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
@@ -533,7 +533,7 @@ orElseBwd (π0 × s) ks = case π0 of
       Left PListEmpty -> orElseBwd (π × s) ks'
          where
          ks' = popIfPresent (Left (PConstr cCons (replicate 2 pVarAnon)) : (π <#> anon)) ks <#> popPatt >>> snd
-      Left (PListNonEmpty _ _) -> orElseBwd ((subpatts p <> π) × s) ks'
+      Left (PListNonEmpty _ _) -> under ks'
          where
          ks' = popIfPresent (Left PListEmpty : (π <#> anon)) ks <#>
             popPatt >>> unsafePartial \(p'@(Left (PListNonEmpty _ _)) × k) -> pushPatts (subpatts p') k
@@ -541,10 +541,13 @@ orElseBwd (π0 × s) ks = case π0 of
       Right PListEnd -> orElseBwd (π × s) ks'
          where
          ks' = popIfPresent (Right (PListNext pVarAnon pListVarAnon) : (π <#> anon)) ks <#> popPatt >>> snd
-      Right (PListNext _ _) -> orElseBwd ((subpatts p <> π) × s) ks'
+      Right (PListNext _ _) -> under ks'
          where
          ks' = popIfPresent (Right PListEnd : (π <#> anon)) ks <#>
             popPatt >>> unsafePartial \(p'@(Right (PListNext _ _)) × k) -> pushPatts (subpatts p') k
+      where
+      under :: NonEmptyList (ClauseState a) -> a × Expr a
+      under = orElseBwd ((subpatts p <> π) × s)
    where
    popPatt :: ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
    popPatt ((p : π) × s') = p × (π × s')
