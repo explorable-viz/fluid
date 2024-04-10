@@ -476,34 +476,32 @@ orElseFwd :: forall a. a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd α = case _ of
    Nil × s -> singleton (Nil × s)
    (p : π) × s -> case p of
-      Left (PVar _) -> orElseFwd α (π × s) <#> pushPatt p
+      Left (PVar _) -> under <#> \(_ × k) -> pushPatt p k
       Left (PRecord xps) -> under <#> \(π' × k) ->
          pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p') -> p') <$> π')))) k
       Left (PConstr c _) -> ks `appendList` ks'
          where
          ks = under <#> \(π' × k) ->
             pushPatt (Left (PConstr c (unsafePartial (\(Left p') -> p') <$> π'))) k
-         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
       Left PListEmpty -> ks `appendList` ks'
          where
-         ks = orElseFwd α (π × s) <#> pushPatt (Left PListEmpty)
-         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
+         ks = under <#> \(_ × k) -> pushPatt (Left PListEmpty) k
       Left (PListNonEmpty _ _) -> ks `appendList` ks'
          where
          ks = under <#> unsafePartial \((Left p' : Right o' : Nil) × k) ->
             pushPatt (Left (PListNonEmpty p' o')) k
-         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
-      Right (PListVar _) -> orElseFwd α (π × s) <#> pushPatt p
+      Right (PListVar _) -> under <#> \(_ × k) -> pushPatt p k
       Right (PListNext _ _) -> ks `appendList` ks'
          where
          ks = under <#> unsafePartial \((Left p' : Right o' : Nil) × k) ->
             pushPatt (Right (PListNext p' o')) k
-         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
       Right PListEnd -> ks `appendList` ks'
          where
-         ks = orElseFwd α (π × s) <#> pushPatt (Right PListEnd)
-         ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
+         ks = under <#> \(_ × k) -> pushPatt (Right PListEnd) k
       where
+      ks' :: List (ClauseState a)
+      ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
+
       under :: NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
       under = popPatts (length π') <$> orElseFwd α (pushPatts π' (π × s))
          where
