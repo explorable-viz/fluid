@@ -430,6 +430,13 @@ clausesStateFwd ks@(((Left (PVar x) : _) × _) : _) =
    ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
 clausesStateFwd ks@(((Left (PRecord xps) : _) × _) : _) =
    ContElim <$> ElimRecord (B.keys xps) <$> (clausesStateFwd =<< popRecordFwd (xps <#> fst) ks)
+clausesStateFwd ks@(((Right (PListVar x) : _) × _) : _) =
+   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
+{-
+clausesStateFwd ks@(((p : _) × _) : _) = do
+   kss <- popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks
+   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
+-}
 clausesStateFwd ks@(((Left (PConstr c _) : _) × _) : _) = do
    kss <- popConstrFwd (defined (dataTypeFor c)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
@@ -439,8 +446,6 @@ clausesStateFwd ks@(((Left PListEmpty : _) × _) : _) = do
 clausesStateFwd ks@(((Left (PListNonEmpty _ _) : _) × _) : _) = do
    kss <- popConstrFwd (defined (dataTypeFor cCons)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
-clausesStateFwd ks@(((Right (PListVar x) : _) × _) : _) =
-   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popListVarFwd x ks)
 clausesStateFwd ks@(((Right PListEnd : _) × _) : _) = do
    kss <- popConstrFwd (defined (dataTypeFor cNil)) ks
    ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
