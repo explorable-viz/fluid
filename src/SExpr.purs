@@ -476,32 +476,33 @@ unless (Right PListEnd) = Right (PListNext pVarAnon pListVarAnon) : Nil
 orElseFwd :: forall a. a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd α = case _ of
    Nil × s -> singleton (Nil × s)
-   (p : π) × s -> (under <#> wib p) `appendList` ks'
+   (p : π) × s ->
+      (orElseFwd α (pushPatts π' (π × s)) <#> popPatts (length π') <#> pushPattFor p)
+         `appendList`
+            (unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p')
       where
-      ks' :: List (ClauseState a)
-      ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
-
-      under :: NonEmptyList (List (Pattern + ListRestPattern) × ClauseState a)
-      under = popPatts (length π') <$> orElseFwd α (pushPatts π' (π × s))
-         where
-         π' = subpatts p
+      π' = subpatts p
    where
    pushPatt :: Pattern + ListRestPattern -> Endo (ClauseState a)
    pushPatt p (π × s) = (p : π) × s
 
-   wib :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern) × ClauseState a -> ClauseState a
-   wib (Left (PVar x)) = \(_ × k) -> pushPatt (Left (PVar x)) k
-   wib (Left (PRecord xps)) = \(π' × k) ->
-      pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p') -> p') <$> π')))) k
-   wib (Left (PConstr c _)) = \(π' × k) ->
-      pushPatt (Left (PConstr c (unsafePartial (\(Left p') -> p') <$> π'))) k
-   wib (Left PListEmpty) = \(_ × k) -> pushPatt (Left PListEmpty) k
-   wib (Left (PListNonEmpty _ _)) = unsafePartial \((Left p' : Right o' : Nil) × k) ->
-      pushPatt (Left (PListNonEmpty p' o')) k
-   wib (Right (PListVar x)) = \(_ × k) -> pushPatt (Right (PListVar x)) k
-   wib (Right (PListNext _ _)) = unsafePartial \((Left p' : Right o' : Nil) × k) ->
-      pushPatt (Right (PListNext p' o')) k
-   wib (Right PListEnd) = \(_ × k) -> pushPatt (Right PListEnd) k
+   pushPattFor :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern) × ClauseState a -> ClauseState a
+   pushPattFor (Left (PVar x)) = \(_ × k) ->
+      pushPatt (Left (PVar x)) k
+   pushPattFor (Left (PRecord xps)) = \(π × k) ->
+      pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p) -> p) <$> π)))) k
+   pushPattFor (Left (PConstr c _)) = \(π × k) ->
+      pushPatt (Left (PConstr c (unsafePartial (\(Left p) -> p) <$> π))) k
+   pushPattFor (Left PListEmpty) = \(_ × k) ->
+      pushPatt (Left PListEmpty) k
+   pushPattFor (Left (PListNonEmpty _ _)) = unsafePartial \((Left p : Right o : Nil) × k) ->
+      pushPatt (Left (PListNonEmpty p o)) k
+   pushPattFor (Right (PListVar x)) = \(_ × k) ->
+      pushPatt (Right (PListVar x)) k
+   pushPattFor (Right (PListNext _ _)) = unsafePartial \((Left p : Right o : Nil) × k) ->
+      pushPatt (Right (PListNext p o)) k
+   pushPattFor (Right PListEnd) = \(_ × k) ->
+      pushPatt (Right PListEnd) k
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left pVarAnon
