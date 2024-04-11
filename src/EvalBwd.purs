@@ -26,7 +26,7 @@ import Lattice (Raw, 𝔹, (∨), bot, botOf, expand, top)
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (!), (×), Endo, absurd, definitely', error, nonEmpty, singleton, successful)
+import Util (type (×), (!), (×), Endo, absurd, definitely', error, nonEmpty, singleton, defined)
 import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, intersectionWith, keys, maplet, toUnfoldable, (<+>))
 import Util.Pair (zip) as P
 import Util.Set (empty, isEmpty, (∪))
@@ -205,5 +205,5 @@ traceGC γ e = do
    t × v <- eval γ e bot
    let
       bwd v' = let γ' × e' × _ = evalBwd γ e v' t in γ' × e'
-      fwd (γ' × e') = snd $ successful $ eval γ' e' top
+      fwd (γ' × e') = snd $ defined $ eval γ' e' top
    pure $ { gc: GC { fwd, bwd }, v }

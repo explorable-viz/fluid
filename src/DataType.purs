@@ -23,7 +23,7 @@ import Util.Map (keys, lookup)
 
 type TypeName = String
 type FieldName = String
-type Ctr = String -- newtype would be nicer but JS maps are also nice
+type Ctr = String -- newtype would require more general Dict keys
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
@@ -39,17 +39,16 @@ showCtr c
    | isCtrOp c = "(" <> c <> ")"
    | otherwise = error absurd
 
-data DataType' a = DataType TypeName (Dict a)
-type DataType = DataType' CtrSig
+data DataType = DataType TypeName (Dict CtrSig)
 type CtrSig = Int
 
 typeName :: DataType -> TypeName
 typeName (DataType name _) = name
 
-instance Eq (DataType' Int) where
+instance Eq DataType where
    eq = eq `on` typeName
 
-instance Show (DataType' Int) where
+instance Show DataType where
    show = typeName
 
 dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType

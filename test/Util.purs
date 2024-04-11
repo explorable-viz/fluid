@@ -6,7 +6,6 @@ import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
--- import Data.Map (size)
 import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst, snd)
@@ -24,7 +23,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Thunk, Endo, check, checkSatisfies, debug, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, debug, spyWhen, throw, (×))
 import Val (class Ann, Val)
 
 type Selector f = Endo (f 𝔹) -- modifies selection state

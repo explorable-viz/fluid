@@ -12,8 +12,8 @@ import Data.Foldable (class Foldable, foldr)
 import Data.Functor.Compose (Compose)
 import Data.Functor.Product (Product)
 import Data.Identity (Identity(..))
-import Data.List (List(..), (:), intercalate)
-import Data.List.NonEmpty (NonEmptyList(..))
+import Data.List (List, intercalate)
+import Data.List.NonEmpty (NonEmptyList(..), fromList)
 import Data.Map (Map)
 import Data.Map as M
 import Data.Maybe (Maybe(..))
@@ -133,9 +133,6 @@ definitely msg Nothing = error ("definitely " <> msg)
 definitely' :: forall a. Maybe a -> a
 definitely' = definitely absurd
 
-get :: forall k v. Ord k => k -> Map k v -> v
-get k = definitely' <<< M.lookup k
-
 onlyIf :: forall m a. Bind m => Alternative m => Boolean -> a -> m a
 onlyIf b a = do
    guard b
@@ -148,13 +145,13 @@ orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
 orElse s Nothing = throw s
 orElse _ (Just x) = pure x
 
-successful :: forall a. MayFail a -> a
-successful = runExcept >>> case _ of
+defined :: forall a. MayFail a -> a
+defined = runExcept >>> case _ of
    Right x -> x
    Left e -> error $ show e
 
-successfulWith :: String -> forall a. MayFail a -> a
-successfulWith msg = successful <<< with msg
+definedWith :: String -> forall a. MayFail a -> a
+definedWith msg = defined <<< with msg
 
 with :: forall a m. MonadError Error m => String -> Endo (m a)
 with msg m = catchError m \e ->
@@ -214,8 +211,7 @@ unsafeUpdateAt i x = updateAt i x >>> definitely "index within bounds"
 infixl 8 unsafeIndex as !
 
 nonEmpty :: forall a. List a -> NonEmptyList a
-nonEmpty Nil = error absurd
-nonEmpty (x : xs) = NonEmptyList (x :| xs)
+nonEmpty = definitely' <<< fromList
 
 -- Similar to NonEmptyList.appendFoldable but without copying the list
 appendList :: forall a. NonEmptyList a -> List a -> NonEmptyList a

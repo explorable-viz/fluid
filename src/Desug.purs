@@ -9,7 +9,7 @@ import Expr (Expr)
 import GaloisConnection (GaloisConnection(..))
 import Lattice (class BoundedLattice, Raw)
 import SExpr (Expr) as S
-import Util (successful)
+import Util (defined)
 
 -- Core-language slicing can produce "partial" slices, but these are not (yet) tolerated by desugaring.
 type Desugaring a =
@@ -26,6 +26,6 @@ desugGC
    -> m (Desugaring a)
 desugGC s = pure $ { gc: GC { fwd, bwd }, e }
    where
-   e = successful $ desug s
-   fwd s' = successful $ desug s'
+   e = defined $ desug s
+   fwd s' = defined $ desug s'
    bwd e' = desugBwd e' s

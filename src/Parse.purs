@@ -331,9 +331,9 @@ expr_ =
                where
                qualifier :: SParser (Raw Qualifier)
                qualifier =
-                  Generator <$> pattern <* lArrow <*> expr'
-                     <|> Declaration <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
-                     <|> Guard <$> expr'
+                  ListCompGen <$> pattern <* lArrow <*> expr'
+                     <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
+                     <|> ListCompGuard <$> expr'
 
             listEnum :: SParser (Raw Expr)
             listEnum = token.brackets $

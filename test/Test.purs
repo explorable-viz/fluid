@@ -16,7 +16,7 @@ import Util (type (×), (×))
 main :: Effect Unit
 main = run tests
 
---main = run $ linkedOutputsSuite linkedOutputs_cases
+--main = run $ asTestSuite $ suite desugar_cases
 --main = run scratchpad
 
 scratchpad :: TestSuite
