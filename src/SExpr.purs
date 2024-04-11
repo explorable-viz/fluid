@@ -416,20 +416,21 @@ popRecordBwd _ Nil = Nil
 
 -- Implementing Desugarable would require another newtype
 clausesStateFwd :: forall a m. BoundedLattice a => MonadError Error m => ClausesState' a -> m (Cont a)
-clausesStateFwd Nil = error absurd
-clausesStateFwd ((Nil × Nil × s) : Nil) =
-   ContExpr <$> desug s
-clausesStateFwd ks@((Nil × _) : _) =
-   ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
-clausesStateFwd ks@(((Left (PVar x) : _) × _) : _) =
-   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
-clausesStateFwd ks@(((Left (PRecord xps) : _) × _) : _) =
-   ContElim <$> ElimRecord (B.keys xps) <$> (clausesStateFwd =<< popRecordFwd (xps <#> fst) ks)
-clausesStateFwd ks@(((Right (PListVar x) : _) × _) : _) =
-   ContElim <$> ElimVar x <$> (clausesStateFwd =<< popListVarFwd x ks)
-clausesStateFwd ks@(((p : _) × _) : _) = do
-   kss <- popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks
-   ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
+clausesStateFwd ks = case ks of
+   Nil -> error absurd
+   (Nil × Nil × s) : Nil ->
+      ContExpr <$> desug s
+   (Nil × _) : _ ->
+      ContExpr <$> E.Lambda top <$> asElim <$> (clausesStateFwd =<< popArgFwd ks)
+   ((Left (PVar x) : _) × _) : _ ->
+      ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
+   ((Left (PRecord xps) : _) × _) : _ ->
+      ContElim <$> ElimRecord (B.keys xps) <$> (clausesStateFwd =<< popRecordFwd (xps <#> fst) ks)
+   ((Right (PListVar x) : _) × _) : _ ->
+      ContElim <$> ElimVar x <$> (clausesStateFwd =<< popListVarFwd x ks)
+   ((p : _) × _) : _ -> do
+      kss <- popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks
+      ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
 
 -- Recovers (subset of) clauses in order consistent with their original order.
 clausesStateBwd :: forall a. BoundedJoinSemilattice a => Cont a -> Raw ClausesState' -> ClausesState' a
