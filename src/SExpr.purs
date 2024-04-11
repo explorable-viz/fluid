@@ -20,7 +20,7 @@ import Data.Profunctor.Strong (first, second)
 import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (curry, fst, snd, uncurry)
+import Data.Tuple (fst, snd, uncurry)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desugBwd, desug)
@@ -370,17 +370,17 @@ popConstrFwd :: forall a m. MonadError Error m => DataType -> ClausesState' a ->
 popConstrFwd _ ((Nil × _ × _) : _) = error absurd
 popConstrFwd d (((p : π') × π'' × s) : ks) =
    assert (length π == defined (arity c) && defined (dataTypeFor c) == d) $
-      forConstr c ((π <> π') × π'' × s) <$> popConstrFwd d ks
+      forConstrFwd c ((π <> π') × π'' × s) <$> popConstrFwd d ks
    where
    π = subpatts p
    c = definitely' (ctrFor p)
 popConstrFwd _ Nil = pure Nil
 
-forConstr :: forall a. Ctr -> ClauseState' a -> Endo (List (Ctr × ClausesState' a))
-forConstr c k Nil = (c × (k : Nil)) : Nil
-forConstr c k ((c' × ks') : cks)
+forConstrFwd :: forall a. Ctr -> ClauseState' a -> Endo (List (Ctr × ClausesState' a))
+forConstrFwd c k Nil = (c × (k : Nil)) : Nil
+forConstrFwd c k ((c' × ks') : cks)
    | c == c' = (c' × (k : ks')) : cks
-   | otherwise = (c' × ks') : forConstr c k cks
+   | otherwise = (c' × ks') : forConstrFwd c k cks
 
 popConstrBwd :: forall a. List (Ctr × ClausesState' a) -> Raw ClausesState' -> ClausesState' a
 popConstrBwd _ ((Nil × _ × _) : _) = error absurd
@@ -457,12 +457,6 @@ clausesStateBwd κ0 ks = case κ0 × ks of
 -- initially containing only p and empty when the recursion terminates.
 type ClauseState a = List (Pattern + ListRestPattern) × Expr a
 
-pushPatts :: forall a. List (Pattern + ListRestPattern) -> Endo (ClauseState a)
-pushPatts π (π' × s) = (π <> π') × s
-
-popPatts :: forall a. Int -> ClauseState a -> List (Pattern + ListRestPattern) × ClauseState a
-popPatts n (π' × s) = take n π' × drop n π' × s
-
 unless :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern)
 unless (Left (PVar _)) = Nil
 unless (Left (PRecord _)) = Nil
@@ -479,7 +473,7 @@ orElseFwd :: forall a. a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd α = case _ of
    Nil × s -> singleton (Nil × s)
    (p : π) × s ->
-      (orElseFwd α (pushPatts π' (π × s)) <#> popPatts (length π') <#> pushPattFor p)
+      (orElseFwd α ((π' <> π) × s) <#> popPatts (length π') <#> pushPattFor p)
          `appendList`
             (unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p')
       where
@@ -487,6 +481,9 @@ orElseFwd α = case _ of
    where
    pushPatt :: Pattern + ListRestPattern -> Endo (ClauseState a)
    pushPatt p (π × s) = (p : π) × s
+
+   popPatts :: Int -> ClauseState a -> List (Pattern + ListRestPattern) × ClauseState a
+   popPatts n (π' × s) = take n π' × drop n π' × s
 
    pushPattFor :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern) × ClauseState a -> ClauseState a
    pushPattFor (Left (PVar x)) = \(_ × k) ->
@@ -517,22 +514,18 @@ orElseBwd (π0 × s) ks = case π0 of
    p : π -> ks # popIfPresent (unless p) # under
       where
       under :: a × NonEmptyList (ClauseState a) -> a × Expr a
-      under (α × ks') = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
+      under (α × ks') = ks' <#> (unsafePartial \((p' : π') × s') -> (subpatts p' <> π') × s')
          # orElseBwd ((subpatts p <> π) × s)
          # first (_ ∨ α)
 
       popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> a × NonEmptyList (ClauseState a)
-      popIfPresent Nil ks'' = bot × ks''
-      popIfPresent ps ks'' =
-         if (p' : (π <#> anon)) /= π' then popIfPresent ps' ks''
-         else popIfPresent ps' (nonEmpty ks') # first (_ ∨ (s # unsafePartial \(ListEmpty α) -> α))
+      popIfPresent Nil ks' = bot × ks'
+      popIfPresent ps ks' =
+         if (p' : (π <#> anon)) /= π' then popIfPresent ps' ks'
+         else popIfPresent ps' (nonEmpty ks'') # first (_ ∨ (s # unsafePartial \(ListEmpty α) -> α))
          where
-         { init: ks', last: π' × s } = unsnoc ks''
+         { init: ks'', last: π' × s } = unsnoc ks'
          { init: ps', last: p' } = unsnoc (nonEmpty ps)
-   where
-   popPatt :: ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
-   popPatt ((p : π) × s') = p × (π × s')
-   popPatt _ = error absurd
 
 -- ======================
 -- boilerplate
