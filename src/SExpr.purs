@@ -20,7 +20,7 @@ import Data.Profunctor.Strong (first, second)
 import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (curry, fst, snd, uncurry)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desugBwd, desug)
@@ -516,29 +516,29 @@ orElseBwd (π0 × s) ks = case π0 of
       NonEmptyList (Nil × s' :| Nil) -> bot × s'
       _ -> error absurd
    p : π -> case p of
-      Left (PVar _) -> ks # under
-      Left (PRecord _) -> ks # under
-      Left (PConstr c _) -> nonEmpty ks_c # under
+      Left (PVar _) -> ks # popIfPresent (unless p) # under
+      Left (PRecord _) -> ks # popIfPresent (unless p) # under
+      Left (PConstr c _) -> nonEmpty ks_c # curry under bot
          # first ((_ :| (ks_not_c <#> snd >>> unsafePartial \(ListEmpty α) -> α)) >>> foldl1 (∨))
          where
          { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
             (Left (PConstr c' _) : _) × _ -> c' == c
             _ -> false
-      Left PListEmpty -> ks # popIfPresent (unless p) # snd >>> under
-      Left (PListNonEmpty _ _) -> ks # popIfPresent (unless p) # snd >>> under
-      Right (PListVar _) -> ks # under
-      Right PListEnd -> ks # popIfPresent (unless p) # snd >>> under
-      Right (PListNext _ _) -> ks # popIfPresent (unless p) # snd >>> under
+      Left PListEmpty -> ks # popIfPresent (unless p) # under
+      Left (PListNonEmpty _ _) -> ks # popIfPresent (unless p) # under
+      Right (PListVar _) -> ks # popIfPresent (unless p) # under
+      Right PListEnd -> ks # popIfPresent (unless p) # under
+      Right (PListNext _ _) -> ks # popIfPresent (unless p) # under
       where
-      under :: NonEmptyList (ClauseState a) -> a × Expr a
-      under ks' = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
+      under :: a × NonEmptyList (ClauseState a) -> a × Expr a
+      under (_ × ks') = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
          # orElseBwd ((subpatts p <> π) × s)
 
       popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> a × NonEmptyList (ClauseState a)
       popIfPresent Nil ks'' = bot × ks''
       popIfPresent ps ks'' =
-         if (p' : (π <#> anon)) == π' then popIfPresent ps' (nonEmpty ks') # first (_ ∨ (s # unsafePartial \(ListEmpty α) -> α))
-         else popIfPresent ps' ks''
+         if (p' : (π <#> anon)) /= π' then popIfPresent ps' ks''
+         else popIfPresent ps' (nonEmpty ks') # first (_ ∨ (s # unsafePartial \(ListEmpty α) -> α))
          where
          { init: ks', last: π' × s } = unsnoc ks''
          { init: ps', last: p' } = unsnoc (nonEmpty ps)
