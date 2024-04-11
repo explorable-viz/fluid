@@ -525,31 +525,31 @@ orElseBwd (π0 × s) ks = case π0 of
             (Left (PConstr c' _) : _) × _ -> c' == c
             _ -> false
       Left PListEmpty -> ks
-         # popIfPresent (Left (PConstr cCons (replicate 2 pVarAnon)) : (π <#> anon))
+         # popIfPresent (Left (PConstr cCons (replicate 2 pVarAnon)))
          # under
       Left (PListNonEmpty _ _) -> ks
-         # popIfPresent (Left PListEmpty : (π <#> anon))
+         # popIfPresent (Left PListEmpty)
          # under
       Right (PListVar _) -> ks # under
       Right PListEnd -> ks
-         # popIfPresent (Right (PListNext pVarAnon pListVarAnon) : (π <#> anon))
+         # popIfPresent (Right (PListNext pVarAnon pListVarAnon))
          # under
       Right (PListNext _ _) -> ks
-         # popIfPresent (Right PListEnd : (π <#> anon))
+         # popIfPresent (Right PListEnd)
          # under
       where
       under :: NonEmptyList (ClauseState a) -> a × Expr a
       under ks' = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
          # orElseBwd ((subpatts p <> π) × s)
+
+      popIfPresent :: Pattern + ListRestPattern -> NonEmptyList (ClauseState a) -> NonEmptyList (ClauseState a)
+      popIfPresent p' ks'' = if (p' : (π <#> anon)) == π' then nonEmpty ks' else ks''
+         where
+         { init: ks', last: π' × _ } = unsnoc ks
    where
    popPatt :: ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
    popPatt ((p : π) × s') = p × (π × s')
    popPatt _ = error absurd
-
-   popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> NonEmptyList (ClauseState a)
-   popIfPresent π ks'' = if π == π' then nonEmpty ks' else ks''
-      where
-      { init: ks', last: π' × _ } = unsnoc ks
 
 -- ======================
 -- boilerplate
