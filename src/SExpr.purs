@@ -516,9 +516,9 @@ orElseBwd (π0 × s) ks = case π0 of
       NonEmptyList (Nil × s' :| Nil) -> bot × s'
       _ -> error absurd
    p : π -> case p of
-      Left (PVar _) -> ks <#> wibble # under
-      Left (PRecord _) -> ks <#> wibble # under
-      Left (PConstr c _) -> nonEmpty ks_c <#> wibble # under
+      Left (PVar _) -> ks # under
+      Left (PRecord _) -> ks # under
+      Left (PConstr c _) -> nonEmpty ks_c # under
          # first ((_ :| (ks_not_c <#> snd >>> unsafePartial \(ListEmpty α) -> α)) >>> foldl1 (∨))
          where
          { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
@@ -526,27 +526,21 @@ orElseBwd (π0 × s) ks = case π0 of
             _ -> false
       Left PListEmpty -> ks
          # popIfPresent (Left (PConstr cCons (replicate 2 pVarAnon)) : (π <#> anon))
-         <#> wibble
          # under
       Left (PListNonEmpty _ _) -> ks
          # popIfPresent (Left PListEmpty : (π <#> anon))
-         <#> wibble
          # under
-      Right (PListVar _) -> ks <#> wibble # under
+      Right (PListVar _) -> ks # under
       Right PListEnd -> ks
          # popIfPresent (Right (PListNext pVarAnon pListVarAnon) : (π <#> anon))
-         <#> wibble
          # under
       Right (PListNext _ _) -> ks
          # popIfPresent (Right PListEnd : (π <#> anon))
-         <#> wibble
          # under
       where
       under :: NonEmptyList (ClauseState a) -> a × Expr a
-      under = orElseBwd ((subpatts p <> π) × s)
-
-      wibble :: Endo (ClauseState a)
-      wibble = popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k
+      under ks' = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
+         # orElseBwd ((subpatts p <> π) × s)
    where
    popPatt :: ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
    popPatt ((p : π) × s') = p × (π × s')
