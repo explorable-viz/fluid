@@ -524,19 +524,11 @@ orElseBwd (π0 × s) ks = case π0 of
          { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
             (Left (PConstr c' _) : _) × _ -> c' == c
             _ -> false
-      Left PListEmpty -> ks
-         # popIfPresent (Left (PConstr cCons (replicate 2 pVarAnon)) : Nil)
-         # under
-      Left (PListNonEmpty _ _) -> ks
-         # popIfPresent (Left PListEmpty : Nil)
-         # under
+      Left PListEmpty -> ks # popIfPresent (unless p) # under
+      Left (PListNonEmpty _ _) -> ks # popIfPresent (unless p) # under
       Right (PListVar _) -> ks # under
-      Right PListEnd -> ks
-         # popIfPresent (Right (PListNext pVarAnon pListVarAnon) : Nil)
-         # under
-      Right (PListNext _ _) -> ks
-         # popIfPresent (Right PListEnd : Nil)
-         # under
+      Right PListEnd -> ks # popIfPresent (unless p) # under
+      Right (PListNext _ _) -> ks # popIfPresent (unless p) # under
       where
       under :: NonEmptyList (ClauseState a) -> a × Expr a
       under ks' = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
