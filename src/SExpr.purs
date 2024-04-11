@@ -11,11 +11,11 @@ import Data.Filterable (filterMap)
 import Data.Foldable (length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, partition, take, zip, zipWith, (:), (\\))
+import Data.List (List(..), drop, take, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, unsnoc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.NonEmpty (foldl1, (:|))
+import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, second)
 import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
@@ -512,17 +512,9 @@ anon (Right _) = Right pListVarAnon
 
 orElseBwd :: forall a. BoundedJoinSemilattice a => Raw ClauseState -> NonEmptyList (ClauseState a) -> a × Expr a
 orElseBwd (π0 × s) ks = case π0 of
-   Nil -> case ks of
+   Nil -> unsafePartial case ks of
       NonEmptyList (Nil × s' :| Nil) -> bot × s'
-      _ -> error absurd
-   p : π -> case p of
-      Left (PConstr c _) -> nonEmpty ks_c # curry under bot
-         # first ((_ :| (ks_not_c <#> snd >>> unsafePartial \(ListEmpty α) -> α)) >>> foldl1 (∨))
-         where
-         { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
-            (Left (PConstr c' _) : _) × _ -> c' == c
-            _ -> false
-      _ -> ks # popIfPresent (unless p) # under
+   p : π -> ks # popIfPresent (unless p) # under
       where
       under :: a × NonEmptyList (ClauseState a) -> a × Expr a
       under (α × ks') = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
