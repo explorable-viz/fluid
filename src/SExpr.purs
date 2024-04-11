@@ -1,6 +1,7 @@
 module SExpr where
 
 import Prelude hiding (absurd, top, unless)
+
 import Bind (Bind, Var, varAnon, (↦))
 import Bind (keys) as B
 import Control.Monad.Error.Class (class MonadError)
@@ -475,29 +476,7 @@ unless (Right PListEnd) = Right (PListNext pVarAnon pListVarAnon) : Nil
 orElseFwd :: forall a. a -> ClauseState a -> NonEmptyList (ClauseState a)
 orElseFwd α = case _ of
    Nil × s -> singleton (Nil × s)
-   (p : π) × s -> case p of
-      Left (PVar _) -> under <#> \(_ × k) -> pushPatt p k
-      Left (PRecord xps) -> under <#> \(π' × k) ->
-         pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p') -> p') <$> π')))) k
-      Left (PConstr c _) -> ks `appendList` ks'
-         where
-         ks = under <#> \(π' × k) ->
-            pushPatt (Left (PConstr c (unsafePartial (\(Left p') -> p') <$> π'))) k
-      Left PListEmpty -> ks `appendList` ks'
-         where
-         ks = under <#> \(_ × k) -> pushPatt (Left PListEmpty) k
-      Left (PListNonEmpty _ _) -> ks `appendList` ks'
-         where
-         ks = under <#> unsafePartial \((Left p' : Right o' : Nil) × k) ->
-            pushPatt (Left (PListNonEmpty p' o')) k
-      Right (PListVar _) -> under <#> \(_ × k) -> pushPatt p k
-      Right (PListNext _ _) -> ks `appendList` ks'
-         where
-         ks = under <#> unsafePartial \((Left p' : Right o' : Nil) × k) ->
-            pushPatt (Right (PListNext p' o')) k
-      Right PListEnd -> ks `appendList` ks'
-         where
-         ks = under <#> \(_ × k) -> pushPatt (Right PListEnd) k
+   (p : π) × s -> (under <#> wib p) `appendList` ks'
       where
       ks' :: List (ClauseState a)
       ks' = unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p'
@@ -509,6 +488,20 @@ orElseFwd α = case _ of
    where
    pushPatt :: Pattern + ListRestPattern -> Endo (ClauseState a)
    pushPatt p (π × s) = (p : π) × s
+
+   wib :: Pattern + ListRestPattern -> List (Pattern + ListRestPattern) × ClauseState a -> ClauseState a
+   wib (Left (PVar x)) = \(_ × k) -> pushPatt (Left (PVar x)) k
+   wib (Left (PRecord xps)) = \(π' × k) ->
+      pushPatt (Left (PRecord (zip (fst <$> xps) (unsafePartial (\(Left p') -> p') <$> π')))) k
+   wib (Left (PConstr c _)) = \(π' × k) ->
+      pushPatt (Left (PConstr c (unsafePartial (\(Left p') -> p') <$> π'))) k
+   wib (Left PListEmpty) = \(_ × k) -> pushPatt (Left PListEmpty) k
+   wib (Left (PListNonEmpty _ _)) = unsafePartial \((Left p' : Right o' : Nil) × k) ->
+      pushPatt (Left (PListNonEmpty p' o')) k
+   wib (Right (PListVar x)) = \(_ × k) -> pushPatt (Right (PListVar x)) k
+   wib (Right (PListNext _ _)) = unsafePartial \((Left p' : Right o' : Nil) × k) ->
+      pushPatt (Right (PListNext p' o')) k
+   wib (Right PListEnd) = \(_ × k) -> pushPatt (Right PListEnd) k
 
 anon :: Pattern + ListRestPattern -> Pattern + ListRestPattern
 anon (Left _) = Left pVarAnon
