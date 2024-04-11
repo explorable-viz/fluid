@@ -524,18 +524,18 @@ orElseBwd (π0 × s) ks = case π0 of
          { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
             (Left (PConstr c' _) : _) × _ -> c' == c
             _ -> false
-      Left PListEmpty -> ks # popIfPresent (unless p) # under
-      Left (PListNonEmpty _ _) -> ks # popIfPresent (unless p) # under
+      Left PListEmpty -> ks # popIfPresent (unless p) # snd >>> under
+      Left (PListNonEmpty _ _) -> ks # popIfPresent (unless p) # snd >>> under
       Right (PListVar _) -> ks # under
-      Right PListEnd -> ks # popIfPresent (unless p) # under
-      Right (PListNext _ _) -> ks # popIfPresent (unless p) # under
+      Right PListEnd -> ks # popIfPresent (unless p) # snd >>> under
+      Right (PListNext _ _) -> ks # popIfPresent (unless p) # snd >>> under
       where
       under :: NonEmptyList (ClauseState a) -> a × Expr a
       under ks' = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
          # orElseBwd ((subpatts p <> π) × s)
 
-      popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> NonEmptyList (ClauseState a)
-      popIfPresent Nil ks'' = ks''
+      popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> a × NonEmptyList (ClauseState a)
+      popIfPresent Nil ks'' = bot × ks''
       popIfPresent ps ks'' = popIfPresent ps' (if (p' : (π <#> anon)) == π' then nonEmpty ks' else ks'')
          where
          { init: ks', last: π' × _ } = unsnoc ks''
