@@ -516,13 +516,9 @@ orElseBwd (π0 × s) ks = case π0 of
       NonEmptyList (Nil × s' :| Nil) -> bot × s'
       _ -> error absurd
    p : π -> case p of
-      Left (PVar _) -> ks <#> popPatt >>> snd # under
-      Left (PRecord _) -> ks
-         <#> (popPatt >>> unsafePartial \(p'@(Left (PRecord _)) × k) -> pushPatts (subpatts p') k)
-         # under
-      Left (PConstr c _) -> nonEmpty ks_c
-         <#> (popPatt >>> unsafePartial \(p'@(Left (PConstr _ _)) × k) -> pushPatts (subpatts p') k)
-         # under
+      Left (PVar _) -> ks <#> wibble # under
+      Left (PRecord _) -> ks <#> wibble # under
+      Left (PConstr c _) -> nonEmpty ks_c <#> wibble # under
          # first ((_ :| (ks_not_c <#> snd >>> unsafePartial \(ListEmpty α) -> α)) >>> foldl1 (∨))
          where
          { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
@@ -530,24 +526,27 @@ orElseBwd (π0 × s) ks = case π0 of
             _ -> false
       Left PListEmpty -> ks
          # popIfPresent (Left (PConstr cCons (replicate 2 pVarAnon)) : (π <#> anon))
-         <#> popPatt >>> snd
+         <#> wibble
          # under
       Left (PListNonEmpty _ _) -> ks
          # popIfPresent (Left PListEmpty : (π <#> anon))
-         <#> (popPatt >>> unsafePartial \(p'@(Left (PListNonEmpty _ _)) × k) -> pushPatts (subpatts p') k)
+         <#> wibble
          # under
-      Right (PListVar _) -> under (ks <#> popPatt >>> snd)
+      Right (PListVar _) -> ks <#> wibble # under
       Right PListEnd -> ks
          # popIfPresent (Right (PListNext pVarAnon pListVarAnon) : (π <#> anon))
-         <#> popPatt >>> snd
+         <#> wibble
          # under
       Right (PListNext _ _) -> ks
          # popIfPresent (Right PListEnd : (π <#> anon))
-         <#> (popPatt >>> unsafePartial \(p'@(Right (PListNext _ _)) × k) -> pushPatts (subpatts p') k)
+         <#> wibble
          # under
       where
       under :: NonEmptyList (ClauseState a) -> a × Expr a
       under = orElseBwd ((subpatts p <> π) × s)
+
+      wibble :: Endo (ClauseState a)
+      wibble = popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k
    where
    popPatt :: ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
    popPatt ((p : π) × s') = p × (π × s')
