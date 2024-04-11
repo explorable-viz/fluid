@@ -20,7 +20,7 @@ import Data.Profunctor.Strong (first, second)
 import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (curry, fst, snd, uncurry)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desugBwd, desug)
@@ -434,23 +434,24 @@ clausesStateFwd ks = case ks of
 
 -- Recovers (subset of) clauses in order consistent with their original order.
 clausesStateBwd :: forall a. BoundedJoinSemilattice a => Cont a -> Raw ClausesState' -> ClausesState' a
-clausesStateBwd _ Nil = error absurd
-clausesStateBwd (ContExpr e) ((Nil × Nil × s) : Nil) =
-   (Nil × Nil × desugBwd e s) : Nil
-clausesStateBwd (ContExpr (E.Lambda _ σ)) ks@((Nil × _) : _) =
-   popArgBwd (clausesStateBwd (ContElim σ) (defined (popArgFwd ks)))
-clausesStateBwd (ContExpr _) _ = error absurd
-clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Left (PVar _) : _) × _) : _) =
-   popVarBwd x (clausesStateBwd κ (defined (popVarFwd x ks)))
-clausesStateBwd (ContElim (ElimRecord _ κ)) ks@(((Left (PRecord xps) : _) × _) : _) =
-   popRecordBwd (xps <#> fst) (clausesStateBwd κ (defined (popRecordFwd (xps <#> fst) ks)))
-clausesStateBwd (ContElim (ElimVar x κ)) ks@(((Right (PListVar _) : _) × _) : _) =
-   popListVarBwd x (clausesStateBwd κ (defined (popListVarFwd x ks)))
-clausesStateBwd (ContElim (ElimConstr m)) ks@(((p : _) × _) : _) =
-   popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
-   where
-   kss = defined (popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks)
-clausesStateBwd (ContElim _) _ = error (shapeMismatch unit)
+clausesStateBwd κ0 ks = case κ0 × ks of
+   _ × Nil -> error absurd
+   ContExpr e × (Nil × Nil × s) : Nil ->
+      (Nil × Nil × desugBwd e s) : Nil
+   ContExpr (E.Lambda _ σ) × (Nil × _) : _ ->
+      popArgBwd (clausesStateBwd (ContElim σ) (defined (popArgFwd ks)))
+   ContExpr _ × _ -> error absurd
+   ContElim (ElimVar x κ) × ((Left (PVar _) : _) × _) : _ ->
+      popVarBwd x (clausesStateBwd κ (defined (popVarFwd x ks)))
+   ContElim (ElimRecord _ κ) × ((Left (PRecord xps) : _) × _) : _ ->
+      popRecordBwd (xps <#> fst) (clausesStateBwd κ (defined (popRecordFwd (xps <#> fst) ks)))
+   ContElim (ElimVar x κ) × ((Right (PListVar _) : _) × _) : _ ->
+      popListVarBwd x (clausesStateBwd κ (defined (popListVarFwd x ks)))
+   ContElim (ElimConstr m) × ((p : _) × _) : _ ->
+      popConstrBwd (filterMap (\(c' ↦ ks') -> (c' ↦ _) <$> (clausesStateBwd <$> lookup c' m <@> ks')) kss) ks
+      where
+      kss = defined (popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks)
+   ContElim _ × _ -> error (shapeMismatch unit)
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.
