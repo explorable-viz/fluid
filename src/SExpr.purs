@@ -516,23 +516,18 @@ orElseBwd (π0 × s) ks = case π0 of
       NonEmptyList (Nil × s' :| Nil) -> bot × s'
       _ -> error absurd
    p : π -> case p of
-      Left (PVar _) -> ks # popIfPresent (unless p) # under
-      Left (PRecord _) -> ks # popIfPresent (unless p) # under
       Left (PConstr c _) -> nonEmpty ks_c # curry under bot
          # first ((_ :| (ks_not_c <#> snd >>> unsafePartial \(ListEmpty α) -> α)) >>> foldl1 (∨))
          where
          { no: ks_not_c, yes: ks_c } = flip partition (toList ks) case _ of
             (Left (PConstr c' _) : _) × _ -> c' == c
             _ -> false
-      Left PListEmpty -> ks # popIfPresent (unless p) # under
-      Left (PListNonEmpty _ _) -> ks # popIfPresent (unless p) # under
-      Right (PListVar _) -> ks # popIfPresent (unless p) # under
-      Right PListEnd -> ks # popIfPresent (unless p) # under
-      Right (PListNext _ _) -> ks # popIfPresent (unless p) # under
+      _ -> ks # popIfPresent (unless p) # under
       where
       under :: a × NonEmptyList (ClauseState a) -> a × Expr a
-      under (_ × ks') = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
+      under (α × ks') = (ks' <#> (popPatt >>> unsafePartial \(p' × k) -> pushPatts (subpatts p') k))
          # orElseBwd ((subpatts p <> π) × s)
+         # first (_ ∨ α)
 
       popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> a × NonEmptyList (ClauseState a)
       popIfPresent Nil ks'' = bot × ks''
