@@ -545,7 +545,7 @@ orElseBwd (π0 × s) ks = case π0 of
       popIfPresent :: Pattern + ListRestPattern -> NonEmptyList (ClauseState a) -> NonEmptyList (ClauseState a)
       popIfPresent p' ks'' = if (p' : (π <#> anon)) == π' then nonEmpty ks' else ks''
          where
-         { init: ks', last: π' × _ } = unsnoc ks
+         { init: ks', last: π' × _ } = unsnoc ks''
    where
    popPatt :: ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
    popPatt ((p : π) × s') = p × (π × s')
