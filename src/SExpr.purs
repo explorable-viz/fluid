@@ -536,10 +536,13 @@ orElseBwd (π0 × s) ks = case π0 of
 
       popIfPresent :: List (Pattern + ListRestPattern) -> NonEmptyList (ClauseState a) -> a × NonEmptyList (ClauseState a)
       popIfPresent Nil ks'' = bot × ks''
-      popIfPresent ps ks'' = popIfPresent ps' (if (p' : (π <#> anon)) == π' then nonEmpty ks' else ks'')
+      popIfPresent ps ks'' = popIfPresent ps' ks''' # first (_ ∨ α)
          where
-         { init: ks', last: π' × _ } = unsnoc ks''
+         { init: ks', last: π' × s } = unsnoc ks''
          { init: ps', last: p' } = unsnoc (nonEmpty ps)
+         α × ks''' =
+            if (p' : (π <#> anon)) == π' then (s # unsafePartial \(ListEmpty α) -> α) × nonEmpty ks'
+            else bot × ks''
    where
    popPatt :: ClauseState a -> (Pattern + ListRestPattern) × ClauseState a
    popPatt ((p : π) × s') = p × (π × s')
