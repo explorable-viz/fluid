@@ -8,14 +8,13 @@ import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Strong (first, (***))
+import Data.Profunctor.Strong ((***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
 import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
 import EvalGraph (GraphEval, graphEval, graphGC)
-import Expr (Expr)
 import GaloisConnection (GaloisConnection(..), relatedInputs, relatedOutputs)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, botOf, erase, topOf)
@@ -43,7 +42,7 @@ type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
    , eval :: GraphEval GraphImpl EnvExpr Val
-   , in_ :: Env 𝔹 × Expr 𝔹
+   , in_ :: EnvExpr 𝔹
    , out :: Val 𝔹
    , dir :: Direction
    }
@@ -54,31 +53,31 @@ output = "output"
 
 -- TODO: replace (expensive) botOf in_ by per-variable botOf
 selectOutput :: Selector Val -> Endo Fig
-selectOutput δv fig@{ dir, in_, out } = fig
+selectOutput δv fig@{ dir, in_: EnvExpr γ e, out } = fig
    { out = δv out
-   , in_ = if dir == LinkedInputs then first botOf in_ else in_
+   , in_ = if dir == LinkedInputs then EnvExpr (botOf γ) e else EnvExpr γ e
    , dir = LinkedOutputs
    }
 
 selectInput :: Bind (Selector Val) -> Endo Fig
-selectInput (x ↦ δv) fig@{ dir, in_, out } = fig
-   { in_ = first (envVal x δv) in_
+selectInput (x ↦ δv) fig@{ dir, in_: EnvExpr γ e, out } = fig
+   { in_ = EnvExpr (envVal x δv γ) e
    , out = if dir == LinkedOutputs then botOf out else out
    , dir = LinkedInputs
    }
 
 drawFig :: Fig -> Effect Unit
 drawFig fig@{ spec: { divId } } = do
-   let
-      out_view × in_views =
-         selectionResult fig
-            # unsafePartial (view output *** unwrap >>> mapWithKey view)
    drawView divId output (drawFig <<< flip selectOutput fig) out_view
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
+   where
+   out_view × in_views =
+      selectionResult fig
+         # unsafePartial (view output *** unwrap >>> mapWithKey view)
 
 -- Not easy to express as direct composition of Galois connections because of direct use of e.
 unfocus :: Fig -> GaloisConnection (Env 𝔹) (Val 𝔹)
-unfocus { spec: { inputs }, eval, in_: γ × e } = GC
+unfocus { spec: { inputs }, eval, in_: EnvExpr γ e } = GC
    { fwd: \γ' -> gc.fwd (EnvExpr (unrestrict.fwd γ') (topOf e))
    , bwd: \v -> unrestrict.bwd (gc.bwd v # \(EnvExpr γ'' _) -> γ'')
    }
@@ -92,7 +91,7 @@ selectionResult fig@{ out, dir: LinkedOutputs } =
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    out' × γ = (unwrap (relatedOutputs (unfocus fig))).bwd out
-selectionResult fig@{ in_: γ × _, dir: LinkedInputs } =
+selectionResult fig@{ in_: EnvExpr γ _, dir: LinkedInputs } =
    (toSel <$> report out) × wrap (mapWithKey (\x v -> asSel <$> get x γ <*> v) (unwrap γ'))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
@@ -108,7 +107,7 @@ loadFig spec@{ imports, file, datasets } = do
    e <- desug s
    gconfig <- loadProgCxt imports datasets >>= initialConfig e
    eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
-   pure { spec, s, eval, in_: botOf γα × topOf e, out: botOf outα, dir: LinkedOutputs }
+   pure { spec, s, eval, in_: EnvExpr (botOf γα) (topOf e), out: botOf outα, dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
