@@ -106,8 +106,8 @@ loadFig spec@{ imports, file, datasets } = do
    s <- open file
    e <- desug s
    gconfig <- loadProgCxt imports datasets >>= initialConfig e
-   eval <- graphGC gconfig e
-   pure { spec, s, eval, in_: botOf eval.γα × topOf e, out: botOf eval.vα, dir: LinkedOutputs }
+   eval@({ γeα: EnvExpr γα _, vα }) <- graphGC gconfig e
+   pure { spec, s, eval, in_: botOf γα × topOf e, out: botOf vα, dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)

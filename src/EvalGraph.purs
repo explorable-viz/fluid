@@ -184,8 +184,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
 type GraphEval g =
    { gc :: GaloisConnection (EnvExpr 𝔹) (Val 𝔹)
    , gc_op :: GaloisConnection (Val 𝔹) (EnvExpr 𝔹)
-   , γα :: Env Vertex
-   , eα :: Expr Vertex
+   , γeα :: EnvExpr Vertex
    , g :: g
    , vα :: Val Vertex
    }
@@ -200,7 +199,7 @@ graphGC { n, γ } e = do
    _ × _ × g × eα × outα <- flip runAllocT n do
       eα <- alloc e
       let inputs = vertices (γ × eα)
-      g × outα <- runWithGraphT_spy (eval γ eα mempty) inputs
+      g × outα :: _ × Val Vertex <- runWithGraphT_spy (eval γ eα mempty) inputs
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × eα × outα)
 
@@ -214,8 +213,7 @@ graphGC { n, γ } e = do
            { fwd: \out𝔹 -> select𝔹s inα (vertices (fwdSlice' (selectαs out𝔹 outα ∪ (sources g \\ vertices outα)) (op g)))
            , bwd: \in𝔹 -> select𝔹s outα (vertices (bwdSlice' (selectαs in𝔹 inα) (op g)))
            }
-      , γα: γ
-      , eα
+      , γeα: EnvExpr γ eα
       , g
       , vα: outα
       }
