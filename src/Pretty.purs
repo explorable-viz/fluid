@@ -29,7 +29,7 @@ import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, class Highlightable, BaseVal, DictRep(..), Env(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), highlightIf)
+import Val (class Ann, class Highlightable, BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), highlightIf)
 
 class Pretty p where
    pretty :: p -> Doc
@@ -377,6 +377,9 @@ instance Highlightable a => Pretty (Env a) where
       go Nil = empty
       go ((x × v) : rest) =
          (text x .<>. text str.rArrow .<>. pretty v .<>. text str.comma) `atop` go rest
+
+instance Highlightable a => Pretty (EnvExpr a) where
+   pretty (EnvExpr γ e) = atop (pretty γ) (pretty e)
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = hcat [ text x, text str.equals, pretty σ ]

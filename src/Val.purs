@@ -18,7 +18,7 @@ import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
 import Effect.Exception (Error)
-import Expr (Elim, fv)
+import Expr (Expr, Elim, fv)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
@@ -97,6 +97,8 @@ instance Map (Env a) String (Val a) where
    insert k v (Env γ) = Env (insert k v γ)
    toUnfoldable (Env γ) = toUnfoldable γ
 
+data EnvExpr a = EnvExpr (Env a) (Expr a)
+
 -- Goes from smaller environment to larger (so "dual" to a projection).
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
 unrestrictGC γ xs =
@@ -162,14 +164,17 @@ derive instance Functor Val
 derive instance Functor Env
 derive instance Functor Fun
 derive instance Functor BaseVal
+derive instance Functor EnvExpr
 derive instance Traversable Val
 derive instance Traversable BaseVal
 derive instance Traversable Fun
 derive instance Traversable Env
+derive instance Traversable EnvExpr
 derive instance Foldable Val
 derive instance Foldable BaseVal
 derive instance Foldable Fun
 derive instance Foldable Env
+derive instance Foldable EnvExpr
 
 instance Apply Val where
    apply (Val fα fv) (Val α v) = Val (fα α) (fv <*> v)
@@ -202,6 +207,9 @@ instance Apply MatrixRep where
 
 instance Apply Env where
    apply (Env fγ) (Env γ) = Env (((<*>) <$> fγ) <*> γ)
+
+instance Apply EnvExpr where
+   apply (EnvExpr fγ fe) (EnvExpr γ e) = EnvExpr (fγ <*> γ) (fe <*> e)
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
@@ -296,6 +304,7 @@ derive instance Eq a => Eq (DictRep a)
 derive instance Eq a => Eq (MatrixRep a)
 derive instance Eq a => Eq (Fun a)
 derive instance Eq a => Eq (Env a)
+derive instance Eq a => Eq (EnvExpr a)
 
 derive instance Ord a => Ord (Val a)
 derive instance Ord a => Ord (BaseVal a)
@@ -303,5 +312,6 @@ derive instance Ord a => Ord (DictRep a)
 derive instance Ord a => Ord (MatrixRep a)
 derive instance Ord a => Ord (Fun a)
 derive instance Ord a => Ord (Env a)
+derive instance Ord a => Ord (EnvExpr a)
 
 derive instance Newtype (Env a) _

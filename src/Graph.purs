@@ -15,7 +15,7 @@ import Data.String (joinWith)
 import Dict (Dict)
 import Lattice (𝔹)
 import Util (type (×), Endo, (×))
-import Util.Set ((∈), (∪))
+import Util.Set ((∈))
 
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex -- mostly a convenience
@@ -42,7 +42,7 @@ class (Eq g, Vertices g) <= Graph g where
    empty :: g
 
    -- | Construct a graph from initial set of sinks and topologically sorted list of hyperedges (α, βs). Read
-   -- | right-to-left, each α is a new vertex to be added, and each β in βs already exists in the graph being
+   -- | right-to-left, each α is a new vertex to be added, and each β ∈ βs already exists in the graph being
    -- | constructed. Upper adjoint to toEdgeList. If "direction" is bwd, hyperedges are assumed to be in
    -- | reverse topological order.
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
@@ -60,17 +60,10 @@ class Selectαs a b | a -> b where
 
 instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
-else instance (Vertices a, Vertices b) => Vertices (a × b) where
-   vertices (a × b) = vertices a ∪ vertices b
-else instance (Functor g, Foldable g, Functor f, Foldable f) => Vertices (g (f Vertex)) where
-   vertices = (vertices <$> _) >>> unions
 
 instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f Vertex) where
    selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
    select𝔹s vα αs = (_ ∈ αs) <$> vα
-else instance (Selectαs a b, Selectαs a' b') => Selectαs (a × a') (b × b') where
-   selectαs (v𝔹 × v𝔹') (vα × vα') = selectαs v𝔹 vα ∪ selectαs v𝔹' vα'
-   select𝔹s (vα × vα') αs = select𝔹s vα αs × select𝔹s vα' αs
 
 instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f Vertex)) where
    selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) <*> dα)
