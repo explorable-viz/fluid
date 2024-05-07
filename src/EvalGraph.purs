@@ -189,6 +189,47 @@ type GraphEval g =
    , vα :: Val Vertex
    }
 
+type GraphEval2 g s t =
+   { gc :: GaloisConnection (s 𝔹) (t 𝔹)
+   , g :: g
+   , inα :: s Vertex
+   , outα :: t Vertex
+   }
+
+withOp :: forall g s t. GraphEval2 g s t -> GraphEval2 g t s
+withOp { gc : GC { fwd, bwd }, g, inα, outα } =
+   { gc: GC { fwd: bwd, bwd: fwd }, g, inα: outα, outα: inα }
+
+graphGC2
+   :: forall m
+    . MonadError Error m
+   => GraphConfig
+   -> Raw Expr
+   -> m (GraphEval2 GraphImpl EnvExpr Val)
+graphGC2 { n, γ } e = do
+   _ × _ × g × inα × outα <- flip runAllocT n do
+      eα <- alloc e
+      let inα = EnvExpr γ eα
+      let inputs = vertices inα
+      g × outα :: _ × Val Vertex <- runWithGraphT_spy (eval γ eα mempty) inputs
+      when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
+      pure (g × inα × outα)
+   let
+      gc :: GaloisConnection (EnvExpr 𝔹) (Val 𝔹)
+      gc = GC
+         { fwd: \in𝔹 -> select𝔹s outα (vertices (fwdSlice' (selectαs in𝔹 inα ∪ (sinks g \\ vertices inα)) g))
+         , bwd: \out𝔹 -> select𝔹s inα (vertices (bwdSlice' (selectαs out𝔹 outα) g))
+         }
+   pure { gc, g, inα, outα }
+   where
+   fwdSlice' :: Set Vertex -> Endo GraphImpl
+   fwdSlice' = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
+
+   bwdSlice' :: Set Vertex -> Endo GraphImpl
+   bwdSlice' = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
+
+   spyFun' b msg = spyFunWhen b msg (showVertices *** showGraph) showGraph
+
 graphGC
    :: forall m
     . MonadError Error m
