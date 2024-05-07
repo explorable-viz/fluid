@@ -97,13 +97,13 @@ loadFig spec@{ inputs, imports, file, datasets } = do
    gconfig <- loadProgCxt imports datasets >>= initialConfig e
    eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
    let
+      γ = botOf γα
       GC gc = graphGC eval
-      unrestrict = unwrap (unrestrictGC (erase γ) (Set.fromFoldable inputs))
+      GC unrestrict = unrestrictGC (erase γ) (Set.fromFoldable inputs)
       gc' = GC -- not easy to express point-free because of direct use of e
          { fwd: \γ' -> gc.fwd (EnvExpr (unrestrict.fwd γ') (topOf e))
          , bwd: \v -> unrestrict.bwd (gc.bwd v # \(EnvExpr γ' _) -> γ')
          }
-      γ = botOf γα
    pure { spec, s, in_: EnvExpr γ (topOf e), out: botOf outα, gc: gc', dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
