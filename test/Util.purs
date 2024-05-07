@@ -75,6 +75,8 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       traceGC (EnvExpr γ e)
    { gc: GC evalG, gc_op: GC evalG_op, g, vα: _ } <- graphBenchmark benchNames.eval \_ ->
       graphGC gconfig e
+   --   graphed <- graphBenchmark benchNames.eval \_ ->
+   --      graphGC_new gconfig e
 
    let out0 = δv (botOf v)
    EnvExpr in_γ in_e <- do
@@ -121,6 +123,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
 
    let GC evalG_dual = dual (GC evalG)
+   --   let { gc: GC evalG_op' } = withOp graphed
 
    out2 <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
    out3 <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)
