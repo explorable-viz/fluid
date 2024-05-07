@@ -16,7 +16,7 @@ import Desugarable (desug)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC)
 import GaloisConnection (GaloisConnection(..), relatedInputs, relatedOutputs)
-import Lattice (𝔹, Raw, botOf, erase, topOf)
+import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -90,13 +90,12 @@ drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
 
-{-
-injExpr :: forall a. GaloisConnection (EnvExpr a) (Expr a)
-injExpr = GC
-   { fwd: \(EnvExpr _ e) -> e
-   , bwd: ?_
+unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnection (Env a) (EnvExpr a)
+unprojExpr (EnvExpr _ e) = GC
+   { fwd: \γ -> EnvExpr γ (topOf e)
+   , bwd: \(EnvExpr γ _) -> γ
    }
--}
+
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ inputs, imports, file, datasets } = do
    s <- open file
@@ -104,14 +103,9 @@ loadFig spec@{ inputs, imports, file, datasets } = do
    gconfig <- loadProgCxt imports datasets >>= initialConfig e
    eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
    let
-      γ = botOf γα
-      GC gc = graphGC eval
-      GC unrestrict = unrestrictGC (erase γ) (Set.fromFoldable inputs)
-      gc' = GC -- not easy to express point-free because of direct use of e
-         { fwd: \γ' -> gc.fwd (EnvExpr (unrestrict.fwd γ') (topOf e))
-         , bwd: \v -> unrestrict.bwd (gc.bwd v # \(EnvExpr γ' _) -> γ')
-         }
-   pure { spec, s, in_: γ, out: botOf outα, gc: gc', dir: LinkedOutputs }
+      EnvExpr γ e' = erase eval.inα
+      gc = unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e') >>> graphGC eval
+   pure { spec, s, in_: botOf γα, out: botOf outα, gc: gc, dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
