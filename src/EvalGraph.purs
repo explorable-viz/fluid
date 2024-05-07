@@ -34,7 +34,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((\\), (∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (DictRep(..), Env(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
+import Val (DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
 
 -- Needs a better name.
 type GraphConfig =
@@ -182,8 +182,8 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       pure $ γ <+> maplet x v
 
 type GraphEval g =
-   { gc :: GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹)
-   , gc_op :: GaloisConnection (Val 𝔹) (Env 𝔹 × Expr 𝔹)
+   { gc :: GaloisConnection (EnvExpr 𝔹) (Val 𝔹)
+   , gc_op :: GaloisConnection (Val 𝔹) (EnvExpr 𝔹)
    , γα :: Env Vertex
    , eα :: Expr Vertex
    , g :: g
@@ -204,7 +204,7 @@ graphGC { n, γ } e = do
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × eα × outα)
 
-   let inα = γ × eα
+   let inα = EnvExpr γ eα
    pure
       { gc: GC
            { fwd: \in𝔹 -> select𝔹s outα (vertices (fwdSlice' (selectαs in𝔹 inα ∪ (sinks g \\ vertices inα)) g))

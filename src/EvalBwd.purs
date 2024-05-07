@@ -31,7 +31,7 @@ import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, inte
 import Util.Pair (zip) as P
 import Util.Set (empty, isEmpty, (∪))
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..))
+import Val (class Ann, DictRep(..), Env, EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × Dict (Elim a) × a
 closeDefsBwd γ =
@@ -196,14 +196,14 @@ evalBwd' v (T.LetRec (RecDefs _ ρ) t) =
 evalBwd' _ _ = error absurd
 
 type TracedEval =
-   { gc :: GaloisConnection (Env 𝔹 × Expr 𝔹) (Val 𝔹)
+   { gc :: GaloisConnection (EnvExpr 𝔹) (Val 𝔹)
    , v :: Raw Val
    }
 
-traceGC :: forall m. MonadError Error m => Raw Env -> Raw Expr -> m TracedEval
-traceGC γ e = do
-   t × v <- eval γ e bot
+traceGC :: forall m. MonadError Error m => Raw EnvExpr -> m TracedEval
+traceGC (EnvExpr γ e) = do
+   t × v <- eval (EnvExpr γ e) bot
    let
-      bwd v' = let γ' × e' × _ = evalBwd γ e v' t in γ' × e'
-      fwd (γ' × e') = snd $ defined $ eval γ' e' top
+      bwd v' = let γ' × e' × _ = evalBwd γ e v' t in EnvExpr γ' e'
+      fwd (EnvExpr γ' e') = snd $ defined $ eval (EnvExpr γ' e') top
    pure $ { gc: GC { fwd, bwd }, v }

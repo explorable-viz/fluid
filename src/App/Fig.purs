@@ -11,7 +11,7 @@ import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong (first, (***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
-import Data.Tuple (curry, fst)
+import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
 import EvalGraph (GraphEval, graphGC)
@@ -27,7 +27,7 @@ import Test.Util (Selector)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, spyWhen, (×))
 import Util.Map (get, mapWithKey)
-import Val (Env, Val, unrestrictGC)
+import Val (Env, EnvExpr(..), Val, unrestrictGC)
 
 type FigSpec =
    { divId :: HTMLId
@@ -79,8 +79,8 @@ drawFig fig@{ spec: { divId } } = do
 -- Not easy to express as direct composition of Galois connections because of direct use of e.
 unfocus :: Fig -> GaloisConnection (Env 𝔹) (Val 𝔹)
 unfocus { spec: { inputs }, eval: { gc: GC gc }, in_: γ × e } = GC
-   { fwd: \γ' -> gc.fwd (unrestrict.fwd γ' × topOf e)
-   , bwd: \v -> unrestrict.bwd (gc.bwd v # fst)
+   { fwd: \γ' -> gc.fwd (EnvExpr (unrestrict.fwd γ') (topOf e))
+   , bwd: \v -> unrestrict.bwd (gc.bwd v # \(EnvExpr γ'' _) -> γ'')
    }
    where
    unrestrict = unwrap (unrestrictGC (erase γ) (Set.fromFoldable inputs))
