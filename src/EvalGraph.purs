@@ -198,7 +198,8 @@ graphGC
 graphGC { n, γ } e = do
    _ × _ × g × eα × outα <- flip runAllocT n do
       eα <- alloc e
-      let inputs = vertices (γ × eα)
+      let inα = EnvExpr γ eα
+      let inputs = vertices inα
       g × outα :: _ × Val Vertex <- runWithGraphT_spy (eval γ eα mempty) inputs
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × eα × outα)
