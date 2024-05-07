@@ -44,6 +44,7 @@ type Fig =
    , eval :: GraphEval GraphImpl EnvExpr Val
    , in_ :: EnvExpr 𝔹
    , out :: Val 𝔹
+   , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , dir :: Direction
    }
 
@@ -75,39 +76,37 @@ drawFig fig@{ spec: { divId } } = do
       selectionResult fig
          # unsafePartial (view output *** unwrap >>> mapWithKey view)
 
--- Not easy to express as direct composition of Galois connections because of direct use of e.
-unfocus :: Fig -> GaloisConnection (Env 𝔹) (Val 𝔹)
-unfocus { spec: { inputs }, eval, in_: EnvExpr γ e } = GC
-   { fwd: \γ' -> gc.fwd (EnvExpr (unrestrict.fwd γ') (topOf e))
-   , bwd: \v -> unrestrict.bwd (gc.bwd v # \(EnvExpr γ'' _) -> γ'')
-   }
-   where
-   GC gc = graphGC eval
-   unrestrict = unwrap (unrestrictGC (erase γ) (Set.fromFoldable inputs))
-
 selectionResult :: Fig -> Val Sel × Env Sel
 selectionResult fig@{ out, dir: LinkedOutputs } =
    (asSel <$> out <*> out') × map toSel (report γ)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   out' × γ = (unwrap (relatedOutputs (unfocus fig))).bwd out
+   out' × γ = (unwrap (relatedOutputs fig.gc)).bwd out
 selectionResult fig@{ in_: EnvExpr γ _, dir: LinkedInputs } =
    (toSel <$> report out) × wrap (mapWithKey (\x v -> asSel <$> get x γ <*> v) (unwrap γ'))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   γ' × out = (unwrap (relatedInputs (unfocus fig))).bwd γ
+   γ' × out = (unwrap (relatedInputs fig.gc)).bwd γ
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
 
 loadFig :: forall m. FigSpec -> AffError m Fig
-loadFig spec@{ imports, file, datasets } = do
+loadFig spec@{ inputs, imports, file, datasets } = do
    s <- open file
    e <- desug s
    gconfig <- loadProgCxt imports datasets >>= initialConfig e
    eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
-   pure { spec, s, eval, in_: EnvExpr (botOf γα) (topOf e), out: botOf outα, dir: LinkedOutputs }
+   let
+      GC gc = graphGC eval
+      unrestrict = unwrap (unrestrictGC (erase γ) (Set.fromFoldable inputs))
+      gc' = GC -- not easy to express point-free because of direct use of e
+         { fwd: \γ' -> gc.fwd (EnvExpr (unrestrict.fwd γ') (topOf e))
+         , bwd: \v -> unrestrict.bwd (gc.bwd v # \(EnvExpr γ' _) -> γ')
+         }
+      γ = botOf γα
+   pure { spec, s, eval, in_: EnvExpr γ (topOf e), out: botOf outα, gc: gc', dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
