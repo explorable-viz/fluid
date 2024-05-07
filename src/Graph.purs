@@ -60,8 +60,6 @@ class Selectαs a b | a -> b where
 
 instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
-else instance (Vertices a, Vertices b) => Vertices (a × b) where
-   vertices (a × b) = vertices a ∪ vertices b
 else instance (Functor g, Foldable g, Functor f, Foldable f) => Vertices (g (f Vertex)) where
    vertices = (vertices <$> _) >>> unions
 
