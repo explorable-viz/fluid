@@ -14,9 +14,8 @@ import Data.Traversable (sequence_)
 import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
-import EvalGraph (GraphEval, graphEval, graphGC)
+import EvalGraph (graphEval, graphGC)
 import GaloisConnection (GaloisConnection(..), relatedInputs, relatedOutputs)
-import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, botOf, erase, topOf)
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
@@ -41,7 +40,6 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , eval :: GraphEval GraphImpl EnvExpr Val
    , in_ :: EnvExpr 𝔹
    , out :: Val 𝔹
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
@@ -106,7 +104,7 @@ loadFig spec@{ inputs, imports, file, datasets } = do
          , bwd: \v -> unrestrict.bwd (gc.bwd v # \(EnvExpr γ' _) -> γ')
          }
       γ = botOf γα
-   pure { spec, s, eval, in_: EnvExpr γ (topOf e), out: botOf outα, gc: gc', dir: LinkedOutputs }
+   pure { spec, s, in_: EnvExpr γ (topOf e), out: botOf outα, gc: gc', dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
