@@ -40,7 +40,7 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , in_ :: EnvExpr 𝔹
+   , in_ :: Env 𝔹
    , out :: Val 𝔹
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , dir :: Direction
@@ -52,15 +52,15 @@ output = "output"
 
 -- TODO: replace (expensive) botOf in_ by per-variable botOf
 selectOutput :: Selector Val -> Endo Fig
-selectOutput δv fig@{ dir, in_: EnvExpr γ e, out } = fig
+selectOutput δv fig@{ dir, in_: γ, out } = fig
    { out = δv out
-   , in_ = if dir == LinkedInputs then EnvExpr (botOf γ) e else EnvExpr γ e
+   , in_ = if dir == LinkedInputs then botOf γ else γ
    , dir = LinkedOutputs
    }
 
 selectInput :: Bind (Selector Val) -> Endo Fig
-selectInput (x ↦ δv) fig@{ dir, in_: EnvExpr γ e, out } = fig
-   { in_ = EnvExpr (envVal x δv γ) e
+selectInput (x ↦ δv) fig@{ dir, in_: γ, out } = fig
+   { in_ = envVal x δv γ
    , out = if dir == LinkedOutputs then botOf out else out
    , dir = LinkedInputs
    }
@@ -80,7 +80,7 @@ selectionResult fig@{ out, dir: LinkedOutputs } =
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    out' × γ = (unwrap (relatedOutputs fig.gc)).bwd out
-selectionResult fig@{ in_: EnvExpr γ _, dir: LinkedInputs } =
+selectionResult fig@{ in_: γ, dir: LinkedInputs } =
    (toSel <$> report out) × wrap (mapWithKey (\x v -> asSel <$> get x γ <*> v) (unwrap γ'))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
@@ -90,6 +90,13 @@ drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
 
+{-
+injExpr :: forall a. GaloisConnection (EnvExpr a) (Expr a)
+injExpr = GC
+   { fwd: \(EnvExpr _ e) -> e
+   , bwd: ?_
+   }
+-}
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ inputs, imports, file, datasets } = do
    s <- open file
@@ -104,7 +111,7 @@ loadFig spec@{ inputs, imports, file, datasets } = do
          { fwd: \γ' -> gc.fwd (EnvExpr (unrestrict.fwd γ') (topOf e))
          , bwd: \v -> unrestrict.bwd (gc.bwd v # \(EnvExpr γ' _) -> γ')
          }
-   pure { spec, s, in_: EnvExpr γ (topOf e), out: botOf outα, gc: gc', dir: LinkedOutputs }
+   pure { spec, s, in_: γ, out: botOf outα, gc: gc', dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
