@@ -15,7 +15,8 @@ import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
-import GaloisConnection (GaloisConnection(..), dual, relatedInputs, relatedOutputs)
+import GaloisConnection (GaloisConnection(..), dual, meet)
+import GaloisConnection ((***)) as GC
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
@@ -80,12 +81,12 @@ selectionResult fig@{ out, dir: LinkedOutputs } =
    (asSel <$> out <*> out') × map toSel (report γ)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   out' × γ = (unwrap (relatedOutputs fig.gc)).bwd out
+   out' × γ = (unwrap ((fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc)).bwd out
 selectionResult fig@{ in_: γ, dir: LinkedInputs } =
    (toSel <$> report out) × wrap (mapWithKey (\x v -> asSel <$> get x γ <*> v) (unwrap γ'))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   γ' × out = (unwrap (relatedInputs fig.gc)).bwd γ
+   γ' × out = (unwrap ((fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual)).bwd γ
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
