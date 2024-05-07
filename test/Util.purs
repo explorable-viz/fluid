@@ -12,7 +12,7 @@ import Desug (Desugaring, desugGC)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
-import EvalGraph (GraphConfig, graphGC)
+import EvalGraph (GraphConfig, graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, 𝔹, botOf, erase, topOf, (-))
 import Module (File, initialConfig, open, parse)
@@ -73,10 +73,8 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
    traced@{ gc: GC evalT, v } <- traceBenchmark benchNames.eval \_ ->
       traceGC (EnvExpr γ e)
-   { gc: GC evalG, gc_op: GC evalG_op, g, vα: _ } <- graphBenchmark benchNames.eval \_ ->
-      graphGC gconfig e
-   --   graphed <- graphBenchmark benchNames.eval \_ ->
-   --      graphGC_new gconfig e
+   graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
+      graphEval gconfig e
 
    let out0 = δv (botOf v)
    EnvExpr in_γ in_e <- do
@@ -109,6 +107,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       checkPretty ("fwd_expect") fwd_expect (report out0')
 
    recordGraphSize g
+   let GC evalG = graphGC graphed
 
    in0 <- graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd out0)
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
@@ -123,7 +122,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
 
    let GC evalG_dual = dual (GC evalG)
-   --   let { gc: GC evalG_op' } = withOp graphed
+   let GC evalG_op = withOp graphed # graphGC
 
    out2 <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
    out3 <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)

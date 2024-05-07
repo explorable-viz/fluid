@@ -14,7 +14,7 @@ import Data.Traversable (sequence_)
 import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
-import EvalGraph (GraphEval, graphGC)
+import EvalGraph (GraphEval, graphEval, graphGC)
 import Expr (Expr)
 import GaloisConnection (GaloisConnection(..), relatedInputs, relatedOutputs)
 import Graph.GraphImpl (GraphImpl)
@@ -42,7 +42,7 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , eval :: GraphEval GraphImpl
+   , eval :: GraphEval GraphImpl EnvExpr Val
    , in_ :: Env 𝔹 × Expr 𝔹
    , out :: Val 𝔹
    , dir :: Direction
@@ -78,11 +78,12 @@ drawFig fig@{ spec: { divId } } = do
 
 -- Not easy to express as direct composition of Galois connections because of direct use of e.
 unfocus :: Fig -> GaloisConnection (Env 𝔹) (Val 𝔹)
-unfocus { spec: { inputs }, eval: { gc: GC gc }, in_: γ × e } = GC
+unfocus { spec: { inputs }, eval, in_: γ × e } = GC
    { fwd: \γ' -> gc.fwd (EnvExpr (unrestrict.fwd γ') (topOf e))
    , bwd: \v -> unrestrict.bwd (gc.bwd v # \(EnvExpr γ'' _) -> γ'')
    }
    where
+   GC gc = graphGC eval
    unrestrict = unwrap (unrestrictGC (erase γ) (Set.fromFoldable inputs))
 
 selectionResult :: Fig -> Val Sel × Env Sel
@@ -106,8 +107,8 @@ loadFig spec@{ imports, file, datasets } = do
    s <- open file
    e <- desug s
    gconfig <- loadProgCxt imports datasets >>= initialConfig e
-   eval@({ γeα: EnvExpr γα _, vα }) <- graphGC gconfig e
-   pure { spec, s, eval, in_: botOf γα × topOf e, out: botOf vα, dir: LinkedOutputs }
+   eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
+   pure { spec, s, eval, in_: botOf γα × topOf e, out: botOf outα, dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
