@@ -14,8 +14,8 @@ import Data.Traversable (sequence_)
 import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
-import EvalGraph (graphEval, graphGC)
-import GaloisConnection (GaloisConnection(..), relatedInputs, relatedOutputs)
+import EvalGraph (graphEval, graphGC, withOp)
+import GaloisConnection (GaloisConnection(..), dual, relatedInputs, relatedOutputs)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
@@ -43,6 +43,7 @@ type Fig =
    , in_ :: Env 𝔹
    , out :: Val 𝔹
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
+   , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
    , dir :: Direction
    }
 
@@ -104,8 +105,10 @@ loadFig spec@{ inputs, imports, file, datasets } = do
    eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
    let
       EnvExpr γ e' = erase eval.inα
-      gc = unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e') >>> graphGC eval
-   pure { spec, s, in_: botOf γα, out: botOf outα, gc: gc, dir: LinkedOutputs }
+      focus = unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e')
+      gc = focus >>> graphGC eval
+      gc_dual = graphGC (withOp eval) >>> dual focus
+   pure { spec, s, in_: botOf γα, out: botOf outα, gc, gc_dual, dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
