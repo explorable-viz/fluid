@@ -20,7 +20,7 @@ import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, op, selectαs, select𝔹s, showGraph, showVertices, sinks, sources, vertices)
+import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -196,17 +196,17 @@ type GraphEval2 g s t =
    , outα :: t Vertex
    }
 
-withOp :: forall g s t. GraphEval2 g s t -> GraphEval2 g t s
-withOp { gc : GC { fwd, bwd }, g, inα, outα } =
-   { gc: GC { fwd: bwd, bwd: fwd }, g, inα: outα, outα: inα }
+withOp :: forall g s t. Graph g => GraphEval2 g s t -> GraphEval2 g t s
+withOp { gc: GC { fwd, bwd }, g, inα, outα } =
+   { gc: GC { fwd: bwd, bwd: fwd }, g: op g, inα: outα, outα: inα }
 
-graphGC2
+graphGC_new
    :: forall m
     . MonadError Error m
    => GraphConfig
    -> Raw Expr
    -> m (GraphEval2 GraphImpl EnvExpr Val)
-graphGC2 { n, γ } e = do
+graphGC_new { n, γ } e = do
    _ × _ × g × inα × outα <- flip runAllocT n do
       eα <- alloc e
       let inα = EnvExpr γ eα
