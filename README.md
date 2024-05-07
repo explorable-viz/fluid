@@ -14,11 +14,12 @@ Fluid is an experimental programming language which integrates a bidirectional d
 
 #### Running the tests on the command line
 
+- Install `ChromeHeadless` binary
 - `yarn build` and then `yarn test` for core tests
 
 #### Running the tests in the browser
 
-- `yarn build` as above, then `yarn test-browser`
+- As per command-line tests above, but run `yarn test-browser`
 - hit Debug in the browser window that opens, and then open Developer Tools or equivalent
 
 #### Running the web app
