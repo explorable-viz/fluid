@@ -71,5 +71,5 @@ main = do
       , loadFile' (Folder "fluid/example/linked-outputs") (File "renewables")
       , loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss")
       ]
-   runAffs_ drawFig [ loadFig fig1, loadFig fig2, loadFig fig3, loadFig energyScatter ]
+--   runAffs_ drawFig [ loadFig fig1, loadFig fig2, loadFig fig3, loadFig energyScatter ]
    runAffs_ drawFig [ loadFig linkedOutputs_spec1.spec ]

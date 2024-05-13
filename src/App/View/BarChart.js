@@ -72,6 +72,8 @@ function drawBarChart_ (
    listener
 ) {
    return () => {
+      listenersEnabled = false
+      console.log("Restarting drawBarChart_")
       const childId = id + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
@@ -145,7 +147,16 @@ function drawBarChart_ (
                const col = color(bar.j)
                return Sel_isNone(bar.sel) ? col : colorShade(col, -70)
             })
-            .on('mousedown', (e, d) => { listener(e) })
+            .on('mouseover', (e, d) => {
+               if (!listenersEnabled) {
+                  console.log('Ignoring mouseover', e)
+                  listenersEnabled = true
+               } else {
+                  console.log('Processing mouseover', e)
+                  listener(e)
+                  listenersEnabled = false
+               }
+            })
 
       // TODO: enforce that all stacked bars have same set of segments
       const legendLineHeight = 15,
@@ -190,6 +201,8 @@ function drawBarChart_ (
          .attr('class', 'title-text')
          .attr('dominant-baseline', 'bottom')
          .attr('text-anchor', 'middle')
+
+      listenersEnabled = true
    }
 }
 
