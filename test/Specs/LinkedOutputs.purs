@@ -18,9 +18,9 @@ linkedOutputs_spec1 =
         , file: File "linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         }
-   , δ_out: multiPlotEntry "bar-chart" (barChart (barSegment 1 0))
+   , δ_out: multiPlotEntry "bar-chart" (barChart (barSegment 1 0 neg))
    , out_expect:
-        multiPlotEntry "bar-chart" (barChart (barSegment 1 0))
+        multiPlotEntry "bar-chart" (barChart (barSegment 1 0 neg))
            >>> multiPlotEntry "line-chart"
               ( lineChart
                    ( field f_plots
@@ -45,9 +45,9 @@ linkedOutputs_spec2 =
         , file: File "linked-outputs/stacked-bar-chart-scatter-plot"
         , inputs: [ "nonRenewables" ]
         }
-   , δ_out: multiPlotEntry "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3))
+   , δ_out: multiPlotEntry "stacked-bar-chart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
    , out_expect:
-        multiPlotEntry "stacked-bar-chart" (barChart (barSegment 3 2 >>> barSegment 4 1 >>> barSegment 4 3))
+        multiPlotEntry "stacked-bar-chart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
            >>> multiPlotEntry "scatter-plot"
               ( scatterPlot
                    ( scatterPoint 4 (field f_y neg)

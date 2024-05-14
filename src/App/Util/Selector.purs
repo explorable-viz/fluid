@@ -6,7 +6,7 @@ import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cBarChart, cBubbleChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
-import Lattice (𝔹, neg)
+import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Test.Util (Selector)
 import Util (Endo, absurd, assert, definitely', error)
@@ -37,7 +37,7 @@ lineChart :: Endo (Selector Val)
 lineChart = constrArg cLineChart 0
 
 linePoint :: Int -> Endo (Selector Val)
-linePoint i = constrArg cLinePlot 0 <<< field f_data <<< listElement i
+linePoint i = listElement i >>> field f_data >>> constrArg cLinePlot 0
 
 barChart :: Endo (Selector Val)
 barChart = constrArg cBarChart 0
@@ -46,11 +46,11 @@ scatterPlot :: Endo (Selector Val)
 scatterPlot = constrArg cScatterPlot 0
 
 scatterPoint :: Int -> Endo (Selector Val)
-scatterPoint i = field f_data <<< listElement i
+scatterPoint i = listElement i >>> field f_data
 
-barSegment :: Int -> Int -> Selector Val
+barSegment :: Int -> Int -> Endo (Selector Val)
 barSegment i j =
-   field f_data (listElement i (field f_bars (listElement j (field f_z neg))))
+   field f_z >>> listElement j >>> field f_bars >>> listElement i >>> field f_data
 
 matrixElement :: Int -> Int -> Endo (Selector Val)
 matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv r

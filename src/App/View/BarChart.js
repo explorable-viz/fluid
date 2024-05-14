@@ -72,8 +72,7 @@ function drawBarChart_ (
    listener
 ) {
    return () => {
-      listenersEnabled = false
-      console.log("Restarting drawBarChart_")
+      listenersEnabled = true
       const childId = id + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
@@ -94,7 +93,7 @@ function drawBarChart_ (
       const x = d3.scaleBand()
          .range([0, width])
          .domain(data.map(d => fst(d.x)))
-         .padding(0.2)
+                        .padding(0.2)
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
          .call(d3.axisBottom(x))
@@ -125,6 +124,16 @@ function drawBarChart_ (
       const color = d3.scaleOrdinal(d3.schemeAccent)
       const strokeWidth = 1
 
+      function toggleBar (e) {
+         if (listenersEnabled) {
+            console.log(`Processing ${e.type} event`)
+            listener(e)
+         } else {
+            console.log(`Ignoring ${e.type} event`)
+         }
+         listenersEnabled = !listenersEnabled
+      }
+
       stacks.selectAll('.bar')
          .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
             const prev = acc[acc.length - 1]
@@ -147,16 +156,8 @@ function drawBarChart_ (
                const col = color(bar.j)
                return Sel_isNone(bar.sel) ? col : colorShade(col, -70)
             })
-            .on('mouseover', (e, d) => {
-               if (!listenersEnabled) {
-                  console.log('Ignoring mouseover', e)
-                  listenersEnabled = true
-               } else {
-                  console.log('Processing mouseover', e)
-                  listener(e)
-                  listenersEnabled = false
-               }
-            })
+            .on('mouseleave', (e, d) => { toggleBar(e) })
+            .on('mouseenter', (e, d) => { toggleBar(e) })
 
       // TODO: enforce that all stacked bars have same set of segments
       const legendLineHeight = 15,
@@ -201,8 +202,6 @@ function drawBarChart_ (
          .attr('class', 'title-text')
          .attr('dominant-baseline', 'bottom')
          .attr('text-anchor', 'middle')
-
-      listenersEnabled = true
    }
 }
 

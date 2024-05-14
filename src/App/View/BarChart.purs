@@ -5,13 +5,17 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (barChart, barSegment)
 import Data.Maybe (Maybe)
+import Data.Profunctor.Strong ((&&&))
+import Data.Tuple (uncurry)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
+import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
+import Util (type (×), Endo, (×))
 import Util.Map (get)
 import Val (Val)
-import Web.Event.Event (target)
+import Web.Event.Event (EventType, target, type_)
 import Web.Event.EventTarget (EventTarget)
 
 newtype BarChart = BarChart
@@ -53,10 +57,10 @@ instance Reflect (Dict (Val Sel)) Bar where
 type BarSegmentCoordinate = { i :: Int, j :: Int }
 
 barChartHandler :: Handler
-barChartHandler = target >>> barSegmentCoord >>> toggleSegment
+barChartHandler = (target &&& type_) >>> barSegmentCoord >>> uncurry toggleSegment
    where
-   toggleSegment :: BarSegmentCoordinate -> Selector Val
-   toggleSegment { i, j } = barChart $ barSegment i j
+   toggleSegment :: BarSegmentCoordinate -> Endo (Selector Val)
+   toggleSegment { i, j } = barSegment i j >>> barChart
 
-   barSegmentCoord :: Maybe EventTarget -> BarSegmentCoordinate
-   barSegmentCoord = unsafeEventData
+   barSegmentCoord :: Maybe EventTarget × EventType -> BarSegmentCoordinate × Selector Val
+   barSegmentCoord (tgt_opt × _) = unsafeEventData tgt_opt × neg
