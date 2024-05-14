@@ -41,8 +41,8 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , in_ :: Env 𝔹
-   , out :: Val 𝔹
+   , γ :: Env 𝔹
+   , v :: Val 𝔹
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
    , dir :: Direction
@@ -52,18 +52,18 @@ type Fig =
 output :: String
 output = "output"
 
--- TODO: replace (expensive) botOf in_ by per-variable botOf
+-- TODO: replace (expensive) botOf γ by per-variable botOf
 selectOutput :: Selector Val -> Endo Fig
-selectOutput δv fig@{ dir, in_: γ, out } = fig
-   { out = δv out
-   , in_ = if dir == LinkedInputs then botOf γ else γ
+selectOutput δv fig@{ dir, γ, v } = fig
+   { v = δv v
+   , γ = if dir == LinkedInputs then botOf γ else γ
    , dir = LinkedOutputs
    }
 
 selectInput :: Bind (Selector Val) -> Endo Fig
-selectInput (x ↦ δv) fig@{ dir, in_: γ, out } = fig
-   { in_ = envVal x δv γ
-   , out = if dir == LinkedOutputs then botOf out else out
+selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
+   { γ = envVal x δv γ
+   , v = if dir == LinkedOutputs then botOf v else v
    , dir = LinkedInputs
    }
 
@@ -77,12 +77,12 @@ drawFig fig@{ spec: { divId } } = do
          # unsafePartial (view output *** unwrap >>> mapWithKey view)
 
 selectionResult :: Fig -> Val Sel × Env Sel
-selectionResult fig@{ out, dir: LinkedOutputs } =
-   (asSel <$> out <*> out') × map toSel (report γ)
+selectionResult fig@{ v, dir: LinkedOutputs } =
+   (asSel <$> v <*> v') × map toSel (report γ)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   out' × γ = (unwrap ((fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc)).bwd out
-selectionResult fig@{ in_: γ, dir: LinkedInputs } =
+   v' × γ = (unwrap ((fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc)).bwd v
+selectionResult fig@{ γ, dir: LinkedInputs } =
    (toSel <$> report out) × wrap (mapWithKey (\x v -> asSel <$> get x γ <*> v) (unwrap γ'))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
@@ -109,7 +109,7 @@ loadFig spec@{ inputs, imports, file, datasets } = do
       focus = unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e')
       gc = focus >>> graphGC eval
       gc_dual = graphGC (withOp eval) >>> dual focus
-   pure { spec, s, in_: botOf γα, out: botOf outα, gc, gc_dual, dir: LinkedOutputs }
+   pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)

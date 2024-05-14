@@ -15,15 +15,15 @@ import Dict (Dict)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class.Console (log)
-import Lattice (𝔹)
+import Lattice (𝔹, botOf, neg, topOf)
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Test.Util (Selector)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), definitely', dup)
+import Util (type (×), definitely', dup, error)
 import Util.Map (get)
 import Val (BaseVal(..), DictRep(..), Val(..))
-import Web.Event.Event (Event)
+import Web.Event.Event (Event, EventType(..))
 import Web.Event.EventTarget (EventListener, EventTarget)
 
 type HTMLId = String
@@ -78,3 +78,9 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
 -- Unpack d3.js data associated with mouse event target.
 unsafeEventData :: forall a. Maybe EventTarget -> a
 unsafeEventData target = (unsafeCoerce $ definitely' target).__data__
+
+selector :: EventType -> Selector Val
+selector (EventType "mousedown") = neg
+selector (EventType "mouseenter") = topOf
+selector (EventType "mouseleave") = botOf
+selector (EventType _) = error "Unsupported event type"

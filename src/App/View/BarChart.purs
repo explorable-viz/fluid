@@ -2,14 +2,13 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, selector, unsafeEventData)
 import App.Util.Selector (barChart, barSegment)
 import Data.Maybe (Maybe)
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
-import Lattice (neg)
 import Primitive (string, unpack)
 import Test.Util (Selector)
 import Util (type (×), Endo, (×))
@@ -63,4 +62,4 @@ barChartHandler = (target &&& type_) >>> barSegmentCoord >>> uncurry toggleSegme
    toggleSegment { i, j } = barSegment i j >>> barChart
 
    barSegmentCoord :: Maybe EventTarget × EventType -> BarSegmentCoordinate × Selector Val
-   barSegmentCoord (tgt_opt × _) = unsafeEventData tgt_opt × neg
+   barSegmentCoord (tgt_opt × ty) = unsafeEventData tgt_opt × selector ty

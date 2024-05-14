@@ -124,16 +124,6 @@ function drawBarChart_ (
       const color = d3.scaleOrdinal(d3.schemeAccent)
       const strokeWidth = 1
 
-      function toggleBar (e) {
-         if (listenersEnabled) {
-            console.log(`Processing ${e.type} event`)
-            listener(e)
-         } else {
-            console.log(`Ignoring ${e.type} event`)
-         }
-         listenersEnabled = !listenersEnabled
-      }
-
       stacks.selectAll('.bar')
          .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
             const prev = acc[acc.length - 1]
@@ -156,8 +146,17 @@ function drawBarChart_ (
                const col = color(bar.j)
                return Sel_isNone(bar.sel) ? col : colorShade(col, -70)
             })
-            .on('mouseleave', (e, d) => { toggleBar(e) })
-            .on('mouseenter', (e, d) => { toggleBar(e) })
+            .on('mousedown', (e, d) => { listener(e) })
+            .on('mouseleave', (e, d) => { listener(e) })
+            .on('mouseenter', (e, d) => {
+               if (listenersEnabled) {
+                  console.log(`Processing ${e.type} event`)
+                  listener(e)
+               } else {
+                  console.log(`Ignoring ${e.type} event`)
+               }
+               listenersEnabled = !listenersEnabled
+            })
 
       // TODO: enforce that all stacked bars have same set of segments
       const legendLineHeight = 15,
