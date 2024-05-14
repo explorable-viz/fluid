@@ -2,7 +2,7 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, 𝕊, Selectable, from, record, unsafeEventData)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point)
 import Data.Maybe (Maybe)
@@ -26,7 +26,7 @@ newtype ScatterPlot = ScatterPlot
 
 foreign import drawScatterPlot :: Renderer ScatterPlot
 
-instance Reflect (Dict (Val Sel)) ScatterPlot where
+instance Reflect (Dict (Val 𝕊)) ScatterPlot where
    from r = ScatterPlot
       { caption: unpack string (get f_caption r)
       , data: record from <$> from (get f_data r)

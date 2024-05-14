@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, 𝕊, Selectable, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
@@ -34,25 +34,25 @@ newtype Point = Point
 
 foreign import drawLineChart :: Renderer LineChart
 
-instance Reflect (Dict (Val Sel)) Point where
+instance Reflect (Dict (Val 𝕊)) Point where
    from r = Point
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
       }
 
-instance Reflect (Dict (Val Sel)) LinePlot where
+instance Reflect (Dict (Val 𝕊)) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
       , data: record from <$> from (get f_data r)
       }
 
-instance Reflect (Dict (Val Sel)) LineChart where
+instance Reflect (Dict (Val 𝕊)) LineChart where
    from r = LineChart
       { caption: unpack string (get f_caption r)
-      , plots: from <$> (from (get f_plots r) :: Array (Val Sel)) :: Array LinePlot
+      , plots: from <$> (from (get f_plots r) :: Array (Val 𝕊)) :: Array LinePlot
       }
 
-instance Reflect (Val Sel) LinePlot where
+instance Reflect (Val 𝕊) LinePlot where
    from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
 lineChartHandler :: Handler

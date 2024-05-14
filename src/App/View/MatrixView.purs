@@ -2,7 +2,7 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (Handler, Renderer, Sel, Selectable, unsafeEventData)
+import App.Util (Handler, Renderer, 𝕊, Selectable, unsafeEventData)
 import App.Util.Selector (matrixElement)
 import Data.Maybe (Maybe)
 import Data.Profunctor.Strong ((&&&))
@@ -20,7 +20,7 @@ newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import drawMatrix :: Renderer MatrixView
 
-matrixRep :: MatrixRep Sel -> IntMatrix
+matrixRep :: MatrixRep 𝕊 -> IntMatrix
 matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    ((unpack int <$> _) <$> vss) × i × j
 

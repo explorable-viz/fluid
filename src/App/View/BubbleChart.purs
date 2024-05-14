@@ -2,7 +2,7 @@ module App.View.BubbleChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Sel, Selectable, from, get_intOrNumber, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, 𝕊, Selectable, from, get_intOrNumber, record, unsafeEventData)
 import App.Util.Selector (bubbleChart, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel, f_z)
@@ -32,7 +32,7 @@ newtype Bubble = Bubble
 
 foreign import drawBubbleChart :: Renderer BubbleChart
 
-instance Reflect (Dict (Val Sel)) Bubble where
+instance Reflect (Dict (Val 𝕊)) Bubble where
    from r = Bubble
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
@@ -40,7 +40,7 @@ instance Reflect (Dict (Val Sel)) Bubble where
       , c: unpack string $ get f_colour r
       }
 
-instance Reflect (Dict (Val Sel)) BubbleChart where
+instance Reflect (Dict (Val 𝕊)) BubbleChart where
    from r = BubbleChart
       { caption: unpack string (get f_caption r)
       , data: record from <$> from (get f_data r)

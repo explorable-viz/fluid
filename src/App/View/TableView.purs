@@ -2,7 +2,7 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (Handler, Renderer, Sel, unsafeEventData)
+import App.Util (Handler, Renderer, 𝕊, unsafeEventData)
 import App.Util.Selector (field, listElement)
 import Data.Maybe (Maybe)
 import Dict (Dict)
@@ -15,7 +15,7 @@ import Web.Event.Internal.Types (EventTarget)
 newtype TableView = TableView
    { title :: String
    , filter :: Boolean
-   , table :: Array (Dict (Val Sel))
+   , table :: Array (Dict (Val 𝕊))
    }
 
 foreign import drawTable :: Renderer TableView

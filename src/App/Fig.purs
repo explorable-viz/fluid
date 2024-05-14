@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (HTMLId, Sel, asSel, toSel)
+import App.Util (HTMLId, 𝕊, as𝕊, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
@@ -76,14 +76,14 @@ drawFig fig@{ spec: { divId } } = do
       selectionResult fig
          # unsafePartial (view output *** unwrap >>> mapWithKey view)
 
-selectionResult :: Fig -> Val Sel × Env Sel
+selectionResult :: Fig -> Val 𝕊 × Env 𝕊
 selectionResult fig@{ v, dir: LinkedOutputs } =
-   (asSel <$> v <*> v') × map toSel (report γ)
+   (as𝕊 <$> v <*> v') × map to𝕊 (report γ)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    v' × γ = (unwrap ((fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc)).bwd v
 selectionResult fig@{ γ, dir: LinkedInputs } =
-   (toSel <$> report out) × wrap (mapWithKey (\x v -> asSel <$> get x γ <*> v) (unwrap γ'))
+   (to𝕊 <$> report out) × wrap (mapWithKey (\x v -> as𝕊 <$> get x γ <*> v) (unwrap γ'))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    γ' × out = (unwrap ((fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual)).bwd γ
