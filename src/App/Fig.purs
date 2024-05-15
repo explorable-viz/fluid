@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (HTMLId, SelState, Selector, 𝕊, as𝕊', persistent, selState, to𝕊', transient)
+import App.Util (HTMLId, SelState, Selector, 𝕊, as𝕊, persistent, selState, to𝕊, transient)
 import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
@@ -76,15 +76,15 @@ drawFig fig@{ spec: { divId } } = do
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
-   (as𝕊' <$> v <*> (selState <$> v1 <*> v2)) × (to𝕊' <$> report (selState <$> γ1 <*> γ2))
+   (as𝕊 <$> v <*> (selState <$> v1 <*> v2)) × (to𝕊 <$> report (selState <$> γ1 <*> γ2))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
    v1 × γ1 = gc.bwd (v <#> persistent)
    v2 × γ2 = gc.bwd (v <#> transient)
 selectionResult fig@{ γ, dir: LinkedInputs } =
-   (to𝕊' <$> report (selState <$> v1 <*> v2)) ×
-      wrap (mapWithKey (\x v -> as𝕊' <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
+   (to𝕊 <$> report (selState <$> v1 <*> v2)) ×
+      wrap (mapWithKey (\x v -> as𝕊 <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual

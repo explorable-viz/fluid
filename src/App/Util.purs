@@ -3,6 +3,7 @@ module App.Util where
 import Prelude hiding (absurd)
 
 import Bind (Var)
+import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
@@ -10,7 +11,7 @@ import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, over, over2, unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (snd, uncurry)
+import Data.Tuple (snd)
 import DataType (cCons, cNil)
 import Dict (Dict)
 import Effect (Effect)
@@ -20,7 +21,7 @@ import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, 
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', dup, error)
+import Util (type (×), Endo, definitely', error)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..))
@@ -56,30 +57,30 @@ transient = unwrap >>> _.transient
 data 𝕊 = None | Primary | Secondary
 type Selectable a = a × SelState 𝕊
 
-to𝔹 :: 𝕊 -> 𝔹
-to𝔹 None = false
-to𝔹 Primary = true
-to𝔹 Secondary = true
+to𝔹 :: SelState 𝕊 -> SelState 𝔹
+to𝔹 = (to𝔹' <$> _)
+   where
+   to𝔹' :: 𝕊 -> 𝔹
+   to𝔹' None = false
+   to𝔹' Primary = true
+   to𝔹' Secondary = true
 
-to𝔹' :: SelState 𝕊 -> SelState 𝔹
-to𝔹' = over SelState \s -> { persistent: to𝔹 s.persistent, transient: to𝔹 s.transient }
+to𝕊 :: SelState 𝔹 -> SelState 𝕊
+to𝕊 = (to𝕊' <$> _)
+   where
+   to𝕊' :: 𝔹 -> 𝕊
+   to𝕊' false = None
+   to𝕊' true = Primary
 
-to𝕊 :: 𝔹 -> 𝕊
-to𝕊 = dup >>> uncurry as𝕊
-
-to𝕊' :: SelState 𝔹 -> SelState 𝕊
-to𝕊' = over SelState \s -> { persistent: to𝕊 s.persistent, transient: to𝕊 s.transient }
-
-as𝕊 :: 𝔹 -> 𝔹 -> 𝕊
-as𝕊 false false = None
-as𝕊 false true = Secondary
-as𝕊 true false = Primary -- "costless output", but ignore those for now
-as𝕊 true true = Primary
-
--- Turn previous selection state and new state obtained via related outputs/inputs into primary/secondary
-as𝕊' :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
-as𝕊' (SelState s1) (SelState s2) =
-   SelState { persistent: as𝕊 s1.persistent s2.persistent, transient: as𝕊 s1.transient s2.transient }
+-- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
+as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
+as𝕊 = lift2 as𝕊'
+   where
+   as𝕊' :: 𝔹 -> 𝔹 -> 𝕊
+   as𝕊' false false = None
+   as𝕊' false true = Secondary
+   as𝕊' true false = Primary -- "costless output", but ignore those for now
+   as𝕊' true true = Primary
 
 doNothing :: OnSel
 doNothing = const $ pure unit
