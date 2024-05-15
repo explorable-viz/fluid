@@ -2,13 +2,13 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
+import App.Util (Selector, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cBarChart, cBubbleChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
-import Lattice (𝔹, neg)
+import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
-import Test.Util (Selector)
 import Util (Endo, absurd, assert, definitely', error)
 import Util.Map (update)
 import Util.Set ((∈))
@@ -37,7 +37,7 @@ lineChart :: Endo (Selector Val)
 lineChart = constrArg cLineChart 0
 
 linePoint :: Int -> Endo (Selector Val)
-linePoint i = constrArg cLinePlot 0 <<< field f_data <<< listElement i
+linePoint i = listElement i >>> field f_data >>> constrArg cLinePlot 0
 
 barChart :: Endo (Selector Val)
 barChart = constrArg cBarChart 0
@@ -46,11 +46,11 @@ scatterPlot :: Endo (Selector Val)
 scatterPlot = constrArg cScatterPlot 0
 
 scatterPoint :: Int -> Endo (Selector Val)
-scatterPoint i = field f_data <<< listElement i
+scatterPoint i = listElement i >>> field f_data
 
-barSegment :: Int -> Int -> Selector Val
+barSegment :: Int -> Int -> Endo (Selector Val)
 barSegment i j =
-   field f_data (listElement i (field f_bars (listElement j (field f_z neg))))
+   field f_z >>> listElement j >>> field f_bars >>> listElement i >>> field f_data
 
 matrixElement :: Int -> Int -> Endo (Selector Val)
 matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv r
@@ -76,15 +76,15 @@ constrArg c n δv = unsafePartial $ case _ of
 
 constr :: Ctr -> Endo 𝔹 -> Selector Val
 constr c' δα = unsafePartial $ case _ of
-   Val α (Constr c vs) | c == c' -> Val (δα α) (Constr c vs)
+   Val α (Constr c vs) | c == c' -> Val (persist δα α) (Constr c vs)
 
 dict :: Endo 𝔹 -> Selector Val
 dict δα = unsafePartial $ case _ of
-   Val α (Dictionary d) -> Val (δα α) (Dictionary d)
+   Val α (Dictionary d) -> Val (persist δα α) (Dictionary d)
 
 dictKey :: String -> Endo 𝔹 -> Selector Val
 dictKey s δα = unsafePartial $ case _ of
-   Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first δα) s d
+   Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first $ persist δα) s d
 
 dictVal :: String -> Endo (Selector Val)
 dictVal s δv = unsafePartial $ case _ of
@@ -96,6 +96,7 @@ envVal x δv γ =
 
 listCell :: Int -> Endo 𝔹 -> Selector Val
 listCell n δα = unsafePartial $ case _ of
-   Val α (Constr c Nil) | n == 0 && c == cNil -> Val (δα α) (Constr c Nil)
-   Val α (Constr c (v : v' : Nil)) | n == 0 && c == cCons -> Val (δα α) (Constr c (v : v' : Nil))
-   Val α (Constr c (v : v' : Nil)) | c == cCons -> Val α (Constr c (v : listCell (n - 1) δα v' : Nil))
+   Val α (Constr c Nil) | n == 0 && c == cNil -> Val (persist δα α) (Constr c Nil)
+   Val α (Constr c (v : v' : Nil)) | c == cCons ->
+      if n == 0 then Val (persist δα α) (Constr c (v : v' : Nil))
+      else Val α (Constr c (v : listCell (n - 1) δα v' : Nil))

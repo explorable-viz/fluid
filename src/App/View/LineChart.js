@@ -2,41 +2,55 @@
 
 import * as d3 from "d3"
 
+// =================================================================
 // This prelude currently duplicated across all FFI implementations.
-function curry2(f) {
+// =================================================================
+
+function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function curry3(f) {
+function curry3 (f) {
    return x1 => x2 => x3 => f(x1, x2, x3)
 }
 
-function curry4(f) {
+function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
-function Sel_isNone (v) {
-   return v.tag == "None"
+function isCtr (v, i, ctrs) {
+   const j = ctrs.indexOf(v.tag)
+   if (j == -1) {
+      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
+   }
+   return i == j
 }
 
-function Sel_isPrimary (v) {
-   return v.tag == "Primary"
+// Selectable projections
+function val(x) {
+   return x._1
 }
 
-function Sel_isSecondary (v) {
-   return v.tag == "Secondary"
+function selState(x) {
+   return x._2
 }
 
-function fst(p) {
-   return p._1
+const 𝕊_ctrs = ["None", "Primary", "Secondary"]
+
+function 𝕊_isNone (v) {
+   return isCtr(v, 0, 𝕊_ctrs)
 }
 
-function snd(p) {
-   return p._2
+function 𝕊_isPrimary (v) {
+   return isCtr(v, 1, 𝕊_ctrs)
+}
+
+function 𝕊_isSecondary (v) {
+   return isCtr(v, 2, 𝕊_ctrs)
 }
 
 // https://stackoverflow.com/questions/5560248
-function colorShade(col, amt) {
+function colorShade (col, amt) {
    col = col.replace(/^#/, '')
    if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
 
@@ -54,16 +68,20 @@ function colorShade(col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
+// =================================================================
+// End of duplicated prelude
+// =================================================================
+
 function max_y (linePlot) {
-   return Math.max(...linePlot.data.map(point => fst(point.y)))
+   return Math.max(...linePlot.data.map(point => val(point.y)))
 }
 
 function min_x (linePlot) {
-   return Math.min(...linePlot.data.map(point => fst(point.x)))
+   return Math.min(...linePlot.data.map(point => val(point.x)))
 }
 
 function max_x (linePlot) {
-   return Math.max(...linePlot.data.map(point => fst(point.x)))
+   return Math.max(...linePlot.data.map(point => val(point.x)))
 }
 
 function drawLineChart_ (
@@ -83,7 +101,7 @@ function drawLineChart_ (
             y_max = Math.max(...plots.map(max_y)),
             x_min = Math.min(...plots.map(min_x)),
             x_max = Math.max(...plots.map(max_x)),
-            names = plots.map(plot => fst(plot.name))
+            names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + id)
 
       div.selectAll('#' + childId).remove()
@@ -100,8 +118,8 @@ function drawLineChart_ (
             y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
 
       const line1 = d3.line()
-         .x(d => x(fst(d.x)))
-         .y(d => y(fst(d.y)))
+         .x(d => x(val(d.x)))
+         .y(d => y(val(d.y)))
 
       const color = d3.scaleOrdinal(d3.schemePastel1)
 
@@ -111,7 +129,7 @@ function drawLineChart_ (
          .append('g')
          .append('path')
          .attr('fill', 'none')
-         .attr('stroke', ([, d]) => color(names.indexOf(fst(d.name))))
+         .attr('stroke', ([, d]) => color(names.indexOf(val(d.name))))
          .attr('stroke-width', 1)
          .attr('class', 'line')
          .attr('d', ([_, d]) => line1(d.data))
@@ -119,17 +137,17 @@ function drawLineChart_ (
       const smallRadius = 2
       for (const n_plot of plots.entries()) {
          const [i, plot] = n_plot,
-               col = color(names.indexOf(fst(plot.name)))
+               col = color(names.indexOf(val(plot.name)))
          svg.selectAll('markers')
             .data([...plot.data.entries()].map(([j, ns]) => [[i, j], ns]))
             .enter()
             .append('g')
             .append('circle')
-            .attr('r', ([, d]) => Sel_isNone(snd(d.y)) ? smallRadius : smallRadius * 2)
-            .attr('cx', ([, d]) => x(fst(d.x)))
-            .attr('cy', ([, d]) => y(fst(d.y)))
+            .attr('r', ([, d]) => 𝕊_isNone(selState(d.y).persistent) ? smallRadius : smallRadius * 2)
+            .attr('cx', ([, d]) => x(val(d.x)))
+            .attr('cy', ([, d]) => y(val(d.y)))
             .attr('fill', col)
-            .attr('stroke', ([, d]) => Sel_isNone(snd(d.y)) ? col : colorShade(col, -30))
+            .attr('stroke', ([, d]) => 𝕊_isNone(selState(d.y).persistent) ? col : colorShade(col, -30))
             .on('mousedown', (e, d) => { listener(e) })
       }
 
@@ -173,7 +191,7 @@ function drawLineChart_ (
          .attr('cy', legendLineHeight / 2 - smallRadius / 2)
 
       svg.append('text')
-         .text(fst(caption))
+         .text(val(caption))
          .attr('x', width / 2)
          .attr('y', height + 35)
          .attr('class', 'title-text')

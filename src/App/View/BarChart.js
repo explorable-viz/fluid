@@ -2,7 +2,10 @@
 
 import * as d3 from "d3"
 
+// =================================================================
 // This prelude currently duplicated across all FFI implementations.
+// =================================================================
+
 function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
@@ -15,24 +18,35 @@ function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
-function Sel_isNone (v) {
-   return v.tag == "None"
+function isCtr (v, i, ctrs) {
+   const j = ctrs.indexOf(v.tag)
+   if (j == -1) {
+      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
+   }
+   return i == j
 }
 
-function Sel_isPrimary (v) {
-   return v.tag == "Primary"
+// Selectable projections
+function val(x) {
+   return x._1
 }
 
-function Sel_isSecondary (v) {
-   return v.tag == "Secondary"
+function selState(x) {
+   return x._2
 }
 
-function fst(p) {
-   return p._1
+const 𝕊_ctrs = ["None", "Primary", "Secondary"]
+
+function 𝕊_isNone (v) {
+   return isCtr(v, 0, 𝕊_ctrs)
 }
 
-function snd(p) {
-   return p._2
+function 𝕊_isPrimary (v) {
+   return isCtr(v, 1, 𝕊_ctrs)
+}
+
+function 𝕊_isSecondary (v) {
+   return isCtr(v, 2, 𝕊_ctrs)
 }
 
 // https://stackoverflow.com/questions/5560248
@@ -54,6 +68,10 @@ function colorShade (col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
+// =================================================================
+// End of duplicated prelude
+// =================================================================
+
 // Heuristic saying how often to place a tick on an axis of length n.
 function tickEvery (n) {
    const m = Math.floor(Math.log10(n))
@@ -72,6 +90,7 @@ function drawBarChart_ (
    listener
 ) {
    return () => {
+      listenersEnabled = true
       const childId = id + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
@@ -91,7 +110,7 @@ function drawBarChart_ (
       // x-axis
       const x = d3.scaleBand()
          .range([0, width])
-         .domain(data.map(d => fst(d.x)))
+         .domain(data.map(d => val(d.x)))
          .padding(0.2)
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
@@ -100,7 +119,7 @@ function drawBarChart_ (
             .style('text-anchor', 'middle')
 
       function barHeight (bars) {
-         return bars.reduce((acc, bar) => { return fst(bar.z) + acc }, 0)
+         return bars.reduce((acc, bar) => { return val(bar.z) + acc }, 0)
       }
       // y-axis
       const nearest = 100,
@@ -127,9 +146,9 @@ function drawBarChart_ (
          .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
             const prev = acc[acc.length - 1]
             const y = prev.y + prev.height
-            acc.push({i, j: prev.j + 1, x: fst(x), y, height: fst(bar.z), sel: snd(bar.z)})
+            acc.push({i, j: prev.j + 1, x: val(x), y, height: val(bar.z), sel: selState(bar.z)})
             return acc
-         }, [{i, j: 0, x: fst(x), y: 0, height: fst(bars[0].z), sel: snd(bars[0].z)}]))
+         }, [{i, j: 0, x: val(x), y: 0, height: val(bars[0].z), sel: selState(bars[0].z)}]))
          .enter()
          .append('rect')
             .attr('x', bar => { return x(bar.x) })
@@ -138,19 +157,29 @@ function drawBarChart_ (
             .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
             .attr('fill', bar => {
                const col = color(bar.j)
-               return Sel_isNone(bar.sel) ? col : colorShade(col, -20)
+               return 𝕊_isNone(bar.sel.persistent) ? col : colorShade(col, -20)
             })
             .attr('stroke-width', _ => strokeWidth)
             .attr('stroke', bar => {
                const col = color(bar.j)
-               return Sel_isNone(bar.sel) ? col : colorShade(col, -70)
+               return 𝕊_isNone(bar.sel.persistent) ? col : colorShade(col, -70)
             })
             .on('mousedown', (e, d) => { listener(e) })
+            .on('mouseleave', (e, d) => { listener(e) })
+            .on('mouseenter', (e, d) => {
+               if (listenersEnabled) {
+                  console.log(`Processing ${e.type} event`)
+                  listener(e)
+               } else {
+                  console.log(`Ignoring ${e.type} event`)
+               }
+               listenersEnabled = !listenersEnabled
+            })
 
       // TODO: enforce that all stacked bars have same set of segments
       const legendLineHeight = 15,
             legendStart = width + margin.left / 2
-            names = data[0].bars.map(bar => fst(bar.y))
+            names = data[0].bars.map(bar => val(bar.y))
       svg.append('rect')
          .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
          .attr('x', 0)
@@ -184,7 +213,7 @@ function drawBarChart_ (
          .attr('y', legendLineHeight / 2 - legendSquareSize)
 
       svg.append('text')
-         .text(fst(caption))
+         .text(val(caption))
          .attr('x', width / 2)
          .attr('y', height + 35)
          .attr('class', 'title-text')

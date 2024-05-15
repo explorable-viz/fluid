@@ -2,50 +2,55 @@
 
 import * as d3 from "d3"
 
+// =================================================================
 // This prelude currently duplicated across all FFI implementations.
-function curry2(f) {
+// =================================================================
+
+function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function curry3(f) {
+function curry3 (f) {
    return x1 => x2 => x3 => f(x1, x2, x3)
 }
 
-function curry4(f) {
+function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
-function Sel_isNone (v) {
-   return v.tag == "None"
-}
-
-function Sel_isPrimary (v) {
-   return v.tag == "Primary"
-}
-
-function Sel_isSecondary (v) {
-   return v.tag == "Secondary"
-}
-
-function val_α(v) {
-   return v._1
-}
-
-function val_v(v) {
-   return v._2
-}
-
-function prim (v) {
-   if (isNaN(parseFloat(v._1))) {
-      return v._1
-   } else {
-      return +parseFloat(v._1).toFixed(2)
+function isCtr (v, i, ctrs) {
+   const j = ctrs.indexOf(v.tag)
+   if (j == -1) {
+      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
    }
+   return i == j
 }
 
+// Selectable projections
+function val(x) {
+   return x._1
+}
+
+function selState(x) {
+   return x._2
+}
+
+const 𝕊_ctrs = ["None", "Primary", "Secondary"]
+
+function 𝕊_isNone (v) {
+   return isCtr(v, 0, 𝕊_ctrs)
+}
+
+function 𝕊_isPrimary (v) {
+   return isCtr(v, 1, 𝕊_ctrs)
+}
+
+function 𝕊_isSecondary (v) {
+   return isCtr(v, 2, 𝕊_ctrs)
+}
 
 // https://stackoverflow.com/questions/5560248
-function colorShade(col, amt) {
+function colorShade (col, amt) {
    col = col.replace(/^#/, '')
    if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
 
@@ -63,9 +68,31 @@ function colorShade(col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
+// =================================================================
+// End of duplicated prelude
+// =================================================================
+
+// TableView differs from other JS mappings in that the individual value in each cell is not "unpacked" to
+// a Selectable but remains as a Val
+function Val_val(x) {
+   return x._2
+}
+
+function Val_selState(x) {
+   return x._1
+}
+
+function prim (v) {
+   if (isNaN(parseFloat(v._1))) {
+      return v._1
+   } else {
+      return +parseFloat(v._1).toFixed(2)
+   }
+}
+
 // any record type with only primitive fields -> Sel
 function isUsed (r) {
-   return Object.keys(r).some(k => k != indexKey && !Sel_isNone(val_α(r[k])))
+   return Object.keys(r).some(k => k != indexKey && !𝕊_isNone(Val_selState(r[k]).persistent))
 }
 
 // Generic to all tables.
@@ -130,12 +157,12 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => d.name != indexKey && Sel_isPrimary(val_α(d.value))
+            .attr('class', d => d.name != indexKey && 𝕊_isPrimary(Val_selState(d.value).persistent)
                ? 'cell-selected'
-               : d.name != indexKey && Sel_isSecondary(val_α(d.value))
+               : d.name != indexKey && 𝕊_isSecondary(Val_selState(d.value).persistent)
                   ? 'cell-selected-secondary'
                   : 'cell-unselected')
-            .text(d => d.name != indexKey ? prim(val_v(d.value)) : d.value)
+            .text(d => d.name != indexKey ? prim(Val_val(d.value)) : d.value)
             .on('mousedown', e => listener(e))
 
          sel = d3.select("th")

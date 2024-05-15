@@ -116,7 +116,7 @@ lastLine :: Doc -> String
 lastLine (Doc d) = helperUnwrapMaybe (last d.lines)
 
 -- takes all but the first lines of d2 so say e.g. [s1, s2] and spaces returns "  " (length of last line of d1) and we do ["  ", " "]
--- we then zip this with all but the first line of d2 so we have indented the document by the length of the last line of d1 
+-- we then zip this with all but the first line of d2 so we have indented the document by the length of the last line of d1
 indentedExpression :: Doc -> Doc -> Array String
 indentedExpression (Doc d1) (Doc d2) =
    zipWith (<>)
@@ -139,21 +139,21 @@ vcat = ala Stack foldMap
 -- | A wrapper for `Doc` with a `Monoid` instance which stacks documents vertically.
 newtype Stack = Stack Doc
 
-derive instance newtypeStack :: Newtype Stack _
+derive instance Newtype Stack _
 
-instance semigroupStack :: Semigroup Stack where
+instance Semigroup Stack where
    append (Stack d1) (Stack d2) = Stack (d1 `atop` d2)
 
-instance monoidStack :: Monoid Stack where
+instance Monoid Stack where
    mempty = Stack empty
 
 -- | A wrapper for `Doc` with a `Monoid` instance which stacks documents in columns.
 newtype Columns = Columns Doc
 
-derive instance newtypeColumns :: Newtype Columns _
+derive instance Newtype Columns _
 
-instance semigroupColumns :: Semigroup Columns where
+instance Semigroup Columns where
    append (Columns d1) (Columns d2) = Columns (d1 `beside` d2)
 
-instance monoidColumns :: Monoid Columns where
+instance Monoid Columns where
    mempty = Columns empty
