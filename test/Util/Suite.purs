@@ -3,15 +3,16 @@ module Test.Util.Suite where
 import Prelude
 
 import App.Fig (Fig, FigSpec, selectionResult, loadFig, selectInput, selectOutput)
-import App.Util (to𝔹)
+import App.Util (Selector, to𝔹)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
+import Data.Tuple (fst, snd)
 import Effect.Aff (Aff)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile, loadProgCxt)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
-import Test.Util (Selector, checkEq, test)
+import Test.Util (checkEq, test)
 import Test.Util.Debug (timing)
 import Util (type (×), (×))
 import Val (Val, Env)
@@ -61,7 +62,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
       test (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: Array TestBwdSpec -> BenchSuite
-bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> ("slicing/" <> _)) &&& asTest)
+bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> (unwrap folder <> _)) &&& asTest)
    where
    folder = File "slicing/"
 
@@ -82,8 +83,9 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
-   out × _ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ -> pure $ selectionResult fig
-   checkEq "selected" "expected" (to𝔹 <$> out) (out_expect (botOf out))
+   v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
+      pure (fst (selectionResult fig))
+   checkEq "selected" "expected" (to𝔹 <$> v) (out_expect (botOf v))
    pure fig
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
@@ -94,7 +96,8 @@ linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectInput δ_in
-   _ × γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ -> pure $ selectionResult fig
+   γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
+      pure (snd (selectionResult fig))
    checkEq "selected" "expected" (to𝔹 <$> γ) (in_expect (botOf γ))
    pure fig
 

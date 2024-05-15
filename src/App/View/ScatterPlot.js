@@ -3,41 +3,55 @@
 import * as d3 from "d3"
 import * as d3tip from "d3-tip"
 
+// =================================================================
 // This prelude currently duplicated across all FFI implementations.
+// =================================================================
+
 function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
 function curry3 (f) {
-  return x1 => x2 => x3 => f(x1, x2, x3)
+   return x1 => x2 => x3 => f(x1, x2, x3)
 }
 
 function curry4 (f) {
-  return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
+   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
-function Sel_isNone (v) {
-   return v.tag == "None"
+function isCtr (v, i, ctrs) {
+   const j = ctrs.indexOf(v.tag)
+   if (j == -1) {
+      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
+   }
+   return i == j
 }
 
-function Sel_isPrimary (v) {
-   return v.tag == "Primary"
+// Selectable projections
+function val(x) {
+   return x._1
 }
 
-function Sel_isSecondary (v) {
-   return v.tag == "Secondary"
+function selState(x) {
+   return x._2
 }
 
-function fst(p) {
-   return p._1
+const 𝕊_ctrs = ["None", "Primary", "Secondary"]
+
+function 𝕊_isNone (v) {
+   return isCtr(v, 0, 𝕊_ctrs)
 }
 
-function snd(p) {
-   return p._2
+function 𝕊_isPrimary (v) {
+   return isCtr(v, 1, 𝕊_ctrs)
+}
+
+function 𝕊_isSecondary (v) {
+   return isCtr(v, 2, 𝕊_ctrs)
 }
 
 // https://stackoverflow.com/questions/5560248
-function colorShade(col, amt) {
+function colorShade (col, amt) {
    col = col.replace(/^#/, '')
    if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
 
@@ -55,6 +69,10 @@ function colorShade(col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
+// =================================================================
+// End of duplicated prelude
+// =================================================================
+
 function drawScatterPlot_ (
    id,
    suffix,
@@ -70,10 +88,10 @@ function drawScatterPlot_ (
       const childId = id + '-' + suffix
       var max_width = 360
       var max_height = 360
-      const x_max = Math.ceil(Math.max(...data.map(d => fst(d.x))))
-      const x_min = Math.ceil(Math.min(...data.map(d => fst(d.x))))
-      const y_max = Math.ceil(Math.max(...data.map(d => fst(d.y))))
-      const y_min = Math.ceil(Math.min(...data.map(d => fst(d.y))))
+      const x_max = Math.ceil(Math.max(...data.map(d => val(d.x))))
+      const x_min = Math.ceil(Math.min(...data.map(d => val(d.x))))
+      const y_max = Math.ceil(Math.max(...data.map(d => val(d.y))))
+      const y_min = Math.ceil(Math.min(...data.map(d => val(d.y))))
 
       const margin = {top: 20, right: 20, bottom: 40, left: 50}
 
@@ -111,14 +129,14 @@ function drawScatterPlot_ (
          .attr("y", height + 25)
          .style("text-anchor", "end")
          .style("font-size", "8px")
-         .text(fst(xlabel))
+         .text(val(xlabel))
       svg.append("text")
          .attr("transform", "rotate(-90)")
          .attr("x", -margin.top)
          .attr("y", -margin.left + 20)
          .style("text-anchor", "end")
          .style("font-size", "8px")
-         .text(fst(ylabel))
+         .text(val(ylabel))
 
 
          svg.append('g')
@@ -126,17 +144,17 @@ function drawScatterPlot_ (
             .data([...data.entries()])
             .enter()
             .append('circle')
-               .attr('cx', ([, d]) => x(fst(d.x)))
-               .attr('cy', ([, d]) => y(fst(d.y)))
+               .attr('cx', ([, d]) => x(val(d.x)))
+               .attr('cy', ([, d]) => y(val(d.y)))
                .attr('r', 3)
-               .attr('data-y', ([, d]) => fst(d.y))
+               .attr('data-y', ([, d]) => val(d.y))
                .attr('stroke-width', 0.5)
                .attr('class', ([, d]) =>
-                  Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
+                  𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
                .on('mousedown', (e, d) => {listener(e)})
 
          svg.append('text')
-            .text(fst(caption))
+            .text(val(caption))
             .attr('x', width/2)
             .attr('y', height+40)
             .attr('class', 'title-text')

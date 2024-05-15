@@ -2,53 +2,55 @@
 
 import * as d3 from "d3"
 
+// =================================================================
 // This prelude currently duplicated across all FFI implementations.
-function curry2(f) {
+// =================================================================
+
+function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function curry3(f) {
+function curry3 (f) {
    return x1 => x2 => x3 => f(x1, x2, x3)
 }
 
-function curry4(f) {
+function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
-function fst(p) {
-   return p._1
+function isCtr (v, i, ctrs) {
+   const j = ctrs.indexOf(v.tag)
+   if (j == -1) {
+      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
+   }
+   return i == j
 }
 
-function snd(p) {
-   return p._2
+// Selectable projections
+function val(x) {
+   return x._1
 }
 
-function Sel_isNone (v) {
-   return v.tag == "None"
+function selState(x) {
+   return x._2
 }
 
-function Sel_isPrimary (v) {
-   return v.tag == "Primary"
+const 𝕊_ctrs = ["None", "Primary", "Secondary"]
+
+function 𝕊_isNone (v) {
+   return isCtr(v, 0, 𝕊_ctrs)
 }
 
-function Sel_isSecondary (v) {
-   return v.tag == "Secondary"
+function 𝕊_isPrimary (v) {
+   return isCtr(v, 1, 𝕊_ctrs)
 }
 
-function intMatrix_nss (v) {
-   return v._1
-}
-
-function intMatrix_i_max (v) {
-   return v._2._1
-}
-
-function intMatrix_j_max (v) {
-   return v._2._2
+function 𝕊_isSecondary (v) {
+   return isCtr(v, 2, 𝕊_ctrs)
 }
 
 // https://stackoverflow.com/questions/5560248
-function colorShade(col, amt) {
+function colorShade (col, amt) {
    col = col.replace(/^#/, '')
    if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
 
@@ -64,6 +66,22 @@ function colorShade(col, amt) {
    const bb = (b.length < 2 ? '0' : '') + b
 
    return `#${rr}${gg}${bb}`
+}
+
+// =================================================================
+// End of duplicated prelude
+// =================================================================
+
+function intMatrix_nss (v) {
+   return v._1
+}
+
+function intMatrix_i_max (v) {
+   return v._2._1
+}
+
+function intMatrix_j_max (v) {
+   return v._2._2
 }
 
 function drawMatrix_ (
@@ -114,16 +132,16 @@ function drawMatrix_ (
          .attr('width', w)
          .attr('height', h)
          .attr('class', ([, n]) =>
-            Sel_isPrimary(snd(n))
+            𝕊_isPrimary(selState(n).persistent)
             ? 'matrix-cell-selected'
-            : Sel_isSecondary(snd(n))
+            : 𝕊_isSecondary(selState(n).persistent)
                ? 'matrix-cell-selected-secondary'
                : 'matrix-cell-unselected')
          .attr('stroke-width', strokeWidth)
 
       rect
          .append('text')
-         .text(([, n]) => fst(n))
+         .text(([, n]) => val(n))
          .attr('x', (_, j) => w * (j + 0.5))
          .attr('y', 0.5 * h)
          .attr('class', 'matrix-cell-text')
