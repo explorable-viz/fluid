@@ -72,6 +72,16 @@ function colorShade (col, amt) {
 // End of duplicated prelude
 // =================================================================
 
+// TableView differs from other JS mappings in that the individual value in each cell is not "unpacked" to
+// a Selectable but remains as a Val
+function Val_val(x) {
+   return x._2
+}
+
+function Val_selState(x) {
+   return x._1
+}
+
 function prim (v) {
    if (isNaN(parseFloat(v._1))) {
       return v._1
@@ -82,7 +92,7 @@ function prim (v) {
 
 // any record type with only primitive fields -> Sel
 function isUsed (r) {
-   return Object.keys(r).some(k => k != indexKey && !Sel_isNone(selState(r[k]).persistent))
+   return Object.keys(r).some(k => k != indexKey && !𝕊_isNone(Val_selState(r[k]).persistent))
 }
 
 // Generic to all tables.
@@ -147,12 +157,12 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => d.name != indexKey && Sel_isPrimary(selState(d.value).persistent)
+            .attr('class', d => d.name != indexKey && 𝕊_isPrimary(Val_selState(d.value).persistent)
                ? 'cell-selected'
-               : d.name != indexKey && Sel_isSecondary(selState(d.value).persistent)
+               : d.name != indexKey && 𝕊_isSecondary(Val_selState(d.value).persistent)
                   ? 'cell-selected-secondary'
                   : 'cell-unselected')
-            .text(d => d.name != indexKey ? prim(val(d.value)) : d.value)
+            .text(d => d.name != indexKey ? prim(Val_val(d.value)) : d.value)
             .on('mousedown', e => listener(e))
 
          sel = d3.select("th")

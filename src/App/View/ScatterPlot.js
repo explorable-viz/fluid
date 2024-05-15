@@ -150,7 +150,7 @@ function drawScatterPlot_ (
                .attr('data-y', ([, d]) => val(d.y))
                .attr('stroke-width', 0.5)
                .attr('class', ([, d]) =>
-                  Sel_isNone(selState(d.x).persistent) && Sel_isNone(selState(d.y).persistent) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
+                  𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
                .on('mousedown', (e, d) => {listener(e)})
 
          svg.append('text')

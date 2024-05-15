@@ -132,9 +132,9 @@ function drawMatrix_ (
          .attr('width', w)
          .attr('height', h)
          .attr('class', ([, n]) =>
-            Sel_isPrimary(selState(n).persistent)
+            𝕊_isPrimary(selState(n).persistent)
             ? 'matrix-cell-selected'
-            : Sel_isSecondary(SelState(n).persistent)
+            : 𝕊_isSecondary(SelState(n).persistent)
                ? 'matrix-cell-selected-secondary'
                : 'matrix-cell-unselected')
          .attr('stroke-width', strokeWidth)

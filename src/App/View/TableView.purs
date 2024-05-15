@@ -16,7 +16,7 @@ import Web.Event.Internal.Types (EventTarget)
 newtype TableView = TableView
    { title :: String
    , filter :: Boolean
-   , table :: Array (Dict (Val (SelState 𝕊)))
+   , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous as elsewhere we have Selectables
    }
 
 foreign import drawTable :: Renderer TableView

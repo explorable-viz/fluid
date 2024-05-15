@@ -143,11 +143,11 @@ function drawLineChart_ (
             .enter()
             .append('g')
             .append('circle')
-            .attr('r', ([, d]) => Sel_isNone(selState(d.y).persistent) ? smallRadius : smallRadius * 2)
+            .attr('r', ([, d]) => 𝕊_isNone(selState(d.y).persistent) ? smallRadius : smallRadius * 2)
             .attr('cx', ([, d]) => x(val(d.x)))
             .attr('cy', ([, d]) => y(val(d.y)))
             .attr('fill', col)
-            .attr('stroke', ([, d]) => Sel_isNone(selState(d.y).persistent) ? col : colorShade(col, -30))
+            .attr('stroke', ([, d]) => 𝕊_isNone(selState(d.y).persistent) ? col : colorShade(col, -30))
             .on('mousedown', (e, d) => { listener(e) })
       }
 
