@@ -2,7 +2,10 @@
 
 import * as d3 from "d3"
 
+// =================================================================
 // This prelude currently duplicated across all FFI implementations.
+// =================================================================
+
 function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
@@ -23,6 +26,15 @@ function isCtr (v, i, ctrs) {
    return i == j
 }
 
+// Selectable projections
+function val(x) {
+   return x._1
+}
+
+function selState(x) {
+   return x._2
+}
+
 const 𝕊_ctrs = ["None", "Primary", "Secondary"]
 
 function 𝕊_isNone (v) {
@@ -35,15 +47,6 @@ function 𝕊_isPrimary (v) {
 
 function 𝕊_isSecondary (v) {
    return isCtr(v, 2, 𝕊_ctrs)
-}
-
-// Selectable projections
-function val(x) {
-   return x._1
-}
-
-function selState(x) {
-   return x._2
 }
 
 // https://stackoverflow.com/questions/5560248
@@ -64,6 +67,10 @@ function colorShade (col, amt) {
 
    return `#${rr}${gg}${bb}`
 }
+
+// =================================================================
+// End of duplicated prelude
+// =================================================================
 
 // Heuristic saying how often to place a tick on an axis of length n.
 function tickEvery (n) {
