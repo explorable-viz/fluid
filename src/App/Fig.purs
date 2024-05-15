@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (HTMLId, 𝕊, as𝕊, to𝕊)
+import App.Util (HTMLId, SelState, Selector, 𝕊, as𝕊', persistent, selState, to𝕊', transient)
 import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
@@ -15,14 +15,13 @@ import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
-import GaloisConnection (GaloisConnection(..), dual, meet)
 import GaloisConnection ((***)) as GC
+import GaloisConnection (GaloisConnection(..), dual, meet)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import SExpr (Expr) as S
-import Test.Util (Selector)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, spyWhen, (×))
 import Util.Map (get, mapWithKey)
@@ -41,8 +40,8 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , γ :: Env 𝔹
-   , v :: Val 𝔹
+   , γ :: Env (SelState 𝔹)
+   , v :: Val (SelState 𝔹)
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
    , dir :: Direction
@@ -73,20 +72,24 @@ drawFig fig@{ spec: { divId } } = do
    sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
    where
    out_view × in_views =
-      selectionResult fig
-         # unsafePartial (view output *** unwrap >>> mapWithKey view)
+      selectionResult fig # unsafePartial (view output *** unwrap >>> mapWithKey view)
 
-selectionResult :: Fig -> Val 𝕊 × Env 𝕊
+selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
-   (as𝕊 <$> v <*> v') × map to𝕊 (report γ)
+   (as𝕊' <$> v <*> (selState <$> v1 <*> v2)) × (to𝕊' <$> report (selState <$> γ1 <*> γ2))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   v' × γ = (unwrap ((fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc)).bwd v
+   GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
+   v1 × γ1 = gc.bwd (v <#> persistent)
+   v2 × γ2 = gc.bwd (v <#> transient)
 selectionResult fig@{ γ, dir: LinkedInputs } =
-   (to𝕊 <$> report out) × wrap (mapWithKey (\x v -> as𝕊 <$> get x γ <*> v) (unwrap γ'))
+   (to𝕊' <$> report (selState <$> v1 <*> v2)) ×
+      wrap (mapWithKey (\x v -> as𝕊' <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   γ' × out = (unwrap ((fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual)).bwd γ
+   GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
+   γ1 × v1 = gc.bwd (γ <#> persistent)
+   γ2 × v2 = gc.bwd (γ <#> transient)
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =

@@ -2,18 +2,18 @@ module App.View.BubbleChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, 𝕊, Selectable, from, get_intOrNumber, record, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, selector, unsafeEventData)
 import App.Util.Selector (bubbleChart, field, listElement)
 import Data.Maybe (Maybe)
+import Data.Profunctor.Strong ((&&&))
+import Data.Tuple (uncurry)
 import DataType (f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel, f_z)
 import Dict (Dict)
-import Lattice (neg)
 import Primitive (string, unpack)
-import Test.Util (Selector)
-import Util ((!))
+import Util (type (×), Endo, (!), (×))
 import Util.Map (get)
 import Val (Val)
-import Web.Event.Event (target)
+import Web.Event.Event (EventType, target, type_)
 import Web.Event.Internal.Types (EventTarget)
 
 newtype BubbleChart = BubbleChart
@@ -32,7 +32,7 @@ newtype Bubble = Bubble
 
 foreign import drawBubbleChart :: Renderer BubbleChart
 
-instance Reflect (Dict (Val 𝕊)) Bubble where
+instance Reflect (Dict (Val (SelState 𝕊))) Bubble where
    from r = Bubble
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
@@ -40,7 +40,7 @@ instance Reflect (Dict (Val 𝕊)) Bubble where
       , c: unpack string $ get f_colour r
       }
 
-instance Reflect (Dict (Val 𝕊)) BubbleChart where
+instance Reflect (Dict (Val (SelState 𝕊))) BubbleChart where
    from r = BubbleChart
       { caption: unpack string (get f_caption r)
       , data: record from <$> from (get f_data r)
@@ -49,10 +49,10 @@ instance Reflect (Dict (Val 𝕊)) BubbleChart where
       }
 
 bubbleChartHandler :: Handler
-bubbleChartHandler = target >>> bubbleIndex >>> toggleBubble
+bubbleChartHandler = (target &&& type_) >>> bubbleIndex >>> uncurry toggleBubble
    where
-   toggleBubble :: Int -> Selector Val
-   toggleBubble i = bubbleChart $ field f_data $ listElement i $ neg
+   toggleBubble :: Int -> Endo (Selector Val)
+   toggleBubble i = bubbleChart <<< field f_data <<< listElement i
 
-   bubbleIndex :: Maybe EventTarget -> Int
-   bubbleIndex tgt_opt = unsafeEventData tgt_opt ! 0
+   bubbleIndex :: Maybe EventTarget × EventType -> Int × Selector Val
+   bubbleIndex (tgt_opt × ty) = unsafeEventData tgt_opt ! 0 × selector ty

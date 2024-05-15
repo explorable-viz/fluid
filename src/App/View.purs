@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (HTMLId, OnSel, 𝕊, from, record)
+import App.Util (HTMLId, OnSel, 𝕊, SelState, from, record)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
 import App.View.BarChart (barChartHandler, drawBarChart)
@@ -47,7 +47,7 @@ drawView divId suffix onSel = case _ of
    MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (onSel <<< multiPlotEntry x)) vws
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
-view :: Partial => String -> Val 𝕊 -> View
+view :: Partial => String -> Val (SelState 𝕊) -> View
 view _ (Val _ (Constr c (u1 : Nil))) | c == cBarChart =
    BarChart (record from u1)
 view _ (Val _ (Constr c (u1 : Nil))) | c == cBubbleChart =

@@ -2,7 +2,7 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, 𝕊, Selectable, from, get_intOrNumber, record, selector, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, Selectable, Selector, 𝕊, SelState, from, get_intOrNumber, record, selector, unsafeEventData)
 import App.Util.Selector (barChart, barSegment)
 import Data.Maybe (Maybe)
 import Data.Profunctor.Strong ((&&&))
@@ -10,7 +10,6 @@ import Data.Tuple (uncurry)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
 import Primitive (string, unpack)
-import Test.Util (Selector)
 import Util (type (×), Endo, (×))
 import Util.Map (get)
 import Val (Val)
@@ -34,19 +33,19 @@ newtype Bar = Bar
 
 foreign import drawBarChart :: Renderer BarChart
 
-instance Reflect (Dict (Val 𝕊)) BarChart where
+instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart
       { caption: unpack string (get f_caption r)
       , data: record from <$> from (get f_data r)
       }
 
-instance Reflect (Dict (Val 𝕊)) StackedBar where
+instance Reflect (Dict (Val (SelState 𝕊))) StackedBar where
    from r = StackedBar
       { x: unpack string (get f_x r)
       , bars: record from <$> from (get f_bars r)
       }
 
-instance Reflect (Dict (Val 𝕊)) Bar where
+instance Reflect (Dict (Val (SelState 𝕊))) Bar where
    from r = Bar
       { y: unpack string (get f_y r)
       , z: get_intOrNumber f_z r

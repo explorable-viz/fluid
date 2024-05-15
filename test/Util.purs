@@ -2,6 +2,7 @@ module Test.Util where
 
 import Prelude hiding ((-), absurd)
 
+import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -14,7 +15,7 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, 𝔹, botOf, erase, topOf, (-))
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, botOf, erase, topOf, (-))
 import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), prettyP)
@@ -22,10 +23,8 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, debug, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
-
-type Selector f = Endo (f 𝔹) -- modifies selection state
 
 type SelectionSpec =
    { δv :: Selector Val
@@ -59,12 +58,12 @@ benchNames
       }
 
 benchNames =
-   { eval: "Eval" -- Neeeded
-   , bwd: "Demands" -- Needed
-   , demBy: "DemBy" -- Needed
-   , fwd: "Suffices" -- Unsure
-   , demBy_G_direct: "DemBy-Dir" -- Needed
-   , demBy_G_suff_dual: "DemBy-Suff" -- Needed
+   { eval: "Eval"
+   , bwd: "Demands"
+   , demBy: "DemBy"
+   , fwd: "Suffices" -- needed?
+   , demBy_G_direct: "DemBy-Dir"
+   , demBy_G_suff_dual: "DemBy-Suff"
    }
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
@@ -76,7 +75,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
 
-   let out0 = δv (botOf v)
+   let out0 = δv (botOf v) <#> unwrap >>> _.persistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
