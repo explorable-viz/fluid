@@ -18,15 +18,6 @@ function isCtr (v, i, ctrs) {
    return i == j
 }
 
-// Selectable projections
-function val(x) {
-   return x._1
-}
-
-function selState(x) {
-   return x._2
-}
-
 const 𝕊_ctrs = ["None", "Primary", "Secondary"]
 
 function 𝕊_isNone (v) {
@@ -74,7 +65,7 @@ function tickEvery (n) {
 
 function drawBarChart_ (
    {
-      uiHelpers,
+      uiHelpers: { val, selState },
       divId,
       suffix,
       view: {

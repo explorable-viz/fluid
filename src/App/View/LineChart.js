@@ -18,15 +18,6 @@ function isCtr (v, i, ctrs) {
    return i == j
 }
 
-// Selectable projections
-function val(x) {
-   return x._1
-}
-
-function selState(x) {
-   return x._2
-}
-
 const 𝕊_ctrs = ["None", "Primary", "Secondary"]
 
 function 𝕊_isNone (v) {
@@ -64,16 +55,22 @@ function colorShade (col, amt) {
 // End of duplicated prelude
 // =================================================================
 
-function max_y (linePlot) {
-   return Math.max(...linePlot.data.map(point => val(point.y)))
+function max_y ({ val }) {
+   return linePlot => {
+      return Math.max(...linePlot.data.map(point => val(point.y)))
+   }
 }
 
-function min_x (linePlot) {
-   return Math.min(...linePlot.data.map(point => val(point.x)))
+function min_x ({ val }) {
+   return linePlot => {
+      return Math.min(...linePlot.data.map(point => val(point.x)))
+   }
 }
 
-function max_x (linePlot) {
-   return Math.max(...linePlot.data.map(point => val(point.x)))
+function max_x ({ val }) {
+   return linePlot => {
+      return Math.max(...linePlot.data.map(point => val(point.x)))
+   }
 }
 
 function drawLineChart_ (
@@ -89,13 +86,14 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
+      const { val, selState } = uiHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom,
-            y_max = Math.max(...plots.map(max_y)),
-            x_min = Math.min(...plots.map(min_x)),
-            x_max = Math.max(...plots.map(max_x)),
+            y_max = Math.max(...plots.map(max_y(uiHelpers))),
+            x_min = Math.min(...plots.map(min_x(uiHelpers))),
+            x_max = Math.max(...plots.map(max_x(uiHelpers))),
             names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + divId)
 

@@ -11,7 +11,7 @@ import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, over, over2, unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (snd)
+import Data.Tuple (fst, snd)
 import DataType (cCons, cNil)
 import Dict (Dict)
 import Effect (Effect)
@@ -41,6 +41,15 @@ type RendererSpec a =
    , view :: a
    }
 
+-- Bundle into a record so we can export via FFI
+type UIHelpers =
+   { val :: forall a. Selectable a -> a
+   , selState :: forall a. Selectable a -> SelState 𝕊
+   , persistent :: forall a. SelState a -> a
+   , transient :: forall a. SelState a -> a
+   , persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
+   }
+
 -- Selection has two dimensions: persistent/transient and primary/secondary
 newtype SelState a = SelState
    { persistent :: a
@@ -65,16 +74,11 @@ transient = unwrap >>> _.transient
 persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
 persistentOrTransient s = persistent s ∨ transient s
 
--- Bundle into a record so we can export to JS
-type UIHelpers =
-   { persistent :: forall a. SelState a -> a
-   , transient :: forall a. SelState a -> a
-   , persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
-   }
-
 uiHelpers :: UIHelpers
 uiHelpers =
-   { persistent
+   { val: fst
+   , selState: snd
+   , persistent
    , transient
    , persistentOrTransient
    }
