@@ -10,14 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
-}
-
 function isCtr (v, i, ctrs) {
    const j = ctrs.indexOf(v.tag)
    if (j == -1) {
@@ -85,19 +77,22 @@ function intMatrix_j_max (v) {
 }
 
 function drawMatrix_ (
-   id,
-   suffix,
    {
-      title,    // String
-      matrix    // IntMatrix
+      uiHelpers,
+      divId,
+      suffix,
+      view: {
+         title,    // String
+         matrix    // IntMatrix
+      }
    },
    listener
 ) {
    return () => {
-      const childId = id + '-' + suffix
+      const childId = divId + '-' + suffix
       const strokeWidth = 0.5
       const w = 30, h = 30
-      const div = d3.select('#' + id)
+      const div = d3.select('#' + divId)
       const [width, height] = [w * intMatrix_j_max(matrix) + strokeWidth, h * intMatrix_i_max(matrix) + strokeWidth]
       const hMargin = w / 2
       const vMargin = h / 2
@@ -162,4 +157,4 @@ function drawMatrix_ (
    }
 }
 
-export var drawMatrix = curry4(drawMatrix_)
+export var drawMatrix = curry2(drawMatrix_)

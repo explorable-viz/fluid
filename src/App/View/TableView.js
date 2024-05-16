@@ -10,14 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
-}
-
 function isCtr (v, i, ctrs) {
    const j = ctrs.indexOf(v.tag)
    if (j == -1) {
@@ -72,8 +64,7 @@ function colorShade (col, amt) {
 // End of duplicated prelude
 // =================================================================
 
-// TableView differs from other JS mappings in that the individual value in each cell is not "unpacked" to
-// a Selectable but remains as a Val
+// Difference from other JS mappings: values in each cell are not "unpacked" to Selectable but remain as Val
 function Val_val(x) {
    return x._2
 }
@@ -90,25 +81,28 @@ function prim (v) {
    }
 }
 
-// any record type with only primitive fields -> Sel
+// [any record type with only primitive fields] -> Sel
 function isUsed (r) {
    return Object.keys(r).some(k => k != indexKey && !𝕊_isNone(Val_selState(r[k]).persistent))
 }
 
 // Generic to all tables.
 function drawTable_ (
-   id,
-   suffix,
    {
-      title,   // String
-      filter,  // Boolean
-      table    // Homogeneous array of records with fields of primitive type
+      uiHelpers,
+      divId,
+      suffix,
+      view: {
+         title,   // String
+         filter,  // Boolean
+         table    // Homogeneous array of records with fields of primitive type
+      }
    },
    listener
 ) {
    return () => {
-      const childId = id + '-' + suffix
-      const div = d3.select('#' + id)
+      const childId = divId + '-' + suffix
+      const div = d3.select('#' + divId)
 
       indexKey = "__n"
       table = table.map((r, n) => { return {[ indexKey ]: n + 1, ...r} })
@@ -171,4 +165,4 @@ function drawTable_ (
    }
 }
 
-export var drawTable = curry4(drawTable_)
+export var drawTable = curry2(drawTable_)

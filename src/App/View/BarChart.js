@@ -10,14 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
-}
-
 function isCtr (v, i, ctrs) {
    const j = ctrs.indexOf(v.tag)
    if (j == -1) {
@@ -81,20 +73,23 @@ function tickEvery (n) {
 }
 
 function drawBarChart_ (
-   id,
-   suffix,
    {
-      caption,    // String
-      data,       // Array StackedBar
+      uiHelpers,
+      divId,
+      suffix,
+      view: {
+         caption,    // String
+         data,       // Array StackedBar
+      }
    },
    listener
 ) {
    return () => {
-      const childId = id + '-' + suffix
+      const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
-      const div = d3.select('#' + id)
+      const div = d3.select('#' + divId)
 
       div.selectAll('#' + childId).remove()
 
@@ -223,4 +218,4 @@ function drawBarChart_ (
    }
 }
 
-export var drawBarChart = curry4(drawBarChart_)
+export var drawBarChart = curry2(drawBarChart_)

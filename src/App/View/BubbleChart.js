@@ -10,14 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
-}
-
 function isCtr (v, i, ctrs) {
    const j = ctrs.indexOf(v.tag)
    if (j == -1) {
@@ -73,18 +65,21 @@ function colorShade (col, amt) {
 // =================================================================
 
 function drawBubbleChart_ (
-   id,
-   suffix,
    {
-      caption, // String
-      data,   // Array BubbleRecord
-      xlabel,
-      ylabel,
+      uiHelpers,
+      divId,
+      suffix,
+      view: {
+         caption, // String
+         data,    // Array BubbleRecord
+         xlabel,
+         ylabel,
+      }
    },
    listener
 ) {
    return () => {
-      const childId = id + '-' + suffix
+      const childId = divId + '-' + suffix
       var max_width = 340
       var max_height = 190
       const max_z_rad = Math.min(max_width, max_height) / 10
@@ -97,7 +92,7 @@ function drawBubbleChart_ (
 
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
-      const div = d3.select('#' + id)
+      const div = d3.select('#' + divId)
 
       div.selectAll('#' + childId).remove()
 
@@ -190,4 +185,4 @@ function drawBubbleChart_ (
    }
 }
 
-export var drawBubbleChart = curry4(drawBubbleChart_)
+export var drawBubbleChart = curry2(drawBubbleChart_)

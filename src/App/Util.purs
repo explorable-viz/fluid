@@ -29,9 +29,17 @@ import Web.Event.EventTarget (EventListener, EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
 type HTMLId = String
-type Renderer a = HTMLId -> String -> a -> EventListener -> Effect Unit
+type Renderer a = RendererSpec a -> EventListener -> Effect Unit
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
+
+-- Heavily curried type isn't convenient for FFI
+type RendererSpec a =
+   { uiHelpers :: UIHelpers
+   , divId :: HTMLId
+   , suffix :: String
+   , view :: a
+   }
 
 -- Selection has two dimensions: persistent/transient and primary/secondary
 newtype SelState a = SelState
@@ -40,7 +48,7 @@ newtype SelState a = SelState
    }
 
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
-   highlightIf (SelState s) = highlightIf (s.persistent ∨ s.transient)
+   highlightIf s = highlightIf (persistentOrTransient s)
 
 persist :: forall a. Endo a -> Endo (SelState a)
 persist δα = over SelState \s -> s { persistent = δα s.persistent }
@@ -53,6 +61,23 @@ persistent = unwrap >>> _.persistent
 
 transient :: forall a. SelState a -> a
 transient = unwrap >>> _.transient
+
+persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
+persistentOrTransient s = persistent s ∨ transient s
+
+-- Bundle into a record so we can export to JS
+type UIHelpers =
+   { persistent :: forall a. SelState a -> a
+   , transient :: forall a. SelState a -> a
+   , persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
+   }
+
+uiHelpers :: UIHelpers
+uiHelpers =
+   { persistent
+   , transient
+   , persistentOrTransient
+   }
 
 data 𝕊 = None | Primary | Secondary
 type Selectable a = a × SelState 𝕊

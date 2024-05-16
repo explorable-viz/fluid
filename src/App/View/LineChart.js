@@ -10,14 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
-}
-
 function isCtr (v, i, ctrs) {
    const j = ctrs.indexOf(v.tag)
    if (j == -1) {
@@ -85,16 +77,19 @@ function max_x (linePlot) {
 }
 
 function drawLineChart_ (
-   id,
-   suffix,
    {
-      caption,   // String
-      plots,     // Array LinePlot
+      uiHelpers,
+      divId,
+      suffix,
+      view: {
+         caption,   // String
+         plots,     // Array LinePlot
+      }
    },
    listener
 ) {
    return () => {
-      const childId = id + '-' + suffix
+      const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom,
@@ -102,7 +97,7 @@ function drawLineChart_ (
             x_min = Math.min(...plots.map(min_x)),
             x_max = Math.max(...plots.map(max_x)),
             names = plots.map(plot => val(plot.name))
-      const div = d3.select('#' + id)
+      const div = d3.select('#' + divId)
 
       div.selectAll('#' + childId).remove()
 
@@ -200,4 +195,4 @@ function drawLineChart_ (
    }
 }
 
-export var drawLineChart = curry4(drawLineChart_)
+export var drawLineChart = curry2(drawLineChart_)

@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (HTMLId, OnSel, 𝕊, SelState, from, record)
+import App.Util (HTMLId, OnSel, SelState, 𝕊, from, record, uiHelpers)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
 import App.View.BarChart (barChartHandler, drawBarChart)
@@ -38,12 +38,12 @@ data View
 
 drawView :: HTMLId -> String -> OnSel -> View -> Effect Unit
 drawView divId suffix onSel = case _ of
-   MatrixView vw -> drawMatrix divId suffix vw =<< eventListener (onSel <<< matrixViewHandler)
-   TableView vw -> drawTable divId suffix vw =<< eventListener (onSel <<< tableViewHandler)
-   LineChart vw -> drawLineChart divId suffix vw =<< eventListener (onSel <<< lineChartHandler)
-   BarChart vw -> drawBarChart divId suffix vw =<< eventListener (onSel <<< barChartHandler)
-   BubbleChart vw -> drawBubbleChart divId suffix vw =<< eventListener (onSel <<< bubbleChartHandler)
-   ScatterPlot vw -> drawScatterPlot divId suffix vw =<< eventListener (onSel <<< scatterPlotHandler)
+   MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< matrixViewHandler)
+   TableView vw -> drawTable { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< tableViewHandler)
+   LineChart vw -> drawLineChart { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< lineChartHandler)
+   BarChart vw -> drawBarChart { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< barChartHandler)
+   BubbleChart vw -> drawBubbleChart { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< bubbleChartHandler)
+   ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< scatterPlotHandler)
    MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (onSel <<< multiPlotEntry x)) vws
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
