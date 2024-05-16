@@ -90,7 +90,6 @@ function drawBarChart_ (
    listener
 ) {
    return () => {
-      listenersEnabled = true
       const childId = id + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
@@ -142,6 +141,7 @@ function drawBarChart_ (
       const color = d3.scaleOrdinal(d3.schemeAccent)
       const strokeWidth = 1
 
+      mouseenterEnabled = true
       stacks.selectAll('.bar')
          .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
             const prev = acc[acc.length - 1]
@@ -165,15 +165,16 @@ function drawBarChart_ (
                return 𝕊_isNone(bar.sel.persistent) ? col : colorShade(col, -70)
             })
             .on('mousedown', (e, d) => { listener(e) })
-            .on('mouseleave', (e, d) => { listener(e) })
+            .on('mouseleave', (e, d) => {
+               console.log(`${e.type}`)
+               listener(e)
+            })
             .on('mouseenter', (e, d) => {
-               if (listenersEnabled) {
-                  console.log(`Processing ${e.type} event`)
+               if (mouseenterEnabled) {
+                  console.log(`${e.type}`)
                   listener(e)
-               } else {
-                  console.log(`Ignoring ${e.type} event`)
                }
-               listenersEnabled = !listenersEnabled
+               mouseenterEnabled = !mouseenterEnabled
             })
 
       // TODO: enforce that all stacked bars have same set of segments
