@@ -10,28 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
-   }
-   return i == j
-}
-
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
@@ -86,7 +64,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { val, selState } = uiHelpers
+      const { val, selState, isNone𝕊 } = uiHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
@@ -136,11 +114,11 @@ function drawLineChart_ (
             .enter()
             .append('g')
             .append('circle')
-            .attr('r', ([, d]) => 𝕊_isNone(selState(d.y).persistent) ? smallRadius : smallRadius * 2)
+            .attr('r', ([, d]) => isNone𝕊(selState(d.y).persistent) ? smallRadius : smallRadius * 2)
             .attr('cx', ([, d]) => x(val(d.x)))
             .attr('cy', ([, d]) => y(val(d.y)))
             .attr('fill', col)
-            .attr('stroke', ([, d]) => 𝕊_isNone(selState(d.y).persistent) ? col : colorShade(col, -30))
+            .attr('stroke', ([, d]) => isNone𝕊(selState(d.y).persistent) ? col : colorShade(col, -30))
             .on('mousedown', (e, d) => { listener(e) })
       }
 

@@ -10,28 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
-   }
-   return i == j
-}
-
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
@@ -69,7 +47,7 @@ function intMatrix_j_max (v) {
 
 function drawMatrix_ (
    {
-      uiHelpers: { val, selState },
+      uiHelpers: { val, selState, isPrimary𝕊, isSecondary𝕊 },
       divId,
       suffix,
       view: {
@@ -118,9 +96,9 @@ function drawMatrix_ (
          .attr('width', w)
          .attr('height', h)
          .attr('class', ([, n]) =>
-            𝕊_isPrimary(selState(n).persistent)
+            isPrimary𝕊(selState(n).persistent)
             ? 'matrix-cell-selected'
-            : 𝕊_isSecondary(selState(n).persistent)
+            : isSecondary𝕊(selState(n).persistent)
                ? 'matrix-cell-selected-secondary'
                : 'matrix-cell-unselected')
          .attr('stroke-width', strokeWidth)

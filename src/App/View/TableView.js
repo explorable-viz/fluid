@@ -10,28 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
-   }
-   return i == j
-}
-
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
@@ -73,8 +51,8 @@ function prim (v) {
 }
 
 // [any record type with only primitive fields] -> Sel
-function isUsed (r) {
-   return Object.keys(r).some(k => k != indexKey && !𝕊_isNone(Val_selState(r[k]).persistent))
+function isUsed ({ isNone𝕊 }, r) {
+   return Object.keys(r).some(k => k != indexKey && !isNone𝕊(Val_selState(r[k]).persistent))
 }
 
 // Generic to all tables.
@@ -92,6 +70,7 @@ function drawTable_ (
    listener
 ) {
    return () => {
+      const { isPrimary𝕊, isSecondary𝕊 } = uiHelpers
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
 
@@ -101,7 +80,7 @@ function drawTable_ (
       const unfilteredLength = table.length
       div.selectAll('#' + childId).remove()
       if (filter) {
-         table = table.filter(r => isUsed(r))
+         table = table.filter(r => isUsed(uiHelpers, r))
       }
 
       if (table.length > 0) {
@@ -142,9 +121,9 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => d.name != indexKey && 𝕊_isPrimary(Val_selState(d.value).persistent)
+            .attr('class', d => d.name != indexKey && isPrimary𝕊(Val_selState(d.value).persistent)
                ? 'cell-selected'
-               : d.name != indexKey && 𝕊_isSecondary(Val_selState(d.value).persistent)
+               : d.name != indexKey && isSecondary𝕊(Val_selState(d.value).persistent)
                   ? 'cell-selected-secondary'
                   : 'cell-unselected')
             .text(d => d.name != indexKey ? prim(Val_val(d.value)) : d.value)

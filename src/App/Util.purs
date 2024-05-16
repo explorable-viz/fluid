@@ -45,6 +45,9 @@ type RendererSpec a =
 type UIHelpers =
    { val :: forall a. Selectable a -> a
    , selState :: forall a. Selectable a -> SelState 𝕊
+   , isNone𝕊 :: 𝕊 -> Boolean
+   , isPrimary𝕊 :: 𝕊 -> Boolean
+   , isSecondary𝕊 :: 𝕊 -> Boolean
    , persistent :: forall a. SelState a -> a
    , transient :: forall a. SelState a -> a
    , persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
@@ -78,6 +81,15 @@ uiHelpers :: UIHelpers
 uiHelpers =
    { val: fst
    , selState: snd
+   , isNone𝕊: case _ of
+      None -> true
+      _ -> false
+   , isPrimary𝕊: case _ of
+      Primary -> true
+      _ -> false
+   , isSecondary𝕊: case _ of
+      Secondary -> true
+      _ -> false
    , persistent
    , transient
    , persistentOrTransient

@@ -10,28 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
-   }
-   return i == j
-}
-
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
@@ -65,7 +43,7 @@ function tickEvery (n) {
 
 function drawBarChart_ (
    {
-      uiHelpers: { val, selState },
+      uiHelpers: { val, selState, isNone𝕊 },
       divId,
       suffix,
       view: {
@@ -143,12 +121,12 @@ function drawBarChart_ (
             .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
             .attr('fill', bar => {
                const col = color(bar.j)
-               return 𝕊_isNone(bar.sel.persistent) ? col : colorShade(col, -20)
+               return isNone𝕊(bar.sel.persistent) ? col : colorShade(col, -20)
             })
             .attr('stroke-width', _ => strokeWidth)
             .attr('stroke', bar => {
                const col = color(bar.j)
-               return 𝕊_isNone(bar.sel.persistent) ? col : colorShade(col, -70)
+               return isNone𝕊(bar.sel.persistent) ? col : colorShade(col, -70)
             })
             .on('mousedown', (e, d) => { listener(e) })
             .on('mouseleave', (e, d) => {

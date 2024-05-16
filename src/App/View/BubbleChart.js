@@ -10,29 +10,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
-   }
-   return i == j
-}
-
-// Selectable projections
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
@@ -58,7 +35,7 @@ function colorShade (col, amt) {
 
 function drawBubbleChart_ (
    {
-      uiHelpers: { val, selState },
+      uiHelpers: { val, selState, isNone𝕊 },
       divId,
       suffix,
       view: {
@@ -146,13 +123,13 @@ function drawBubbleChart_ (
             .attr('cy', ([, d]) => y(val(d.y)))
             .attr('r', ([, d]) => z(val(d.z)))
             .attr('stroke', ([, d]) =>
-               𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) && 𝕊_isNone(selState(d.z).persistent)
+               isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) && isNone𝕊(selState(d.z).persistent)
                ? colorShade(c(val(d.c)), -30) : 'black')
             .style('fill', ([, d]) =>
-               𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) && 𝕊_isNone(selState(d.z).persistent)
+               isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) && isNone𝕊(selState(d.z).persistent)
                ? c(val(d.c)): colorShade(c(val(d.c)), -50))
             .style('class', ([, d]) =>
-               𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) && 𝕊_isNone(selState(d.z).persistent)
+               isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) && isNone𝕊(selState(d.z).persistent)
                ? 'dot-unselected' : 'dot-selected')
             .on('mousedown', (e, d) => { listener(e) })
 

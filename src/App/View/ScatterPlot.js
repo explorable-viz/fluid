@@ -11,28 +11,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
-   }
-   return i == j
-}
-
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
@@ -58,7 +36,7 @@ function colorShade (col, amt) {
 
 function drawScatterPlot_ (
    {
-      uiHelpers: { val, selState },
+      uiHelpers: { val, selState, isNone𝕊 },
       divId,
       suffix,
       view: {
@@ -136,7 +114,7 @@ function drawScatterPlot_ (
                .attr('data-y', ([, d]) => val(d.y))
                .attr('stroke-width', 0.5)
                .attr('class', ([, d]) =>
-                  𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
+                  isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
                .on('mousedown', (e, d) => {listener(e)})
 
          svg.append('text')
