@@ -2,37 +2,6 @@
 
 import * as d3 from "d3"
 
-// =================================================================
-// This prelude currently duplicated across all FFI implementations.
-// =================================================================
-
-function curry2 (f) {
-   return x1 => x2 => f(x1, x2)
-}
-
-// https://stackoverflow.com/questions/5560248
-function colorShade (col, amt) {
-   col = col.replace(/^#/, '')
-   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
-
-   let [r, g, b] = col.match(/.{2}/g);
-   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
-
-   r = Math.max(Math.min(255, r), 0).toString(16)
-   g = Math.max(Math.min(255, g), 0).toString(16)
-   b = Math.max(Math.min(255, b), 0).toString(16)
-
-   const rr = (r.length < 2 ? '0' : '') + r
-   const gg = (g.length < 2 ? '0' : '') + g
-   const bb = (b.length < 2 ? '0' : '') + b
-
-   return `#${rr}${gg}${bb}`
-}
-
-// =================================================================
-// End of duplicated prelude
-// =================================================================
-
 // Difference from other JS mappings: values in each cell are not "unpacked" to Selectable but remain as Val
 function Val_val(x) {
    return x._2
@@ -135,4 +104,4 @@ function drawTable_ (
    }
 }
 
-export var drawTable = curry2(drawTable_)
+export var drawTable = x1 => x2 => drawTable_(x1, x2)
