@@ -2,40 +2,9 @@
 
 import * as d3 from "d3"
 
-// =================================================================
-// This prelude currently duplicated across all FFI implementations.
-// =================================================================
-
-function curry2 (f) {
-   return x1 => x2 => f(x1, x2)
-}
-
-// https://stackoverflow.com/questions/5560248
-function colorShade (col, amt) {
-   col = col.replace(/^#/, '')
-   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
-
-   let [r, g, b] = col.match(/.{2}/g);
-   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
-
-   r = Math.max(Math.min(255, r), 0).toString(16)
-   g = Math.max(Math.min(255, g), 0).toString(16)
-   b = Math.max(Math.min(255, b), 0).toString(16)
-
-   const rr = (r.length < 2 ? '0' : '') + r
-   const gg = (g.length < 2 ? '0' : '') + g
-   const bb = (b.length < 2 ? '0' : '') + b
-
-   return `#${rr}${gg}${bb}`
-}
-
-// =================================================================
-// End of duplicated prelude
-// =================================================================
-
 function drawBubbleChart_ (
    {
-      uiHelpers: { val, selState, isNone𝕊 },
+      uiHelpers: { val, selState, isNone𝕊, colorShade },
       divId,
       suffix,
       view: {
@@ -124,10 +93,10 @@ function drawBubbleChart_ (
             .attr('r', ([, d]) => z(val(d.z)))
             .attr('stroke', ([, d]) =>
                isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) && isNone𝕊(selState(d.z).persistent)
-               ? colorShade(c(val(d.c)), -30) : 'black')
+               ? colorShade(c(val(d.c)))(-30) : 'black')
             .style('fill', ([, d]) =>
                isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) && isNone𝕊(selState(d.z).persistent)
-               ? c(val(d.c)): colorShade(c(val(d.c)), -50))
+               ? c(val(d.c)): colorShade(c(val(d.c)))(-50))
             .style('class', ([, d]) =>
                isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) && isNone𝕊(selState(d.z).persistent)
                ? 'dot-unselected' : 'dot-selected')
@@ -154,4 +123,4 @@ function drawBubbleChart_ (
    }
 }
 
-export var drawBubbleChart = curry2(drawBubbleChart_)
+export var drawBubbleChart = x1 => x2 => drawBubbleChart_(x1, x2)

@@ -2,37 +2,6 @@
 
 import * as d3 from "d3"
 
-// =================================================================
-// This prelude currently duplicated across all FFI implementations.
-// =================================================================
-
-function curry2 (f) {
-   return x1 => x2 => f(x1, x2)
-}
-
-// https://stackoverflow.com/questions/5560248
-function colorShade (col, amt) {
-   col = col.replace(/^#/, '')
-   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
-
-   let [r, g, b] = col.match(/.{2}/g);
-   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
-
-   r = Math.max(Math.min(255, r), 0).toString(16)
-   g = Math.max(Math.min(255, g), 0).toString(16)
-   b = Math.max(Math.min(255, b), 0).toString(16)
-
-   const rr = (r.length < 2 ? '0' : '') + r
-   const gg = (g.length < 2 ? '0' : '') + g
-   const bb = (b.length < 2 ? '0' : '') + b
-
-   return `#${rr}${gg}${bb}`
-}
-
-// =================================================================
-// End of duplicated prelude
-// =================================================================
-
 function max_y ({ val }) {
    return linePlot => {
       return Math.max(...linePlot.data.map(point => val(point.y)))
@@ -64,7 +33,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { val, selState, isNone𝕊 } = uiHelpers
+      const { val, selState, isNone𝕊, colorShade } = uiHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
@@ -118,7 +87,7 @@ function drawLineChart_ (
             .attr('cx', ([, d]) => x(val(d.x)))
             .attr('cy', ([, d]) => y(val(d.y)))
             .attr('fill', col)
-            .attr('stroke', ([, d]) => isNone𝕊(selState(d.y).persistent) ? col : colorShade(col, -30))
+            .attr('stroke', ([, d]) => isNone𝕊(selState(d.y).persistent) ? col : colorShade(col)(-30))
             .on('mousedown', (e, d) => { listener(e) })
       }
 
@@ -171,4 +140,4 @@ function drawLineChart_ (
    }
 }
 
-export var drawLineChart = curry2(drawLineChart_)
+export var drawLineChart = x1 => x2 => drawLineChart_(x1, x2)
