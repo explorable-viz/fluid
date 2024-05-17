@@ -12,7 +12,7 @@ function tickEvery (n) {
 
 function drawBarChart_ (
    {
-      uiHelpers: { val, selState, isNone𝕊, colorShade },
+      uiHelpers: { val, selState, isNone𝕊, colorShade, barChartHelpers: { barCol } },
       divId,
       suffix,
       view: {
@@ -88,10 +88,7 @@ function drawBarChart_ (
             .attr('y', bar => { return y(bar.y + bar.height) })
             .attr('width', x.bandwidth())
             .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
-            .attr('fill', bar => {
-               const col = color(bar.j)
-               return isNone𝕊(bar.sel.persistent) ? col : colorShade(col)(-20)
-            })
+            .attr('fill', bar => { return barCol(bar.sel)(color(bar.j)) })
             .attr('stroke-width', _ => strokeWidth)
             .attr('stroke', bar => {
                const col = color(bar.j)

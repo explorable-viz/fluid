@@ -6,15 +6,18 @@ import Bind (Var)
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Either (Either(..))
+import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, over, over2, unwrap)
 import Data.Profunctor.Strong (first)
+import Data.Show.Generic (genericShow)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cNil)
+import Debug (trace)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
@@ -85,8 +88,9 @@ type BarChartHelpers =
    }
 
 barCol :: SelState 𝕊 -> Endo String
-barCol (SelState { persistent: None }) col = col
-barCol _ col = colorShade col (-20)
+barCol s col = trace (show s <> "\n" <> show col) \_ -> case s of
+   SelState { persistent: None } -> col
+   _ -> colorShade col (-20)
 
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
@@ -191,10 +195,15 @@ selector (EventType _) = error "Unsupported event type"
 -- ======================
 -- boilerplate
 -- ======================
+derive instance Generic 𝕊 _
+instance Show 𝕊 where
+   show = genericShow
+
 derive instance Newtype (SelState a) _
 derive instance Functor SelState
 
 derive instance Eq a => Eq (SelState a)
+derive newtype instance Show a => Show (SelState a)
 
 instance Apply SelState where
    apply (SelState fs) (SelState s) =
