@@ -43,19 +43,6 @@ type RendererSpec a =
    , view :: a
    }
 
--- Bundle into a record so we can export via FFI
-type UIHelpers =
-   { val :: forall a. Selectable a -> a
-   , selState :: forall a. Selectable a -> SelState 𝕊
-   , isNone𝕊 :: 𝕊 -> Boolean
-   , isPrimary𝕊 :: 𝕊 -> Boolean
-   , isSecondary𝕊 :: 𝕊 -> Boolean
-   , persistent :: forall a. SelState a -> a
-   , transient :: forall a. SelState a -> a
-   , persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
-   , colorShade :: String -> Int -> String
-   }
-
 -- Selection has two dimensions: persistent/transient and primary/secondary
 newtype SelState a = SelState
    { persistent :: a
@@ -92,25 +79,28 @@ colorShade col n =
          # clamp 0 255
          # toStringAs hexadecimal
 
-{-
-function colorShade (col, amt) {
-   col = col.replace(/^#/, '')
-   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
+-- TODO: lift more UI logic to PureScript.
+type BarChartHelpers =
+   { barCol :: SelState 𝕊 -> Endo String
+   }
 
-   let [r, g, b] = col.match(/.{2}/g);
-   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
+barCol :: SelState 𝕊 -> Endo String
+barCol (SelState { persistent: None }) col = col
+barCol _ col = colorShade col (-20)
 
-   r = Math.max(Math.min(255, r), 0).toString(16)
-   g = Math.max(Math.min(255, g), 0).toString(16)
-   b = Math.max(Math.min(255, b), 0).toString(16)
-
-   const rr = (r.length < 2 ? '0' : '') + r
-   const gg = (g.length < 2 ? '0' : '') + g
-   const bb = (b.length < 2 ? '0' : '') + b
-
-   return `#${rr}${gg}${bb}`
-}
--}
+-- Bundle into a record so we can export via FFI
+type UIHelpers =
+   { val :: forall a. Selectable a -> a
+   , selState :: forall a. Selectable a -> SelState 𝕊
+   , isNone𝕊 :: 𝕊 -> Boolean
+   , isPrimary𝕊 :: 𝕊 -> Boolean
+   , isSecondary𝕊 :: 𝕊 -> Boolean
+   , persistent :: forall a. SelState a -> a
+   , transient :: forall a. SelState a -> a
+   , persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
+   , colorShade :: String -> Int -> String
+   , barChartHelpers :: BarChartHelpers
+   }
 
 uiHelpers :: UIHelpers
 uiHelpers =
@@ -129,6 +119,8 @@ uiHelpers =
    , transient
    , persistentOrTransient
    , colorShade
+   , barChartHelpers:
+        { barCol }
    }
 
 data 𝕊 = None | Primary | Secondary
