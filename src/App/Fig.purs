@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (HTMLId, SelState, Selector, 𝕊, as𝕊, persistent, selState, to𝕊, transient)
+import App.Util (HTMLId, SelState(..), Selector, 𝕊, as𝕊, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
@@ -80,16 +80,16 @@ selectionResult fig@{ v, dir: LinkedOutputs } =
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
-   v1 × γ1 = gc.bwd (v <#> persistent)
-   v2 × γ2 = gc.bwd (v <#> transient)
+   v1 × γ1 = gc.bwd (v <#> \(SelState { persistent }) -> persistent)
+   v2 × γ2 = gc.bwd (v <#> \(SelState { transient }) -> transient)
 selectionResult fig@{ γ, dir: LinkedInputs } =
    (to𝕊 <$> report (selState <$> v1 <*> v2)) ×
       wrap (mapWithKey (\x v -> as𝕊 <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
-   γ1 × v1 = gc.bwd (γ <#> persistent)
-   γ2 × v2 = gc.bwd (γ <#> transient)
+   γ1 × v1 = gc.bwd (γ <#> \(SelState { persistent }) -> persistent)
+   γ2 × v2 = gc.bwd (γ <#> \(SelState { transient }) -> transient)
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =

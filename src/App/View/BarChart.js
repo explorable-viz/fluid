@@ -12,7 +12,7 @@ function tickEvery (n) {
 
 function drawBarChart_ (
    {
-      uiHelpers: { val, selState, isNone𝕊, colorShade, barChartHelpers: { barCol } },
+      uiHelpers: { val, selState, barChartHelpers: { bar_fill, bar_stroke } },
       divId,
       suffix,
       view: {
@@ -88,12 +88,9 @@ function drawBarChart_ (
             .attr('y', bar => { return y(bar.y + bar.height) })
             .attr('width', x.bandwidth())
             .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
-            .attr('fill', bar => { return barCol(bar.sel)(color(bar.j)) })
+            .attr('fill', bar => { return bar_fill(bar.sel)(color(bar.j)) })
             .attr('stroke-width', _ => strokeWidth)
-            .attr('stroke', bar => {
-               const col = color(bar.j)
-               return isNone𝕊(bar.sel.persistent) ? col : colorShade(col)(-70)
-            })
+            .attr('stroke', bar => { return bar_stroke(bar.sel)(color(bar.j)) })
             .on('mousedown', (e, d) => { listener(e) })
             .on('mouseleave', (e, d) => {
                console.log(`${e.type}`)

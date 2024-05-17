@@ -17,7 +17,6 @@ import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cNil)
-import Debug (trace)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
@@ -26,7 +25,7 @@ import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, 
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', error)
+import Util (type (×), (×), Endo, definitely', error)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..))
@@ -53,22 +52,13 @@ newtype SelState a = SelState
    }
 
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
-   highlightIf s = highlightIf (persistentOrTransient s)
+   highlightIf (SelState { persistent, transient }) = highlightIf (persistent ∨ transient)
 
 persist :: forall a. Endo a -> Endo (SelState a)
 persist δα = over SelState \s -> s { persistent = δα s.persistent }
 
 selState :: forall a. a -> a -> SelState a
 selState b1 b2 = SelState { persistent: b1, transient: b2 }
-
-persistent :: forall a. SelState a -> a
-persistent = unwrap >>> _.persistent
-
-transient :: forall a. SelState a -> a
-transient = unwrap >>> _.transient
-
-persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
-persistentOrTransient s = persistent s ∨ transient s
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
@@ -83,14 +73,16 @@ colorShade col n =
          # toStringAs hexadecimal
 
 -- TODO: lift more UI logic to PureScript.
-type BarChartHelpers =
-   { barCol :: SelState 𝕊 -> Endo String
-   }
-
-barCol :: SelState 𝕊 -> Endo String
-barCol s col = trace (show s <> "\n" <> show col) \_ -> case s of
+bar_fill :: SelState 𝕊 -> Endo String
+bar_fill s col = case s of
    SelState { persistent: None } -> col
    _ -> colorShade col (-20)
+
+bar_stroke :: SelState 𝕊 -> Endo String
+bar_stroke (SelState { persistent, transient }) col =
+   case persistent × transient of
+      None × None -> col
+      _ -> colorShade col (-70)
 
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
@@ -99,11 +91,11 @@ type UIHelpers =
    , isNone𝕊 :: 𝕊 -> Boolean
    , isPrimary𝕊 :: 𝕊 -> Boolean
    , isSecondary𝕊 :: 𝕊 -> Boolean
-   , persistent :: forall a. SelState a -> a
-   , transient :: forall a. SelState a -> a
-   , persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
    , colorShade :: String -> Int -> String
-   , barChartHelpers :: BarChartHelpers
+   , barChartHelpers ::
+        { bar_fill :: SelState 𝕊 -> Endo String
+        , bar_stroke :: SelState 𝕊 -> Endo String
+        }
    }
 
 uiHelpers :: UIHelpers
@@ -119,12 +111,11 @@ uiHelpers =
    , isSecondary𝕊: case _ of
         Secondary -> true
         _ -> false
-   , persistent
-   , transient
-   , persistentOrTransient
    , colorShade
    , barChartHelpers:
-        { barCol }
+        { bar_fill
+        , bar_stroke
+        }
    }
 
 data 𝕊 = None | Primary | Secondary
