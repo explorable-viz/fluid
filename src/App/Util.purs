@@ -80,6 +80,7 @@ transient = unwrap >>> _.transient
 persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
 persistentOrTransient s = persistent s ∨ transient s
 
+-- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
 colorShade col n =
    -- remove and reinstate leading "#"
