@@ -121,6 +121,7 @@ function drawBarChart_ (
             .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
             .attr('fill', bar => {
                const col = color(bar.j)
+               console.log(col)
                return isNone𝕊(bar.sel.persistent) ? col : colorShade(col, -20)
             })
             .attr('stroke-width', _ => strokeWidth)

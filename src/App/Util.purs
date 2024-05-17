@@ -6,10 +6,12 @@ import Bind (Var)
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Either (Either(..))
+import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, over, over2, unwrap)
 import Data.Profunctor.Strong (first)
+import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cNil)
@@ -51,6 +53,7 @@ type UIHelpers =
    , persistent :: forall a. SelState a -> a
    , transient :: forall a. SelState a -> a
    , persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
+   , colorShade :: String -> Int -> String
    }
 
 -- Selection has two dimensions: persistent/transient and primary/secondary
@@ -77,22 +80,54 @@ transient = unwrap >>> _.transient
 persistentOrTransient :: forall a. JoinSemilattice a => SelState a -> a
 persistentOrTransient s = persistent s ∨ transient s
 
+colorShade :: String -> Int -> String
+colorShade col n =
+   -- remove and reinstate leading "#"
+   "#" <> shade (take 2 $ drop 1 col) <> shade (take 2 $ drop 3 col) <> shade (take 2 $ drop 5 col)
+   where
+   shade :: String -> String
+   shade rgbComponent =
+      definitely' (fromStringAs hexadecimal rgbComponent) + n
+         # clamp 0 255
+         # toStringAs hexadecimal
+
+{-
+function colorShade (col, amt) {
+   col = col.replace(/^#/, '')
+   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
+
+   let [r, g, b] = col.match(/.{2}/g);
+   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
+
+   r = Math.max(Math.min(255, r), 0).toString(16)
+   g = Math.max(Math.min(255, g), 0).toString(16)
+   b = Math.max(Math.min(255, b), 0).toString(16)
+
+   const rr = (r.length < 2 ? '0' : '') + r
+   const gg = (g.length < 2 ? '0' : '') + g
+   const bb = (b.length < 2 ? '0' : '') + b
+
+   return `#${rr}${gg}${bb}`
+}
+-}
+
 uiHelpers :: UIHelpers
 uiHelpers =
    { val: fst
    , selState: snd
    , isNone𝕊: case _ of
-      None -> true
-      _ -> false
+        None -> true
+        _ -> false
    , isPrimary𝕊: case _ of
-      Primary -> true
-      _ -> false
+        Primary -> true
+        _ -> false
    , isSecondary𝕊: case _ of
-      Secondary -> true
-      _ -> false
+        Secondary -> true
+        _ -> false
    , persistent
    , transient
    , persistentOrTransient
+   , colorShade
    }
 
 data 𝕊 = None | Primary | Secondary
