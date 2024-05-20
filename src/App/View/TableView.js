@@ -7,10 +7,6 @@ function Val_val(x) {
    return x._2
 }
 
-function Val_selState(x) {
-   return x._1
-}
-
 function prim (v) {
    if (isNaN(parseFloat(v._1))) {
       return v._1
@@ -34,7 +30,7 @@ function drawTable_ (
    listener
 ) {
    return () => {
-      const { isPrimary𝕊, isSecondary𝕊, tableViewHelpers: { record_isUsed } } = uiHelpers
+      const { tableViewHelpers: { record_isUsed, cell_class } } = uiHelpers
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
 
@@ -85,16 +81,12 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => d.name != indexKey && isPrimary𝕊(Val_selState(d.value).persistent)
-               ? 'cell-selected'
-               : d.name != indexKey && isSecondary𝕊(Val_selState(d.value).persistent)
-                  ? 'cell-selected-secondary'
-                  : 'cell-unselected')
+            .attr('class', d => cell_class(d.name)(d.value))
             .text(d => d.name != indexKey ? prim(Val_val(d.value)) : d.value)
             .on('mousedown', e => listener(e))
 
          sel = d3.select("th")
-         sel.on("mouseover", e => console.log("TODO: toggle filter state persistently"))
+         sel.on("mouseover", _ => console.log("TODO: toggle filter state persistently"))
       }
    }
 }
