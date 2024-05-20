@@ -19,11 +19,6 @@ function prim (v) {
    }
 }
 
-// [any record type with only primitive fields] -> Sel
-function isUsed ({ isNone𝕊 }, r) {
-   return Object.keys(r).some(k => k != indexKey && !isNone𝕊(Val_selState(r[k]).persistent))
-}
-
 // Generic to all tables.
 function drawTable_ (
    {
@@ -39,7 +34,7 @@ function drawTable_ (
    listener
 ) {
    return () => {
-      const { isPrimary𝕊, isSecondary𝕊 } = uiHelpers
+      const { isPrimary𝕊, isSecondary𝕊, tableViewHelpers: { record_isUsed } } = uiHelpers
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
 
@@ -49,7 +44,7 @@ function drawTable_ (
       const unfilteredLength = table.length
       div.selectAll('#' + childId).remove()
       if (filter) {
-         table = table.filter(r => isUsed(uiHelpers, r))
+         table = table.filter(r => record_isUsed(r))
       }
 
       if (table.length > 0) {

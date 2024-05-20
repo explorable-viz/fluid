@@ -46,6 +46,7 @@ instance FoldableWithIndex String Dict where
 instance Set (Dict a) String where
    empty = Dict empty
    isEmpty (Dict d) = isEmpty d
+   filter p (Dict d) = Dict (filterKeys p d)
    size (Dict d) = size d
    member x (Dict d) = x ∈ d
    difference (Dict d) (Dict d') = Dict (difference d d')

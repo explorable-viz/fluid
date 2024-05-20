@@ -10,7 +10,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype, over, over2, unwrap)
+import Data.Newtype (class Newtype, over, over2)
 import Data.Profunctor.Strong (first)
 import Data.Show.Generic (genericShow)
 import Data.String.CodeUnits (drop, take)
@@ -26,7 +26,8 @@ import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), Endo, definitely', error)
-import Util.Map (get)
+import Util.Map (filterKeys, get)
+import Util.Set (isEmpty)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..))
 import Web.Event.EventTarget (EventListener, EventTarget)
@@ -60,6 +61,21 @@ persist δα = over SelState \s -> s { persistent = δα s.persistent }
 selState :: forall a. a -> a -> SelState a
 selState b1 b2 = SelState { persistent: b1, transient: b2 }
 
+selected :: forall a. JoinSemilattice a => SelState a -> a
+selected (SelState { persistent, transient }) = persistent ∨ transient
+
+isNone𝕊 :: 𝕊 -> Boolean
+isNone𝕊 None = true
+isNone𝕊 _ = false
+
+isPrimary𝕊 :: 𝕊 -> Boolean
+isPrimary𝕊 Primary = true
+isPrimary𝕊 _ = false
+
+isSecondary𝕊 :: 𝕊 -> Boolean
+isSecondary𝕊 Secondary = true
+isSecondary𝕊 _ = false
+
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
 colorShade col n =
@@ -84,6 +100,15 @@ bar_stroke (SelState { persistent, transient }) col =
       None × None -> col
       _ -> colorShade col (-70)
 
+indexKey :: String
+indexKey = "__n"
+
+-- [any record type with only primitive fields] -> 𝕊
+record_isUsed :: Dict (Val (SelState 𝕊)) -> 𝔹
+record_isUsed r =
+   not <<< isEmpty $ flip filterKeys r \k ->
+      k /= indexKey && selected (not <<< isNone𝕊 <$> (get k r # \(Val α _) -> α))
+
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
    { val :: forall a. Selectable a -> a
@@ -96,25 +121,27 @@ type UIHelpers =
         { bar_fill :: SelState 𝕊 -> Endo String
         , bar_stroke :: SelState 𝕊 -> Endo String
         }
+   , tableViewHelpers ::
+        { indexKey :: String
+        , record_isUsed :: Dict (Val (SelState 𝕊)) -> 𝔹
+        }
    }
 
 uiHelpers :: UIHelpers
 uiHelpers =
    { val: fst
    , selState: snd
-   , isNone𝕊: case _ of
-        None -> true
-        _ -> false
-   , isPrimary𝕊: case _ of
-        Primary -> true
-        _ -> false
-   , isSecondary𝕊: case _ of
-        Secondary -> true
-        _ -> false
+   , isNone𝕊
+   , isPrimary𝕊
+   , isSecondary𝕊
    , colorShade
    , barChartHelpers:
         { bar_fill
         , bar_stroke
+        }
+   , tableViewHelpers:
+        { indexKey
+        , record_isUsed
         }
    }
 
