@@ -30,7 +30,7 @@ function drawTable_ (
    listener
 ) {
    return () => {
-      const { tableViewHelpers: { record_isUsed, cell_class } } = uiHelpers
+      const { tableViewHelpers: { record_isUsed, cell_classes } } = uiHelpers
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
 
@@ -81,7 +81,7 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => cell_class(d.name)(d.value))
+            .attr('class', d => cell_classes(d.name)(d.value))
             .text(d => d.name != indexKey ? prim(Val_val(d.value)) : d.value)
             .on('mousedown', e => listener(e))
 

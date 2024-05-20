@@ -109,11 +109,11 @@ record_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
       k /= indexKey && selected (not <<< isNone𝕊 <$> (get k r # \(Val α _) -> α))
 
-cell_class :: String -> Val (SelState 𝕊) -> String
-cell_class col v =
-   if col /= indexKey && isPrimary𝕊 (v # \(Val (SelState α) _) -> α.persistent) then "cell-selected"
-   else if col /= indexKey && isSecondary𝕊 ((v # \(Val (SelState α) _) -> α.persistent)) then "cell-selected-secondary"
-   else "cell-unselected"
+cell_classes :: String -> Val (SelState 𝕊) -> String
+cell_classes col v =
+   if col /= indexKey && isPrimary𝕊 (v # \(Val (SelState α) _) -> α.persistent) then "cell selected"
+   else if col /= indexKey && isSecondary𝕊 ((v # \(Val (SelState α) _) -> α.persistent)) then "cell selected-secondary"
+   else "cell unselected"
 
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
@@ -130,7 +130,7 @@ type UIHelpers =
    , tableViewHelpers ::
         { indexKey :: String
         , record_isUsed :: Dict (Val (SelState 𝕊)) -> 𝔹
-        , cell_class :: String -> Val (SelState 𝕊) -> String
+        , cell_classes :: String -> Val (SelState 𝕊) -> String
         }
    }
 
@@ -149,7 +149,7 @@ uiHelpers =
    , tableViewHelpers:
         { indexKey
         , record_isUsed
-        , cell_class
+        , cell_classes
         }
    }
 
