@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (HTMLId, SelState(..), Selector, 𝕊, as𝕊, selState, to𝕊)
+import App.Util (HTMLId, SelState, Selector, 𝕊, as𝕊, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import Bind (Bind, Var, (↦))
@@ -11,7 +11,6 @@ import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
-import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
@@ -28,8 +27,7 @@ import Util.Map (get, mapWithKey)
 import Val (Env, EnvExpr(..), Val, unrestrictGC)
 
 type FigSpec =
-   { divId :: HTMLId
-   , imports :: Array String
+   { imports :: Array String
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
@@ -66,13 +64,17 @@ selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
    , dir = LinkedInputs
    }
 
-drawFig :: Fig -> Effect Unit
-drawFig fig@{ spec: { divId } } = do
-   drawView divId output (drawFig <<< flip selectOutput fig) out_view
-   sequence_ $ mapWithKey (\x -> drawView divId x (drawFig <<< flip (curry selectInput x) fig)) in_views
+drawFig :: { fig :: Fig, divId :: HTMLId } -> Effect Unit
+drawFig { fig, divId } = do
+   drawView divId output (\δv -> drawFig { fig: selectOutput δv fig, divId }) out_view
+   sequence_ $
+      mapWithKey (\x -> drawView divId x (\δv -> drawFig { fig: selectInput (x ↦ δv) fig, divId })) in_views
    where
    out_view × in_views =
       selectionResult fig # unsafePartial (view output *** unwrap >>> mapWithKey view)
+
+atDivId :: String -> Fig -> { fig :: Fig, divId :: HTMLId }
+atDivId divId fig = { fig, divId }
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
@@ -80,16 +82,16 @@ selectionResult fig@{ v, dir: LinkedOutputs } =
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
-   v1 × γ1 = gc.bwd (v <#> \(SelState { persistent }) -> persistent)
-   v2 × γ2 = gc.bwd (v <#> \(SelState { transient }) -> transient)
+   v1 × γ1 = gc.bwd (v <#> unwrap >>> _.persistent)
+   v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
 selectionResult fig@{ γ, dir: LinkedInputs } =
    (to𝕊 <$> report (selState <$> v1 <*> v2)) ×
       wrap (mapWithKey (\x v -> as𝕊 <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
-   γ1 × v1 = gc.bwd (γ <#> \(SelState { persistent }) -> persistent)
-   γ2 × v2 = gc.bwd (γ <#> \(SelState { transient }) -> transient)
+   γ1 × v1 = gc.bwd (γ <#> unwrap >>> _.persistent)
+   γ2 × v2 = gc.bwd (γ <#> unwrap >>> _.transient)
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
@@ -117,10 +119,10 @@ loadFig spec@{ inputs, imports, file, datasets } = do
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
 
-drawFigWithCode :: Fig -> Effect Unit
-drawFigWithCode fig = do
-   drawFig fig
-   addEditorView (codeMirrorDiv fig.spec.divId) >>= drawCode (prettyP fig.s)
+drawFigWithCode :: { fig :: Fig, divId :: HTMLId } -> Effect Unit
+drawFigWithCode { fig, divId } = do
+   drawFig { fig, divId }
+   addEditorView (codeMirrorDiv divId) >>= drawCode (prettyP fig.s)
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =

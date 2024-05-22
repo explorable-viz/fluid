@@ -110,10 +110,13 @@ record_isUsed r =
       k /= indexKey && selected (not <<< isNone𝕊 <$> (get k r # \(Val α _) -> α))
 
 cell_classes :: String -> Val (SelState 𝕊) -> String
-cell_classes col v =
-   if col /= indexKey && isPrimary𝕊 (v # \(Val (SelState α) _) -> α.persistent) then "cell selected"
-   else if col /= indexKey && isSecondary𝕊 ((v # \(Val (SelState α) _) -> α.persistent)) then "cell selected-secondary"
-   else "cell unselected"
+cell_classes col v
+   | col == indexKey = "cell unselected"
+   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell selected"
+   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell selected-transient"
+   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell selected-secondary"
+   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell selected-secondary-transient"
+   | otherwise = "cell unselected"
 
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
