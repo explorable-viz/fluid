@@ -4,8 +4,8 @@ import Prelude hiding (absurd)
 
 import App.Util (HTMLId, OnSel, SelState, 𝕊, from, record, uiHelpers)
 import App.Util.Selector (multiPlotEntry)
-import App.View.BarChart (BarChart) as View
-import App.View.BarChart (barChartHandler, drawBarChart)
+import App.View.BarChart (BarChart') as View
+import App.View.BarChart (barChartHandler, barChartSelState, drawBarChart)
 import App.View.BubbleChart (BubbleChart) as View
 import App.View.BubbleChart (bubbleChartHandler, drawBubbleChart)
 import App.View.LineChart (LineChart) as View
@@ -27,7 +27,7 @@ import Web.Event.EventTarget (eventListener)
 
 data View
    -- one for each constructor of the Fluid 'Plot' data type
-   = BarChart View.BarChart
+   = BarChart View.BarChart'
    | BubbleChart View.BubbleChart
    | LineChart View.LineChart
    | ScatterPlot View.ScatterPlot
@@ -49,7 +49,8 @@ drawView divId suffix onSel = case _ of
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 view :: Partial => String -> Val (SelState 𝕊) -> View
 view _ (Val _ (Constr c (u1 : Nil))) | c == cBarChart =
-   BarChart (record from u1)
+   BarChart { chart, selData: barChartSelState chart }
+   where chart = record from u1
 view _ (Val _ (Constr c (u1 : Nil))) | c == cBubbleChart =
    BubbleChart (record from u1)
 view _ (Val _ (Constr c (u1 : Nil))) | c == cLineChart =

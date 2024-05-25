@@ -10,14 +10,23 @@ function tickEvery (n) {
       : 10 ** m
 }
 
+function setSelectionState (stacks, selData) {
+   stacks.selectAll('rect').each((d, i) => {
+      console.log(selData[d.i])
+   })
+}
+
 function drawBarChart_ (
    {
       uiHelpers: { val, selState, barChartHelpers: { bar_fill, bar_stroke } },
       divId,
       suffix,
       view: {
-         caption,    // String
-         data,       // Array StackedBar
+         chart: {
+            caption,    // String
+            data,       // Array StackedBar
+         },
+         selData        // BarChartSelState
       }
    },
    listener
@@ -103,6 +112,8 @@ function drawBarChart_ (
                }
                mouseenterEnabled = !mouseenterEnabled
             })
+
+      setSelectionState(stacks, selData)
 
       // TODO: enforce that all stacked bars have same set of segments
       const legendLineHeight = 15,

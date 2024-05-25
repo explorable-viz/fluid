@@ -29,7 +29,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, orElse, singleton, spyFunWhen, defined, throw, with, (×), (⊆))
+import Util (type (×), Endo, check, concatM, orElse, singleton, spyFunWhen, defined, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -51,7 +51,7 @@ match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × empty)
    | otherwise = pure (maplet x v × κ × empty)
 match (Val α (V.Constr c vs)) (ElimConstr m) = do
-   with "Pattern mismatch" $ Set.singleton c `consistentWith` keys m
+   withMsg "Pattern mismatch" $ Set.singleton c `consistentWith` keys m
    κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
@@ -104,8 +104,8 @@ apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
-eval γ (Var x) _ = with "Variable lookup" $ lookup' x γ
-eval γ (Op op) _ = with "Variable lookup" $ lookup' op γ
+eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
+eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval _ (Int α n) αs = Val <$> new (insert α αs) <@> V.Int n
 eval _ (Float α n) αs = Val <$> new (insert α αs) <@> V.Float n
 eval _ (Str α s) αs = Val <$> new (insert α αs) <@> V.Str s
@@ -140,7 +140,7 @@ eval γ (Lambda α σ) αs =
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
-      Val _ (V.Record xvs) -> with "Record lookup" (lookup' x xvs)
+      Val _ (V.Record xvs) -> withMsg "Record lookup" (lookup' x xvs)
       _ -> throw $ "Found " <> prettyP v <> ", expected record"
 eval γ (App e e') αs = do
    v <- eval γ e αs

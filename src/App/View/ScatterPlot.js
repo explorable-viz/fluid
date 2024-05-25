@@ -78,7 +78,7 @@ function drawScatterPlot_ (
             .append('circle')
                .attr('cx', ([, d]) => x(val(d.x)))
                .attr('cy', ([, d]) => y(val(d.y)))
-               .attr('r', 3)
+               .attr('r', 2)
                .attr('data-y', ([, d]) => val(d.y))
                .attr('stroke-width', 0.5)
                .attr('class', ([, d]) =>
