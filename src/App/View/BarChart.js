@@ -10,15 +10,20 @@ function tickEvery (n) {
       : 10 ** m
 }
 
-function setSelectionState (stacks, selData) {
-   stacks.selectAll('rect').each((d, i) => {
-      console.log(selData[d.i])
+function setSelectionState ({ bar_fill, bar_stroke }, stacks, selData) {
+   // Be careful. Arrow functions don't have their own "this".
+   const color = d3.scaleOrdinal(d3.schemeAccent)
+   stacks.selectAll('rect').each(function (d) {
+      const sel = selData[d.i][d.j]
+      d3.select(this)
+         .attr('fill', bar => { return bar_fill(sel)(color(bar.j)) })
+         .attr('stroke', bar => { return bar_stroke(sel)(color(bar.j)) })
    })
 }
 
 function drawBarChart_ (
    {
-      uiHelpers: { val, selState, barChartHelpers: { bar_fill, bar_stroke } },
+      uiHelpers: { val, selState, barChartHelpers },
       divId,
       suffix,
       view: {
@@ -32,6 +37,7 @@ function drawBarChart_ (
    listener
 ) {
    return () => {
+      const { bar_fill, bar_stroke } = barChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
@@ -113,7 +119,7 @@ function drawBarChart_ (
                mouseenterEnabled = !mouseenterEnabled
             })
 
-      setSelectionState(stacks, selData)
+      setSelectionState(barChartHelpers, stacks, selData)
 
       // TODO: enforce that all stacked bars have same set of segments
       const legendLineHeight = 15,
