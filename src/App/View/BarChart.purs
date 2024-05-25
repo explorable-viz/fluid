@@ -31,19 +31,7 @@ newtype Bar = Bar
    , z :: Selectable Number
    }
 
-type BarChart' =
-   { chart :: BarChart
-   , selData :: BarChartSelState
-   }
-
-type BarChartSelState = Array (Array (SelState 𝕊))
-
--- Selection state actually used in UI
-barChartSelState :: BarChart -> BarChartSelState
-barChartSelState (BarChart r) =
-   r.data <#> \(StackedBar { bars }) -> bars <#> \(Bar { z: _ × α }) -> α
-
-foreign import drawBarChart :: Renderer BarChart'
+foreign import drawBarChart :: Renderer BarChart
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart

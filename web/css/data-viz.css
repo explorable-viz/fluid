@@ -2,11 +2,6 @@
    font-size: 11px;
 }
 
-/* unused? */
-.bar-selected {
-   z-index: 2147483647;
-}
-
 .cell {
    border-radius: 2px;
 }

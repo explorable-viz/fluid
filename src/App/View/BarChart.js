@@ -10,10 +10,10 @@ function tickEvery (n) {
       : 10 ** m
 }
 
-function setSelectionState ({ bar_fill, bar_stroke }, chart, selData) {
+function setSelState ({ selState, barChartHelpers: { bar_fill, bar_stroke } }, chart, { data }) {
    const color = d3.scaleOrdinal(d3.schemeAccent)
    chart.selectAll('.bar').each(function (d) {
-      const sel = selData[d.i][d.j]
+      const sel = selState(data[d.i].bars[d.j].z)
       d3.select(this) // won't work inside arrow function :/
          .attr('fill', bar => { return bar_fill(sel)(color(bar.j)) })
          .attr('stroke', bar => { return bar_stroke(sel)(color(bar.j)) })
@@ -22,31 +22,29 @@ function setSelectionState ({ bar_fill, bar_stroke }, chart, selData) {
 
 function drawBarChart_ (
    {
-      uiHelpers: { val, selState, barChartHelpers },
+      uiHelpers,
       divId,
       suffix,
       view: {
-         chart: {
-            caption,    // String
-            data,       // Array StackedBar
-         },
-         selData        // BarChartSelState
+         caption,    // String
+         data,       // Array StackedBar
       }
    },
    listener
 ) {
    return () => {
+      const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + divId)
-      const chart = div.selectAll('#' + childId)
+      let chart = div.selectAll('#' + childId)
 
       if (!chart.empty()) {
-         setSelectionState(barChartHelpers, chart, selData)
+         setSelState(uiHelpers, chart, { data })
       } else {
-         const chart = div
+         chart = div
             .append('svg')
                .attr('width', width + margin.left + margin.right)
                .attr('height', height + margin.top + margin.bottom)
@@ -106,15 +104,9 @@ function drawBarChart_ (
                .attr('width', x.bandwidth())
                .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
                .attr('stroke-width', _ => strokeWidth)
-               .on('mousedown', (e, d) => { listener(e) })
-               .on('mouseleave', (e, d) => {
-                  console.log(`${e.type}`)
-                  listener(e)
-               })
-               .on('mouseenter', (e, d) => {
-                  console.log(`${e.type}`)
-                  listener(e)
-               })
+               .on('mousedown', e => { listener(e) })
+               .on('mouseenter', e => { listener(e) })
+               .on('mouseleave', e => { listener(e) })
 
          // TODO: enforce that all stacked bars have same set of segments
          const legendLineHeight = 15,
@@ -162,7 +154,7 @@ function drawBarChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
 
-         setSelectionState(barChartHelpers, chart, selData)
+         setSelState(uiHelpers, chart, { data })
       }
    }
 }
