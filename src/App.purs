@@ -71,5 +71,5 @@ main = do
       , atDivId "fig-conv-2" <$> loadFig fig2
       , atDivId "fig-conv-3" <$> loadFig fig3
       , atDivId "fig-4" <$> loadFig energyScatter
-      , -}atDivId "fig-1" <$> loadFig linkedOutputs_spec1.spec
+      , -} atDivId "fig-1" <$> loadFig linkedOutputs_spec1.spec
       ]

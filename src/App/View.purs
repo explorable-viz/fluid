@@ -50,7 +50,8 @@ drawView divId suffix onSel = case _ of
 view :: Partial => String -> Val (SelState 𝕊) -> View
 view _ (Val _ (Constr c (u1 : Nil))) | c == cBarChart =
    BarChart { chart, selData: barChartSelState chart }
-   where chart = record from u1
+   where
+   chart = record from u1
 view _ (Val _ (Constr c (u1 : Nil))) | c == cBubbleChart =
    BubbleChart (record from u1)
 view _ (Val _ (Constr c (u1 : Nil))) | c == cLineChart =
