@@ -10,7 +10,7 @@ function tickEvery (n) {
       : 10 ** m
 }
 
-function setSelectionState ({ selState, barChartHelpers: { bar_fill, bar_stroke } }, chart, { data }) {
+function setSelState ({ selState, barChartHelpers: { bar_fill, bar_stroke } }, chart, { data }) {
    const color = d3.scaleOrdinal(d3.schemeAccent)
    chart.selectAll('.bar').each(function (d) {
       const sel = selState(data[d.i].bars[d.j].z)
@@ -39,12 +39,12 @@ function drawBarChart_ (
             width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + divId)
-      const chart = div.selectAll('#' + childId)
+      let chart = div.selectAll('#' + childId)
 
       if (!chart.empty()) {
-         setSelectionState(uiHelpers, chart, { data })
+         setSelState(uiHelpers, chart, { data })
       } else {
-         const chart = div
+         chart = div
             .append('svg')
                .attr('width', width + margin.left + margin.right)
                .attr('height', height + margin.top + margin.bottom)
@@ -104,9 +104,9 @@ function drawBarChart_ (
                .attr('width', x.bandwidth())
                .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
                .attr('stroke-width', _ => strokeWidth)
-               .on('mousedown', (e, d) => { listener(e) })
-               .on('mouseleave', (e, d) => { listener(e) })
-               .on('mouseenter', (e, d) => { listener(e) })
+               .on('mousedown', e => { listener(e) })
+               .on('mouseenter', e => { listener(e) })
+               .on('mouseleave', e => { listener(e) })
 
          // TODO: enforce that all stacked bars have same set of segments
          const legendLineHeight = 15,
@@ -154,7 +154,7 @@ function drawBarChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
 
-         setSelectionState(uiHelpers, chart, { data })
+         setSelState(uiHelpers, chart, { data })
       }
    }
 }

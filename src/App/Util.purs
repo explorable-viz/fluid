@@ -108,6 +108,12 @@ point_radius (SelState { persistent, transient }) =
       None × None -> point_smallRadius
       _ -> point_smallRadius * 2
 
+point_stroke :: SelState 𝕊 -> Endo String
+point_stroke (SelState { persistent, transient }) col =
+   case persistent × transient of
+      None × None -> col
+      _ -> colorShade col (-30)
+
 indexKey :: String
 indexKey = "__n"
 
@@ -141,6 +147,7 @@ type UIHelpers =
    , lineChartHelpers ::
         { point_smallRadius :: Int
         , point_radius :: SelState 𝕊 -> Int
+        , point_stroke :: SelState 𝕊 -> Endo String
         }
    , tableViewHelpers ::
         { indexKey :: String
@@ -164,6 +171,7 @@ uiHelpers =
    , lineChartHelpers:
         { point_smallRadius
         , point_radius
+        , point_stroke
         }
    , tableViewHelpers:
         { indexKey
