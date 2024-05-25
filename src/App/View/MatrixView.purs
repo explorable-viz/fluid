@@ -14,14 +14,14 @@ import Web.Event.Event (EventType, target, type_)
 import Web.Event.EventTarget (EventTarget)
 
 --  (Rendered) matrices are required to have element type Int for now.
-type IntMatrix = Array2 (Selectable Int) × Int × Int
+type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import drawMatrix :: Renderer MatrixView
 
 matrixRep :: MatrixRep (SelState 𝕊) -> IntMatrix
 matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
-   ((unpack int <$> _) <$> vss) × i × j
+   { cells: (unpack int <$> _) <$> vss, i, j }
 
 -- see data binding in .js
 type MatrixCellCoordinate = { i :: Int, j :: Int }

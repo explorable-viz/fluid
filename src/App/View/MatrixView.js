@@ -2,16 +2,13 @@
 
 import * as d3 from "d3"
 
-function intMatrix_nss (v) {
-   return v._1
-}
-
-function intMatrix_i_max (v) {
-   return v._2._1
-}
-
-function intMatrix_j_max (v) {
-   return v._2._2
+function setSelState ({ selState, matrixViewHelpers: { matrix_cell_classes } }, rootElement, { matrix }) {
+   rootElement.selectAll('.matrix-cell').each(function (cell) {
+      const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
+      console.log(sel)
+      d3.select(this) // won't work inside arrow function :/
+         .attr('class', matrix_cell_classes(sel))
+   })
 }
 
 function drawMatrix_ (
@@ -31,7 +28,7 @@ function drawMatrix_ (
       const strokeWidth = 0.5
       const w = 30, h = 30
       const div = d3.select('#' + divId)
-      const [width, height] = [w * intMatrix_j_max(matrix) + strokeWidth, h * intMatrix_i_max(matrix) + strokeWidth]
+      const [width, height] = [w * matrix.j + strokeWidth, h * matrix.i + strokeWidth]
       const hMargin = w / 2
       const vMargin = h / 2
 
@@ -48,7 +45,7 @@ function drawMatrix_ (
       // group for each row
       const grp = rootElement
          .selectAll('g')
-         .data([...intMatrix_nss(matrix).entries()].map(([i, ns]) => { return { i: i + 1, ns } }))
+         .data([...matrix.cells.entries()].map(([i, ns]) => { return { i: i + 1, ns } }))
          .enter()
          .append('g')
          .attr(
@@ -58,9 +55,7 @@ function drawMatrix_ (
 
       const rect = grp
          .selectAll('rect')
-         .data(({ i, ns }) => [...ns.entries()].map(([j, n]) => {
-            return { i, j: j + 1, n }
-         }))
+         .data(({ i, ns }) => [...ns.entries()].map(([j, n]) => { return { i, j: j + 1, n } }))
          .enter()
 
       rect
@@ -70,6 +65,7 @@ function drawMatrix_ (
          .attr('height', h)
          .attr('class', ({ n }) => matrix_cell_classes(selState(n)))
          .attr('stroke-width', strokeWidth)
+         .on('mousedown', e => { listener(e) })
 
       rect
          .append('text')
@@ -89,8 +85,7 @@ function drawMatrix_ (
          .attr('dominant-baseline', 'middle')
          .attr('text-anchor', 'left')
 
-      rootElement.selectAll('rect')
-         .on('mousedown', e => { listener(e) })
+      setSelState({ selState, matrixViewHelpers: { matrix_cell_classes } }, rootElement, { matrix })
    }
 }
 
