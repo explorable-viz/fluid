@@ -88,7 +88,6 @@ colorShade col n =
          # clamp 0 255
          # toStringAs hexadecimal
 
--- TODO: lift more UI logic to PureScript.
 bar_fill :: SelState 𝕊 -> Endo String
 bar_fill s col = case s of
    SelState { persistent: None } -> col
@@ -99,6 +98,15 @@ bar_stroke (SelState { persistent, transient }) col =
    case persistent × transient of
       None × None -> col
       _ -> colorShade col (-70)
+
+point_smallRadius :: Int
+point_smallRadius = 2
+
+point_radius :: SelState 𝕊 -> Int
+point_radius (SelState { persistent, transient }) =
+   case persistent × transient of
+      None × None -> point_smallRadius
+      _ -> point_smallRadius * 2
 
 indexKey :: String
 indexKey = "__n"
@@ -130,6 +138,10 @@ type UIHelpers =
         { bar_fill :: SelState 𝕊 -> Endo String
         , bar_stroke :: SelState 𝕊 -> Endo String
         }
+   , lineChartHelpers ::
+        { point_smallRadius :: Int
+        , point_radius :: SelState 𝕊 -> Int
+        }
    , tableViewHelpers ::
         { indexKey :: String
         , record_isUsed :: Dict (Val (SelState 𝕊)) -> 𝔹
@@ -148,6 +160,10 @@ uiHelpers =
    , barChartHelpers:
         { bar_fill
         , bar_stroke
+        }
+   , lineChartHelpers:
+        { point_smallRadius
+        , point_radius
         }
    , tableViewHelpers:
         { indexKey

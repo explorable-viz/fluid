@@ -33,7 +33,8 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { val, selState, isNone𝕊, colorShade } = uiHelpers
+      const { val, selState, isNone𝕊, colorShade, lineChartHelpers } = uiHelpers
+      const { point_smallRadius, point_radius } = lineChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
@@ -74,7 +75,6 @@ function drawLineChart_ (
          .attr('class', 'line')
          .attr('d', ([_, d]) => line1(d.data))
 
-      const smallRadius = 2
       for (const n_plot of plots.entries()) {
          const [i, plot] = n_plot,
                col = color(names.indexOf(val(plot.name)))
@@ -83,7 +83,7 @@ function drawLineChart_ (
             .enter()
             .append('g')
             .append('circle')
-            .attr('r', ([, d]) => isNone𝕊(selState(d.y).persistent) ? smallRadius : smallRadius * 2)
+            .attr('r', ([, d]) => point_radius(selState(d.y)))
             .attr('cx', ([, d]) => x(val(d.x)))
             .attr('cy', ([, d]) => y(val(d.y)))
             .attr('fill', col)
@@ -126,9 +126,9 @@ function drawLineChart_ (
 
       legend.append('circle')
          .attr('fill', d => color(names.indexOf(d)))
-         .attr('r', smallRadius)
-         .attr('cx', legendLineHeight / 2 - smallRadius / 2)
-         .attr('cy', legendLineHeight / 2 - smallRadius / 2)
+         .attr('r', point_smallRadius)
+         .attr('cx', legendLineHeight / 2 - point_smallRadius / 2)
+         .attr('cy', legendLineHeight / 2 - point_smallRadius / 2)
 
       svg.append('text')
          .text(val(caption))

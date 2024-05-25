@@ -10,10 +10,10 @@ function tickEvery (n) {
       : 10 ** m
 }
 
-function setSelectionState ({ bar_fill, bar_stroke }, chart, selData) {
+function setSelectionState ({ selState, barChartHelpers: { bar_fill, bar_stroke } }, chart, { data }) {
    const color = d3.scaleOrdinal(d3.schemeAccent)
    chart.selectAll('.bar').each(function (d) {
-      const sel = selData[d.i][d.j]
+      const sel = selState(data[d.i].bars[d.j].z)
       d3.select(this) // won't work inside arrow function :/
          .attr('fill', bar => { return bar_fill(sel)(color(bar.j)) })
          .attr('stroke', bar => { return bar_stroke(sel)(color(bar.j)) })
@@ -22,20 +22,18 @@ function setSelectionState ({ bar_fill, bar_stroke }, chart, selData) {
 
 function drawBarChart_ (
    {
-      uiHelpers: { val, barChartHelpers },
+      uiHelpers,
       divId,
       suffix,
       view: {
-         chart: {
-            caption,    // String
-            data,       // Array StackedBar
-         },
-         selData        // BarChartSelState
+         caption,    // String
+         data,       // Array StackedBar
       }
    },
    listener
 ) {
    return () => {
+      const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
@@ -44,7 +42,7 @@ function drawBarChart_ (
       const chart = div.selectAll('#' + childId)
 
       if (!chart.empty()) {
-         setSelectionState(barChartHelpers, chart, selData)
+         setSelectionState(uiHelpers, chart, { data })
       } else {
          const chart = div
             .append('svg')
@@ -156,7 +154,7 @@ function drawBarChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
 
-         setSelectionState(barChartHelpers, chart, selData)
+         setSelectionState(uiHelpers, chart, { data })
       }
    }
 }
