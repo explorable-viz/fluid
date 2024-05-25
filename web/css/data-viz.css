@@ -31,17 +31,17 @@
    background-color: #ffffff;
 }
 
-.matrix-cell-selected {
+.matrix-cell.selected {
    fill: LightGreen;
    stroke: DarkGray;
 }
 
-.matrix-cell-selected-secondary {
+.matrix-cell.selected-secondary {
    fill: rgb(226, 226, 226);
    stroke: DarkGray;
 }
 
-.matrix-cell-unselected {
+.matrix-cell.unselected {
    fill: White;
    stroke: DarkGray;
 }

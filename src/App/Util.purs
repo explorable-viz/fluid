@@ -132,6 +132,12 @@ cell_classes col v
    | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell selected-secondary-transient"
    | otherwise = "cell unselected"
 
+matrix_cell_classes :: SelState 𝕊 -> String
+matrix_cell_classes (SelState { persistent }) =
+   if isPrimary𝕊 persistent then "matrix-cell selected"
+   else if isSecondary𝕊 persistent then "matrix-cell selected-secondary"
+   else "matrix-cell unselected"
+
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
    { val :: forall a. Selectable a -> a
@@ -148,6 +154,9 @@ type UIHelpers =
         { point_smallRadius :: Int
         , point_radius :: SelState 𝕊 -> Int
         , point_stroke :: SelState 𝕊 -> Endo String
+        }
+   , matrixViewHelpers ::
+        { matrix_cell_classes :: SelState 𝕊 -> String
         }
    , tableViewHelpers ::
         { indexKey :: String
@@ -172,6 +181,9 @@ uiHelpers =
         { point_smallRadius
         , point_radius
         , point_stroke
+        }
+   , matrixViewHelpers:
+        { matrix_cell_classes
         }
    , tableViewHelpers:
         { indexKey

@@ -16,7 +16,7 @@ function intMatrix_j_max (v) {
 
 function drawMatrix_ (
    {
-      uiHelpers: { val, selState, isPrimary𝕊, isSecondary𝕊 },
+      uiHelpers: { val, selState, matrixViewHelpers: { matrix_cell_classes } },
       divId,
       suffix,
       view: {
@@ -64,12 +64,7 @@ function drawMatrix_ (
          .attr('x', (_, j) => w * j)
          .attr('width', w)
          .attr('height', h)
-         .attr('class', ([, n]) =>
-            isPrimary𝕊(selState(n).persistent)
-            ? 'matrix-cell-selected'
-            : isSecondary𝕊(selState(n).persistent)
-               ? 'matrix-cell-selected-secondary'
-               : 'matrix-cell-unselected')
+         .attr('class', ([, n]) => matrix_cell_classes(selState(n)))
          .attr('stroke-width', strokeWidth)
 
       rect

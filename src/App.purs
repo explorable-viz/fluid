@@ -7,7 +7,6 @@ import App.Util (runAffs_)
 import Bind ((↦))
 import Effect (Effect)
 import Module (File(..))
-import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
 
 fig1 :: FigSpec
 fig1 =
@@ -67,9 +66,11 @@ main = do
       ]
    -}
    runAffs_ drawFig
-      [ {-atDivId "fig-conv-1" <$> loadFig fig1
+      [ atDivId "fig-conv-1" <$> loadFig fig1
       , atDivId "fig-conv-2" <$> loadFig fig2
       , atDivId "fig-conv-3" <$> loadFig fig3
+      {-
       , atDivId "fig-4" <$> loadFig energyScatter
-      , -} atDivId "fig-1" <$> loadFig linkedOutputs_spec1.spec
+      , atDivId "fig-1" <$> loadFig linkedOutputs_spec1.spec
+      -}
       ]
