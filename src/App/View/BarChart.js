@@ -37,7 +37,7 @@ function drawBarChart_ (
    listener
 ) {
    return () => {
-      const { bar_fill, bar_stroke } = barChartHelpers
+//      const { bar_fill, bar_stroke } = barChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
@@ -103,9 +103,9 @@ function drawBarChart_ (
             .attr('y', bar => { return y(bar.y + bar.height) })
             .attr('width', x.bandwidth())
             .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
-            .attr('fill', bar => { return bar_fill(bar.sel)(color(bar.j)) })
+//            .attr('fill', bar => { return bar_fill(bar.sel)(color(bar.j)) })
             .attr('stroke-width', _ => strokeWidth)
-            .attr('stroke', bar => { return bar_stroke(bar.sel)(color(bar.j)) })
+//            .attr('stroke', bar => { return bar_stroke(bar.sel)(color(bar.j)) })
             .on('mousedown', (e, d) => { listener(e) })
             .on('mouseleave', (e, d) => {
                console.log(`${e.type}`)
