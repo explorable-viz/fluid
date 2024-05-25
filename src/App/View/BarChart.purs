@@ -51,7 +51,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
       , z: get_intOrNumber f_z r
       }
 
--- see data binding in BarChart.js
+-- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
 
 barChartHandler :: Handler

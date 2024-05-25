@@ -55,7 +55,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
 instance Reflect (Val (SelState 𝕊)) LinePlot where
    from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
--- see data binding in BarChart.js
+-- see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int }
 
 lineChartHandler :: Handler

@@ -37,16 +37,18 @@ function drawMatrix_ (
 
       div.selectAll('#' + childId).remove()
 
-      const svg = div
+      const rootElement = div
          .append('svg')
          .attr('id', childId)
+
+      rootElement
          .attr('width', width + hMargin)
          .attr('height', height + vMargin)
 
       // group for each row
-      const grp = svg
+      const grp = rootElement
          .selectAll('g')
-         .data([...intMatrix_nss(matrix).entries()].map(([i, ns]) => [i + 1, ns]))
+         .data([...intMatrix_nss(matrix).entries()].map(([i, ns]) => { return { i: i + 1, ns } }))
          .enter()
          .append('g')
          .attr(
@@ -56,7 +58,9 @@ function drawMatrix_ (
 
       const rect = grp
          .selectAll('rect')
-         .data(([i, ns]) => [...ns.entries()].map(([j, n]) => [[i, j + 1], n]))
+         .data(({ i, ns }) => [...ns.entries()].map(([j, n]) => {
+            return { i, j: j + 1, n }
+         }))
          .enter()
 
       rect
@@ -64,12 +68,12 @@ function drawMatrix_ (
          .attr('x', (_, j) => w * j)
          .attr('width', w)
          .attr('height', h)
-         .attr('class', ([, n]) => matrix_cell_classes(selState(n)))
+         .attr('class', ({ n }) => matrix_cell_classes(selState(n)))
          .attr('stroke-width', strokeWidth)
 
       rect
          .append('text')
-         .text(([, n]) => val(n))
+         .text(({ n }) => val(n))
          .attr('x', (_, j) => w * (j + 0.5))
          .attr('y', 0.5 * h)
          .attr('class', 'matrix-cell-text')
@@ -77,7 +81,7 @@ function drawMatrix_ (
          .attr('dominant-baseline', 'middle')
          .attr('pointer-events', 'none')
 
-      svg.append('text')
+      rootElement.append('text')
          .text(title)
          .attr('x', hMargin / 2)
          .attr('y', vMargin / 2)
@@ -85,7 +89,7 @@ function drawMatrix_ (
          .attr('dominant-baseline', 'middle')
          .attr('text-anchor', 'left')
 
-      svg.selectAll('rect')
+      rootElement.selectAll('rect')
          .on('mousedown', e => { listener(e) })
    }
 }
