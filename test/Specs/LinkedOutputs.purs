@@ -12,8 +12,7 @@ import Test.Util.Suite (TestLinkedOutputsSpec)
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
-        { divId: "fig-1"
-        , datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
+        { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
         , imports: []
         , file: File "linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
@@ -36,8 +35,7 @@ linkedOutputs_spec1 =
 linkedOutputs_spec2 :: TestLinkedOutputsSpec
 linkedOutputs_spec2 =
    { spec:
-        { divId: "fig-1"
-        , datasets:
+        { datasets:
              [ "renewables" ↦ "example/linked-inputs/renewables"
              , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
              ]
@@ -59,8 +57,7 @@ linkedOutputs_spec2 =
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
-          { divId: ""
-          , datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
+          { datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
@@ -70,8 +67,7 @@ linkedOutputs_cases =
           >>> fst (fst neg >>> snd (fst neg))
      }
    , { spec:
-          { divId: ""
-          , datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
+          { datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
           , imports: [ "lib/convolution" ]
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]

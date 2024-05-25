@@ -2,89 +2,22 @@
 
 import * as d3 from "d3"
 
-// =================================================================
-// This prelude currently duplicated across all FFI implementations.
-// =================================================================
-
-function curry2 (f) {
-   return x1 => x2 => f(x1, x2)
-}
-
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
-}
-
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
-   }
-   return i == j
-}
-
-// Selectable projections
-function val(x) {
-   return x._1
-}
-
-function selState(x) {
-   return x._2
-}
-
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
-// https://stackoverflow.com/questions/5560248
-function colorShade (col, amt) {
-   col = col.replace(/^#/, '')
-   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
-
-   let [r, g, b] = col.match(/.{2}/g);
-   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
-
-   r = Math.max(Math.min(255, r), 0).toString(16)
-   g = Math.max(Math.min(255, g), 0).toString(16)
-   b = Math.max(Math.min(255, b), 0).toString(16)
-
-   const rr = (r.length < 2 ? '0' : '') + r
-   const gg = (g.length < 2 ? '0' : '') + g
-   const bb = (b.length < 2 ? '0' : '') + b
-
-   return `#${rr}${gg}${bb}`
-}
-
-// =================================================================
-// End of duplicated prelude
-// =================================================================
-
 function drawBubbleChart_ (
-   id,
-   suffix,
    {
-      caption, // String
-      data,   // Array BubbleRecord
-      xlabel,
-      ylabel,
+      uiHelpers: { val, selState, isNone𝕊, colorShade },
+      divId,
+      suffix,
+      view: {
+         caption, // String
+         data,    // Array BubbleRecord
+         xlabel,
+         ylabel,
+      }
    },
    listener
 ) {
    return () => {
-      const childId = id + '-' + suffix
+      const childId = divId + '-' + suffix
       var max_width = 340
       var max_height = 190
       const max_z_rad = Math.min(max_width, max_height) / 10
@@ -97,7 +30,7 @@ function drawBubbleChart_ (
 
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
-      const div = d3.select('#' + id)
+      const div = d3.select('#' + divId)
 
       div.selectAll('#' + childId).remove()
 
@@ -159,13 +92,13 @@ function drawBubbleChart_ (
             .attr('cy', ([, d]) => y(val(d.y)))
             .attr('r', ([, d]) => z(val(d.z)))
             .attr('stroke', ([, d]) =>
-               𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) && 𝕊_isNone(selState(d.z).persistent)
-               ? colorShade(c(val(d.c)), -30) : 'black')
+               isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) && isNone𝕊(selState(d.z).persistent)
+               ? colorShade(c(val(d.c)))(-30) : 'black')
             .style('fill', ([, d]) =>
-               𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) && 𝕊_isNone(selState(d.z).persistent)
-               ? c(val(d.c)): colorShade(c(val(d.c)), -50))
+               isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) && isNone𝕊(selState(d.z).persistent)
+               ? c(val(d.c)): colorShade(c(val(d.c)))(-50))
             .style('class', ([, d]) =>
-               𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) && 𝕊_isNone(selState(d.z).persistent)
+               isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) && isNone𝕊(selState(d.z).persistent)
                ? 'dot-unselected' : 'dot-selected')
             .on('mousedown', (e, d) => { listener(e) })
 
@@ -190,4 +123,4 @@ function drawBubbleChart_ (
    }
 }
 
-export var drawBubbleChart = curry4(drawBubbleChart_)
+export var drawBubbleChart = x1 => x2 => drawBubbleChart_(x1, x2)

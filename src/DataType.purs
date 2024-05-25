@@ -18,7 +18,7 @@ import Dict (Dict)
 import Dict (fromFoldable) as O
 import Effect.Exception (Error)
 import Partial.Unsafe (unsafePartial)
-import Util (type (×), absurd, definitely', error, orElse, with, (=<<<), (×), (≞))
+import Util (type (×), absurd, definitely', error, orElse, withMsg, (=<<<), (×), (≞))
 import Util.Map (keys, lookup)
 
 type TypeName = String
@@ -72,7 +72,7 @@ consistentWith :: forall m. MonadError Error m => Set Ctr -> Set Ctr -> m Unit
 consistentWith cs cs' = void do
    d <- dataTypeFor cs'
    d' <- dataTypeFor cs'
-   with ("constructors of " <> show d' <> " do not include " <> (show (S.map showCtr cs))) (d ≞ d')
+   withMsg ("constructors of " <> show d' <> " do not include " <> (show (S.map showCtr cs))) (d ≞ d')
 
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
@@ -84,7 +84,7 @@ arity c = do
 
 checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = void $
-   with ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
+   withMsg ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
 
 -- Used internally by primitives, desugaring or rendering layer.
 cBarChart = "BarChart" :: Ctr -- Plot

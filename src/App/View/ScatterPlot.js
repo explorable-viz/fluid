@@ -1,91 +1,23 @@
 "use strict"
 
 import * as d3 from "d3"
-import * as d3tip from "d3-tip"
-
-// =================================================================
-// This prelude currently duplicated across all FFI implementations.
-// =================================================================
-
-function curry2 (f) {
-   return x1 => x2 => f(x1, x2)
-}
-
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
-}
-
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
-   }
-   return i == j
-}
-
-// Selectable projections
-function val(x) {
-   return x._1
-}
-
-function selState(x) {
-   return x._2
-}
-
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
-// https://stackoverflow.com/questions/5560248
-function colorShade (col, amt) {
-   col = col.replace(/^#/, '')
-   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
-
-   let [r, g, b] = col.match(/.{2}/g);
-   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
-
-   r = Math.max(Math.min(255, r), 0).toString(16)
-   g = Math.max(Math.min(255, g), 0).toString(16)
-   b = Math.max(Math.min(255, b), 0).toString(16)
-
-   const rr = (r.length < 2 ? '0' : '') + r
-   const gg = (g.length < 2 ? '0' : '') + g
-   const bb = (b.length < 2 ? '0' : '') + b
-
-   return `#${rr}${gg}${bb}`
-}
-
-// =================================================================
-// End of duplicated prelude
-// =================================================================
 
 function drawScatterPlot_ (
-   id,
-   suffix,
    {
-      caption, // String
-      data,    // Array ScatterRecord
-      xlabel,
-      ylabel
+      uiHelpers: { val, selState, isNone𝕊 },
+      divId,
+      suffix,
+      view: {
+         caption, // String
+         data,    // Array ScatterRecord
+         xlabel,
+         ylabel
+      }
    },
    listener
 ) {
    return () => {
-      const childId = id + '-' + suffix
+      const childId = divId + '-' + suffix
       var max_width = 360
       var max_height = 360
       const x_max = Math.ceil(Math.max(...data.map(d => val(d.x))))
@@ -97,7 +29,7 @@ function drawScatterPlot_ (
 
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
-      const div = d3.select('#' + id)
+      const div = d3.select('#' + divId)
 
       div.selectAll('#' + childId).remove()
 
@@ -146,11 +78,11 @@ function drawScatterPlot_ (
             .append('circle')
                .attr('cx', ([, d]) => x(val(d.x)))
                .attr('cy', ([, d]) => y(val(d.y)))
-               .attr('r', 3)
+               .attr('r', 2)
                .attr('data-y', ([, d]) => val(d.y))
                .attr('stroke-width', 0.5)
                .attr('class', ([, d]) =>
-                  𝕊_isNone(selState(d.x).persistent) && 𝕊_isNone(selState(d.y).persistent) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
+                  isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
                .on('mousedown', (e, d) => {listener(e)})
 
          svg.append('text')
@@ -163,4 +95,4 @@ function drawScatterPlot_ (
    }
 }
 
-export var drawScatterPlot = curry4(drawScatterPlot_)
+export var drawScatterPlot = x1 => x2 => drawScatterPlot_(x1, x2)

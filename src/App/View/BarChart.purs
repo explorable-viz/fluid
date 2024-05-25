@@ -2,7 +2,7 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Selectable, Selector, 𝕊, SelState, from, get_intOrNumber, record, selector, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, selector, unsafeEventData)
 import App.Util.Selector (barChart, barSegment)
 import Data.Maybe (Maybe)
 import Data.Profunctor.Strong ((&&&))
@@ -31,7 +31,19 @@ newtype Bar = Bar
    , z :: Selectable Number
    }
 
-foreign import drawBarChart :: Renderer BarChart
+type BarChart' =
+   { chart :: BarChart
+   , selData :: BarChartSelState
+   }
+
+type BarChartSelState = Array (Array (SelState 𝕊))
+
+-- Selection state actually used in UI
+barChartSelState :: BarChart -> BarChartSelState
+barChartSelState (BarChart r) =
+   r.data <#> \(StackedBar { bars }) -> bars <#> \(Bar { z: _ × α }) -> α
+
+foreign import drawBarChart :: Renderer BarChart'
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart

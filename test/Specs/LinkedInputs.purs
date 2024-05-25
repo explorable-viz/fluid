@@ -12,8 +12,7 @@ import Test.Util.Suite (TestLinkedInputsSpec)
 linkedInputs_spec1 :: TestLinkedInputsSpec
 linkedInputs_spec1 =
    { spec:
-        { divId: "fig-1"
-        , imports: []
+        { imports: []
         , datasets:
              [ "countries" ↦ "example/linked-inputs/countries"
              , "cities" ↦ "example/linked-inputs/cities"
@@ -34,8 +33,7 @@ linkedInputs_spec1 =
 linkedInputs_spec2 :: TestLinkedInputsSpec
 linkedInputs_spec2 =
    { spec:
-        { divId: "fig-2"
-        , imports: []
+        { imports: []
         , datasets:
              [ "countries" ↦ "example/linked-inputs/countries"
              , "cities" ↦ "example/linked-inputs/cities"
@@ -57,7 +55,7 @@ linkedInputs_spec2 =
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
-   { spec: energyScatter { divId = "fig-3" }
+   { spec: energyScatter
    , δ_in: "nonRenewables" ↦ listElement 51 (field "coalCap" neg)
    , in_expect:
         envVal "nonRenewables" (listElement 51 (field "coalCap" neg >>> field "gasCap" neg >>> field "nuclearCap" neg >>> field "petrolCap" neg)) >>>
@@ -71,7 +69,7 @@ linkedInputs_spec3 =
 
 linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
-   { spec: energyScatter { divId = "fig-2" }
+   { spec: energyScatter
    , δ_in: "renewables" ↦ listElement 204 (field "capacity" neg)
    , in_expect:
         envVal "nonRenewables"
@@ -94,8 +92,7 @@ linkedInputs_spec4 =
 linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
-        { divId: "fig-1"
-        , file: File "linked-inputs/mini-energyscatter"
+        { file: File "linked-inputs/mini-energyscatter"
         , imports: []
         , datasets:
              [ "nonRenewables" ↦ "example/linked-inputs/mini-non-renewables"

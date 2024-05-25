@@ -25,7 +25,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (×), both, check, orElse, singleton, defined, throw, unzip, with)
+import Util (type (×), (×), both, check, orElse, singleton, defined, throw, unzip, withMsg)
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set (empty, (∪))
@@ -40,7 +40,7 @@ match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
    | otherwise = pure (maplet x v × κ × top × MatchVar x (erase v))
 match (Val α (V.Constr c vs)) (ElimConstr m) = do
-   with "Pattern mismatch" $ singleton c `consistentWith` keys m
+   withMsg "Pattern mismatch" $ singleton c `consistentWith` keys m
    κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × α' × ws <- matchMany vs κ
    pure (γ × κ' × (α ∧ α') × MatchConstr c ws)

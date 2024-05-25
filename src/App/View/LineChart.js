@@ -2,107 +2,47 @@
 
 import * as d3 from "d3"
 
-// =================================================================
-// This prelude currently duplicated across all FFI implementations.
-// =================================================================
-
-function curry2 (f) {
-   return x1 => x2 => f(x1, x2)
-}
-
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
-}
-
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
+function max_y ({ val }) {
+   return linePlot => {
+      return Math.max(...linePlot.data.map(point => val(point.y)))
    }
-   return i == j
 }
 
-// Selectable projections
-function val(x) {
-   return x._1
+function min_x ({ val }) {
+   return linePlot => {
+      return Math.min(...linePlot.data.map(point => val(point.x)))
+   }
 }
 
-function selState(x) {
-   return x._2
-}
-
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
-// https://stackoverflow.com/questions/5560248
-function colorShade (col, amt) {
-   col = col.replace(/^#/, '')
-   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
-
-   let [r, g, b] = col.match(/.{2}/g);
-   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
-
-   r = Math.max(Math.min(255, r), 0).toString(16)
-   g = Math.max(Math.min(255, g), 0).toString(16)
-   b = Math.max(Math.min(255, b), 0).toString(16)
-
-   const rr = (r.length < 2 ? '0' : '') + r
-   const gg = (g.length < 2 ? '0' : '') + g
-   const bb = (b.length < 2 ? '0' : '') + b
-
-   return `#${rr}${gg}${bb}`
-}
-
-// =================================================================
-// End of duplicated prelude
-// =================================================================
-
-function max_y (linePlot) {
-   return Math.max(...linePlot.data.map(point => val(point.y)))
-}
-
-function min_x (linePlot) {
-   return Math.min(...linePlot.data.map(point => val(point.x)))
-}
-
-function max_x (linePlot) {
-   return Math.max(...linePlot.data.map(point => val(point.x)))
+function max_x ({ val }) {
+   return linePlot => {
+      return Math.max(...linePlot.data.map(point => val(point.x)))
+   }
 }
 
 function drawLineChart_ (
-   id,
-   suffix,
    {
-      caption,   // String
-      plots,     // Array LinePlot
+      uiHelpers,
+      divId,
+      suffix,
+      view: {
+         caption,   // String
+         plots,     // Array LinePlot
+      }
    },
    listener
 ) {
    return () => {
-      const childId = id + '-' + suffix
+      const { val, selState, isNone𝕊, colorShade } = uiHelpers
+      const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom,
-            y_max = Math.max(...plots.map(max_y)),
-            x_min = Math.min(...plots.map(min_x)),
-            x_max = Math.max(...plots.map(max_x)),
+            y_max = Math.max(...plots.map(max_y(uiHelpers))),
+            x_min = Math.min(...plots.map(min_x(uiHelpers))),
+            x_max = Math.max(...plots.map(max_x(uiHelpers))),
             names = plots.map(plot => val(plot.name))
-      const div = d3.select('#' + id)
+      const div = d3.select('#' + divId)
 
       div.selectAll('#' + childId).remove()
 
@@ -143,11 +83,11 @@ function drawLineChart_ (
             .enter()
             .append('g')
             .append('circle')
-            .attr('r', ([, d]) => 𝕊_isNone(selState(d.y).persistent) ? smallRadius : smallRadius * 2)
+            .attr('r', ([, d]) => isNone𝕊(selState(d.y).persistent) ? smallRadius : smallRadius * 2)
             .attr('cx', ([, d]) => x(val(d.x)))
             .attr('cy', ([, d]) => y(val(d.y)))
             .attr('fill', col)
-            .attr('stroke', ([, d]) => 𝕊_isNone(selState(d.y).persistent) ? col : colorShade(col, -30))
+            .attr('stroke', ([, d]) => isNone𝕊(selState(d.y).persistent) ? col : colorShade(col)(-30))
             .on('mousedown', (e, d) => { listener(e) })
       }
 
@@ -200,4 +140,4 @@ function drawLineChart_ (
    }
 }
 
-export var drawLineChart = curry4(drawLineChart_)
+export var drawLineChart = x1 => x2 => drawLineChart_(x1, x2)
