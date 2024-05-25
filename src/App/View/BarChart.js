@@ -22,7 +22,7 @@ function setSelectionState ({ bar_fill, bar_stroke }, chart, selData) {
 
 function drawBarChart_ (
    {
-      uiHelpers: { val, selState, barChartHelpers },
+      uiHelpers: { val, barChartHelpers },
       divId,
       suffix,
       view: {
@@ -107,14 +107,8 @@ function drawBarChart_ (
                .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
                .attr('stroke-width', _ => strokeWidth)
                .on('mousedown', (e, d) => { listener(e) })
-               .on('mouseleave', (e, d) => {
-                  console.log(`${e.type}`)
-                  listener(e)
-               })
-               .on('mouseenter', (e, d) => {
-                  console.log(`${e.type}`)
-                  listener(e)
-               })
+               .on('mouseleave', (e, d) => { listener(e) })
+               .on('mouseenter', (e, d) => { listener(e) })
 
          // TODO: enforce that all stacked bars have same set of segments
          const legendLineHeight = 15,
