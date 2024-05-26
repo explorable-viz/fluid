@@ -9,6 +9,7 @@ tracing
       , bwdSelection :: Boolean
       , fwdAfterBwd :: Boolean
       , mediatingData :: Boolean
+      , mouseEvent :: Boolean
       }
 
 tracing =
@@ -19,6 +20,7 @@ tracing =
    , bwdSelection: false
    , fwdAfterBwd: false
    , mediatingData: false
+   , mouseEvent: true
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,

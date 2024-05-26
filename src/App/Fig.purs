@@ -1,6 +1,6 @@
 module App.Fig where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (HTMLId, SelState, Selector, 𝕊, as𝕊, selState, to𝕊)
@@ -11,6 +11,7 @@ import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
+import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
@@ -22,7 +23,7 @@ import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, spyWhen, (×))
+import Util (type (×), AffError, Endo, assert, spyWhen, (×))
 import Util.Map (get, mapWithKey)
 import Val (Env, EnvExpr(..), Val, unrestrictGC)
 
@@ -52,7 +53,7 @@ output = "output"
 -- TODO: replace (expensive) botOf γ by per-variable botOf
 selectOutput :: Selector Val -> Endo Fig
 selectOutput δv fig@{ dir, γ, v } = fig
-   { v = δv v
+   { v = assert (v == botOf v) $ δv v -- this should NOT be true in general
    , γ = if dir == LinkedInputs then botOf γ else γ
    , dir = LinkedOutputs
    }
@@ -64,17 +65,14 @@ selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
    , dir = LinkedInputs
    }
 
-drawFig :: { fig :: Fig, divId :: HTMLId } -> Effect Unit
-drawFig { fig, divId } = do
-   drawView divId output (\δv -> drawFig { fig: selectOutput δv fig, divId }) out_view
+drawFig :: HTMLId -> Fig -> Effect Unit
+drawFig divId fig = do
+   drawView divId output (drawFig divId <<< flip selectOutput fig) out_view
    sequence_ $
-      mapWithKey (\x -> drawView divId x (\δv -> drawFig { fig: selectInput (x ↦ δv) fig, divId })) in_views
+      mapWithKey (\x -> drawView divId x (drawFig divId <<< flip (curry selectInput x) fig)) in_views
    where
    out_view × in_views =
       selectionResult fig # unsafePartial (view output *** unwrap >>> mapWithKey view)
-
-atDivId :: String -> Fig -> { fig :: Fig, divId :: HTMLId }
-atDivId divId fig = { fig, divId }
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
@@ -121,7 +119,7 @@ codeMirrorDiv = ("codemirror-" <> _)
 
 drawFigWithCode :: { fig :: Fig, divId :: HTMLId } -> Effect Unit
 drawFigWithCode { fig, divId } = do
-   drawFig { fig, divId }
+   drawFig divId fig
    addEditorView (codeMirrorDiv divId) >>= drawCode (prettyP fig.s)
 
 drawCode :: String -> EditorView -> Effect Unit

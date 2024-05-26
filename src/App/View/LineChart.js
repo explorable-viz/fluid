@@ -20,10 +20,16 @@ function max_x ({ val }) {
    }
 }
 
+const logging = {
+   setSelState: false
+}
+
 function setSelState ({ selState, lineChartHelpers: { point_radius, point_stroke } }, nameCol, rootElement, { plots }) {
    rootElement.selectAll('.point').each(function (point) {
       const sel = selState(plots[point.i].data[point.j].y)
-      console.log(`{ persistent: ${sel.persistent.tag}, transient: ${sel.transient.tag}} for element ${point.i, point.j}`)
+      if (logging.setSelState) {
+         console.log(`LineChart: { persistent: ${sel.persistent.tag}, transient: ${sel.transient.tag}} for element ${point.i}, ${point.j}`)
+      }
       d3.select(this) // won't work inside arrow function :/
          .attr('r', point_radius(sel))
          .attr('stroke', point_stroke(sel)(nameCol(point.name)))

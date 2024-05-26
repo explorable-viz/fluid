@@ -25,8 +25,9 @@ import Effect.Class.Console (log)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, neg, (∨))
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
+import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (×), Endo, definitely', error)
+import Util (type (×), Endo, definitely', error, spyWhen, (×))
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
@@ -284,10 +285,13 @@ unsafeEventData :: forall a. Maybe EventTarget -> a
 unsafeEventData target = (unsafeCoerce $ definitely' target).__data__
 
 selector :: EventType -> Selector Val
-selector (EventType "mousedown") = (over SelState (\s -> s { persistent = neg s.persistent }) <$> _)
-selector (EventType "mouseenter") = (over SelState (_ { transient = true }) <$> _)
-selector (EventType "mouseleave") = (over SelState (_ { transient = false }) <$> _)
-selector (EventType _) = error "Unsupported event type"
+selector = case _ of
+   EventType "mousedown" -> (over SelState (\s -> report "mousedown" (s { persistent = neg s.persistent })) <$> _)
+   EventType "mouseenter" -> (over SelState (\s -> report "mouseenter" (s { transient = true })) <$> _)
+   EventType "mouseleave" -> (over SelState (\s -> report "mouseleave" (s { transient = false })) <$> _)
+   EventType _ -> error "Unsupported event type"
+   where
+   report = flip (spyWhen tracing.mouseEvent) show
 
 -- ======================
 -- boilerplate
@@ -299,6 +303,7 @@ instance Show 𝕊 where
 derive instance Newtype (SelState a) _
 derive instance Functor SelState
 
+derive instance Ord a => Ord (SelState a)
 derive instance Eq a => Eq (SelState a)
 derive newtype instance Show a => Show (SelState a)
 

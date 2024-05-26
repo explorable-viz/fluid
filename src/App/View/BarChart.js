@@ -10,13 +10,20 @@ function tickEvery (n) {
       : 10 ** m
 }
 
+const logging = {
+   setSelState: false
+}
+
 function setSelState ({ selState, barChartHelpers: { bar_fill, bar_stroke } }, rootElement, { data }) {
    const color = d3.scaleOrdinal(d3.schemeAccent)
-   rootElement.selectAll('.bar').each(function (d) {
-      const sel = selState(data[d.i].bars[d.j].z)
+   rootElement.selectAll('.bar').each(function (bar) {
+      const sel = selState(data[bar.i].bars[bar.j].z)
+      if (logging.setSelState) {
+         console.log(`BarChart: { persistent: ${sel.persistent.tag}, transient: ${sel.transient.tag}} for element ${bar.i}, ${bar.j}`)
+      }
       d3.select(this) // won't work inside arrow function :/
-         .attr('fill', bar => { return bar_fill(sel)(color(bar.j)) })
-         .attr('stroke', bar => { return bar_stroke(sel)(color(bar.j)) })
+         .attr('fill', bar_fill(sel)(color(bar.j)))
+         .attr('stroke', bar_stroke(sel)(color(bar.j)))
    })
 }
 

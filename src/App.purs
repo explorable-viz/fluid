@@ -2,12 +2,14 @@ module App where
 
 import Prelude hiding (absurd)
 
-import App.Fig (FigSpec, atDivId, drawFig, drawFile, loadFig)
+import App.Fig (FigSpec, drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
 import Bind ((↦))
+import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..), Folder(..), loadFile')
 import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
+import Util ((×))
 
 fig1 :: FigSpec
 fig1 =
@@ -64,10 +66,10 @@ main = do
       , loadFile' (Folder "fluid/example/linked-outputs") (File "renewables")
       , loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss")
       ]
-   runAffs_ drawFig
-      [ {-atDivId "fig-4" <$> loadFig energyScatter
-      , -} atDivId "fig-conv-1" <$> loadFig fig1
-      , atDivId "fig-conv-2" <$> loadFig fig2
-      , atDivId "fig-conv-3" <$> loadFig fig3
-      , atDivId "fig-1" <$> loadFig linkedOutputs_spec1.spec
+   runAffs_ (uncurry drawFig)
+      [ {-("fig-4" × _) <$> loadFig energyScatter
+      , -} ("fig-conv-1" × _) <$> loadFig fig1
+      , ("fig-conv-2" × _) <$> loadFig fig2
+      , ("fig-conv-3" × _) <$> loadFig fig3
+      , ("fig-1" × _) <$> loadFig linkedOutputs_spec1.spec
       ]

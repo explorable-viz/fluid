@@ -55,7 +55,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
 instance Reflect (Val (SelState 𝕊)) LinePlot where
    from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
--- see data binding in .js
+-- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int }
 
 lineChartHandler :: Handler
@@ -63,11 +63,7 @@ lineChartHandler = (target &&& type_) >>> pos >>> uncurry togglePoint
    where
    togglePoint :: PointCoordinate -> Endo (Selector Val)
    togglePoint { i, j } =
-      lineChart
-         <<< field f_plots
-         <<< listElement i
-         <<< linePoint j
+      lineChart <<< field f_plots <<< listElement i <<< linePoint j
 
-   -- [Unsafe] 0-based indices of line plot and point within line plot.
    pos :: Maybe EventTarget × EventType -> PointCoordinate × Selector Val
    pos (tgt_opt × ty) = unsafeEventData tgt_opt × selector ty
