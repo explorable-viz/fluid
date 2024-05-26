@@ -27,7 +27,7 @@ matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
 type MatrixCellCoordinate = { i :: Int, j :: Int }
 
 matrixViewHandler :: Handler
-matrixViewHandler = (target &&& type_) >>> pos >>> uncurry \{ i , j } -> matrixElement i j
+matrixViewHandler = (target &&& type_) >>> pos >>> uncurry \{ i, j } -> matrixElement i j
    where
    -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
    pos :: Maybe EventTarget × EventType -> MatrixCellCoordinate × Selector Val

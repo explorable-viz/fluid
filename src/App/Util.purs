@@ -13,6 +13,7 @@ import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, over, over2)
 import Data.Profunctor.Strong (first)
 import Data.Show.Generic (genericShow)
+import Data.String (joinWith)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd)
@@ -123,20 +124,49 @@ record_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
       k /= indexKey && selected (not <<< isNone𝕊 <$> (get k r # \(Val α _) -> α))
 
+css
+   :: { sel ::
+           { unselected :: String
+           , selected :: String
+           , selected_transient :: String
+           , selected_secondary :: String
+           , selected_secondary_transient :: String
+           }
+      }
+
+css =
+   { sel:
+        { unselected: "unselected" -- delete this
+        , selected: "selected"
+        , selected_transient: "selected-transient"
+        , selected_secondary: "selected-secondary"
+        , selected_secondary_transient: "selected-secondary-transient"
+        }
+   }
+
+-- Ideally would derive this from css.sel
+selClasses :: String
+selClasses = joinWith " " $
+   [ css.sel.selected
+   , css.sel.selected_transient
+   , css.sel.selected_secondary
+   , css.sel.selected_secondary_transient
+   ]
+
 cell_classes :: String -> Val (SelState 𝕊) -> String
 cell_classes col v
-   | col == indexKey = "cell unselected"
-   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell selected"
-   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell selected-transient"
-   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell selected-secondary"
-   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell selected-secondary-transient"
-   | otherwise = "cell unselected"
+   | col == indexKey = "cell " <> css.sel.unselected
+   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell " <> css.sel.selected
+   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell " <> css.sel.selected_transient
+   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell " <> css.sel.selected_secondary
+   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell " <> css.sel.selected_secondary_transient
+   | otherwise = "cell " <> css.sel.unselected
 
-matrix_cell_classes :: SelState 𝕊 -> String
-matrix_cell_classes (SelState { persistent }) =
-   if isPrimary𝕊 persistent then "matrix-cell selected"
-   else if isSecondary𝕊 persistent then "matrix-cell selected-secondary"
-   else "matrix-cell unselected"
+matrix_cell_selClass :: SelState 𝕊 -> String
+matrix_cell_selClass (SelState { persistent }) =
+   if isPrimary𝕊 persistent then css.sel.selected
+   else if isSecondary𝕊 persistent then css.sel.selected_secondary
+   else ""
 
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
@@ -146,6 +176,7 @@ type UIHelpers =
    , isPrimary𝕊 :: 𝕊 -> Boolean
    , isSecondary𝕊 :: 𝕊 -> Boolean
    , colorShade :: String -> Int -> String
+   , selClasses :: String
    , barChartHelpers ::
         { bar_fill :: SelState 𝕊 -> Endo String
         , bar_stroke :: SelState 𝕊 -> Endo String
@@ -156,7 +187,7 @@ type UIHelpers =
         , point_stroke :: SelState 𝕊 -> Endo String
         }
    , matrixViewHelpers ::
-        { matrix_cell_classes :: SelState 𝕊 -> String
+        { matrix_cell_selClass :: SelState 𝕊 -> String
         }
    , tableViewHelpers ::
         { indexKey :: String
@@ -173,6 +204,7 @@ uiHelpers =
    , isPrimary𝕊
    , isSecondary𝕊
    , colorShade
+   , selClasses
    , barChartHelpers:
         { bar_fill
         , bar_stroke
@@ -183,7 +215,7 @@ uiHelpers =
         , point_stroke
         }
    , matrixViewHelpers:
-        { matrix_cell_classes
+        { matrix_cell_selClass
         }
    , tableViewHelpers:
         { indexKey
