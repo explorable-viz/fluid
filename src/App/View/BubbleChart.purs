@@ -2,13 +2,11 @@ module App.View.BubbleChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, eventData)
+import App.Util (class Reflect, Renderer, SelState, Selectable, 𝕊, ViewSelector, from, get_intOrNumber, record)
 import App.Util.Selector (bubbleChart, field, listElement)
-import Data.Tuple (uncurry)
 import DataType (f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel, f_z)
 import Dict (Dict)
 import Primitive (string, unpack)
-import Util (Endo)
 import Util.Map (get)
 import Val (Val)
 
@@ -46,8 +44,5 @@ instance Reflect (Dict (Val (SelState 𝕊))) BubbleChart where
 
 type BubbleIndex = Int
 
-bubbleChartHandler :: Handler
-bubbleChartHandler = eventData >>> uncurry toggleBubble
-   where
-   toggleBubble :: BubbleIndex -> Endo (Selector Val)
-   toggleBubble i = bubbleChart <<< field f_data <<< listElement i
+bubbleChartSelector :: ViewSelector BubbleIndex
+bubbleChartSelector i = bubbleChart <<< field f_data <<< listElement i

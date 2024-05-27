@@ -2,13 +2,11 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, eventData)
+import App.Util (class Reflect, Renderer, SelState, Selectable, 𝕊, ViewSelector, from, get_intOrNumber, record)
 import App.Util.Selector (barChart, barSegment)
-import Data.Tuple (uncurry)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
 import Primitive (string, unpack)
-import Util (Endo)
 import Util.Map (get)
 import Val (Val)
 
@@ -50,8 +48,5 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
 
-barChartHandler :: Handler
-barChartHandler = eventData >>> uncurry toggleSegment
-   where
-   toggleSegment :: BarSegmentCoordinate -> Endo (Selector Val)
-   toggleSegment { i, j } = barSegment i j >>> barChart
+barChartSelector :: ViewSelector BarSegmentCoordinate
+barChartSelector { i, j } = barSegment i j >>> barChart

@@ -2,14 +2,12 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, eventData)
+import App.Util (class Reflect, Renderer, SelState, Selectable, 𝕊, ViewSelector, from, get_intOrNumber, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import Data.List (List(..), (:))
-import Data.Tuple (uncurry)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Primitive (string, unpack)
-import Util (Endo)
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
@@ -54,9 +52,6 @@ instance Reflect (Val (SelState 𝕊)) LinePlot where
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int }
 
-lineChartHandler :: Handler
-lineChartHandler = eventData >>> uncurry togglePoint
-   where
-   togglePoint :: PointCoordinate -> Endo (Selector Val)
-   togglePoint { i, j } =
-      lineChart <<< field f_plots <<< listElement i <<< linePoint j
+lineChartSelector :: ViewSelector PointCoordinate
+lineChartSelector { i, j } =
+   lineChart <<< field f_plots <<< listElement i <<< linePoint j

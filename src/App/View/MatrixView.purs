@@ -2,9 +2,8 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (Handler, Renderer, SelState, Selectable, 𝕊, eventData)
+import App.Util (Renderer, SelState, Selectable, 𝕊, ViewSelector)
 import App.Util.Selector (matrixElement)
-import Data.Tuple (uncurry)
 import Primitive (int, unpack)
 import Util ((×))
 import Val (Array2, MatrixRep(..))
@@ -22,5 +21,5 @@ matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
 -- 1-based indices of selected cell.; see data binding in .js
 type MatrixCellCoordinate = { i :: Int, j :: Int }
 
-matrixViewHandler :: Handler
-matrixViewHandler = eventData >>> uncurry \{ i, j } -> matrixElement i j
+matrixViewSelector :: ViewSelector MatrixCellCoordinate
+matrixViewSelector { i, j } = matrixElement i j

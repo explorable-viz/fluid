@@ -38,7 +38,8 @@ type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selecti
 type HTMLId = String
 type Renderer a = RendererSpec a -> EventListener -> Effect Unit
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
-type Handler = Event -> Selector Val
+--type Handler = Event -> Selector Val
+type ViewSelector a = a -> Endo (Selector Val)
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =
