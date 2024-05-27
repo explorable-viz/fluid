@@ -2,7 +2,7 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, record, unsafeEventData')
+import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, record, eventData)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point)
 import Data.Tuple (uncurry)
@@ -33,7 +33,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
 type PointIndex = Int
 
 scatterPlotHandler :: Handler
-scatterPlotHandler = unsafeEventData' >>> uncurry togglePoint
+scatterPlotHandler = eventData >>> uncurry togglePoint
    where
    togglePoint :: Int -> Endo (Selector Val)
    togglePoint i = scatterPlot <<< field f_data <<< listElement i

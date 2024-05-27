@@ -2,7 +2,7 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, unsafeEventData')
+import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, eventData)
 import App.Util.Selector (barChart, barSegment)
 import Data.Tuple (uncurry)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
@@ -51,7 +51,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
 type BarSegmentCoordinate = { i :: Int, j :: Int }
 
 barChartHandler :: Handler
-barChartHandler = unsafeEventData' >>> uncurry toggleSegment
+barChartHandler = eventData >>> uncurry toggleSegment
    where
    toggleSegment :: BarSegmentCoordinate -> Endo (Selector Val)
    toggleSegment { i, j } = barSegment i j >>> barChart

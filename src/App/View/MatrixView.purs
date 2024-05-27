@@ -2,7 +2,7 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (Handler, Renderer, SelState, Selectable, 𝕊, unsafeEventData')
+import App.Util (Handler, Renderer, SelState, Selectable, 𝕊, eventData)
 import App.Util.Selector (matrixElement)
 import Data.Tuple (uncurry)
 import Primitive (int, unpack)
@@ -23,4 +23,4 @@ matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
 type MatrixCellCoordinate = { i :: Int, j :: Int }
 
 matrixViewHandler :: Handler
-matrixViewHandler = unsafeEventData' >>> uncurry \{ i, j } -> matrixElement i j
+matrixViewHandler = eventData >>> uncurry \{ i, j } -> matrixElement i j

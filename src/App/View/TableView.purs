@@ -2,7 +2,7 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (Handler, Renderer, SelState, 𝕊, unsafeEventData')
+import App.Util (Handler, Renderer, SelState, 𝕊, eventData)
 import App.Util.Selector (field, listElement)
 import Data.Tuple (uncurry)
 import Dict (Dict)
@@ -20,4 +20,4 @@ foreign import drawTable :: Renderer TableView
 type CellIndex = { __n :: Int, name :: String }
 
 tableViewHandler :: Handler
-tableViewHandler = unsafeEventData' >>> uncurry \{ __n, name } -> listElement (__n - 1) <<< field name
+tableViewHandler = eventData >>> uncurry \{ __n, name } -> listElement (__n - 1) <<< field name

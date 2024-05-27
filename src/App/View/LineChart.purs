@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, unsafeEventData')
+import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, eventData)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import Data.List (List(..), (:))
 import Data.Tuple (uncurry)
@@ -55,7 +55,7 @@ instance Reflect (Val (SelState 𝕊)) LinePlot where
 type PointCoordinate = { i :: Int, j :: Int }
 
 lineChartHandler :: Handler
-lineChartHandler = unsafeEventData' >>> uncurry togglePoint
+lineChartHandler = eventData >>> uncurry togglePoint
    where
    togglePoint :: PointCoordinate -> Endo (Selector Val)
    togglePoint { i, j } =
