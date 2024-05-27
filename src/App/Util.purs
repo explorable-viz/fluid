@@ -152,14 +152,12 @@ selClasses = joinWith " " $
    , css.sel.selected_secondary_transient
    ]
 
--- TODO: rewrite using pattern-matching; drop isNone𝕊 etc
 selClass :: SelState 𝕊 -> String
-selClass (SelState { persistent, transient })
-   | isPrimary𝕊 persistent = css.sel.selected
-   | isPrimary𝕊 transient = css.sel.selected_transient
-   | isSecondary𝕊 persistent = css.sel.selected_secondary
-   | isSecondary𝕊 transient = css.sel.selected_secondary_transient
-   | otherwise = ""
+selClass (SelState { persistent: Primary }) = css.sel.selected
+selClass (SelState { transient: Primary }) = css.sel.selected_transient
+selClass (SelState { persistent: Secondary }) = css.sel.selected_secondary
+selClass (SelState { transient: Secondary }) = css.sel.selected_secondary_transient
+selClass _ = ""
 
 -- TODO: unify with above
 cell_classes :: String -> Val (SelState 𝕊) -> String
