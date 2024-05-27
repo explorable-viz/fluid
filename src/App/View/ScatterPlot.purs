@@ -28,7 +28,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
       , ylabel: unpack string (get f_ylabel r)
       }
 
-type PointIndex = Int
+type PointIndex = { i :: Int }
 
 scatterPlotSelector :: ViewSelector PointIndex
-scatterPlotSelector i = scatterPlot <<< field f_data <<< listElement i
+scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
