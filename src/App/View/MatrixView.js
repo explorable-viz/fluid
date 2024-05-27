@@ -2,16 +2,24 @@
 
 import * as d3 from "d3"
 
-function setSelState ({ selState, selClasses, matrixViewHelpers: { matrix_cell_selClass } }, rootElement, { matrix }) {
+function setSelState (
+   {
+      selState,
+      selClasses,
+      selClass
+   },
+   rootElement,
+   { matrix },
+   listener
+) {
    rootElement.selectAll('.matrix-cell').each(function (cell) {
       const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
-      if (matrix_cell_selClass(sel) != "") {
-         console.log("Clearing " + selClasses + " for cell " + cell.i + ", " + cell.j)
-         console.log("Setting " + matrix_cell_selClass(sel) + " for cell " + cell.i + ", " + cell.j)
-      }
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
-         .classed(matrix_cell_selClass(sel), true)
+         .classed(selClass(sel), true)
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
    })
 }
 
@@ -39,9 +47,7 @@ function drawMatrix_ (
 
       let rootElement = div.selectAll('#' + childId)
 
-      if (!rootElement.empty()) {
-         setSelState(uiHelpers, rootElement, { matrix })
-      } else {
+      if (rootElement.empty()) {
          rootElement = div
             .append('svg')
             .attr('id', childId)
@@ -73,9 +79,6 @@ function drawMatrix_ (
             .attr('width', w)
             .attr('height', h)
             .attr('stroke-width', strokeWidth)
-            .on('mousedown', e => { listener(e) })
-            .on('mouseenter', e => { listener(e) })
-            .on('mouseleave', e => { listener(e) })
 
          rect
             .append('text')
@@ -94,9 +97,8 @@ function drawMatrix_ (
             .attr('class', 'title-text')
             .attr('dominant-baseline', 'middle')
             .attr('text-anchor', 'left')
-
-         setSelState(uiHelpers, rootElement, { matrix })
       }
+      setSelState(uiHelpers, rootElement, { matrix }, listener)
    }
 }
 

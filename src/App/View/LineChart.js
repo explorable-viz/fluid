@@ -20,19 +20,24 @@ function max_x ({ val }) {
    }
 }
 
-const logging = {
-   setSelState: false
-}
-
-function setSelState ({ selState, lineChartHelpers: { point_radius, point_stroke } }, nameCol, rootElement, { plots }) {
+function setSelState (
+   {
+      selState,
+      lineChartHelpers: { point_radius, point_stroke }
+   },
+   nameCol,
+   rootElement,
+   { plots },
+   listener
+) {
    rootElement.selectAll('.point').each(function (point) {
       const sel = selState(plots[point.i].data[point.j].y)
-      if (logging.setSelState) {
-         console.log(`LineChart: { persistent: ${sel.persistent.tag}, transient: ${sel.transient.tag}} for element ${point.i}, ${point.j}`)
-      }
       d3.select(this) // won't work inside arrow function :/
          .attr('r', point_radius(sel))
          .attr('stroke', point_stroke(sel)(nameCol(point.name)))
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
    })
 }
 
@@ -67,9 +72,7 @@ function drawLineChart_ (
          return color(names.indexOf(name))
       }
 
-      if (!rootElement.empty()) {
-         setSelState(uiHelpers, nameCol, rootElement, { plots })
-      } else {
+      if (rootElement.empty()) {
          rootElement = div
             .append('svg')
                .attr('width', width + margin.left + margin.right)
@@ -109,9 +112,6 @@ function drawLineChart_ (
                .attr('cx', point => x(point.x))
                .attr('cy', point => y(point.y))
                .attr('fill', point => nameCol(point.name))
-               .on('mousedown', e => { listener(e) })
-               .on('mouseenter', e => { listener(e) })
-               .on('mouseleave', e => { listener(e) })
          }
 
          rootElement
@@ -164,9 +164,8 @@ function drawLineChart_ (
             .attr('class', 'title-text')
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
-
-         setSelState(uiHelpers, nameCol, rootElement, { plots })
       }
+      setSelState(uiHelpers, nameCol, rootElement, { plots }, listener)
    }
 }
 

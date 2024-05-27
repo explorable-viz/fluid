@@ -152,6 +152,16 @@ selClasses = joinWith " " $
    , css.sel.selected_secondary_transient
    ]
 
+-- TODO: rewrite using pattern-matching; drop isNone𝕊 etc
+selClass :: SelState 𝕊 -> String
+selClass (SelState { persistent, transient })
+   | isPrimary𝕊 persistent = css.sel.selected
+   | isPrimary𝕊 transient = css.sel.selected_transient
+   | isSecondary𝕊 persistent = css.sel.selected_secondary
+   | isSecondary𝕊 transient = css.sel.selected_secondary_transient
+   | otherwise = ""
+
+-- TODO: unify with above
 cell_classes :: String -> Val (SelState 𝕊) -> String
 cell_classes col v
    | col == indexKey = "cell " <> css.sel.unselected
@@ -160,12 +170,6 @@ cell_classes col v
    | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell " <> css.sel.selected_secondary
    | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell " <> css.sel.selected_secondary_transient
    | otherwise = "cell " <> css.sel.unselected
-
-matrix_cell_selClass :: SelState 𝕊 -> String
-matrix_cell_selClass (SelState { persistent }) =
-   if isPrimary𝕊 persistent then css.sel.selected
-   else if isSecondary𝕊 persistent then css.sel.selected_secondary
-   else ""
 
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
@@ -176,6 +180,7 @@ type UIHelpers =
    , isSecondary𝕊 :: 𝕊 -> Boolean
    , colorShade :: String -> Int -> String
    , selClasses :: String
+   , selClass :: SelState 𝕊 -> String
    , barChartHelpers ::
         { bar_fill :: SelState 𝕊 -> Endo String
         , bar_stroke :: SelState 𝕊 -> Endo String
@@ -186,7 +191,7 @@ type UIHelpers =
         , point_stroke :: SelState 𝕊 -> Endo String
         }
    , matrixViewHelpers ::
-        { matrix_cell_selClass :: SelState 𝕊 -> String
+        {
         }
    , tableViewHelpers ::
         { indexKey :: String
@@ -204,6 +209,7 @@ uiHelpers =
    , isSecondary𝕊
    , colorShade
    , selClasses
+   , selClass
    , barChartHelpers:
         { bar_fill
         , bar_stroke
@@ -214,7 +220,7 @@ uiHelpers =
         , point_stroke
         }
    , matrixViewHelpers:
-        { matrix_cell_selClass
+        {
         }
    , tableViewHelpers:
         { indexKey
