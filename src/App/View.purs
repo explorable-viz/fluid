@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (HTMLId, OnSel, SelState, 𝕊, ViewSelector, eventData, from, record, uiHelpers)
+import App.Util (HTMLId, SelState, ViewSelector, 𝕊, Selector, eventData, from, record, uiHelpers)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
 import App.View.BarChart (barChartSelector, drawBarChart)
@@ -37,18 +37,18 @@ data View
    | MatrixView View.MatrixView
    | TableView View.TableView
 
-drawView :: HTMLId -> String -> OnSel -> View -> Effect Unit
-drawView divId suffix onSel = case _ of
+drawView :: HTMLId -> String -> (Selector Val -> Effect Unit) -> View -> Effect Unit
+drawView divId suffix redraw = case _ of
    MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< listener matrixViewSelector
    TableView vw -> drawTable { uiHelpers, divId, suffix, view: vw } =<< listener tableViewSelector
    LineChart vw -> drawLineChart { uiHelpers, divId, suffix, view: vw } =<< listener lineChartSelector
    BarChart vw -> drawBarChart { uiHelpers, divId, suffix, view: vw } =<< listener barChartSelector
    BubbleChart vw -> drawBubbleChart { uiHelpers, divId, suffix, view: vw } =<< listener bubbleChartSelector
    ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< listener scatterPlotSelector
-   MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (onSel <<< multiPlotEntry x)) vws
+   MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
    where
    listener :: forall a. ViewSelector a -> Effect EventListener
-   listener selector = eventListener (eventData >>> uncurry selector >>> onSel)
+   listener selector = eventListener (eventData >>> uncurry selector >>> redraw)
 
 -- Convert annotated value to appropriate View, discarding top-level annotations for now.
 view :: Partial => String -> Val (SelState 𝕊) -> View

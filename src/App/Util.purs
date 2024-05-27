@@ -37,7 +37,6 @@ import Web.Event.EventTarget (EventListener, EventTarget)
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
 type HTMLId = String
 type Renderer a = RendererSpec a -> EventListener -> Effect Unit
-type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
 -- Heavily curried type isn't convenient for FFI
@@ -251,9 +250,6 @@ as𝕊 = lift2 as𝕊'
    as𝕊' false true = Secondary
    as𝕊' true false = Primary -- "costless output", but ignore those for now
    as𝕊' true true = Primary
-
-doNothing :: OnSel
-doNothing = const $ pure unit
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
