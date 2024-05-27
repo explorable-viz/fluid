@@ -13,7 +13,7 @@
 
 .cell.selected-transient {
    border: 1px solid rgb(201, 221, 221);
-   background-color: #ffffff;
+   background-color: White;
 }
 
 .cell.selected-secondary {
@@ -23,27 +23,33 @@
 
 .cell.selected-secondary-transient {
    border: 1px solid rgb(216, 211, 211);
-   background-color: #ffffff;
+   background-color: White;
 }
 
 .cell.unselected {
-   border: 1px solid #ffffff;
-   background-color: #ffffff;
+   border: 1px solid White;
+   background-color: White;
 }
 
-.matrix-cell-selected {
-   fill: LightGreen;
+.matrix-cell {
    stroke: DarkGray;
-}
-
-.matrix-cell-selected-secondary {
-   fill: rgb(226, 226, 226);
-   stroke: DarkGray;
-}
-
-.matrix-cell-unselected {
    fill: White;
-   stroke: DarkGray;
+}
+
+.matrix-cell.selected {
+   fill: LightGreen;
+}
+
+.matrix-cell.selected-transient {
+   fill: rgb(201, 241, 221);
+}
+
+.matrix-cell.selected-secondary {
+   fill: rgb(226, 226, 226);
+}
+
+.matrix-cell.selected-secondary-transient {
+   fill: rgb(240, 240, 240);
 }
 
 .matrix-cell-text {

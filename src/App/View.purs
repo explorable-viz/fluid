@@ -2,28 +2,29 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (HTMLId, OnSel, SelState, 𝕊, from, record, uiHelpers)
+import App.Util (HTMLId, SelState, ViewSelector, 𝕊, Selector, eventData, from, record, uiHelpers)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
-import App.View.BarChart (barChartHandler, drawBarChart)
+import App.View.BarChart (barChartSelector, drawBarChart)
 import App.View.BubbleChart (BubbleChart) as View
-import App.View.BubbleChart (bubbleChartHandler, drawBubbleChart)
+import App.View.BubbleChart (bubbleChartSelector, drawBubbleChart)
 import App.View.LineChart (LineChart) as View
-import App.View.LineChart (drawLineChart, lineChartHandler)
+import App.View.LineChart (drawLineChart, lineChartSelector)
 import App.View.MatrixView (MatrixView(..)) as View
-import App.View.MatrixView (drawMatrix, matrixRep, matrixViewHandler)
+import App.View.MatrixView (drawMatrix, matrixRep, matrixViewSelector)
 import App.View.ScatterPlot (ScatterPlot) as View
-import App.View.ScatterPlot (drawScatterPlot, scatterPlotHandler)
+import App.View.ScatterPlot (drawScatterPlot, scatterPlotSelector)
 import App.View.TableView (TableView(..)) as View
-import App.View.TableView (drawTable, tableViewHandler)
+import App.View.TableView (drawTable, tableViewSelector)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
+import Data.Tuple (uncurry)
 import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
 import Dict (Dict)
 import Effect (Effect)
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), Val(..))
-import Web.Event.EventTarget (eventListener)
+import Web.Event.EventTarget (EventListener, eventListener)
 
 data View
    -- one for each constructor of the Fluid 'Plot' data type
@@ -36,17 +37,20 @@ data View
    | MatrixView View.MatrixView
    | TableView View.TableView
 
-drawView :: HTMLId -> String -> OnSel -> View -> Effect Unit
-drawView divId suffix onSel = case _ of
-   MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< matrixViewHandler)
-   TableView vw -> drawTable { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< tableViewHandler)
-   LineChart vw -> drawLineChart { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< lineChartHandler)
-   BarChart vw -> drawBarChart { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< barChartHandler)
-   BubbleChart vw -> drawBubbleChart { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< bubbleChartHandler)
-   ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< eventListener (onSel <<< scatterPlotHandler)
-   MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (onSel <<< multiPlotEntry x)) vws
+drawView :: HTMLId -> String -> (Selector Val -> Effect Unit) -> View -> Effect Unit
+drawView divId suffix redraw = case _ of
+   MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< listener matrixViewSelector
+   TableView vw -> drawTable { uiHelpers, divId, suffix, view: vw } =<< listener tableViewSelector
+   LineChart vw -> drawLineChart { uiHelpers, divId, suffix, view: vw } =<< listener lineChartSelector
+   BarChart vw -> drawBarChart { uiHelpers, divId, suffix, view: vw } =<< listener barChartSelector
+   BubbleChart vw -> drawBubbleChart { uiHelpers, divId, suffix, view: vw } =<< listener bubbleChartSelector
+   ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< listener scatterPlotSelector
+   MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
+   where
+   listener :: forall a. ViewSelector a -> Effect EventListener
+   listener selector = eventListener (eventData >>> uncurry selector >>> redraw)
 
--- Convert sliced value to appropriate View, discarding top-level annotations for now.
+-- Convert annotated value to appropriate View, discarding top-level annotations for now.
 view :: Partial => String -> Val (SelState 𝕊) -> View
 view _ (Val _ (Constr c (u : Nil))) | c == cBarChart =
    BarChart (record from u)

@@ -1,6 +1,5 @@
 -- Better name and more consistent interface to Foreign.Object, plus some additional functions.
--- Maybe upgrade Dict into a full replacement of Foreign.Object; in particular Ord instance
--- seems broken (rather than isSubmap, compares on toAscArray).
+-- Newtype wrapper so we can fix Ord instance be consistent with Eq (i.e. to use isSubmap vs. toAscArray).
 module Dict
    ( module Foreign.Object
    , Dict(..)
@@ -23,7 +22,7 @@ newtype Dict a = Dict (O.Object a)
 derive instance Newtype (Dict a) _
 derive newtype instance Eq a => Eq (Dict a)
 
--- More sensible than the Foreign.Object Ord instance.
+-- More sensible than Foreign.Object Ord instance.
 instance Ord a => Ord (Dict a) where
    compare (Dict d) (Dict d') =
       if isSubmap d d' then

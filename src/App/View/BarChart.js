@@ -10,13 +10,24 @@ function tickEvery (n) {
       : 10 ** m
 }
 
-function setSelState ({ selState, barChartHelpers: { bar_fill, bar_stroke } }, chart, { data }) {
+function setSelState (
+   {
+      selState,
+      barChartHelpers: { bar_fill, bar_stroke }
+   },
+   rootElement,
+   { data },
+   listener
+) {
    const color = d3.scaleOrdinal(d3.schemeAccent)
-   chart.selectAll('.bar').each(function (d) {
-      const sel = selState(data[d.i].bars[d.j].z)
+   rootElement.selectAll('.bar').each(function (bar) {
+      const sel = selState(data[bar.i].bars[bar.j].z)
       d3.select(this) // won't work inside arrow function :/
-         .attr('fill', bar => { return bar_fill(sel)(color(bar.j)) })
-         .attr('stroke', bar => { return bar_stroke(sel)(color(bar.j)) })
+         .attr('fill', bar_fill(sel)(color(bar.j)))
+         .attr('stroke', bar_stroke(sel)(color(bar.j)))
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
    })
 }
 
@@ -39,18 +50,16 @@ function drawBarChart_ (
             width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + divId)
-      let chart = div.selectAll('#' + childId)
+      let rootElement = div.selectAll('#' + childId)
 
-      if (!chart.empty()) {
-         setSelState(uiHelpers, chart, { data })
-      } else {
-         chart = div
+      if (rootElement.empty()) {
+         rootElement = div
             .append('svg')
                .attr('width', width + margin.left + margin.right)
                .attr('height', height + margin.top + margin.bottom)
             .attr('id', childId)
 
-         chart
+         rootElement
             .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
@@ -59,7 +68,8 @@ function drawBarChart_ (
             .range([0, width])
             .domain(data.map(d => val(d.x)))
             .padding(0.2)
-         chart.append('g')
+
+         rootElement.append('g')
             .attr('transform', "translate(0," + height + ")")
             .call(d3.axisBottom(x))
             .selectAll('text')
@@ -78,11 +88,12 @@ function drawBarChart_ (
                ticks = Array.from(Array(Math.ceil(y_max / tickEvery_n + 1)).keys()).map(n => n * tickEvery_n)
          const yAxis = d3.axisLeft(y)
             .tickValues(ticks)
-         chart.append('g')
+
+         rootElement.append('g')
             .call(yAxis)
 
          // bars
-         const stacks = chart.selectAll('.stack')
+         const stacks = rootElement.selectAll('.stack')
             .data([...data.entries()])
             .enter()
             .append('g')
@@ -104,15 +115,12 @@ function drawBarChart_ (
                .attr('width', x.bandwidth())
                .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
                .attr('stroke-width', _ => strokeWidth)
-               .on('mousedown', e => { listener(e) })
-               .on('mouseenter', e => { listener(e) })
-               .on('mouseleave', e => { listener(e) })
 
          // TODO: enforce that all stacked bars have same set of segments
          const legendLineHeight = 15,
                legendStart = width + margin.left / 2
                names = data[0].bars.map(bar => val(bar.y))
-         chart
+         rootElement
             .append('rect')
             .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
             .attr('x', 0)
@@ -122,7 +130,7 @@ function drawBarChart_ (
             .attr('height', legendLineHeight * names.length)
             .attr('width', margin.right - 22)
 
-         const legend = chart.selectAll('legend')
+         const legend = rootElement.selectAll('legend')
             .data(names)
             .enter()
             .append('g')
@@ -145,7 +153,7 @@ function drawBarChart_ (
             .attr('x', legendLineHeight / 2 - legendSquareSize / 2)
             .attr('y', legendLineHeight / 2 - legendSquareSize)
 
-         chart
+         rootElement
             .append('text')
             .text(val(caption))
             .attr('x', width / 2)
@@ -153,9 +161,9 @@ function drawBarChart_ (
             .attr('class', 'title-text')
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
-
-         setSelState(uiHelpers, chart, { data })
       }
+
+      setSelState(uiHelpers, rootElement, { data }, listener)
    }
 }
 

@@ -2,19 +2,13 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, selector, unsafeEventData)
+import App.Util (class Reflect, Renderer, SelState, Selectable, 𝕊, ViewSelector, from, get_intOrNumber, record)
 import App.Util.Selector (barChart, barSegment)
-import Data.Maybe (Maybe)
-import Data.Profunctor.Strong ((&&&))
-import Data.Tuple (uncurry)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
 import Primitive (string, unpack)
-import Util (type (×), Endo, (×))
 import Util.Map (get)
 import Val (Val)
-import Web.Event.Event (EventType, target, type_)
-import Web.Event.EventTarget (EventTarget)
 
 newtype BarChart = BarChart
    { caption :: Selectable String
@@ -51,14 +45,8 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
       , z: get_intOrNumber f_z r
       }
 
--- see data binding in BarChart.js
+-- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
 
-barChartHandler :: Handler
-barChartHandler = (target &&& type_) >>> barSegmentCoord >>> uncurry toggleSegment
-   where
-   toggleSegment :: BarSegmentCoordinate -> Endo (Selector Val)
-   toggleSegment { i, j } = barSegment i j >>> barChart
-
-   barSegmentCoord :: Maybe EventTarget × EventType -> BarSegmentCoordinate × Selector Val
-   barSegmentCoord (tgt_opt × ty) = unsafeEventData tgt_opt × selector ty
+barChartSelector :: ViewSelector BarSegmentCoordinate
+barChartSelector { i, j } = barSegment i j >>> barChart

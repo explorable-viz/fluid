@@ -11,8 +11,9 @@ import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, over, over2)
-import Data.Profunctor.Strong (first)
+import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
+import Data.String (joinWith)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd)
@@ -24,19 +25,19 @@ import Effect.Class.Console (log)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, neg, (∨))
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
+import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (×), Endo, definitely', error)
+import Util (type (×), Endo, definitely', error, spyWhen, (×))
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
-import Web.Event.Event (Event, EventType(..))
+import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventListener, EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
 type HTMLId = String
 type Renderer a = RendererSpec a -> EventListener -> Effect Unit
-type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
-type Handler = Event -> Selector Val
+type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =
@@ -123,14 +124,52 @@ record_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
       k /= indexKey && selected (not <<< isNone𝕊 <$> (get k r # \(Val α _) -> α))
 
+css
+   :: { sel ::
+           { unselected :: String
+           , selected :: String
+           , selected_transient :: String
+           , selected_secondary :: String
+           , selected_secondary_transient :: String
+           }
+      }
+css =
+   { sel:
+        { unselected: "unselected" -- delete this
+        , selected: "selected"
+        , selected_transient: "selected-transient"
+        , selected_secondary: "selected-secondary"
+        , selected_secondary_transient: "selected-secondary-transient"
+        }
+   }
+
+-- Ideally would derive this from css.sel
+selClasses :: String
+selClasses = joinWith " " $
+   [ css.sel.selected
+   , css.sel.selected_transient
+   , css.sel.selected_secondary
+   , css.sel.selected_secondary_transient
+   ]
+
+-- TODO: rewrite using pattern-matching; drop isNone𝕊 etc
+selClass :: SelState 𝕊 -> String
+selClass (SelState { persistent, transient })
+   | isPrimary𝕊 persistent = css.sel.selected
+   | isPrimary𝕊 transient = css.sel.selected_transient
+   | isSecondary𝕊 persistent = css.sel.selected_secondary
+   | isSecondary𝕊 transient = css.sel.selected_secondary_transient
+   | otherwise = ""
+
+-- TODO: unify with above
 cell_classes :: String -> Val (SelState 𝕊) -> String
 cell_classes col v
-   | col == indexKey = "cell unselected"
-   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell selected"
-   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell selected-transient"
-   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell selected-secondary"
-   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell selected-secondary-transient"
-   | otherwise = "cell unselected"
+   | col == indexKey = "cell " <> css.sel.unselected
+   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell " <> css.sel.selected
+   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell " <> css.sel.selected_transient
+   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell " <> css.sel.selected_secondary
+   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell " <> css.sel.selected_secondary_transient
+   | otherwise = "cell " <> css.sel.unselected
 
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
@@ -140,6 +179,8 @@ type UIHelpers =
    , isPrimary𝕊 :: 𝕊 -> Boolean
    , isSecondary𝕊 :: 𝕊 -> Boolean
    , colorShade :: String -> Int -> String
+   , selClasses :: String
+   , selClass :: SelState 𝕊 -> String
    , barChartHelpers ::
         { bar_fill :: SelState 𝕊 -> Endo String
         , bar_stroke :: SelState 𝕊 -> Endo String
@@ -148,6 +189,9 @@ type UIHelpers =
         { point_smallRadius :: Int
         , point_radius :: SelState 𝕊 -> Int
         , point_stroke :: SelState 𝕊 -> Endo String
+        }
+   , matrixViewHelpers ::
+        {
         }
    , tableViewHelpers ::
         { indexKey :: String
@@ -164,6 +208,8 @@ uiHelpers =
    , isPrimary𝕊
    , isSecondary𝕊
    , colorShade
+   , selClasses
+   , selClass
    , barChartHelpers:
         { bar_fill
         , bar_stroke
@@ -172,6 +218,9 @@ uiHelpers =
         { point_smallRadius
         , point_radius
         , point_stroke
+        }
+   , matrixViewHelpers:
+        {
         }
    , tableViewHelpers:
         { indexKey
@@ -208,9 +257,6 @@ as𝕊 = lift2 as𝕊'
    as𝕊' true false = Primary -- "costless output", but ignore those for now
    as𝕊' true true = Primary
 
-doNothing :: OnSel
-doNothing = const $ pure unit
-
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
@@ -235,15 +281,21 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
    Left err -> log $ show err
    Right as' -> as' <#> f # sequence_
 
--- Unpack d3.js data associated with mouse event target.
-unsafeEventData :: forall a. Maybe EventTarget -> a
-unsafeEventData target = (unsafeCoerce $ definitely' target).__data__
+-- Unpack d3.js data and event type associated with mouse event target.
+eventData :: forall a. Event -> a × Selector Val
+eventData = target >>> unsafeEventData &&& type_ >>> selector
+   where
+   unsafeEventData :: Maybe EventTarget -> a
+   unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
 selector :: EventType -> Selector Val
-selector (EventType "mousedown") = (over SelState (\s -> s { persistent = neg s.persistent }) <$> _)
-selector (EventType "mouseenter") = (over SelState (_ { transient = true }) <$> _)
-selector (EventType "mouseleave") = (over SelState (_ { transient = false }) <$> _)
-selector (EventType _) = error "Unsupported event type"
+selector = case _ of
+   EventType "mousedown" -> (over SelState (\s -> report "mousedown" (s { persistent = neg s.persistent })) <$> _)
+   EventType "mouseenter" -> (over SelState (\s -> report "mouseenter" (s { transient = true })) <$> _)
+   EventType "mouseleave" -> (over SelState (\s -> report "mouseleave" (s { transient = false })) <$> _)
+   EventType _ -> error "Unsupported event type"
+   where
+   report = flip (spyWhen tracing.mouseEvent) show
 
 -- ======================
 -- boilerplate
@@ -255,6 +307,7 @@ instance Show 𝕊 where
 derive instance Newtype (SelState a) _
 derive instance Functor SelState
 
+derive instance Ord a => Ord (SelState a)
 derive instance Eq a => Eq (SelState a)
 derive newtype instance Show a => Show (SelState a)
 

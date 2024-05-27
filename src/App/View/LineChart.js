@@ -20,13 +20,24 @@ function max_x ({ val }) {
    }
 }
 
-function setSelState ({ selState, lineChartHelpers: { point_radius, point_stroke } }, nameCol, chart, { plots }) {
-   chart.selectAll('.point').each(function (point) {
+function setSelState (
+   {
+      selState,
+      lineChartHelpers: { point_radius, point_stroke }
+   },
+   nameCol,
+   rootElement,
+   { plots },
+   listener
+) {
+   rootElement.selectAll('.point').each(function (point) {
       const sel = selState(plots[point.i].data[point.j].y)
-      console.log(sel)
       d3.select(this) // won't work inside arrow function :/
          .attr('r', point_radius(sel))
          .attr('stroke', point_stroke(sel)(nameCol(point.name)))
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
    })
 }
 
@@ -54,23 +65,19 @@ function drawLineChart_ (
             x_max = Math.max(...plots.map(max_x(uiHelpers))),
             names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + divId)
-      let chart = div.selectAll('#' + childId)
+      let rootElement = div.selectAll('#' + childId)
       const color = d3.scaleOrdinal(d3.schemePastel1)
 
       function nameCol (name) {
          return color(names.indexOf(name))
       }
 
-      if (!chart.empty()) {
-         setSelState(uiHelpers, nameCol, chart, { plots })
-      } else {
-         chart = div
+      if (rootElement.empty()) {
+         rootElement = div
             .append('svg')
                .attr('width', width + margin.left + margin.right)
                .attr('height', height + margin.top + margin.bottom)
             .attr('id', childId)
-
-         chart
             .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
@@ -81,7 +88,7 @@ function drawLineChart_ (
             .x(d => x(val(d.x)))
             .y(d => y(val(d.y)))
 
-         chart.selectAll('line')
+         rootElement.selectAll('line')
             .data([...plots.entries()])
             .enter()
             .append('g')
@@ -94,7 +101,7 @@ function drawLineChart_ (
 
          for (const i_plot of plots.entries()) {
             const [i, plot] = i_plot
-            chart.selectAll('point')
+            rootElement.selectAll('point')
                .data([...plot.data.entries()].map(([j, p]) => {
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
@@ -105,24 +112,21 @@ function drawLineChart_ (
                .attr('cx', point => x(point.x))
                .attr('cy', point => y(point.y))
                .attr('fill', point => nameCol(point.name))
-               .on('mousedown', e => { listener(e) })
-               .on('mouseenter', e => { listener(e) })
-               .on('mouseleave', e => { listener(e) })
          }
 
-         chart
+         rootElement
             .append('g')
             .attr('transform', `translate(0, ${height})`)
             .call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')))
 
-         chart
+         rootElement
             .append('g')
             .call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))) // lots of hard-coded constants
 
          const legendLineHeight = 15,
                legendStart = width + margin.left / 2
 
-         chart
+         rootElement
             .append('rect')
             .attr('transform', `translate(${legendStart}, ${legendLineHeight * (names.length - 1) + 2})`)
             .attr('x', 0)
@@ -132,7 +136,7 @@ function drawLineChart_ (
             .attr('height', legendLineHeight * names.length)
             .attr('width', margin.right - 16)
 
-         const legend = chart.selectAll('legend')
+         const legend = rootElement.selectAll('legend')
             .data(names)
             .enter()
             .append('g')
@@ -152,7 +156,7 @@ function drawLineChart_ (
             .attr('cx', legendLineHeight / 2 - point_smallRadius / 2)
             .attr('cy', legendLineHeight / 2 - point_smallRadius / 2)
 
-         chart
+         rootElement
             .append('text')
             .text(val(caption))
             .attr('x', width / 2)
@@ -160,9 +164,8 @@ function drawLineChart_ (
             .attr('class', 'title-text')
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
-
-         setSelState(uiHelpers, nameCol, chart, { plots })
       }
+      setSelState(uiHelpers, nameCol, rootElement, { plots }, listener)
    }
 }
 

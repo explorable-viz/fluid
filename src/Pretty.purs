@@ -1,4 +1,4 @@
-module Pretty (class Pretty, PrettyShow(..), pretty, prettyP) where
+module Pretty (class Pretty, PrettyShow(..), compare, pretty, prettyP) where
 
 import Prelude hiding (absurd, between)
 
@@ -21,6 +21,7 @@ import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
 import Graph.GraphImpl (GraphImpl)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
@@ -429,3 +430,12 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
 
 instance Pretty GraphImpl where
    pretty = showGraph >>> text
+
+compare :: forall a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => String -> String -> a -> a -> String × String
+compare op1 op2 x y =
+   let
+      x_minus_y × y_minus_x = symmetricDiff x y
+      left = if x_minus_y == botOf x then "" else op1 <> " but not " <> op2 <> ":\n" <> prettyP x_minus_y
+      right = if y_minus_x == botOf x then "" else op2 <> " but not " <> op1 <> ":\n" <> prettyP y_minus_x
+   in
+      left × right
