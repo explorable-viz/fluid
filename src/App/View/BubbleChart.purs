@@ -2,19 +2,15 @@ module App.View.BubbleChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, selector, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, unsafeEventData')
 import App.Util.Selector (bubbleChart, field, listElement)
-import Data.Maybe (Maybe)
-import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry)
 import DataType (f_caption, f_colour, f_data, f_x, f_xlabel, f_y, f_ylabel, f_z)
 import Dict (Dict)
 import Primitive (string, unpack)
-import Util (type (×), Endo, (!), (×))
+import Util (Endo)
 import Util.Map (get)
 import Val (Val)
-import Web.Event.Event (EventType, target, type_)
-import Web.Event.Internal.Types (EventTarget)
 
 newtype BubbleChart = BubbleChart
    { caption :: Selectable String
@@ -48,11 +44,10 @@ instance Reflect (Dict (Val (SelState 𝕊))) BubbleChart where
       , ylabel: unpack string (get f_ylabel r)
       }
 
-bubbleChartHandler :: Handler
-bubbleChartHandler = (target &&& type_) >>> bubbleIndex >>> uncurry toggleBubble
-   where
-   toggleBubble :: Int -> Endo (Selector Val)
-   toggleBubble i = bubbleChart <<< field f_data <<< listElement i
+type BubbleIndex = Int
 
-   bubbleIndex :: Maybe EventTarget × EventType -> Int × Selector Val
-   bubbleIndex (tgt_opt × ty) = unsafeEventData tgt_opt ! 0 × selector ty
+bubbleChartHandler :: Handler
+bubbleChartHandler = unsafeEventData' >>> uncurry toggleBubble
+   where
+   toggleBubble :: BubbleIndex -> Endo (Selector Val)
+   toggleBubble i = bubbleChart <<< field f_data <<< listElement i

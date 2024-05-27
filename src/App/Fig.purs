@@ -50,7 +50,6 @@ type Fig =
 output :: String
 output = "output"
 
--- TODO: replace (expensive) botOf γ by per-variable botOf
 selectOutput :: Selector Val -> Endo Fig
 selectOutput δv fig@{ dir, γ, v } = fig
    { v = assert (v == botOf v) $ δv v -- this should NOT be true in general

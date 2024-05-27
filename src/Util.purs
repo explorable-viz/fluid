@@ -199,6 +199,7 @@ bind2Flipped f x y = join (lift2 f x y)
 
 infixr 1 bind2Flipped as =<<<
 
+-- like Endo in prelude but specialised to functions, to avoid newtype clutter
 type Endo a = a -> a
 
 -- version of this in Data.Array uses unsafePartial

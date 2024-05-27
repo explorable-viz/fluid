@@ -11,7 +11,7 @@ import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, over, over2)
-import Data.Profunctor.Strong (first)
+import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.String.CodeUnits (drop, take)
@@ -31,7 +31,7 @@ import Util (type (×), Endo, definitely', error, spyWhen, (×))
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
-import Web.Event.Event (Event, EventType(..))
+import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventListener, EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
@@ -282,7 +282,10 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
 
 -- Unpack d3.js data associated with mouse event target.
 unsafeEventData :: forall a. Maybe EventTarget -> a
-unsafeEventData target = (unsafeCoerce $ definitely' target).__data__
+unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
+
+unsafeEventData' :: forall a. Event -> a × Selector Val
+unsafeEventData' = target >>> unsafeEventData &&& type_ >>> selector
 
 selector :: EventType -> Selector Val
 selector = case _ of

@@ -2,20 +2,16 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, selector, unsafeEventData)
+import App.Util (class Reflect, Handler, Renderer, SelState, Selectable, Selector, 𝕊, from, get_intOrNumber, record, unsafeEventData')
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe)
-import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Primitive (string, unpack)
-import Util (type (×), Endo, (×))
+import Util (Endo)
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
-import Web.Event.Event (EventType, target, type_)
-import Web.Event.EventTarget (EventTarget)
 
 newtype LineChart = LineChart
    { caption :: Selectable String
@@ -59,11 +55,8 @@ instance Reflect (Val (SelState 𝕊)) LinePlot where
 type PointCoordinate = { i :: Int, j :: Int }
 
 lineChartHandler :: Handler
-lineChartHandler = (target &&& type_) >>> pos >>> uncurry togglePoint
+lineChartHandler = unsafeEventData' >>> uncurry togglePoint
    where
    togglePoint :: PointCoordinate -> Endo (Selector Val)
    togglePoint { i, j } =
       lineChart <<< field f_plots <<< listElement i <<< linePoint j
-
-   pos :: Maybe EventTarget × EventType -> PointCoordinate × Selector Val
-   pos (tgt_opt × ty) = unsafeEventData tgt_opt × selector ty
