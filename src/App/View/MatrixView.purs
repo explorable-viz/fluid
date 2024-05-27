@@ -18,7 +18,7 @@ matrixRep :: MatrixRep (SelState 𝕊) -> IntMatrix
 matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    { cells: (unpack int <$> _) <$> vss, i, j }
 
--- 1-based indices of selected cell.; see data binding in .js
+-- 1-based indices of selected cell; see data binding in .js
 type MatrixCellCoordinate = { i :: Int, j :: Int }
 
 matrixViewSelector :: ViewSelector MatrixCellCoordinate
