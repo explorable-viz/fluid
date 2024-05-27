@@ -14,7 +14,15 @@ const logging = {
    setSelState: false
 }
 
-function setSelState ({ selState, barChartHelpers: { bar_fill, bar_stroke } }, rootElement, { data }) {
+function setSelState (
+   {
+      selState,
+      barChartHelpers: { bar_fill, bar_stroke }
+   },
+   rootElement,
+   { data },
+   listener
+) {
    const color = d3.scaleOrdinal(d3.schemeAccent)
    rootElement.selectAll('.bar').each(function (bar) {
       const sel = selState(data[bar.i].bars[bar.j].z)
@@ -24,6 +32,9 @@ function setSelState ({ selState, barChartHelpers: { bar_fill, bar_stroke } }, r
       d3.select(this) // won't work inside arrow function :/
          .attr('fill', bar_fill(sel)(color(bar.j)))
          .attr('stroke', bar_stroke(sel)(color(bar.j)))
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
    })
 }
 
@@ -48,9 +59,7 @@ function drawBarChart_ (
       const div = d3.select('#' + divId)
       let rootElement = div.selectAll('#' + childId)
 
-      if (!rootElement.empty()) {
-         setSelState(uiHelpers, rootElement, { data })
-      } else {
+      if (rootElement.empty()) {
          rootElement = div
             .append('svg')
                .attr('width', width + margin.left + margin.right)
@@ -113,9 +122,6 @@ function drawBarChart_ (
                .attr('width', x.bandwidth())
                .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
                .attr('stroke-width', _ => strokeWidth)
-               .on('mousedown', e => { listener(e) })
-               .on('mouseenter', e => { listener(e) })
-               .on('mouseleave', e => { listener(e) })
 
          // TODO: enforce that all stacked bars have same set of segments
          const legendLineHeight = 15,
@@ -162,9 +168,9 @@ function drawBarChart_ (
             .attr('class', 'title-text')
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
-
-         setSelState(uiHelpers, rootElement, { data })
       }
+
+      setSelState(uiHelpers, rootElement, { data }, listener)
    }
 }
 
