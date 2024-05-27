@@ -14,7 +14,6 @@ import Data.Traversable (sequence_)
 import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
-import Effect.Console (log)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection ((***)) as GC
 import GaloisConnection (GaloisConnection(..), dual, meet)
@@ -24,7 +23,7 @@ import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, spy, spyWhen, (×))
+import Util (type (×), AffError, Endo, spyWhen, (×))
 import Util.Map (get, mapWithKey)
 import Val (Env, EnvExpr(..), Val, unrestrictGC)
 
@@ -52,15 +51,11 @@ output :: String
 output = "output"
 
 selectOutput :: Selector Val -> Endo Fig
-selectOutput δv fig@{ dir, γ, v } =
-   let
-      fig' = fig
-         { v = δv v
-         , γ = if dir == LinkedInputs then botOf γ else γ
-         , dir = LinkedOutputs
-         }
-   in
-      spy "selectOutput output selection" (\{ v: v' } -> show (v' /= botOf v')) fig'
+selectOutput δv fig@{ dir, γ, v } = fig
+   { v = δv v
+   , γ = if dir == LinkedInputs then botOf γ else γ
+   , dir = LinkedOutputs
+   }
 
 selectInput :: Bind (Selector Val) -> Endo Fig
 selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
@@ -71,7 +66,6 @@ selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   log ("drawFig output selection: " <> show (fig.v /= botOf fig.v))
    drawView divId output (drawFig divId <<< flip selectOutput fig) out_view
    sequence_ $
       mapWithKey (\x -> drawView divId x (drawFig divId <<< flip (curry selectInput x) fig)) in_views

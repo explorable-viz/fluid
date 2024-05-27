@@ -58,14 +58,26 @@
    font-family: "Roboto", sans-serif;
 }
 
-.scatterplot-point-selected {
+.scatterplot-point {
+   fill: white;
+   stroke: black;
+}
+
+.scatterplot-point.selected {
    fill: LightGreen;
    stroke: teal;
 }
 
-.scatterplot-point-unselected {
-   fill: white;
-   stroke: black;
+.scatterplot-point.selected-transient {
+   fill: rgb(201, 241, 221);
+}
+
+.scatterplot-point.selected-secondary {
+   fill: rgb(226, 226, 226);
+}
+
+.scatterplot-point.selected-secondary-transient {
+   fill: rgb(240, 240, 240);
 }
 
 .title-text {
