@@ -2,14 +2,39 @@
 
 import * as d3 from "d3"
 
+function setSelState (
+   {
+      selState,
+      selClasses,
+      selClass,
+      join
+   },
+   rootElement,
+   { data },
+   listener
+) {
+   rootElement.selectAll('.scatterplot-point').each(function (point) {
+      console.log(selState(data[point.i].x), selState(data[point.i].y))
+      console.log(join(selState(data[point.i].x))(selState(data[point.i].y)))
+      const sel = join(selState(data[point.i].x))(selState(data[point.i].y))
+      console.log("Setting " + selClass(sel) + " for " + point.i)
+      d3.select(this) // won't work inside arrow function :/
+         .classed(selClasses, false)
+         .classed(selClass(sel), true)
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
+   })
+}
+
 function drawScatterPlot_ (
    {
-      uiHelpers: { val, selState, isNone𝕊 },
+      uiHelpers,
       divId,
       suffix,
       view: {
          caption, // String
-         data,    // Array ScatterRecord
+         data,    // Array Point
          xlabel,
          ylabel
       }
@@ -17,6 +42,7 @@ function drawScatterPlot_ (
    listener
 ) {
    return () => {
+      const { val } = uiHelpers
       const childId = divId + '-' + suffix
       var max_width = 360
       var max_height = 360
@@ -30,68 +56,69 @@ function drawScatterPlot_ (
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
       const div = d3.select('#' + divId)
+      let rootElement = div.selectAll('#' + childId)
 
-      div.selectAll('#' + childId).remove()
+      if (rootElement.empty()) {
+         rootElement = div
+            .append('svg')
+               .classed('center', true)
+               .attr('width', max_width + margin.left + margin.right)
+               .attr('height', max_height + margin.top)
+            .attr('id', childId)
+            .append('g')
+               .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-      const svg = div
-         .append('svg')
-            .attr('width', max_width + margin.left + margin.right)
-            .attr('height', max_height + margin.top)
-         .attr('id', childId)
-         .append('g')
-            .attr('transform', `translate(${margin.left}, ${margin.top})`)
+         const x = d3.scaleLinear()
+            .domain([Math.min(0, x_min), x_max])
+            .range([0, width])
+         rootElement.append('g')
+            .attr('transform', "translate(0," + height + ")")
+            .call(d3.axisBottom(x))
+            .selectAll('text')
+            .style('text-anchor', 'middle')
 
-      const x = d3.scaleLinear()
-         .domain([Math.min(0, x_min), x_max])
-         .range([0, width])
-      svg.append('g')
-         .attr('transform', "translate(0," + height + ")")
-         .call(d3.axisBottom(x))
-         .selectAll('text')
-         .style('text-anchor', 'middle')
+         const y = d3.scaleLinear()
+            .domain([Math.min(0, y_min), y_max])
+            .range([height, 0])
+         rootElement.append('g')
+            .call(d3.axisLeft(y))
 
-      const y = d3.scaleLinear()
-         .domain([Math.min(0, y_min), y_max])
-         .range([height, 0])
-      svg.append('g')
-         .call(d3.axisLeft(y))
+         rootElement.append("text")
+            .attr("x", width)
+            .attr("y", height + 25)
+            .style("text-anchor", "end")
+            .style("font-size", "8px")
+            .text(val(xlabel))
+         rootElement.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -margin.top)
+            .attr("y", -margin.left + 20)
+            .style("text-anchor", "end")
+            .style("font-size", "8px")
+            .text(val(ylabel))
 
-      svg.append("text")
-         .attr("x", width)
-         .attr("y", height + 25)
-         .style("text-anchor", "end")
-         .style("font-size", "8px")
-         .text(val(xlabel))
-      svg.append("text")
-         .attr("transform", "rotate(-90)")
-         .attr("x", -margin.top)
-         .attr("y", -margin.left + 20)
-         .style("text-anchor", "end")
-         .style("font-size", "8px")
-         .text(val(ylabel))
-
-
-         svg.append('g')
-            .selectAll('dot')
-            .data([...data.entries()])
+         rootElement.append('g')
+            .selectAll('circle')
+            .data([...data.entries()].map(([i, point]) => { return { i, point } }))
             .enter()
             .append('circle')
-               .attr('cx', ([, d]) => x(val(d.x)))
-               .attr('cy', ([, d]) => y(val(d.y)))
-               .attr('r', 2)
-               .attr('data-y', ([, d]) => val(d.y))
-               .attr('stroke-width', 0.5)
-               .attr('class', ([, d]) =>
-                  isNone𝕊(selState(d.x).persistent) && isNone𝕊(selState(d.y).persistent) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
-               .on('mousedown', (e, d) => {listener(e)})
+            .classed('scatterplot-point', true)
+            .attr('cx', ({ point }) => x(val(point.x)))
+            .attr('cy', ({ point }) => y(val(point.y)))
+            .attr('r', 2)
+            .attr('data-y', ({ point }) => val(point.y))
+            .attr('stroke-width', 0.5)
 
-         svg.append('text')
+         rootElement.append('text')
             .text(val(caption))
-            .attr('x', width/2)
-            .attr('y', height+40)
+            .attr('x', width / 2)
+            .attr('y', height + 40)
             .attr('class', 'title-text')
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
+      }
+
+      setSelState(uiHelpers, rootElement, { data }, listener)
    }
 }
 

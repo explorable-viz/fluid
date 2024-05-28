@@ -67,8 +67,8 @@ main = do
       , loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss")
       ]
    runAffs_ (uncurry drawFig)
-      [ {-("fig-4" × _) <$> loadFig energyScatter
-      , -} ("fig-conv-1" × _) <$> loadFig fig1
+      [ ("fig-4" × _) <$> loadFig energyScatter
+      , ("fig-conv-1" × _) <$> loadFig fig1
       , ("fig-conv-2" × _) <$> loadFig fig2
       , ("fig-conv-3" × _) <$> loadFig fig3
       , ("fig-1" × _) <$> loadFig linkedOutputs_spec1.spec

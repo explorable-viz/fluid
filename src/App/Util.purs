@@ -1,6 +1,6 @@
 module App.Util where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, join)
 
 import Bind (Var)
 import Control.Apply (lift2)
@@ -25,9 +25,8 @@ import Effect.Class.Console (log)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, neg, (∨))
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
-import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', error, spyWhen, (×))
+import Util (type (×), Endo, definitely', error, spy, (×))
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
@@ -152,13 +151,12 @@ selClasses = joinWith " " $
    , css.sel.selected_secondary_transient
    ]
 
--- TODO: rewrite using pattern-matching; drop isNone𝕊 etc
 selClass :: SelState 𝕊 -> String
-selClass (SelState { persistent, transient })
-   | isPrimary𝕊 persistent = css.sel.selected
-   | isPrimary𝕊 transient = css.sel.selected_transient
-   | isSecondary𝕊 persistent = css.sel.selected_secondary
-   | isSecondary𝕊 transient = css.sel.selected_secondary_transient
+selClass (SelState s)
+   | s.persistent == Primary = css.sel.selected
+   | s.transient == Primary = css.sel.selected_transient
+   | s.persistent == Secondary = css.sel.selected_secondary
+   | s.transient == Secondary = css.sel.selected_secondary_transient
    | otherwise = ""
 
 -- TODO: unify with above
@@ -175,6 +173,7 @@ cell_classes col v
 type UIHelpers =
    { val :: forall a. Selectable a -> a
    , selState :: forall a. Selectable a -> SelState 𝕊
+   , join :: SelState 𝕊 -> SelState 𝕊 -> SelState 𝕊
    , isNone𝕊 :: 𝕊 -> Boolean
    , isPrimary𝕊 :: 𝕊 -> Boolean
    , isSecondary𝕊 :: 𝕊 -> Boolean
@@ -204,6 +203,7 @@ uiHelpers :: UIHelpers
 uiHelpers =
    { val: fst
    , selState: snd
+   , join: (∨)
    , isNone𝕊
    , isPrimary𝕊
    , isSecondary𝕊
@@ -231,6 +231,25 @@ uiHelpers =
 
 data 𝕊 = None | Primary | Secondary
 type Selectable a = a × SelState 𝕊
+
+-- UI sometimes merges selection states, e.g. x and y coordinates in a scatter plot
+compare' :: 𝕊 -> 𝕊 -> Ordering
+compare' None None = EQ
+compare' None _ = LT
+compare' Secondary None = GT
+compare' Secondary Secondary = EQ
+compare' Secondary Primary = LT
+compare' Primary Primary = EQ
+compare' Primary _ = GT
+
+instance Eq 𝕊 where
+   eq s s' = compare' s s' == EQ
+
+instance Ord 𝕊 where
+   compare = compare'
+
+instance JoinSemilattice 𝕊 where
+   join = max
 
 to𝔹 :: SelState 𝕊 -> SelState 𝔹
 to𝔹 = (to𝔹' <$> _)
@@ -290,12 +309,10 @@ eventData = target >>> unsafeEventData &&& type_ >>> selector
 
 selector :: EventType -> Selector Val
 selector = case _ of
-   EventType "mousedown" -> (over SelState (\s -> report "mousedown" (s { persistent = neg s.persistent })) <$> _)
-   EventType "mouseenter" -> (over SelState (\s -> report "mouseenter" (s { transient = true })) <$> _)
-   EventType "mouseleave" -> (over SelState (\s -> report "mouseleave" (s { transient = false })) <$> _)
+   EventType "mousedown" -> (over SelState (\s -> s { persistent = neg s.persistent }) <$> _)
+   EventType "mouseenter" -> (over SelState (\s -> spy "mouseenter" identity (s { transient = true })) <$> _)
+   EventType "mouseleave" -> (over SelState (_ { transient = false }) <$> _)
    EventType _ -> error "Unsupported event type"
-   where
-   report = flip (spyWhen tracing.mouseEvent) show
 
 -- ======================
 -- boilerplate
