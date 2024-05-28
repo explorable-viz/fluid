@@ -4,10 +4,10 @@ import Prelude hiding (absurd)
 
 import App.Fig (FigSpec, drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
-import Bind ((↦))
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..), Folder(..), loadFile')
+import Test.Specs.LinkedInputs (energyScatter, linkedInputs_spec1)
 import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
 import Util ((×))
 
@@ -47,17 +47,6 @@ fig3 =
    , inputs: [ "input_image" ]
    }
 
-energyScatter :: FigSpec
-energyScatter =
-   { imports: []
-   , datasets:
-        [ "renewables" ↦ "example/linked-inputs/renewables"
-        , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
-        ]
-   , file: File "linked-inputs/energyscatter"
-   , inputs: [ "renewables", "nonRenewables" ]
-   }
-
 main :: Effect Unit
 main = do
    runAffs_ drawFile
@@ -72,4 +61,5 @@ main = do
       , ("fig-conv-2" × _) <$> loadFig fig2
       , ("fig-conv-3" × _) <$> loadFig fig3
       , ("fig-1" × _) <$> loadFig linkedOutputs_spec1.spec
+      , ("fig-2" × _) <$> loadFig linkedInputs_spec1.spec
       ]

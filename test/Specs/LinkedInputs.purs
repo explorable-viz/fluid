@@ -2,12 +2,23 @@ module Test.Specs.LinkedInputs where
 
 import Prelude
 
-import App (energyScatter)
+import App.Fig (FigSpec)
 import App.Util.Selector (envVal, field, listElement)
 import Bind ((↦))
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedInputsSpec)
+
+energyScatter :: FigSpec
+energyScatter =
+   { imports: []
+   , datasets:
+        [ "renewables" ↦ "example/linked-inputs/renewables"
+        , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
+        ]
+   , file: File "linked-inputs/energyscatter"
+   , inputs: [ "renewables", "nonRenewables" ]
+   }
 
 linkedInputs_spec1 :: TestLinkedInputsSpec
 linkedInputs_spec1 =
