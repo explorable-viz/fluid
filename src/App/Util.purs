@@ -26,7 +26,7 @@ import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, 
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', error, (×))
+import Util (type (×), Endo, definitely', error, spy, (×))
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
@@ -152,11 +152,12 @@ selClasses = joinWith " " $
    ]
 
 selClass :: SelState 𝕊 -> String
-selClass (SelState { persistent: Primary }) = css.sel.selected
-selClass (SelState { transient: Primary }) = css.sel.selected_transient
-selClass (SelState { persistent: Secondary }) = css.sel.selected_secondary
-selClass (SelState { transient: Secondary }) = css.sel.selected_secondary_transient
-selClass _ = ""
+selClass (SelState s)
+   | s.persistent == Primary = css.sel.selected
+   | s.transient == Primary = css.sel.selected_transient
+   | s.persistent == Secondary = css.sel.selected_secondary
+   | s.transient == Secondary = css.sel.selected_secondary_transient
+   | otherwise = ""
 
 -- TODO: unify with above
 cell_classes :: String -> Val (SelState 𝕊) -> String
@@ -309,7 +310,7 @@ eventData = target >>> unsafeEventData &&& type_ >>> selector
 selector :: EventType -> Selector Val
 selector = case _ of
    EventType "mousedown" -> (over SelState (\s -> s { persistent = neg s.persistent }) <$> _)
-   EventType "mouseenter" -> (over SelState (_ { transient = true }) <$> _)
+   EventType "mouseenter" -> (over SelState (\s -> spy "mouseenter" identity (s { transient = true })) <$> _)
    EventType "mouseleave" -> (over SelState (_ { transient = false }) <$> _)
    EventType _ -> error "Unsupported event type"
 
