@@ -15,8 +15,8 @@ newtype TableView = TableView
 
 foreign import drawTable :: Renderer TableView
 
--- 1-based index of selected record and name of field; see data binding in .js (0th field name is indexKey)
-type CellIndex = { __n :: Int, name :: String }
+-- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
+type CellIndex = { __n :: Int, colName :: String }
 
 tableViewSelector :: ViewSelector CellIndex
-tableViewSelector { __n, name } = listElement (__n - 1) <<< field name
+tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName

@@ -2,11 +2,6 @@
 
 import * as d3 from "d3"
 
-// Difference from other JS mappings: values in each cell are not "unpacked" to Selectable but remain as Val
-function Val_val(x) {
-   return x._2
-}
-
 function prim (v) {
    if (isNaN(parseFloat(v._1))) {
       return v._1
@@ -15,7 +10,32 @@ function prim (v) {
    }
 }
 
-// Generic to all tables.
+function setSelState (
+   {
+      selClasses,
+      tableView: { cell_selClass, rowKey, record_isUsed, val_selState }
+   },
+   rootElement,
+   { table },
+   listener
+) {
+   rootElement.selectAll('.table-cell').each(function (cell) {
+      if (cell.colName != rowKey) {
+         const sel = val_selState(table[cell.i][cell.colName])
+         d3.select(this) // won't work inside arrow function :/
+            .classed(selClasses, false)
+            .classed(cell_selClass(cell.colName)(sel), true)
+            .on('mousedown', e => { listener(e) })
+            .on('mouseenter', e => { listener(e) })
+            .on('mouseleave', e => { listener(e) })
+      }
+   })
+   rootElement.selectAll('.table-row').each(function ({ i }) {
+      d3.select(this) // won't work inside arrow function :/
+         .classed('hidden', !record_isUsed(table[i]))
+   })
+}
+
 function drawTable_ (
    {
       uiHelpers,
@@ -30,26 +50,22 @@ function drawTable_ (
    listener
 ) {
    return () => {
-      const { tableViewHelpers: { indexKey, record_isUsed, cell_classes } } = uiHelpers
+      const { tableView: { rowKey, val_val } } = uiHelpers
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
 
-      table = table.map((r, n) => { return {[ indexKey ]: n + 1, ...r} })
-
+      table = table.map((r, n) => { return {[ rowKey ]: n + 1, ...r} })
+      const colNames = Object.keys(table[0]).sort()
       const unfilteredLength = table.length
-      div.selectAll('#' + childId).remove()
-      if (filter) {
-         table = table.filter(r => record_isUsed(r))
-      }
 
-      if (table.length > 0) {
-         const HTMLtable = div
+      let rootElement = div.selectAll('#' + childId)
+
+      if (rootElement.empty()) {
+         rootElement = div
             .append('table')
             .attr('id', childId)
 
-         const colNames = Object.keys(table[0]).sort()
-
-         HTMLtable.append('caption')
+         rootElement.append('caption')
             .text(title + ' (' + table.length + ' of ' + unfilteredLength + ')' )
             .attr('x', 0)
             .attr('y', 0)
@@ -57,33 +73,34 @@ function drawTable_ (
             .attr('dominant-baseline', 'middle')
             .attr('text-anchor', 'left')
 
-         const tableHead = HTMLtable.append('thead')
+         const tableHead = rootElement.append('thead')
          tableHead
             .append('tr')
             .selectAll('th')
             .data(colNames)
             .enter()
             .append('th')
-            .text(d => d == indexKey ? (filter ? "▸" : "▾" ) : d)
+            .text(colName => colName == rowKey ? (filter ? "▸" : "▾" ) : colName)
 
-         const rows = HTMLtable
+         const rows = rootElement
             .append('tbody')
             .selectAll('tr')
-            .data(table)
+            .data([...table.entries()].map((([i, row]) => { return { i, row } })))
             .enter()
             .append('tr')
+            .attr('class', 'table-row')
 
          rows.selectAll('td')
-            .data(d => colNames.map(
-               k => { return { [ indexKey ]: d[indexKey], 'value': d[k], 'name': k } })
-            )
+            .data(({ i, row }) => colNames.map(colName => {
+               return { [rowKey]: row[rowKey], i, colName, value: row[colName] }
+            }))
             .enter()
             .append('td')
-            .attr('data-th', d => d.name)
-            .attr('class', d => cell_classes(d.name)(d.value))
-            .text(d => d.name != indexKey ? prim(Val_val(d.value)) : d.value)
-            .on('mousedown', e => listener(e))
+            .attr('class', 'table-cell')
+            .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
+
+      setSelState(uiHelpers, rootElement, { table }, listener)
    }
 }
 
