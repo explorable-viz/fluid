@@ -16,7 +16,7 @@ function setSelState (
       tableView: { cell_selClass, rowKey, record_isUsed, val_selState }
    },
    rootElement,
-   { table },
+   { title, table },
    listener
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
@@ -30,10 +30,15 @@ function setSelState (
             .on('mouseleave', e => { listener(e) })
       }
    })
+   let hidden = 0
    rootElement.selectAll('.table-row').each(function ({ i }) {
+      hide = !record_isUsed(table[i])
+      if (hide) hidden++
       d3.select(this) // won't work inside arrow function :/
-         .classed('hidden', !record_isUsed(table[i]))
+         .classed('hidden', hide)
    })
+   rootElement.select('.table-caption')
+      .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
 }
 
 function drawTable_ (
@@ -56,7 +61,6 @@ function drawTable_ (
 
       table = table.map((r, n) => { return {[ rowKey ]: n + 1, ...r} })
       const colNames = Object.keys(table[0]).sort()
-      const unfilteredLength = table.length
 
       let rootElement = div.selectAll('#' + childId)
 
@@ -66,7 +70,6 @@ function drawTable_ (
             .attr('id', childId)
 
          rootElement.append('caption')
-            .text(title + ' (' + table.length + ' of ' + unfilteredLength + ')' )
             .attr('x', 0)
             .attr('y', 0)
             .attr('class', 'title-text table-caption')
@@ -100,7 +103,7 @@ function drawTable_ (
             .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setSelState(uiHelpers, rootElement, { table }, listener)
+      setSelState(uiHelpers, rootElement, { title, table }, listener)
    }
 }
 
