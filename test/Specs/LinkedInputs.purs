@@ -2,55 +2,22 @@ module Test.Specs.LinkedInputs where
 
 import Prelude
 
-import App (energyScatter)
+import App.Fig (FigSpec)
 import App.Util.Selector (envVal, field, listElement)
 import Bind ((↦))
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedInputsSpec)
 
-linkedInputs_spec1 :: TestLinkedInputsSpec
-linkedInputs_spec1 =
-   { spec:
-        { imports: []
-        , datasets:
-             [ "countries" ↦ "example/linked-inputs/countries"
-             , "cities" ↦ "example/linked-inputs/cities"
-             ]
-        , file: File "linked-inputs/water"
-        , inputs: [ "countries", "cities" ]
-        }
-   , δ_in: "countries" ↦ listElement 0 (field "farms" neg)
-   , in_expect:
-        envVal "countries" (listElement 0 (field "farms" neg >>> field "popMil" neg))
-           >>> envVal "cities"
-              ( listElement 0 (field "water" neg)
-                   >>> listElement 1 (field "water" neg)
-                   >>> listElement 2 (field "water" neg)
-              )
-   }
-
-linkedInputs_spec2 :: TestLinkedInputsSpec
-linkedInputs_spec2 =
-   { spec:
-        { imports: []
-        , datasets:
-             [ "countries" ↦ "example/linked-inputs/countries"
-             , "cities" ↦ "example/linked-inputs/cities"
-             ]
-        , file: File "linked-inputs/water"
-        , inputs: [ "countries", "cities" ]
-        }
-   , δ_in: "cities" ↦ listElement 3 (field "water" neg)
-        >>> listElement 4 (field "water" neg)
-        >>> listElement 5 (field "water" neg)
-   , in_expect:
-        envVal "countries" (listElement 1 (field "farms" neg >>> field "popMil" neg))
-           >>> envVal "cities"
-              ( listElement 3 (field "water" neg)
-                   >>> listElement 4 (field "water" neg)
-                   >>> listElement 5 (field "water" neg)
-              )
+energyScatter :: FigSpec
+energyScatter =
+   { imports: []
+   , datasets:
+        [ "renewables" ↦ "example/linked-inputs/renewables"
+        , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
+        ]
+   , file: File "linked-inputs/energyscatter"
+   , inputs: [ "renewables", "nonRenewables" ]
    }
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
@@ -120,9 +87,7 @@ linkedInputs_spec5 =
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
 linkedInputs_cases =
-   [ linkedInputs_spec1
-   , linkedInputs_spec2
-   , linkedInputs_spec3
+   [ linkedInputs_spec3
    , linkedInputs_spec4
    , linkedInputs_spec5
    ]

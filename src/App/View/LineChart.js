@@ -23,7 +23,7 @@ function max_x ({ val }) {
 function setSelState (
    {
       selState,
-      lineChartHelpers: { point_radius, point_stroke }
+      lineChart: { point_radius, point_stroke }
    },
    nameCol,
    rootElement,
@@ -54,8 +54,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { val, lineChartHelpers } = uiHelpers
-      const { point_smallRadius } = lineChartHelpers
+      const { val, lineChart: { point_smallRadius } } = uiHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,

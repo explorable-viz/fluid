@@ -67,12 +67,12 @@ function drawMatrix_ (
                (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`
             )
 
-         const rect = grp
+         const cells = grp
             .selectAll('rect')
             .data(({ i, ns }) => [...ns.entries()].map(([j, n]) => { return { i, j: j + 1, n } }))
             .enter()
 
-         rect
+         cells
             .append('rect')
             .classed('matrix-cell', true)
             .attr('x', (_, j) => w * j)
@@ -80,7 +80,7 @@ function drawMatrix_ (
             .attr('height', h)
             .attr('stroke-width', strokeWidth)
 
-         rect
+         cells
             .append('text')
             .text(({ n }) => val(n))
             .attr('x', (_, j) => w * (j + 0.5))

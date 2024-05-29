@@ -13,7 +13,7 @@ function tickEvery (n) {
 function setSelState (
    {
       selState,
-      barChartHelpers: { bar_fill, bar_stroke }
+      barChart: { bar_fill, bar_stroke }
    },
    rootElement,
    { data },

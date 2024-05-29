@@ -6,8 +6,6 @@ import App.Util (HTMLId, SelState, ViewSelector, 𝕊, Selector, eventData, from
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
 import App.View.BarChart (barChartSelector, drawBarChart)
-import App.View.BubbleChart (BubbleChart) as View
-import App.View.BubbleChart (bubbleChartSelector, drawBubbleChart)
 import App.View.LineChart (LineChart) as View
 import App.View.LineChart (drawLineChart, lineChartSelector)
 import App.View.MatrixView (MatrixView(..)) as View
@@ -19,7 +17,7 @@ import App.View.TableView (drawTable, tableViewSelector)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (uncurry)
-import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
+import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
 import Dict (Dict)
 import Effect (Effect)
 import Util.Map (mapWithKey)
@@ -29,7 +27,6 @@ import Web.Event.EventTarget (EventListener, eventListener)
 data View
    -- one for each constructor of the Fluid 'Plot' data type
    = BarChart View.BarChart
-   | BubbleChart View.BubbleChart
    | LineChart View.LineChart
    | ScatterPlot View.ScatterPlot
    | MultiView (Dict View)
@@ -43,7 +40,6 @@ drawView divId suffix redraw = case _ of
    TableView vw -> drawTable { uiHelpers, divId, suffix, view: vw } =<< listener tableViewSelector
    LineChart vw -> drawLineChart { uiHelpers, divId, suffix, view: vw } =<< listener lineChartSelector
    BarChart vw -> drawBarChart { uiHelpers, divId, suffix, view: vw } =<< listener barChartSelector
-   BubbleChart vw -> drawBubbleChart { uiHelpers, divId, suffix, view: vw } =<< listener bubbleChartSelector
    ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< listener scatterPlotSelector
    MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
    where
@@ -54,8 +50,6 @@ drawView divId suffix redraw = case _ of
 view :: Partial => String -> Val (SelState 𝕊) -> View
 view _ (Val _ (Constr c (u : Nil))) | c == cBarChart =
    BarChart (record from u)
-view _ (Val _ (Constr c (u : Nil))) | c == cBubbleChart =
-   BubbleChart (record from u)
 view _ (Val _ (Constr c (u : Nil))) | c == cLineChart =
    LineChart (record from u)
 view title (Val _ (Constr c (u : Nil))) | c == cMultiPlot =

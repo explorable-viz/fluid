@@ -6,7 +6,7 @@ import App.Util (Selector, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cBarChart, cBubbleChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely', error)
@@ -23,9 +23,6 @@ snd = constrArg cPair 1
 
 some :: Endo 𝔹 -> Selector Val
 some = constr cSome
-
-bubbleChart :: Endo (Selector Val)
-bubbleChart = constrArg cBubbleChart 0
 
 multiPlot :: Endo (Selector Val)
 multiPlot = constrArg cMultiPlot 0

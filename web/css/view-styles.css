@@ -1,34 +1,46 @@
-.d3-tip {
-   font-size: 11px;
+table {
+   border-collapse: collapse;
+   border-spacing: 0px;
 }
 
-.cell {
+.title-text {
+   fill: Black;
+   font-size: 9pt;
+   font-family: "Roboto", sans-serif;
+}
+
+.table-row {
+   display: table-row;
+   border: 1px solid White; /* then can be overridden by cell */
+}
+
+.table-cell {
    border-radius: 2px;
+   background-color: White;
 }
 
-.cell.selected {
+.table-cell.selected {
    border: 1px solid teal;
    background-color: #93E9BE;
 }
 
-.cell.selected-transient {
+.table-cell.selected-transient {
    border: 1px solid rgb(201, 221, 221);
    background-color: White;
 }
 
-.cell.selected-secondary {
+.table-cell.selected-secondary {
    border: 1px solid rgb(156, 156, 156);
    background-color: rgb(226, 226, 226);
 }
 
-.cell.selected-secondary-transient {
+.table-cell.selected-secondary-transient {
    border: 1px solid rgb(216, 211, 211);
    background-color: White;
 }
 
-.cell.unselected {
-   border: 1px solid White;
-   background-color: White;
+.table-row.hidden {
+   display: none;
 }
 
 .matrix-cell {
@@ -78,10 +90,4 @@
 
 .scatterplot-point.selected-secondary-transient {
    fill: rgb(240, 240, 240);
-}
-
-.title-text {
-   fill: Black;
-   font-size: 9pt;
-   font-family: "Roboto", sans-serif;
 }

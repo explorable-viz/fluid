@@ -26,7 +26,7 @@ import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, 
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', error, spy, (×))
+import Util (type (×), Endo, definitely', error, (×))
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
@@ -114,14 +114,14 @@ point_stroke (SelState { persistent, transient }) col =
       None × None -> col
       _ -> colorShade col (-30)
 
-indexKey :: String
-indexKey = "__n"
+rowKey :: String
+rowKey = "__n"
 
 -- [any record type with only primitive fields] -> 𝕊
 record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
 record_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
-      k /= indexKey && selected (not <<< isNone𝕊 <$> (get k r # \(Val α _) -> α))
+      k /= rowKey && selected (not <<< isNone𝕊 <$> (get k r # \(Val α _) -> α))
 
 css
    :: { sel ::
@@ -159,15 +159,10 @@ selClass (SelState s)
    | s.transient == Secondary = css.sel.selected_secondary_transient
    | otherwise = ""
 
--- TODO: unify with above
-cell_classes :: String -> Val (SelState 𝕊) -> String
-cell_classes col v
-   | col == indexKey = "cell " <> css.sel.unselected
-   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell " <> css.sel.selected
-   | isPrimary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell " <> css.sel.selected_transient
-   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.persistent) = "cell " <> css.sel.selected_secondary
-   | isSecondary𝕊 (v # \(Val (SelState α) _) -> α.transient) = "cell " <> css.sel.selected_secondary_transient
-   | otherwise = "cell " <> css.sel.unselected
+cell_selClass :: String -> SelState 𝕊 -> String
+cell_selClass colName s
+   | colName == rowKey = ""
+   | otherwise = selClass s
 
 -- Bundle into a record so we can export via FFI
 type UIHelpers =
@@ -180,22 +175,22 @@ type UIHelpers =
    , colorShade :: String -> Int -> String
    , selClasses :: String
    , selClass :: SelState 𝕊 -> String
-   , barChartHelpers ::
+   , barChart ::
         { bar_fill :: SelState 𝕊 -> Endo String
         , bar_stroke :: SelState 𝕊 -> Endo String
         }
-   , lineChartHelpers ::
+   , lineChart ::
         { point_smallRadius :: Int
         , point_radius :: SelState 𝕊 -> Int
         , point_stroke :: SelState 𝕊 -> Endo String
         }
-   , matrixViewHelpers ::
-        {
-        }
-   , tableViewHelpers ::
-        { indexKey :: String
+   , tableView ::
+        { rowKey :: String
         , record_isUsed :: Dict (Val (SelState 𝕊)) -> 𝔹
-        , cell_classes :: String -> Val (SelState 𝕊) -> String
+        , cell_selClass :: String -> SelState 𝕊 -> String
+        -- values in table cells are not "unpacked" to Selectable but remain as Val
+        , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
+        , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
         }
    }
 
@@ -210,22 +205,21 @@ uiHelpers =
    , colorShade
    , selClasses
    , selClass
-   , barChartHelpers:
+   , barChart:
         { bar_fill
         , bar_stroke
         }
-   , lineChartHelpers:
+   , lineChart:
         { point_smallRadius
         , point_radius
         , point_stroke
         }
-   , matrixViewHelpers:
-        {
-        }
-   , tableViewHelpers:
-        { indexKey
+   , tableView:
+        { rowKey
         , record_isUsed
-        , cell_classes
+        , cell_selClass
+        , val_val: \(Val _ v) -> v
+        , val_selState: \(Val α _) -> α
         }
    }
 
@@ -310,7 +304,7 @@ eventData = target >>> unsafeEventData &&& type_ >>> selector
 selector :: EventType -> Selector Val
 selector = case _ of
    EventType "mousedown" -> (over SelState (\s -> s { persistent = neg s.persistent }) <$> _)
-   EventType "mouseenter" -> (over SelState (\s -> spy "mouseenter" identity (s { transient = true })) <$> _)
+   EventType "mouseenter" -> (over SelState (_ { transient = true }) <$> _)
    EventType "mouseleave" -> (over SelState (_ { transient = false }) <$> _)
    EventType _ -> error "Unsupported event type"
 
