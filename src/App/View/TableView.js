@@ -30,11 +30,10 @@ function drawTable_ (
    listener
 ) {
    return () => {
-      const { tableViewHelpers: { record_isUsed, cell_classes } } = uiHelpers
+      const { tableViewHelpers: { indexKey, record_isUsed, cell_classes } } = uiHelpers
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
 
-      indexKey = "__n"
       table = table.map((r, n) => { return {[ indexKey ]: n + 1, ...r} })
 
       const unfilteredLength = table.length
@@ -84,9 +83,6 @@ function drawTable_ (
             .attr('class', d => cell_classes(d.name)(d.value))
             .text(d => d.name != indexKey ? prim(Val_val(d.value)) : d.value)
             .on('mousedown', e => listener(e))
-
-         sel = d3.select("th")
-         sel.on("mouseover", _ => console.log("TODO: toggle filter state persistently"))
       }
    }
 }
