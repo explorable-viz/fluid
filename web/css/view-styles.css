@@ -1,12 +1,21 @@
+table {
+   border-collapse: collapse;
+   border-spacing: 0px;
+}
+
 .title-text {
    fill: Black;
    font-size: 9pt;
    font-family: "Roboto", sans-serif;
 }
 
+.table-row {
+   display: table-row;
+   border: 1px solid White; /* then can be overridden by cell */
+}
+
 .table-cell {
    border-radius: 2px;
-   border: 1px solid White;
    background-color: White;
 }
 
