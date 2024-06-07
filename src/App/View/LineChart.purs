@@ -84,21 +84,20 @@ point_smallRadius = 2
 
 point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
 point_attrs nameCol (LineChart { plots }) { i, j, name } =
-   let
-      LinePlot plot = plots ! i
-      Point { y } = plot.points ! j
-      SelState { persistent, transient } = snd y
-      col = nameCol name
-   in
-      case persistent × transient of
-         None × None -> fromFoldable
-            [ "r" ↦ show point_smallRadius
-            , "stroke" ↦ col
-            ]
-         _ -> fromFoldable
-            [ "r" ↦ show (point_smallRadius * 2)
-            , "stroke" ↦ colorShade col (-30)
-            ]
+   case persistent × transient of
+      None × None -> fromFoldable
+         [ "r" ↦ show point_smallRadius
+         , "stroke" ↦ col
+         ]
+      _ -> fromFoldable
+         [ "r" ↦ show (point_smallRadius * 2)
+         , "stroke" ↦ colorShade col (-30)
+         ]
+   where
+   LinePlot plot = plots ! i
+   Point { y } = plot.points ! j
+   SelState { persistent, transient } = snd y
+   col = nameCol name
 
 plot_max_y :: LinePlot -> Number
 plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))
