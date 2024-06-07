@@ -7,7 +7,7 @@ import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
 import App.View.BarChart (barChartSelector, bar_fill, bar_stroke, drawBarChart)
 import App.View.LineChart (LineChart) as View
-import App.View.LineChart (drawLineChart, lineChartSelector, point_radius, point_smallRadius, point_stroke)
+import App.View.LineChart (drawLineChart', lineChartSelector)
 import App.View.MatrixView (MatrixView(..)) as View
 import App.View.MatrixView (drawMatrix, matrixRep, matrixViewSelector)
 import App.View.ScatterPlot (ScatterPlot) as View
@@ -40,7 +40,7 @@ drawView :: HTMLId -> String -> (Selector Val -> Effect Unit) -> View -> Effect 
 drawView divId suffix redraw = case _ of
    MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< listener matrixViewSelector
    TableView vw -> drawTable { uiHelpers, divId, suffix, view: vw } =<< listener tableViewSelector
-   LineChart vw -> drawLineChart { uiHelpers, divId, suffix, view: vw } =<< listener lineChartSelector
+   LineChart vw -> drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< listener lineChartSelector
    BarChart vw -> drawBarChart { uiHelpers, divId, suffix, view: vw } =<< listener barChartSelector
    ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< listener scatterPlotSelector
    MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
@@ -73,11 +73,6 @@ uiHelpers =
    , barChart:
         { bar_fill
         , bar_stroke
-        }
-   , lineChart:
-        { point_smallRadius
-        , point_radius
-        , point_stroke
         }
    , tableView:
         { rowKey

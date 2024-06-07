@@ -25,8 +25,9 @@ import Effect.Class.Console (log)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, neg, (∨))
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
+import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', error)
+import Util (type (×), Endo, definitely', error, spyWhen)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
@@ -102,7 +103,7 @@ selClass (SelState s)
 data 𝕊 = None | Primary | Secondary
 type Selectable a = a × SelState 𝕊
 
--- UI sometimes merges selection states, e.g. x and y coordinates in a scatter plot
+-- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
 compare' None None = EQ
 compare' None _ = LT
@@ -179,10 +180,12 @@ eventData = target >>> unsafeEventData &&& type_ >>> selector
 
 selector :: EventType -> Selector Val
 selector = case _ of
-   EventType "mousedown" -> (over SelState (\s -> s { persistent = neg s.persistent }) <$> _)
-   EventType "mouseenter" -> (over SelState (_ { transient = true }) <$> _)
-   EventType "mouseleave" -> (over SelState (_ { transient = false }) <$> _)
+   EventType "mousedown" -> (over SelState (report <<< \s -> s { persistent = neg s.persistent }) <$> _)
+   EventType "mouseenter" -> (over SelState (report <<< \s -> s { transient = true }) <$> _)
+   EventType "mouseleave" -> (over SelState (report <<< \s -> s { transient = false }) <$> _)
    EventType _ -> error "Unsupported event type"
+   where
+   report = spyWhen tracing.mouseEvent "Setting SelState to " show
 
 -- ======================
 -- boilerplate

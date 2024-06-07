@@ -20,21 +20,23 @@ function max_x ({ val }) {
    }
 }
 
+d3.selection.prototype.attrs = function(m) {
+   for (const k in m) {
+      this.attr(k, m[k])
+   }
+   return this
+}
+
 function setSelState (
-   {
-      selState,
-      lineChart: { point_radius, point_stroke }
-   },
+   { point_attrs },
    nameCol,
    rootElement,
-   { plots },
+   chart,
    listener
 ) {
    rootElement.selectAll('.point').each(function (point) {
-      const sel = selState(plots[point.i].data[point.j].y)
       d3.select(this) // won't work inside arrow function :/
-         .attr('r', point_radius(sel))
-         .attr('stroke', point_stroke(sel)(nameCol(point.name)))
+         .attrs(point_attrs(nameCol)(chart)(point))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -42,6 +44,7 @@ function setSelState (
 }
 
 function drawLineChart_ (
+   lineChartHelpers,
    {
       uiHelpers,
       divId,
@@ -54,7 +57,8 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { val, lineChart: { point_smallRadius } } = uiHelpers
+      const { point_smallRadius } = lineChartHelpers
+      const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
@@ -93,10 +97,10 @@ function drawLineChart_ (
             .append('g')
             .append('path')
             .attr('fill', 'none')
-            .attr('stroke', ([, d]) => nameCol(val(d.name)))
+            .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
-            .attr('d', ([_, d]) => line1(d.data))
+            .attr('d', ([, plot]) => line1(plot.data))
 
          for (const i_plot of plots.entries()) {
             const [i, plot] = i_plot
@@ -164,8 +168,8 @@ function drawLineChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
       }
-      setSelState(uiHelpers, nameCol, rootElement, { plots }, listener)
+      setSelState(lineChartHelpers, nameCol, rootElement, { plots }, listener)
    }
 }
 
-export var drawLineChart = x1 => x2 => drawLineChart_(x1, x2)
+export var drawLineChart = x1 => x2 => x3 => drawLineChart_(x1, x2, x3)

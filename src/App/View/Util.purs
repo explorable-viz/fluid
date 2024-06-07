@@ -32,11 +32,6 @@ type UIHelpers =
         { bar_fill :: SelState 𝕊 -> Endo String
         , bar_stroke :: SelState 𝕊 -> Endo String
         }
-   , lineChart ::
-        { point_smallRadius :: Int
-        , point_radius :: SelState 𝕊 -> Int
-        , point_stroke :: SelState 𝕊 -> Endo String
-        }
    , tableView ::
         { rowKey :: String
         , record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean

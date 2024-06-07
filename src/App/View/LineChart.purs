@@ -5,11 +5,14 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (Renderer)
+import Bind ((↦))
 import Data.List (List(..), (:))
+import Data.Tuple (snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
-import Dict (Dict)
+import Dict (Dict, fromFoldable)
+import Foreign.Object (Object)
 import Primitive (string, unpack)
-import Util (Endo, (×))
+import Util ((×), (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
@@ -28,7 +31,18 @@ newtype Point = Point
    , y :: Selectable Number
    }
 
-foreign import drawLineChart :: Renderer LineChart
+type LineChartHelpers =
+   { point_smallRadius :: Int
+   , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+   }
+
+foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
+
+drawLineChart' :: Renderer LineChart
+drawLineChart' = drawLineChart
+   { point_smallRadius
+   , point_attrs
+   }
 
 instance Reflect (Dict (Val (SelState 𝕊))) Point where
    from r = Point
@@ -52,7 +66,7 @@ instance Reflect (Val (SelState 𝕊)) LinePlot where
    from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
-type PointCoordinate = { i :: Int, j :: Int }
+type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
 lineChartSelector :: ViewSelector PointCoordinate
 lineChartSelector { i, j } =
@@ -61,14 +75,20 @@ lineChartSelector { i, j } =
 point_smallRadius :: Int
 point_smallRadius = 2
 
-point_radius :: SelState 𝕊 -> Int
-point_radius (SelState { persistent, transient }) =
-   case persistent × transient of
-      None × None -> point_smallRadius
-      _ -> point_smallRadius * 2
-
-point_stroke :: SelState 𝕊 -> Endo String
-point_stroke (SelState { persistent, transient }) col =
-   case persistent × transient of
-      None × None -> col
-      _ -> colorShade col (-30)
+point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+point_attrs nameCol (LineChart { plots }) { i, j, name } =
+   let
+      LinePlot plot = plots ! i
+      Point { y } = plot.data ! j
+      SelState { persistent, transient } = snd y
+      col = nameCol name
+   in
+      case persistent × transient of
+         None × None -> fromFoldable
+            [ "r" ↦ show point_smallRadius
+            , "stroke" ↦ col
+            ]
+         _ -> fromFoldable
+            [ "r" ↦ show (point_smallRadius * 2)
+            , "stroke" ↦ colorShade col (-30)
+            ]
