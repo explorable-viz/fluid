@@ -88,10 +88,12 @@ point_attrs nameCol (LineChart { plots }) { i, j, name } =
       None × None -> fromFoldable
          [ "r" ↦ show point_smallRadius
          , "stroke" ↦ col
+         , "stroke-width" ↦ "1"
          ]
       _ -> fromFoldable
          [ "r" ↦ show (point_smallRadius * 2)
          , "stroke" ↦ colorShade col (-30)
+         , "stroke-width" ↦ "1"
          ]
    where
    LinePlot plot = plots ! i
