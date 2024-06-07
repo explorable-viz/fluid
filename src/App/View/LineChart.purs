@@ -6,13 +6,14 @@ import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (Renderer)
 import Bind ((↦))
+import Data.Foldable (maximum, minimum)
 import Data.List (List(..), (:))
-import Data.Tuple (snd)
+import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict, fromFoldable)
 import Foreign.Object (Object)
 import Primitive (string, unpack)
-import Util ((×), (!))
+import Util (definitely', (!), (×))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
@@ -23,7 +24,7 @@ newtype LineChart = LineChart
 
 newtype LinePlot = LinePlot
    { name :: Selectable String
-   , data :: Array Point
+   , points :: Array Point
    }
 
 newtype Point = Point
@@ -32,7 +33,10 @@ newtype Point = Point
    }
 
 type LineChartHelpers =
-   { point_smallRadius :: Int
+   { plot_max_x :: LinePlot -> Number
+   , plot_min_x :: LinePlot -> Number
+   , plot_max_y :: LinePlot -> Number
+   , point_smallRadius :: Int
    , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    }
 
@@ -40,7 +44,10 @@ foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
 drawLineChart' :: Renderer LineChart
 drawLineChart' = drawLineChart
-   { point_smallRadius
+   { plot_max_x
+   , plot_min_x
+   , plot_max_y
+   , point_smallRadius
    , point_attrs
    }
 
@@ -53,7 +60,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) Point where
 instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
-      , data: record from <$> from (get f_data r)
+      , points: record from <$> from (get f_data r)
       }
 
 instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
@@ -79,7 +86,7 @@ point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object Stri
 point_attrs nameCol (LineChart { plots }) { i, j, name } =
    let
       LinePlot plot = plots ! i
-      Point { y } = plot.data ! j
+      Point { y } = plot.points ! j
       SelState { persistent, transient } = snd y
       col = nameCol name
    in
@@ -92,3 +99,12 @@ point_attrs nameCol (LineChart { plots }) { i, j, name } =
             [ "r" ↦ show (point_smallRadius * 2)
             , "stroke" ↦ colorShade col (-30)
             ]
+
+plot_max_y :: LinePlot -> Number
+plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))
+
+plot_min_x :: LinePlot -> Number
+plot_min_x (LinePlot { points }) = definitely' (minimum (points <#> \(Point { x }) -> fst x))
+
+plot_max_x :: LinePlot -> Number
+plot_max_x (LinePlot { points }) = definitely' (maximum (points <#> \(Point { x }) -> fst x))

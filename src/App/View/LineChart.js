@@ -2,24 +2,6 @@
 
 import * as d3 from "d3"
 
-function max_y ({ val }) {
-   return linePlot => {
-      return Math.max(...linePlot.data.map(point => val(point.y)))
-   }
-}
-
-function min_x ({ val }) {
-   return linePlot => {
-      return Math.min(...linePlot.data.map(point => val(point.x)))
-   }
-}
-
-function max_x ({ val }) {
-   return linePlot => {
-      return Math.max(...linePlot.data.map(point => val(point.x)))
-   }
-}
-
 d3.selection.prototype.attrs = function(m) {
    for (const k in m) {
       this.attr(k, m[k])
@@ -46,7 +28,7 @@ function setSelState (
 function drawLineChart_ (
    lineChartHelpers,
    {
-      uiHelpers,
+      uiHelpers: { val },
       divId,
       suffix,
       view: {
@@ -57,15 +39,14 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { point_smallRadius } = lineChartHelpers
-      const { val } = uiHelpers
+      const { point_smallRadius, plot_max_y, plot_max_x, plot_min_x } = lineChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom,
-            y_max = Math.max(...plots.map(max_y(uiHelpers))),
-            x_min = Math.min(...plots.map(min_x(uiHelpers))),
-            x_max = Math.max(...plots.map(max_x(uiHelpers))),
+            y_max = Math.max(...plots.map(plot_max_y)),
+            x_min = Math.min(...plots.map(plot_min_x)),
+            x_max = Math.max(...plots.map(plot_max_x)),
             names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + divId)
       let rootElement = div.selectAll('#' + childId)
@@ -100,12 +81,12 @@ function drawLineChart_ (
             .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
-            .attr('d', ([, plot]) => line1(plot.data))
+            .attr('d', ([, plot]) => line1(plot.points))
 
          for (const i_plot of plots.entries()) {
             const [i, plot] = i_plot
             rootElement.selectAll('point')
-               .data([...plot.data.entries()].map(([j, p]) => {
+               .data([...plot.points.entries()].map(([j, p]) => {
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
