@@ -2,12 +2,14 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Renderer, SelState, Selectable, 𝕊, ViewSelector, from, get_intOrNumber, record)
+import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
+import App.View.Util (Renderer)
 import Data.List (List(..), (:))
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Primitive (string, unpack)
+import Util (Endo, (×))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
@@ -55,3 +57,18 @@ type PointCoordinate = { i :: Int, j :: Int }
 lineChartSelector :: ViewSelector PointCoordinate
 lineChartSelector { i, j } =
    lineChart <<< field f_plots <<< listElement i <<< linePoint j
+
+point_smallRadius :: Int
+point_smallRadius = 2
+
+point_radius :: SelState 𝕊 -> Int
+point_radius (SelState { persistent, transient }) =
+   case persistent × transient of
+      None × None -> point_smallRadius
+      _ -> point_smallRadius * 2
+
+point_stroke :: SelState 𝕊 -> Endo String
+point_stroke (SelState { persistent, transient }) col =
+   case persistent × transient of
+      None × None -> col
+      _ -> colorShade col (-30)

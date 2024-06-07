@@ -16,7 +16,7 @@ import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (fst, snd)
+import Data.Tuple (snd)
 import DataType (cCons, cNil)
 import Dict (Dict)
 import Effect (Effect)
@@ -26,25 +26,14 @@ import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, 
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', error, (×))
-import Util.Map (filterKeys, get)
-import Util.Set (isEmpty)
+import Util (type (×), Endo, definitely', error)
+import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
-import Web.Event.EventTarget (EventListener, EventTarget)
+import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
-type HTMLId = String
-type Renderer a = RendererSpec a -> EventListener -> Effect Unit
 type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
-
--- Heavily curried type isn't convenient for FFI
-type RendererSpec a =
-   { uiHelpers :: UIHelpers
-   , divId :: HTMLId
-   , suffix :: String
-   , view :: a
-   }
 
 -- Selection has two dimensions: persistent/transient and primary/secondary
 newtype SelState a = SelState
@@ -64,18 +53,6 @@ selState b1 b2 = SelState { persistent: b1, transient: b2 }
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
 
-isNone𝕊 :: 𝕊 -> Boolean
-isNone𝕊 None = true
-isNone𝕊 _ = false
-
-isPrimary𝕊 :: 𝕊 -> Boolean
-isPrimary𝕊 Primary = true
-isPrimary𝕊 _ = false
-
-isSecondary𝕊 :: 𝕊 -> Boolean
-isSecondary𝕊 Secondary = true
-isSecondary𝕊 _ = false
-
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
 colorShade col n =
@@ -87,41 +64,6 @@ colorShade col n =
       definitely' (fromStringAs hexadecimal rgbComponent) + n
          # clamp 0 255
          # toStringAs hexadecimal
-
-bar_fill :: SelState 𝕊 -> Endo String
-bar_fill s col = case s of
-   SelState { persistent: None } -> col
-   _ -> colorShade col (-20)
-
-bar_stroke :: SelState 𝕊 -> Endo String
-bar_stroke (SelState { persistent, transient }) col =
-   case persistent × transient of
-      None × None -> col
-      _ -> colorShade col (-70)
-
-point_smallRadius :: Int
-point_smallRadius = 2
-
-point_radius :: SelState 𝕊 -> Int
-point_radius (SelState { persistent, transient }) =
-   case persistent × transient of
-      None × None -> point_smallRadius
-      _ -> point_smallRadius * 2
-
-point_stroke :: SelState 𝕊 -> Endo String
-point_stroke (SelState { persistent, transient }) col =
-   case persistent × transient of
-      None × None -> col
-      _ -> colorShade col (-30)
-
-rowKey :: String
-rowKey = "__n"
-
--- [any record type with only primitive fields] -> 𝕊
-record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
-record_isUsed r =
-   not <<< isEmpty $ flip filterKeys r \k ->
-      k /= rowKey && selected (not <<< isNone𝕊 <$> (get k r # \(Val α _) -> α))
 
 css
    :: { sel ::
@@ -156,70 +98,6 @@ selClass (SelState s)
    | s.persistent == Secondary = css.sel.selected_secondary
    | s.transient == Secondary = css.sel.selected_secondary_transient
    | otherwise = ""
-
-cell_selClass :: String -> SelState 𝕊 -> String
-cell_selClass colName s
-   | colName == rowKey = ""
-   | otherwise = selClass s
-
--- Bundle into a record so we can export via FFI
-type UIHelpers =
-   { val :: forall a. Selectable a -> a
-   , selState :: forall a. Selectable a -> SelState 𝕊
-   , join :: SelState 𝕊 -> SelState 𝕊 -> SelState 𝕊
-   , isNone𝕊 :: 𝕊 -> Boolean
-   , isPrimary𝕊 :: 𝕊 -> Boolean
-   , isSecondary𝕊 :: 𝕊 -> Boolean
-   , colorShade :: String -> Int -> String
-   , selClasses :: String
-   , selClass :: SelState 𝕊 -> String
-   , barChart ::
-        { bar_fill :: SelState 𝕊 -> Endo String
-        , bar_stroke :: SelState 𝕊 -> Endo String
-        }
-   , lineChart ::
-        { point_smallRadius :: Int
-        , point_radius :: SelState 𝕊 -> Int
-        , point_stroke :: SelState 𝕊 -> Endo String
-        }
-   , tableView ::
-        { rowKey :: String
-        , record_isUsed :: Dict (Val (SelState 𝕊)) -> 𝔹
-        , cell_selClass :: String -> SelState 𝕊 -> String
-        -- values in table cells are not "unpacked" to Selectable but remain as Val
-        , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
-        , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
-        }
-   }
-
-uiHelpers :: UIHelpers
-uiHelpers =
-   { val: fst
-   , selState: snd
-   , join: (∨)
-   , isNone𝕊
-   , isPrimary𝕊
-   , isSecondary𝕊
-   , colorShade
-   , selClasses
-   , selClass
-   , barChart:
-        { bar_fill
-        , bar_stroke
-        }
-   , lineChart:
-        { point_smallRadius
-        , point_radius
-        , point_stroke
-        }
-   , tableView:
-        { rowKey
-        , record_isUsed
-        , cell_selClass
-        , val_val: \(Val _ v) -> v
-        , val_selState: \(Val α _) -> α
-        }
-   }
 
 data 𝕊 = None | Primary | Secondary
 type Selectable a = a × SelState 𝕊

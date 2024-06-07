@@ -2,24 +2,26 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (HTMLId, SelState, ViewSelector, 𝕊, Selector, eventData, from, record, uiHelpers)
+import App.Util (SelState, Selector, ViewSelector, 𝕊, eventData, from, record, selClass, selClasses)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
-import App.View.BarChart (barChartSelector, drawBarChart)
+import App.View.BarChart (barChartSelector, bar_fill, bar_stroke, drawBarChart)
 import App.View.LineChart (LineChart) as View
-import App.View.LineChart (drawLineChart, lineChartSelector)
+import App.View.LineChart (drawLineChart, lineChartSelector, point_radius, point_smallRadius, point_stroke)
 import App.View.MatrixView (MatrixView(..)) as View
 import App.View.MatrixView (drawMatrix, matrixRep, matrixViewSelector)
 import App.View.ScatterPlot (ScatterPlot) as View
 import App.View.ScatterPlot (drawScatterPlot, scatterPlotSelector)
 import App.View.TableView (TableView(..)) as View
-import App.View.TableView (drawTable, tableViewSelector)
+import App.View.TableView (cell_selClass, drawTable, record_isUsed, rowKey, tableViewSelector)
+import App.View.Util (HTMLId, UIHelpers)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
-import Data.Tuple (uncurry)
+import Data.Tuple (fst, snd, uncurry)
 import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
 import Dict (Dict)
 import Effect (Effect)
+import Lattice ((∨))
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener, eventListener)
@@ -60,3 +62,28 @@ view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
    TableView (View.TableView { title, filter: true, table: record identity <$> from u })
 view title (Val _ (Matrix r)) =
    MatrixView (View.MatrixView { title, matrix: matrixRep r })
+
+uiHelpers :: UIHelpers
+uiHelpers =
+   { val: fst
+   , selState: snd
+   , join: (∨)
+   , selClasses
+   , selClass
+   , barChart:
+        { bar_fill
+        , bar_stroke
+        }
+   , lineChart:
+        { point_smallRadius
+        , point_radius
+        , point_stroke
+        }
+   , tableView:
+        { rowKey
+        , record_isUsed
+        , cell_selClass
+        , val_val: \(Val _ v) -> v
+        , val_selState: \(Val α _) -> α
+        }
+   }

@@ -2,9 +2,10 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, Renderer, SelState, Selectable, 𝕊, ViewSelector, from, record)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from, record)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point)
+import App.View.Util (Renderer)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
 import Primitive (string, unpack)
