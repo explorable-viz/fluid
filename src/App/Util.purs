@@ -125,8 +125,7 @@ record_isUsed r =
 
 css
    :: { sel ::
-           { unselected :: String
-           , selected :: String
+           { selected :: String
            , selected_transient :: String
            , selected_secondary :: String
            , selected_secondary_transient :: String
@@ -134,8 +133,7 @@ css
       }
 css =
    { sel:
-        { unselected: "unselected" -- delete this
-        , selected: "selected"
+        { selected: "selected"
         , selected_transient: "selected-transient"
         , selected_secondary: "selected-secondary"
         , selected_secondary_transient: "selected-secondary-transient"
