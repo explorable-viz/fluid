@@ -3,9 +3,10 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (HTMLId, SelState, Selector, 𝕊, as𝕊, selState, to𝕊)
+import App.Util (SelState, Selector, 𝕊, as𝕊, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (drawView, view)
+import App.View.Util (HTMLId)
 import Bind (Bind, Var, (↦))
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))

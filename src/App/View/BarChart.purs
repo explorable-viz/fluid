@@ -2,11 +2,13 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Renderer, SelState, Selectable, 𝕊, ViewSelector, from, get_intOrNumber, record)
+import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
 import App.Util.Selector (barChart, barSegment)
+import App.View.Util (Renderer)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
 import Primitive (string, unpack)
+import Util (Endo, (×))
 import Util.Map (get)
 import Val (Val)
 
@@ -50,3 +52,14 @@ type BarSegmentCoordinate = { i :: Int, j :: Int }
 
 barChartSelector :: ViewSelector BarSegmentCoordinate
 barChartSelector { i, j } = barSegment i j >>> barChart
+
+bar_fill :: SelState 𝕊 -> Endo String
+bar_fill s col = case s of
+   SelState { persistent: None } -> col
+   _ -> colorShade col (-20)
+
+bar_stroke :: SelState 𝕊 -> Endo String
+bar_stroke (SelState { persistent, transient }) col =
+   case persistent × transient of
+      None × None -> col
+      _ -> colorShade col (-70)

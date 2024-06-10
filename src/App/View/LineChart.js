@@ -2,39 +2,23 @@
 
 import * as d3 from "d3"
 
-function max_y ({ val }) {
-   return linePlot => {
-      return Math.max(...linePlot.data.map(point => val(point.y)))
+d3.selection.prototype.attrs = function(m) {
+   for (const k in m) {
+      this.attr(k, m[k])
    }
-}
-
-function min_x ({ val }) {
-   return linePlot => {
-      return Math.min(...linePlot.data.map(point => val(point.x)))
-   }
-}
-
-function max_x ({ val }) {
-   return linePlot => {
-      return Math.max(...linePlot.data.map(point => val(point.x)))
-   }
+   return this
 }
 
 function setSelState (
-   {
-      selState,
-      lineChart: { point_radius, point_stroke }
-   },
+   { point_attrs },
    nameCol,
    rootElement,
-   { plots },
+   chart,
    listener
 ) {
    rootElement.selectAll('.point').each(function (point) {
-      const sel = selState(plots[point.i].data[point.j].y)
       d3.select(this) // won't work inside arrow function :/
-         .attr('r', point_radius(sel))
-         .attr('stroke', point_stroke(sel)(nameCol(point.name)))
+         .attrs(point_attrs(nameCol)(chart)(point))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -42,8 +26,9 @@ function setSelState (
 }
 
 function drawLineChart_ (
+   lineChartHelpers,
    {
-      uiHelpers,
+      uiHelpers: { val },
       divId,
       suffix,
       view: {
@@ -54,14 +39,14 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { val, lineChart: { point_smallRadius } } = uiHelpers
+      const { point_smallRadius, plot_max_y, plot_max_x, plot_min_x } = lineChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom,
-            y_max = Math.max(...plots.map(max_y(uiHelpers))),
-            x_min = Math.min(...plots.map(min_x(uiHelpers))),
-            x_max = Math.max(...plots.map(max_x(uiHelpers))),
+            y_max = Math.max(...plots.map(plot_max_y)),
+            x_min = Math.min(...plots.map(plot_min_x)),
+            x_max = Math.max(...plots.map(plot_max_x)),
             names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + divId)
       let rootElement = div.selectAll('#' + childId)
@@ -93,15 +78,15 @@ function drawLineChart_ (
             .append('g')
             .append('path')
             .attr('fill', 'none')
-            .attr('stroke', ([, d]) => nameCol(val(d.name)))
+            .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
-            .attr('d', ([_, d]) => line1(d.data))
+            .attr('d', ([, plot]) => line1(plot.points))
 
          for (const i_plot of plots.entries()) {
             const [i, plot] = i_plot
             rootElement.selectAll('point')
-               .data([...plot.data.entries()].map(([j, p]) => {
+               .data([...plot.points.entries()].map(([j, p]) => {
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
@@ -110,7 +95,6 @@ function drawLineChart_ (
                .attr('class', 'point')
                .attr('cx', point => x(point.x))
                .attr('cy', point => y(point.y))
-               .attr('fill', point => nameCol(point.name))
          }
 
          rootElement
@@ -164,8 +148,8 @@ function drawLineChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
       }
-      setSelState(uiHelpers, nameCol, rootElement, { plots }, listener)
+      setSelState(lineChartHelpers, nameCol, rootElement, { plots }, listener)
    }
 }
 
-export var drawLineChart = x1 => x2 => drawLineChart_(x1, x2)
+export var drawLineChart = x1 => x2 => x3 => drawLineChart_(x1, x2, x3)

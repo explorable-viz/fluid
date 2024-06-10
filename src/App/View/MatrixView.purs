@@ -2,8 +2,9 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (Renderer, SelState, Selectable, 𝕊, ViewSelector)
+import App.Util (SelState, Selectable, 𝕊, ViewSelector)
 import App.Util.Selector (matrixElement)
+import App.View.Util (Renderer)
 import Primitive (int, unpack)
 import Util ((×))
 import Val (Array2, MatrixRep(..))
