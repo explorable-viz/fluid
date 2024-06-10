@@ -31,11 +31,7 @@ rowKey = "__n"
 record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
 record_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
-      k /= rowKey && selected (not <<< isNone𝕊 <$> (get k r # \(Val α _) -> α))
-   where
-   isNone𝕊 :: 𝕊 -> Boolean
-   isNone𝕊 None = true
-   isNone𝕊 _ = false
+      k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> α))
 
 cell_selClass :: String -> SelState 𝕊 -> String
 cell_selClass colName s

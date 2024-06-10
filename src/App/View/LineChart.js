@@ -95,7 +95,6 @@ function drawLineChart_ (
                .attr('class', 'point')
                .attr('cx', point => x(point.x))
                .attr('cy', point => y(point.y))
-               .attr('fill', point => nameCol(point.name))
          }
 
          rootElement

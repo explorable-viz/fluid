@@ -36,9 +36,10 @@ import Web.Event.EventTarget (EventTarget)
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
 type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
--- Selection has two dimensions: persistent/transient and primary/secondary. I can be both persistently *and*
--- transiently selected at the same time, and these need to be visually distinct (so that for example clicking
--- during mouseover visibly changes the state).
+-- Selection has two dimensions: persistent/transient and primary/secondary. An element can be persistently
+-- *and* transiently selected at the same time; these need to be visually distinct (so that for example
+-- clicking during mouseover visibly changes the state). Primary and secondary also need to be visually
+-- distinct but not orthogonal; primary should (visually) subsume secondary.
 newtype SelState a = SelState
    { persistent :: a
    , transient :: a
@@ -59,6 +60,23 @@ selected (SelState { persistent, transient }) = persistent ∨ transient
 data 𝕊 = None | Secondary | Primary
 type Selectable a = a × SelState 𝕊
 
+isPrimary :: SelState 𝕊 -> 𝔹
+isPrimary (SelState { persistent, transient }) =
+   persistent == Primary || transient == Primary
+
+isSecondary :: SelState 𝕊 -> 𝔹
+isSecondary (SelState { persistent, transient }) =
+   persistent == Secondary || transient == Secondary
+
+isNone :: SelState 𝕊 -> 𝔹
+isNone sel = not (isPersistent sel || isTransient sel)
+
+isPersistent :: SelState 𝕊 -> 𝔹
+isPersistent (SelState { persistent }) = to𝔹' persistent
+
+isTransient :: SelState 𝕊 -> 𝔹
+isTransient (SelState { transient }) = to𝔹' transient
+
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
 compare' None None = EQ
@@ -78,20 +96,18 @@ instance Ord 𝕊 where
 instance JoinSemilattice 𝕊 where
    join = max
 
+to𝔹' :: 𝕊 -> 𝔹
+to𝔹' = (_ /= None)
+
 to𝔹 :: SelState 𝕊 -> SelState 𝔹
 to𝔹 = (to𝔹' <$> _)
-   where
-   to𝔹' :: 𝕊 -> 𝔹
-   to𝔹' None = false
-   to𝔹' Secondary = true
-   to𝔹' Primary = true
+
+to𝕊' :: 𝔹 -> 𝕊
+to𝕊' false = None
+to𝕊' true = Primary
 
 to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 = (to𝕊' <$> _)
-   where
-   to𝕊' :: 𝔹 -> 𝕊
-   to𝕊' false = None
-   to𝕊' true = Primary
 
 -- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊

@@ -2,18 +2,19 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
+import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isNone, isPersistent, isPrimary, isSecondary, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (Renderer)
-import Bind ((↦))
-import Data.Foldable (maximum, minimum)
+import Bind (Bind, (↦))
+import Data.Foldable (foldl, maximum, minimum)
+import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict, fromFoldable)
-import Foreign.Object (Object)
+import Foreign.Object (Object, empty, union)
 import Primitive (string, unpack)
-import Util (definitely', (!), (×))
+import Util (definitely', (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
@@ -82,23 +83,21 @@ lineChartSelector { i, j } =
 point_smallRadius :: Int
 point_smallRadius = 2
 
+override :: Array (Array (Bind String)) -> Object String
+override = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
+
 point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
 point_attrs nameCol (LineChart { plots }) { i, j, name } =
-   case persistent × transient of
-      None × None -> fromFoldable
-         [ "r" ↦ show point_smallRadius
-         , "stroke" ↦ col
-         , "stroke-width" ↦ "1"
-         ]
-      _ -> fromFoldable
-         [ "r" ↦ show (point_smallRadius * 2)
-         , "stroke" ↦ colorShade col (-30)
-         , "stroke-width" ↦ "1"
-         ]
+   override
+      [ [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0) ]
+      , [ "stroke-width" ↦ "1" ]
+      , [ "stroke" ↦ (col # if isNone sel then identity else flip colorShade (-30)) ]
+      , [ "fill" ↦ (col # if isPersistent sel then flip colorShade (-30) else identity) ]
+      ]
    where
    LinePlot plot = plots ! i
    Point { y } = plot.points ! j
-   SelState { persistent, transient } = snd y
+   sel = snd y
    col = nameCol name
 
 plot_max_y :: LinePlot -> Number
