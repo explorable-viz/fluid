@@ -36,7 +36,9 @@ import Web.Event.EventTarget (EventTarget)
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
 type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
--- Selection has two dimensions: persistent/transient and primary/secondary
+-- Selection has two dimensions: persistent/transient and primary/secondary. I can be both persistently *and*
+-- transiently selected at the same time, and these need to be visually distinct (so that for example clicking
+-- during mouseover visibly changes the state).
 newtype SelState a = SelState
    { persistent :: a
    , transient :: a
@@ -54,53 +56,7 @@ selState b1 b2 = SelState { persistent: b1, transient: b2 }
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
 
--- https://stackoverflow.com/questions/5560248
-colorShade :: String -> Int -> String
-colorShade col n =
-   -- remove and reinstate leading "#"
-   "#" <> shade (take 2 $ drop 1 col) <> shade (take 2 $ drop 3 col) <> shade (take 2 $ drop 5 col)
-   where
-   shade :: String -> String
-   shade rgbComponent =
-      definitely' (fromStringAs hexadecimal rgbComponent) + n
-         # clamp 0 255
-         # toStringAs hexadecimal
-
-css
-   :: { sel ::
-           { selected :: String
-           , selected_transient :: String
-           , selected_secondary :: String
-           , selected_secondary_transient :: String
-           }
-      }
-css =
-   { sel:
-        { selected: "selected"
-        , selected_transient: "selected-transient"
-        , selected_secondary: "selected-secondary"
-        , selected_secondary_transient: "selected-secondary-transient"
-        }
-   }
-
--- Ideally would derive this from css.sel
-selClasses :: String
-selClasses = joinWith " " $
-   [ css.sel.selected
-   , css.sel.selected_transient
-   , css.sel.selected_secondary
-   , css.sel.selected_secondary_transient
-   ]
-
-selClass :: SelState 𝕊 -> String
-selClass (SelState s)
-   | s.persistent == Primary = css.sel.selected
-   | s.transient == Primary = css.sel.selected_transient
-   | s.persistent == Secondary = css.sel.selected_secondary
-   | s.transient == Secondary = css.sel.selected_secondary_transient
-   | otherwise = ""
-
-data 𝕊 = None | Primary | Secondary
+data 𝕊 = None | Secondary | Primary
 type Selectable a = a × SelState 𝕊
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
@@ -127,8 +83,8 @@ to𝔹 = (to𝔹' <$> _)
    where
    to𝔹' :: 𝕊 -> 𝔹
    to𝔹' None = false
-   to𝔹' Primary = true
    to𝔹' Secondary = true
+   to𝔹' Primary = true
 
 to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 = (to𝕊' <$> _)
@@ -186,6 +142,52 @@ selector = case _ of
    EventType _ -> error "Unsupported event type"
    where
    report = spyWhen tracing.mouseEvent "Setting SelState to " show
+
+-- https://stackoverflow.com/questions/5560248
+colorShade :: String -> Int -> String
+colorShade col n =
+   -- remove and reinstate leading "#"
+   "#" <> shade (take 2 $ drop 1 col) <> shade (take 2 $ drop 3 col) <> shade (take 2 $ drop 5 col)
+   where
+   shade :: String -> String
+   shade rgbComponent =
+      definitely' (fromStringAs hexadecimal rgbComponent) + n
+         # clamp 0 255
+         # toStringAs hexadecimal
+
+css
+   :: { sel ::
+           { selected :: String
+           , selected_transient :: String
+           , selected_secondary :: String
+           , selected_secondary_transient :: String
+           }
+      }
+css =
+   { sel:
+        { selected: "selected"
+        , selected_transient: "selected-transient"
+        , selected_secondary: "selected-secondary"
+        , selected_secondary_transient: "selected-secondary-transient"
+        }
+   }
+
+-- Ideally would derive this from css.sel
+selClasses :: String
+selClasses = joinWith " " $
+   [ css.sel.selected
+   , css.sel.selected_transient
+   , css.sel.selected_secondary
+   , css.sel.selected_secondary_transient
+   ]
+
+selClass :: SelState 𝕊 -> String
+selClass (SelState s)
+   | s.persistent == Secondary = css.sel.selected_secondary
+   | s.transient == Secondary = css.sel.selected_secondary_transient
+   | s.persistent == Primary = css.sel.selected
+   | s.transient == Primary = css.sel.selected_transient
+   | otherwise = ""
 
 -- ======================
 -- boilerplate
