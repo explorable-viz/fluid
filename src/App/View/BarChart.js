@@ -10,18 +10,15 @@ d3.selection.prototype.attrs = function(m) {
 }
 
 function setSelState (
-   { bar_fill, bar_stroke },
-   { selState },
+   { bar_attrs },
+   indexCol,
    rootElement,
-   { stackedBars },
+   chart,
    listener
 ) {
-   const color = d3.scaleOrdinal(d3.schemeAccent)
    rootElement.selectAll('.bar').each(function (bar) {
-      const sel = selState(stackedBars[bar.i].bars[bar.j].z)
       d3.select(this) // won't work inside arrow function :/
-         .attr('fill', bar_fill(sel)(color(bar.j)))
-         .attr('stroke', bar_stroke(sel)(color(bar.j)))
+         .attrs(bar_attrs(indexCol)(chart)(bar))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -35,8 +32,8 @@ function drawBarChart_ (
       divId,
       suffix,
       view: {
-         caption,    // String
-         stackedBars,       // Array StackedBar
+         caption,
+         stackedBars,
       }
    },
    listener
@@ -49,6 +46,7 @@ function drawBarChart_ (
             width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + divId)
+      const color = d3.scaleOrdinal(d3.schemeAccent)
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
@@ -96,7 +94,6 @@ function drawBarChart_ (
             .data([...stackedBars.entries()])
             .enter()
             .append('g')
-         const color = d3.scaleOrdinal(d3.schemeAccent)
          const strokeWidth = 1
 
          stacks.selectAll('.bar')
@@ -162,7 +159,7 @@ function drawBarChart_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(barChartHelpers, uiHelpers, rootElement, { stackedBars }, listener)
+      setSelState(barChartHelpers, color, rootElement, { stackedBars }, listener)
    }
 }
 

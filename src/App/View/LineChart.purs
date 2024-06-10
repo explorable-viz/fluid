@@ -5,14 +5,14 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (Renderer)
-import Bind (Bind, (↦))
-import Data.Foldable (foldl, maximum, minimum)
+import Bind ((↦))
+import Data.Foldable (maximum, minimum)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
-import Dict (Dict, fromFoldable)
-import Foreign.Object (Object, empty, union)
+import Dict (Dict)
+import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
 import Util (definitely', (!))
 import Util.Map (get)
@@ -83,16 +83,13 @@ lineChartSelector { i, j } =
 point_smallRadius :: Int
 point_smallRadius = 2
 
-override :: Array (Array (Bind String)) -> Object String
-override = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
-
 point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
 point_attrs nameCol (LineChart { plots }) { i, j, name } =
-   override
-      [ [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0) ]
-      , [ "stroke-width" ↦ "1" ]
-      , [ "stroke" ↦ (fill # if isTransient sel then flip colorShade (-30) else identity) ]
-      , [ "fill" ↦ fill ]
+   fromFoldable
+      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
+      , "stroke-width" ↦ "1"
+      , "stroke" ↦ (fill # if isTransient sel then flip colorShade (-30) else identity)
+      , "fill" ↦ fill
       ]
    where
    LinePlot plot = plots ! i
