@@ -9,14 +9,15 @@ import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
+import Foreign.Object (Object)
 import Primitive (string, unpack)
-import Util (Endo, (×))
+import Util (Endo, error, (×))
 import Util.Map (get)
 import Val (Val)
 
 newtype BarChart = BarChart
    { caption :: Selectable String
-   , data :: Array StackedBar
+   , stackedBars :: Array StackedBar
    }
 
 newtype StackedBar = StackedBar
@@ -32,6 +33,7 @@ newtype Bar = Bar
 type BarChartHelpers =
    { bar_fill :: SelState 𝕊 -> Endo String
    , bar_stroke :: SelState 𝕊 -> Endo String
+   , bar_attrs :: BarChart -> BarSegmentCoordinate -> Object String
    , tickEvery :: Int -> Int
    }
 
@@ -41,13 +43,14 @@ drawBarChart' :: Renderer BarChart
 drawBarChart' = drawBarChart
    { bar_fill
    , bar_stroke
+   , bar_attrs
    , tickEvery
    }
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart
       { caption: unpack string (get f_caption r)
-      , data: record from <$> from (get f_data r)
+      , stackedBars: record from <$> from (get f_data r)
       }
 
 instance Reflect (Dict (Val (SelState 𝕊))) StackedBar where
@@ -79,9 +82,12 @@ bar_stroke (SelState { persistent, transient }) col =
       None × None -> col
       _ -> colorShade col (-70)
 
+bar_attrs :: BarChart -> BarSegmentCoordinate -> Object String
+bar_attrs _ = error "todo"
+
 tickEvery :: Int -> Int
 tickEvery n =
-   let m = floor (log (toNumber n) / log 10.0) in
-   if n <= 2 * pow 10 m
-   then 2 * pow 10 (m - 1)
+   if n <= 2 * pow 10 m then 2 * pow 10 (m - 1)
    else pow 10 m
+   where
+   m = floor (log (toNumber n) / log 10.0)
