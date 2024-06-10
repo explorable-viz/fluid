@@ -2,6 +2,13 @@
 
 import * as d3 from "d3"
 
+d3.selection.prototype.attrs = function(m) {
+   for (const k in m) {
+      this.attr(k, m[k])
+   }
+   return this
+}
+
 // Heuristic saying how often to place a tick on an axis of length n.
 function tickEvery (n) {
    const m = Math.floor(Math.log10(n))
@@ -11,10 +18,8 @@ function tickEvery (n) {
 }
 
 function setSelState (
-   {
-      selState,
-      barChart: { bar_fill, bar_stroke }
-   },
+   { bar_fill, bar_stroke },
+   { selState },
    rootElement,
    { data },
    listener
@@ -32,6 +37,7 @@ function setSelState (
 }
 
 function drawBarChart_ (
+   barChartHelpers,
    {
       uiHelpers,
       divId,
@@ -163,8 +169,8 @@ function drawBarChart_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(uiHelpers, rootElement, { data }, listener)
+      setSelState(barChartHelpers, uiHelpers, rootElement, { data }, listener)
    }
 }
 
-export var drawBarChart = x1 => x2 => drawBarChart_(x1, x2)
+export var drawBarChart = x1 => x2 => x3 => drawBarChart_(x1, x2, x3)

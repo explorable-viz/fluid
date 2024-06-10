@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (SelState, Selector, ViewSelector, 𝕊, eventData, from, record, selClass, selClasses)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
-import App.View.BarChart (barChartSelector, bar_fill, bar_stroke, drawBarChart)
+import App.View.BarChart (barChartSelector, drawBarChart')
 import App.View.LineChart (LineChart) as View
 import App.View.LineChart (drawLineChart', lineChartSelector)
 import App.View.MatrixView (MatrixView(..)) as View
@@ -41,7 +41,7 @@ drawView divId suffix redraw = case _ of
    MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< listener matrixViewSelector
    TableView vw -> drawTable { uiHelpers, divId, suffix, view: vw } =<< listener tableViewSelector
    LineChart vw -> drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< listener lineChartSelector
-   BarChart vw -> drawBarChart { uiHelpers, divId, suffix, view: vw } =<< listener barChartSelector
+   BarChart vw -> drawBarChart' { uiHelpers, divId, suffix, view: vw } =<< listener barChartSelector
    ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< listener scatterPlotSelector
    MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
    where
@@ -70,10 +70,6 @@ uiHelpers =
    , join: (∨)
    , selClasses
    , selClass
-   , barChart:
-        { bar_fill
-        , bar_stroke
-        }
    , tableView:
         { rowKey
         , record_isUsed

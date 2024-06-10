@@ -27,7 +27,18 @@ newtype Bar = Bar
    , z :: Selectable Number
    }
 
-foreign import drawBarChart :: Renderer BarChart
+type BarChartHelpers =
+   { bar_fill :: SelState 𝕊 -> Endo String
+   , bar_stroke :: SelState 𝕊 -> Endo String
+   }
+
+foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart
+
+drawBarChart' :: Renderer BarChart
+drawBarChart' = drawBarChart
+   { bar_fill
+   , bar_stroke
+   }
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart
