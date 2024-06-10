@@ -5,6 +5,8 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
 import App.Util.Selector (barChart, barSegment)
 import App.View.Util (Renderer)
+import Data.Int (floor, pow, toNumber)
+import Data.Number (log)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
 import Primitive (string, unpack)
@@ -30,6 +32,7 @@ newtype Bar = Bar
 type BarChartHelpers =
    { bar_fill :: SelState 𝕊 -> Endo String
    , bar_stroke :: SelState 𝕊 -> Endo String
+   , tickEvery :: Int -> Int
    }
 
 foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart
@@ -38,6 +41,7 @@ drawBarChart' :: Renderer BarChart
 drawBarChart' = drawBarChart
    { bar_fill
    , bar_stroke
+   , tickEvery
    }
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
@@ -74,3 +78,10 @@ bar_stroke (SelState { persistent, transient }) col =
    case persistent × transient of
       None × None -> col
       _ -> colorShade col (-70)
+
+tickEvery :: Int -> Int
+tickEvery n =
+   let m = floor (log (toNumber n) / log 10.0) in
+   if n <= 2 * pow 10 m
+   then 2 * pow 10 (m - 1)
+   else pow 10 m

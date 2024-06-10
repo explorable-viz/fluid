@@ -9,14 +9,6 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
-// Heuristic saying how often to place a tick on an axis of length n.
-function tickEvery (n) {
-   const m = Math.floor(Math.log10(n))
-   return n <= 2 * 10 ** m
-      ? 2 * 10 ** (m - 1)
-      : 10 ** m
-}
-
 function setSelState (
    { bar_fill, bar_stroke },
    { selState },
@@ -51,6 +43,7 @@ function drawBarChart_ (
 ) {
    return () => {
       const { val } = uiHelpers
+      const { tickEvery } = barChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
