@@ -2,10 +2,11 @@ module App.Util where
 
 import Prelude hiding (absurd, join)
 
-import Bind (Var)
+import Bind (Bind, Var)
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Either (Either(..))
+import Data.Foldable (foldl)
 import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
@@ -22,6 +23,7 @@ import Dict (Dict)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class.Console (log)
+import Foreign.Object (Object, empty, fromFoldable, union)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, neg, (∨))
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
@@ -204,6 +206,9 @@ selClass (SelState s)
    | s.persistent == Primary = css.sel.selected
    | s.transient == Primary = css.sel.selected_transient
    | otherwise = ""
+
+attrs :: Array (Array (Bind String)) -> Object String
+attrs = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
 
 -- ======================
 -- boilerplate

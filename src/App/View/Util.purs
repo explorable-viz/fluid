@@ -5,7 +5,6 @@ import Prelude
 import App.Util (SelState, Selectable, 𝕊)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo)
 import Val (BaseVal, Val)
 import Web.Event.EventTarget (EventListener)
 
@@ -28,10 +27,6 @@ type UIHelpers =
    , join :: SelState 𝕊 -> SelState 𝕊 -> SelState 𝕊
    , selClasses :: String
    , selClass :: SelState 𝕊 -> String
-   , barChart ::
-        { bar_fill :: SelState 𝕊 -> Endo String
-        , bar_stroke :: SelState 𝕊 -> Endo String
-        }
    , tableView ::
         { rowKey :: String
         , record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean

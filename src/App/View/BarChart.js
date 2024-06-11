@@ -2,29 +2,23 @@
 
 import * as d3 from "d3"
 
-// Heuristic saying how often to place a tick on an axis of length n.
-function tickEvery (n) {
-   const m = Math.floor(Math.log10(n))
-   return n <= 2 * 10 ** m
-      ? 2 * 10 ** (m - 1)
-      : 10 ** m
+d3.selection.prototype.attrs = function(m) {
+   for (const k in m) {
+      this.attr(k, m[k])
+   }
+   return this
 }
 
 function setSelState (
-   {
-      selState,
-      barChart: { bar_fill, bar_stroke }
-   },
+   { bar_attrs },
+   indexCol,
    rootElement,
-   { data },
+   chart,
    listener
 ) {
-   const color = d3.scaleOrdinal(d3.schemeAccent)
    rootElement.selectAll('.bar').each(function (bar) {
-      const sel = selState(data[bar.i].bars[bar.j].z)
       d3.select(this) // won't work inside arrow function :/
-         .attr('fill', bar_fill(sel)(color(bar.j)))
-         .attr('stroke', bar_stroke(sel)(color(bar.j)))
+         .attrs(bar_attrs(indexCol)(chart)(bar))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -32,24 +26,27 @@ function setSelState (
 }
 
 function drawBarChart_ (
+   barChartHelpers,
    {
       uiHelpers,
       divId,
       suffix,
       view: {
-         caption,    // String
-         data,       // Array StackedBar
+         caption,
+         stackedBars,
       }
    },
    listener
 ) {
    return () => {
       const { val } = uiHelpers
+      const { tickEvery } = barChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 40, left: 40},
             width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + divId)
+      const color = d3.scaleOrdinal(d3.schemeAccent)
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
@@ -66,7 +63,7 @@ function drawBarChart_ (
          // x-axis
          const x = d3.scaleBand()
             .range([0, width])
-            .domain(data.map(d => val(d.x)))
+            .domain(stackedBars.map(bar => val(bar.x)))
             .padding(0.2)
 
          rootElement.append('g')
@@ -80,7 +77,7 @@ function drawBarChart_ (
          }
          // y-axis
          const nearest = 100,
-               y_max = Math.ceil(Math.max(...data.map(d => barHeight(d.bars))) / nearest) * nearest
+               y_max = Math.ceil(Math.max(...stackedBars.map(d => barHeight(d.bars))) / nearest) * nearest
          const y = d3.scaleLinear()
             .domain([0, y_max])
             .range([height, 0])
@@ -94,10 +91,9 @@ function drawBarChart_ (
 
          // bars
          const stacks = rootElement.selectAll('.stack')
-            .data([...data.entries()])
+            .data([...stackedBars.entries()])
             .enter()
             .append('g')
-         const color = d3.scaleOrdinal(d3.schemeAccent)
          const strokeWidth = 1
 
          stacks.selectAll('.bar')
@@ -119,7 +115,7 @@ function drawBarChart_ (
          // TODO: enforce that all stacked bars have same set of segments
          const legendLineHeight = 15,
                legendStart = width + margin.left / 2
-               names = data[0].bars.map(bar => val(bar.y))
+               names = stackedBars[0].bars.map(bar => val(bar.y))
          rootElement
             .append('rect')
             .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
@@ -143,6 +139,7 @@ function drawBarChart_ (
             .text(d => d)
             .attr('font-size', 11)
             .attr('transform', 'translate(15, 9)') // align text with boxes
+            .style('user-select', 'none') // avoid mysterious spurious text selection
 
          const legendSquareSize = 4
 
@@ -156,6 +153,7 @@ function drawBarChart_ (
          rootElement
             .append('text')
             .text(val(caption))
+            .style('user-select', 'none') // avoid mysterious spurious text selection
             .attr('x', width / 2)
             .attr('y', height + 35)
             .attr('class', 'title-text')
@@ -163,8 +161,8 @@ function drawBarChart_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(uiHelpers, rootElement, { data }, listener)
+      setSelState(barChartHelpers, color, rootElement, { stackedBars }, listener)
    }
 }
 
-export var drawBarChart = x1 => x2 => drawBarChart_(x1, x2)
+export var drawBarChart = x1 => x2 => x3 => drawBarChart_(x1, x2, x3)
