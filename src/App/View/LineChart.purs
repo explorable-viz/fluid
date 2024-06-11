@@ -88,15 +88,15 @@ point_attrs nameCol (LineChart { plots }) { i, j, name } =
    fromFoldable
       [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
       , "stroke-width" ↦ "1"
-      , "stroke" ↦ (fill # if isTransient sel then flip colorShade (-30) else identity)
-      , "fill" ↦ fill
+      , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
+      , "fill" ↦ fill col
       ]
    where
    LinePlot plot = plots ! i
    Point { y } = plot.points ! j
    sel = snd y
    col = nameCol name
-   fill = col # if isPersistent sel then flip colorShade (-30) else identity
+   fill = if isPersistent sel then flip colorShade (-30) else identity
 
 plot_max_y :: LinePlot -> Number
 plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))

@@ -139,6 +139,7 @@ function drawBarChart_ (
             .text(d => d)
             .attr('font-size', 11)
             .attr('transform', 'translate(15, 9)') // align text with boxes
+            .style('user-select', 'none') // avoid mysterious spurious text selection
 
          const legendSquareSize = 4
 
@@ -152,6 +153,7 @@ function drawBarChart_ (
          rootElement
             .append('text')
             .text(val(caption))
+            .style('user-select', 'none') // avoid mysterious spurious text selection
             .attr('x', width / 2)
             .attr('y', height + 35)
             .attr('class', 'title-text')

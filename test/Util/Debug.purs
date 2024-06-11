@@ -20,7 +20,7 @@ tracing =
    , bwdSelection: false
    , fwdAfterBwd: false
    , mediatingData: false
-   , mouseEvent: true
+   , mouseEvent: false
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,

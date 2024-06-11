@@ -2,7 +2,7 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, isPersistent, record, selected, to𝔹')
+import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isNone, isPersistent, isTransient, record)
 import App.Util.Selector (barChart, barSegment)
 import App.View.Util (Renderer)
 import Bind ((↦))
@@ -13,7 +13,7 @@ import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
-import Util (Endo, (×), (!))
+import Util ((!))
 import Util.Map (get)
 import Val (Val)
 
@@ -72,14 +72,16 @@ barChartSelector { i, j } = barSegment i j >>> barChart
 bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
 bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
    fromFoldable
-      [ "fill" ↦ (col # if isPersistent sel then flip colorShade (-20) else identity)
-      , "stroke" ↦ (col # if to𝔹' (selected sel) then flip colorShade (-70) else identity)
+      [ "fill" ↦ fill col
+      , "stroke-dasharray" ↦ if isTransient sel then "1 1" else "none"
+      , "stroke" ↦ (fill col # if not (isNone sel) then flip colorShade (-70) else identity)
       ]
    where
    StackedBar { bars } = stackedBars ! i
    Bar { z } = bars ! j
    sel = snd z
    col = indexCol j
+   fill = if isPersistent sel then flip colorShade (-40) else identity
 
 tickEvery :: Int -> Int
 tickEvery n =
