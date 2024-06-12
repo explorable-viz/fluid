@@ -63,22 +63,27 @@ function drawBarChart_ (
             .attr('width', 3.5)
             .attr('height', 3.5)
             .attr('patternTransform', 'rotate(45)')
+               .append('line')
+               .attr('x1', 0)
+               .attr('y', 0)
+               .attr('x2', 0)
+               .attr('y2', 3.5)
+               .attr('stroke', 'rgba(255, 255, 255, 1)')
+               .attr('stroke-width', "6")
 
-         pattern
-            .append('rect')
-            .attr('width', 3.5)
-            .attr('height', 3.5)
-            .attr('fill', 'rgb(117, 191, 117)')
-
-         pattern
-            .append('line')
-            .attr('class', 'bar-hatch')
-            .attr('x1', 0)
+         rootElement
+            .append('mask')
+            .attr('id', 'diagonalHatch-mask')
+            .attr('x', 0)
             .attr('y', 0)
-            .attr('x2', 0)
-            .attr('y2', 3.5)
-            .attr('stroke', 'rgba(255, 255, 255, 0.2)')
-            .attr('stroke-width', "1")
+            .attr('width', 1)
+            .attr('height', 1)
+               .append('rect')
+               .attr('x', 0)
+               .attr('y', 0)
+               .attr('width', '100%')
+               .attr('height', '100%')
+               .attr('fill', 'url(#diagonalHatch)')
 
         rootElement
             .append('g')

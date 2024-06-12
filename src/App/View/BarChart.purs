@@ -14,7 +14,7 @@ import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
-import Util (spy, (!))
+import Util ((!))
 import Util.Map (get)
 import Val (Val)
 
@@ -76,16 +76,15 @@ bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
       [ "fill" ↦ fill
       , "stroke-dasharray" ↦ if isTransient sel then "1 1" else "none"
       , "stroke" ↦ (col # if not (isNone sel) then flip colorShade (-70) else identity)
+      , "mask" ↦ if (unwrap sel).persistent == Secondary then "url(#diagonalHatch-mask)" else "none"
+         -- hide element using this mask
       ]
    where
    StackedBar { bars } = stackedBars ! i
    Bar { z } = bars ! j
    sel = snd z
    col = indexCol j
-   fill = col # case (unwrap sel).persistent of
-      None -> identity
-      Secondary -> flip colorShade (-40)
-      Primary -> \_ -> spy "blah" identity "url(#diagonalHatch)"
+   fill = col # if (unwrap sel).persistent == Primary then flip colorShade (-40) else identity
 
 tickEvery :: Int -> Int
 tickEvery n =
