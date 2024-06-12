@@ -2,7 +2,7 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, isNone, isTransient, record)
+import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, isNone, record)
 import App.Util.Selector (barChart, barSegment)
 import App.View.Util (Renderer)
 import Bind ((↦))
@@ -75,7 +75,10 @@ bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
    fromFoldable
       [ "fill" ↦ fill
       , "stroke-width" ↦ "1.5"
-      , "stroke-dasharray" ↦ if isTransient sel then "2 2" else "none"
+      , "stroke-dasharray" ↦ case (unwrap sel).transient of
+           None -> "none"
+           Secondary -> "1 2"
+           Primary -> "2 2"
       , "stroke-linecap" ↦ "round"
       , "stroke" ↦ (col # if not (isNone sel) then flip colorShade (-70) else identity)
       ]
