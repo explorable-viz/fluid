@@ -63,27 +63,24 @@ function drawBarChart_ (
             .attr('width', 3.5)
             .attr('height', 3.5)
             .attr('patternTransform', 'rotate(45)')
+
          pattern
             .append('rect')
             .attr('width', 3.5)
             .attr('height', 3.5)
             .attr('fill', 'rgb(117, 191, 117)')
+
          pattern
             .append('line')
+            .attr('class', 'bar-hatch')
             .attr('x1', 0)
             .attr('y', 0)
             .attr('x2', 0)
             .attr('y2', 3.5)
-            .attr('stroke', 'rgb(137, 211, 137)')
+            .attr('stroke', 'rgba(255, 255, 255, 0.2)')
             .attr('stroke-width', "1")
-/*
-            .append('path')
-               .attr('d', 'M -1,2 l 6,0')
-               .attr('fill', 'rgb(117, 191, 117)')
-               .attr('stroke', 'rgb(107, 181, 107)')
-               .attr('stroke-width', '.5')
-*/
-         rootElement
+
+        rootElement
             .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
