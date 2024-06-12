@@ -56,6 +56,9 @@ function drawBarChart_ (
                .attr('height', height + margin.top + margin.bottom)
             .attr('id', childId)
 
+         // CSS background-image + gradient fill doesn't work with SVG
+         // SVG patterns don't support per-usage styling so generate one per colour
+         // Masks eliminate dependency on specific colours but seem to clip the stroke a bit
          pattern = rootElement
             .append('pattern')
             .attr('id', 'diagonalHatch')
@@ -63,14 +66,22 @@ function drawBarChart_ (
             .attr('width', 3.5)
             .attr('height', 3.5)
             .attr('patternTransform', 'rotate(45)')
-               .append('line')
-               .attr('x1', 0)
-               .attr('y', 0)
-               .attr('x2', 0)
-               .attr('y2', 3.5)
-               .attr('stroke', 'rgba(255, 255, 255, 1)')
-               .attr('stroke-width', "6")
 
+         pattern
+            .append('rect')
+            .attr('width', 3.5)
+            .attr('height', 3.5)
+            .attr('fill', '#7fc97f')
+
+         pattern
+            .append('line')
+            .attr('x1', 0)
+            .attr('y', 0)
+            .attr('x2', 0)
+            .attr('y2', 3.5)
+            .attr('stroke', 'rgba(255, 255, 255, 1)')
+            .attr('stroke-width', "1")
+/*
          rootElement
             .append('mask')
             .attr('id', 'diagonalHatch-mask')
@@ -84,7 +95,7 @@ function drawBarChart_ (
                .attr('width', '100%')
                .attr('height', '100%')
                .attr('fill', 'url(#diagonalHatch)')
-
+*/
         rootElement
             .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
