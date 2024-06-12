@@ -1,3 +1,10 @@
+.stipple {
+   width: 200px;
+   height: 200px;
+   background-image: radial-gradient(black 1px, transparent 1px);
+   background-size: 10px 10px;
+}
+
 table {
    border-collapse: collapse;
    border-spacing: 0px;
@@ -90,4 +97,8 @@ table {
 
 .scatterplot-point.selected-secondary-transient {
    fill: rgb(240, 240, 240);
+}
+
+.barchart-segment.selected-secondary {
+   background-image: repeating-linear-gradient(45deg, #444cf7 0, #444cf7 1px, #e5e5f7 0, #e5e5f7 50%);
 }
