@@ -84,7 +84,7 @@ bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
    col = indexCol j
    fill = case (unwrap sel).persistent of
       None -> col
-      Secondary -> "url(#diagonalHatch)"
+      Secondary -> "url(#diagonalHatch-" <> show j <> ")"
       Primary -> colorShade col (-40)
 
 tickEvery :: Int -> Int
