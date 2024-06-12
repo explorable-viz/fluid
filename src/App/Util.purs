@@ -207,7 +207,9 @@ selClass (SelState s)
    | s.transient == Primary = css.sel.selected_transient
    | otherwise = ""
 
-attrs :: Array (Array (Bind String)) -> Object String
+type Attrs = Array (Bind String)
+
+attrs :: Array Attrs -> Object String
 attrs = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
 
 -- ======================
