@@ -28,10 +28,11 @@ function setSelState (
 // CSS background-image + gradient fill doesn't work with SVG
 // SVG patterns don't support per-usage styling so generate one per colour
 // Masks eliminate dependency on specific colours but seem to clip the stroke a bit
-function addHatchPattern (rootElement) {
+function addHatchPattern (color, j, rootElement) {
+   col = color(j)
    pattern = rootElement
       .append('pattern')
-      .attr('id', 'diagonalHatch')
+      .attr('id', 'diagonalHatch-' + j)
       .attr('patternUnits', 'userSpaceOnUse')
       .attr('width', 3.5)
       .attr('height', 3.5)
@@ -41,7 +42,7 @@ function addHatchPattern (rootElement) {
       .append('rect')
       .attr('width', 3.5)
       .attr('height', 3.5)
-      .attr('fill', '#7fc97f')
+      .attr('fill', color(j))
 
    pattern
       .append('line')
@@ -84,7 +85,7 @@ function drawBarChart_ (
                .attr('height', height + margin.top + margin.bottom)
             .attr('id', childId)
 
-         addHatchPattern(rootElement)
+         addHatchPattern(color, 0, rootElement)
          rootElement
             .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
