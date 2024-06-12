@@ -74,7 +74,9 @@ bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object Strin
 bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
    fromFoldable
       [ "fill" ↦ fill
-      , "stroke-dasharray" ↦ if isTransient sel then "1 1" else "none"
+      , "stroke-width" ↦ "1.5"
+      , "stroke-dasharray" ↦ if isTransient sel then "2 2" else "none"
+      , "stroke-linecap" ↦ "round"
       , "stroke" ↦ (col # if not (isNone sel) then flip colorShade (-70) else identity)
       ]
    where
