@@ -56,7 +56,8 @@ thead {
 }
 
 .matrix-cell.selected-primary-persistent {
-   fill: LightGreen;
+   fill: lightgrey;
+/* fill: LightGreen; */
 }
 
 .matrix-cell.selected-secondary-persistent {
