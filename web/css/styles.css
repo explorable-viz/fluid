@@ -93,8 +93,6 @@ li:last-child {
 
 table {
    margin: 4mm;
-   outline: dotted;
-   outline-color: lightgrey;
 }
 
 .table-caption {

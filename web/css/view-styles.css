@@ -10,6 +10,10 @@ table {
    border-spacing: 0px;
 }
 
+thead {
+   border-top: 0.5px solid lightgray;
+}
+
 .title-text {
    fill: Black;
    font-size: 9pt;
@@ -42,7 +46,7 @@ table {
 }
 
 .table-cell.selected-secondary-transient {
-   border: 1px solid rgb(216, 211, 211);
+   border: 1px dotted rgb(216, 211, 211);
    background-color: White;
 }
 
