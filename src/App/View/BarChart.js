@@ -149,11 +149,10 @@ function drawBarChart_ (
                legendStart = width + margin.left / 2
                names = stackedBars[0].bars.map(bar => val(bar.y))
          rootElement.append('rect')
+            .attr('class', 'legend-box')
             .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
             .attr('x', 0)
             .attr('y', 0)
-            .attr('stroke', 'lightgray')
-            .attr('fill', 'none')
             .attr('height', legendLineHeight * names.length)
             .attr('width', margin.right - 22)
 
@@ -161,7 +160,6 @@ function drawBarChart_ (
             .data(names)
             .enter()
             .append('g')
-               .attr('class', 'legend')
                .attr('transform', (d, i) =>
                   `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
                )

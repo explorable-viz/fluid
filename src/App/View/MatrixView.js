@@ -6,7 +6,7 @@ function setSelState (
    {
       selState,
       selClasses,
-      selClass
+      selClassesFor
    },
    rootElement,
    { matrix },
@@ -16,7 +16,7 @@ function setSelState (
       const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
-         .classed(selClass(sel), true)
+         .classed(selClassesFor(sel), true)
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })

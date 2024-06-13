@@ -5,6 +5,7 @@ import Prelude hiding (absurd, join)
 import Bind (Bind, Var)
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
+import Data.Array (concat)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Generic.Rep (class Generic)
@@ -168,37 +169,50 @@ colorShade col n =
 
 css
    :: { sel ::
-           { selected :: String
-           , selected_transient :: String
-           , selected_secondary :: String
-           , selected_secondary_transient :: String
+           { transient ::
+                { primary :: String
+                , secondary :: String
+                }
+           , persistent ::
+                { primary :: String
+                , secondary :: String
+                }
            }
       }
 css =
    { sel:
-        { selected: "selected"
-        , selected_transient: "selected-transient"
-        , selected_secondary: "selected-secondary"
-        , selected_secondary_transient: "selected-secondary-transient"
+        { transient:
+             { primary: "selected-primary-transient"
+             , secondary: "selected-secondary-transient"
+             }
+        , persistent:
+             { primary: "selected-primary-persistent"
+             , secondary: "selected-secondary-persistent"
+             }
         }
    }
 
--- Ideally would derive this from css.sel
+-- Ideally would derive from css.sel
 selClasses :: String
 selClasses = joinWith " " $
-   [ css.sel.selected
-   , css.sel.selected_transient
-   , css.sel.selected_secondary
-   , css.sel.selected_secondary_transient
+   [ css.sel.transient.primary
+   , css.sel.transient.secondary
+   , css.sel.persistent.primary
+   , css.sel.persistent.secondary
    ]
 
-selClass :: SelState 𝕊 -> String
-selClass (SelState s)
-   | s.persistent == Secondary = css.sel.selected_secondary
-   | s.transient == Secondary = css.sel.selected_secondary_transient
-   | s.persistent == Primary = css.sel.selected
-   | s.transient == Primary = css.sel.selected_transient
-   | otherwise = ""
+selClassesFor :: SelState 𝕊 -> String
+selClassesFor (SelState s) =
+   joinWith " " $ concat
+      [ case s.persistent of
+           Secondary -> [ css.sel.persistent.secondary ]
+           Primary -> [ css.sel.persistent.primary ]
+           None -> []
+      , case s.transient of
+           Secondary -> [ css.sel.transient.secondary ]
+           Primary -> [ css.sel.transient.primary ]
+           None -> []
+      ]
 
 type Attrs = Array (Bind String)
 

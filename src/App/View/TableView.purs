@@ -2,7 +2,7 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (SelState, ViewSelector, 𝕊(..), selClass, selected)
+import App.Util (SelState, ViewSelector, 𝕊(..), selClassesFor, selected)
 import App.Util.Selector (field, listElement)
 import App.View.Util (Renderer)
 import Dict (Dict)
@@ -33,7 +33,7 @@ record_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
       k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> α))
 
-cell_selClass :: String -> SelState 𝕊 -> String
-cell_selClass colName s
+cell_selClassesFor :: String -> SelState 𝕊 -> String
+cell_selClassesFor colName s
    | colName == rowKey = ""
-   | otherwise = selClass s
+   | otherwise = selClassesFor s

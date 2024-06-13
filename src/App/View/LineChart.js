@@ -111,11 +111,10 @@ function drawLineChart_ (
 
          rootElement
             .append('rect')
+            .attr('class', 'legend-box')
             .attr('transform', `translate(${legendStart}, ${legendLineHeight * (names.length - 1) + 2})`)
             .attr('x', 0)
             .attr('y', 0)
-            .attr('stroke', 'lightgray')
-            .attr('fill', 'none')
             .attr('height', legendLineHeight * names.length)
             .attr('width', margin.right - 16)
 
@@ -123,7 +122,6 @@ function drawLineChart_ (
             .data(names)
             .enter()
             .append('g')
-            .attr('class', 'legend')
             .attr('transform', (d, i) =>
                `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
             )
