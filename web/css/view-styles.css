@@ -56,12 +56,12 @@ thead {
 }
 
 .matrix-cell.selected-primary-persistent {
-   fill: lightgrey;
+   fill: rgb(225,225,225);
 /* fill: LightGreen; */
 }
 
 .matrix-cell.selected-secondary-persistent {
-   fill: rgb(235, 235, 235);
+   fill: rgb(245, 245, 245);
 }
 
 .matrix-cell.selected-primary-transient {
@@ -73,7 +73,7 @@ thead {
 .matrix-cell-text {
    font-size: 10pt;
    font-family: "Roboto", sans-serif;
-   color: lightgray
+   color: rgb(205, 205, 205)
 }
 
 .matrix-cell-text.selected-primary-transient {
