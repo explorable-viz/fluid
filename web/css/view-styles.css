@@ -52,6 +52,8 @@ thead {
 .matrix-cell {
    stroke: DarkGray;
    fill: White;
+   color: lightgray
+/* filter: drop-shadow( -1px -1px 1px rgba(0, 0, 0, .5)); */
 }
 
 .matrix-cell.selected-primary-persistent {
@@ -63,11 +65,9 @@ thead {
 }
 
 .matrix-cell.selected-primary-transient {
-/* filter: drop-shadow( -1px -1px 1px rgba(30, 214, 30, 0.6)); */
 }
 
 .matrix-cell.selected-secondary-transient {
-/* filter: drop-shadow( -1px -1px 1px rgba(0, 0, 0, .5)); */
 }
 
 .matrix-cell-text {
@@ -80,7 +80,7 @@ thead {
 }
 
 .matrix-cell-text.selected-secondary-transient {
-   color: blue
+   color: black
 }
 
 .matrix-cell-text.selected-primary-persistent {
