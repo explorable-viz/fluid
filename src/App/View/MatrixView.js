@@ -21,6 +21,12 @@ function setSelState (
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
    })
+   rootElement.selectAll('.matrix-cell-text').each(function (cell) {
+      const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
+      d3.select(this) // won't work inside arrow function :/
+         .classed(selClasses, false)
+         .classed(selClassesFor(sel), true)
+   })
 }
 
 function drawMatrix_ (
@@ -66,6 +72,10 @@ function drawMatrix_ (
                'transform',
                (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`
             )
+            // these will be inherited by text elements
+            .attr('fill', 'currentColor')
+            .attr('stroke', 'currentColor')
+            .attr('stroke-width', '.25') // otherwise setting stroke makes it bold
 
          const cells = grp
             .selectAll('rect')

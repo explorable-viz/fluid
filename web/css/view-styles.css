@@ -54,26 +54,39 @@ thead {
    fill: White;
 }
 
-.matrix-cell.selected {
+.matrix-cell.selected-primary-persistent {
    fill: LightGreen;
 }
 
-.matrix-cell.selected-transient {
-   fill: rgb(201, 241, 221);
+.matrix-cell.selected-secondary-persistent {
+   fill: rgb(235, 235, 235);
 }
 
-.matrix-cell.selected-secondary {
-   fill: rgb(226, 226, 226);
+.matrix-cell.selected-primary-transient {
+/* filter: drop-shadow( -1px -1px 1px rgba(30, 214, 30, 0.6)); */
 }
 
 .matrix-cell.selected-secondary-transient {
-   fill: rgb(240, 240, 240);
+/* filter: drop-shadow( -1px -1px 1px rgba(0, 0, 0, .5)); */
 }
 
 .matrix-cell-text {
-   fill: Black;
    font-size: 10pt;
    font-family: "Roboto", sans-serif;
+}
+
+.matrix-cell-text.selected-primary-transient {
+   font-weight: 400;
+}
+
+.matrix-cell-text.selected-secondary-transient {
+   color: blue
+}
+
+.matrix-cell-text.selected-primary-persistent {
+}
+
+.matrix-cell-text.selected-secondary-persistent {
 }
 
 .scatterplot-point {
