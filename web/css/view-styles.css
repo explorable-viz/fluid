@@ -52,7 +52,6 @@ thead {
 .matrix-cell {
    stroke: DarkGray;
    fill: White;
-   color: lightgray
 /* filter: drop-shadow( -1px -1px 1px rgba(0, 0, 0, .5)); */
 }
 
@@ -73,10 +72,12 @@ thead {
 .matrix-cell-text {
    font-size: 10pt;
    font-family: "Roboto", sans-serif;
+   color: lightgray
 }
 
 .matrix-cell-text.selected-primary-transient {
    font-weight: 400;
+   color: black
 }
 
 .matrix-cell-text.selected-secondary-transient {
