@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState, Selector, ViewSelector, 𝕊, eventData, from, record, selClass, selClasses)
+import App.Util (SelState, Selector, ViewSelector, 𝕊, eventData, from, record, selClasses, selClassesFor)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
 import App.View.BarChart (barChartSelector, drawBarChart')
@@ -13,7 +13,7 @@ import App.View.MatrixView (drawMatrix, matrixRep, matrixViewSelector)
 import App.View.ScatterPlot (ScatterPlot) as View
 import App.View.ScatterPlot (drawScatterPlot, scatterPlotSelector)
 import App.View.TableView (TableView(..)) as View
-import App.View.TableView (cell_selClass, drawTable, record_isUsed, rowKey, tableViewSelector)
+import App.View.TableView (cell_selClassesFor, drawTable, record_isUsed, rowKey, tableViewSelector)
 import App.View.Util (HTMLId, UIHelpers)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
@@ -69,11 +69,11 @@ uiHelpers =
    , selState: snd
    , join: (∨)
    , selClasses
-   , selClass
+   , selClassesFor
    , tableView:
         { rowKey
         , record_isUsed
-        , cell_selClass
+        , cell_selClassesFor
         , val_val: \(Val _ v) -> v
         , val_selState: \(Val α _) -> α
         }

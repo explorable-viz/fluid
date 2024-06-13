@@ -6,7 +6,7 @@ function setSelState (
    {
       selState,
       selClasses,
-      selClass,
+      selClassesFor,
       join
    },
    rootElement,
@@ -17,7 +17,7 @@ function setSelState (
       const sel = join(selState(data[point.i].x))(selState(data[point.i].y))
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
-         .classed(selClass(sel), true)
+         .classed(selClassesFor(sel), true)
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })

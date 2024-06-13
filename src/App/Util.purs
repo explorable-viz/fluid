@@ -5,6 +5,7 @@ import Prelude hiding (absurd, join)
 import Bind (Bind, Var)
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
+import Data.Array (concat)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Generic.Rep (class Generic)
@@ -74,10 +75,10 @@ isNone :: SelState 𝕊 -> 𝔹
 isNone sel = not (isPersistent sel || isTransient sel)
 
 isPersistent :: SelState 𝕊 -> 𝔹
-isPersistent (SelState { persistent }) = to𝔹' persistent
+isPersistent (SelState { persistent }) = persistent /= None
 
 isTransient :: SelState 𝕊 -> 𝔹
-isTransient (SelState { transient }) = to𝔹' transient
+isTransient (SelState { transient }) = transient /= None
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
@@ -98,18 +99,11 @@ instance Ord 𝕊 where
 instance JoinSemilattice 𝕊 where
    join = max
 
-to𝔹' :: 𝕊 -> 𝔹
-to𝔹' = (_ /= None)
-
 to𝔹 :: SelState 𝕊 -> SelState 𝔹
-to𝔹 = (to𝔹' <$> _)
-
-to𝕊' :: 𝔹 -> 𝕊
-to𝕊' false = None
-to𝕊' true = Primary
+to𝔹 = (_ <#> (_ /= None))
 
 to𝕊 :: SelState 𝔹 -> SelState 𝕊
-to𝕊 = (to𝕊' <$> _)
+to𝕊 = (_ <#> if _ then Primary else None)
 
 -- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
@@ -175,39 +169,54 @@ colorShade col n =
 
 css
    :: { sel ::
-           { selected :: String
-           , selected_transient :: String
-           , selected_secondary :: String
-           , selected_secondary_transient :: String
+           { transient ::
+                { primary :: String
+                , secondary :: String
+                }
+           , persistent ::
+                { primary :: String
+                , secondary :: String
+                }
            }
       }
 css =
    { sel:
-        { selected: "selected"
-        , selected_transient: "selected-transient"
-        , selected_secondary: "selected-secondary"
-        , selected_secondary_transient: "selected-secondary-transient"
+        { transient:
+             { primary: "selected-primary-transient"
+             , secondary: "selected-secondary-transient"
+             }
+        , persistent:
+             { primary: "selected-primary-persistent"
+             , secondary: "selected-secondary-persistent"
+             }
         }
    }
 
--- Ideally would derive this from css.sel
+-- Ideally would derive from css.sel
 selClasses :: String
 selClasses = joinWith " " $
-   [ css.sel.selected
-   , css.sel.selected_transient
-   , css.sel.selected_secondary
-   , css.sel.selected_secondary_transient
+   [ css.sel.transient.primary
+   , css.sel.transient.secondary
+   , css.sel.persistent.primary
+   , css.sel.persistent.secondary
    ]
 
-selClass :: SelState 𝕊 -> String
-selClass (SelState s)
-   | s.persistent == Secondary = css.sel.selected_secondary
-   | s.transient == Secondary = css.sel.selected_secondary_transient
-   | s.persistent == Primary = css.sel.selected
-   | s.transient == Primary = css.sel.selected_transient
-   | otherwise = ""
+selClassesFor :: SelState 𝕊 -> String
+selClassesFor (SelState s) =
+   joinWith " " $ concat
+      [ case s.persistent of
+           Secondary -> [ css.sel.persistent.secondary ]
+           Primary -> [ css.sel.persistent.primary ]
+           None -> []
+      , case s.transient of
+           Secondary -> [ css.sel.transient.secondary ]
+           Primary -> [ css.sel.transient.primary ]
+           None -> []
+      ]
 
-attrs :: Array (Array (Bind String)) -> Object String
+type Attrs = Array (Bind String)
+
+attrs :: Array Attrs -> Object String
 attrs = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
 
 -- ======================

@@ -26,11 +26,11 @@ type UIHelpers =
    , selState :: forall a. Selectable a -> SelState 𝕊
    , join :: SelState 𝕊 -> SelState 𝕊 -> SelState 𝕊
    , selClasses :: String
-   , selClass :: SelState 𝕊 -> String
+   , selClassesFor :: SelState 𝕊 -> String
    , tableView ::
         { rowKey :: String
         , record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
-        , cell_selClass :: String -> SelState 𝕊 -> String
+        , cell_selClassesFor :: String -> SelState 𝕊 -> String
         -- values in table cells are not "unpacked" to Selectable but remain as Val
         , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
         , val_selState :: Val (SelState 𝕊) -> SelState 𝕊

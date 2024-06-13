@@ -25,6 +25,31 @@ function setSelState (
    })
 }
 
+// CSS background-image + gradient fill doesn't work with SVG
+// SVG patterns don't support per-usage styling so generate one per colour
+// Masks eliminate dependency on specific colours but seem to clip the stroke a bit
+function addHatchPattern (rootElement, j, col_j) {
+   pattern = rootElement.append('pattern')
+      .attr('id', 'diagonalHatch-' + j)
+      .attr('patternUnits', 'userSpaceOnUse')
+      .attr('width', 3.5)
+      .attr('height', 3.5)
+      .attr('patternTransform', 'rotate(45)')
+
+   pattern.append('rect')
+      .attr('width', 3.5)
+      .attr('height', 3.5)
+      .attr('fill', col_j)
+
+   pattern.append('line')
+      .attr('x1', 0)
+      .attr('y', 0)
+      .attr('x2', 0)
+      .attr('y2', 3.5)
+      .attr('stroke', 'rgba(255, 255, 255, 1)')
+      .attr('stroke-width', "1")
+}
+
 function drawBarChart_ (
    barChartHelpers,
    {
@@ -54,11 +79,11 @@ function drawBarChart_ (
             .append('svg')
                .attr('width', width + margin.left + margin.right)
                .attr('height', height + margin.top + margin.bottom)
-            .attr('id', childId)
+               .attr('id', childId)
 
          rootElement
             .append('g')
-            .attr('transform', `translate(${margin.left}, ${margin.top})`)
+               .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
          // x-axis
          const x = d3.scaleBand()
@@ -75,6 +100,7 @@ function drawBarChart_ (
          function barHeight (bars) {
             return bars.reduce((acc, bar) => { return val(bar.z) + acc }, 0)
          }
+
          // y-axis
          const nearest = 100,
                y_max = Math.ceil(Math.max(...stackedBars.map(d => barHeight(d.bars))) / nearest) * nearest
@@ -94,7 +120,14 @@ function drawBarChart_ (
             .data([...stackedBars.entries()])
             .enter()
             .append('g')
+
          const strokeWidth = 1
+         // TODO: enforce that all stacked bars have same set of segments
+         const j_max = Math.max(...stackedBars.map(bar => bar.bars.length))
+
+         for (let j = 0; j < j_max; ++j) {
+            addHatchPattern(rootElement, j, color(j))
+         }
 
          stacks.selectAll('.bar')
             .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
@@ -112,17 +145,14 @@ function drawBarChart_ (
                .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
                .attr('stroke-width', _ => strokeWidth)
 
-         // TODO: enforce that all stacked bars have same set of segments
          const legendLineHeight = 15,
                legendStart = width + margin.left / 2
                names = stackedBars[0].bars.map(bar => val(bar.y))
-         rootElement
-            .append('rect')
+         rootElement.append('rect')
+            .attr('class', 'legend-box')
             .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
             .attr('x', 0)
             .attr('y', 0)
-            .attr('stroke', 'lightgray')
-            .attr('fill', 'none')
             .attr('height', legendLineHeight * names.length)
             .attr('width', margin.right - 22)
 
@@ -130,10 +160,9 @@ function drawBarChart_ (
             .data(names)
             .enter()
             .append('g')
-            .attr('class', 'legend')
-            .attr('transform', (d, i) =>
-               `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
-            )
+               .attr('transform', (d, i) =>
+                  `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
+               )
 
          legend.append('text')
             .text(d => d)
@@ -150,8 +179,7 @@ function drawBarChart_ (
             .attr('x', legendLineHeight / 2 - legendSquareSize / 2)
             .attr('y', legendLineHeight / 2 - legendSquareSize)
 
-         rootElement
-            .append('text')
+         rootElement.append('text')
             .text(val(caption))
             .style('user-select', 'none') // avoid mysterious spurious text selection
             .attr('x', width / 2)

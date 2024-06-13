@@ -13,7 +13,7 @@ function prim (v) {
 function setSelState (
    {
       selClasses,
-      tableView: { cell_selClass, rowKey, record_isUsed, val_selState }
+      tableView: { cell_selClassesFor, rowKey, record_isUsed, val_selState }
    },
    rootElement,
    { title, table },
@@ -24,7 +24,7 @@ function setSelState (
          const sel = val_selState(table[cell.i][cell.colName])
          d3.select(this) // won't work inside arrow function :/
             .classed(selClasses, false)
-            .classed(cell_selClass(cell.colName)(sel), true)
+            .classed(cell_selClassesFor(cell.colName)(sel), true)
             .on('mousedown', e => { listener(e) })
             .on('mouseenter', e => { listener(e) })
             .on('mouseleave', e => { listener(e) })
