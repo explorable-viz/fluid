@@ -100,12 +100,13 @@ thead {
 .scatterplot-point.selected-primary-persistent {
    fill: LightGreen;
    stroke: teal;
-   r: 3.6;
+   r: 3.2;
 }
 
 .scatterplot-point.selected-primary-transient {
-   fill: rgb(201, 241, 221);
-   r: 3.6;
+   stroke: blue;
+   stroke-width: 1;
+   r: 3.2;
 }
 
 .scatterplot-point.selected-secondary-persistent {
@@ -114,6 +115,7 @@ thead {
 }
 
 .scatterplot-point.selected-secondary-transient {
-   fill: rgb(240, 240, 240);
+   stroke: blue;
+   stroke-width: 1;
    r: 2.5;
 }
