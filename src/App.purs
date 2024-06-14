@@ -7,6 +7,7 @@ import App.Util (runAffs_)
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..), Folder(..), loadFile')
+import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
 import Test.Specs.LinkedInputs (energyScatter)
 import Util ((×))
 
@@ -44,7 +45,7 @@ main = do
       ]
    runAffs_ (uncurry drawFig)
       [ ("fig-4" × _) <$> loadFig energyScatter
-      {-("fig-conv-2" × _) <$> loadFig fig2
+      , ("fig-conv-2" × _) <$> loadFig fig2
       , ("fig-conv-3" × _) <$> loadFig fig3
       , ("fig-1" × _) <$> loadFig linkedOutputs_spec1.spec
-      -}]
+      ]
