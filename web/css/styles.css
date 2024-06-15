@@ -163,6 +163,7 @@ nav ul li a.active-page {
 .data-pane-button {
    color: #EEEEEE;
    font-size: 9pt;
+   user-select: none;
 }
 
 .data-pane {
