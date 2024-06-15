@@ -11,7 +11,6 @@
    <script>
       // move to PureScript
       function toggle(id) {
-         console.log('Here')
          const elem = document.getElementById(id)
          if (elem.style.visibility == 'hidden')
             elem.style.visibility = 'visible'
@@ -66,14 +65,7 @@
    <div></div>
    <div id="fig-4-input" class="flex-right-align data-pane"></div>
    <div>
-      <div
-         id="fig-4-data-pane-button"
-         onclick="toggle('fig-4-input')"
-         onmouseenter="setColorActive('fig-4', true)"
-         onmouseleave="setColorActive('fig-4', false)""
-      >
-         <span class="data-pane-button">◀▶</span>
-      </div>
+      <div onclick="toggle('fig-4-input')"><span class="data-pane-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig-4"></div>
@@ -90,14 +82,7 @@
    <div></div>
    <div id="fig-1-input" class="flex-right-align data-pane"></div>
    <div>
-      <div
-         id="fig-1-data-pane-button"
-         onclick="toggle('fig-1-input')"
-         onmouseenter="setColorActive('fig-1', true)"
-         onmouseleave="setColorActive('fig-1', false)""
-      >
-         <span class="data-pane-button">◀▶</span>
-      </div>
+      <div onclick="toggle('fig-1-input')"><span class="data-pane-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig-1" class="flex-bottom-align"></div>
@@ -123,14 +108,7 @@
    <div></div>
    <div id="fig-conv-2-input" class="flex-right-align data-pane"></div>
    <div>
-      <div
-         id="fig-conv-2-data-pane-button"
-         onclick="toggle('fig-conv-2-input')"
-         onmouseenter="setColorActive('fig-conv-2', true)"
-         onmouseleave="setColorActive('fig-conv-2', false)""
-      >
-         <span class="data-pane-button">◀▶</span>
-      </div>
+      <div onclick="toggle('fig-conv-2-input')"><span class="data-pane-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig-conv-2"></div>
@@ -152,9 +130,6 @@
    toggle('fig-1-input')
    toggle('fig-4-input')
    toggle('fig-conv-2-input')
-   setColorActive('fig-1', false)
-   setColorActive('fig-4', false)
-   setColorActive('fig-conv-2', false)
 </script>
 </body>
 </html>
