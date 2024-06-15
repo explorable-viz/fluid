@@ -153,6 +153,5 @@ nav ul li a.active-page {
 }
 
 .main-pane {
-   display: flex;
-   align-items: center;
+   align-items: flex–start;
 }
