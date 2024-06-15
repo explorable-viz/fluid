@@ -33,6 +33,7 @@ body {
 }
 
 .data-pane {
+   justify-items: end;
 }
 
 .main-pane {
