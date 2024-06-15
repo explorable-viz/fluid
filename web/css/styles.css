@@ -161,3 +161,7 @@ nav ul li a.active-page {
    flex-direction: row;
    align-items: flex-end;
 }
+
+.data-pane-button {
+   color: #EEEEEE;
+}
