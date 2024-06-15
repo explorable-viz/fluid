@@ -47,9 +47,14 @@ type Fig =
    , dir :: Direction
    }
 
--- Pseudo-variable to use as name of output view.
-output :: String
-output = "output"
+str
+   :: { output :: String -- pseudo-variable to use as name of output view
+      , input :: String -- prefix for input views
+      }
+str =
+   { output: "output"
+   , input: "input"
+   }
 
 selectOutput :: Selector Val -> Endo Fig
 selectOutput δv fig@{ dir, γ, v } = fig
@@ -67,12 +72,12 @@ selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView divId output (drawFig divId <<< flip selectOutput fig) out_view
+   drawView divId str.output (drawFig divId <<< flip selectOutput fig) out_view
    sequence_ $
-      mapWithKey (\x -> drawView divId x (drawFig divId <<< flip (curry selectInput x) fig)) in_views
+      mapWithKey (\x -> drawView (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig)) in_views
    where
    out_view × in_views =
-      selectionResult fig # unsafePartial (view output *** unwrap >>> mapWithKey view)
+      selectionResult fig # unsafePartial (view str.output *** unwrap >>> mapWithKey view)
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =

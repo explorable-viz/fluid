@@ -67,7 +67,7 @@ function drawBarChart_ (
       const { val } = uiHelpers
       const { tickEvery } = barChartHelpers
       const childId = divId + '-' + suffix
-      const margin = {top: 15, right: 75, bottom: 40, left: 40},
+      const margin = {top: 15, right: 75, bottom: 25, left: 40},
             width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + divId)
