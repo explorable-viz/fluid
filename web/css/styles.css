@@ -146,10 +146,6 @@ nav ul li a.active-page {
    display: none;
 }
 
-.main-pane {
-   align-items: flex–start;
-}
-
 .flex-left-align {
    display: flex;
    flex-direction: column;
