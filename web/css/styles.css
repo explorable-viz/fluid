@@ -167,8 +167,4 @@ nav ul li a.active-page {
 
 .data-pane {
    background-color: #F5F5F5;
-   box-shadow:
-      inset 0 4px 6px rgba(0, 0, 0, 0.1),
-      inset 0 -4px 6px rgba(0, 0, 0, 0.1),
-      0 1px 3px rgba(0, 0, 0, 0.1);
 }
