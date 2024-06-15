@@ -32,7 +32,10 @@ body {
    margin-bottom: 10em;
 }
 
-.parent {
+.data-pane {
+}
+
+.main-pane {
    display: flex;
    align-items: center;
 }
