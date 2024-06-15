@@ -47,11 +47,10 @@ type Fig =
    , dir :: Direction
    }
 
-
-str ::
-   { output :: String -- pseudo-variable to use as name of output view
-   , input :: String  -- prefix for input views
-   }
+str
+   :: { output :: String -- pseudo-variable to use as name of output view
+      , input :: String -- prefix for input views
+      }
 str =
    { output: "output"
    , input: "input"
