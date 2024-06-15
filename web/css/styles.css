@@ -155,3 +155,9 @@ nav ul li a.active-page {
 .main-pane {
    align-items: flex–start;
 }
+
+.flex-bottom-align {
+   display: flex;
+   flex-direction: row;
+   align-items: flex-end;
+}
