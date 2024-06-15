@@ -139,8 +139,7 @@ nav ul li a.active-page {
 
 .grid-container {
    display: grid;
-   grid-template-columns: 40% 60%;
-   gap: 10px;
+   grid-template-columns: 40% fit-content(10px) 60%;
 }
 
 .grid-item {
@@ -164,4 +163,5 @@ nav ul li a.active-page {
 
 .data-pane-button {
    color: #EEEEEE;
+   font-size: 9pt;
 }
