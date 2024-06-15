@@ -32,15 +32,6 @@ body {
    margin-bottom: 10em;
 }
 
-.data-pane {
-   justify-items: end;
-}
-
-.main-pane {
-   display: flex;
-   align-items: center;
-}
-
 .center {
    height: 100%;
 }
@@ -148,10 +139,20 @@ nav ul li a.active-page {
 
 .grid-container {
    display: grid;
-   grid-template-columns: 1fr 1fr;
+   grid-template-columns: 40% 60%;
+   gap: 10px;
 }
 
 .grid-item {
    display: flex;
    flex-direction: column;
+}
+
+.data-pane {
+   align-items: flex-end;
+}
+
+.main-pane {
+   display: flex;
+   align-items: center;
 }
