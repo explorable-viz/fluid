@@ -142,17 +142,24 @@ nav ul li a.active-page {
    grid-template-columns: 40% fit-content(10px) 60%;
 }
 
-.grid-item {
-   display: flex;
-   flex-direction: column;
-}
-
 .data-pane {
-   align-items: flex-end;
+   display: none;
 }
 
 .main-pane {
    align-items: flex–start;
+}
+
+.flex-left-align {
+   display: flex;
+   flex-direction: column;
+   align-items: flex–start;
+}
+
+.flex-right-align {
+   display: flex;
+   flex-direction: column;
+   align-items: flex-end;
 }
 
 .flex-bottom-align {
