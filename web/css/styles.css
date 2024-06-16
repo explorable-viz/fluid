@@ -107,10 +107,6 @@ td:nth-child(1) {
    color: lightgray;
 }
 
-th:nth-child(1) {
-   color: lightgray;
-}
-
 nav ul {
    list-style: none;
 }
@@ -162,11 +158,14 @@ nav ul li a.active-page {
 
 .data-pane-button {
    font-size: 9pt;
-   user-select: none;
-   color: #EEEEEE;
 }
 
-.data-pane-button:hover {
+.toggle-button {
+   color: #EEEEEE;
+   user-select: none;
+}
+
+.toggle-button:hover {
    color: #CCCCCC;
 }
 

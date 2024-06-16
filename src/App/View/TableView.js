@@ -83,6 +83,7 @@ function drawTable_ (
                .enter()
                .append('th')
                .text(colName => colName == rowKey ? (filter ? "▸" : "▾" ) : colName)
+               .classed('toggle-button', colName => colName == rowKey)
 
          const rows = rootElement
             .append('tbody')
