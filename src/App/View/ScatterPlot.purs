@@ -5,7 +5,7 @@ import Prelude
 import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from, record)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point)
-import App.View.Util (Renderer)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
 import Primitive (string, unpack)
@@ -20,6 +20,11 @@ newtype ScatterPlot = ScatterPlot
    }
 
 foreign import drawScatterPlot :: Renderer ScatterPlot
+
+instance Drawable ScatterPlot Unit where
+   initialState _ = unit
+   draw divId suffix redraw vw _ =
+      drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< selListener redraw scatterPlotSelector
 
 instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
    from r = ScatterPlot

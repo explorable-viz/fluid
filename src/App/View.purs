@@ -2,66 +2,26 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState, ViewSelector, 𝕊, eventData, from, record, selClasses, selClassesFor, selectionEventData)
+import App.Util (SelState, ViewSelector, 𝕊, from, record, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
-import App.View.BarChart (BarChart, barChartSelector, drawBarChart')
-import App.View.LineChart (LineChart, drawLineChart', lineChartSelector)
-import App.View.MatrixView (MatrixView(..), drawMatrix, matrixRep, matrixViewSelector)
-import App.View.ScatterPlot (ScatterPlot, drawScatterPlot, scatterPlotSelector)
-import App.View.TableView (FilterToggler, TableView(..), TableViewState(..), drawTable', filterToggler, tableViewSelector)
-import App.View.Util (HTMLId, UIHelpers, Redraw)
+import App.View.BarChart (BarChart)
+import App.View.LineChart (LineChart)
+import App.View.MatrixView (MatrixView(..), matrixRep)
+import App.View.ScatterPlot (ScatterPlot)
+import App.View.TableView (TableView(..))
+import App.View.Util (class Drawable, HTMLId, Redraw, draw, initialState)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (uncurry)
 import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
 import Dict (Dict)
 import Effect (Effect)
-import Lattice ((∨))
-import Util (type (×), (×), spy)
+import Util (type (×), (×))
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype View = View (forall r. (forall a b. Drawable a b => a × b -> r) -> r)
-
-class Drawable a b | a -> b where
-   initialState :: a -> b
-   draw :: HTMLId -> String -> Redraw -> a -> b -> Effect Unit
-
-instance Drawable BarChart Unit where
-   initialState _ = unit
-   draw divId suffix redraw vw _ =
-      drawBarChart' { uiHelpers, divId, suffix, view: vw } =<< selListener redraw barChartSelector
-
-instance Drawable LineChart Unit where
-   initialState _ = unit
-   draw divId suffix redraw vw _ =
-      drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< selListener redraw lineChartSelector
-
-instance Drawable MatrixView Unit where
-   initialState _ = unit
-   draw divId suffix redraw vw _ =
-      drawMatrix { uiHelpers, divId, suffix, view: vw } =<< selListener redraw matrixViewSelector
-
-instance Drawable (Dict View) Unit where
-   initialState _ = unit
-   draw divId _ redraw vws _ =
-      sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
-
-instance Drawable ScatterPlot Unit where
-   initialState _ = unit
-   draw divId suffix redraw vw _ =
-      drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< selListener redraw scatterPlotSelector
-
-instance Drawable TableView TableViewState where
-   initialState _ = TableViewState { filter: true }
-   draw divId suffix redraw vw _ = do
-      toggleListener <- filterToggleListener filterToggler
-      drawTable' toggleListener { uiHelpers, divId, suffix, view: vw } =<< selListener redraw tableViewSelector
-      where
-      filterToggleListener :: FilterToggler -> Effect EventListener
-      filterToggleListener toggler =
-         eventListener (eventData >>> toggler >>> (\_ -> spy "TODO" identity) >>> redraw)
 
 selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
 selListener redraw selector = eventListener (selectionEventData >>> uncurry selector >>> redraw)
@@ -81,7 +41,7 @@ view _ (Val _ (Constr c (u : Nil))) | c == cLineChart =
 view title (Val _ (Matrix r)) =
    pack (MatrixView { title, matrix: matrixRep r })
 view title (Val _ (Constr c (u : Nil))) | c == cMultiPlot =
-   pack (view title <$> from u :: Dict View)
+   pack (MultiView (view title <$> from u))
 view _ (Val _ (Constr c (u : Nil))) | c == cScatterPlot =
    pack (record from u :: ScatterPlot)
 view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
@@ -90,11 +50,10 @@ view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
 drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
 drawView divId suffix redraw vw = unpack vw (uncurry $ draw divId suffix redraw)
 
-uiHelpers :: UIHelpers
-uiHelpers =
-   { val: fst
-   , selState: snd
-   , join: (∨)
-   , selClasses
-   , selClassesFor
-   }
+-- Newtype avoids orphan instance/cyclic dependency
+newtype MultiView = MultiView (Dict View)
+
+instance Drawable MultiView Unit where
+   initialState _ = unit
+   draw divId _ redraw (MultiView vws) _ =
+      sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws

@@ -2,16 +2,17 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (SelState, ViewSelector, 𝕊(..), selClassesFor, selected)
+import App.Util (SelState, ViewSelector, 𝕊(..), eventData, selClassesFor, selected)
 import App.Util.Selector (field, listElement)
-import App.View.Util (Renderer)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Newtype (class Newtype, over)
 import Dict (Dict)
-import Util (Endo)
+import Effect (Effect)
+import Util (Endo, spy)
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (BaseVal, Val(..))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype TableView = TableView
    { title :: String
@@ -43,6 +44,16 @@ drawTable' = drawTable
    , val_val: \(Val _ v) -> v
    , val_selState: \(Val α _) -> α
    }
+
+instance Drawable TableView TableViewState where
+   initialState _ = TableViewState { filter: true }
+   draw divId suffix redraw vw _ = do
+      toggleListener <- filterToggleListener filterToggler
+      drawTable' toggleListener { uiHelpers, divId, suffix, view: vw } =<< selListener redraw tableViewSelector
+      where
+      filterToggleListener :: FilterToggler -> Effect EventListener
+      filterToggleListener toggler =
+         eventListener (eventData >>> toggler >>> (\_ -> spy "TODO" identity) >>> redraw)
 
 -- convert mouse event data (here, always rowKey) to view change
 type FilterToggler = String -> Endo TableViewState

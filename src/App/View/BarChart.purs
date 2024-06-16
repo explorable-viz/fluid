@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
 import App.Util.Selector (barChart, barSegment)
-import App.View.Util (Renderer)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
@@ -44,6 +44,11 @@ drawBarChart' = drawBarChart
    { bar_attrs
    , tickEvery
    }
+
+instance Drawable BarChart Unit where
+   initialState _ = unit
+   draw divId suffix redraw vw _ =
+      drawBarChart' { uiHelpers, divId, suffix, view: vw } =<< selListener redraw barChartSelector
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart

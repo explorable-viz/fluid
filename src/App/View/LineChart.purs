@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
-import App.View.Util (Renderer)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Foldable (maximum, minimum)
 import Data.Int (toNumber)
@@ -51,6 +51,11 @@ drawLineChart' = drawLineChart
    , point_smallRadius
    , point_attrs
    }
+
+instance Drawable LineChart Unit where
+   initialState _ = unit
+   draw divId suffix redraw vw _ =
+      drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< selListener redraw lineChartSelector
 
 instance Reflect (Dict (Val (SelState 𝕊))) Point where
    from r = Point
