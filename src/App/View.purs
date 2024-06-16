@@ -34,15 +34,15 @@ class Drawable a where
 
 instance Drawable View.BarChart where
    draw divId suffix redraw vw =
-      drawBarChart' { uiHelpers, divId, suffix, view: vw } =<< selListener' redraw barChartSelector
+      drawBarChart' { uiHelpers, divId, suffix, view: vw } =<< selListener redraw barChartSelector
 
 instance Drawable View.LineChart where
    draw divId suffix redraw vw =
-      drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< selListener' redraw lineChartSelector
+      drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< selListener redraw lineChartSelector
 
 instance Drawable View.MatrixView where
    draw divId suffix redraw vw =
-      drawMatrix { uiHelpers, divId, suffix, view: vw } =<< selListener' redraw matrixViewSelector
+      drawMatrix { uiHelpers, divId, suffix, view: vw } =<< selListener redraw matrixViewSelector
 
 instance Drawable (Dict View) where
    draw divId _ redraw vws =
@@ -50,18 +50,18 @@ instance Drawable (Dict View) where
 
 instance Drawable View.ScatterPlot where
    draw divId suffix redraw vw =
-      drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< selListener' redraw scatterPlotSelector
+      drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< selListener redraw scatterPlotSelector
 
 instance Drawable View.TableView where
    draw divId suffix redraw vw = do
       toggleListener <- filterToggleListener filterToggler
-      drawTable' toggleListener { uiHelpers, divId, suffix, view: vw } =<< selListener' redraw tableViewSelector
+      drawTable' toggleListener { uiHelpers, divId, suffix, view: vw } =<< selListener redraw tableViewSelector
       where
       filterToggleListener :: FilterToggler -> Effect EventListener
       filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)
 
-selListener' :: forall a. Redraw -> ViewSelector a -> Effect EventListener
-selListener' redraw selector = eventListener (selectionEventData >>> uncurry selector >>> redraw)
+selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
+selListener redraw selector = eventListener (selectionEventData >>> uncurry selector >>> redraw)
 
 pack :: forall a. Drawable a => a -> View
 pack x = View \k -> k x
