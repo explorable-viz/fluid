@@ -5,19 +5,19 @@
  }
 
 .glowing, a {
-   transition: all .25s
+   transition: all .25s;
 }
 
 a:hover {
-   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
+   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
 }
 
 .nowrap {
-   white-space: nowrap
+   white-space: nowrap;
 }
 
 code {
-   font-size: 11pt
+   font-size: 11pt;
 }
 
 body {
@@ -37,7 +37,7 @@ body {
 }
 
 .align-right {
-   text-align: right
+   text-align: right;
 }
 
 .title {
@@ -70,7 +70,7 @@ a {
 
 a.not_decorated,
 a:hover {
-   text-decoration: none
+   text-decoration: none;
 }
 
 ul {
@@ -90,7 +90,7 @@ table {
 }
 
 .table-caption {
-   text-align: left
+   text-align: left;
 }
 
 th {
@@ -129,7 +129,7 @@ nav ul li a {
 }
 
 nav ul li a.active-page {
-   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
+   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
 }
 
 .cm-line {
@@ -139,25 +139,37 @@ nav ul li a.active-page {
 
 .grid-container {
    display: grid;
-   grid-template-columns: 40% 60%;
-   gap: 10px;
+   grid-template-columns: 10px 35% fit-content(10px) 55%;
 }
 
-.grid-item {
+.flex-left-align {
    display: flex;
    flex-direction: column;
-}
-
-.data-pane {
-   align-items: flex-end;
-}
-
-.main-pane {
    align-items: flex–start;
+}
+
+.flex-right-align {
+   display: flex;
+   flex-direction: column;
+   align-items: flex-end;
 }
 
 .flex-bottom-align {
    display: flex;
    flex-direction: row;
    align-items: flex-end;
+}
+
+.data-pane-button {
+   font-size: 9pt;
+   user-select: none;
+   color: #EEEEEE;
+}
+
+.data-pane-button:hover {
+   color: #CCCCCC;
+}
+
+.data-pane {
+   background-color: #F5F5F5;
 }

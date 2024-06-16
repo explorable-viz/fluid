@@ -1,23 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Fluid: Data-Linked Visualisations</title>
-  <script src="https://use.fontawesome.com/1091715d00.js"></script>
-  <link href="css/styles.css" rel="stylesheet" type="text/css">
-  <link href="css/view-styles.css" rel="stylesheet" type="text/css">
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Fluid: Data-Linked Visualisations</title>
+   <link href="css/styles.css" rel="stylesheet" type="text/css">
+   <link href="css/view-styles.css" rel="stylesheet" type="text/css">
+   <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <script>
+      // move to PureScript
+      function toggle(id) {
+         const elem = document.getElementById(id)
+         if (elem.style.visibility == 'hidden')
+            elem.style.visibility = 'visible'
+         else
+            elem.style.visibility = 'hidden'
+      }
+
+      function setColorActive(id, active) {
+         const elem = document.getElementById(id + '-data-pane-button')
+         if (active) {
+            elem.style.color = 'blue'
+         } else {
+            elem.style.color = '#EEEEEE'
+         }
+      }
+   </script>
 </head>
 <body>
 
 <div class="grid-container">
-   <div class="grid-item data-pane">
+   <div></div>
+   <div class="flex-right-align">
       <img src="https://i.ibb.co/bFjzrXR/Untitled.jpg" width="250px">
       <img src="https://i.ibb.co/zNqHKg7/University-of-Bristol-logo.png" width="250px">
       <img src="https://dorchard.github.io/images/iccs-full-logo.png" alt="ICCS logo" width="250px">
    </div>
-   <div class="grid-item">
+   <div></div>
+   <div class="flex-left-align">
       <nav>
          <ul>
             <li><a href="." class="active-page">Latest</a></li>
@@ -33,29 +54,37 @@
       <h2>Fluid: data-linked visualisations</h2>
    </div>
 
-   <div class="grid-item"></div>
-   <div class="grid-item main-pane">
+   <div></div>
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
       <h3 class="title lowercase">example 1</h3>
       <p>Renewables example for related inputs:</p>
    </div>
 
-   <div class="grid-item data-pane">
-      <div id="fig-4-input"></div>
+   <div></div>
+   <div id="fig-4-input" class="flex-right-align data-pane"></div>
+   <div>
+      <div onclick="toggle('fig-4-input')"><span class="data-pane-button">◀▶</span></div>
    </div>
-   <div class="grid-item main-pane">
+   <div class="flex-left-align">
       <div id="fig-4"></div>
    </div>
 
-   <div class="grid-item"></div>
-   <div class="grid-item main-pane">
+   <div></div>
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
       <h3 class="title lowercase">example 2</h3>
       <p>Bar chart and line chart showing renewables data:</p>
    </div>
 
-   <div class="grid-item data-pane">
-      <div id="fig-1-input"></div>
+   <div></div>
+   <div id="fig-1-input" class="flex-right-align data-pane"></div>
+   <div>
+      <div onclick="toggle('fig-1-input')"><span class="data-pane-button">◀▶</span></div>
    </div>
-   <div class="grid-item main-pane">
+   <div class="flex-left-align">
       <div id="fig-1" class="flex-bottom-align"></div>
       <p>Source code:</p>
       <details>
@@ -68,16 +97,20 @@
       </details>
    </div>
 
-   <div class="grid-item"></div>
-   <div class="grid-item main-pane">
+   <div></div>
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
       <h3 class="title lowercase">example 3</h3>
       <p>Matrix convolution, with wrap at boundary:</p>
    </div>
 
-   <div class="grid-item data-pane">
-      <div id="fig-conv-2-input"></div>
+   <div></div>
+   <div id="fig-conv-2-input" class="flex-right-align data-pane"></div>
+   <div>
+      <div onclick="toggle('fig-conv-2-input')"><span class="data-pane-button">◀▶</span></div>
    </div>
-   <div class="grid-item main-pane">
+   <div class="flex-left-align">
       <div id="fig-conv-2"></div>
       <p>Source code:</p>
       <details>
@@ -92,5 +125,11 @@
 </div>
 
 <script src="app.js"></script>
+<script>
+   // move to PureScript
+   toggle('fig-1-input')
+   toggle('fig-4-input')
+   toggle('fig-conv-2-input')
+</script>
 </body>
 </html>
