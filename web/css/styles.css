@@ -166,9 +166,8 @@ nav ul li a.active-page {
    color: #EEEEEE;
 }
 
-.data-pane-botton:hover {
-   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
-   color: blue;
+.data-pane-button:hover {
+   color: #CCCCCC;
 }
 
 .data-pane {
