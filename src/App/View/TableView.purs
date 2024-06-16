@@ -20,6 +20,10 @@ newtype TableView = TableView
    , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
    }
 
+newtype TableViewState = TableViewState
+   { filter :: Boolean
+   }
+
 type TableViewHelpers =
    { rowKey :: String
    , record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
@@ -41,10 +45,10 @@ drawTable' = drawTable
    }
 
 -- convert mouse event data (here, always rowKey) to view change
-type FilterToggler = String -> Endo TableView
+type FilterToggler = String -> Endo TableViewState
 
 filterToggler :: FilterToggler
-filterToggler _ = over TableView \vw -> vw { filter = not vw.filter }
+filterToggler _ = over TableViewState \vw -> vw { filter = not vw.filter }
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }
@@ -69,4 +73,4 @@ cell_selClassesFor colName s
 -- ======================
 -- boilerplate
 -- ======================
-derive instance Newtype TableView _
+derive instance Newtype TableViewState _
