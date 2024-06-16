@@ -5,10 +5,13 @@ import Prelude
 import App.Util (SelState, ViewSelector, 𝕊(..), selClassesFor, selected)
 import App.Util.Selector (field, listElement)
 import App.View.Util (Renderer)
+import Data.Newtype (class Newtype, over)
 import Dict (Dict)
+import Util (Endo)
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (BaseVal, Val(..))
+import Web.Event.EventTarget (EventListener)
 
 newtype TableView = TableView
    { title :: String
@@ -26,9 +29,9 @@ type TableViewHelpers =
    , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
    }
 
-foreign import drawTable :: TableViewHelpers -> Renderer TableView
+foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
 
-drawTable' :: Renderer TableView
+drawTable' :: EventListener -> Renderer TableView
 drawTable' = drawTable
    { rowKey
    , record_isUsed
@@ -36,6 +39,11 @@ drawTable' = drawTable
    , val_val: \(Val _ v) -> v
    , val_selState: \(Val α _) -> α
    }
+
+type FilterToggler = Unit -> Endo TableView -- convert mouse event data to view change
+
+filterToggler :: FilterToggler
+filterToggler _ = over TableView \vw -> vw { filter = not vw.filter }
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }
@@ -56,3 +64,8 @@ cell_selClassesFor :: String -> SelState 𝕊 -> String
 cell_selClassesFor colName s
    | colName == rowKey = ""
    | otherwise = selClassesFor s
+
+-- ======================
+-- boilerplate
+-- ======================
+derive instance Newtype TableView _

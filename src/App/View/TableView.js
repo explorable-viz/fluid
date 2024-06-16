@@ -17,7 +17,7 @@ function setSelState (
    },
    rootElement,
    { title, filter, table },
-   listener
+   selListener
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
       if (cell.colName != rowKey) {
@@ -25,9 +25,9 @@ function setSelState (
          d3.select(this) // won't work inside arrow function :/
             .classed(selClasses, false)
             .classed(cell_selClassesFor(cell.colName)(sel), true)
-            .on('mousedown', e => { listener(e) })
-            .on('mouseenter', e => { listener(e) })
-            .on('mouseleave', e => { listener(e) })
+            .on('mousedown', e => { selListener(e) })
+            .on('mouseenter', e => { selListener(e) })
+            .on('mouseleave', e => { selListener(e) })
       }
    })
    let hidden = 0
@@ -46,13 +46,14 @@ function setSelState (
 
 function drawTable_ (
    tableViewHelpers,
+   filterToggleListener,
    {
       uiHelpers,
       divId,
       suffix,
       view
    },
-   listener
+   selListener
 ) {
    return () => {
       const { rowKey, val_val } = tableViewHelpers
@@ -105,8 +106,8 @@ function drawTable_ (
             .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setSelState(tableViewHelpers, uiHelpers, rootElement, view, listener)
+      setSelState(tableViewHelpers, uiHelpers, rootElement, view, selListener)
    }
 }
 
-export var drawTable = x1 => x2 => x3 => drawTable_(x1, x2, x3)
+export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)

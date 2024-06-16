@@ -140,8 +140,11 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
    Right as' -> as' <#> f # sequence_
 
 -- Unpack d3.js data and event type associated with mouse event target.
-eventData :: forall a. Event -> a × Selector Val
-eventData = target >>> unsafeEventData &&& type_ >>> selector
+selectionEventData :: forall a. Event -> a × Selector Val
+selectionEventData = eventData &&& type_ >>> selector
+
+eventData :: forall a. Event -> a
+eventData = target >>> unsafeEventData
    where
    unsafeEventData :: Maybe EventTarget -> a
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__

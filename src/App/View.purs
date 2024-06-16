@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState, Selector, ViewSelector, 𝕊, eventData, from, record, selClasses, selClassesFor)
+import App.Util (SelState, Selector, ViewSelector, 𝕊, eventData, from, record, selClasses, selClassesFor, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart) as View
 import App.View.BarChart (barChartSelector, drawBarChart')
@@ -12,8 +12,8 @@ import App.View.MatrixView (MatrixView(..)) as View
 import App.View.MatrixView (drawMatrix, matrixRep, matrixViewSelector)
 import App.View.ScatterPlot (ScatterPlot) as View
 import App.View.ScatterPlot (drawScatterPlot, scatterPlotSelector)
+import App.View.TableView (FilterToggler, drawTable', filterToggler, tableViewSelector)
 import App.View.TableView (TableView(..)) as View
-import App.View.TableView (drawTable', tableViewSelector)
 import App.View.Util (HTMLId, UIHelpers)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
@@ -38,15 +38,20 @@ data View
 
 drawView :: HTMLId -> String -> (Selector Val -> Effect Unit) -> View -> Effect Unit
 drawView divId suffix redraw = case _ of
-   MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< listener matrixViewSelector
-   TableView vw -> drawTable' { uiHelpers, divId, suffix, view: vw } =<< listener tableViewSelector
-   LineChart vw -> drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< listener lineChartSelector
-   BarChart vw -> drawBarChart' { uiHelpers, divId, suffix, view: vw } =<< listener barChartSelector
-   ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< listener scatterPlotSelector
+   MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< selListener matrixViewSelector
+   TableView vw -> do
+      toggleListener <- filterToggleListener filterToggler
+      drawTable' toggleListener { uiHelpers, divId, suffix, view: vw } =<< selListener tableViewSelector
+   LineChart vw -> drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< selListener lineChartSelector
+   BarChart vw -> drawBarChart' { uiHelpers, divId, suffix, view: vw } =<< selListener barChartSelector
+   ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< selListener scatterPlotSelector
    MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
    where
-   listener :: forall a. ViewSelector a -> Effect EventListener
-   listener selector = eventListener (eventData >>> uncurry selector >>> redraw)
+   selListener :: forall a. ViewSelector a -> Effect EventListener
+   selListener selector = eventListener (selectionEventData >>> uncurry selector >>> redraw)
+
+   filterToggleListener :: FilterToggler -> Effect EventListener
+   filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)
 
 -- Convert annotated value to appropriate View, discarding top-level annotations for now.
 view :: Partial => String -> Val (SelState 𝕊) -> View
