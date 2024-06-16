@@ -36,7 +36,9 @@ data View
    | MatrixView View.MatrixView
    | TableView View.TableView
 
-drawView :: HTMLId -> String -> (Selector Val -> Effect Unit) -> View -> Effect Unit
+type Redraw = Selector Val -> Effect Unit
+
+drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
 drawView divId suffix redraw = case _ of
    MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< selListener matrixViewSelector
    TableView vw -> do
