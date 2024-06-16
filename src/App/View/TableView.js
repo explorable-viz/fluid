@@ -79,18 +79,18 @@ function drawTable_ (
          tableHead
             .append('tr')
             .selectAll('th')
-            .data(colNames)
-            .enter()
-            .append('th')
-            .text(colName => colName == rowKey ? (filter ? "▸" : "▾" ) : colName)
+               .data(colNames)
+               .enter()
+               .append('th')
+               .text(colName => colName == rowKey ? (filter ? "▸" : "▾" ) : colName)
 
          const rows = rootElement
             .append('tbody')
             .selectAll('tr')
-            .data([...table.entries()].map((([i, row]) => { return { i, row } })))
-            .enter()
-            .append('tr')
-            .attr('class', 'table-row')
+               .data([...table.entries()].map((([i, row]) => { return { i, row } })))
+               .enter()
+               .append('tr')
+               .attr('class', 'table-row')
 
          rows.selectAll('td')
             .data(({ i, row }) => colNames.map(colName => {
