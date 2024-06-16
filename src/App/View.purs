@@ -27,32 +27,39 @@ import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener, eventListener)
 
 type Redraw = Selector Val -> Effect Unit
-newtype View = View (forall r. (forall a. Drawable a => a -> r) -> r)
+newtype View = View (forall r. (forall a b. Drawable a b => a -> r) -> r)
 
-class Drawable a where
+class Drawable a b | a -> b where
+   initialState :: a -> b
    draw :: HTMLId -> String -> Redraw -> a -> Effect Unit
 
-instance Drawable View.BarChart where
+instance Drawable View.BarChart Unit where
+   initialState _ = unit
    draw divId suffix redraw vw =
       drawBarChart' { uiHelpers, divId, suffix, view: vw } =<< selListener redraw barChartSelector
 
-instance Drawable View.LineChart where
+instance Drawable View.LineChart Unit where
+   initialState _ = unit
    draw divId suffix redraw vw =
       drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< selListener redraw lineChartSelector
 
-instance Drawable View.MatrixView where
+instance Drawable View.MatrixView Unit where
+   initialState _ = unit
    draw divId suffix redraw vw =
       drawMatrix { uiHelpers, divId, suffix, view: vw } =<< selListener redraw matrixViewSelector
 
-instance Drawable (Dict View) where
+instance Drawable (Dict View) Unit where
+   initialState _ = unit
    draw divId _ redraw vws =
       sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
 
-instance Drawable View.ScatterPlot where
+instance Drawable View.ScatterPlot Unit where
+   initialState _ = unit
    draw divId suffix redraw vw =
       drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< selListener redraw scatterPlotSelector
 
-instance Drawable View.TableView where
+instance Drawable View.TableView Boolean where
+   initialState _ = true
    draw divId suffix redraw vw = do
       toggleListener <- filterToggleListener filterToggler
       drawTable' toggleListener { uiHelpers, divId, suffix, view: vw } =<< selListener redraw tableViewSelector
@@ -63,10 +70,10 @@ instance Drawable View.TableView where
 selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
 selListener redraw selector = eventListener (selectionEventData >>> uncurry selector >>> redraw)
 
-pack :: forall a. Drawable a => a -> View
+pack :: forall a b. Drawable a b => a -> View
 pack x = View \k -> k x
 
-unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
+unpack :: forall r. View -> (forall a b. Drawable a b => a -> r) -> r
 unpack (View vw) k = vw k
 
 -- Convert annotated value to appropriate View, discarding top-level annotations for now.
