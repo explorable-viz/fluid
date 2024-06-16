@@ -1,12 +1,13 @@
 module App.View.Util where
 
 import Prelude
-
-import App.Util (SelState, Selectable, 𝕊)
+import App.Util (SelState, Selectable, 𝕊, Selector)
 import Effect (Effect)
+import Val (Val)
 import Web.Event.EventTarget (EventListener)
 
 type HTMLId = String
+type Redraw = Selector Val -> Effect Unit
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =
