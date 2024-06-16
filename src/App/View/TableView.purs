@@ -40,7 +40,8 @@ drawTable' = drawTable
    , val_selState: \(Val α _) -> α
    }
 
-type FilterToggler = Unit -> Endo TableView -- convert mouse event data to view change
+-- convert mouse event data (here, always rowKey) to view change
+type FilterToggler = String -> Endo TableView
 
 filterToggler :: FilterToggler
 filterToggler _ = over TableView \vw -> vw { filter = not vw.filter }

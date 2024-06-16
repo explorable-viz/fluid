@@ -12,6 +12,7 @@ function prim (v) {
 
 function setSelState (
    { cell_selClassesFor, rowKey, record_isUsed, val_selState },
+   filterToggleListener,
    {
       selClasses,
    },
@@ -41,7 +42,7 @@ function setSelState (
    rootElement.select('.table-caption')
       .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
    rootElement.select('.filter-toggle')
-      .on('mousedown', e => { console.log('toggle filter') })
+      .on('mousedown', e => { filterToggleListener(e) })
 }
 
 function drawTable_ (
@@ -106,7 +107,7 @@ function drawTable_ (
             .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setSelState(tableViewHelpers, uiHelpers, rootElement, view, selListener)
+      setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, selListener)
    }
 }
 
