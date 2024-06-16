@@ -11,9 +11,9 @@ function prim (v) {
 }
 
 function setSelState (
+   { cell_selClassesFor, rowKey, record_isUsed, val_selState },
    {
       selClasses,
-      tableView: { cell_selClassesFor, rowKey, record_isUsed, val_selState }
    },
    rootElement,
    { title, filter, table },
@@ -43,20 +43,18 @@ function setSelState (
 }
 
 function drawTable_ (
+   tableViewHelpers,
    {
       uiHelpers,
       divId,
       suffix,
-      view: {
-         title,
-         filter,
-         table
-      }
+      view
    },
    listener
 ) {
    return () => {
-      const { tableView: { rowKey, val_val } } = uiHelpers
+      const { rowKey, val_val } = tableViewHelpers
+      let { filter, table } = view
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
 
@@ -104,8 +102,8 @@ function drawTable_ (
             .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setSelState(uiHelpers, rootElement, { title, table }, listener)
+      setSelState(tableViewHelpers, uiHelpers, rootElement, view, listener)
    }
 }
 
-export var drawTable = x1 => x2 => drawTable_(x1, x2)
+export var drawTable = x1 => x2 => x3 => drawTable_(x1, x2, x3)

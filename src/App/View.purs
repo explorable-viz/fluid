@@ -13,7 +13,7 @@ import App.View.MatrixView (drawMatrix, matrixRep, matrixViewSelector)
 import App.View.ScatterPlot (ScatterPlot) as View
 import App.View.ScatterPlot (drawScatterPlot, scatterPlotSelector)
 import App.View.TableView (TableView(..)) as View
-import App.View.TableView (cell_selClassesFor, drawTable, record_isUsed, rowKey, tableViewSelector)
+import App.View.TableView (drawTable', tableViewSelector)
 import App.View.Util (HTMLId, UIHelpers)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
@@ -39,7 +39,7 @@ data View
 drawView :: HTMLId -> String -> (Selector Val -> Effect Unit) -> View -> Effect Unit
 drawView divId suffix redraw = case _ of
    MatrixView vw -> drawMatrix { uiHelpers, divId, suffix, view: vw } =<< listener matrixViewSelector
-   TableView vw -> drawTable { uiHelpers, divId, suffix, view: vw } =<< listener tableViewSelector
+   TableView vw -> drawTable' { uiHelpers, divId, suffix, view: vw } =<< listener tableViewSelector
    LineChart vw -> drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< listener lineChartSelector
    BarChart vw -> drawBarChart' { uiHelpers, divId, suffix, view: vw } =<< listener barChartSelector
    ScatterPlot vw -> drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< listener scatterPlotSelector
@@ -54,14 +54,14 @@ view _ (Val _ (Constr c (u : Nil))) | c == cBarChart =
    BarChart (record from u)
 view _ (Val _ (Constr c (u : Nil))) | c == cLineChart =
    LineChart (record from u)
+view title (Val _ (Matrix r)) =
+   MatrixView (View.MatrixView { title, matrix: matrixRep r })
 view title (Val _ (Constr c (u : Nil))) | c == cMultiPlot =
    MultiView (view title <$> from u)
 view _ (Val _ (Constr c (u : Nil))) | c == cScatterPlot =
    ScatterPlot (record from u)
 view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
    TableView (View.TableView { title, filter: true, table: record identity <$> from u })
-view title (Val _ (Matrix r)) =
-   MatrixView (View.MatrixView { title, matrix: matrixRep r })
 
 uiHelpers :: UIHelpers
 uiHelpers =
@@ -70,11 +70,4 @@ uiHelpers =
    , join: (∨)
    , selClasses
    , selClassesFor
-   , tableView:
-        { rowKey
-        , record_isUsed
-        , cell_selClassesFor
-        , val_val: \(Val _ v) -> v
-        , val_selState: \(Val α _) -> α
-        }
    }
