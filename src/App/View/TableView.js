@@ -40,6 +40,8 @@ function setSelState (
    })
    rootElement.select('.table-caption')
       .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
+   rootElement.select('.filter-toggle')
+      .on('mousedown', e => { console.log('toggle filter') })
 }
 
 function drawTable_ (
@@ -83,7 +85,7 @@ function drawTable_ (
                .enter()
                .append('th')
                .text(colName => colName == rowKey ? (filter ? "▸" : "▾" ) : colName)
-               .classed('toggle-button', colName => colName == rowKey)
+               .classed('filter-toggle toggle-button', colName => colName == rowKey)
 
          const rows = rootElement
             .append('tbody')
