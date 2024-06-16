@@ -5,7 +5,7 @@ import Prelude hiding (absurd, compare)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState, Selector, 𝕊, as𝕊, selState, to𝕊)
 import App.Util.Selector (envVal)
-import App.View (drawView, view)
+import App.View (drawView2, view2)
 import App.View.Util (HTMLId)
 import Bind (Bind, Var, (↦))
 import Data.Newtype (unwrap, wrap)
@@ -72,12 +72,12 @@ selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView divId str.output (drawFig divId <<< flip selectOutput fig) out_view
+   drawView2 divId str.output (drawFig divId <<< flip selectOutput fig) out_view
    sequence_ $ flip mapWithKey in_views \x ->
-      drawView (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig)
+      drawView2 (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig)
    where
    out_view × in_views =
-      selectionResult fig # unsafePartial (view str.output *** unwrap >>> mapWithKey view)
+      selectionResult fig # unsafePartial (view2 str.output *** unwrap >>> mapWithKey view2)
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
