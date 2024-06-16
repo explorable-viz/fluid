@@ -16,7 +16,7 @@ function setSelState (
       tableView: { cell_selClassesFor, rowKey, record_isUsed, val_selState }
    },
    rootElement,
-   { title, table },
+   { title, filter, table },
    listener
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
@@ -32,8 +32,9 @@ function setSelState (
    })
    let hidden = 0
    rootElement.selectAll('.table-row').each(function ({ i }) {
-      hide = !record_isUsed(table[i])
-      if (hide) hidden++
+      hide = !record_isUsed(table[i]) && filter
+      if (hide)
+         hidden++
       d3.select(this) // won't work inside arrow function :/
          .classed('hidden', hide)
    })
@@ -47,9 +48,9 @@ function drawTable_ (
       divId,
       suffix,
       view: {
-         title,   // String
-         filter,  // Boolean
-         table    // Homogeneous array of records with fields of primitive type
+         title,
+         filter,
+         table
       }
    },
    listener

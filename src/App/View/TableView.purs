@@ -13,7 +13,8 @@ import Val (Val(..))
 newtype TableView = TableView
    { title :: String
    , filter :: Boolean
-   , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous as elsewhere we have Selectables
+   -- homogeneous array of records with fields of primitive type
+   , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
    }
 
 foreign import drawTable :: Renderer TableView
@@ -27,7 +28,7 @@ tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
 rowKey :: String
 rowKey = "__n"
 
--- [any record type with only primitive fields] -> 𝕊
+-- Defined for any record type with fields of primitive type
 record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
 record_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
