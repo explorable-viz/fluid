@@ -50,6 +50,9 @@ instance Drawable TableView TableViewState where
       toggleListener <- filterToggleListener filterToggler
       drawTable' toggleListener { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw tableViewSelector
       where
+      tableViewSelector :: ViewSelector CellIndex
+      tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
+
       filterToggleListener :: FilterToggler -> Effect EventListener
       filterToggleListener toggler =
          eventListener (eventData >>> toggler >>> (\_ -> spy "TODO" identity) >>> redraw)
@@ -62,9 +65,6 @@ filterToggler _ vw = vw { filter = not vw.filter }
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }
-
-tableViewSelector :: ViewSelector CellIndex
-tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
 
 rowKey :: String
 rowKey = "__n"

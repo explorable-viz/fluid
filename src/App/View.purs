@@ -49,7 +49,8 @@ view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
    pack (TableView { title, table: record identity <$> from u })
 
 drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
-drawView divId suffix redraw vw = unpack vw (uncurry $ draw divId suffix redraw)
+drawView divId suffix redraw vw =
+   unpack vw (uncurry $ draw divId suffix redraw)
 
 -- Newtype avoids orphan instance/cyclic dependency
 newtype MultiView = MultiView (Dict View)
