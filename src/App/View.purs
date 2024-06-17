@@ -24,7 +24,8 @@ import Web.Event.EventTarget (EventListener, eventListener)
 newtype View = View (forall r. (forall a b. Drawable a b => a × b -> r) -> r)
 
 selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
-selListener redraw selector = eventListener (selectionEventData >>> uncurry selector >>> redraw)
+selListener redraw selector =
+   eventListener (selectionEventData >>> uncurry selector >>> redraw)
 
 pack :: forall a b. Drawable a b => a -> View
 pack x = View (_ $ (x × initialState x))
@@ -45,7 +46,7 @@ view title (Val _ (Constr c (u : Nil))) | c == cMultiPlot =
 view _ (Val _ (Constr c (u : Nil))) | c == cScatterPlot =
    pack (record from u :: ScatterPlot)
 view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
-   pack (TableView { title, filter: true, table: record identity <$> from u })
+   pack (TableView { title, table: record identity <$> from u })
 
 drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
 drawView divId suffix redraw vw = unpack vw (uncurry $ draw divId suffix redraw)
@@ -55,5 +56,6 @@ newtype MultiView = MultiView (Dict View)
 
 instance Drawable MultiView Unit where
    initialState _ = unit
+
    draw divId _ redraw (MultiView vws) _ =
       sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws

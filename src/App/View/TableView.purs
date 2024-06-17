@@ -15,7 +15,6 @@ import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype TableView = TableView
    { title :: String
-   , filter :: Boolean
    -- homogeneous array of records with fields of primitive type
    , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
    }
