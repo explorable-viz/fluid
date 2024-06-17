@@ -17,7 +17,8 @@ function setSelState (
       selClasses,
    },
    rootElement,
-   { title, filter, table },
+   { title, table },
+   { filter },
    selListener
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
@@ -52,13 +53,14 @@ function drawTable_ (
       uiHelpers,
       divId,
       suffix,
-      view
+      view,
+      viewState: { filter }
    },
    selListener
 ) {
    return () => {
       const { rowKey, val_val } = tableViewHelpers
-      let { filter, table } = view
+      let { table } = view
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
 
@@ -107,7 +109,7 @@ function drawTable_ (
             .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, selListener)
+      setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, { filter }, selListener)
    }
 }
 

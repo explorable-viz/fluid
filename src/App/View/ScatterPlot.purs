@@ -14,27 +14,28 @@ import Val (Val)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
-   , data :: Array Point
+   , points :: Array Point
    , xlabel :: Selectable String
    , ylabel :: Selectable String
    }
 
-foreign import drawScatterPlot :: Renderer ScatterPlot
+foreign import drawScatterPlot :: Renderer ScatterPlot Unit
 
 instance Drawable ScatterPlot Unit where
    initialState _ = unit
-   draw divId suffix redraw vw _ =
-      drawScatterPlot { uiHelpers, divId, suffix, view: vw } =<< selListener redraw scatterPlotSelector
+
+   draw divId suffix redraw view viewState =
+      drawScatterPlot { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
+      where
+      scatterPlotSelector :: ViewSelector PointIndex
+      scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
 
 instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
    from r = ScatterPlot
       { caption: unpack string (get f_caption r)
-      , data: record from <$> from (get f_data r)
+      , points: record from <$> from (get f_data r)
       , xlabel: unpack string (get f_xlabel r)
       , ylabel: unpack string (get f_ylabel r)
       }
 
 type PointIndex = { i :: Int }
-
-scatterPlotSelector :: ViewSelector PointIndex
-scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i

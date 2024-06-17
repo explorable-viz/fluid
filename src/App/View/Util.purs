@@ -20,14 +20,15 @@ class Drawable a b | a -> b where
    draw :: HTMLId -> String -> Redraw -> a -> b -> Effect Unit
 
 -- Heavily curried type isn't convenient for FFI
-type RendererSpec a =
+type RendererSpec a b =
    { uiHelpers :: UIHelpers
    , divId :: HTMLId
    , suffix :: String
    , view :: a
+   , viewState :: b
    }
 
-type Renderer a = RendererSpec a -> EventListener -> Effect Unit
+type Renderer a b = RendererSpec a b -> EventListener -> Effect Unit
 
 type UIHelpers =
    { val :: forall a. Selectable a -> a

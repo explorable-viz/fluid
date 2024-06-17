@@ -5,7 +5,6 @@ import Prelude
 import App.Util (SelState, ViewSelector, 𝕊(..), eventData, selClassesFor, selected)
 import App.Util.Selector (field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import Data.Newtype (class Newtype, over)
 import Dict (Dict)
 import Effect (Effect)
 import Util (Endo, spy)
@@ -21,7 +20,7 @@ newtype TableView = TableView
    , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
    }
 
-newtype TableViewState = TableViewState
+type TableViewState =
    { filter :: Boolean
    }
 
@@ -34,9 +33,9 @@ type TableViewHelpers =
    , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
    }
 
-foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
+foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView TableViewState
 
-drawTable' :: EventListener -> Renderer TableView
+drawTable' :: EventListener -> Renderer TableView TableViewState
 drawTable' = drawTable
    { rowKey
    , record_isUsed
@@ -46,10 +45,11 @@ drawTable' = drawTable
    }
 
 instance Drawable TableView TableViewState where
-   initialState _ = TableViewState { filter: true }
-   draw divId suffix redraw vw _ = do
+   initialState _ = { filter: true }
+
+   draw divId suffix redraw view viewState = do
       toggleListener <- filterToggleListener filterToggler
-      drawTable' toggleListener { uiHelpers, divId, suffix, view: vw } =<< selListener redraw tableViewSelector
+      drawTable' toggleListener { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw tableViewSelector
       where
       filterToggleListener :: FilterToggler -> Effect EventListener
       filterToggleListener toggler =
@@ -59,7 +59,7 @@ instance Drawable TableView TableViewState where
 type FilterToggler = String -> Endo TableViewState
 
 filterToggler :: FilterToggler
-filterToggler _ = over TableViewState \vw -> vw { filter = not vw.filter }
+filterToggler _ vw = vw { filter = not vw.filter }
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }
@@ -80,8 +80,3 @@ cell_selClassesFor :: String -> SelState 𝕊 -> String
 cell_selClassesFor colName s
    | colName == rowKey = ""
    | otherwise = selClassesFor s
-
--- ======================
--- boilerplate
--- ======================
-derive instance Newtype TableViewState _

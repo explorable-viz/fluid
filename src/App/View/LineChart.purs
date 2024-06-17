@@ -41,9 +41,9 @@ type LineChartHelpers =
    , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    }
 
-foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
+foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart Unit
 
-drawLineChart' :: Renderer LineChart
+drawLineChart' :: Renderer LineChart Unit
 drawLineChart' = drawLineChart
    { plot_max_x
    , plot_min_x
@@ -54,8 +54,13 @@ drawLineChart' = drawLineChart
 
 instance Drawable LineChart Unit where
    initialState _ = unit
-   draw divId suffix redraw vw _ =
-      drawLineChart' { uiHelpers, divId, suffix, view: vw } =<< selListener redraw lineChartSelector
+
+   draw divId suffix redraw view viewState =
+      drawLineChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw lineChartSelector
+      where
+      lineChartSelector :: ViewSelector PointCoordinate
+      lineChartSelector { i, j } =
+         lineChart <<< field f_plots <<< listElement i <<< linePoint j
 
 instance Reflect (Dict (Val (SelState 𝕊))) Point where
    from r = Point
@@ -80,10 +85,6 @@ instance Reflect (Val (SelState 𝕊)) LinePlot where
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
-
-lineChartSelector :: ViewSelector PointCoordinate
-lineChartSelector { i, j } =
-   lineChart <<< field f_plots <<< listElement i <<< linePoint j
 
 point_smallRadius :: Int
 point_smallRadius = 2
