@@ -29,7 +29,6 @@ type RendererSpec a =
 
 type Renderer a = RendererSpec a -> EventListener -> Effect Unit
 
--- Bundle into a record so we can export via FFI
 type UIHelpers =
    { val :: forall a. Selectable a -> a
    , selState :: forall a. Selectable a -> SelState 𝕊

@@ -46,7 +46,7 @@ thead {
 }
 
 .table-row.hidden {
-   display: none;
+   visibility: collapse;
 }
 
 .matrix-cell {
