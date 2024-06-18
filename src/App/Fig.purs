@@ -8,6 +8,7 @@ import App.Util.Selector (envVal)
 import App.View (drawView, view)
 import App.View.Util (HTMLId)
 import Bind (Bind, Var, (↦))
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set as Set
@@ -72,9 +73,9 @@ selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView divId str.output (drawFig divId <<< flip selectOutput fig) out_view
-   sequence_ $ flip mapWithKey in_views \x ->
-      drawView (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig)
+   drawView divId str.output (drawFig divId <<< flip selectOutput fig) (out_view Nothing)
+   sequence_ $ flip mapWithKey in_views \x vw ->
+      drawView (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig) (vw Nothing)
    where
    out_view × in_views =
       selectionResult fig # unsafePartial (view str.output *** unwrap >>> mapWithKey view)
