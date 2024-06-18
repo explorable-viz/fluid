@@ -9,52 +9,54 @@ import App.View.LineChart (LineChart)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.ScatterPlot (ScatterPlot)
 import App.View.TableView (TableView(..))
-import App.View.Util (class Drawable, HTMLId, Redraw, draw, initialState)
+import App.View.Util (class Drawable, HTMLId, Redraw, draw)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (uncurry)
 import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
 import Dict (Dict)
 import Effect (Effect)
-import Util (type (×), Endo, (×))
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener, eventListener)
 
-newtype View = View (forall r. (forall a b. Drawable a b => a × b -> r) -> r)
+data View
+   -- one for each constructor of the Fluid 'Plot' data type
+   = BarChart BarChart
+   | LineChart LineChart
+   | ScatterPlot ScatterPlot
+   | MultiView' MultiView
+   -- plus default visualisations for specific kinds of value
+   | MatrixView' MatrixView
+   | TableView' TableView
 
 selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
 selListener redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> redraw)
 
-pack :: forall a b. Drawable a b => a -> View
-pack x = View (_ $ (x × initialState x))
-
-unpack :: forall r. View -> (forall a b. Drawable a b => a × b -> r) -> r
-unpack (View vw) k = vw k
-
--- EXPERIMENT
-update :: (forall a b. Drawable a b => a × b -> a × b) -> Endo View
-update f vw = View (\k -> unpack vw (f >>> k))
-
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 view :: Partial => String -> Val (SelState 𝕊) -> View
 view _ (Val _ (Constr c (u : Nil))) | c == cBarChart =
-   pack (record from u :: BarChart)
+   BarChart (record from u)
 view _ (Val _ (Constr c (u : Nil))) | c == cLineChart =
-   pack (record from u :: LineChart)
+   LineChart (record from u)
 view title (Val _ (Matrix r)) =
-   pack (MatrixView { title, matrix: matrixRep r })
+   MatrixView' (MatrixView { title, matrix: matrixRep r })
 view title (Val _ (Constr c (u : Nil))) | c == cMultiPlot =
-   pack (MultiView (view title <$> from u))
+   MultiView' (MultiView (view title <$> from u))
 view _ (Val _ (Constr c (u : Nil))) | c == cScatterPlot =
-   pack (record from u :: ScatterPlot)
+   ScatterPlot (record from u)
 view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
-   pack (TableView { title, table: record identity <$> from u })
+   TableView' (TableView { title, table: record identity <$> from u })
 
 drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
-drawView divId suffix redraw vw =
-   unpack vw (uncurry $ draw divId suffix redraw)
+drawView divId suffix redraw = case _ of
+   BarChart x -> draw divId suffix redraw x unit
+   LineChart x -> draw divId suffix redraw x unit
+   ScatterPlot x -> draw divId suffix redraw x unit
+   MultiView' x -> draw divId suffix redraw x unit
+   MatrixView' x -> draw divId suffix redraw x unit
+   TableView' x -> draw divId suffix redraw x { filter: true }
 
 -- Newtype avoids orphan instance/cyclic dependency
 newtype MultiView = MultiView (Dict View)
