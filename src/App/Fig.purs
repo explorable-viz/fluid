@@ -5,7 +5,7 @@ import Prelude hiding (absurd, compare)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState, Selector, 𝕊, as𝕊, selState, to𝕊)
 import App.Util.Selector (envVal)
-import App.View (drawView, view)
+import App.View (View, drawView, view)
 import App.View.Util (HTMLId)
 import Bind (Bind, Var, (↦))
 import Data.Maybe (Maybe(..))
@@ -15,6 +15,7 @@ import Data.Set as Set
 import Data.Traversable (sequence_)
 import Data.Tuple (curry)
 import Desugarable (desug)
+import Dict (Dict)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection ((***)) as GC
@@ -27,7 +28,7 @@ import SExpr (Expr) as S
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, spyWhen, (×))
 import Util.Map (get, mapWithKey)
-import Val (Env, EnvExpr(..), Val, unrestrictGC)
+import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
 
 type FigSpec =
    { imports :: Array String
@@ -46,6 +47,8 @@ type Fig =
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
    , dir :: Direction
+   , in_views :: Dict (Maybe View)
+   , out_view :: Maybe View
    }
 
 str
@@ -73,12 +76,13 @@ selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView divId str.output (drawFig divId <<< flip selectOutput fig) (out_view Nothing)
-   sequence_ $ flip mapWithKey in_views \x vw ->
-      drawView (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig) (vw Nothing)
+   drawView divId str.output (drawFig divId <<< flip selectOutput fig) out_view
+   sequence_ $ flip mapWithKey in_views \x ->
+      drawView (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig)
    where
    out_view × in_views =
-      selectionResult fig # unsafePartial (view str.output *** unwrap >>> mapWithKey view)
+      selectionResult fig # unsafePartial
+         (flip (view str.output) fig.out_view *** \(Env γ) -> mapWithKey view γ <*> fig.in_views)
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
@@ -118,7 +122,8 @@ loadFig spec@{ inputs, imports, file, datasets } = do
       focus = unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e')
       gc = focus >>> graphGC eval
       gc_dual = graphGC (withOp eval) >>> dual focus
-   pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs }
+      in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
+   pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
