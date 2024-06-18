@@ -16,7 +16,7 @@ import Data.Tuple (uncurry)
 import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
 import Dict (Dict)
 import Effect (Effect)
-import Util (type (×), (×))
+import Util (type (×), Endo, (×))
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener, eventListener)
@@ -32,6 +32,10 @@ pack x = View (_ $ (x × initialState x))
 
 unpack :: forall r. View -> (forall a b. Drawable a b => a × b -> r) -> r
 unpack (View vw) k = vw k
+
+-- EXPERIMENT
+update :: (forall a b. Drawable a b => a × b -> a × b) -> Endo View
+update f vw = View (\k -> unpack vw (f >>> k))
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 view :: Partial => String -> Val (SelState 𝕊) -> View
