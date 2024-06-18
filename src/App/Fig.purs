@@ -27,7 +27,7 @@ import Pretty (prettyP)
 import SExpr (Expr) as S
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, spyWhen, (×))
-import Util.Map (get, mapWithKey)
+import Util.Map (get, insert, lookup, mapWithKey)
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
 
 type FigSpec =
@@ -47,7 +47,7 @@ type Fig =
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
    , dir :: Direction
-   , in_views :: Dict (Maybe View)
+   , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View
    }
 
@@ -72,6 +72,11 @@ selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
    { γ = envVal x δv γ
    , v = if dir == LinkedOutputs then botOf v else v
    , dir = LinkedInputs
+   }
+
+setInputViewState :: Bind (Endo View) -> Endo Fig
+setInputViewState (x ↦ δvw) fig = fig
+   { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
 drawFig :: HTMLId -> Fig -> Effect Unit
