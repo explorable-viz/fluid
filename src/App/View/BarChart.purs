@@ -46,8 +46,6 @@ drawBarChart' = drawBarChart
    }
 
 instance Drawable BarChart Unit where
-   initialState _ = unit
-
    draw divId suffix redraw view viewState =
       drawBarChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
       where

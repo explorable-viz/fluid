@@ -22,8 +22,6 @@ newtype ScatterPlot = ScatterPlot
 foreign import drawScatterPlot :: Renderer ScatterPlot Unit
 
 instance Drawable ScatterPlot Unit where
-   initialState _ = unit
-
    draw divId suffix redraw view viewState =
       drawScatterPlot { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
       where

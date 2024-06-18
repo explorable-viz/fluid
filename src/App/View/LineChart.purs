@@ -53,8 +53,6 @@ drawLineChart' = drawLineChart
    }
 
 instance Drawable LineChart Unit where
-   initialState _ = unit
-
    draw divId suffix redraw view viewState =
       drawLineChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw lineChartSelector
       where

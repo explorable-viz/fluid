@@ -44,8 +44,6 @@ drawTable' = drawTable
    }
 
 instance Drawable TableView TableViewState where
-   initialState _ = { filter: true }
-
    draw divId suffix redraw view viewState = do
       toggleListener <- filterToggleListener filterToggler
       drawTable' toggleListener { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw tableViewSelector

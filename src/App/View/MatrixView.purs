@@ -16,8 +16,6 @@ newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 foreign import drawMatrix :: Renderer MatrixView Unit
 
 instance Drawable MatrixView Unit where
-   initialState _ = unit
-
    draw divId suffix redraw view viewState =
       drawMatrix { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw matrixViewSelector
       where

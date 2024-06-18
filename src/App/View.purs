@@ -39,6 +39,7 @@ selListener redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> redraw)
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
+-- WIP for view state updating.
 view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
 view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
    BarChart' (record from u)
@@ -71,8 +72,6 @@ drawView divId suffix redraw = case _ of
    TableView' vwState vw -> draw divId suffix redraw vw vwState
 
 instance Drawable MultiView Unit where
-   initialState _ = unit
-
    draw divId _ redraw (MultiView vws) _ =
       sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
 
