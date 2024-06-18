@@ -11,13 +11,15 @@ function prim (v) {
 }
 
 function setSelState (
+   { cell_selClassesFor, rowKey, record_isUsed, val_selState },
+   filterToggleListener,
    {
       selClasses,
-      tableView: { cell_selClassesFor, rowKey, record_isUsed, val_selState }
    },
    rootElement,
    { title, table },
-   listener
+   { filter },
+   selListener
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
       if (cell.colName != rowKey) {
@@ -25,37 +27,40 @@ function setSelState (
          d3.select(this) // won't work inside arrow function :/
             .classed(selClasses, false)
             .classed(cell_selClassesFor(cell.colName)(sel), true)
-            .on('mousedown', e => { listener(e) })
-            .on('mouseenter', e => { listener(e) })
-            .on('mouseleave', e => { listener(e) })
+            .on('mousedown', e => { selListener(e) })
+            .on('mouseenter', e => { selListener(e) })
+            .on('mouseleave', e => { selListener(e) })
       }
    })
    let hidden = 0
    rootElement.selectAll('.table-row').each(function ({ i }) {
-      hide = !record_isUsed(table[i])
-      if (hide) hidden++
+      hide = !record_isUsed(table[i]) && filter
+      if (hide)
+         hidden++
       d3.select(this) // won't work inside arrow function :/
          .classed('hidden', hide)
    })
    rootElement.select('.table-caption')
       .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
+   rootElement.select('.filter-toggle')
+      .on('mousedown', e => { filterToggleListener(e) })
 }
 
 function drawTable_ (
+   tableViewHelpers,
+   filterToggleListener,
    {
       uiHelpers,
       divId,
       suffix,
-      view: {
-         title,   // String
-         filter,  // Boolean
-         table    // Homogeneous array of records with fields of primitive type
-      }
+      view,
+      viewState: { filter }
    },
-   listener
+   selListener
 ) {
    return () => {
-      const { tableView: { rowKey, val_val } } = uiHelpers
+      const { rowKey, val_val } = tableViewHelpers
+      let { table } = view
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
 
@@ -80,18 +85,19 @@ function drawTable_ (
          tableHead
             .append('tr')
             .selectAll('th')
-            .data(colNames)
-            .enter()
-            .append('th')
-            .text(colName => colName == rowKey ? (filter ? "▸" : "▾" ) : colName)
+               .data(colNames)
+               .enter()
+               .append('th')
+               .text(colName => colName == rowKey ? (filter ? "▸" : "▾" ) : colName)
+               .classed('filter-toggle toggle-button', colName => colName == rowKey)
 
          const rows = rootElement
             .append('tbody')
             .selectAll('tr')
-            .data([...table.entries()].map((([i, row]) => { return { i, row } })))
-            .enter()
-            .append('tr')
-            .attr('class', 'table-row')
+               .data([...table.entries()].map((([i, row]) => { return { i, row } })))
+               .enter()
+               .append('tr')
+               .attr('class', 'table-row')
 
          rows.selectAll('td')
             .data(({ i, row }) => colNames.map(colName => {
@@ -103,8 +109,8 @@ function drawTable_ (
             .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setSelState(uiHelpers, rootElement, { title, table }, listener)
+      setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, { filter }, selListener)
    }
 }
 
-export var drawTable = x1 => x2 => drawTable_(x1, x2)
+export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)

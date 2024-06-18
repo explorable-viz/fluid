@@ -46,7 +46,7 @@ thead {
 }
 
 .table-row.hidden {
-   display: none;
+   visibility: collapse;
 }
 
 .matrix-cell {
@@ -56,12 +56,13 @@ thead {
 }
 
 .matrix-cell.selected-primary-persistent {
-   fill: rgb(225,225,225);
-/* fill: LightGreen; */
+/*   fill: rgb(225,225,225); */
+   fill: LightGreen;
 }
 
 .matrix-cell.selected-secondary-persistent {
-   fill: rgb(245, 245, 245);
+/*   fill: rgb(245, 245, 245); */
+   fill: rgb(214, 240, 214)
 }
 
 .matrix-cell.selected-primary-transient {
@@ -78,11 +79,11 @@ thead {
 
 .matrix-cell-text.selected-primary-transient {
    font-weight: 400;
-   color: black
+   color: blue
 }
 
 .matrix-cell-text.selected-secondary-transient {
-   color: black
+   color: blue
 }
 
 .matrix-cell-text.selected-primary-persistent {

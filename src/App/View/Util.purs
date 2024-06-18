@@ -2,37 +2,47 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, Selectable, 𝕊)
-import Dict (Dict)
+import App.Util (SelState, Selectable, Selector, ViewSelector, 𝕊, selClasses, selClassesFor, selectionEventData)
+import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
-import Val (BaseVal, Val)
-import Web.Event.EventTarget (EventListener)
+import Lattice ((∨))
+import Val (Val)
+import Web.Event.EventTarget (EventListener, eventListener)
 
 type HTMLId = String
+type Redraw = Selector Val -> Effect Unit
+
+selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
+selListener redraw selector =
+   eventListener (selectionEventData >>> uncurry selector >>> redraw)
+
+class Drawable a b | a -> b where
+   draw :: HTMLId -> String -> Redraw -> a -> b -> Effect Unit
 
 -- Heavily curried type isn't convenient for FFI
-type RendererSpec a =
+type RendererSpec a b =
    { uiHelpers :: UIHelpers
    , divId :: HTMLId
    , suffix :: String
    , view :: a
+   , viewState :: b
    }
 
-type Renderer a = RendererSpec a -> EventListener -> Effect Unit
+type Renderer a b = RendererSpec a b -> EventListener -> Effect Unit
 
--- Bundle into a record so we can export via FFI
 type UIHelpers =
    { val :: forall a. Selectable a -> a
    , selState :: forall a. Selectable a -> SelState 𝕊
    , join :: SelState 𝕊 -> SelState 𝕊 -> SelState 𝕊
    , selClasses :: String
    , selClassesFor :: SelState 𝕊 -> String
-   , tableView ::
-        { rowKey :: String
-        , record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
-        , cell_selClassesFor :: String -> SelState 𝕊 -> String
-        -- values in table cells are not "unpacked" to Selectable but remain as Val
-        , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
-        , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
-        }
+   }
+
+uiHelpers :: UIHelpers
+uiHelpers =
+   { val: fst
+   , selState: snd
+   , join: (∨)
+   , selClasses
+   , selClassesFor
    }

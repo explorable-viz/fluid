@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
 import App.Util.Selector (barChart, barSegment)
-import App.View.Util (Renderer)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
@@ -37,13 +37,20 @@ type BarChartHelpers =
    , tickEvery :: Int -> Int
    }
 
-foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart
+foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart Unit
 
-drawBarChart' :: Renderer BarChart
+drawBarChart' :: Renderer BarChart Unit
 drawBarChart' = drawBarChart
    { bar_attrs
    , tickEvery
    }
+
+instance Drawable BarChart Unit where
+   draw divId suffix redraw view viewState =
+      drawBarChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
+      where
+      barChartSelector :: ViewSelector BarSegmentCoordinate
+      barChartSelector { i, j } = barSegment i j >>> barChart
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart
@@ -65,9 +72,6 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
-
-barChartSelector :: ViewSelector BarSegmentCoordinate
-barChartSelector { i, j } = barSegment i j >>> barChart
 
 bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
 bar_attrs indexCol (BarChart { stackedBars }) { i, j } =

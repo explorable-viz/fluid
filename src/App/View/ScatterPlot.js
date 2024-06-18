@@ -10,11 +10,11 @@ function setSelState (
       join
    },
    rootElement,
-   { data },
+   { points },
    listener
 ) {
    rootElement.selectAll('.scatterplot-point').each(function (point) {
-      const sel = join(selState(data[point.i].x))(selState(data[point.i].y))
+      const sel = join(selState(points[point.i].x))(selState(points[point.i].y))
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
@@ -30,8 +30,8 @@ function drawScatterPlot_ (
       divId,
       suffix,
       view: {
-         caption, // String
-         data,    // Array Point
+         caption,
+         points,
          xlabel,
          ylabel
       }
@@ -43,10 +43,10 @@ function drawScatterPlot_ (
       const childId = divId + '-' + suffix
       var max_width = 360
       var max_height = 360
-      const x_max = Math.ceil(Math.max(...data.map(d => val(d.x))))
-      const x_min = Math.ceil(Math.min(...data.map(d => val(d.x))))
-      const y_max = Math.ceil(Math.max(...data.map(d => val(d.y))))
-      const y_min = Math.ceil(Math.min(...data.map(d => val(d.y))))
+      const x_max = Math.ceil(Math.max(...points.map(point => val(point.x))))
+      const x_min = Math.ceil(Math.min(...points.map(point => val(point.x))))
+      const y_max = Math.ceil(Math.max(...points.map(point => val(point.y))))
+      const y_min = Math.ceil(Math.min(...points.map(point => val(point.y))))
 
       const margin = {top: 20, right: 20, bottom: 40, left: 50}
 
@@ -96,7 +96,7 @@ function drawScatterPlot_ (
 
          rootElement.append('g')
             .selectAll('circle')
-            .data([...data.entries()].map(([i, point]) => { return { i, point } }))
+            .data([...points.entries()].map(([i, point]) => { return { i, point } }))
             .enter()
             .append('circle')
             .classed('scatterplot-point', true)
@@ -114,7 +114,7 @@ function drawScatterPlot_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(uiHelpers, rootElement, { data }, listener)
+      setSelState(uiHelpers, rootElement, { points }, listener)
    }
 }
 
