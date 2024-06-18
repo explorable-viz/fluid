@@ -39,7 +39,7 @@ selListener redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> redraw)
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
--- WIP for view state updating.
+-- View state update (e.g. toggle filter) is WIP.
 view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
 view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
    BarChart' (record from u)
