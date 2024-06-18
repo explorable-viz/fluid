@@ -13,7 +13,8 @@ type HTMLId = String
 type Redraw = Selector Val -> Effect Unit
 
 selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
-selListener redraw selector = eventListener (selectionEventData >>> uncurry selector >>> redraw)
+selListener redraw selector =
+   eventListener (selectionEventData >>> uncurry selector >>> redraw)
 
 class Drawable a b | a -> b where
    initialState :: a -> b
