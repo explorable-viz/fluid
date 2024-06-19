@@ -172,3 +172,8 @@ nav ul li a.active-page {
 .data-pane {
    background-color: #F5F5F5;
 }
+
+/* Standalone figures have zoom hardcoded at 2 for presentation purposes. */
+.double-size {
+   zoom: 2;
+}

@@ -11,5 +11,8 @@ mkdir -p dist/app/renewables
 yarn spago build --purs-args '--strict --censor-codes=UserDefinedWarning'
 yarn purs-backend-es bundle-app --main Publish.Renewables --to dist/app/renewables/app.js
 
-# will this pick up CSS (probably not)?
+# shared by all standalone figures
+cp -r fluid dist/app
+cp -r web/css dist/app
+
 cp web/template.html dist/app/renewables/index.html
