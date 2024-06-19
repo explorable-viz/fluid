@@ -5,6 +5,10 @@ set -e
 
 # hardcode to renewables examples first of all
 
+NAME="HereIsAName"
+NAME_LISP_CASE=$(echo $NAME | sed 's/\([A-Z]\)/-\1/g' | tr 'A-Z' 'a-z' | sed 's/^-//')
+echo $NAME_LISP_CASE
+
 # turn into npm script?
 rm -rf dist/app/renewables
 mkdir -p dist/app/renewables
