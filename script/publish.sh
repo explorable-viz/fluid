@@ -3,12 +3,6 @@
 # set -x
 set -e
 
-# hardcode to renewables examples first of all
-
-NAME="Renewables"
-NAME_LISP_CASE=$(echo $NAME | sed 's/\([A-Z]\)/-\1/g' | tr 'A-Z' 'a-z' | sed 's/^-//')
-echo $NAME_LISP_CASE
-
 # shared by all standalone figures
 cp -r fluid dist/app
 cp -r web/css dist/app
