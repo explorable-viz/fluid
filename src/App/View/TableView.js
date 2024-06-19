@@ -62,7 +62,12 @@ function drawTable_ (
       const { rowKey, val_val } = tableViewHelpers
       let { table } = view
       const childId = divId + '-' + suffix
+
       const div = d3.select('#' + divId)
+      if (div.empty()) {
+         console.error('Unable to insert figure: no div found with id ' + divId)
+         return
+      }
 
       table = table.map((r, n) => { return {[ rowKey ]: n + 1, ...r} })
       const colNames = Object.keys(table[0]).sort()

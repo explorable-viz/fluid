@@ -49,6 +49,11 @@ function drawLineChart_ (
             x_max = Math.max(...plots.map(plot_max_x)),
             names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + divId)
+      if (div.empty()) {
+         console.error('Unable to insert figure: no div found with id ' + divId)
+         return
+      }
+
       let rootElement = div.selectAll('#' + childId)
       const color = d3.scaleOrdinal(d3.schemePastel1)
 

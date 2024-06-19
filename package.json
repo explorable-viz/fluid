@@ -3,10 +3,7 @@
   "scripts": {
     "clean-app": "rm -rf dist/app && mkdir -p dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app && cp -r web/pdf dist/app",
     "build-app": "yarn clean-app && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main App --to dist/app/app.js",
-    "serve-app": "yarn build-app && npx http-serve dist/app -a 127.0.0.1 -c-1",
-    "clean-icfp2024": "rm -rf dist/icfp2024 && mkdir -p dist/icfp2024 && cp -r fluid dist/icfp2024 && cp web/icfp2024.html dist/icfp2024/index.html && cp -r web/css dist/icfp2024",
-    "build-icfp2024": "yarn clean-icfp2024 && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main ICFP2024 --to dist/icfp2024/app.js",
-    "serve-icfp2024": "yarn build-icfp2024 && npx http-serve dist/icfp2024 -a 127.0.0.1 -c-1",
+    "serve-app": "npx http-serve dist/app -a 127.0.0.1 -c-1",
     "clean": "rm -rf dist/tests && mkdir -p dist/tests && cp web/tests.html dist/tests",
     "clean-bench": "rm -rf dist/benches && mkdir -p dist/benches && cp -r fluid dist/benches && cp web/index.html dist/benches && cp -r web/css dist/benches",
     "build": "yarn tidy && yarn clean && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Test --to dist/tests/app.js",

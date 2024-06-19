@@ -135,7 +135,8 @@ nav ul li a.active-page {
 
 .grid-container {
    display: grid;
-   grid-template-columns: 10px 35% fit-content(10px) 55%;
+   width: 100%;
+   grid-template-columns: 10px 47.5% fit-content(10px) 47.5%;
 }
 
 .flex-left-align {
@@ -171,4 +172,20 @@ nav ul li a.active-page {
 
 .data-pane {
    background-color: #F5F5F5;
+}
+
+/* Standalone figures have hardcoded zoom for presentation purposes. */
+.double-size {
+   zoom: 1.8;
+}
+
+body.standalone {
+   height: 100%;
+   display: grid; /* outer grid for vertical centering of inner */
+   place-items: center;
+}
+
+/* Needed for contained height specifications to work */
+html {
+   height: 100%;
 }

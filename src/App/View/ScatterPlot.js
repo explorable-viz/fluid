@@ -47,12 +47,16 @@ function drawScatterPlot_ (
       const x_min = Math.ceil(Math.min(...points.map(point => val(point.x))))
       const y_max = Math.ceil(Math.max(...points.map(point => val(point.y))))
       const y_min = Math.ceil(Math.min(...points.map(point => val(point.y))))
-
       const margin = {top: 20, right: 20, bottom: 40, left: 50}
-
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
+
       const div = d3.select('#' + divId)
+      if (div.empty()) {
+         console.error('Unable to insert figure: no div found with id ' + divId)
+         return
+      }
+
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
