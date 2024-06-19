@@ -71,6 +71,11 @@ function drawBarChart_ (
             width = 275 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
       const div = d3.select('#' + divId)
+      if (div.empty()) {
+         console.error('Unable to insert figure: no div found with id ' + divId)
+         return
+      }
+
       const color = d3.scaleOrdinal(d3.schemeAccent)
       let rootElement = div.selectAll('#' + childId)
 

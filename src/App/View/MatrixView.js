@@ -46,7 +46,13 @@ function drawMatrix_ (
       const childId = divId + '-' + suffix
       const strokeWidth = 0.5
       const w = 30, h = 30
+
       const div = d3.select('#' + divId)
+      if (div.empty()) {
+         console.error('Unable to insert figure: no div found with id ' + divId)
+         return
+      }
+
       const [width, height] = [w * matrix.j + strokeWidth, h * matrix.i + strokeWidth]
       const hMargin = w / 2
       const vMargin = h / 2
