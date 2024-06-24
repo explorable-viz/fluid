@@ -151,10 +151,10 @@ defined = runExcept >>> case _ of
    Left e -> error $ show e
 
 definedWith :: String -> forall a. MayFail a -> a
-definedWith msg = defined <<< with msg
+definedWith msg = defined <<< withMsg msg
 
-with :: forall a m. MonadError Error m => String -> Endo (m a)
-with msg m = catchError m \e ->
+withMsg :: forall a m. MonadError Error m => String -> Endo (m a)
+withMsg msg m = catchError m \e ->
    throw $ message e <> if msg == "" then "" else ("\n" <> msg)
 
 check :: forall m. MonadThrow Error m => Boolean -> String -> m Unit
@@ -199,6 +199,7 @@ bind2Flipped f x y = join (lift2 f x y)
 
 infixr 1 bind2Flipped as =<<<
 
+-- like Endo in prelude but specialised to functions, to avoid newtype clutter
 type Endo a = a -> a
 
 -- version of this in Data.Array uses unsafePartial
@@ -226,6 +227,9 @@ unzip = (fst <$> _) &&& (snd <$> _)
 
 both :: forall a b c. Category a => Strong a => a b c -> a (b × b) (c × c)
 both f = f *** f
+
+with :: forall a b. a -> (a -> b) -> a × b
+with x f = x × f x
 
 assoc1 :: forall a b c. (a × b) × c -> a × (b × c)
 assoc1 ((a × b) × c) = a × (b × c)

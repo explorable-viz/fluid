@@ -2,63 +2,77 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (HTMLId, OnSel, 𝕊, SelState, from, record)
+import App.Util (SelState, ViewSelector, 𝕊, from, record, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
-import App.View.BarChart (BarChart) as View
-import App.View.BarChart (barChartHandler, drawBarChart)
-import App.View.BubbleChart (BubbleChart) as View
-import App.View.BubbleChart (bubbleChartHandler, drawBubbleChart)
-import App.View.LineChart (LineChart) as View
-import App.View.LineChart (drawLineChart, lineChartHandler)
-import App.View.MatrixView (MatrixView(..)) as View
-import App.View.MatrixView (drawMatrix, matrixRep, matrixViewHandler)
-import App.View.ScatterPlot (ScatterPlot) as View
-import App.View.ScatterPlot (drawScatterPlot, scatterPlotHandler)
-import App.View.TableView (TableView(..)) as View
-import App.View.TableView (drawTable, tableViewHandler)
+import App.View.BarChart (BarChart)
+import App.View.LineChart (LineChart)
+import App.View.MatrixView (MatrixView(..), matrixRep)
+import App.View.ScatterPlot (ScatterPlot)
+import App.View.TableView (TableView(..), TableViewState)
+import App.View.Util (class Drawable, HTMLId, Redraw, draw)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
-import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
+import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype, unwrap)
+import Data.Tuple (uncurry)
+import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
 import Dict (Dict)
 import Effect (Effect)
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), Val(..))
-import Web.Event.EventTarget (eventListener)
+import Web.Event.EventTarget (EventListener, eventListener)
 
 data View
    -- one for each constructor of the Fluid 'Plot' data type
-   = BarChart View.BarChart
-   | BubbleChart View.BubbleChart
-   | LineChart View.LineChart
-   | ScatterPlot View.ScatterPlot
-   | MultiView (Dict View)
+   = BarChart' BarChart
+   | LineChart' LineChart
+   | ScatterPlot' ScatterPlot
+   | MultiView' MultiView
    -- plus default visualisations for specific kinds of value
-   | MatrixView View.MatrixView
-   | TableView View.TableView
+   | MatrixView' MatrixView
+   | TableView' TableViewState TableView
 
-drawView :: HTMLId -> String -> OnSel -> View -> Effect Unit
-drawView divId suffix onSel = case _ of
-   MatrixView vw -> drawMatrix divId suffix vw =<< eventListener (onSel <<< matrixViewHandler)
-   TableView vw -> drawTable divId suffix vw =<< eventListener (onSel <<< tableViewHandler)
-   LineChart vw -> drawLineChart divId suffix vw =<< eventListener (onSel <<< lineChartHandler)
-   BarChart vw -> drawBarChart divId suffix vw =<< eventListener (onSel <<< barChartHandler)
-   BubbleChart vw -> drawBubbleChart divId suffix vw =<< eventListener (onSel <<< bubbleChartHandler)
-   ScatterPlot vw -> drawScatterPlot divId suffix vw =<< eventListener (onSel <<< scatterPlotHandler)
-   MultiView vws -> sequence_ $ mapWithKey (\x -> drawView divId x (onSel <<< multiPlotEntry x)) vws
+newtype MultiView = MultiView (Dict View)
 
--- Convert sliced value to appropriate View, discarding top-level annotations for now.
-view :: Partial => String -> Val (SelState 𝕊) -> View
-view _ (Val _ (Constr c (u1 : Nil))) | c == cBarChart =
-   BarChart (record from u1)
-view _ (Val _ (Constr c (u1 : Nil))) | c == cBubbleChart =
-   BubbleChart (record from u1)
-view _ (Val _ (Constr c (u1 : Nil))) | c == cLineChart =
-   LineChart (record from u1)
-view title (Val _ (Constr c (u1 : Nil))) | c == cMultiPlot =
-   MultiView (view title <$> from u1)
-view _ (Val _ (Constr c (u1 : Nil))) | c == cScatterPlot =
-   ScatterPlot (record from u1)
-view title u@(Val _ (Constr c _)) | c == cNil || c == cCons =
-   TableView (View.TableView { title, filter: true, table: record identity <$> from u })
-view title (Val _ (Matrix r)) =
-   MatrixView (View.MatrixView { title, matrix: matrixRep r })
+selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
+selListener redraw selector =
+   eventListener (selectionEventData >>> uncurry selector >>> redraw)
+
+-- Convert annotated value to appropriate view, discarding top-level annotations for now.
+-- View state update (e.g. toggle filter) is WIP.
+view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
+view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
+   BarChart' (record from u)
+view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
+   LineChart' (record from u)
+view title (Val _ (Matrix r)) _ =
+   MatrixView' (MatrixView { title, matrix: matrixRep r })
+view title (Val _ (Constr c (u : Nil))) vw | c == cMultiPlot =
+   MultiView' (MultiView vws)
+   where
+   vws = case vw of
+      Nothing -> let vws' = from u in view title <$> vws' <*> (const Nothing <$> vws')
+      Just (MultiView' vws') -> view title <$> from u <*> (Just <$> unwrap vws')
+view _ (Val _ (Constr c (u : Nil))) _ | c == cScatterPlot =
+   ScatterPlot' (record from u)
+view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
+   TableView' vwState (TableView { title, table: record identity <$> from u })
+   where
+   vwState = case vw of
+      Nothing -> { filter: true }
+      Just (TableView' vwState' _) -> vwState'
+
+drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
+drawView divId suffix redraw = case _ of
+   BarChart' vw -> draw divId suffix redraw vw unit
+   LineChart' vw -> draw divId suffix redraw vw unit
+   ScatterPlot' vw -> draw divId suffix redraw vw unit
+   MultiView' vw -> draw divId suffix redraw vw unit
+   MatrixView' vw -> draw divId suffix redraw vw unit
+   TableView' vwState vw -> draw divId suffix redraw vw vwState
+
+instance Drawable MultiView Unit where
+   draw divId _ redraw (MultiView vws) _ =
+      sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
+
+derive instance Newtype MultiView _

@@ -1,6 +1,6 @@
 module Test.Util where
 
-import Prelude hiding ((-), absurd)
+import Prelude hiding (absurd, compare)
 
 import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadError)
@@ -15,10 +15,10 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, botOf, erase, topOf, (-))
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, botOf, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
-import Pretty (class Pretty, PrettyShow(..), prettyP)
+import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
@@ -130,10 +130,9 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
 
 checkEq :: forall m a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => MonadError Error m => String -> String -> a -> a -> m Unit
 checkEq op1 op2 x y = do
-   let x_minus_y = x - y
-   let y_minus_x = y - x
-   check (x_minus_y == botOf x) (op1 <> " but not " <> op2 <> ":\n" <> prettyP x_minus_y)
-   check (y_minus_x == botOf x) (op2 <> " but not " <> op1 <> ":\n" <> prettyP y_minus_x)
+   let left × right = compare op1 op2 x y
+   check (left == "") left
+   check (right == "") right
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do

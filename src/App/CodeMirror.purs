@@ -1,7 +1,7 @@
 module App.CodeMirror where
 
 import Prelude
-import App.Util (HTMLId)
+import App.View.Util (HTMLId)
 import Effect (Effect)
 
 -- The CodeMirror API, documented in TypeScript, is horrendous. Expose the smallest subset that

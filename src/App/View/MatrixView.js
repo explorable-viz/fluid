@@ -2,164 +2,120 @@
 
 import * as d3 from "d3"
 
-// =================================================================
-// This prelude currently duplicated across all FFI implementations.
-// =================================================================
-
-function curry2 (f) {
-   return x1 => x2 => f(x1, x2)
-}
-
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
-}
-
-function isCtr (v, i, ctrs) {
-   const j = ctrs.indexOf(v.tag)
-   if (j == -1) {
-      throw `Bad constructor ${v.tag}; expected one of ${ctrs}`
-   }
-   return i == j
-}
-
-// Selectable projections
-function val(x) {
-   return x._1
-}
-
-function selState(x) {
-   return x._2
-}
-
-const 𝕊_ctrs = ["None", "Primary", "Secondary"]
-
-function 𝕊_isNone (v) {
-   return isCtr(v, 0, 𝕊_ctrs)
-}
-
-function 𝕊_isPrimary (v) {
-   return isCtr(v, 1, 𝕊_ctrs)
-}
-
-function 𝕊_isSecondary (v) {
-   return isCtr(v, 2, 𝕊_ctrs)
-}
-
-// https://stackoverflow.com/questions/5560248
-function colorShade (col, amt) {
-   col = col.replace(/^#/, '')
-   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
-
-   let [r, g, b] = col.match(/.{2}/g);
-   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
-
-   r = Math.max(Math.min(255, r), 0).toString(16)
-   g = Math.max(Math.min(255, g), 0).toString(16)
-   b = Math.max(Math.min(255, b), 0).toString(16)
-
-   const rr = (r.length < 2 ? '0' : '') + r
-   const gg = (g.length < 2 ? '0' : '') + g
-   const bb = (b.length < 2 ? '0' : '') + b
-
-   return `#${rr}${gg}${bb}`
-}
-
-// =================================================================
-// End of duplicated prelude
-// =================================================================
-
-function intMatrix_nss (v) {
-   return v._1
-}
-
-function intMatrix_i_max (v) {
-   return v._2._1
-}
-
-function intMatrix_j_max (v) {
-   return v._2._2
+function setSelState (
+   {
+      selState,
+      selClasses,
+      selClassesFor
+   },
+   rootElement,
+   { matrix },
+   listener
+) {
+   rootElement.selectAll('.matrix-cell').each(function (cell) {
+      const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
+      d3.select(this) // won't work inside arrow function :/
+         .classed(selClasses, false)
+         .classed(selClassesFor(sel), true)
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
+   })
+   rootElement.selectAll('.matrix-cell-text').each(function (cell) {
+      const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
+      d3.select(this) // won't work inside arrow function :/
+         .classed(selClasses, false)
+         .classed(selClassesFor(sel), true)
+   })
 }
 
 function drawMatrix_ (
-   id,
-   suffix,
    {
-      title,    // String
-      matrix    // IntMatrix
+      uiHelpers,
+      divId,
+      suffix,
+      view: {
+         title,    // String
+         matrix    // IntMatrix
+      }
    },
    listener
 ) {
    return () => {
-      const childId = id + '-' + suffix
+      const { val } = uiHelpers
+      const childId = divId + '-' + suffix
       const strokeWidth = 0.5
       const w = 30, h = 30
-      const div = d3.select('#' + id)
-      const [width, height] = [w * intMatrix_j_max(matrix) + strokeWidth, h * intMatrix_i_max(matrix) + strokeWidth]
+
+      const div = d3.select('#' + divId)
+      if (div.empty()) {
+         console.error('Unable to insert figure: no div found with id ' + divId)
+         return
+      }
+
+      const [width, height] = [w * matrix.j + strokeWidth, h * matrix.i + strokeWidth]
       const hMargin = w / 2
       const vMargin = h / 2
 
-      div.selectAll('#' + childId).remove()
+      let rootElement = div.selectAll('#' + childId)
 
-      const svg = div
-         .append('svg')
-         .attr('id', childId)
-         .attr('width', width + hMargin)
-         .attr('height', height + vMargin)
+      if (rootElement.empty()) {
+         rootElement = div
+            .append('svg')
+            .attr('id', childId)
 
-      // group for each row
-      const grp = svg
-         .selectAll('g')
-         .data([...intMatrix_nss(matrix).entries()].map(([i, ns]) => [i + 1, ns]))
-         .enter()
-         .append('g')
-         .attr(
-            'transform',
-            (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`
-         )
+         rootElement
+            .attr('width', width + hMargin)
+            .attr('height', height + vMargin)
 
-      const rect = grp
-         .selectAll('rect')
-         .data(([i, ns]) => [...ns.entries()].map(([j, n]) => [[i, j + 1], n]))
-         .enter()
+         // group for each row
+         const grp = rootElement
+            .selectAll('g')
+            .data([...matrix.cells.entries()].map(([i, ns]) => { return { i: i + 1, ns } }))
+            .enter()
+            .append('g')
+            .attr(
+               'transform',
+               (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`
+            )
+            // these will be inherited by text elements
+            .attr('fill', 'currentColor')
+            .attr('stroke', 'currentColor')
+            .attr('stroke-width', '.25') // otherwise setting stroke makes it bold
 
-      rect
-         .append('rect')
-         .attr('x', (_, j) => w * j)
-         .attr('width', w)
-         .attr('height', h)
-         .attr('class', ([, n]) =>
-            𝕊_isPrimary(selState(n).persistent)
-            ? 'matrix-cell-selected'
-            : 𝕊_isSecondary(selState(n).persistent)
-               ? 'matrix-cell-selected-secondary'
-               : 'matrix-cell-unselected')
-         .attr('stroke-width', strokeWidth)
+         const cells = grp
+            .selectAll('rect')
+            .data(({ i, ns }) => [...ns.entries()].map(([j, n]) => { return { i, j: j + 1, n } }))
+            .enter()
 
-      rect
-         .append('text')
-         .text(([, n]) => val(n))
-         .attr('x', (_, j) => w * (j + 0.5))
-         .attr('y', 0.5 * h)
-         .attr('class', 'matrix-cell-text')
-         .attr('text-anchor', 'middle')
-         .attr('dominant-baseline', 'middle')
-         .attr('pointer-events', 'none')
+         cells
+            .append('rect')
+            .classed('matrix-cell', true)
+            .attr('x', (_, j) => w * j)
+            .attr('width', w)
+            .attr('height', h)
+            .attr('stroke-width', strokeWidth)
 
-      svg.append('text')
-         .text(title)
-         .attr('x', hMargin / 2)
-         .attr('y', vMargin / 2)
-         .attr('class', 'title-text')
-         .attr('dominant-baseline', 'middle')
-         .attr('text-anchor', 'left')
+         cells
+            .append('text')
+            .text(({ n }) => val(n))
+            .attr('x', (_, j) => w * (j + 0.5))
+            .attr('y', 0.5 * h)
+            .attr('class', 'matrix-cell-text')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .attr('pointer-events', 'none')
 
-      svg.selectAll('rect')
-         .on('mousedown', e => { listener(e) })
+         rootElement.append('text')
+            .text(title)
+            .attr('x', hMargin / 2)
+            .attr('y', vMargin / 2)
+            .attr('class', 'title-text')
+            .attr('dominant-baseline', 'middle')
+            .attr('text-anchor', 'left')
+      }
+      setSelState(uiHelpers, rootElement, { matrix }, listener)
    }
 }
 
-export var drawMatrix = curry4(drawMatrix_)
+export var drawMatrix = x1 => x2 => drawMatrix_(x1, x2)

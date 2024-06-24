@@ -1,6 +1,6 @@
 module Lattice where
 
-import Prelude hiding (absurd, join, top)
+import Prelude hiding (absurd, (-), join, top)
 
 import Control.Apply (lift2)
 import Data.Array (zipWith) as A
@@ -12,9 +12,9 @@ import Data.Set (subset)
 import Dict (Dict)
 import Util (type (×), Endo, assert, shapeMismatch, (×))
 import Util.Map (intersectionWith, keys, unionWith)
+import Util.Map as Map
 import Util.Pair (Pair(..))
 import Util.Set ((∪))
-import Util.Map as Map
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
@@ -103,6 +103,9 @@ erase = (<$>) (const unit)
 infixl 7 meet as ∧
 infixl 6 join as ∨
 infixl 6 relativeComplement as -
+
+symmetricDiff :: forall a. Neg a => MeetSemilattice a => a -> a -> a × a
+symmetricDiff x y = (x - y) × (y - x)
 
 type 𝔹 = Boolean
 type Raw (f :: Type -> Type) = f Unit

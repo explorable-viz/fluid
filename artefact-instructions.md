@@ -1,5 +1,7 @@
 # Artefact notes
 
+**Obsolete -- need revisiting**
+
 ## Regenerating data for energy linked-inputs
 
  - Download energy data from [here](https://ember-climate.org/data-catalogue/yearly-electricity-data/) (choose yearly full release long format (CSV))

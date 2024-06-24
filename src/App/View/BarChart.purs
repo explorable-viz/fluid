@@ -2,23 +2,24 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Handler, Renderer, Selectable, Selector, 𝕊, SelState, from, get_intOrNumber, record, selector, unsafeEventData)
+import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
 import App.Util.Selector (barChart, barSegment)
-import Data.Maybe (Maybe)
-import Data.Profunctor.Strong ((&&&))
-import Data.Tuple (uncurry)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import Bind ((↦))
+import Data.Int (floor, pow, toNumber)
+import Data.Number (log)
+import Data.Tuple (snd)
 import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
 import Dict (Dict)
+import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
-import Util (type (×), Endo, (×))
+import Util ((!))
 import Util.Map (get)
 import Val (Val)
-import Web.Event.Event (EventType, target, type_)
-import Web.Event.EventTarget (EventTarget)
 
 newtype BarChart = BarChart
    { caption :: Selectable String
-   , data :: Array StackedBar
+   , stackedBars :: Array StackedBar
    }
 
 newtype StackedBar = StackedBar
@@ -31,12 +32,30 @@ newtype Bar = Bar
    , z :: Selectable Number
    }
 
-foreign import drawBarChart :: Renderer BarChart
+type BarChartHelpers =
+   { bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
+   , tickEvery :: Int -> Int
+   }
+
+foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart Unit
+
+drawBarChart' :: Renderer BarChart Unit
+drawBarChart' = drawBarChart
+   { bar_attrs
+   , tickEvery
+   }
+
+instance Drawable BarChart Unit where
+   draw divId suffix redraw view viewState =
+      drawBarChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
+      where
+      barChartSelector :: ViewSelector BarSegmentCoordinate
+      barChartSelector { i, j } = barSegment i j >>> barChart
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart
       { caption: unpack string (get f_caption r)
-      , data: record from <$> from (get f_data r)
+      , stackedBars: record from <$> from (get f_data r)
       }
 
 instance Reflect (Dict (Val (SelState 𝕊))) StackedBar where
@@ -51,14 +70,35 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
       , z: get_intOrNumber f_z r
       }
 
--- see data binding in BarChart.js
+-- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
 
-barChartHandler :: Handler
-barChartHandler = (target &&& type_) >>> barSegmentCoord >>> uncurry toggleSegment
+bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
+bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
+   fromFoldable
+      [ "fill" ↦ case persistent of
+           None -> col
+           Secondary -> "url(#diagonalHatch-" <> show j <> ")"
+           Primary -> colorShade col (-40)
+      , "stroke-width" ↦ "1.5"
+      , "stroke-dasharray" ↦ case transient of
+           None -> "none"
+           Secondary -> "1 2"
+           Primary -> "2 2"
+      , "stroke-linecap" ↦ "round"
+      , "stroke" ↦
+           if persistent /= None || transient /= None then colorShade col (-70)
+           else col
+      ]
    where
-   toggleSegment :: BarSegmentCoordinate -> Endo (Selector Val)
-   toggleSegment { i, j } = barSegment i j >>> barChart
+   StackedBar { bars } = stackedBars ! i
+   Bar { z } = bars ! j
+   SelState { persistent, transient } = snd z
+   col = indexCol j
 
-   barSegmentCoord :: Maybe EventTarget × EventType -> BarSegmentCoordinate × Selector Val
-   barSegmentCoord (tgt_opt × ty) = unsafeEventData tgt_opt × selector ty
+tickEvery :: Int -> Int
+tickEvery n =
+   if n <= 2 * pow 10 m then 2 * pow 10 (m - 1)
+   else pow 10 m
+   where
+   m = floor (log (toNumber n) / log 10.0)
