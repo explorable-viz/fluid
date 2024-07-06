@@ -120,7 +120,6 @@ function drawScatterPlot_ (
          .style("font-size", "8px")
          .text(fst(ylabel))
 
-
          svg.append('g')
             .selectAll('dot')
             .data([...data.entries()])
@@ -130,9 +129,15 @@ function drawScatterPlot_ (
                .attr('cy', ([, d]) => y(fst(d.y)))
                .attr('r', 3)
                .attr('data-y', ([, d]) => fst(d.y))
+               .attr('data-x', ([, d]) => fst(d.x))
                .attr('stroke-width', 0.5)
-               .attr('class', ([, d]) =>
-                  Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected')
+               .attr('class', ([, d]) => {
+                  console.log(fst(d.x))
+                  console.log(Sel_isNone(snd(d.x)))
+                  console.log(fst(d.y))
+                  console.log(Sel_isNone(snd(d.y)))
+                  return Sel_isNone(snd(d.x)) && Sel_isNone(snd(d.y)) ? 'scatterplot-point-unselected' : 'scatterplot-point-selected'
+   }           )
                .on('mousedown', (e, d) => {listener(e)})
 
          svg.append('text')
