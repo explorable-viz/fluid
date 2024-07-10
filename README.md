@@ -6,23 +6,26 @@ Fluid is an experimental programming language which integrates a bidirectional d
 [![GitHub pages](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment)
 [![v0.3.1-typescript](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml)
 
+## Installation
 ### Software required
-
 - git
+- Node.js
 - yarn
-- `yarn install` to install application dependencies
+- Windows users: Ubuntu (WSL)
+---
+- `yarn install` within root directory of cloned respository
+- Install `ChromeHeadless` binary
 
 #### Running the tests on the command line
 
-- Install `ChromeHeadless` binary
 - `yarn build` and then `yarn test` for core tests
 
 #### Running the tests in the browser
 
 - As per command-line tests above, but run `yarn test-browser`
-- hit Debug in the browser window that opens, and then open Developer Tools or equivalent
+- Hit Debug in the browser window that opens, and then open Developer Tools or equivalent
 
 #### Running the web app
-
-- `yarn serve-app` to build and serve app
-- open a browser at the served URL (usually `127.0.0.1:8080`).
+- `yarn build-app`
+- `yarn serve-app`
+- Open a browser at the served URL (usually `127.0.0.1:8080`)
