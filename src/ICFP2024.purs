@@ -12,11 +12,11 @@ import Test.Util.Suite (linkedInputsTest, linkedOutputsTest)
 main :: Effect Unit
 main = runAffs_ drawFig $
    ( linkedInputsTest <$>
-      [ linkedInputs_spec3
-      , linkedInputs_spec4
-      ]
-   ) <>
-   ( linkedOutputsTest <$>
-        [ linkedOutputs_spec2
+        [ linkedInputs_spec3
+        , linkedInputs_spec4
         ]
-   )
+   ) <>
+      ( linkedOutputsTest <$>
+           [ linkedOutputs_spec2
+           ]
+      )
