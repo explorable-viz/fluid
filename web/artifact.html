@@ -23,26 +23,11 @@
 
 <div class="grid-container">
    <div></div>
-   <div class="flex-right-align">
-      <img src="https://i.ibb.co/bFjzrXR/Untitled.jpg" width="250px">
-      <img src="https://i.ibb.co/zNqHKg7/University-of-Bristol-logo.png" width="250px">
-      <img src="https://dorchard.github.io/images/iccs-full-logo.png" alt="ICCS logo" width="250px">
-   </div>
+   <div></div>
    <div></div>
    <div class="flex-left-align">
-      <nav>
-         <ul>
-            <li><a href="." class="active-page">Latest</a></li>
-            <li><a href="https://f.luid.org/0.3.1">v0.3.1</a></li>
-         </ul>
-      </nav>
-      <div>
-         <a href="https://github.com/explorable-viz/fluid">GitHub</a> ·
-         <a href="https://dl.acm.org/doi/10.1145/3498668">POPL 2022 paper</a> ·
-         <a href="https://www.youtube.com/watch?v=M_ePrtD9axk">POPL 2022 talk</a> ·
-         <a href="https://www.youtube.com/watch?v=2-S6yVyzypU">PROPL 2024 talk</a>
-      </div>
-      <h2>Fluid: data-linked visualisations</h2>
+      <div></div>
+      <h2>POPL 2025 Submission 99 Reviewer Artifact</h2>
    </div>
 
    <div></div>
@@ -51,6 +36,35 @@
    <div class="flex-left-align">
       <h3 class="title lowercase">example 1</h3>
       <p>Renewables example for related inputs:</p>
+   </div>
+
+   <div></div>
+   <div id="fig-1-input" class="flex-right-align data-pane"></div>
+   <div>
+      <div onclick="toggle('fig-1-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig-1"></div>
+   </div>
+
+   <div></div>
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
+      <h3 class="title lowercase">Linked outputs</h3>
+      <p>This is an <b>anonymised web demo</b> to support our POPL 2025 submission. This will be fully documented and substantially improved for the formal Artifact Evaluation process. <b>The page will take a few second to load while the programs are evaluated and dependence graphs constructed.</b>
+
+      Instructions:
+      <ul>
+         <li>There are two examples below, one showing linked outputs, the other linked inputs.</li>
+         <li>Click the grey ◀▶ button to reveal the data pane.</li>
+      </ul>
+
+      Additional notes:
+      <ul>
+         <li>The user interface implemented here is slightly different from the one shown in the paper.</li>
+      </ul>
+      </p>
    </div>
 
    <div></div>
@@ -66,6 +80,7 @@
 <script src="app.js"></script>
 <script>
    // move to PureScript
+   toggle('fig-1-input')
    toggle('fig-4-input')
 </script>
 </body>
