@@ -11,6 +11,7 @@ import Dict (Dict)
 import Primitive (string, unpack)
 import Util.Map (get)
 import Val (Val)
+import Foreign.Object (Object, fromFoldable)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -37,3 +38,9 @@ instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
       }
 
 type PointIndex = { i :: Int }
+
+point_smallRadius :: Int
+point_smallRadius = 2
+
+point_attrs :: (String -> String) -> ScatterPlot -> PointIndex -> Object String
+point_attrs nameCol (ScatterPlot { points }) i = fromFoldable []
