@@ -12,6 +12,6 @@ import Util ((×))
 
 main :: Effect Unit
 main = runAffs_ (uncurry drawFig)
-      [ ("fig-1" × _) <$> loadFig energyScatter
-      , ("fig-4" × _) <$> loadFig (linkedOutputs_spec2.spec { inputs = [ "renewables", "nonRenewables" ] })
-      ]
+   [ ("fig-1" × _) <$> loadFig energyScatter
+   , ("fig-4" × _) <$> loadFig (linkedOutputs_spec2.spec { inputs = [ "renewables", "nonRenewables" ] })
+   ]
