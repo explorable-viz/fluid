@@ -13,6 +13,7 @@ import Util.Map (get)
 import Val (Val)
 import Foreign.Object (Object, fromFoldable)
 
+
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
    , points :: Array Point
@@ -20,11 +21,18 @@ newtype ScatterPlot = ScatterPlot
    , ylabel :: Selectable String
    }
 
-foreign import drawScatterPlot :: Renderer ScatterPlot Unit
+type ScatterPlotHelpers =
+   { point_attrs :: (String -> String) -> ScatterPlot -> PointIndex -> Object String }
+
+foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit
+
+drawScatterPlot' :: Renderer ScatterPlot Unit
+drawScatterPlot' = drawScatterPlot
+   { point_attrs }
 
 instance Drawable ScatterPlot Unit where
    draw divId suffix redraw view viewState =
-      drawScatterPlot { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
+      drawScatterPlot' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
       where
       scatterPlotSelector :: ViewSelector PointIndex
       scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
@@ -42,5 +50,14 @@ type PointIndex = { i :: Int }
 point_smallRadius :: Int
 point_smallRadius = 2
 
-point_attrs :: Object String
-point_attrs = fromFoldable []
+point_attrs :: (String -> String) -> ScatterPlot -> PointIndex -> Object String
+point_attrs _ (ScatterPlot { }) { } =
+   fromFoldable []
+      
+{-
+   where
+   Point { y } = points ! i
+   sel = snd y
+   col = nameCol name
+   fill = if isPersistent sel then flip colorShade (-30) else identity
+-}
