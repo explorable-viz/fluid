@@ -42,5 +42,5 @@ type PointIndex = { i :: Int }
 point_smallRadius :: Int
 point_smallRadius = 2
 
-point_attrs :: (String -> String) -> ScatterPlot -> PointIndex -> Object String
-point_attrs nameCol (ScatterPlot { points }) i = fromFoldable []
+point_attrs :: Object String
+point_attrs = fromFoldable []
