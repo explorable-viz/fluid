@@ -47,10 +47,10 @@ jobs:
     - name: build
       run: |
         yarn install
-        yarn build-app
+        yarn build-artifact
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/app/
+        publish_dir: dist/artifact/
         keep_files: true
