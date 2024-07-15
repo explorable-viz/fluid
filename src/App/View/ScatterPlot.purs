@@ -56,7 +56,7 @@ point_smallRadius = 2
 point_attrs :: ScatterPlot -> PointIndex -> Object String
 point_attrs (ScatterPlot { points }) { i } =
    fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0) ]
+      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 1.6 else if isSecondary sel then 1.25 else 1.0) ]
    where
    Point { y } = points ! i
    sel = snd y
