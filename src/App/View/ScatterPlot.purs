@@ -7,7 +7,7 @@ import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
---import Data.Int (toNumber)
+import Data.Int (toNumber)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
 import Primitive (string, unpack)
@@ -54,5 +54,5 @@ point_smallRadius = 2
 point_attrs :: ScatterPlot -> PointIndex -> Object String
 point_attrs (ScatterPlot {}) {} =
    fromFoldable
-      [ "r" ↦ "2" ]
+      [ "r" ↦ show (toNumber point_smallRadius * 1.0) ]
 
