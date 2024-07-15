@@ -6,6 +6,8 @@ import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from, 
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import Bind ((↦))
+--import Data.Int (toNumber)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
 import Primitive (string, unpack)
@@ -52,13 +54,6 @@ point_smallRadius = 2
 point_attrs :: ScatterPlot -> PointIndex -> Object String
 point_attrs (ScatterPlot {}) {} =
    fromFoldable
-      []
+      ["r" ↦ "2"]
 
-{-
-   where
-   Point { y } = points ! i
-   sel = snd y
-   col = nameCol name
-   fill = if isPersistent sel then flip colorShade (-30) else identity
--}
 
