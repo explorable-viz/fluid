@@ -13,7 +13,6 @@ import Util.Map (get)
 import Val (Val)
 import Foreign.Object (Object, fromFoldable)
 
-
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
    , points :: Array Point
@@ -51,9 +50,9 @@ point_smallRadius :: Int
 point_smallRadius = 2
 
 point_attrs :: (String -> String) -> ScatterPlot -> PointIndex -> Object String
-point_attrs _ (ScatterPlot { }) { } =
+point_attrs _ (ScatterPlot {}) {} =
    fromFoldable []
-      
+
 {-
    where
    Point { y } = points ! i

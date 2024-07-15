@@ -8,10 +8,12 @@ Fluid is an experimental programming language which integrates a bidirectional d
 
 ## Installation
 ### Software required
+- Windows users: Ubuntu (WSL)
+
 - git
 - Node.js
 - yarn
-- Windows users: Ubuntu (WSL)
+
 ---
 - `yarn install` within root directory of cloned respository
 - Install `ChromeHeadless` binary
