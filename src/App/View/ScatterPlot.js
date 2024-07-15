@@ -3,6 +3,7 @@
 import * as d3 from "d3"
 
 function setSelState (
+   { point_attrs },
    {
       selState,
       selClasses,
@@ -10,14 +11,16 @@ function setSelState (
       join
    },
    rootElement,
-   { points },
+   chart,
    listener
 ) {
+   const { points } = chart
    rootElement.selectAll('.scatterplot-point').each(function (point) {
       const sel = join(selState(points[point.i].x))(selState(points[point.i].y))
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
+         .attrs(point_attrs(chart)(point))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -119,7 +122,7 @@ function drawScatterPlot_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(uiHelpers, rootElement, { points }, listener)
+      setSelState(ScatterPlotHelpers, uiHelpers, rootElement, { points }, listener)
    }
 }
 

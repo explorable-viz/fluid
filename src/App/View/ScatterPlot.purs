@@ -21,9 +21,9 @@ newtype ScatterPlot = ScatterPlot
    }
 
 type ScatterPlotHelpers =
-   { point_attrs :: (String -> String) -> ScatterPlot -> PointIndex -> Object String }
+   { point_attrs :: ScatterPlot -> PointIndex -> Object String }
 
-foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit
+foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit -- draws 
 
 drawScatterPlot' :: Renderer ScatterPlot Unit
 drawScatterPlot' = drawScatterPlot
@@ -49,9 +49,10 @@ type PointIndex = { i :: Int }
 point_smallRadius :: Int
 point_smallRadius = 2
 
-point_attrs :: (String -> String) -> ScatterPlot -> PointIndex -> Object String
-point_attrs _ (ScatterPlot {}) {} =
-   fromFoldable []
+point_attrs :: ScatterPlot -> PointIndex -> Object String
+point_attrs (ScatterPlot {}) {} =
+   fromFoldable
+      []
 
 {-
    where
@@ -60,3 +61,4 @@ point_attrs _ (ScatterPlot {}) {} =
    col = nameCol name
    fill = if isPersistent sel then flip colorShade (-30) else identity
 -}
+
