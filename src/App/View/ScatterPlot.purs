@@ -2,9 +2,9 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from, record)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from, record, isPrimary, isSecondary)
 import App.Util.Selector (field, listElement, scatterPlot)
-import App.View.LineChart (Point)
+import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (toNumber)
@@ -14,6 +14,8 @@ import Primitive (string, unpack)
 import Util.Map (get)
 import Val (Val)
 import Foreign.Object (Object, fromFoldable)
+import Util ((!))
+import Data.Tuple (snd)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -52,7 +54,9 @@ point_smallRadius :: Int
 point_smallRadius = 2
 
 point_attrs :: ScatterPlot -> PointIndex -> Object String
-point_attrs (ScatterPlot {}) {} =
+point_attrs (ScatterPlot { points }) { i } =
    fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * 1.0) ]
-
+      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0) ]
+   where
+   Point { y } = points ! i
+   sel = snd y
