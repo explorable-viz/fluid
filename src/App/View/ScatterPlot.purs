@@ -54,6 +54,5 @@ point_smallRadius = 2
 point_attrs :: ScatterPlot -> PointIndex -> Object String
 point_attrs (ScatterPlot {}) {} =
    fromFoldable
-      ["r" ↦ "2"]
-
+      [ "r" ↦ "2" ]
 
