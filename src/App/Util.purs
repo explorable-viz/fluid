@@ -39,10 +39,11 @@ import Web.Event.EventTarget (EventTarget)
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
 type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
--- Selection has two dimensions: persistent/transient and primary/secondary. An element can be persistently
+-- Selection has two dimensions: persistent/transient and primary/secondary/unused. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
 -- clicking during mouseover visibly changes the state). Primary and secondary also need to be visually
--- distinct but not orthogonal; primary should (visually) subsume secondary.
+-- distinct but not orthogonal; primary should (visually) subsume secondary. 
+-- Unused is for input data lacking dependency from output data
 newtype SelState a = SelState
    { persistent :: a
    , transient :: a
@@ -60,7 +61,9 @@ selState b1 b2 = SelState { persistent: b1, transient: b2 }
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
 
-data 𝕊 = None | Secondary | Primary
+-- claim, we don't worry about persistency/transiency of unused for redundancy purposes, as it never should be selected
+-- here we add "unused" as a state of data (only input) - ideally where output query(top) excludes it, but just adding with no functionality for now
+data 𝕊 = Unused | None | Secondary | Primary
 type Selectable a = a × SelState 𝕊
 
 isPrimary :: SelState 𝕊 -> 𝔹
@@ -70,6 +73,11 @@ isPrimary (SelState { persistent, transient }) =
 isSecondary :: SelState 𝕊 -> 𝔹
 isSecondary (SelState { persistent, transient }) =
    persistent == Secondary || transient == Secondary
+
+-- would this imply having to rerun unused for every hover?
+isUnused :: SelState 𝕊 -> 𝔹
+isUnused (SelState { persistent, transient }) =
+   persistent == Unused || transient == Unused
 
 isNone :: SelState 𝕊 -> 𝔹
 isNone sel = not (isPersistent sel || isTransient sel)
@@ -82,8 +90,22 @@ isTransient (SelState { transient }) = transient /= None
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
+--compare' None None = EQ
+--compare' None _ = LT
+--compare' Secondary None = GT
+--compare' Secondary Secondary = EQ
+--compare' Secondary Primary = LT
+--compare' Primary Primary = EQ
+--compare' Primary _ = GT
+-- shouldn't really need this for Unused, as we should never have comparison? - is adding Unused to Boolean algebra necessary
+-- if so, then it's lower than none.
+compare' Unused Unused = EQ
+compare' Unused _ = LT
+compare' None Unused = GT
 compare' None None = EQ
-compare' None _ = LT
+compare' None Secondary = LT
+compare' None Primary = LT
+compare' Secondary Unused = GT
 compare' Secondary None = GT
 compare' Secondary Secondary = EQ
 compare' Secondary Primary = LT
@@ -175,10 +197,12 @@ css
            { transient ::
                 { primary :: String
                 , secondary :: String
+                , unused :: String
                 }
            , persistent ::
                 { primary :: String
                 , secondary :: String
+                , unused :: String
                 }
            }
       }
@@ -187,10 +211,12 @@ css =
         { transient:
              { primary: "selected-primary-transient"
              , secondary: "selected-secondary-transient"
+             , unused: "unused-blank"
              }
         , persistent:
              { primary: "selected-primary-persistent"
              , secondary: "selected-secondary-persistent"
+             , unused: "unused-blank"
              }
         }
    }
@@ -200,8 +226,10 @@ selClasses :: String
 selClasses = joinWith " " $
    [ css.sel.transient.primary
    , css.sel.transient.secondary
+   , css.sel.transient.unused
    , css.sel.persistent.primary
    , css.sel.persistent.secondary
+   , css.sel.persistent.unused
    ]
 
 selClassesFor :: SelState 𝕊 -> String
@@ -211,10 +239,12 @@ selClassesFor (SelState s) =
            Secondary -> [ css.sel.persistent.secondary ]
            Primary -> [ css.sel.persistent.primary ]
            None -> []
+           Unused -> [ css.sel.persistent.unused ]
       , case s.transient of
            Secondary -> [ css.sel.transient.secondary ]
            Primary -> [ css.sel.transient.primary ]
            None -> []
+           Unused -> [ css.sel.transient.unused ]
       ]
 
 type Attrs = Array (Bind String)
