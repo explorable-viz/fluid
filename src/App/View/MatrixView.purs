@@ -13,11 +13,23 @@ import Val (Array2, MatrixRep(..))
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import drawMatrix :: Renderer MatrixView Unit
+type MatrixHelpers =
+   {
+   -- current transient selection
+   -- function to calculate borders -OR- borders to be drawn
+   }
+
+foreign import drawMatrix :: MatrixHelpers -> Renderer MatrixView Unit
+
+drawMatrix' :: Renderer MatrixView Unit
+drawMatrix' = drawMatrix
+   {
+
+   }
 
 instance Drawable MatrixView Unit where
    draw divId suffix redraw view viewState =
-      drawMatrix { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw matrixViewSelector
+      drawMatrix' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw matrixViewSelector
       where
       matrixViewSelector :: ViewSelector MatrixCellCoordinate
       matrixViewSelector { i, j } = matrixElement i j

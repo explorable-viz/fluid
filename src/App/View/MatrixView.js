@@ -30,6 +30,7 @@ function setSelState (
 }
 
 function drawMatrix_ (
+   matrixHelpers,
    {
       uiHelpers,
       divId,
@@ -118,4 +119,4 @@ function drawMatrix_ (
    }
 }
 
-export var drawMatrix = x1 => x2 => drawMatrix_(x1, x2)
+export var drawMatrix = x1 => x2 => x3 => drawMatrix_(x1, x2, x3)

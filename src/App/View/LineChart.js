@@ -10,7 +10,7 @@ d3.selection.prototype.attrs = function(m) {
 }
 
 function setSelState (
-   { point_attrs },
+   { point_attrs }, // lineChartHelpers
    nameCol,
    rootElement,
    chart,
