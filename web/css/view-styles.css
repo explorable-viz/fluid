@@ -83,7 +83,7 @@ thead {
 }
 
 .matrix-cell-text.selected-secondary-transient {
-   color: blue
+   color: rgb(255, 0, 208)
 }
 
 .matrix-cell-text.selected-primary-persistent {
