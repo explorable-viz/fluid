@@ -80,14 +80,14 @@ bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
            None -> col
            Secondary -> "url(#diagonalHatch-" <> show j <> ")"
            Primary -> colorShade col (-40)
-           -- no good reason for colour choice below, this should just be redundant code regardless
-           Unused -> colorShade col (50)
+           -- recall that here Childless refers to costless output
+           Childless -> colorShade col (100)
       , "stroke-width" ↦ "1.5"
       , "stroke-dasharray" ↦ case transient of
            None -> "none"
            Secondary -> "1 2"
            Primary -> "2 2"
-           Unused -> "none"
+           Childless -> "10 2"
 
       , "stroke-linecap" ↦ "round"
       , "stroke" ↦

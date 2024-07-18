@@ -21,35 +21,29 @@ thead {
 
 .table-row {
    border-left: 2px solid white;
-   /*display: table-row;*/
+   display: table-row;
 }
 
 .table-cell {
    border-radius: 2px;
    background-color: White;
    border-left: 2px solid white;
-   visibility: collapse;
 }
 
-/*not quite what we want, as visibility is controlled by the toggle*/
+/*not quite what we want, as visibility is controlled by the toggle elsewhere, and this has the sad impact of overriding it*/
 .table-cell.selected-primary-persistent {
-   visibility: visible;
-
    display: table-cell;
 
    background-color: #93E9BE;
 }
 
 .table-cell.selected-primary-transient {
-   visibility: visible;
-
    display: table-cell;
 
    border-left: 2px solid blue;
 }
 
 .table-cell.selected-secondary-persistent {
-   visibility: visible;
 
    display: table-cell;
 
@@ -59,20 +53,24 @@ thead {
 }
 
 .table-cell.selected-secondary-transient {
-   visibility: visible;
 
    display: table-cell;
 
    border-left: 2px solid lightblue;
 }
 /*shouldn't need both of these, but by categories of selection atm is necessary*/
-.table-cell.selected-unused {
-   visibility: collapse;
+.table-cell.selected-childless-persistent {
+   background-color: orange;
    /*here, visibility collapse is better if we have
    display: none;
     should be easier to see in testing */
 }
-
+.table-cell.selected-childless-transient {
+   background-color: burlywood;
+   /*here, visibility collapse is better if we have
+   display: none;
+    should be easier to see in testing */
+}
 
 .table-row.hidden {
    visibility: collapse;
@@ -94,12 +92,18 @@ thead {
    fill: rgb(214, 240, 214)
 }
 
+
+.matrix-cell.selected-childless-persistent {
+   fill: rgb(219, 214, 240)
+}
 .matrix-cell.selected-primary-transient {
 }
 
 .matrix-cell.selected-secondary-transient {
 }
-
+.matrix-cell.selected-childless-transient {
+   fill: rgb(44, 16, 158)
+}
 .matrix-cell-text {
    font-size: 10pt;
    font-family: "Roboto", sans-serif;
@@ -113,6 +117,14 @@ thead {
 
 .matrix-cell-text.selected-secondary-transient {
    color: red
+}
+
+.matrix-cell-text.selected-childless-transient {
+   color: burlywood
+}
+
+.matrix-cell-text.selected-childless-persistent {
+   color:orange
 }
 
 .matrix-cell-text.selected-primary-persistent {
