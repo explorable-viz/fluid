@@ -39,11 +39,21 @@ thead {
 
 .table-cell.selected-secondary-persistent {
    background-color: rgb(226, 226, 226);
+   /*proof-of-concept for display: none. Doing it cell-by-cell is a big pain*/
+   /*visibility: collapse;*/
 }
 
 .table-cell.selected-secondary-transient {
    border-left: 2px solid lightblue;
 }
+/*shouldn't need both of these, but by categories of selection atm is necessary*/
+.table-cell.selected-unused {
+   visibility: collapse;
+   /*here, visibility collapse is better if we have
+   display: none;
+    should be easier to see in testing */
+}
+
 
 .table-row.hidden {
    visibility: collapse;
@@ -83,7 +93,7 @@ thead {
 }
 
 .matrix-cell-text.selected-secondary-transient {
-   color: blue
+   color: red
 }
 
 .matrix-cell-text.selected-primary-persistent {
@@ -108,9 +118,10 @@ thead {
 }
 
 .scatterplot-point.selected-secondary-persistent {
-   fill: rgb(226, 226, 226);
+   fill: red;
 }
 
 .scatterplot-point.selected-secondary-transient {
    stroke-width: 1;
+   fill: yellow;
 }

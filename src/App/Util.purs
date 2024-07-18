@@ -1,9 +1,41 @@
-module App.Util where
+module App.Util
+  ( Attrs
+  , SelState(..)
+  , Selectable
+  , Selector
+  , ViewSelector
+  , as𝕊
+  , attrs
+  , class Reflect
+  , colorShade
+  , compare'
+  , css
+  , eventData
+  , get_intOrNumber
+  , isNone
+  , isPrimary
+  , isSecondary
+  , isTransient
+  , isUnused
+  , persist
+  , record
+  , runAffs_
+  , selClasses
+  , selClassesFor
+  , selState
+  , selected
+  , selectionEventData
+  , selector
+  , to𝔹
+  , to𝕊
+  , 𝕊(..)
+  )
+  where
 
 import Prelude hiding (absurd, join)
 
 import Bind (Bind, Var)
-import Control.Apply (lift2)
+import Control.Apply (lift2, lift3)
 import Data.Array ((:)) as A
 import Data.Array (concat)
 import Data.Either (Either(..))
@@ -43,7 +75,7 @@ type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to vi
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
 -- clicking during mouseover visibly changes the state). Primary and secondary also need to be visually
 -- distinct but not orthogonal; primary should (visually) subsume secondary. 
--- Unused is for input data lacking dependency from output data
+-- Unused is for input data lacking a dependency from output data, and should be used for a lack of display
 newtype SelState a = SelState
    { persistent :: a
    , transient :: a
@@ -128,6 +160,20 @@ to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 = (_ <#> if _ then Primary else None)
 
 -- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
+-- GRR, this code is where we end up redefining everything to be "none", rather than Prim/Sec/Unused every time it is used
+-- are we going for a "if unused, then don't bother checking?"
+-- why can't we use isPrimary, isSecondary here?#
+-- is this code assigning primary/secondary to data, because it seems like it's just reading it
+--as𝕊 :: SelState 𝕊 -> SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
+ --  where
+  -- as𝕊' :: 𝕊 -> 𝔹 -> 𝔹 -> 𝕊
+-- as𝕊' :: 𝔹 -> 𝔹 -> 𝕊 
+   -- does the ordering actually work like this, or do we need to repeat lines with None, Secondary and Primary?
+   --as𝕊' Unused _ _ = Unused
+  -- as𝕊' _ false false = None
+  -- as𝕊' _ false true = Secondary
+ --  as𝕊' _ true false = Primary -- "costless output", but ignore those for now
+--   as𝕊' _ true true = Primary
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 as𝕊 = lift2 as𝕊'
    where
@@ -211,12 +257,12 @@ css =
         { transient:
              { primary: "selected-primary-transient"
              , secondary: "selected-secondary-transient"
-             , unused: "unused-blank"
+             , unused: "selected-unused"
              }
         , persistent:
              { primary: "selected-primary-persistent"
              , secondary: "selected-secondary-persistent"
-             , unused: "unused-blank"
+             , unused: "selected-unused"
              }
         }
    }
