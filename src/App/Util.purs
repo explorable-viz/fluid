@@ -11,8 +11,10 @@ module App.Util
   , compare'
   , css
   , eventData
+  , from
   , get_intOrNumber
   , isNone
+  , isPersistent
   , isPrimary
   , isSecondary
   , isTransient
@@ -35,7 +37,7 @@ module App.Util
 import Prelude hiding (absurd, join)
 
 import Bind (Bind, Var)
-import Control.Apply (lift2, lift3)
+import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
 import Data.Either (Either(..))
@@ -156,24 +158,12 @@ instance JoinSemilattice 𝕊 where
 to𝔹 :: SelState 𝕊 -> SelState 𝔹
 to𝔹 = (_ <#> (_ /= None))
 
+
+--we need this not to change Unused, right? But then how are we expressing this as a boolean?
 to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 = (_ <#> if _ then Primary else None)
 
--- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
--- GRR, this code is where we end up redefining everything to be "none", rather than Prim/Sec/Unused every time it is used
--- are we going for a "if unused, then don't bother checking?"
--- why can't we use isPrimary, isSecondary here?#
--- is this code assigning primary/secondary to data, because it seems like it's just reading it
---as𝕊 :: SelState 𝕊 -> SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
- --  where
-  -- as𝕊' :: 𝕊 -> 𝔹 -> 𝔹 -> 𝕊
--- as𝕊' :: 𝔹 -> 𝔹 -> 𝕊 
-   -- does the ordering actually work like this, or do we need to repeat lines with None, Secondary and Primary?
-   --as𝕊' Unused _ _ = Unused
-  -- as𝕊' _ false false = None
-  -- as𝕊' _ false true = Secondary
- --  as𝕊' _ true false = Primary -- "costless output", but ignore those for now
---   as𝕊' _ true true = Primary
+--should we have a new variable here, asinit𝕊, say, that could give us an initial value for S of unused?
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 as𝕊 = lift2 as𝕊'
    where
@@ -182,6 +172,36 @@ as𝕊 = lift2 as𝕊'
    as𝕊' false true = Secondary
    as𝕊' true false = Primary -- "costless output", but ignore those for now
    as𝕊' true true = Primary
+
+-- so: despite not having a nice use case for unused, this is OK since we'll never update that data.
+   -- doesn't work if we want to make some data not-unused, but ah well
+-- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
+-- this code is where we end up redefining everything to be "none", rather than Prim/Sec/Unused every time it is used
+-- are we going for a "if unused, then don't bother checking?"
+-- here we have code if we want to alter fig to check if unused every time, but this isn't necessary bar for completeness.
+--as𝕊 :: SelState 𝕊 -> SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
+--as𝕊 = lift3 as𝕊'
+  -- where
+   --as𝕊' :: 𝕊 -> 𝔹 -> 𝔹 -> 𝕊
+-- as𝕊' :: 𝔹 -> 𝔹 -> 𝕊 
+-- does the ordering actually work like this, or do we need to repeat lines with None, Secondary and Primary?
+  -- as𝕊' Unused _ _ = Unused
+  -- as𝕊' None false false = None
+  -- as𝕊' Primary false false = None
+   --as𝕊' Secondary false false = None
+  -- as𝕊' None false true = Secondary
+   --as𝕊' Primary false true = Secondary
+  -- as𝕊' Secondary false true = Secondary
+   --as𝕊' None true false = Primary -- "costless output", but ignore those for now
+  -- as𝕊' Primary true false = Primary -- "costless output", but ignore those for now
+ --  as𝕊' Secondary true false = Primary -- "costless output", but ignore those for now
+ --  as𝕊' None true true = Primary
+  -- as𝕊' Primary true true = Primary
+  -- as𝕊' Secondary true true = Primary
+ --  as𝕊' _ false true = Secondary
+  -- as𝕊' _ true false = Primary -- "costless output", but ignore those for now
+  -- as𝕊' _ true true = Primary
+
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))

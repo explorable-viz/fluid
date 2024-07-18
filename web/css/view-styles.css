@@ -20,30 +20,49 @@ thead {
 }
 
 .table-row {
-   display: table-row;
+   border-left: 2px solid white;
+   /*display: table-row;*/
 }
 
 .table-cell {
    border-radius: 2px;
    background-color: White;
    border-left: 2px solid white;
+   visibility: collapse;
 }
 
+/*not quite what we want, as visibility is controlled by the toggle*/
 .table-cell.selected-primary-persistent {
+   visibility: visible;
+
+   display: table-cell;
+
    background-color: #93E9BE;
 }
 
 .table-cell.selected-primary-transient {
+   visibility: visible;
+
+   display: table-cell;
+
    border-left: 2px solid blue;
 }
 
 .table-cell.selected-secondary-persistent {
+   visibility: visible;
+
+   display: table-cell;
+
    background-color: rgb(226, 226, 226);
    /*proof-of-concept for display: none. Doing it cell-by-cell is a big pain*/
    /*visibility: collapse;*/
 }
 
 .table-cell.selected-secondary-transient {
+   visibility: visible;
+
+   display: table-cell;
+
    border-left: 2px solid lightblue;
 }
 /*shouldn't need both of these, but by categories of selection atm is necessary*/
