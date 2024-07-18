@@ -106,6 +106,9 @@ let additions =
         , "node-http"
         , "prelude"
         , "record"
+        , "console"
+        , "effect"
+        , "assert"
         ]
     , repo =
       "https://github.com/justinwoo/purescript-toppokki.git"
