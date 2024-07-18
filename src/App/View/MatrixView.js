@@ -77,7 +77,7 @@ function drawMatrix_ (
             .append('g')
             .attr(
                'transform',
-               (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`
+               _ => `translate(${strokeWidth / 2 + hMargin / 2}, ${strokeWidth / 2 + vMargin})`
             )
             // these will be inherited by text elements
             .attr('fill', 'currentColor')
@@ -92,7 +92,8 @@ function drawMatrix_ (
          cells
             .append('rect')
             .classed('matrix-cell', true)
-            .attr('x', (_, j) => w * j)
+            .attr('x', ({j}) => w * (j - 1))
+            .attr('y', ({i}) => h * (i - 1))
             .attr('width', w)
             .attr('height', h)
             .attr('stroke-width', strokeWidth)
@@ -100,8 +101,8 @@ function drawMatrix_ (
          cells
             .append('text')
             .text(({ n }) => val(n))
-            .attr('x', (_, j) => w * (j + 0.5))
-            .attr('y', 0.5 * h)
+            .attr('x', ({j}) => (j - 0.5) * w)
+            .attr('y', ({i}) => (i - 0.5) * h)
             .attr('class', 'matrix-cell-text')
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'middle')
