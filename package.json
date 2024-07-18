@@ -15,7 +15,8 @@
     "test": "karma start karma.conf.tests.js",
     "bench": "npx http-serve dist/benches -a 127.0.0.1",
     "test-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
-    "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs"
+    "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
+    "build-puppeteer": "yarn tidy && yarn clean && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
@@ -41,6 +42,7 @@
     "purescript-psa": "0.8.2",
     "purs-backend-es": "1.1.0",
     "purs-tidy": "^0.9.3",
-    "spago": "^0.20.9"
+    "spago": "^0.21.0",
+    "typescript": "^5.5.3"
   }
 }
