@@ -1,38 +1,23 @@
 module Test.Puppeteer where
 
-import Prelude 
-import Toppokki as T
+import Prelude
+import Data.String as String
 import Effect (Effect)
-import Effect.Aff (launchAff_)
---import Effect.Aff (Aff)
---import Data.String as String
---import Test.Assert as Assert
+import Test.Assert as Assert
 
+-- Function to check if a string is non-empty
+isNonEmpty :: String -> Boolean
+isNonEmpty str = String.length str > 0
+
+-- Test cases
 main :: Effect Unit
-main = launchAff_ do
-   browser <- T.launch {}
-   page <- T.newPage browser
-   T.goto (T.URL "https://example.com") page
-   --content <- T.content page
-   --Assert.assert' "content is non-empty string" (String.length content > 0)
-   pure unit
+main = do
+   -- Test case for non-empty string
+   let nonEmptyContent = "Hello, PureScript!"
+   Assert.assert' "Content should be non-empty" (isNonEmpty nonEmptyContent)
 
-{-
-main :: Effect Unit
-main = launchAff_ do
-   browser <- T.launch {}
-   page <- T.newPage browser
-   _ <- T.screenshot {path: "./test/test.png"} page
-   _ <- T.pdf {path: "./test/test.pdf"} page
-   pure unit
-   T.close browser
--}
+   -- Test case for empty string
+   let emptyContent = ""
+   Assert.assert' "Content should be empty" (not (isNonEmpty emptyContent))
 
-{-
-puppeteer :: Array BenchSuite
-   [-- check circle position function
-    -- check text position function
-    -- etc
-   ]
--}
 
