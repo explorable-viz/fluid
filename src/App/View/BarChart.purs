@@ -80,7 +80,7 @@ bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
            None -> col
            Secondary -> "url(#diagonalHatch-" <> show j <> ")"
            Primary -> colorShade col (-40)
-           -- recall that here Childless refers to costless output
+           -- recall that here Childless refers to costless output, and  so is, in effect, a constant indicator
            Childless -> colorShade col (100)
       , "stroke-width" ↦ "1.5"
       , "stroke-dasharray" ↦ case transient of

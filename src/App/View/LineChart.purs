@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
+import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isChildless, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
@@ -87,10 +87,11 @@ type PointCoordinate = { i :: Int, j :: Int, name :: String }
 point_smallRadius :: Int
 point_smallRadius = 2
 
+-- childless makes a dot smaller, maybe should be colour change to remain consistent, but colour is already quite integral to a line chart
 point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
 point_attrs nameCol (LineChart { plots }) { i, j, name } =
    fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
+      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else if isChildless sel then 0.5 else 1.0)
       , "stroke-width" ↦ "1"
       , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
       , "fill" ↦ fill col

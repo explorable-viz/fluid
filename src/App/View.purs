@@ -59,6 +59,7 @@ view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
    TableView' vwState (TableView { title, table: record identity <$> from u })
    where
    vwState = case vw of
+      -- change this to true when you've finished testing, as false makes all records viewable.
       Nothing -> { filter: true }
       Just (TableView' vwState' _) -> vwState'
 

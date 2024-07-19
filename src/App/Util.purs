@@ -76,7 +76,7 @@ type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to vi
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
 -- clicking during mouseover visibly changes the state). Primary and secondary also need to be visually
 -- distinct but not orthogonal; primary should (visually) subsume secondary. 
--- Childless is for input data lacking a dependency from output data, and should be used for a lack of display
+-- Childless is for nodes with no descendants. transient childness no requirement orthog persistent other selection, as by definition only other selectin is persistent childless, and UI still interpretable?
 newtype SelState a = SelState
    { persistent :: a
    , transient :: a
@@ -94,8 +94,6 @@ selState b1 b2 = SelState { persistent: b1, transient: b2 }
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
 
--- claim, we don't worry about persistency/transiency of Childless for redundancy purposes, as it never should be selected
--- here we add "Childless" as a state of data (only input) - ideally where output query(top) excludes it, but just adding with no functionality for now
 data 𝕊 = Childless | None | Secondary | Primary
 type Selectable a = a × SelState 𝕊
 
@@ -107,7 +105,6 @@ isSecondary :: SelState 𝕊 -> 𝔹
 isSecondary (SelState { persistent, transient }) =
    persistent == Secondary || transient == Secondary
 
--- would this imply having to rerun Childless for every hover?
 isChildless :: SelState 𝕊 -> 𝔹
 isChildless (SelState { persistent, transient }) =
    persistent == Childless || transient == Childless
@@ -123,16 +120,13 @@ isTransient (SelState { transient }) = transient /= None
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
---compare' None None = EQ
---compare' None _ = LT
---compare' Secondary None = GT
---compare' Secondary Secondary = EQ
---compare' Secondary Primary = LT
---compare' Primary Primary = EQ
---compare' Primary _ = GT
 -- shouldn't really need this for Childless, as we should never have comparison? - is adding Childless to Boolean algebra necessary
 -- if so, then it's lower than none.
--- this is an insensate comparison
+-- this is a problem for transparency in UI: as the fact that data is childless is not shown.
+-- this is an insensate comparison, as it shouldn't be a total order? We should be transparent about all (here) costless output
+-- imagine some terrible set of three line graphs split into low, medium, high risk (for hurricane damage, say), with GDP vs avg number of hurricanes seen.
+-- then low/medium/high to determine a line is costless (maybe I look at a graph and go "all of Haiti is vulnerable, and a small amount of the US is, so US low, Haiti high", but this comparison is annoying)
+-- more, even the UI splitting up x,y axes doesn't necessarily solve this, for how do I know where to look? 
 compare' Childless Childless = EQ
 compare' Childless _ = LT
 compare' None Childless = GT
@@ -156,48 +150,18 @@ instance JoinSemilattice 𝕊 where
 to𝔹 :: SelState 𝕊 -> SelState 𝔹
 to𝔹 = (_ <#> (_ /= None))
 
---we need this not to change Childless, right? But then how are we expressing this as a boolean?
+--does selection giving primary initially (updated later to childless as soon as run) create a problem?
 to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 = (_ <#> if _ then Primary else None)
 
---should we have a new variable here, asinit𝕊, say, that could give us an initial value for S of Childless?
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 as𝕊 = lift2 as𝕊'
    where
    as𝕊' :: 𝔹 -> 𝔹 -> 𝕊
    as𝕊' false false = None
    as𝕊' false true = Secondary
-   as𝕊' true false = Childless -- "costless output/ Childless input", but ignore those for now
+   as𝕊' true false = Childless -- "costless output/ Childless input", i.e. node with no dependencies
    as𝕊' true true = Primary
-
--- so: despite not having a nice use case for Childless, this is OK since we'll never update that data.
--- doesn't work if we want to make some data not-Childless, but ah well
--- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
--- this code is where we end up redefining everything to be "none", rather than Prim/Sec/Childless every time it is used
--- are we going for a "if Childless, then don't bother checking?"
--- here we have code if we want to alter fig to check if Childless every time, but this isn't necessary bar for completeness.
---as𝕊 :: SelState 𝕊 -> SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
---as𝕊 = lift3 as𝕊'
--- where
---as𝕊' :: 𝕊 -> 𝔹 -> 𝔹 -> 𝕊
--- as𝕊' :: 𝔹 -> 𝔹 -> 𝕊 
--- does the ordering actually work like this, or do we need to repeat lines with None, Secondary and Primary?
--- as𝕊' Childless _ _ = Childless
--- as𝕊' None false false = None
--- as𝕊' Primary false false = None
---as𝕊' Secondary false false = None
--- as𝕊' None false true = Secondary
---as𝕊' Primary false true = Secondary
--- as𝕊' Secondary false true = Secondary
---as𝕊' None true false = Primary -- "costless output", but ignore those for now
--- as𝕊' Primary true false = Primary -- "costless output", but ignore those for now
---  as𝕊' Secondary true false = Primary -- "costless output", but ignore those for now
---  as𝕊' None true true = Primary
--- as𝕊' Primary true true = Primary
--- as𝕊' Secondary true true = Primary
---  as𝕊' _ false true = Secondary
--- as𝕊' _ true false = Primary -- "costless output", but ignore those for now
--- as𝕊' _ true true = Primary
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))

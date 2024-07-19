@@ -30,46 +30,33 @@ thead {
    border-left: 2px solid white;
 }
 
-/*not quite what we want, as visibility is controlled by the toggle elsewhere, and this has the sad impact of overriding it*/
 .table-cell.selected-primary-persistent {
-   display: table-cell;
 
    background-color: #93E9BE;
 }
 
 .table-cell.selected-primary-transient {
-   display: table-cell;
 
    border-left: 2px solid blue;
 }
 
 .table-cell.selected-secondary-persistent {
 
-   display: table-cell;
-
    background-color: rgb(226, 226, 226);
-   /*proof-of-concept for display: none. Doing it cell-by-cell is a big pain*/
-   /*visibility: collapse;*/
 }
 
 .table-cell.selected-secondary-transient {
 
-   display: table-cell;
-
    border-left: 2px solid lightblue;
 }
-/*shouldn't need both of these, but by categories of selection atm is necessary*/
+
+/*we don't collapse childless cells at present*/
 .table-cell.selected-childless-persistent {
    background-color: orange;
-   /*here, visibility collapse is better if we have
-   display: none;
-    should be easier to see in testing */
+
 }
 .table-cell.selected-childless-transient {
    background-color: burlywood;
-   /*here, visibility collapse is better if we have
-   display: none;
-    should be easier to see in testing */
 }
 
 .table-row.hidden {
@@ -155,4 +142,12 @@ thead {
 .scatterplot-point.selected-secondary-transient {
    stroke-width: 1;
    fill: yellow;
+}
+
+.table-cell.selected-childless-persistent {
+   fill: orange;
+
+}
+.table-cell.selected-childless-transient {
+   fill: burlywood;
 }
