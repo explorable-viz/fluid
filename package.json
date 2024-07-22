@@ -16,7 +16,10 @@
     "bench": "npx http-serve dist/benches -a 127.0.0.1",
     "test-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
     "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
-    "build-puppeteer": "yarn tidy && yarn clean && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js"
+    "build-puppeteer": "yarn tidy && yarn clean && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js",
+    "test-puppeteer": "concurrently \"yarn serve-app\" \"yarn build-puppeteer\" && node puppeteer.js --kill-others-on-fail "
+ 
+    
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
@@ -30,6 +33,7 @@
     "purescript": "^0.15.10"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "esbuild": "0.15.1",
     "gh-pages": "^6.1.1",
     "karma": "6.4.0",

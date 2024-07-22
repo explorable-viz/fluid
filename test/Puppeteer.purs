@@ -9,6 +9,7 @@ import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Test.Assert as Assert
 import Toppokki as T
+
 --import Data.String as String
 
 -- Function to check if a string is non-empty
@@ -34,5 +35,6 @@ main = do
       content <- T.content page
       liftEffect (Assert.assert' "Content is non-empty string" (String.length content > 0))
       liftEffect (log content)
+      liftEffect (Assert.assertTrue' "Graph exists" (String.contains (String.Pattern "fig-4") content))
       T.close browser
    log "hello"
