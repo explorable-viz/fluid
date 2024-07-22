@@ -3,6 +3,7 @@
 import * as d3 from "d3"
 
 function setSelState (
+   { cell_attrs },
    {
       selState,
       selClasses,
@@ -17,6 +18,7 @@ function setSelState (
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
+         .attrs(cell_attrs(matrix))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -46,7 +48,7 @@ function drawMatrix_ (
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const strokeWidth = 0.5
-      const highlightStrokeWidth = 1.5
+      const highlightStrokeWidth = 0.5
       const highlightStrokeColor = 'blue'
       const w = 30, h = 30
 
@@ -71,34 +73,36 @@ function drawMatrix_ (
             .attr('width', width + hMargin)
             .attr('height', height + vMargin)
          
-         // outer group containing all rows
-         const outerGrp = rootElement
+         // group for the whole matrix 
+         const matrixGrp = rootElement
             .append('g')
-            .attr('transform', `translate(${strokeWidth / 2 + hMargin / 2}, ${strokeWidth / 2 + vMargin})`)            
+            .attr('transform', `translate(${highlightStrokeWidth / 2 + hMargin / 2}, ${highlightStrokeWidth / 2 + vMargin})`)            
             // these will be inherited by text elements
             .attr('fill', 'currentColor')
             .attr('stroke', 'currentColor')
             .attr('stroke-width', '.25') // otherwise setting stroke makes it bold
-         
+
          // group for each row
-         const grp = outerGrp
+         const rowGrp = matrixGrp
             .selectAll('g')
             .data([...matrix.cells.entries()].map(([i, ns]) => { return { i: i + 1, ns } }))
             .enter()
             .append('g')
 
-         const cells = grp
-            .selectAll('rect')
+         // group for cell elements
+         const cellGrp = rowGrp
+            .selectAll('g')
             .data(({ i, ns }) => [...ns.entries()].map(([j, n]) => { return { i, j: j + 1, n } }))
             .enter()
+            .append('g')
+            .classed('matrix-cell', true)
 
-         cells.each(function ({i, j, n}) {
+         cellGrp.each(function ({i, j, n}) {
             const cell = d3.select(this);
             const x = w * (j - 1);
             const y = h * (i - 1);
 
             cell.append('rect')
-               .classed('matrix-cell', true)
                .attr('x', x)
                .attr('y', y)
                .attr('width', w)
@@ -155,7 +159,7 @@ function drawMatrix_ (
             .attr('dominant-baseline', 'middle')
             .attr('text-anchor', 'left')
       }
-      setSelState(uiHelpers, rootElement, { matrix }, listener)
+      setSelState(matrixHelpers, uiHelpers, rootElement, { matrix }, listener)
    }
 }
 

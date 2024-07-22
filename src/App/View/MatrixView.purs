@@ -5,6 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (SelState, Selectable, 𝕊, ViewSelector)
 import App.Util.Selector (matrixElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import Foreign.Object (Object, fromFoldable)
 import Primitive (int, unpack)
 import Util ((×))
 import Val (Array2, MatrixRep(..))
@@ -15,16 +16,18 @@ newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 type MatrixHelpers =
    {
-   -- current transient selection
-   -- function to calculate borders -OR- borders to be drawn
+      cell_attrs :: IntMatrix -> Object String
    }
+
+cell_attrs :: IntMatrix -> Object String
+cell_attrs _ = fromFoldable []  
 
 foreign import drawMatrix :: MatrixHelpers -> Renderer MatrixView Unit
 
 drawMatrix' :: Renderer MatrixView Unit
 drawMatrix' = drawMatrix
    {
-
+      cell_attrs
    }
 
 instance Drawable MatrixView Unit where
