@@ -9,4 +9,5 @@ yarn purs-tidy check src/**/*.purs test/**/*.purs
 #yarn test
 yarn build-app
 yarn puppeteer browsers install chrome
-yarn test-puppeteer
+yarn build-puppeteer
+node puppeteer.js
