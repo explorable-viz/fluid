@@ -22,7 +22,7 @@ main = do
    launchAff_ do
       browser <- T.launch {}
       page <- T.newPage browser
-      T.goto (T.URL "http://127.0.0.1:8080") page
+      T.goto (T.URL "https://www.microsoft.com/en-gb") page
       content <- T.content page
       liftEffect (Assert.assert' "Content is non-empty string" (String.length content > 0))
       liftEffect (log content)
