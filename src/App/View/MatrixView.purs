@@ -15,19 +15,17 @@ type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 type MatrixHelpers =
-   {
-      cell_attrs :: IntMatrix -> Object String
+   { cell_attrs :: IntMatrix -> MatrixCellCoordinate -> Object String
    }
 
-cell_attrs :: IntMatrix -> Object String
-cell_attrs _ = fromFoldable []  
+cell_attrs :: IntMatrix -> MatrixCellCoordinate -> Object String
+cell_attrs _ _ = fromFoldable []
 
 foreign import drawMatrix :: MatrixHelpers -> Renderer MatrixView Unit
 
 drawMatrix' :: Renderer MatrixView Unit
 drawMatrix' = drawMatrix
-   {
-      cell_attrs
+   { cell_attrs
    }
 
 instance Drawable MatrixView Unit where

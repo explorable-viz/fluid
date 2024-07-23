@@ -13,18 +13,18 @@ function setSelState (
    { matrix },
    listener
 ) {
-   rootElement.selectAll('.matrix-cell').each(function (cell) {
-      const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
+   rootElement.selectAll('.matrix-cell').each(function (cellRect) {
+      const sel = selState(matrix.cells[cellRect.i - 1][cellRect.j - 1])
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
-         .attrs(cell_attrs(matrix))
+         .attrs(cell_attrs(matrix)(cellRect))  // currently NO-OP
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
    })
-   rootElement.selectAll('.matrix-cell-text').each(function (cell) {
-      const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
+   rootElement.selectAll('.matrix-cell-text').each(function (cellText) {
+      const sel = selState(matrix.cells[cellText.i - 1][cellText.j - 1])
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
@@ -48,7 +48,7 @@ function drawMatrix_ (
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const strokeWidth = 0.5
-      const highlightStrokeWidth = 0.5
+      const highlightStrokeWidth = 1.5
       const highlightStrokeColor = 'blue'
       const w = 30, h = 30
 
@@ -95,7 +95,7 @@ function drawMatrix_ (
             .data(({ i, ns }) => [...ns.entries()].map(([j, n]) => { return { i, j: j + 1, n } }))
             .enter()
             .append('g')
-            .classed('matrix-cell', true)
+            .attr('class', 'matrix-cell-group')
 
          cellGrp.each(function ({i, j, n}) {
             const cell = d3.select(this);
@@ -107,6 +107,7 @@ function drawMatrix_ (
                .attr('y', y)
                .attr('width', w)
                .attr('height', h)
+               .attr('class', 'matrix-cell')
                .attr('stroke-width', strokeWidth)
             
             cell.append('text')
@@ -123,6 +124,8 @@ function drawMatrix_ (
                .attr('y1', y)
                .attr('x2', x + w)
                .attr('y2', y)
+               .attr('class', 'matrix-cell-north-border')
+               .attr('visibility', 'hidden')
                .attr('stroke-width', highlightStrokeWidth)
                .attr('stroke', highlightStrokeColor);
 
@@ -131,6 +134,8 @@ function drawMatrix_ (
                .attr('y1', y)
                .attr('x2', x + w)
                .attr('y2', y + h)
+               .attr('class', 'matrix-cell-east-border')
+               .attr('visibility', 'hidden')
                .attr('stroke-width', highlightStrokeWidth)
                .attr('stroke', highlightStrokeColor);
 
@@ -139,6 +144,8 @@ function drawMatrix_ (
                .attr('y1', y + h)
                .attr('x2', x)
                .attr('y2', y + h)
+               .attr('class', 'matrix-cell-south-border')
+               .attr('visibility', 'hidden')
                .attr('stroke-width', highlightStrokeWidth)
                .attr('stroke', highlightStrokeColor);
 
@@ -147,6 +154,8 @@ function drawMatrix_ (
                .attr('y1', y + h)
                .attr('x2', x)
                .attr('y2', y)
+               .attr('class', 'matrix-cell-west-border')
+               .attr('visibility', 'hidden')
                .attr('stroke-width', highlightStrokeWidth)
                .attr('stroke', highlightStrokeColor);
          })
