@@ -7,5 +7,6 @@ shopt -s extglob nullglob globstar
 yarn purs-tidy check src/**/*.purs test/**/*.purs
 #yarn build
 #yarn test
+yarn build-app
 yarn puppeteer browsers install chrome
 yarn test-puppeteer
