@@ -5,6 +5,7 @@ import Prelude
 import Data.String as String
 import Effect (Effect)
 import Effect.Aff (launchAff_)
+--import Test.Assert (assertEqual)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Test.Assert as Assert
@@ -18,16 +19,6 @@ isNotEmpty str = String.length str > 0
 
 main :: Effect Unit
 main = do
-
-   -- Test case for non-empty string
-   let nonEmptyContent = "Hello, PureScript!"
-   Assert.assert' "Content should be non-empty" (isNotEmpty nonEmptyContent)
-
-   -- Test case for empty string
-   let emptyContent = ""
-   Assert.assert' "Content should be empty" (not (isNotEmpty emptyContent))
-
-   ------------------
    launchAff_ do
       browser <- T.launch {}
       page <- T.newPage browser
@@ -38,3 +29,25 @@ main = do
       liftEffect (Assert.assertTrue' "Graph exists" (String.contains (String.Pattern "fig-4") content))
       T.close browser
    log "hello"
+
+------------
+{-
+foreign import isGraphPresent :: String -> String -> Aff Boolean
+
+checkGraphPresence :: String -> String -> Aff Boolean
+checkGraphPresence url selector = isGraphPresent url selector
+
+testGraphPresence :: Effect Unit
+testGraphPresence = launchAff_ do
+  let url = "http://127.0.0.1:8080"
+  let selector = "#graph"
+
+  isPresent <- checkGraphPresence url selector
+
+  --Assert.equal isPresent true "Graph should be present"
+  assertEqual "Graph should be present" true isPresent
+
+  log $ if isPresent
+    then "Graph is present."
+    else "Graph is not present."
+-}
