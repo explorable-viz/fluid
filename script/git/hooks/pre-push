@@ -12,4 +12,7 @@ yarn puppeteer browsers install chrome
 
 yarn build-puppeteer
 node puppeteer.js
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+nvm install 22
 node -v
