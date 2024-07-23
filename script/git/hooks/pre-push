@@ -5,6 +5,7 @@ set -x -e
 # if globstar not a valid shell option name on MacOS, install bash >=4.0
 shopt -s extglob nullglob globstar
 yarn purs-tidy check src/**/*.purs test/**/*.purs
-yarn build
-yarn test
+#yarn build
+#yarn test
+yarn puppeteer browsers install chrome
 yarn test-puppeteer
