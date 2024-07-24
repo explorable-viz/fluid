@@ -11,6 +11,5 @@ yarn build-app
 yarn puppeteer browsers install chrome
 
 yarn serve-app &
+node -v
 node puppeteer.js
-
-
