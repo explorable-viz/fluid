@@ -89,14 +89,19 @@ drawFig divId fig = do
       selectionResult fig # unsafePartial
          (flip (view str.output) fig.out_view *** \(Env γ) -> mapWithKey view γ <*> fig.in_views)
 
+--want SelState here, to be just "Sel" - or whatever new thing with embedded constructor, so we have space to edit this
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
    (as𝕊 <$> v <*> (selState <$> v1 <*> v2)) × (to𝕊 <$> report (selState <$> γ1 <*> γ2))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
+   --needs updating the output for Sel
    v1 × γ1 = gc.bwd (v <#> unwrap >>> _.persistent)
    v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
+--gamma 0 is all data that is reactive, this is initialisable
+-- nice as we can do if you're in gamma-0, you're not inert?
+   _ = gc.bwd (topOf v )
 selectionResult fig@{ γ, dir: LinkedInputs } =
    (to𝕊 <$> report (selState <$> v1 <*> v2)) ×
       wrap (mapWithKey (\x v -> as𝕊 <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))

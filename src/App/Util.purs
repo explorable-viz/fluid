@@ -39,10 +39,13 @@ import Web.Event.EventTarget (EventTarget)
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
 type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
--- Selection has two dimensions: persistent/transient and primary/secondary. An element can be persistently
+-- Selection has two dimensions: persistent/transient and primary/secondary/inert. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
 -- clicking during mouseover visibly changes the state). Primary and secondary also need to be visually
--- distinct but not orthogonal; primary should (visually) subsume secondary.
+-- distinct but not orthogonal; primary should (visually) subsume secondary. 
+-- inert is for nodes with no descendants. 
+-- We implement ReactState, then TelState to possibly include none in a different location.
+
 newtype SelState a = SelState
    { persistent :: a
    , transient :: a
@@ -60,6 +63,23 @@ selState b1 b2 = SelState { persistent: b1, transient: b2 }
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
 
+data ReactState a = Inert | Reactive (SelState a)
+
+newtype TelState a = TelState
+   {
+     -- like ReactState, but here we shove none as a possibility via {unused, inert} = {true,false}
+     -- note that now sel will have a great deal of unused things, but this perhaps might be nicer 
+     -- if we can streamline it to "persistent or not" "primary or not"
+     -- requires streamlining of this Sel to be useful in future, but may well be so.
+     unused :: Boolean
+   , inert :: Boolean
+   , sel :: SelState a
+   }
+
+-- note that I/ T basically just a bool, done solely for 
+data 𝕀 = IInert | INone
+data 𝕋 = TSecondary | TPrimary
+data ℝ = RNone | RSecondary | RPrimary
 data 𝕊 = None | Secondary | Primary
 type Selectable a = a × SelState 𝕊
 
@@ -74,6 +94,10 @@ isSecondary (SelState { persistent, transient }) =
 isNone :: SelState 𝕊 -> 𝔹
 isNone sel = not (isPersistent sel || isTransient sel)
 
+--isInert :: SelState 𝕊 -> 𝔹
+--isInert (SelState { persistent, transient }) =
+--  persistent == Inert || transient == Inert
+
 isPersistent :: SelState 𝕊 -> 𝔹
 isPersistent (SelState { persistent }) = persistent /= None
 
@@ -82,11 +106,14 @@ isTransient (SelState { transient }) = transient /= None
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
+--compare' Inert Inert = EQ
+--compare' Inert _ = LT
+--compare' None Inert = GT
 compare' None None = EQ
 compare' None _ = LT
-compare' Secondary None = GT
 compare' Secondary Secondary = EQ
 compare' Secondary Primary = LT
+compare' Secondary _ = GT
 compare' Primary Primary = EQ
 compare' Primary _ = GT
 
@@ -113,6 +140,7 @@ as𝕊 = lift2 as𝕊'
    as𝕊' false false = None
    as𝕊' false true = Secondary
    as𝕊' true false = Primary -- "costless output", but ignore those for now
+   -- this should be Inert, defining it will be cool.
    as𝕊' true true = Primary
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
@@ -149,6 +177,7 @@ eventData = target >>> unsafeEventData
    unsafeEventData :: Maybe EventTarget -> a
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
+-- maybe we make inert unselectable
 selector :: EventType -> Selector Val
 selector = case _ of
    EventType "mousedown" -> (over SelState (report <<< \s -> s { persistent = neg s.persistent }) <$> _)
@@ -170,6 +199,7 @@ colorShade col n =
          # clamp 0 255
          # toStringAs hexadecimal
 
+-- need to consider inert things for this
 css
    :: { sel ::
            { transient ::
@@ -202,6 +232,7 @@ selClasses = joinWith " " $
    , css.sel.transient.secondary
    , css.sel.persistent.primary
    , css.sel.persistent.secondary
+   --more inert shenanigans required
    ]
 
 selClassesFor :: SelState 𝕊 -> String

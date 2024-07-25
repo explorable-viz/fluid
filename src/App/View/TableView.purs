@@ -1,4 +1,15 @@
-module App.View.TableView where
+module App.View.TableView
+   ( CellIndex
+   , FilterToggler
+   , TableView(..)
+   , TableViewHelpers
+   , TableViewState
+   , drawTable
+   , drawTable'
+   , filterToggler
+   , record_isUsed
+   , rowKey
+   ) where
 
 import Prelude
 
@@ -21,11 +32,16 @@ newtype TableView = TableView
 
 type TableViewState =
    { filter :: Boolean
+   -- this is where we'd add in UI to make this filter (3x3) or smth.
    }
 
 type TableViewHelpers =
    { rowKey :: String
    , record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
+   --, record_isUsed :: Boolean -> Dict (Val (SelState 𝕊)) -> Boolean
+   --so record_isUsed(True) is a stand in for record_isUsed(inert?) for true/false
+   -- and record_isUsed(False) is a stand in for record_isUsed(not_inert) for true/false
+   --, record_isInert :: Dict (Val (SelState 𝕊)) -> Boolean
    , cell_selClassesFor :: String -> SelState 𝕊 -> String
    -- values in table cells are not "unpacked" to Selectable but remain as Val
    , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
@@ -38,6 +54,7 @@ drawTable' :: EventListener -> Renderer TableView TableViewState
 drawTable' = drawTable
    { rowKey
    , record_isUsed
+   --, record_isInert
    , cell_selClassesFor
    , val_val: \(Val _ v) -> v
    , val_selState: \(Val α _) -> α
@@ -72,6 +89,12 @@ record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
 record_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
       k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> α))
+
+-- may be handy as a helper method, but also as a SelState S needs to adapt to ReactState
+--record_isInert :: Dict (Val (SelState 𝕊)) -> Boolean
+--record_isInert r =
+-- not <<< isEmpty $ flip filterKeys r \k ->
+--  k /= rowKey && selected (not <<< (_ == Inert) <$> (get k r # \(Val α _) -> α))
 
 cell_selClassesFor :: String -> SelState 𝕊 -> String
 cell_selClassesFor colName s
