@@ -132,6 +132,15 @@ to𝔹 = (_ <#> (_ /= None))
 to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 = (_ <#> if _ then Primary else None)
 
+--this assumes we know what inert is.
+toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
+toℝ true _ = Inert
+toℝ false sel = Reactive (to𝕊 sel)
+
+fromℝ :: ReactState 𝕊 -> SelState 𝕊
+fromℝ Inert = (SelState { persistent: None, transient: None })
+fromℝ (Reactive sel) = sel
+
 -- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 as𝕊 = lift2 as𝕊'
@@ -142,6 +151,8 @@ as𝕊 = lift2 as𝕊'
    as𝕊' true false = Primary -- "costless output", but ignore those for now
    -- this should be Inert, defining it will be cool.
    as𝕊' true true = Primary
+
+--
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
