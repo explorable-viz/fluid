@@ -56,9 +56,12 @@ process.on('uncaughtException', err => {
   process.exit(1)
 });        
 
-server.shutdown(function(err) {
-  if (err) {
-      return console.log('shutdown failed', err.message);
-  }
-  console.log('Everything is cleanly shutdown.');
-});
+const serverDown = (() => {
+  server.shutdown(function(err) {
+    if (err) {
+        return console.log('shutdown failed', err.message);
+    }
+    console.log('Everything is cleanly shutdown.');
+  });
+})();
+export {serverDown};
