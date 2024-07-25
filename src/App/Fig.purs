@@ -49,6 +49,8 @@ type Fig =
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View
+   --   , γ0 :: Env (SelState 𝔹)
+   -- , v0 :: Val (SelState 𝔹)
    }
 
 str
@@ -133,6 +135,9 @@ loadFig spec@{ inputs, imports, file, datasets } = do
       gc = focus >>> graphGC eval
       gc_dual = graphGC (withOp eval) >>> dual focus
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
+
+   --_ × γ0 = neg (gc.bwd (unwrap topOf γα))
+   --v0 × _ = neg (gc.fwd (topOf outα))
    pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
 
 codeMirrorDiv :: Endo String

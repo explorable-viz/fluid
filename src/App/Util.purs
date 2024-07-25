@@ -1,4 +1,45 @@
-module App.Util where
+module App.Util
+   ( Attrs
+   , ReactState(..)
+   , SelState(..)
+   , Selectable
+   , Selector
+   , TelState(..)
+   , ViewSelector
+   , as𝕊
+   , as𝕊2
+   , attrs
+   , at𝕊
+   , class Reflect
+   , colorShade
+   , compare'
+   , css
+   , eventData
+   , from
+   , fromℝ
+   , get_intOrNumber
+   , isNone
+   , isPersistent
+   , isPrimary
+   , isSecondary
+   , isTransient
+   , persist
+   , record
+   , runAffs_
+   , selClasses
+   , selClassesFor
+   , selState
+   , selected
+   , selectionEventData
+   , selector
+   , toℝ
+   , to𝔹
+   , to𝕊
+   , ℝ(..)
+   , 𝕀(..)
+   , 𝕊(..)
+   , 𝕋(..)
+   ) where
 
 import Prelude hiding (absurd, join)
 
@@ -142,6 +183,7 @@ fromℝ Inert = (SelState { persistent: None, transient: None })
 fromℝ (Reactive sel) = sel
 
 -- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
+-- in place currently selected
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 as𝕊 = lift2 as𝕊'
    where
@@ -152,7 +194,29 @@ as𝕊 = lift2 as𝕊'
    -- this should be Inert, defining it will be cool.
    as𝕊' true true = Primary
 
---
+at𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
+at𝕊 = lift2 at𝕊'
+   where
+   at𝕊' :: 𝔹 -> 𝔹 -> 𝕊
+   at𝕊' false false = Primary
+   at𝕊' false true = Primary
+   at𝕊' true false = None -- just abusing the lift notn and other helper methods to solve this
+   at𝕊' true true = Primary
+
+
+
+as𝕊2 :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
+as𝕊2 a b = (if c then Inert else Reactive (sel))
+   where
+   sel :: SelState 𝕊
+   sel = as𝕊 a b
+
+   t :: SelState 𝕊
+   t = at𝕊 a b
+
+   c :: Boolean
+   c = isNone t
+
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
