@@ -17,7 +17,7 @@
     "test-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
     "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
     "build-puppeteer": "yarn tidy && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js",
-    "test-puppeteer": "concurrently -k --kill-signal -s last \"yarn serve-app\" \"yarn run-test\"",
+    "test-puppeteer": "concurrently -k --kill-signal -s last \"yarn serve-app\" \"yarn run-puppeteer\"",
     "run-puppeteer": "wait-on http://127.0.0.1:8080 && \"node puppeteer.js\""
   },
   "dependencies": {
