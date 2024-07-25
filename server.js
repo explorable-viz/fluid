@@ -1,10 +1,11 @@
 const http = require('http');
 const process = require('node:process');
+require('http-shutdown').extend();
 
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Hello World\n');
-});
+}).withShutdown();
 
 server.listen(8080, () => {
   console.log('Server started');
@@ -54,3 +55,10 @@ process.on('uncaughtException', err => {
   console.log(`Uncaught Exception: ${err.message}`)
   process.exit(1)
 });        
+
+server.shutdown(function(err) {
+  if (err) {
+      return console.log('shutdown failed', err.message);
+  }
+  console.log('Everything is cleanly shutdown.');
+});
