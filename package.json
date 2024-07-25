@@ -4,6 +4,7 @@
     "clean-app": "rm -rf dist/app && mkdir -p dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app && cp -r web/pdf dist/app",
     "build-app": "yarn clean-app && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main App --to dist/app/app.js",
     "serve-app": "npx http-serve dist/app -a 127.0.0.1 -c-1",
+    "serve-app-alt": "node server.js",
     "clean-artifact": "rm -rf dist/artifact && mkdir -p dist/artifact && cp -r fluid dist/artifact && cp web/artifact.html dist/artifact/index.html && cp -r web/css dist/artifact",
     "build-artifact": "yarn clean-artifact && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Artifact --to dist/artifact/app.js",
     "serve-artifact": "yarn build-artifact && npx http-serve dist/artifact -a 127.0.0.1 -c-1",
@@ -17,7 +18,7 @@
     "test-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
     "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
     "build-puppeteer": "yarn tidy && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js",
-    "test-puppeteer": "concurrently -k --kill-signal -s last \"yarn serve-app\" \"yarn run-puppeteer\"",
+    "test-puppeteer": "concurrently -k \"yarn serve-app-alt\" \"yarn run-puppeteer\"",
     "run-puppeteer": "wait-on http://127.0.0.1:8080 && node puppeteer.js"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "d3": "^7.9.0",
     "d3-tip": "0.9.1",
     "datetime": "^0.0.3",
+    "http-server": "^14.1.1",
     "js-date": "^0.1.3",
     "purescript": "^0.15.10",
     "wait-on": "^7.2.0"
