@@ -190,8 +190,7 @@ as𝕊 = lift2 as𝕊'
    as𝕊' :: 𝔹 -> 𝔹 -> 𝕊
    as𝕊' false false = None
    as𝕊' false true = Secondary
-   as𝕊' true false = Primary -- "costless output", but ignore those for now
-   -- this should be Inert, defining it will be cool.
+   as𝕊' true false = Primary -- the other atS method makes this case a) not run, as lazy compiler, and b) be replaced by Inert
    as𝕊' true true = Primary
 
 at𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
@@ -203,20 +202,17 @@ at𝕊 = lift2 at𝕊'
    at𝕊' true false = None -- just abusing the lift notn and other helper methods to solve this
    at𝕊' true true = Primary
 
-
-
 as𝕊2 :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 as𝕊2 a b = (if c then Inert else Reactive (sel))
    where
-   sel :: SelState 𝕊
-   sel = as𝕊 a b
-
    t :: SelState 𝕊
    t = at𝕊 a b
 
    c :: Boolean
    c = isNone t
 
+   sel :: SelState 𝕊
+   sel = as𝕊 a b
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
