@@ -34,10 +34,7 @@ module App.Util
    , toℝ
    , to𝔹
    , to𝕊
-   , ℝ(..)
-   , 𝕀(..)
    , 𝕊(..)
-   , 𝕋(..)
    ) where
 
 import Prelude hiding (absurd, join)
@@ -117,9 +114,9 @@ newtype TelState a = TelState
    }
 
 -- note that I/ T basically just a bool, done solely for 
-data 𝕀 = IInert | INone
-data 𝕋 = TSecondary | TPrimary
-data ℝ = RNone | RSecondary | RPrimary
+--data 𝕀 = IInert | INone
+--data 𝕋 = TSecondary | TPrimary
+--data ℝ = RNone | RSecondary | RPrimary
 data 𝕊 = None | Secondary | Primary
 type Selectable a = a × SelState 𝕊
 

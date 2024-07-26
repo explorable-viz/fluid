@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, Selector, 𝕊, as𝕊, selState, fromℝ, toℝ, asℝ)
+import App.Util (SelState, Selector, 𝕊, selState, fromℝ, toℝ, asℝ)
 import App.Util.Selector (envVal)
 import App.View (View, drawView, view)
 import App.View.Util (HTMLId)
@@ -106,7 +106,7 @@ selectionResult fig@{ v, dir: LinkedOutputs } =
    _ × γ0 = neg (gc.bwd (topOf v))
 selectionResult fig@{ γ, dir: LinkedInputs } =
    (fromℝ <$> (toℝ <$> v0 <*> report (selState <$> v1 <*> v2))) ×
-      wrap (mapWithKey (\x v -> as𝕊 <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
+      wrap (mapWithKey (\x v -> fromℝ <$> (asℝ <$> get x γ <*> v)) (unwrap (selState <$> γ1 <*> γ2)))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
