@@ -6,10 +6,9 @@ module App.Util
    , Selector
    , TelState(..)
    , ViewSelector
+   , asℝ
    , as𝕊
-   , as𝕊2
    , attrs
-   , at𝕊
    , class Reflect
    , colorShade
    , compare'
@@ -193,6 +192,7 @@ as𝕊 = lift2 as𝕊'
    as𝕊' true false = Primary -- the other atS method makes this case a) not run, as lazy compiler, and b) be replaced by Inert
    as𝕊' true true = Primary
 
+-- purely a helper method for asR
 at𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 at𝕊 = lift2 at𝕊'
    where
@@ -202,8 +202,8 @@ at𝕊 = lift2 at𝕊'
    at𝕊' true false = None -- just abusing the lift notn and other helper methods to solve this
    at𝕊' true true = Primary
 
-as𝕊2 :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-as𝕊2 a b = (if c then Inert else Reactive (sel))
+asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
+asℝ a b = (if c then Inert else Reactive (sel))
    where
    t :: SelState 𝕊
    t = at𝕊 a b

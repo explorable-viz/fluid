@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, Selector, 𝕊, as𝕊, selState, to𝕊, fromℝ, toℝ)
+import App.Util (SelState, Selector, 𝕊, as𝕊, selState, to𝕊, fromℝ, toℝ, asℝ)
 import App.Util.Selector (envVal)
 import App.View (View, drawView, view)
 import App.View.Util (HTMLId)
@@ -49,8 +49,8 @@ type Fig =
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View
-   --   , γ0 :: Env (SelState 𝔹)
-   -- , v0 :: Val (SelState 𝔹)
+   --  , γ0 :: Env (SelState 𝔹)
+   --, v0 :: Val (SelState 𝔹)
    }
 
 str
@@ -94,7 +94,7 @@ drawFig divId fig = do
 --want SelState here, to be just "Sel" - or whatever new thing with embedded constructor, so we have space to edit this
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
-   (as𝕊 <$> v <*> (selState <$> v1 <*> v2)) × (fromℝ <$> (toℝ <$> γ0 <*> report (selState <$> γ1 <*> γ2)))
+   (fromℝ <$> (asℝ <$> v <*> (selState <$> v1 <*> v2))) × (fromℝ <$> (toℝ <$> γ0 <*> report (selState <$> γ1 <*> γ2)))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
@@ -136,8 +136,8 @@ loadFig spec@{ inputs, imports, file, datasets } = do
       gc_dual = graphGC (withOp eval) >>> dual focus
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
-   --_ × γ0 = neg (gc.bwd (unwrap topOf γα))
-   --v0 × _ = neg (gc.fwd (topOf outα))
+   --(_ × γ0) = neg (gc.bwd ({inα: outα}))
+   --(v0 × _) = neg (gc.fwd (topOf γα))
    pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
 
 codeMirrorDiv :: Endo String
