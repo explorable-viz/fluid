@@ -19,7 +19,7 @@
     "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
     "build-puppeteer": "yarn tidy && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js",
     "test-puppeteer": "concurrently \"yarn serve-app-alt\" \"yarn run-puppeteer\"",
-    "run-puppeteer": "wait-on http://127.0.0.1:8080 && node puppeteer.js "
+    "run-puppeteer": "wait-on http://127.0.0.1:8080 && node puppeteer.js && node server-shutdown.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",

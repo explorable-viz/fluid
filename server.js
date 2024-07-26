@@ -54,14 +54,24 @@ process.on('SIGINT', () => {
 process.on('uncaughtException', err => {
   console.log(`Uncaught Exception: ${err.message}`)
   process.exit(1)
-});        
+});    
 
-const serverDown = (() => {
+function moo(){
+  server.close();
+}
+
+module.exports = {moo};
+  /*
+function serverDown() {
+  server.close();
+
   server.shutdown(function(err) {
     if (err) {
         return console.log('shutdown failed', err.message);
     }
     console.log('Everything is cleanly shutdown.');
   });
-})();
-export {serverDown};
+
+};
+module.exports = {serverDown};
+  */
