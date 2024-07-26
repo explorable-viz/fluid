@@ -1,6 +1,8 @@
 name: v0.3.1-typescript
 
 on:
+  schedule:
+    - cron: '0 0 * * 0' # every Sunday at midnight UTC
   push:
     branches:
       - 'v0.3.1'
@@ -8,9 +10,9 @@ on:
 
 jobs:
   test-and-deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         ref: 'v0.3.1'
     - name: test
