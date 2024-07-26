@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, Selector, 𝕊, as𝕊, selState, to𝕊, fromℝ, toℝ, asℝ)
+import App.Util (SelState, Selector, 𝕊, as𝕊, selState, fromℝ, toℝ, asℝ)
 import App.Util.Selector (envVal)
 import App.View (View, drawView, view)
 import App.View.Util (HTMLId)
@@ -105,13 +105,14 @@ selectionResult fig@{ v, dir: LinkedOutputs } =
    -- nice as we can do if you're in gamma-0, you're not inert?
    _ × γ0 = neg (gc.bwd (topOf v))
 selectionResult fig@{ γ, dir: LinkedInputs } =
-   (to𝕊 <$> report (selState <$> v1 <*> v2)) ×
+   (fromℝ <$> (toℝ <$> v0 <*> report (selState <$> v1 <*> v2))) ×
       wrap (mapWithKey (\x v -> as𝕊 <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
    γ1 × v1 = gc.bwd (γ <#> unwrap >>> _.persistent)
    γ2 × v2 = gc.bwd (γ <#> unwrap >>> _.transient)
+   _ × v0 = neg (gc.bwd (topOf γ))
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
