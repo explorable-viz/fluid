@@ -3,7 +3,10 @@
 import * as d3 from "d3"
 
 function setSelState (
-   { cell_attrs },
+   { 
+      hBorder_attrs, 
+      vBorder_attrs
+   },
    {
       selState,
       selClasses,
@@ -32,12 +35,12 @@ function setSelState (
 
    rootElement.selectAll('.matrix-cell-hBorder').each(function (hBorder) {
       d3.select(this)
-         .attrs(cell_attrs(matrix)(hBorder)) // something like this...
+         .attrs(hBorder_attrs(matrix)(hBorder)) // something like this...
    })
 
    rootElement.selectAll('.matrix-cell-vBorder').each(function (vBorder) {
       d3.select(this)
-         .attrs(cell_attrs(matrix)(vBorder))
+         .attrs(vBorder_attrs(matrix)(vBorder))
    })
 }
 
@@ -162,7 +165,7 @@ function drawMatrix_ (
                .attr('y1', ({i}) => i * h)
                .attr('x2', ({j}) => j * w)
                .attr('y2', ({i}) => i * h)
-               .attr('visibility', 'hidden')
+               //.attr('visibility', 'hidden')
                .attr('class', 'matrix-cell-hBorder')
          });
 
@@ -188,7 +191,7 @@ function drawMatrix_ (
                .attr('y1', ({i}) => (i - 1) * h)
                .attr('x2', ({j}) => j * w)
                .attr('y2', ({i}) => i * h)
-               .attr('visibility', 'hidden')
+               //.attr('visibility', 'hidden')
                .attr('class', 'matrix-cell-vBorder')
          });
       }
