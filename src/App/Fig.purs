@@ -49,8 +49,8 @@ type Fig =
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View
-   --  , γ0 :: Env (SelState 𝔹)
-   --, v0 :: Val (SelState 𝔹)
+   , γ0 :: Env (𝔹)
+   , v0 :: Val (𝔹)
    }
 
 str
@@ -93,7 +93,7 @@ drawFig divId fig = do
 
 --want SelState here, to be just "Sel" - or whatever new thing with embedded constructor, so we have space to edit this
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
-selectionResult fig@{ v, dir: LinkedOutputs } =
+selectionResult fig@{ γ0, v, dir: LinkedOutputs } =
    (fromℝ <$> (asℝ <$> v <*> (selState <$> v1 <*> v2))) × (fromℝ <$> (toℝ <$> γ0 <*> report (selState <$> γ1 <*> γ2)))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
@@ -101,10 +101,10 @@ selectionResult fig@{ v, dir: LinkedOutputs } =
    --needs updating the output for Sel
    v1 × γ1 = gc.bwd (v <#> unwrap >>> _.persistent)
    v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
-   --gamma 0 is all data that is reactive, this is initialisable
-   -- nice as we can do if you're in gamma-0, you're not inert?
-   _ × γ0 = neg (gc.bwd (topOf v))
-selectionResult fig@{ γ, dir: LinkedInputs } =
+--gamma 0 is all data that is reactive, this is initialisable
+-- nice as we can do if you're in gamma-0, you're not inert?
+--_ × γ0 = neg (gc.bwd (topOf v))
+selectionResult fig@{ v0, γ, dir: LinkedInputs } =
    (fromℝ <$> (toℝ <$> v0 <*> report (selState <$> v1 <*> v2))) ×
       wrap (mapWithKey (\x v -> fromℝ <$> (asℝ <$> get x γ <*> v)) (unwrap (selState <$> γ1 <*> γ2)))
    where
@@ -112,7 +112,8 @@ selectionResult fig@{ γ, dir: LinkedInputs } =
    GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
    γ1 × v1 = gc.bwd (γ <#> unwrap >>> _.persistent)
    γ2 × v2 = gc.bwd (γ <#> unwrap >>> _.transient)
-   _ × v0 = neg (gc.bwd (topOf γ))
+
+--_ × v0 = neg (gc.bwd (topOf γ))
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
@@ -137,9 +138,9 @@ loadFig spec@{ inputs, imports, file, datasets } = do
       gc_dual = graphGC (withOp eval) >>> dual focus
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
-   --(_ × γ0) = neg (gc.bwd ({inα: outα}))
-   --(v0 × _) = neg (gc.fwd (topOf γα))
-   pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
+      γ0 = neg (unwrap gc).bwd (botOf outα)
+      v0 = neg (unwrap gc).fwd (topOf γα)
+   pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing, γ0, v0 }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)

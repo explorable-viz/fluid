@@ -170,9 +170,7 @@ to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 = (_ <#> if _ then Primary else None)
 
 --this assumes we know what inert is.
-toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-toℝ true _ = Inert
-toℝ false sel = Reactive (to𝕊 sel)
+
 
 fromℝ :: ReactState 𝕊 -> SelState 𝕊
 fromℝ Inert = (SelState { persistent: None, transient: None })
@@ -198,6 +196,10 @@ at𝕊 = lift2 at𝕊'
    at𝕊' false true = Primary
    at𝕊' true false = None -- just abusing the lift notn and other helper methods to solve this
    at𝕊' true true = Primary
+   
+toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
+toℝ true _ = Inert
+toℝ false sel = Reactive (to𝕊 sel)
 
 asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 asℝ a b = (if c then Inert else Reactive (sel))
