@@ -200,6 +200,7 @@ at𝕊 = lift2 at𝕊'
 toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 toℝ true _ = Inert
 toℝ false sel = Reactive (to𝕊 sel)
+
 {-
 asℝ :: 𝔹 -> SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 asℝ true _ _ = Inert
