@@ -59,7 +59,7 @@ view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
    TableView' vwState (TableView { title, table: record identity <$> from u })
    where
    vwState = case vw of
-      Nothing -> { filter: true }
+      Nothing -> { filter: false }
       Just (TableView' vwState' _) -> vwState'
 
 drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit

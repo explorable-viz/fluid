@@ -138,8 +138,8 @@ loadFig spec@{ inputs, imports, file, datasets } = do
       gc_dual = graphGC (withOp eval) >>> dual focus
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
-      γ0 = neg (unwrap gc).bwd (botOf outα)
-      v0 = neg (unwrap gc).fwd (topOf γα)
+      γ0 = neg (unwrap gc).bwd (topOf outα)
+      v0 = neg (unwrap gc_dual).bwd (topOf γα)
    pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing, γ0, v0 }
 
 codeMirrorDiv :: Endo String

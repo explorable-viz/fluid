@@ -150,7 +150,7 @@ compare' None None = EQ
 compare' None _ = LT
 compare' Secondary Secondary = EQ
 compare' Secondary Primary = LT
-compare' Secondary _ = GT
+compare' Secondary None = GT
 compare' Primary Primary = EQ
 compare' Primary _ = GT
 
@@ -171,7 +171,6 @@ to𝕊 = (_ <#> if _ then Primary else None)
 
 --this assumes we know what inert is.
 
-
 fromℝ :: ReactState 𝕊 -> SelState 𝕊
 fromℝ Inert = (SelState { persistent: None, transient: None })
 fromℝ (Reactive sel) = sel
@@ -188,6 +187,7 @@ as𝕊 = lift2 as𝕊'
    as𝕊' true true = Primary
 
 -- purely a helper method for asR
+
 at𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 at𝕊 = lift2 at𝕊'
    where
@@ -196,22 +196,23 @@ at𝕊 = lift2 at𝕊'
    at𝕊' false true = Primary
    at𝕊' true false = None -- just abusing the lift notn and other helper methods to solve this
    at𝕊' true true = Primary
-   
+
 toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 toℝ true _ = Inert
 toℝ false sel = Reactive (to𝕊 sel)
-
+{-
+asℝ :: 𝔹 -> SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
+asℝ true _ _ = Inert
+asℝ false sel1 sel2 = Reactive (as𝕊 sel1 sel2)
+-}
 asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-asℝ a b = (if c then Inert else Reactive (sel))
+asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
    where
    t :: SelState 𝕊
    t = at𝕊 a b
 
    c :: Boolean
    c = isNone t
-
-   sel :: SelState 𝕊
-   sel = as𝕊 a b
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
