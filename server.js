@@ -1,3 +1,4 @@
+/*
 const http = require('http');
 const process = require('node:process');
 require('http-shutdown').extend();
@@ -21,7 +22,7 @@ server.on('connection', (connection) => {
     });
   });
 });
-
+*/
 function closeConnections() {
   console.log('Closing connections');
   connections.forEach((connection) => {
