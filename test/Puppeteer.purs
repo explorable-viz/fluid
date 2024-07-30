@@ -30,5 +30,3 @@ main = do
       T.close browser
    log "In Puppeteer.purs"
 
-
-
