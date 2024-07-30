@@ -4,8 +4,8 @@ import * as d3 from "d3"
 
 function setSelState (
    { 
-      hBorder_attrs, 
-      vBorder_attrs
+      isHBorderExterior, 
+      isVBorderExterior
    },
    {
       selState,
@@ -35,12 +35,12 @@ function setSelState (
 
    rootElement.selectAll('.matrix-cell-hBorder').each(function (hBorder) {
       d3.select(this)
-         .attrs(hBorder_attrs(matrix)(hBorder)) // something like this...
+         .attr("visibility", isHBorderExterior(matrix)(hBorder) ? null : "hidden")
    })
 
    rootElement.selectAll('.matrix-cell-vBorder').each(function (vBorder) {
       d3.select(this)
-         .attrs(vBorder_attrs(matrix)(vBorder))
+         .attr("visibility", isVBorderExterior(matrix)(vBorder) ? null : "hidden")
    })
 }
 
@@ -145,7 +145,6 @@ function drawMatrix_ (
          
          const hBordersGrp = bordersGrp
             .append('g')
-            .classed('matrix-hBorders-group', true)
 
          // group for each row of horizontal borders
          const hBordersRowGrps = hBordersGrp
@@ -153,7 +152,6 @@ function drawMatrix_ (
             .data(d3.range(matrix.i + 1))
             .enter()
             .append('g')
-            .attr('class', 'matrix-hBorders-row-group')
 
          hBordersRowGrps.each(function(d) {
             d3.select(this)
@@ -165,13 +163,11 @@ function drawMatrix_ (
                .attr('y1', ({i}) => i * h)
                .attr('x2', ({j}) => j * w)
                .attr('y2', ({i}) => i * h)
-               //.attr('visibility', 'hidden')
                .attr('class', 'matrix-cell-hBorder')
          });
 
          const vBordersGrp = bordersGrp
             .append('g')
-            .classed('matrix-vBorders-group', true)
 
          // group for each row of vertical borders
          const vBordersRowGrps = vBordersGrp
@@ -179,7 +175,6 @@ function drawMatrix_ (
          .data(d3.range(1, matrix.i + 1), i => i)
          .enter()
          .append('g')
-         .attr('class', 'matrix-vBorders-row-group')
    
          vBordersRowGrps.each(function(d) {
             d3.select(this)
@@ -191,7 +186,6 @@ function drawMatrix_ (
                .attr('y1', ({i}) => (i - 1) * h)
                .attr('x2', ({j}) => j * w)
                .attr('y2', ({i}) => i * h)
-               //.attr('visibility', 'hidden')
                .attr('class', 'matrix-cell-vBorder')
          });
       }
