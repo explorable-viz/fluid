@@ -1,4 +1,4 @@
-/*
+
 const http = require('http');
 const process = require('node:process');
 require('http-shutdown').extend();
@@ -22,7 +22,7 @@ server.on('connection', (connection) => {
     });
   });
 });
-*/
+
 function closeConnections() {
   console.log('Closing connections');
   connections.forEach((connection) => {
@@ -57,22 +57,3 @@ process.on('uncaughtException', err => {
   process.exit(1)
 });    
 
-function moo(){
-  server.close();
-}
-
-module.exports = {moo};
-  /*
-function serverDown() {
-  server.close();
-
-  server.shutdown(function(err) {
-    if (err) {
-        return console.log('shutdown failed', err.message);
-    }
-    console.log('Everything is cleanly shutdown.');
-  });
-
-};
-module.exports = {serverDown};
-  */

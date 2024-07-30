@@ -1,5 +1,5 @@
 const http = require('http');
-const process = require('node:process');
+const puppeteer = require('puppeteer');
 require('http-shutdown').extend();
 
 const server = http.createServer((req, res) => {
@@ -11,37 +11,26 @@ server.listen(8080, () => {
   console.log('Server started');
 });
 
-let connections = [];
-
-server.on('connection', (connection) => {
-  connections.push(connection);
-  connection.on('close', () => {
-    connections = connections.filter((curr) => {
-      return curr !== connection;
+(async () => {
+  try {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto('http://127.0.0.1:8080');
+    const content = await page.content();
+    console.log(content);
+        await browser.close();
+      } catch (error) {
+        console.error('Error:', error);
+      }
+      console.log('Running tests')
+    server.shutdown(function(err) {
+      if (err) {
+          return console.log('shutdown failed', err.message);
+      }
+      console.log('Everything is cleanly shutdown.');
     });
-  });
-});
-/////////
-function serverDown() {
-  server.close();
-  server.shutdown(function(err) {
-    if (err) {
-        return console.log('shutdown failed', err.message);
-    }
-    console.log('Everything is cleanly shutdown.');
-  });
-};
-module.exports = {serverDown};
-/////////
+    })();
 
-import('./output-es/Test.Puppeteer/index.js').then(({ main }) => {
-    main();
-    //serverDown();
-  }).catch(err => {
-    console.error("Failed to load PureScript output:", err);
-  });
-
-///////////
 
 
 
