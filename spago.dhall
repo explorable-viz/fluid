@@ -8,7 +8,6 @@ You can edit this file as you like.
   , "affjax"
   , "affjax-web"
   , "arrays"
-  , "assert"
   , "bifunctors"
   , "console"
   , "control"
