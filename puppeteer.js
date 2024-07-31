@@ -1,15 +1,22 @@
 const http = require('http');
+const express = require('express');
+const serve = require('express-static');
 const puppeteer = require('puppeteer');
 require('http-shutdown').extend();
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Server created\n');
+const app = express();
+
+app.use(serve(__dirname + '/dist/app'));
+
+const server = app.listen(8080, function(){
+  console.log("Server running");
 }).withShutdown();
 
+/*
 server.listen(8080, () => {
   console.log('Server started');
 });
+*/
 
 (async () => {
   try {
