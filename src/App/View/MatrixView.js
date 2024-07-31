@@ -61,7 +61,7 @@ function drawMatrix_ (
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const strokeWidth = 0.5
-      const highlightStrokeWidth = 1.5
+      const highlightStrokeWidth = 0.5
       const highlightStrokeColor = 'blue'
       const w = 30, h = 30
 
