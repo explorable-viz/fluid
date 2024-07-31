@@ -2,20 +2,11 @@ module Test.Puppeteer where
 
 import Prelude
 
-import Data.String as String
 import Effect (Effect)
 import Effect.Aff (launchAff_)
---import Test.Assert (assertEqual)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
---import Test.Assert as Assert
 import Toppokki as T
-
---import Data.String as String
-
--- Function to check if a string is non-empty
-isNotEmpty :: String -> Boolean
-isNotEmpty str = String.length str > 0
 
 main :: Effect Unit
 main = do

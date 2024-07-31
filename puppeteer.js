@@ -12,6 +12,7 @@ const server = app.listen(8080, function(){
   console.log("Server running");
 }).withShutdown();    
 
+/*
 (async () => {
   try {
     await import('./output-es/Test.Puppeteer/index.js').then(({ main }) => {
@@ -33,12 +34,10 @@ const server = app.listen(8080, function(){
   
 })();
 
-    
+*/
 
-      
-    /*
 
-  (async () => {
+(async () => {
   try {
     console.log('Launching browser')
     const browser = await puppeteer.launch();
@@ -61,5 +60,5 @@ const server = app.listen(8080, function(){
     console.log('Everything is cleanly shutdown.');
   });
 })();
-*/
+
   
