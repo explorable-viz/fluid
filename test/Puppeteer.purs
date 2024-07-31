@@ -29,4 +29,3 @@ main = do
       --liftEffect (Assert.assertTrue' "Graph exists" (String.contains (String.Pattern "fig-4") content))
       T.close browser
    log "In Puppeteer.purs"
-
