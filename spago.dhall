@@ -5,6 +5,7 @@ You can edit this file as you like.
 { name = ""
 , dependencies =
   [ "aff"
+  , "aff-promise"
   , "affjax"
   , "affjax-web"
   , "arrays"
