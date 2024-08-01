@@ -1,8 +1,12 @@
-module App.View.BarChart where
+module App.View.BarChart
+   ( Bar(..)
+   , BarChart(..)
+   , StackedBar(..)
+   ) where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
+import App.Util (class Reflect, ReactState, Relectable, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, get_intOrNumberℝ, record, recordℝ)
 import App.Util.Selector (barChart, barSegment)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
@@ -30,6 +34,21 @@ newtype StackedBar = StackedBar
 newtype Bar = Bar
    { y :: Selectable String
    , z :: Selectable Number
+   }
+
+newtype RBarChart = RBarChart
+   { caption :: Relectable String
+   , stackedBars :: Array RStackedBar
+   }
+
+newtype RStackedBar = RStackedBar
+   { x :: Relectable String
+   , bars :: Array RBar
+   }
+
+newtype RBar = RBar
+   { y :: Relectable String
+   , z :: Relectable Number
    }
 
 type BarChartHelpers =
@@ -68,6 +87,24 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
    from r = Bar
       { y: unpack string (get f_y r)
       , z: get_intOrNumber f_z r
+      }
+
+instance Reflect (Dict (Val (ReactState 𝕊))) RBarChart where
+   from r = RBarChart
+      { caption: unpack string (get f_caption r)
+      , stackedBars: recordℝ from <$> from (get f_data r)
+      }
+
+instance Reflect (Dict (Val (ReactState 𝕊))) RStackedBar where
+   from r = RStackedBar
+      { x: unpack string (get f_x r)
+      , bars: recordℝ from <$> from (get f_bars r)
+      }
+
+instance Reflect (Dict (Val (ReactState 𝕊))) RBar where
+   from r = RBar
+      { y: unpack string (get f_y r)
+      , z: get_intOrNumberℝ f_z r
       }
 
 -- see data binding in .js

@@ -1,5 +1,6 @@
 module App.Util
    ( Attrs
+   , Relectable
    , ReactState(..)
    , SelState(..)
    , Selectable
@@ -9,6 +10,7 @@ module App.Util
    , asℝ
    , as𝕊
    , attrs
+   , cheatToℝ
    , class Reflect
    , colorShade
    , compare'
@@ -17,6 +19,7 @@ module App.Util
    , from
    , fromℝ
    , get_intOrNumber
+   , get_intOrNumberℝ
    , isNone
    , isPersistent
    , isPrimary
@@ -24,6 +27,7 @@ module App.Util
    , isTransient
    , persist
    , record
+   , recordℝ
    , runAffs_
    , selClasses
    , selClassesFor
@@ -119,6 +123,17 @@ newtype TelState a = TelState
 --data ℝ = RNone | RSecondary | RPrimary
 data 𝕊 = None | Secondary | Primary
 type Selectable a = a × SelState 𝕊
+
+type Relectable a = a × ReactState 𝕊
+
+{-
+cheatToRSelectable :: forall a. Selectable a -> Relectable a
+cheatToRSelectable a = (cheatToℝ <$> (a))
+
+
+fromRSelectable :: forall a. Relectable a -> Selectable a
+fromRSelectable a = (fromℝ <$> (a))
+-}
 
 isPrimary :: SelState 𝕊 -> 𝔹
 isPrimary (SelState { persistent, transient }) =
@@ -218,10 +233,20 @@ asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
+get_intOrNumberℝ :: Var -> Dict (Val (ReactState 𝕊)) -> Relectable Number
+get_intOrNumberℝ x r = first as (unpack intOrNumber (get x r))
+
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val (SelState 𝕊)) -> a) -> Val (SelState 𝕊) -> a
 record toRecord (Val _ v) = toRecord (P.record2.unpack v)
 
+cheatToℝ :: SelState 𝕊 -> ReactState 𝕊
+cheatToℝ sel = (Reactive sel)
+
+recordℝ :: forall a. (Dict (Val (ReactState 𝕊)) -> a) -> Val (ReactState 𝕊) -> a
+recordℝ toRecord (Val _ v) = toRecord (P.record2.unpack v)
+
+-- edit the reflect class next
 class Reflect a b where
    from :: Partial => a -> b
 
@@ -233,6 +258,13 @@ instance Reflect (Val (SelState 𝕊)) (Array (Val (SelState 𝕊))) where
 -- Discard both constructor-level annotations and key annotations.
 instance Reflect (Val (SelState 𝕊)) (Dict (Val (SelState 𝕊))) where
    from (Val _ (Dictionary (DictRep d))) = d <#> snd
+
+instance Reflect (Val (ReactState 𝕊)) (Dict (Val (ReactState 𝕊))) where
+   from (Val _ (Dictionary (DictRep d))) = d <#> snd
+
+instance Reflect (Val (ReactState 𝕊)) (Array (Val (ReactState 𝕊))) where
+   from (Val _ (Constr c Nil)) | c == cNil = []
+   from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
 
 runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
 runAffs_ f as = flip runAff_ (sequence as) case _ of

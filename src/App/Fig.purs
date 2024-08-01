@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, Selector, 𝕊, selState, fromℝ, toℝ, asℝ)
+import App.Util (ReactState, SelState, Selector, 𝕊, asℝ, selState, toℝ)
 import App.Util.Selector (envVal)
 import App.View (View, drawView, view)
 import App.View.Util (HTMLId)
@@ -92,9 +92,9 @@ drawFig divId fig = do
          (flip (view str.output) fig.out_view *** \(Env γ) -> mapWithKey view γ <*> fig.in_views)
 
 --want SelState here, to be just "Sel" - or whatever new thing with embedded constructor, so we have space to edit this
-selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
+selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
 selectionResult fig@{ γ0, v, dir: LinkedOutputs } =
-   (fromℝ <$> (asℝ <$> v <*> (selState <$> v1 <*> v2))) × (fromℝ <$> (toℝ <$> γ0 <*> report (selState <$> γ1 <*> γ2)))
+   (asℝ <$> v <*> (selState <$> v1 <*> v2)) × (toℝ <$> γ0 <*> report (selState <$> γ1 <*> γ2))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
@@ -105,8 +105,8 @@ selectionResult fig@{ γ0, v, dir: LinkedOutputs } =
 -- nice as we can do if you're in gamma-0, you're not inert?
 --_ × γ0 = neg (gc.bwd (topOf v))
 selectionResult fig@{ v0, γ, dir: LinkedInputs } =
-   (fromℝ <$> (toℝ <$> v0 <*> report (selState <$> v1 <*> v2))) ×
-      wrap (mapWithKey (\x v -> fromℝ <$> (asℝ <$> get x γ <*> v)) (unwrap (selState <$> γ1 <*> γ2)))
+   (toℝ <$> v0 <*> report (selState <$> v1 <*> v2)) ×
+      wrap (mapWithKey (\x v -> asℝ <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
