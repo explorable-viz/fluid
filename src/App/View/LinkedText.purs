@@ -5,8 +5,9 @@ import Prelude
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
 
-newtype LinkedText = LinkedText {
-   
-}
+newtype LinkedText = LinkedText
+   {
 
-type LinkedTextHelpers = {} 
+   }
+
+type LinkedTextHelpers = {}

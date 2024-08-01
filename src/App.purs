@@ -37,11 +37,12 @@ fig3 =
    }
 
 fig4 :: FigSpec
-fig4 = { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
-       , imports: []
-       , file: File "graphics/small-barchart"
-       , inputs: [ "renewables" ]
-       }
+fig4 =
+   { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
+   , imports: []
+   , file: File "graphics/small-barchart"
+   , inputs: [ "renewables" ]
+   }
 
 main :: Effect Unit
 main = do
