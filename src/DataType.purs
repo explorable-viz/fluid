@@ -112,7 +112,8 @@ f_xlabel = "xlabel" :: FieldName
 f_ylabel = "ylabel" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
-
+f_contents = "contents" :: FieldName
+f_val = "val" :: FieldName
 dataTypes :: List DataType
 dataTypes = L.fromFoldable
    [
