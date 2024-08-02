@@ -9,6 +9,7 @@ yarn purs-tidy check src/**/*.purs test/**/*.purs
 #yarn test
 yarn build-app
 yarn puppeteer browsers install chrome
+yarn spago install aff-promise
 
 yarn build-puppeteer
 yarn test-puppeteer
