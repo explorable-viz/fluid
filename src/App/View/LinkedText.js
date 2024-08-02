@@ -9,6 +9,17 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
-function drawLinkedText_ ( ) { }
+function drawLinkedText_ (
+   linkedTextHelpers,
+   {
+      uiHelpers,
+      divId,
+      suffix,
+      view: {
+         contents
+      }
+   },
+   listener
+) { }
 
 export var drawLinkedText = x1 => x2 => x3 => drawLinkedText_()

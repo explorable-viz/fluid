@@ -49,6 +49,12 @@ barSegment :: Int -> Int -> Endo (Selector Val)
 barSegment i j =
    field f_z >>> listElement j >>> field f_bars >>> listElement i >>> field f_data
 
+textElem :: Int -> Endo (Selector Val)
+textElem = error "todo"
+
+linkedText :: Endo (Selector Val)
+linkedText = error "todo"
+
 matrixElement :: Int -> Int -> Endo (Selector Val)
 matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv r
 matrixElement _ _ _ _ = error absurd
