@@ -1,14 +1,17 @@
 module App.View.BarChart
    ( Bar(..)
    , BarChart(..)
+   , RBar(..)
+   , RBarChart(..)
+   , RStackedBar(..)
    , StackedBar(..)
    ) where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, Relectable, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, get_intOrNumberℝ, record, recordℝ)
+import App.Util (fromℝ, class Reflect, ReactState, Relectable, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, get_intOrNumberℝ, record, recordℝ)
 import App.Util.Selector (barChart, barSegment)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, Renderer, RRenderer, selListener, uiHelpers, uiRHelpers)
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
@@ -38,12 +41,12 @@ newtype Bar = Bar
 
 newtype RBarChart = RBarChart
    { caption :: Relectable String
-   , stackedBars :: Array RStackedBar
+   , rstackedBars :: Array RStackedBar
    }
 
 newtype RStackedBar = RStackedBar
    { x :: Relectable String
-   , bars :: Array RBar
+   , rbars :: Array RBar
    }
 
 newtype RBar = RBar
@@ -56,7 +59,14 @@ type BarChartHelpers =
    , tickEvery :: Int -> Int
    }
 
+type RBarChartHelpers =
+   { rbar_attrs :: (Int -> String) -> RBarChart -> BarSegmentCoordinate -> Object String
+   , tickEvery :: Int -> Int
+   }
+
 foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart Unit
+
+foreign import drawRBarChart :: RBarChartHelpers -> RRenderer RBarChart Unit
 
 drawBarChart' :: Renderer BarChart Unit
 drawBarChart' = drawBarChart
@@ -64,9 +74,22 @@ drawBarChart' = drawBarChart
    , tickEvery
    }
 
+drawRBarChart' :: RRenderer RBarChart Unit
+drawRBarChart' = drawRBarChart
+   { rbar_attrs
+   , tickEvery
+   }
+
 instance Drawable BarChart Unit where
    draw divId suffix redraw view viewState =
       drawBarChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
+      where
+      barChartSelector :: ViewSelector BarSegmentCoordinate
+      barChartSelector { i, j } = barSegment i j >>> barChart
+
+instance Drawable RBarChart Unit where
+   draw divId suffix redraw view viewState =
+      drawRBarChart' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
       where
       barChartSelector :: ViewSelector BarSegmentCoordinate
       barChartSelector { i, j } = barSegment i j >>> barChart
@@ -92,13 +115,13 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
 instance Reflect (Dict (Val (ReactState 𝕊))) RBarChart where
    from r = RBarChart
       { caption: unpack string (get f_caption r)
-      , stackedBars: recordℝ from <$> from (get f_data r)
+      , rstackedBars: recordℝ from <$> from (get f_data r)
       }
 
 instance Reflect (Dict (Val (ReactState 𝕊))) RStackedBar where
    from r = RStackedBar
       { x: unpack string (get f_x r)
-      , bars: recordℝ from <$> from (get f_bars r)
+      , rbars: recordℝ from <$> from (get f_bars r)
       }
 
 instance Reflect (Dict (Val (ReactState 𝕊))) RBar where
@@ -131,6 +154,33 @@ bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
    StackedBar { bars } = stackedBars ! i
    Bar { z } = bars ! j
    SelState { persistent, transient } = snd z
+   col = indexCol j
+
+rbar_attrs :: (Int -> String) -> RBarChart -> BarSegmentCoordinate -> Object String
+rbar_attrs indexCol (RBarChart { rstackedBars }) { i, j } =
+   fromFoldable
+      [ "fill" ↦ case persistent of
+           None -> col
+           Secondary -> "url(#diagonalHatch-" <> show j <> ")"
+           Primary -> colorShade col (-40)
+      , "stroke-width" ↦ "1.5"
+      , "stroke-dasharray" ↦ case transient of
+           None -> "none"
+           Secondary -> "1 2"
+           Primary -> "2 2"
+      , "stroke-linecap" ↦ "round"
+      , "stroke" ↦
+           if persistent /= None || transient /= None then colorShade col (-70)
+           else col
+      ]
+   where
+   -- let's mess around to get inert a thing here, because for whatever reason we encode bar chart directly/
+
+   -- ok, so task is to make the Relectable thing out here as not a problem, which is a little more unpacking required.
+   RStackedBar { rbars } = rstackedBars ! i
+   RBar { z } = rbars ! j
+   --if z is inert, then what on earth do we do here?
+   SelState { persistent, transient } = fromℝ (snd z)
    col = indexCol j
 
 tickEvery :: Int -> Int

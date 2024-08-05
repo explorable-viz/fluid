@@ -2,9 +2,9 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (ReactState, ViewSelector, 𝕊, from, fromℝ, record, selectionEventData)
+import App.Util (ReactState, ViewSelector, 𝕊, from, fromℝ, record, recordℝ, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
-import App.View.BarChart (BarChart)
+import App.View.BarChart (RBarChart)
 import App.View.LineChart (LineChart)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.ScatterPlot (ScatterPlot)
@@ -24,7 +24,7 @@ import Web.Event.EventTarget (EventListener, eventListener)
 
 data View
    -- one for each constructor of the Fluid 'Plot' data type
-   = BarChart' BarChart
+   = BarChart' RBarChart
    | LineChart' LineChart
    | ScatterPlot' ScatterPlot
    | MultiView' MultiView
@@ -43,7 +43,7 @@ selListener redraw selector =
 
 view :: Partial => String -> Val (ReactState 𝕊) -> Maybe View -> View
 view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
-   BarChart' (record from (fromℝ <$> u))
+   BarChart' (recordℝ from u)
 view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
    --editing reflect class eneded to change the record.
    LineChart' (record from (fromℝ <$> u))

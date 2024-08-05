@@ -1,7 +1,7 @@
 module App.Util
    ( Attrs
-   , Relectable
    , ReactState(..)
+   , Relectable
    , SelState(..)
    , Selectable
    , Selector
@@ -28,7 +28,10 @@ module App.Util
    , persist
    , record
    , recordℝ
+   , rselClasses
+   , rselClassesFor
    , runAffs_
+   , rupCompare
    , selClasses
    , selClassesFor
    , selState
@@ -178,6 +181,17 @@ instance Ord 𝕊 where
 instance JoinSemilattice 𝕊 where
    join = max
 
+rJoin :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
+rJoin a b = cheatToℝ (lift2 rJoin' (fromℝ a) (fromℝ b))
+   where
+   rJoin' :: 𝕊 -> 𝕊 -> 𝕊
+   rJoin' c d = c ∨ d
+
+rupCompare :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
+rupCompare Inert b = b
+rupCompare a Inert = a
+rupCompare a b = rJoin a b
+
 to𝔹 :: SelState 𝕊 -> SelState 𝔹
 to𝔹 = (_ <#> (_ /= None))
 
@@ -315,6 +329,7 @@ css
                 , secondary :: String
                 }
            }
+      , inert :: String
       }
 css =
    { sel:
@@ -327,6 +342,7 @@ css =
              , secondary: "selected-secondary-persistent"
              }
         }
+   , inert: "inert"
    }
 
 -- Ideally would derive from css.sel
@@ -352,6 +368,31 @@ selClassesFor (SelState s) =
            None -> []
       ]
 
+rselClasses :: String
+rselClasses = joinWith " " $
+   [ css.sel.transient.primary
+   , css.sel.transient.secondary
+   , css.sel.persistent.primary
+   , css.sel.persistent.secondary
+   , css.inert
+   ]
+
+rselClassesFor :: ReactState 𝕊 -> String
+rselClassesFor Inert =
+   joinWith " " $ concat
+      [ [ css.inert ] ]
+rselClassesFor (Reactive (SelState s)) =
+   joinWith " " $ concat
+      [ case s.persistent of
+           Secondary -> [ css.sel.persistent.secondary ]
+           Primary -> [ css.sel.persistent.primary ]
+           None -> []
+      , case s.transient of
+           Secondary -> [ css.sel.transient.secondary ]
+           Primary -> [ css.sel.transient.primary ]
+           None -> []
+      ]
+
 type Attrs = Array (Bind String)
 
 attrs :: Array Attrs -> Object String
@@ -360,6 +401,8 @@ attrs = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
 -- ======================
 -- boilerplate
 -- ======================
+
+-- figure out what's going on here wrt things.
 derive instance Generic 𝕊 _
 instance Show 𝕊 where
    show = genericShow
