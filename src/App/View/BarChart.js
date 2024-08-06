@@ -200,6 +200,22 @@ function drawBarChart_ (
 
 export var drawBarChart = x1 => x2 => x3 => drawBarChart_(x1, x2, x3)
 
+function setRSelState (
+   { rbar_attrs },
+   indexCol,
+   rootElement,
+   chart,
+   listener
+) {
+   rootElement.selectAll('.bar').each(function (bar) {
+      d3.select(this) // won't work inside arrow function :/
+         .attrs(rbar_attrs(indexCol)(chart)(bar))
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
+   })
+}
+
 function drawRBarChart_ (
    rBarChartHelpers,
    {
@@ -214,7 +230,7 @@ function drawRBarChart_ (
    listener
 ) {
    return () => {
-      const { val } = uiRHelpers
+      const { rval } = uiRHelpers
       const { tickEvery } = rBarChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 25, left: 40},
@@ -243,7 +259,7 @@ function drawRBarChart_ (
          // x-axis
          const x = d3.scaleBand()
             .range([0, width])
-            .domain(rstackedBars.map(bar => val(bar.x)))
+            .domain(rstackedBars.map(rbar => rval(rbar.x)))
             .padding(0.2)
 
          rootElement.append('g')
@@ -252,13 +268,13 @@ function drawRBarChart_ (
             .selectAll('text')
                .style('text-anchor', 'middle')
 
-         function barHeight (bars) {
-            return bars.reduce((acc, bar) => { return val(bar.z) + acc }, 0)
+         function barHeight (rbars) {
+            return rbars.reduce((acc, rbar) => { return rval(rbar.z) + acc }, 0)
          }
 
          // y-axis
          const nearest = 100,
-               y_max = Math.ceil(Math.max(...rstackedBars.map(d => barHeight(d.bars))) / nearest) * nearest
+               y_max = Math.ceil(Math.max(...rstackedBars.map(d => barHeight(d.rbars))) / nearest) * nearest
          const y = d3.scaleLinear()
             .domain([0, y_max])
             .range([height, 0])
@@ -278,31 +294,31 @@ function drawRBarChart_ (
 
          const strokeWidth = 1
          // TODO: enforce that all stacked bars have same set of segments
-         const j_max = Math.max(...rstackedBars.map(bar => bar.bars.length))
+         const j_max = Math.max(...rstackedBars.map(rbar => rbar.rbars.length))
 
          for (let j = 0; j < j_max; ++j) {
             addHatchPattern(rootElement, j, color(j))
          }
 
          stacks.selectAll('.bar')
-            .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
+            .data(([i, {x, rbars}]) => rbars.slice(1).reduce((acc, rbar) => {
                const prev = acc[acc.length - 1]
                const y = prev.y + prev.height
-               acc.push({i, j: prev.j + 1, x: val(x), y, height: val(bar.z)})
+               acc.push({i, j: prev.j + 1, x: rval(x), y, height: rval(rbar.z)})
                return acc
-            }, [{i, j: 0, x: val(x), y: 0, height: val(bars[0].z)}]))
+            }, [{i, j: 0, x: rval(x), y: 0, height: rval(rbars[0].z)}]))
             .enter()
             .append('rect')
                .attr('class', 'bar')
-               .attr('x', bar => { return x(bar.x) })
-               .attr('y', bar => { return y(bar.y + bar.height) })
+               .attr('x', rbar => { return x(rbar.x) })
+               .attr('y', rbar => { return y(rbar.y + rbar.height) })
                .attr('width', x.bandwidth())
-               .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
+               .attr('height', rbar => { return height - y(rbar.height) - strokeWidth }) // stop bars overplotting
                .attr('stroke-width', _ => strokeWidth)
 
          const legendLineHeight = 15,
                legendStart = width + margin.left / 2
-               names = rstackedBars[0].bars.map(bar => val(bar.y))
+               names = rstackedBars[0].rbars.map(rbar => rval(rbar.y))
          rootElement.append('rect')
             .attr('class', 'legend-box')
             .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
@@ -335,7 +351,7 @@ function drawRBarChart_ (
             .attr('y', legendLineHeight / 2 - legendSquareSize)
 
          rootElement.append('text')
-            .text(val(caption))
+            .text(rval(caption))
             .style('user-select', 'none') // avoid mysterious spurious text selection
             .attr('x', width / 2)
             .attr('y', height + 35)
@@ -344,7 +360,7 @@ function drawRBarChart_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(rBarChartHelpers, color, rootElement, { rstackedBars }, listener)
+      setRSelState(rBarChartHelpers, color, rootElement, { rstackedBars }, listener)
    }
 }
 
