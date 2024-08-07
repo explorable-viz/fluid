@@ -7,7 +7,7 @@ import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (RBarChart)
 import App.View.LineChart (LineChart)
 import App.View.MatrixView (RMatrixView(..), matrixRRep)
-import App.View.ScatterPlot (ScatterPlot)
+import App.View.ScatterPlot (RScatterPlot)
 import App.View.TableView (TableView(..), TableViewState)
 import App.View.Util (class Drawable, HTMLId, Redraw, draw)
 import Data.Foldable (sequence_)
@@ -26,7 +26,7 @@ data View
    -- one for each constructor of the Fluid 'Plot' data type
    = BarChart' RBarChart
    | LineChart' LineChart
-   | ScatterPlot' ScatterPlot
+   | ScatterPlot' RScatterPlot
    | MultiView' MultiView
    -- plus default visualisations for specific kinds of value
    | MatrixView' RMatrixView
@@ -59,7 +59,7 @@ view title (Val _ (Constr c (u : Nil))) vw | c == cMultiPlot =
       Nothing -> let vws' = from u in view title <$> vws' <*> (const Nothing <$> vws')
       Just (MultiView' vws') -> view title <$> from u <*> (Just <$> unwrap vws')
 view _ (Val _ (Constr c (u : Nil))) _ | c == cScatterPlot =
-   ScatterPlot' (record from (fromℝ <$> u))
+   ScatterPlot' (recordℝ from u)
 view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
    TableView' vwState (TableView { title, table: record identity <$> from (fromℝ <$> u) })
    where
