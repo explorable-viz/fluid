@@ -6,7 +6,7 @@ import App.Util (ReactState, ViewSelector, 𝕊, from, fromℝ, record, record�
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (RBarChart)
 import App.View.LineChart (LineChart)
-import App.View.MatrixView (MatrixView(..), matrixRep)
+import App.View.MatrixView (RMatrixView(..), matrixRRep)
 import App.View.ScatterPlot (ScatterPlot)
 import App.View.TableView (TableView(..), TableViewState)
 import App.View.Util (class Drawable, HTMLId, Redraw, draw)
@@ -29,7 +29,7 @@ data View
    | ScatterPlot' ScatterPlot
    | MultiView' MultiView
    -- plus default visualisations for specific kinds of value
-   | MatrixView' MatrixView
+   | MatrixView' RMatrixView
    | TableView' TableViewState TableView
 
 newtype MultiView = MultiView (Dict View)
@@ -49,9 +49,9 @@ view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
    {-LineChart' (recordℝ from u)-}
    LineChart' (record from (fromℝ <$> u))
 view title (Val _ (Matrix r)) _ =
-   MatrixView' (MatrixView { title, matrix: matrixRep (fromℝ <$> r) })
+   {-MatrixView' (MatrixView { title, matrix: matrixRep (fromℝ <$> r) })-}
    {-matrixRRep required-}
-   {-MatrixView' (RMatrixView { title, matrix: matrixRep ( r) })-}
+   MatrixView' (RMatrixView { title, matrix: matrixRRep (r) })
 view title (Val _ (Constr c (u : Nil))) vw | c == cMultiPlot =
    MultiView' (MultiView vws)
    where
