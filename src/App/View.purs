@@ -50,6 +50,8 @@ view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
    LineChart' (record from (fromℝ <$> u))
 view title (Val _ (Matrix r)) _ =
    MatrixView' (MatrixView { title, matrix: matrixRep (fromℝ <$> r) })
+   {-matrixRRep required-}
+   {-MatrixView' (RMatrixView { title, matrix: matrixRep ( r) })-}
 view title (Val _ (Constr c (u : Nil))) vw | c == cMultiPlot =
    MultiView' (MultiView vws)
    where
