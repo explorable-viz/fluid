@@ -157,16 +157,16 @@ function drawLineChart_ (
 
 export var drawLineChart = x1 => x2 => x3 => drawLineChart_(x1, x2, x3)
 
-/*
+
 function drawRLineChart_ (
    lineRChartHelpers,
    {
-      uiRHelpers: { val },
+      uiRHelpers: { rval },
       divId,
       suffix,
       view: {
          caption,   // String
-         rplots,     // Array RLinePlot
+         plots,     // Array RLinePlot
       }
    },
    listener
@@ -177,10 +177,10 @@ function drawRLineChart_ (
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom,
-            y_max = Math.max(...rplots.map(rplot_max_y)),
-            x_min = Math.min(...rplots.map(rplot_min_x)),
-            x_max = Math.max(...rplots.map(rplot_max_x)),
-            names = rplots.map(rplot => val(rplot.name))
+            y_max = Math.max(...plots.map(rplot_max_y)),
+            x_min = Math.min(...plots.map(rplot_min_x)),
+            x_max = Math.max(...plots.map(rplot_max_x)),
+            names = plots.map (rplot => rval(rplot.name))
       const div = d3.select('#' + divId)
       if (div.empty()) {
          console.error('Unable to insert figure: no div found with id ' + divId)
@@ -207,8 +207,8 @@ function drawRLineChart_ (
                y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
 
          const line1 = d3.line()
-            .x(d => x(val(d.x)))
-            .y(d => y(val(d.y)))
+            .x(d => x(rval(d.x)))
+            .y(d => y(rval(d.y)))
 
          rootElement.selectAll('line')
             .data([...rplots.entries()])
@@ -216,16 +216,16 @@ function drawRLineChart_ (
             .append('g')
             .append('path')
             .attr('fill', 'none')
-            .attr('stroke', ([, rplot]) => nameCol(val(rplot.name)))
+            .attr('stroke', ([, rplot]) => nameCol(rval(rplot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
             .attr('d', ([, rplot]) => line1(rplot.rpoints))
 
-         for (const i_plot of rplots.entries()) {
+         for (const i_plot of plots.entries()) {
             const [i, rplot] = i_plot
             rootElement.selectAll('point')
                .data([...rplot.points.entries()].map(([j, p]) => {
-                  return { name: val(rplot.name), x: val(p.x), y: val(p.y), i, j }
+                  return { name: rval(rplot.name), x: rval(p.x), y: rval(p.y), i, j }
                }))
                .enter()
                .append('g')
@@ -277,16 +277,31 @@ function drawRLineChart_ (
 
          rootElement
             .append('text')
-            .text(val(caption))
+            .text(rval(caption))
             .attr('x', width / 2)
             .attr('y', height + 35)
             .attr('class', 'title-text')
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
       }
-      setSelState(lineRChartHelpers, nameCol, rootElement, { rplots }, listener)
+      setrSelState(lineRChartHelpers, nameCol, rootElement, { plots }, listener)
    }
 }
 
+function setrSelState (
+   { rpoint_attrs },
+   nameCol,
+   rootElement,
+   chart,
+   listener
+) {
+   rootElement.selectAll('.point').each(function (rpoint) {
+      d3.select(this) // won't work inside arrow function :/
+         .attrs(rpoint_attrs(nameCol)(chart)(rpoint))
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
+   })
+}
+
 export var drawRLineChart = x1 => x2 => x3 => drawRLineChart_(x1, x2, x3)
-*/
