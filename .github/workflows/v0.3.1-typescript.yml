@@ -1,11 +1,6 @@
 name: v0.3.1-typescript
 
 on:
-  schedule:
-    - cron: '0 0 * * 0' # every Sunday at midnight UTC
-  push:
-    branches:
-      - 'v0.3.1'
   workflow_dispatch:
 
 jobs:
