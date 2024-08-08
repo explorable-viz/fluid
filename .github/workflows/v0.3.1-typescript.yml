@@ -17,6 +17,7 @@ jobs:
       run: |
         unzip 0.3.1.zip
         git status
+        git add .
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
