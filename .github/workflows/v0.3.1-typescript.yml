@@ -24,4 +24,3 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: 0.3.1/
         destination_dir: 0.3.1/
-        allow_empty_commit: true
