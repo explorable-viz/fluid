@@ -9,26 +9,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-and-deploy:
+  deploy:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: 'v0.3.1'
-    - name: test
+    - name: unzip # no longer builds -- unzip prebuilt archive
       run: |
-        sudo npm install karma -g
-        cd old
-        yarn install
-        yarn run test
-    - name: bundle
-      run: |
-        cd old
-        yarn install
-        yarn run bundle
+        unzip v0.3.1.zip
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: old/dist/
+        publish_dir: 0.3.1/
         destination_dir: 0.3.1/
