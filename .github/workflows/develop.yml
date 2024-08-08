@@ -41,6 +41,20 @@ jobs:
         publish_dir: dist/app/
         keep_files: true
 
+  deploy-v0.3.1:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: unzip
+      run: |
+        unzip v0.3.1.zip
+    - name: gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: 0.3.1/
+        destination_dir: 0.3.1/
+
   deploy-artifact:
     runs-on: ubuntu-22.04
     needs: test
