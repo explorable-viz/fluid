@@ -15,6 +15,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: unzip # no longer builds -- unzip prebuilt archive
       run: |
+        set -x -e
         unzip 0.3.1.zip
         git status
         git add .
