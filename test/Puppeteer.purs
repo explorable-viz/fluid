@@ -30,3 +30,9 @@ tests = do
    T.close browser
    liftEffect (log "In Puppeteer.purs")
 
+checkForFigures :: T.Page -> Aff Unit
+checkForFigures page = do
+   let selector = T.Selector "fig-4"
+   let options = { visible: true }
+   _ <- T.pageWaitForSelector selector options page
+   pure unit
