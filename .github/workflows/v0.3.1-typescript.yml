@@ -17,7 +17,8 @@ jobs:
       run: |
         set -x -e
         unzip 0.3.1.zip
-        pwd
+        ls -la /home/runner/work/fluid/fluid/0.3.1/.*
+        ls -la /home/runner/work/fluid/fluid/0.3.1/
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
