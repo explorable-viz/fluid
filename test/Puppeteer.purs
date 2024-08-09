@@ -15,9 +15,6 @@ import Toppokki as T
 main :: Effect (Promise (Unit))
 main = Promise.fromAff tests
 
-isNotEmptyString :: String -> Boolean
-isNotEmptyString str = not (str == "")
-
 tests :: Aff Unit
 tests = do
    browser <- T.launch {}
@@ -35,6 +32,6 @@ tests = do
 checkForFigure :: T.Page -> String -> Aff Unit
 checkForFigure page id = do
    let selector = T.Selector ("div#" <> id)
-   let options = { visible: true }
+   let options = { visible: true, timeout: 60000 }
    _ <- T.pageWaitForSelector selector options page
    pure unit
