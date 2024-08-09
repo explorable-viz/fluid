@@ -211,7 +211,7 @@ function drawRLineChart_ (
             .y(d => y(rval(d.y)))
 
          rootElement.selectAll('line')
-            .data([...rplots.entries()])
+            .data([...plots.entries()])
             .enter()
             .append('g')
             .append('path')

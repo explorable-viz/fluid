@@ -135,7 +135,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
 instance Reflect (Dict (Val (ReactState 𝕊))) RLineChart where
    from r = RLineChart
       { caption: unpack string (get f_caption r)
-      , plots: recordℝ from <$> (from (get f_plots r) :: Array (Val (ReactState 𝕊))) :: Array RLinePlot
+      , plots: from <$> (from (get f_plots r) :: Array (Val (ReactState 𝕊))) :: Array RLinePlot
       }
 
 instance Reflect (Val (SelState 𝕊)) LinePlot where

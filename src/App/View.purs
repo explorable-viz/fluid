@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (ReactState, ViewSelector, 𝕊, from, fromℝ, record, recordℝ, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (RBarChart)
-import App.View.LineChart (LineChart)
+import App.View.LineChart (RLineChart)
 import App.View.MatrixView (RMatrixView(..), matrixRRep)
 import App.View.ScatterPlot (RScatterPlot)
 import App.View.TableView (TableView(..), TableViewState)
@@ -25,7 +25,7 @@ import Web.Event.EventTarget (EventListener, eventListener)
 data View
    -- one for each constructor of the Fluid 'Plot' data type
    = BarChart' RBarChart
-   | LineChart' LineChart
+   | LineChart' RLineChart
    | ScatterPlot' RScatterPlot
    | MultiView' MultiView
    -- plus default visualisations for specific kinds of value
@@ -45,9 +45,9 @@ view :: Partial => String -> Val (ReactState 𝕊) -> Maybe View -> View
 view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
    BarChart' (recordℝ from u)
 view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
-   --editing reflect class eneded to change the record.
-   {-LineChart' (recordℝ from u)-}
-   LineChart' (record from (fromℝ <$> u))
+   --editing reflect class needed to change the record?
+   LineChart' (recordℝ from u)
+   --LineChart' (record from (fromℝ <$> u))
 view title (Val _ (Matrix r)) _ =
    {-MatrixView' (MatrixView { title, matrix: matrixRep (fromℝ <$> r) })-}
    {-matrixRRep required-}
