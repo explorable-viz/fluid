@@ -19,9 +19,9 @@ export function _newPage(browser) {
   };
 }
 
-export function _goto(url, page) {
+export function _goto(url, options, page) {
   return function() {
-    return page.goto(url);
+    return page.goto(url, options);
   };
 }
 

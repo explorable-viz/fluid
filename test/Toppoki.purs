@@ -76,8 +76,14 @@ launchChromeAWS = runPromiseAffE2 _launchChromeAWS
 newPage :: Browser -> Aff Page
 newPage = runPromiseAffE1 _newPage
 
-goto :: URL -> Page -> Aff Unit
-goto = runPromiseAffE2 _goto
+goto
+   :: forall options trash
+    . Row.Union options trash ScreenshotOptions
+   => URL
+   -> { | options }
+   -> Page
+   -> Aff Unit
+goto = runPromiseAffE3 _goto
 
 close :: Browser -> Aff Unit
 close = runPromiseAffE1 _close
@@ -319,7 +325,7 @@ foreign import puppeteer :: Puppeteer
 foreign import _launch :: forall options. FU.Fn1 options (Effect (Promise Browser))
 foreign import _launchChromeAWS :: forall options. FU.Fn2 ChromeAWS options (Effect (Promise Browser))
 foreign import _newPage :: FU.Fn1 Browser (Effect (Promise Page))
-foreign import _goto :: FU.Fn2 URL Page (Effect (Promise Unit))
+foreign import _goto :: forall options. FU.Fn3 URL options Page (Effect (Promise Unit))
 foreign import _close :: FU.Fn1 Browser (Effect (Promise Unit))
 foreign import _content :: FU.Fn1 Page (Effect (Promise String))
 foreign import _screenshot :: forall options. FU.Fn2 options Page (Effect (Promise Buffer))
