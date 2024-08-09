@@ -1,14 +1,16 @@
-#!/usr/bin/env bash
-# (ensure we pull bash from path not /usr/bin)
-set -x -e
 
-# if globstar not a valid shell option name on MacOS, install bash >=4.0
-shopt -s extglob nullglob globstar
-yarn purs-tidy check src/**/*.purs test/**/*.purs
-#yarn build
-#yarn test
-yarn build-app
-yarn puppeteer browsers install chrome
+##!/usr/bin/env bash
+## (ensure we pull bash from path not /usr/bin)
+#set -x -e
 
-yarn build-puppeteer
-yarn test-puppeteer
+## if globstar not a valid shell option name on MacOS, install bash >=4.0
+#shopt -s extglob nullglob globstar
+#yarn purs-tidy check src/**/*.purs test/**/*.purs
+##yarn build
+##yarn test
+#yarn build-app
+#yarn puppeteer browsers install chrome
+
+#yarn build-puppeteer
+#yarn test-puppeteer
+

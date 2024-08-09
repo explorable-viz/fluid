@@ -78,7 +78,9 @@ newPage = runPromiseAffE1 _newPage
 
 goto
    :: forall options trash
-    . Row.Union options trash ScreenshotOptions
+    . Row.Union options trash
+         ( waitUntil :: WaitUntilOption
+         )
    => URL
    -> { | options }
    -> Page
