@@ -2,29 +2,20 @@ module App.View.LinkedText where
 
 import Prelude
 
-import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, from, record)
-import App.Util.Selector (linkedText, textElem)
+import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊)
+import App.Util.Selector (linkedText)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Either (Either(..))
-import DataType (f_contents, f_val)
-import Dict (Dict)
-import Primitive (string, unpack)
-import Util (error)
-import Util.Map (get)
+import Data.Int (toNumber)
+import Data.Number.Format (toString)
+import Data.Tuple (Tuple(..))
+import Primitive (intOrNumber, unpack)
+import Util (type (+)) --,error)
 import Val (Val)
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
 
-
-
-newtype LinkedText = LinkedText
-   {
-      contents :: Array TextElem
-   }
-
-newtype TextElem = TextElem (Either String Quote)
-
-newtype Quote = Quote { val :: Selectable String }
+newtype LinkedText = LinkedText (Selectable String)
 
 type LinkedTextHelpers = {}
 
@@ -32,23 +23,20 @@ drawLinkedText' :: Renderer LinkedText Unit
 drawLinkedText' = drawLinkedText {}
 
 instance Drawable LinkedText Unit where
-   draw divId suffix redraw view viewState = 
+   draw divId suffix redraw view viewState =
       drawLinkedText' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw linkedTextSelector
       where
-      linkedTextSelector :: ViewSelector LinkedTextElem
-      linkedTextSelector { i } = textElem i >>> linkedText
+      linkedTextSelector :: ViewSelector LinkedText
+      linkedTextSelector _ = linkedText
 
-instance Reflect (Dict (Val (SelState 𝕊))) LinkedText where
-   from r = LinkedText {
-      contents : record from <$> from (get f_contents r)
-   }
+instance Reflect (Val (SelState 𝕊)) LinkedText where
+   from r = LinkedText (unpackedStringify $ unpack intOrNumber r)
 
-instance Reflect (Dict (Val (SelState 𝕊))) TextElem where
-   from _r = error "todo"
+unpackedStringify :: forall a. Tuple (Int + Number) a -> Tuple String a
+unpackedStringify (Tuple x y) = Tuple (stringify x) y
 
-instance Reflect (Dict (Val (SelState 𝕊))) Quote where
-   from r = Quote {
-      val : unpack string (get f_val r)
-   }
+stringify :: (Int + Number) -> String
+stringify (Left n) = toString $ toNumber n
+stringify (Right n) = toString n
 
 type LinkedTextElem = { i :: Int }

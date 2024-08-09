@@ -6,6 +6,7 @@ import App.Util (SelState, ViewSelector, 𝕊, from, record, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart)
 import App.View.LineChart (LineChart)
+import App.View.LinkedText (LinkedText)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.ScatterPlot (ScatterPlot)
 import App.View.TableView (TableView(..), TableViewState)
@@ -31,6 +32,7 @@ data View
    -- plus default visualisations for specific kinds of value
    | MatrixView' MatrixView
    | TableView' TableViewState TableView
+   | LinkedText' LinkedText
 
 newtype MultiView = MultiView (Dict View)
 
@@ -70,6 +72,7 @@ drawView divId suffix redraw = case _ of
    MultiView' vw -> draw divId suffix redraw vw unit
    MatrixView' vw -> draw divId suffix redraw vw unit
    TableView' vwState vw -> draw divId suffix redraw vw vwState
+   LinkedText' vw -> draw divId suffix redraw vw unit
 
 instance Drawable MultiView Unit where
    draw divId _ redraw (MultiView vws) _ =

@@ -92,6 +92,7 @@ cLineChart = "LineChart" :: Ctr
 cLinePlot = "LinePlot" :: Ctr
 cMultiPlot = "MultiPlot" :: Ctr
 cScatterPlot = "ScatterPlot" :: Ctr
+cLinkedText = "LinkedText" :: Ctr
 cFalse = "False" :: Ctr -- Bool
 cTrue = "True" :: Ctr
 cNil = "Nil" :: Ctr -- List
@@ -99,6 +100,7 @@ cCons = ":" :: Ctr
 cPair = "Pair" :: Ctr -- Pair
 cNone = "None" :: Ctr -- Option
 cSome = "Some" :: Ctr
+cText = "Text" :: Ctr
 
 -- Field names used internally by rendering layer.
 f_bars = "bars" :: FieldName
@@ -113,7 +115,9 @@ f_ylabel = "ylabel" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
 f_contents = "contents" :: FieldName
+f_text = "text" :: FieldName
 f_val = "val" :: FieldName
+
 dataTypes :: List DataType
 dataTypes = L.fromFoldable
    [
@@ -184,5 +188,8 @@ dataTypes = L.fromFoldable
         ]
    , dataType "Marker"
         [ "Arrowhead" × 0
+        ]
+   , dataType "Text"
+        [ "Text" × 1 -- Contents
         ]
    ]
