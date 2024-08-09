@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Toppokki as T
+import Test.Toppokki as T
 import Util (check)
 
 main :: Effect (Promise (Unit))

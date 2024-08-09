@@ -97,7 +97,7 @@ let overrides =
 }
 
 let additions =
-  { toppokki = 
+  { {- toppokki = 
     { dependencies = 
         [ "aff-promise"
         , "functions"
@@ -115,8 +115,8 @@ let additions =
     , version =
          "v4.0.0"
     }
-
-  , js-promise-aff =
+    
+  , -} js-promise-aff =
         { dependencies = [ "prelude" ]
         , repo = "https://github.com/purescript-contrib/purescript-js-promise-aff.git"
         , version = "v4.0.0"
