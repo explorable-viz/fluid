@@ -21,7 +21,7 @@ jobs:
           node-version: 22
     - name: test
       run: |
-        yar install
+        yarn install
         . script/git/hooks/pre-push
 
   deploy:
