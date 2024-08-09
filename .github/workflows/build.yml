@@ -1,4 +1,4 @@
-name: develop
+name: build
 
 on:
   push:
@@ -22,7 +22,15 @@ jobs:
     - name: test
       run: |
         yarn install
-        . script/git/hooks/pre-push
+        set -x -e
+        shopt -s extglob nullglob globstar
+        yarn purs-tidy check src/**/*.purs test/**/*.purs
+        yarn build
+        yarn test
+        yarn build-app
+        yarn puppeteer browsers install chrome
+        yarn build-puppeteer
+        yarn test-puppeteer
 
   deploy:
     runs-on: ubuntu-22.04
