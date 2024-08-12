@@ -12,6 +12,7 @@ else
    yarn tidy
    if git status --porcelain | grep -q '^[ M]'
    then
+      echo "Formatting changes found. Committing."
       git layout # requires script/dev-setup.sh to have been run
    fi
 fi
