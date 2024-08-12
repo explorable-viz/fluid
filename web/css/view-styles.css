@@ -83,7 +83,7 @@ thead {
 }
 
 .matrix-cell-text.selected-secondary-transient {
-   color: blue
+   color: rgb(255, 0, 208)
 }
 
 .matrix-cell-text.selected-primary-persistent {
@@ -95,7 +95,6 @@ thead {
 .scatterplot-point {
    fill: white;
    stroke: black;
-   r: 2;
 }
 
 .scatterplot-point.selected-primary-persistent {
@@ -106,7 +105,6 @@ thead {
 .scatterplot-point.selected-primary-transient {
    stroke: blue;
    stroke-width: 1;
-   r: 3.2;
 }
 
 .scatterplot-point.selected-secondary-persistent {
@@ -115,5 +113,4 @@ thead {
 
 .scatterplot-point.selected-secondary-transient {
    stroke-width: 1;
-   r: 2.5;
 }

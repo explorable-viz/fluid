@@ -1,32 +1,21 @@
 name: v0.3.1-typescript
 
 on:
-  push:
-    branches:
-      - 'v0.3.1'
   workflow_dispatch:
 
 jobs:
-  test-and-deploy:
-    runs-on: ubuntu-18.04
+  deploy:
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: 'v0.3.1'
-    - name: test
+    - name: unzip # no longer builds -- unzip prebuilt archive
       run: |
-        sudo npm install karma -g
-        cd old
-        yarn install
-        yarn run test
-    - name: bundle
-      run: |
-        cd old
-        yarn install
-        yarn run bundle
+        set -x -e
+        unzip 0.3.1.zip
+        ls -la /home/runner/work/fluid/fluid/0.3.1/
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: old/dist/
+        publish_dir: 0.3.1/
         destination_dir: 0.3.1/
