@@ -27,6 +27,7 @@ You can edit this file as you like.
   , "lists"
   , "maybe"
   , "newtype"
+  , "node-process"
   , "nonempty"
   , "numbers"
   , "ordered-collections"

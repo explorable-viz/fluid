@@ -47,8 +47,6 @@ const server = app.listen(8080, function(){
     console.log(content);
     await browser.close();
     console.log("Browser closed");
-    
-
   } catch (error) {
     console.error('Error:', error);
   }

@@ -70,5 +70,8 @@
     "purs-tidy": "^0.9.3",
     "spago": "^0.21.0",
     "typescript": "^5.5.3"
+  },
+  "bin": {
+    "fluid": "./cli.js"
   }
 }
