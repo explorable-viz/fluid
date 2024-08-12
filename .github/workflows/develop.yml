@@ -11,23 +11,31 @@ on:
     - '**.md'
   workflow_dispatch:
 
+#name: publish
+#on:
+# workflow_dispatch:
+
+#jobs:
+# 
 jobs:
   test:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-          node-version: 22
-    - name: test
-      run: |
-        yarn install
-        . script/git/hooks/pre-push
+    uses: ./.github/workflows/test.yml
+#    runs-on: ubuntu-22.04
+#    steps:
+#    - uses: actions/checkout@v4
+#    - uses: actions/setup-node@v4
+#      with:
+#          node-version: 22
+#    - name: test
+#      run: |
+#        yarn install
+#        . script/git/hooks/pre-push
 
-  deploy:
+# new file: publish.yml - publish to NPM -> then deploy (needs publish to succeed); 
+  deploy-npm:
     runs-on: ubuntu-22.04
     needs: test
-    if: github.ref == 'refs/heads/release'
+    if: github.ref == 'refs/heads/creating-NPM-library'
     steps:
     - uses: actions/checkout@v4
     - name: build
@@ -40,7 +48,30 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: dist/app/
         keep_files: true
+        registry-url: 'https://registry.npmjs.org'
+    - run: npm publish --provenance --access public
+       env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  deploy-github:
+    runs-on: ubuntu-22.04
+    needs: deploy-npm
+    if: github.ref == 'refs/heads/creating-NPM-library' # testing: duplicate just in case
+    steps:
+    - uses: actions/checkout@v4
+    - name: build
+      run: |
+        yarn install
+        yarn build-artifact
+    - name: gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: dist/artifact/
+        keep_files: true
+
+
+# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   deploy-artifact:
     runs-on: ubuntu-22.04
     needs: test
