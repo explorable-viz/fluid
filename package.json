@@ -1,9 +1,27 @@
 {
+  "name": "@explorable-viz/fluid",
+  "version": "0.0.4",
+  "description": "Fluid is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/explorable-viz/fluid.git#release"
+  },
+  "keywords": [
+    "PureScript",
+    "JavaScript"
+  ],
+  "author": "explorable-viz",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/explorable-viz/fluid/issues"
+  },
+  "homepage": "https://f.luid.org",
   "scripts": {
     "clean-app": "rm -rf dist/app && mkdir -p dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app && cp -r web/pdf dist/app",
     "build-app": "yarn clean-app && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main App --to dist/app/app.js",
     "serve-app": "npx http-serve dist/app -a 127.0.0.1 -c-1",
+    "serve-app-alt": "node server.js",
     "clean-artifact": "rm -rf dist/artifact && mkdir -p dist/artifact && cp -r fluid dist/artifact && cp web/artifact.html dist/artifact/index.html && cp -r web/css dist/artifact",
     "build-artifact": "yarn clean-artifact && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Artifact --to dist/artifact/app.js",
     "serve-artifact": "yarn build-artifact && npx http-serve dist/artifact -a 127.0.0.1 -c-1",
@@ -15,31 +33,42 @@
     "test": "karma start karma.conf.tests.js",
     "bench": "npx http-serve dist/benches -a 127.0.0.1",
     "test-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
-    "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs"
+    "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
+    "build-puppeteer": "yarn tidy && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js",
+    "test-puppeteer": "node puppeteer.js"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
     "@codemirror/state": "6.2.0",
     "@codemirror/view": "6.9.3",
     "benchmark": "^2.1.4",
-    "d3": "6.7.0",
+    "concurrently": "^8.2.2",
+    "d3": "^7.9.0",
     "d3-tip": "0.9.1",
     "datetime": "^0.0.3",
+    "express": "^4.19.2",
+    "express-static": "^1.2.6",
+    "http-serve": "^1.0.1",
+    "http-server": "^14.1.1",
+    "http-shutdown": "^1.2.2",
     "js-date": "^0.1.3",
-    "purescript": "^0.15.10"
+    "purescript": "^0.15.10",
+    "wait-on": "^7.2.0"
   },
   "devDependencies": {
     "esbuild": "0.15.1",
-    "gh-pages": "3.1.0",
+    "gh-pages": "^6.1.1",
     "karma": "6.4.0",
     "karma-chrome-launcher": "3.1.1",
     "karma-mocha": "2.0.1",
     "karma-mocha-reporter": "2.2.5",
     "mocha": "10.0.0",
+    "puppeteer": "^22.13.0",
     "purescript-language-server": "0.16.6",
     "purescript-psa": "0.8.2",
     "purs-backend-es": "1.1.0",
     "purs-tidy": "^0.9.3",
-    "spago": "^0.20.9"
+    "spago": "^0.21.0",
+    "typescript": "^5.5.3"
   }
 }

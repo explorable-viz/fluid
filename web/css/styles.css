@@ -162,12 +162,12 @@ nav ul li a.active-page {
 }
 
 .toggle-button {
-   color: #EEEEEE;
+   color: #CCCCCC;
    user-select: none;
 }
 
 .toggle-button:hover {
-   color: #CCCCCC;
+   color: #999999;
 }
 
 .data-pane {

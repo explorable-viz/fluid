@@ -7,25 +7,29 @@ Fluid is an experimental programming language which integrates a bidirectional d
 [![v0.3.1-typescript](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml)
 
 ## Installation
+
 ### Software required
-- git
-- Node.js
-- yarn
 - Windows users: Ubuntu (WSL)
----
-- `yarn install` within root directory of cloned respository
-- Install `ChromeHeadless` binary
+- git
+- Node.js >=14.0.0
+- yarn
 
-#### Running the tests on the command line
+### Notes
+- Run `script/dev-setup.sh` after cloning repository
+- Avoid having PureScript installed globally
+- `Add Npm Path` is selected in PureScript IDE extension settings
+- VSCode for Windows users:
+	- Launch VSCode through Ubuntu (WSL) terminal
+	- Install WSL extension in VSCode
 
+#### Running tests on command line
 - `yarn build` and then `yarn test` for core tests
 
-#### Running the tests in the browser
-
+#### Running tests in browser
 - As per command-line tests above, but run `yarn test-browser`
 - Hit Debug in the browser window that opens, and then open Developer Tools or equivalent
 
-#### Running the web app
+#### Running web app
 - `yarn build-app`
 - `yarn serve-app`
 - Open a browser at the served URL (usually `127.0.0.1:8080`)
