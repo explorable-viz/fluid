@@ -17,6 +17,7 @@ module App.Util
    , css
    , eventData
    , from
+   , fromChangeℝ
    , fromℝ
    , get_intOrNumber
    , get_intOrNumberℝ
@@ -210,6 +211,10 @@ to𝕊 = (_ <#> if _ then Primary else None)
 fromℝ :: ReactState 𝕊 -> SelState 𝕊
 fromℝ Inert = (SelState { persistent: None, transient: None })
 fromℝ (Reactive sel) = sel
+
+fromChangeℝ :: ReactState 𝕊 -> SelState 𝕊
+fromChangeℝ Inert = (SelState { persistent: None, transient: None })
+fromChangeℝ _ = (SelState { persistent: Primary, transient: Secondary })
 
 -- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
 -- in place currently selected

@@ -64,8 +64,24 @@ view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
    TableView' vwState (RTableView { title, table: recordℝ identity <$> from u })
    where
    vwState = case vw of
-      Nothing -> { filter: true }
+      Nothing -> { filter: false }
       Just (TableView' vwState' _) -> vwState'
+
+drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
+drawView divId suffix redraw = case _ of
+   BarChart' vw -> draw divId suffix redraw vw unit
+   LineChart' vw -> draw divId suffix redraw vw unit
+   ScatterPlot' vw -> draw divId suffix redraw vw unit
+   MultiView' vw -> draw divId suffix redraw vw unit
+   MatrixView' vw -> draw divId suffix redraw vw unit
+   TableView' vwState vw -> draw divId suffix redraw vw vwState
+
+instance Drawable MultiView Unit where
+   draw divId _ redraw (MultiView vws) _ =
+      sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
+
+derive instance Newtype MultiView _
+
 
 {-}
 view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
@@ -91,17 +107,3 @@ view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
       Nothing -> { filter: false }
       Just (TableView' vwState' _) -> vwState'
 -}
-drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
-drawView divId suffix redraw = case _ of
-   BarChart' vw -> draw divId suffix redraw vw unit
-   LineChart' vw -> draw divId suffix redraw vw unit
-   ScatterPlot' vw -> draw divId suffix redraw vw unit
-   MultiView' vw -> draw divId suffix redraw vw unit
-   MatrixView' vw -> draw divId suffix redraw vw unit
-   TableView' vwState vw -> draw divId suffix redraw vw vwState
-
-instance Drawable MultiView Unit where
-   draw divId _ redraw (MultiView vws) _ =
-      sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
-
-derive instance Newtype MultiView _

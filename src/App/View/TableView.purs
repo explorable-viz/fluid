@@ -19,7 +19,7 @@ module App.View.TableView
 
 import Prelude
 
-import App.Util (ReactState, SelState, ViewSelector, 𝕊(..), eventData, fromℝ, isInert, rselClassesFor, selClassesFor, selected)
+import App.Util (ReactState, SelState, ViewSelector, 𝕊(..), eventData, fromChangeℝ, fromℝ, rselClassesFor, selClassesFor, selected)
 import App.Util.Selector (field, listElement)
 import App.View.Util (class Drawable, Renderer, RRenderer, selListener, uiHelpers, uiRHelpers)
 import Dict (Dict)
@@ -107,7 +107,7 @@ rrecord_isUnused r =
 rrecord_isInert :: Dict (Val (ReactState 𝕊)) -> Boolean
 rrecord_isInert r =
    not <<< isEmpty $ flip filterKeys r \k ->
-      (k /= rowKey) && (isInert (get k r # \(Val α _) -> α))
+      (k /= rowKey) && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> fromChangeℝ α))
 
 {-}
 -- this is awful, no? It goes "obtain the value r, by mapping through this function ValSelState, then if it's none, map it to the bottom of a lattice? (take true-> false/bottom in this semilattice)

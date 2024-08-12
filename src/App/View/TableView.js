@@ -146,7 +146,7 @@ function setRSelState (
    
    let hidden = 0
    rootElement.selectAll('.table-row').each(function ({ i }) {
-      hide = !rrecord_isUsed(table[i]) && filter
+      hide = !rrecord_isInert(table[i]) && !filter
       if (hide)
          hidden++
       d3.select(this) // won't work inside arrow function :/
