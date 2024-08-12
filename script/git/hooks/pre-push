@@ -14,6 +14,7 @@ else
    then
       echo "Committing formatting changes."
       git layout # requires script/dev-setup.sh to have been run
+      git commit --amend --no-edit
    else
       echo "No formatting changes."
    fi
