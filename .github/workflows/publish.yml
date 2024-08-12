@@ -1,0 +1,46 @@
+#name: publish
+
+#on:
+#  workflow_run: ["develop"]
+
+#  workflow_dispatch:
+
+#jobs:
+# new file: publish.yml - publish to NPM -> then deploy (needs publish to succeed); 
+#  deploy:
+#    runs-on: ubuntu-22.04
+#    needs: test # needs develop.yml to succeed
+#    if: github.ref == 'refs/heads/release'
+#    steps:
+#    - uses: actions/checkout@v4
+#    - name: build
+#      run: |
+#        yarn install
+#        yarn build-app
+#    - name: gh-pages
+#      uses: peaceiris/actions-gh-pages@v3
+#      with:
+#        github_token: ${{ secrets.GITHUB_TOKEN }}
+#        publish_dir: dist/app/
+#        keep_files: true
+#        registry-url: 'https://registry.npmjs.org'
+#   - run: npm publish --provenance --access public
+#       env:
+#         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+#    
+#  deploy-artifact:
+#    runs-on: ubuntu-22.04
+#   needs: deploy
+    #if: github.ref == 'refs/heads/release' #condition is same as deploy's
+#    steps:
+#    - uses: actions/checkout@v4
+#    - name: build
+#      run: |
+#        yarn install
+#       yarn build-artifact
+#    - name: gh-pages
+#      uses: peaceiris/actions-gh-pages@v3
+#      with:
+#        github_token: ${{ secrets.GITHUB_TOKEN }}
+#        publish_dir: dist/artifact/
+#        keep_files: true
