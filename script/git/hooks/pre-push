@@ -12,7 +12,7 @@ else
    yarn tidy
    if git status --porcelain | grep -q '^[ M]'
    then
-      echo "Formatting changes. Commit again before pushing."
+      echo "Format fixed. Commit again before pushing."
       exit 1
    fi
    echo "Pushing."
