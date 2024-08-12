@@ -57,7 +57,7 @@ jobs:
     # deploy to github - - - - - - - - -
     - uses: actions/setup-node@v4
       with:
-        node-version: '22.x'
+        node-version: 22
         registry-url: 'https://registry.npmjs.org'
     # - run: npm ci # https://docs.npmjs.com/cli/v10/commands/npm-ci - must have package-lock.json
     - run: npm publish --provenance --access public
