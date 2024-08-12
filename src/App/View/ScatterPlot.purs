@@ -7,7 +7,7 @@ module App.View.ScatterPlot
 
 import Prelude
 
-import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, from, fromℝ, isNone, isPrimary, isSecondary, recordℝ)
+import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, from, fromℝ, isNone, isPrimary, isSecondary, recordℝ, rupCompare)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (RPoint(..))
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
@@ -17,7 +17,6 @@ import Data.Tuple (snd)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
-import Lattice ((∨))
 import Primitive (string, unpack)
 import Util ((!))
 import Util.Map (get)
@@ -65,9 +64,9 @@ rpoint_attrs (RScatterPlot { points }) { i } =
       [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.5 else if isSecondary sel then 1.5 else if isNone sel then 0.5 else 1.0) ]
    where
    RPoint { x, y } = points ! i
-   sel1 = fromℝ (snd y)
-   sel2 = fromℝ (snd x)
-   sel = sel1 ∨ sel2
+   sel1 = snd y
+   sel2 = snd x
+   sel = fromℝ (rupCompare sel1 sel2)
 
 {-}
 newtype ScatterPlot = ScatterPlot
