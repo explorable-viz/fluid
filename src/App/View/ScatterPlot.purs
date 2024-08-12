@@ -61,7 +61,7 @@ point_smallRadius = 2
 rpoint_attrs :: RScatterPlot -> PointIndex -> Object String
 rpoint_attrs (RScatterPlot { points }) { i } =
    fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.5 else if isSecondary sel then 1.5 else if isNone sel then 0.5 else 1.0) ]
+      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 1.5 else if isSecondary sel then 1.2 else if isNone sel then 0.5 else 1.0) ]
    where
    RPoint { x, y } = points ! i
    sel1 = snd y
