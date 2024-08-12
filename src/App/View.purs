@@ -47,7 +47,7 @@ view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
 view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
    --editing reflect class needed to change the record?
    LineChart' (recordℝ from u)
-   --LineChart' (record from (fromℝ <$> u))
+--LineChart' (record from (fromℝ <$> u))
 view title (Val _ (Matrix r)) _ =
    {-MatrixView' (MatrixView { title, matrix: matrixRep (fromℝ <$> r) })-}
    {-matrixRRep required-}
