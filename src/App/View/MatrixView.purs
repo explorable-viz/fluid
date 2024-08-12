@@ -28,24 +28,24 @@ hBorderStyles m c = matrixBorderStyles $ hBorderShadowDirection m c
 
 hBorderShadowDirection :: IntMatrix -> MatrixBorderCoordinate -> ShadowDirection
 hBorderShadowDirection { cells, i: matrixH, j: _ } { i, j } = case i of
-   0                -> if isCellTransient cells { i, j: j - 1 } then South else None
+   0 -> if isCellTransient cells { i, j: j - 1 } then South else None
    _ | i == matrixH -> if isCellTransient cells { i: i - 1, j: j - 1 } then North else None
-   _                -> if isCellTransient cells { i, j: j - 1 } && (not isCellTransient cells { i: i - 1, j: j - 1 })
-                       then South
-                       else if (not isCellTransient cells { i, j: j - 1 }) && isCellTransient cells { i: i - 1, j: j - 1 }
-                       then North else None
+   _ ->
+      if isCellTransient cells { i, j: j - 1 } && (not isCellTransient cells { i: i - 1, j: j - 1 }) then South
+      else if (not isCellTransient cells { i, j: j - 1 }) && isCellTransient cells { i: i - 1, j: j - 1 } then North
+      else None
 
 vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
 vBorderStyles m c = matrixBorderStyles $ vBorderShadowDirection m c
 
 vBorderShadowDirection :: IntMatrix -> MatrixBorderCoordinate -> ShadowDirection
 vBorderShadowDirection { cells, i: _, j: matrixW } { i, j } = case j of
-   0                -> if isCellTransient cells { i: i - 1, j } then East else None
+   0 -> if isCellTransient cells { i: i - 1, j } then East else None
    _ | j == matrixW -> if isCellTransient cells { i: i - 1, j: j - 1 } then West else None
-   _                -> if isCellTransient cells { i: i - 1, j } && (not isCellTransient cells { i: i - 1, j: j - 1 })
-                       then East
-                       else if (not isCellTransient cells { i: i - 1, j }) && isCellTransient cells { i: i - 1, j: j - 1 }
-                       then West else None
+   _ ->
+      if isCellTransient cells { i: i - 1, j } && (not isCellTransient cells { i: i - 1, j: j - 1 }) then East
+      else if (not isCellTransient cells { i: i - 1, j }) && isCellTransient cells { i: i - 1, j: j - 1 } then West
+      else None
 
 isCellTransient :: forall a. Array2 (Selectable a) -> MatrixCellCoordinate -> Boolean
 isCellTransient arr2d { i, j } = isTransient $ snd $ (arr2d ! i) ! j
