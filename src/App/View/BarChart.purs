@@ -1,7 +1,7 @@
 module App.View.BarChart
-   ( RBar(..)
-   , RBarChart(..)
-   , RStackedBar(..)
+   ( Bar(..)
+   , BarChart(..)
+   , StackedBar(..)
    ) where
 
 import Prelude hiding (absurd)
@@ -21,55 +21,55 @@ import Util ((!))
 import Util.Map (get)
 import Val (Val)
 
-newtype RBarChart = RBarChart
+newtype BarChart = BarChart
    { caption :: Relectable String
-   , rstackedBars :: Array RStackedBar
+   , stackedBars :: Array StackedBar
    }
 
-newtype RStackedBar = RStackedBar
+newtype StackedBar = StackedBar
    { x :: Relectable String
-   , rbars :: Array RBar
+   , bars :: Array Bar
    }
 
-newtype RBar = RBar
+newtype Bar = Bar
    { y :: Relectable String
    , z :: Relectable Number
    }
 
-type RBarChartHelpers =
-   { rbar_attrs :: (Int -> String) -> RBarChart -> BarSegmentCoordinate -> Object String
+type BarChartHelpers =
+   { bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
    , tickEvery :: Int -> Int
    }
 
-foreign import drawRBarChart :: RBarChartHelpers -> RRenderer RBarChart Unit
+foreign import drawBarChart :: BarChartHelpers -> RRenderer BarChart Unit
 
-drawRBarChart' :: RRenderer RBarChart Unit
-drawRBarChart' = drawRBarChart
-   { rbar_attrs
+drawBarChart' :: RRenderer BarChart Unit
+drawBarChart' = drawBarChart
+   { bar_attrs
    , tickEvery
    }
 
-instance Drawable RBarChart Unit where
+instance Drawable BarChart Unit where
    draw divId suffix redraw view viewState =
-      drawRBarChart' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
+      drawBarChart' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
       where
       barChartSelector :: ViewSelector BarSegmentCoordinate
       barChartSelector { i, j } = barSegment i j >>> barChart
 
-instance Reflect (Dict (Val (ReactState 𝕊))) RBarChart where
-   from r = RBarChart
+instance Reflect (Dict (Val (ReactState 𝕊))) BarChart where
+   from r = BarChart
       { caption: unpack string (get f_caption r)
-      , rstackedBars: recordℝ from <$> from (get f_data r)
+      , stackedBars: recordℝ from <$> from (get f_data r)
       }
 
-instance Reflect (Dict (Val (ReactState 𝕊))) RStackedBar where
-   from r = RStackedBar
+instance Reflect (Dict (Val (ReactState 𝕊))) StackedBar where
+   from r = StackedBar
       { x: unpack string (get f_x r)
-      , rbars: recordℝ from <$> from (get f_bars r)
+      , bars: recordℝ from <$> from (get f_bars r)
       }
 
-instance Reflect (Dict (Val (ReactState 𝕊))) RBar where
-   from r = RBar
+instance Reflect (Dict (Val (ReactState 𝕊))) Bar where
+   from r = Bar
       { y: unpack string (get f_y r)
       , z: get_intOrNumberℝ f_z r
       }
@@ -77,8 +77,8 @@ instance Reflect (Dict (Val (ReactState 𝕊))) RBar where
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
 
-rbar_attrs :: (Int -> String) -> RBarChart -> BarSegmentCoordinate -> Object String
-rbar_attrs indexCol (RBarChart { rstackedBars }) { i, j } =
+bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
+bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
    fromFoldable
       [ "fill" ↦ case persistent of
            None -> col
@@ -96,8 +96,8 @@ rbar_attrs indexCol (RBarChart { rstackedBars }) { i, j } =
       ]
    where
    -- ok, so implement inert into images
-   RStackedBar { rbars } = rstackedBars ! i
-   RBar { z } = rbars ! j
+   StackedBar { bars } = stackedBars ! i
+   Bar { z } = bars ! j
    --if z is inert, then what on earth do we do here?
    SelState { persistent, transient } = fromℝ (snd z)
    col = indexCol j

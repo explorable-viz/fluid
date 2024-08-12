@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (ReactState, ViewSelector, 𝕊, from, recordℝ, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
-import App.View.BarChart (RBarChart)
+import App.View.BarChart (BarChart)
 import App.View.LineChart (RLineChart)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.ScatterPlot (RScatterPlot)
@@ -24,7 +24,7 @@ import Web.Event.EventTarget (EventListener, eventListener)
 
 data View
    -- one for each constructor of the Fluid 'Plot' data type
-   = BarChart' RBarChart
+   = BarChart' BarChart
    | LineChart' RLineChart
    | ScatterPlot' RScatterPlot
    | MultiView' MultiView
