@@ -17,17 +17,17 @@ main = Promise.fromAff tests
 
 tests :: Aff Unit
 tests = do
-   browser <- T.launch {}
-   page <- T.newPage browser
-   T.goto (T.URL "http://127.0.0.1:8080") {} page
-   --_ <- T.waitForNavigation { waitUntil: T.networkIdle2 } page
-   content <- T.content page
-   liftEffect (log content)
-   check (String.length content > 0) "Content is non-empty string"
-   checkForFigure page "fig-4"
-   checkForFigure page "fig-1"
-   checkForFigure page "fig-conv-2"
-   T.close browser
+      browser <- T.launch {}
+      page <- T.newPage browser
+      T.goto (T.URL "http://127.0.0.1:8080") {} page
+      --_ <- T.waitForNavigation { waitUntil: T.networkIdle2 } page
+      content <- T.content page
+      liftEffect (log content)
+      check (String.length content > 0) "Content is non-empty string"
+      checkForFigure page "fig-4"
+      checkForFigure page "fig-1"
+      checkForFigure page "fig-conv-2"
+      T.close browser
 
 checkForFigure :: T.Page -> String -> Aff Unit
 checkForFigure page id = do
