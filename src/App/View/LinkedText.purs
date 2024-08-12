@@ -19,7 +19,7 @@ type LinkedTextHelpers = { test_field :: String }
 newtype LinkedText = LinkedText (Selectable String)
 
 drawLinkedText' :: Renderer LinkedText Unit
-drawLinkedText' = drawLinkedText { test_field : "test" }
+drawLinkedText' = drawLinkedText { test_field: "test" }
 
 instance Drawable LinkedText Unit where
    draw divId suffix redraw view viewState =

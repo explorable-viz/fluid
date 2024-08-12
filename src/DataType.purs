@@ -100,7 +100,7 @@ cCons = ":" :: Ctr
 cPair = "Pair" :: Ctr -- Pair
 cNone = "None" :: Ctr -- Option
 cSome = "Some" :: Ctr
-cText = "Text" :: Ctr
+cText = "TextBox" :: Ctr
 
 -- Field names used internally by rendering layer.
 f_bars = "bars" :: FieldName

@@ -38,10 +38,10 @@ fig3 =
 
 fig4 :: FigSpec
 fig4 =
-   { datasets: [ ]
-   , imports: [ ]
+   { datasets: []
+   , imports: []
    , file: File "text"
-   , inputs: [ ]
+   , inputs: []
    }
 
 main :: Effect Unit
