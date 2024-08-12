@@ -2,13 +2,13 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (ReactState, ViewSelector, 𝕊, from, fromℝ, record, recordℝ, selectionEventData)
+import App.Util (ReactState, ViewSelector, 𝕊, from, recordℝ, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (RBarChart)
 import App.View.LineChart (RLineChart)
 import App.View.MatrixView (RMatrixView(..), matrixRRep)
 import App.View.ScatterPlot (RScatterPlot)
-import App.View.TableView (TableView(..), TableViewState)
+import App.View.TableView (RTableView(..), TableViewState)
 import App.View.Util (class Drawable, HTMLId, Redraw, draw)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
@@ -30,7 +30,7 @@ data View
    | MultiView' MultiView
    -- plus default visualisations for specific kinds of value
    | MatrixView' RMatrixView
-   | TableView' TableViewState TableView
+   | TableView' TableViewState RTableView
 
 newtype MultiView = MultiView (Dict View)
 
@@ -61,7 +61,7 @@ view title (Val _ (Constr c (u : Nil))) vw | c == cMultiPlot =
 view _ (Val _ (Constr c (u : Nil))) _ | c == cScatterPlot =
    ScatterPlot' (recordℝ from u)
 view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
-   TableView' vwState (TableView { title, table: record identity <$> from (fromℝ <$> u) })
+   TableView' vwState (RTableView { title, table: recordℝ identity <$> from u })
    where
    vwState = case vw of
       Nothing -> { filter: false }

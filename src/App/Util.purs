@@ -104,9 +104,6 @@ persist δα = over SelState \s -> s { persistent = δα s.persistent }
 selState :: forall a. a -> a -> SelState a
 selState b1 b2 = SelState { persistent: b1, transient: b2 }
 
-selected :: forall a. JoinSemilattice a => SelState a -> a
-selected (SelState { persistent, transient }) = persistent ∨ transient
-
 data ReactState a = Inert | Reactive (SelState a)
 
 newtype TelState a = TelState
@@ -136,6 +133,14 @@ cheatToRSelectable a = (cheatToℝ <$> (a))
 
 fromRSelectable :: forall a. Relectable a -> Selectable a
 fromRSelectable a = (fromℝ <$> (a))
+-}
+
+selected :: forall a. JoinSemilattice a => SelState a -> a
+selected (SelState { persistent, transient }) = persistent ∨ transient
+
+{-}
+relected :: forall a. ReactState a => a
+relected t = selected (fromℝ t)
 -}
 
 isPrimary :: SelState 𝕊 -> 𝔹
@@ -187,6 +192,7 @@ rJoin a b = cheatToℝ (lift2 rJoin' (fromℝ a) (fromℝ b))
    rJoin' :: 𝕊 -> 𝕊 -> 𝕊
    rJoin' c d = c ∨ d
 
+--this is join for a semilattice
 rupCompare :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
 rupCompare Inert b = b
 rupCompare a Inert = a
@@ -402,7 +408,7 @@ attrs = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
 -- boilerplate
 -- ======================
 
--- figure out what's going on here wrt things.
+-- figure out what's going on here wrt RactState as a semilattice.
 derive instance Generic 𝕊 _
 instance Show 𝕊 where
    show = genericShow

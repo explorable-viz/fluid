@@ -174,9 +174,7 @@ rbar_attrs indexCol (RBarChart { rstackedBars }) { i, j } =
            else col
       ]
    where
-   -- let's mess around to get inert a thing here, because for whatever reason we encode bar chart directly/
-
-   -- ok, so task is to make the Relectable thing out here as not a problem, which is a little more unpacking required.
+   -- ok, so implement inert into images
    RStackedBar { rbars } = rstackedBars ! i
    RBar { z } = rbars ! j
    --if z is inert, then what on earth do we do here?

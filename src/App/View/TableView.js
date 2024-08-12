@@ -119,3 +119,120 @@ function drawTable_ (
 }
 
 export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)
+
+
+function setRSelState (
+   { cell_rselClassesFor, rowKey, rrecord_isUsed, val_rselState },
+   filterToggleListener,
+   {
+      rselClasses,
+   },
+   rootElement,
+   { title, table },
+   { filter },
+   selListener
+) {
+   rootElement.selectAll('.table-cell').each(function (cell) {
+      if (cell.colName != rowKey) {
+         const sel = val_rselState(table[cell.i][cell.colName])
+         d3.select(this) // won't work inside arrow function :/
+            .classed(rselClasses, false)
+            .classed(cell_rselClassesFor(cell.colName)(sel), true)
+            .on('mousedown', e => { selListener(e) })
+            .on('mouseenter', e => { selListener(e) })
+            .on('mouseleave', e => { selListener(e) })
+      }
+   })
+   
+   let hidden = 0
+   /*
+   rootElement.selectAll('.table-row').each(function ({ i }) {
+
+      // this is where we can put, say rrecord_isInert(table[i]) also
+      hide = !rrecord_isUsed(table[i]) && filter
+      if (hide)
+         hidden++
+      d3.select(this) // won't work inside arrow function :/
+         .classed('hidden', hide)
+   })
+         */
+   rootElement.select('.table-caption')
+      .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
+   rootElement.select('.filter-toggle')
+      .on('mousedown', e => { filterToggleListener(e) })
+}
+
+function drawRTable_ (
+   rtableViewHelpers,
+   filterToggleListener,
+   {
+      uiRHelpers,
+      divId,
+      suffix,
+      view,
+      viewState: { filter }
+   },
+   selListener
+) {
+   return () => {
+      const { rowKey, val_rval } = rtableViewHelpers
+      let { table } = view
+      const childId = divId + '-' + suffix
+
+      const div = d3.select('#' + divId)
+      if (div.empty()) {
+         console.error('Unable to insert figure: no div found with id ' + divId)
+         return
+      }
+
+      table = table.map((r, n) => { return {[ rowKey ]: n + 1, ...r} })
+      const colNames = Object.keys(table[0]).sort()
+
+      let rootElement = div.selectAll('#' + childId)
+
+      if (rootElement.empty()) {
+         rootElement = div
+            .append('table')
+            .attr('id', childId)
+
+         rootElement.append('caption')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('class', 'title-text table-caption')
+            .attr('dominant-baseline', 'middle')
+            .attr('text-anchor', 'left')
+
+         const tableHead = rootElement.append('thead')
+         tableHead
+            .append('tr')
+            .selectAll('th')
+               .data(colNames)
+               .enter()
+               .append('th')
+               .text(colName => colName == rowKey ? (filter ? "▸" : "▾" ) : colName)
+               .classed('filter-toggle toggle-button', colName => colName == rowKey)
+
+         const rows = rootElement
+            .append('tbody')
+            .selectAll('tr')
+               .data([...table.entries()].map((([i, row]) => { return { i, row } })))
+               .enter()
+               .append('tr')
+               .attr('class', 'table-row')
+
+         rows.selectAll('td')
+            .data(({ i, row }) => colNames.map(colName => {
+               return { [rowKey]: row[rowKey], i, colName, value: row[colName] }
+            }))
+            .enter()
+            .append('td')
+            .attr('class', 'table-cell')
+            .text(cell => cell.colName == rowKey ? cell.value : prim(val_rval(cell.value)))
+      }
+
+      setRSelState(rtableViewHelpers, filterToggleListener, uiRHelpers, rootElement, view, { filter }, selListener)
+   }
+}
+
+export var drawRTable = x1 => x2 => x3 => x4 => drawRTable_(x1, x2, x3, x4)
+
