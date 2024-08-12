@@ -10,21 +10,21 @@ import Util ((×))
 import Val (Array2, MatrixRep(..))
 
 --  (Rendered) matrices are required to have element type Int for now.
-type RIntMatrix = { cells :: Array2 (Relectable Int), i :: Int, j :: Int }
+type IntMatrix = { cells :: Array2 (Relectable Int), i :: Int, j :: Int }
 
-newtype RMatrixView = RMatrixView { title :: String, matrix :: RIntMatrix }
+newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import drawRMatrix :: RRenderer RMatrixView Unit
+foreign import drawMatrix :: RRenderer MatrixView Unit
 
-instance Drawable RMatrixView Unit where
+instance Drawable MatrixView Unit where
    draw divId suffix redraw view viewState =
-      drawRMatrix { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw matrixViewSelector
+      drawMatrix { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw matrixViewSelector
       where
       matrixViewSelector :: ViewSelector MatrixCellCoordinate
       matrixViewSelector { i, j } = matrixElement i j
 
-matrixRRep :: MatrixRep (ReactState 𝕊) -> RIntMatrix
-matrixRRep (MatrixRep (vss × (i × _) × (j × _))) =
+matrixRep :: MatrixRep (ReactState 𝕊) -> IntMatrix
+matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    { cells: (unpack int <$> _) <$> vss, i, j }
 
 -- 1-based indices of selected cell; see data binding in .js

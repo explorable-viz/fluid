@@ -30,7 +30,7 @@ function setRSelState (
    })
 }
 
-function drawRMatrix_ (
+function drawMatrix_ (
    {
       uiRHelpers,
       divId,
@@ -119,7 +119,7 @@ function drawRMatrix_ (
    }
 }
 
-export var drawRMatrix = x1 => x2 => drawRMatrix_(x1, x2)
+export var drawMatrix = x1 => x2 => drawMatrix_(x1, x2)
 
 /*
 function setSelState (
