@@ -224,7 +224,7 @@ function drawRLineChart_ (
          for (const i_plot of plots.entries()) {
             const [i, rplot] = i_plot
             rootElement.selectAll('point')
-               .data([...rplot.points.entries()].map(([j, p]) => {
+               .data([...rplot.rpoints.entries()].map(([j, p]) => {
                   return { name: rval(rplot.name), x: rval(p.x), y: rval(p.y), i, j }
                }))
                .enter()
