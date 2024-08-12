@@ -82,7 +82,6 @@ instance Drawable MultiView Unit where
 
 derive instance Newtype MultiView _
 
-
 {-}
 view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
 view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =

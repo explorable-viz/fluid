@@ -13,7 +13,7 @@ module App.View.TableView
    , filterToggler
    , record_isUsed
    , rowKey
-   , rrecord_isInert
+   , rrecord_isReactive
    , rrecord_isUsed
    ) where
 
@@ -44,7 +44,7 @@ type TableViewState =
 type RTableViewHelpers =
    { rowKey :: String
    , rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
-   , rrecord_isInert :: Dict (Val (ReactState 𝕊)) -> Boolean
+   , rrecord_isReactive :: Dict (Val (ReactState 𝕊)) -> Boolean
    , cell_rselClassesFor :: String -> ReactState 𝕊 -> String
    -- values in table cells are not "unpacked" to Selectable but remain as Val
    , val_rval :: Val (ReactState 𝕊) -> BaseVal (ReactState 𝕊)
@@ -57,7 +57,7 @@ drawRTable' :: EventListener -> RRenderer RTableView TableViewState
 drawRTable' = drawRTable
    { rowKey
    , rrecord_isUsed
-   , rrecord_isInert
+   , rrecord_isReactive
    , cell_rselClassesFor
    , val_rval: \(Val _ v) -> v
    , val_rselState: \(Val α _) -> α
@@ -104,8 +104,8 @@ rrecord_isUnused r =
    not <<< isEmpty $ flip filterKeys r \k ->
       (k /= rowKey) && (isNone (fromℝ (get k r # \(Val α _) -> α)))
 -}
-rrecord_isInert :: Dict (Val (ReactState 𝕊)) -> Boolean
-rrecord_isInert r =
+rrecord_isReactive :: Dict (Val (ReactState 𝕊)) -> Boolean
+rrecord_isReactive r =
    not <<< isEmpty $ flip filterKeys r \k ->
       (k /= rowKey) && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> fromChangeℝ α))
 

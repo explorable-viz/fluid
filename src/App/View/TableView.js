@@ -122,7 +122,7 @@ export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)
 
 
 function setRSelState (
-   { cell_rselClassesFor, rowKey, rrecord_isUsed, rrecord_isInert, val_rselState },
+   { cell_rselClassesFor, rowKey, rrecord_isUsed, rrecord_isReactive, val_rselState },
    filterToggleListener,
    {
       rselClasses,
@@ -146,7 +146,7 @@ function setRSelState (
    
    let hidden = 0
    rootElement.selectAll('.table-row').each(function ({ i }) {
-      hide = !rrecord_isInert(table[i]) && !filter
+      hide = !rrecord_isReactive(table[i]) && !filter
       if (hide)
          hidden++
       d3.select(this) // won't work inside arrow function :/
