@@ -41,19 +41,23 @@ jobs:
       id-token: write
     steps:
     - uses: actions/checkout@v4
-    - name: build
-      run: |
-        yarn install
-        yarn build-app
-    - name: gh-pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/app/
-        keep_files: true
+    # steps done in test - - - - - - - -
+    #- name: build
+    #  run: |
+    #    yarn install
+    #    yarn build-app
+    # steps done in test - - - - - - - -
+    # deploy to github - - - - - - - - -
+    #- name: gh-pages
+    #  uses: peaceiris/actions-gh-pages@v3
+    #  with:
+    #    github_token: ${{ secrets.GITHUB_TOKEN }}
+    #    publish_dir: dist/app/
+    #    keep_files: true
+    # deploy to github - - - - - - - - -
     - uses: actions/setup-node@v4
       with:
-        node-version: '20.x'
+        node-version: '22.x'
         registry-url: 'https://registry.npmjs.org'
     # - run: npm ci # https://docs.npmjs.com/cli/v10/commands/npm-ci - must have package-lock.json
     - run: npm publish --provenance --access public
