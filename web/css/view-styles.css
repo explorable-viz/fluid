@@ -45,6 +45,29 @@ thead {
    border-left: 2px solid lightblue;
 }
 
+.transparent-text {
+   border-radius: 2px;
+   background-color: White;
+   border-bottom: 2px solid white;
+   display: inline-block;
+}
+
+.transparent-text.selected-primary-persistent {
+   background-color: #93E9BE;
+}
+
+.transparent-text.selected-primary-transient {
+   border-bottom: 2px solid blue;
+}
+
+.transparent-text.selected-secondary-persistent {
+   background-color: rgb(226, 226, 226);
+}
+
+.transparent-text.selected-secondary-transient {
+   border-bottom: 2px solid lightblue;
+}
+
 .table-row.hidden {
    visibility: collapse;
 }

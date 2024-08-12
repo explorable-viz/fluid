@@ -10,16 +10,25 @@ d3.selection.prototype.attrs = function(m) {
 }
 
 function setSelState (
+   {},
    {
       selState,
       selClasses,
       selClassesFor,
       join
    },
-   rootElement,
-   listener
+   div,
+   view,
+   selListener
 ) {
-   
+   // console.log("Exercising setSelState")
+   const sel = selState(view)
+   div
+      .classed(selClasses, false)
+      .classed(selClassesFor(sel), true)
+      .on('mousedown', e => { selListener(e) })
+      .on('mouseenter', e => { selListener(e) })
+      .on('mouseleave', e => { selListener(e) })
 }
 
 function drawLinkedText_ (
@@ -30,14 +39,15 @@ function drawLinkedText_ (
       suffix,
       view
    },
-   listener
+   selListener
 ) {
    return () => {
-      // const { val } = uiHelpers
       const div = d3.select('#' + divId)
-      console.log("Lol")
-      console.log(view)
-      document.getElementById(divId).innerText = view._1
+      let rootElement = div.selectAll('#' + divId)
+      div.text(view._1)
+      div.attr('class', 'transparent-text')
+
+      setSelState(linkedTextHelpers, uiHelpers, div, view,  selListener)
    } 
 }
 
