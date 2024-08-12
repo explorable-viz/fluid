@@ -7,6 +7,7 @@ Fluid is an experimental programming language which integrates a bidirectional d
 [![v0.3.1-typescript](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml)
 
 ## Installation
+
 ### Software required
 - Windows users: Ubuntu (WSL)
 - git
@@ -14,6 +15,7 @@ Fluid is an experimental programming language which integrates a bidirectional d
 - yarn
 
 ### Notes
+- Run `script/dev-setup.sh` after cloning repository
 - Avoid having PureScript installed globally
 - `Add Npm Path` is selected in PureScript IDE extension settings
 - VSCode for Windows users:
@@ -21,11 +23,9 @@ Fluid is an experimental programming language which integrates a bidirectional d
 	- Install WSL extension in VSCode
 
 #### Running tests on command line
-
 - `yarn build` and then `yarn test` for core tests
 
 #### Running tests in browser
-
 - As per command-line tests above, but run `yarn test-browser`
 - Hit Debug in the browser window that opens, and then open Developer Tools or equivalent
 
