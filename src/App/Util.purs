@@ -20,6 +20,7 @@ module App.Util
    , fromℝ
    , get_intOrNumber
    , get_intOrNumberℝ
+   , isInert
    , isNone
    , isPersistent
    , isPrimary
@@ -154,9 +155,9 @@ isSecondary (SelState { persistent, transient }) =
 isNone :: SelState 𝕊 -> 𝔹
 isNone sel = not (isPersistent sel || isTransient sel)
 
---isInert :: SelState 𝕊 -> 𝔹
---isInert (SelState { persistent, transient }) =
---  persistent == Inert || transient == Inert
+isInert :: ReactState 𝕊 -> 𝔹
+isInert Inert = true
+isInert _ = false
 
 isPersistent :: SelState 𝕊 -> 𝔹
 isPersistent (SelState { persistent }) = persistent /= None

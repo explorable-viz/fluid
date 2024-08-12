@@ -122,7 +122,7 @@ export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)
 
 
 function setRSelState (
-   { cell_rselClassesFor, rowKey, rrecord_isUsed, val_rselState },
+   { cell_rselClassesFor, rowKey, rrecord_isUsed, rrecord_isInert, val_rselState },
    filterToggleListener,
    {
       rselClasses,
@@ -145,17 +145,14 @@ function setRSelState (
    })
    
    let hidden = 0
-   /*
    rootElement.selectAll('.table-row').each(function ({ i }) {
-
-      // this is where we can put, say rrecord_isInert(table[i]) also
       hide = !rrecord_isUsed(table[i]) && filter
       if (hide)
          hidden++
       d3.select(this) // won't work inside arrow function :/
          .classed('hidden', hide)
    })
-         */
+         
    rootElement.select('.table-caption')
       .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
    rootElement.select('.filter-toggle')

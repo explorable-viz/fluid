@@ -64,7 +64,7 @@ view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
    TableView' vwState (RTableView { title, table: recordℝ identity <$> from u })
    where
    vwState = case vw of
-      Nothing -> { filter: false }
+      Nothing -> { filter: true }
       Just (TableView' vwState' _) -> vwState'
 
 {-}
