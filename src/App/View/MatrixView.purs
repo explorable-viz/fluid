@@ -14,34 +14,53 @@ import Val (MatrixRep(..), Array2)
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-type MatrixHelpers =
-   { isHBorderExterior :: IntMatrix -> MatrixBorderCoordinate -> Boolean
-   , isVBorderExterior :: IntMatrix -> MatrixBorderCoordinate -> Boolean
-   }
+data ShadowDirection = North | South | East | West | None
 
--- horizontal border: i ∈ [0..matrixH], j ∈ [1..matrixW]
-isHBorderExterior :: IntMatrix -> MatrixBorderCoordinate -> Boolean
-isHBorderExterior { cells, i: matrixH, j: _ } { i, j }
-   | i == 0 = isCellTransient cells { i, j: j - 1 } -- top border of the entire matrix, check only the cell below
-   | i == matrixH = isCellTransient cells { i: i - 1, j: j - 1 } -- bottom border of the entire matrix, check only the cell above
-   | otherwise = isCellTransient cells { i, j: j - 1 } /= isCellTransient cells { i: i - 1, j: j - 1 }
+matrixBorderStyles :: ShadowDirection -> String
+matrixBorderStyles North = "filter: drop-shadow(0px -1px 1px blue);"
+matrixBorderStyles South = "filter: drop-shadow(0px 1px 1px blue);"
+matrixBorderStyles East = "filter: drop-shadow(1px 0px 1px blue);"
+matrixBorderStyles West = "filter: drop-shadow(-1px 0px 1px blue);"
+matrixBorderStyles None = "visibility: hidden;"
 
--- vertical border: i ∈ [1..matrixH], j ∈ [0..matrixW]
-isVBorderExterior :: IntMatrix -> MatrixBorderCoordinate -> Boolean
-isVBorderExterior { cells, i: _, j: matrixW } { i, j }
-   | j == 0 = isCellTransient cells { i: i - 1, j } -- left border of the entire matrix, check only the cell to the right
-   | j == matrixW = isCellTransient cells { i: i - 1, j: j - 1 } -- right border of the entire matrix, check only the cell to the left
-   | otherwise = isCellTransient cells { i: i - 1, j } /= isCellTransient cells { i: i - 1, j: j - 1 }
+hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
+hBorderStyles m c = matrixBorderStyles $ hBorderShadowDirection m c
+
+hBorderShadowDirection :: IntMatrix -> MatrixBorderCoordinate -> ShadowDirection
+hBorderShadowDirection { cells, i: matrixH, j: _ } { i, j } = case i of
+   0                -> if isCellTransient cells { i, j: j - 1 } then South else None
+   _ | i == matrixH -> if isCellTransient cells { i: i - 1, j: j - 1 } then North else None
+   _                -> if isCellTransient cells { i, j: j - 1 } && (not isCellTransient cells { i: i - 1, j: j - 1 })
+                       then South
+                       else if (not isCellTransient cells { i, j: j - 1 }) && isCellTransient cells { i: i - 1, j: j - 1 }
+                       then North else None
+
+vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
+vBorderStyles m c = matrixBorderStyles $ vBorderShadowDirection m c
+
+vBorderShadowDirection :: IntMatrix -> MatrixBorderCoordinate -> ShadowDirection
+vBorderShadowDirection { cells, i: _, j: matrixW } { i, j } = case j of
+   0                -> if isCellTransient cells { i: i - 1, j } then East else None
+   _ | j == matrixW -> if isCellTransient cells { i: i - 1, j: j - 1 } then West else None
+   _                -> if isCellTransient cells { i: i - 1, j } && (not isCellTransient cells { i: i - 1, j: j - 1 })
+                       then East
+                       else if (not isCellTransient cells { i: i - 1, j }) && isCellTransient cells { i: i - 1, j: j - 1 }
+                       then West else None
 
 isCellTransient :: forall a. Array2 (Selectable a) -> MatrixCellCoordinate -> Boolean
 isCellTransient arr2d { i, j } = isTransient $ snd $ (arr2d ! i) ! j
 
 foreign import drawMatrix :: MatrixHelpers -> Renderer MatrixView Unit
 
+type MatrixHelpers =
+   { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
+   , vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
+   }
+
 drawMatrix' :: Renderer MatrixView Unit
 drawMatrix' = drawMatrix
-   { isHBorderExterior
-   , isVBorderExterior
+   { hBorderStyles
+   , vBorderStyles
    }
 
 instance Drawable MatrixView Unit where

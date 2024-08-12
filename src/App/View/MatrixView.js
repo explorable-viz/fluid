@@ -4,8 +4,8 @@ import * as d3 from "d3"
 
 function setSelState (
    { 
-      isHBorderExterior, 
-      isVBorderExterior
+      hBorderStyles, 
+      vBorderStyles
    },
    {
       selState,
@@ -35,12 +35,14 @@ function setSelState (
 
    rootElement.selectAll('.matrix-cell-hBorder').each(function (hBorder) {
       d3.select(this)
-         .attr("visibility", isHBorderExterior(matrix)(hBorder) ? null : "hidden")
+         .attr("style", hBorderStyles(matrix)(hBorder))
+         //.attr("visibility", hBorderVisibility(matrix)(hBorder) == "matrix-border-hidden" ? "hidden" : null)
    })
 
    rootElement.selectAll('.matrix-cell-vBorder').each(function (vBorder) {
       d3.select(this)
-         .attr("visibility", isVBorderExterior(matrix)(vBorder) ? null : "hidden")
+         .attr("style", vBorderStyles(matrix)(vBorder))
+         //.attr("visibility", vBorderVisibility(matrix)(vBorder) == "matrix-border-hidden" ? "hidden" : null)
    })
 }
 

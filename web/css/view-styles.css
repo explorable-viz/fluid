@@ -88,11 +88,11 @@ thead {
 
 .matrix-cell-text.selected-primary-transient {
    font-weight: 400;
-   color: darkblue
+   color: blue
 }
 
 .matrix-cell-text.selected-secondary-transient {
-   color: blue
+   color: royalblue
 }
 
 .scatterplot-point {
