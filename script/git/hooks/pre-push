@@ -8,11 +8,14 @@ then
    echo "There are locally modified files. Stash or discard them before pushing."
    exit 1
 else
-   echo "No locally modified files. Formatting."
+   echo "No locally modified files. Checking format."
    yarn tidy
    if git status --porcelain | grep -q '^[ M]'
    then
-      echo "Formatting changes found. Committing."
+      echo "Committing formatting changes."
       git layout # requires script/dev-setup.sh to have been run
+   else
+      echo "No formatting changes."
    fi
+   echo "Pushing."
 fi
