@@ -8,7 +8,7 @@ then
    echo "There are locally modified files. Stash or discard them before pushing."
    exit 1
 else
-   echo "No locally modified files."
+   echo "No locally modified files. Formatting."
    yarn tidy
    if git status --porcelain | grep -q '^[ M]'
    then
