@@ -1,6 +1,17 @@
 
 #!/usr/bin/env bash
 # (ensure we pull bash from path not /usr/bin)
-set -x -e
+set -e
 
-yarn tidy
+if git status --porcelain | grep -q '^[ M]'
+then
+   echo "There are locally modified files. Stash or discard them before pushing."
+   exit 1
+else
+   echo "No locally modified files."
+   yarn tidy
+   if git status --porcelain | grep -q '^[ M]'
+   then
+      git layout # requires script/dev-setup.sh to have been run
+   fi
+fi
