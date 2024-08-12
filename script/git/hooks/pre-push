@@ -5,18 +5,15 @@ set -e
 
 if git status --porcelain | grep -q '^[ M]'
 then
-   echo "There are locally modified files. Stash or discard them before pushing."
+   echo "Locally modified files. Stash or discard before pushing."
    exit 1
 else
    echo "No locally modified files. Checking format."
    yarn tidy
    if git status --porcelain | grep -q '^[ M]'
    then
-      echo "Adding formatting changes to most recent commit."
-      git add --all
-      git commit --amend --no-edit
-   else
-      echo "No formatting changes."
+      echo "Formatting changes. Commit again before pushing."
+      exit 1
    fi
    echo "Pushing."
 fi
