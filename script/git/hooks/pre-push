@@ -12,8 +12,8 @@ else
    yarn tidy
    if git status --porcelain | grep -q '^[ M]'
    then
-      echo "Committing formatting changes."
-      git layout # requires script/dev-setup.sh to have been run
+      echo "Adding formatting changes to most recent commit."
+      git add --all
       git commit --amend --no-edit
    else
       echo "No formatting changes."
