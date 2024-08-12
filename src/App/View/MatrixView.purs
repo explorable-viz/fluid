@@ -2,9 +2,9 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (ReactState, SelState, Selectable, 𝕊, ViewSelector, Relectable)
+import App.Util (ReactState, 𝕊, ViewSelector, Relectable)
 import App.Util.Selector (matrixElement)
-import App.View.Util (class Drawable, Renderer, RRenderer, selListener, uiHelpers, uiRHelpers)
+import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Primitive (int, unpack)
 import Util ((×))
 import Val (Array2, MatrixRep(..))
@@ -30,6 +30,7 @@ matrixRRep (MatrixRep (vss × (i × _) × (j × _))) =
 -- 1-based indices of selected cell; see data binding in .js
 type MatrixCellCoordinate = { i :: Int, j :: Int }
 
+{-}
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
@@ -42,7 +43,7 @@ instance Drawable MatrixView Unit where
       matrixViewSelector :: ViewSelector MatrixCellCoordinate
       matrixViewSelector { i, j } = matrixElement i j
 
-
 matrixRep :: MatrixRep (SelState 𝕊) -> IntMatrix
 matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    { cells: (unpack int <$> _) <$> vss, i, j }
+-}
