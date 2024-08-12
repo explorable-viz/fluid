@@ -190,6 +190,6 @@ dataTypes = L.fromFoldable
         [ "Arrowhead" × 0
         ]
    , dataType "Text"
-        [ "Text" × 1 -- Contents
+        [ cText × 1 -- Contents
         ]
    ]

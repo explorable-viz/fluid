@@ -16,7 +16,7 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (uncurry)
-import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
+import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot, cText)
 import Dict (Dict)
 import Effect (Effect)
 import Util.Map (mapWithKey)
@@ -45,6 +45,8 @@ selListener redraw selector =
 view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
 view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
    BarChart' (record from u)
+view _ (Val _ (Constr c (u : Nil))) _ | c == cText =
+   LinkedText' (from u)
 view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
    LineChart' (record from u)
 view title (Val _ (Matrix r)) _ =

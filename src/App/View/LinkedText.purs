@@ -15,12 +15,11 @@ import Val (Val)
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
 
+type LinkedTextHelpers = { test_field :: String }
 newtype LinkedText = LinkedText (Selectable String)
 
-type LinkedTextHelpers = {}
-
 drawLinkedText' :: Renderer LinkedText Unit
-drawLinkedText' = drawLinkedText {}
+drawLinkedText' = drawLinkedText { test_field : "test" }
 
 instance Drawable LinkedText Unit where
    draw divId suffix redraw view viewState =

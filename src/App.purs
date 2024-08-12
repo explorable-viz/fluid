@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (FigSpec, drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
-import Bind ((↦))
+-- import Bind ((↦))
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..), Folder(..), loadFile')
@@ -38,10 +38,10 @@ fig3 =
 
 fig4 :: FigSpec
 fig4 =
-   { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
-   , imports: []
-   , file: File "graphics/small-barchart"
-   , inputs: [ "renewables" ]
+   { datasets: [ ]
+   , imports: [ ]
+   , file: File "text"
+   , inputs: [ ]
    }
 
 main :: Effect Unit

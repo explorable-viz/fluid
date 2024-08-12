@@ -9,17 +9,36 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
+function setSelState (
+   {
+      selState,
+      selClasses,
+      selClassesFor,
+      join
+   },
+   rootElement,
+   listener
+) {
+   
+}
+
 function drawLinkedText_ (
    linkedTextHelpers,
    {
       uiHelpers,
       divId,
       suffix,
-      view: {
-         contents
-      }
+      view
    },
    listener
-) { }
+) {
+   return () => {
+      // const { val } = uiHelpers
+      const div = d3.select('#' + divId)
+      console.log("Lol")
+      console.log(view)
+      document.getElementById(divId).innerText = view._1
+   } 
+}
 
-export var drawLinkedText = x1 => x2 => x3 => drawLinkedText_()
+export var drawLinkedText = x1 => x2 => x3 => drawLinkedText_(x1, x2, x3)
