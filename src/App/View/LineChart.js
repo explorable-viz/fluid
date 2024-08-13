@@ -12,7 +12,7 @@ d3.selection.prototype.attrs = function(m) {
 function drawLineChart_ (
    lineChartHelpers,
    {
-      uiRHelpers: { rval },
+      uiHelpers: { val },
       divId,
       suffix,
       view: {
@@ -31,7 +31,7 @@ function drawLineChart_ (
             y_max = Math.max(...plots.map(plot_max_y)),
             x_min = Math.min(...plots.map(plot_min_x)),
             x_max = Math.max(...plots.map(plot_max_x)),
-            names = plots.map (plot => rval(plot.name))
+            names = plots.map (plot => val(plot.name))
       const div = d3.select('#' + divId)
       if (div.empty()) {
          console.error('Unable to insert figure: no div found with id ' + divId)
@@ -58,8 +58,8 @@ function drawLineChart_ (
                y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
 
          const line1 = d3.line()
-            .x(d => x(rval(d.x)))
-            .y(d => y(rval(d.y)))
+            .x(d => x(val(d.x)))
+            .y(d => y(val(d.y)))
 
          rootElement.selectAll('line')
             .data([...plots.entries()])
@@ -67,7 +67,7 @@ function drawLineChart_ (
             .append('g')
             .append('path')
             .attr('fill', 'none')
-            .attr('stroke', ([, plot]) => nameCol(rval(plot.name)))
+            .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
             .attr('d', ([, plot]) => line1(plot.points))
@@ -76,7 +76,7 @@ function drawLineChart_ (
             const [i, plot] = i_plot
             rootElement.selectAll('point')
                .data([...plot.points.entries()].map(([j, p]) => {
-                  return { name: rval(plot.name), x: rval(p.x), y: rval(p.y), i, j }
+                  return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
                .append('g')
@@ -128,7 +128,7 @@ function drawLineChart_ (
 
          rootElement
             .append('text')
-            .text(rval(caption))
+            .text(val(caption))
             .attr('x', width / 2)
             .attr('y', height + 35)
             .attr('class', 'title-text')

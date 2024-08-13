@@ -54,7 +54,7 @@ function setRSelState (
 function drawBarChart_ (
    BarChartHelpers,
    {
-      uiRHelpers,
+      uiHelpers,
       divId,
       suffix,
       view: {
@@ -65,7 +65,7 @@ function drawBarChart_ (
    listener
 ) {
    return () => {
-      const { rval } = uiRHelpers
+      const { val } = uiHelpers
       const { tickEvery } = BarChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 25, left: 40},
@@ -94,7 +94,7 @@ function drawBarChart_ (
          // x-axis
          const x = d3.scaleBand()
             .range([0, width])
-            .domain(stackedBars.map(bar => rval(bar.x)))
+            .domain(stackedBars.map(bar => val(bar.x)))
             .padding(0.2)
 
          rootElement.append('g')
@@ -104,7 +104,7 @@ function drawBarChart_ (
                .style('text-anchor', 'middle')
 
          function barHeight (bars) {
-            return bars.reduce((acc, bar) => { return rval(bar.z) + acc }, 0)
+            return bars.reduce((acc, bar) => { return val(bar.z) + acc }, 0)
          }
 
          // y-axis
@@ -139,9 +139,9 @@ function drawBarChart_ (
             .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
                const prev = acc[acc.length - 1]
                const y = prev.y + prev.height
-               acc.push({i, j: prev.j + 1, x: rval(x), y, height: rval(bar.z)})
+               acc.push({i, j: prev.j + 1, x: val(x), y, height: val(bar.z)})
                return acc
-            }, [{i, j: 0, x: rval(x), y: 0, height: rval(bars[0].z)}]))
+            }, [{i, j: 0, x: val(x), y: 0, height: val(bars[0].z)}]))
             .enter()
             .append('rect')
                .attr('class', 'bar')
@@ -153,7 +153,7 @@ function drawBarChart_ (
 
          const legendLineHeight = 15,
                legendStart = width + margin.left / 2
-               names = stackedBars[0].bars.map(bar => rval(bar.y))
+               names = stackedBars[0].bars.map(bar => val(bar.y))
          rootElement.append('rect')
             .attr('class', 'legend-box')
             .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
@@ -186,7 +186,7 @@ function drawBarChart_ (
             .attr('y', legendLineHeight / 2 - legendSquareSize)
 
          rootElement.append('text')
-            .text(rval(caption))
+            .text(val(caption))
             .style('user-select', 'none') // avoid mysterious spurious text selection
             .attr('x', width / 2)
             .attr('y', height + 35)

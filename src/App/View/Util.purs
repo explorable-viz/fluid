@@ -3,11 +3,11 @@ module App.View.Util
    , RRenderer
    , RRendererSpec
    , Redraw
-   , UIRHelpers
+   , UIHelpers
    , class Drawable
    , draw
    , selListener
-   , uiRHelpers
+   , uiHelpers
    ) where
 
 import Prelude
@@ -32,7 +32,7 @@ class Drawable a b | a -> b where
 -- Heavily curried type isn't convenient for FFI
 
 type RRendererSpec a b =
-   { uiRHelpers :: UIRHelpers
+   { uiHelpers :: UIHelpers
    , divId :: HTMLId
    , suffix :: String
    , view :: a
@@ -69,17 +69,17 @@ uiHelpers =
    , selClassesFor
    }
 -}
-type UIRHelpers =
-   { rval :: forall a. Selectable a -> a
+type UIHelpers =
+   { val :: forall a. Selectable a -> a
    , rselState :: forall a. Selectable a -> ReactState 𝕊
    , rjoin :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
    , selClasses :: String
    , selClassesFor :: ReactState 𝕊 -> String
    }
 
-uiRHelpers :: UIRHelpers
-uiRHelpers =
-   { rval: fst
+uiHelpers :: UIHelpers
+uiHelpers =
+   { val: fst
    , rselState: snd
    , rjoin: rupCompare
    -- need to adapt the semilattice to accept inert as well

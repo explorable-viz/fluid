@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, recordℝ)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
+import App.View.Util (class Drawable, RRenderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Foldable (maximum, minimum)
 import Data.Int (toNumber)
@@ -54,7 +54,7 @@ drawLineChart' = drawLineChart
 
 instance Drawable LineChart Unit where
    draw divId suffix redraw view viewState =
-      drawLineChart' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw lineChartSelector
+      drawLineChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw lineChartSelector
       where
       lineChartSelector :: ViewSelector PointCoordinate
       lineChartSelector { i, j } =

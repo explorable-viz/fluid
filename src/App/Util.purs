@@ -197,6 +197,7 @@ sto𝔹 :: SelState 𝕊 -> SelState 𝔹
 sto𝔹 = (_ <#> (_ /= None))
 
 to𝔹 :: ReactState 𝕊 -> SelState 𝔹
+--only used in tests
 to𝔹 = (sto𝔹 <$> (fromℝ $ _))
 
 to𝕊 :: SelState 𝔹 -> SelState 𝕊

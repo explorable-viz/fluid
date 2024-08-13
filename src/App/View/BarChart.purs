@@ -8,7 +8,7 @@ import Prelude hiding (absurd)
 
 import App.Util (fromℝ, class Reflect, ReactState, Selectable, SelState(..), ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, recordℝ)
 import App.Util.Selector (barChart, barSegment)
-import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
+import App.View.Util (class Drawable, RRenderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
@@ -51,7 +51,7 @@ drawBarChart' = drawBarChart
 
 instance Drawable BarChart Unit where
    draw divId suffix redraw view viewState =
-      drawBarChart' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
+      drawBarChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
       where
       barChartSelector :: ViewSelector BarSegmentCoordinate
       barChartSelector { i, j } = barSegment i j >>> barChart

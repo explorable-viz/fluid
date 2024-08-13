@@ -163,7 +163,7 @@ function drawRTable_ (
    rtableViewHelpers,
    filterToggleListener,
    {
-      uiRHelpers,
+      uiHelpers,
       divId,
       suffix,
       view,
@@ -172,7 +172,7 @@ function drawRTable_ (
    selListener
 ) {
    return () => {
-      const { rowKey, val_rval } = rtableViewHelpers
+      const { rowKey, val_val } = rtableViewHelpers
       let { table } = view
       const childId = divId + '-' + suffix
 
@@ -224,10 +224,10 @@ function drawRTable_ (
             .enter()
             .append('td')
             .attr('class', 'table-cell')
-            .text(cell => cell.colName == rowKey ? cell.value : prim(val_rval(cell.value)))
+            .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setRSelState(rtableViewHelpers, filterToggleListener, uiRHelpers, rootElement, view, { filter }, selListener)
+      setRSelState(rtableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, { filter }, selListener)
    }
 }
 

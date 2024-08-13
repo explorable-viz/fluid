@@ -32,7 +32,7 @@ function setRSelState (
 
 function drawMatrix_ (
    {
-      uiRHelpers,
+      uiHelpers,
       divId,
       suffix,
       view: {
@@ -43,7 +43,7 @@ function drawMatrix_ (
    listener
 ) {
    return () => {
-      const { rval } = uiRHelpers
+      const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const strokeWidth = 0.5
       const w = 30, h = 30
@@ -99,7 +99,7 @@ function drawMatrix_ (
 
          cells
             .append('text')
-            .text(({ n }) => rval(n))
+            .text(({ n }) => val(n))
             .attr('x', (_, j) => w * (j + 0.5))
             .attr('y', 0.5 * h)
             .attr('class', 'matrix-cell-text')
@@ -115,7 +115,7 @@ function drawMatrix_ (
             .attr('dominant-baseline', 'middle')
             .attr('text-anchor', 'left')
       }
-      setRSelState(uiRHelpers, rootElement, { matrix }, listener)
+      setRSelState(uiHelpers, rootElement, { matrix }, listener)
    }
 }
 

@@ -17,7 +17,7 @@ import Prelude
 
 import App.Util (ReactState, SelState, ViewSelector, 𝕊(..), eventData, fromChangeℝ, fromℝ, selClassesFor, selected)
 import App.Util.Selector (field, listElement)
-import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
+import App.View.Util (class Drawable, RRenderer, selListener, uiHelpers)
 import Dict (Dict)
 import Effect (Effect)
 import Util (Endo, spy)
@@ -43,7 +43,7 @@ type RTableViewHelpers =
    , rrecord_isReactive :: Dict (Val (ReactState 𝕊)) -> Boolean
    , cell_selClassesFor :: String -> ReactState 𝕊 -> String
    -- values in table cells are not "unpacked" to Selectable but remain as Val
-   , val_rval :: Val (ReactState 𝕊) -> BaseVal (ReactState 𝕊)
+   , val_val :: Val (ReactState 𝕊) -> BaseVal (ReactState 𝕊)
    , val_rselState :: Val (ReactState 𝕊) -> ReactState 𝕊
    }
 
@@ -55,14 +55,14 @@ drawRTable' = drawRTable
    , rrecord_isUsed
    , rrecord_isReactive
    , cell_selClassesFor
-   , val_rval: \(Val _ v) -> v
+   , val_val: \(Val _ v) -> v
    , val_rselState: \(Val α _) -> α
    }
 
 instance Drawable RTableView TableViewState where
    draw divId suffix redraw view viewState = do
       toggleListener <- filterToggleListener filterToggler
-      drawRTable' toggleListener { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw tableViewSelector
+      drawRTable' toggleListener { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw tableViewSelector
       where
       tableViewSelector :: ViewSelector CellIndex
       tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName

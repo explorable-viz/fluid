@@ -10,7 +10,7 @@ import Prelude
 import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, from, isPrimary, isSecondary, recordℝ, rupCompare)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
-import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
+import App.View.Util (class Drawable, RRenderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (toNumber)
 import Data.Tuple (snd)
@@ -40,7 +40,7 @@ drawScatterPlot' = drawScatterPlot
 
 instance Drawable ScatterPlot Unit where
    draw divId suffix redraw view viewState =
-      drawScatterPlot' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
+      drawScatterPlot' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
       where
       scatterPlotSelector :: ViewSelector PointIndex
       scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i

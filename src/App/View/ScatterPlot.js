@@ -31,7 +31,7 @@ function setRSelState (
 function drawScatterPlot_ (
    ScatterPlotHelpers,
    {
-      uiRHelpers,
+      uiHelpers,
       divId,
       suffix,
       view: {
@@ -44,14 +44,14 @@ function drawScatterPlot_ (
    listener
 ) {
    return () => {
-      const { rval } = uiRHelpers
+      const { val } = uiHelpers
       const childId = divId + '-' + suffix
       var max_width = 360
       var max_height = 360
-      const x_max = Math.ceil(Math.max(...points.map(point => rval(point.x))))
-      const x_min = Math.ceil(Math.min(...points.map(point => rval(point.x))))
-      const y_max = Math.ceil(Math.max(...points.map(point => rval(point.y))))
-      const y_min = Math.ceil(Math.min(...points.map(point => rval(point.y))))
+      const x_max = Math.ceil(Math.max(...points.map(point => val(point.x))))
+      const x_min = Math.ceil(Math.min(...points.map(point => val(point.x))))
+      const y_max = Math.ceil(Math.max(...points.map(point => val(point.y))))
+      const y_min = Math.ceil(Math.min(...points.map(point => val(point.y))))
       const margin = {top: 20, right: 20, bottom: 40, left: 50}
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
@@ -94,14 +94,14 @@ function drawScatterPlot_ (
             .attr("y", height + 25)
             .style("text-anchor", "end")
             .style("font-size", "8px")
-            .text(rval(xlabel))
+            .text(val(xlabel))
          rootElement.append("text")
             .attr("transform", "rotate(-90)")
             .attr("x", -margin.top)
             .attr("y", -margin.left + 20)
             .style("text-anchor", "end")
             .style("font-size", "8px")
-            .text(rval(ylabel))
+            .text(val(ylabel))
 
          rootElement.append('g')
             .selectAll('circle')
@@ -109,13 +109,13 @@ function drawScatterPlot_ (
             .enter()
             .append('circle')
             .classed('scatterplot-point', true)
-            .attr('cx', ({ point }) => x(rval(point.x)))
-            .attr('cy', ({ point }) => y(rval(point.y)))
-            .attr('data-y', ({ point }) => rval(point.y))
+            .attr('cx', ({ point }) => x(val(point.x)))
+            .attr('cy', ({ point }) => y(val(point.y)))
+            .attr('data-y', ({ point }) => val(point.y))
             .attr('stroke-width', 0.5)
 
          rootElement.append('text')
-            .text(rval(caption))
+            .text(val(caption))
             .attr('x', width / 2)
             .attr('y', height + 40)
             .attr('class', 'title-text')
@@ -123,7 +123,7 @@ function drawScatterPlot_ (
             .attr('text-anchor', 'middle')
       }
 
-      setRSelState(ScatterPlotHelpers, uiRHelpers, rootElement, { points }, listener)
+      setRSelState(ScatterPlotHelpers, uiHelpers, rootElement, { points }, listener)
    }
 }
 
