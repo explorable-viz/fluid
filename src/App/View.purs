@@ -8,7 +8,7 @@ import App.View.BarChart (BarChart)
 import App.View.LineChart (LineChart)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.ScatterPlot (ScatterPlot)
-import App.View.TableView (RTableView(..), TableViewState)
+import App.View.TableView (TableView(..), TableViewState)
 import App.View.Util (class Drawable, HTMLId, Redraw, draw)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
@@ -30,7 +30,7 @@ data View
    | MultiView' MultiView
    -- plus default visualisations for specific kinds of value
    | MatrixView' MatrixView
-   | TableView' TableViewState RTableView
+   | TableView' TableViewState TableView
 
 newtype MultiView = MultiView (Dict View)
 
@@ -61,7 +61,7 @@ view title (Val _ (Constr c (u : Nil))) vw | c == cMultiPlot =
 view _ (Val _ (Constr c (u : Nil))) _ | c == cScatterPlot =
    ScatterPlot' (recordℝ from u)
 view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
-   TableView' vwState (RTableView { title, table: recordℝ identity <$> from u })
+   TableView' vwState (TableView { title, table: recordℝ identity <$> from u })
    where
    vwState = case vw of
       Nothing -> { filter: false }

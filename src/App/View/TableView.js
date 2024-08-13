@@ -9,7 +9,7 @@ function prim (v) {
       return +parseFloat(v._1).toFixed(2)
    }
 }
-
+/*
 function setSelState (
    { cell_selClassesFor, rowKey, record_isUsed, val_selState },
    filterToggleListener,
@@ -119,7 +119,7 @@ function drawTable_ (
 }
 
 export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)
-
+*/
 
 function setSelState (
    { cell_selClassesFor, rowKey, rrecord_isUsed, rrecord_isReactive, val_selState },
@@ -159,8 +159,8 @@ function setSelState (
       .on('mousedown', e => { filterToggleListener(e) })
 }
 
-function drawRTable_ (
-   rtableViewHelpers,
+function drawTable_ (
+   tableViewHelpers,
    filterToggleListener,
    {
       uiHelpers,
@@ -172,7 +172,7 @@ function drawRTable_ (
    selListener
 ) {
    return () => {
-      const { rowKey, val_val } = rtableViewHelpers
+      const { rowKey, val_val } = tableViewHelpers
       let { table } = view
       const childId = divId + '-' + suffix
 
@@ -227,9 +227,9 @@ function drawRTable_ (
             .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setSelState(rtableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, { filter }, selListener)
+      setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, { filter }, selListener)
    }
 }
 
-export var drawRTable = x1 => x2 => x3 => x4 => drawRTable_(x1, x2, x3, x4)
+export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)
 

@@ -1,7 +1,7 @@
 module App.View.Util
    ( HTMLId
-   , RRenderer
-   , RRendererSpec
+   , Renderer
+   , RendererSpec
    , Redraw
    , UIHelpers
    , class Drawable
@@ -31,16 +31,6 @@ class Drawable a b | a -> b where
 
 -- Heavily curried type isn't convenient for FFI
 
-type RRendererSpec a b =
-   { uiHelpers :: UIHelpers
-   , divId :: HTMLId
-   , suffix :: String
-   , view :: a
-   , viewState :: b
-   }
-
-type RRenderer a b = RRendererSpec a b -> EventListener -> Effect Unit
-{-}
 type RendererSpec a b =
    { uiHelpers :: UIHelpers
    , divId :: HTMLId
@@ -49,26 +39,8 @@ type RendererSpec a b =
    , viewState :: b
    }
 
-
 type Renderer a b = RendererSpec a b -> EventListener -> Effect Unit
 
-type UIHelpers =
-   { val :: forall a. Selectable a -> a
-   , selState :: forall a. Selectable a -> SelState 𝕊
-   , join :: SelState 𝕊 -> SelState 𝕊 -> SelState 𝕊
-   , selClasses :: String
-   , selClassesFor :: SelState 𝕊 -> String
-   }
-
-uiHelpers :: UIHelpers
-uiHelpers =
-   { val: fst
-   , selState: snd
-   , join: (∨)
-   , selClasses
-   , selClassesFor
-   }
--}
 type UIHelpers =
    { val :: forall a. Selectable a -> a
    , selState :: forall a. Selectable a -> ReactState 𝕊
@@ -82,10 +54,6 @@ uiHelpers =
    { val: fst
    , selState: snd
    , join: joinR
-   -- need to adapt the semilattice to accept inert as well
-   -- at least, make a decision as to how much inert we want to present
-   -- do we really, or do we just find another way through?
-
    , selClasses
    , selClassesFor
    }

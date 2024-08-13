@@ -10,7 +10,7 @@ import Prelude
 import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, from, isPrimary, isSecondary, recordℝ, joinR)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
-import App.View.Util (class Drawable, RRenderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (toNumber)
 import Data.Tuple (snd)
@@ -32,9 +32,9 @@ newtype ScatterPlot = ScatterPlot
 type ScatterPlotHelpers =
    { point_attrs :: ScatterPlot -> PointIndex -> Object String }
 
-foreign import drawScatterPlot :: ScatterPlotHelpers -> RRenderer ScatterPlot Unit -- draws 
+foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit -- draws 
 
-drawScatterPlot' :: RRenderer ScatterPlot Unit
+drawScatterPlot' :: Renderer ScatterPlot Unit
 drawScatterPlot' = drawScatterPlot
    { point_attrs }
 
@@ -67,49 +67,3 @@ point_attrs (ScatterPlot { points }) { i } =
    sel1 = snd y
    sel2 = snd x
    sel = joinR sel1 sel2
-
-{-}
-newtype ScatterPlot = ScatterPlot
-   { caption :: Selectable String
-   , points :: Array Point
-   , xlabel :: Selectable String
-   , ylabel :: Selectable String
-   }
-
-type ScatterPlotHelpers =
-   { point_attrs :: ScatterPlot -> PointIndex -> Object String }
-
-foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit -- draws 
-
-
-instance Drawable ScatterPlot Unit where
-   draw divId suffix redraw view viewState =
-      drawScatterPlot' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
-      where
-      scatterPlotSelector :: ViewSelector PointIndex
-      scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
-
-drawScatterPlot' :: Renderer ScatterPlot Unit
-drawScatterPlot' = drawScatterPlot
-   { point_attrs }
-
-
-instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
-   from r = ScatterPlot
-      { caption: unpack string (get f_caption r)
-      , points: record from <$> from (get f_data r)
-      , xlabel: unpack string (get f_xlabel r)
-      , ylabel: unpack string (get f_ylabel r)
-      }
-
-
-point_attrs :: ScatterPlot -> PointIndex -> Object String
-point_attrs (ScatterPlot { points }) { i } =
-   fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.5 else if isSecondary sel then 1.5 else if isNone sel then 0.5 else 1.0) ]
-   where
-   Point { x, y } = points ! i
-   sel1 = snd y
-   sel2 = snd x
-   sel = sel1 ∨ sel2
--}
