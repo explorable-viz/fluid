@@ -3,23 +3,18 @@ module App.View.Util
    , RRenderer
    , RRendererSpec
    , Redraw
-   , Renderer
-   , RendererSpec
-   , UIHelpers
    , UIRHelpers
    , class Drawable
    , draw
    , selListener
-   , uiHelpers
    , uiRHelpers
    ) where
 
 import Prelude
 
-import App.Util (ReactState, Relectable, rselClasses, rselClassesFor, rupCompare, SelState, Selectable, Selector, ViewSelector, 𝕊, selClasses, selClassesFor, selectionEventData)
+import App.Util (ReactState, Relectable, rselClasses, rselClassesFor, rupCompare, Selector, ViewSelector, 𝕊, selectionEventData)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
-import Lattice ((∨))
 import Val (Val)
 import Web.Event.EventTarget (EventListener, eventListener)
 
@@ -35,13 +30,6 @@ class Drawable a b | a -> b where
    draw :: HTMLId -> String -> Redraw -> a -> b -> Effect Unit
 
 -- Heavily curried type isn't convenient for FFI
-type RendererSpec a b =
-   { uiHelpers :: UIHelpers
-   , divId :: HTMLId
-   , suffix :: String
-   , view :: a
-   , viewState :: b
-   }
 
 type RRendererSpec a b =
    { uiRHelpers :: UIRHelpers
@@ -52,6 +40,15 @@ type RRendererSpec a b =
    }
 
 type RRenderer a b = RRendererSpec a b -> EventListener -> Effect Unit
+{-}
+type RendererSpec a b =
+   { uiHelpers :: UIHelpers
+   , divId :: HTMLId
+   , suffix :: String
+   , view :: a
+   , viewState :: b
+   }
+
 
 type Renderer a b = RendererSpec a b -> EventListener -> Effect Unit
 
@@ -71,7 +68,7 @@ uiHelpers =
    , selClasses
    , selClassesFor
    }
-
+-}
 type UIRHelpers =
    { rval :: forall a. Relectable a -> a
    , rselState :: forall a. Relectable a -> ReactState 𝕊

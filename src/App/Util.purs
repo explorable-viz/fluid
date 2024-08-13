@@ -3,7 +3,6 @@ module App.Util
    , ReactState(..)
    , Relectable
    , SelState(..)
-   , Selectable
    , Selector
    , TelState(..)
    , ViewSelector
@@ -121,7 +120,6 @@ newtype TelState a = TelState
 --data 𝕋 = TSecondary | TPrimary
 --data ℝ = RNone | RSecondary | RPrimary
 data 𝕊 = None | Secondary | Primary
-type Selectable a = a × SelState 𝕊
 
 type Relectable a = a × ReactState 𝕊
 
@@ -134,7 +132,7 @@ fromRSelectable :: forall a. Relectable a -> Selectable a
 fromRSelectable a = (fromℝ <$> (a))
 -}
 
--- part of the TableView conundrum, but only part of such.
+-- part of the TableView conundrum, but part only of such.
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
 

@@ -3,13 +3,9 @@ module App.View.TableView
    , FilterToggler
    , RTableView(..)
    , RTableViewHelpers
-   , TableView(..)
-   , TableViewHelpers
    , TableViewState
    , drawRTable
    , drawRTable'
-   , drawTable
-   , drawTable'
    , filterToggler
    , record_isUsed
    , rowKey
@@ -19,9 +15,9 @@ module App.View.TableView
 
 import Prelude
 
-import App.Util (ReactState, SelState, ViewSelector, 𝕊(..), eventData, fromChangeℝ, fromℝ, rselClassesFor, selClassesFor, selected)
+import App.Util (ReactState, SelState, ViewSelector, 𝕊(..), eventData, fromChangeℝ, fromℝ, rselClassesFor, selected)
 import App.Util.Selector (field, listElement)
-import App.View.Util (class Drawable, Renderer, RRenderer, selListener, uiHelpers, uiRHelpers)
+import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Dict (Dict)
 import Effect (Effect)
 import Util (Endo, spy)
@@ -146,7 +142,7 @@ cell_rselClassesFor :: String -> ReactState 𝕊 -> String
 cell_rselClassesFor colName s
    | colName == rowKey = ""
    | otherwise = rselClassesFor s
-
+{-}
 newtype TableView = TableView
    { title :: String
    -- homogeneous array of records with fields of primitive type
@@ -194,3 +190,4 @@ cell_selClassesFor :: String -> SelState 𝕊 -> String
 cell_selClassesFor colName s
    | colName == rowKey = ""
    | otherwise = selClassesFor s
+-}
