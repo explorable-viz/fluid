@@ -35,12 +35,12 @@ function setSelState (
 
    rootElement.selectAll('.matrix-cell-hBorder').each(function (hBorder) {
       d3.select(this)
-         .attr("style", hBorderStyles(matrix)(hBorder))
+         .attr('style', hBorderStyles(matrix)(hBorder))
    })
 
    rootElement.selectAll('.matrix-cell-vBorder').each(function (vBorder) {
       d3.select(this)
-         .attr("style", vBorderStyles(matrix)(vBorder))
+         .attr('style', vBorderStyles(matrix)(vBorder))
    })
 }
 
