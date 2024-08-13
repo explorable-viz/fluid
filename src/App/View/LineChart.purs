@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, colorShade, from, fromℝ, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, recordℝ)
+import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, recordℝ)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Bind ((↦))
@@ -92,16 +92,15 @@ point_attrs nameCol (LineChart { plots }) { i, j, name } =
    fromFoldable
       [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
       , "stroke-width" ↦ "1"
-      , "stroke" ↦ (fill col # if isTransient selS then flip colorShade (-30) else identity)
+      , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
       , "fill" ↦ fill col
       ]
    where
    LinePlot plot = plots ! i
    Point { y } = plot.points ! j
    sel = snd y
-   selS = fromℝ (sel)
    col = nameCol name
-   fill = if isPersistent selS then flip colorShade (-30) else identity
+   fill = if isPersistent sel then flip colorShade (-30) else identity
 
 plot_max_x :: LinePlot -> Number
 plot_max_x (LinePlot { points }) = definitely' (maximum (points <#> \(Point { x }) -> fst x))
@@ -180,7 +179,7 @@ point_attrs nameCol (LineChart { plots }) { i, j, name } =
    fromFoldable
       [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
       , "stroke-width" ↦ "1"
-      , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
+      , "stroke" ↦ (fill col # if isSTransient sel then flip colorShade (-30) else identity)
       , "fill" ↦ fill col
       ]
    where
@@ -188,7 +187,7 @@ point_attrs nameCol (LineChart { plots }) { i, j, name } =
    Point { y } = plot.points ! j
    sel = snd y
    col = nameCol name
-   fill = if isPersistent sel then flip colorShade (-30) else identity
+   fill = if isSPersistent sel then flip colorShade (-30) else identity
 
 plot_max_y :: LinePlot -> Number
 plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))

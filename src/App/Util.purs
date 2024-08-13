@@ -156,11 +156,15 @@ isInert :: ReactState 𝕊 -> 𝔹
 isInert Inert = true
 isInert _ = false
 
-isPersistent :: SelState 𝕊 -> 𝔹
-isPersistent (SelState { persistent }) = persistent /= None
+isPersistent :: ReactState 𝕊 -> 𝔹
+--returns false for Inert
+isPersistent (Reactive (SelState { persistent })) = persistent /= None
+isPersistent Inert = false
 
-isTransient :: SelState 𝕊 -> 𝔹
-isTransient (SelState { transient }) = transient /= None
+isTransient :: ReactState 𝕊 -> 𝔹
+--returns false for Inert
+isTransient (Reactive (SelState { persistent })) = persistent /= None
+isTransient Inert = false
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
@@ -227,7 +231,6 @@ as𝕊 = lift2 as𝕊'
    as𝕊' true true = Primary
 
 -- purely a helper method for asR
-
 at𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 at𝕊 = lift2 at𝕊'
    where
@@ -241,11 +244,12 @@ toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 toℝ true _ = Inert
 toℝ false sel = Reactive (to𝕊 sel)
 
-{-
-asℝ :: 𝔹 -> SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-asℝ true _ _ = Inert
-asℝ false sel1 sel2 = Reactive (as𝕊 sel1 sel2)
--}
+isSPersistent :: SelState 𝕊 -> 𝔹
+isSPersistent (SelState { persistent }) = persistent /= None
+
+isSTransient :: SelState 𝕊 -> 𝔹
+isSTransient (SelState { transient }) = transient /= None
+
 asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
    where
@@ -253,7 +257,7 @@ asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
    t = at𝕊 a b
 
    c :: Boolean
-   c = not (isPersistent t || isTransient t)
+   c = not (isSPersistent t || isSTransient t)
 
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
