@@ -6,8 +6,8 @@ import * as d3 from "d3"
 function setRSelState (
    {
       rselState,
-      rselClasses,
-      rselClassesFor
+      selClasses,
+      selClassesFor
    },
    rootElement,
    { matrix },
@@ -16,8 +16,8 @@ function setRSelState (
    rootElement.selectAll('.matrix-cell').each(function (cell) {
       const sel = rselState(matrix.cells[cell.i - 1][cell.j - 1])
       d3.select(this) // won't work inside arrow function :/
-         .classed(rselClasses, false)
-         .classed(rselClassesFor(sel), true)
+         .classed(selClasses, false)
+         .classed(selClassesFor(sel), true)
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -25,8 +25,8 @@ function setRSelState (
    rootElement.selectAll('.matrix-cell-text').each(function (cell) {
       const sel = rselState(matrix.cells[cell.i - 1][cell.j - 1])
       d3.select(this) // won't work inside arrow function :/
-         .classed(rselClasses, false)
-         .classed(rselClassesFor(sel), true)
+         .classed(selClasses, false)
+         .classed(selClassesFor(sel), true)
    })
 }
 

@@ -122,10 +122,10 @@ export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)
 
 
 function setRSelState (
-   { cell_rselClassesFor, rowKey, rrecord_isUsed, rrecord_isReactive, val_rselState },
+   { cell_selClassesFor, rowKey, rrecord_isUsed, rrecord_isReactive, val_rselState },
    filterToggleListener,
    {
-      rselClasses,
+      selClasses,
    },
    rootElement,
    { title, table },
@@ -136,8 +136,8 @@ function setRSelState (
       if (cell.colName != rowKey) {
          const sel = val_rselState(table[cell.i][cell.colName])
          d3.select(this) // won't work inside arrow function :/
-            .classed(rselClasses, false)
-            .classed(cell_rselClassesFor(cell.colName)(sel), true)
+            .classed(selClasses, false)
+            .classed(cell_selClassesFor(cell.colName)(sel), true)
             .on('mousedown', e => { selListener(e) })
             .on('mouseenter', e => { selListener(e) })
             .on('mouseleave', e => { selListener(e) })

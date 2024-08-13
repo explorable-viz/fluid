@@ -7,8 +7,8 @@ function setRSelState (
    { point_attrs },
    {
       rselState,
-      rselClasses,
-      rselClassesFor,
+      selClasses,
+      selClassesFor,
       rjoin
    },
    rootElement,
@@ -19,8 +19,8 @@ function setRSelState (
    rootElement.selectAll('.scatterplot-point').each(function (point) {
       const sel = rjoin(rselState(points[point.i].x))(rselState(points[point.i].y))
       d3.select(this) // won't work inside arrow function :/
-         .classed(rselClasses, false)
-         .classed(rselClassesFor(sel), true)
+         .classed(selClasses, false)
+         .classed(selClassesFor(sel), true)
          .attrs(point_attrs(chart)(point))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })

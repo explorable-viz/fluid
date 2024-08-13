@@ -4,11 +4,9 @@ module App.Util
    , SelState(..)
    , Selectable
    , Selector
-   , TelState(..)
    , ViewSelector
    , asℝ
    , attrs
-   , cheatToℝ
    , class Reflect
    , colorShade
    , compare'
@@ -19,6 +17,7 @@ module App.Util
    , fromℝ
    , get_intOrNumber
    , isInert
+   , isNone
    , isPersistent
    , isPrimary
    , isSecondary
@@ -26,8 +25,6 @@ module App.Util
    , persist
    , record
    , recordℝ
-   , rselClasses
-   , rselClassesFor
    , runAffs_
    , rupCompare
    , selClasses
@@ -38,6 +35,7 @@ module App.Util
    , selector
    , toℝ
    , to𝔹
+   , to𝕊
    , 𝕊(..)
    ) where
 
@@ -103,17 +101,6 @@ selState b1 b2 = SelState { persistent: b1, transient: b2 }
 
 data ReactState a = Inert | Reactive (SelState a)
 
-newtype TelState a = TelState
-   {
-     -- like ReactState, but here we shove none as a possibility via {unused, inert} = {true,false}
-     -- note that now sel will have a great deal of unused things, but this perhaps might be nicer 
-     -- if we can streamline it to "persistent or not" "primary or not"
-     -- requires streamlining of this Sel to be useful in future, but may well be so.
-     unused :: Boolean
-   , inert :: Boolean
-   , sel :: SelState a
-   }
-
 -- note that I/ T basically just a bool, done solely for 
 --data 𝕀 = IInert | INone
 --data 𝕋 = TSecondary | TPrimary
@@ -140,8 +127,6 @@ relected :: forall a. ReactState a => a
 relected t = selected (fromℝ t)
 -}
 
--- only used in linechart and scatterplot, should be refactorable easily enough - we care more about SelState for "is persistent vs "is transient"
-
 isPrimary :: ReactState 𝕊 -> 𝔹
 isPrimary (Reactive (SelState { persistent, transient })) =
    persistent == Primary || transient == Primary
@@ -151,6 +136,11 @@ isSecondary :: ReactState 𝕊 -> 𝔹
 isSecondary (Reactive (SelState { persistent, transient })) =
    persistent == Secondary || transient == Secondary
 isSecondary Inert = false
+
+isNone :: ReactState 𝕊 -> 𝔹
+isNone (Reactive (SelState { persistent, transient })) =
+   persistent == None || transient == None
+isNone _ = false
 
 isInert :: ReactState 𝕊 -> 𝔹
 isInert Inert = true
@@ -194,6 +184,9 @@ rJoin a b = cheatToℝ (lift2 rJoin' (fromℝ a) (fromℝ b))
    rJoin' :: 𝕊 -> 𝕊 -> 𝕊
    rJoin' c d = c ∨ d
 
+cheatToℝ :: SelState 𝕊 -> ReactState 𝕊
+cheatToℝ sel = (Reactive sel)
+
 --this is join for a semilattice
 rupCompare :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
 rupCompare Inert b = b
@@ -210,6 +203,21 @@ to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 = (_ <#> if _ then Primary else None)
 
 --this assumes we know what inert is.
+--methods for initial assignation of states 
+toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
+toℝ true _ = Inert
+toℝ false sel = Reactive (to𝕊 sel)
+
+asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
+asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
+   where
+   t :: SelState 𝕊
+   t = at𝕊 a b
+
+   c :: Boolean
+   c = not (isSPersistent t || isSTransient t)
+
+-- TO FIX/REMOVE/OTHERWISE ALTER
 
 fromℝ :: ReactState 𝕊 -> SelState 𝕊
 fromℝ Inert = (SelState { persistent: None, transient: None })
@@ -219,8 +227,6 @@ fromChangeℝ :: ReactState 𝕊 -> SelState 𝕊
 fromChangeℝ Inert = (SelState { persistent: None, transient: None })
 fromChangeℝ _ = (SelState { persistent: Primary, transient: Secondary })
 
--- Turn previous selection state + new state obtained via related outputs/inputs into primary/secondary sel
--- in place currently selected
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 as𝕊 = lift2 as𝕊'
    where
@@ -240,24 +246,11 @@ at𝕊 = lift2 at𝕊'
    at𝕊' true false = None -- just abusing the lift notn and other helper methods to solve this
    at𝕊' true true = Primary
 
-toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-toℝ true _ = Inert
-toℝ false sel = Reactive (to𝕊 sel)
-
 isSPersistent :: SelState 𝕊 -> 𝔹
 isSPersistent (SelState { persistent }) = persistent /= None
 
 isSTransient :: SelState 𝕊 -> 𝔹
 isSTransient (SelState { transient }) = transient /= None
-
-asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
-   where
-   t :: SelState 𝕊
-   t = at𝕊 a b
-
-   c :: Boolean
-   c = not (isSPersistent t || isSTransient t)
 
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
@@ -265,9 +258,6 @@ get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val (SelState 𝕊)) -> a) -> Val (SelState 𝕊) -> a
 record toRecord (Val _ v) = toRecord (P.record2.unpack v)
-
-cheatToℝ :: SelState 𝕊 -> ReactState 𝕊
-cheatToℝ sel = (Reactive sel)
 
 recordℝ :: forall a. (Dict (Val (ReactState 𝕊)) -> a) -> Val (ReactState 𝕊) -> a
 recordℝ toRecord (Val _ v) = toRecord (P.record2.unpack v)
@@ -357,6 +347,7 @@ css =
    , inert: "inert"
    }
 
+{-}
 -- Ideally would derive from css.sel
 selClasses :: String
 selClasses = joinWith " " $
@@ -379,9 +370,9 @@ selClassesFor (SelState s) =
            Primary -> [ css.sel.transient.primary ]
            None -> []
       ]
-
-rselClasses :: String
-rselClasses = joinWith " " $
+-}
+selClasses :: String
+selClasses = joinWith " " $
    [ css.sel.transient.primary
    , css.sel.transient.secondary
    , css.sel.persistent.primary
@@ -389,11 +380,11 @@ rselClasses = joinWith " " $
    , css.inert
    ]
 
-rselClassesFor :: ReactState 𝕊 -> String
-rselClassesFor Inert =
+selClassesFor :: ReactState 𝕊 -> String
+selClassesFor Inert =
    joinWith " " $ concat
       [ [ css.inert ] ]
-rselClassesFor (Reactive (SelState s)) =
+selClassesFor (Reactive (SelState s)) =
    joinWith " " $ concat
       [ case s.persistent of
            Secondary -> [ css.sel.persistent.secondary ]

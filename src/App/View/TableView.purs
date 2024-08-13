@@ -15,7 +15,7 @@ module App.View.TableView
 
 import Prelude
 
-import App.Util (ReactState, SelState, ViewSelector, 𝕊(..), eventData, fromChangeℝ, fromℝ, rselClassesFor, selected)
+import App.Util (ReactState, SelState, ViewSelector, 𝕊(..), eventData, fromChangeℝ, fromℝ, selClassesFor, selected)
 import App.Util.Selector (field, listElement)
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Dict (Dict)
@@ -41,7 +41,7 @@ type RTableViewHelpers =
    { rowKey :: String
    , rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
    , rrecord_isReactive :: Dict (Val (ReactState 𝕊)) -> Boolean
-   , cell_rselClassesFor :: String -> ReactState 𝕊 -> String
+   , cell_selClassesFor :: String -> ReactState 𝕊 -> String
    -- values in table cells are not "unpacked" to Selectable but remain as Val
    , val_rval :: Val (ReactState 𝕊) -> BaseVal (ReactState 𝕊)
    , val_rselState :: Val (ReactState 𝕊) -> ReactState 𝕊
@@ -54,7 +54,7 @@ drawRTable' = drawRTable
    { rowKey
    , rrecord_isUsed
    , rrecord_isReactive
-   , cell_rselClassesFor
+   , cell_selClassesFor
    , val_rval: \(Val _ v) -> v
    , val_rselState: \(Val α _) -> α
    }
@@ -138,10 +138,10 @@ rrecord_isUsed r =
 
 -- may be handy as a helper method, but also as a SelState S needs to adapt to ReactState
 
-cell_rselClassesFor :: String -> ReactState 𝕊 -> String
-cell_rselClassesFor colName s
+cell_selClassesFor :: String -> ReactState 𝕊 -> String
+cell_selClassesFor colName s
    | colName == rowKey = ""
-   | otherwise = rselClassesFor s
+   | otherwise = selClassesFor s
 {-}
 newtype TableView = TableView
    { title :: String

@@ -12,7 +12,7 @@ module App.View.Util
 
 import Prelude
 
-import App.Util (ReactState, Selectable, rselClasses, rselClassesFor, rupCompare, Selector, ViewSelector, 𝕊, selectionEventData)
+import App.Util (ReactState, Selectable, selClasses, selClassesFor, rupCompare, Selector, ViewSelector, 𝕊, selectionEventData)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Val (Val)
@@ -73,8 +73,8 @@ type UIRHelpers =
    { rval :: forall a. Selectable a -> a
    , rselState :: forall a. Selectable a -> ReactState 𝕊
    , rjoin :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
-   , rselClasses :: String
-   , rselClassesFor :: ReactState 𝕊 -> String
+   , selClasses :: String
+   , selClassesFor :: ReactState 𝕊 -> String
    }
 
 uiRHelpers :: UIRHelpers
@@ -86,6 +86,6 @@ uiRHelpers =
    -- at least, make a decision as to how much inert we want to present
    -- do we really, or do we just find another way through?
 
-   , rselClasses
-   , rselClassesFor
+   , selClasses
+   , selClassesFor
    }
