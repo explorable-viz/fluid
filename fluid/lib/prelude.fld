@@ -186,10 +186,6 @@ let lastN n xs =
 let nth n (x : xs) =
    if n == 0 then x else nth (n - 1) xs;
 
--- Matrix Int -> Int -> Int -> Int
-let nth2 i j xss =
-   nth (j - 1) (nth (i - 1) xss);
-
 -- Partial; requires k to be in the map.
 -- Int -> List (Int, b) -> b
 let lookup k [] = error "Key not found in map";
@@ -233,9 +229,3 @@ let range (m1, n1) (m2, n2) =
 
 -- Int -> Int -> Int (should probably be defined differently but this works for now)
 let abs x y = if x - y < 0 then negate (x - y) else (x - y);
-
--- Eq a => [a] -> [a]
-let nub l =
-    let nub' [] _ = [];
-        nub' (x : xs) ys = if x `elem` ys then nub' xs ys else x : nub' xs (x : ys) in
-    nub' l [];
