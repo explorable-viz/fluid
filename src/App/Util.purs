@@ -22,8 +22,8 @@ module App.Util
    , isInert
    , isNone
    , isPersistent
-   , isSPrimary
-   , isSSecondary
+   , isPrimary
+   , isSecondary
    , isTransient
    , persist
    , record
@@ -144,13 +144,16 @@ relected t = selected (fromℝ t)
 -}
 
 -- only used in linechart and scatterplot, should be refactorable easily enough - we care more about SelState for "is persistent vs "is transient"
-isSPrimary :: SelState 𝕊 -> 𝔹
-isSPrimary (SelState { persistent, transient }) =
-   persistent == Primary || transient == Primary
 
-isSSecondary :: SelState 𝕊 -> 𝔹
-isSSecondary (SelState { persistent, transient }) =
+isPrimary :: ReactState 𝕊 -> 𝔹
+isPrimary (Reactive (SelState { persistent, transient })) =
+   persistent == Primary || transient == Primary
+isPrimary Inert = false
+
+isSecondary :: ReactState 𝕊 -> 𝔹
+isSecondary (Reactive (SelState { persistent, transient })) =
    persistent == Secondary || transient == Secondary
+isSecondary Inert = false
 
 isNone :: SelState 𝕊 -> 𝔹
 isNone sel = not (isPersistent sel || isTransient sel)
