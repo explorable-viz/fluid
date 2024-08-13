@@ -59,6 +59,12 @@ export function _pageWaitForSelector(selector, options, page) {
   };
 }
 
+export function _waitForReadyStateComplete(page) {
+  return function() {
+    return page.waitForFunction(() => document.readyState === "complete", { timeout: 300000 });
+  };
+}
+
 export function _focus(selector, page) {
   return function() {
     return page.focus(selector);

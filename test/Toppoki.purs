@@ -79,7 +79,8 @@ newPage = runPromiseAffE1 _newPage
 goto
    :: forall options trash
     . Row.Union options trash
-         ( waitUntil :: WaitUntilOption
+         ( timeout :: Int
+         , waitUntil :: WaitUntilOption
          )
    => URL
    -> { | options }
@@ -173,6 +174,9 @@ pageWaitForSelector
    -> Aff ElementHandle
 pageWaitForSelector = runPromiseAffE3 _pageWaitForSelector
 
+waitForReadyStateComplete :: Page -> Aff Unit
+waitForReadyStateComplete = runPromiseAffE1 _waitForReadyStateComplete
+
 focus :: Selector -> Page -> Aff Unit
 focus = runPromiseAffE2 _focus
 
@@ -200,6 +204,12 @@ click :: Selector -> Page -> Aff Unit
 click = runPromiseAffE2 _click
 
 foreign import data WaitUntilOption :: Type
+
+load :: WaitUntilOption
+load = unsafeCoerce $ "load"
+
+domContentLoaded :: WaitUntilOption
+domContentLoaded = unsafeCoerce $ "domcontentloaded"
 
 networkIdle :: WaitUntilOption
 networkIdle = unsafeCoerce $ "networkidle"
@@ -334,6 +344,7 @@ foreign import _screenshot :: forall options. FU.Fn2 options Page (Effect (Promi
 foreign import _pdf :: forall options. FU.Fn2 options Page (Effect (Promise Buffer))
 foreign import _on :: forall a. EU.EffectFn3 String (EU.EffectFn1 a Unit) Page Unit
 foreign import _pageWaitForSelector :: forall options. FU.Fn3 Selector options Page (Effect (Promise ElementHandle))
+foreign import _waitForReadyStateComplete :: FU.Fn1 Page (Effect (Promise Unit))
 foreign import _select :: forall options. FU.Fn3 Selector options Page (Effect (Promise Unit))
 foreign import _focus :: FU.Fn2 Selector Page (Effect (Promise Unit))
 foreign import _setViewport :: FU.Fn2 (Record DefaultViewPort) Page (Effect (Promise Unit))

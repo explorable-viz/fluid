@@ -15,6 +15,7 @@ import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
@@ -45,6 +46,7 @@ derive newtype instance Monoid File
 loadFile :: forall m. Folder -> File -> AffError m String
 loadFile (Folder folder) (File file) = do
    let url = "/" <> folder <> "/" <> file <> ".fld"
+   log ("Loading " <> url)
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
       Left err -> throwError $ E.error $ printError err
