@@ -1,9 +1,19 @@
+
 #!/usr/bin/env bash
 # (ensure we pull bash from path not /usr/bin)
-set -x -e
+set -e
 
-# if globstar not a valid shell option name on MacOS, install bash >=4.0
-shopt -s extglob nullglob globstar
-yarn purs-tidy check src/**/*.purs test/**/*.purs
-yarn build
-yarn test
+if git status --porcelain | grep -q '^[ M]'
+then
+   echo "Locally modified files. Stash or discard before pushing."
+   exit 1
+else
+   echo "No locally modified files. Checking format."
+   yarn tidy
+   if git status --porcelain | grep -q '^[ M]'
+   then
+      echo "Format fixed. Commit again before pushing."
+      exit 1
+   fi
+   echo "Pushing."
+fi

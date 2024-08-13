@@ -67,12 +67,13 @@ runAllocT m n = do
 
 runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
 runWithGraphT m αs = do
-   g × a <- runStateT m Nil
-      <#> swap
-      <#> first (fromEdgeList αs <<< report "edge list" showEdgeList)
+   g × a <- freezeGraph m αs
    -- only check one direction for now
    assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList mempty (toEdgeList g)) $
       pure (g × a)
+
+freezeGraph :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
+freezeGraph m αs = runStateT m Nil <#> swap <#> first (fromEdgeList αs <<< report "edge list" showEdgeList)
    where
    report :: forall c b. String -> (c -> b) -> Endo c
    report msg = spyWhen tracing.runWithGraphT ("runWithGraphT " <> msg)
