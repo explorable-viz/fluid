@@ -2,7 +2,7 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (ReactState, 𝕊, ViewSelector, Relectable)
+import App.Util (ReactState, 𝕊, ViewSelector, Selectable)
 import App.Util.Selector (matrixElement)
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Primitive (int, unpack)
@@ -10,7 +10,7 @@ import Util ((×))
 import Val (Array2, MatrixRep(..))
 
 --  (Rendered) matrices are required to have element type Int for now.
-type IntMatrix = { cells :: Array2 (Relectable Int), i :: Int, j :: Int }
+type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 

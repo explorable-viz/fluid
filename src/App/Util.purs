@@ -1,7 +1,7 @@
 module App.Util
    ( Attrs
    , ReactState(..)
-   , Relectable
+   , Selectable
    , SelState(..)
    , Selector
    , TelState(..)
@@ -121,14 +121,14 @@ newtype TelState a = TelState
 --data ℝ = RNone | RSecondary | RPrimary
 data 𝕊 = None | Secondary | Primary
 
-type Relectable a = a × ReactState 𝕊
+type Selectable a = a × ReactState 𝕊
 
 {-
-cheatToRSelectable :: forall a. Selectable a -> Relectable a
+cheatToRSelectable :: forall a. Selectable a -> Selectable a
 cheatToRSelectable a = (cheatToℝ <$> (a))
 
 
-fromRSelectable :: forall a. Relectable a -> Selectable a
+fromRSelectable :: forall a. Selectable a -> Selectable a
 fromRSelectable a = (fromℝ <$> (a))
 -}
 
@@ -259,7 +259,7 @@ asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
    c :: Boolean
    c = isNone t
 
-get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Relectable Number
+get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
 -- Assumes fields are all of primitive type.

@@ -6,7 +6,7 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (fromℝ, class Reflect, ReactState, Relectable, SelState(..), ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, recordℝ)
+import App.Util (fromℝ, class Reflect, ReactState, Selectable, SelState(..), ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, recordℝ)
 import App.Util.Selector (barChart, barSegment)
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Bind ((↦))
@@ -22,18 +22,18 @@ import Util.Map (get)
 import Val (Val)
 
 newtype BarChart = BarChart
-   { caption :: Relectable String
+   { caption :: Selectable String
    , stackedBars :: Array StackedBar
    }
 
 newtype StackedBar = StackedBar
-   { x :: Relectable String
+   { x :: Selectable String
    , bars :: Array Bar
    }
 
 newtype Bar = Bar
-   { y :: Relectable String
-   , z :: Relectable Number
+   { y :: Selectable String
+   , z :: Selectable Number
    }
 
 type BarChartHelpers =

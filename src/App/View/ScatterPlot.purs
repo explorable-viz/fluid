@@ -7,7 +7,7 @@ module App.View.ScatterPlot
 
 import Prelude
 
-import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, from, isPrimary, isSecondary, recordℝ, rupCompare)
+import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, from, isPrimary, isSecondary, recordℝ, rupCompare)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
@@ -23,10 +23,10 @@ import Util.Map (get)
 import Val (Val)
 
 newtype ScatterPlot = ScatterPlot
-   { caption :: Relectable String
+   { caption :: Selectable String
    , points :: Array Point
-   , xlabel :: Relectable String
-   , ylabel :: Relectable String
+   , xlabel :: Selectable String
+   , ylabel :: Selectable String
    }
 
 type ScatterPlotHelpers =

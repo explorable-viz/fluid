@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, colorShade, from, fromℝ, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, recordℝ)
+import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, colorShade, from, fromℝ, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, recordℝ)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Bind ((↦))
@@ -19,18 +19,18 @@ import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
 newtype LineChart = LineChart
-   { caption :: Relectable String
+   { caption :: Selectable String
    , plots :: Array LinePlot
    }
 
 newtype LinePlot = LinePlot
-   { name :: Relectable String
+   { name :: Selectable String
    , points :: Array Point
    }
 
 newtype Point = Point
-   { x :: Relectable Number
-   , y :: Relectable Number
+   { x :: Selectable Number
+   , y :: Selectable Number
    }
 
 type LineChartHelpers =

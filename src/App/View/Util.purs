@@ -12,7 +12,7 @@ module App.View.Util
 
 import Prelude
 
-import App.Util (ReactState, Relectable, rselClasses, rselClassesFor, rupCompare, Selector, ViewSelector, 𝕊, selectionEventData)
+import App.Util (ReactState, Selectable, rselClasses, rselClassesFor, rupCompare, Selector, ViewSelector, 𝕊, selectionEventData)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Val (Val)
@@ -70,8 +70,8 @@ uiHelpers =
    }
 -}
 type UIRHelpers =
-   { rval :: forall a. Relectable a -> a
-   , rselState :: forall a. Relectable a -> ReactState 𝕊
+   { rval :: forall a. Selectable a -> a
+   , rselState :: forall a. Selectable a -> ReactState 𝕊
    , rjoin :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
    , rselClasses :: String
    , rselClassesFor :: ReactState 𝕊 -> String
