@@ -35,3 +35,4 @@ checkForFigure page id = do
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
    log ("Found " <> selector)
    pure unit
+
