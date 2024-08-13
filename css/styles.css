@@ -1,30 +1,29 @@
 @charset "UTF-8";
 @font-face {
    font-family: "Fira Code";
-   src: url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap");
+   src: url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
  }
 
-.glowing,
-a {
-   transition: all .25s
+.glowing, a {
+   transition: all .25s;
 }
 
 a:hover {
-   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
+   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
 }
 
 .nowrap {
-   white-space: nowrap
+   white-space: nowrap;
 }
 
 code {
-   font-size: 11pt
+   font-size: 11pt;
 }
 
 body {
    font-size: 11pt;
    font-family: "Roboto", sans-serif;
-   font-weight: 400;
+   font-weight: 300;
    line-height: 1.25;
    padding: 0;
    margin: 0;
@@ -33,18 +32,12 @@ body {
    margin-bottom: 10em;
 }
 
-.parent {
-   display: flex;
-   align-items: center;
-   justify-content: center;
-}
-
 .center {
    height: 100%;
 }
 
 .align-right {
-   text-align: right
+   text-align: right;
 }
 
 .title {
@@ -70,8 +63,14 @@ h4 {
 }
 
 a {
+   text-decoration: none;
    color: inherit;
    transition-timing-function: ease-out
+}
+
+a.not_decorated,
+a:hover {
+   text-decoration: none;
 }
 
 ul {
@@ -88,12 +87,10 @@ li:last-child {
 
 table {
    margin: 4mm;
-   outline: thin dotted;
-   outline-color: lightgray;
 }
 
 .table-caption {
-   text-align: left
+   text-align: left;
 }
 
 th {
@@ -107,10 +104,6 @@ td {
 }
 
 td:nth-child(1) {
-   color: lightgray;
-}
-
-th:nth-child(1) {
    color: lightgray;
 }
 
@@ -132,10 +125,67 @@ nav ul li a {
 }
 
 nav ul li a.active-page {
-   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
+   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
 }
 
 .cm-line {
    font-family: 'Fira Code';
    font-size: 8pt;
+}
+
+.grid-container {
+   display: grid;
+   width: 100%;
+   grid-template-columns: 10px 47.5% fit-content(10px) 47.5%;
+}
+
+.flex-left-align {
+   display: flex;
+   flex-direction: column;
+   align-items: flex–start;
+}
+
+.flex-right-align {
+   display: flex;
+   flex-direction: column;
+   align-items: flex-end;
+}
+
+.flex-bottom-align {
+   display: flex;
+   flex-direction: row;
+   align-items: flex-end;
+}
+
+.data-pane-button {
+   font-size: 9pt;
+}
+
+.toggle-button {
+   color: #CCCCCC;
+   user-select: none;
+}
+
+.toggle-button:hover {
+   color: #999999;
+}
+
+.data-pane {
+   background-color: #F5F5F5;
+}
+
+/* Standalone figures have hardcoded zoom for presentation purposes. */
+.double-size {
+   zoom: 1.8;
+}
+
+body.standalone {
+   height: 100%;
+   display: grid; /* outer grid for vertical centering of inner */
+   place-items: center;
+}
+
+/* Needed for contained height specifications to work */
+html {
+   height: 100%;
 }

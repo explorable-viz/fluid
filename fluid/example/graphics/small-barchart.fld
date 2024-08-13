@@ -1,0 +1,5 @@
+let countryData = [ { x: "USA", bars: [ { y: "output", z: 196.7 } ] } ]
+in BarChart {
+    caption: "Total output by country",
+    data: countryData
+}

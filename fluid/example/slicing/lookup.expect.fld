@@ -3,4 +3,4 @@ let lookup k (Empty) = None;
                                                 {(LT) -> lookup k t1;
                                                   (EQ) -> ⸨Some val⸩;
                                                   (GT) -> lookup k t2} in
-lookup ⸨6⸩ (NonEmpty (NonEmpty (Empty) ((3, "USA")) (Empty)) ((4, "China")) (NonEmpty (⸨NonEmpty⸩ (Empty) (⸨(⸨6⸩, "Germany")⸩) (Empty)) ((7, "UK")) (Empty)))
+lookup ⸨6⸩ (NonEmpty (NonEmpty (Empty) ((3, "USA")) (Empty)) ((4, "China")) (NonEmpty (⸨NonEmpty (Empty) (⸨(⸨6⸩, "Germany")⸩) (Empty)⸩) ((7, "UK")) (Empty)))
