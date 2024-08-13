@@ -7,7 +7,7 @@ module App.View.ScatterPlot
 
 import Prelude
 
-import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, from, isPrimary, isSecondary, recordℝ, rupCompare)
+import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, from, isPrimary, isSecondary, recordℝ, joinR)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, RRenderer, selListener, uiHelpers)
@@ -66,7 +66,7 @@ point_attrs (ScatterPlot { points }) { i } =
    Point { x, y } = points ! i
    sel1 = snd y
    sel2 = snd x
-   sel = rupCompare sel1 sel2
+   sel = joinR sel1 sel2
 
 {-}
 newtype ScatterPlot = ScatterPlot

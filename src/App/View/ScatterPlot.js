@@ -9,7 +9,7 @@ function setSelState (
       selState,
       selClasses,
       selClassesFor,
-      rjoin
+      join
    },
    rootElement,
    chart,
@@ -17,7 +17,7 @@ function setSelState (
 ) {
    const { points } = chart
    rootElement.selectAll('.scatterplot-point').each(function (point) {
-      const sel = rjoin(selState(points[point.i].x))(selState(points[point.i].y))
+      const sel = join(selState(points[point.i].x))(selState(points[point.i].y))
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)

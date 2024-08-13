@@ -22,11 +22,11 @@ module App.Util
    , isPrimary
    , isSecondary
    , isTransient
+   , joinR
    , persist
    , record
    , recordℝ
    , runAffs_
-   , rupCompare
    , selClasses
    , selClassesFor
    , selState
@@ -188,10 +188,10 @@ cheatToℝ :: SelState 𝕊 -> ReactState 𝕊
 cheatToℝ sel = (Reactive sel)
 
 --this is join for a semilattice
-rupCompare :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
-rupCompare Inert b = b
-rupCompare a Inert = a
-rupCompare a b = rJoin a b
+joinR :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
+joinR Inert b = b
+joinR a Inert = a
+joinR a b = rJoin a b
 
 sto𝔹 :: SelState 𝕊 -> SelState 𝔹
 sto𝔹 = (_ <#> (_ /= None))

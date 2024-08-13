@@ -12,7 +12,7 @@ module App.View.Util
 
 import Prelude
 
-import App.Util (ReactState, Selectable, selClasses, selClassesFor, rupCompare, Selector, ViewSelector, 𝕊, selectionEventData)
+import App.Util (ReactState, Selectable, selClasses, selClassesFor, joinR, Selector, ViewSelector, 𝕊, selectionEventData)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Val (Val)
@@ -72,7 +72,7 @@ uiHelpers =
 type UIHelpers =
    { val :: forall a. Selectable a -> a
    , selState :: forall a. Selectable a -> ReactState 𝕊
-   , rjoin :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
+   , join :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
    , selClasses :: String
    , selClassesFor :: ReactState 𝕊 -> String
    }
@@ -81,7 +81,7 @@ uiHelpers :: UIHelpers
 uiHelpers =
    { val: fst
    , selState: snd
-   , rjoin: rupCompare
+   , join: joinR
    -- need to adapt the semilattice to accept inert as well
    -- at least, make a decision as to how much inert we want to present
    -- do we really, or do we just find another way through?
