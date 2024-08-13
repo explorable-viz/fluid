@@ -9,8 +9,8 @@ import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.Number.Format (toString)
 import Data.Tuple (Tuple(..))
-import Primitive (intOrNumber, unpack)
-import Util (type (+)) --,error)
+import Primitive (intOrNumberOrString, unpack)
+import Util (type (+))
 import Val (Val)
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
@@ -29,13 +29,14 @@ instance Drawable LinkedText Unit where
       linkedTextSelector _ = linkedText
 
 instance Reflect (Val (SelState 𝕊)) LinkedText where
-   from r = LinkedText (unpackedStringify $ unpack intOrNumber r)
+   from r = LinkedText (unpackedStringify $ unpack intOrNumberOrString r)
 
-unpackedStringify :: forall a. Tuple (Int + Number) a -> Tuple String a
+unpackedStringify :: forall a. Tuple (Int + Number + String) a -> Tuple String a
 unpackedStringify (Tuple x y) = Tuple (stringify x) y
 
-stringify :: (Int + Number) -> String
+stringify :: (Int + Number + String) -> String
 stringify (Left n) = toString $ toNumber n
-stringify (Right n) = toString n
+stringify (Right (Left n)) = toString n
+stringify (Right (Right n)) = n
 
 type LinkedTextElem = { i :: Int }

@@ -78,6 +78,6 @@ drawView divId suffix redraw = case _ of
 
 instance Drawable MultiView Unit where
    draw divId _ redraw (MultiView vws) _ =
-      sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
+      sequence_ $ mapWithKey (\x-> drawView (divId <> "-" <> x) x (multiPlotEntry x >>> redraw)) vws
 
 derive instance Newtype MultiView _

@@ -1,1 +1,10 @@
-TextBox( 3.4 )
+MultiPlot {|
+   "one" :=
+       TextBox( "The first value is: " ),
+   "two" :=
+       TextBox( 3.4 ),
+   "three" :=
+       TextBox( " and the second is: "),
+   "four" :=
+       TextBox( 4.3 )
+|}

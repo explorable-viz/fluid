@@ -47,9 +47,10 @@ thead {
 
 .transparent-text {
    border-radius: 2px;
+   /* float: left; */
    background-color: White;
    border-bottom: 2px solid white;
-   display: inline-block;
+   display: inline;
 }
 
 .transparent-text.selected-primary-persistent {

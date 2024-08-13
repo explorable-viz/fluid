@@ -4,12 +4,11 @@ import Prelude hiding (absurd)
 
 import App.Fig (FigSpec, drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
--- import Bind ((↦))
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..), Folder(..), loadFile')
-import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
 import Test.Specs.LinkedInputs (energyScatter)
+import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
 import Util ((×))
 
 fig2 :: FigSpec
@@ -39,9 +38,9 @@ fig3 =
 fig4 :: FigSpec
 fig4 =
    { datasets: []
-   , imports: []
+   , imports: [ ]
    , file: File "text"
-   , inputs: []
+   , inputs: [ ]
    }
 
 main :: Effect Unit
@@ -54,7 +53,7 @@ main = do
       , loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss-wrap")
       ]
    runAffs_ (uncurry drawFig)
-      [ ("fig-small-barchart" × _) <$> loadFig fig4
+      [ ("fig-text" × _) <$> loadFig fig4
       , ("fig-4" × _) <$> loadFig energyScatter
       , ("fig-conv-2" × _) <$> loadFig fig2
       , ("fig-1" × _) <$> loadFig linkedOutputs_spec1.spec
