@@ -1,10 +1,20 @@
-MultiPlot {|
+let totalFor c rows =
+    sum [ row.output | row <- rows, row.country == c ];
+let data2015 = [ row | row <- renewables, row.year == 2015 ];
+    countryData = [ { x: c, bars: [ { y: "output", z: totalFor c data2015 } ] }
+                | c <- ["China", "USA", "Germany"] ]
+in MultiPlot {|
+   "bar-chart" :=
+      BarChart {
+         caption: "Total output by country",
+         data: countryData
+      },
    "one" :=
-       TextBox( "The first value is: " ),
+       TextBox( "The total for the USA is: " ),
    "two" :=
-       TextBox( 3.4 ),
+       TextBox( totalFor "USA" data2015 ),
    "three" :=
-       TextBox( " and the second is: "),
+       TextBox( ", compared to that of China, which is actually: "),
    "four" :=
-       TextBox( 4.3 )
+       TextBox( totalFor "China" data2015 )
 |}

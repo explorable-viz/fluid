@@ -10,6 +10,7 @@ import Module (File(..), Folder(..), loadFile')
 import Test.Specs.LinkedInputs (energyScatter)
 import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
 import Util ((×))
+import Bind ((↦))
 
 fig2 :: FigSpec
 fig2 =
@@ -37,10 +38,10 @@ fig3 =
 
 fig4 :: FigSpec
 fig4 =
-   { datasets: []
+   { datasets: [ "renewables" ↦ "example/linked-outputs/renewables"  ]
    , imports: [ ]
    , file: File "text"
-   , inputs: [ ]
+   , inputs: [ "renewables" ]
    }
 
 main :: Effect Unit
