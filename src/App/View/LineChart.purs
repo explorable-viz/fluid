@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, colorShade, from, fromℝ, get_intOrNumberℝ, isPersistent, isPrimary, isSecondary, isTransient, recordℝ)
+import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, colorShade, from, fromℝ, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, recordℝ)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Bind ((↦))
@@ -62,8 +62,8 @@ instance Drawable LineChart Unit where
 
 instance Reflect (Dict (Val (ReactState 𝕊))) Point where
    from r = Point
-      { x: get_intOrNumberℝ f_x r
-      , y: get_intOrNumberℝ f_y r
+      { x: get_intOrNumber f_x r
+      , y: get_intOrNumber f_y r
       }
 
 instance Reflect (Dict (Val (ReactState 𝕊))) LinePlot where

@@ -8,7 +8,6 @@ module App.Util
    , TelState(..)
    , ViewSelector
    , asℝ
-   , as𝕊
    , attrs
    , cheatToℝ
    , class Reflect
@@ -20,7 +19,6 @@ module App.Util
    , fromChangeℝ
    , fromℝ
    , get_intOrNumber
-   , get_intOrNumberℝ
    , isInert
    , isNone
    , isPersistent
@@ -42,7 +40,6 @@ module App.Util
    , selector
    , toℝ
    , to𝔹
-   , to𝕊
    , 𝕊(..)
    ) where
 
@@ -200,8 +197,11 @@ rupCompare Inert b = b
 rupCompare a Inert = a
 rupCompare a b = rJoin a b
 
-to𝔹 :: SelState 𝕊 -> SelState 𝔹
-to𝔹 = (_ <#> (_ /= None))
+sto𝔹 :: SelState 𝕊 -> SelState 𝔹
+sto𝔹 = (_ <#> (_ /= None))
+
+to𝔹 :: ReactState 𝕊 -> SelState 𝔹
+to𝔹 = (sto𝔹 <$> (fromℝ $ _))
 
 to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 = (_ <#> if _ then Primary else None)
@@ -256,11 +256,8 @@ asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
    c :: Boolean
    c = isNone t
 
-get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
+get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Relectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
-
-get_intOrNumberℝ :: Var -> Dict (Val (ReactState 𝕊)) -> Relectable Number
-get_intOrNumberℝ x r = first as (unpack intOrNumber (get x r))
 
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val (SelState 𝕊)) -> a) -> Val (SelState 𝕊) -> a

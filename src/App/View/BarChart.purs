@@ -6,7 +6,7 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (fromℝ, class Reflect, ReactState, Relectable, SelState(..), ViewSelector, 𝕊(..), colorShade, from, get_intOrNumberℝ, recordℝ)
+import App.Util (fromℝ, class Reflect, ReactState, Relectable, SelState(..), ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, recordℝ)
 import App.Util.Selector (barChart, barSegment)
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Bind ((↦))
@@ -71,7 +71,7 @@ instance Reflect (Dict (Val (ReactState 𝕊))) StackedBar where
 instance Reflect (Dict (Val (ReactState 𝕊))) Bar where
    from r = Bar
       { y: unpack string (get f_y r)
-      , z: get_intOrNumberℝ f_z r
+      , z: get_intOrNumber f_z r
       }
 
 -- see data binding in .js
