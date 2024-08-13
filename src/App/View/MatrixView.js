@@ -3,9 +3,9 @@
 import * as d3 from "d3"
 
 
-function setRSelState (
+function setSelState (
    {
-      rselState,
+      selState,
       selClasses,
       selClassesFor
    },
@@ -14,7 +14,7 @@ function setRSelState (
    listener
 ) {
    rootElement.selectAll('.matrix-cell').each(function (cell) {
-      const sel = rselState(matrix.cells[cell.i - 1][cell.j - 1])
+      const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
@@ -23,7 +23,7 @@ function setRSelState (
          .on('mouseleave', e => { listener(e) })
    })
    rootElement.selectAll('.matrix-cell-text').each(function (cell) {
-      const sel = rselState(matrix.cells[cell.i - 1][cell.j - 1])
+      const sel = selState(matrix.cells[cell.i - 1][cell.j - 1])
       d3.select(this) // won't work inside arrow function :/
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
@@ -115,7 +115,7 @@ function drawMatrix_ (
             .attr('dominant-baseline', 'middle')
             .attr('text-anchor', 'left')
       }
-      setRSelState(uiHelpers, rootElement, { matrix }, listener)
+      setSelState(uiHelpers, rootElement, { matrix }, listener)
    }
 }
 

@@ -216,7 +216,7 @@ asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
    t = at𝕊 a b
 
    c :: Boolean
-   c = not (isSPersistent t || isSTransient t)
+   c = isNone (cheatToℝ t)
 
 -- TO FIX/REMOVE/OTHERWISE ALTER
 
@@ -246,12 +246,6 @@ at𝕊 = lift2 at𝕊'
    at𝕊' false true = Primary
    at𝕊' true false = None -- just abusing the lift notn and other helper methods to solve this
    at𝕊' true true = Primary
-
-isSPersistent :: SelState 𝕊 -> 𝔹
-isSPersistent (SelState { persistent }) = persistent /= None
-
-isSTransient :: SelState 𝕊 -> 𝔹
-isSTransient (SelState { transient }) = transient /= None
 
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))

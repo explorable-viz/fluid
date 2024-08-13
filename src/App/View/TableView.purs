@@ -44,7 +44,7 @@ type RTableViewHelpers =
    , cell_selClassesFor :: String -> ReactState 𝕊 -> String
    -- values in table cells are not "unpacked" to Selectable but remain as Val
    , val_val :: Val (ReactState 𝕊) -> BaseVal (ReactState 𝕊)
-   , val_rselState :: Val (ReactState 𝕊) -> ReactState 𝕊
+   , val_selState :: Val (ReactState 𝕊) -> ReactState 𝕊
    }
 
 foreign import drawRTable :: RTableViewHelpers -> EventListener -> RRenderer RTableView TableViewState
@@ -56,7 +56,7 @@ drawRTable' = drawRTable
    , rrecord_isReactive
    , cell_selClassesFor
    , val_val: \(Val _ v) -> v
-   , val_rselState: \(Val α _) -> α
+   , val_selState: \(Val α _) -> α
    }
 
 instance Drawable RTableView TableViewState where

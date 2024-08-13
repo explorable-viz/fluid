@@ -121,8 +121,8 @@ function drawTable_ (
 export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)
 
 
-function setRSelState (
-   { cell_selClassesFor, rowKey, rrecord_isUsed, rrecord_isReactive, val_rselState },
+function setSelState (
+   { cell_selClassesFor, rowKey, rrecord_isUsed, rrecord_isReactive, val_selState },
    filterToggleListener,
    {
       selClasses,
@@ -134,7 +134,7 @@ function setRSelState (
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
       if (cell.colName != rowKey) {
-         const sel = val_rselState(table[cell.i][cell.colName])
+         const sel = val_selState(table[cell.i][cell.colName])
          d3.select(this) // won't work inside arrow function :/
             .classed(selClasses, false)
             .classed(cell_selClassesFor(cell.colName)(sel), true)
@@ -227,7 +227,7 @@ function drawRTable_ (
             .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setRSelState(rtableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, { filter }, selListener)
+      setSelState(rtableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, { filter }, selListener)
    }
 }
 

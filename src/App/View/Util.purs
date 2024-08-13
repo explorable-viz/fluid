@@ -71,7 +71,7 @@ uiHelpers =
 -}
 type UIHelpers =
    { val :: forall a. Selectable a -> a
-   , rselState :: forall a. Selectable a -> ReactState 𝕊
+   , selState :: forall a. Selectable a -> ReactState 𝕊
    , rjoin :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
    , selClasses :: String
    , selClassesFor :: ReactState 𝕊 -> String
@@ -80,7 +80,7 @@ type UIHelpers =
 uiHelpers :: UIHelpers
 uiHelpers =
    { val: fst
-   , rselState: snd
+   , selState: snd
    , rjoin: rupCompare
    -- need to adapt the semilattice to accept inert as well
    -- at least, make a decision as to how much inert we want to present

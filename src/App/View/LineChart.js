@@ -135,11 +135,11 @@ function drawLineChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
       }
-      setrSelState(lineChartHelpers, nameCol, rootElement, { plots }, listener)
+      setselState(lineChartHelpers, nameCol, rootElement, { plots }, listener)
    }
 }
 
-function setrSelState (
+function setselState (
    { point_attrs },
    nameCol,
    rootElement,

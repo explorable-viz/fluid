@@ -35,7 +35,7 @@ function addHatchPattern (rootElement, j, col_j) {
 }
 
 
-function setRSelState (
+function setSelState (
    { bar_attrs },
    indexCol,
    rootElement,
@@ -195,7 +195,7 @@ function drawBarChart_ (
             .attr('text-anchor', 'middle')
       }
 
-      setRSelState(BarChartHelpers, color, rootElement, { stackedBars }, listener)
+      setSelState(BarChartHelpers, color, rootElement, { stackedBars }, listener)
    }
 }
 
