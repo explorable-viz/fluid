@@ -100,19 +100,22 @@ thead {
    color: rgb(205, 205, 205)
 }
 
+.matrix-cell-text.selected-primary-persistent {
+   font-weight: 400;
+   color: darkgreen
+}
+
+.matrix-cell-text.selected-secondary-persistent {
+   color: green
+}
+
 .matrix-cell-text.selected-primary-transient {
    font-weight: 400;
    color: blue
 }
 
 .matrix-cell-text.selected-secondary-transient {
-   color: rgb(255, 0, 208)
-}
-
-.matrix-cell-text.selected-primary-persistent {
-}
-
-.matrix-cell-text.selected-secondary-persistent {
+   color: royalblue
 }
 
 .scatterplot-point {
