@@ -38,8 +38,8 @@ fig3 =
 
 fig4 :: FigSpec
 fig4 =
-   { datasets: [ "renewables" ↦ "example/linked-outputs/renewables"  ]
-   , imports: [ ]
+   { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
+   , imports: []
    , file: File "text"
    , inputs: [ "renewables" ]
    }
