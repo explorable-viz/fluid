@@ -17,6 +17,7 @@ tests :: Aff Unit
 tests = do
    browser <- T.launch {}
    page <- T.newPage browser
+
    log "Waiting for 'goto' load"
    T.goto (T.URL "http://127.0.0.1:8080") { waitUntil: T.load, timeout: 300000 } page
    content <- T.content page

@@ -1,6 +1,7 @@
 module Test.Benchmark where
 
 import Prelude
+
 import Data.Array (concat)
 import Data.Array.NonEmpty (fromArray)
 import Data.Traversable (sequence)
@@ -8,10 +9,10 @@ import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class.Console (logShow)
 import Test.Benchmark.Util (BenchAcc(..))
-import Test.Specs.Misc (misc_cases)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.Graphics (graphics_cases)
+import Test.Specs.Misc (misc_cases)
 import Test.Util.Suite (BenchSuite, bwdSuite, suite, withDatasetSuite)
 import Util (definitely, (×))
 

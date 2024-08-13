@@ -1,0 +1,19 @@
+
+#!/usr/bin/env bash
+# (ensure we pull bash from path not /usr/bin)
+set -e
+
+if git status --porcelain | grep -q '^[ M]'
+then
+   echo "Locally modified files. Stash or discard before pushing."
+   exit 1
+else
+   echo "No locally modified files. Checking format."
+   yarn tidy
+   if git status --porcelain | grep -q '^[ M]'
+   then
+      echo "Format fixed. Commit again before pushing."
+      exit 1
+   fi
+   echo "Pushing."
+fi
