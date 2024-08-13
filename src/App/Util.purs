@@ -1,8 +1,8 @@
 module App.Util
    ( Attrs
    , ReactState(..)
-   , Selectable
    , SelState(..)
+   , Selectable
    , Selector
    , TelState(..)
    , ViewSelector
@@ -19,7 +19,6 @@ module App.Util
    , fromℝ
    , get_intOrNumber
    , isInert
-   , isNone
    , isPersistent
    , isPrimary
    , isSecondary
@@ -153,9 +152,6 @@ isSecondary (Reactive (SelState { persistent, transient })) =
    persistent == Secondary || transient == Secondary
 isSecondary Inert = false
 
-isNone :: SelState 𝕊 -> 𝔹
-isNone sel = not (isPersistent sel || isTransient sel)
-
 isInert :: ReactState 𝕊 -> 𝔹
 isInert Inert = true
 isInert _ = false
@@ -257,7 +253,7 @@ asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
    t = at𝕊 a b
 
    c :: Boolean
-   c = isNone t
+   c = not (isPersistent t || isTransient t)
 
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
