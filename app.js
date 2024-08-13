@@ -16096,6 +16096,18 @@
     doc: "",
     extensions: [keymap.of(defaultKeymap), EditorView.editable.of(false)]
   });
+  function getContentsLength_(ed) {
+    return ed.state.doc.length;
+  }
+  function addEditorView_(id3) {
+    return () => {
+      const div = select_default2("#" + id3).node();
+      return new EditorView({
+        state: startState,
+        parent: div
+      });
+    };
+  }
   function replaceSelection_(editorState, str) {
     return editorState.replaceSelection(str);
   }
@@ -16109,7 +16121,9 @@
       return editorState.update(...specs);
     };
   }
+  var addEditorView = addEditorView_;
   var dispatch2 = curry2(dispatch_);
+  var getContentsLength = getContentsLength_;
   var replaceSelection = curry2(replaceSelection_);
   var update = curry2(update_);
 
@@ -40167,6 +40181,10 @@
       });
     };
   };
+  var loadFile$p = (folder) => (file) => (dictMonadAff) => {
+    const map1 = dictMonadAff.MonadEffect0().Monad0().Bind1().Apply0().Functor0().map;
+    return (dictMonadError) => map1((v) => $Tuple(file, v))(loadFile(folder)(file)(dictMonadAff)(dictMonadError));
+  };
   var module_2 = (dictMonadAff) => {
     const Monad0 = dictMonadAff.MonadEffect0().Monad0();
     const bind = Monad0.Bind1().bind;
@@ -40414,6 +40432,8 @@
       ))();
     };
   };
+  var drawCode = (s) => (ed) => bindE(update(ed.state)([{ changes: { from: 0, to: getContentsLength(ed), insert: s } }]))(dispatch2(ed));
+  var drawFile = (v) => bindE(addEditorView("codemirror-" + v._1))(drawCode(v._2));
 
   // output-es/Effect.Aff.Class/index.js
   var monadAffAff = { liftAff: (x2) => x2, MonadEffect0: () => monadEffectAff };
@@ -40434,34 +40454,46 @@
     { persistent: !x2._1.persistent, transient: !x2._1.transient },
     functorBaseVal.map((x$1) => ({ persistent: !x$1.persistent, transient: !x$1.transient }))(x2._2)
   );
-  var linkedOutputs_spec2 = {
+  var linkedOutputs_spec1 = {
     spec: {
-      datasets: [
-        /* @__PURE__ */ $Tuple("renewables", "example/linked-inputs/renewables"),
-        /* @__PURE__ */ $Tuple("nonRenewables", "example/linked-inputs/non-renewables")
-      ],
+      datasets: [/* @__PURE__ */ $Tuple("renewables", "example/linked-outputs/renewables")],
       imports: [],
-      file: "linked-outputs/stacked-bar-chart-scatter-plot",
-      inputs: ["nonRenewables"]
+      file: "linked-outputs/bar-chart-line-chart",
+      inputs: ["renewables"]
     },
-    "\u03B4_out": /* @__PURE__ */ multiPlotEntry("stacked-bar-chart")(/* @__PURE__ */ constrArg("BarChart")(0)((x2) => barSegment(4)(3)(neg)(barSegment(4)(1)(neg)(barSegment(3)(2)(neg)(x2))))),
+    "\u03B4_out": /* @__PURE__ */ multiPlotEntry("bar-chart")(/* @__PURE__ */ constrArg("BarChart")(0)(/* @__PURE__ */ barSegment(1)(0)(neg))),
     out_expect: /* @__PURE__ */ (() => {
-      const $0 = multiPlotEntry("stacked-bar-chart")(constrArg("BarChart")(0)((x2) => barSegment(4)(3)(neg)(barSegment(4)(1)(neg)(barSegment(3)(2)(neg)(x2)))));
-      const $1 = multiPlotEntry("scatter-plot")(constrArg("ScatterPlot")(0)((x2) => field("data")(listElement(6)(field("y")(neg)))(field("data")(listElement(4)(field("y")(neg)))(x2))));
-      return (x2) => $1($0(x2));
+      const $0 = multiPlotEntry("line-chart")(constrArg("LineChart")(0)(field("plots")((x2) => listElement(3)(linePoint(2)(field("y")(neg)))(listElement(2)(linePoint(2)(field("y")(neg)))(listElement(1)(linePoint(2)(field("y")(neg)))(listElement(0)(linePoint(2)(field("y")(neg)))(x2)))))));
+      return (x2) => $0(constrArg("MultiPlot")(0)(dictVal("bar-chart")(constrArg("BarChart")(0)(barSegment(1)(0)(neg))))(x2));
     })()
   };
 
-  // output-es/Artifact/index.js
-  var main = /* @__PURE__ */ (() => runAffs_((v) => drawFig(v._1)(v._2))([
-    _map((v) => $Tuple("fig-1", v))(loadFig(energyScatter)(monadAffAff)(monadErrorAff)),
-    _map((v) => $Tuple("fig-4", v))(loadFig({
-      imports: linkedOutputs_spec2.spec.imports,
-      datasets: linkedOutputs_spec2.spec.datasets,
-      file: linkedOutputs_spec2.spec.file,
-      inputs: ["renewables", "nonRenewables"]
-    })(monadAffAff)(monadErrorAff))
-  ]))();
+  // output-es/App/index.js
+  var fig4 = { datasets: [], imports: [], file: "text", inputs: [] };
+  var fig2 = {
+    file: "slicing/convolution/emboss-wrap",
+    imports: ["lib/convolution", "example/slicing/convolution/test-image", "example/slicing/convolution/filter/emboss"],
+    datasets: [],
+    inputs: ["input_image", "filter"]
+  };
+  var main = /* @__PURE__ */ (() => {
+    const $0 = runAffs_(drawFile)([
+      loadFile$p("fluid/example/graphics")("small-barchart")(monadAffAff)(monadErrorAff),
+      loadFile$p("fluid/example/linked-outputs")("bar-chart-line-chart")(monadAffAff)(monadErrorAff),
+      loadFile$p("fluid/example/linked-outputs")("renewables")(monadAffAff)(monadErrorAff),
+      loadFile$p("fluid/lib")("convolution")(monadAffAff)(monadErrorAff),
+      loadFile$p("fluid/example/slicing/convolution")("emboss-wrap")(monadAffAff)(monadErrorAff)
+    ]);
+    return () => {
+      $0();
+      return runAffs_((v) => drawFig(v._1)(v._2))([
+        _map((v) => $Tuple("fig-small-barchart", v))(loadFig(fig4)(monadAffAff)(monadErrorAff)),
+        _map((v) => $Tuple("fig-4", v))(loadFig(energyScatter)(monadAffAff)(monadErrorAff)),
+        _map((v) => $Tuple("fig-conv-2", v))(loadFig(fig2)(monadAffAff)(monadErrorAff)),
+        _map((v) => $Tuple("fig-1", v))(loadFig(linkedOutputs_spec1.spec)(monadAffAff)(monadErrorAff))
+      ])();
+    };
+  })();
 
   // <stdin>
   main();

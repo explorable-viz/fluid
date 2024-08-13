@@ -4,7 +4,7 @@
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-   <title>POPL 2025 Submission 99 Anonymised Web Demo</title>
+   <title>Fluid: Data-Linked Visualisations</title>
    <link href="css/styles.css" rel="stylesheet" type="text/css">
    <link href="css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
@@ -23,60 +23,34 @@
 
 <div class="grid-container">
    <div></div>
-   <div></div>
+   <div class="flex-right-align">
+      <img src="https://i.ibb.co/bFjzrXR/Untitled.jpg" width="250px">
+      <img src="https://i.ibb.co/zNqHKg7/University-of-Bristol-logo.png" width="250px">
+      <img src="https://dorchard.github.io/images/iccs-full-logo.png" alt="ICCS logo" width="250px">
+   </div>
    <div></div>
    <div class="flex-left-align">
-      <div></div>
-      <h2>POPL 2025 Submission 99 Anonymised Web Demo</h2>
-
-      <p>This is an anonymised reviewer artifact to support our POPL 2025 submission. This will be documented in full and substantially improved for the formal Artifact Evaluation process.</p>
-
-      <p><b>Please wait a few seconds for page to load</b> while example programs are evaluated and dependence graphs constructed. There are two examples below (linked inputs, linked outputs); note that the user interface implemented here is slightly different from the one shown in the paper. One difference is that the individual selection of <emph>x</emph> and <emph>y</emph> components of the scatter plot points, while supported by the analysis, has not yet been implemented in the UI.</p>
-
-      <p><b>Also note that there is currently a problem with the scatter plot in Firefox; please view these in Chrome.</b></p>
+      <nav>
+         <ul>
+            <li><a href="." class="active-page">Latest</a></li>
+            <li><a href="https://f.luid.org/0.3.1">v0.3.1</a></li>
+         </ul>
+      </nav>
+      <div>
+         <a href="https://github.com/explorable-viz/fluid">GitHub</a> ·
+         <a href="https://dl.acm.org/doi/10.1145/3498668">POPL 2022 paper</a> ·
+         <a href="https://www.youtube.com/watch?v=M_ePrtD9axk">POPL 2022 talk</a> ·
+         <a href="https://www.youtube.com/watch?v=2-S6yVyzypU">PROPL 2024 talk</a>
+      </div>
+      <h2>Fluid: data-linked visualisations</h2>
    </div>
 
    <div></div>
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <h3 class="title lowercase">Linked inputs example</h3>
-      <p>Follow these instructions, which work around various UI limitations:
-      <ul>
-         <li>Click grey ◀▶ button below to reveal/hide data pane</li>
-         <li>Mouseover a few scatter plot points to see demanded data on the left (table cells with blue sidebar on left-hand edge of cell)</li>
-         <li>Click one of them to make that selection persistent (turns green); this is a rather roundabout way of making it possible to select data elements</li>
-         <li>Move mouse to data pane, taking care not to mouse over either of the tables</li>
-         <li>Mouse over value of <code>petrolCap</code>; this will initiate a new interaction, querying outputs demanded by this input and any related inputs; primary selection (<code>petrolCap</code>) will have blue sidebar, related inputs will have grey sidebar</li>
-         <li>You can try moving the mouse carefully between <code>petrolCap</code> and <code>petrolOut</code>; the latter has no related outputs (because it is not used anywhere)
-      </ul>
-      Ideally it would be possible to initiate this interaction directly from the data pane, but this requires more UI work. For now, this just shows that the response time is very fast. When selecting inputs, it is quite easy to lose the selection entirely, in which case you will need to start again by first selecting some output and then moving over to the data pane.
-      </p>
-   </div>
-
-   <div></div>
-   <div id="fig-1-input" class="flex-right-align data-pane"></div>
-   <div>
-      <div onclick="toggle('fig-1-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
-   </div>
-   <div class="flex-left-align">
-      <div id="fig-1"></div>
-   </div>
-
-   <div></div>
-   <div></div>
-   <div></div>
-   <div class="flex-left-align">
-      <h3 class="title lowercase">Linked outputs example</h3>
-      <p>Try the following:</p>
-      <ul>
-         <li>Click grey ◀▶ button below to reveal/hide data pane</li>
-         <li>Mouse over stacked bar chart to reveal demanded data on the left (table cells with blue sidebar)</li>
-         <li>Mouse over any of the 2018 segments and notice that related scatter plot points are highlighted on right</li>
-         <li>Click on a 2018 segment to make that selection persistent; related scatter plot point on right will turn (slightly) grey</li>
-         <li>Now mouse over the grey scatter plot point to observe how data demanded by the point (cells with blue sidebar) intersect with those demanded by the bar segment (cells with green) highlighting</li>
-      </ul>
-      Again this UI is work-in-progress but this demonstrates how the response time based on dependence graphs is very fast.
+      <h3 class="title lowercase">example 1</h3>
+      <p>Renewables example for related inputs:</p>
    </div>
 
    <div></div>
@@ -87,6 +61,79 @@
    <div class="flex-left-align">
       <div id="fig-4"></div>
    </div>
+
+   <div></div>
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
+      <h3 class="title lowercase">example 2</h3>
+      <p>Bar chart and line chart showing renewables data:</p>
+   </div>
+
+   <div></div>
+   <div id="fig-1-input" class="flex-right-align data-pane"></div>
+   <div>
+      <div onclick="toggle('fig-1-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig-1" class="flex-bottom-align"></div>
+      <p>Source code:</p>
+      <details>
+         <summary>bar-chart-line-chart.fld</summary>
+         <div id="codemirror-bar-chart-line-chart"></div>
+      </details>
+      <details>
+         <summary>renewables.fld</summary>
+         <div id="codemirror-renewables"></div>
+      </details>
+   </div>
+
+   <div></div>
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
+      <h3 class="title lowercase">example 3</h3>
+      <p>Matrix convolution, with wrap at boundary:</p>
+   </div>
+
+   <div></div>
+   <div id="fig-conv-2-input" class="flex-right-align data-pane"></div>
+   <div>
+      <div onclick="toggle('fig-conv-2-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig-conv-2"></div>
+      <p>Source code:</p>
+      <details>
+         <summary>convolution.fld</summary>
+         <div id="codemirror-convolution"></div>
+      </details>
+      <details>
+         <summary>emboss-zero-wrap.fld</summary>
+         <div id="codemirror-emboss-wrap"></div>
+      </details>
+   </div>
+
+   <div></div>
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
+      <h3 class="title lowercase">example sub-program</h3>
+      <p>Example subprogram of the bar chart</p>
+   </div>
+   <div></div>
+   <div id="fig-small-barchart-input" class="flex-right-align data-pane"></div>
+   <div>
+      <div onclick="toggle('fig-small-barchart-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig-small-barchart"></div>
+      <p>Source code:</p>
+      <details>
+         <summary>small-barchart.fld</summary>
+         <div id="codemirror-small-barchart"></div>
+      </details>
+   </div>
 </div>
 
 <script src="app.js"></script>
@@ -94,6 +141,7 @@
    // move to PureScript
    toggle('fig-1-input')
    toggle('fig-4-input')
+   toggle('fig-conv-2-input')
 </script>
 </body>
 </html>
