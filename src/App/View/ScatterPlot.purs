@@ -7,7 +7,7 @@ module App.View.ScatterPlot
 
 import Prelude
 
-import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, from, fromℝ, isNone, isPrimary, isSecondary, recordℝ, rupCompare)
+import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, from, fromℝ, isNone, isSPrimary, isSSecondary, recordℝ, rupCompare)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
@@ -61,7 +61,7 @@ point_smallRadius = 2
 point_attrs :: ScatterPlot -> PointIndex -> Object String
 point_attrs (ScatterPlot { points }) { i } =
    fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 1.5 else if isSecondary sel then 1.2 else if isNone sel then 1.0 else 0.5) ]
+      [ "r" ↦ show (toNumber point_smallRadius * if isSPrimary sel then 1.5 else if isSSecondary sel then 1.2 else if isNone sel then 1.0 else 0.5) ]
    where
    Point { x, y } = points ! i
    sel1 = snd y

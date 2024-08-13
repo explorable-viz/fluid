@@ -22,8 +22,8 @@ module App.Util
    , isInert
    , isNone
    , isPersistent
-   , isPrimary
-   , isSecondary
+   , isSPrimary
+   , isSSecondary
    , isTransient
    , persist
    , record
@@ -134,6 +134,7 @@ fromRSelectable :: forall a. Relectable a -> Selectable a
 fromRSelectable a = (fromℝ <$> (a))
 -}
 
+-- part of the TableView conundrum, but only part of such.
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
 
@@ -142,12 +143,13 @@ relected :: forall a. ReactState a => a
 relected t = selected (fromℝ t)
 -}
 
-isPrimary :: SelState 𝕊 -> 𝔹
-isPrimary (SelState { persistent, transient }) =
+-- only used in linechart and scatterplot, should be refactorable easily enough - we care more about SelState for "is persistent vs "is transient"
+isSPrimary :: SelState 𝕊 -> 𝔹
+isSPrimary (SelState { persistent, transient }) =
    persistent == Primary || transient == Primary
 
-isSecondary :: SelState 𝕊 -> 𝔹
-isSecondary (SelState { persistent, transient }) =
+isSSecondary :: SelState 𝕊 -> 𝔹
+isSSecondary (SelState { persistent, transient }) =
    persistent == Secondary || transient == Secondary
 
 isNone :: SelState 𝕊 -> 𝔹

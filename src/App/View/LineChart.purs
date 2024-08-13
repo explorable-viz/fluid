@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, colorShade, from, fromℝ, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, recordℝ)
+import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, colorShade, from, fromℝ, get_intOrNumber, isPersistent, isSPrimary, isSSecondary, isTransient, recordℝ)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Bind ((↦))
@@ -90,7 +90,7 @@ point_smallRadius = 2
 point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
 point_attrs nameCol (LineChart { plots }) { i, j, name } =
    fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
+      [ "r" ↦ show (toNumber point_smallRadius * if isSPrimary sel then 2.0 else if isSSecondary sel then 1.4 else 1.0)
       , "stroke-width" ↦ "1"
       , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
       , "fill" ↦ fill col
