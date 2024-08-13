@@ -6,6 +6,7 @@ import App.Util (SelState, ViewSelector, 𝕊, from, record, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart)
 import App.View.LineChart (LineChart)
+import App.View.LinkedText (LinkedText)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.ScatterPlot (ScatterPlot)
 import App.View.TableView (TableView(..), TableViewState)
@@ -15,7 +16,7 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (uncurry)
-import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot)
+import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot, cText)
 import Dict (Dict)
 import Effect (Effect)
 import Util.Map (mapWithKey)
@@ -31,6 +32,7 @@ data View
    -- plus default visualisations for specific kinds of value
    | MatrixView' MatrixView
    | TableView' TableViewState TableView
+   | LinkedText' LinkedText
 
 newtype MultiView = MultiView (Dict View)
 
@@ -43,6 +45,8 @@ selListener redraw selector =
 view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
 view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
    BarChart' (record from u)
+view _ (Val _ (Constr c (u : Nil))) _ | c == cText =
+   LinkedText' (from u)
 view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
    LineChart' (record from u)
 view title (Val _ (Matrix r)) _ =
@@ -70,6 +74,7 @@ drawView divId suffix redraw = case _ of
    MultiView' vw -> draw divId suffix redraw vw unit
    MatrixView' vw -> draw divId suffix redraw vw unit
    TableView' vwState vw -> draw divId suffix redraw vw vwState
+   LinkedText' vw -> draw divId suffix redraw vw unit
 
 instance Drawable MultiView Unit where
    draw divId _ redraw (MultiView vws) _ =
