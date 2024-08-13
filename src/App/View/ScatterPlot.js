@@ -4,7 +4,7 @@ import * as d3 from "d3"
 
 
 function setRSelState (
-   { rpoint_attrs },
+   { point_attrs },
    {
       rselState,
       rselClasses,
@@ -21,15 +21,15 @@ function setRSelState (
       d3.select(this) // won't work inside arrow function :/
          .classed(rselClasses, false)
          .classed(rselClassesFor(sel), true)
-         .attrs(rpoint_attrs(chart)(point))
+         .attrs(point_attrs(chart)(point))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
    })
 }
 
-function drawRScatterPlot_ (
-   RScatterPlotHelpers,
+function drawScatterPlot_ (
+   ScatterPlotHelpers,
    {
       uiRHelpers,
       divId,
@@ -123,11 +123,11 @@ function drawRScatterPlot_ (
             .attr('text-anchor', 'middle')
       }
 
-      setRSelState(RScatterPlotHelpers, uiRHelpers, rootElement, { points }, listener)
+      setRSelState(ScatterPlotHelpers, uiRHelpers, rootElement, { points }, listener)
    }
 }
 
-export var drawRScatterPlot = x1 => x2 => x3 => drawRScatterPlot_(x1, x2, x3)
+export var drawScatterPlot = x1 => x2 => x3 => drawScatterPlot_(x1, x2, x3)
 
 /*
 function setSelState (

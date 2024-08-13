@@ -9,29 +9,29 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
-function drawRLineChart_ (
-   lineRChartHelpers,
+function drawLineChart_ (
+   lineChartHelpers,
    {
       uiRHelpers: { rval },
       divId,
       suffix,
       view: {
          caption,   // String
-         plots,     // Array RLinePlot
+         plots,     // Array LinePlot
       }
    },
    listener
 ) {
    return () => {
-      const { point_smallRadius, rplot_max_y, rplot_max_x, rplot_min_x } = lineRChartHelpers
+      const { point_smallRadius, plot_max_y, plot_max_x, plot_min_x } = lineChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom,
-            y_max = Math.max(...plots.map(rplot_max_y)),
-            x_min = Math.min(...plots.map(rplot_min_x)),
-            x_max = Math.max(...plots.map(rplot_max_x)),
-            names = plots.map (rplot => rval(rplot.name))
+            y_max = Math.max(...plots.map(plot_max_y)),
+            x_min = Math.min(...plots.map(plot_min_x)),
+            x_max = Math.max(...plots.map(plot_max_x)),
+            names = plots.map (plot => rval(plot.name))
       const div = d3.select('#' + divId)
       if (div.empty()) {
          console.error('Unable to insert figure: no div found with id ' + divId)
@@ -67,23 +67,23 @@ function drawRLineChart_ (
             .append('g')
             .append('path')
             .attr('fill', 'none')
-            .attr('stroke', ([, rplot]) => nameCol(rval(rplot.name)))
+            .attr('stroke', ([, plot]) => nameCol(rval(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
-            .attr('d', ([, rplot]) => line1(rplot.rpoints))
+            .attr('d', ([, plot]) => line1(plot.points))
 
          for (const i_plot of plots.entries()) {
-            const [i, rplot] = i_plot
+            const [i, plot] = i_plot
             rootElement.selectAll('point')
-               .data([...rplot.rpoints.entries()].map(([j, p]) => {
-                  return { name: rval(rplot.name), x: rval(p.x), y: rval(p.y), i, j }
+               .data([...plot.points.entries()].map(([j, p]) => {
+                  return { name: rval(plot.name), x: rval(p.x), y: rval(p.y), i, j }
                }))
                .enter()
                .append('g')
                .append('circle')
                .attr('class', 'point')
-               .attr('cx', rpoint => x(rpoint.x))
-               .attr('cy', rpoint => y(rpoint.y))
+               .attr('cx', point => x(point.x))
+               .attr('cy', point => y(point.y))
          }
 
          rootElement
@@ -135,27 +135,27 @@ function drawRLineChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
       }
-      setrSelState(lineRChartHelpers, nameCol, rootElement, { plots }, listener)
+      setrSelState(lineChartHelpers, nameCol, rootElement, { plots }, listener)
    }
 }
 
 function setrSelState (
-   { rpoint_attrs },
+   { point_attrs },
    nameCol,
    rootElement,
    chart,
    listener
 ) {
-   rootElement.selectAll('.point').each(function (rpoint) {
+   rootElement.selectAll('.point').each(function (point) {
       d3.select(this) // won't work inside arrow function :/
-         .attrs(rpoint_attrs(nameCol)(chart)(rpoint))
+         .attrs(point_attrs(nameCol)(chart)(point))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
    })
 }
 
-export var drawRLineChart = x1 => x2 => x3 => drawRLineChart_(x1, x2, x3)
+export var drawLineChart = x1 => x2 => x3 => drawLineChart_(x1, x2, x3)
 
 
 /*

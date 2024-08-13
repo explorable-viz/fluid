@@ -5,9 +5,9 @@ import Prelude hiding (absurd)
 import App.Util (ReactState, ViewSelector, 𝕊, from, recordℝ, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart)
-import App.View.LineChart (RLineChart)
+import App.View.LineChart (LineChart)
 import App.View.MatrixView (MatrixView(..), matrixRep)
-import App.View.ScatterPlot (RScatterPlot)
+import App.View.ScatterPlot (ScatterPlot)
 import App.View.TableView (RTableView(..), TableViewState)
 import App.View.Util (class Drawable, HTMLId, Redraw, draw)
 import Data.Foldable (sequence_)
@@ -25,8 +25,8 @@ import Web.Event.EventTarget (EventListener, eventListener)
 data View
    -- one for each constructor of the Fluid 'Plot' data type
    = BarChart' BarChart
-   | LineChart' RLineChart
-   | ScatterPlot' RScatterPlot
+   | LineChart' LineChart
+   | ScatterPlot' ScatterPlot
    | MultiView' MultiView
    -- plus default visualisations for specific kinds of value
    | MatrixView' MatrixView

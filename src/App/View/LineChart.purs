@@ -18,67 +18,67 @@ import Util (definitely', (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
-newtype RLineChart = RLineChart
+newtype LineChart = LineChart
    { caption :: Relectable String
-   , plots :: Array RLinePlot
+   , plots :: Array LinePlot
    }
 
-newtype RLinePlot = RLinePlot
+newtype LinePlot = LinePlot
    { name :: Relectable String
-   , rpoints :: Array RPoint
+   , points :: Array Point
    }
 
-newtype RPoint = RPoint
+newtype Point = Point
    { x :: Relectable Number
    , y :: Relectable Number
    }
 
-type RLineChartHelpers =
-   { rplot_max_x :: RLinePlot -> Number
-   , rplot_min_x :: RLinePlot -> Number
-   , rplot_max_y :: RLinePlot -> Number
+type LineChartHelpers =
+   { plot_max_x :: LinePlot -> Number
+   , plot_min_x :: LinePlot -> Number
+   , plot_max_y :: LinePlot -> Number
    , point_smallRadius :: Int
-   , rpoint_attrs :: (String -> String) -> RLineChart -> PointCoordinate -> Object String
+   , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    }
 
-foreign import drawRLineChart :: RLineChartHelpers -> RRenderer RLineChart Unit
+foreign import drawLineChart :: LineChartHelpers -> RRenderer LineChart Unit
 
-drawRLineChart' :: RRenderer RLineChart Unit
-drawRLineChart' = drawRLineChart
-   { rplot_max_x
-   , rplot_min_x
-   , rplot_max_y
+drawLineChart' :: RRenderer LineChart Unit
+drawLineChart' = drawLineChart
+   { plot_max_x
+   , plot_min_x
+   , plot_max_y
    , point_smallRadius
-   , rpoint_attrs
+   , point_attrs
    }
 
-instance Drawable RLineChart Unit where
+instance Drawable LineChart Unit where
    draw divId suffix redraw view viewState =
-      drawRLineChart' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw lineChartSelector
+      drawLineChart' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw lineChartSelector
       where
       lineChartSelector :: ViewSelector PointCoordinate
       lineChartSelector { i, j } =
          lineChart <<< field f_plots <<< listElement i <<< linePoint j
 
-instance Reflect (Dict (Val (ReactState 𝕊))) RPoint where
-   from r = RPoint
+instance Reflect (Dict (Val (ReactState 𝕊))) Point where
+   from r = Point
       { x: get_intOrNumberℝ f_x r
       , y: get_intOrNumberℝ f_y r
       }
 
-instance Reflect (Dict (Val (ReactState 𝕊))) RLinePlot where
-   from r = RLinePlot
+instance Reflect (Dict (Val (ReactState 𝕊))) LinePlot where
+   from r = LinePlot
       { name: unpack string (get f_name r)
-      , rpoints: recordℝ from <$> from (get f_data r)
+      , points: recordℝ from <$> from (get f_data r)
       }
 
-instance Reflect (Dict (Val (ReactState 𝕊))) RLineChart where
-   from r = RLineChart
+instance Reflect (Dict (Val (ReactState 𝕊))) LineChart where
+   from r = LineChart
       { caption: unpack string (get f_caption r)
-      , plots: from <$> (from (get f_plots r) :: Array (Val (ReactState 𝕊))) :: Array RLinePlot
+      , plots: from <$> (from (get f_plots r) :: Array (Val (ReactState 𝕊))) :: Array LinePlot
       }
 
-instance Reflect (Val (ReactState 𝕊)) RLinePlot where
+instance Reflect (Val (ReactState 𝕊)) LinePlot where
    from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = recordℝ from u1
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
@@ -87,8 +87,8 @@ type PointCoordinate = { i :: Int, j :: Int, name :: String }
 point_smallRadius :: Int
 point_smallRadius = 2
 
-rpoint_attrs :: (String -> String) -> RLineChart -> PointCoordinate -> Object String
-rpoint_attrs nameCol (RLineChart { plots }) { i, j, name } =
+point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+point_attrs nameCol (LineChart { plots }) { i, j, name } =
    fromFoldable
       [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
       , "stroke-width" ↦ "1"
@@ -96,20 +96,20 @@ rpoint_attrs nameCol (RLineChart { plots }) { i, j, name } =
       , "fill" ↦ fill col
       ]
    where
-   RLinePlot plot = plots ! i
-   RPoint { y } = plot.rpoints ! j
+   LinePlot plot = plots ! i
+   Point { y } = plot.points ! j
    sel = fromℝ (snd y)
    col = nameCol name
    fill = if isPersistent sel then flip colorShade (-30) else identity
 
-rplot_max_x :: RLinePlot -> Number
-rplot_max_x (RLinePlot { rpoints }) = definitely' (maximum (rpoints <#> \(RPoint { x }) -> fst x))
+plot_max_x :: LinePlot -> Number
+plot_max_x (LinePlot { points }) = definitely' (maximum (points <#> \(Point { x }) -> fst x))
 
-rplot_max_y :: RLinePlot -> Number
-rplot_max_y (RLinePlot { rpoints }) = definitely' (maximum (rpoints <#> \(RPoint { y }) -> fst y))
+plot_max_y :: LinePlot -> Number
+plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))
 
-rplot_min_x :: RLinePlot -> Number
-rplot_min_x (RLinePlot { rpoints }) = definitely' (minimum (rpoints <#> \(RPoint { x }) -> fst x))
+plot_min_x :: LinePlot -> Number
+plot_min_x (LinePlot { points }) = definitely' (minimum (points <#> \(Point { x }) -> fst x))
 
 {-}
 newtype LineChart = LineChart

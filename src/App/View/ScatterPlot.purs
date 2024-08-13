@@ -1,7 +1,7 @@
 module App.View.ScatterPlot
    ( PointIndex
-   , RScatterPlot(..)
-   , RScatterPlotHelpers
+   , ScatterPlot(..)
+   , ScatterPlotHelpers
    , point_smallRadius
    ) where
 
@@ -9,7 +9,7 @@ import Prelude
 
 import App.Util (class Reflect, ReactState, Relectable, ViewSelector, 𝕊, from, fromℝ, isNone, isPrimary, isSecondary, recordℝ, rupCompare)
 import App.Util.Selector (field, listElement, scatterPlot)
-import App.View.LineChart (RPoint(..))
+import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, RRenderer, selListener, uiRHelpers)
 import Bind ((↦))
 import Data.Int (toNumber)
@@ -22,31 +22,31 @@ import Util ((!))
 import Util.Map (get)
 import Val (Val)
 
-newtype RScatterPlot = RScatterPlot
+newtype ScatterPlot = ScatterPlot
    { caption :: Relectable String
-   , points :: Array RPoint
+   , points :: Array Point
    , xlabel :: Relectable String
    , ylabel :: Relectable String
    }
 
-type RScatterPlotHelpers =
-   { rpoint_attrs :: RScatterPlot -> PointIndex -> Object String }
+type ScatterPlotHelpers =
+   { point_attrs :: ScatterPlot -> PointIndex -> Object String }
 
-foreign import drawRScatterPlot :: RScatterPlotHelpers -> RRenderer RScatterPlot Unit -- draws 
+foreign import drawScatterPlot :: ScatterPlotHelpers -> RRenderer ScatterPlot Unit -- draws 
 
-drawRScatterPlot' :: RRenderer RScatterPlot Unit
-drawRScatterPlot' = drawRScatterPlot
-   { rpoint_attrs }
+drawScatterPlot' :: RRenderer ScatterPlot Unit
+drawScatterPlot' = drawScatterPlot
+   { point_attrs }
 
-instance Drawable RScatterPlot Unit where
+instance Drawable ScatterPlot Unit where
    draw divId suffix redraw view viewState =
-      drawRScatterPlot' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
+      drawScatterPlot' { uiRHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
       where
       scatterPlotSelector :: ViewSelector PointIndex
       scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
 
-instance Reflect (Dict (Val (ReactState 𝕊))) RScatterPlot where
-   from r = RScatterPlot
+instance Reflect (Dict (Val (ReactState 𝕊))) ScatterPlot where
+   from r = ScatterPlot
       { caption: unpack string (get f_caption r)
       , points: recordℝ from <$> from (get f_data r)
       , xlabel: unpack string (get f_xlabel r)
@@ -58,12 +58,12 @@ type PointIndex = { i :: Int }
 point_smallRadius :: Int
 point_smallRadius = 2
 
-rpoint_attrs :: RScatterPlot -> PointIndex -> Object String
-rpoint_attrs (RScatterPlot { points }) { i } =
+point_attrs :: ScatterPlot -> PointIndex -> Object String
+point_attrs (ScatterPlot { points }) { i } =
    fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 1.5 else if isSecondary sel then 1.2 else if isNone sel then 0.5 else 1.0) ]
+      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 1.5 else if isSecondary sel then 1.2 else if isNone sel then 1.0 else 0.5) ]
    where
-   RPoint { x, y } = points ! i
+   Point { x, y } = points ! i
    sel1 = snd y
    sel2 = snd x
    sel = fromℝ (rupCompare sel1 sel2)
