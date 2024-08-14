@@ -78,28 +78,6 @@
   resolved "https://registry.yarnpkg.com/@esbuild/linux-loong64/-/linux-loong64-0.15.1.tgz#f293d9442201fa7448248f05590139bb8e521856"
   integrity sha512-1tORADNFK9QS4KYyUyh3Td9WGrdiI1rSoKvY6A43+9G0kPujBuT4lIGyoK0AweOSO1aRIR28xQUfiJCUa78bUw==
 
-"@explorable-viz/fluid@^0.0.8":
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/@explorable-viz/fluid/-/fluid-0.0.8.tgz#b3ccb382efc26618334b862a34248874962bb5d9"
-  integrity sha512-7vyMpex+aFS4jcas2+MtI6r3pm1m7WE49uCISw0NVZE/apfNMiGJyIKfnl+YBwA9FLilTeg94dynODZ3BjSnJg==
-  dependencies:
-    "@codemirror/commands" "6.2.2"
-    "@codemirror/state" "6.2.0"
-    "@codemirror/view" "6.9.3"
-    benchmark "^2.1.4"
-    concurrently "^8.2.2"
-    d3 "^7.9.0"
-    d3-tip "0.9.1"
-    datetime "^0.0.3"
-    express "^4.19.2"
-    express-static "^1.2.6"
-    http-serve "^1.0.1"
-    http-server "^14.1.1"
-    http-shutdown "^1.2.2"
-    js-date "^0.1.3"
-    purescript "^0.15.10"
-    wait-on "^7.2.0"
-
 "@gar/promisify@^1.1.3":
   version "1.1.3"
   resolved "https://registry.npmjs.org/@gar/promisify/-/promisify-1.1.3.tgz"
