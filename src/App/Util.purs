@@ -100,11 +100,11 @@ data ReactState a = Inert | Reactive (SelState a)
 
 data 𝕊 = None | Secondary | Primary
 
-type Selectable a = a × ReactState 𝕊
-
 -- part of the TableView conundrum, but part only of such, so fixing that should remove all issues.
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
+
+type Selectable a = a × ReactState 𝕊
 
 isPrimary :: ReactState 𝕊 -> 𝔹
 isPrimary (Reactive (SelState { persistent, transient })) =
@@ -184,7 +184,17 @@ toℝ true _ = Inert
 toℝ false sel = Reactive (sel <#> if _ then Primary else None)
 
 asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-asℝ a b = (if isNone (Reactive (at𝕊 a b)) then Inert else Reactive (as𝕊 a b))
+--asℝ a b = (if isNone (Reactive (at𝕊 a b)) then Inert else Reactive (as𝕊 a b))
+asℝ (SelState { persistent: a1, transient: b1 }) (SelState { persistent: a2, transient: b2 }) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (lift2 as𝕊' a b))
+   where
+   a = (SelState { persistent: a1, transient: b1 })
+   b = (SelState { persistent: a2, transient: b2 })
+
+   as𝕊' :: 𝔹 -> 𝔹 -> 𝕊
+   as𝕊' false false = None
+   as𝕊' false true = Secondary
+   as𝕊' true false = Primary -- the if solves this case, (as you can't be persistent inert and transient not...)
+   as𝕊' true true = Primary
 
 -- TO FIX/REMOVE/OTHERWISE ALTER
 
@@ -196,23 +206,6 @@ fromChangeℝ :: ReactState 𝕊 -> SelState 𝕊
 fromChangeℝ Inert = (SelState { persistent: None, transient: None })
 fromChangeℝ _ = (SelState { persistent: Primary, transient: Secondary })
 
-as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
-as𝕊 = lift2 as𝕊'
-   where
-   as𝕊' :: 𝔹 -> 𝔹 -> 𝕊
-   as𝕊' false false = None
-   as𝕊' false true = Secondary
-   as𝕊' true false = Primary -- the other atS method makes this case a) not run, as lazy compiler, and b) be replaced by Inert
-   as𝕊' true true = Primary
-
--- purely a helper method for asR
-at𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
-at𝕊 = lift2 at𝕊'
-   where
-   at𝕊' :: 𝔹 -> 𝔹 -> 𝕊
-   at𝕊' true false = None -- just abusing the lift notn and other helper methods to solve this
-   at𝕊' _ _ = Primary
-
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
@@ -220,7 +213,6 @@ get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 record :: forall a. (Dict (Val (ReactState 𝕊)) -> a) -> Val (ReactState 𝕊) -> a
 record toRecord (Val _ v) = toRecord (P.record2.unpack v)
 
--- edit the reflect class next
 class Reflect a b where
    from :: Partial => a -> b
 
@@ -339,7 +331,6 @@ attrs = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
 -- boilerplate
 -- ======================
 
--- figure out what's going on here wrt RactState as a semilattice.
 derive instance Generic 𝕊 _
 instance Show 𝕊 where
    show = genericShow
@@ -347,13 +338,13 @@ instance Show 𝕊 where
 derive instance Newtype (SelState a) _
 derive instance Functor SelState
 
-derive instance Ord a => Ord (SelState a)
-derive instance Eq a => Eq (SelState a)
-derive newtype instance Show a => Show (SelState a)
-
 instance Apply SelState where
    apply (SelState fs) (SelState s) =
       SelState { persistent: fs.persistent s.persistent, transient: fs.transient s.transient }
+
+derive instance Ord a => Ord (SelState a)
+derive instance Eq a => Eq (SelState a)
+derive newtype instance Show a => Show (SelState a)
 
 instance JoinSemilattice a => JoinSemilattice (SelState a) where
    join = over2 SelState \s1 s2 ->

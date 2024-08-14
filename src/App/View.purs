@@ -45,12 +45,8 @@ view :: Partial => String -> Val (ReactState 𝕊) -> Maybe View -> View
 view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
    BarChart' (record from u)
 view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
-   --editing reflect class needed to change the record?
    LineChart' (record from u)
---LineChart' (record from (fromℝ <$> u))
 view title (Val _ (Matrix r)) _ =
-   {-MatrixView' (MatrixView { title, matrix: matrixRep (fromℝ <$> r) })-}
-   {-matrixRRep required-}
    MatrixView' (MatrixView { title, matrix: matrixRep (r) })
 view title (Val _ (Constr c (u : Nil))) vw | c == cMultiPlot =
    MultiView' (MultiView vws)

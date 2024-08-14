@@ -1,17 +1,16 @@
 module App.View.TableView
-  ( CellIndex
-  , FilterToggler
-  , TableView(..)
-  , TableViewHelpers
-  , TableViewState
-  , drawTable
-  , drawTable'
-  , filterToggler
-  , rowKey
-  , rrecord_isReactive
-  , rrecord_isUsed
-  )
-  where
+   ( CellIndex
+   , FilterToggler
+   , TableView(..)
+   , TableViewHelpers
+   , TableViewState
+   , drawTable
+   , drawTable'
+   , filterToggler
+   , rowKey
+   , rrecord_isReactive
+   , rrecord_isUsed
+   ) where
 
 import Prelude
 
@@ -82,6 +81,7 @@ type CellIndex = { __n :: Int, colName :: String }
 
 rowKey :: String
 rowKey = "__n"
+
 {-}
 -- Defined for any record type with fields of primitive type
 record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
