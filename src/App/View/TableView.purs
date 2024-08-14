@@ -15,7 +15,7 @@ module App.View.TableView
 
 import Prelude
 
-import App.Util (ReactState, SelState, ViewSelector, 𝕊(..), eventData, fromChangeℝ, fromℝ, selClassesFor, selected)
+import App.Util (ReactState, ViewSelector, 𝕊(..), eventData, fromChangeℝ, fromℝ, selClassesFor, selected)
 import App.Util.Selector (field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
@@ -82,13 +82,13 @@ type CellIndex = { __n :: Int, colName :: String }
 
 rowKey :: String
 rowKey = "__n"
-
+{-}
 -- Defined for any record type with fields of primitive type
 record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
 record_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
       k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> α))
-
+-}
 rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
 rrecord_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
