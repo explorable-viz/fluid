@@ -35,7 +35,6 @@ module App.Util
    , selector
    , toℝ
    , to𝔹
-   , to𝕊
    , 𝕊(..)
    ) where
 
@@ -101,22 +100,13 @@ selState b1 b2 = SelState { persistent: b1, transient: b2 }
 
 data ReactState a = Inert | Reactive (SelState a)
 
--- note that I/ T basically just a bool, done solely for 
---data 𝕀 = IInert | INone
---data 𝕋 = TSecondary | TPrimary
---data ℝ = RNone | RSecondary | RPrimary
 data 𝕊 = None | Secondary | Primary
 
 type Selectable a = a × ReactState 𝕊
 
--- part of the TableView conundrum, but part only of such.
+-- part of the TableView conundrum, but part only of such, so fixing that should remove all issues.
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
-
-{-}
-relected :: forall a. ReactState a => a
-relected t = selected (fromℝ t)
--}
 
 isPrimary :: ReactState 𝕊 -> 𝔹
 isPrimary (Reactive (SelState { persistent, transient })) =
@@ -169,39 +159,27 @@ instance Ord 𝕊 where
 instance JoinSemilattice 𝕊 where
    join = max
 
-rJoin :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
-rJoin a b = (Reactive ((fromℝ a) ∨ (fromℝ b)))
-
 --this is join for a semilattice
 joinR :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
 joinR Inert b = b
 joinR a Inert = a
-joinR a b = rJoin a b
+joinR a b = (Reactive ((fromℝ a) ∨ (fromℝ b)))
 
 sto𝔹 :: SelState 𝕊 -> SelState 𝔹
 sto𝔹 = (_ <#> (_ /= None))
 
 to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 --only used in tests
-to𝔹 = (sto𝔹 <$> (fromℝ $ _))
-
-to𝕊 :: SelState 𝔹 -> SelState 𝕊
-to𝕊 = (_ <#> if _ then Primary else None)
+to𝔹 = sto𝔹 <<< fromℝ
 
 --this assumes we know what inert is.
 --methods for initial assignation of states 
 toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 toℝ true _ = Inert
-toℝ false sel = Reactive (to𝕊 sel)
+toℝ false sel = Reactive (sel <#> if _ then Primary else None)
 
 asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
-   where
-   t :: SelState 𝕊
-   t = at𝕊 a b
-
-   c :: Boolean
-   c = isNone (Reactive t)
+asℝ a b = (if isNone (Reactive (at𝕊 a b)) then Inert else Reactive (as𝕊 a b))
 
 -- TO FIX/REMOVE/OTHERWISE ALTER
 
