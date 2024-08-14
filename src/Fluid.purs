@@ -8,4 +8,4 @@ import Node.Process as NProcess
 
 main :: Effect Unit
 main = do
-   log (NProcess.version)
+   log NProcess.version
