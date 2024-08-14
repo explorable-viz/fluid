@@ -1,42 +1,41 @@
 module App.Util
-  ( Attrs
-  , ReactState(..)
-  , SelState(..)
-  , Selectable
-  , Selector
-  , ViewSelector
-  , asℝ
-  , attrs
-  , class Reflect
-  , colorShade
-  , comparer'
-  , css
-  , eventData
-  , from
-  , fromChangeℝ
-  , fromℝ
-  , get_intOrNumber
-  , isInert
-  , isNone
-  , isPersistent
-  , isPrimary
-  , isSecondary
-  , isTransient
-  , joinR
-  , persist
-  , record
-  , runAffs_
-  , selClasses
-  , selClassesFor
-  , selState
-  , selected
-  , selectionEventData
-  , selector
-  , toℝ
-  , to𝔹
-  , 𝕊(..)
-  )
-  where
+   ( Attrs
+   , ReactState(..)
+   , SelState(..)
+   , Selectable
+   , Selector
+   , ViewSelector
+   , asℝ
+   , attrs
+   , class Reflect
+   , colorShade
+   , comparer'
+   , css
+   , eventData
+   , from
+   , fromChangeℝ
+   , fromℝ
+   , get_intOrNumber
+   , isInert
+   , isNone
+   , isPersistent
+   , isPrimary
+   , isSecondary
+   , isTransient
+   , joinR
+   , persist
+   , record
+   , runAffs_
+   , selClasses
+   , selClassesFor
+   , selState
+   , selected
+   , selectionEventData
+   , selector
+   , toℝ
+   , to𝔹
+   , 𝕊(..)
+   ) where
 
 import Prelude hiding (absurd, join)
 
@@ -154,7 +153,7 @@ comparer' :: ReactState 𝕊 -> ReactState 𝕊 -> Ordering
 comparer' Inert Inert = EQ
 comparer' Inert _ = LT
 comparer' _ Inert = GT
-comparer' (Reactive (SelState {persistent: a1, transient: b1 })) (Reactive (SelState {persistent: a2, transient: b2 })) =  compare' (a1∨b1) (a2∨b2)
+comparer' (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = compare' (a1 ∨ b1) (a2 ∨ b2)
 
 instance Eq (ReactState 𝕊) where
    eq s s' = comparer' s s' == EQ
@@ -164,6 +163,7 @@ instance Eq 𝕊 where
 
 instance Ord 𝕊 where
    compare = compare'
+
 instance Ord (ReactState 𝕊) where
    compare = comparer'
 
