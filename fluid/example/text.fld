@@ -12,9 +12,9 @@ in MultiPlot {|
    "one" :=
        TextBox( "The total for the USA is: " ),
    "two" :=
-       TextBox( totalFor "USA" data2015 ),
+       TextBox( numToStr (totalFor "USA" data2015) ),
    "three" :=
        TextBox( ", compared to that of China, which is actually: "),
    "four" :=
-       TextBox( totalFor "China" data2015 )
+       TextBox( numToStr (totalFor "China" data2015) )
 |}

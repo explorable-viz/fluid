@@ -5,12 +5,7 @@ import Prelude
 import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊)
 import App.Util.Selector (linkedText)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import Data.Either (Either(..))
-import Data.Int (toNumber)
-import Data.Number.Format (toString)
-import Data.Tuple (Tuple(..))
-import Primitive (intOrNumberOrString, unpack)
-import Util (type (+))
+import Primitive (string, unpack)
 import Val (Val)
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
@@ -29,14 +24,14 @@ instance Drawable LinkedText Unit where
       linkedTextSelector _ = linkedText
 
 instance Reflect (Val (SelState 𝕊)) LinkedText where
-   from r = LinkedText (unpackedStringify $ unpack intOrNumberOrString r)
+   from r = LinkedText (unpack string r)
 
-unpackedStringify :: forall a. Tuple (Int + Number + String) a -> Tuple String a
-unpackedStringify (Tuple x y) = Tuple (stringify x) y
+-- unpackedStringify :: forall a. Tuple (Int + Number + String) a -> Tuple String a
+-- unpackedStringify (Tuple x y) = Tuple (stringify x) y
 
-stringify :: (Int + Number + String) -> String
-stringify (Left n) = toString $ toNumber n
-stringify (Right (Left n)) = toString n
-stringify (Right (Right n)) = n
+-- stringify :: (Int + Number + String) -> String
+-- stringify (Left n) = toString $ toNumber n
+-- stringify (Right (Left n)) = toString n
+-- stringify (Right (Right n)) = n
 
 type LinkedTextElem = { i :: Int }
