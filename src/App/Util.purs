@@ -132,7 +132,7 @@ isPersistent Inert = false
 
 isTransient :: ReactState 𝕊 -> 𝔹
 --returns false for Inert
-isTransient (Reactive (SelState { persistent })) = persistent /= None
+isTransient (Reactive (SelState { transient })) = transient /= None
 isTransient Inert = false
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
