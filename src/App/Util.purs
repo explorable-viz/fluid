@@ -1,41 +1,42 @@
 module App.Util
-   ( Attrs
-   , ReactState(..)
-   , SelState(..)
-   , Selectable
-   , Selector
-   , ViewSelector
-   , asℝ
-   , attrs
-   , class Reflect
-   , colorShade
-   , compare'
-   , css
-   , eventData
-   , from
-   , fromChangeℝ
-   , fromℝ
-   , get_intOrNumber
-   , isInert
-   , isNone
-   , isPersistent
-   , isPrimary
-   , isSecondary
-   , isTransient
-   , joinR
-   , persist
-   , record
-   , runAffs_
-   , selClasses
-   , selClassesFor
-   , selState
-   , selected
-   , selectionEventData
-   , selector
-   , toℝ
-   , to𝔹
-   , 𝕊(..)
-   ) where
+  ( Attrs
+  , ReactState(..)
+  , SelState(..)
+  , Selectable
+  , Selector
+  , ViewSelector
+  , asℝ
+  , attrs
+  , class Reflect
+  , colorShade
+  , comparer'
+  , css
+  , eventData
+  , from
+  , fromChangeℝ
+  , fromℝ
+  , get_intOrNumber
+  , isInert
+  , isNone
+  , isPersistent
+  , isPrimary
+  , isSecondary
+  , isTransient
+  , joinR
+  , persist
+  , record
+  , runAffs_
+  , selClasses
+  , selClassesFor
+  , selState
+  , selected
+  , selectionEventData
+  , selector
+  , toℝ
+  , to𝔹
+  , 𝕊(..)
+  )
+  where
 
 import Prelude hiding (absurd, join)
 
@@ -149,20 +150,37 @@ compare' Secondary None = GT
 compare' Primary Primary = EQ
 compare' Primary _ = GT
 
+comparer' :: ReactState 𝕊 -> ReactState 𝕊 -> Ordering
+comparer' Inert Inert = EQ
+comparer' Inert _ = LT
+comparer' _ Inert = GT
+comparer' (Reactive (SelState {persistent: a1, transient: b1 })) (Reactive (SelState {persistent: a2, transient: b2 })) =  compare' (a1∨b1) (a2∨b2)
+
+instance Eq (ReactState 𝕊) where
+   eq s s' = comparer' s s' == EQ
+
 instance Eq 𝕊 where
    eq s s' = compare' s s' == EQ
 
 instance Ord 𝕊 where
    compare = compare'
+instance Ord (ReactState 𝕊) where
+   compare = comparer'
 
 instance JoinSemilattice 𝕊 where
    join = max
 
+instance JoinSemilattice (ReactState 𝕊) where
+   join = max
+
 --this is join for a semilattice
 joinR :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
+{-}
 joinR Inert b = b
 joinR a Inert = a
 joinR a b = (Reactive ((fromℝ a) ∨ (fromℝ b)))
+-}
+joinR a b = a ∨ b
 
 to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 --only used in tests
@@ -201,10 +219,8 @@ at𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 at𝕊 = lift2 at𝕊'
    where
    at𝕊' :: 𝔹 -> 𝔹 -> 𝕊
-   at𝕊' false false = Primary
-   at𝕊' false true = Primary
    at𝕊' true false = None -- just abusing the lift notn and other helper methods to solve this
-   at𝕊' true true = Primary
+   at𝕊' _ _ = Primary
 
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
