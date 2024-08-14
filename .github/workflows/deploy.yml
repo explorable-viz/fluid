@@ -9,7 +9,6 @@ on:
     paths-ignore:
     - 'old/**'
     - '**.md'
-  workflow_dispatch:
 
 jobs:
   deploy-npm:
