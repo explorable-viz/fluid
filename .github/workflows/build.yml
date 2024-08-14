@@ -1,6 +1,15 @@
 name: build
 
-on: [workflow_call]
+#on: [workflow_call]
+on:
+  push:
+    paths-ignore:
+    - 'old/**'
+    - '**.md'
+  pull_request:
+    paths-ignore:
+    - 'old/**'
+    - '**.md'
 
 jobs:
   test:

@@ -1,88 +1,47 @@
 name: deploy
 
 on:
-  push:
-    paths-ignore:
-    - 'old/**'
-    - '**.md'
-  #pull_request:
-  #  paths-ignore:
-  #  - 'old/**'
-  #  - '**.md'
   workflow_dispatch:
 
-#name: publish
-#on:
-# workflow_dispatch:
-
-#jobs:
-# 
 jobs:
   build:
     uses: ./.github/workflows/build.yml
-#    runs-on: ubuntu-22.04
-#    steps:
-#    - uses: actions/checkout@v4
-#    - uses: actions/setup-node@v4
-#      with:
-#          node-version: 22
-#    - name: test
-#      run: |
-#        yarn install
-#        . script/git/hooks/pre-push
 
-# new file: publish.yml - publish to NPM -> then deploy (needs publish to succeed); 
   deploy-npm:
     runs-on: ubuntu-22.04
     needs: build
     if: github.ref == 'refs/heads/creating-NPM-library'
+  #  if: github.ref == 'refs/heads/release'
     permissions:
       contents: read
       id-token: write
     steps:
     - uses: actions/checkout@v4
-    # steps done in test - - - - - - - -
-    #- name: build
-    #  run: |
-    #    yarn install
-    #    yarn build-app
-    # steps done in test - - - - - - - -
-    # deploy to github - - - - - - - - -
-    #- name: gh-pages
-    #  uses: peaceiris/actions-gh-pages@v3
-    #  with:
-    #    github_token: ${{ secrets.GITHUB_TOKEN }}
-    #    publish_dir: dist/app/
-    #    keep_files: true
-    # deploy to github - - - - - - - - -
     - uses: actions/setup-node@v4
       with:
         node-version: 22
         registry-url: 'https://registry.npmjs.org'
-    # - run: npm ci # https://docs.npmjs.com/cli/v10/commands/npm-ci - must have package-lock.json
     - run: npm publish --provenance --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  deploy-github:
+   deploy-gh-pages:
     runs-on: ubuntu-22.04
     needs: deploy-npm
-    if: github.ref == 'refs/heads/creating-NPM-library' # testing: duplicate just in case
+    if: github.ref == 'refs/heads/release'
     steps:
     - uses: actions/checkout@v4
     - name: build
       run: |
         yarn install
-        yarn build-artifact
+        yarn build-app
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/artifact/
+        publish_dir: dist/app/
         keep_files: true
 
-
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   deploy-artifact:
     runs-on: ubuntu-22.04
     needs: build
