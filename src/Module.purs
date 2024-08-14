@@ -49,8 +49,12 @@ loadFile (Folder folder) (File file) = do
    log ("Loading " <> url)
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
-      Left err -> throwError $ E.error $ printError err
-      Right response -> pure response.body
+      Left err -> do
+         log ("Failed with " <> printError err)
+         throwError $ E.error $ printError err
+      Right response -> do
+         log "Succeeded"
+         pure response.body
 
 loadFile' :: forall m. Folder -> File -> AffError m (File × String)
 loadFile' folder file = (file × _) <$> loadFile folder file
