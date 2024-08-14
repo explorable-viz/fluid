@@ -108,7 +108,7 @@ function drawTable_ (
 
          rows.selectAll('td')
             .data(({ i, row }) => colNames.map(colName => {
-               return { [rowKey]: row[rowKey], i, colName, value: row[colName] }
+                return { [rowKey]: row[rowKey], i, colName, value: row[colName] }
             }))
             .enter()
             .append('td')
