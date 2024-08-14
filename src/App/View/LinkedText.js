@@ -43,11 +43,15 @@ function drawLinkedText_ (
 ) {
    return () => {
       const div = d3.select('#' + divId)
-      let rootElement = div.selectAll('#' + divId)
-      div.text(view._1)
-      div.attr('class', 'transparent-text')
+      const childId = divId + '-' + suffix
+      let rootElement = div.selectAll('#' + childId)
+      if (rootElement.empty()) {
+         console.log("Root element empty!")
+         console.log(rootElement)
+         rootElement = div.append("div").attr("id", childId).text(view._1).attr('class', 'transparent-text')
+      }
 
-      setSelState(linkedTextHelpers, uiHelpers, div, view,  selListener)
+      setSelState(linkedTextHelpers, uiHelpers, rootElement, view,  selListener)
    } 
 }
 
