@@ -1,17 +1,17 @@
 module App.View.TableView
-   ( CellIndex
-   , FilterToggler
-   , TableView(..)
-   , TableViewHelpers
-   , TableViewState
-   , drawTable
-   , drawTable'
-   , filterToggler
-   , record_isUsed
-   , rowKey
-   , rrecord_isReactive
-   , rrecord_isUsed
-   ) where
+  ( CellIndex
+  , FilterToggler
+  , TableView(..)
+  , TableViewHelpers
+  , TableViewState
+  , drawTable
+  , drawTable'
+  , filterToggler
+  , rowKey
+  , rrecord_isReactive
+  , rrecord_isUsed
+  )
+  where
 
 import Prelude
 

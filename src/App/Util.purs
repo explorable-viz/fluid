@@ -22,7 +22,6 @@ module App.Util
    , isPrimary
    , isSecondary
    , isTransient
-   , joinR
    , persist
    , record
    , runAffs_
@@ -173,15 +172,6 @@ instance JoinSemilattice 𝕊 where
 
 instance JoinSemilattice (ReactState 𝕊) where
    join = max
-
---this is join for a semilattice
-joinR :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
-{-}
-joinR Inert b = b
-joinR a Inert = a
-joinR a b = (Reactive ((fromℝ a) ∨ (fromℝ b)))
--}
-joinR a b = a ∨ b
 
 to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 --only used in tests
