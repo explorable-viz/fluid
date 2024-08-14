@@ -9,7 +9,6 @@ module App.Util
    , attrs
    , class Reflect
    , colorShade
-   , comparer'
    , css
    , eventData
    , from
@@ -144,29 +143,19 @@ compare' Primary Primary = EQ
 compare' Primary _ = GT
 
 --rather than deriving instances, and just taking inert as bot whenever we derive, directly
-comparer' :: ReactState 𝕊 -> ReactState 𝕊 -> Ordering
-comparer' Inert Inert = EQ
-comparer' Inert _ = LT
-comparer' _ Inert = GT
-comparer' (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = compare' (a1 ∨ b1) (a2 ∨ b2)
-
-instance Eq (ReactState 𝕊) where
-   eq s s' = comparer' s s' == EQ
-
 instance Eq 𝕊 where
    eq s s' = compare' s s' == EQ
 
 instance Ord 𝕊 where
    compare = compare'
 
-instance Ord (ReactState 𝕊) where
-   compare = comparer'
-
 instance JoinSemilattice 𝕊 where
    join = max
 
 instance JoinSemilattice (ReactState 𝕊) where
-   join = max
+   join a Inert = a
+   join Inert b = b
+   join (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = (Reactive (SelState { persistent: a1∨a2, transient: b1∨b2 }))
 
 to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 --only used in tests
