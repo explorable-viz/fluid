@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (ReactState, ViewSelector, 𝕊, from, recordℝ, selectionEventData)
+import App.Util (ReactState, ViewSelector, 𝕊, from, record, selectionEventData)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart)
 import App.View.LineChart (LineChart)
@@ -43,10 +43,10 @@ selListener redraw selector =
 
 view :: Partial => String -> Val (ReactState 𝕊) -> Maybe View -> View
 view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
-   BarChart' (recordℝ from u)
+   BarChart' (record from u)
 view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
    --editing reflect class needed to change the record?
-   LineChart' (recordℝ from u)
+   LineChart' (record from u)
 --LineChart' (record from (fromℝ <$> u))
 view title (Val _ (Matrix r)) _ =
    {-MatrixView' (MatrixView { title, matrix: matrixRep (fromℝ <$> r) })-}
@@ -59,9 +59,9 @@ view title (Val _ (Constr c (u : Nil))) vw | c == cMultiPlot =
       Nothing -> let vws' = from u in view title <$> vws' <*> (const Nothing <$> vws')
       Just (MultiView' vws') -> view title <$> from u <*> (Just <$> unwrap vws')
 view _ (Val _ (Constr c (u : Nil))) _ | c == cScatterPlot =
-   ScatterPlot' (recordℝ from u)
+   ScatterPlot' (record from u)
 view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
-   TableView' vwState (TableView { title, table: recordℝ identity <$> from u })
+   TableView' vwState (TableView { title, table: record identity <$> from u })
    where
    vwState = case vw of
       Nothing -> { filter: false }

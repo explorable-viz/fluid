@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, recordℝ)
+import App.Util (class Reflect, ReactState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
@@ -69,7 +69,7 @@ instance Reflect (Dict (Val (ReactState 𝕊))) Point where
 instance Reflect (Dict (Val (ReactState 𝕊))) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
-      , points: recordℝ from <$> from (get f_data r)
+      , points: record from <$> from (get f_data r)
       }
 
 instance Reflect (Dict (Val (ReactState 𝕊))) LineChart where
@@ -79,7 +79,7 @@ instance Reflect (Dict (Val (ReactState 𝕊))) LineChart where
       }
 
 instance Reflect (Val (ReactState 𝕊)) LinePlot where
-   from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = recordℝ from u1
+   from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }

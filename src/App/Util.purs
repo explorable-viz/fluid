@@ -25,7 +25,6 @@ module App.Util
    , joinR
    , persist
    , record
-   , recordℝ
    , runAffs_
    , selClasses
    , selClassesFor
@@ -211,11 +210,8 @@ get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
 -- Assumes fields are all of primitive type.
-record :: forall a. (Dict (Val (SelState 𝕊)) -> a) -> Val (SelState 𝕊) -> a
+record :: forall a. (Dict (Val (ReactState 𝕊)) -> a) -> Val (ReactState 𝕊) -> a
 record toRecord (Val _ v) = toRecord (P.record2.unpack v)
-
-recordℝ :: forall a. (Dict (Val (ReactState 𝕊)) -> a) -> Val (ReactState 𝕊) -> a
-recordℝ toRecord (Val _ v) = toRecord (P.record2.unpack v)
 
 -- edit the reflect class next
 class Reflect a b where
@@ -302,30 +298,6 @@ css =
    , inert: "inert"
    }
 
-{-}
--- Ideally would derive from css.sel
-selClasses :: String
-selClasses = joinWith " " $
-   [ css.sel.transient.primary
-   , css.sel.transient.secondary
-   , css.sel.persistent.primary
-   , css.sel.persistent.secondary
-   --more inert shenanigans required
-   ]
-
-selClassesFor :: SelState 𝕊 -> String
-selClassesFor (SelState s) =
-   joinWith " " $ concat
-      [ case s.persistent of
-           Secondary -> [ css.sel.persistent.secondary ]
-           Primary -> [ css.sel.persistent.primary ]
-           None -> []
-      , case s.transient of
-           Secondary -> [ css.sel.transient.secondary ]
-           Primary -> [ css.sel.transient.primary ]
-           None -> []
-      ]
--}
 selClasses :: String
 selClasses = joinWith " " $
    [ css.sel.transient.primary
