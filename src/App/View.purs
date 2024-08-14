@@ -81,28 +81,3 @@ instance Drawable MultiView Unit where
       sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
 
 derive instance Newtype MultiView _
-
-{-}
-view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
-view _ (Val _ (Constr c (u : Nil))) _ | c == cBarChart =
-   BarChart' (record from (fromℝ <$> (cheatToℝ <$> u)))
-view _ (Val _ (Constr c (u : Nil))) _ | c == cLineChart =
-   --editing reflect class eneded to change the record.
-   LineChart' (record from (fromℝ <$> (cheatToℝ <$> u)))
-view title (Val _ (Matrix r)) _ =
-   MatrixView' (MatrixView { title, matrix: matrixRep (fromℝ <$> (cheatToℝ <$> r)) })
-view title (Val _ (Constr c (u : Nil))) vw | c == cMultiPlot =
-   MultiView' (MultiView vws)
-   where
-   vws = case vw of
-      Nothing -> let vws' = from (fromℝ <$> (cheatToℝ <$> u)) in view title <$> vws' <*> (const Nothing <$> vws')
-      Just (MultiView' vws') -> view title <$> from (fromℝ <$> (cheatToℝ <$> u)) <*> (Just <$> unwrap vws')
-view _ (Val _ (Constr c (u : Nil))) _ | c == cScatterPlot =
-   ScatterPlot' (record from (fromℝ <$> (cheatToℝ <$> u)))
-view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
-   TableView' vwState (TableView { title, table: record identity <$> from (fromℝ <$> (cheatToℝ <$> u)) })
-   where
-   vwState = case vw of
-      Nothing -> { filter: false }
-      Just (TableView' vwState' _) -> vwState'
--}

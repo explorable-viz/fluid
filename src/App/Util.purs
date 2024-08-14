@@ -109,15 +109,6 @@ data 𝕊 = None | Secondary | Primary
 
 type Selectable a = a × ReactState 𝕊
 
-{-
-cheatToRSelectable :: forall a. Selectable a -> Selectable a
-cheatToRSelectable a = (cheatToℝ <$> (a))
-
-
-fromRSelectable :: forall a. Selectable a -> Selectable a
-fromRSelectable a = (fromℝ <$> (a))
--}
-
 -- part of the TableView conundrum, but part only of such.
 selected :: forall a. JoinSemilattice a => SelState a -> a
 selected (SelState { persistent, transient }) = persistent ∨ transient
@@ -179,13 +170,7 @@ instance JoinSemilattice 𝕊 where
    join = max
 
 rJoin :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
-rJoin a b = cheatToℝ (lift2 rJoin' (fromℝ a) (fromℝ b))
-   where
-   rJoin' :: 𝕊 -> 𝕊 -> 𝕊
-   rJoin' c d = c ∨ d
-
-cheatToℝ :: SelState 𝕊 -> ReactState 𝕊
-cheatToℝ sel = (Reactive sel)
+rJoin a b = (Reactive ((fromℝ a) ∨ (fromℝ b)))
 
 --this is join for a semilattice
 joinR :: ReactState 𝕊 -> ReactState 𝕊 -> ReactState 𝕊
@@ -216,7 +201,7 @@ asℝ a b = (if c then Inert else Reactive (as𝕊 a b))
    t = at𝕊 a b
 
    c :: Boolean
-   c = isNone (cheatToℝ t)
+   c = isNone (Reactive t)
 
 -- TO FIX/REMOVE/OTHERWISE ALTER
 
