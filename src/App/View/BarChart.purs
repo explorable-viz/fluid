@@ -108,4 +108,3 @@ tickEvery n =
    else pow 10 m
    where
    m = floor (log (toNumber n) / log 10.0)
-   

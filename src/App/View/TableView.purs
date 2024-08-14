@@ -14,7 +14,7 @@ module App.View.TableView
 
 import Prelude
 
-import App.Util (ReactState, ViewSelector, 𝕊(..), eventData, fromChangeℝ, fromℝ, selClassesFor, selected)
+import App.Util (ReactState, ViewSelector, 𝕊, eventData, selClassesFor, isInert, isNone)
 import App.Util.Selector (field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
@@ -82,61 +82,15 @@ type CellIndex = { __n :: Int, colName :: String }
 rowKey :: String
 rowKey = "__n"
 
-{-}
--- Defined for any record type with fields of primitive type
-record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
-record_isUsed r =
-   not <<< isEmpty $ flip filterKeys r \k ->
-      k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> α))
--}
 rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
 rrecord_isUsed r =
    not <<< isEmpty $ flip filterKeys r \k ->
-      k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> fromℝ α))
+      k /= rowKey && (not isNone (get k r # \(Val α _) -> α))
 
-{-}
-rrecord_isUnused :: Dict (Val (ReactState 𝕊)) -> Boolean
-rrecord_isUnused r =
-   not <<< isEmpty $ flip filterKeys r \k ->
-      (k /= rowKey) && (isNone (fromℝ (get k r # \(Val α _) -> α)))
--}
 rrecord_isReactive :: Dict (Val (ReactState 𝕊)) -> Boolean
 rrecord_isReactive r =
    not <<< isEmpty $ flip filterKeys r \k ->
-      (k /= rowKey) && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> fromChangeℝ α))
-
-{-}
--- this is awful, no? It goes "obtain the value r, by mapping through this function ValSelState, then if it's none, map it to the bottom of a lattice? (take true-> false/bottom in this semilattice)
--- mayhaps I should simply aim to rewrite this.
--- so selected takes us from a SelState to a S, basically, being forced to use semilattice
-
-
-rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
-rrecord_isUsed r =
-   let
-      isUsed k (Val α _) =
-         k /= rowKey && isNone (fromℝ α)
-   in
-      not <<< isEmpty $ filterKeys (\k -> isUsed k (unsafePartial $ get k r)) r
--}
-{-}
-rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
-rrecord_isUsed r =
-  not <<< isEmpty $ flip filterKeys r \k ->
-    k /= rowKey && case get k r of
-      --Nothing -> false
-      Just (Val α _) -> isNone (fromℝ α)
-
--}
---make selected relected? or is this more of an issue?
-{-}
-rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
-rrecord_isUsed r =
-   not <<< isEmpty $ flip filterKeys r \k ->
-      k /= rowKey && selected (not <<< ((fromℝ <$> _) == (Reactive _)) (fromℝ <$> <$> (get k r # \(Val α _) -> α))
--}
-
--- may be handy as a helper method, but also as a SelState S needs to adapt to ReactState
+      (k /= rowKey) && (not isInert (get k r # \(Val α _) -> α))
 
 cell_selClassesFor :: String -> ReactState 𝕊 -> String
 cell_selClassesFor colName s

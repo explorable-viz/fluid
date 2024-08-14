@@ -27,7 +27,6 @@ module App.Util
    , selClasses
    , selClassesFor
    , selState
-   , selected
    , selectionEventData
    , selector
    , toℝ
@@ -99,10 +98,6 @@ data ReactState a = Inert | Reactive (SelState a)
 
 data 𝕊 = None | Secondary | Primary
 
--- part of the TableView conundrum, but part only of such, so fixing that should remove all issues.
-selected :: forall a. JoinSemilattice a => SelState a -> a
-selected (SelState { persistent, transient }) = persistent ∨ transient
-
 type Selectable a = a × ReactState 𝕊
 
 isPrimary :: ReactState 𝕊 -> 𝔹
@@ -117,7 +112,7 @@ isSecondary Inert = false
 
 isNone :: ReactState 𝕊 -> 𝔹
 isNone (Reactive (SelState { persistent, transient })) =
-   persistent == None || transient == None
+   persistent == None && transient == None
 isNone _ = false
 
 isInert :: ReactState 𝕊 -> 𝔹
@@ -155,7 +150,7 @@ instance JoinSemilattice 𝕊 where
 instance JoinSemilattice (ReactState 𝕊) where
    join a Inert = a
    join Inert b = b
-   join (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = (Reactive (SelState { persistent: a1∨a2, transient: b1∨b2 }))
+   join (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = (Reactive (SelState { persistent: a1 ∨ a2, transient: b1 ∨ b2 }))
 
 to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 --only used in tests
@@ -319,6 +314,7 @@ instance Show 𝕊 where
 
 derive instance Newtype (SelState a) _
 derive instance Functor SelState
+derive instance Functor ReactState
 
 instance Apply SelState where
    apply (SelState fs) (SelState s) =
