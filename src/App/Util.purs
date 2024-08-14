@@ -165,12 +165,9 @@ joinR Inert b = b
 joinR a Inert = a
 joinR a b = (Reactive ((fromℝ a) ∨ (fromℝ b)))
 
-sto𝔹 :: SelState 𝕊 -> SelState 𝔹
-sto𝔹 = (_ <#> (_ /= None))
-
 to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 --only used in tests
-to𝔹 = sto𝔹 <<< fromℝ
+to𝔹 = ((_ /= None) <$> _) <<< fromℝ
 
 --this assumes we know what inert is.
 --methods for initial assignation of states 
