@@ -12,9 +12,10 @@ module App.View.Util
 
 import Prelude
 
-import App.Util (ReactState, Selectable, selClasses, selClassesFor, joinR, Selector, ViewSelector, 𝕊, selectionEventData)
+import App.Util (ReactState, Selectable, selClasses, selClassesFor, Selector, ViewSelector, 𝕊, selectionEventData)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
+import Lattice ((∨))
 import Val (Val)
 import Web.Event.EventTarget (EventListener, eventListener)
 
@@ -53,7 +54,7 @@ uiHelpers :: UIHelpers
 uiHelpers =
    { val: fst
    , selState: snd
-   , join: joinR
+   , join: (∨)
    , selClasses
    , selClassesFor
    }

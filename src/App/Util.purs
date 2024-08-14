@@ -149,6 +149,7 @@ compare' Secondary None = GT
 compare' Primary Primary = EQ
 compare' Primary _ = GT
 
+--rather than deriving instances, and just taking inert as bot whenever we derive, directly
 comparer' :: ReactState 𝕊 -> ReactState 𝕊 -> Ordering
 comparer' Inert Inert = EQ
 comparer' Inert _ = LT
