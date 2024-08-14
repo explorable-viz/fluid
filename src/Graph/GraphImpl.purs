@@ -5,7 +5,6 @@ import Prelude
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
 import Data.Filterable (filter)
-import Data.Foldable (foldM, sequence_)
 import Data.Graph as G
 import Data.List (List(..), reverse, (:))
 import Data.List as L
@@ -82,16 +81,26 @@ sinks' m = D.toArrayWithKey (×) (unwrap m)
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
-assertPresent :: forall r. MutableAdjMap r -> Vertex -> ST r Unit
-assertPresent acc (Vertex α) = do
-   present <- OST.peek α acc <#> isJust
-   assertWhen checking.edgeListSorted (α <> " is an existing vertex") (\_ -> present) $ pure unit
+assertPresent :: forall r. MutableAdjMap r -> List Vertex -> ST r (Step (List Vertex) Unit)
+assertPresent _ Nil = pure $ Done unit
+assertPresent obj (Vertex α : αs) = do
+   present <- OST.peek α obj <#> isJust
+   assertWhen checking.edgeListSorted (α <> " is an existing vertex") (\_ -> present)
+      $ pure
+      $ Loop αs
 
-addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
-addIfMissing acc (Vertex β) = do
-   OST.peek β acc >>= case _ of
-      Nothing -> OST.poke β mempty acc
+addIfMissing :: forall r. MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
+addIfMissing acc (Vertex α) =
+   OST.peek α acc >>= case _ of
+      Nothing -> OST.poke α mempty acc
       Just _ -> pure acc
+
+addIfMissing' :: forall r. List Vertex -> MutableAdjMap r -> ST r (MutableAdjMap r)
+addIfMissing' αs acc = flip tailRecM (αs × acc) case _ of
+   (Nil × acc') -> pure $ Done acc'
+   ((α : βs) × acc') -> do
+      acc'' <- addIfMissing acc' α
+      pure $ Loop (βs × acc'')
 
 init :: forall r. List Vertex -> ST r (MutableAdjMap r)
 init αs = do
@@ -114,8 +123,9 @@ outMap αs es = do
    addEdges (((Vertex α × βs) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (_ == mempty)
       if ok then do
-         sequence_ $ assertPresent acc <$> (L.fromFoldable βs)
-         acc' <- OST.poke α βs acc >>= flip (foldM addIfMissing) βs
+         let βs' = Set.toUnfoldable βs
+         tailRecM (assertPresent acc) βs'
+         acc' <- OST.poke α βs acc >>= addIfMissing' βs'
          pure $ Loop (es' × acc')
       else
          error $ "Duplicate edge list entry for " <> show α
@@ -128,7 +138,7 @@ inMap αs es = do
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : es') × acc) = do
-      acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α
+      acc' <- tailRecM (addEdge' α) (Set.toUnfoldable βs × acc) >>= flip addIfMissing α
       pure $ Loop (es' × acc')
 
    addEdge :: Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
@@ -136,3 +146,9 @@ inMap αs es = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc
          Just αs' -> OST.poke β (insert α αs') acc
+
+   addEdge' :: Vertex -> List Vertex × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
+   addEdge' _ (Nil × acc) = pure $ Done acc
+   addEdge' α ((β : βs) × acc) = do
+      acc' <- addEdge α acc β
+      pure $ Loop (βs × acc')
