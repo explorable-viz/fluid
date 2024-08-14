@@ -2,29 +2,29 @@ module App.View.LinkedText where
 
 import Prelude
 
-import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊)
-import App.Util.Selector (linkedText)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from)
+import App.Util.Selector (linkedText, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Primitive (string, unpack)
 import Val (Val)
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
 
-type LinkedTextHelpers = { test_field :: String }
-newtype LinkedText = LinkedText (Selectable String)
+type LinkedTextHelpers = {}
+newtype LinkedText = LinkedText (Array (Selectable String))
 
 drawLinkedText' :: Renderer LinkedText Unit
-drawLinkedText' = drawLinkedText { test_field: "test" }
+drawLinkedText' = drawLinkedText {}
 
 instance Drawable LinkedText Unit where
    draw divId suffix redraw view viewState =
       drawLinkedText' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw linkedTextSelector
       where
-      linkedTextSelector :: ViewSelector LinkedText
-      linkedTextSelector _ = linkedText
+      linkedTextSelector :: ViewSelector LinkedTextElem
+      linkedTextSelector { i } = linkedText <<< listElement i
 
 instance Reflect (Val (SelState 𝕊)) LinkedText where
-   from r = LinkedText (unpack string r)
+   from r = LinkedText (unpack string <$> from r)
 
 -- unpackedStringify :: forall a. Tuple (Int + Number + String) a -> Tuple String a
 -- unpackedStringify (Tuple x y) = Tuple (stringify x) y

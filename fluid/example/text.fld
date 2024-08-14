@@ -10,11 +10,5 @@ in MultiPlot {|
          data: countryData
       },
    "one" :=
-       TextBox( "The total for the USA is: " ),
-   "two" :=
-       TextBox( numToStr (totalFor "USA" data2015) ),
-   "three" :=
-       TextBox( ", compared to that of China, which is actually: "),
-   "four" :=
-       TextBox( numToStr (totalFor "China" data2015) )
+       TextBox( ["The total for the USA is: ", numToStr (totalFor "USA" data2015), ", compared to that of China, which is actually: ", numToStr (totalFor "China" data2015) ] )
 |}

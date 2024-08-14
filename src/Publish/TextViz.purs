@@ -11,13 +11,12 @@ import Util ((×))
 import Module (File(..))
 
 fig :: FigSpec
-fig = 
+fig =
    { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
    , imports: []
    , file: File "text"
    , inputs: [ "renewables" ]
    }
 
-
 main :: Effect Unit
-main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig fig]
+main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig fig ]
