@@ -12,7 +12,6 @@ module App.Util
    , css
    , eventData
    , from
-   , fromChangeℝ
    , fromℝ
    , get_intOrNumber
    , isInert
@@ -178,10 +177,6 @@ asℝ (SelState { persistent: a1, transient: b1 }) (SelState { persistent: a2, t
 fromℝ :: ReactState 𝕊 -> SelState 𝕊
 fromℝ Inert = (SelState { persistent: None, transient: None })
 fromℝ (Reactive sel) = sel
-
-fromChangeℝ :: ReactState 𝕊 -> SelState 𝕊
-fromChangeℝ Inert = (SelState { persistent: None, transient: None })
-fromChangeℝ _ = (SelState { persistent: Primary, transient: Secondary })
 
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
