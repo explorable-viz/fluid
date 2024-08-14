@@ -4,8 +4,9 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Console (log)
-import Node.Process as NProcess
+import Node.Process (argv)
 
 main :: Effect Unit
 main = do
-   log NProcess.version
+   args <- argv
+   log $ show args
