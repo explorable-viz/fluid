@@ -2835,6 +2835,11 @@ netmask@^2.0.2:
   resolved "https://registry.npmjs.org/netmask/-/netmask-2.0.2.tgz"
   integrity sha512-dBpDMdxv9Irdq66304OLfEmQ9tbNRFnFTuZiLo+bD+r332bBmMJ8GBLXklIXXgxd3+v9+KUnZaUR5PJMa75Gsg==
 
+node-process@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/node-process/-/node-process-1.0.1.tgz#50c59218771bca1159fb49aea00a1e277fb28975"
+  integrity sha512-XsyyLcJiMecF9AKVL3Ojd+7ViJ0Y23zigEpzgXQgos76wVqmgSkOQ6kizxQ3EFYKnD4vswEt8UjbCl4hVO1r9g==
+
 normalize-path@^3.0.0, normalize-path@~3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/normalize-path/-/normalize-path-3.0.0.tgz"
