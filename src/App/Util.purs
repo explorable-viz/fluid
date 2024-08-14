@@ -126,20 +126,15 @@ isInert Inert = true
 isInert _ = false
 
 isPersistent :: ReactState 𝕊 -> 𝔹
---returns false for Inert
 isPersistent (Reactive (SelState { persistent })) = persistent /= None
 isPersistent Inert = false
 
 isTransient :: ReactState 𝕊 -> 𝔹
---returns false for Inert
 isTransient (Reactive (SelState { transient })) = transient /= None
 isTransient Inert = false
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
---compare' Inert Inert = EQ
---compare' Inert _ = LT
---compare' None Inert = GT
 compare' None None = EQ
 compare' None _ = LT
 compare' Secondary Secondary = EQ
@@ -177,14 +172,12 @@ to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 --only used in tests
 to𝔹 = ((_ /= None) <$> _) <<< fromℝ
 
---this assumes we know what inert is.
 --methods for initial assignation of states 
 toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 toℝ true _ = Inert
 toℝ false sel = Reactive (sel <#> if _ then Primary else None)
 
 asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
---asℝ a b = (if isNone (Reactive (at𝕊 a b)) then Inert else Reactive (as𝕊 a b))
 asℝ (SelState { persistent: a1, transient: b1 }) (SelState { persistent: a2, transient: b2 }) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (lift2 as𝕊' a b))
    where
    a = (SelState { persistent: a1, transient: b1 })
