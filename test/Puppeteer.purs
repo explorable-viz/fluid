@@ -24,6 +24,7 @@ tests = do
    checkForFigure page "fig-1-bar-chart"
    checkForFigure page "fig-1-line-chart"
    checkForFigure page "fig-conv-2-output"
+
    T.close browser
 
 checkForFigure :: T.Page -> String -> Aff Unit
