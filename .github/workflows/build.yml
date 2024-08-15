@@ -30,7 +30,7 @@ jobs:
         yarn build-app
         yarn puppeteer browsers install chrome
         yarn build-puppeteer
-        # yarn test-puppeteer
+        yarn test-puppeteer
 
   deploy:
     runs-on: ubuntu-22.04

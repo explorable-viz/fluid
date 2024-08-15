@@ -108,12 +108,13 @@ const waitTillHTMLRendered = async (page, timeout = 30000) => {
         const content = await page.content();
         console.log(content);
 
-        //await checkForFigure(page, "fig-4");
+        
         const selector = `svg#fig-4-output`;
         console.log(`Waiting for ${selector}`);
         await page.waitForSelector(selector, { timeout: 120000 });
         console.log(`Found ${selector}`); 
 
+        //await checkForFigure(page, "fig-4");
         //await checkForFigure(page, "fig-1");
         //await checkForFigure(page, "fig-conv-2");
         
