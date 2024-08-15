@@ -114,9 +114,9 @@ const waitTillHTMLRendered = async (page, timeout = 30000) => {
         await page.waitForSelector(selector, { timeout: 120000 });
         console.log(`Found ${selector}`); 
 
-        //await checkForFigure(page, "fig-4");
-        //await checkForFigure(page, "fig-1");
-        //await checkForFigure(page, "fig-conv-2");
+        await checkForFigure(page, "fig-4-output");
+        await checkForFigure(page, "fig-1-bar-chart");
+        await checkForFigure(page, "fig-1-line-chart");
         
     } catch (error) {
         console.error('Error:', error);
@@ -134,7 +134,7 @@ const waitTillHTMLRendered = async (page, timeout = 30000) => {
   })();
 
   async function checkForFigure(page, id) {
-    const selector = `div#${id}`;
+    const selector = `svg#${id}`;
     console.log(`Waiting for ${selector}`);
     await page.waitForSelector(selector, { timeout: 120000 });
     console.log(`Found ${selector}`); 
