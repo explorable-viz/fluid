@@ -15,15 +15,20 @@ import Val (Val)
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
 
-type LinkedTextHelpers = { test_field :: String }
 newtype LinkedText = LinkedText (Selectable String)
 
-drawLinkedText' :: Renderer LinkedText Unit
-drawLinkedText' = drawLinkedText { test_field: "test" }
+type LinkedTextHelpers =
+   { test_field :: String
+   }
+
+linkedTextHelpers :: LinkedTextHelpers
+linkedTextHelpers =
+   { test_field: "test"
+   }
 
 instance Drawable LinkedText Unit where
    draw redraw rspec =
-      drawLinkedText' uiHelpers rspec =<< selListener redraw linkedTextSelector
+      drawLinkedText linkedTextHelpers uiHelpers rspec =<< selListener redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelector LinkedText
       linkedTextSelector _ = linkedText

@@ -2,7 +2,7 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, Selectable, Selector, ViewSelector, 𝕊, selClasses, selClassesFor, selectionEventData)
+import App.Util (SelState, Selectable, Selector, 𝕊, ViewSelector, selClasses, selClassesFor, selectionEventData)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Lattice ((∨))

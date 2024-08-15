@@ -41,10 +41,8 @@ type LineChartHelpers =
    , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    }
 
-foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart Unit
-
-drawLineChart' :: Renderer LineChart Unit
-drawLineChart' = drawLineChart
+lineChartHelpers :: LineChartHelpers
+lineChartHelpers =
    { plot_max_x
    , plot_min_x
    , plot_max_y
@@ -52,9 +50,11 @@ drawLineChart' = drawLineChart
    , point_attrs
    }
 
+foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart Unit
+
 instance Drawable LineChart Unit where
    draw redraw rspec =
-      drawLineChart' uiHelpers rspec =<< selListener redraw lineChartSelector
+      drawLineChart lineChartHelpers uiHelpers rspec =<< selListener redraw lineChartSelector
       where
       lineChartSelector :: ViewSelector PointCoordinate
       lineChartSelector { i, j } =

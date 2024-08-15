@@ -14,15 +14,6 @@ import Val (MatrixRep(..), Array2)
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-data ShadowDirection = North | South | East | West | None
-
-matrixBorderStyles :: ShadowDirection -> String
-matrixBorderStyles North = "filter: drop-shadow(0px -1px 1px blue);"
-matrixBorderStyles South = "filter: drop-shadow(0px 1px 1px blue);"
-matrixBorderStyles East = "filter: drop-shadow(1px 0px 1px blue);"
-matrixBorderStyles West = "filter: drop-shadow(-1px 0px 1px blue);"
-matrixBorderStyles None = "visibility: hidden;"
-
 foreign import drawMatrix :: MatrixViewHelpers -> Renderer MatrixView Unit
 
 type MatrixViewHelpers =
@@ -30,15 +21,15 @@ type MatrixViewHelpers =
    , vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
    }
 
-drawMatrix' :: Renderer MatrixView Unit
-drawMatrix' = drawMatrix
+matrixViewHelpers :: MatrixViewHelpers
+matrixViewHelpers =
    { hBorderStyles
    , vBorderStyles
    }
 
 instance Drawable MatrixView Unit where
    draw redraw rspec =
-      drawMatrix' uiHelpers rspec =<< selListener redraw matrixViewSelector
+      drawMatrix matrixViewHelpers uiHelpers rspec =<< selListener redraw matrixViewSelector
       where
       matrixViewSelector :: ViewSelector MatrixCellCoordinate
       matrixViewSelector { i, j } = matrixElement i j
@@ -77,3 +68,12 @@ vBorderShadowDirection { cells, j: width } { i, j }
 
 isCellTransient :: forall a. Array2 (Selectable a) -> MatrixCellCoordinate -> Boolean
 isCellTransient arr2d { i, j } = isTransient $ snd $ arr2d ! i ! j
+
+data ShadowDirection = North | South | East | West | None
+
+matrixBorderStyles :: ShadowDirection -> String
+matrixBorderStyles North = "filter: drop-shadow(0px -1px 1px blue);"
+matrixBorderStyles South = "filter: drop-shadow(0px 1px 1px blue);"
+matrixBorderStyles East = "filter: drop-shadow(1px 0px 1px blue);"
+matrixBorderStyles West = "filter: drop-shadow(-1px 0px 1px blue);"
+matrixBorderStyles None = "visibility: hidden;"

@@ -2,16 +2,14 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (SelState, ViewSelector, 𝕊(..), eventData, selClassesFor, selected)
+import App.Util (SelState, ViewSelector, 𝕊(..), selClassesFor, selected)
 import App.Util.Selector (field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
-import Effect (Effect)
-import Util (Endo, spy)
+import Util (Endo)
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (BaseVal, Val(..))
-import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype TableView = TableView
    { title :: String
@@ -32,10 +30,10 @@ type TableViewHelpers =
    , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
    }
 
-foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView TableViewState
+foreign import drawTable :: TableViewHelpers -> {-EventListener -> -} Renderer TableView TableViewState
 
-drawTable' :: EventListener -> Renderer TableView TableViewState
-drawTable' = drawTable
+tableViewHelpers :: TableViewHelpers
+tableViewHelpers =
    { rowKey
    , record_isUsed
    , cell_selClassesFor
@@ -45,16 +43,17 @@ drawTable' = drawTable
 
 instance Drawable TableView TableViewState where
    draw redraw rspec = do
-      toggleListener <- filterToggleListener filterToggler
-      drawTable' toggleListener uiHelpers rspec =<< selListener redraw tableViewSelector
+      --      toggleListener <- filterToggleListener filterToggler
+      drawTable {-- toggleListener-}  tableViewHelpers uiHelpers rspec =<< selListener redraw tableViewSelector
       where
       tableViewSelector :: ViewSelector CellIndex
       tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
 
+{-
       filterToggleListener :: FilterToggler -> Effect EventListener
       filterToggleListener toggler =
          eventListener (eventData >>> toggler >>> (\_ -> spy "TODO" identity) >>> redraw)
-
+-}
 -- convert mouse event data (here, always rowKey) to view change
 type FilterToggler = String -> Endo TableViewState
 

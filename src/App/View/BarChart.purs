@@ -39,15 +39,15 @@ type BarChartHelpers =
 
 foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart Unit
 
-drawBarChart' :: Renderer BarChart Unit
-drawBarChart' = drawBarChart
+barChartHelpers :: BarChartHelpers
+barChartHelpers =
    { bar_attrs
    , tickEvery
    }
 
 instance Drawable BarChart Unit where
    draw redraw rspec =
-      drawBarChart' uiHelpers rspec =<< selListener redraw barChartSelector
+      drawBarChart barChartHelpers uiHelpers rspec =<< selListener redraw barChartSelector
       where
       barChartSelector :: ViewSelector BarSegmentCoordinate
       barChartSelector { i, j } = barSegment i j >>> barChart
