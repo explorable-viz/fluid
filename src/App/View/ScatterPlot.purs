@@ -34,8 +34,8 @@ drawScatterPlot' = drawScatterPlot
    { point_attrs }
 
 instance Drawable ScatterPlot Unit where
-   draw redraw divId suffix view viewState =
-      drawScatterPlot' uiHelpers { divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
+   draw redraw rspec =
+      drawScatterPlot' uiHelpers rspec =<< selListener redraw scatterPlotSelector
       where
       scatterPlotSelector :: ViewSelector PointIndex
       scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i

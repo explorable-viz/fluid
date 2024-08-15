@@ -22,8 +22,8 @@ drawLinkedText' :: Renderer LinkedText Unit
 drawLinkedText' = drawLinkedText { test_field: "test" }
 
 instance Drawable LinkedText Unit where
-   draw redraw divId suffix view viewState =
-      drawLinkedText' uiHelpers { divId, suffix, view, viewState } =<< selListener redraw linkedTextSelector
+   draw redraw rspec =
+      drawLinkedText' uiHelpers rspec =<< selListener redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelector LinkedText
       linkedTextSelector _ = linkedText
