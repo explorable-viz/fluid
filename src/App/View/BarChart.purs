@@ -47,7 +47,7 @@ drawBarChart' = drawBarChart
 
 instance Drawable BarChart Unit where
    draw divId suffix redraw view viewState =
-      drawBarChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
+      drawBarChart' uiHelpers { divId, suffix, view, viewState } =<< selListener redraw barChartSelector
       where
       barChartSelector :: ViewSelector BarSegmentCoordinate
       barChartSelector { i, j } = barSegment i j >>> barChart

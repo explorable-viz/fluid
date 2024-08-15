@@ -54,7 +54,7 @@ drawLineChart' = drawLineChart
 
 instance Drawable LineChart Unit where
    draw divId suffix redraw view viewState =
-      drawLineChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw lineChartSelector
+      drawLineChart' uiHelpers { divId, suffix, view, viewState } =<< selListener redraw lineChartSelector
       where
       lineChartSelector :: ViewSelector PointCoordinate
       lineChartSelector { i, j } =

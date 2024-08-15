@@ -46,7 +46,7 @@ drawTable' = drawTable
 instance Drawable TableView TableViewState where
    draw divId suffix redraw view viewState = do
       toggleListener <- filterToggleListener filterToggler
-      drawTable' toggleListener { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw tableViewSelector
+      drawTable' toggleListener uiHelpers { divId, suffix, view, viewState } =<< selListener redraw tableViewSelector
       where
       tableViewSelector :: ViewSelector CellIndex
       tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName

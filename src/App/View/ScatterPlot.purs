@@ -27,7 +27,7 @@ newtype ScatterPlot = ScatterPlot
 type ScatterPlotHelpers =
    { point_attrs :: ScatterPlot -> PointIndex -> Object String }
 
-foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit -- draws 
+foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit -- draws
 
 drawScatterPlot' :: Renderer ScatterPlot Unit
 drawScatterPlot' = drawScatterPlot
@@ -35,7 +35,7 @@ drawScatterPlot' = drawScatterPlot
 
 instance Drawable ScatterPlot Unit where
    draw divId suffix redraw view viewState =
-      drawScatterPlot' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
+      drawScatterPlot' uiHelpers { divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
       where
       scatterPlotSelector :: ViewSelector PointIndex
       scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i

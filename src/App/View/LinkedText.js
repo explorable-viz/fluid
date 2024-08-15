@@ -33,8 +33,8 @@ function setSelState (
 
 function drawLinkedText_ (
    linkedTextHelpers,
+   uiHelpers,
    {
-      uiHelpers,
       divId,
       suffix,
       view
@@ -48,7 +48,7 @@ function drawLinkedText_ (
       div.attr('class', 'transparent-text')
 
       setSelState(linkedTextHelpers, uiHelpers, div, view,  selListener)
-   } 
+   }
 }
 
-export var drawLinkedText = x1 => x2 => x3 => drawLinkedText_(x1, x2, x3)
+export var drawLinkedText = x1 => x2 => x3 => x4 => drawLinkedText_(x1, x2, x3, x4)

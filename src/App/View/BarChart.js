@@ -52,8 +52,8 @@ function addHatchPattern (rootElement, j, col_j) {
 
 function drawBarChart_ (
    barChartHelpers,
+   uiHelpers,
    {
-      uiHelpers,
       divId,
       suffix,
       view: {
@@ -198,4 +198,4 @@ function drawBarChart_ (
    }
 }
 
-export var drawBarChart = x1 => x2 => x3 => drawBarChart_(x1, x2, x3)
+export var drawBarChart = x1 => x2 => x3 => x4 => drawBarChart_(x1, x2, x3, x4)

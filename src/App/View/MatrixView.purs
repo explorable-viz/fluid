@@ -50,9 +50,9 @@ vBorderShadowDirection { cells, j: width } { i, j }
 isCellTransient :: forall a. Array2 (Selectable a) -> MatrixCellCoordinate -> Boolean
 isCellTransient arr2d { i, j } = isTransient $ snd $ arr2d ! i ! j
 
-foreign import drawMatrix :: MatrixHelpers -> Renderer MatrixView Unit
+foreign import drawMatrix :: MatrixViewHelpers -> Renderer MatrixView Unit
 
-type MatrixHelpers =
+type MatrixViewHelpers =
    { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
    , vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
    }
@@ -65,7 +65,7 @@ drawMatrix' = drawMatrix
 
 instance Drawable MatrixView Unit where
    draw divId suffix redraw view viewState =
-      drawMatrix' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw matrixViewSelector
+      drawMatrix' uiHelpers { divId, suffix, view, viewState } =<< selListener redraw matrixViewSelector
       where
       matrixViewSelector :: ViewSelector MatrixCellCoordinate
       matrixViewSelector { i, j } = matrixElement i j
