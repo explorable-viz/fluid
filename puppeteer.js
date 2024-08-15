@@ -33,4 +33,3 @@ function serverDown()
     console.log('Everything is cleanly shutdown.');
   });
 }
-
