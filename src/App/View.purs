@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState, ViewSelector, 𝕊, from, record, selectionEventData)
+import App.Util (SelState, 𝕊, from, record)
 import App.Util.Selector (multiPlotEntry)
 import App.View.BarChart (BarChart)
 import App.View.LineChart (LineChart)
@@ -15,13 +15,11 @@ import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
-import Data.Tuple (uncurry)
 import DataType (cBarChart, cCons, cLineChart, cMultiPlot, cNil, cScatterPlot, cText)
 import Dict (Dict)
 import Effect (Effect)
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), Val(..))
-import Web.Event.EventTarget (EventListener, eventListener)
 
 data View
    -- one for each constructor of the Fluid 'Plot' data type
@@ -35,10 +33,6 @@ data View
    | LinkedText' LinkedText
 
 newtype MultiView = MultiView (Dict View)
-
-selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
-selListener redraw selector =
-   eventListener (selectionEventData >>> uncurry selector >>> redraw)
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- View state update (e.g. toggle filter) is WIP.
