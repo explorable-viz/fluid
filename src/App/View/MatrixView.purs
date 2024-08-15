@@ -64,7 +64,7 @@ drawMatrix' = drawMatrix
    }
 
 instance Drawable MatrixView Unit where
-   draw divId suffix redraw view viewState =
+   draw redraw divId suffix view viewState =
       drawMatrix' uiHelpers { divId, suffix, view, viewState } =<< selListener redraw matrixViewSelector
       where
       matrixViewSelector :: ViewSelector MatrixCellCoordinate

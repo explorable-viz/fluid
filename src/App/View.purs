@@ -62,16 +62,16 @@ view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
 
 drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
 drawView divId suffix redraw = case _ of
-   BarChart' vw -> draw divId suffix redraw vw unit
-   LineChart' vw -> draw divId suffix redraw vw unit
-   ScatterPlot' vw -> draw divId suffix redraw vw unit
-   MultiView' vw -> draw divId suffix redraw vw unit
-   MatrixView' vw -> draw divId suffix redraw vw unit
-   TableView' vwState vw -> draw divId suffix redraw vw vwState
-   LinkedText' vw -> draw divId suffix redraw vw unit
+   BarChart' vw -> draw redraw divId suffix vw unit
+   LineChart' vw -> draw redraw divId suffix vw unit
+   ScatterPlot' vw -> draw redraw divId suffix vw unit
+   MultiView' vw -> draw redraw divId suffix vw unit
+   MatrixView' vw -> draw redraw divId suffix vw unit
+   TableView' vwState vw -> draw redraw divId suffix vw vwState
+   LinkedText' vw -> draw redraw divId suffix vw unit
 
 instance Drawable MultiView Unit where
-   draw divId _ redraw (MultiView vws) _ =
+   draw redraw divId _ (MultiView vws) _ =
       sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
 
 derive instance Newtype MultiView _

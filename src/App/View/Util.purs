@@ -17,7 +17,7 @@ selListener redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> redraw)
 
 class Drawable a b | a -> b where
-   draw :: HTMLId -> String -> Redraw -> a -> b -> Effect Unit
+   draw :: Redraw -> HTMLId -> String -> a -> b -> Effect Unit
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a b =

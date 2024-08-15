@@ -22,7 +22,7 @@ drawLinkedText' :: Renderer LinkedText Unit
 drawLinkedText' = drawLinkedText { test_field: "test" }
 
 instance Drawable LinkedText Unit where
-   draw divId suffix redraw view viewState =
+   draw redraw divId suffix view viewState =
       drawLinkedText' uiHelpers { divId, suffix, view, viewState } =<< selListener redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelector LinkedText
