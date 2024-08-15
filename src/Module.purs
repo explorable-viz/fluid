@@ -46,14 +46,12 @@ derive newtype instance Monoid File
 loadFile :: forall m. Folder -> File -> AffError m String
 loadFile (Folder folder) (File file) = do
    let url = "/" <> folder <> "/" <> file <> ".fld"
-   log ("Loading " <> url)
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
       Left err -> do
          log ("Failed with " <> printError err)
          throwError $ E.error $ printError err
-      Right response -> do
-         log "Succeeded"
+      Right response ->
          pure response.body
 
 loadFile' :: forall m. Folder -> File -> AffError m (File × String)
