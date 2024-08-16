@@ -32,7 +32,7 @@ type TableViewHelpers =
    , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
    }
 
-foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView TableViewState
+foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
 
 tableViewHelpers :: TableViewHelpers
 tableViewHelpers =
@@ -58,9 +58,9 @@ tableViewHelpers =
       | otherwise = selClassesFor s
 
 instance Drawable TableView where
-   draw divId suffix figView redraw vw = do
+   draw divId suffix figView redraw view = do
       toggleListener <- filterToggleListener filterToggler
-      drawTable tableViewHelpers toggleListener uiHelpers { divId, suffix, view: vw, viewState: { filter: true } }
+      drawTable tableViewHelpers toggleListener uiHelpers { divId, suffix, view }
          =<< selListener figView redraw tableViewSelector
       where
       tableViewSelector :: ViewSelector CellIndex

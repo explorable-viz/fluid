@@ -28,7 +28,7 @@ type ScatterPlotHelpers =
    { point_attrs :: ScatterPlot -> PointIndex -> Object String
    }
 
-foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit -- draws
+foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot
 
 scatterPlotHelpers :: ScatterPlotHelpers
 scatterPlotHelpers =
@@ -45,8 +45,8 @@ scatterPlotHelpers =
       point_smallRadius = 2
 
 instance Drawable ScatterPlot where
-   draw divId suffix figView redraw vw =
-      drawScatterPlot scatterPlotHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
+   draw divId suffix figView redraw view =
+      drawScatterPlot scatterPlotHelpers uiHelpers { divId, suffix, view }
          =<< selListener figView redraw scatterPlotSelector
       where
       scatterPlotSelector :: ViewSelector PointIndex

@@ -37,7 +37,7 @@ type BarChartHelpers =
    , tickEvery :: Int -> Int
    }
 
-foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart Unit
+foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart
 
 barChartHelpers :: BarChartHelpers
 barChartHelpers =
@@ -76,8 +76,8 @@ barChartHelpers =
       m = floor (log (toNumber n) / log 10.0)
 
 instance Drawable BarChart where
-   draw divId suffix figView redraw vw =
-      drawBarChart barChartHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
+   draw divId suffix figView redraw view =
+      drawBarChart barChartHelpers uiHelpers { divId, suffix, view }
          =<< selListener figView redraw barChartSelector
       where
       barChartSelector :: ViewSelector BarSegmentCoordinate

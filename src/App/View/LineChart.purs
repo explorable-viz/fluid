@@ -77,11 +77,11 @@ lineChartHelpers =
    point_smallRadius :: Int
    point_smallRadius = 2
 
-foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart Unit
+foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
 instance Drawable LineChart where
-   draw divId suffix figView redraw vw =
-      drawLineChart lineChartHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
+   draw divId suffix figView redraw view =
+      drawLineChart lineChartHelpers uiHelpers { divId, suffix, view }
          =<< selListener figView redraw lineChartSelector
       where
       lineChartSelector :: ViewSelector PointCoordinate

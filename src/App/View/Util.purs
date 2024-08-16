@@ -39,14 +39,13 @@ drawView divId suffix figView redraw vw =
    unpack vw (draw divId suffix figView redraw)
 
 -- Heavily curried type isn't convenient for FFI
-type RendererSpec a b =
+type RendererSpec a =
    { divId :: HTMLId
    , suffix :: String
    , view :: a
-   , viewState :: b
    }
 
-type Renderer a b = UIHelpers -> RendererSpec a b -> EventListener -> Effect Unit
+type Renderer a = UIHelpers -> RendererSpec a -> EventListener -> Effect Unit
 
 type UIHelpers =
    { val :: forall a. Selectable a -> a

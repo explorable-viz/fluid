@@ -12,7 +12,7 @@ import Primitive (intOrNumber, unpack)
 import Util (type (+), type (×), (×))
 import Val (Val)
 
-foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
+foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText
 
 newtype LinkedText = LinkedText (Selectable String)
 
@@ -26,8 +26,8 @@ linkedTextHelpers =
    }
 
 instance Drawable LinkedText where
-   draw divId suffix figView redraw vw =
-      drawLinkedText linkedTextHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
+   draw divId suffix figView redraw view =
+      drawLinkedText linkedTextHelpers uiHelpers { divId, suffix, view }
          =<< selListener figView redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelector LinkedText
