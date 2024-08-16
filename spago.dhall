@@ -41,6 +41,7 @@ You can edit this file as you like.
   , "st"
   , "strings"
   , "tailrec"
+  , "toppokki"
   , "transformers"
   , "tuples"
   , "unfoldable"
