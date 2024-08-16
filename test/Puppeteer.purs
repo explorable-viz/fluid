@@ -10,9 +10,6 @@ import Effect.Class.Console (log)
 import Prim.Row as Row
 import Toppokki as T
 
-main :: Effect (Promise Unit)
-main = fromAff tests
-
 launchFirefox
    :: forall options trash
     . Row.Union options trash T.LaunchOptions
@@ -22,9 +19,12 @@ launchFirefox = T.runPromiseAffE1 _launchFirefox
 
 foreign import _launchFirefox :: forall options. FU.Fn1 options (Effect (Promise T.Browser))
 
-tests :: Aff Unit
-tests = do
-   browser <- launchFirefox {}
+main :: Effect (Promise Unit)
+main = fromAff (tests (launchFirefox {}))
+
+tests :: Aff T.Browser -> Aff Unit
+tests launchBrowser = do
+   browser <- launchBrowser
    page <- T.newPage browser
    log "Waiting for 'goto' load"
    T.goto (T.URL "http://127.0.0.1:8080") page
