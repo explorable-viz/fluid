@@ -8,9 +8,8 @@ import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.Number.Format (toString)
-import Data.Tuple (Tuple(..))
 import Primitive (intOrNumber, unpack)
-import Util (type (+))
+import Util (type (+), type (×), (×))
 import Val (Val)
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
@@ -37,8 +36,8 @@ instance Drawable LinkedText where
 instance Reflect (Val (SelState 𝕊)) LinkedText where
    from r = LinkedText (unpackedStringify $ unpack intOrNumber r)
 
-unpackedStringify :: forall a. Tuple (Int + Number) a -> Tuple String a
-unpackedStringify (Tuple x y) = Tuple (stringify x) y
+unpackedStringify :: forall a. (Int + Number) × a -> String × a
+unpackedStringify (x × y) = stringify x × y
 
 stringify :: (Int + Number) -> String
 stringify (Left n) = toString $ toNumber n
