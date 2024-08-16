@@ -10,7 +10,7 @@ import App.View.LinkedText (LinkedText)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.ScatterPlot (ScatterPlot)
 import App.View.TableView (TableView(..), TableViewState)
-import App.View.Util (class Drawable, HTMLId, Redraw, draw)
+import App.View.Util (class Drawable, class View', HTMLId, Redraw, draw, drawView')
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
@@ -20,6 +20,18 @@ import Dict (Dict)
 import Effect (Effect)
 import Util.Map (mapWithKey)
 import Val (BaseVal(..), Val(..))
+
+newtype View2 = View2 (forall r. (forall a. View' a => a -> r) -> r)
+
+instance View' MultiView2 where
+   drawView' divId _ redraw (MultiView2 vws) =
+      sequence_ $ mapWithKey (\x -> drawView2 divId x (multiPlotEntry x >>> redraw)) vws
+
+pack :: forall a. View' a => a -> View2
+pack x = View2 \k -> k x
+
+unpack :: forall r. View2 -> (forall a. View' a => a -> r) -> r
+unpack (View2 vw) k = vw k
 
 data View
    -- one for each constructor of the Fluid 'Plot' data type
@@ -33,6 +45,7 @@ data View
    | LinkedText' LinkedText
 
 newtype MultiView = MultiView (Dict View)
+newtype MultiView2 = MultiView2 (Dict View2)
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- View state update (e.g. toggle filter) is WIP.
@@ -59,6 +72,10 @@ view title u@(Val _ (Constr c _)) vw | c == cNil || c == cCons =
    vwState = case vw of
       Nothing -> { filter: true }
       Just (TableView' vwState' _) -> vwState'
+
+drawView2 :: HTMLId -> String -> Redraw -> View2 -> Effect Unit
+drawView2 divId suffix redraw vw =
+   unpack vw (drawView' divId suffix redraw)
 
 drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
 drawView divId suffix redraw = case _ of

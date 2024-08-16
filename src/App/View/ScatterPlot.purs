@@ -5,17 +5,17 @@ import Prelude
 import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from, record, isPrimary, isSecondary)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (toNumber)
+import Data.Tuple (snd)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
+import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
+import Util ((!))
 import Util.Map (get)
 import Val (Val)
-import Foreign.Object (Object, fromFoldable)
-import Util ((!))
-import Data.Tuple (snd)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -34,6 +34,14 @@ scatterPlotHelpers :: ScatterPlotHelpers
 scatterPlotHelpers =
    { point_attrs
    }
+
+instance View' ScatterPlot where
+   drawView' divId suffix redraw vw =
+      drawScatterPlot scatterPlotHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
+         =<< selListener redraw scatterPlotSelector
+      where
+      scatterPlotSelector :: ViewSelector PointIndex
+      scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
 
 instance Drawable ScatterPlot Unit where
    draw redraw rspec =

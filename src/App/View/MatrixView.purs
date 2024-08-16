@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelState, Selectable, ViewSelector, 𝕊, isTransient)
 import App.Util.Selector (matrixElement)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
 import Data.Tuple (snd)
 import Primitive (int, unpack)
 import Util ((!), (×))
@@ -26,6 +26,14 @@ matrixViewHelpers =
    { hBorderStyles
    , vBorderStyles
    }
+
+instance View' MatrixView where
+   drawView' divId suffix redraw vw =
+      drawMatrix matrixViewHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
+         =<< selListener redraw matrixViewSelector
+      where
+      matrixViewSelector :: ViewSelector MatrixCellCoordinate
+      matrixViewSelector { i, j } = matrixElement i j
 
 instance Drawable MatrixView Unit where
    draw redraw rspec =

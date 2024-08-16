@@ -19,6 +19,9 @@ selListener redraw selector =
 class Drawable a b | a -> b where
    draw :: Redraw -> RendererSpec a b -> Effect Unit
 
+class View' a where
+   drawView' :: HTMLId -> String -> Redraw -> a -> Effect Unit
+
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a b =
    { divId :: HTMLId
