@@ -42,6 +42,20 @@ tableViewHelpers =
    , val_val: \(Val _ v) -> v
    , val_selState: \(Val α _) -> α
    }
+   where
+   rowKey :: String
+   rowKey = "__n"
+
+   -- Defined for any record type with fields of primitive type
+   record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
+   record_isUsed r =
+      not <<< isEmpty $ flip filterKeys r \k ->
+         k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> α))
+
+   cell_selClassesFor :: String -> SelState 𝕊 -> String
+   cell_selClassesFor colName s
+      | colName == rowKey = ""
+      | otherwise = selClassesFor s
 
 instance View' TableView where
    drawView' divId suffix redraw vw = do
@@ -75,17 +89,3 @@ filterToggler _ vw = vw { filter = not vw.filter }
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }
-
-rowKey :: String
-rowKey = "__n"
-
--- Defined for any record type with fields of primitive type
-record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
-record_isUsed r =
-   not <<< isEmpty $ flip filterKeys r \k ->
-      k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> α))
-
-cell_selClassesFor :: String -> SelState 𝕊 -> String
-cell_selClassesFor colName s
-   | colName == rowKey = ""
-   | otherwise = selClassesFor s

@@ -44,6 +44,36 @@ barChartHelpers =
    { bar_attrs
    , tickEvery
    }
+   where
+   bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
+   bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
+      fromFoldable
+         [ "fill" ↦ case persistent of
+              None -> col
+              Secondary -> "url(#diagonalHatch-" <> show j <> ")"
+              Primary -> colorShade col (-40)
+         , "stroke-width" ↦ "1.5"
+         , "stroke-dasharray" ↦ case transient of
+              None -> "none"
+              Secondary -> "1 2"
+              Primary -> "2 2"
+         , "stroke-linecap" ↦ "round"
+         , "stroke" ↦
+              if persistent /= None || transient /= None then colorShade col (-70)
+              else col
+         ]
+      where
+      StackedBar { bars } = stackedBars ! i
+      Bar { z } = bars ! j
+      SelState { persistent, transient } = snd z
+      col = indexCol j
+
+   tickEvery :: Int -> Int
+   tickEvery n =
+      if n <= 2 * pow 10 m then 2 * pow 10 (m - 1)
+      else pow 10 m
+      where
+      m = floor (log (toNumber n) / log 10.0)
 
 instance View' BarChart where
    drawView' divId suffix redraw vw =
@@ -80,33 +110,3 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
-
-bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
-bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
-   fromFoldable
-      [ "fill" ↦ case persistent of
-           None -> col
-           Secondary -> "url(#diagonalHatch-" <> show j <> ")"
-           Primary -> colorShade col (-40)
-      , "stroke-width" ↦ "1.5"
-      , "stroke-dasharray" ↦ case transient of
-           None -> "none"
-           Secondary -> "1 2"
-           Primary -> "2 2"
-      , "stroke-linecap" ↦ "round"
-      , "stroke" ↦
-           if persistent /= None || transient /= None then colorShade col (-70)
-           else col
-      ]
-   where
-   StackedBar { bars } = stackedBars ! i
-   Bar { z } = bars ! j
-   SelState { persistent, transient } = snd z
-   col = indexCol j
-
-tickEvery :: Int -> Int
-tickEvery n =
-   if n <= 2 * pow 10 m then 2 * pow 10 (m - 1)
-   else pow 10 m
-   where
-   m = floor (log (toNumber n) / log 10.0)

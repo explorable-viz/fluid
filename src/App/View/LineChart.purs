@@ -49,6 +49,33 @@ lineChartHelpers =
    , point_smallRadius
    , point_attrs
    }
+   where
+   plot_max_x :: LinePlot -> Number
+   plot_max_x (LinePlot { points }) = definitely' (maximum (points <#> \(Point { x }) -> fst x))
+
+   plot_min_x :: LinePlot -> Number
+   plot_min_x (LinePlot { points }) = definitely' (minimum (points <#> \(Point { x }) -> fst x))
+
+   plot_max_y :: LinePlot -> Number
+   plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))
+
+   point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+   point_attrs nameCol (LineChart { plots }) { i, j, name } =
+      fromFoldable
+         [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
+         , "stroke-width" ↦ "1"
+         , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
+         , "fill" ↦ fill col
+         ]
+      where
+      LinePlot plot = plots ! i
+      Point { y } = plot.points ! j
+      sel = snd y
+      col = nameCol name
+      fill = if isPersistent sel then flip colorShade (-30) else identity
+
+   point_smallRadius :: Int
+   point_smallRadius = 2
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart Unit
 
@@ -92,30 +119,3 @@ instance Reflect (Val (SelState 𝕊)) LinePlot where
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
-
-point_smallRadius :: Int
-point_smallRadius = 2
-
-point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-point_attrs nameCol (LineChart { plots }) { i, j, name } =
-   fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
-      , "stroke-width" ↦ "1"
-      , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
-      , "fill" ↦ fill col
-      ]
-   where
-   LinePlot plot = plots ! i
-   Point { y } = plot.points ! j
-   sel = snd y
-   col = nameCol name
-   fill = if isPersistent sel then flip colorShade (-30) else identity
-
-plot_max_y :: LinePlot -> Number
-plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))
-
-plot_min_x :: LinePlot -> Number
-plot_min_x (LinePlot { points }) = definitely' (minimum (points <#> \(Point { x }) -> fst x))
-
-plot_max_x :: LinePlot -> Number
-plot_max_x (LinePlot { points }) = definitely' (maximum (points <#> \(Point { x }) -> fst x))

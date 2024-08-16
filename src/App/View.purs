@@ -17,6 +17,7 @@ import DataType (cBarChart, cCons, cLineChart, cLinkedText, cMultiPlot, cNil, cS
 import Val (BaseVal(..), Val(..))
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
+-- Ignore view state for now..
 view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
 view title (Val _ (Constr c (u : Nil))) _
    | c == cBarChart = pack (record from u :: BarChart)
@@ -28,6 +29,6 @@ view title (Val _ (Constr c (u : Nil))) _
         vws = view title <$> from u
 view title u@(Val _ (Constr c _)) _
    | c == cNil || c == cCons =
-        pack (TableView { title, table: record identity <$> from u }) -- ignore view state for now
+        pack (TableView { title, table: record identity <$> from u })
 view title (Val _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
