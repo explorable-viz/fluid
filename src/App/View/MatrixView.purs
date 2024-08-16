@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelState, Selectable, ViewSelector, 𝕊, isTransient)
 import App.Util.Selector (matrixElement)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
 import Data.Tuple (snd)
 import Primitive (int, unpack)
 import Util ((!), (×))
@@ -14,14 +14,41 @@ import Val (MatrixRep(..), Array2)
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-data ShadowDirection = North | South | East | West | None
+foreign import drawMatrix :: MatrixViewHelpers -> Renderer MatrixView Unit
 
-matrixBorderStyles :: ShadowDirection -> String
-matrixBorderStyles North = "filter: drop-shadow(0px -1px 1px blue);"
-matrixBorderStyles South = "filter: drop-shadow(0px 1px 1px blue);"
-matrixBorderStyles East = "filter: drop-shadow(1px 0px 1px blue);"
-matrixBorderStyles West = "filter: drop-shadow(-1px 0px 1px blue);"
-matrixBorderStyles None = "visibility: hidden;"
+type MatrixViewHelpers =
+   { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
+   , vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
+   }
+
+matrixViewHelpers :: MatrixViewHelpers
+matrixViewHelpers =
+   { hBorderStyles
+   , vBorderStyles
+   }
+
+instance View' MatrixView where
+   drawView' divId suffix redraw vw =
+      drawMatrix matrixViewHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
+         =<< selListener redraw matrixViewSelector
+      where
+      matrixViewSelector :: ViewSelector MatrixCellCoordinate
+      matrixViewSelector { i, j } = matrixElement i j
+
+instance Drawable MatrixView Unit where
+   draw redraw rspec =
+      drawMatrix matrixViewHelpers uiHelpers rspec =<< selListener redraw matrixViewSelector
+      where
+      matrixViewSelector :: ViewSelector MatrixCellCoordinate
+      matrixViewSelector { i, j } = matrixElement i j
+
+matrixRep :: MatrixRep (SelState 𝕊) -> IntMatrix
+matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
+   { cells: (unpack int <$> _) <$> vss, i, j }
+
+-- 1-based indices of selected cell; see data binding in .js
+type MatrixCellCoordinate = { i :: Int, j :: Int }
+type MatrixBorderCoordinate = { i :: Int, j :: Int }
 
 hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
 hBorderStyles m = matrixBorderStyles <<< hBorderShadowDirection m
@@ -50,31 +77,11 @@ vBorderShadowDirection { cells, j: width } { i, j }
 isCellTransient :: forall a. Array2 (Selectable a) -> MatrixCellCoordinate -> Boolean
 isCellTransient arr2d { i, j } = isTransient $ snd $ arr2d ! i ! j
 
-foreign import drawMatrix :: MatrixHelpers -> Renderer MatrixView Unit
+data ShadowDirection = North | South | East | West | None
 
-type MatrixHelpers =
-   { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
-   , vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
-   }
-
-drawMatrix' :: Renderer MatrixView Unit
-drawMatrix' = drawMatrix
-   { hBorderStyles
-   , vBorderStyles
-   }
-
-instance Drawable MatrixView Unit where
-   draw divId suffix redraw view viewState =
-      drawMatrix' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw matrixViewSelector
-      where
-      matrixViewSelector :: ViewSelector MatrixCellCoordinate
-      matrixViewSelector { i, j } = matrixElement i j
-
-matrixRep :: MatrixRep (SelState 𝕊) -> IntMatrix
-matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
-   { cells: (unpack int <$> _) <$> vss, i, j }
-
--- 1-based indices of selected cell; see data binding in .js
-type MatrixCellCoordinate = { i :: Int, j :: Int }
-
-type MatrixBorderCoordinate = { i :: Int, j :: Int }
+matrixBorderStyles :: ShadowDirection -> String
+matrixBorderStyles North = "filter: drop-shadow(0px -1px 1px blue);"
+matrixBorderStyles South = "filter: drop-shadow(0px 1px 1px blue);"
+matrixBorderStyles East = "filter: drop-shadow(1px 0px 1px blue);"
+matrixBorderStyles West = "filter: drop-shadow(-1px 0px 1px blue);"
+matrixBorderStyles None = "visibility: hidden;"

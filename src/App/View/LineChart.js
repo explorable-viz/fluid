@@ -27,8 +27,8 @@ function setSelState (
 
 function drawLineChart_ (
    lineChartHelpers,
+   { val },
    {
-      uiHelpers: { val },
       divId,
       suffix,
       view: {
@@ -155,4 +155,4 @@ function drawLineChart_ (
    }
 }
 
-export var drawLineChart = x1 => x2 => x3 => drawLineChart_(x1, x2, x3)
+export var drawLineChart = x1 => x2 => x3 => x4 => drawLineChart_(x1, x2, x3, x4)

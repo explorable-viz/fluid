@@ -4,26 +4,39 @@ import Prelude
 
 import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊)
 import App.Util.Selector (linkedText)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
 import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.Number.Format (toString)
 import Data.Tuple (Tuple(..))
 import Primitive (intOrNumber, unpack)
-import Util (type (+)) --,error)
+import Util (type (+))
 import Val (Val)
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
 
-type LinkedTextHelpers = { test_field :: String }
 newtype LinkedText = LinkedText (Selectable String)
 
-drawLinkedText' :: Renderer LinkedText Unit
-drawLinkedText' = drawLinkedText { test_field: "test" }
+type LinkedTextHelpers =
+   { test_field :: String
+   }
+
+linkedTextHelpers :: LinkedTextHelpers
+linkedTextHelpers =
+   { test_field: "test"
+   }
+
+instance View' LinkedText where
+   drawView' divId suffix redraw vw =
+      drawLinkedText linkedTextHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
+         =<< selListener redraw linkedTextSelector
+      where
+      linkedTextSelector :: ViewSelector LinkedText
+      linkedTextSelector _ = linkedText
 
 instance Drawable LinkedText Unit where
-   draw divId suffix redraw view viewState =
-      drawLinkedText' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw linkedTextSelector
+   draw redraw rspec =
+      drawLinkedText linkedTextHelpers uiHelpers rspec =<< selListener redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelector LinkedText
       linkedTextSelector _ = linkedText

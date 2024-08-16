@@ -49,8 +49,8 @@ function setSelState (
 function drawTable_ (
    tableViewHelpers,
    filterToggleListener,
+   uiHelpers,
    {
-      uiHelpers,
       divId,
       suffix,
       view,
@@ -118,4 +118,4 @@ function drawTable_ (
    }
 }
 
-export var drawTable = x1 => x2 => x3 => x4 => drawTable_(x1, x2, x3, x4)
+export var drawTable = x1 => x2 => x3 => x4 => x5 => drawTable_(x1, x2, x3, x4, x5)

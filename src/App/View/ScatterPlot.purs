@@ -5,17 +5,17 @@ import Prelude
 import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from, record, isPrimary, isSecondary)
 import App.Util.Selector (field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (toNumber)
+import Data.Tuple (snd)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
+import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
+import Util ((!))
 import Util.Map (get)
 import Val (Val)
-import Foreign.Object (Object, fromFoldable)
-import Util ((!))
-import Data.Tuple (snd)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -25,17 +25,27 @@ newtype ScatterPlot = ScatterPlot
    }
 
 type ScatterPlotHelpers =
-   { point_attrs :: ScatterPlot -> PointIndex -> Object String }
+   { point_attrs :: ScatterPlot -> PointIndex -> Object String
+   }
 
-foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit -- draws 
+foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit -- draws
 
-drawScatterPlot' :: Renderer ScatterPlot Unit
-drawScatterPlot' = drawScatterPlot
-   { point_attrs }
+scatterPlotHelpers :: ScatterPlotHelpers
+scatterPlotHelpers =
+   { point_attrs
+   }
+
+instance View' ScatterPlot where
+   drawView' divId suffix redraw vw =
+      drawScatterPlot scatterPlotHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
+         =<< selListener redraw scatterPlotSelector
+      where
+      scatterPlotSelector :: ViewSelector PointIndex
+      scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
 
 instance Drawable ScatterPlot Unit where
-   draw divId suffix redraw view viewState =
-      drawScatterPlot' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
+   draw redraw rspec =
+      drawScatterPlot scatterPlotHelpers uiHelpers rspec =<< selListener redraw scatterPlotSelector
       where
       scatterPlotSelector :: ViewSelector PointIndex
       scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
