@@ -58,9 +58,9 @@ setInputViewState (x ↦ δvw) fig = fig
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView divId str.output (drawFig divId <<< flip selectOutput fig) out_view
-   sequence_ $ flip mapWithKey in_views \x ->
-      drawView (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig)
+   drawView divId str.output selectOutput (\figUpdater -> drawFig divId (figUpdater fig)) out_view
+   sequence_ $ flip mapWithKey in_views \x -> do
+      drawView (divId <> "-" <> str.input) x (curry selectInput x) (\figUpdater -> drawFig divId (figUpdater fig))
    where
    out_view × in_views =
       selectionResult fig # unsafePartial

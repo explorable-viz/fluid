@@ -12,11 +12,12 @@ import GaloisConnection (GaloisConnection)
 import Lattice (𝔹, Raw, (∨))
 import Module (File)
 import SExpr as S
+import Util (Endo)
 import Val (Env, Val)
 import Web.Event.EventTarget (EventListener, eventListener)
 
 type HTMLId = String
-type Redraw = Selector Val -> Effect Unit
+type Redraw = Endo Fig -> Effect Unit
 
 newtype View = View (forall r. (forall a. Drawable a => a -> r) -> r)
 
@@ -26,16 +27,16 @@ pack x = View \k -> k x
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
-selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
-selListener redraw selector =
-   eventListener (selectionEventData >>> uncurry selector >>> redraw)
+selListener :: forall a. (Selector Val -> Endo Fig) -> Redraw -> ViewSelector a -> Effect EventListener
+selListener figView redraw selector =
+   eventListener (selectionEventData >>> uncurry selector >>> figView >>> redraw)
 
 class Drawable a where
-   draw :: HTMLId -> String -> Redraw -> a -> Effect Unit
+   draw :: HTMLId -> String -> (Selector Val -> Endo Fig) -> Redraw -> a -> Effect Unit
 
-drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
-drawView divId suffix redraw vw =
-   unpack vw (draw divId suffix redraw)
+drawView :: HTMLId -> String -> (Selector Val -> Endo Fig) -> Redraw -> View -> Effect Unit
+drawView divId suffix figView redraw vw =
+   unpack vw (draw divId suffix figView redraw)
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a b =

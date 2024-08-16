@@ -58,10 +58,10 @@ tableViewHelpers =
       | otherwise = selClassesFor s
 
 instance Drawable TableView where
-   draw divId suffix redraw vw = do
+   draw divId suffix figView redraw vw = do
       toggleListener <- filterToggleListener filterToggler
       drawTable tableViewHelpers toggleListener uiHelpers { divId, suffix, view: vw, viewState: { filter: true } }
-         =<< selListener redraw tableViewSelector
+         =<< selListener figView redraw tableViewSelector
       where
       tableViewSelector :: ViewSelector CellIndex
       tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
