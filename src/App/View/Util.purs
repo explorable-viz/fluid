@@ -12,6 +12,14 @@ import Web.Event.EventTarget (EventListener, eventListener)
 type HTMLId = String
 type Redraw = Selector Val -> Effect Unit
 
+newtype View = View (forall r. (forall a. View' a => a -> r) -> r)
+
+pack :: forall a. View' a => a -> View
+pack x = View \k -> k x
+
+unpack :: forall r. View -> (forall a. View' a => a -> r) -> r
+unpack (View vw) k = vw k
+
 selListener :: forall a. Redraw -> ViewSelector a -> Effect EventListener
 selListener redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> redraw)
@@ -21,6 +29,10 @@ class Drawable a b | a -> b where
 
 class View' a where
    drawView' :: HTMLId -> String -> Redraw -> a -> Effect Unit
+
+drawView :: HTMLId -> String -> Redraw -> View -> Effect Unit
+drawView divId suffix redraw vw =
+   unpack vw (drawView' divId suffix redraw)
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a b =
