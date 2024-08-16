@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Foldable (maximum, minimum)
 import Data.Int (toNumber)
@@ -79,18 +79,10 @@ lineChartHelpers =
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart Unit
 
-instance View' LineChart where
-   drawView' divId suffix redraw vw =
+instance Drawable LineChart where
+   draw divId suffix redraw vw =
       drawLineChart lineChartHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
          =<< selListener redraw lineChartSelector
-      where
-      lineChartSelector :: ViewSelector PointCoordinate
-      lineChartSelector { i, j } =
-         lineChart <<< field f_plots <<< listElement i <<< linePoint j
-
-instance Drawable LineChart Unit where
-   draw redraw rspec =
-      drawLineChart lineChartHelpers uiHelpers rspec =<< selListener redraw lineChartSelector
       where
       lineChartSelector :: ViewSelector PointCoordinate
       lineChartSelector { i, j } =

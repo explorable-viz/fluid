@@ -4,10 +4,10 @@ import Prelude
 
 import App.Util (SelState, ViewSelector, 𝕊(..), eventData, selClassesFor, selected)
 import App.Util.Selector (field, listElement)
-import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, spy)
+import Util (Endo)
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (BaseVal, Val(..))
@@ -57,8 +57,8 @@ tableViewHelpers =
       | colName == rowKey = ""
       | otherwise = selClassesFor s
 
-instance View' TableView where
-   drawView' divId suffix redraw vw = do
+instance Drawable TableView where
+   draw divId suffix redraw vw = do
       toggleListener <- filterToggleListener filterToggler
       drawTable tableViewHelpers toggleListener uiHelpers { divId, suffix, view: vw, viewState: { filter: true } }
          =<< selListener redraw tableViewSelector
@@ -68,18 +68,6 @@ instance View' TableView where
 
       filterToggleListener :: FilterToggler -> Effect EventListener
       filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)
-
-instance Drawable TableView TableViewState where
-   draw redraw rspec = do
-      toggleListener <- filterToggleListener filterToggler
-      drawTable tableViewHelpers toggleListener uiHelpers rspec =<< selListener redraw tableViewSelector
-      where
-      tableViewSelector :: ViewSelector CellIndex
-      tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
-
-      filterToggleListener :: FilterToggler -> Effect EventListener
-      filterToggleListener toggler =
-         eventListener (eventData >>> toggler >>> (\_ -> spy "TODO" identity) >>> redraw)
 
 -- convert mouse event data (here, always rowKey) to view change
 type FilterToggler = String -> Endo TableViewState

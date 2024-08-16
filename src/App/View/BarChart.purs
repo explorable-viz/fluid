@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
 import App.Util.Selector (barChart, barSegment)
-import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
@@ -75,17 +75,10 @@ barChartHelpers =
       where
       m = floor (log (toNumber n) / log 10.0)
 
-instance View' BarChart where
-   drawView' divId suffix redraw vw =
+instance Drawable BarChart where
+   draw divId suffix redraw vw =
       drawBarChart barChartHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
          =<< selListener redraw barChartSelector
-      where
-      barChartSelector :: ViewSelector BarSegmentCoordinate
-      barChartSelector { i, j } = barSegment i j >>> barChart
-
-instance Drawable BarChart Unit where
-   draw redraw rspec =
-      drawBarChart barChartHelpers uiHelpers rspec =<< selListener redraw barChartSelector
       where
       barChartSelector :: ViewSelector BarSegmentCoordinate
       barChartSelector { i, j } = barSegment i j >>> barChart

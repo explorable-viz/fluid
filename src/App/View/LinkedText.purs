@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊)
 import App.Util.Selector (linkedText)
-import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.Number.Format (toString)
@@ -26,17 +26,10 @@ linkedTextHelpers =
    { test_field: "test"
    }
 
-instance View' LinkedText where
-   drawView' divId suffix redraw vw =
+instance Drawable LinkedText where
+   draw divId suffix redraw vw =
       drawLinkedText linkedTextHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
          =<< selListener redraw linkedTextSelector
-      where
-      linkedTextSelector :: ViewSelector LinkedText
-      linkedTextSelector _ = linkedText
-
-instance Drawable LinkedText Unit where
-   draw redraw rspec =
-      drawLinkedText linkedTextHelpers uiHelpers rspec =<< selListener redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelector LinkedText
       linkedTextSelector _ = linkedText
