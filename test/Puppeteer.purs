@@ -2,26 +2,20 @@ module Test.Puppeteer where
 
 import Prelude
 
-import Control.Promise (Promise, fromAff)
-import Data.Function.Uncurried as FU
+import Control.Promise (Promise, fromAff, toAffE)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
-import Prim.Row as Row
 import Toppokki as T
 
-launchFirefox
-   :: forall options trash
-    . Row.Union options trash T.LaunchOptions
-   => { | options }
-   -> Aff T.Browser
-launchFirefox = T.runPromiseAffE1 _launchFirefox
+launchFirefox :: Aff T.Browser
+launchFirefox = toAffE _launchFirefox
 
-foreign import _launchFirefox :: forall options. FU.Fn1 options (Effect (Promise T.Browser))
+foreign import _launchFirefox :: Effect (Promise T.Browser)
 
 main :: Effect (Promise Unit)
 main = fromAff do
-   tests (launchFirefox {})
+   tests (launchFirefox)
    tests (T.launch {})
 
 tests :: Aff T.Browser -> Aff Unit
