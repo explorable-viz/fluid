@@ -31,12 +31,7 @@ tests launchBrowser = do
    checkForFigure page "fig-1-line-chart"
    checkForFigure page "fig-conv-2-output"
 
-   let selector = "#fig-1-input + div > div > span.toggle-button"
-   log ("Waiting for " <> selector)
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
-   _ <- T.click (T.Selector selector) page
-   log ("Found " <> selector)
-
+   clickToggle page "fig-1-input"
    pure unit
 
    T.close browser
@@ -48,3 +43,12 @@ checkForFigure page id = do
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
    log ("Found " <> selector)
    pure unit
+
+clickToggle :: T.Page -> String -> Aff Unit
+clickToggle page id = do
+   let selector = "#" <> id <> " + div > div > span.toggle-button"
+   log ("Waiting for " <> selector)
+   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
+   log ("Found " <> selector <> ", clicking the toggle button")
+   _ <- T.click (T.Selector selector) page
+   log ("Clicked on " <> selector)
