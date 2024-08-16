@@ -3,10 +3,16 @@ module App.View.Util where
 import Prelude
 
 import App.Util (SelState, Selectable, Selector, 𝕊, ViewSelector, selClasses, selClassesFor, selectionEventData)
+import Bind (Bind, Var)
+import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)
+import Dict (Dict)
 import Effect (Effect)
-import Lattice ((∨))
-import Val (Val)
+import GaloisConnection (GaloisConnection)
+import Lattice (𝔹, Raw, (∨))
+import Module (File)
+import SExpr as S
+import Val (Env, Val)
 import Web.Event.EventTarget (EventListener, eventListener)
 
 type HTMLId = String
@@ -57,3 +63,30 @@ uiHelpers =
    , selClasses
    , selClassesFor
    }
+
+type FigSpec =
+   { imports :: Array String
+   , datasets :: Array (Bind String)
+   , file :: File
+   , inputs :: Array Var
+   }
+
+data Direction = LinkedInputs | LinkedOutputs
+
+type Fig =
+   { spec :: FigSpec
+   , s :: Raw S.Expr
+   , γ :: Env (SelState 𝔹)
+   , v :: Val (SelState 𝔹)
+   , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
+   , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
+   , dir :: Direction
+   , in_views :: Dict (Maybe View) -- strengthen this
+   , out_view :: Maybe View
+   }
+
+-- ======================
+-- boilerplate
+-- ======================
+
+derive instance Eq Direction
