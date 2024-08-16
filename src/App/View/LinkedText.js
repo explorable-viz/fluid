@@ -45,7 +45,7 @@ function drawLinkedText_ (
       const div = d3.select('#' + divId)
       let rootElement = div.selectAll('#' + divId)
       div.text(view._1)
-      div.attr('class', 'transparent-text')
+      div.attr('class', 'linked-text')
 
       setSelState(linkedTextHelpers, uiHelpers, div, view,  selListener)
    }

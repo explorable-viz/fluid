@@ -6,7 +6,7 @@ import App.Util (Selector, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, cText, cScatterPlot, cSome, f_bars, f_data, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiPlot, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely', error)
@@ -50,7 +50,7 @@ barSegment i j =
    field f_z >>> listElement j >>> field f_bars >>> listElement i >>> field f_data
 
 linkedText :: Endo (Selector Val)
-linkedText = constrArg cText 0
+linkedText = constrArg cLinkedText 0
 
 matrixElement :: Int -> Int -> Endo (Selector Val)
 matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv r
