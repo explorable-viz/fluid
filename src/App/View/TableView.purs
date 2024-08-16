@@ -15,12 +15,9 @@ import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype TableView = TableView
    { title :: String
+   , filter :: Boolean
    -- homogeneous array of records with fields of primitive type
    , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
-   }
-
-type TableViewState =
-   { filter :: Boolean
    }
 
 type TableViewHelpers =
@@ -70,10 +67,10 @@ instance Drawable TableView where
       filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)
 
 -- convert mouse event data (here, always rowKey) to view change
-type FilterToggler = String -> Endo TableViewState
+type FilterToggler = String -> Endo TableView
 
 filterToggler :: FilterToggler
-filterToggler _ vw = vw { filter = not vw.filter }
+filterToggler _ (TableView view) = TableView view { filter = not view.filter }
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }

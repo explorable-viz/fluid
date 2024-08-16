@@ -17,8 +17,7 @@ function setSelState (
       selClasses,
    },
    rootElement,
-   { title, table },
-   { filter },
+   { title, filter, table },
    selListener
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
@@ -53,8 +52,7 @@ function drawTable_ (
    {
       divId,
       suffix,
-      view,
-      viewState: { filter }
+      view
    },
    selListener
 ) {
@@ -93,7 +91,7 @@ function drawTable_ (
                .data(colNames)
                .enter()
                .append('th')
-               .text(colName => colName == rowKey ? (filter ? "▸" : "▾" ) : colName)
+               .text(colName => colName == rowKey ? (view.filter ? "▸" : "▾" ) : colName)
                .classed('filter-toggle toggle-button', colName => colName == rowKey)
 
          const rows = rootElement
@@ -114,7 +112,7 @@ function drawTable_ (
             .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
       }
 
-      setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, { filter }, selListener)
+      setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, selListener)
    }
 }
 
