@@ -20,7 +20,9 @@ launchFirefox = T.runPromiseAffE1 _launchFirefox
 foreign import _launchFirefox :: forall options. FU.Fn1 options (Effect (Promise T.Browser))
 
 main :: Effect (Promise Unit)
-main = fromAff (tests (launchFirefox {}))
+main = fromAff do
+   tests (launchFirefox {})
+   tests (T.launch {})
 
 tests :: Aff T.Browser -> Aff Unit
 tests launchBrowser = do
