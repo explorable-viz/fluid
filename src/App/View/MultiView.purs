@@ -20,4 +20,3 @@ instance Drawable MultiView Unit where
       sequence_ $ mapWithKey (\x -> drawView divId x (multiPlotEntry x >>> redraw)) vws
 
 derive instance Newtype MultiView _
-
