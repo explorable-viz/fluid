@@ -22,8 +22,9 @@ tests :: Aff T.Browser -> Aff Unit
 tests launchBrowser = do
    browser <- launchBrowser
    page <- T.newPage browser
-   log "Waiting for 'goto' load"
-   T.goto (T.URL "http://127.0.0.1:8080") page
+   let url = "http://127.0.0.1:8080"
+   log ("Going to" <> url)
+   T.goto (T.URL url) page
    content <- T.content page
    log content
    checkForFigure page "fig-4-output"

@@ -4,16 +4,15 @@ import Prelude
 
 import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊)
 import App.Util.Selector (linkedText)
-import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.Number.Format (toString)
-import Data.Tuple (Tuple(..))
 import Primitive (intOrNumber, unpack)
-import Util (type (+))
+import Util (type (+), type (×), (×))
 import Val (Val)
 
-foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
+foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText
 
 newtype LinkedText = LinkedText (Selectable String)
 
@@ -26,17 +25,10 @@ linkedTextHelpers =
    { test_field: "test"
    }
 
-instance View' LinkedText where
-   drawView' divId suffix redraw vw =
-      drawLinkedText linkedTextHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
-         =<< selListener redraw linkedTextSelector
-      where
-      linkedTextSelector :: ViewSelector LinkedText
-      linkedTextSelector _ = linkedText
-
-instance Drawable LinkedText Unit where
-   draw redraw rspec =
-      drawLinkedText linkedTextHelpers uiHelpers rspec =<< selListener redraw linkedTextSelector
+instance Drawable LinkedText where
+   draw divId suffix figView redraw view =
+      drawLinkedText linkedTextHelpers uiHelpers { divId, suffix, view }
+         =<< selListener figView redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelector LinkedText
       linkedTextSelector _ = linkedText
@@ -44,8 +36,8 @@ instance Drawable LinkedText Unit where
 instance Reflect (Val (SelState 𝕊)) LinkedText where
    from r = LinkedText (unpackedStringify $ unpack intOrNumber r)
 
-unpackedStringify :: forall a. Tuple (Int + Number) a -> Tuple String a
-unpackedStringify (Tuple x y) = Tuple (stringify x) y
+unpackedStringify :: forall a. (Int + Number) × a -> String × a
+unpackedStringify (x × y) = stringify x × y
 
 stringify :: (Int + Number) -> String
 stringify (Left n) = toString $ toNumber n

@@ -4,10 +4,10 @@ import Prelude
 
 import App.Util (SelState, ViewSelector, 𝕊(..), eventData, selClassesFor, selected)
 import App.Util.Selector (field, listElement)
-import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, spy)
+import Util (Endo)
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (BaseVal, Val(..))
@@ -15,12 +15,9 @@ import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype TableView = TableView
    { title :: String
+   , filter :: Boolean
    -- homogeneous array of records with fields of primitive type
    , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
-   }
-
-type TableViewState =
-   { filter :: Boolean
    }
 
 type TableViewHelpers =
@@ -32,7 +29,7 @@ type TableViewHelpers =
    , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
    }
 
-foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView TableViewState
+foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
 
 tableViewHelpers :: TableViewHelpers
 tableViewHelpers =
@@ -42,12 +39,26 @@ tableViewHelpers =
    , val_val: \(Val _ v) -> v
    , val_selState: \(Val α _) -> α
    }
+   where
+   rowKey :: String
+   rowKey = "__n"
 
-instance View' TableView where
-   drawView' divId suffix redraw vw = do
+   -- Defined for any record type with fields of primitive type
+   record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
+   record_isUsed r =
+      not <<< isEmpty $ flip filterKeys r \k ->
+         k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> α))
+
+   cell_selClassesFor :: String -> SelState 𝕊 -> String
+   cell_selClassesFor colName s
+      | colName == rowKey = ""
+      | otherwise = selClassesFor s
+
+instance Drawable TableView where
+   draw divId suffix figView redraw view = do
       toggleListener <- filterToggleListener filterToggler
-      drawTable tableViewHelpers toggleListener uiHelpers { divId, suffix, view: vw, viewState: { filter: true } }
-         =<< selListener redraw tableViewSelector
+      drawTable tableViewHelpers toggleListener uiHelpers { divId, suffix, view }
+         =<< selListener figView redraw tableViewSelector
       where
       tableViewSelector :: ViewSelector CellIndex
       tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
@@ -55,37 +66,11 @@ instance View' TableView where
       filterToggleListener :: FilterToggler -> Effect EventListener
       filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)
 
-instance Drawable TableView TableViewState where
-   draw redraw rspec = do
-      toggleListener <- filterToggleListener filterToggler
-      drawTable tableViewHelpers toggleListener uiHelpers rspec =<< selListener redraw tableViewSelector
-      where
-      tableViewSelector :: ViewSelector CellIndex
-      tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
-
-      filterToggleListener :: FilterToggler -> Effect EventListener
-      filterToggleListener toggler =
-         eventListener (eventData >>> toggler >>> (\_ -> spy "TODO" identity) >>> redraw)
-
 -- convert mouse event data (here, always rowKey) to view change
-type FilterToggler = String -> Endo TableViewState
+type FilterToggler = String -> Endo TableView
 
 filterToggler :: FilterToggler
-filterToggler _ vw = vw { filter = not vw.filter }
+filterToggler _ (TableView view) = TableView view { filter = not view.filter }
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }
-
-rowKey :: String
-rowKey = "__n"
-
--- Defined for any record type with fields of primitive type
-record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
-record_isUsed r =
-   not <<< isEmpty $ flip filterKeys r \k ->
-      k /= rowKey && selected (not <<< (_ == None) <$> (get k r # \(Val α _) -> α))
-
-cell_selClassesFor :: String -> SelState 𝕊 -> String
-cell_selClassesFor colName s
-   | colName == rowKey = ""
-   | otherwise = selClassesFor s

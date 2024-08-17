@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (field, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, class View', Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Foldable (maximum, minimum)
 import Data.Int (toNumber)
@@ -49,21 +49,40 @@ lineChartHelpers =
    , point_smallRadius
    , point_attrs
    }
+   where
+   plot_max_x :: LinePlot -> Number
+   plot_max_x (LinePlot { points }) = definitely' (maximum (points <#> \(Point { x }) -> fst x))
 
-foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart Unit
+   plot_min_x :: LinePlot -> Number
+   plot_min_x (LinePlot { points }) = definitely' (minimum (points <#> \(Point { x }) -> fst x))
 
-instance View' LineChart where
-   drawView' divId suffix redraw vw =
-      drawLineChart lineChartHelpers uiHelpers { divId, suffix, view: vw, viewState: unit }
-         =<< selListener redraw lineChartSelector
+   plot_max_y :: LinePlot -> Number
+   plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))
+
+   point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+   point_attrs nameCol (LineChart { plots }) { i, j, name } =
+      fromFoldable
+         [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
+         , "stroke-width" ↦ "1"
+         , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
+         , "fill" ↦ fill col
+         ]
       where
-      lineChartSelector :: ViewSelector PointCoordinate
-      lineChartSelector { i, j } =
-         lineChart <<< field f_plots <<< listElement i <<< linePoint j
+      LinePlot plot = plots ! i
+      Point { y } = plot.points ! j
+      sel = snd y
+      col = nameCol name
+      fill = if isPersistent sel then flip colorShade (-30) else identity
 
-instance Drawable LineChart Unit where
-   draw redraw rspec =
-      drawLineChart lineChartHelpers uiHelpers rspec =<< selListener redraw lineChartSelector
+   point_smallRadius :: Int
+   point_smallRadius = 2
+
+foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
+
+instance Drawable LineChart where
+   draw divId suffix figView redraw view =
+      drawLineChart lineChartHelpers uiHelpers { divId, suffix, view }
+         =<< selListener figView redraw lineChartSelector
       where
       lineChartSelector :: ViewSelector PointCoordinate
       lineChartSelector { i, j } =
@@ -92,30 +111,3 @@ instance Reflect (Val (SelState 𝕊)) LinePlot where
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
-
-point_smallRadius :: Int
-point_smallRadius = 2
-
-point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-point_attrs nameCol (LineChart { plots }) { i, j, name } =
-   fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
-      , "stroke-width" ↦ "1"
-      , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
-      , "fill" ↦ fill col
-      ]
-   where
-   LinePlot plot = plots ! i
-   Point { y } = plot.points ! j
-   sel = snd y
-   col = nameCol name
-   fill = if isPersistent sel then flip colorShade (-30) else identity
-
-plot_max_y :: LinePlot -> Number
-plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))
-
-plot_min_x :: LinePlot -> Number
-plot_min_x (LinePlot { points }) = definitely' (minimum (points <#> \(Point { x }) -> fst x))
-
-plot_max_x :: LinePlot -> Number
-plot_max_x (LinePlot { points }) = definitely' (maximum (points <#> \(Point { x }) -> fst x))

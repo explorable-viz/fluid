@@ -90,7 +90,7 @@ checkArity c n = void $
 cBarChart = "BarChart" :: Ctr -- Plot
 cLineChart = "LineChart" :: Ctr
 cLinePlot = "LinePlot" :: Ctr
-cMultiPlot = "MultiPlot" :: Ctr
+cMultiView = "MultiView" :: Ctr
 cScatterPlot = "ScatterPlot" :: Ctr
 cLinkedText = "LinkedText" :: Ctr
 cFalse = "False" :: Ctr -- Bool
@@ -151,7 +151,7 @@ dataTypes = L.fromFoldable
    , dataType "Plot"
         [ cBarChart × 1 -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
         , cLineChart × 1 -- Record<caption: Str, plots: List<LinePlot>>
-        , cMultiPlot × 1 -- Dict<Plot>
+        , cMultiView × 1 -- Dict<Plot>
         , cScatterPlot × 1 -- Record<Caption: Str, data: List<Record<x: Number, y: Number>>>
         ]
    , dataType "Tree"

@@ -6,8 +6,8 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelState, Selector, 𝕊, as𝕊, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
-import App.View.Util (HTMLId, View, drawView)
-import Bind (Bind, Var, (↦))
+import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
+import Bind (Bind, (↦))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
@@ -15,41 +15,18 @@ import Data.Set as Set
 import Data.Traversable (sequence_)
 import Data.Tuple (curry)
 import Desugarable (desug)
-import Dict (Dict)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection ((***)) as GC
 import GaloisConnection (GaloisConnection(..), dual, meet)
-import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
+import Lattice (class BoundedMeetSemilattice, Raw, botOf, erase, topOf)
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import SExpr (Expr) as S
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, spyWhen, (×))
 import Util.Map (get, insert, lookup, mapWithKey)
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
-
-type FigSpec =
-   { imports :: Array String
-   , datasets :: Array (Bind String)
-   , file :: File
-   , inputs :: Array Var
-   }
-
-data Direction = LinkedInputs | LinkedOutputs
-
-type Fig =
-   { spec :: FigSpec
-   , s :: Raw S.Expr
-   , γ :: Env (SelState 𝔹)
-   , v :: Val (SelState 𝔹)
-   , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
-   , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
-   , dir :: Direction
-   , in_views :: Dict (Maybe View) -- strengthen this
-   , out_view :: Maybe View
-   }
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view
@@ -81,9 +58,9 @@ setInputViewState (x ↦ δvw) fig = fig
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView divId str.output (drawFig divId <<< flip selectOutput fig) out_view
-   sequence_ $ flip mapWithKey in_views \x ->
-      drawView (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig)
+   drawView divId str.output selectOutput (\figUpdater -> drawFig divId (figUpdater fig)) out_view
+   sequence_ $ flip mapWithKey in_views \x -> do
+      drawView (divId <> "-" <> str.input) x (curry selectInput x) (\figUpdater -> drawFig divId (figUpdater fig))
    where
    out_view × in_views =
       selectionResult fig # unsafePartial
@@ -141,9 +118,3 @@ drawFigWithCode { fig, divId } = do
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
-
--- ======================
--- boilerplate
--- ======================
-
-derive instance Eq Direction
