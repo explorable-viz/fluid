@@ -12,7 +12,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype, over, over2, unwrap)
+import Data.Newtype (class Newtype, over, over2)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
@@ -153,10 +153,11 @@ selector :: EventType -> Selector Val
 selector (EventType ev) = (over SelState (report <<< setSel ev) <$> _)
    where
    setSel :: String -> Endo { persistent :: 𝔹, transient :: 𝔹 }
-   setSel "mousedown" sel = sel { persistent = neg sel.persistent }
-   setSel "mouseenter" sel = sel { transient = true }
-   setSel "mouseleave" sel = sel { transient = false }
-   setSel _ _ = error "Unsupported event type"
+   setSel s sel
+      | s == "mousedown" = sel { persistent = neg sel.persistent }
+      | s == "mouseenter" = sel { transient = true }
+      | s == "mouseleave" = sel { transient = false }
+      | otherwise = error "Unsupported event type"
    report = spyWhen tracing.mouseEvent "Setting SelState to " show
 
 -- https://stackoverflow.com/questions/5560248
