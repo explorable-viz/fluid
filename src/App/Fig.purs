@@ -3,28 +3,27 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, Selector, 𝕊, as𝕊, selState, to𝕊)
+import App.Util (SelState, 𝕊, as𝕊, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
-import Bind (Bind, (↦))
+import Bind (Var)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
-import Data.Tuple (curry)
 import Desugarable (desug)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection ((***)) as GC
 import GaloisConnection (GaloisConnection(..), dual, meet)
-import Lattice (class BoundedMeetSemilattice, Raw, botOf, erase, topOf)
+import Lattice (𝔹, class BoundedMeetSemilattice, Raw, botOf, erase, topOf)
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
 import Util.Map (get, insert, lookup, mapWithKey)
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
 
@@ -37,35 +36,35 @@ str =
    , input: "input"
    }
 
-selectOutput :: Selector Val -> Endo Fig
+selectOutput :: Setter Fig (Val (SelState 𝔹))
 selectOutput δv fig@{ dir, γ, v } = fig
    { v = δv v
    , γ = if dir == LinkedInputs then botOf γ else γ
    , dir = LinkedOutputs
    }
 
-setOutputView :: Endo View -> Endo Fig
+setOutputView :: Setter Fig View
 setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw
    }
 
-selectInput :: Bind (Selector Val) -> Endo Fig
-selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
+selectInput :: Var -> Setter Fig (Val (SelState 𝔹))
+selectInput x δv fig@{ dir, γ, v } = fig
    { γ = envVal x δv γ
    , v = if dir == LinkedOutputs then botOf v else v
    , dir = LinkedInputs
    }
 
-setInputView :: Bind (Endo View) -> Endo Fig
-setInputView (x ↦ δvw) fig = fig
+setInputView :: Var -> Setter Fig View
+setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView { divId, suffix: str.output, view: out_view } selectOutput redraw
+   drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
    sequence_ $ flip mapWithKey in_views \x view -> do
-      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (curry selectInput x) redraw
+      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
    where
    redraw = (_ $ fig) >>> drawFig divId
    out_view × in_views =

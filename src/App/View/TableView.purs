@@ -2,8 +2,8 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (SelState, ViewSelector, 𝕊(..), eventData, selClassesFor, selected)
-import App.Util.Selector (field, listElement)
+import App.Util (SelState, 𝕊(..), eventData, selClassesFor, selected)
+import App.Util.Selector (ViewSelector, field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
 import Effect (Effect)
@@ -55,7 +55,7 @@ tableViewHelpers =
       | otherwise = selClassesFor s
 
 instance Drawable TableView where
-   draw rSpec figVal redraw = do
+   draw rSpec figVal _ redraw = do
       toggleListener <- filterToggleListener filterToggler
       drawTable tableViewHelpers toggleListener uiHelpers rSpec
          =<< selListener figVal redraw tableViewSelector

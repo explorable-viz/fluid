@@ -2,8 +2,8 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState, Selectable, ViewSelector, 𝕊, isTransient)
-import App.Util.Selector (matrixElement)
+import App.Util (SelState, Selectable, 𝕊, isTransient)
+import App.Util.Selector (ViewSelector, matrixElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Tuple (snd)
 import Primitive (int, unpack)
@@ -64,7 +64,7 @@ matrixViewHelpers =
    borderStyles None = "visibility: hidden;"
 
 instance Drawable MatrixView where
-   draw rSpec figVal redraw =
+   draw rSpec figVal _ redraw =
       drawMatrix matrixViewHelpers uiHelpers rSpec =<< selListener figVal redraw matrixViewSelector
       where
       matrixViewSelector :: ViewSelector MatrixCellCoordinate

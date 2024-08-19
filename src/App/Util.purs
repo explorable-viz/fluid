@@ -30,14 +30,13 @@ import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', error, spyWhen)
+import Util (type (×), Endo, Setter, definitely', error, spyWhen)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
-type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
 -- Selection has two dimensions: persistent/transient and primary/secondary. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
@@ -51,7 +50,7 @@ newtype SelState a = SelState
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf (SelState { persistent, transient }) = highlightIf (persistent ∨ transient)
 
-persist :: forall a. Endo a -> Endo (SelState a)
+persist :: forall a. Setter (SelState a) a
 persist δα = over SelState \s -> s { persistent = δα s.persistent }
 
 selState :: forall a. a -> a -> SelState a
