@@ -3,19 +3,17 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (ReactState, SelState, Selector, 𝕊, asℝ, selState, toℝ)
+import App.Util (ReactState, SelState, 𝕊, asℝ, selState, toℝ)
 import App.Util.Selector (envVal)
-import App.View (View, drawView, view)
-import App.View.Util (HTMLId)
-import Bind (Bind, Var, (↦))
+import App.View (view)
+import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
+import Bind (Var)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
-import Data.Tuple (curry)
 import Desugarable (desug)
-import Dict (Dict)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection ((***)) as GC
@@ -24,34 +22,10 @@ import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topO
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import SExpr (Expr) as S
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
 import Util.Map (get, insert, lookup, mapWithKey)
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
-
-type FigSpec =
-   { imports :: Array String
-   , datasets :: Array (Bind String)
-   , file :: File
-   , inputs :: Array Var
-   }
-
-data Direction = LinkedInputs | LinkedOutputs
-
-type Fig =
-   { spec :: FigSpec
-   , s :: Raw S.Expr
-   , γ :: Env (SelState 𝔹)
-   , v :: Val (SelState 𝔹)
-   , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
-   , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
-   , dir :: Direction
-   , in_views :: Dict (Maybe View) -- strengthen this
-   , out_view :: Maybe View
-   , γ0 :: Env (𝔹)
-   , v0 :: Val (𝔹)
-   }
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view
@@ -62,31 +36,37 @@ str =
    , input: "input"
    }
 
-selectOutput :: Selector Val -> Endo Fig
+selectOutput :: Setter Fig (Val (SelState 𝔹))
 selectOutput δv fig@{ dir, γ, v } = fig
    { v = δv v
    , γ = if dir == LinkedInputs then botOf γ else γ
    , dir = LinkedOutputs
    }
 
-selectInput :: Bind (Selector Val) -> Endo Fig
-selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
+setOutputView :: Setter Fig View
+setOutputView δvw fig = fig
+   { out_view = fig.out_view <#> δvw
+   }
+
+selectInput :: Var -> Setter Fig (Val (SelState 𝔹))
+selectInput x δv fig@{ dir, γ, v } = fig
    { γ = envVal x δv γ
    , v = if dir == LinkedOutputs then botOf v else v
    , dir = LinkedInputs
    }
 
-setInputViewState :: Bind (Endo View) -> Endo Fig
-setInputViewState (x ↦ δvw) fig = fig
+setInputView :: Var -> Setter Fig View
+setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView divId str.output (drawFig divId <<< flip selectOutput fig) out_view
-   sequence_ $ flip mapWithKey in_views \x ->
-      drawView (divId <> "-" <> str.input) x (drawFig divId <<< flip (curry selectInput x) fig)
+   drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
+   sequence_ $ flip mapWithKey in_views \x view -> do
+      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
    where
+   redraw = (_ $ fig) >>> drawFig divId
    out_view × in_views =
       selectionResult fig # unsafePartial
          (flip (view str.output) fig.out_view *** \(Env γ) -> mapWithKey view γ <*> fig.in_views)
@@ -149,9 +129,3 @@ drawFigWithCode { fig, divId } = do
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
-
--- ======================
--- boilerplate
--- ======================
-
-derive instance Eq Direction

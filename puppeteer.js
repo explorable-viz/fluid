@@ -1,7 +1,6 @@
-const http = require('http');
+
 const express = require('express');
 const serve = require('express-static');
-const puppeteer = require('puppeteer');
 require('http-shutdown').extend();
 
 const app = express();
@@ -10,7 +9,7 @@ app.use(serve(__dirname + '/dist/app'));
 
 const server = app.listen(8080, function(){
   console.log("Server running");
-}).withShutdown();    
+}).withShutdown();
 
 (async () => {
   try {
@@ -33,5 +32,4 @@ function serverDown()
     }
     console.log('Everything is cleanly shutdown.');
   });
-  
 }

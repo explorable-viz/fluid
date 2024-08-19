@@ -52,9 +52,9 @@ function setSelState (
 }
 
 function drawBarChart_ (
-   BarChartHelpers,
+   barChartHelpers,
+   uiHelpers,
    {
-      uiHelpers,
       divId,
       suffix,
       view: {
@@ -66,7 +66,7 @@ function drawBarChart_ (
 ) {
    return () => {
       const { val } = uiHelpers
-      const { tickEvery } = BarChartHelpers
+      const { tickEvery } = barChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 75, bottom: 25, left: 40},
             width = 275 - margin.left - margin.right,
@@ -195,8 +195,8 @@ function drawBarChart_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(BarChartHelpers, color, rootElement, { stackedBars }, listener)
+      setSelState(barChartHelpers, color, rootElement, { stackedBars }, listener)
    }
 }
 
-export var drawBarChart = x1 => x2 => x3 => drawBarChart_(x1, x2, x3)
+export var drawBarChart = x1 => x2 => x3 => x4 => drawBarChart_(x1, x2, x3, x4)

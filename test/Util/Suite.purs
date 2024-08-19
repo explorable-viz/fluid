@@ -2,12 +2,13 @@ module Test.Util.Suite where
 
 import Prelude
 
-import App.Fig (Fig, FigSpec, selectionResult, loadFig, selectInput, selectOutput)
+import App.Fig (selectionResult, loadFig, selectInput, selectOutput)
 import App.Util (Selector, to𝔹)
+import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 import Effect.Aff (Aff)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile, loadProgCxt)
@@ -95,7 +96,7 @@ linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
-   fig <- loadFig (spec { file = spec.file }) <#> selectInput δ_in
+   fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (snd (selectionResult fig))
    checkEq "selected" "expected" (to𝔹 <$> γ) (in_expect (botOf γ))

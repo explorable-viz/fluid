@@ -9,10 +9,26 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
+function setSelState (
+   { point_attrs },
+   nameCol,
+   rootElement,
+   chart,
+   listener
+) {
+   rootElement.selectAll('.point').each(function (point) {
+      d3.select(this) // won't work inside arrow function :/
+         .attrs(point_attrs(nameCol)(chart)(point))
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
+   })
+}
+
 function drawLineChart_ (
    lineChartHelpers,
+   { val },
    {
-      uiHelpers: { val },
       divId,
       suffix,
       view: {
@@ -135,24 +151,8 @@ function drawLineChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
       }
-      setselState(lineChartHelpers, nameCol, rootElement, { plots }, listener)
+      setSelState(lineChartHelpers, nameCol, rootElement, { plots }, listener)
    }
 }
 
-function setselState (
-   { point_attrs },
-   nameCol,
-   rootElement,
-   chart,
-   listener
-) {
-   rootElement.selectAll('.point').each(function (point) {
-      d3.select(this) // won't work inside arrow function :/
-         .attrs(point_attrs(nameCol)(chart)(point))
-         .on('mousedown', e => { listener(e) })
-         .on('mouseenter', e => { listener(e) })
-         .on('mouseleave', e => { listener(e) })
-   })
-}
-
-export var drawLineChart = x1 => x2 => x3 => drawLineChart_(x1, x2, x3)
+export var drawLineChart = x1 => x2 => x3 => x4 => drawLineChart_(x1, x2, x3, x4)

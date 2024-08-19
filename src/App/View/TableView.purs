@@ -1,25 +1,13 @@
-module App.View.TableView
-   ( CellIndex
-   , FilterToggler
-   , TableView(..)
-   , TableViewHelpers
-   , TableViewState
-   , drawTable
-   , drawTable'
-   , filterToggler
-   , rowKey
-   , rrecord_isReactive
-   , rrecord_isUsed
-   ) where
+module App.View.TableView where
 
 import Prelude
 
-import App.Util (ReactState, ViewSelector, 𝕊, eventData, selClassesFor, isInert, isNone)
-import App.Util.Selector (field, listElement)
+import App.Util (𝕊, ReactState, eventData, isInert, isNone, selClassesFor)
+import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, spy)
+import Util (Endo)
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (BaseVal, Val(..))
@@ -27,13 +15,9 @@ import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype TableView = TableView
    { title :: String
+   , filter :: Boolean
    -- homogeneous array of records with fields of primitive type
    , table :: Array (Dict (Val (ReactState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
-   }
-
-type TableViewState =
-   { filter :: Boolean
-   -- this is where we'd add in UI to make this filter (3x3) or smth.
    }
 
 type TableViewHelpers =
@@ -46,10 +30,10 @@ type TableViewHelpers =
    , val_selState :: Val (ReactState 𝕊) -> ReactState 𝕊
    }
 
-foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView TableViewState
+foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
 
-drawTable' :: EventListener -> Renderer TableView TableViewState
-drawTable' = drawTable
+tableViewHelpers :: TableViewHelpers
+tableViewHelpers =
    { rowKey
    , rrecord_isUsed
    , rrecord_isReactive
@@ -57,42 +41,43 @@ drawTable' = drawTable
    , val_val: \(Val _ v) -> v
    , val_selState: \(Val α _) -> α
    }
+   where
+   rowKey :: String
+   rowKey = "__n"
 
-instance Drawable TableView TableViewState where
-   draw divId suffix redraw view viewState = do
+   -- Defined for any record type with fields of primitive type
+   rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
+   rrecord_isUsed r =
+      not <<< isEmpty $ flip filterKeys r \k ->
+         k /= rowKey && (not isNone (get k r # \(Val α _) -> α))
+
+   rrecord_isReactive :: Dict (Val (ReactState 𝕊)) -> Boolean
+   rrecord_isReactive r =
+      not <<< isEmpty $ flip filterKeys r \k ->
+         (k /= rowKey) && (not isInert (get k r # \(Val α _) -> α))
+
+   cell_selClassesFor :: String -> ReactState 𝕊 -> String
+   cell_selClassesFor colName s
+      | colName == rowKey = ""
+      | otherwise = selClassesFor s
+
+instance Drawable TableView where
+   draw rSpec figVal _ redraw = do
       toggleListener <- filterToggleListener filterToggler
-      drawTable' toggleListener { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw tableViewSelector
+      drawTable tableViewHelpers toggleListener uiHelpers rSpec
+         =<< selListener figVal redraw tableViewSelSetter
       where
-      tableViewSelector :: ViewSelector CellIndex
-      tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
+      tableViewSelSetter :: ViewSelSetter CellIndex
+      tableViewSelSetter { __n, colName } = listElement (__n - 1) <<< field colName
 
       filterToggleListener :: FilterToggler -> Effect EventListener
-      filterToggleListener toggler =
-         eventListener (eventData >>> toggler >>> (\_ -> spy "TODO" identity) >>> redraw)
+      filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)
 
 -- convert mouse event data (here, always rowKey) to view change
-type FilterToggler = String -> Endo TableViewState
+type FilterToggler = String -> Endo TableView
 
 filterToggler :: FilterToggler
-filterToggler _ vw = vw { filter = not vw.filter }
+filterToggler _ (TableView view) = TableView view { filter = not view.filter }
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }
-
-rowKey :: String
-rowKey = "__n"
-
-rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
-rrecord_isUsed r =
-   not <<< isEmpty $ flip filterKeys r \k ->
-      k /= rowKey && (not isNone (get k r # \(Val α _) -> α))
-
-rrecord_isReactive :: Dict (Val (ReactState 𝕊)) -> Boolean
-rrecord_isReactive r =
-   not <<< isEmpty $ flip filterKeys r \k ->
-      (k /= rowKey) && (not isInert (get k r # \(Val α _) -> α))
-
-cell_selClassesFor :: String -> ReactState 𝕊 -> String
-cell_selClassesFor colName s
-   | colName == rowKey = ""
-   | otherwise = selClassesFor s

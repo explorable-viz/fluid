@@ -1,37 +1,4 @@
-module App.Util
-   ( Attrs
-   , ReactState(..)
-   , SelState(..)
-   , Selectable
-   , Selector
-   , ViewSelector
-   , asℝ
-   , attrs
-   , class Reflect
-   , colorShade
-   , css
-   , eventData
-   , from
-   , fromℝ
-   , get_intOrNumber
-   , isInert
-   , isNone
-   , isPersistent
-   , isPrimary
-   , isSecondary
-   , isTransient
-   , persist
-   , record
-   , runAffs_
-   , selClasses
-   , selClassesFor
-   , selState
-   , selectionEventData
-   , selector
-   , toℝ
-   , to𝔹
-   , 𝕊(..)
-   ) where
+module App.Util where
 
 import Prelude hiding (absurd, join)
 
@@ -63,24 +30,19 @@ import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', error, spyWhen)
+import Util (type (×), Endo, Setter, definitely', error, spyWhen)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
-{-}
-type Relector (f :: Type -> Type) = Endo (f (ReactState 𝔹))
-type ViewRelector a = a -> Endo (Relector Val) -- convert mouse event data to view selector
--}
-type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
 -- Selection has two dimensions: persistent/transient and primary/secondary/inert. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
 -- clicking during mouseover visibly changes the state). Primary and secondary also need to be visually
--- distinct but not orthogonal; primary should (visually) subsume secondary. 
--- inert is for nodes with no descendants. 
+-- distinct but not orthogonal; primary should (visually) subsume secondary.
+-- inert is for nodes with no descendants.
 -- We implement ReactState, then TelState to possibly include none in a different location.
 
 newtype SelState a = SelState
@@ -91,12 +53,8 @@ newtype SelState a = SelState
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf (SelState { persistent, transient }) = highlightIf (persistent ∨ transient)
 
-{-}
-persist :: forall a. Endo a -> Endo (SelState a)
-persist δα = over SelState \s -> s { persistent = δα s.persistent }
--}
-persist :: forall a. Endo a -> Endo (SelState a)
-persist δα = \(SelState s) -> SelState { persistent: δα s.persistent, transient: s.transient }
+persist :: forall a. Setter (SelState a) a
+persist δα = \(SelState s) -> SelState (s { persistent = δα s.persistent })
 
 {-}
 --   where s = SelState {persistent: s, transient: t}
@@ -188,7 +146,7 @@ to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 --only used in tests
 to𝔹 = ((_ /= None) <$> _) <<< fromℝ
 
---methods for initial assignation of states 
+--methods for initial assignation of states
 toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 toℝ true _ = Inert
 toℝ false sel = Reactive (sel <#> if _ then Primary else None)
@@ -281,12 +239,14 @@ eventData = target >>> unsafeEventData
 
 -- maybe we make inert unselectable
 selector :: EventType -> Selector Val
-selector = case _ of
-   EventType "mousedown" -> (over SelState (report <<< \s -> s { persistent = neg s.persistent }) <$> _)
-   EventType "mouseenter" -> (over SelState (report <<< \s -> s { transient = true }) <$> _)
-   EventType "mouseleave" -> (over SelState (report <<< \s -> s { transient = false }) <$> _)
-   EventType _ -> error "Unsupported event type"
+selector (EventType ev) = (over SelState (report <<< setSel ev) <$> _)
    where
+   setSel :: String -> Endo { persistent :: 𝔹, transient :: 𝔹 }
+   setSel s sel
+      | s == "mousedown" = sel { persistent = neg sel.persistent }
+      | s == "mouseenter" = sel { transient = true }
+      | s == "mouseleave" = sel { transient = false }
+      | otherwise = error "Unsupported event type"
    report = spyWhen tracing.mouseEvent "Setting SelState to " show
 
 {-}
@@ -421,7 +381,7 @@ meetReactState _ _ = Nothing -- Incomparable cases (Inert with Reactive)
 
 instance boundedMeetSemiReactState :: BoundedMeetSemilattice a => BoundedMeetSemilattice (ReactState a) where
   meet x y = fromMaybe (error "Cannot take the meet of different ReactState types") (meetReactState x y)
-  
+
 
 s1 = SelState { persistent: w, transient: x }
 s2 = SelState { persistent: y, transient: z }

@@ -4,8 +4,8 @@ import * as d3 from "d3"
 
 
 function setSelState (
-   { 
-      hBorderStyles, 
+   {
+      hBorderStyles,
       vBorderStyles
    },
    {
@@ -26,7 +26,7 @@ function setSelState (
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
    })
-   
+
    rootElement.selectAll('.matrix-cell-text').each(function (cellText) {
       const sel = selState(matrix.cells[cellText.i - 1][cellText.j - 1])
       d3.select(this) // won't work inside arrow function :/
@@ -46,9 +46,9 @@ function setSelState (
 }
 
 function drawMatrix_ (
-   matrixHelpers,
+   matrixViewHelpers,
+   uiHelpers,
    {
-      uiHelpers,
       divId,
       suffix,
       view: {
@@ -143,7 +143,7 @@ function drawMatrix_ (
             .attr('fill', 'currentColor')
             .attr('stroke', highlightStrokeColor)
             .attr('stroke-width', highlightStrokeWidth)
-         
+
          const hBordersGrp = bordersGrp
             .append('g')
 
@@ -176,7 +176,7 @@ function drawMatrix_ (
          .data(d3.range(1, matrix.i + 1), i => i)
          .enter()
          .append('g')
-   
+
          vBordersRowGrps.each(function(d) {
             d3.select(this)
                .selectAll('line')
@@ -190,8 +190,8 @@ function drawMatrix_ (
                .attr('class', 'matrix-cell-vBorder')
          });
       }
-      setSelState(matrixHelpers, uiHelpers, rootElement, { matrix }, listener)
+      setSelState(matrixViewHelpers, uiHelpers, rootElement, { matrix }, listener)
    }
 }
 
-export var drawMatrix = x1 => x2 => x3 => drawMatrix_(x1, x2, x3)
+export var drawMatrix = x1 => x2 => x3 => x4 => drawMatrix_(x1, x2, x3, x4)

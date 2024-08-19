@@ -202,6 +202,8 @@ infixr 1 bind2Flipped as =<<<
 -- like Endo in prelude but specialised to functions, to avoid newtype clutter
 type Endo a = a -> a
 
+type Setter b a = Endo a -> Endo b
+
 -- version of this in Data.Array uses unsafePartial
 unsafeIndex :: forall a. Array a -> Int -> a
 unsafeIndex xs i = definitely "index within bounds" (xs !! i)
