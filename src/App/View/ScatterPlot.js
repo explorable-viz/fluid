@@ -29,7 +29,7 @@ function setSelState (
 }
 
 function drawScatterPlot_ (
-   ScatterPlotHelpers,
+   scatterPlotHelpers,
    uiHelpers,
    {
       divId,
@@ -123,7 +123,7 @@ function drawScatterPlot_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(ScatterPlotHelpers, uiHelpers, rootElement, { points }, listener)
+      setSelState(scatterPlotHelpers, uiHelpers, rootElement, { points }, listener)
    }
 }
 
