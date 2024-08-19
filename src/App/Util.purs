@@ -70,6 +70,10 @@ import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
+{-}
+type Relector (f :: Type -> Type) = Endo (f (ReactState 𝔹))
+type ViewRelector a = a -> Endo (Relector Val) -- convert mouse event data to view selector
+-}
 type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
 -- Selection has two dimensions: persistent/transient and primary/secondary/inert. An element can be persistently
@@ -87,12 +91,41 @@ newtype SelState a = SelState
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf (SelState { persistent, transient }) = highlightIf (persistent ∨ transient)
 
+{-}
 persist :: forall a. Endo a -> Endo (SelState a)
 persist δα = over SelState \s -> s { persistent = δα s.persistent }
+-}
+persist :: forall a. Endo a -> Endo (SelState a)
+persist δα = \(SelState s) -> SelState { persistent: δα s.persistent, transient: s.transient }
 
+{-}
+--   where s = SelState {persistent: s, transient: t}
+
+perrsist :: forall a. Endo a -> Endo (ReactState a)
+perrsist δα = \sel ->
+   case sel of
+      Reactive (SelState s) -> Reactive (SelState { persistent: δα s.persistent, transient: s.transient })
+      Inert -> Inert
+
+kindOfBot :: ReactState 𝔹 -> ReactState 𝔹
+kindOfBot (Inert) = Inert
+kindOfBot (Reactive (SelState _)) = Reactive (SelState { persistent: false, transient: false })
+
+kindOfTop :: ReactState 𝔹 -> ReactState 𝔹
+kindOfTop (Inert) = Inert
+kindOfTop (Reactive (SelState _)) = Reactive (SelState { persistent: true, transient: true })
+-}
 selState :: forall a. a -> a -> SelState a
 selState b1 b2 = SelState { persistent: b1, transient: b2 }
 
+{-}
+reactState :: forall a. a -> a -> ReactState a
+reactState b1 b2 = Reactive (SelState { persistent: b1, transient: b2 })
+
+reactStateCombine :: 𝔹 -> SelState 𝔹 -> ReactState 𝔹
+reactStateCombine true _ = Inert
+reactStateCombine false sel = Reactive (sel)
+-}
 data ReactState a = Inert | Reactive (SelState a)
 
 data 𝕊 = None | Secondary | Primary
@@ -160,6 +193,28 @@ toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 toℝ true _ = Inert
 toℝ false sel = Reactive (sel <#> if _ then Primary else None)
 
+{-}
+cheatToℝ :: forall a. SelState a -> ReactState a
+cheatToℝ b = Reactive b
+
+torℝ :: 𝔹 -> ReactState 𝔹 -> ReactState 𝕊
+torℝ true _ = Inert
+torℝ false sel = sel <#> if _ then Primary else None
+
+asrℝ :: ReactState 𝔹 -> ReactState 𝔹 -> ReactState 𝕊
+asrℝ (Inert) _ = (Inert)
+asrℝ _ (Inert) = (Inert)
+asrℝ (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (lift2 asr𝕊' a b))
+   where
+   a = SelState { persistent: a1, transient: b1 }
+   b = SelState { persistent: a2, transient: b2 }
+
+   asr𝕊' :: 𝔹 -> 𝔹 -> 𝕊
+   asr𝕊' false false = None
+   asr𝕊' false true = Secondary
+   asr𝕊' true false = Primary -- the if solves this case, (as you can't be persistent inert and transient not...)
+   asr𝕊' true true = Primary
+-}
 asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 asℝ (SelState { persistent: a1, transient: b1 }) (SelState { persistent: a2, transient: b2 }) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (lift2 as𝕊' a b))
    where
@@ -178,6 +233,11 @@ fromℝ :: ReactState 𝕊 -> SelState 𝕊
 fromℝ Inert = (SelState { persistent: None, transient: None })
 fromℝ (Reactive sel) = sel
 
+{-}
+fromℝ𝔹 :: ReactState 𝔹 -> SelState 𝔹
+fromℝ𝔹 Inert = (SelState { persistent: false, transient: false })
+fromℝ𝔹 (Reactive sel) = sel
+-}
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
@@ -228,6 +288,18 @@ selector = case _ of
    EventType _ -> error "Unsupported event type"
    where
    report = spyWhen tracing.mouseEvent "Setting SelState to " show
+
+{-}
+relector :: EventType -> Relector Val
+relector = case _ of
+   EventType "mousedown" -> (over Reactive (SelState (report <<< \s -> s { persistent = neg s.persistent })) <$> _) || (over Inert identity)
+   EventType "mouseenter" -> (over Reactive (over SelState (report <<< \s -> s { transient = true })) <$> _)
+   EventType "mouseleave" -> (over Reactive (over SelState (report <<< \s -> s { transient = false })) <$> _)
+   EventType _ -> error "Unsupported event type"
+   where
+   report = spyWhen tracing.mouseEvent "Setting ReactState to " show
+
+-}
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
@@ -302,12 +374,12 @@ attrs = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
 -- ======================
 -- boilerplate
 -- ======================
-
 derive instance Generic 𝕊 _
 instance Show 𝕊 where
    show = genericShow
 
 derive instance Newtype (SelState a) _
+
 derive instance Functor SelState
 derive instance Functor ReactState
 
@@ -315,6 +387,13 @@ instance Apply SelState where
    apply (SelState fs) (SelState s) =
       SelState { persistent: fs.persistent s.persistent, transient: fs.transient s.transient }
 
+{-}
+instance Apply ReactState where
+   apply (Inert) _ = Inert
+   apply _ (Inert) = Inert
+   apply (Reactive (SelState fs)) (Reactive (SelState s)) =
+      Reactive (SelState { persistent: fs.persistent s.persistent, transient: fs.transient s.transient })
+-}
 derive instance Ord a => Ord (SelState a)
 derive instance Eq a => Eq (SelState a)
 derive newtype instance Show a => Show (SelState a)
@@ -325,3 +404,33 @@ instance JoinSemilattice a => JoinSemilattice (SelState a) where
 
 instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a) where
    bot = SelState { persistent: bot, transient: bot }
+{-}
+instance BoundedMeetSemiLattice ReactState 𝔹 where
+   top = \s ->
+   case s of
+   Inert = Inert
+   Reactive (SelState _) = Reactive (SelState { persistent: true, transient: true })
+
+   -- we're still working on the principle that we'll never compare Inert, SelState(), so maybe we let inert win?
+   -- therefore, I want to make this new explicit structure, called a pair of lattices
+
+meetReactState :: forall a. BoundedMeetSemilattice a => ReactState a -> ReactState a -> Maybe (ReactState a)
+meetReactState Inert Inert = Just Inert
+meetReactState (Reactive s1) (Reactive s2) = Just $ Reactive (meetSelState s1 s2)
+meetReactState _ _ = Nothing -- Incomparable cases (Inert with Reactive)
+
+instance boundedMeetSemiReactState :: BoundedMeetSemilattice a => BoundedMeetSemilattice (ReactState a) where
+  meet x y = fromMaybe (error "Cannot take the meet of different ReactState types") (meetReactState x y)
+  
+
+s1 = SelState { persistent: w, transient: x }
+s2 = SelState { persistent: y, transient: z }
+
+a = Reactive s1
+b = Reactive s2
+i = Inert
+
+result1 = meet a b -- Reactive (SelState { persistent: w∇y, transient: x∇z })
+result2 = meet i i -- Inert
+result3 = meet a i -- Throws error "Cannot take the meet of different ReactState types"
+-}

@@ -94,6 +94,11 @@ envVal :: Var -> Selector Val -> Selector Env
 envVal x δv γ =
    assert (x ∈ γ) $ update δv x γ
 
+{-}
+envRVal :: Var -> Relector Val -> Relector Env
+envRVal x δv γ =
+   assert (x ∈ γ) $ update δv x γ
+-}
 listCell :: Int -> Endo 𝔹 -> Selector Val
 listCell n δα = unsafePartial $ case _ of
    Val α (Constr c Nil) | n == 0 && c == cNil -> Val (persist δα α) (Constr c Nil)
