@@ -77,7 +77,7 @@ lift (GC gc) = GC { fwd, bwd }
       v1 = gc.bwd (γ <#> )
       v2 = gc.bwd (γ <#> isTransient)
 -}
-   
+
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
