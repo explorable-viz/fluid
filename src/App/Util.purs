@@ -76,14 +76,10 @@ kindOfTop (Reactive (SelState _)) = Reactive (SelState { persistent: true, trans
 selState :: forall a. a -> a -> SelState a
 selState b1 b2 = SelState { persistent: b1, transient: b2 }
 
-{-}
-reactState :: forall a. a -> a -> ReactState a
-reactState b1 b2 = Reactive (SelState { persistent: b1, transient: b2 })
+reactState :: 𝔹 -> 𝔹 -> 𝔹 -> ReactState 𝔹
+reactState true _ _ = Inert
+reactState false b1 b2 = Reactive (SelState { persistent: b1, transient: b2 })
 
-reactStateCombine :: 𝔹 -> SelState 𝔹 -> ReactState 𝔹
-reactStateCombine true _ = Inert
-reactStateCombine false sel = Reactive (sel)
--}
 data ReactState a = Inert | Reactive (SelState a)
 
 data 𝕊 = None | Secondary | Primary
@@ -184,6 +180,17 @@ asℝ (SelState { persistent: a1, transient: b1 }) (SelState { persistent: a2, t
    as𝕊' false true = Secondary
    as𝕊' true false = Primary -- the if solves this case, (as you can't be persistent inert and transient not...)
    as𝕊' true true = Primary
+
+arℝ :: ReactState 𝔹 -> ReactState 𝔹 -> ReactState 𝕊
+arℝ Inert _ = Inert
+arℝ _ Inert = Inert
+arℝ (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (SelState { persistent: cross a1 a2, transient: cross b1 b2 }))
+   where
+   cross :: 𝔹 -> 𝔹 -> 𝕊
+   cross false false = None
+   cross false true = Secondary
+   cross true false = Primary -- the if solves this case, (as you can't be persistent inert and transient not...)
+   cross true true = Primary
 
 -- TO FIX/REMOVE/OTHERWISE ALTER
 

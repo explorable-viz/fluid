@@ -60,6 +60,24 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
+{-}
+lift :: GaloisConnection (Env 𝔹) (Val 𝔹) -> GaloisConnection (Env (ReactState 𝕊)) (Val (ReactState 𝕊))
+lift (GC gc) = GC { fwd, bwd }
+   where
+   fwd :: Env (ReactState 𝕊) -> Val (ReactState 𝕊)
+   fwd γ = reactState <$> v0 <*> v1 <*> v2
+      where
+      v0 = neg (unwrap gc).bwd (topOf outα)
+      v1 = gc.fwd (γ <#> )
+      v2 = gc.fwd (γ <#> )
+   bwd :: Val (ReactState 𝕊) -> Env (ReactState 𝕊)
+   bwd γ = reactState <$> v0 <*> v1 <*> v2
+      where
+      v0 = neg (unwrap gc_dual).bwd (topOf γα)
+      v1 = gc.bwd (γ <#> )
+      v2 = gc.bwd (γ <#> isTransient)
+-}
+   
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
