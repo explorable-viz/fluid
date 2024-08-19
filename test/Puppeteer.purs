@@ -31,7 +31,10 @@ tests launchBrowser = do
    checkForFigure page "fig-1-line-chart"
    checkForFigure page "fig-conv-2-output"
 
+   clickToggle page "fig-4-input"
    clickToggle page "fig-1-input"
+   clickToggle page "fig-conv-2-input"
+
    pure unit
 
    T.close browser
