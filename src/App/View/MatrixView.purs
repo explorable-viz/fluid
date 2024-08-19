@@ -37,8 +37,8 @@ matrixViewHelpers =
          | i == 0 = if isCellTransient cells { i, j: j - 1 } then South else None
          | i == height = if isCellTransient cells { i: i - 1, j: j - 1 } then North else None
          | otherwise =
-              if isCellTransient cells { i, j: j - 1 } && (not isCellTransient cells { i: i - 1, j: j - 1 }) then South
-              else if (not isCellTransient cells { i, j: j - 1 }) && isCellTransient cells { i: i - 1, j: j - 1 } then North
+              if isCellTransient cells { i, j: j - 1 } && not isCellTransient cells { i: i - 1, j: j - 1 } then South
+              else if not isCellTransient cells { i, j: j - 1 } && isCellTransient cells { i: i - 1, j: j - 1 } then North
               else None
 
    vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String

@@ -44,6 +44,11 @@ selectOutput δv fig@{ dir, γ, v } = fig
    , dir = LinkedOutputs
    }
 
+selectOutputView :: Endo View -> Endo Fig
+selectOutputView δvw fig = fig
+   { out_view = fig.out_view <#> δvw
+   }
+
 selectInput :: Bind (Selector Val) -> Endo Fig
 selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
    { γ = envVal x δv γ
@@ -51,8 +56,8 @@ selectInput (x ↦ δv) fig@{ dir, γ, v } = fig
    , dir = LinkedInputs
    }
 
-setInputViewState :: Bind (Endo View) -> Endo Fig
-setInputViewState (x ↦ δvw) fig = fig
+setInputView :: Bind (Endo View) -> Endo Fig
+setInputView (x ↦ δvw) fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
