@@ -45,9 +45,8 @@ scatterPlotHelpers =
       point_smallRadius = 2
 
 instance Drawable ScatterPlot where
-   draw divId suffix figView redraw view =
-      drawScatterPlot scatterPlotHelpers uiHelpers { divId, suffix, view }
-         =<< selListener figView redraw scatterPlotSelector
+   draw rSpec figVal redraw =
+      drawScatterPlot scatterPlotHelpers uiHelpers rSpec =<< selListener figVal redraw scatterPlotSelector
       where
       scatterPlotSelector :: ViewSelector PointIndex
       scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i

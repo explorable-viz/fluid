@@ -28,15 +28,15 @@ unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
 selListener :: forall a. (Selector Val -> Endo Fig) -> Redraw -> ViewSelector a -> Effect EventListener
-selListener figView redraw selector =
-   eventListener (selectionEventData >>> uncurry selector >>> figView >>> redraw)
+selListener figVal redraw selector =
+   eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where
-   draw :: HTMLId -> String -> (Selector Val -> Endo Fig) -> Redraw -> a -> Effect Unit
+   draw :: RendererSpec a -> (Selector Val -> Endo Fig) -> Redraw -> Effect Unit
 
 drawView :: HTMLId -> String -> (Selector Val -> Endo Fig) -> Redraw -> View -> Effect Unit
-drawView divId suffix figView redraw vw =
-   unpack vw (draw divId suffix figView redraw)
+drawView divId suffix figVal redraw vw =
+   unpack vw (\view -> draw { divId, suffix, view } figVal redraw)
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =

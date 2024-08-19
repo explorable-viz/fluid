@@ -12,7 +12,7 @@ import Util.Map (mapWithKey)
 newtype MultiView = MultiView (Dict View)
 
 instance Drawable MultiView where
-   draw divId _ figView redraw (MultiView views) =
-      sequence_ $ mapWithKey (\x -> drawView divId x (multiViewEntry x >>> figView) redraw) views
+   draw { divId, view: MultiView views } figVal redraw =
+      sequence_ $ mapWithKey (\x -> drawView divId x (multiViewEntry x >>> figVal) redraw) views
 
 derive instance Newtype MultiView _

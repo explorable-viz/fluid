@@ -64,9 +64,8 @@ matrixViewHelpers =
    borderStyles None = "visibility: hidden;"
 
 instance Drawable MatrixView where
-   draw divId suffix figView redraw view =
-      drawMatrix matrixViewHelpers uiHelpers { divId, suffix, view }
-         =<< selListener figView redraw matrixViewSelector
+   draw rSpec figVal redraw =
+      drawMatrix matrixViewHelpers uiHelpers rSpec =<< selListener figVal redraw matrixViewSelector
       where
       matrixViewSelector :: ViewSelector MatrixCellCoordinate
       matrixViewSelector { i, j } = matrixElement i j

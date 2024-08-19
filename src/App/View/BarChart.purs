@@ -76,9 +76,8 @@ barChartHelpers =
       m = floor (log (toNumber n) / log 10.0)
 
 instance Drawable BarChart where
-   draw divId suffix figView redraw view =
-      drawBarChart barChartHelpers uiHelpers { divId, suffix, view }
-         =<< selListener figView redraw barChartSelector
+   draw rSpec figVal redraw =
+      drawBarChart barChartHelpers uiHelpers rSpec =<< selListener figVal redraw barChartSelector
       where
       barChartSelector :: ViewSelector BarSegmentCoordinate
       barChartSelector { i, j } = barSegment i j >>> barChart

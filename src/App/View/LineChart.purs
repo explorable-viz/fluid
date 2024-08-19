@@ -80,9 +80,8 @@ lineChartHelpers =
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
 instance Drawable LineChart where
-   draw divId suffix figView redraw view =
-      drawLineChart lineChartHelpers uiHelpers { divId, suffix, view }
-         =<< selListener figView redraw lineChartSelector
+   draw rSpec figVal redraw =
+      drawLineChart lineChartHelpers uiHelpers rSpec =<< selListener figVal redraw lineChartSelector
       where
       lineChartSelector :: ViewSelector PointCoordinate
       lineChartSelector { i, j } =

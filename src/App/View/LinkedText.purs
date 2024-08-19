@@ -26,9 +26,8 @@ linkedTextHelpers =
    }
 
 instance Drawable LinkedText where
-   draw divId suffix figView redraw view =
-      drawLinkedText linkedTextHelpers uiHelpers { divId, suffix, view }
-         =<< selListener figView redraw linkedTextSelector
+   draw rSpec figVal redraw =
+      drawLinkedText linkedTextHelpers uiHelpers rSpec =<< selListener figVal redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelector LinkedText
       linkedTextSelector _ = linkedText
