@@ -2,7 +2,7 @@ module Test.Specs.LinkedOutputs where
 
 import Prelude
 
-import App.Util.Selector (barChart, barSegment, field, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd)
+import App.Util.SelSetter (barChart, barSegment, field, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd)
 import Bind ((↦))
 import DataType (f_plots, f_y)
 import Lattice (neg)

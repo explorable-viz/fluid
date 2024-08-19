@@ -2,7 +2,7 @@ module App.View.MultiView where
 
 import Prelude
 
-import App.Util.Selector (multiViewEntry)
+import App.Util.SelSetter (multiViewEntry)
 import App.View.Util (class Drawable, View, drawView)
 import Data.Foldable (sequence_)
 import Data.Newtype (class Newtype)

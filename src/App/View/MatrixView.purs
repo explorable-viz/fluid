@@ -3,7 +3,7 @@ module App.View.MatrixView where
 import Prelude hiding (absurd)
 
 import App.Util (SelState, Selectable, 𝕊, isTransient)
-import App.Util.Selector (ViewSelSetter, matrixElement)
+import App.Util.SelSetter (ViewSelSetter, matrixElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Tuple (snd)
 import Primitive (int, unpack)

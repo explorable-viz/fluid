@@ -3,7 +3,7 @@ module App.View.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
-import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
+import App.Util.SelSetter (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Foldable (maximum, minimum)

@@ -3,7 +3,7 @@ module App.View.LinkedText where
 import Prelude
 
 import App.Util (class Reflect, SelState, Selectable, 𝕊)
-import App.Util.Selector (ViewSelSetter, linkedText)
+import App.Util.SelSetter (ViewSelSetter, linkedText)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Either (Either(..))
 import Data.Int (toNumber)

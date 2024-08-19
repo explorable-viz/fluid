@@ -3,7 +3,7 @@ module App.View.Util where
 import Prelude
 
 import App.Util (SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
-import App.Util.Selector (ViewSelSetter)
+import App.Util.SelSetter (ViewSelSetter)
 import Bind (Bind, Var)
 import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)

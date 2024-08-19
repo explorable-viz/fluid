@@ -2,7 +2,7 @@ module Test.Specs.Bwd where
 
 import Prelude
 
-import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, listCell, listElement, matrixElement, multiViewEntry, snd, some)
+import App.Util.SelSetter (barChart, barSegment, dict, dictKey, dictVal, listCell, listElement, matrixElement, multiViewEntry, snd, some)
 import Bind ((↦))
 import Lattice (neg)
 import Test.Util.Suite (TestBwdSpec)

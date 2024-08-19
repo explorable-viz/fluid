@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState, 𝕊, as𝕊, selState, to𝕊)
-import App.Util.Selector (envVal)
+import App.Util.SelSetter (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
 import Bind (Var)

@@ -1,4 +1,4 @@
-module App.Util.Selector where
+module App.Util.SelSetter where
 
 import Prelude hiding (absurd)
 
