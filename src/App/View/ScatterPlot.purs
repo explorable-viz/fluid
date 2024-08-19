@@ -2,8 +2,8 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from, record, isPrimary, isSecondary)
-import App.Util.Selector (field, listElement, scatterPlot)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, from, record, isPrimary, isSecondary)
+import App.Util.Selector (ViewSelSetter, field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
@@ -45,12 +45,11 @@ scatterPlotHelpers =
       point_smallRadius = 2
 
 instance Drawable ScatterPlot where
-   draw divId suffix figView redraw view =
-      drawScatterPlot scatterPlotHelpers uiHelpers { divId, suffix, view }
-         =<< selListener figView redraw scatterPlotSelector
+   draw rSpec figVal _ redraw =
+      drawScatterPlot scatterPlotHelpers uiHelpers rSpec =<< selListener figVal redraw point
       where
-      scatterPlotSelector :: ViewSelector PointIndex
-      scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
+      point :: ViewSelSetter PointIndex
+      point { i } = listElement i >>> field f_data >>> scatterPlot
 
 instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
    from r = ScatterPlot

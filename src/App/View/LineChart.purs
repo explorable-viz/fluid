@@ -2,8 +2,8 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
-import App.Util.Selector (field, lineChart, linePoint, listElement)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
+import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Foldable (maximum, minimum)
@@ -80,13 +80,12 @@ lineChartHelpers =
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
 instance Drawable LineChart where
-   draw divId suffix figView redraw view =
-      drawLineChart lineChartHelpers uiHelpers { divId, suffix, view }
-         =<< selListener figView redraw lineChartSelector
+   draw rSpec figVal _ redraw =
+      drawLineChart lineChartHelpers uiHelpers rSpec =<< selListener figVal redraw point
       where
-      lineChartSelector :: ViewSelector PointCoordinate
-      lineChartSelector { i, j } =
-         lineChart <<< field f_plots <<< listElement i <<< linePoint j
+      point :: ViewSelSetter PointCoordinate
+      point { i, j } =
+         linePoint j >>> listElement i >>> field f_plots >>> lineChart
 
 instance Reflect (Dict (Val (SelState 𝕊))) Point where
    from r = Point

@@ -2,7 +2,8 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, Selectable, Selector, 𝕊, ViewSelector, selClasses, selClassesFor, selectionEventData)
+import App.Util (SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
+import App.Util.Selector (ViewSelSetter)
 import Bind (Bind, Var)
 import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)
@@ -12,7 +13,7 @@ import GaloisConnection (GaloisConnection)
 import Lattice (𝔹, Raw, (∨))
 import Module (File)
 import SExpr as S
-import Util (Endo)
+import Util (Endo, Setter)
 import Val (Env, Val)
 import Web.Event.EventTarget (EventListener, eventListener)
 
@@ -27,16 +28,16 @@ pack x = View \k -> k x
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
-selListener :: forall a. (Selector Val -> Endo Fig) -> Redraw -> ViewSelector a -> Effect EventListener
-selListener figView redraw selector =
-   eventListener (selectionEventData >>> uncurry selector >>> figView >>> redraw)
+selListener :: forall a. Setter Fig (Val (SelState 𝔹)) -> Redraw -> ViewSelSetter a -> Effect EventListener
+selListener figVal redraw selector =
+   eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where
-   draw :: HTMLId -> String -> (Selector Val -> Endo Fig) -> Redraw -> a -> Effect Unit
+   draw :: RendererSpec a -> Setter Fig (Val (SelState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
 
-drawView :: HTMLId -> String -> (Selector Val -> Endo Fig) -> Redraw -> View -> Effect Unit
-drawView divId suffix figView redraw vw =
-   unpack vw (draw divId suffix figView redraw)
+drawView :: RendererSpec View -> Setter Fig (Val (SelState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
+drawView rSpec@{ view: vw } figVal figView redraw =
+   unpack vw (\view -> draw (rSpec { view = view }) figVal figView redraw)
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =

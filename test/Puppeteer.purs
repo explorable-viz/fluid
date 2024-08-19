@@ -23,7 +23,7 @@ tests launchBrowser = do
    browser <- launchBrowser
    page <- T.newPage browser
    let url = "http://127.0.0.1:8080"
-   log ("Going to" <> url)
+   log ("Going to " <> url)
    T.goto (T.URL url) page
    content <- T.content page
    log content

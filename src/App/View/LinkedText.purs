@@ -2,8 +2,8 @@ module App.View.LinkedText where
 
 import Prelude
 
-import App.Util (class Reflect, SelState, Selectable, ViewSelector, 𝕊)
-import App.Util.Selector (linkedText)
+import App.Util (class Reflect, SelState, Selectable, 𝕊)
+import App.Util.Selector (ViewSelSetter, linkedText)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Either (Either(..))
 import Data.Int (toNumber)
@@ -26,12 +26,11 @@ linkedTextHelpers =
    }
 
 instance Drawable LinkedText where
-   draw divId suffix figView redraw view =
-      drawLinkedText linkedTextHelpers uiHelpers { divId, suffix, view }
-         =<< selListener figView redraw linkedTextSelector
+   draw rSpec figVal _ redraw =
+      drawLinkedText linkedTextHelpers uiHelpers rSpec =<< selListener figVal redraw linkedText'
       where
-      linkedTextSelector :: ViewSelector LinkedText
-      linkedTextSelector _ = linkedText
+      linkedText' :: ViewSelSetter LinkedText
+      linkedText' _ = linkedText
 
 instance Reflect (Val (SelState 𝕊)) LinkedText where
    from r = LinkedText (unpackedStringify $ unpack intOrNumber r)
