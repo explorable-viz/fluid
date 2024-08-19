@@ -3,7 +3,7 @@ module App.View.TableView where
 import Prelude
 
 import App.Util (SelState, 𝕊(..), eventData, selClassesFor, selected)
-import App.Util.Selector (ViewSelector, field, listElement)
+import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
 import Effect (Effect)
@@ -58,10 +58,10 @@ instance Drawable TableView where
    draw rSpec figVal _ redraw = do
       toggleListener <- filterToggleListener filterToggler
       drawTable tableViewHelpers toggleListener uiHelpers rSpec
-         =<< selListener figVal redraw tableViewSelector
+         =<< selListener figVal redraw tableViewSelSetter
       where
-      tableViewSelector :: ViewSelector CellIndex
-      tableViewSelector { __n, colName } = listElement (__n - 1) <<< field colName
+      tableViewSelSetter :: ViewSelSetter CellIndex
+      tableViewSelSetter { __n, colName } = listElement (__n - 1) <<< field colName
 
       filterToggleListener :: FilterToggler -> Effect EventListener
       filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)

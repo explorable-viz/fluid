@@ -2,7 +2,7 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState, Selector, persist)
+import App.Util (SelState, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
@@ -16,7 +16,7 @@ import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection setters.
 type SelSetter f g = Setter (f (SelState 𝔹)) (g (SelState 𝔹))
-type ViewSelector a = a -> SelSetter Val Val -- convert mouse event data to view selector
+type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
 
 fst :: SelSetter Val Val
 fst = constrArg cPair 0
@@ -93,7 +93,7 @@ dictVal :: String -> SelSetter Val Val
 dictVal s δv = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (second δv) s d
 
-envVal :: Var -> Selector Val -> Selector Env
+envVal :: Var -> Setter (Env (SelState 𝔹)) (Val (SelState 𝔹))
 envVal x δv γ =
    assert (x ∈ γ) $ update δv x γ
 

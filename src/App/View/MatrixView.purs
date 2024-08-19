@@ -3,7 +3,7 @@ module App.View.MatrixView where
 import Prelude hiding (absurd)
 
 import App.Util (SelState, Selectable, 𝕊, isTransient)
-import App.Util.Selector (ViewSelector, matrixElement)
+import App.Util.Selector (ViewSelSetter, matrixElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Tuple (snd)
 import Primitive (int, unpack)
@@ -34,27 +34,25 @@ matrixViewHelpers =
       where
       shadowDirection :: IntMatrix -> MatrixBorderCoordinate -> ShadowDirection
       shadowDirection { cells, i: height } { i, j }
-         | i == 0 = if isCellTransient cells { i, j: j - 1 } then South else None
-         | i == height = if isCellTransient cells { i: i - 1, j: j - 1 } then North else None
-         | otherwise =
-              if isCellTransient cells { i, j: j - 1 } && not isCellTransient cells { i: i - 1, j: j - 1 } then South
-              else if not isCellTransient cells { i, j: j - 1 } && isCellTransient cells { i: i - 1, j: j - 1 } then North
-              else None
+         | i == 0 = if isCellTransient cells i (j - 1) then South else None
+         | i == height = if isCellTransient cells (i - 1) (j - 1) then North else None
+         | isCellTransient cells i (j - 1) && not isCellTransient cells (i - 1) (j - 1) = South
+         | not isCellTransient cells i (j - 1) && isCellTransient cells (i - 1) (j - 1) = North
+         | otherwise = None
 
    vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
    vBorderStyles m = borderStyles <<< shadowDirection m
       where
       shadowDirection :: IntMatrix -> MatrixBorderCoordinate -> ShadowDirection
       shadowDirection { cells, j: width } { i, j }
-         | j == 0 = if isCellTransient cells { i: i - 1, j } then East else None
-         | j == width = if isCellTransient cells { i: i - 1, j: j - 1 } then West else None
-         | otherwise =
-              if isCellTransient cells { i: i - 1, j } && not isCellTransient cells { i: i - 1, j: j - 1 } then East
-              else if not isCellTransient cells { i: i - 1, j } && isCellTransient cells { i: i - 1, j: j - 1 } then West
-              else None
+         | j == 0 = if isCellTransient cells (i - 1) j then East else None
+         | j == width = if isCellTransient cells (i - 1) (j - 1) then West else None
+         | isCellTransient cells (i - 1) j && not isCellTransient cells (i - 1) (j - 1) = East
+         | not isCellTransient cells (i - 1) j && isCellTransient cells (i - 1) (j - 1) = West
+         | otherwise = None
 
-   isCellTransient :: forall a. Array2 (Selectable a) -> MatrixCellCoordinate -> Boolean
-   isCellTransient arr2d { i, j } = isTransient $ snd $ arr2d ! i ! j
+   isCellTransient :: forall a. Array2 (Selectable a) -> Int -> Int -> Boolean
+   isCellTransient arr2d i j = isTransient $ snd $ arr2d ! i ! j
 
    borderStyles :: ShadowDirection -> String
    borderStyles North = "filter: drop-shadow(0px -1px 1px blue);"
@@ -65,10 +63,10 @@ matrixViewHelpers =
 
 instance Drawable MatrixView where
    draw rSpec figVal _ redraw =
-      drawMatrix matrixViewHelpers uiHelpers rSpec =<< selListener figVal redraw matrixViewSelector
+      drawMatrix matrixViewHelpers uiHelpers rSpec =<< selListener figVal redraw element
       where
-      matrixViewSelector :: ViewSelector MatrixCellCoordinate
-      matrixViewSelector { i, j } = matrixElement i j
+      element :: ViewSelSetter MatrixCellCoordinate
+      element { i, j } = matrixElement i j
 
 matrixRep :: MatrixRep (SelState 𝕊) -> IntMatrix
 matrixRep (MatrixRep (vss × (i × _) × (j × _))) =

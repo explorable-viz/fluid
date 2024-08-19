@@ -3,7 +3,7 @@ module App.View.BarChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState(..), Selectable, 𝕊(..), colorShade, from, get_intOrNumber, record)
-import App.Util.Selector (ViewSelector, barChart, barSegment)
+import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
@@ -77,10 +77,10 @@ barChartHelpers =
 
 instance Drawable BarChart where
    draw rSpec figVal _ redraw =
-      drawBarChart barChartHelpers uiHelpers rSpec =<< selListener figVal redraw barChartSelector
+      drawBarChart barChartHelpers uiHelpers rSpec =<< selListener figVal redraw barSegment'
       where
-      barChartSelector :: ViewSelector BarSegmentCoordinate
-      barChartSelector { i, j } = barSegment i j >>> barChart
+      barSegment' :: ViewSelSetter BarSegmentCoordinate
+      barSegment' { i, j } = barSegment i j >>> barChart
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart

@@ -3,7 +3,7 @@ module App.View.Util where
 import Prelude
 
 import App.Util (SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
-import App.Util.Selector (ViewSelector)
+import App.Util.Selector (ViewSelSetter)
 import Bind (Bind, Var)
 import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)
@@ -28,7 +28,7 @@ pack x = View \k -> k x
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
-selListener :: forall a. Setter Fig (Val (SelState 𝔹)) -> Redraw -> ViewSelector a -> Effect EventListener
+selListener :: forall a. Setter Fig (Val (SelState 𝔹)) -> Redraw -> ViewSelSetter a -> Effect EventListener
 selListener figVal redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
 
