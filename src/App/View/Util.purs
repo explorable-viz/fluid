@@ -34,9 +34,9 @@ selListener figVal redraw selector =
 class Drawable a where
    draw :: RendererSpec a -> (Selector Val -> Endo Fig) -> Redraw -> Effect Unit
 
-drawView :: HTMLId -> String -> (Selector Val -> Endo Fig) -> Redraw -> View -> Effect Unit
-drawView divId suffix figVal redraw vw =
-   unpack vw (\view -> draw { divId, suffix, view } figVal redraw)
+drawView :: RendererSpec View -> (Selector Val -> Endo Fig) -> Redraw -> Effect Unit
+drawView rSpec@{ view: vw } figVal redraw =
+   unpack vw (\view -> draw (rSpec { view = view }) figVal redraw)
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =

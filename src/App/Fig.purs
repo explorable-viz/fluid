@@ -44,8 +44,8 @@ selectOutput δv fig@{ dir, γ, v } = fig
    , dir = LinkedOutputs
    }
 
-selectOutputView :: Endo View -> Endo Fig
-selectOutputView δvw fig = fig
+setOutputView :: Endo View -> Endo Fig
+setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw
    }
 
@@ -63,10 +63,11 @@ setInputView (x ↦ δvw) fig = fig
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView divId str.output selectOutput (\figUpdater -> drawFig divId (figUpdater fig)) out_view
-   sequence_ $ flip mapWithKey in_views \x -> do
-      drawView (divId <> "-" <> str.input) x (curry selectInput x) (\figUpdater -> drawFig divId (figUpdater fig))
+   drawView { divId, suffix: str.output, view: out_view } selectOutput redraw
+   sequence_ $ flip mapWithKey in_views \x view -> do
+      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (curry selectInput x) redraw
    where
+   redraw = (_ $ fig) >>> drawFig divId
    out_view × in_views =
       selectionResult fig # unsafePartial
          (flip (view str.output) fig.out_view *** \(Env γ) -> mapWithKey view γ <*> fig.in_views)
