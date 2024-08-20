@@ -10,7 +10,7 @@ app.use(serve(__dirname + '/dist/app'));
 
 const server = app.listen(8080, function(){
   console.log("Server running");
-}).withShutdown();    
+}).withShutdown();
 
 (async () => {
   try {
@@ -33,5 +33,5 @@ function serverDown()
     }
     console.log('Everything is cleanly shutdown.');
   });
-  
+
 }

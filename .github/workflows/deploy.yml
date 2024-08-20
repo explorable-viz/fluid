@@ -18,7 +18,7 @@ jobs:
   deploy-npm:
     runs-on: ubuntu-22.04
     needs: build
-    if: github.ref == 'refs/heads/creating-NPM-library'
+    if: github.ref == 'refs/heads/release'
     permissions:
       contents: read
       id-token: write

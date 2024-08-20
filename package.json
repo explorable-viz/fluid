@@ -35,12 +35,14 @@
     "test-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
     "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
     "build-puppeteer": "yarn tidy && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js",
-    "test-puppeteer": "node puppeteer.js"
+    "test-puppeteer": "node puppeteer.js",
+    "build-fluid": "yarn tidy && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Fluid --to dist/app/fluid.js"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
     "@codemirror/state": "6.2.0",
     "@codemirror/view": "6.9.3",
+    "@explorable-viz/fluid": "^0.0.12",
     "benchmark": "^2.1.4",
     "concurrently": "^8.2.2",
     "d3": "^7.9.0",
@@ -73,6 +75,6 @@
     "typescript": "^5.5.3"
   },
   "bin": {
-    "fluid": "./cli.js"
+    "fluid": "./fluid.js"
   }
 }

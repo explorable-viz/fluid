@@ -2,11 +2,12 @@ module Fluid where
 
 import Prelude
 
+import Data.Foldable (for_)
 import Effect (Effect)
-import Effect.Console (log)
+import Effect.Class.Console (log)
 import Node.Process (argv)
 
 main :: Effect Unit
 main = do
    args <- argv
-   log $ show args
+   for_ args \x -> log (show x)
