@@ -64,7 +64,7 @@
     "karma-mocha": "2.0.1",
     "karma-mocha-reporter": "2.2.5",
     "mocha": "10.0.0",
-    "puppeteer": "^23.01.0",
+    "puppeteer": "^23.1.0",
     "purescript-language-server": "0.16.6",
     "purescript-psa": "0.8.2",
     "purs-backend-es": "1.1.0",
