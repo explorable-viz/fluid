@@ -6,6 +6,7 @@ import Control.Promise (Promise, fromAff, toAffE)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
+--import Foreign (unsafeFromForeign)
 import Toppokki as T
 
 launchFirefox :: Aff T.Browser
@@ -35,10 +36,17 @@ tests launchBrowser = do
    clickToggle page "fig-1-input"
    clickToggle page "fig-conv-2-input"
 
+   --clickScatterPlotPoint page "fig-4-ouput"
+
+   let selector = "div#fig-4-output .scatterplot-point"
+   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
+   _ <- T.click (T.Selector selector) page
+   log ("Clicked on " <> selector)
    pure unit
 
    T.close browser
 
+--Function to check for the presence of an SVG figure
 checkForFigure :: T.Page -> String -> Aff Unit
 checkForFigure page id = do
    let selector = "svg#" <> id
@@ -47,11 +55,24 @@ checkForFigure page id = do
    log ("Found " <> selector)
    pure unit
 
+--Function to click a toggle
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
-   let selector = "#" <> id <> " + div > div > span.toggle-button"
+   let selector = "div#" <> id <> " + div > div > span.toggle-button"
    log ("Waiting for " <> selector)
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
    log ("Found " <> selector <> ", clicking the toggle button")
    _ <- T.click (T.Selector selector) page
    log ("Clicked on " <> selector)
+
+   _ <- T.pageWaitForSelector (T.Selector ("div#" <> id)) { visible: true } page
+   pure unit
+
+{-
+clickScatterPlotPoint :: T.Page -> String -> Aff Unit
+clickScatterPlotPoint page id = do
+   let selector = "div#" <> id <> " .scatterplot-point"
+   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
+   _ <- T.click (T.Selector selector) page
+   log ("Clicked on " <> selector)
+-}
