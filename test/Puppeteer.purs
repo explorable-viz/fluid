@@ -36,12 +36,7 @@ tests launchBrowser = do
    clickToggle page "fig-1-input"
    clickToggle page "fig-conv-2-input"
 
-   --clickScatterPlotPoint page "fig-4-ouput"
-
-   let selector = "svg#fig-4-output .scatterplot-point"
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
-   _ <- T.click (T.Selector selector) page
-   log ("Clicked on " <> selector)
+   clickScatterPlotPoint page "fig-4"
 
    T.close browser
 
@@ -67,11 +62,9 @@ clickToggle page id = do
    _ <- T.pageWaitForSelector (T.Selector ("div#" <> id)) { visible: true } page
    pure unit
 
-{-
 clickScatterPlotPoint :: T.Page -> String -> Aff Unit
 clickScatterPlotPoint page id = do
-   let selector = "svg#" <> id <> " .scatterplot-point"
+   let selector = "div#" <> id <> " .scatterplot-point"
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
    _ <- T.click (T.Selector selector) page
    log ("Clicked on " <> selector)
--}
