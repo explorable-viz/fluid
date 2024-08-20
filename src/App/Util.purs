@@ -192,6 +192,14 @@ arℝ (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelStat
    cross true false = Primary -- the if solves this case, (as you can't be persistent inert and transient not...)
    cross true true = Primary
 
+getPersistent :: ReactState 𝔹 -> 𝔹
+getPersistent Inert = false
+getPersistent (Reactive (SelState a)) = a.persistent
+
+getTransient :: ReactState 𝔹 -> 𝔹
+getTransient Inert = false
+getTransient (Reactive (SelState a)) = a.transient
+
 -- TO FIX/REMOVE/OTHERWISE ALTER
 
 fromℝ :: ReactState 𝕊 -> SelState 𝕊

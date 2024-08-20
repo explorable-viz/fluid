@@ -63,19 +63,20 @@ setInputView x δvw fig = fig
 {-}
 lift :: GaloisConnection (Env 𝔹) (Val 𝔹) -> GaloisConnection (Env (ReactState 𝕊)) (Val (ReactState 𝕊))
 lift (GC gc) = GC { fwd, bwd }
+   γ v
    where
    fwd :: Env (ReactState 𝕊) -> Val (ReactState 𝕊)
    fwd γ = reactState <$> v0 <*> v1 <*> v2
       where
       v0 = neg (unwrap gc).bwd (topOf outα)
-      v1 = gc.fwd (γ <#> )
-      v2 = gc.fwd (γ <#> )
+      v1 = gc.fwd (γ <#> getPersistent)
+      v2 = gc.fwd (γ <#> getTransient)
    bwd :: Val (ReactState 𝕊) -> Env (ReactState 𝕊)
-   bwd γ = reactState <$> v0 <*> v1 <*> v2
+   bwd v = reactState <$> v0 <*> v1 <*> v2
       where
       v0 = neg (unwrap gc_dual).bwd (topOf γα)
-      v1 = gc.bwd (γ <#> )
-      v2 = gc.bwd (γ <#> isTransient)
+      v1 = gc.bwd (v <#> getPersistent)
+      v2 = gc.bwd (v <#> getTransient)
 -}
 
 drawFig :: HTMLId -> Fig -> Effect Unit
@@ -95,7 +96,7 @@ selectionResult fig@{ γ0, v, dir: LinkedOutputs } =
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
-   v1 × γ1 = gc.bwd (v <#> unwrap >>> _.persistent)
+   v1 × γ1 = gc.bwd (_.persistent <$> (unwrap <$> v))
    v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
 
 selectionResult fig@{ v0, γ, dir: LinkedInputs } =
