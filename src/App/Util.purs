@@ -143,6 +143,7 @@ to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 to𝔹 = ((_ /= None) <$> _) <<< fromℝ
 
 --methods for initial assignation of states
+--subsumed by reactState
 toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
 toℝ true _ = Inert
 toℝ false sel = Reactive (sel <#> if _ then Primary else None)
@@ -263,18 +264,6 @@ selector (EventType ev) = (over SelState (report <<< setSel ev) <$> _)
       | s == "mouseleave" = sel { transient = false }
       | otherwise = error "Unsupported event type"
    report = spyWhen tracing.mouseEvent "Setting SelState to " show
-
-{-}
-relector :: EventType -> Relector Val
-relector = case _ of
-   EventType "mousedown" -> (over Reactive (SelState (report <<< \s -> s { persistent = neg s.persistent })) <$> _) || (over Inert identity)
-   EventType "mouseenter" -> (over Reactive (over SelState (report <<< \s -> s { transient = true })) <$> _)
-   EventType "mouseleave" -> (over Reactive (over SelState (report <<< \s -> s { transient = false })) <$> _)
-   EventType _ -> error "Unsupported event type"
-   where
-   report = spyWhen tracing.mouseEvent "Setting ReactState to " show
-
--}
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String

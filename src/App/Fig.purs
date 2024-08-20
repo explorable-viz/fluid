@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (ReactState, SelState, 𝕊, asℝ, selState, toℝ)
+import App.Util (ReactState, SelState, 𝕊, asℝ, getPersistent, getTransient, reactState, selState, toℝ)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -60,24 +60,25 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-{-}
-lift :: GaloisConnection (Env 𝔹) (Val 𝔹) -> GaloisConnection (Env (ReactState 𝕊)) (Val (ReactState 𝕊))
-lift (GC gc) = GC { fwd, bwd }
-   γ v
+-- I want to take a gc, (possibly with dual) on Env B and Val B, and produce a connection on Env rs and Val rs
+-- to deal with rs reasonably, I need to define what an inert set is - which we can do as v0
+lift :: GaloisConnection (Env 𝔹) (Val 𝔹) -> GaloisConnection (Env (ReactState 𝔹)) (Val (ReactState 𝔹))
+lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    where
-   fwd :: Env (ReactState 𝕊) -> Val (ReactState 𝕊)
-   fwd γ = reactState <$> v0 <*> v1 <*> v2
+   fwd1 :: Env (ReactState 𝔹) -> Val (ReactState 𝔹)
+   fwd1 γ = reactState <$> v0 <*> v1 <*> v2
       where
-      v0 = neg (unwrap gc).bwd (topOf outα)
+      -- should v0 be gc_dual
+      v0 = neg gc.fwd (topOf γ)
       v1 = gc.fwd (γ <#> getPersistent)
       v2 = gc.fwd (γ <#> getTransient)
-   bwd :: Val (ReactState 𝕊) -> Env (ReactState 𝕊)
-   bwd v = reactState <$> v0 <*> v1 <*> v2
+
+   bwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
+   bwd1 v = reactState <$> v0 <*> v1 <*> v2
       where
-      v0 = neg (unwrap gc_dual).bwd (topOf γα)
+      v0 = neg gc.bwd (topOf v)
       v1 = gc.bwd (v <#> getPersistent)
       v2 = gc.bwd (v <#> getTransient)
--}
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
@@ -96,6 +97,7 @@ selectionResult fig@{ γ0, v, dir: LinkedOutputs } =
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
+
    v1 × γ1 = gc.bwd (_.persistent <$> (unwrap <$> v))
    v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
 
