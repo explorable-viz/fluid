@@ -2,13 +2,14 @@ module Publish.TextViz where
 
 import Prelude hiding (absurd)
 
-import App.Fig (FigSpec, drawFig, loadFig)
+import App.Fig (drawFig, loadFig)
 import App.Util (runAffs_)
+import App.View.Util (FigSpec)
 import Bind ((↦))
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Util ((×))
 import Module (File(..))
+import Util ((×))
 
 fig :: FigSpec
 fig =
