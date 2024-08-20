@@ -69,11 +69,8 @@ clickScatterPlotPoint page id = do
    _ <- T.click (T.Selector selector) page
    log ("Clicked on " <> selector)
 
-   --className <- T.unsafePageEval (T.Selector selector) "element => element.getAttribute('class')" page
+   className <- T.unsafePageEval (T.Selector selector) "element => element.getAttribute('class')" page
    radius <- T.unsafePageEval (T.Selector selector) "element => element.getAttribute('r')" page
 
-   if unsafeFromForeign radius == "3.2" then log "The circle's radius has changed as expected."
-   else log "The circle's radius did not change as expected."
-
---if unsafeFromForeign className == "scatterplot-point selected-primary-transient" && unsafeFromForeign radius == "3.2" then log "The circle's class and radius have changed as expected."
---else log "The circle's class and/or radius did not change as expected."
+   if unsafeFromForeign className == "scatterplot-point selected-primary-persistent selected-primary-transient" && unsafeFromForeign radius == "3.2" then log "The circle's class and radius have changed as expected."
+   else log "The circle's class and/or radius did not change as expected."
