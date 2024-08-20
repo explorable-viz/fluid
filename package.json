@@ -26,6 +26,7 @@
     "build-artifact": "yarn clean-artifact && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Artifact --to dist/artifact/app.js",
     "serve-artifact": "yarn build-artifact && npx http-serve dist/artifact -a 127.0.0.1 -c-1",
     "publish-standalone": "./script/publish.sh",
+    "publish-single": "./script/publish-single.sh",
     "clean": "rm -rf dist/tests && mkdir -p dist/tests && cp web/tests.html dist/tests",
     "clean-bench": "rm -rf dist/benches && mkdir -p dist/benches && cp -r fluid dist/benches && cp web/index.html dist/benches && cp -r web/css dist/benches",
     "build": "yarn tidy && yarn clean && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Test --to dist/tests/app.js",

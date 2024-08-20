@@ -45,7 +45,7 @@ thead {
    border-left: 2px solid lightblue;
 }
 
-.linked-text {
+.transparent-text {
    border-radius: 2px;
    /* float: left; */
    background-color: White;
@@ -53,19 +53,19 @@ thead {
    display: inline;
 }
 
-.linked-text.selected-primary-persistent {
+.transparent-text.selected-primary-persistent {
    background-color: #93E9BE;
 }
 
-.linked-text.selected-primary-transient {
+.transparent-text.selected-primary-transient {
    border-bottom: 2px solid blue;
 }
 
-.linked-text.selected-secondary-persistent {
+.transparent-text.selected-secondary-persistent {
    background-color: rgb(226, 226, 226);
 }
 
-.linked-text.selected-secondary-transient {
+.transparent-text.selected-secondary-transient {
    border-bottom: 2px solid lightblue;
 }
 
