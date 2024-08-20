@@ -29,8 +29,8 @@ function setSelState (
 
 function drawScatterPlot_ (
    ScatterPlotHelpers,
+   uiHelpers,
    {
-      uiHelpers,
       divId,
       suffix,
       view: {
@@ -126,4 +126,4 @@ function drawScatterPlot_ (
    }
 }
 
-export var drawScatterPlot = x1 => x2 => x3 => drawScatterPlot_(x1, x2, x3)
+export var drawScatterPlot = x1 => x2 => x3 => x4 => drawScatterPlot_(x1, x2, x3, x4)

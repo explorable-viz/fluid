@@ -2,70 +2,73 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (Selector, persist)
+import App.Util (SelState, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiPlot, cNil, cPair, cText, cScatterPlot, cSome, f_bars, f_data, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
-import Util (Endo, absurd, assert, definitely', error)
+import Util (Setter, absurd, assert, definitely', error)
 import Util.Map (update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
--- Selection helpers. TODO: turn into lenses/prisms.
-fst :: Endo (Selector Val)
+-- Selection setters.
+type SelSetter f g = Setter (f (SelState 𝔹)) (g (SelState 𝔹))
+type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
+
+fst :: SelSetter Val Val
 fst = constrArg cPair 0
 
-snd :: Endo (Selector Val)
+snd :: SelSetter Val Val
 snd = constrArg cPair 1
 
-some :: Endo 𝔹 -> Selector Val
+some :: Setter (Val (SelState 𝔹)) 𝔹
 some = constr cSome
 
-multiPlot :: Endo (Selector Val)
-multiPlot = constrArg cMultiPlot 0
+multiView :: SelSetter Val Val
+multiView = constrArg cMultiView 0
 
-multiPlotEntry :: String -> Endo (Selector Val)
-multiPlotEntry x = dictVal x >>> multiPlot
+multiViewEntry :: String -> SelSetter Val Val
+multiViewEntry x = dictVal x >>> multiView
 
-lineChart :: Endo (Selector Val)
+lineChart :: SelSetter Val Val
 lineChart = constrArg cLineChart 0
 
-linePoint :: Int -> Endo (Selector Val)
+linePoint :: Int -> SelSetter Val Val
 linePoint i = listElement i >>> field f_data >>> constrArg cLinePlot 0
 
-barChart :: Endo (Selector Val)
+barChart :: SelSetter Val Val
 barChart = constrArg cBarChart 0
 
-scatterPlot :: Endo (Selector Val)
+scatterPlot :: SelSetter Val Val
 scatterPlot = constrArg cScatterPlot 0
 
-scatterPoint :: Int -> Endo (Selector Val)
+scatterPoint :: Int -> SelSetter Val Val
 scatterPoint i = listElement i >>> field f_data
 
-barSegment :: Int -> Int -> Endo (Selector Val)
+barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
    field f_z >>> listElement j >>> field f_bars >>> listElement i >>> field f_data
 
-linkedText :: Endo (Selector Val)
-linkedText = constrArg cText 0
+linkedText :: SelSetter Val Val
+linkedText = constrArg cLinkedText 0
 
-matrixElement :: Int -> Int -> Endo (Selector Val)
+matrixElement :: Int -> Int -> SelSetter Val Val
 matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv r
 matrixElement _ _ _ _ = error absurd
 
-listElement :: Int -> Endo (Selector Val)
+listElement :: Int -> SelSetter Val Val
 listElement n δv = unsafePartial $ case _ of
    Val α (Constr c (v : v' : Nil)) | n == 0 && c == cCons -> Val α (Constr c (δv v : v' : Nil))
    Val α (Constr c (v : v' : Nil)) | c == cCons -> Val α (Constr c (v : listElement (n - 1) δv v' : Nil))
 
-field :: Var -> Endo (Selector Val)
+field :: Var -> SelSetter Val Val
 field f δv = unsafePartial $ case _ of
    Val α (Record r) -> Val α $ Record $ update δv f r
 
-constrArg :: Ctr -> Int -> Endo (Selector Val)
+constrArg :: Ctr -> Int -> SelSetter Val Val
 constrArg c n δv = unsafePartial $ case _ of
    Val α (Constr c' us) | c == c' ->
       Val α (Constr c us')
@@ -74,27 +77,27 @@ constrArg c n δv = unsafePartial $ case _ of
          u1 <- us !! n
          updateAt n (δv u1) us
 
-constr :: Ctr -> Endo 𝔹 -> Selector Val
+constr :: Ctr -> Setter (Val (SelState 𝔹)) 𝔹
 constr c' δα = unsafePartial $ case _ of
    Val α (Constr c vs) | c == c' -> Val (persist δα α) (Constr c vs)
 
-dict :: Endo 𝔹 -> Selector Val
+dict :: Setter (Val (SelState 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of
    Val α (Dictionary d) -> Val (persist δα α) (Dictionary d)
 
-dictKey :: String -> Endo 𝔹 -> Selector Val
+dictKey :: String -> Setter (Val (SelState 𝔹)) 𝔹
 dictKey s δα = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first $ persist δα) s d
 
-dictVal :: String -> Endo (Selector Val)
+dictVal :: String -> SelSetter Val Val
 dictVal s δv = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (second δv) s d
 
-envVal :: Var -> Selector Val -> Selector Env
+envVal :: Var -> Setter (Env (SelState 𝔹)) (Val (SelState 𝔹))
 envVal x δv γ =
    assert (x ∈ γ) $ update δv x γ
 
-listCell :: Int -> Endo 𝔹 -> Selector Val
+listCell :: Int -> Setter (Val (SelState 𝔹)) 𝔹
 listCell n δα = unsafePartial $ case _ of
    Val α (Constr c Nil) | n == 0 && c == cNil -> Val (persist δα α) (Constr c Nil)
    Val α (Constr c (v : v' : Nil)) | c == cCons ->

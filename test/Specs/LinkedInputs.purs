@@ -2,8 +2,8 @@ module Test.Specs.LinkedInputs where
 
 import Prelude
 
-import App.Fig (FigSpec)
 import App.Util.Selector (envVal, field, listElement)
+import App.View.Util (FigSpec)
 import Bind ((↦))
 import Lattice (neg)
 import Module (File(..))

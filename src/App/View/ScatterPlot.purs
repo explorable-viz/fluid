@@ -2,20 +2,20 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, SelState, Selectable, 𝕊, ViewSelector, from, record, isPrimary, isSecondary)
-import App.Util.Selector (field, listElement, scatterPlot)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, from, record, isPrimary, isSecondary)
+import App.Util.Selector (ViewSelSetter, field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (toNumber)
+import Data.Tuple (snd)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
+import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
+import Util ((!))
 import Util.Map (get)
 import Val (Val)
-import Foreign.Object (Object, fromFoldable)
-import Util ((!))
-import Data.Tuple (snd)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -25,20 +25,31 @@ newtype ScatterPlot = ScatterPlot
    }
 
 type ScatterPlotHelpers =
-   { point_attrs :: ScatterPlot -> PointIndex -> Object String }
+   { point_attrs :: ScatterPlot -> PointIndex -> Object String
+   }
 
-foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot Unit -- draws 
+foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot
 
-drawScatterPlot' :: Renderer ScatterPlot Unit
-drawScatterPlot' = drawScatterPlot
-   { point_attrs }
-
-instance Drawable ScatterPlot Unit where
-   draw divId suffix redraw view viewState =
-      drawScatterPlot' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw scatterPlotSelector
+scatterPlotHelpers :: ScatterPlotHelpers
+scatterPlotHelpers =
+   { point_attrs
+   }
+   where
+   point_attrs :: ScatterPlot -> PointIndex -> Object String
+   point_attrs (ScatterPlot { points }) { i } =
+      fromFoldable
+         [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 1.6 else if isSecondary sel then 1.25 else 1.0) ]
       where
-      scatterPlotSelector :: ViewSelector PointIndex
-      scatterPlotSelector { i } = scatterPlot <<< field f_data <<< listElement i
+      Point { y } = points ! i
+      sel = snd y
+      point_smallRadius = 2
+
+instance Drawable ScatterPlot where
+   draw rSpec figVal _ redraw =
+      drawScatterPlot scatterPlotHelpers uiHelpers rSpec =<< selListener figVal redraw point
+      where
+      point :: ViewSelSetter PointIndex
+      point { i } = listElement i >>> field f_data >>> scatterPlot
 
 instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
    from r = ScatterPlot
@@ -49,14 +60,3 @@ instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
       }
 
 type PointIndex = { i :: Int }
-
-point_smallRadius :: Int
-point_smallRadius = 2
-
-point_attrs :: ScatterPlot -> PointIndex -> Object String
-point_attrs (ScatterPlot { points }) { i } =
-   fromFoldable
-      [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 1.6 else if isSecondary sel then 1.25 else 1.0) ]
-   where
-   Point { y } = points ! i
-   sel = snd y

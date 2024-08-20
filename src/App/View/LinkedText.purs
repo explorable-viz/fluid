@@ -8,7 +8,7 @@ import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Primitive (string, unpack)
 import Val (Val)
 
-foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText Unit
+foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText
 
 type LinkedTextHelpers = {}
 newtype LinkedText = LinkedText (Array (Selectable String))
@@ -16,9 +16,14 @@ newtype LinkedText = LinkedText (Array (Selectable String))
 drawLinkedText' :: Renderer LinkedText Unit
 drawLinkedText' = drawLinkedText {}
 
-instance Drawable LinkedText Unit where
-   draw divId suffix redraw view viewState =
-      drawLinkedText' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw linkedTextSelector
+linkedTextHelpers :: LinkedTextHelpers
+linkedTextHelpers =
+   { test_field: "test"
+   }
+
+instance Drawable LinkedText where
+   draw rSpec figVal _ redraw =
+      drawLinkedText linkedTextHelpers uiHelpers rSpec =<< selListener figVal redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelector LinkedTextElem
       linkedTextSelector { i } = linkedText <<< listElement i

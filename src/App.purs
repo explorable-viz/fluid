@@ -2,8 +2,9 @@ module App where
 
 import Prelude hiding (absurd)
 
-import App.Fig (FigSpec, drawFig, drawFile, loadFig)
+import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
+import App.View.Util (FigSpec)
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..), Folder(..), loadFile')

@@ -2,37 +2,44 @@ module Test.Puppeteer where
 
 import Prelude
 
-import Control.Promise (Promise)
-import Control.Promise as Promise
-import Data.String as String
+import Control.Promise (Promise, fromAff, toAffE)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
-import Test.Toppokki as T
-import Util (check)
+import Effect.Class.Console (log)
+import Toppokki as T
 
-main :: Effect (Promise (Unit))
-main = Promise.fromAff tests
+launchFirefox :: Aff T.Browser
+launchFirefox = toAffE _launchFirefox
 
-tests :: Aff Unit
-tests = do
-   browser <- T.launch {}
+foreign import _launchFirefox :: Effect (Promise T.Browser)
+
+main :: Effect (Promise Unit)
+main = fromAff do
+   tests (launchFirefox)
+   tests (T.launch {})
+
+tests :: Aff T.Browser -> Aff Unit
+tests launchBrowser = do
+   browser <- launchBrowser
    page <- T.newPage browser
-   T.goto (T.URL "http://127.0.0.1:8080") {} page
-   --_ <- T.waitForNavigation { waitUntil: T.networkIdle2 } page
+   let url = "http://127.0.0.1:8080"
+   log ("Going to " <> url)
+   T.goto (T.URL url) page
    content <- T.content page
-   liftEffect (log content)
-   check (String.length content > 0) "Content is non-empty string"
-   checkForFigure page "fig-4"
-   checkForFigure page "fig-1"
-   checkForFigure page "fig-conv-2"
+   log content
+   checkForFigure page "fig-4-output"
+   checkForFigure page "fig-1-bar-chart"
+   checkForFigure page "fig-1-line-chart"
+   checkForFigure page "fig-conv-2-output"
+
+   pure unit
+
    T.close browser
 
 checkForFigure :: T.Page -> String -> Aff Unit
 checkForFigure page id = do
-   let selector = T.Selector ("div#" <> id)
-   let options = { visible: true, timeout: 300000 }
-   _ <- T.pageWaitForSelector selector options page
-   liftEffect (log ("Found " <> id))
+   let selector = "svg#" <> id
+   log ("Waiting for " <> selector)
+   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
+   log ("Found " <> selector)
    pure unit
