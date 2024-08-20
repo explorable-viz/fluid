@@ -6,7 +6,7 @@ import Control.Promise (Promise, fromAff, toAffE)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
---import Foreign (unsafeFromForeign)
+import Foreign (unsafeFromForeign)
 import Toppokki as T
 
 launchFirefox :: Aff T.Browser
@@ -68,3 +68,12 @@ clickScatterPlotPoint page id = do
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
    _ <- T.click (T.Selector selector) page
    log ("Clicked on " <> selector)
+
+   --className <- T.unsafePageEval (T.Selector selector) "element => element.getAttribute('class')" page
+   radius <- T.unsafePageEval (T.Selector selector) "element => element.getAttribute('r')" page
+
+   if unsafeFromForeign radius == "3.2" then log "The circle's radius has changed as expected."
+   else log "The circle's radius did not change as expected."
+
+--if unsafeFromForeign className == "scatterplot-point selected-primary-transient" && unsafeFromForeign radius == "3.2" then log "The circle's class and radius have changed as expected."
+--else log "The circle's class and/or radius did not change as expected."
