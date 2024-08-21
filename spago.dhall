@@ -28,6 +28,8 @@ You can edit this file as you like.
   , "lists"
   , "maybe"
   , "newtype"
+  , "node-process"
+  , "node-buffer"
   , "nonempty"
   , "numbers"
   , "ordered-collections"
