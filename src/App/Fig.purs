@@ -63,19 +63,18 @@ setInputView x δvw fig = fig
 -- I want to take a gc, (possibly with dual) on Env B and Val B, and produce a connection on Env rs and Val rs
 -- to deal with rs reasonably, I need to define what an inert set is - which we can do as v0
 -- should this be more explicitly done on tuples?
--- from an input as B, I can obtain a ReactState S, it's just whether I wish to.
+-- from an input as B, I can obtain a ReactState S, it's just whether I wish to here.
 lift :: GaloisConnection (Env 𝔹) (Val 𝔹) -> GaloisConnection (Env (ReactState 𝔹)) (Val (ReactState 𝔹))
 lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    where
    fwd1 :: Env (ReactState 𝔹) -> Val (ReactState 𝔹)
    fwd1 γ = reactState <$> v0 <*> v1 <*> v2
       where
-      -- should v0 be gc_dual with a bwd
+      -- should v0 not be gc_dual with a bwd
+      -- deeper problems here regarding not inert (i.e. union topOf not inert, but solvable on their own)
       v0 = neg gc.fwd (topOf γ)
       v1 = gc.fwd (γ <#> getPersistent)
       v2 = gc.fwd (γ <#> getTransient)
-
-   -- of course, everything here is forced to be primary
 
    bwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
    bwd1 v = reactState <$> v0 <*> v1 <*> v2
