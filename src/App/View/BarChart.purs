@@ -2,8 +2,8 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState(..), Selectable, ViewSelector, 𝕊(..), colorShade, from, get_intOrNumber, record)
-import App.Util.Selector (barChart, barSegment)
+import App.Util (class Reflect, SelState(..), Selectable, 𝕊(..), colorShade, from, get_intOrNumber, record)
+import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
@@ -37,20 +37,50 @@ type BarChartHelpers =
    , tickEvery :: Int -> Int
    }
 
-foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart Unit
+foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart
 
-drawBarChart' :: Renderer BarChart Unit
-drawBarChart' = drawBarChart
+barChartHelpers :: BarChartHelpers
+barChartHelpers =
    { bar_attrs
    , tickEvery
    }
-
-instance Drawable BarChart Unit where
-   draw divId suffix redraw view viewState =
-      drawBarChart' { uiHelpers, divId, suffix, view, viewState } =<< selListener redraw barChartSelector
+   where
+   bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
+   bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
+      fromFoldable
+         [ "fill" ↦ case persistent of
+              None -> col
+              Secondary -> "url(#diagonalHatch-" <> show j <> ")"
+              Primary -> colorShade col (-40)
+         , "stroke-width" ↦ "1.5"
+         , "stroke-dasharray" ↦ case transient of
+              None -> "none"
+              Secondary -> "1 2"
+              Primary -> "2 2"
+         , "stroke-linecap" ↦ "round"
+         , "stroke" ↦
+              if persistent /= None || transient /= None then colorShade col (-70)
+              else col
+         ]
       where
-      barChartSelector :: ViewSelector BarSegmentCoordinate
-      barChartSelector { i, j } = barSegment i j >>> barChart
+      StackedBar { bars } = stackedBars ! i
+      Bar { z } = bars ! j
+      SelState { persistent, transient } = snd z
+      col = indexCol j
+
+   tickEvery :: Int -> Int
+   tickEvery n =
+      if n <= 2 * pow 10 m then 2 * pow 10 (m - 1)
+      else pow 10 m
+      where
+      m = floor (log (toNumber n) / log 10.0)
+
+instance Drawable BarChart where
+   draw rSpec figVal _ redraw =
+      drawBarChart barChartHelpers uiHelpers rSpec =<< selListener figVal redraw barSegment'
+      where
+      barSegment' :: ViewSelSetter BarSegmentCoordinate
+      barSegment' { i, j } = barSegment i j >>> barChart
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart
@@ -72,33 +102,3 @@ instance Reflect (Dict (Val (SelState 𝕊))) Bar where
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
-
-bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
-bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
-   fromFoldable
-      [ "fill" ↦ case persistent of
-           None -> col
-           Secondary -> "url(#diagonalHatch-" <> show j <> ")"
-           Primary -> colorShade col (-40)
-      , "stroke-width" ↦ "1.5"
-      , "stroke-dasharray" ↦ case transient of
-           None -> "none"
-           Secondary -> "1 2"
-           Primary -> "2 2"
-      , "stroke-linecap" ↦ "round"
-      , "stroke" ↦
-           if persistent /= None || transient /= None then colorShade col (-70)
-           else col
-      ]
-   where
-   StackedBar { bars } = stackedBars ! i
-   Bar { z } = bars ! j
-   SelState { persistent, transient } = snd z
-   col = indexCol j
-
-tickEvery :: Int -> Int
-tickEvery n =
-   if n <= 2 * pow 10 m then 2 * pow 10 (m - 1)
-   else pow 10 m
-   where
-   m = floor (log (toNumber n) / log 10.0)

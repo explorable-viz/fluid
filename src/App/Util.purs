@@ -30,14 +30,13 @@ import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, definitely', error, spyWhen)
+import Util (type (×), Endo, Setter, definitely', error, spyWhen)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
-type ViewSelector a = a -> Endo (Selector Val) -- convert mouse event data to view selector
 
 -- Selection has two dimensions: persistent/transient and primary/secondary. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
@@ -51,7 +50,7 @@ newtype SelState a = SelState
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf (SelState { persistent, transient }) = highlightIf (persistent ∨ transient)
 
-persist :: forall a. Endo a -> Endo (SelState a)
+persist :: forall a. Setter (SelState a) a
 persist δα = over SelState \s -> s { persistent = δα s.persistent }
 
 selState :: forall a. a -> a -> SelState a
@@ -150,12 +149,14 @@ eventData = target >>> unsafeEventData
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
 selector :: EventType -> Selector Val
-selector = case _ of
-   EventType "mousedown" -> (over SelState (report <<< \s -> s { persistent = neg s.persistent }) <$> _)
-   EventType "mouseenter" -> (over SelState (report <<< \s -> s { transient = true }) <$> _)
-   EventType "mouseleave" -> (over SelState (report <<< \s -> s { transient = false }) <$> _)
-   EventType _ -> error "Unsupported event type"
+selector (EventType ev) = (over SelState (report <<< setSel ev) <$> _)
    where
+   setSel :: String -> Endo { persistent :: 𝔹, transient :: 𝔹 }
+   setSel s sel
+      | s == "mousedown" = sel { persistent = neg sel.persistent }
+      | s == "mouseenter" = sel { transient = true }
+      | s == "mouseleave" = sel { transient = false }
+      | otherwise = error "Unsupported event type"
    report = spyWhen tracing.mouseEvent "Setting SelState to " show
 
 -- https://stackoverflow.com/questions/5560248

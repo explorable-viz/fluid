@@ -1,7 +1,6 @@
-const http = require('http');
+
 const express = require('express');
 const serve = require('express-static');
-const puppeteer = require('puppeteer');
 require('http-shutdown').extend();
 
 const app = express();
@@ -33,5 +32,4 @@ function serverDown()
     }
     console.log('Everything is cleanly shutdown.');
   });
-
 }

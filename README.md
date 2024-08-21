@@ -24,6 +24,7 @@
 
 #### Running tests on command line
 - `yarn build` and then `yarn test` for core tests
+- `yarn build-puppeteer` and then `yarn test-puppeteer` to run puppeteer tests
 
 #### Running tests in browser
 - As per command-line tests above, but run `yarn test-browser`

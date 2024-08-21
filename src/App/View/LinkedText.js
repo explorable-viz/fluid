@@ -33,8 +33,8 @@ function setSelState (
 
 function drawLinkedText_ (
    linkedTextHelpers,
+   uiHelpers,
    {
-      uiHelpers,
       divId,
       suffix,
       view
@@ -45,10 +45,10 @@ function drawLinkedText_ (
       const div = d3.select('#' + divId)
       let rootElement = div.selectAll('#' + divId)
       div.text(view._1)
-      div.attr('class', 'transparent-text')
+      div.attr('class', 'linked-text')
 
       setSelState(linkedTextHelpers, uiHelpers, div, view,  selListener)
-   } 
+   }
 }
 
-export var drawLinkedText = x1 => x2 => x3 => drawLinkedText_(x1, x2, x3)
+export var drawLinkedText = x1 => x2 => x3 => x4 => drawLinkedText_(x1, x2, x3, x4)

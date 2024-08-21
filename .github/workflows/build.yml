@@ -4,21 +4,64 @@ on: [workflow_call]
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macOS-14]
+    runs-on: ${{ matrix.os }}
+
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
           node-version: 22
     - name: build-and-test
+    - name: enable-glob
+      run: |
+        shopt -s extglob nullglob globstar
+      if: runner.os == 'Linux'
+    - name: test
       run: |
         yarn install
         set -x -e
-        shopt -s extglob nullglob globstar
         yarn purs-tidy check src/**/*.purs test/**/*.purs
         yarn build
         yarn test
         yarn build-app
         yarn puppeteer browsers install chrome
+        yarn puppeteer browsers install firefox
         yarn build-puppeteer
-      #  yarn test-puppeteer
+        yarn test-puppeteer
+
+  deploy:
+    runs-on: ubuntu-22.04
+    needs: test
+    if: github.ref == 'refs/heads/release'
+    steps:
+    - uses: actions/checkout@v4
+    - name: build
+      run: |
+        yarn install
+        yarn build-app
+    - name: gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: dist/app/
+        keep_files: true
+
+  deploy-artifact:
+    runs-on: ubuntu-22.04
+    needs: test
+    if: github.ref == 'refs/heads/develop' && github.repository == 'rolyp/popl25-web-artifact'
+    steps:
+    - uses: actions/checkout@v4
+    - name: build
+      run: |
+        yarn install
+        yarn build-artifact
+    - name: gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: dist/artifact/
+        keep_files: true
