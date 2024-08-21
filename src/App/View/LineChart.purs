@@ -96,7 +96,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) Point where
 instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
-      , points: record from <$> from (get f_data r)
+      , points: record from <$> from ((get f_data r))
       }
 
 instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
