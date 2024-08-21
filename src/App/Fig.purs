@@ -91,7 +91,7 @@ selectionResultLift fig@{ v, dir: LinkedOutputs } =
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = lift (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
- - Lift doesn't act on tuples rn, but I don't think this is a problem yet?
+   -- Lift doesn't act on tuples rn, but I don't think this is a problem yet?
    γ1 = gc.bwd (v)
    v1 = gc.fwd (γ1)
 
@@ -123,7 +123,7 @@ selectionResult fig@{ γ0, v, dir: LinkedOutputs } =
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
 
-   v1 × γ1 = gc.bwd (_.persistent <$> (unwrap <$> v))
+   v1 × γ1 = gc.bwd (v <#> unwrap >>> _.persistent)
    v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
 
 selectionResult fig@{ v0, γ, dir: LinkedInputs } =

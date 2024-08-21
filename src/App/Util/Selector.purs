@@ -103,7 +103,7 @@ envVal x δv γ =
    assert (x ∈ γ) $ update δv x γ
 
 {-
-envRVal :: Var -> Relector Val -> Relector Env
+envRVal :: Var -> Setter (Env (ReactState 𝔹)) (Val (ReactState 𝔹))
 envRVal x δv γ =
    assert (x ∈ γ) $ update δv x γ
 -}
