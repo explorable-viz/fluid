@@ -42,7 +42,7 @@ function setSelState (
    rootElement.select('.table-caption')
       .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
    rootElement.select('.filter-toggle')
-      .on('mousedown', e => { filterToggleListener(e) })
+      .on('mousedown', e => { console.log("Here"); filterToggleListener(e) })
 }
 
 function drawTable_ (

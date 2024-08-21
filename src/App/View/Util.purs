@@ -13,6 +13,7 @@ import GaloisConnection (GaloisConnection)
 import Lattice (𝔹, Raw, (∨))
 import Module (File)
 import SExpr as S
+import Unsafe.Coerce (unsafeCoerce)
 import Util (Endo, Setter)
 import Val (Env, Val)
 import Web.Event.EventTarget (EventListener, eventListener)
@@ -27,6 +28,12 @@ pack x = View \k -> k x
 
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
+
+unsafeUnpack :: forall a. Drawable a => View -> a
+unsafeUnpack vw = unpack vw (unsafeCoerce (\x -> x))
+
+unsafeView :: forall a. Drawable a => Setter View a
+unsafeView δvw vw = pack (δvw (unsafeUnpack vw))
 
 selListener :: forall a. Setter Fig (Val (SelState 𝔹)) -> Redraw -> ViewSelSetter a -> Effect EventListener
 selListener figVal redraw selector =

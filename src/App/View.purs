@@ -9,15 +9,16 @@ import App.View.LinkedText (LinkedText)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
 import App.View.ScatterPlot (ScatterPlot)
-import App.View.TableView (TableView(..))
-import App.View.Util (View, pack)
+import App.View.TableView (TableView(..), table)
+import App.View.Util (View, pack, unsafeUnpack)
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import DataType (cBarChart, cCons, cLineChart, cLinkedText, cMultiView, cNil, cScatterPlot)
+import Dict (Dict)
 import Val (BaseVal(..), Val(..))
 
--- Convert annotated value to appropriate view, discarding top-level annotations for now.
--- Ignore view state for now..
+-- Convert annotated value to appropriate view.
+-- Note: discards top-level annotation (see https://github.com/explorable-viz/fluid/issues/1033)
 view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
 view title (Val _ (Constr c (u : Nil))) _
    | c == cBarChart = pack (record from u :: BarChart)
@@ -27,8 +28,14 @@ view title (Val _ (Constr c (u : Nil))) _
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> from u
-view title u@(Val _ (Constr c _)) _
+view title u@(Val _ (Constr c _)) vw
    | c == cNil || c == cCons =
-        pack (TableView { title, filter: true, table: record identity <$> from u })
+        pack (maybe (TableView { title, filter: true, table: table' }) (table (const table')) vw')
+        where
+        vw' :: Maybe TableView
+        vw' = unsafeUnpack <$> vw
+
+        table' :: Array (Dict (Val (SelState 𝕊)))
+        table' = record identity <$> from u
 view title (Val _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
