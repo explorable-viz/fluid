@@ -87,13 +87,13 @@ lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
 {-}
 selectionResultLift :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
 selectionResultLift fig@{ v, dir: LinkedOutputs } =
-   (arℝ <$> v <*> v1) × (to𝕊 <$> ] report (y1)
+   (arℝ <$> v <*> v1) × (to𝕊 <$> report (y1))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = lift (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
  - Lift doesn't act on tuples rn, but I don't think this is a problem yet?
-   v1 × γ1 = gc.bwd (v)
-   v2 × γ2 = gc.bwd (v)
+   γ1 = gc.bwd (v)
+   v1 = gc.fwd (γ1)
 
 selectionResultLift fig@{ v0, γ, dir: LinkedInputs } =
    (toℝ <$> v0 <*> report (selState <$> v1 <*> v2)) ×
