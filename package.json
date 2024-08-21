@@ -35,8 +35,7 @@
     "test-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
     "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
     "build-puppeteer": "yarn tidy && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js",
-    "test-puppeteer": "node puppeteer.js"
-  },
+    "test-puppeteer": "yarn puppeteer browsers install chrome && yarn puppeteer browsers install firefox && node puppeteer.js"},
   "dependencies": {
     "@codemirror/commands": "6.2.2",
     "@codemirror/state": "6.2.0",
