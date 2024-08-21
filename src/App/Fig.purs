@@ -75,6 +75,8 @@ lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
       v1 = gc.fwd (γ <#> getPersistent)
       v2 = gc.fwd (γ <#> getTransient)
 
+   -- of course, everything here is forced to be primary
+
    bwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
    bwd1 v = reactState <$> v0 <*> v1 <*> v2
       where
