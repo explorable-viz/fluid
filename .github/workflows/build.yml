@@ -35,8 +35,6 @@ jobs:
         yarn build
         yarn test
         yarn build-app
-        yarn puppeteer browsers install chrome
-        yarn puppeteer browsers install firefox
         yarn build-puppeteer
         yarn test-puppeteer
 
