@@ -62,13 +62,15 @@ setInputView x δvw fig = fig
 
 -- I want to take a gc, (possibly with dual) on Env B and Val B, and produce a connection on Env rs and Val rs
 -- to deal with rs reasonably, I need to define what an inert set is - which we can do as v0
+-- should this be more explicitly done on tuples?
+-- from an input as B, I can obtain a ReactState S, it's just whether I wish to.
 lift :: GaloisConnection (Env 𝔹) (Val 𝔹) -> GaloisConnection (Env (ReactState 𝔹)) (Val (ReactState 𝔹))
 lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    where
    fwd1 :: Env (ReactState 𝔹) -> Val (ReactState 𝔹)
    fwd1 γ = reactState <$> v0 <*> v1 <*> v2
       where
-      -- should v0 be gc_dual
+      -- should v0 be gc_dual with a bwd
       v0 = neg gc.fwd (topOf γ)
       v1 = gc.fwd (γ <#> getPersistent)
       v2 = gc.fwd (γ <#> getTransient)
@@ -79,6 +81,27 @@ lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
       v0 = neg gc.bwd (topOf v)
       v1 = gc.bwd (v <#> getPersistent)
       v2 = gc.bwd (v <#> getTransient)
+
+{-}
+selectionResultLift :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
+selectionResultLift fig@{ v, dir: LinkedOutputs } =
+   (combinetworeactstates <$> v <*> v1) × (not sure how we get inert here, probably doable in GC, actually? <$> γ0 <*> report (y1)
+   where
+   report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
+   GC gc = lift (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
+ - Lift doesn't act on tuples rn, but I don't think this is a problem yet?
+   v1 × γ1 = gc.bwd (v)
+   v2 × γ2 = gc.bwd (v)
+
+selectionResultLift fig@{ v0, γ, dir: LinkedInputs } =
+   (toℝ <$> v0 <*> report (selState <$> v1 <*> v2)) ×
+      wrap (mapWithKey (\x v -> asℝ <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
+   where
+   report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
+   GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
+   γ1 × v1 = gc.bwd (γ <#> unwrap >>> _.persistent)
+   γ2 × v2 = gc.bwd (γ <#> unwrap >>> _.transient)
+-}
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
