@@ -3,10 +3,14 @@ module Test.Puppeteer where
 import Prelude
 
 import Control.Promise (Promise, fromAff, toAffE)
+import Data.Foldable (sequence_)
+import Data.Tuple (snd)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
+import Test.Test (TestSuite)
 import Toppokki as T
+import Util ((×))
 
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
@@ -14,12 +18,16 @@ launchFirefox = toAffE _launchFirefox
 foreign import _launchFirefox :: Effect (Promise T.Browser)
 
 main :: Effect (Promise Unit)
-main = fromAff do
-   tests (launchFirefox)
-   tests (T.launch {})
+main = fromAff $ sequence_ (snd <$> tests)
 
-tests :: Aff T.Browser -> Aff Unit
-tests launchBrowser = do
+tests :: TestSuite
+tests =
+   [ "firefox-tests" × browserTests (launchFirefox)
+   , "chrome-tests" × browserTests (T.launch {})
+   ]
+
+browserTests :: Aff T.Browser -> Aff Unit
+browserTests launchBrowser = do
    browser <- launchBrowser
    page <- T.newPage browser
    let url = "http://127.0.0.1:8080"
