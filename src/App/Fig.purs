@@ -87,7 +87,7 @@ lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
 {-}
 selectionResultLift :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
 selectionResultLift fig@{ v, dir: LinkedOutputs } =
-   (combinetworeactstates <$> v <*> v1) × (not sure how we get inert here, probably doable in GC, actually? <$> γ0 <*> report (y1)
+   (arℝ <$> v <*> v1) × (to𝕊 <$> ] report (y1)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = lift (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
