@@ -91,14 +91,14 @@ let additions =
 let upstream =
       https://github.com/purescript/package-sets/releases/download/psc-0.15.4-20220808/packages.dhall sha256:60eee64b04ca0013fae3e02a69fc3b176105c6baa2f31865c67cd5f881a412fd
 
-let overrides = 
+let overrides =
 { node-fs =
     upstream.node-fs // {version = "v9.1.0"}
 }
 
 let additions =
-  { toppokki = 
-    { dependencies = 
+  { toppokki =
+    { dependencies =
         [ "aff-promise"
         , "functions"
         , "node-buffer"
@@ -115,11 +115,78 @@ let additions =
     , version =
          "v4.0.0"
     }
-    
+
   , js-promise-aff =
         { dependencies = [ "prelude" ]
         , repo = "https://github.com/purescript-contrib/purescript-js-promise-aff.git"
         , version = "v4.0.0"
+        }
+
+  , node-event-emitter =
+        { dependencies =
+            [ "effect"
+            , "either"
+            , "functions"
+            , "maybe"
+            , "nullable"
+            , "prelude"
+            , "unsafe-coerce"
+            ]
+        , repo = "https://github.com/purescript-node/purescript-node-event-emitter.git"
+        , version = "v3.0.0"
+        }
+
+  , node-process =
+        { dependencies =
+            [ "effect"
+            , "foreign"
+            , "foreign-object"
+            , "maybe"
+            , "node-event-emitter"
+            , "node-streams"
+            , "posix-types"
+            , "prelude"
+            , "unsafe-coerce"
+            ]
+        , repo = "https://github.com/purescript-node/purescript-node-process.git"
+        , version = "v11.2.0"
+        }
+
+  , optparse =
+        { dependencies =
+            [ "aff"
+            , "arrays"
+            , "bifunctors"
+            , "console"
+            , "control"
+            , "effect"
+            , "either"
+            , "enums"
+            , "exists"
+            , "exitcodes"
+            , "foldable-traversable"
+            , "free"
+            , "gen"
+            , "integers"
+            , "lazy"
+            , "lists"
+            , "maybe"
+            , "newtype"
+            , "node-buffer"
+            , "node-process"
+            , "node-streams"
+            , "nonempty"
+            , "numbers"
+            , "open-memoize"
+            , "partial"
+            , "prelude"
+            , "strings"
+            , "tailrec"
+            , "transformers"
+            , "tuples"
+            ]
+        , repo = "https://github.com/purescript-contrib/purescript-optparse.git"
+        , version = "v6.0.0"
         }
   }
 
