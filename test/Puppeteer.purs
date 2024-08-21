@@ -37,6 +37,11 @@ tests launchBrowser = do
    clickToggle page "fig-conv-2-input"
 
    clickScatterPlotPoint page "fig-4"
+   --------------
+   let selector = "table#fig-4-input-renewables > caption.table-caption"
+   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
+   captionText <- T.unsafePageEval (T.Selector selector) "element => element.textContent" page
+   log ("captionText " <> unsafeFromForeign captionText)
 
    T.close browser
 
@@ -69,8 +74,13 @@ clickScatterPlotPoint page id = do
    _ <- T.click (T.Selector selector) page
    log ("Clicked on " <> selector)
 
-   className <- T.unsafePageEval (T.Selector selector) "element => element.getAttribute('class')" page
-   radius <- T.unsafePageEval (T.Selector selector) "element => element.getAttribute('r')" page
+   className <- getAttributeValue page (T.Selector selector) "class"
+   radius <- getAttributeValue page (T.Selector selector) "r"
 
-   if unsafeFromForeign className == "scatterplot-point selected-primary-persistent selected-primary-transient" && unsafeFromForeign radius == "3.2" then log "The circle's class and radius have changed as expected."
+   if className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2" then log "The circle's class and radius have changed as expected."
    else log "The circle's class and/or radius did not change as expected."
+
+getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
+getAttributeValue page selector attribute = do
+   attrValue <- T.unsafePageEval selector ("element => element.getAttribute('" <> attribute <> "')") page
+   pure (unsafeFromForeign attrValue)
