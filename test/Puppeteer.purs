@@ -8,7 +8,7 @@ import Data.Tuple (snd)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
-import Test.Test (TestSuite)
+import Test.Util (TestSuite)
 import Toppokki as T
 import Util ((×))
 
