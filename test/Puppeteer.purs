@@ -37,11 +37,7 @@ tests launchBrowser = do
    clickToggle page "fig-conv-2-input"
 
    clickScatterPlotPoint page "fig-4"
-   --------------
-   let selector = "table#fig-4-input-renewables > caption.table-caption"
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
-   captionText <- T.unsafePageEval (T.Selector selector) "element => element.textContent" page
-   log ("captionText " <> unsafeFromForeign captionText)
+   checkCaptionText page "table#fig-4-input-renewables > caption.table-caption"
 
    T.close browser
 
@@ -63,7 +59,6 @@ clickToggle page id = do
    log ("Found " <> selector <> ", clicking the toggle button")
    _ <- T.click (T.Selector selector) page
    log ("Clicked on " <> selector)
-
    _ <- T.pageWaitForSelector (T.Selector ("div#" <> id)) { visible: true } page
    pure unit
 
@@ -73,10 +68,8 @@ clickScatterPlotPoint page id = do
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
    _ <- T.click (T.Selector selector) page
    log ("Clicked on " <> selector)
-
    className <- getAttributeValue page (T.Selector selector) "class"
    radius <- getAttributeValue page (T.Selector selector) "r"
-
    if className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2" then log "The circle's class and radius have changed as expected."
    else log "The circle's class and/or radius did not change as expected."
 
@@ -84,3 +77,10 @@ getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
 getAttributeValue page selector attribute = do
    attrValue <- T.unsafePageEval selector ("element => element.getAttribute('" <> attribute <> "')") page
    pure (unsafeFromForeign attrValue)
+
+checkCaptionText :: T.Page -> String -> Aff Unit
+checkCaptionText page selector = do
+   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
+   captionText <- T.unsafePageEval (T.Selector selector) "element => element.textContent" page
+   log ("captionText " <> unsafeFromForeign captionText)
+   pure unit
