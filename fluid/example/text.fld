@@ -1,14 +1,11 @@
 let totalFor c rows =
     sum [ row.output | row <- rows, row.country == c ];
-let compareBio c1 c2 dataset =
-   let c1Rec = head [ row | row <- dataset, row.country == c1, row.year == 2015, row.energyType == "Bio" ];
-       c2Rec = head [ row | row <- dataset, row.country == c2, row.year == 2015, row.energyType == "Bio" ]
-   in if c1Rec.output <= c2Rec.output
-      then "less"
-      else "more";
 let data2015 = [ row | row <- renewables, row.year == 2015 ];
     countryData = [ { x: c, bars: [ { y: "output", z: totalFor c data2015 } ] }
-                | c <- ["China", "USA", "Germany"] ]
+                | c <- ["China", "USA", "Germany"] ];
+    germany = head [ row | row <- data2015, row.country == "Germany", row.energyType == "Bio" ];
+    usa = head [ row | row <- data2015, row.country == "USA", row.energyType == "Bio" ];
+    china = head [ row | row <- data2015, row.country == "China", row.energyType == "Bio" ]
 in MultiView {|
    "bar-chart" :=
       BarChart {
@@ -18,5 +15,5 @@ in MultiView {|
    "one" :=
        LinkedText( ["The total for the USA is: ", numToStr (totalFor "USA" data2015), ", compared to that of China, which is actually: ", numToStr (totalFor "China" data2015) ] ),
    "two" :=
-       LinkedText( ["By inspecting the data, we can see that Germany produces ", compareBio "Germany" "USA" data2015, " Bio energy than the USA"] )
+       LinkedText( ["By inspecting the data, we can see that Germany produced ", gradedLeqP germany.output usa.output, " Bio energy than the USA (for the year 2015), whilst the USA produced ", gradedLeqP usa.output china.output, " than China." ] )
 |}
