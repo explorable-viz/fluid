@@ -14,7 +14,7 @@ import Util ((×))
 fig :: FigSpec
 fig =
    { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
-   , imports: []
+   , imports: [ "lib/nombre" ]
    , file: File "text"
    , inputs: [ "renewables" ]
    }

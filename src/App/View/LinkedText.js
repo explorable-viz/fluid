@@ -21,12 +21,8 @@ function setSelState (
    view,
    selListener
 ) {
-   console.log("Exercising setSelState")
    div.selectAll('span').each(function (textElem) {
-      console.log("Making selection!")
-      console.log("content: ", view[textElem.i])
       const sel = selState(view[textElem.i])
-      console.log("sel is: ", sel)
       d3.select(this)
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
@@ -47,13 +43,10 @@ function drawLinkedText_ (
    selListener
 ) {
    return () => {
-      console.log(view)
       const div = d3.select('#' + divId)
       const childId = divId + '-' + suffix
       let rootElement = div.selectAll('#' + childId)
       if (rootElement.empty()) {
-         console.log("Root element empty!")
-         console.log("adding entries: ", view.entries())
          rootElement = div.append("div").attr("id", childId).text(view._1).attr('class', 'transparent-text-parent')
          
 
