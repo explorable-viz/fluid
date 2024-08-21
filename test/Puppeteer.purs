@@ -7,6 +7,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
+
 import Toppokki as T
 
 launchFirefox :: Aff T.Browser
@@ -37,7 +38,6 @@ tests launchBrowser = do
    clickToggle page "fig-conv-2-input"
 
    clickScatterPlotPoint page "fig-4"
-   checkCaptionText page "table#fig-4-input-renewables > caption.table-caption"
 
    T.close browser
 
@@ -72,6 +72,7 @@ clickScatterPlotPoint page id = do
    radius <- getAttributeValue page (T.Selector selector) "r"
    if className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2" then log "The circle's class and radius have changed as expected."
    else log "The circle's class and/or radius did not change as expected."
+   checkCaptionText page "table#fig-4-input-renewables > caption.table-caption"
 
 getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
 getAttributeValue page selector attribute = do
@@ -82,5 +83,8 @@ checkCaptionText :: T.Page -> String -> Aff Unit
 checkCaptionText page selector = do
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
    captionText <- T.unsafePageEval (T.Selector selector) "element => element.textContent" page
-   log ("captionText " <> unsafeFromForeign captionText)
+   let text = unsafeFromForeign captionText
+   --log ("captionText " <> text)
+   if text == "renewables (4 of 240)" then log "The caption contains the expected value."
+   else log "The caption does not contain the expected value."
    pure unit
