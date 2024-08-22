@@ -20,6 +20,7 @@ import Web.Event.EventTarget (EventListener, eventListener)
 
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
+type Redraw2 = Endo Fig2 -> Effect Unit
 
 newtype View = View (forall r. (forall a. Drawable a => a -> r) -> r)
 newtype ViewState = ViewState (forall r. (forall a b. Drawable2 a b => b -> r) -> r)
@@ -50,7 +51,8 @@ class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
 
 class Drawable2 a b | b -> a where
-   draw2 :: RendererSpec2 a b -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
+   draw2 :: RendererSpec2 a b -> Setter Fig2 (Sel Val) -> Setter Fig2 ViewState -> Redraw2 -> Effect Unit
+   initialState :: b
 
 drawView :: RendererSpec View -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal figView redraw =
@@ -106,7 +108,7 @@ type Fig =
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
    , dir :: Direction
-   , in_views :: Dict (Maybe View)
+   , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View
    }
 
@@ -118,7 +120,7 @@ type Fig2 =
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
    , dir :: Direction
-   , in_viewStates :: Dict (Maybe ViewState)
+   , in_viewStates :: Dict (ViewState) -- strengthen this
    , out_viewState :: Maybe ViewState
    }
 
