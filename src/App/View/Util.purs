@@ -14,7 +14,7 @@ import Lattice (𝔹, Raw, (∨))
 import Module (File)
 import SExpr as S
 import Unsafe.Coerce (unsafeCoerce)
-import Util (Endo, Setter)
+import Util (type (×), Endo, Setter)
 import Val (Env, Val)
 import Web.Event.EventTarget (EventListener, eventListener)
 
@@ -22,12 +22,19 @@ type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
 newtype View = View (forall r. (forall a. Drawable a => a -> r) -> r)
+newtype View2 = View2 (forall r. (forall a b. Drawable2 a b => a × b -> r) -> r)
 
 pack :: forall a. Drawable a => a -> View
 pack x = View \k -> k x
 
+pack2 :: forall a b. Drawable2 a b => a × b -> View2
+pack2 x = View2 \k -> k x
+
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
+
+unpack2 :: forall r. View2 -> (forall a b. Drawable2 a b => a × b -> r) -> r
+unpack2 (View2 vw) k = vw k
 
 unsafeUnpack :: forall a. Drawable a => View -> a
 unsafeUnpack vw = unpack vw (unsafeCoerce (\x -> x))
@@ -42,6 +49,9 @@ selListener figVal redraw selector =
 class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
 
+class Drawable2 a b where
+   draw2 :: RendererSpec2 a b -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
+
 drawView :: RendererSpec View -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal figView redraw =
    unpack vw (\view -> draw (rSpec { view = view }) figVal figView redraw)
@@ -51,6 +61,13 @@ type RendererSpec a =
    { divId :: HTMLId
    , suffix :: String
    , view :: a
+   }
+
+type RendererSpec2 a b =
+   { divId :: HTMLId
+   , suffix :: String
+   , view :: a
+   , viewState :: b
    }
 
 type Renderer a = UIHelpers -> RendererSpec a -> EventListener -> Effect Unit
