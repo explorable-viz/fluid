@@ -6,7 +6,7 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelState, 𝕊, Sel, as𝕊, selState, to𝕊)
 import App.Util.SelSetter (envVal)
 import App.View (view)
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
+import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, Fig2, drawView)
 import Bind (Var)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
@@ -23,7 +23,7 @@ import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, error, spyWhen, (×))
 import Util.Map (get, insert, lookup, mapWithKey)
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
 
@@ -87,6 +87,9 @@ selectionResult fig@{ γ, dir: LinkedInputs } =
    GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
    γ1 × v1 = gc.bwd (γ <#> unwrap >>> _.persistent)
    γ2 × v2 = gc.bwd (γ <#> unwrap >>> _.transient)
+
+selectionResult2 :: Fig2 -> Val (SelState 𝕊) × Env (SelState 𝕊)
+selectionResult2 _ = error "todo"
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =

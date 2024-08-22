@@ -106,8 +106,20 @@ type Fig =
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
    , dir :: Direction
-   , in_views :: Dict (Maybe View) -- strengthen this
+   , in_views :: Dict (Maybe View)
    , out_view :: Maybe View
+   }
+
+type Fig2 =
+   { spec :: FigSpec
+   , s :: Raw S.Expr
+   , γ :: Sel Env
+   , v :: Sel Val
+   , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
+   , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
+   , dir :: Direction
+   , in_viewStates :: Dict (Maybe ViewState)
+   , out_viewState :: Maybe ViewState
    }
 
 -- ======================
