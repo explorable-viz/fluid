@@ -74,17 +74,23 @@ clickScatterPlotPoint page id = do
    else log "The circle's class and/or radius did not change as expected."
    checkCaptionText page "table#fig-4-input-renewables > caption.table-caption"
 
+checkCaptionText :: T.Page -> String -> Aff Unit
+checkCaptionText page selector = do
+   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
+   captionText <- textContentValue page (T.Selector selector)
+   if captionText == "renewables (4 of 240)" then log "The caption contains the expected value."
+   else log "The caption does not contain the expected value."
+   pure unit
+
+-------------
+
 getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
 getAttributeValue page selector attribute = do
    attrValue <- T.unsafePageEval selector ("element => element.getAttribute('" <> attribute <> "')") page
    pure (unsafeFromForeign attrValue)
 
-checkCaptionText :: T.Page -> String -> Aff Unit
-checkCaptionText page selector = do
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
-   captionText <- T.unsafePageEval (T.Selector selector) "element => element.textContent" page
-   let text = unsafeFromForeign captionText
+textContentValue :: T.Page -> T.Selector -> Aff String
+textContentValue page selector = do
+   captionText <- T.unsafePageEval selector "element => element.textContent" page
    --log ("captionText " <> text)
-   if text == "renewables (4 of 240)" then log "The caption contains the expected value."
-   else log "The caption does not contain the expected value."
-   pure unit
+   pure (unsafeFromForeign captionText)
