@@ -1,0 +1,12 @@
+let points = [
+    { x: 2010, y: 1000 },
+    { x: 2011, y: 14 },
+    { x: 2012, y: 23 },
+    { x: 2013, y: 24 },
+    { x: 2014, y: 13 },
+    { x: 2015, y: 65 },
+    { x: 2016, y : 1000}
+] in LineChart {
+    caption: "Dummy Linechart!",
+    plots: [ LinePlot { name: "Dummy", data: (slice 1 5 points)} ] 
+}
