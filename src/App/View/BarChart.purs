@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState(..), Selectable, 𝕊(..), colorShade, from, get_intOrNumber, record)
 import App.Util.SelSetter (ViewSelSetter, barChart, barSegment)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Renderer, Renderer2, selListener, selListener2, uiHelpers)
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
@@ -22,6 +22,8 @@ newtype BarChart = BarChart
    , stackedBars :: Array StackedBar
    }
 
+newtype BarChartState = BarChartState Unit
+
 newtype StackedBar = StackedBar
    { x :: Selectable String
    , bars :: Array Bar
@@ -38,6 +40,7 @@ type BarChartHelpers =
    }
 
 foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart
+foreign import drawBarChart2 :: BarChartHelpers -> Renderer2 BarChart BarChartState
 
 barChartHelpers :: BarChartHelpers
 barChartHelpers =
@@ -81,6 +84,14 @@ instance Drawable BarChart where
       where
       barSegment' :: ViewSelSetter BarSegmentCoordinate
       barSegment' { i, j } = barSegment i j >>> barChart
+
+instance Drawable2 BarChart BarChartState where
+   draw2 rSpec figVal _ redraw =
+      drawBarChart2 barChartHelpers uiHelpers rSpec =<< selListener2 figVal redraw barSegment'
+      where
+      barSegment' :: ViewSelSetter BarSegmentCoordinate
+      barSegment' { i, j } = barSegment i j >>> barChart
+   initialState = BarChartState unit
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart

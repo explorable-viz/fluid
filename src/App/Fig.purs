@@ -5,8 +5,8 @@ import Prelude hiding (absurd, compare)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState, 𝕊, Sel, as𝕊, selState, to𝕊)
 import App.Util.SelSetter (envVal)
-import App.View (view)
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, Fig2, drawView)
+import App.View (view, view2)
+import App.View.Util (Direction(..), Fig, Fig2, FigSpec, HTMLId, View, drawView, drawView2)
 import Bind (Var)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
@@ -70,6 +70,16 @@ drawFig divId fig = do
    out_view × in_views =
       selectionResult fig # unsafePartial
          (flip (view str.output) fig.out_view *** \(Env γ) -> mapWithKey view γ <*> fig.in_views)
+
+drawFig2 :: HTMLId -> Fig2 -> Effect Unit
+drawFig2 divId fig = do
+   drawView2 { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
+   ?_
+   where
+   redraw = (_ $ fig) >>> drawFig2 divId
+   out_view × in_views =
+      selectionResult2 fig # unsafePartial
+         (view2 str.output *** \(Env γ) -> mapWithKey view2 γ)
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =

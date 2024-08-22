@@ -10,7 +10,7 @@ import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
 import App.View.ScatterPlot (ScatterPlot)
 import App.View.TableView (TableView(..), table)
-import App.View.Util (View, pack, unsafeUnpack)
+import App.View.Util (View, View2(..), pack, pack2, unsafeUnpack)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..), maybe)
 import DataType (cBarChart, cCons, cLineChart, cLinkedText, cMultiView, cNil, cScatterPlot)
@@ -40,17 +40,17 @@ view title u@(Val _ (Constr c _)) vw
 view title (Val _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
 
-view2 :: Partial => String -> Val (SelState 𝕊) -> View
+view2 :: Partial => String -> Val (SelState 𝕊) -> View2
 view2 title (Val _ (Constr c (u : Nil)))
-   | c == cBarChart = pack (record from u :: BarChart)
-   | c == cLineChart = pack (record from u :: LineChart)
-   | c == cScatterPlot = pack (record from u :: ScatterPlot)
-   | c == cLinkedText = pack (from u :: LinkedText)
-   | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
+   | c == cBarChart = pack2 (record from u :: BarChart)
+   | c == cLineChart = pack2 (record from u :: LineChart)
+   | c == cScatterPlot = pack2 (record from u :: ScatterPlot)
+   | c == cLinkedText = pack2 (from u :: LinkedText)
+   | c == cMultiView = pack2 (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> from u
 view2 title u@(Val _ (Constr c _))
    | c == cNil || c == cCons =
-        pack (TableView { title, filter: true, table: record identity <$> from u })
+        pack2 (TableView { title, filter: true, table: record identity <$> from u })
 view2 title (Val _ (Matrix r)) =
-   pack (MatrixView { title, matrix: matrixRep r })
+   pack2 (MatrixView { title, matrix: matrixRep r })

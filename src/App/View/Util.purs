@@ -29,8 +29,11 @@ newtype ViewState = ViewState (forall r. (forall a b. Drawable2 a b => b -> r) -
 pack :: forall a. Drawable a => a -> View
 pack x = View \k -> k x
 
-pack2 :: forall a b. Drawable2 a b => b -> ViewState
-pack2 x = ViewState \k -> k x
+pack2 :: forall a b. Drawable2 a b => a -> View2
+pack2 x = View2 \k -> k x
+
+pack2' :: forall a b. Drawable2 a b => b -> ViewState
+pack2' x = ViewState \k -> k x
 
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
@@ -52,6 +55,10 @@ unsafeView δvw vw = pack (δvw (unsafeUnpack vw))
 
 selListener :: forall a. Setter Fig (Sel Val) -> Redraw -> ViewSelSetter a -> Effect EventListener
 selListener figVal redraw selector =
+   eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
+
+selListener2 :: forall a. Setter Fig2 (Sel Val) -> Redraw2 -> ViewSelSetter a -> Effect EventListener
+selListener2 figVal redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where
@@ -86,6 +93,7 @@ type RendererSpec2 a b =
    }
 
 type Renderer a = UIHelpers -> RendererSpec a -> EventListener -> Effect Unit
+type Renderer2 a b = UIHelpers -> RendererSpec2 a b -> EventListener -> Effect Unit
 
 type UIHelpers =
    { val :: forall a. Selectable a -> a

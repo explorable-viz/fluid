@@ -199,3 +199,4 @@ function drawBarChart_ (
 }
 
 export var drawBarChart = x1 => x2 => x3 => x4 => drawBarChart_(x1, x2, x3, x4)
+export var drawBarChart2 = x1 => x2 => x3 => x4 => drawBarChart_(x1, x2, x3, x4)
