@@ -39,3 +39,18 @@ view title u@(Val _ (Constr c _)) vw
         table' = record identity <$> from u
 view title (Val _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
+
+view2 :: Partial => String -> Val (SelState 𝕊) -> View
+view2 title (Val _ (Constr c (u : Nil)))
+   | c == cBarChart = pack (record from u :: BarChart)
+   | c == cLineChart = pack (record from u :: LineChart)
+   | c == cScatterPlot = pack (record from u :: ScatterPlot)
+   | c == cLinkedText = pack (from u :: LinkedText)
+   | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
+        where
+        vws = view title <$> from u
+view2 title u@(Val _ (Constr c _))
+   | c == cNil || c == cCons =
+        pack (TableView { title, filter: true, table: record identity <$> from u })
+view2 title (Val _ (Matrix r)) =
+   pack (MatrixView { title, matrix: matrixRep r })
