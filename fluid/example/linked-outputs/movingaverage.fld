@@ -3,17 +3,24 @@ let mean l = (sum l) / (length l);
 let mAvg l window = 
     let startInd = window;
         endInd = (length l) - window
-    in [ mean (slice (ind - window) (ind + window) l) | ind <- [startInd..endInd] ];
-let points = [
-    { x: 2010, y: 10 },
-    { x: 2011, y: 14 },
-    { x: 2012, y: 23 },
-    { x: 2013, y: 24 },
-    { x: 2014, y: 13 },
-    { x: 2015, y: 65 },
-    { x: 2016, y :72}
-];
-let avgs = zipWith (fun xV yV -> { x: xV, y: yV}) [2011..2015] (mAvg (map (fun point -> point.y) points) 1)
+    in [ mean (slice (ind - window) (ind + window + 1) l) | ind <- [startInd..endInd] ];
+
+let zipPairs xs ys = zipWith (fun x y -> { x : x, y : y}) xs ys;
+
+let getXs records = 
+    map (fun rec -> rec.x) records; 
+
+let getYs records = 
+    map (fun rec -> rec.y) records;
+
+let mAvgChop l window = 
+    let start = window;
+        end = (length l) - window;
+        indices = slice start end (getXs l);
+        avgs = mAvg (getYs l) 1
+    in zipPairs indices avgs;
+
+let avgs = mAvgChop points 1
 in LineChart {
     caption: "Dummy Linechart!",
     plots: [ LinePlot { name: "Dummy", data: points}, LinePlot { name: "Avg", data: avgs} ] 

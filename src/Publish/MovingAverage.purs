@@ -9,12 +9,13 @@ import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..))
 import Util ((×))
+import Bind ((↦))
 
 fig :: FigSpec
-fig = { datasets: [ ]
+fig = { datasets: [ "points" ↦ "example/linked-outputs/linechartpoints" ]
       , imports: [ ]
       , file: File "/linked-outputs/movingaverage"
-      , inputs: [ ]   
+      , inputs: [ "points" ]   
 }
 
 main :: Effect Unit
