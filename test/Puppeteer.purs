@@ -14,6 +14,7 @@ launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
 
 foreign import _launchFirefox :: Effect (Promise T.Browser)
+foreign import checkLineChartPlotPoints :: T.Page -> Aff Unit
 
 main :: Effect (Promise Unit)
 main = fromAff do
@@ -38,6 +39,7 @@ tests launchBrowser = do
    clickToggle page "fig-conv-2-input"
 
    clickScatterPlotPoint page "fig-4"
+   checkLineChartPlotPoints page
 
    T.close browser
 
