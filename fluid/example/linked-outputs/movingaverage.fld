@@ -1,13 +1,19 @@
 let mean l = (sum l) / (length l);
 -- window = size of lookahead/lookback ie (n - 1) / 2
 
-let mAvg l window = 
+let cMAvg l window = 
     let startInd = window;
         endInd = (length l) - window
-    in [ mean (slice (ind - window) (ind + window + 1) l) | ind <- [startInd..endInd] ];
+    in [ mean (slice (ind - window) (ind + window) l) | ind <- [startInd..endInd] ];
 
-let mAvg' l window = 
-    [ mean (slice (ind - window) (ind + window + 1) l) | ind <- [0..(length l)] ];
+let cMAvg' l window = 
+    [ mean (slice (ind - window) (ind + window) l) | ind <- [0..(length l)] ];
+
+let sMAvg l window =
+    [ mean (slice (ind - window) ind l) | ind <- [0..(length l)]];
+
+let sMAvg' l window =
+    [ mean (slice (ind - window) ind l) | ind <- [window..(length l)]];
 
 let zipPairs xs ys = zipWith (fun x y -> { x : x, y : y}) xs ys;
 
@@ -21,25 +27,31 @@ let mAvgChop l window =
     let start = window;
         end = (length l) - window;
         indices = slice start end (getXs l);
-        avgs = mAvg (getYs l) window
+        avgs = cMAvg (getYs l) window
     in zipPairs indices avgs;
 
 let mAvgShrink l window =
     let indices = getXs l;
-        avgs = mAvg' (getYs l) window
+        avgs = cMAvg' (getYs l) window
     in zipPairs indices avgs;
 
-let avgs = mAvgChop points 1;
-    avgs' = mAvgShrink points 1
+let sAvgChop l window =
+    let indices = slice window (length l) (getXs l);
+        avgs = sMAvg (getYs l) window
+    in zipPairs indices avgs;
+
+let cavgs = mAvgChop points 1;
+    cavgs' = mAvgShrink points 1;
+    savgs = sAvgChop points 3
 in MultiView {|
     "line-chart-1" :=
         LineChart {
             caption: "Dummy Linechart",
-            plots: [ LinePlot { name: "Dummy", data: points}, LinePlot { name: "Avg", data: avgs} ] 
+            plots: [ LinePlot { name: "Dummy", data: points}, LinePlot { name: "Avg", data: cavgs} ] 
         },
     "line-chart-2" :=
         LineChart {
             caption: "Dummy Linechart 2",
-            plots: [ LinePlot { name: "Avg'", data: avgs'} ]
+            plots: [ LinePlot { name: "Central", data: cavgs'}, LinePlot { name: "Simple", data: savgs} ]
         }
 |}

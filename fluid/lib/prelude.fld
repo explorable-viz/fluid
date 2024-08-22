@@ -241,4 +241,4 @@ let nub l =
     nub' l [];
 
 -- Int -> Int -> [a] -> [a]
-let slice begin end l = take (end - begin) (drop begin l);
+let slice begin end l = take (end - begin + 1) (drop begin l);
