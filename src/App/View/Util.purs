@@ -2,7 +2,7 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
+import App.Util (SelState, Selectable, 𝕊, Sel, selClasses, selClassesFor, selectionEventData)
 import App.Util.SelSetter (ViewSelSetter)
 import Bind (Bind, Var)
 import Data.Maybe (Maybe)
@@ -35,14 +35,14 @@ unsafeUnpack vw = unpack vw (unsafeCoerce (\x -> x))
 unsafeView :: forall a. Drawable a => Setter View a
 unsafeView δvw vw = pack (δvw (unsafeUnpack vw))
 
-selListener :: forall a. Setter Fig (Val (SelState 𝔹)) -> Redraw -> ViewSelSetter a -> Effect EventListener
+selListener :: forall a. Setter Fig (Sel Val) -> Redraw -> ViewSelSetter a -> Effect EventListener
 selListener figVal redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where
-   draw :: RendererSpec a -> Setter Fig (Val (SelState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
+   draw :: RendererSpec a -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
 
-drawView :: RendererSpec View -> Setter Fig (Val (SelState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
+drawView :: RendererSpec View -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal figView redraw =
    unpack vw (\view -> draw (rSpec { view = view }) figVal figView redraw)
 
@@ -84,8 +84,8 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , γ :: Env (SelState 𝔹)
-   , v :: Val (SelState 𝔹)
+   , γ :: Sel Env
+   , v :: Sel Val
    , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
    , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
    , dir :: Direction

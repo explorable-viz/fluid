@@ -36,7 +36,7 @@ import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
-type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
+type Selector (f :: Type -> Type) = Endo (Sel f) -- modifies selection state
 
 -- Selection has two dimensions: persistent/transient and primary/secondary. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
@@ -46,6 +46,8 @@ newtype SelState a = SelState
    { persistent :: a
    , transient :: a
    }
+
+type Sel (f :: Type -> Type) = f (SelState 𝔹)
 
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf (SelState { persistent, transient }) = highlightIf (persistent ∨ transient)

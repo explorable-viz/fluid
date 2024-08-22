@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, 𝕊, as𝕊, selState, to𝕊)
+import App.Util (SelState, 𝕊, Sel, as𝕊, selState, to𝕊)
 import App.Util.SelSetter (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -18,7 +18,7 @@ import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection ((***)) as GC
 import GaloisConnection (GaloisConnection(..), dual, meet)
-import Lattice (𝔹, class BoundedMeetSemilattice, Raw, botOf, erase, topOf)
+import Lattice (class BoundedMeetSemilattice, Raw, botOf, erase, topOf)
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -36,7 +36,7 @@ str =
    , input: "input"
    }
 
-selectOutput :: Setter Fig (Val (SelState 𝔹))
+selectOutput :: Setter Fig (Sel Val)
 selectOutput δv fig@{ dir, γ, v } = fig
    { v = δv v
    , γ = if dir == LinkedInputs then botOf γ else γ
@@ -48,7 +48,7 @@ setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw
    }
 
-selectInput :: Var -> Setter Fig (Val (SelState 𝔹))
+selectInput :: Var -> Setter Fig (Sel Val)
 selectInput x δv fig@{ dir, γ, v } = fig
    { γ = envVal x δv γ
    , v = if dir == LinkedOutputs then botOf v else v

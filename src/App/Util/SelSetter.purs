@@ -2,7 +2,7 @@ module App.Util.SelSetter where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState, persist)
+import App.Util (Sel, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
@@ -15,7 +15,7 @@ import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection setters.
-type SelSetter f g = Setter (f (SelState 𝔹)) (g (SelState 𝔹))
+type SelSetter f g = Setter (Sel f) (Sel g)
 type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
 
 fst :: SelSetter Val Val
@@ -24,7 +24,7 @@ fst = constrArg cPair 0
 snd :: SelSetter Val Val
 snd = constrArg cPair 1
 
-some :: Setter (Val (SelState 𝔹)) 𝔹
+some :: Setter (Sel Val) 𝔹
 some = constr cSome
 
 multiView :: SelSetter Val Val
@@ -77,15 +77,15 @@ constrArg c n δv = unsafePartial $ case _ of
          u1 <- us !! n
          updateAt n (δv u1) us
 
-constr :: Ctr -> Setter (Val (SelState 𝔹)) 𝔹
+constr :: Ctr -> Setter (Sel Val) 𝔹
 constr c' δα = unsafePartial $ case _ of
    Val α (Constr c vs) | c == c' -> Val (persist δα α) (Constr c vs)
 
-dict :: Setter (Val (SelState 𝔹)) 𝔹
+dict :: Setter (Sel Val) 𝔹
 dict δα = unsafePartial $ case _ of
    Val α (Dictionary d) -> Val (persist δα α) (Dictionary d)
 
-dictKey :: String -> Setter (Val (SelState 𝔹)) 𝔹
+dictKey :: String -> Setter (Sel Val) 𝔹
 dictKey s δα = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first $ persist δα) s d
 
@@ -93,11 +93,11 @@ dictVal :: String -> SelSetter Val Val
 dictVal s δv = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (second δv) s d
 
-envVal :: Var -> Setter (Env (SelState 𝔹)) (Val (SelState 𝔹))
+envVal :: Var -> Setter (Sel Env) (Sel Val)
 envVal x δv γ =
    assert (x ∈ γ) $ update δv x γ
 
-listCell :: Int -> Setter (Val (SelState 𝔹)) 𝔹
+listCell :: Int -> Setter (Sel Val) 𝔹
 listCell n δα = unsafePartial $ case _ of
    Val α (Constr c Nil) | n == 0 && c == cNil -> Val (persist δα α) (Constr c Nil)
    Val α (Constr c (v : v' : Nil)) | c == cCons ->
