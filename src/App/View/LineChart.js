@@ -156,3 +156,4 @@ function drawLineChart_ (
 }
 
 export var drawLineChart = x1 => x2 => x3 => x4 => drawLineChart_(x1, x2, x3, x4)
+export var drawLineChart2 = x1 => x2 => x3 => x4 => drawLineChart_(x1, x2, x3, x4)

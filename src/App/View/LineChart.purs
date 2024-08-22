@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.SelSetter (ViewSelSetter, field, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Renderer, Renderer2, selListener, selListener2, uiHelpers)
 import Bind ((↦))
 import Data.Foldable (maximum, minimum)
 import Data.Int (toNumber)
@@ -22,6 +22,8 @@ newtype LineChart = LineChart
    { caption :: Selectable String
    , plots :: Array LinePlot
    }
+
+newtype LineChartState = LineChartState Unit
 
 newtype LinePlot = LinePlot
    { name :: Selectable String
@@ -78,6 +80,7 @@ lineChartHelpers =
    point_smallRadius = 2
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
+foreign import drawLineChart2 :: LineChartHelpers -> Renderer2 LineChart LineChartState
 
 instance Drawable LineChart where
    draw rSpec figVal _ redraw =
@@ -86,6 +89,16 @@ instance Drawable LineChart where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =
          linePoint j >>> listElement i >>> field f_plots >>> lineChart
+
+instance Drawable2 LineChart LineChartState where
+   draw2 rSpec figVal _ redraw =
+      drawLineChart2 lineChartHelpers uiHelpers rSpec =<< selListener2 figVal redraw point
+      where
+      point :: ViewSelSetter PointCoordinate
+      point { i, j } =
+         linePoint j >>> listElement i >>> field f_plots >>> lineChart
+
+   initialState = LineChartState unit
 
 instance Reflect (Dict (Val (SelState 𝕊))) Point where
    from r = Point
