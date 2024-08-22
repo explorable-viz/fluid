@@ -1,12 +1,20 @@
+let mean l = (sum l) / (length l);
+-- window = size of lookahead/lookback ie (n - 1) / 2
+let mAvg l window = 
+    let startInd = window;
+        endInd = (length l) - window
+    in [ mean (slice (ind - window) (ind + window) l) | ind <- [startInd..endInd] ];
 let points = [
-    { x: 2010, y: 1000 },
+    { x: 2010, y: 10 },
     { x: 2011, y: 14 },
     { x: 2012, y: 23 },
     { x: 2013, y: 24 },
     { x: 2014, y: 13 },
     { x: 2015, y: 65 },
-    { x: 2016, y : 1000}
-] in LineChart {
+    { x: 2016, y :72}
+];
+let avgs = zipWith (fun xV yV -> { x: xV, y: yV}) [2011..2015] (mAvg (map (fun point -> point.y) points) 1)
+in LineChart {
     caption: "Dummy Linechart!",
-    plots: [ LinePlot { name: "Dummy", data: (slice 1 5 points)} ] 
+    plots: [ LinePlot { name: "Dummy", data: points}, LinePlot { name: "Avg", data: avgs} ] 
 }
