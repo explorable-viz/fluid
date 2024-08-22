@@ -8,13 +8,11 @@ import App.View.Util (class Drawable, Renderer, selListener, uiHelpers, unsafeVi
 import Data.Newtype (class Newtype, over)
 import Dict (Dict)
 import Effect (Effect)
-import Effect.Class.Console (log)
 import Util (Endo, Setter)
 import Util.Map (filterKeys, get)
 import Util.Set (isEmpty)
 import Val (BaseVal, Val(..))
 import Web.Event.EventTarget (EventListener, eventListener)
-import Web.Event.Internal.Types (Event)
 
 newtype TableView = TableView
    { title :: String
@@ -66,18 +64,9 @@ instance Drawable TableView where
       tableViewSelSetter :: ViewSelSetter CellIndex
       tableViewSelSetter { __n, colName } = listElement (__n - 1) <<< field colName
 
-      blah :: FilterToggler -> Event -> Effect Unit
-      blah toggler ev = do
-         let s = eventData ev
-         log s
-         let δtable = toggler s
-         let δvw = unsafeView δtable
-         let δfig = figView δvw
-         redraw δfig
-
       filterToggleListener :: FilterToggler -> Effect EventListener
       filterToggleListener toggler =
-         eventListener (blah toggler)
+         eventListener (eventData >>> toggler >>> unsafeView >>> figView >>> redraw)
 
 -- convert mouse event data (here, always rowKey) to view change
 type FilterToggler = String -> Endo TableView
