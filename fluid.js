@@ -1,7 +1,34 @@
-const process = require('process');
+#!/usr/bin/env node
+const { program } = require('commander');
+const fs = require('node:fs');
+const filenameRegex = /\w+\.yml/ //may need to expand character set
 
-import('./output-es/Fluid/index.js').then(({ main }) => {
-    args = process.argv.slice(2) //ignore first 2 elements (node and file path)
-    console.log(args)
-    //main();
-  })
+program.command('load')
+  .arguments('<file>')
+  .action(function(file) {
+    if (program.args.length > 2)
+    {
+      console.error("Only 2 commands allowed: load <filename>.yml")
+    }
+    else
+    {
+      if (file.match(filenameRegex) != null)
+      {
+        try
+        {
+          const data = fs.readFileSync(__dirname + "/" + file, 'utf8');
+          console.log(data);
+        }
+        catch (err)
+        {
+          console.error(err);
+        }
+      }
+      else
+      {
+        console.error("Invalid input file: Must be a .yml file.")
+      }
+    }
+  });
+
+program.parse()
