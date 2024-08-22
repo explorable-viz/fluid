@@ -23,6 +23,7 @@ type Redraw = Endo Fig -> Effect Unit
 type Redraw2 = Endo Fig2 -> Effect Unit
 
 newtype View = View (forall r. (forall a. Drawable a => a -> r) -> r)
+newtype View2 = View2 (forall r. (forall a b. Drawable2 a b => a -> r) -> r)
 newtype ViewState = ViewState (forall r. (forall a b. Drawable2 a b => b -> r) -> r)
 
 pack :: forall a. Drawable a => a -> View
@@ -34,11 +35,17 @@ pack2 x = ViewState \k -> k x
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
-unpack2 :: forall r. ViewState -> (forall a b. Drawable2 a b => b -> r) -> r
-unpack2 (ViewState vw) k = vw k
+unpack2 :: forall r. View2 -> (forall a b. Drawable2 a b => a -> r) -> r
+unpack2 (View2 vw) k = vw k
+
+unpack2' :: forall r. ViewState -> (forall a b. Drawable2 a b => b -> r) -> r
+unpack2' (ViewState vw) k = vw k
 
 unsafeUnpack :: forall a. Drawable a => View -> a
 unsafeUnpack vw = unpack vw (unsafeCoerce (\x -> x))
+
+unsafeUnpack2 :: forall a b. Drawable2 a b => ViewState -> b
+unsafeUnpack2 vw = unpack2' vw (unsafeCoerce (\x -> x))
 
 unsafeView :: forall a. Drawable a => Setter View a
 unsafeView δvw vw = pack (δvw (unsafeUnpack vw))
@@ -50,13 +57,19 @@ selListener figVal redraw selector =
 class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
 
-class Drawable2 a b | b -> a where
+class Drawable2 a b | a -> b, b -> a where
    draw2 :: RendererSpec2 a b -> Setter Fig2 (Sel Val) -> Setter Fig2 ViewState -> Redraw2 -> Effect Unit
    initialState :: b
 
 drawView :: RendererSpec View -> Setter Fig (Sel Val) -> Setter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal figView redraw =
-   unpack vw (\view -> draw (rSpec { view = view }) figVal figView redraw)
+   unpack vw \view ->
+      draw (rSpec { view = view }) figVal figView redraw
+
+drawView2 :: RendererSpec2 View2 ViewState -> Setter Fig2 (Sel Val) -> Setter Fig2 ViewState -> Redraw2 -> Effect Unit
+drawView2 rSpec@{ view: vw, viewState } figVal figView redraw =
+   unpack2 vw \view ->
+      draw2 (rSpec { view = view, viewState = unsafeUnpack2 viewState }) figVal figView redraw
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =
