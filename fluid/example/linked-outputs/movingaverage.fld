@@ -4,16 +4,16 @@ let mean l = (sum l) / (length l);
 let cMAvg l window = 
     let startInd = window;
         endInd = (length l) - window
-    in [ mean (slice (ind - window) (ind + window) l) | ind <- [startInd..endInd] ];
+    in [ (sum (slice (ind - window) (ind + window) l)) / (1 + 2 * window) | ind <- [startInd..endInd] ];
 
 let cMAvg' l window = 
-    [ mean (slice (ind - window) (ind + window) l) | ind <- [0..(length l)] ];
+    [ (sum (slice (ind - window) (ind + window) l)) / (1 + 2 * window) | ind <- [0..(length l)] ];
 
 let sMAvg l window =
-    [ mean (slice (ind - window) ind l) | ind <- [0..(length l)]];
+    [ (sum (slice (ind - window) ind l)) / window | ind <- [0..(length l)]];
 
 let sMAvg' l window =
-    [ mean (slice (ind - window) ind l) | ind <- [window..(length l)]];
+    [ (sum (slice (ind - window) ind l)) / window | ind <- [window..(length l)]];
 
 let zipPairs xs ys = zipWith (fun x y -> { x : x, y : y}) xs ys;
 
