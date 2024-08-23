@@ -50,8 +50,8 @@ function drawLineChart_ (
       const { point_smallRadius, plot_max_y, plot_max_x, plot_min_x } = lineChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
-            width = 230 - margin.left - margin.right,
-            height = 185 - margin.top - margin.bottom,
+            width = 330 - margin.left - margin.right,
+            height = 285 - margin.top - margin.bottom,
             y_max = Math.max(...plots.map(plot_max_y)),
             x_min = Math.min(...plots.map(plot_min_x)),
             x_max = Math.max(...plots.map(plot_max_x)),

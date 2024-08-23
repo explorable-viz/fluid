@@ -38,6 +38,7 @@ lineChart = constrArg cLineChart 0
 
 linePoint :: Int -> SelSetter Val Val
 linePoint i = listElement i >>> field f_data >>> constrArg cLinePlot 0
+
 -- linePoint i = field f_y >>> listElement i >>> field f_data >>> constrArg cLinePlot 0
 barChart :: SelSetter Val Val
 barChart = constrArg cBarChart 0

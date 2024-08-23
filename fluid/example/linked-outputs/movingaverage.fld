@@ -40,6 +40,11 @@ let sAvgChop l window =
         avgs = sMAvg (getYs l) window
     in zipPairs indices avgs;
 
+let sAvgShrink l window =
+    let indices = getXS l;
+        avgs = sMavg' (getYs l) window
+    in zipPairs indices avgs;
+
 let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
 
 let cavgs = mAvgChop (newPoints 0) 1;
