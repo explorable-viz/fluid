@@ -1,4 +1,3 @@
-let mean l = (sum l) / (length l);
 -- window = size of lookahead/lookback ie (n - 1) / 2
 
 let cMAvg l window = 
@@ -13,15 +12,13 @@ let sMAvg l window =
     [ (sum (slice (ind - window) (ind + 1) l)) / window | ind <- [window..(length l)]];
 
 let sMAvg' l window =
-    [ (sum (slice (ind - window) ind l)) / window | ind <- [0..(length l)]];
+    [ (sum (slice (ind - window) (ind + 1) l)) / window | ind <- [0..(length l)]];
 
 let zipPairs xs ys = zipWith (fun x y -> { x : x, y : y}) xs ys;
 
-let getXs records = 
-    map (fun rec -> rec.x) records; 
+let getXs = map (fun rec -> rec.x); 
 
-let getYs records = 
-    map (fun rec -> rec.y) records;
+let getYs = map (fun rec -> rec.y) ;
 
 let mAvgChop l window = 
     let start = window;
@@ -41,15 +38,15 @@ let sAvgChop l window =
     in zipPairs indices avgs;
 
 let sAvgShrink l window =
-    let indices = getXS l;
-        avgs = sMavg' (getYs l) window
+    let indices = getXs l;
+        avgs = sMAvg' (getYs l) window
     in zipPairs indices avgs;
 
 let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
 
 let cavgs = mAvgChop (newPoints 0) 1;
     cavgs' = mAvgShrink (newPoints 0) 1;
-    savgs = sAvgChop (newPoints 0) 2
+    savgs = sAvgShrink (newPoints 0) 2
 in MultiView {|
     "line-chart-1" :=
         LineChart {
