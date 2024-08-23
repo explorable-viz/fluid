@@ -49,6 +49,6 @@ in MultiView {|
     "line-chart-1" :=
         LineChart {
             caption: "Dummy Linechart",
-            plots: [ LinePlot { name: "Simple", data: savgs}, LinePlot { name: "Central", data: cavgs'}, LinePlot { name: "Original Curve", data: (newPoints 0)} ] 
+            plots: [ LinePlot { name: "Simple", data: savgs}, LinePlot { name: "Central", data: cavgs}, LinePlot { name: "Original Curve", data: (newPoints 0)} ] 
         }
 |}

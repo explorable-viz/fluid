@@ -21,9 +21,6 @@ function setSelState (
    listener
 ) {
    rootElement.selectAll('.point').each(function (point) {
-      // console.log("Selstate Point: ", point)
-      // const sel = selState(point.y)
-      // console.log("Selstate: ", sel)
       d3.select(this) // won't work inside arrow function :/
          .attrs(point_attrs(nameCol)(chart)(point))
          .on('mousedown', e => { listener(e) })
@@ -103,7 +100,6 @@ function drawLineChart_ (
             const [i, plot] = i_plot
             rootElement.selectAll('point')
                .data([...plot.points.entries()].map(([j, p]) => {
-                  console.log("Point: ", p)
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
