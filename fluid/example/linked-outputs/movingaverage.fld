@@ -4,16 +4,16 @@ let mean l = (sum l) / (length l);
 let cMAvg l window = 
     let startInd = window;
         endInd = (length l) - window
-    in [ (sum (slice (ind - window) (ind + window) l)) / (1 + 2 * window) | ind <- [startInd..endInd] ];
+    in [ (sum (slice (ind - window) (ind + window + 1) l)) / (1 + 2 * window) | ind <- [startInd..endInd] ];
 
 let cMAvg' l window = 
-    [ (sum (slice (ind - window) (ind + window) l)) / (1 + 2 * window) | ind <- [0..(length l)] ];
+    [ (sum (slice (ind - window) (ind + window + 1) l)) / (1 + 2 * window) | ind <- [0..(length l)] ];
 
 let sMAvg l window =
-    [ (sum (slice (ind - window) ind l)) / window | ind <- [0..(length l)]];
+    [ (sum (slice (ind - window) (ind + 1) l)) / window | ind <- [window..(length l)]];
 
 let sMAvg' l window =
-    [ (sum (slice (ind - window) ind l)) / window | ind <- [window..(length l)]];
+    [ (sum (slice (ind - window) ind l)) / window | ind <- [0..(length l)]];
 
 let zipPairs xs ys = zipWith (fun x y -> { x : x, y : y}) xs ys;
 
@@ -42,18 +42,13 @@ let sAvgChop l window =
 
 let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
 
-let cavgs = mAvgChop (newPoints 1) 1;
-    cavgs' = mAvgShrink (newPoints 1) 1;
-    savgs = sAvgChop (newPoints 0) 3
+let cavgs = mAvgChop (newPoints 0) 1;
+    cavgs' = mAvgShrink (newPoints 0) 1;
+    savgs = sAvgChop (newPoints 0) 2
 in MultiView {|
     "line-chart-1" :=
         LineChart {
             caption: "Dummy Linechart",
-            plots: [ LinePlot { name: "Test", data: (newPoints 1)}, LinePlot { name: "Central 1", data: cavgs} ] 
-        },
-    "line-chart-2" :=
-        LineChart {
-            caption: "Dummy Linechart 2",
-            plots: [ LinePlot { name: "Central 2", data: cavgs'}, LinePlot { name: "Original Curve", data: (newPoints 0)} ]
+            plots: [ LinePlot { name: "Simple", data: savgs}, LinePlot { name: "Central", data: cavgs'}, LinePlot { name: "Original Curve", data: (newPoints 0)} ] 
         }
 |}
