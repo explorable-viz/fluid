@@ -40,18 +40,20 @@ let sAvgChop l window =
         avgs = sMAvg (getYs l) window
     in zipPairs indices avgs;
 
-let cavgs = mAvgChop points 1;
-    cavgs' = mAvgShrink points 1;
-    savgs = sAvgChop points 3
+let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
+
+let cavgs = mAvgChop (newPoints 1) 1;
+    cavgs' = mAvgShrink (newPoints 1) 1;
+    savgs = sAvgChop (newPoints 0) 3
 in MultiView {|
     "line-chart-1" :=
         LineChart {
             caption: "Dummy Linechart",
-            plots: [ LinePlot { name: "Dummy", data: points}, LinePlot { name: "Avg", data: cavgs} ] 
+            plots: [ LinePlot { name: "Test", data: (newPoints 1)}, LinePlot { name: "Central 1", data: cavgs} ] 
         },
     "line-chart-2" :=
         LineChart {
             caption: "Dummy Linechart 2",
-            plots: [ LinePlot { name: "Central", data: cavgs'}, LinePlot { name: "Simple", data: savgs} ]
+            plots: [ LinePlot { name: "Central 2", data: cavgs'}, LinePlot { name: "Original Curve", data: (newPoints 0)} ]
         }
 |}

@@ -11,12 +11,19 @@ d3.selection.prototype.attrs = function(m) {
 
 function setSelState (
    { point_attrs },
+   { selState,
+     selClasses,
+     selClassesFor
+   },
    nameCol,
    rootElement,
    chart,
    listener
 ) {
    rootElement.selectAll('.point').each(function (point) {
+      // console.log("Selstate Point: ", point)
+      // const sel = selState(point.y)
+      // console.log("Selstate: ", sel)
       d3.select(this) // won't work inside arrow function :/
          .attrs(point_attrs(nameCol)(chart)(point))
          .on('mousedown', e => { listener(e) })
@@ -27,7 +34,11 @@ function setSelState (
 
 function drawLineChart_ (
    lineChartHelpers,
-   { val },
+   { val,
+     selState,
+     selClasses,
+     selClassesFor
+    },
    {
       divId,
       suffix,
@@ -92,14 +103,15 @@ function drawLineChart_ (
             const [i, plot] = i_plot
             rootElement.selectAll('point')
                .data([...plot.points.entries()].map(([j, p]) => {
+                  console.log("Point: ", p)
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
                .append('g')
                .append('circle')
                .attr('class', 'point')
-               .attr('cx', point => x(point.x))
-               .attr('cy', point => y(point.y))
+               .attr('cx', p => x(p.x))
+               .attr('cy', p => y(p.y))
          }
 
          rootElement
@@ -151,7 +163,7 @@ function drawLineChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
       }
-      setSelState(lineChartHelpers, nameCol, rootElement, { plots }, listener)
+      setSelState(lineChartHelpers, { selState, selClasses, selClassesFor}, nameCol, rootElement, { plots }, listener)
    }
 }
 
