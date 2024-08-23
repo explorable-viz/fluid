@@ -5,7 +5,8 @@ const filenameRegex = /\w+\.yml/ //may need to expand character set
 
 program.command('load')
   .arguments('<file>')
-  .action(function(file) {
+  .action(function(file)
+  {
     if (program.args.length > 2)
     {
       console.error("Only 2 commands allowed: load <filename>.yml")
@@ -16,7 +17,7 @@ program.command('load')
       {
         try
         {
-          const data = fs.readFileSync(__dirname + "/" + file, 'utf8');
+          const data = fs.readFileSync(__dirname + "/" + file, 'utf8'); //read data stream if file is large
           console.log(data);
         }
         catch (err)
