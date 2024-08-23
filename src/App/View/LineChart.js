@@ -11,6 +11,10 @@ d3.selection.prototype.attrs = function(m) {
 
 function setSelState (
    { point_attrs },
+   { selState,
+     selClasses,
+     selClassesFor
+   },
    nameCol,
    rootElement,
    chart,
@@ -27,7 +31,11 @@ function setSelState (
 
 function drawLineChart_ (
    lineChartHelpers,
-   { val },
+   { val,
+     selState,
+     selClasses,
+     selClassesFor
+    },
    {
       divId,
       suffix,
@@ -42,8 +50,8 @@ function drawLineChart_ (
       const { point_smallRadius, plot_max_y, plot_max_x, plot_min_x } = lineChartHelpers
       const childId = divId + '-' + suffix
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
-            width = 230 - margin.left - margin.right,
-            height = 185 - margin.top - margin.bottom,
+            width = 330 - margin.left - margin.right,
+            height = 285 - margin.top - margin.bottom,
             y_max = Math.max(...plots.map(plot_max_y)),
             x_min = Math.min(...plots.map(plot_min_x)),
             x_max = Math.max(...plots.map(plot_max_x)),
@@ -98,8 +106,8 @@ function drawLineChart_ (
                .append('g')
                .append('circle')
                .attr('class', 'point')
-               .attr('cx', point => x(point.x))
-               .attr('cy', point => y(point.y))
+               .attr('cx', p => x(p.x))
+               .attr('cy', p => y(p.y))
          }
 
          rootElement
@@ -151,7 +159,7 @@ function drawLineChart_ (
             .attr('dominant-baseline', 'bottom')
             .attr('text-anchor', 'middle')
       }
-      setSelState(lineChartHelpers, nameCol, rootElement, { plots }, listener)
+      setSelState(lineChartHelpers, { selState, selClasses, selClassesFor}, nameCol, rootElement, { plots }, listener)
    }
 }
 

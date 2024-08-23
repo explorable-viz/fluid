@@ -69,7 +69,7 @@ lineChartHelpers =
          ]
       where
       LinePlot plot = plots ! i
-      Point { y } = plot.points ! j
+      Point { x: _x, y } = plot.points ! j
       sel = snd y
       col = nameCol name
       fill = if isPersistent sel then flip colorShade (-30) else identity

@@ -1,0 +1,65 @@
+-- Utils
+let zipPairs xs ys = zipWith (fun x y -> { x : x, y : y}) xs ys;
+
+let getXs = map (fun rec -> rec.x); 
+
+let getYs = map (fun rec -> rec.y) ;
+
+-- window = size of lookahead/lookback ie (n - 1) / 2
+-- Central average, but stops near the ends of the sequence
+let cMAvg l window = 
+    let startInd = window;
+        endInd = (length l) - window
+    in [ (sum (slice (ind - window) (ind + window + 1) l)) / (1 + 2 * window) | ind <- [startInd..endInd] ];
+
+let mAvgChop l window = 
+    let start = window;
+        end = (length l) - window;
+        indices = slice start end (getXs l);
+        avgs = cMAvg (getYs l) window
+    in zipPairs indices avgs;
+
+-- Central average, but end points use incomplete data
+let cMAvg' l window = 
+    [ (sum (slice (ind - window) (ind + window + 1) l)) / (1 + 2 * window) | ind <- [0..(length l)] ];
+
+let mAvgShrink l window =
+    let indices = getXs l;
+        avgs = cMAvg' (getYs l) window
+    in zipPairs indices avgs;
+
+-- Simple (rearward) average, chops the beginning off the sequence
+let sMAvg l window =
+    [ (sum (slice (ind - window) (ind + 1) l)) / window | ind <- [window..(length l)]];
+
+let sAvgChop l window =
+    let indices = slice window (length l) (getXs l);
+        avgs = sMAvg (getYs l) window
+    in zipPairs indices avgs;
+
+-- Simple (rearward average), doesn't chop beginning off
+let sMAvg' l window =
+    [ (sum (slice (ind - window) (ind + 1) l)) / window | ind <- [0..(length l)]];
+let sAvgShrink l window =
+    let indices = getXs l;
+        avgs = sMAvg' (getYs l) window
+    in zipPairs indices avgs;
+
+-- ISSUE: With the ones that shrink, the values near the ends will be incorrect,
+--        since the actual number of points is less than the size of the window (or 1 + (2 * window))
+--        To fix this, need to check the constant that we divide by, but cannot just use length (since that gets dependency on whole list every time)
+
+let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
+
+let cavgs = mAvgChop (newPoints 0) 1;
+    cavgs' = mAvgShrink (newPoints 0) 1;
+    savgs = sAvgShrink (newPoints 0) 2
+in MultiView {|
+    "line-chart-1" :=
+        LineChart {
+            caption: "Dummy Linechart",
+            plots: [ LinePlot { name: "Simple", data: savgs}
+                   , LinePlot { name: "Central", data: cavgs}
+                   , LinePlot { name: "Original Curve", data: (newPoints 0)} ] 
+        }
+|}

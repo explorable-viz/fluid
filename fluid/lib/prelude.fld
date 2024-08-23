@@ -239,3 +239,6 @@ let nub l =
     let nub' [] _ = [];
         nub' (x : xs) ys = if x `elem` ys then nub' xs ys else x : nub' xs (x : ys) in
     nub' l [];
+
+-- Int -> Int -> [a] -> [a]
+let slice begin end l = take (end - begin) (drop begin l);
