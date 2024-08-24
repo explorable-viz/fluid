@@ -18,9 +18,9 @@
   },
   "homepage": "https://f.luid.org",
   "scripts": {
-    "clean-app": "rm -rf dist/app && mkdir -p dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app && cp -r web/pdf dist/app",
+    "clean-app": "rm -rf dist/app && mkdir -p dist/app && yarn copy-static-app",
     "build-app": "yarn tidy && yarn clean-app && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main App --to dist/app/app.js",
-    "refresh-app": "rm -rf dist/app/fluid && rm -rf dist/app/css && rm -rf dist/app/pdf && rm dist/app/index.html && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app && cp -r web/pdf dist/app",
+    "copy-static-app": "rm -rf dist/app/fluid && rm -rf dist/app/css && rm -rf dist/app/pdf && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app && cp -r web/pdf dist/app",
     "serve-app": "npx http-serve dist/app -a 127.0.0.1 -c-1",
     "clean-artifact": "rm -rf dist/artifact && mkdir -p dist/artifact && cp -r fluid dist/artifact && cp web/artifact.html dist/artifact/index.html && cp -r web/css dist/artifact",
     "build-artifact": "yarn clean-artifact && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Artifact --to dist/artifact/app.js",
