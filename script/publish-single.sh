@@ -12,7 +12,6 @@ NAME=$(basename $1 .purs)
 NAME_LISP_CASE=$(echo $NAME | sed 's/\([A-Z]\)/-\1/g' | tr 'A-Z' 'a-z' | sed 's/^-//')
 echo $NAME_LISP_CASE
 
-# turn into npm script?
 rm -rf dist/app/$NAME_LISP_CASE
 mkdir -p dist/app/$NAME_LISP_CASE
 yarn spago build --purs-args '--strict --censor-codes=UserDefinedWarning'
