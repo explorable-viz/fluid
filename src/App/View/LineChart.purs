@@ -66,11 +66,13 @@ lineChartHelpers =
          , "stroke-width" ↦ "1"
          , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
          , "fill" ↦ fill col
+         , "cx" ↦ show (fst x)
+         , "cy" ↦ show (fst y)
          ]
       where
       LinePlot plot = plots ! i
-      Point { x: _x, y } = plot.points ! j
-      sel = snd y
+      Point { x , y } = plot.points ! j
+      sel = snd y  -- ouch: discard x
       col = nameCol name
       fill = if isPersistent sel then flip colorShade (-30) else identity
 

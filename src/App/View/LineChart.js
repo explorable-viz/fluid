@@ -102,8 +102,6 @@ function drawLineChart_ (
                .append('g')
                .append('circle')
                .attr('class', 'linechart-point')
-               .attr('cx', p => x(p.x))
-               .attr('cy', p => y(p.y))
          }
 
          rootElement
