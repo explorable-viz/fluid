@@ -11,16 +11,12 @@ d3.selection.prototype.attrs = function(m) {
 
 function setSelState (
    { point_attrs },
-   { selState,
-     selClasses,
-     selClassesFor
-   },
    nameCol,
    rootElement,
    chart,
    listener
 ) {
-   rootElement.selectAll('.point').each(function (point) {
+   rootElement.selectAll('.linechart-point').each(function (point) {
       d3.select(this) // won't work inside arrow function :/
          .attrs(point_attrs(nameCol)(chart)(point))
          .on('mousedown', e => { listener(e) })
@@ -98,14 +94,14 @@ function drawLineChart_ (
 
          for (const i_plot of plots.entries()) {
             const [i, plot] = i_plot
-            rootElement.selectAll('point')
+            rootElement.selectAll('linechart-point')
                .data([...plot.points.entries()].map(([j, p]) => {
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
                .append('g')
                .append('circle')
-               .attr('class', 'point')
+               .attr('class', 'linechart-point')
                .attr('cx', p => x(p.x))
                .attr('cy', p => y(p.y))
          }
