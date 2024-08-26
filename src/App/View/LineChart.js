@@ -91,7 +91,6 @@ function drawLineChart_ (
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
-               .append('g')
                .append('circle')
                .attr('class', 'linechart-point')
          }
