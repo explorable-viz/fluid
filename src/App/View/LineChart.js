@@ -85,8 +85,7 @@ function drawLineChart_ (
             .attr('class', 'line')
             .attr('d', ([, plot]) => line1(plot.points))
 
-         for (const i_plot of plots.entries()) {
-            const [i, plot] = i_plot
+         for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
                .data([...plot.points.entries()].map(([j, p]) => {
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
