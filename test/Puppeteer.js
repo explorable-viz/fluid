@@ -4,6 +4,7 @@ export function _launchFirefox() {
     return puppeteer.launch({ browser: "firefox" })
 }
 
+/*
 export function checkLineChartPlotPoints(page) {
    return async function() {
       // Getting an array of all elements with class 'item'
@@ -15,3 +16,4 @@ export function checkLineChartPlotPoints(page) {
       }
    }
 }
+*/

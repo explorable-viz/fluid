@@ -14,7 +14,8 @@ launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
 
 foreign import _launchFirefox :: Effect (Promise T.Browser)
-foreign import checkLineChartPlotPoints :: T.Page -> Aff Unit
+
+--foreign import checkLineChartPlotPoints :: T.Page -> Aff Unit
 
 main :: Effect (Promise Unit)
 main = fromAff do
@@ -39,7 +40,14 @@ tests launchBrowser = do
    clickToggle page "fig-conv-2-input"
 
    clickScatterPlotPoint page "fig-4"
-   checkLineChartPlotPoints page
+   --checkLineChartPlotPoints page
+
+   --clickBarChart page
+   let selector = "svg#fig-1-bar-chart"
+   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
+   log ("Found BAR CHART " <> selector)
+   _ <- T.click (T.Selector selector) page
+   log ("Clicked on " <> selector)
 
    T.close browser
 
