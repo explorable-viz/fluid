@@ -75,7 +75,7 @@ lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
       -- deeper problems here regarding not inert (i.e. union topOf not inert, but solvable on their own)
       v0 = gc.fwd (botOf γ)
       v1 = gc.fwd (γ <#> getPersistent)
-      v2 = gc.fwd (getTransient <$> γ)
+      v2 = gc.fwd (γ <#> getTransient)
 
    bwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
    bwd1 v = reactState <$> v0 <*> v1 <*> v2
@@ -90,8 +90,6 @@ liftdual (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    fwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
    fwd1 γ = reactState <$> v0 <*> v1 <*> v2
       where
-      -- should v0 not be gc_dual with a bwd
-      -- deeper problems here regarding not inert (i.e. union topOf not inert, but solvable on their own)
       v0 = gc.fwd (botOf γ)
       v1 = gc.fwd (γ <#> getPersistent)
       v2 = gc.fwd (getTransient <$> γ)
@@ -106,24 +104,17 @@ liftdual (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
 selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
    (arℝ <$> v <*> v1) × (to𝕊 <$> report γ1)
-
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-
-   GC gc2 = ((liftdual fig.gc_dual) `GC.(***)` identity) >>> meet >>> (lift fig.gc)
-   --GC gc1 = lift fig.gc
-   -- Lift doesn't act on tuples rn, but I don't think this is a problem yet?
-   -- dual meet here?
-   v1 × γ1 = gc2.bwd (v)
+   GC gc = fig.gc
+   v1 × γ1 = gc.bwd (v)
 
 selectionResult fig@{ γ, dir: LinkedInputs } =
    (to𝕊 <$> report v1) × (arℝ <$> γ <*> γ1)
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   GC gc2 = ((lift fig.gc) `GC.(***)` identity) >>> meet >>> (liftdual fig.gc_dual)
-   --GC gc1 = lift fig.gc
-   --v1 = gc1.fwd (γ)
-   γ1 × v1 = gc2.bwd (γ)
+   GC gc = fig.gc_dual
+   γ1 × v1 = gc.bwd (γ)
 
 {-}
 selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
@@ -178,14 +169,14 @@ loadFig spec@{ inputs, imports, file, datasets } = do
    let
       EnvExpr γ e' = erase eval.inα
       focus = unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e')
-      gc = focus >>> graphGC eval
-      gc_dual = graphGC (withOp eval) >>> dual focus
+      gc1 = focus >>> graphGC eval
+      gc1_dual = graphGC (withOp eval) >>> dual focus
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
-      γ0 = neg (unwrap gc).bwd (topOf outα)
-      v0 = neg (unwrap gc_dual).bwd (topOf γα)
-   --gc1_dual = ((lift gc) `GC.(***)` identity) >>> meet >>> (liftdual gc_dual)
-   --gc1 = ((liftdual gc_dual) `GC.(***)` identity) >>> meet >>> (lift gc)
+      γ0 = neg (unwrap gc1).bwd (topOf outα)
+      v0 = neg (unwrap gc1_dual).bwd (topOf γα)
+      gc_dual = ((lift gc1) `GC.(***)` identity) >>> meet >>> (liftdual gc1_dual)
+      gc = ((liftdual gc1_dual) `GC.(***)` identity) >>> meet >>> (lift gc1)
    {-v: botOf outα
    γ: botOf γα-}
 
