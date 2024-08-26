@@ -44,7 +44,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { legendLineHeight, legendStart, margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers }
+      const { legendLineHeight, legendStart, margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -129,11 +129,7 @@ function drawLineChart_ (
          rootElement
             .append('text')
             .text(val(caption))
-            .attr('x', width / 2)
-            .attr('y', height + 35)
-            .attr('class', 'title-text')
-            .attr('dominant-baseline', 'bottom')
-            .attr('text-anchor', 'middle')
+            .attrs(caption_attrs)
       }
       setSelState(lineChartHelpers, { selState, selClasses, selClassesFor}, nameCol, rootElement, { plots }, listener)
    }

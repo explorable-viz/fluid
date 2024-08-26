@@ -46,6 +46,7 @@ type LineChartHelpers =
    , to_x :: Endo Number
    , to_y :: Endo Number
    , legendHelpers :: LegendHelpers
+   , caption_attrs :: Object String
    }
 
 type LegendHelpers =
@@ -79,6 +80,7 @@ lineChartHelpers (LineChart { plots }) =
    , to_x
    , to_y
    , legendHelpers
+   , caption_attrs
    }
    where
    -- TODO: LineChart argument no longer needed
@@ -168,6 +170,15 @@ lineChartHelpers (LineChart { plots }) =
          , "width" ↦ show (margin.right - 16)
          ]
       }
+
+   caption_attrs :: Object String
+   caption_attrs = fromFoldable
+      [ "x" ↦ show (width / 2)
+      , "y" ↦ show (height + 35)
+      , "class" ↦ "title-text"
+      , "dominant-baseline" ↦ "bottom"
+      , "text-anchor" ↦ "middle"
+      ]
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
