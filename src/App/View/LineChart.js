@@ -44,7 +44,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { legendLineHeight, legendStart, margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
+      const { legendLineHeight, legend_x, margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -112,7 +112,7 @@ function drawLineChart_ (
             .enter()
             .append('g')
             .attr('transform', (d, i) =>
-               `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
+               `translate(${legend_x}, ${height / 2 - margin.top + i * legendLineHeight})`
             )
 
          legend.append('text')
