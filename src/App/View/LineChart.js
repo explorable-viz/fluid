@@ -64,8 +64,8 @@ function drawLineChart_ (
       if (rootElement.empty()) {
          rootElement = div
             .append('svg')
-               .attr('width', width + margin.left + margin.right)
-               .attr('height', height + margin.top + margin.bottom)
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
             .attr('id', childId)
             .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
