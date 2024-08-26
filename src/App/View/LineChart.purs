@@ -36,8 +36,8 @@ newtype Point = Point
 
 type LineChartHelpers =
    { point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-   , legendLineHeight :: Int
-   , legendStart :: Int
+   , legend_x :: Int
+   , legend_y :: Int
    , margin :: Margin
    , width :: Int
    , height :: Int
@@ -50,9 +50,11 @@ type LineChartHelpers =
    }
 
 type LegendHelpers =
-   { text_attrs :: Object String
+   { lineHeight :: Int
+   , text_attrs :: Object String
    , circle_attrs :: Object String
    , box_attrs :: Object String
+   , entry_y :: Int -> Int
    }
 
 -- d3.js ticks are actually (start, stop, count) but we only supply first argument
@@ -70,8 +72,8 @@ foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Numbe
 lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
    { point_attrs
-   , legendLineHeight
-   , legendStart
+   , legend_x
+   , legend_y
    , margin
    , width
    , height
@@ -104,11 +106,11 @@ lineChartHelpers (LineChart { plots }) =
    point_smallRadius :: Int
    point_smallRadius = 2
 
-   legendLineHeight :: Int
-   legendLineHeight = 15
+   legend_x :: Int
+   legend_x = width + margin.left / 2
 
-   legendStart :: Int
-   legendStart = width + margin.left / 2
+   legend_y :: Int
+   legend_y = lineHeight * (length plots - 1) + 2
 
    margin :: Margin
    margin = { top: 15, right: 65, bottom: 40, left: 30 }
@@ -151,25 +153,32 @@ lineChartHelpers (LineChart { plots }) =
 
    legendHelpers :: LegendHelpers
    legendHelpers =
-      { text_attrs: fromFoldable
+      { lineHeight
+      , text_attrs: fromFoldable
          [ "font-size" ↦ show 11
          , "transform" ↦ "translate(15, 9)" -- align text with boxes
          ]
       , circle_attrs: fromFoldable
          [ "r" ↦ show point_smallRadius
-         , "cx" ↦ show (legendLineHeight / 2 - point_smallRadius / 2)
-         , "cy" ↦ show (legendLineHeight / 2 - point_smallRadius / 2)
+         , "cx" ↦ show (lineHeight / 2 - point_smallRadius / 2)
+         , "cy" ↦ show (lineHeight / 2 - point_smallRadius / 2)
          ]
       , box_attrs: fromFoldable
          [ "class" ↦ "legend-box"
-         , "transform" ↦
-            "translate(" <> show legendStart <> ", " <> show (legendLineHeight * (length plots - 1) + 2) <> ")"
+         , "transform" ↦ "translate(" <> show legend_x <> ", " <> show legend_y <> ")"
          , "x" ↦ show 0
          , "y" ↦ show 0
-         , "height" ↦ show (legendLineHeight * length plots)
+         , "height" ↦ show (lineHeight * length plots)
          , "width" ↦ show (margin.right - 16)
          ]
+      , entry_y
       }
+      where
+      entry_y :: Int -> Int
+      entry_y i = height / 2 - margin.top + i * lineHeight
+
+   lineHeight :: Int
+   lineHeight = 15
 
    caption_attrs :: Object String
    caption_attrs = fromFoldable

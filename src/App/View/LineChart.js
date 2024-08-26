@@ -44,7 +44,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { legendLineHeight, legendStart, margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
+      const { legend_x, margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -64,8 +64,8 @@ function drawLineChart_ (
       if (rootElement.empty()) {
          rootElement = div
             .append('svg')
-               .attr('width', width + margin.left + margin.right)
-               .attr('height', height + margin.top + margin.bottom)
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom)
             .attr('id', childId)
             .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
@@ -77,7 +77,6 @@ function drawLineChart_ (
          rootElement.selectAll('line')
             .data([...plots.entries()])
             .enter()
-            .append('g')
             .append('path')
             .attr('fill', 'none')
             .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
@@ -85,14 +84,12 @@ function drawLineChart_ (
             .attr('class', 'line')
             .attr('d', ([, plot]) => line1(plot.points))
 
-         for (const i_plot of plots.entries()) {
-            const [i, plot] = i_plot
+         for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
                .data([...plot.points.entries()].map(([j, p]) => {
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
-               .append('g')
                .append('circle')
                .attr('class', 'linechart-point')
          }
@@ -115,7 +112,7 @@ function drawLineChart_ (
             .enter()
             .append('g')
             .attr('transform', (d, i) =>
-               `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
+               `translate(${legend_x}, ${legendHelpers.entry_y(i)})`
             )
 
          legend.append('text')
