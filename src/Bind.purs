@@ -26,7 +26,7 @@ val = snd
 
 keys :: forall a. List (Bind a) -> Set Var
 keys Nil = empty
-keys (x ↦ _ : ρ) = singleton x ∪ keys ρ
+keys ((x ↦ _) : ρ) = singleton x ∪ keys ρ
 
-infix 7 Tuple as ↦
+infix 4 Tuple as ↦
 infixl 4 mustGeq as ⪂

@@ -6,6 +6,7 @@ import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, ge
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
+import Data.Foldable (length)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Semigroup.Foldable (maximum, minimum)
@@ -34,8 +35,7 @@ newtype Point = Point
    }
 
 type LineChartHelpers =
-   { point_smallRadius :: Int
-   , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+   { point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    , legendLineHeight :: Int
    , legendStart :: Int
    , margin :: Margin
@@ -45,6 +45,13 @@ type LineChartHelpers =
    , y_ticks :: Ticks
    , to_x :: Endo Number
    , to_y :: Endo Number
+   , legendHelpers :: LegendHelpers
+   }
+
+type LegendHelpers =
+   { text_attrs :: Object String
+   , circle_attrs :: Object String
+   , box_attrs :: Object String
    }
 
 -- d3.js ticks are actually (start, stop, count) but we only supply first argument
@@ -61,10 +68,9 @@ foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Numbe
 
 lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
-   { point_smallRadius
-   , point_attrs
-   , legendLineHeight: 15
-   , legendStart: width + margin.left / 2
+   { point_attrs
+   , legendLineHeight
+   , legendStart
    , margin
    , width
    , height
@@ -72,6 +78,7 @@ lineChartHelpers (LineChart { plots }) =
    , y_ticks
    , to_x
    , to_y
+   , legendHelpers
    }
    where
    -- TODO: LineChart argument no longer needed
@@ -94,6 +101,12 @@ lineChartHelpers (LineChart { plots }) =
 
    point_smallRadius :: Int
    point_smallRadius = 2
+
+   legendLineHeight :: Int
+   legendLineHeight = 15
+
+   legendStart :: Int
+   legendStart = width + margin.left / 2
 
    margin :: Margin
    margin = { top: 15, right: 65, bottom: 40, left: 30 }
@@ -133,6 +146,28 @@ lineChartHelpers (LineChart { plots }) =
 
    y_ticks :: Ticks
    y_ticks = 3.0
+
+   legendHelpers :: LegendHelpers
+   legendHelpers =
+      { text_attrs: fromFoldable
+         [ "font-size" ↦ show 11
+         , "transform" ↦ "translate(15, 9)" -- align text with boxes
+         ]
+      , circle_attrs: fromFoldable
+         [ "r" ↦ show point_smallRadius
+         , "cx" ↦ show (legendLineHeight / 2 - point_smallRadius / 2)
+         , "cy" ↦ show (legendLineHeight / 2 - point_smallRadius / 2)
+         ]
+      , box_attrs: fromFoldable
+         [ "class" ↦ "legend-box"
+         , "transform" ↦
+            "translate(" <> show legendStart <> ", " <> show (legendLineHeight * (length plots - 1) + 2) <> ")"
+         , "x" ↦ show 0
+         , "y" ↦ show 0
+         , "height" ↦ show (legendLineHeight * length plots)
+         , "width" ↦ show (margin.right - 16)
+         ]
+      }
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 

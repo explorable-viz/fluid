@@ -44,7 +44,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { point_smallRadius, legendLineHeight, legendStart, margin, width, height, x_ticks, y_ticks, to_x, to_y }
+      const { legendLineHeight, legendStart, margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -108,12 +108,7 @@ function drawLineChart_ (
 
          rootElement
             .append('rect')
-            .attr('class', 'legend-box')
-            .attr('transform', `translate(${legendStart}, ${legendLineHeight * (names.length - 1) + 2})`)
-            .attr('x', 0)
-            .attr('y', 0)
-            .attr('height', legendLineHeight * names.length)
-            .attr('width', margin.right - 16)
+            .attrs(legendHelpers.box_attrs)
 
          const legend = rootElement.selectAll('legend')
             .data(names)
@@ -125,14 +120,11 @@ function drawLineChart_ (
 
          legend.append('text')
             .text(d => d)
-            .attr('font-size', 11)
-            .attr('transform', 'translate(15, 9)') // align text with boxes
+            .attrs(legendHelpers.text_attrs)
 
          legend.append('circle')
             .attr('fill', d => nameCol(d))
-            .attr('r', point_smallRadius)
-            .attr('cx', legendLineHeight / 2 - point_smallRadius / 2)
-            .attr('cy', legendLineHeight / 2 - point_smallRadius / 2)
+            .attrs(legendHelpers.circle_attrs)
 
          rootElement
             .append('text')
