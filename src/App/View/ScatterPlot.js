@@ -29,8 +29,8 @@ function setSelState (
 
 function drawScatterPlot_ (
    ScatterPlotHelpers,
+   uiHelpers,
    {
-      uiHelpers,
       divId,
       suffix,
       view: {
@@ -110,7 +110,6 @@ function drawScatterPlot_ (
             .classed('scatterplot-point', true)
             .attr('cx', ({ point }) => x(val(point.x)))
             .attr('cy', ({ point }) => y(val(point.y)))
-            .attr('data-y', ({ point }) => val(point.y))
             .attr('stroke-width', 0.5)
 
          rootElement.append('text')
@@ -126,4 +125,4 @@ function drawScatterPlot_ (
    }
 }
 
-export var drawScatterPlot = x1 => x2 => x3 => drawScatterPlot_(x1, x2, x3)
+export var drawScatterPlot = x1 => x2 => x3 => x4 => drawScatterPlot_(x1, x2, x3, x4)

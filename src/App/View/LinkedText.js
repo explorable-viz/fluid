@@ -10,7 +10,7 @@ d3.selection.prototype.attrs = function(m) {
 }
 
 function setSelState (
-   {},
+   { },
    {
       selState,
       selClasses,
@@ -21,20 +21,21 @@ function setSelState (
    view,
    selListener
 ) {
-   // console.log("Exercising setSelState")
-   const sel = selState(view)
-   div
-      .classed(selClasses, false)
-      .classed(selClassesFor(sel), true)
-      .on('mousedown', e => { selListener(e) })
-      .on('mouseenter', e => { selListener(e) })
-      .on('mouseleave', e => { selListener(e) })
+   div.selectAll('span').each(function (textElem) {
+      const sel = selState(view[textElem.i])
+      d3.select(this)
+         .classed(selClasses, false)
+         .classed(selClassesFor(sel), true)
+         .on('mousedown', e => { selListener(e) })
+         .on('mouseenter', e => { selListener(e) })
+         .on('mouseleave', e => { selListener(e) })
+   })
 }
 
 function drawLinkedText_ (
    linkedTextHelpers,
+   uiHelpers,
    {
-      uiHelpers,
       divId,
       suffix,
       view
@@ -43,12 +44,24 @@ function drawLinkedText_ (
 ) {
    return () => {
       const div = d3.select('#' + divId)
-      let rootElement = div.selectAll('#' + divId)
-      div.text(view._1)
-      div.attr('class', 'transparent-text')
+      const childId = divId + '-' + suffix
+      let rootElement = div.selectAll('#' + childId)
+      if (rootElement.empty()) {
+         rootElement = div.append("div").attr("id", childId).text(view._1).attr('class', 'transparent-text-parent')
+         
 
-      setSelState(linkedTextHelpers, uiHelpers, div, view,  selListener)
+         const textElems = rootElement
+                           .selectAll('span')
+                           .data(view.entries().map(([i, conts]) => { return {i, conts}}))
+                           .enter()
+                           .append('span')
+                           .attr('id', childId)
+                           .text(d => d.conts._1)
+                           .attr('class', 'transparent-text')
+      }
+
+      setSelState(linkedTextHelpers, uiHelpers, rootElement, view,  selListener)
    } 
 }
 
-export var drawLinkedText = x1 => x2 => x3 => drawLinkedText_(x1, x2, x3)
+export var drawLinkedText = x1 => x2 => x3 => x4 => drawLinkedText_(x1, x2, x3, x4)

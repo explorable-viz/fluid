@@ -1,4 +1,4 @@
-module Publish.Renewables where
+module Publish.TextViz where
 
 import Prelude hiding (absurd)
 
@@ -11,15 +11,13 @@ import Effect (Effect)
 import Module (File(..))
 import Util ((×))
 
--- Delete this test case once we can enable/disable outputs via the UI
-
-figSpec :: FigSpec
-figSpec =
+fig :: FigSpec
+fig =
    { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
-   , imports: []
-   , file: File "linked-outputs/line-chart"
+   , imports: [ "lib/nombre" ]
+   , file: File "text"
    , inputs: [ "renewables" ]
    }
 
 main :: Effect Unit
-main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig figSpec ]
+main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig fig ]

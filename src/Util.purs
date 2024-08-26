@@ -7,6 +7,7 @@ import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError
 import Control.Monad.Except (Except, ExceptT, runExcept)
 import Control.MonadPlus (class Alternative, guard)
 import Data.Array ((!!), updateAt)
+import Data.Array.NonEmpty (NonEmptyArray, fromArray)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
 import Data.Functor.Compose (Compose)
@@ -202,6 +203,8 @@ infixr 1 bind2Flipped as =<<<
 -- like Endo in prelude but specialised to functions, to avoid newtype clutter
 type Endo a = a -> a
 
+type Setter b a = Endo a -> Endo b
+
 -- version of this in Data.Array uses unsafePartial
 unsafeIndex :: forall a. Array a -> Int -> a
 unsafeIndex xs i = definitely "index within bounds" (xs !! i)
@@ -210,9 +213,6 @@ unsafeUpdateAt :: forall a. Int -> a -> Endo (Array a)
 unsafeUpdateAt i x = updateAt i x >>> definitely "index within bounds"
 
 infixl 8 unsafeIndex as !
-
-nonEmpty :: forall a. List a -> NonEmptyList a
-nonEmpty = definitely' <<< fromList
 
 -- Similar to NonEmptyList.appendFoldable but without copying the list
 appendList :: forall a. NonEmptyList a -> List a -> NonEmptyList a
@@ -278,3 +278,12 @@ instance Singleton Set where
 
 instance Singleton NonEmptySet where
    singleton = NonEmptySet.singleton
+
+class NonEmpty (f :: Type -> Type) (g :: Type -> Type) | f -> g where
+   nonEmpty :: forall a. f a -> g a
+
+instance NonEmpty List NonEmptyList where
+   nonEmpty = definitely "non-empty" <<< fromList
+
+instance NonEmpty Array NonEmptyArray where
+   nonEmpty = definitely "non-empty" <<< fromArray
