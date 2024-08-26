@@ -44,7 +44,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { point_smallRadius, legendLineHeight, legendStart, margin, width, height, y_max, x_min, x_max, to_x, to_y }
+      const { point_smallRadius, legendLineHeight, legendStart, margin, width, height, x_ticks, y_ticks, to_x, to_y }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -100,11 +100,11 @@ function drawLineChart_ (
          rootElement
             .append('g')
             .attr('transform', `translate(0, ${height})`)
-            .call(d3.axisBottom(to_x).ticks(x_max - x_min).tickFormat(d3.format('d')))
+            .call(d3.axisBottom(to_x).ticks(x_ticks).tickFormat(d3.format('d')))
 
          rootElement
             .append('g')
-            .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))) // lots of hard-coded constants
+            .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(y_ticks).tickFormat(d3.format('.1f')))
 
          rootElement
             .append('rect')

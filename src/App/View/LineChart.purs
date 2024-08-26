@@ -41,12 +41,14 @@ type LineChartHelpers =
    , margin :: Margin
    , width :: Int
    , height :: Int
-   , y_max :: Number
-   , x_min :: Number
-   , x_max :: Number
-   , to_x :: Number -> Number
-   , to_y :: Number -> Number
+   , x_ticks :: Ticks
+   , y_ticks :: Ticks
+   , to_x :: Endo Number
+   , to_y :: Endo Number
    }
+
+-- d3.js ticks are actually (start, stop, count) but we only supply first argument
+type Ticks = Number
 
 type Margin =
    { top :: Int
@@ -66,9 +68,8 @@ lineChartHelpers (LineChart { plots }) =
    , margin
    , width
    , height
-   , y_max
-   , x_min
-   , x_max
+   , x_ticks
+   , y_ticks
    , to_x
    , to_y
    }
@@ -126,6 +127,12 @@ lineChartHelpers (LineChart { plots }) =
 
    to_y :: Number -> Number
    to_y = scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
+
+   x_ticks :: Ticks
+   x_ticks = x_max - x_min
+
+   y_ticks :: Ticks
+   y_ticks = 3.0
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
