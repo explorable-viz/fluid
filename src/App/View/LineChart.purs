@@ -6,15 +6,15 @@ import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, ge
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
-import Data.Foldable (maximum, minimum)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
+import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
-import Util (definitely', (!))
+import Util (Endo, nonEmpty, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
@@ -34,56 +34,104 @@ newtype Point = Point
    }
 
 type LineChartHelpers =
-   { plot_max_x :: LinePlot -> Number
-   , plot_min_x :: LinePlot -> Number
-   , plot_max_y :: LinePlot -> Number
-   , point_smallRadius :: Int
+   { point_smallRadius :: Int
    , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+   , legendLineHeight :: Int
+   , legendStart :: Int
+   , margin :: Margin
+   , width :: Int
+   , height :: Int
+   , y_max :: Number
+   , x_min :: Number
+   , x_max :: Number
+   , to_x :: Number -> Number
+   , to_y :: Number -> Number
    }
 
-lineChartHelpers :: LineChartHelpers
-lineChartHelpers =
-   { plot_max_x
-   , plot_min_x
-   , plot_max_y
-   , point_smallRadius
+type Margin =
+   { top :: Int
+   , right :: Int
+   , bottom :: Int
+   , left :: Int
+   }
+
+foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
+
+lineChartHelpers :: LineChart -> LineChartHelpers
+lineChartHelpers (LineChart { plots }) =
+   { point_smallRadius
    , point_attrs
+   , legendLineHeight: 15
+   , legendStart: width + margin.left / 2
+   , margin
+   , width
+   , height
+   , y_max
+   , x_min
+   , x_max
+   , to_x
+   , to_y
    }
    where
-   plot_max_x :: LinePlot -> Number
-   plot_max_x (LinePlot { points }) = definitely' (maximum (points <#> \(Point { x }) -> fst x))
-
-   plot_min_x :: LinePlot -> Number
-   plot_min_x (LinePlot { points }) = definitely' (minimum (points <#> \(Point { x }) -> fst x))
-
-   plot_max_y :: LinePlot -> Number
-   plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))
-
+   -- TODO: LineChart argument no longer needed
    point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-   point_attrs nameCol (LineChart { plots }) { i, j, name } =
+   point_attrs nameCol _ { i, j, name } =
       fromFoldable
          [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
          , "stroke-width" ↦ "1"
          , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
          , "fill" ↦ fill col
-         , "cx" ↦ show (fst x)
-         , "cy" ↦ show (fst y)
+         , "cx" ↦ show (to_x (fst x))
+         , "cy" ↦ show (to_y (fst y))
          ]
       where
       LinePlot plot = plots ! i
       Point { x , y } = plot.points ! j
-      sel = snd y  -- ouch: discard x
+      sel = snd y  -- oof: discard x
       col = nameCol name
       fill = if isPersistent sel then flip colorShade (-30) else identity
 
    point_smallRadius :: Int
    point_smallRadius = 2
 
+   margin :: Margin
+   margin = { top: 15, right: 65, bottom: 40, left: 30 }
+
+   width :: Int
+   width = 330 - margin.left - margin.right
+
+   height :: Int
+   height = 285 - margin.top - margin.bottom
+
+   y_max :: Number
+   y_max = maximum (plots <#> plot_max_y # nonEmpty)
+      where
+      plot_max_y :: LinePlot -> Number
+      plot_max_y (LinePlot { points }) = maximum (points # nonEmpty <#> \(Point { y }) -> fst y)
+
+   x_min :: Number
+   x_min = minimum (plots <#> plot_min_x # nonEmpty)
+      where
+      plot_min_x :: LinePlot -> Number
+      plot_min_x (LinePlot { points }) = minimum (points # nonEmpty <#> \(Point { x }) -> fst x)
+
+   x_max :: Number
+   x_max = maximum (plots <#> plot_max_x # nonEmpty)
+      where
+      plot_max_x :: LinePlot -> Number
+      plot_max_x (LinePlot { points }) = maximum (points # nonEmpty <#> \(Point { x }) -> fst x)
+
+   to_x :: Number -> Number
+   to_x = scaleLinear { min: x_min, max: x_max } { min: 0.0, max: toNumber width }
+
+   to_y :: Number -> Number
+   to_y = scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
+
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
 instance Drawable LineChart where
-   draw rSpec figVal _ redraw =
-      drawLineChart lineChartHelpers uiHelpers rSpec =<< selListener figVal redraw point
+   draw rSpec@{ view } figVal _ redraw =
+      drawLineChart (lineChartHelpers view) uiHelpers rSpec =<< selListener figVal redraw point
       where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =

@@ -32,7 +32,7 @@ function drawLineChart_ (
      selState,
      selClasses,
      selClassesFor
-    },
+   },
    {
       divId,
       suffix,
@@ -44,15 +44,10 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { point_smallRadius, plot_max_y, plot_max_x, plot_min_x } = lineChartHelpers
+      const { point_smallRadius, legendLineHeight, legendStart, margin, width, height, y_max, x_min, x_max, to_x, to_y }
+         = lineChartHelpers
       const childId = divId + '-' + suffix
-      const margin = {top: 15, right: 65, bottom: 40, left: 30},
-            width = 330 - margin.left - margin.right,
-            height = 285 - margin.top - margin.bottom,
-            y_max = Math.max(...plots.map(plot_max_y)),
-            x_min = Math.min(...plots.map(plot_min_x)),
-            x_max = Math.max(...plots.map(plot_max_x)),
-            names = plots.map(plot => val(plot.name))
+      const names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + divId)
       if (div.empty()) {
          console.error('Unable to insert figure: no div found with id ' + divId)
@@ -75,12 +70,9 @@ function drawLineChart_ (
             .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-         const x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
-               y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
-
          const line1 = d3.line()
-            .x(d => x(val(d.x)))
-            .y(d => y(val(d.y)))
+            .x(d => to_x(val(d.x)))
+            .y(d => to_y(val(d.y)))
 
          rootElement.selectAll('line')
             .data([...plots.entries()])
@@ -108,14 +100,11 @@ function drawLineChart_ (
          rootElement
             .append('g')
             .attr('transform', `translate(0, ${height})`)
-            .call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')))
+            .call(d3.axisBottom(to_x).ticks(x_max - x_min).tickFormat(d3.format('d')))
 
          rootElement
             .append('g')
-            .call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))) // lots of hard-coded constants
-
-         const legendLineHeight = 15,
-               legendStart = width + margin.left / 2
+            .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))) // lots of hard-coded constants
 
          rootElement
             .append('rect')
@@ -159,3 +148,4 @@ function drawLineChart_ (
 }
 
 export var drawLineChart = x1 => x2 => x3 => x4 => drawLineChart_(x1, x2, x3, x4)
+export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
