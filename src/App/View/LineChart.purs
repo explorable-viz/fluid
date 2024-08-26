@@ -54,6 +54,7 @@ type LegendHelpers =
    , text_attrs :: Object String
    , circle_attrs :: Object String
    , box_attrs :: Object String
+   , entry_y :: Int -> Int
    }
 
 -- d3.js ticks are actually (start, stop, count) but we only supply first argument
@@ -170,7 +171,11 @@ lineChartHelpers (LineChart { plots }) =
          , "height" ↦ show (lineHeight * length plots)
          , "width" ↦ show (margin.right - 16)
          ]
+      , entry_y
       }
+      where
+      entry_y :: Int -> Int
+      entry_y i = height / 2 - margin.top + i * lineHeight
 
    lineHeight :: Int
    lineHeight = 15
