@@ -3,13 +3,13 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (ReactState, SelState, 𝕊, asℝ, getPersistent, getTransient, reactState, selState, toℝ)
-import App.Util.Selector (envVal)
+import App.Util (ReactState, 𝕊, arℝ, getPersistent, getTransient, kindOfBot, reactState, to𝕊, vReact)
+import App.Util.Selector (envRVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
 import Bind (Var)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap, wrap)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
@@ -24,7 +24,7 @@ import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
-import Util.Map (get, insert, lookup, mapWithKey)
+import Util.Map (insert, lookup, mapWithKey)
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
 
 str
@@ -36,10 +36,10 @@ str =
    , input: "input"
    }
 
-selectOutput :: Setter Fig (Val (SelState 𝔹))
+selectOutput :: Setter Fig (Val (ReactState 𝔹))
 selectOutput δv fig@{ dir, γ, v } = fig
    { v = δv v
-   , γ = if dir == LinkedInputs then botOf γ else γ
+   , γ = if dir == LinkedInputs then kindOfBot <$> γ else γ
    , dir = LinkedOutputs
    }
 
@@ -48,10 +48,10 @@ setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw
    }
 
-selectInput :: Var -> Setter Fig (Val (SelState 𝔹))
+selectInput :: Var -> Setter Fig (Val (ReactState 𝔹))
 selectInput x δv fig@{ dir, γ, v } = fig
-   { γ = envVal x δv γ
-   , v = if dir == LinkedOutputs then botOf v else v
+   { γ = envRVal x δv γ
+   , v = if dir == LinkedOutputs then kindOfBot <$> v else v
    , dir = LinkedInputs
    }
 
@@ -64,6 +64,7 @@ setInputView x δvw fig = fig
 -- to deal with rs reasonably, I need to define what an inert set is - which we can do as v0
 -- should this be more explicitly done on tuples?
 -- from an input as B, I can obtain a ReactState S, it's just whether I wish to here.
+-- generalise Env, Val to f,g?
 lift :: GaloisConnection (Env 𝔹) (Val 𝔹) -> GaloisConnection (Env (ReactState 𝔹)) (Val (ReactState 𝔹))
 lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    where
@@ -72,37 +73,80 @@ lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
       where
       -- should v0 not be gc_dual with a bwd
       -- deeper problems here regarding not inert (i.e. union topOf not inert, but solvable on their own)
-      v0 = neg gc.fwd (topOf γ)
+      v0 = gc.fwd (botOf γ)
       v1 = gc.fwd (γ <#> getPersistent)
-      v2 = gc.fwd (γ <#> getTransient)
+      v2 = gc.fwd (getTransient <$> γ)
 
    bwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
    bwd1 v = reactState <$> v0 <*> v1 <*> v2
       where
-      v0 = neg gc.bwd (topOf v)
+      v0 = gc.bwd (botOf v)
       v1 = gc.bwd (v <#> getPersistent)
       v2 = gc.bwd (v <#> getTransient)
 
-{-}
-selectionResultLift :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
-selectionResultLift fig@{ v, dir: LinkedOutputs } =
-   (arℝ <$> v <*> v1) × (to𝕊 <$> report (y1))
+liftdual :: GaloisConnection (Val 𝔹) (Env 𝔹) -> GaloisConnection (Val (ReactState 𝔹)) (Env (ReactState 𝔹))
+liftdual (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
+   where
+   fwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
+   fwd1 γ = reactState <$> v0 <*> v1 <*> v2
+      where
+      -- should v0 not be gc_dual with a bwd
+      -- deeper problems here regarding not inert (i.e. union topOf not inert, but solvable on their own)
+      v0 = gc.fwd (botOf γ)
+      v1 = gc.fwd (γ <#> getPersistent)
+      v2 = gc.fwd (getTransient <$> γ)
+
+   bwd1 :: Env (ReactState 𝔹) -> Val (ReactState 𝔹)
+   bwd1 v = reactState <$> v0 <*> v1 <*> v2
+      where
+      v0 = gc.bwd (botOf v)
+      v1 = gc.bwd (v <#> getPersistent)
+      v2 = gc.bwd (v <#> getTransient)
+
+selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
+selectionResult fig@{ v, dir: LinkedOutputs } =
+   (arℝ <$> v <*> v1) × (to𝕊 <$> report γ1)
+
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   GC gc = lift (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
-   -- Lift doesn't act on tuples rn, but I don't think this is a problem yet?
-   γ1 = gc.bwd (v)
-   v1 = gc.fwd (γ1)
 
-selectionResultLift fig@{ v0, γ, dir: LinkedInputs } =
-   (toℝ <$> v0 <*> report (selState <$> v1 <*> v2)) ×
-      wrap (mapWithKey (\x v -> asℝ <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
+   GC gc2 = ((liftdual fig.gc_dual) `GC.(***)` identity) >>> meet >>> (lift fig.gc)
+   --GC gc1 = lift fig.gc
+   -- Lift doesn't act on tuples rn, but I don't think this is a problem yet?
+   -- dual meet here?
+   v1 × γ1 = gc2.bwd (v)
+
+selectionResult fig@{ γ, dir: LinkedInputs } =
+   (to𝕊 <$> report v1) × (arℝ <$> γ <*> γ1)
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
+   GC gc2 = ((lift fig.gc) `GC.(***)` identity) >>> meet >>> (liftdual fig.gc_dual)
+   --GC gc1 = lift fig.gc
+   --v1 = gc1.fwd (γ)
+   γ1 × v1 = gc2.bwd (γ)
+
+{-}
+selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
+selectionResult fig@{ γ0, v, dir: LinkedOutputs } =
+   (asℝ <$> v <*> (selState <$> v1 <*> v2)) × (toℝ <$> γ0 <*> report (selState <$> γ1 <*> γ2))
+   where
+   report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
+   GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
+
+   v1 × γ1 = gc.bwd (v <#> unwrap >>> _.persistent)
+   v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
+
+
+selectionResult fig@{ γ, dir: LinkedInputs } =
+   (toℝ <$> v0 <*> report   (selState <$> v1 <*> v2)) ×
+      wrap (mapWithKey (\x v -> asℝ <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
+   where
+   --report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
    γ1 × v1 = gc.bwd (γ <#> unwrap >>> _.persistent)
    γ2 × v2 = gc.bwd (γ <#> unwrap >>> _.transient)
 -}
+--_ × v0 = neg (gc.bwd (topOf γ))
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
@@ -114,27 +158,6 @@ drawFig divId fig = do
    out_view × in_views =
       selectionResult fig # unsafePartial
          (flip (view str.output) fig.out_view *** \(Env γ) -> mapWithKey view γ <*> fig.in_views)
-
-selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
-selectionResult fig@{ γ0, v, dir: LinkedOutputs } =
-   (asℝ <$> v <*> (selState <$> v1 <*> v2)) × (toℝ <$> γ0 <*> report (selState <$> γ1 <*> γ2))
-   where
-   report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
-
-   v1 × γ1 = gc.bwd (v <#> unwrap >>> _.persistent)
-   v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
-
-selectionResult fig@{ v0, γ, dir: LinkedInputs } =
-   (toℝ <$> v0 <*> report (selState <$> v1 <*> v2)) ×
-      wrap (mapWithKey (\x v -> asℝ <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
-   where
-   report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
-   γ1 × v1 = gc.bwd (γ <#> unwrap >>> _.persistent)
-   γ2 × v2 = gc.bwd (γ <#> unwrap >>> _.transient)
-
---_ × v0 = neg (gc.bwd (topOf γ))
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
@@ -161,7 +184,12 @@ loadFig spec@{ inputs, imports, file, datasets } = do
 
       γ0 = neg (unwrap gc).bwd (topOf outα)
       v0 = neg (unwrap gc_dual).bwd (topOf γα)
-   pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing, γ0, v0 }
+   --gc1_dual = ((lift gc) `GC.(***)` identity) >>> meet >>> (liftdual gc_dual)
+   --gc1 = ((liftdual gc_dual) `GC.(***)` identity) >>> meet >>> (lift gc)
+   {-v: botOf outα
+   γ: botOf γα-}
+
+   pure { spec, s, γ: vReact <$> γ0 <*> botOf γα, v: vReact <$> v0 <*> botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)

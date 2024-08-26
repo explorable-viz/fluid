@@ -3,14 +3,13 @@ module Test.Util.Suite where
 import Prelude
 
 import App.Fig (selectionResult, loadFig, selectInput, selectOutput)
-import App.Util (Selector, to𝔹)
+import App.Util (Selector, cheatToSel, kindOfBotS, toR𝔹, to𝔹)
 import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, snd, uncurry)
 import Effect.Aff (Aff)
-import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile, loadProgCxt)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
 import Test.Util (checkEq, test)
@@ -86,7 +85,7 @@ linkedOutputsTest { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (fst (selectionResult fig))
-   checkEq "selected" "expected" (to𝔹 <$> v) (out_expect (botOf v))
+   checkEq "selected" "expected" (to𝔹 <$> v) (cheatToSel <$> (out_expect (toR𝔹 <$> (kindOfBotS <$> v))))
    pure fig
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
@@ -99,7 +98,7 @@ linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (snd (selectionResult fig))
-   checkEq "selected" "expected" (to𝔹 <$> γ) (in_expect (botOf γ))
+   checkEq "selected" "expected" (to𝔹 <$> γ) (cheatToSel <$> (in_expect (toR𝔹 <$> (kindOfBotS <$> γ))))
    pure fig
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)

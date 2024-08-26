@@ -8,7 +8,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Benchmark (benchmarks)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
-import Test.Specs.LinkedOutputs (linkedOutputs_cases, linkedOutputs_spec1)
+import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util (type (×), (×))
@@ -20,7 +20,7 @@ main = run tests
 --main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = linkedOutputsSuite [ linkedOutputs_spec1 ]
+scratchpad = linkedOutputsSuite []
 
 type TestSuite = Array (String × Aff Unit)
 
