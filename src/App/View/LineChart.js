@@ -77,7 +77,6 @@ function drawLineChart_ (
          rootElement.selectAll('line')
             .data([...plots.entries()])
             .enter()
-            .append('g')
             .append('path')
             .attr('fill', 'none')
             .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
