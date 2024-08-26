@@ -18,4 +18,5 @@ mkdir -p dist/app/$NAME_LISP_CASE
 yarn spago build --purs-args '--strict --censor-codes=UserDefinedWarning'
 yarn purs-backend-es bundle-app --main Publish.$NAME --to dist/app/$NAME_LISP_CASE/app.js
 
-cp web/template.html dist/app/$NAME_LISP_CASE/index.html
+cp web/template.html dist/app/$NAME_LISP_CASE/index.html #puts copy of template.html into dist/app with new file name
+#This takes in a .purs in Publish that is assumed to be an entry point
