@@ -6,15 +6,16 @@ import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, ge
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
-import Data.Foldable (maximum, minimum)
+import Data.Foldable (length)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
+import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
-import Util (definitely', (!))
+import Util (Endo, nonEmpty, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
@@ -34,54 +35,156 @@ newtype Point = Point
    }
 
 type LineChartHelpers =
-   { plot_max_x :: LinePlot -> Number
-   , plot_min_x :: LinePlot -> Number
-   , plot_max_y :: LinePlot -> Number
-   , point_smallRadius :: Int
-   , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+   { point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+   , legendLineHeight :: Int
+   , legendStart :: Int
+   , margin :: Margin
+   , width :: Int
+   , height :: Int
+   , x_ticks :: Ticks
+   , y_ticks :: Ticks
+   , to_x :: Endo Number
+   , to_y :: Endo Number
+   , legendHelpers :: LegendHelpers
+   , caption_attrs :: Object String
    }
 
-lineChartHelpers :: LineChartHelpers
-lineChartHelpers =
-   { plot_max_x
-   , plot_min_x
-   , plot_max_y
-   , point_smallRadius
-   , point_attrs
+type LegendHelpers =
+   { text_attrs :: Object String
+   , circle_attrs :: Object String
+   , box_attrs :: Object String
+   }
+
+-- d3.js ticks are actually (start, stop, count) but we only supply first argument
+type Ticks = Number
+
+type Margin =
+   { top :: Int
+   , right :: Int
+   , bottom :: Int
+   , left :: Int
+   }
+
+foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
+
+lineChartHelpers :: LineChart -> LineChartHelpers
+lineChartHelpers (LineChart { plots }) =
+   { point_attrs
+   , legendLineHeight
+   , legendStart
+   , margin
+   , width
+   , height
+   , x_ticks
+   , y_ticks
+   , to_x
+   , to_y
+   , legendHelpers
+   , caption_attrs
    }
    where
-   plot_max_x :: LinePlot -> Number
-   plot_max_x (LinePlot { points }) = definitely' (maximum (points <#> \(Point { x }) -> fst x))
-
-   plot_min_x :: LinePlot -> Number
-   plot_min_x (LinePlot { points }) = definitely' (minimum (points <#> \(Point { x }) -> fst x))
-
-   plot_max_y :: LinePlot -> Number
-   plot_max_y (LinePlot { points }) = definitely' (maximum (points <#> \(Point { y }) -> fst y))
-
+   -- TODO: LineChart argument no longer needed
    point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-   point_attrs nameCol (LineChart { plots }) { i, j, name } =
+   point_attrs nameCol _ { i, j, name } =
       fromFoldable
          [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
          , "stroke-width" ↦ "1"
          , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
          , "fill" ↦ fill col
+         , "cx" ↦ show (to_x (fst x))
+         , "cy" ↦ show (to_y (fst y))
          ]
       where
       LinePlot plot = plots ! i
-      Point { x: _x, y } = plot.points ! j
-      sel = snd y
+      Point { x , y } = plot.points ! j
+      sel = snd y  -- oof: discard x
       col = nameCol name
       fill = if isPersistent sel then flip colorShade (-30) else identity
 
    point_smallRadius :: Int
    point_smallRadius = 2
 
+   legendLineHeight :: Int
+   legendLineHeight = 15
+
+   legendStart :: Int
+   legendStart = width + margin.left / 2
+
+   margin :: Margin
+   margin = { top: 15, right: 65, bottom: 40, left: 30 }
+
+   width :: Int
+   width = 330 - margin.left - margin.right
+
+   height :: Int
+   height = 285 - margin.top - margin.bottom
+
+   y_max :: Number
+   y_max = maximum (plots <#> plot_max_y # nonEmpty)
+      where
+      plot_max_y :: LinePlot -> Number
+      plot_max_y (LinePlot { points }) = maximum (points # nonEmpty <#> \(Point { y }) -> fst y)
+
+   x_min :: Number
+   x_min = minimum (plots <#> plot_min_x # nonEmpty)
+      where
+      plot_min_x :: LinePlot -> Number
+      plot_min_x (LinePlot { points }) = minimum (points # nonEmpty <#> \(Point { x }) -> fst x)
+
+   x_max :: Number
+   x_max = maximum (plots <#> plot_max_x # nonEmpty)
+      where
+      plot_max_x :: LinePlot -> Number
+      plot_max_x (LinePlot { points }) = maximum (points # nonEmpty <#> \(Point { x }) -> fst x)
+
+   to_x :: Number -> Number
+   to_x = scaleLinear { min: x_min, max: x_max } { min: 0.0, max: toNumber width }
+
+   to_y :: Number -> Number
+   to_y = scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
+
+   x_ticks :: Ticks
+   x_ticks = x_max - x_min
+
+   y_ticks :: Ticks
+   y_ticks = 3.0
+
+   legendHelpers :: LegendHelpers
+   legendHelpers =
+      { text_attrs: fromFoldable
+         [ "font-size" ↦ show 11
+         , "transform" ↦ "translate(15, 9)" -- align text with boxes
+         ]
+      , circle_attrs: fromFoldable
+         [ "r" ↦ show point_smallRadius
+         , "cx" ↦ show (legendLineHeight / 2 - point_smallRadius / 2)
+         , "cy" ↦ show (legendLineHeight / 2 - point_smallRadius / 2)
+         ]
+      , box_attrs: fromFoldable
+         [ "class" ↦ "legend-box"
+         , "transform" ↦
+            "translate(" <> show legendStart <> ", " <> show (legendLineHeight * (length plots - 1) + 2) <> ")"
+         , "x" ↦ show 0
+         , "y" ↦ show 0
+         , "height" ↦ show (legendLineHeight * length plots)
+         , "width" ↦ show (margin.right - 16)
+         ]
+      }
+
+   caption_attrs :: Object String
+   caption_attrs = fromFoldable
+      [ "x" ↦ show (width / 2)
+      , "y" ↦ show (height + 35)
+      , "class" ↦ "title-text"
+      , "dominant-baseline" ↦ "bottom"
+      , "text-anchor" ↦ "middle"
+      ]
+
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
 instance Drawable LineChart where
-   draw rSpec figVal _ redraw =
-      drawLineChart lineChartHelpers uiHelpers rSpec =<< selListener figVal redraw point
+   draw rSpec@{ view } figVal _ redraw =
+      drawLineChart (lineChartHelpers view) uiHelpers rSpec =<< selListener figVal redraw point
       where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =
