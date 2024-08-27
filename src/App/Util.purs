@@ -3,7 +3,6 @@ module App.Util where
 import Prelude hiding (absurd, join)
 
 import Bind (Bind, Var)
-import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
 import Data.Either (Either(..))
@@ -142,11 +141,10 @@ instance JoinSemilattice a => JoinSemilattice (ReactState a)
    join (Reactive b) (Reactive c) = Reactive (b ∨ c)
    join _ _ = error absurd
 
-
+{-} Ideally we rewrite out_expect, in_expect to require only this rather than toR𝔹 and cheatToSel both 
 to𝔹 :: ReactState 𝕊 -> SelState 𝔹
---only used in tests
 to𝔹 = ((_ /= None) <$> _) <<< fromℝ
-
+-}
 toR𝔹 :: ReactState 𝕊 -> ReactState 𝔹
 toR𝔹 Inert = Inert
 toR𝔹 (Reactive (SelState { persistent: a, transient: b })) = Reactive (SelState { persistent: c, transient: d })
@@ -154,34 +152,10 @@ toR𝔹 (Reactive (SelState { persistent: a, transient: b })) = Reactive (SelSta
    c = if (a /= None) then true else false
    d = if (b /= None) then true else false
 
---methods for initial assignation of states
---subsumed by reactState
-toℝ :: 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-toℝ true _ = Inert
-toℝ false sel = Reactive (sel <#> if _ then Primary else None)
-
-cheatToℝ :: forall a. SelState a -> ReactState a
-cheatToℝ b = Reactive b
-
-cheatToS :: ReactState 𝕊 -> SelState 𝕊
-cheatToS Inert = selState None None
-cheatToS (Reactive sel) = sel
-
+-- also used in util test, ideally not so
 cheatToSel :: ReactState 𝔹 -> SelState 𝔹
 cheatToSel Inert = (SelState { persistent: false, transient: false })
 cheatToSel (Reactive sel) = sel
-
-asℝ :: SelState 𝔹 -> SelState 𝔹 -> ReactState 𝕊
-asℝ (SelState { persistent: a1, transient: b1 }) (SelState { persistent: a2, transient: b2 }) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (lift2 as𝕊' a b))
-   where
-   a = (SelState { persistent: a1, transient: b1 })
-   b = (SelState { persistent: a2, transient: b2 })
-
-   as𝕊' :: 𝔹 -> 𝔹 -> 𝕊
-   as𝕊' false false = None
-   as𝕊' false true = Secondary
-   as𝕊' true false = Primary -- the if solves this case, (as you can't be persistent inert and transient not...)
-   as𝕊' true true = Primary
 
 arℝ :: ReactState 𝔹 -> ReactState 𝔹 -> ReactState 𝕊
 arℝ Inert _ = Inert
