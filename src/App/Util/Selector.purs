@@ -18,11 +18,6 @@ import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 type SelSetter (f :: Type -> Type) (g :: Type -> Type) = Setter (f (ReactState 𝔹)) (g (ReactState 𝔹))
 type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
 
-{-
-type RelSetter (f g :: Type -> Type) = Setter (f (ReactState 𝔹)) (g (ReactState 𝔹))
-type ViewRelSetter a = a -> RelSetter Val Val -- convert mouse event data to view selector
--}
-
 fst :: SelSetter Val Val
 fst = constrArg cPair 0
 

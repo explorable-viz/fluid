@@ -331,4 +331,6 @@ instance JoinSemilattice a => JoinSemilattice (SelState a) where
 
 instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a) where
    bot = SelState { persistent: bot, transient: bot }
-
+{-}
+instance BoundedJoinSemilattice a => BoundedJoinSemilattice (ReactState a) where
+   bot = Inert-}
