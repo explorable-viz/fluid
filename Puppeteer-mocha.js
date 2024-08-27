@@ -1,6 +1,5 @@
 
 const puppeteer = require('puppeteer');
-//const { expect } = require('chai');
 const mocha = require('mocha');
 const { describe, it, before, after } = mocha;
 const express = require('express');
@@ -15,6 +14,7 @@ describe('Got to web page', () => {
   let server;
 
   before(async () => {
+    app.use(serve(__dirname + '/dist/app'));
     server = app.listen(8080, function(){
       console.log("Server running");
     }).withShutdown();
@@ -32,8 +32,8 @@ describe('Got to web page', () => {
     await page.goto('http://127.0.0.1:8080');
     const content = await page.content();
     console.log(content);
-    //const title = await page.title();
-    //assert.equal(title, 'Example Domain');
+    const title = await page.title();
+    assert.equal(title, 'Fluid: Data-Linked Visualisations');
   });
 });
 
@@ -42,7 +42,7 @@ function serverDown(server)
   console.log('Shutting down server')
   server.shutdown(function(err) {
     if (err) {
-      return console.log('shutdown failed', err.message);
+      return console.log('Shutdown failed', err.message);
     }
     console.log('Everything is cleanly shutdown.');
   });
