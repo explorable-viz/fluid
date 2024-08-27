@@ -12,7 +12,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype, over, over2)
+import Data.Newtype (class Newtype, over2)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
@@ -28,16 +28,14 @@ import Foreign.Object (Object, empty, fromFoldable, union)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, neg, (∨))
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
-import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, Setter, absurd, definitely', error, spyWhen)
+import Util (type (×), Endo, Setter, absurd, definitely', error)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (ReactState 𝔹)) -- modifies selection state
-type Relector (f :: Type -> Type) = Endo (f (SelState 𝔹))
 -- Selection has two dimensions: persistent/transient and primary/secondary/inert. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
 -- clicking during mouseover visibly changes the state). Primary and secondary also need to be visually
@@ -144,12 +142,7 @@ instance JoinSemilattice a => JoinSemilattice (ReactState a)
    join (Reactive b) (Reactive c) = Reactive (b ∨ c)
    join _ _ = error absurd
 
-{-}
-instance JoinSemilattice (ReactState 𝕊) where
-   join a Inert = a
-   join Inert b = b
-   join (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = (Reactive (SelState { persistent: a1 ∨ a2, transient: b1 ∨ b2 }))
--}
+
 to𝔹 :: ReactState 𝕊 -> SelState 𝔹
 --only used in tests
 to𝔹 = ((_ /= None) <$> _) <<< fromℝ
@@ -286,17 +279,6 @@ selector (EventType ev) = delector <$> (over SelState (report <<< setSel ev) <$>
       | otherwise = error "Unsupported event type"
    report = spyWhen tracing.mouseEvent "Setting SelState to " show
 -}
-
-selector :: EventType -> Relector Val
-selector (EventType ev) = (over SelState (report <<< setSel ev) <$> _)
-   where
-   setSel :: String -> Endo { persistent :: 𝔹, transient :: 𝔹 }
-   setSel s sel
-      | s == "mousedown" = sel { persistent = neg sel.persistent }
-      | s == "mouseenter" = sel { transient = true }
-      | s == "mouseleave" = sel { transient = false }
-      | otherwise = error "Unsupported event type"
-   report = spyWhen tracing.mouseEvent "Setting SelState to " show
 
 telector :: EventType -> Selector Val
 telector (EventType ev) = (setSel ev <$> _)
