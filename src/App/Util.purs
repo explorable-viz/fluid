@@ -68,6 +68,10 @@ kindOfBotS :: ReactState 𝕊 -> ReactState 𝕊
 kindOfBotS (Inert) = Inert
 kindOfBotS (Reactive (SelState _)) = Reactive (SelState { persistent: None, transient: None })
 
+--vReact applies the inert set to the reactState (should try to incorporate into ReactState def)
+vReact :: 𝔹 -> SelState 𝔹 -> ReactState 𝔹
+vReact b a = if b then Inert else (Reactive a)
+
 reactState :: 𝔹 -> 𝔹 -> 𝔹 -> ReactState 𝔹
 reactState true _ _ = Inert
 reactState false b1 b2 = Reactive (SelState { persistent: b1, transient: b2 })
@@ -105,6 +109,15 @@ isTransient :: ReactState 𝕊 -> 𝔹
 isTransient (Reactive (SelState { transient })) = transient /= None
 isTransient Inert = false
 
+--barchart
+getPersistentS :: ReactState 𝕊 -> 𝕊
+getPersistentS Inert = None
+getPersistentS (Reactive (SelState a)) = a.persistent
+
+getTransientS :: ReactState 𝕊 -> 𝕊
+getTransientS Inert = None
+getTransientS (Reactive (SelState a)) = a.transient
+
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
 compare' None None = EQ
@@ -115,7 +128,6 @@ compare' Secondary None = GT
 compare' Primary Primary = EQ
 compare' Primary _ = GT
 
---rather than deriving instances, and just taking inert as bot whenever we derive, directly
 instance Eq 𝕊 where
    eq s s' = compare' s s' == EQ
 
@@ -147,6 +159,7 @@ cheatToSel :: ReactState 𝔹 -> SelState 𝔹
 cheatToSel Inert = (SelState { persistent: false, transient: false })
 cheatToSel (Reactive sel) = sel
 
+-- methods for obtaining the ReactStates
 as𝕊 :: ReactState 𝔹 -> ReactState 𝔹 -> ReactState 𝕊
 as𝕊 Inert _ = Inert
 as𝕊 _ Inert = Inert
@@ -162,32 +175,14 @@ to𝕊 :: ReactState 𝔹 -> ReactState 𝕊
 to𝕊 Inert = Inert
 to𝕊 (Reactive (sel)) = Reactive (sel <#> if _ then Primary else None)
 
-vReact :: 𝔹 -> SelState 𝔹 -> ReactState 𝔹
-vReact b a = if b then Inert else (Reactive a)
-
---vReact takes everything as true to Inert, leaves the rest in Reactive.
-
+-- we should be able to negate the need for these with the lift code
 getPersistent :: ReactState 𝔹 -> 𝔹
 getPersistent Inert = false
 getPersistent (Reactive (SelState a)) = a.persistent
 
-getPersistentS :: ReactState 𝕊 -> 𝕊
-getPersistentS Inert = None
-getPersistentS (Reactive (SelState a)) = a.persistent
-
 getTransient :: ReactState 𝔹 -> 𝔹
 getTransient Inert = false
 getTransient (Reactive (SelState a)) = a.transient
-
-getTransientS :: ReactState 𝕊 -> 𝕊
-getTransientS Inert = None
-getTransientS (Reactive (SelState a)) = a.transient
-
--- TO FIX/REMOVE/OTHERWISE ALTER
-
-fromℝ :: ReactState 𝕊 -> SelState 𝕊
-fromℝ Inert = (SelState { persistent: None, transient: None })
-fromℝ (Reactive sel) = sel
 
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
@@ -198,15 +193,6 @@ record toRecord (Val _ v) = toRecord (P.record2.unpack v)
 
 class Reflect a b where
    from :: Partial => a -> b
-
--- Discard any constructor-level annotations.
-instance Reflect (Val (SelState 𝕊)) (Array (Val (SelState 𝕊))) where
-   from (Val _ (Constr c Nil)) | c == cNil = []
-   from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
-
--- Discard both constructor-level annotations and key annotations.
-instance Reflect (Val (SelState 𝕊)) (Dict (Val (SelState 𝕊))) where
-   from (Val _ (Dictionary (DictRep d))) = d <#> snd
 
 instance Reflect (Val (ReactState 𝕊)) (Dict (Val (ReactState 𝕊))) where
    from (Val _ (Dictionary (DictRep d))) = d <#> snd
