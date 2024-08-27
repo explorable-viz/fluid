@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -x
+set -xe
 
 yarn puppeteer browsers install chrome
 yarn puppeteer browsers install firefox
