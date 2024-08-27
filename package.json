@@ -19,23 +19,17 @@
   "homepage": "https://f.luid.org",
   "scripts": {
     "tidy": "./script/tidy.sh",
-
     "build-app": "./script/build.sh app App",
     "serve-app": "./script/serve.sh app",
-
     "build-artifact": "./script/build.sh artifact Artifact",
     "serve-artifact": "./script/serve.sh artifact",
-
     "publish-standalone": "./script/publish.sh",
     "publish-single": "./script/publish-single.sh",
-
     "build-bench": "./script/build.sh bench Test.Benchmark",
     "bench": "./script/serve.sh bench",
-
     "build": "./script/build.sh test Test.Test",
     "test": "./script/test.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
-
     "build-puppeteer": "./script/build.sh test-puppeteer Test.Puppeteer --platform=node",
     "test-puppeteer": "./script/test-puppeteer.sh"
   },
@@ -59,8 +53,8 @@
     "karma-chrome-launcher": "3.1.1",
     "karma-mocha": "2.0.1",
     "karma-mocha-reporter": "2.2.5",
-    "mocha": "10.0.0",
-    "puppeteer": "^23.1.0",
+    "mocha": "^10.0.0",
+    "puppeteer": "^23.2.0",
     "purescript-language-server": "0.16.6",
     "purescript-psa": "0.8.2",
     "purs-backend-es": "1.1.0",
