@@ -208,7 +208,7 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
 
 -- Unpack d3.js data and event type associated with mouse event target.
 selectionEventData :: forall a. Event -> a × Selector Val
-selectionEventData = (eventData &&& type_ >>> telector)
+selectionEventData = (eventData &&& type_ >>> selector)
 
 eventData :: forall a. Event -> a
 eventData = target >>> unsafeEventData
@@ -216,22 +216,8 @@ eventData = target >>> unsafeEventData
    unsafeEventData :: Maybe EventTarget -> a
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
-{-}
--- maybe we make inert unselectable
 selector :: EventType -> Selector Val
-selector (EventType ev) = delector <$> (over SelState (report <<< setSel ev) <$> _)
-   where
-   setSel :: String -> Endo { persistent :: 𝔹, transient :: 𝔹 }
-   setSel s sel
-      | s == "mousedown" = sel { persistent = neg sel.persistent }
-      | s == "mouseenter" = sel { transient = true }
-      | s == "mouseleave" = sel { transient = false }
-      | otherwise = error "Unsupported event type"
-   report = spyWhen tracing.mouseEvent "Setting SelState to " show
--}
-
-telector :: EventType -> Selector Val
-telector (EventType ev) = (setSel ev <$> _)
+selector (EventType ev) = (setSel ev <$> _)
    where
    setSel :: String -> ReactState 𝔹 -> ReactState 𝔹
    setSel _ Inert = Inert
@@ -240,12 +226,8 @@ telector (EventType ev) = (setSel ev <$> _)
    setSel "mouseleave" (Reactive (SelState { persistent: a, transient: _ })) = Reactive (SelState { persistent: a, transient: false })
    setSel _ _ = error "Unsupported event type"
 
---report = spyWhen tracing.mouseEvent "Setting SelState to " show cheatToSel
-{-}
-delector :: Endo (SelState 𝔹) -> Endo (ReactState 𝔹)
-delector _ Inert = Inert
-delector δv (Reactive sel) = Reactive (δv sel)
--}
+--report = spyWhen tracing.mouseEvent "Setting SelState to " show <<< cheatToSel
+
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
 colorShade col n =
