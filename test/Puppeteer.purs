@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
-import Test.Test (TestSuite)
+import Test.Util (TestSuite)
 import Toppokki as T
 import Util ((×))
 
