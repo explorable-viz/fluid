@@ -1,4 +1,4 @@
-module Publish.RenewablesLinked where
+module Standalone.RenewablesLinked where
 
 import Prelude hiding (absurd)
 

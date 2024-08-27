@@ -26,8 +26,8 @@
     "build-artifact": "./script/build.sh artifact Artifact",
     "serve-artifact": "./script/serve.sh artifact",
 
-    "publish-standalone": "./script/publish.sh",
-    "publish-single": "./script/publish-single.sh",
+    "build-standalone-all": "./script/build-standalone-all.sh",
+    "build-standalone": "./script/build-standalone.sh",
 
     "build-bench": "./script/build.sh bench Test.Benchmark",
     "bench": "./script/serve.sh bench",
