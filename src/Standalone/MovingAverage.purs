@@ -1,4 +1,4 @@
-module Publish.MovingAverage where
+module Standalone.MovingAverage where
 
 import Prelude hiding (absurd)
 
