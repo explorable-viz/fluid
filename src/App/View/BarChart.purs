@@ -6,7 +6,7 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, SelState(..), Selectable, 𝕊(..), colorShade, from, fromℝ, get_intOrNumber, record)
+import App.Util (class Reflect, ReactState, Selectable, 𝕊(..), colorShade, from, getPersistentS, getTransientS, get_intOrNumber, record)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
@@ -67,11 +67,11 @@ barChartHelpers =
               else col
          ]
       where
-      -- ok, so implement inert into images
       StackedBar { bars } = stackedBars ! i
       Bar { z } = bars ! j
-      --if z is inert, then what on earth do we do here?
-      SelState { persistent, transient } = fromℝ (snd z)
+      t = snd z
+      persistent = getPersistentS t
+      transient = getTransientS t
       col = indexCol j
 
    tickEvery :: Int -> Int

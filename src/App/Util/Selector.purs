@@ -2,7 +2,7 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (ReactState, SelState, perrsist {-}, persist-} )
+import App.Util (ReactState, perrsist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
@@ -98,12 +98,8 @@ dictVal :: String -> SelSetter Val Val
 dictVal s δv = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (second δv) s d
 
-envVal :: Var -> Setter (Env (SelState 𝔹)) (Val (SelState 𝔹))
+envVal :: Var -> Setter (Env (ReactState 𝔹)) (Val (ReactState 𝔹))
 envVal x δv γ =
-   assert (x ∈ γ) $ update δv x γ
-
-envRVal :: Var -> Setter (Env (ReactState 𝔹)) (Val (ReactState 𝔹))
-envRVal x δv γ =
    assert (x ∈ γ) $ update δv x γ
 
 listCell :: Int -> Setter (Val (ReactState 𝔹)) 𝔹

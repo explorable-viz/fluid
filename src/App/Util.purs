@@ -214,9 +214,17 @@ getPersistent :: ReactState 𝔹 -> 𝔹
 getPersistent Inert = false
 getPersistent (Reactive (SelState a)) = a.persistent
 
+getPersistentS :: ReactState 𝕊 -> 𝕊
+getPersistentS Inert = None
+getPersistentS (Reactive (SelState a)) = a.persistent
+
 getTransient :: ReactState 𝔹 -> 𝔹
 getTransient Inert = false
 getTransient (Reactive (SelState a)) = a.transient
+
+getTransientS :: ReactState 𝕊 -> 𝕊
+getTransientS Inert = None
+getTransientS (Reactive (SelState a)) = a.transient
 
 -- TO FIX/REMOVE/OTHERWISE ALTER
 

@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (ReactState, 𝕊, arℝ, getPersistent, getTransient, kindOfBot, reactState, to𝕊, vReact)
-import App.Util.Selector (envRVal)
+import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
 import Bind (Var)
@@ -50,7 +50,7 @@ setOutputView δvw fig = fig
 
 selectInput :: Var -> Setter Fig (Val (ReactState 𝔹))
 selectInput x δv fig@{ dir, γ, v } = fig
-   { γ = envRVal x δv γ
+   { γ = envVal x δv γ
    , v = if dir == LinkedOutputs then kindOfBot <$> v else v
    , dir = LinkedInputs
    }
@@ -115,29 +115,6 @@ selectionResult fig@{ γ, dir: LinkedInputs } =
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    GC gc = fig.gc_dual
    γ1 × v1 = gc.bwd (γ)
-
-{-}
-selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
-selectionResult fig@{ γ0, v, dir: LinkedOutputs } =
-   (asℝ <$> v <*> (selState <$> v1 <*> v2)) × (toℝ <$> γ0 <*> report (selState <$> γ1 <*> γ2))
-   where
-   report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
-
-   v1 × γ1 = gc.bwd (v <#> unwrap >>> _.persistent)
-   v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
-
-
-selectionResult fig@{ γ, dir: LinkedInputs } =
-   (toℝ <$> v0 <*> report   (selState <$> v1 <*> v2)) ×
-      wrap (mapWithKey (\x v -> asℝ <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
-   where
-   --report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
-   γ1 × v1 = gc.bwd (γ <#> unwrap >>> _.persistent)
-   γ2 × v2 = gc.bwd (γ <#> unwrap >>> _.transient)
--}
---_ × v0 = neg (gc.bwd (topOf γ))
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
