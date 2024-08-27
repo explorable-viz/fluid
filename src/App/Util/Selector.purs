@@ -84,15 +84,15 @@ constrArg c n δv = unsafePartial $ case _ of
 
 constr :: Ctr -> Setter (Val (ReactState 𝔹)) 𝔹
 constr c' δα = unsafePartial $ case _ of
-   Val α (Constr c vs) | c == c' -> Val (perrsist δα α) (Constr c vs)
+   Val α (Constr c vs) | c == c' -> Val (persist δα α) (Constr c vs)
 
 dict :: Setter (Val (ReactState 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of
-   Val α (Dictionary d) -> Val (perrsist δα α) (Dictionary d)
+   Val α (Dictionary d) -> Val (persist δα α) (Dictionary d)
 
 dictKey :: String -> Setter (Val (ReactState 𝔹)) 𝔹
 dictKey s δα = unsafePartial $ case _ of
-   Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first $ perrsist δα) s d
+   Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first $ persist δα) s d
 
 dictVal :: String -> SelSetter Val Val
 dictVal s δv = unsafePartial $ case _ of
@@ -104,7 +104,7 @@ envVal x δv γ =
 
 listCell :: Int -> Setter (Val (ReactState 𝔹)) 𝔹
 listCell n δα = unsafePartial $ case _ of
-   Val α (Constr c Nil) | n == 0 && c == cNil -> Val (perrsist δα α) (Constr c Nil)
+   Val α (Constr c Nil) | n == 0 && c == cNil -> Val (persist δα α) (Constr c Nil)
    Val α (Constr c (v : v' : Nil)) | c == cCons ->
-      if n == 0 then Val (perrsist δα α) (Constr c (v : v' : Nil))
+      if n == 0 then Val (persist δα α) (Constr c (v : v' : Nil))
       else Val α (Constr c (v : listCell (n - 1) δα v' : Nil))

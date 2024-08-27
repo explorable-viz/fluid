@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (ReactState, 𝕊, arℝ, getPersistent, getTransient, kindOfBot, reactState, to𝕊, vReact)
+import App.Util (ReactState, 𝕊, as𝕊, getPersistent, getTransient, kindOfBot, reactState, to𝕊, vReact)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -103,14 +103,14 @@ liftdual (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
 
 selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
-   (arℝ <$> v <*> v1) × (to𝕊 <$> report γ1)
+   (as𝕊 <$> v <*> v1) × (to𝕊 <$> report γ1)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    GC gc = fig.gc
    v1 × γ1 = gc.bwd (v)
 
 selectionResult fig@{ γ, dir: LinkedInputs } =
-   (to𝕊 <$> report v1) × (arℝ <$> γ <*> γ1)
+   (to𝕊 <$> report v1) × (as𝕊 <$> γ <*> γ1)
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    GC gc = fig.gc_dual

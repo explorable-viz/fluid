@@ -54,11 +54,8 @@ instance Highlightable (ReactState 𝔹) where
    highlightIf Inert = highlightIf false
    highlightIf (Reactive a) = highlightIf a
 
-persist :: forall a. Setter (SelState a) a
-persist δα = \(SelState s) -> SelState (s { persistent = δα s.persistent })
-
-perrsist :: forall a. Setter (ReactState a) a
-perrsist δα = \sel ->
+persist :: forall a. Setter (ReactState a) a
+persist δα = \sel ->
    case sel of
       Reactive (SelState s) -> Reactive (SelState { persistent: δα s.persistent, transient: s.transient })
       Inert -> Inert
@@ -70,13 +67,6 @@ kindOfBot (Reactive (SelState _)) = Reactive (SelState { persistent: false, tran
 kindOfBotS :: ReactState 𝕊 -> ReactState 𝕊
 kindOfBotS (Inert) = Inert
 kindOfBotS (Reactive (SelState _)) = Reactive (SelState { persistent: None, transient: None })
-
-kindOfTop :: ReactState 𝔹 -> ReactState 𝔹
-kindOfTop (Inert) = Inert
-kindOfTop (Reactive (SelState _)) = Reactive (SelState { persistent: true, transient: true })
-
-selState :: forall a. a -> a -> SelState a
-selState b1 b2 = SelState { persistent: b1, transient: b2 }
 
 reactState :: 𝔹 -> 𝔹 -> 𝔹 -> ReactState 𝔹
 reactState true _ _ = Inert
@@ -157,10 +147,10 @@ cheatToSel :: ReactState 𝔹 -> SelState 𝔹
 cheatToSel Inert = (SelState { persistent: false, transient: false })
 cheatToSel (Reactive sel) = sel
 
-arℝ :: ReactState 𝔹 -> ReactState 𝔹 -> ReactState 𝕊
-arℝ Inert _ = Inert
-arℝ _ Inert = Inert
-arℝ (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (SelState { persistent: cross a1 a2, transient: cross b1 b2 }))
+as𝕊 :: ReactState 𝔹 -> ReactState 𝔹 -> ReactState 𝕊
+as𝕊 Inert _ = Inert
+as𝕊 _ Inert = Inert
+as𝕊 (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (SelState { persistent: cross a1 a2, transient: cross b1 b2 }))
    where
    cross :: 𝔹 -> 𝔹 -> 𝕊
    cross false false = None
