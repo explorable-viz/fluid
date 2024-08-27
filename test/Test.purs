@@ -14,15 +14,13 @@ import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, suite
 import Util ((×))
 
 main :: Effect Unit
-main = run tests
+--main = run tests
 
---main = run $ asTestSuite $ suite desugar_cases
---main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite
-   [ { file: "desugar/list-comp-8", imports: [], fwd_expect: "(5 : (4 : (3 : [])))" }
-   , { file: "desugar/list-comp-9", imports: [], fwd_expect: "(10 : (19 : []))" }
+   [ { file: "linked-outputs/moving-average", imports: [ "lib/moving-average" ], fwd_expect: "(1 : (2 : (3 : [])))" }
    ]
 
 asTestSuite :: BenchSuite -> TestSuite

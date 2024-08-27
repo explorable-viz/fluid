@@ -37,6 +37,7 @@ misc_cases =
    , { file: "lookup", imports: [], fwd_expect: "Some \"sarah\"" }
    , { file: "map", imports: [], fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))" }
    , { file: "mergeSort", imports: [], fwd_expect: "(1 : (2 : (3 : [])))" }
+   , { file: "moving-average", imports: [ "lib/moving-average" ], fwd_expect: "(1 : (2 : (3 : [])))" }
    , { file: "normalise", imports: [], fwd_expect: "(33, 66)" }
    , { file: "nub", imports: [], fwd_expect: "(1 : (2 : (3 : (4 : []))))" }
    , { file: "pattern-match", imports: [], fwd_expect: "4" }
