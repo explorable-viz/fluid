@@ -1,18 +1,18 @@
 -- Utils
 let zipPairs xs ys = zipWith (fun x y -> { x : x, y : y}) xs ys;
 
-let getXs = map (fun rec -> rec.x); 
+let getXs = map (fun rec -> rec.x);
 
 let getYs = map (fun rec -> rec.y) ;
 
 -- window = size of lookahead/lookback ie (n - 1) / 2
 -- Central average, but stops near the ends of the sequence
-let cMAvg l window = 
+let cMAvg l window =
     let startInd = window;
         endInd = (length l) - window
     in [ (sum (slice (ind - window) (ind + window + 1) l)) / (1 + 2 * window) | ind <- [startInd..endInd] ];
 
-let mAvgChop l window = 
+let mAvgChop l window =
     let start = window;
         end = (length l) - window;
         indices = slice start end (getXs l);
@@ -20,7 +20,7 @@ let mAvgChop l window =
     in zipPairs indices avgs;
 
 -- Central average, but end points use incomplete data
-let cMAvg' l window = 
+let cMAvg' l window =
     [ (sum (slice (ind - window) (ind + window + 1) l)) / (1 + 2 * window) | ind <- [0..(length l)] ];
 
 let mAvgShrink l window =
@@ -60,6 +60,6 @@ in MultiView {|
             caption: "Dummy Linechart",
             plots: [ LinePlot { name: "Simple", data: savgs}
                    , LinePlot { name: "Central", data: cavgs}
-                   , LinePlot { name: "Original Curve", data: (newPoints 0)} ] 
+                   , LinePlot { name: "Original Curve", data: (newPoints 0)} ]
         }
 |}
