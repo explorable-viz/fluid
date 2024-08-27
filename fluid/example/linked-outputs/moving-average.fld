@@ -1,14 +1,15 @@
 let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
 
-let cavgs = mAvgChop (newPoints 0) 1;
-    cavgs' = mAvgShrink (newPoints 0) 1;
-    savgs = sAvgShrink (newPoints 0) 2
+let points' = newPoints 0;
+    cavgs = mAvgChop points' 1;
+    cavgs' = mAvgShrink points' 1;
+    savgs = sAvgShrink points' 2
 in MultiView {|
     "line-chart-1" :=
         LineChart {
             caption: "Moving averages",
-            plots: [ LinePlot { name: "Simple", data: savgs}
-                   , LinePlot { name: "Central", data: cavgs}
-                   , LinePlot { name: "Original Curve", data: (newPoints 0)} ]
+            plots: [ LinePlot { name: "Simple", data: savgs }
+                   , LinePlot { name: "Central", data: cavgs }
+                   , LinePlot { name: "Original Curve", data: points' } ]
         }
 |}
