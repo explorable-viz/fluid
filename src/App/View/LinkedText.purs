@@ -30,12 +30,4 @@ instance Drawable LinkedText where
 instance Reflect (Val (SelState 𝕊)) LinkedText where
    from r = LinkedText (unpack string <$> from r)
 
--- unpackedStringify :: forall a. Tuple (Int + Number + String) a -> Tuple String a
--- unpackedStringify (Tuple x y) = Tuple (stringify x) y
-
--- stringify :: (Int + Number + String) -> String
--- stringify (Left n) = toString $ toNumber n
--- stringify (Right (Left n)) = toString n
--- stringify (Right (Right n)) = n
-
 type LinkedTextElem = { i :: Int }
