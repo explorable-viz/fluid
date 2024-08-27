@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-set -x
+set -xe
 
 karma start karma.conf.test.js $@

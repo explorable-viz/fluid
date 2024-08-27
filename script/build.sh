@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -x
+set -xe
 
 yarn tidy
 . script/clean.sh $1
