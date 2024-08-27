@@ -45,28 +45,29 @@ thead {
    border-left: 2px solid lightblue;
 }
 
-.transparent-text {
-   border-radius: 2px;
-   /* float: left; */
+.linked-text {
+   border-radius: 0px;
    background-color: White;
-   border-bottom: 2px solid white;
+   border-bottom-style: solid;
+   border-bottom-color: white;
+   border-bottom-width: 1px;
    display: inline;
 }
 
-.transparent-text.selected-primary-persistent {
+.linked-text.selected-primary-persistent {
    background-color: #93E9BE;
 }
 
-.transparent-text.selected-primary-transient {
-   border-bottom: 2px solid blue;
+.linked-text.selected-primary-transient {
+   border-bottom-color: blue;
 }
 
-.transparent-text.selected-secondary-persistent {
+.linked-text.selected-secondary-persistent {
    background-color: rgb(226, 226, 226);
 }
 
-.transparent-text.selected-secondary-transient {
-   border-bottom: 2px solid lightblue;
+.linked-text.selected-secondary-transient {
+   border-bottom-color: lightblue;
 }
 
 .table-row.hidden {
@@ -76,16 +77,13 @@ thead {
 .matrix-cell {
    stroke: DarkGray;
    fill: White;
-/* filter: drop-shadow( -1px -1px 1px rgba(0, 0, 0, .5)); */
 }
 
 .matrix-cell.selected-primary-persistent {
-/*   fill: rgb(225,225,225); */
    fill: LightGreen;
 }
 
 .matrix-cell.selected-secondary-persistent {
-/*   fill: rgb(245, 245, 245); */
    fill: rgb(214, 240, 214)
 }
 

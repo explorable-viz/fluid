@@ -1,4 +1,4 @@
-module Publish.RenewablesLinked where
+module Standalone.MovingAverage where
 
 import Prelude hiding (absurd)
 
@@ -6,8 +6,8 @@ import App.Fig (drawFig, loadFig)
 import App.Util (runAffs_)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Test.Specs.LinkedOutputs (linkedOutputs_spec1)
+import Test.Specs.LinkedOutputs (movingAverages_spec)
 import Util ((×))
 
 main :: Effect Unit
-main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig linkedOutputs_spec1.spec ]
+main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig movingAverages_spec.spec ]

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # https://stackoverflow.com/questions/57927115
-set -x
+set -xe
 
 export OWNER="explorable-viz"
 export REPOSITORY="fluid"
