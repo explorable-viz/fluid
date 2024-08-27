@@ -1,5 +1,5 @@
 -- Utils
-let zipPairs xs ys = zipWith (fun x y -> { x : x, y : y}) xs ys;
+let zipPairs = zipWith (fun x y -> {x : x, y : y});
 
 let getXs = map (fun rec -> rec.x);
 
