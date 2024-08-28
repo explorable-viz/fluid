@@ -50,18 +50,7 @@ browserTests launchBrowser = do
    clickScatterPlotPoint page "fig-4"
    --checkLineChartPlotPoints page
 
-   --clickBarChart page
-   let selector = "svg#fig-1-bar-chart rect.bar"
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
-   log ("Found BAR CHART " <> selector)
-   _ <- T.click (T.Selector selector) page
-   log ("Clicked on " <> selector)
-
-   --_ <- T.pageWaitForSelector (T.Selector "svg#fig-1-bar-chart") { fill= "57a157" } page
-   fill <- getAttributeValue page (T.Selector "svg#fig-1-bar-chart .bar") "fill"
-   log ("Fill colour is: " <> fill)
-   if fill == "#57a157" then log "The first bar in bar chart has been clicked."
-   else log "The first bar in bar chart has not been successfully clicked."
+   clickBarChart page "fig-1-bar-chart"
 
    T.close browser
 
@@ -105,6 +94,20 @@ checkCaptionText page selector = do
    if captionText == "renewables (4 of 240)" then log "The caption contains the expected value."
    else log "The caption does not contain the expected value."
    pure unit
+
+clickBarChart :: T.Page -> String -> Aff Unit
+clickBarChart page id = do
+   let selector = "svg#" <> id <> " rect.bar"
+   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
+   log ("Found BAR CHART " <> selector)
+   _ <- T.click (T.Selector selector) page
+   log ("Clicked on " <> selector)
+   fill <- getAttributeValue page (T.Selector selector) "fill"
+   log ("Fill colour is: " <> fill)
+   if fill == "#57a157" then log "The first bar in bar chart has been clicked."
+   else log "The first bar in bar chart has not been successfully clicked."
+
+--check ((fill == "#57a157") (log "The first bar in bar chart has been clicked.") (log "The first bar in bar chart has not been successfully clicked."))
 
 -------------
 
