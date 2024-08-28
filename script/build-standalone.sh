@@ -7,10 +7,9 @@ set -e
 cp -r fluid dist/app
 cp -r web/css dist/app
 
-echo $1
 NAME=$(basename $1 .purs)
 NAME_LISP_CASE=$(echo $NAME | sed 's/\([A-Z]\)/-\1/g' | tr 'A-Z' 'a-z' | sed 's/^-//')
-echo $NAME_LISP_CASE
+echo "$1 -> $NAME_LISP_CASE"
 
 rm -rf dist/app/$NAME_LISP_CASE
 mkdir -p dist/app/$NAME_LISP_CASE
