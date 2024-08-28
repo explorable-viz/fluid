@@ -51,11 +51,17 @@ browserTests launchBrowser = do
    --checkLineChartPlotPoints page
 
    --clickBarChart page
-   let selector = "svg#fig-1-bar-chart"
+   let selector = "svg#fig-1-bar-chart rect.bar"
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
    log ("Found BAR CHART " <> selector)
    _ <- T.click (T.Selector selector) page
    log ("Clicked on " <> selector)
+
+   --_ <- T.pageWaitForSelector (T.Selector "svg#fig-1-bar-chart") { fill= "57a157" } page
+   fill <- getAttributeValue page (T.Selector "svg#fig-1-bar-chart .bar") "fill"
+   log ("Fill colour is: " <> fill)
+   if fill == "#57a157" then log "The first bar in bar chart has been clicked."
+   else log "The first bar in bar chart has not been successfully clicked."
 
    T.close browser
 
