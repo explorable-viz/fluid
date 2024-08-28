@@ -18,8 +18,6 @@ launchFirefox = toAffE _launchFirefox
 
 foreign import _launchFirefox :: Effect (Promise T.Browser)
 
---foreign import checkLineChartPlotPoints :: T.Page -> Aff Unit
-
 main :: Effect (Promise Unit)
 main = fromAff $ sequence_ (snd <$> tests)
 
@@ -72,20 +70,15 @@ checkFigConv2 page = do
 checkForFigure :: T.Page -> String -> Aff Unit
 checkForFigure page id = do
    let selector = "svg#" <> id
-   --log ("Waiting for " <> selector)
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
-   --log ("Found " <> selector)
    pure unit
 
 --Function to click a toggle
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
    let selector = "div#" <> id <> " + div > div > span.toggle-button"
-   --log ("Waiting for " <> selector)
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
-   --log ("Found " <> selector <> ", clicking the toggle button")
    _ <- T.click (T.Selector selector) page
-   --log ("Clicked on " <> selector)
    _ <- T.pageWaitForSelector (T.Selector ("div#" <> id)) { visible: true } page
    pure unit
 
@@ -94,7 +87,6 @@ clickScatterPlotPoint page id = do
    let selector = "div#" <> id <> " .scatterplot-point"
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
    _ <- T.click (T.Selector selector) page
-   --log ("Clicked on " <> selector)
    className <- getAttributeValue page (T.Selector selector) "class"
    radius <- getAttributeValue page (T.Selector selector) "r"
    if className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2" then log "The circle's class and radius have changed as expected."
@@ -113,11 +105,9 @@ clickBarChart :: T.Page -> String -> Aff Unit
 clickBarChart page id = do
    let selector = "svg#" <> id <> " rect.bar"
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
-   --log ("Found BAR CHART " <> selector)
+
    _ <- T.click (T.Selector selector) page
-   --log ("Clicked on " <> selector)
    fill <- getAttributeValue page (T.Selector selector) "fill"
-   --log ("Fill colour is: " <> fill)
    if fill == "#57a157" then log "The first bar in bar chart has been clicked."
    else log "The first bar in bar chart has not been successfully clicked."
 
@@ -133,5 +123,4 @@ getAttributeValue page selector attribute = do
 textContentValue :: T.Page -> T.Selector -> Aff String
 textContentValue page selector = do
    captionText <- T.unsafePageEval selector "element => element.textContent" page
-   --log ("captionText " <> text)
    pure (unsafeFromForeign captionText)
