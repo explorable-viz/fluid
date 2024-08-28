@@ -103,23 +103,25 @@ function drawLineChart_ (
             .append('g')
             .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(y_ticks).tickFormat(d3.format('.1f')))
 
-         rootElement
-            .append('rect')
+         const legend = rootElement.append('g')
+            .attr('transform', `translate(${legend_x}, 0)`)
+
+         legend.append('rect')
             .attrs(legendHelpers.box_attrs)
 
-         const legend = rootElement.selectAll('legend')
+         const legendEntry = legend.selectAll('legend-entry')
             .data(names)
             .enter()
             .append('g')
             .attr('transform', (d, i) =>
-               `translate(${legend_x}, ${legendHelpers.entry_y(i)})`
+               `translate(0, ${legendHelpers.entry_y(i)})`
             )
 
-         legend.append('text')
+         legendEntry.append('text')
             .text(d => d)
             .attrs(legendHelpers.text_attrs)
 
-         legend.append('circle')
+         legendEntry.append('circle')
             .attr('fill', d => nameCol(d))
             .attrs(legendHelpers.circle_attrs)
 

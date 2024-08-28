@@ -165,7 +165,7 @@ lineChartHelpers (LineChart { plots }) =
          ]
       , box_attrs: fromFoldable
          [ "class" ↦ "legend-box"
-         , "transform" ↦ "translate(" <> show legend_x <> ", " <> show legend_y <> ")"
+         , "transform" ↦ "translate(0, " <> show legend_y <> ")"
          , "x" ↦ show 0
          , "y" ↦ show 0
          , "height" ↦ show (lineHeight * length plots)
