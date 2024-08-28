@@ -108,8 +108,11 @@ lineChartHelpers (LineChart { plots }) =
    point_smallRadius :: Int
    point_smallRadius = 2
 
+   legend_sep :: Int
+   legend_sep = 15
+
    margin :: Margin
-   margin = { top: 15, right: 65, bottom: 40, left: 30 }
+   margin = { top: 15, right: 15, bottom: 40, left: 15 }
 
    image_width :: Int
    image_width = 330
@@ -118,10 +121,16 @@ lineChartHelpers (LineChart { plots }) =
    image_height = 285
 
    width :: Int
-   width = image_width - margin.left - margin.right
+   width = image_width - margin.left - margin.right - legend_width
 
    height :: Int
-   height = image_height - margin.top - margin.bottom
+   height = image_height - margin.top - margin.bottom -- minus caption_height?
+
+   legend_height :: Int
+   legend_height = lineHeight * length plots
+
+   legend_width :: Int
+   legend_width = 40 -- could compute width based on text labels
 
    y_max :: Number
    y_max = maximum (plots <#> unwrap >>> _.points >>> ys >>> maximum # nonEmpty)
@@ -164,31 +173,27 @@ lineChartHelpers (LineChart { plots }) =
          ]
       , box_attrs: fromFoldable
          [ "class" ↦ "legend-box"
-         , "transform" ↦ "translate(0, " <> show y <> ")"
          , "x" ⟼ 0
          , "y" ⟼ 0
          , "height" ⟼ legend_height
-         , "width" ⟼ margin.right - 16
+         , "width" ⟼ legend_width
          ]
       , entry_y
       , x
       , y
       }
       where
-      legend_height :: Int
-      legend_height = lineHeight * length plots
-
       entry_y :: Int -> Int
-      entry_y i = height / 2 - margin.top + i * lineHeight
+      entry_y i = i * lineHeight + 2 -- tweak to emulate vertical centering of text
 
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
 
       x :: Int
-      x = width + margin.left / 2
+      x = width + legend_sep
 
       y :: Int
-      y = lineHeight * (length plots - 1) + 2
+      y = (height - legend_height) / 2
 
    lineHeight :: Int
    lineHeight = 15

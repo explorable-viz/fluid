@@ -104,7 +104,7 @@ function drawLineChart_ (
             .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(y_ticks).tickFormat(d3.format('.1f')))
 
          const legend = rootElement.append('g')
-            .attr('transform', `translate(${legendHelpers.x}, 0)`)
+            .attr('transform', `translate(${legendHelpers.x}, ${legendHelpers.y})`)
 
          legend.append('rect')
             .attrs(legendHelpers.box_attrs)
