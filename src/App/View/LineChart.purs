@@ -36,8 +36,6 @@ newtype Point = Point
 
 type LineChartHelpers =
    { point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-   , legend_x :: Int
-   , legend_y :: Int
    , margin :: Margin
    , width :: Int
    , height :: Int
@@ -55,6 +53,8 @@ type LegendHelpers =
    , circle_attrs :: Object String
    , box_attrs :: Object String
    , entry_y :: Int -> Int
+   , x :: Int
+   , y :: Int
    }
 
 -- d3.js ticks are actually (start, stop, count) but we only supply first argument
@@ -72,8 +72,6 @@ foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Numbe
 lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
    { point_attrs
-   , legend_x
-   , legend_y
    , margin
    , width
    , height
@@ -105,12 +103,6 @@ lineChartHelpers (LineChart { plots }) =
 
    point_smallRadius :: Int
    point_smallRadius = 2
-
-   legend_x :: Int
-   legend_x = width + margin.left / 2
-
-   legend_y :: Int
-   legend_y = lineHeight * (length plots - 1) + 2
 
    margin :: Margin
    margin = { top: 15, right: 65, bottom: 40, left: 30 }
@@ -160,22 +152,33 @@ lineChartHelpers (LineChart { plots }) =
          ]
       , circle_attrs: fromFoldable
          [ "r" ↦ show point_smallRadius
-         , "cx" ↦ show (lineHeight / 2 - point_smallRadius / 2)
-         , "cy" ↦ show (lineHeight / 2 - point_smallRadius / 2)
+         , "cx" ↦ show circle_centre
+         , "cy" ↦ show circle_centre
          ]
       , box_attrs: fromFoldable
          [ "class" ↦ "legend-box"
-         , "transform" ↦ "translate(0, " <> show legend_y <> ")"
+         , "transform" ↦ "translate(0, " <> show y <> ")"
          , "x" ↦ show 0
          , "y" ↦ show 0
          , "height" ↦ show (lineHeight * length plots)
          , "width" ↦ show (margin.right - 16)
          ]
       , entry_y
+      , x
+      , y
       }
       where
       entry_y :: Int -> Int
       entry_y i = height / 2 - margin.top + i * lineHeight
+
+      circle_centre :: Int
+      circle_centre = lineHeight / 2 - point_smallRadius / 2
+
+      x :: Int
+      x = width + margin.left / 2
+
+      y :: Int
+      y = lineHeight * (length plots - 1) + 2
 
    lineHeight :: Int
    lineHeight = 15

@@ -44,7 +44,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { legend_x, margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
+      const { margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -104,7 +104,7 @@ function drawLineChart_ (
             .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(y_ticks).tickFormat(d3.format('.1f')))
 
          const legend = rootElement.append('g')
-            .attr('transform', `translate(${legend_x}, 0)`)
+            .attr('transform', `translate(${legendHelpers.x}, 0)`)
 
          legend.append('rect')
             .attrs(legendHelpers.box_attrs)
