@@ -5,10 +5,12 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import Bind ((↦))
+import Bind ((↦), (⟼))
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Foldable (length)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
+import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
@@ -87,12 +89,12 @@ lineChartHelpers (LineChart { plots }) =
    point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    point_attrs nameCol _ { i, j, name } =
       fromFoldable
-         [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
-         , "stroke-width" ↦ "1"
+         [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
+         , "stroke-width" ⟼ 1
          , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
          , "fill" ↦ fill col
-         , "cx" ↦ show (to_x (fst x))
-         , "cy" ↦ show (to_y (fst y))
+         , "cx" ⟼ to_x (fst x)
+         , "cy" ⟼ to_y (fst y)
          ]
       where
       LinePlot plot = plots ! i
@@ -114,22 +116,19 @@ lineChartHelpers (LineChart { plots }) =
    height = 285 - margin.top - margin.bottom
 
    y_max :: Number
-   y_max = maximum (plots <#> plot_max_y # nonEmpty)
-      where
-      plot_max_y :: LinePlot -> Number
-      plot_max_y (LinePlot { points }) = maximum (points # nonEmpty <#> \(Point { y }) -> fst y)
+   y_max = maximum (plots <#> unwrap >>> _.points >>> ys >>> maximum # nonEmpty)
 
    x_min :: Number
-   x_min = minimum (plots <#> plot_min_x # nonEmpty)
-      where
-      plot_min_x :: LinePlot -> Number
-      plot_min_x (LinePlot { points }) = minimum (points # nonEmpty <#> \(Point { x }) -> fst x)
+   x_min = minimum (plots <#> unwrap >>> _.points >>> xs >>> minimum # nonEmpty)
 
    x_max :: Number
-   x_max = maximum (plots <#> plot_max_x # nonEmpty)
-      where
-      plot_max_x :: LinePlot -> Number
-      plot_max_x (LinePlot { points }) = maximum (points # nonEmpty <#> \(Point { x }) -> fst x)
+   x_max = maximum (plots <#> unwrap >>> _.points >>> xs >>> maximum # nonEmpty)
+
+   xs :: Array Point -> NonEmptyArray Number
+   xs = (_ # nonEmpty) >>> (_ <#> unwrap >>> _.x >>> fst)
+
+   ys :: Array Point -> NonEmptyArray Number
+   ys = (_ # nonEmpty) >>> (_ <#> unwrap >>> _.y >>> fst)
 
    to_x :: Number -> Number
    to_x = scaleLinear { min: x_min, max: x_max } { min: 0.0, max: toNumber width }
@@ -147,21 +146,21 @@ lineChartHelpers (LineChart { plots }) =
    legendHelpers =
       { lineHeight
       , text_attrs: fromFoldable
-         [ "font-size" ↦ show 11
+         [ "font-size" ⟼ 11
          , "transform" ↦ "translate(15, 9)" -- align text with boxes
          ]
       , circle_attrs: fromFoldable
-         [ "r" ↦ show point_smallRadius
-         , "cx" ↦ show circle_centre
-         , "cy" ↦ show circle_centre
+         [ "r" ⟼ point_smallRadius
+         , "cx" ⟼ circle_centre
+         , "cy" ⟼ circle_centre
          ]
       , box_attrs: fromFoldable
          [ "class" ↦ "legend-box"
          , "transform" ↦ "translate(0, " <> show y <> ")"
-         , "x" ↦ show 0
-         , "y" ↦ show 0
-         , "height" ↦ show legend_height
-         , "width" ↦ show (margin.right - 16)
+         , "x" ⟼ 0
+         , "y" ⟼ 0
+         , "height" ⟼ legend_height
+         , "width" ⟼ margin.right - 16
          ]
       , entry_y
       , x
@@ -188,8 +187,8 @@ lineChartHelpers (LineChart { plots }) =
 
    caption_attrs :: Object String
    caption_attrs = fromFoldable
-      [ "x" ↦ show (width / 2)
-      , "y" ↦ show (height + 35)
+      [ "x" ⟼ width / 2
+      , "y" ⟼ height + 35
       , "class" ↦ "title-text"
       , "dominant-baseline" ↦ "bottom"
       , "text-anchor" ↦ "middle"
@@ -228,3 +227,6 @@ instance Reflect (Val (SelState 𝕊)) LinePlot where
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
+
+derive instance Newtype Point _
+derive instance Newtype LinePlot _
