@@ -39,7 +39,8 @@ newtype Point = Point
 type LineChartHelpers =
    { point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    , margin :: Margin
-   , width :: Int
+   , image_width :: Int
+   , image_height :: Int
    , height :: Int
    , x_ticks :: Ticks
    , y_ticks :: Ticks
@@ -75,7 +76,8 @@ lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
    { point_attrs
    , margin
-   , width
+   , image_height
+   , image_width
    , height
    , x_ticks
    , y_ticks
@@ -109,11 +111,17 @@ lineChartHelpers (LineChart { plots }) =
    margin :: Margin
    margin = { top: 15, right: 65, bottom: 40, left: 30 }
 
+   image_width :: Int
+   image_width = 330
+
+   image_height :: Int
+   image_height = 285
+
    width :: Int
-   width = 330 - margin.left - margin.right
+   width = image_width - margin.left - margin.right
 
    height :: Int
-   height = 285 - margin.top - margin.bottom
+   height = image_height - margin.top - margin.bottom
 
    y_max :: Number
    y_max = maximum (plots <#> unwrap >>> _.points >>> ys >>> maximum # nonEmpty)

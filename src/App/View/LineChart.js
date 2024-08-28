@@ -44,7 +44,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
+      const { margin, image_width, image_height, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -64,8 +64,8 @@ function drawLineChart_ (
       if (rootElement.empty()) {
          rootElement = div
             .append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
+            .attr('width', image_width)
+            .attr('height', image_height)
             .attr('id', childId)
             .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
