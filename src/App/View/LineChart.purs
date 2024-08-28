@@ -160,7 +160,7 @@ lineChartHelpers (LineChart { plots }) =
          , "transform" ↦ "translate(0, " <> show y <> ")"
          , "x" ↦ show 0
          , "y" ↦ show 0
-         , "height" ↦ show (lineHeight * length plots)
+         , "height" ↦ show legend_height
          , "width" ↦ show (margin.right - 16)
          ]
       , entry_y
@@ -168,6 +168,9 @@ lineChartHelpers (LineChart { plots }) =
       , y
       }
       where
+      legend_height :: Int
+      legend_height = lineHeight * length plots
+
       entry_y :: Int -> Int
       entry_y i = height / 2 - margin.top + i * lineHeight
 
