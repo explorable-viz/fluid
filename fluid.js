@@ -2,6 +2,17 @@
 const { program } = require('commander');
 const fs = require('node:fs');
 const filenameRegex = /\w+\.yml/ //may need to expand character set
+const express = require('express');
+const serve = require('express-static');
+require('http-shutdown').extend();
+
+const app = express();
+
+app.use(serve(__dirname + '/dist/article'));
+
+const server = app.listen(8080, function(){
+  console.log("Server running");
+}).withShutdown();
 
 //NOTE: serve html file in dist/app/fluid/ using express e.g. app.use(serve(__dirname + '/dist/app'));
 program.command('load')

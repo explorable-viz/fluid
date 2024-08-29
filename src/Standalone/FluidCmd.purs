@@ -1,4 +1,4 @@
-module Standalone.Fluid where
+module Standalone.FluidCmd where
 
 import Prelude hiding (absurd)
 

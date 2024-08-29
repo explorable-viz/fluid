@@ -39,7 +39,9 @@
     "build-puppeteer": "./script/build.sh test-puppeteer Test.Puppeteer --platform=node",
     "test-puppeteer": "./script/test-puppeteer.sh",
 
-    "build-fluid": "./script/build-standalone.sh Fluid"
+    "build-fluid": "./script/build-article.sh",
+
+    "npm-publish": "./script/npm-publish.sh"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
