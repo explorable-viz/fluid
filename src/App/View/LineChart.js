@@ -51,11 +51,7 @@ function setSelState (
 
 function drawLineChart_ (
    lineChartHelpers,
-   { val,
-     selState,
-     selClasses,
-     selClassesFor
-   },
+   uiHelpers,
    {
       divId,
       suffix,
@@ -69,6 +65,7 @@ function drawLineChart_ (
    return () => {
       const { createRootElement, interior, ticks, to, legendHelpers, createLegend, createLegendEntry, caption_attrs }
          = lineChartHelpers
+      const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + divId)
@@ -136,7 +133,7 @@ function drawLineChart_ (
             .text(val(caption))
             .attrs(caption_attrs)
       }
-      setSelState(lineChartHelpers, { selState, selClasses, selClassesFor}, nameCol, rootElement, listener)
+      setSelState(lineChartHelpers, uiHelpers, nameCol, rootElement, listener)
    }
 }
 
