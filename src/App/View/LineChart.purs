@@ -37,7 +37,7 @@ newtype Point = Point (Coord (Selectable Number))
 
 type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect D3Selection
-   , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
+   , point_attrs :: (String -> String) -> PointCoordinate -> Object String
    , interior :: Dimensions
    , ticks :: Coord Ticks
    , to :: Coord (Endo Number)
@@ -112,8 +112,8 @@ lineChartHelpers (LineChart { plots }) =
          ]
 
    -- TODO: LineChart argument no longer needed
-   point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-   point_attrs nameCol _ { i, j, name } =
+   point_attrs :: (String -> String) -> PointCoordinate -> Object String
+   point_attrs nameCol { i, j, name } =
       fromFoldable
          [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
          , "stroke-width" ⟼ 1
@@ -212,9 +212,11 @@ lineChartHelpers (LineChart { plots }) =
 
    createLegendEntry :: D3Selection -> Effect D3Selection
    createLegendEntry parent =
-      createChildren parent "g" (mapWithIndex ((\i (LinePlot { name }) -> { i, name: fst name })) plots) $
-         fromFoldable
-            [ "transform" ↦ \{ i } -> translate { x: 0, y: legendHelpers.entry_y i } ]
+      createChildren parent "g" entries $ fromFoldable
+         [ "transform" ↦ \{ i } -> translate { x: 0, y: legendHelpers.entry_y i } ]
+      where
+      entries :: Array LegendEntry
+      entries = mapWithIndex ((\i (LinePlot { name }) -> { i, name: fst name })) plots
 
    lineHeight :: Int
    lineHeight = 15

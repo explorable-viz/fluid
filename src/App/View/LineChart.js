@@ -9,7 +9,7 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
-d3.selection.prototype.attrsFuns = function(m) {
+d3.selection.prototype.attrFuns = function(m) {
    for (const k in m) {
       this.attr(k, d => m[k](d))
    }
@@ -38,12 +38,11 @@ function setSelState (
    { },
    nameCol,
    rootElement,
-   chart,
    listener
 ) {
    rootElement.selectAll('.linechart-point').each(function (point) {
       d3.select(this) // won't work inside arrow function :/
-         .attrs(point_attrs(nameCol)(chart)(point))
+         .attrs(point_attrs(nameCol)(point))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -122,12 +121,7 @@ function drawLineChart_ (
             .call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(ticks.y).tickFormat(d3.format('.1f')))
 
          const legend = createLegend(rootElement)()
-         const legendEntry = legend
-            .selectAll('g')
-            .data(names.entries().map(([i, name]) => { return { i, name } }))
-            .enter()
-            .append('g')
-            .attr('transform', ({ i }) => `translate(0, ${legendHelpers.entry_y(i)})`)
+         const legendEntry = createLegendEntry(legend)()
 
          legendEntry.append('text')
             .text(({ name }) => name)
@@ -142,7 +136,7 @@ function drawLineChart_ (
             .text(val(caption))
             .attrs(caption_attrs)
       }
-      setSelState(lineChartHelpers, { selState, selClasses, selClassesFor}, nameCol, rootElement, { plots }, listener)
+      setSelState(lineChartHelpers, { selState, selClasses, selClassesFor}, nameCol, rootElement, listener)
    }
 }
 
