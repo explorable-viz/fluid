@@ -2,16 +2,18 @@ module Test.Puppeteer where
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadThrow)
 import Control.Promise (Promise, fromAff, toAffE)
 import Data.Foldable (sequence_)
 import Data.Tuple (snd)
 import Effect (Effect)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, Error)
+import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
 import Test.Util (TestSuite)
 import Toppokki as T
-import Util ((×))
+import Util (Endo, check, debug, (×))
 
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
@@ -32,10 +34,10 @@ browserTests launchBrowser = do
    browser <- launchBrowser
    page <- T.newPage browser
    let url = "http://127.0.0.1:8080"
-   log ("Going to " <> url)
+   log' ("Going to " <> url)
    T.goto (T.URL url) page
    content <- T.content page
-   log content
+   log' content
 
    checkFig4 page
    checkFig1 page
@@ -49,7 +51,7 @@ checkFig4 page = do
    checkForFigure page "fig-4-output"
    clickToggle page "fig-4-input"
    clickScatterPlotPoint page "fig-4"
-   log "checkFig4 completed"
+   log' "checkFig4 completed"
 
 checkFig1 :: T.Page -> Aff Unit
 checkFig1 page = do
@@ -57,13 +59,13 @@ checkFig1 page = do
    checkForFigure page "fig-1-line-chart"
    clickToggle page "fig-1-input"
    clickBarChart page "fig-1-bar-chart"
-   log "checkFig1 completed"
+   log' "checkFig1 completed"
 
 checkFigConv2 :: T.Page -> Aff Unit
 checkFigConv2 page = do
    checkForFigure page "fig-conv-2-output"
    clickToggle page "fig-conv-2-input"
-   log "checkFigConv2 completed"
+   log' "checkFigConv2 completed"
 
 ----------------------
 --Function to check for the presence of an SVG figure
@@ -89,29 +91,23 @@ clickScatterPlotPoint page id = do
    _ <- T.click (T.Selector selector) page
    className <- getAttributeValue page (T.Selector selector) "class"
    radius <- getAttributeValue page (T.Selector selector) "r"
-   if className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2" then log "The circle's class and radius have changed as expected."
-   else log "The circle's class and/or radius did not change as expected."
+   check' (className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2") "The circle's class and/or radius did not change as expected."
    checkCaptionText page "table#fig-4-input-renewables > caption.table-caption"
 
 checkCaptionText :: T.Page -> String -> Aff Unit
 checkCaptionText page selector = do
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
    captionText <- textContentValue page (T.Selector selector)
-   if captionText == "renewables (4 of 240)" then log "The caption contains the expected value."
-   else log "The caption does not contain the expected value."
+   check' (captionText == "renewables (4 of 240)") "The caption does not contain the expected value"
    pure unit
 
 clickBarChart :: T.Page -> String -> Aff Unit
 clickBarChart page id = do
    let selector = "svg#" <> id <> " rect.bar"
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
-
    _ <- T.click (T.Selector selector) page
    fill <- getAttributeValue page (T.Selector selector) "fill"
-   if fill == "#57a157" then log "The first bar in bar chart has been clicked."
-   else log "The first bar in bar chart has not been successfully clicked."
-
---check ((fill == "#57a157") (log "The first bar in bar chart has been clicked.") (log "The first bar in bar chart has not been successfully clicked."))
+   check' (fill == "#57a157") "The first bar in bar chart has not been successfully clicked."
 
 -------------
 
@@ -124,3 +120,18 @@ textContentValue :: T.Page -> T.Selector -> Aff String
 textContentValue page selector = do
    captionText <- T.unsafePageEval selector "element => element.textContent" page
    pure (unsafeFromForeign captionText)
+
+-------------------
+
+report :: Boolean -> Endo String
+report b s = "\x1b[" <> if b then "32" else "31" <> "m " <> if b then "✔" else "✖" <> "\x1b[0m " <> s
+
+check' :: forall m. MonadThrow Error m => MonadEffect m => Boolean -> String -> m Unit
+check' true s = do
+   log (report true s)
+   pure unit
+check' false s = check false (report false s)
+
+log' :: forall m. MonadEffect m => String -> m Unit
+log' message =
+   when debug.logging (log message)
