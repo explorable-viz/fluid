@@ -55,18 +55,22 @@ linkedOutputs_spec2 =
               )
    }
 
+linkedOutputs_spec3 :: TestLinkedOutputsSpec
+linkedOutputs_spec3 =
+   { spec:
+        { datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
+        , imports: []
+        , file: File "linked-outputs/pairs"
+        , inputs: [ "data" ]
+        }
+   , δ_out: snd (snd (fst neg))
+   , out_expect: snd (snd (fst neg))
+        >>> fst (fst neg >>> snd (fst neg))
+   }
+
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
-   [ { spec:
-          { datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
-          , imports: []
-          , file: File "linked-outputs/pairs"
-          , inputs: [ "data" ]
-          }
-     , δ_out: snd (snd (fst neg))
-     , out_expect: snd (snd (fst neg))
-          >>> fst (fst neg >>> snd (fst neg))
-     }
+   [ linkedOutputs_spec3
    , { spec:
           { datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
           , imports: [ "lib/convolution" ]

@@ -19,6 +19,7 @@ import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd)
 import DataType (cCons, cNil)
+import Debug (spy)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
@@ -40,7 +41,6 @@ type Selector (f :: Type -> Type) = Endo (f (ReactState 𝔹)) -- modifies selec
 -- clicking during mouseover visibly changes the state). Primary and secondary also need to be visually
 -- distinct but not orthogonal; primary should (visually) subsume secondary.
 -- inert is for nodes with no descendants.
--- We implement ReactState, then TelState to possibly include none in a different location.
 
 newtype SelState a = SelState
    { persistent :: a
@@ -59,6 +59,19 @@ persist δα = \sel ->
    case sel of
       Reactive (SelState s) -> Reactive (SelState { persistent: δα s.persistent, transient: s.transient })
       Inert -> Inert
+
+checkREq :: ReactState 𝔹 -> ReactState 𝔹 -> 𝔹
+checkREq Inert Inert = true
+checkREq (Reactive a) (Reactive b) = eq a b
+checkREq _ _ = false
+
+nullify :: ReactState 𝔹 -> ReactState 𝔹
+nullify (Inert) = Inert
+nullify (Reactive (SelState _)) = Inert
+
+compress :: ReactState 𝔹 -> ReactState 𝔹
+compress Inert = (Reactive (SelState { persistent: false, transient: false }))
+compress (Reactive a) = (Reactive a)
 
 kindOfBot :: ReactState 𝔹 -> ReactState 𝔹
 kindOfBot (Inert) = Inert
@@ -183,6 +196,10 @@ getPersistent (Reactive (SelState a)) = a.persistent
 getTransient :: ReactState 𝔹 -> 𝔹
 getTransient Inert = false
 getTransient (Reactive (SelState a)) = a.transient
+
+getInert :: ReactState 𝔹 -> 𝔹
+getInert Inert = true
+getInert (Reactive (SelState _)) = false
 
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
@@ -314,13 +331,12 @@ instance Apply SelState where
    apply (SelState fs) (SelState s) =
       SelState { persistent: fs.persistent s.persistent, transient: fs.transient s.transient }
 
-{-}
 instance Apply ReactState where
    apply (Inert) _ = Inert
    apply _ (Inert) = Inert
    apply (Reactive (SelState fs)) (Reactive (SelState s)) =
       Reactive (SelState { persistent: fs.persistent s.persistent, transient: fs.transient s.transient })
--}
+
 derive instance Ord a => Ord (SelState a)
 derive instance Eq a => Eq (SelState a)
 derive newtype instance Show a => Show (SelState a)
@@ -331,6 +347,16 @@ instance JoinSemilattice a => JoinSemilattice (SelState a) where
 
 instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a) where
    bot = SelState { persistent: bot, transient: bot }
-{-}
+
 instance BoundedJoinSemilattice a => BoundedJoinSemilattice (ReactState a) where
-   bot = Inert-}
+   bot = Inert
+
+instance Eq 𝔹 => Eq (ReactState 𝔹) where
+   eq (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = spy "reactive comparison" {-eq a1 a2 && eq b1 b2-}  (a1 && a2 && b1 && b2) && not (a1 && a2 && b1 && b2)
+   eq Inert Inert = spy "inert comparison" true
+   eq Inert (Reactive (SelState { persistent: c, transient: d })) = spy "inert-reactive" (c || not d)
+   eq (Reactive _) Inert = spy "reactive-inert" true
+
+instance BoundedJoinSemilattice 𝕊 where
+   bot = None
+

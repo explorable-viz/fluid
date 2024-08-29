@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (ReactState, 𝕊, as𝕊, getPersistent, getTransient, kindOfBot, reactState, to𝕊, vReact)
+import App.Util (ReactState, 𝕊, as𝕊, getInert, getPersistent, getTransient, kindOfBot, reactState, to𝕊, vReact)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -67,14 +67,14 @@ lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    fwd1 :: Env (ReactState 𝔹) -> Val (ReactState 𝔹)
    fwd1 γ = reactState <$> v0 <*> v1 <*> v2
       where
-      v0 = gc.fwd (botOf γ)
+      v0 = gc.fwd (γ <#> getInert)
       v1 = gc.fwd (γ <#> getPersistent)
       v2 = gc.fwd (γ <#> getTransient)
 
    bwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
    bwd1 v = reactState <$> v0 <*> v1 <*> v2
       where
-      v0 = gc.bwd (botOf v)
+      v0 = gc.bwd (v <#> getInert)
       v1 = gc.bwd (v <#> getPersistent)
       v2 = gc.bwd (v <#> getTransient)
 
@@ -84,16 +84,18 @@ liftdual (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    fwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
    fwd1 γ = reactState <$> v0 <*> v1 <*> v2
       where
-      v0 = gc.fwd (botOf γ)
+      v0 = gc.fwd (γ <#> getInert)
       v1 = gc.fwd (γ <#> getPersistent)
       v2 = gc.fwd (getTransient <$> γ)
 
    bwd1 :: Env (ReactState 𝔹) -> Val (ReactState 𝔹)
    bwd1 v = reactState <$> v0 <*> v1 <*> v2
       where
-      v0 = gc.bwd (botOf v)
+      v0 = gc.bwd (v <#> getInert) -- or botOf v
       v1 = gc.bwd (v <#> getPersistent)
       v2 = gc.bwd (v <#> getTransient)
+
+--bwd1 v =  gc.bwd <$> (v)
 
 selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
@@ -151,7 +153,7 @@ loadFig spec@{ inputs, imports, file, datasets } = do
    {-v: botOf outα
    γ: botOf γα-}
 
-   pure { spec, s, γ: vReact <$> γ0 <*> botOf γα, v: vReact <$> v0 <*> botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
+   pure { spec, s, γ: vReact <$> γ0 <*> {-Reactive <$> -}  botOf γα, v: vReact <$> v0 {-} Reactive <$>-}  <*> botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)

@@ -3,12 +3,13 @@ module Test.Util.Suite where
 import Prelude
 
 import App.Fig (selectionResult, loadFig, selectInput, selectOutput)
-import App.Util (Selector, cheatToSel, kindOfBotS, toR𝔹)
+import App.Util (Selector, cheatToSel, compress, kindOfBotS, toR𝔹)
 import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, snd, uncurry)
+import Debug (spy)
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), loadFile, loadProgCxt)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
@@ -85,6 +86,15 @@ linkedOutputsTest { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (fst (selectionResult fig))
+   --there's no reason that we should be able to apply checkEq to ReactState
+   --checkEq "selectedA" "expectedA" (Inert) (Reactive (SelState { persistent: true, transient: true }))
+   --checkEq "selectedA" "expectedA" [(Inert), (Reactive (SelState{persistent: true, transient: true}))] [(Reactive (SelState{persistent: true, transient: true})), (Inert)]
+   checkEq "selected0" "expected0" (spy "a2" <$> (compress <<< toR𝔹 <$> v)) (spy "a1" <<< toR𝔹 <$> v)
+   --checkEq "selected1" "expected1" (spy "a1" <<< toR𝔹 <$> v) (spy "a2" <$> (toR𝔹 <$> v))
+   --checkEq "jointest" "jointest2" (cheatToSel  ((Reactive (SelState { persistent: true, transient: false })) ∨ (Reactive (SelState { persistent: false, transient: false })))) (SelState {persistent: true, transient: false})
+   --checkEq "selected2" "expected2" (spy "b1" <<< compress <<< toR𝔹 <$> v) (spy "b2" <<< compress <<< toR𝔹 <$> v)
+   --checkEq "selected3" "expected3" (spy "3" <<< compress <<< toR𝔹 <$> v) ( {-spy "product" <<< -} compress <$> (out_expect (toR𝔹 <$> (kindOfBotS <$> v)))) {-(Reactive (SelState ({persistent: true, transient: true}))) (Reactive (SelState ({persistent:true, transient: true})))-} {-(spy "v" <<< toR𝔹 <$> v) (spy "product" <$> (out_expect (toR𝔹 <$> (kindOfBotS <$> v))))-}
+   --checkEq "selected4" "expected4" ( {-spy "v" <<< -} nullify <<< toR𝔹 <$> v)  ( {-spy "product" <<< -} compress <$> (out_expect (toR𝔹 <$> (kindOfBotS <$> v))))) {-(Reactive (SelState ({persistent: true, transient: true})) (Reactive (SelState ({persistent:true, transient: true})))-} {-(spy "v" <<< toR𝔹 <$> v) (spy "product" <$> (out_expect (toR𝔹 <$> (kindOfBotS <$> v))))-}
    checkEq "selected" "expected" (cheatToSel <<< toR𝔹 <$> v) (cheatToSel <$> (out_expect (toR𝔹 <$> (kindOfBotS <$> v))))
    pure fig
 
