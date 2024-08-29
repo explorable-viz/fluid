@@ -15,6 +15,7 @@ import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
+import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
 import Util (Endo, nonEmpty, (!))
@@ -47,6 +48,7 @@ type LineChartHelpers =
    , to_x :: Endo Number
    , to_y :: Endo Number
    , legendHelpers :: LegendHelpers
+   , createLegend :: D3Selection -> Effect D3Selection
    , caption_attrs :: Object String
    }
 
@@ -70,6 +72,12 @@ type Margin =
    , left :: Int
    }
 
+translate :: Int -> Int -> String
+translate x y = "translate(" <> show x <> ", " <> show y <> ")"
+
+foreign import data D3Selection :: Type
+
+foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 
 lineChartHelpers :: LineChart -> LineChartHelpers
@@ -84,6 +92,7 @@ lineChartHelpers (LineChart { plots }) =
    , to_x
    , to_y
    , legendHelpers
+   , createLegend
    , caption_attrs
    }
    where
@@ -159,12 +168,18 @@ lineChartHelpers (LineChart { plots }) =
    y_ticks :: Ticks
    y_ticks = 3.0
 
+   legend_x :: Int
+   legend_x = width + legend_sep
+
+   legend_y :: Int
+   legend_y = (height - legend_height) / 2
+
    legendHelpers :: LegendHelpers
    legendHelpers =
       { lineHeight
       , text_attrs: fromFoldable
          [ "font-size" ⟼ 11
-         , "transform" ↦ "translate(15, 9)" -- align text with boxes
+         , "transform" ↦ translate 15 9 -- align text with boxes
          ]
       , circle_attrs: fromFoldable
          [ "r" ⟼ point_smallRadius
@@ -179,8 +194,8 @@ lineChartHelpers (LineChart { plots }) =
          , "width" ⟼ legend_width
          ]
       , entry_y
-      , x
-      , y
+      , x: legend_x
+      , y: legend_y
       }
       where
       entry_y :: Int -> Int
@@ -189,11 +204,12 @@ lineChartHelpers (LineChart { plots }) =
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
 
-      x :: Int
-      x = width + legend_sep
-
-      y :: Int
-      y = (height - legend_height) / 2
+   createLegend :: D3Selection -> Effect D3Selection
+   createLegend parent =
+      createChild parent "g" attrs
+      where
+      attrs = fromFoldable
+         [ "transform" ↦ translate legend_x legend_y ]
 
    lineHeight :: Int
    lineHeight = 15

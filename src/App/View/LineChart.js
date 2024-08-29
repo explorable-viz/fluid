@@ -9,6 +9,10 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
+function createChild_ (parent, elementType, attrs_) {
+   return parent.append(elementType).attrs(attrs_)
+}
+
 function setSelState (
    { point_attrs },
    { },
@@ -44,7 +48,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { margin, image_width, image_height, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
+      const { margin, image_width, image_height, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, createLegend, caption_attrs }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -103,13 +107,13 @@ function drawLineChart_ (
             .append('g')
             .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(y_ticks).tickFormat(d3.format('.1f')))
 
-         const legend = rootElement.append('g')
-            .attr('transform', `translate(${legendHelpers.x}, ${legendHelpers.y})`)
+         const legend = createLegend(rootElement)
 
          legend.append('rect')
             .attrs(legendHelpers.box_attrs)
 
-         const legendEntry = legend.selectAll('legend-entry')
+         const legendEntry = legend
+            .selectAll('legend-entry')
             .data(names)
             .enter()
             .append('g')
@@ -136,3 +140,4 @@ function drawLineChart_ (
 
 export var drawLineChart = x1 => x2 => x3 => x4 => drawLineChart_(x1, x2, x3, x4)
 export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
+export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
