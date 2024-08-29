@@ -54,6 +54,18 @@ linkedOutputs_spec2 =
               )
    }
 
+movingAverages_spec :: TestLinkedOutputsSpec
+movingAverages_spec =
+   { spec:
+        { datasets: [ "points" ↦ "example/linked-outputs/moving-average-data" ]
+        , imports: [ "lib/moving-average" ]
+        , file: File "linked-outputs/moving-average"
+        , inputs: [ "points" ]
+        }
+   , δ_out: identity
+   , out_expect: identity
+   }
+
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
@@ -95,4 +107,5 @@ linkedOutputs_cases =
      }
    , linkedOutputs_spec1
    , linkedOutputs_spec2
+   , movingAverages_spec
    ]

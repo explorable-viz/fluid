@@ -18,24 +18,27 @@
   },
   "homepage": "https://f.luid.org",
   "scripts": {
-    "clean-app": "rm -rf dist/app && mkdir -p dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app && cp -r web/pdf dist/app",
-    "build-app": "yarn tidy && yarn clean-app && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main App --to dist/app/app.js",
-    "serve-app": "npx http-serve dist/app -a 127.0.0.1 -c-1",
-    "clean-artifact": "rm -rf dist/artifact && mkdir -p dist/artifact && cp -r fluid dist/artifact && cp web/artifact.html dist/artifact/index.html && cp -r web/css dist/artifact",
-    "build-artifact": "yarn clean-artifact && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Artifact --to dist/artifact/app.js",
-    "serve-artifact": "yarn build-artifact && npx http-serve dist/artifact -a 127.0.0.1 -c-1",
-    "publish-standalone": "./script/publish.sh",
-    "publish-single": "./script/publish-single.sh",
-    "clean": "rm -rf dist/tests && mkdir -p dist/tests && cp web/tests.html dist/tests",
-    "clean-bench": "rm -rf dist/benches && mkdir -p dist/benches && cp -r fluid dist/benches && cp web/index.html dist/benches && cp -r web/css dist/benches",
-    "build": "yarn tidy && yarn clean && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Test --to dist/tests/app.js",
-    "build-bench": "yarn clean-bench && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Benchmark --to dist/benches/app.js",
-    "test": "karma start karma.conf.tests.js",
-    "bench": "npx http-serve dist/benches -a 127.0.0.1",
-    "test-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
-    "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
-    "build-puppeteer": "yarn tidy && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --platform=node --main Test.Puppeteer --to dist/tests/puppeteer.js",
-    "test-puppeteer": "yarn puppeteer browsers install chrome && yarn puppeteer browsers install firefox && node puppeteer.js",
+    "tidy": "./script/tidy.sh",
+
+    "build-app": "./script/build.sh app App",
+    "serve-app": "./script/serve.sh app",
+
+    "build-artifact": "./script/build.sh artifact Artifact",
+    "serve-artifact": "./script/serve.sh artifact",
+
+    "build-standalone-all": "./script/build-standalone-all.sh",
+    "build-standalone": "./script/build-standalone.sh",
+
+    "build-bench": "./script/build.sh bench Test.Benchmark",
+    "bench": "./script/serve.sh bench",
+
+    "build": "./script/build.sh test Test.Test",
+    "test": "./script/test.sh",
+    "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
+
+    "build-puppeteer": "./script/build.sh test-puppeteer Test.Puppeteer --platform=node",
+    "test-puppeteer": "./script/test-puppeteer.sh",
+
     "build-fluid": "./script/publish-single.sh Fluid"
   },
   "dependencies": {
@@ -44,19 +47,13 @@
     "@codemirror/view": "6.9.3",
     "benchmark": "^2.1.4",
     "commander": "^12.1.0",
-    "concurrently": "^8.2.2",
     "d3": "^7.9.0",
-    "d3-tip": "0.9.1",
     "datetime": "^0.0.3",
     "express": "^4.19.2",
     "express-static": "^1.2.6",
-    "http-serve": "^1.0.1",
-    "http-server": "^14.1.1",
     "http-shutdown": "^1.2.2",
-    "js-date": "^0.1.3",
     "node-process": "^1.0.1",
-    "purescript": "^0.15.10",
-    "wait-on": "^7.2.0"
+    "purescript": "^0.15.10"
   },
   "devDependencies": {
     "esbuild": "0.15.1",

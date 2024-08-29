@@ -1,4 +1,4 @@
-module Publish.Fluid where
+module Standalone.Fluid where
 
 import Prelude hiding (absurd)
 

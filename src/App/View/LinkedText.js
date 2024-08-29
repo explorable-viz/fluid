@@ -47,21 +47,23 @@ function drawLinkedText_ (
       const childId = divId + '-' + suffix
       let rootElement = div.selectAll('#' + childId)
       if (rootElement.empty()) {
-         rootElement = div.append("div").attr("id", childId).text(view._1).attr('class', 'transparent-text-parent')
-         
+         rootElement = div
+            .append("div")
+            .attr("id", childId)
+            .text(view._1)
+            .attr('class', 'linked-text-parent')
 
-         const textElems = rootElement
-                           .selectAll('span')
-                           .data(view.entries().map(([i, conts]) => { return {i, conts}}))
-                           .enter()
-                           .append('span')
-                           .attr('id', childId)
-                           .text(d => d.conts._1)
-                           .attr('class', 'transparent-text')
+         rootElement.selectAll('span')
+            .data(view.entries().map(([i, conts]) => { return {i, conts}}))
+            .enter()
+            .append('span')
+            .attr('id', childId)
+            .text(d => d.conts._1)
+            .attr('class', 'linked-text')
       }
 
       setSelState(linkedTextHelpers, uiHelpers, rootElement, view,  selListener)
-   } 
+   }
 }
 
 export var drawLinkedText = x1 => x2 => x3 => x4 => drawLinkedText_(x1, x2, x3, x4)
