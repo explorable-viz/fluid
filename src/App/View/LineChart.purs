@@ -40,7 +40,7 @@ newtype Point = Point
 type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect D3Selection
    , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-   , height :: Int
+   , interior :: Dimensions
    , ticks :: Coord Ticks
    , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
@@ -74,8 +74,8 @@ type Dimensions =
    , height :: Int
    }
 
-translate :: Int -> Int -> String
-translate x y = "translate(" <> show x <> ", " <> show y <> ")"
+translate :: Coord Int -> String
+translate { x, y } = "translate(" <> show x <> ", " <> show y <> ")"
 
 foreign import data D3Selection :: Type
 
@@ -86,7 +86,7 @@ lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
    { createRootElement
    , point_attrs
-   , height
+   , interior
    , ticks
    , to
    , legendHelpers
@@ -102,7 +102,7 @@ lineChartHelpers (LineChart { plots }) =
          , "id" ↦ childId
          ]
       createChild rootElement "g" $ fromFoldable
-         [ "transform" ↦ translate margin.left margin.top
+         [ "transform" ↦ translate { x: margin.left, y: margin.top }
          ]
 
    -- TODO: LineChart argument no longer needed
@@ -138,56 +138,60 @@ lineChartHelpers (LineChart { plots }) =
       , height: 285
       }
 
-   width :: Int
-   width = image.width - margin.left - margin.right - legend_width
+   interior :: Dimensions
+   interior =
+      { width: image.width - margin.left - margin.right - legend_dims.width
+      , height: image.height - margin.top - margin.bottom -- minus caption_height?
+      }
 
-   height :: Int
-   height = image.height - margin.top - margin.bottom -- minus caption_height?
+   legend_dims :: Dimensions
+   legend_dims =
+      { width: 40 -- could compute width based on text labels
+      , height: lineHeight * length plots
+      }
 
-   legend_height :: Int
-   legend_height = lineHeight * length plots
+   -- Be better expressed using join of the array monad? (Avoid 2 x minimum/maximum and 2 x nonEmpty.)
+   max :: Coord Number
+   max =
+      { x: maximum (plots <#> unwrap >>> _.points >>> points.x >>> maximum # nonEmpty)
+      , y: maximum (plots <#> unwrap >>> _.points >>> points.y >>> maximum # nonEmpty)
+      }
 
-   legend_width :: Int
-   legend_width = 40 -- could compute width based on text labels
+   min :: Coord Number
+   min =
+      { x: minimum (plots <#> unwrap >>> _.points >>> points.x >>> minimum # nonEmpty)
+      , y: minimum (plots <#> unwrap >>> _.points >>> points.y >>> minimum # nonEmpty)
+      }
 
-   y_max :: Number
-   y_max = maximum (plots <#> unwrap >>> _.points >>> ys >>> maximum # nonEmpty)
-
-   x_min :: Number
-   x_min = minimum (plots <#> unwrap >>> _.points >>> xs >>> minimum # nonEmpty)
-
-   x_max :: Number
-   x_max = maximum (plots <#> unwrap >>> _.points >>> xs >>> maximum # nonEmpty)
-
-   xs :: Array Point -> NonEmptyArray Number
-   xs = (_ # nonEmpty) >>> (_ <#> unwrap >>> _.x >>> fst)
-
-   ys :: Array Point -> NonEmptyArray Number
-   ys = (_ # nonEmpty) >>> (_ <#> unwrap >>> _.y >>> fst)
+   points :: Coord (Array Point -> NonEmptyArray Number)
+   points =
+      { x: (_ # nonEmpty) >>> (_ <#> unwrap >>> _.x >>> fst)
+      , y: (_ # nonEmpty) >>> (_ <#> unwrap >>> _.y >>> fst)
+      }
 
    to :: Coord (Endo Number)
    to =
-      { x: scaleLinear { min: x_min, max: x_max } { min: 0.0, max: toNumber width }
-      , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
+      { x: scaleLinear { min: min.x, max: max.x } { min: 0.0, max: toNumber interior.width }
+      , y: scaleLinear { min: 0.0, max: max.y } { min: toNumber interior.height, max: 0.0 }
       }
 
    ticks :: Coord Ticks
    ticks =
-      { x: x_max - x_min
+      { x: max.x - min.x
       , y: 3.0
       }
 
    legend :: Coord Int
    legend =
-      { x: width + legend_sep
-      , y: (height - legend_height) / 2
+      { x: interior.width + legend_sep
+      , y: (interior.height - legend_dims.height) / 2
       }
 
    legendHelpers :: LegendHelpers
    legendHelpers =
       { text_attrs: fromFoldable
          [ "font-size" ⟼ 11
-         , "transform" ↦ translate 15 9 -- align text with boxes
+         , "transform" ↦ translate { x: 15, y: 9 } -- align text with boxes
          ]
       , circle_attrs: fromFoldable
          [ "r" ⟼ point_smallRadius
@@ -206,13 +210,13 @@ lineChartHelpers (LineChart { plots }) =
    createLegend :: D3Selection -> Effect D3Selection
    createLegend parent = do
       legend' <- createChild parent "g" $ fromFoldable
-         [ "transform" ↦ translate legend.x legend.y ]
+         [ "transform" ↦ translate { x: legend.x, y: legend.y } ]
       void $ createChild legend' "rect" $ fromFoldable
          [ "class" ↦ "legend-box"
          , "x" ⟼ 0
          , "y" ⟼ 0
-         , "height" ⟼ legend_height
-         , "width" ⟼ legend_width
+         , "height" ⟼ legend_dims.height
+         , "width" ⟼ legend_dims.width
          ]
       pure legend'
 
@@ -221,8 +225,8 @@ lineChartHelpers (LineChart { plots }) =
 
    caption_attrs :: Object String
    caption_attrs = fromFoldable
-      [ "x" ⟼ width / 2
-      , "y" ⟼ height + 35
+      [ "x" ⟼ interior.width / 2
+      , "y" ⟼ interior.height + 35
       , "class" ↦ "title-text"
       , "dominant-baseline" ↦ "bottom"
       , "text-anchor" ↦ "middle"
