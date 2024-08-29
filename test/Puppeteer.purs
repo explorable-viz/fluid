@@ -13,7 +13,7 @@ import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
 import Test.Util (TestSuite)
 import Toppokki as T
-import Util (Endo, check, debug, (×))
+import Util (Endo, check, (×))
 
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
@@ -34,10 +34,10 @@ browserTests launchBrowser = do
    browser <- launchBrowser
    page <- T.newPage browser
    let url = "http://127.0.0.1:8080"
-   log' ("Going to " <> url)
+   --log' ("Going to " <> url)
    T.goto (T.URL url) page
-   content <- T.content page
-   log' content
+   --content <- T.content page
+   --log' content
 
    checkFig4 page
    checkFig1 page
@@ -51,7 +51,7 @@ checkFig4 page = do
    checkForFigure page "fig-4-output"
    clickToggle page "fig-4-input"
    clickScatterPlotPoint page "fig-4"
-   log' "checkFig4 completed"
+   log' "fig-4" "tests completed"
 
 checkFig1 :: T.Page -> Aff Unit
 checkFig1 page = do
@@ -59,20 +59,21 @@ checkFig1 page = do
    checkForFigure page "fig-1-line-chart"
    clickToggle page "fig-1-input"
    clickBarChart "fig-1" page "fig-1-bar-chart"
-   log' "checkFig1 completed"
+   log' "fig-1" "tests completed"
 
 checkFigConv2 :: T.Page -> Aff Unit
 checkFigConv2 page = do
    checkForFigure page "fig-conv-2-output"
    clickToggle page "fig-conv-2-input"
-   log' "checkFigConv2 completed"
+   log' "fig-conv-2" "tests completed"
 
 ----------------------
 --Function to check for the presence of an SVG figure
 checkForFigure :: T.Page -> String -> Aff Unit
 checkForFigure page id = do
-   let selector = "svg#" <> id
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
+   let selector = T.Selector ("svg#" <> id)
+   _ <- T.pageWaitForSelector selector { timeout: 60000 } page
+   log' id "figure present"
    pure unit
 
 --Function to click a toggle
@@ -134,6 +135,12 @@ check' fig b s = check'' b (fig <> "/" <> s)
       pure unit
    check'' false s' = check false (report false s')
 
-log' :: forall m. MonadEffect m => String -> m Unit
-log' message =
+{-
+log'' :: forall m. MonadEffect m => String -> m Unit
+log'' message =
    when debug.logging (log message)
+-}
+log' :: forall m. MonadEffect m => String -> String -> m Unit
+log' fig s = log (report true s')
+   where
+   s' = fig <> "/" <> s
