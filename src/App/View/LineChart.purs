@@ -6,7 +6,6 @@ import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, ge
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦), (⟼))
-import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Foldable (length)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
@@ -32,10 +31,7 @@ newtype LinePlot = LinePlot
    , points :: Array Point
    }
 
-newtype Point = Point
-   { x :: Selectable Number
-   , y :: Selectable Number
-   }
+newtype Point = Point (Coord (Selectable Number))
 
 type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect D3Selection
@@ -150,23 +146,22 @@ lineChartHelpers (LineChart { plots }) =
       , height: lineHeight * length plots
       }
 
-   -- Be better expressed using join of the array monad? (Avoid 2 x minimum/maximum and 2 x nonEmpty.)
    max :: Coord Number
    max =
-      { x: maximum (plots <#> unwrap >>> _.points >>> points.x >>> maximum # nonEmpty)
-      , y: maximum (plots <#> unwrap >>> _.points >>> points.y >>> maximum # nonEmpty)
+      { x: maximum (plots <#> unwrap >>> _.points >>> points.x # join >>> nonEmpty)
+      , y: maximum (plots <#> unwrap >>> _.points >>> points.y # join >>> nonEmpty)
       }
 
    min :: Coord Number
    min =
-      { x: minimum (plots <#> unwrap >>> _.points >>> points.x >>> minimum # nonEmpty)
-      , y: minimum (plots <#> unwrap >>> _.points >>> points.y >>> minimum # nonEmpty)
+      { x: minimum (plots <#> unwrap >>> _.points >>> points.y # join >>> nonEmpty)
+      , y: minimum (plots <#> unwrap >>> _.points >>> points.y # join >>> nonEmpty)
       }
 
-   points :: Coord (Array Point -> NonEmptyArray Number)
+   points :: Coord (Array Point -> Array Number)
    points =
-      { x: (_ # nonEmpty) >>> (_ <#> unwrap >>> _.x >>> fst)
-      , y: (_ # nonEmpty) >>> (_ <#> unwrap >>> _.y >>> fst)
+      { x: (_ <#> unwrap >>> _.x >>> fst)
+      , y: (_ <#> unwrap >>> _.y >>> fst)
       }
 
    to :: Coord (Endo Number)
