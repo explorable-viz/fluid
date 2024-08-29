@@ -91,14 +91,14 @@ clickScatterPlotPoint page id = do
    _ <- T.click selector page
    className <- getAttributeValue page selector "class"
    radius <- getAttributeValue page selector "r"
-   check' id (className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2") "The circle's class and radius did not change as expected."
+   check' id (className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2") "circle class and radius"
    checkCaptionText id page "table#fig-4-input-renewables > caption.table-caption"
 
 checkCaptionText :: String -> T.Page -> String -> Aff Unit
 checkCaptionText fig page selector = do
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
    captionText <- textContentValue page (T.Selector selector)
-   check' fig (captionText == "renewables (4 of 240)") "The caption does not contain the expected value"
+   check' fig (captionText == "renewables (4 of 240)") "caption (4 of 240)"
    pure unit
 
 clickBarChart :: String -> T.Page -> String -> Aff Unit
@@ -107,7 +107,7 @@ clickBarChart fig page id = do
    _ <- T.pageWaitForSelector selector { timeout: 60000 } page
    _ <- T.click selector page
    fill <- getAttributeValue page selector "fill"
-   check' fig (fill == "#57a157") "The first bar in bar chart has not been successfully clicked."
+   check' fig (fill == "#57a157") "first bar clicked"
 
 -------------
 
