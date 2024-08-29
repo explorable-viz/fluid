@@ -124,19 +124,17 @@ function drawLineChart_ (
          const legend = createLegend(rootElement)()
          const legendEntry = legend
             .selectAll('legend-entry')
-            .data(names)
+            .data(names.entries().map(([i, name]) => { return { i, name } }))
             .enter()
             .append('g')
-            .attr('transform', (d, i) =>
-               `translate(0, ${legendHelpers.entry_y(i)})`
-            )
+            .attr('transform', ({ i }) => `translate(0, ${legendHelpers.entry_y(i)})`)
 
          legendEntry.append('text')
-            .text(name => name)
+            .text(({ name }) => name)
             .attrs(legendHelpers.text_attrs)
 
          legendEntry.append('circle')
-            .attr('fill', name => nameCol(name))
+            .attr('fill', ({ name }) => nameCol(name))
             .attrs(legendHelpers.circle_attrs)
 
          rootElement
