@@ -58,7 +58,7 @@ checkFig1 page = do
    checkForFigure page "fig-1-bar-chart"
    checkForFigure page "fig-1-line-chart"
    clickToggle page "fig-1-input"
-   clickBarChart page "fig-1-bar-chart"
+   clickBarChart "fig-1" page "fig-1-bar-chart"
    log' "checkFig1 completed"
 
 checkFigConv2 :: T.Page -> Aff Unit
@@ -78,36 +78,36 @@ checkForFigure page id = do
 --Function to click a toggle
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
-   let selector = "div#" <> id <> " + div > div > span.toggle-button"
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
-   _ <- T.click (T.Selector selector) page
+   let selector = T.Selector ("div#" <> id <> " + div > div > span.toggle-button")
+   _ <- T.pageWaitForSelector selector { timeout: 60000 } page
+   _ <- T.click selector page
    _ <- T.pageWaitForSelector (T.Selector ("div#" <> id)) { visible: true } page
    pure unit
 
 clickScatterPlotPoint :: T.Page -> String -> Aff Unit
 clickScatterPlotPoint page id = do
-   let selector = "div#" <> id <> " .scatterplot-point"
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
-   _ <- T.click (T.Selector selector) page
-   className <- getAttributeValue page (T.Selector selector) "class"
-   radius <- getAttributeValue page (T.Selector selector) "r"
-   check' (className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2") "The circle's class and/or radius did not change as expected."
-   checkCaptionText page "table#fig-4-input-renewables > caption.table-caption"
+   let selector = T.Selector ("div#" <> id <> " .scatterplot-point")
+   _ <- T.pageWaitForSelector selector { timeout: 60000, visible: true } page
+   _ <- T.click selector page
+   className <- getAttributeValue page selector "class"
+   radius <- getAttributeValue page selector "r"
+   check' id (className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2") "The circle's class and radius did not change as expected."
+   checkCaptionText id page "table#fig-4-input-renewables > caption.table-caption"
 
-checkCaptionText :: T.Page -> String -> Aff Unit
-checkCaptionText page selector = do
+checkCaptionText :: String -> T.Page -> String -> Aff Unit
+checkCaptionText fig page selector = do
    _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
    captionText <- textContentValue page (T.Selector selector)
-   check' (captionText == "renewables (4 of 240)") "The caption does not contain the expected value"
+   check' fig (captionText == "renewables (4 of 240)") "The caption does not contain the expected value"
    pure unit
 
-clickBarChart :: T.Page -> String -> Aff Unit
-clickBarChart page id = do
-   let selector = "svg#" <> id <> " rect.bar"
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
-   _ <- T.click (T.Selector selector) page
-   fill <- getAttributeValue page (T.Selector selector) "fill"
-   check' (fill == "#57a157") "The first bar in bar chart has not been successfully clicked."
+clickBarChart :: String -> T.Page -> String -> Aff Unit
+clickBarChart fig page id = do
+   let selector = T.Selector ("svg#" <> id <> " rect.bar")
+   _ <- T.pageWaitForSelector selector { timeout: 60000 } page
+   _ <- T.click selector page
+   fill <- getAttributeValue page selector "fill"
+   check' fig (fill == "#57a157") "The first bar in bar chart has not been successfully clicked."
 
 -------------
 
@@ -124,13 +124,15 @@ textContentValue page selector = do
 -------------------
 
 report :: Boolean -> Endo String
-report b s = "\x1b[" <> if b then "32" else "31" <> "m " <> if b then "✔" else "✖" <> "\x1b[0m " <> s
+report b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s
 
-check' :: forall m. MonadThrow Error m => MonadEffect m => Boolean -> String -> m Unit
-check' true s = do
-   log (report true s)
-   pure unit
-check' false s = check false (report false s)
+check' :: forall m. MonadThrow Error m => MonadEffect m => String -> Boolean -> String -> m Unit
+check' fig b s = check'' b (fig <> "/" <> s)
+   where
+   check'' true s' = do
+      log (report true s')
+      pure unit
+   check'' false s' = check false (report false s')
 
 log' :: forall m. MonadEffect m => String -> m Unit
 log' message =
