@@ -84,10 +84,6 @@ function drawLineChart_ (
       if (rootElement.empty()) {
          rootElement = createRootElement(div)(childId)()
 
-         const line1 = d3.line()
-            .x(d => to.x(val(d.x)))
-            .y(d => to.y(val(d.y)))
-
          rootElement.selectAll('line')
             .data(plots.entries())
             .enter()
@@ -96,7 +92,12 @@ function drawLineChart_ (
             .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
-            .attr('d', ([, plot]) => line1(plot.points))
+            .attr('d', ([, plot]) => {
+               const line = d3.line()
+                  .x(d => to.x(val(d.x)))
+                  .y(d => to.y(val(d.y)))
+               return line(plot.points)
+            })
 
          for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
