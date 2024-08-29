@@ -123,7 +123,7 @@ function drawLineChart_ (
 
          const legend = createLegend(rootElement)()
          const legendEntry = legend
-            .selectAll('legend-entry')
+            .selectAll('g')
             .data(names.entries().map(([i, name]) => { return { i, name } }))
             .enter()
             .append('g')

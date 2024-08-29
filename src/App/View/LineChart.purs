@@ -51,6 +51,11 @@ type LegendHelpers =
    , entry_y :: Int -> Int
    }
 
+type LegendEntry =
+   { i :: Int
+   , name :: String
+   }
+
 -- d3.js ticks are actually (start, stop, count) but we only supply first argument
 type Ticks = Number
 
