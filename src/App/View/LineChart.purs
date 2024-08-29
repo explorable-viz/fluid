@@ -6,6 +6,7 @@ import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, ge
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦), (⟼))
+import Data.Array (mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Foldable (length)
 import Data.Int (toNumber)
@@ -42,6 +43,7 @@ type LineChartHelpers =
    , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
    , createLegend :: D3Selection -> Effect D3Selection
+   , createLegendEntry :: D3Selection -> Effect D3Selection
    , caption_attrs :: Object String
    }
 
@@ -94,6 +96,7 @@ lineChartHelpers (LineChart { plots }) =
    , to
    , legendHelpers
    , createLegend
+   , createLegendEntry
    , caption_attrs
    }
    where
@@ -206,6 +209,12 @@ lineChartHelpers (LineChart { plots }) =
          , "width" ⟼ legend_dims.width
          ]
       pure legend'
+
+   createLegendEntry :: D3Selection -> Effect D3Selection
+   createLegendEntry parent =
+      createChildren parent "g" (mapWithIndex ((\i (LinePlot { name }) -> { i, name: fst name })) plots) $
+         fromFoldable
+            [ "transform" ↦ \{ i } -> translate { x: 0, y: legendHelpers.entry_y i } ]
 
    lineHeight :: Int
    lineHeight = 15

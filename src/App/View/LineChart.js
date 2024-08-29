@@ -68,7 +68,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, interior, ticks, to, legendHelpers, createLegend, caption_attrs }
+      const { createRootElement, interior, ticks, to, legendHelpers, createLegend, createLegendEntry, caption_attrs }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
