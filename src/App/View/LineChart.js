@@ -33,11 +33,13 @@ function createChildren_ (parent, elementType, data, attrFuns) {
    }
 }
 
-function line (to, points) {
-   const line = d3.line()
-      .x(d => to.x(d.x))
-      .y(d => to.y(d.y))
-   return line(points)
+function line_ (to, points) {
+   return () => {
+      const line = d3.line()
+         .x(d => to.x(d.x))
+         .y(d => to.y(d.y))
+      return line(points)
+   }
 }
 
 function setSelState (
@@ -99,7 +101,7 @@ function drawLineChart_ (
             .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
-            .attr('d', ([, plot]) => line(to, plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } })))
+            .attr('d', ([, plot]) => line_(to, plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))())
 
          for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
@@ -144,3 +146,4 @@ export var drawLineChart = x1 => x2 => x3 => x4 => drawLineChart_(x1, x2, x3, x4
 export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
 export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
 export var createChildren = x1 => x2 => x3 => x4 => createChildren_(x1, x2, x3, x4)
+export var line = x1 => x2 => line_(x1, x2)
