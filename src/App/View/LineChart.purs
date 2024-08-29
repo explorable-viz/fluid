@@ -38,10 +38,8 @@ newtype Point = Point
    }
 
 type LineChartHelpers =
-   { point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-   , margin :: Margin
-   , image_width :: Int
-   , image_height :: Int
+   { createRootElement :: D3Selection -> String -> Effect D3Selection
+   , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    , height :: Int
    , x_ticks :: Ticks
    , y_ticks :: Ticks
@@ -78,10 +76,8 @@ foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Numbe
 
 lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
-   { point_attrs
-   , margin
-   , image_height
-   , image_width
+   { createRootElement
+   , point_attrs
    , height
    , x_ticks
    , y_ticks
@@ -92,6 +88,17 @@ lineChartHelpers (LineChart { plots }) =
    , caption_attrs
    }
    where
+   createRootElement :: D3Selection -> String -> Effect D3Selection
+   createRootElement div childId = do
+      rootElement <- createChild div "svg" $ fromFoldable
+         [ "width" ⟼ image_width
+         , "height" ⟼ image_height
+         , "id" ↦ childId
+         ]
+      createChild rootElement "g" $ fromFoldable
+         [ "transform" ↦ translate margin.left margin.top
+         ]
+
    -- TODO: LineChart argument no longer needed
    point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    point_attrs nameCol _ { i, j, name } =

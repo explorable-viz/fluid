@@ -50,7 +50,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { margin, image_width, image_height, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, createLegend, caption_attrs }
+      const { createRootElement, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, createLegend, caption_attrs }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -68,13 +68,7 @@ function drawLineChart_ (
       }
 
       if (rootElement.empty()) {
-         rootElement = div
-            .append('svg')
-            .attr('width', image_width)
-            .attr('height', image_height)
-            .attr('id', childId)
-            .append('g')
-            .attr('transform', `translate(${margin.left}, ${margin.top})`)
+         rootElement = createRootElement(div)(childId)()
 
          const line1 = d3.line()
             .x(d => to_x(val(d.x)))
