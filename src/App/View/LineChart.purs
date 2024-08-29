@@ -42,8 +42,7 @@ type LineChartHelpers =
    , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    , height :: Int
    , ticks :: Coord Ticks
-   , to_x :: Endo Number
-   , to_y :: Endo Number
+   , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
    , createLegend :: D3Selection -> Effect D3Selection
    , caption_attrs :: Object String
@@ -89,8 +88,7 @@ lineChartHelpers (LineChart { plots }) =
    , point_attrs
    , height
    , ticks
-   , to_x
-   , to_y
+   , to
    , legendHelpers
    , createLegend
    , caption_attrs
@@ -115,8 +113,8 @@ lineChartHelpers (LineChart { plots }) =
          , "stroke-width" ⟼ 1
          , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
          , "fill" ↦ fill col
-         , "cx" ⟼ to_x (fst x)
-         , "cy" ⟼ to_y (fst y)
+         , "cx" ⟼ to.x (fst x)
+         , "cy" ⟼ to.y (fst y)
          ]
       where
       LinePlot plot = plots ! i
@@ -167,11 +165,11 @@ lineChartHelpers (LineChart { plots }) =
    ys :: Array Point -> NonEmptyArray Number
    ys = (_ # nonEmpty) >>> (_ <#> unwrap >>> _.y >>> fst)
 
-   to_x :: Number -> Number
-   to_x = scaleLinear { min: x_min, max: x_max } { min: 0.0, max: toNumber width }
-
-   to_y :: Number -> Number
-   to_y = scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
+   to :: Coord (Endo Number)
+   to =
+      { x: scaleLinear { min: x_min, max: x_max } { min: 0.0, max: toNumber width }
+      , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
+      }
 
    ticks :: Coord Ticks
    ticks =
