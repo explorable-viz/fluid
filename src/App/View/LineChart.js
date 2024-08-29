@@ -50,7 +50,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, createLegend, caption_attrs }
+      const { createRootElement, height, ticks, to_x, to_y, legendHelpers, createLegend, caption_attrs }
          = lineChartHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -97,11 +97,11 @@ function drawLineChart_ (
          rootElement
             .append('g')
             .attr('transform', `translate(0, ${height})`)
-            .call(d3.axisBottom(to_x).ticks(x_ticks).tickFormat(d3.format('d')))
+            .call(d3.axisBottom(to_x).ticks(ticks.x).tickFormat(d3.format('d')))
 
          rootElement
             .append('g')
-            .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(y_ticks).tickFormat(d3.format('.1f')))
+            .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(ticks.y).tickFormat(d3.format('.1f')))
 
          const legend = createLegend(rootElement)()
          const legendEntry = legend

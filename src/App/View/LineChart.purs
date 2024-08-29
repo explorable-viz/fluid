@@ -41,8 +41,7 @@ type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect D3Selection
    , point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
    , height :: Int
-   , x_ticks :: Ticks
-   , y_ticks :: Ticks
+   , ticks :: Coord Ticks
    , to_x :: Endo Number
    , to_y :: Endo Number
    , legendHelpers :: LegendHelpers
@@ -66,6 +65,16 @@ type Margin =
    , left :: Int
    }
 
+type Coord a =
+   { x :: a
+   , y :: a
+   }
+
+type Dimensions =
+   { width :: Int
+   , height :: Int
+   }
+
 translate :: Int -> Int -> String
 translate x y = "translate(" <> show x <> ", " <> show y <> ")"
 
@@ -79,8 +88,7 @@ lineChartHelpers (LineChart { plots }) =
    { createRootElement
    , point_attrs
    , height
-   , x_ticks
-   , y_ticks
+   , ticks
    , to_x
    , to_y
    , legendHelpers
@@ -165,11 +173,11 @@ lineChartHelpers (LineChart { plots }) =
    to_y :: Number -> Number
    to_y = scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
 
-   x_ticks :: Ticks
-   x_ticks = x_max - x_min
-
-   y_ticks :: Ticks
-   y_ticks = 3.0
+   ticks :: Coord Ticks
+   ticks =
+      { x: x_max - x_min
+      , y: 3.0
+      }
 
    legend_x :: Int
    legend_x = width + legend_sep
