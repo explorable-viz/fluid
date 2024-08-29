@@ -97,8 +97,8 @@ lineChartHelpers (LineChart { plots }) =
    createRootElement :: D3Selection -> String -> Effect D3Selection
    createRootElement div childId = do
       rootElement <- createChild div "svg" $ fromFoldable
-         [ "width" ⟼ image_width
-         , "height" ⟼ image_height
+         [ "width" ⟼ image.width
+         , "height" ⟼ image.height
          , "id" ↦ childId
          ]
       createChild rootElement "g" $ fromFoldable
@@ -132,17 +132,17 @@ lineChartHelpers (LineChart { plots }) =
    margin :: Margin
    margin = { top: 15, right: 15, bottom: 40, left: 15 }
 
-   image_width :: Int
-   image_width = 330
-
-   image_height :: Int
-   image_height = 285
+   image :: Dimensions
+   image =
+      { width: 330
+      , height: 285
+      }
 
    width :: Int
-   width = image_width - margin.left - margin.right - legend_width
+   width = image.width - margin.left - margin.right - legend_width
 
    height :: Int
-   height = image_height - margin.top - margin.bottom -- minus caption_height?
+   height = image.height - margin.top - margin.bottom -- minus caption_height?
 
    legend_height :: Int
    legend_height = lineHeight * length plots
@@ -177,11 +177,11 @@ lineChartHelpers (LineChart { plots }) =
       , y: 3.0
       }
 
-   legend_x :: Int
-   legend_x = width + legend_sep
-
-   legend_y :: Int
-   legend_y = (height - legend_height) / 2
+   legend :: Coord Int
+   legend =
+      { x: width + legend_sep
+      , y: (height - legend_height) / 2
+      }
 
    legendHelpers :: LegendHelpers
    legendHelpers =
@@ -205,16 +205,16 @@ lineChartHelpers (LineChart { plots }) =
 
    createLegend :: D3Selection -> Effect D3Selection
    createLegend parent = do
-      legend <- createChild parent "g" $ fromFoldable
-         [ "transform" ↦ translate legend_x legend_y ]
-      void $ createChild legend "rect" $ fromFoldable
+      legend' <- createChild parent "g" $ fromFoldable
+         [ "transform" ↦ translate legend.x legend.y ]
+      void $ createChild legend' "rect" $ fromFoldable
          [ "class" ↦ "legend-box"
          , "x" ⟼ 0
          , "y" ⟼ 0
          , "height" ⟼ legend_height
          , "width" ⟼ legend_width
          ]
-      pure legend
+      pure legend'
 
    lineHeight :: Int
    lineHeight = 15
