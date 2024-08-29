@@ -53,13 +53,9 @@ type LineChartHelpers =
    }
 
 type LegendHelpers =
-   { lineHeight :: Int
-   , text_attrs :: Object String
+   { text_attrs :: Object String
    , circle_attrs :: Object String
-   , box_attrs :: Object String
    , entry_y :: Int -> Int
-   , x :: Int
-   , y :: Int
    }
 
 -- d3.js ticks are actually (start, stop, count) but we only supply first argument
@@ -176,8 +172,7 @@ lineChartHelpers (LineChart { plots }) =
 
    legendHelpers :: LegendHelpers
    legendHelpers =
-      { lineHeight
-      , text_attrs: fromFoldable
+      { text_attrs: fromFoldable
          [ "font-size" ⟼ 11
          , "transform" ↦ translate 15 9 -- align text with boxes
          ]
@@ -186,16 +181,7 @@ lineChartHelpers (LineChart { plots }) =
          , "cx" ⟼ circle_centre
          , "cy" ⟼ circle_centre
          ]
-      , box_attrs: fromFoldable
-         [ "class" ↦ "legend-box"
-         , "x" ⟼ 0
-         , "y" ⟼ 0
-         , "height" ⟼ legend_height
-         , "width" ⟼ legend_width
-         ]
       , entry_y
-      , x: legend_x
-      , y: legend_y
       }
       where
       entry_y :: Int -> Int
@@ -205,11 +191,17 @@ lineChartHelpers (LineChart { plots }) =
       circle_centre = lineHeight / 2 - point_smallRadius / 2
 
    createLegend :: D3Selection -> Effect D3Selection
-   createLegend parent =
-      createChild parent "g" attrs
-      where
-      attrs = fromFoldable
+   createLegend parent = do
+      legend <- createChild parent "g" $ fromFoldable
          [ "transform" ↦ translate legend_x legend_y ]
+      void $ createChild legend "rect" $ fromFoldable
+         [ "class" ↦ "legend-box"
+         , "x" ⟼ 0
+         , "y" ⟼ 0
+         , "height" ⟼ legend_height
+         , "width" ⟼ legend_width
+         ]
+      pure legend
 
    lineHeight :: Int
    lineHeight = 15

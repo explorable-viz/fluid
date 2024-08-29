@@ -10,7 +10,9 @@ d3.selection.prototype.attrs = function(m) {
 }
 
 function createChild_ (parent, elementType, attrs_) {
-   return parent.append(elementType).attrs(attrs_)
+   return () => {
+      return parent.append(elementType).attrs(attrs_)
+   }
 }
 
 function setSelState (
@@ -107,11 +109,7 @@ function drawLineChart_ (
             .append('g')
             .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(y_ticks).tickFormat(d3.format('.1f')))
 
-         const legend = createLegend(rootElement)
-
-         legend.append('rect')
-            .attrs(legendHelpers.box_attrs)
-
+         const legend = createLegend(rootElement)()
          const legendEntry = legend
             .selectAll('legend-entry')
             .data(names)
