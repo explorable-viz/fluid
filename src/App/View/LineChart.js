@@ -33,6 +33,13 @@ function createChildren_ (parent, elementType, data, attrFuns) {
    }
 }
 
+function line (points) {
+   const line = d3.line()
+      .x(d => to.x(d.x))
+      .y(d => to.y(d.y))
+   return line(points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))
+}
+
 function setSelState (
    { point_attrs },
    { },
@@ -94,9 +101,9 @@ function drawLineChart_ (
             .attr('class', 'line')
             .attr('d', ([, plot]) => {
                const line = d3.line()
-                  .x(d => to.x(val(d.x)))
-                  .y(d => to.y(val(d.y)))
-               return line(plot.points)
+                  .x(d => to.x(d.x))
+                  .y(d => to.y(d.y))
+               return line(plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))
             })
 
          for (const [i, plot] of plots.entries()) {
