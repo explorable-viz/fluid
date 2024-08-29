@@ -33,11 +33,11 @@ function createChildren_ (parent, elementType, data, attrFuns) {
    }
 }
 
-function line (points) {
+function line (to, points) {
    const line = d3.line()
       .x(d => to.x(d.x))
       .y(d => to.y(d.y))
-   return line(points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))
+   return line(points)
 }
 
 function setSelState (
@@ -99,12 +99,7 @@ function drawLineChart_ (
             .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
-            .attr('d', ([, plot]) => {
-               const line = d3.line()
-                  .x(d => to.x(d.x))
-                  .y(d => to.y(d.y))
-               return line(plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))
-            })
+            .attr('d', ([, plot]) => line(to, plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } })))
 
          for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
