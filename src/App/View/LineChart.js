@@ -101,7 +101,7 @@ function drawLineChart_ (
             .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
-            .attr('d', ([, plot]) => line_(to, plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))())
+            .attr('d', ([, plot]) => line(to)(plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))())
 
          for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
