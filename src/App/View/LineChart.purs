@@ -6,6 +6,7 @@ import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, ge
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦), (⟼))
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Foldable (length)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
@@ -76,6 +77,7 @@ translate { x, y } = "translate(" <> show x <> ", " <> show y <> ")"
 foreign import data D3Selection :: Type
 
 foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
+foreign import createChildren :: forall a. D3Selection -> String -> Array a -> Object (a -> String) -> Effect D3Selection
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 
 lineChartHelpers :: LineChart -> LineChartHelpers
@@ -129,10 +131,7 @@ lineChartHelpers (LineChart { plots }) =
    margin = { top: 15, right: 15, bottom: 40, left: 15 }
 
    image :: Dimensions
-   image =
-      { width: 330
-      , height: 285
-      }
+   image = { width: 330, height: 285 }
 
    interior :: Dimensions
    interior =
@@ -147,22 +146,16 @@ lineChartHelpers (LineChart { plots }) =
       }
 
    max :: Coord Number
-   max =
-      { x: maximum (plots <#> unwrap >>> _.points >>> points.x # join >>> nonEmpty)
-      , y: maximum (plots <#> unwrap >>> _.points >>> points.y # join >>> nonEmpty)
-      }
+   max = { x: maximum points.x, y: maximum points.y }
 
    min :: Coord Number
-   min =
-      { x: minimum (plots <#> unwrap >>> _.points >>> points.y # join >>> nonEmpty)
-      , y: minimum (plots <#> unwrap >>> _.points >>> points.y # join >>> nonEmpty)
-      }
+   min = { x: minimum points.x, y: minimum points.y }
 
-   points :: Coord (Array Point -> Array Number)
-   points =
-      { x: (_ <#> unwrap >>> _.x >>> fst)
-      , y: (_ <#> unwrap >>> _.y >>> fst)
-      }
+   points :: Coord (NonEmptyArray Number)
+   points = { x: ps <#> unwrap >>> _.x >>> fst, y: ps <#> unwrap >>> _.y >>> fst }
+      where
+      ps :: NonEmptyArray Point
+      ps = plots <#> unwrap >>> _.points # join >>> nonEmpty
 
    to :: Coord (Endo Number)
    to =
@@ -171,16 +164,10 @@ lineChartHelpers (LineChart { plots }) =
       }
 
    ticks :: Coord Ticks
-   ticks =
-      { x: max.x - min.x
-      , y: 3.0
-      }
+   ticks = { x: max.x - min.x, y: 3.0 }
 
    legend :: Coord Int
-   legend =
-      { x: interior.width + legend_sep
-      , y: (interior.height - legend_dims.height) / 2
-      }
+   legend = { x: interior.width + legend_sep, y: (interior.height - legend_dims.height) / 2 }
 
    legendHelpers :: LegendHelpers
    legendHelpers =

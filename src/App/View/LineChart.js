@@ -9,9 +9,27 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
-function createChild_ (parent, elementType, attrs_) {
+d3.selection.prototype.attrsFuns = function(m) {
+   for (const k in m) {
+      this.attr(k, d => m[k](d))
+   }
+   return this
+}
+
+function createChild_ (parent, elementType, attrs) {
    return () => {
-      return parent.append(elementType).attrs(attrs_)
+      return parent.append(elementType).attrs(attrs)
+   }
+}
+
+function createChildren_ (parent, elementType, data, attrFuns) {
+   return () => {
+      return parent
+         .selectAll(elementType)
+         .data(data)
+         .enter()
+         .append(elementType)
+         .attrFuns(attrFuns)
    }
 }
 
@@ -75,7 +93,7 @@ function drawLineChart_ (
             .y(d => to.y(val(d.y)))
 
          rootElement.selectAll('line')
-            .data([...plots.entries()])
+            .data(plots.entries())
             .enter()
             .append('path')
             .attr('fill', 'none')
@@ -86,7 +104,7 @@ function drawLineChart_ (
 
          for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
-               .data([...plot.points.entries()].map(([j, p]) => {
+               .data(plot.points.entries().map(([j, p]) => {
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
@@ -114,11 +132,11 @@ function drawLineChart_ (
             )
 
          legendEntry.append('text')
-            .text(d => d)
+            .text(name => name)
             .attrs(legendHelpers.text_attrs)
 
          legendEntry.append('circle')
-            .attr('fill', d => nameCol(d))
+            .attr('fill', name => nameCol(name))
             .attrs(legendHelpers.circle_attrs)
 
          rootElement
@@ -133,3 +151,4 @@ function drawLineChart_ (
 export var drawLineChart = x1 => x2 => x3 => x4 => drawLineChart_(x1, x2, x3, x4)
 export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
 export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
+export var createChildren = x1 => x2 => x3 => x4 => createChildren_(x1, x2, x3, x4)
