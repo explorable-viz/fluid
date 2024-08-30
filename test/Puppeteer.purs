@@ -132,7 +132,6 @@ check' fig b s = check'' b (fig <> "/" <> s)
    where
    check'' true s' = do
       log (report true s')
-      pure unit
    check'' false s' = check false (report false s')
 
 {-
