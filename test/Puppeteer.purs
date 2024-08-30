@@ -48,29 +48,29 @@ browserTests launchBrowser = do
 ----------------------
 checkFig4 :: T.Page -> Aff Unit
 checkFig4 page = do
-   checkForFigure page "fig-4-output"
+   waitForFigure page "fig-4-output"
    clickToggle page "fig-4-input"
    clickScatterPlotPoint page "fig-4"
    log' "fig-4" "tests completed"
 
 checkFig1 :: T.Page -> Aff Unit
 checkFig1 page = do
-   checkForFigure page "fig-1-bar-chart"
-   checkForFigure page "fig-1-line-chart"
+   waitForFigure page "fig-1-bar-chart"
+   waitForFigure page "fig-1-line-chart"
    clickToggle page "fig-1-input"
    clickBarChart "fig-1" page "fig-1-bar-chart"
    log' "fig-1" "tests completed"
 
 checkFigConv2 :: T.Page -> Aff Unit
 checkFigConv2 page = do
-   checkForFigure page "fig-conv-2-output"
+   waitForFigure page "fig-conv-2-output"
    clickToggle page "fig-conv-2-input"
    log' "fig-conv-2" "tests completed"
 
 ----------------------
 --Function to check for the presence of an SVG figure
-checkForFigure :: T.Page -> String -> Aff Unit
-checkForFigure page id = do
+waitForFigure :: T.Page -> String -> Aff Unit
+waitForFigure page id = do
    let selector = T.Selector ("svg#" <> id)
    _ <- T.pageWaitForSelector selector { timeout: 60000 } page
    log' id "figure present"
