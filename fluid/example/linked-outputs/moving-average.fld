@@ -6,6 +6,7 @@ let getByX xVal data =
             then x
             else helper xs
     in helper data;
+    
 let points' = newPoints 0;
     cavgs = mAvgChop points' 1;
     cavgs' = mAvgShrink points' 1;
@@ -21,6 +22,9 @@ in MultiView {|
     "desc" :=
         LinkedText( [ "Simple moving averages are computed using the most recent n examples, "
                     , "whereas central moving averages use datapoints either side of the year in question. "
-                    , numToStr (getByX 2015 cavgs).y ] )
+                    , "The moving average for 2015 was "
+                    , numToStr (getByX 2015 cavgs).y, " "
+                    , "we see that the simple moving average for the same year is actually "
+                    , gradedLeqP (getByX 2015 savgs).y (getByX 2015 cavgs).y ])
                 
 |}
