@@ -1,0 +1,1 @@
+let countryData = [ { x: "USA", bars: [ { y: "output", z: 196.7 } ] } ];
