@@ -1,7 +1,12 @@
 let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
-
-let year = 2015;
-    points' = newPoints 0;
+let getByX xVal data = 
+    let helper [] = [];
+        helper (x : xs) = 
+            if x.x == xVal
+            then x
+            else helper xs
+    in helper data;
+let points' = newPoints 0;
     cavgs = mAvgChop points' 1;
     cavgs' = mAvgShrink points' 1;
     savgs = sAvgShrink points' 2
@@ -13,12 +18,9 @@ in MultiView {|
                    , LinePlot { name: "Central", data: cavgs }
                    , LinePlot { name: "Original Curve", data: points' } ]
         },
-    "text" :=
-        LinkedText( [ "We present a comparison between simple and central moving averages above. In the example, for the year "
-                    , numToStr year
-                    , " we can see the difference, the central moving average at that point "
-                    , (numToStr (nth 4 cavgs).y)
-                    , " is smaller than the simple average at the same point, which is "
-                    , (numToStr (nth 5 savgs).y)
-                    , "."] )
+    "desc" :=
+        LinkedText( [ "Simple moving averages are computed using the most recent n examples, "
+                    , "whereas central moving averages use datapoints either side of the year in question. "
+                    , numToStr (getByX 2015 cavgs).y ] )
+                
 |}
