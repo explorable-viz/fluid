@@ -13,7 +13,7 @@ import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
 import Test.Util (TestSuite)
 import Toppokki as T
-import Util (Endo, check, (×))
+import Util (Endo, check, debug, (×))
 
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
@@ -134,12 +134,6 @@ check' fig b s = check'' b (fig <> "/" <> s)
       log (report true s')
    check'' false s' = check false (report false s')
 
-{-
-log'' :: forall m. MonadEffect m => String -> m Unit
-log'' message =
-   when debug.logging (log message)
--}
 log' :: forall m. MonadEffect m => String -> String -> m Unit
-log' fig s = log (report true s')
-   where
-   s' = fig <> "/" <> s
+log' fig s =
+   when debug.logging (log (report true (fig <> "/" <> s)))
