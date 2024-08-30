@@ -24,7 +24,7 @@ jobs:
         set -x -e
         yarn purs-tidy check src/**/*.purs test/**/*.purs
         yarn build
-        yarn test
         yarn build-app
         yarn build-puppeteer
+        yarn test
         yarn test-puppeteer
