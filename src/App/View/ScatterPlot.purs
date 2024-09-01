@@ -12,6 +12,7 @@ import Data.Tuple (snd)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
 import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
+import Lattice ((∨))
 import Primitive (string, unpack)
 import Util ((!))
 import Util.Map (get)
@@ -40,8 +41,8 @@ scatterPlotHelpers =
       fromFoldable
          [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 1.6 else if isSecondary sel then 1.25 else 1.0 ]
       where
-      Point { y } = points ! i
-      sel = snd y
+      Point { x, y } = points ! i
+      sel = snd x ∨ snd y
       point_smallRadius = 2
 
 instance Drawable ScatterPlot where
