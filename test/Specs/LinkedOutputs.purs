@@ -63,9 +63,9 @@ linkedOutputs_spec3 =
         , file: File "linked-outputs/pairs"
         , inputs: [ "data" ]
         }
-   , δ_out: snd (snd (fst neg))
-   , out_expect: snd (snd (fst neg))
-        >>> fst (fst neg >>> snd (fst neg))
+   , δ_out: snd neg {-snd (snd (fst neg))-}
+   , out_expect: neg {-snd (snd (fst neg))
+        >>> fst (fst neg >>> snd (fst neg))-}
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec

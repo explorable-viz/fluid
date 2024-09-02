@@ -332,10 +332,10 @@ instance Apply SelState where
       SelState { persistent: fs.persistent s.persistent, transient: fs.transient s.transient }
 
 instance Apply ReactState where
-   apply (Inert) _ = Inert
-   apply _ (Inert) = Inert
+   apply Inert Inert = Inert
    apply (Reactive (SelState fs)) (Reactive (SelState s)) =
       Reactive (SelState { persistent: fs.persistent s.persistent, transient: fs.transient s.transient })
+   apply _ _ = error absurd
 
 derive instance Ord a => Ord (SelState a)
 derive instance Eq a => Eq (SelState a)
@@ -351,12 +351,17 @@ instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a) where
 instance BoundedJoinSemilattice a => BoundedJoinSemilattice (ReactState a) where
    bot = Inert
 
-instance Eq 𝔹 => Eq (ReactState 𝔹) where
-   eq (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = spy "reactive comparison" {-eq a1 a2 && eq b1 b2-}  (a1 && a2 && b1 && b2) && not (a1 && a2 && b1 && b2)
+instance Eq a => Eq (ReactState a) where
+   eq (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = spy "reactive comparison" (eq a1 a2) && (eq b1 b2)
    eq Inert Inert = spy "inert comparison" true
-   eq Inert (Reactive (SelState { persistent: c, transient: d })) = spy "inert-reactive" (c || not d)
-   eq (Reactive _) Inert = spy "reactive-inert" true
+   eq Inert _ = spy "inert-reactive" error absurd
+   eq _ Inert = spy "reactive-inert" error absurd
 
 instance BoundedJoinSemilattice 𝕊 where
    bot = None
 
+{-
+yarn tidy
+yarn build
+yarn test
+}

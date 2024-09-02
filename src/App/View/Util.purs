@@ -32,7 +32,6 @@ selListener :: forall a. Setter Fig (Val (ReactState 𝔹)) -> Redraw -> ViewSel
 selListener figVal redraw selector =
    eventListener (selectionEventData >>> uncurry (selector) >>> figVal >>> redraw)
 
---need to make Drawable a ReactState thing.
 class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Val (ReactState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
 
