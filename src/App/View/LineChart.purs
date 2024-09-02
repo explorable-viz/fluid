@@ -5,14 +5,18 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import Bind ((↦))
+import Bind ((↦), (⟼))
+import Data.Array (mapWithIndex)
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Foldable (length)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
+import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
+import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
 import Util (Endo, nonEmpty, (!))
@@ -29,32 +33,29 @@ newtype LinePlot = LinePlot
    , points :: Array Point
    }
 
-newtype Point = Point
-   { x :: Selectable Number
-   , y :: Selectable Number
-   }
+newtype Point = Point (Coord (Selectable Number))
 
 type LineChartHelpers =
-   { point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-   , legend_x :: Int
-   , legend_y :: Int
-   , margin :: Margin
-   , width :: Int
-   , height :: Int
-   , x_ticks :: Ticks
-   , y_ticks :: Ticks
-   , to_x :: Endo Number
-   , to_y :: Endo Number
+   { createRootElement :: D3Selection -> String -> Effect D3Selection
+   , point_attrs :: (String -> String) -> PointCoordinate -> Object String
+   , interior :: Dimensions
+   , ticks :: Coord Ticks
+   , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
+   , createLegend :: D3Selection -> Effect D3Selection
+   , createLegendEntry :: D3Selection -> Effect D3Selection
    , caption_attrs :: Object String
    }
 
 type LegendHelpers =
-   { lineHeight :: Int
-   , text_attrs :: Object String
+   { text_attrs :: Object String
    , circle_attrs :: Object String
-   , box_attrs :: Object String
    , entry_y :: Int -> Int
+   }
+
+type LegendEntry =
+   { i :: Int
+   , name :: String
    }
 
 -- d3.js ticks are actually (start, stop, count) but we only supply first argument
@@ -67,34 +68,59 @@ type Margin =
    , left :: Int
    }
 
+type Coord a =
+   { x :: a
+   , y :: a
+   }
+
+type Dimensions =
+   { width :: Int
+   , height :: Int
+   }
+
+translate :: Coord Int -> String
+translate { x, y } = "translate(" <> show x <> ", " <> show y <> ")"
+
+foreign import data D3Selection :: Type
+
+foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
+foreign import createChildren :: forall a. D3Selection -> String -> Array a -> Object (a -> String) -> Effect D3Selection
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 
 lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
-   { point_attrs
-   , legend_x
-   , legend_y
-   , margin
-   , width
-   , height
-   , x_ticks
-   , y_ticks
-   , to_x
-   , to_y
+   { createRootElement
+   , point_attrs
+   , interior
+   , ticks
+   , to
    , legendHelpers
+   , createLegend
+   , createLegendEntry
    , caption_attrs
    }
    where
+   createRootElement :: D3Selection -> String -> Effect D3Selection
+   createRootElement div childId = do
+      rootElement <- createChild div "svg" $ fromFoldable
+         [ "width" ⟼ image.width
+         , "height" ⟼ image.height
+         , "id" ↦ childId
+         ]
+      createChild rootElement "g" $ fromFoldable
+         [ "transform" ↦ translate { x: margin.left, y: margin.top }
+         ]
+
    -- TODO: LineChart argument no longer needed
-   point_attrs :: (String -> String) -> LineChart -> PointCoordinate -> Object String
-   point_attrs nameCol _ { i, j, name } =
+   point_attrs :: (String -> String) -> PointCoordinate -> Object String
+   point_attrs nameCol { i, j, name } =
       fromFoldable
-         [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0)
-         , "stroke-width" ↦ "1"
+         [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
+         , "stroke-width" ⟼ 1
          , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
          , "fill" ↦ fill col
-         , "cx" ↦ show (to_x (fst x))
-         , "cy" ↦ show (to_y (fst y))
+         , "cx" ⟼ to.x (fst x)
+         , "cy" ⟼ to.y (fst y)
          ]
       where
       LinePlot plot = plots ! i
@@ -106,84 +132,99 @@ lineChartHelpers (LineChart { plots }) =
    point_smallRadius :: Int
    point_smallRadius = 2
 
-   legend_x :: Int
-   legend_x = width + margin.left / 2
-
-   legend_y :: Int
-   legend_y = lineHeight * (length plots - 1) + 2
+   legend_sep :: Int
+   legend_sep = 15
 
    margin :: Margin
-   margin = { top: 15, right: 65, bottom: 40, left: 30 }
+   margin = { top: 15, right: 15, bottom: 40, left: 15 }
 
-   width :: Int
-   width = 330 - margin.left - margin.right
+   image :: Dimensions
+   image = { width: 330, height: 285 }
 
-   height :: Int
-   height = 285 - margin.top - margin.bottom
+   interior :: Dimensions
+   interior =
+      { width: image.width - margin.left - margin.right - legend_dims.width
+      , height: image.height - margin.top - margin.bottom -- minus caption_height?
+      }
 
-   y_max :: Number
-   y_max = maximum (plots <#> plot_max_y # nonEmpty)
+   legend_dims :: Dimensions
+   legend_dims =
+      { width: 40 -- could compute width based on text labels
+      , height: lineHeight * length plots
+      }
+
+   max :: Coord Number
+   max = { x: maximum points.x, y: maximum points.y }
+
+   min :: Coord Number
+   min = { x: minimum points.x, y: minimum points.y }
+
+   points :: Coord (NonEmptyArray Number)
+   points = { x: ps <#> unwrap >>> _.x >>> fst, y: ps <#> unwrap >>> _.y >>> fst }
       where
-      plot_max_y :: LinePlot -> Number
-      plot_max_y (LinePlot { points }) = maximum (points # nonEmpty <#> \(Point { y }) -> fst y)
+      ps :: NonEmptyArray Point
+      ps = plots <#> unwrap >>> _.points # join >>> nonEmpty
 
-   x_min :: Number
-   x_min = minimum (plots <#> plot_min_x # nonEmpty)
-      where
-      plot_min_x :: LinePlot -> Number
-      plot_min_x (LinePlot { points }) = minimum (points # nonEmpty <#> \(Point { x }) -> fst x)
+   to :: Coord (Endo Number)
+   to =
+      { x: scaleLinear { min: min.x, max: max.x } { min: 0.0, max: toNumber interior.width }
+      , y: scaleLinear { min: 0.0, max: max.y } { min: toNumber interior.height, max: 0.0 }
+      }
 
-   x_max :: Number
-   x_max = maximum (plots <#> plot_max_x # nonEmpty)
-      where
-      plot_max_x :: LinePlot -> Number
-      plot_max_x (LinePlot { points }) = maximum (points # nonEmpty <#> \(Point { x }) -> fst x)
+   ticks :: Coord Ticks
+   ticks = { x: max.x - min.x, y: 3.0 }
 
-   to_x :: Number -> Number
-   to_x = scaleLinear { min: x_min, max: x_max } { min: 0.0, max: toNumber width }
-
-   to_y :: Number -> Number
-   to_y = scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
-
-   x_ticks :: Ticks
-   x_ticks = x_max - x_min
-
-   y_ticks :: Ticks
-   y_ticks = 3.0
+   legend :: Coord Int
+   legend = { x: interior.width + legend_sep, y: (interior.height - legend_dims.height) / 2 }
 
    legendHelpers :: LegendHelpers
    legendHelpers =
-      { lineHeight
-      , text_attrs: fromFoldable
-         [ "font-size" ↦ show 11
-         , "transform" ↦ "translate(15, 9)" -- align text with boxes
+      { text_attrs: fromFoldable
+         [ "font-size" ⟼ 11
+         , "transform" ↦ translate { x: 15, y: 9 } -- align text with boxes
          ]
       , circle_attrs: fromFoldable
-         [ "r" ↦ show point_smallRadius
-         , "cx" ↦ show (lineHeight / 2 - point_smallRadius / 2)
-         , "cy" ↦ show (lineHeight / 2 - point_smallRadius / 2)
-         ]
-      , box_attrs: fromFoldable
-         [ "class" ↦ "legend-box"
-         , "transform" ↦ "translate(" <> show legend_x <> ", " <> show legend_y <> ")"
-         , "x" ↦ show 0
-         , "y" ↦ show 0
-         , "height" ↦ show (lineHeight * length plots)
-         , "width" ↦ show (margin.right - 16)
+         [ "r" ⟼ point_smallRadius
+         , "cx" ⟼ circle_centre
+         , "cy" ⟼ circle_centre
          ]
       , entry_y
       }
       where
       entry_y :: Int -> Int
-      entry_y i = height / 2 - margin.top + i * lineHeight
+      entry_y i = i * lineHeight + 2 -- tweak to emulate vertical centering of text
+
+      circle_centre :: Int
+      circle_centre = lineHeight / 2 - point_smallRadius / 2
+
+   createLegend :: D3Selection -> Effect D3Selection
+   createLegend parent = do
+      legend' <- createChild parent "g" $ fromFoldable
+         [ "transform" ↦ translate { x: legend.x, y: legend.y } ]
+      void $ createChild legend' "rect" $ fromFoldable
+         [ "class" ↦ "legend-box"
+         , "x" ⟼ 0
+         , "y" ⟼ 0
+         , "height" ⟼ legend_dims.height
+         , "width" ⟼ legend_dims.width
+         ]
+      pure legend'
+
+   createLegendEntry :: D3Selection -> Effect D3Selection
+   createLegendEntry parent =
+      createChildren parent "g" entries $ fromFoldable
+         [ "transform" ↦ \{ i } -> translate { x: 0, y: legendHelpers.entry_y i } ]
+      where
+      entries :: Array LegendEntry
+      entries = mapWithIndex ((\i (LinePlot { name }) -> { i, name: fst name })) plots
 
    lineHeight :: Int
    lineHeight = 15
 
    caption_attrs :: Object String
    caption_attrs = fromFoldable
-      [ "x" ↦ show (width / 2)
-      , "y" ↦ show (height + 35)
+      [ "x" ⟼ interior.width / 2
+      , "y" ⟼ interior.height + 35
       , "class" ↦ "title-text"
       , "dominant-baseline" ↦ "bottom"
       , "text-anchor" ↦ "middle"
@@ -222,3 +263,6 @@ instance Reflect (Val (SelState 𝕊)) LinePlot where
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
+
+derive instance Newtype Point _
+derive instance Newtype LinePlot _

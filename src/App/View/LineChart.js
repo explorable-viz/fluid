@@ -9,17 +9,49 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
+d3.selection.prototype.attrFuns = function(m) {
+   for (const k in m) {
+      this.attr(k, d => m[k](d))
+   }
+   return this
+}
+
+function createChild_ (parent, elementType, attrs) {
+   return () => {
+      return parent.append(elementType).attrs(attrs)
+   }
+}
+
+function createChildren_ (parent, elementType, data, attrFuns) {
+   return () => {
+      return parent
+         .selectAll(elementType)
+         .data(data)
+         .enter()
+         .append(elementType)
+         .attrFuns(attrFuns)
+   }
+}
+
+function line_ (to, points) {
+   return () => {
+      const line = d3.line()
+         .x(d => to.x(d.x))
+         .y(d => to.y(d.y))
+      return line(points)
+   }
+}
+
 function setSelState (
    { point_attrs },
    { },
    nameCol,
    rootElement,
-   chart,
    listener
 ) {
    rootElement.selectAll('.linechart-point').each(function (point) {
       d3.select(this) // won't work inside arrow function :/
-         .attrs(point_attrs(nameCol)(chart)(point))
+         .attrs(point_attrs(nameCol)(point))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -28,11 +60,7 @@ function setSelState (
 
 function drawLineChart_ (
    lineChartHelpers,
-   { val,
-     selState,
-     selClasses,
-     selClassesFor
-   },
+   uiHelpers,
    {
       divId,
       suffix,
@@ -44,8 +72,9 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { legend_x, margin, width, height, x_ticks, y_ticks, to_x, to_y, legendHelpers, caption_attrs }
+      const { createRootElement, interior, ticks, to, legendHelpers, createLegend, createLegendEntry, caption_attrs }
          = lineChartHelpers
+      const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + divId)
@@ -62,31 +91,21 @@ function drawLineChart_ (
       }
 
       if (rootElement.empty()) {
-         rootElement = div
-            .append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-            .attr('id', childId)
-            .append('g')
-            .attr('transform', `translate(${margin.left}, ${margin.top})`)
-
-         const line1 = d3.line()
-            .x(d => to_x(val(d.x)))
-            .y(d => to_y(val(d.y)))
+         rootElement = createRootElement(div)(childId)()
 
          rootElement.selectAll('line')
-            .data([...plots.entries()])
+            .data(plots.entries())
             .enter()
             .append('path')
             .attr('fill', 'none')
             .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
             .attr('class', 'line')
-            .attr('d', ([, plot]) => line1(plot.points))
+            .attr('d', ([, plot]) => line(to)(plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))())
 
          for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
-               .data([...plot.points.entries()].map(([j, p]) => {
+               .data(plot.points.entries().map(([j, p]) => {
                   return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
                }))
                .enter()
@@ -96,31 +115,22 @@ function drawLineChart_ (
 
          rootElement
             .append('g')
-            .attr('transform', `translate(0, ${height})`)
-            .call(d3.axisBottom(to_x).ticks(x_ticks).tickFormat(d3.format('d')))
+            .attr('transform', `translate(0, ${interior.height})`)
+            .call(d3.axisBottom(to.x).ticks(ticks.x).tickFormat(d3.format('d')))
 
          rootElement
             .append('g')
-            .call(d3.axisLeft(to_y).tickSizeOuter(0).ticks(y_ticks).tickFormat(d3.format('.1f')))
+            .call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(ticks.y).tickFormat(d3.format('.1f')))
 
-         rootElement
-            .append('rect')
-            .attrs(legendHelpers.box_attrs)
+         const legend = createLegend(rootElement)()
+         const legendEntry = createLegendEntry(legend)()
 
-         const legend = rootElement.selectAll('legend')
-            .data(names)
-            .enter()
-            .append('g')
-            .attr('transform', (d, i) =>
-               `translate(${legend_x}, ${legendHelpers.entry_y(i)})`
-            )
-
-         legend.append('text')
-            .text(d => d)
+         legendEntry.append('text')
+            .text(({ name }) => name)
             .attrs(legendHelpers.text_attrs)
 
-         legend.append('circle')
-            .attr('fill', d => nameCol(d))
+         legendEntry.append('circle')
+            .attr('fill', ({ name }) => nameCol(name))
             .attrs(legendHelpers.circle_attrs)
 
          rootElement
@@ -128,9 +138,12 @@ function drawLineChart_ (
             .text(val(caption))
             .attrs(caption_attrs)
       }
-      setSelState(lineChartHelpers, { selState, selClasses, selClassesFor}, nameCol, rootElement, { plots }, listener)
+      setSelState(lineChartHelpers, uiHelpers, nameCol, rootElement, listener)
    }
 }
 
 export var drawLineChart = x1 => x2 => x3 => x4 => drawLineChart_(x1, x2, x3, x4)
 export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
+export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
+export var createChildren = x1 => x2 => x3 => x4 => createChildren_(x1, x2, x3, x4)
+export var line = x1 => x2 => line_(x1, x2)
