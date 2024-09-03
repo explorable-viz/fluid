@@ -21,8 +21,10 @@ show' :: T.Selector -> String
 show' (T.Selector sel) = sel
 
 waitFor :: T.Selector -> T.Page -> Aff Unit
-waitFor selector page =
+waitFor selector page = do
+   log' ("Waiting for " <> show' selector)
    void $ T.pageWaitForSelector selector { timeout: 60000, visible: true } page
+   log' "-> found"
 
 foreign import _launchFirefox :: Effect (Promise T.Browser)
 
@@ -96,9 +98,7 @@ checkFigConv2 page = do
 waitForFigure :: T.Page -> String -> Aff Unit
 waitForFigure page id = do
    let selector = T.Selector ("svg#" <> id)
-   log' ("Waiting for " <> show' selector)
    waitFor selector page
-   log' "-> found"
 
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
