@@ -2,44 +2,32 @@ module App.View.LinkedText where
 
 import Prelude
 
-import App.Util (class Reflect, ReactState, Selectable, 𝕊)
-import App.Util.Selector (ViewSelSetter, linkedText)
+import App.Util (class Reflect, ReactState, Selectable, 𝕊, from)
+import App.Util.Selector (linkedText, listElement, ViewSelSetter)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import Data.Either (Either(..))
-import Data.Int (toNumber)
-import Data.Number.Format (toString)
-import Primitive (intOrNumber, unpack)
-import Util (type (+), type (×), (×))
+import Primitive (string, unpack)
 import Val (Val)
 
 foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText
 
-newtype LinkedText = LinkedText (Selectable String)
+type LinkedTextHelpers = {}
+newtype LinkedText = LinkedText (Array (Selectable String))
 
-type LinkedTextHelpers =
-   { test_field :: String
-   }
+drawLinkedText' :: Renderer LinkedText
+drawLinkedText' = drawLinkedText {}
 
 linkedTextHelpers :: LinkedTextHelpers
 linkedTextHelpers =
-   { test_field: "test"
-   }
+   {}
 
 instance Drawable LinkedText where
    draw rSpec figVal _ redraw =
-      drawLinkedText linkedTextHelpers uiHelpers rSpec =<< selListener figVal redraw linkedText'
+      drawLinkedText linkedTextHelpers uiHelpers rSpec =<< selListener figVal redraw linkedTextSelector
       where
-      linkedText' :: ViewSelSetter LinkedText
-      linkedText' _ = linkedText
+      linkedTextSelector :: ViewSelSetter LinkedTextElem
+      linkedTextSelector { i } = linkedText <<< listElement i
 
 instance Reflect (Val (ReactState 𝕊)) LinkedText where
-   from r = LinkedText (unpackedStringify $ unpack intOrNumber r)
-
-unpackedStringify :: forall a. (Int + Number) × a -> String × a
-unpackedStringify (x × y) = stringify x × y
-
-stringify :: (Int + Number) -> String
-stringify (Left n) = toString $ toNumber n
-stringify (Right n) = toString n
+   from r = LinkedText (unpack string <$> from r)
 
 type LinkedTextElem = { i :: Int }

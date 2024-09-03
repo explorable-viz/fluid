@@ -354,11 +354,6 @@ rem = I.rem
 equals :: Int + Number + String -> Int + Number + String -> Boolean
 equals = (==) `union` ((==) `unionStr` (==))
 
--- (Int + Number) + String -> (Int + Number) + String -> Boolean
-
-notEquals' :: Number + String -> Number + String -> Boolean
-notEquals' = (/=) `unionStr` (/=)
-
 notEquals :: Int + Number + String -> Int + Number + String -> Boolean
 notEquals = (/=) `union` ((/=) `unionStr` (/=))
 

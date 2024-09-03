@@ -3,8 +3,7 @@ module.exports = function (config) {
       autoWatch: true,
       basePath: "",
       browsers: ["ChromeHeadlessNoSandbox"],
-      browserDisconnectTimeout: 240000,
-      browserNoActivityTimeout: 2400000,
+      browserDisconnectTimeout: 20000,
       customLaunchers: {
          ChromeHeadlessNoSandbox: {
            base: 'ChromeHeadless',
@@ -16,13 +15,13 @@ module.exports = function (config) {
       },
       client: {
          mocha: {
-            timeout: 60000
+            timeout: 1000000
          }
       },
       colors: true,
       failOnEmptyTestSuite: false,
       files: [
-         "./dist/tests/app.js",
+         "./dist/bench/app.js",
          {
             pattern: "./fluid/**/*.fld",
             watched: true,

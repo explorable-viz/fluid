@@ -76,7 +76,7 @@ module_ file (ProgCxt r@{ mods }) = do
 datasetAs :: forall m. MonadAff m => MonadError Error m => Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs (x ↦ file) (ProgCxt r@{ datasets }) = do
    eα <- parseProgram (Folder "fluid") file >>= desug
-   pure $ ProgCxt r { datasets = x ↦ eα : datasets }
+   pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
 loadProgCxt mods datasets =

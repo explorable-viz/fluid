@@ -46,10 +46,12 @@ thead {
 }
 
 .linked-text {
-   border-radius: 2px;
+   border-radius: 0px;
    background-color: White;
-   border-bottom: 2px solid white;
-   display: inline-block;
+   border-bottom-style: solid;
+   border-bottom-color: white;
+   border-bottom-width: 1px;
+   display: inline;
 }
 
 .linked-text.selected-primary-persistent {
@@ -57,7 +59,7 @@ thead {
 }
 
 .linked-text.selected-primary-transient {
-   border-bottom: 2px solid blue;
+   border-bottom-color: blue;
 }
 
 .linked-text.selected-secondary-persistent {
@@ -65,7 +67,7 @@ thead {
 }
 
 .linked-text.selected-secondary-transient {
-   border-bottom: 2px solid lightblue;
+   border-bottom-color: lightblue;
 }
 
 .table-row.hidden {
@@ -75,16 +77,13 @@ thead {
 .matrix-cell {
    stroke: DarkGray;
    fill: White;
-/* filter: drop-shadow( -1px -1px 1px rgba(0, 0, 0, .5)); */
 }
 
 .matrix-cell.selected-primary-persistent {
-/*   fill: rgb(225,225,225); */
    fill: LightGreen;
 }
 
 .matrix-cell.selected-secondary-persistent {
-/*   fill: rgb(245, 245, 245); */
    fill: rgb(214, 240, 214)
 }
 

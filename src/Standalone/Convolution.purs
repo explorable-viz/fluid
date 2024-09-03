@@ -1,4 +1,4 @@
-module Publish.Convolution where
+module Standalone.Convolution where
 
 import Prelude hiding (absurd)
 

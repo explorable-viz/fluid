@@ -55,22 +55,29 @@ linkedOutputs_spec2 =
               )
    }
 
-linkedOutputs_spec3 :: TestLinkedOutputsSpec
-linkedOutputs_spec3 =
+movingAverages_spec :: TestLinkedOutputsSpec
+movingAverages_spec =
    { spec:
-        { datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
-        , imports: []
-        , file: File "linked-outputs/pairs"
-        , inputs: [ "data" ]
+        { datasets: [ "points" ↦ "example/linked-outputs/moving-average-data" ]
+        , imports: [ "lib/moving-average", "lib/nombre" ]
+        , file: File "linked-outputs/moving-average"
+        , inputs: [ "points" ]
         }
-   , δ_out: snd neg {-snd (snd (fst neg))-}
-   , out_expect: neg {-snd (snd (fst neg))
-        >>> fst (fst neg >>> snd (fst neg))-}
+   , δ_out: identity
+   , out_expect: identity
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
-   [ linkedOutputs_spec3
+   [ { spec:
+          { datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
+          , imports: []
+          , file: File "linked-outputs/pairs"
+          , inputs: [ "data" ]
+          }
+     , δ_out: snd neg
+     , out_expect: neg
+     }
    , { spec:
           { datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
           , imports: [ "lib/convolution" ]
@@ -100,4 +107,5 @@ linkedOutputs_cases =
      }
    , linkedOutputs_spec1
    , linkedOutputs_spec2
+   , movingAverages_spec
    ]

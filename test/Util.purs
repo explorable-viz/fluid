@@ -10,6 +10,7 @@ import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
 import Desug (Desugaring, desugGC)
+import Effect.Aff (Aff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
@@ -25,6 +26,8 @@ import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
+
+type TestSuite = Array (String × Aff Unit)
 
 type SelectionSpec =
    { δv :: Selector Val

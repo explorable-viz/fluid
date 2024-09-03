@@ -111,7 +111,6 @@ function drawScatterPlot_ (
             .classed('scatterplot-point', true)
             .attr('cx', ({ point }) => x(val(point.x)))
             .attr('cy', ({ point }) => y(val(point.y)))
-            .attr('data-y', ({ point }) => val(point.y))
             .attr('stroke-width', 0.5)
 
          rootElement.append('text')

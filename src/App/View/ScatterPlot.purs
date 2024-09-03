@@ -6,7 +6,7 @@ import App.Util (class Reflect, ReactState, Selectable, 𝕊, from, isPrimary, i
 import App.Util.Selector (ViewSelSetter, field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import Bind ((↦))
+import Bind ((⟼))
 import Data.Int (toNumber)
 import Data.Tuple (snd)
 import DataType (f_caption, f_data, f_xlabel, f_ylabel)
@@ -39,12 +39,10 @@ scatterPlotHelpers =
    point_attrs :: ScatterPlot -> PointIndex -> Object String
    point_attrs (ScatterPlot { points }) { i } =
       fromFoldable
-         [ "r" ↦ show (toNumber point_smallRadius * if isPrimary sel then 1.6 else if isSecondary sel then 1.25 else 1.0) ]
+         [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 1.6 else if isSecondary sel then 1.25 else 1.0 ]
       where
       Point { x, y } = points ! i
-      sel1 = snd y
-      sel2 = snd x
-      sel = sel1 ∨ sel2
+      sel = snd x ∨ snd y
       point_smallRadius = 2
 
 instance Drawable ScatterPlot where
