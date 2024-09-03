@@ -11,6 +11,7 @@ import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
 import Test.Util (testCondition)
 import Toppokki as T
+import Util (debug)
 
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
@@ -31,11 +32,10 @@ waitForHidden selector page = do
    log' "-> found"
 
 puppeteerLogging :: Boolean
-puppeteerLogging = true
+puppeteerLogging = false
 
--- Ignore Util.debug.logging flag for now
 log' :: forall m. MonadEffect m => String -> m Unit
-log' msg = when puppeteerLogging (log msg)
+log' msg = when (debug.logging || puppeteerLogging) (log msg)
 
 foreign import _launchFirefox :: Effect (Promise T.Browser)
 
@@ -87,9 +87,9 @@ checkFig4 page = do
       className <- getAttributeValue page selector "class"
       radius <- getAttributeValue page selector "r"
       let expectedClass = "scatterplot-point selected-primary-persistent selected-primary-transient"
-      testCondition fig (className == expectedClass && radius == "3.2") "circle-class-and-radius"
+      testCondition (show' selector) (className == expectedClass && radius == "3.2") "class and radius"
       let caption = T.Selector ("table#" <> fig <> "-input-renewables > caption.table-caption")
-      checkTextContent fig page caption "renewables (4 of 240)"
+      checkTextContent page caption "renewables (4 of 240)"
 
 checkFig1 :: T.Page -> Aff Unit
 checkFig1 page = do
@@ -108,7 +108,7 @@ checkFig1 page = do
       waitFor selector page
       void $ T.click selector page
       fill <- getAttributeValue page selector "fill"
-      testCondition fig (fill == "#57a157") "click-bar"
+      testCondition (show' selector) (fill == "#57a157") "fill"
 
 checkFigConv2 :: T.Page -> Aff Unit
 checkFigConv2 page = do
@@ -122,6 +122,7 @@ waitForFigure :: T.Page -> String -> Aff Unit
 waitForFigure page id = do
    let selector = T.Selector ("svg#" <> id)
    waitFor selector page
+   testCondition (show' selector) true "exists"
 
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
@@ -130,11 +131,11 @@ clickToggle page id = do
    log' ("Clicking " <> show' selector)
    void $ T.click selector page
 
-checkTextContent :: String -> T.Page -> T.Selector -> String -> Aff Unit
-checkTextContent fig page selector expected = do
+checkTextContent :: T.Page -> T.Selector -> String -> Aff Unit
+checkTextContent page selector expected = do
    waitFor selector page
    captionText <- textContentValue page selector
-   testCondition fig (captionText == expected) "table-view-caption"
+   testCondition (show' selector) (captionText == expected) "text content"
    pure unit
 
 getAttributeValue :: T.Page -> T.Selector -> String -> Aff String

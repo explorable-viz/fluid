@@ -153,7 +153,7 @@ testOutcome :: Boolean -> Endo String
 testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s
 
 testCondition :: forall m. MonadThrow Error m => MonadEffect m => String -> Boolean -> String -> m Unit
-testCondition testName b msg = check' b (testName <> "/" <> msg)
+testCondition testName b msg = check' b (testName <> ": " <> msg)
    where
    check' true = log <<< testOutcome true
    check' false = check false <<< testOutcome false
