@@ -26,5 +26,4 @@ jobs:
         yarn build
         yarn build-app
         yarn build-puppeteer
-        yarn test
-        yarn test-puppeteer
+        yarn test-all
