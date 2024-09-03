@@ -7,12 +7,13 @@ import Data.Foldable (sequence_)
 import Data.Tuple (snd)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
 import Test.Util (TestSuite, testCondition)
 import Toppokki (content)
 import Toppokki as T
-import Util (log', (×))
+import Util ((×))
 
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
@@ -25,6 +26,13 @@ waitFor selector page = do
    log' ("Waiting for " <> show' selector)
    void $ T.pageWaitForSelector selector { timeout: 60000, visible: true } page
    log' "-> found"
+
+puppeteerLogging :: Boolean
+puppeteerLogging = true
+
+-- Ignore Util.debug.logging flag for now
+log' :: forall m. MonadEffect m => String -> m Unit
+log' msg = when puppeteerLogging (log msg)
 
 foreign import _launchFirefox :: Effect (Promise T.Browser)
 
