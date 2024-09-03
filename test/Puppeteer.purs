@@ -48,18 +48,23 @@ tests =
    , browserTests "firefox" (launchFirefox)
    ]
 
+goto :: T.URL -> T.Page -> Aff Unit
+goto (T.URL url) page = do
+   log' ("Going to " <> show url)
+   T.goto (T.URL url) page
+
+-- Test each fig on a fresh page, else earlier tests seem to interfere with element visibility (on Firefox)
 browserTests :: String -> Aff T.Browser -> Aff Unit
 browserTests browserName launchBrowser = do
    log ("browserTests: " <> browserName)
    browser <- launchBrowser
    page <- T.newPage browser
    let url = "http://127.0.0.1:8080"
-   log' ("Going to " <> url)
-   T.goto (T.URL url) page
-   --   log' "Waiting for content"
-   --   log =<< content page
+   goto (T.URL url) page
    checkFig4 page
+   goto (T.URL url) page
    checkFig1 page
+   goto (T.URL url) page
    checkFigConv2 page
    T.close browser
 
