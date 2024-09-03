@@ -24,6 +24,12 @@ waitFor selector page = do
    void $ T.pageWaitForSelector selector { timeout: 60000, visible: true } page
    log' "-> found"
 
+waitForHidden :: T.Selector -> T.Page -> Aff Unit
+waitForHidden selector page = do
+   log' ("Waiting for " <> show' selector)
+   void $ T.pageWaitForSelector selector { timeout: 60000, visible: false } page
+   log' "-> found"
+
 puppeteerLogging :: Boolean
 puppeteerLogging = true
 
@@ -60,7 +66,9 @@ browserTests browserName launchBrowser = do
 checkFig4 :: T.Page -> Aff Unit
 checkFig4 page = do
    waitForFigure page (fig <> "-output")
-   clickToggle page (fig <> "-input")
+   let toggle = fig <> "-input"
+   clickToggle page toggle
+   waitFor (T.Selector ("div#" <> toggle)) page
    clickScatterPlotPoint
 
    where
@@ -82,7 +90,9 @@ checkFig1 :: T.Page -> Aff Unit
 checkFig1 page = do
    waitForFigure page (fig <> "-bar-chart")
    waitForFigure page (fig <> "-line-chart")
-   clickToggle page (fig <> "-input")
+   let toggle = fig <> "-input"
+   clickToggle page toggle
+   waitFor (T.Selector ("div#" <> toggle)) page
    clickBarChart
    where
    fig = "fig-1"
@@ -99,7 +109,9 @@ checkFigConv2 :: T.Page -> Aff Unit
 checkFigConv2 page = do
    let fig = "fig-conv-2"
    waitForFigure page (fig <> "-output")
-   clickToggle page (fig <> "-input")
+   let toggle = fig <> "-input"
+   clickToggle page toggle
+   waitFor (T.Selector ("div#" <> toggle)) page
 
 waitForFigure :: T.Page -> String -> Aff Unit
 waitForFigure page id = do
@@ -112,7 +124,6 @@ clickToggle page id = do
    waitFor selector page
    log' ("Clicking " <> show' selector)
    void $ T.click selector page
-   waitFor (T.Selector ("div#" <> id)) page
 
 checkTextContent :: String -> T.Page -> T.Selector -> String -> Aff Unit
 checkTextContent fig page selector expected = do
