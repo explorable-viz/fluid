@@ -2,7 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
-import App.Util (ReactState(..), Selector, cheatToSel)
+import App.Util (ReactState(..), Selector, getPersistent)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -78,7 +78,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
 
-   let out0 = (δv (Reactive <$> (botOf v))) <#> cheatToSel >>> unwrap >>> _.persistent
+   let out0 = (δv (Reactive <$> (botOf v))) <#> getPersistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))

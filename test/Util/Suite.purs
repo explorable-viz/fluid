@@ -87,7 +87,6 @@ linkedOutputsTest { spec, δ_out, out_expect } = do
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (fst (selectionResult fig))
    checkEq "selected" "expected" (toR𝔹 <$> v) (out_expect (botOf <$> v))
-   {-   checkEq "selected" "expected" (cheatToSel <<< toR𝔹 <$> v) (cheatToSel <$> (out_expect (toR𝔹 <$> (kindOfBotS <$> v))))-}
    pure fig
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)

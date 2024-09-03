@@ -122,21 +122,12 @@ instance JoinSemilattice a => JoinSemilattice (ReactState a)
    join (Reactive b) (Reactive c) = Reactive (b ∨ c)
    join _ _ = error absurd
 
-{-} Ideally we rewrite out_expect, in_expect to require only this rather than toR𝔹 and cheatToSel both 
-to𝔹 :: ReactState 𝕊 -> SelState 𝔹
-to𝔹 = ((_ /= None) <$> _) <<< fromℝ
--}
 toR𝔹 :: ReactState 𝕊 -> ReactState 𝔹
 toR𝔹 Inert = Inert
 toR𝔹 (Reactive (SelState { persistent: a, transient: b })) = Reactive (SelState { persistent: c, transient: d })
    where
    c = if (a /= None) then true else false
    d = if (b /= None) then true else false
-
--- also used in util test, ideally not so
-cheatToSel :: ReactState 𝔹 -> SelState 𝔹
-cheatToSel Inert = (SelState { persistent: false, transient: false })
-cheatToSel (Reactive sel) = sel
 
 -- methods for obtaining the ReactState, designed to accept varying type inputs for redundancy
 as𝕊 :: ReactState 𝔹 -> ReactState 𝔹 -> ReactState 𝕊
