@@ -3,7 +3,7 @@ module Test.Util where
 import Prelude hiding (absurd, compare)
 
 import App.Util (Selector)
-import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
@@ -11,6 +11,7 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Desug (Desugaring, desugGC)
 import Effect.Aff (Aff)
+import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
@@ -24,7 +25,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Thunk, Endo, check, checkSatisfies, debug, spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite = Array (String × Aff Unit)
@@ -147,3 +148,12 @@ checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Un
 checkPretty msg expect x =
    unless (expect `eq` prettyP x) $
       throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
+
+testOutcome :: Boolean -> Endo String
+testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s
+
+check' :: forall m. MonadThrow Error m => MonadEffect m => String -> Boolean -> String -> m Unit
+check' testName b msg = check'' b (testName <> "/" <> msg)
+   where
+   check'' true = log <<< testOutcome true
+   check'' false = check false <<< testOutcome false

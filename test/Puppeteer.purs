@@ -2,21 +2,27 @@ module Test.Puppeteer where
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadThrow)
 import Control.Promise (Promise, fromAff, toAffE)
 import Data.Foldable (sequence_)
 import Data.Tuple (snd)
 import Effect (Effect)
-import Effect.Aff (Aff, Error)
-import Effect.Class (class MonadEffect)
+import Effect.Aff (Aff)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
-import Test.Util (TestSuite)
+import Test.Util (TestSuite, check')
+import Toppokki (content)
 import Toppokki as T
-import Util (Endo, check, debug, (×))
+import Util (log', (×))
 
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
+
+show' :: T.Selector -> String
+show' (T.Selector sel) = sel
+
+waitFor :: T.Selector -> T.Page -> Aff Unit
+waitFor selector page =
+   void $ T.pageWaitForSelector selector { timeout: 60000, visible: true } page
 
 foreign import _launchFirefox :: Effect (Promise T.Browser)
 
@@ -34,66 +40,71 @@ browserTests launchBrowser = do
    browser <- launchBrowser
    page <- T.newPage browser
    let url = "http://127.0.0.1:8080"
-   --log' ("Going to " <> url)
+   log' ("Going to " <> url)
    T.goto (T.URL url) page
-   --content <- T.content page
-   --log' content
-
+   log' "Waiting for content"
+   log =<< content page
    checkFig4 page
    checkFig1 page
    checkFigConv2 page
-
    T.close browser
 
-----------------------
 checkFig4 :: T.Page -> Aff Unit
 checkFig4 page = do
-   waitForFigure page "fig-4-output"
-   clickToggle page "fig-4-input"
-   clickScatterPlotPoint page "fig-4"
-   log' "fig-4" "tests completed"
+   waitForFigure page (fig <> "-output")
+   clickToggle page (fig <> "-input")
+   clickScatterPlotPoint
+
+   where
+   fig = "fig-4"
+
+   clickScatterPlotPoint :: Aff Unit
+   clickScatterPlotPoint = do
+      let selector = T.Selector ("div#" <> fig <> " .scatterplot-point")
+      waitFor selector page
+      void $ T.click selector page
+      className <- getAttributeValue page selector "class"
+      radius <- getAttributeValue page selector "r"
+      check' fig (className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2")
+         "circle class and radius"
+      checkCaptionText fig page ("table#" <> fig <> "-input-renewables > caption.table-caption")
 
 checkFig1 :: T.Page -> Aff Unit
 checkFig1 page = do
-   waitForFigure page "fig-1-bar-chart"
-   waitForFigure page "fig-1-line-chart"
-   clickToggle page "fig-1-input"
-   clickBarChart "fig-1" page "fig-1-bar-chart"
-   log' "fig-1" "tests completed"
+   waitForFigure page (fig <> "-bar-chart")
+   waitForFigure page (fig <> "-line-chart")
+   clickToggle page (fig <> "-input")
+   clickBarChart
+   where
+   fig = "fig-1"
+
+   clickBarChart :: Aff Unit
+   clickBarChart = do
+      let selector = T.Selector ("svg#" <> fig <> "-bar-chart rect.bar")
+      waitFor selector page
+      void $ T.click selector page
+      fill <- getAttributeValue page selector "fill"
+      check' fig (fill == "#57a157") "first bar clicked"
 
 checkFigConv2 :: T.Page -> Aff Unit
 checkFigConv2 page = do
-   waitForFigure page "fig-conv-2-output"
-   clickToggle page "fig-conv-2-input"
-   log' "fig-conv-2" "tests completed"
+   let fig = "fig-conv-2"
+   waitForFigure page (fig <> "-output")
+   clickToggle page (fig <> "-input")
 
-----------------------
---Function to check for the presence of an SVG figure
 waitForFigure :: T.Page -> String -> Aff Unit
 waitForFigure page id = do
    let selector = T.Selector ("svg#" <> id)
-   _ <- T.pageWaitForSelector selector { timeout: 60000 } page
-   log' id "figure present"
-   pure unit
+   log' ("Waiting for " <> show' selector)
+   waitFor selector page
+   log' "-> found"
 
---Function to click a toggle
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
    let selector = T.Selector ("div#" <> id <> " + div > div > span.toggle-button")
-   _ <- T.pageWaitForSelector selector { timeout: 60000 } page
-   _ <- T.click selector page
-   _ <- T.pageWaitForSelector (T.Selector ("div#" <> id)) { visible: true } page
-   pure unit
-
-clickScatterPlotPoint :: T.Page -> String -> Aff Unit
-clickScatterPlotPoint page id = do
-   let selector = T.Selector ("div#" <> id <> " .scatterplot-point")
-   _ <- T.pageWaitForSelector selector { timeout: 60000, visible: true } page
-   _ <- T.click selector page
-   className <- getAttributeValue page selector "class"
-   radius <- getAttributeValue page selector "r"
-   check' id (className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2") "circle class and radius"
-   checkCaptionText id page "table#fig-4-input-renewables > caption.table-caption"
+   waitFor selector page
+   void $ T.click selector page
+   waitFor (T.Selector ("div#" <> id)) page
 
 checkCaptionText :: String -> T.Page -> String -> Aff Unit
 checkCaptionText fig page selector = do
@@ -101,16 +112,6 @@ checkCaptionText fig page selector = do
    captionText <- textContentValue page (T.Selector selector)
    check' fig (captionText == "renewables (4 of 240)") "caption (4 of 240)"
    pure unit
-
-clickBarChart :: String -> T.Page -> String -> Aff Unit
-clickBarChart fig page id = do
-   let selector = T.Selector ("svg#" <> id <> " rect.bar")
-   _ <- T.pageWaitForSelector selector { timeout: 60000 } page
-   _ <- T.click selector page
-   fill <- getAttributeValue page selector "fill"
-   check' fig (fill == "#57a157") "first bar clicked"
-
--------------
 
 getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
 getAttributeValue page selector attribute = do
@@ -121,19 +122,3 @@ textContentValue :: T.Page -> T.Selector -> Aff String
 textContentValue page selector = do
    captionText <- T.unsafePageEval selector "element => element.textContent" page
    pure (unsafeFromForeign captionText)
-
--------------------
-
-report :: Boolean -> Endo String
-report b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s
-
-check' :: forall m. MonadThrow Error m => MonadEffect m => String -> Boolean -> String -> m Unit
-check' fig b s = check'' b (fig <> "/" <> s)
-   where
-   check'' true s' = do
-      log (report true s')
-   check'' false s' = check false (report false s')
-
-log' :: forall m. MonadEffect m => String -> String -> m Unit
-log' fig s =
-   when debug.logging (log (report true (fig <> "/" <> s)))
