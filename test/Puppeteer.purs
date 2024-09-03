@@ -111,8 +111,7 @@ checkTextContent :: String -> T.Page -> T.Selector -> String -> Aff Unit
 checkTextContent fig page selector expected = do
    waitFor selector page
    captionText <- textContentValue page selector
-   testCondition fig (captionText == expected)
-      (show expected <> "table-view-caption")
+   testCondition fig (captionText == expected) "table-view-caption"
    pure unit
 
 getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
