@@ -38,7 +38,8 @@
 
     "build-puppeteer": "./script/build.sh test-puppeteer Test.Puppeteer --platform=node",
     "test-puppeteer": "./script/test-puppeteer.sh",
-    "test-puppeteer2": "./script/test-puppeteer2.sh"
+
+    "test-all": "./script/test-all.sh"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
