@@ -46,12 +46,9 @@ newtype SelectionLevel a = SelectionLevel
    , transient :: a
    }
 
-instance (Highlightable a, JoinSemilattice a) => Highlightable (SelectionLevel a) where
-   highlightIf (SelectionLevel { persistent, transient }) = highlightIf (persistent ∨ transient)
-
-instance Highlightable (SelState 𝔹) where
+instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf Inert = highlightIf false
-   highlightIf (Reactive a) = highlightIf a
+   highlightIf (Reactive (SelectionLevel { persistent, transient })) = highlightIf (persistent ∨ transient)
 
 persist :: forall a. Setter (SelState a) a
 persist δα = \sel ->
