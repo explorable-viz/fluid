@@ -113,18 +113,9 @@ instance JoinSemilattice 𝕊 where
 instance BoundedJoinSemilattice 𝕊 where
    bot = None
 
-instance JoinSemilattice a => JoinSemilattice (SelState a)
-   where
-   join Inert Inert = Inert
-   join (Reactive b) (Reactive c) = Reactive (b ∨ c)
-   join _ _ = error absurd
-
 toR𝔹 :: SelState 𝕊 -> SelState 𝔹
 toR𝔹 Inert = Inert
-toR𝔹 (Reactive (SelectionType { persistent: a, transient: b })) = Reactive (SelectionType { persistent: c, transient: d })
-   where
-   c = if (a /= None) then true else false
-   d = if (b /= None) then true else false
+toR𝔹 a = selState false (isPersistent a) (isTransient a)
 
 -- methods for obtaining the SelState, designed to accept varying type inputs for redundancy
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
@@ -299,5 +290,11 @@ instance JoinSemilattice a => JoinSemilattice (SelectionType a) where
 
 instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelectionType a) where
    bot = SelectionType { persistent: bot, transient: bot }
+
+instance JoinSemilattice a => JoinSemilattice (SelState a)
+   where
+   join Inert Inert = Inert
+   join (Reactive b) (Reactive c) = Reactive (b ∨ c)
+   join _ _ = error absurd
 
 derive instance Eq a => Eq (SelState a)
