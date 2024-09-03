@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (ReactState, 𝕊, as𝕊, getInert, getPersistent, getTransient, reactState, to𝕊)
+import App.Util (ReactState, 𝕊, as𝕊, getPersistent, getTransient, isInert, reactState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -67,14 +67,14 @@ lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    fwd1 :: f (ReactState 𝔹) -> g (ReactState 𝔹)
    fwd1 γ = reactState <$> v0 <*> v1 <*> v2
       where
-      v0 = gc.fwd (γ <#> getInert)
+      v0 = gc.fwd (γ <#> isInert)
       v1 = gc.fwd (γ <#> getPersistent)
       v2 = gc.fwd (γ <#> getTransient)
 
    bwd1 :: g (ReactState 𝔹) -> f (ReactState 𝔹)
    bwd1 v = reactState <$> v0 <*> v1 <*> v2
       where
-      v0 = gc.bwd (v <#> getInert)
+      v0 = gc.bwd (v <#> isInert)
       v1 = gc.bwd (v <#> getPersistent)
       v2 = gc.bwd (v <#> getTransient)
 

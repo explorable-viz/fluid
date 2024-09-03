@@ -84,17 +84,15 @@ isNone (Reactive (SelState { persistent, transient })) =
    persistent == None && transient == None
 isNone _ = false
 
-isInert :: ReactState 𝕊 -> 𝔹
+isInert :: forall a. ReactState a -> 𝔹
 isInert Inert = true
 isInert _ = false
 
 isPersistent :: ReactState 𝕊 -> 𝔹
-isPersistent (Reactive (SelState { persistent })) = persistent /= None
-isPersistent Inert = false
+isPersistent = getPersistent >>> to𝔹
 
 isTransient :: ReactState 𝕊 -> 𝔹
-isTransient (Reactive (SelState { transient })) = transient /= None
-isTransient Inert = false
+isTransient = getTransient >>> to𝔹
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
@@ -157,6 +155,11 @@ to𝕊 Inert = Inert
 to𝕊 (Reactive (sel)) = Reactive (sel <#> if _ then Primary else None)
 
 -- we should be able to negate the need for these with the lift code
+
+to𝔹 :: 𝕊 -> 𝔹
+to𝔹 None = false
+to𝔹 _ = true
+
 getPersistent :: forall a. BoundedJoinSemilattice a => ReactState a -> a
 getPersistent Inert = bot
 getPersistent (Reactive (SelState { persistent })) = persistent
@@ -164,10 +167,6 @@ getPersistent (Reactive (SelState { persistent })) = persistent
 getTransient :: forall a. BoundedJoinSemilattice a => ReactState a -> a
 getTransient Inert = bot
 getTransient (Reactive (SelState { transient })) = transient
-
-getInert :: ReactState 𝔹 -> 𝔹
-getInert Inert = true
-getInert (Reactive (SelState _)) = false
 
 get_intOrNumber :: Var -> Dict (Val (ReactState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
