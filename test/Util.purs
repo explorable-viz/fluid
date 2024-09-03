@@ -2,7 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
-import App.Util (ReactState(..), Selector, getPersistent)
+import App.Util (SelState(..), Selector, getPersistent)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)

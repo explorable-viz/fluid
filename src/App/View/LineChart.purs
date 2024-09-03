@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦), (⟼))
@@ -240,25 +240,25 @@ instance Drawable LineChart where
       point { i, j } =
          linePoint j >>> listElement i >>> field f_plots >>> lineChart
 
-instance Reflect (Dict (Val (ReactState 𝕊))) Point where
+instance Reflect (Dict (Val (SelState 𝕊))) Point where
    from r = Point
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
       }
 
-instance Reflect (Dict (Val (ReactState 𝕊))) LinePlot where
+instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
       , points: record from <$> from ((get f_data r))
       }
 
-instance Reflect (Dict (Val (ReactState 𝕊))) LineChart where
+instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
    from r = LineChart
       { caption: unpack string (get f_caption r)
-      , plots: from <$> (from (get f_plots r) :: Array (Val (ReactState 𝕊))) :: Array LinePlot
+      , plots: from <$> (from (get f_plots r) :: Array (Val (SelState 𝕊))) :: Array LinePlot
       }
 
-instance Reflect (Val (ReactState 𝕊)) LinePlot where
+instance Reflect (Val (SelState 𝕊)) LinePlot where
    from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js

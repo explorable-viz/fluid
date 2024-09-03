@@ -6,7 +6,7 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
+import App.Util (class Reflect, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
@@ -88,19 +88,19 @@ instance Drawable BarChart where
       barSegment' :: ViewSelSetter BarSegmentCoordinate
       barSegment' { i, j } = barSegment i j >>> barChart
 
-instance Reflect (Dict (Val (ReactState 𝕊))) BarChart where
+instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart
       { caption: unpack string (get f_caption r)
       , stackedBars: record from <$> from (get f_data r)
       }
 
-instance Reflect (Dict (Val (ReactState 𝕊))) StackedBar where
+instance Reflect (Dict (Val (SelState 𝕊))) StackedBar where
    from r = StackedBar
       { x: unpack string (get f_x r)
       , bars: record from <$> from (get f_bars r)
       }
 
-instance Reflect (Dict (Val (ReactState 𝕊))) Bar where
+instance Reflect (Dict (Val (SelState 𝕊))) Bar where
    from r = Bar
       { y: unpack string (get f_y r)
       , z: get_intOrNumber f_z r

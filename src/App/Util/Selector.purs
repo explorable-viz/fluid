@@ -2,7 +2,7 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (ReactState, persist)
+import App.Util (SelState, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
@@ -15,7 +15,7 @@ import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection setters.
-type SelSetter (f :: Type -> Type) (g :: Type -> Type) = Setter (f (ReactState 𝔹)) (g (ReactState 𝔹))
+type SelSetter (f :: Type -> Type) (g :: Type -> Type) = Setter (f (SelState 𝔹)) (g (SelState 𝔹))
 type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
 
 fst :: SelSetter Val Val
@@ -24,7 +24,7 @@ fst = constrArg cPair 0
 snd :: SelSetter Val Val
 snd = constrArg cPair 1
 
-some :: Setter (Val (ReactState 𝔹)) 𝔹
+some :: Setter (Val (SelState 𝔹)) 𝔹
 some = constr cSome
 
 multiView :: SelSetter Val Val
@@ -78,15 +78,15 @@ constrArg c n δv = unsafePartial $ case _ of
          u1 <- us !! n
          updateAt n (δv u1) us
 
-constr :: Ctr -> Setter (Val (ReactState 𝔹)) 𝔹
+constr :: Ctr -> Setter (Val (SelState 𝔹)) 𝔹
 constr c' δα = unsafePartial $ case _ of
    Val α (Constr c vs) | c == c' -> Val (persist δα α) (Constr c vs)
 
-dict :: Setter (Val (ReactState 𝔹)) 𝔹
+dict :: Setter (Val (SelState 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of
    Val α (Dictionary d) -> Val (persist δα α) (Dictionary d)
 
-dictKey :: String -> Setter (Val (ReactState 𝔹)) 𝔹
+dictKey :: String -> Setter (Val (SelState 𝔹)) 𝔹
 dictKey s δα = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first $ persist δα) s d
 
@@ -94,11 +94,11 @@ dictVal :: String -> SelSetter Val Val
 dictVal s δv = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (second δv) s d
 
-envVal :: Var -> Setter (Env (ReactState 𝔹)) (Val (ReactState 𝔹))
+envVal :: Var -> Setter (Env (SelState 𝔹)) (Val (SelState 𝔹))
 envVal x δv γ =
    assert (x ∈ γ) $ update δv x γ
 
-listCell :: Int -> Setter (Val (ReactState 𝔹)) 𝔹
+listCell :: Int -> Setter (Val (SelState 𝔹)) 𝔹
 listCell n δα = unsafePartial $ case _ of
    Val α (Constr c Nil) | n == 0 && c == cNil -> Val (persist δα α) (Constr c Nil)
    Val α (Constr c (v : v' : Nil)) | c == cCons ->

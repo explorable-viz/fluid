@@ -2,7 +2,7 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, ReactState, Selectable, 𝕊, from, isPrimary, isSecondary, record)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, from, isPrimary, isSecondary, record)
 import App.Util.Selector (ViewSelSetter, field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
@@ -52,7 +52,7 @@ instance Drawable ScatterPlot where
       point :: ViewSelSetter PointIndex
       point { i } = listElement i >>> field f_data >>> scatterPlot
 
-instance Reflect (Dict (Val (ReactState 𝕊))) ScatterPlot where
+instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
    from r = ScatterPlot
       { caption: unpack string (get f_caption r)
       , points: record from <$> from (get f_data r)

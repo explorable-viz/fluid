@@ -2,7 +2,7 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (𝕊, ReactState, eventData, isInert, isNone, selClassesFor)
+import App.Util (𝕊, SelState, eventData, isInert, isNone, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
@@ -17,17 +17,17 @@ newtype TableView = TableView
    { title :: String
    , filter :: Boolean
    -- homogeneous array of records with fields of primitive type
-   , table :: Array (Dict (Val (ReactState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
+   , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
    }
 
 type TableViewHelpers =
    { rowKey :: String
-   , rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
-   , rrecord_isReactive :: Dict (Val (ReactState 𝕊)) -> Boolean
-   , cell_selClassesFor :: String -> ReactState 𝕊 -> String
+   , rrecord_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
+   , rrecord_isReactive :: Dict (Val (SelState 𝕊)) -> Boolean
+   , cell_selClassesFor :: String -> SelState 𝕊 -> String
    -- values in table cells are not "unpacked" to Selectable but remain as Val
-   , val_val :: Val (ReactState 𝕊) -> BaseVal (ReactState 𝕊)
-   , val_selState :: Val (ReactState 𝕊) -> ReactState 𝕊
+   , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
+   , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
    }
 
 foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
@@ -46,17 +46,17 @@ tableViewHelpers =
    rowKey = "__n"
 
    -- Defined for any record type with fields of primitive type
-   rrecord_isUsed :: Dict (Val (ReactState 𝕊)) -> Boolean
+   rrecord_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
    rrecord_isUsed r =
       not <<< isEmpty $ flip filterKeys r \k ->
          k /= rowKey && (not isNone (get k r # \(Val α _) -> α))
 
-   rrecord_isReactive :: Dict (Val (ReactState 𝕊)) -> Boolean
+   rrecord_isReactive :: Dict (Val (SelState 𝕊)) -> Boolean
    rrecord_isReactive r =
       not <<< isEmpty $ flip filterKeys r \k ->
          (k /= rowKey) && (not isInert (get k r # \(Val α _) -> α))
 
-   cell_selClassesFor :: String -> ReactState 𝕊 -> String
+   cell_selClassesFor :: String -> SelState 𝕊 -> String
    cell_selClassesFor colName s
       | colName == rowKey = ""
       | otherwise = selClassesFor s

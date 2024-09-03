@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (ReactState, 𝕊, from, record)
+import App.Util (SelState, 𝕊, from, record)
 import App.View.BarChart (BarChart)
 import App.View.LineChart (LineChart)
 import App.View.LinkedText (LinkedText)
@@ -18,7 +18,7 @@ import Val (BaseVal(..), Val(..))
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- Ignore view state for now..
-view :: Partial => String -> Val (ReactState 𝕊) -> Maybe View -> View
+view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
 view title (Val _ (Constr c (u : Nil))) _
    | c == cBarChart = pack (record from u :: BarChart)
    | c == cLineChart = pack (record from u :: LineChart)

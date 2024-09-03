@@ -2,7 +2,7 @@ module App.View.LinkedText where
 
 import Prelude
 
-import App.Util (class Reflect, ReactState, Selectable, 𝕊, from)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, from)
 import App.Util.Selector (linkedText, listElement, ViewSelSetter)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Primitive (string, unpack)
@@ -27,7 +27,7 @@ instance Drawable LinkedText where
       linkedTextSelector :: ViewSelSetter LinkedTextElem
       linkedTextSelector { i } = linkedText <<< listElement i
 
-instance Reflect (Val (ReactState 𝕊)) LinkedText where
+instance Reflect (Val (SelState 𝕊)) LinkedText where
    from r = LinkedText (unpack string <$> from r)
 
 type LinkedTextElem = { i :: Int }
