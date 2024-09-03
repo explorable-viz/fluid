@@ -4,16 +4,13 @@ import Prelude
 
 import Control.Promise (Promise, fromAff, toAffE)
 import Data.Foldable (sequence_)
-import Data.Tuple (snd)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
-import Test.Util (TestSuite, testCondition)
-import Toppokki (content)
+import Test.Util (testCondition)
 import Toppokki as T
-import Util ((×))
 
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
@@ -37,23 +34,24 @@ log' msg = when puppeteerLogging (log msg)
 foreign import _launchFirefox :: Effect (Promise T.Browser)
 
 main :: Effect (Promise Unit)
-main = fromAff $ sequence_ (snd <$> tests)
+main = fromAff $ sequence_ tests
 
-tests :: TestSuite
+tests :: Array (Aff Unit)
 tests =
-   [ "firefox-tests" × browserTests (launchFirefox)
-   , "chrome-tests" × browserTests (T.launch {})
+   [ browserTests "chrome" (T.launch {})
+   , browserTests "firefox" (launchFirefox)
    ]
 
-browserTests :: Aff T.Browser -> Aff Unit
-browserTests launchBrowser = do
+browserTests :: String -> Aff T.Browser -> Aff Unit
+browserTests browserName launchBrowser = do
+   log ("browserTests: " <> browserName)
    browser <- launchBrowser
    page <- T.newPage browser
    let url = "http://127.0.0.1:8080"
    log' ("Going to " <> url)
    T.goto (T.URL url) page
-   log' "Waiting for content"
-   log =<< content page
+   --   log' "Waiting for content"
+   --   log =<< content page
    checkFig4 page
    checkFig1 page
    checkFigConv2 page
@@ -112,6 +110,7 @@ clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
    let selector = T.Selector ("div#" <> id <> " + div > div > span.toggle-button")
    waitFor selector page
+   log' ("Clicking " <> show' selector)
    void $ T.click selector page
    waitFor (T.Selector ("div#" <> id)) page
 
