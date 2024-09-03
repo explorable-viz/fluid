@@ -41,43 +41,43 @@ type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selecti
 -- distinct but not orthogonal; primary should (visually) subsume secondary.
 -- inert is for nodes with no descendants.
 
-newtype SelectionLevel a = SelectionLevel
+newtype SelectionType a = SelectionType
    { persistent :: a
    , transient :: a
    }
 
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf Inert = highlightIf false
-   highlightIf (Reactive (SelectionLevel { persistent, transient })) = highlightIf (persistent ∨ transient)
+   highlightIf (Reactive (SelectionType { persistent, transient })) = highlightIf (persistent ∨ transient)
 
 persist :: forall a. Setter (SelState a) a
 persist δα = \sel ->
    case sel of
-      Reactive (SelectionLevel s) -> Reactive (SelectionLevel { persistent: δα s.persistent, transient: s.transient })
+      Reactive (SelectionType s) -> Reactive (SelectionType { persistent: δα s.persistent, transient: s.transient })
       Inert -> Inert
 
 selState :: 𝔹 -> 𝔹 -> 𝔹 -> SelState 𝔹
 selState true _ _ = Inert
-selState false b1 b2 = Reactive (SelectionLevel { persistent: b1, transient: b2 })
+selState false b1 b2 = Reactive (SelectionType { persistent: b1, transient: b2 })
 
-data SelState a = Inert | Reactive (SelectionLevel a)
+data SelState a = Inert | Reactive (SelectionType a)
 
 data 𝕊 = None | Secondary | Primary
 
 type Selectable a = a × SelState 𝕊
 
 isPrimary :: SelState 𝕊 -> 𝔹
-isPrimary (Reactive (SelectionLevel { persistent, transient })) =
+isPrimary (Reactive (SelectionType { persistent, transient })) =
    persistent == Primary || transient == Primary
 isPrimary Inert = false
 
 isSecondary :: SelState 𝕊 -> 𝔹
-isSecondary (Reactive (SelectionLevel { persistent, transient })) =
+isSecondary (Reactive (SelectionType { persistent, transient })) =
    persistent == Secondary || transient == Secondary
 isSecondary Inert = false
 
 isNone :: SelState 𝕊 -> 𝔹
-isNone (Reactive (SelectionLevel { persistent, transient })) =
+isNone (Reactive (SelectionType { persistent, transient })) =
    persistent == None && transient == None
 isNone _ = false
 
@@ -121,7 +121,7 @@ instance JoinSemilattice a => JoinSemilattice (SelState a)
 
 toR𝔹 :: SelState 𝕊 -> SelState 𝔹
 toR𝔹 Inert = Inert
-toR𝔹 (Reactive (SelectionLevel { persistent: a, transient: b })) = Reactive (SelectionLevel { persistent: c, transient: d })
+toR𝔹 (Reactive (SelectionType { persistent: a, transient: b })) = Reactive (SelectionType { persistent: c, transient: d })
    where
    c = if (a /= None) then true else false
    d = if (b /= None) then true else false
@@ -130,7 +130,7 @@ toR𝔹 (Reactive (SelectionLevel { persistent: a, transient: b })) = Reactive (
 as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
 as𝕊 Inert _ = Inert
 as𝕊 _ Inert = Inert
-as𝕊 (Reactive (SelectionLevel { persistent: a1, transient: b1 })) (Reactive (SelectionLevel { persistent: a2, transient: b2 })) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (SelectionLevel { persistent: cross a1 a2, transient: cross b1 b2 }))
+as𝕊 (Reactive (SelectionType { persistent: a1, transient: b1 })) (Reactive (SelectionType { persistent: a2, transient: b2 })) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive (SelectionType { persistent: cross a1 a2, transient: cross b1 b2 }))
    where
    cross :: 𝔹 -> 𝔹 -> 𝕊
    cross false false = None
@@ -148,11 +148,11 @@ to𝔹 _ = true
 
 getPersistent :: forall a. BoundedJoinSemilattice a => SelState a -> a
 getPersistent Inert = bot
-getPersistent (Reactive (SelectionLevel { persistent })) = persistent
+getPersistent (Reactive (SelectionType { persistent })) = persistent
 
 getTransient :: forall a. BoundedJoinSemilattice a => SelState a -> a
 getTransient Inert = bot
-getTransient (Reactive (SelectionLevel { transient })) = transient
+getTransient (Reactive (SelectionType { transient })) = transient
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
@@ -191,12 +191,12 @@ selector (EventType ev) = (setSel ev <$> _)
    where
    setSel :: String -> SelState 𝔹 -> SelState 𝔹
    setSel _ Inert = Inert
-   setSel "mousedown" (Reactive (SelectionLevel { persistent: a, transient: b })) = Reactive (SelectionLevel { persistent: neg a, transient: b })
-   setSel "mouseenter" (Reactive (SelectionLevel { persistent: a, transient: _ })) = Reactive (SelectionLevel { persistent: a, transient: true })
-   setSel "mouseleave" (Reactive (SelectionLevel { persistent: a, transient: _ })) = Reactive (SelectionLevel { persistent: a, transient: false })
+   setSel "mousedown" (Reactive (SelectionType { persistent: a, transient: b })) = Reactive (SelectionType { persistent: neg a, transient: b })
+   setSel "mouseenter" (Reactive (SelectionType { persistent: a, transient: _ })) = Reactive (SelectionType { persistent: a, transient: true })
+   setSel "mouseleave" (Reactive (SelectionType { persistent: a, transient: _ })) = Reactive (SelectionType { persistent: a, transient: false })
    setSel _ _ = error "Unsupported event type"
 
---report = spyWhen tracing.mouseEvent "Setting SelectionLevel to " show <<< cheatToSel
+--report = spyWhen tracing.mouseEvent "Setting SelectionType to " show <<< cheatToSel
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
@@ -210,7 +210,6 @@ colorShade col n =
          # clamp 0 255
          # toStringAs hexadecimal
 
--- need to consider inert things for this
 css
    :: { sel ::
            { transient ::
@@ -251,13 +250,13 @@ selClassesFor :: SelState 𝕊 -> String
 selClassesFor Inert =
    joinWith " " $ concat
       [ [ css.inert ] ]
-selClassesFor (Reactive (SelectionLevel s)) =
+selClassesFor t =
    joinWith " " $ concat
-      [ case s.persistent of
+      [ case (getPersistent t) of
            Secondary -> [ css.sel.persistent.secondary ]
            Primary -> [ css.sel.persistent.primary ]
            None -> []
-      , case s.transient of
+      , case (getTransient t) of
            Secondary -> [ css.sel.transient.secondary ]
            Primary -> [ css.sel.transient.primary ]
            None -> []
@@ -275,34 +274,30 @@ derive instance Generic 𝕊 _
 instance Show 𝕊 where
    show = genericShow
 
-derive instance Newtype (SelectionLevel a) _
+derive instance Newtype (SelectionType a) _
 
-derive instance Functor SelectionLevel
+derive instance Functor SelectionType
 derive instance Functor SelState
 
-instance Apply SelectionLevel where
-   apply (SelectionLevel fs) (SelectionLevel s) =
-      SelectionLevel { persistent: fs.persistent s.persistent, transient: fs.transient s.transient }
+instance Apply SelectionType where
+   apply (SelectionType fs) (SelectionType s) =
+      SelectionType { persistent: fs.persistent s.persistent, transient: fs.transient s.transient }
 
 instance Apply SelState where
    apply Inert Inert = Inert
-   apply (Reactive (SelectionLevel fs)) (Reactive (SelectionLevel s)) =
-      Reactive (SelectionLevel { persistent: fs.persistent s.persistent, transient: fs.transient s.transient })
+   apply (Reactive (SelectionType fs)) (Reactive (SelectionType s)) =
+      Reactive (SelectionType { persistent: fs.persistent s.persistent, transient: fs.transient s.transient })
    apply _ _ = shapeMismatch unit
 
-derive instance Ord a => Ord (SelectionLevel a)
-derive instance Eq a => Eq (SelectionLevel a)
-derive newtype instance Show a => Show (SelectionLevel a)
+derive instance Ord a => Ord (SelectionType a)
+derive instance Eq a => Eq (SelectionType a)
+derive newtype instance Show a => Show (SelectionType a)
 
-instance JoinSemilattice a => JoinSemilattice (SelectionLevel a) where
-   join = over2 SelectionLevel \s1 s2 ->
+instance JoinSemilattice a => JoinSemilattice (SelectionType a) where
+   join = over2 SelectionType \s1 s2 ->
       { persistent: s1.persistent ∨ s2.persistent, transient: s1.transient ∨ s2.transient }
 
-instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelectionLevel a) where
-   bot = SelectionLevel { persistent: bot, transient: bot }
+instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelectionType a) where
+   bot = SelectionType { persistent: bot, transient: bot }
 
-derive instance Eq a => Eq (SelState a) {-} where
-   eq (Reactive (SelectionLevel { persistent: a1, transient: b1 })) (Reactive (SelectionLevel { persistent: a2, transient: b2 })) = spy "reactive comparison" (eq a1 a2) && (eq b1 b2)
-   eq Inert Inert = spy "inert comparison" true
-   eq Inert _ = spy "inert-reactive" false
-   eq _ Inert = spy "reactive-inert" false-}
+derive instance Eq a => Eq (SelState a)
