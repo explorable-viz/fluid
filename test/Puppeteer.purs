@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
-import Test.Util (TestSuite, check')
+import Test.Util (TestSuite, testCondition)
 import Toppokki (content)
 import Toppokki as T
 import Util (log', (×))
@@ -65,9 +65,10 @@ checkFig4 page = do
       void $ T.click selector page
       className <- getAttributeValue page selector "class"
       radius <- getAttributeValue page selector "r"
-      check' fig (className == "scatterplot-point selected-primary-persistent selected-primary-transient" && radius == "3.2")
-         "circle class and radius"
-      checkCaptionText fig page ("table#" <> fig <> "-input-renewables > caption.table-caption")
+      let expectedClass = "scatterplot-point selected-primary-persistent selected-primary-transient"
+      testCondition fig (className == expectedClass && radius == "3.2") "circle-class-and-radius"
+      let caption = T.Selector ("table#" <> fig <> "-input-renewables > caption.table-caption")
+      checkTextContent fig page caption "renewables (4 of 240)"
 
 checkFig1 :: T.Page -> Aff Unit
 checkFig1 page = do
@@ -84,7 +85,7 @@ checkFig1 page = do
       waitFor selector page
       void $ T.click selector page
       fill <- getAttributeValue page selector "fill"
-      check' fig (fill == "#57a157") "first bar clicked"
+      testCondition fig (fill == "#57a157") "click-bar"
 
 checkFigConv2 :: T.Page -> Aff Unit
 checkFigConv2 page = do
@@ -106,11 +107,12 @@ clickToggle page id = do
    void $ T.click selector page
    waitFor (T.Selector ("div#" <> id)) page
 
-checkCaptionText :: String -> T.Page -> String -> Aff Unit
-checkCaptionText fig page selector = do
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000, visible: true } page
-   captionText <- textContentValue page (T.Selector selector)
-   check' fig (captionText == "renewables (4 of 240)") "caption (4 of 240)"
+checkTextContent :: String -> T.Page -> T.Selector -> String -> Aff Unit
+checkTextContent fig page selector expected = do
+   waitFor selector page
+   captionText <- textContentValue page selector
+   testCondition fig (captionText == expected)
+      (show expected <> "table-view-caption")
    pure unit
 
 getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
