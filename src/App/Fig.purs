@@ -60,7 +60,6 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
--- generalise Env, Val to f,g?
 lift :: forall f g. Apply f => Apply g => GaloisConnection (f 𝔹) (g 𝔹) -> GaloisConnection (f (SelState 𝔹)) (g (SelState 𝔹))
 lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    where

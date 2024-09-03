@@ -142,8 +142,6 @@ to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 Inert = Inert
 to𝕊 (Reactive (sel)) = Reactive (sel <#> if _ then Primary else None)
 
--- we should be able to negate the need for these with the lift code
-
 to𝔹 :: 𝕊 -> 𝔹
 to𝔹 None = false
 to𝔹 _ = true
@@ -308,13 +306,3 @@ derive instance Eq a => Eq (SelState a) {-} where
    eq Inert Inert = spy "inert comparison" true
    eq Inert _ = spy "inert-reactive" false
    eq _ Inert = spy "reactive-inert" false-}
-
-{-}
-instance BoundedJoinSemilattice 𝕊 where
-   bot = None
--}
-{-
-yarn tidy
-yarn build
-yarn test
-}
