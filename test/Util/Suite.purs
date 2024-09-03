@@ -87,6 +87,7 @@ linkedOutputsTest { spec, δ_out, out_expect } = do
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (fst (selectionResult fig))
    checkEq "selected" "expected" (toR𝔹 <$> v) (out_expect (botOf <$> v))
+   {-   checkEq "selected" "expected" (cheatToSel <<< toR𝔹 <$> v) (cheatToSel <$> (out_expect (toR𝔹 <$> (kindOfBotS <$> v))))-}
    pure fig
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
@@ -99,7 +100,7 @@ linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (snd (selectionResult fig))
-   checkEq "selected" "expected" (toR𝔹 <$> γ) ((in_expect (botOf <$> γ)))
+   checkEq "selected" "expected" (toR𝔹 <$> γ) (in_expect (botOf <$> γ))
    pure fig
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)

@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (ReactState, 𝕊, as𝕊, getInert, getPersistent, getTransient, kindOfBot, reactState, to𝕊, vReact)
+import App.Util (ReactState, 𝕊, as𝕊, getInert, getPersistent, getTransient, reactState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -39,7 +39,7 @@ str =
 selectOutput :: Setter Fig (Val (ReactState 𝔹))
 selectOutput δv fig@{ dir, γ, v } = fig
    { v = δv v
-   , γ = if dir == LinkedInputs then kindOfBot <$> γ else γ
+   , γ = if dir == LinkedInputs then botOf γ else γ
    , dir = LinkedOutputs
    }
 
@@ -51,7 +51,7 @@ setOutputView δvw fig = fig
 selectInput :: Var -> Setter Fig (Val (ReactState 𝔹))
 selectInput x δv fig@{ dir, γ, v } = fig
    { γ = envVal x δv γ
-   , v = if dir == LinkedOutputs then kindOfBot <$> v else v
+   , v = if dir == LinkedOutputs then botOf v else v
    , dir = LinkedInputs
    }
 
@@ -61,41 +61,22 @@ setInputView x δvw fig = fig
    }
 
 -- generalise Env, Val to f,g?
-lift :: GaloisConnection (Env 𝔹) (Val 𝔹) -> GaloisConnection (Env (ReactState 𝔹)) (Val (ReactState 𝔹))
+lift :: forall f g. Apply f => Apply g => GaloisConnection (f 𝔹) (g 𝔹) -> GaloisConnection (f (ReactState 𝔹)) (g (ReactState 𝔹))
 lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
    where
-   fwd1 :: Env (ReactState 𝔹) -> Val (ReactState 𝔹)
+   fwd1 :: f (ReactState 𝔹) -> g (ReactState 𝔹)
    fwd1 γ = reactState <$> v0 <*> v1 <*> v2
       where
       v0 = gc.fwd (γ <#> getInert)
       v1 = gc.fwd (γ <#> getPersistent)
       v2 = gc.fwd (γ <#> getTransient)
 
-   bwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
+   bwd1 :: g (ReactState 𝔹) -> f (ReactState 𝔹)
    bwd1 v = reactState <$> v0 <*> v1 <*> v2
       where
       v0 = gc.bwd (v <#> getInert)
       v1 = gc.bwd (v <#> getPersistent)
       v2 = gc.bwd (v <#> getTransient)
-
-liftdual :: GaloisConnection (Val 𝔹) (Env 𝔹) -> GaloisConnection (Val (ReactState 𝔹)) (Env (ReactState 𝔹))
-liftdual (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
-   where
-   fwd1 :: Val (ReactState 𝔹) -> Env (ReactState 𝔹)
-   fwd1 γ = reactState <$> v0 <*> v1 <*> v2
-      where
-      v0 = gc.fwd (γ <#> getInert)
-      v1 = gc.fwd (γ <#> getPersistent)
-      v2 = gc.fwd (getTransient <$> γ)
-
-   bwd1 :: Env (ReactState 𝔹) -> Val (ReactState 𝔹)
-   bwd1 v = reactState <$> v0 <*> v1 <*> v2
-      where
-      v0 = gc.bwd (v <#> getInert) -- or botOf v
-      v1 = gc.bwd (v <#> getPersistent)
-      v2 = gc.bwd (v <#> getTransient)
-
---bwd1 v =  gc.bwd <$> (v)
 
 selectionResult :: Fig -> Val (ReactState 𝕊) × Env (ReactState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
@@ -148,12 +129,10 @@ loadFig spec@{ inputs, imports, file, datasets } = do
 
       γ0 = neg (unwrap gc1).bwd (topOf outα)
       v0 = neg (unwrap gc1_dual).bwd (topOf γα)
-      gc_dual = ((lift gc1) `GC.(***)` identity) >>> meet >>> (liftdual gc1_dual)
-      gc = ((liftdual gc1_dual) `GC.(***)` identity) >>> meet >>> (lift gc1)
-   {-v: botOf outα
-   γ: botOf γα-}
+      gc_dual = ((lift gc1) `GC.(***)` identity) >>> meet >>> (lift gc1_dual)
+      gc = ((lift gc1_dual) `GC.(***)` identity) >>> meet >>> (lift gc1)
 
-   pure { spec, s, γ: vReact <$> γ0 <*> {-Reactive <$> -}  botOf γα, v: vReact <$> v0 {-} Reactive <$>-}  <*> botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
+   pure { spec, s, γ: reactState <$> γ0 <*> botOf γα <*> botOf γα, v: reactState <$> v0 <*> botOf outα <*> botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)

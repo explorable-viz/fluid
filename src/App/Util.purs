@@ -19,7 +19,6 @@ import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd)
 import DataType (cCons, cNil)
-import Debug (spy)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
@@ -29,7 +28,7 @@ import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, 
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, Setter, absurd, definitely', error)
+import Util (type (×), Endo, Setter, absurd, definitely', error, shapeMismatch)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
@@ -59,31 +58,6 @@ persist δα = \sel ->
    case sel of
       Reactive (SelState s) -> Reactive (SelState { persistent: δα s.persistent, transient: s.transient })
       Inert -> Inert
-
-checkREq :: ReactState 𝔹 -> ReactState 𝔹 -> 𝔹
-checkREq Inert Inert = true
-checkREq (Reactive a) (Reactive b) = eq a b
-checkREq _ _ = false
-
-nullify :: ReactState 𝔹 -> ReactState 𝔹
-nullify (Inert) = Inert
-nullify (Reactive (SelState _)) = Inert
-
-compress :: ReactState 𝔹 -> ReactState 𝔹
-compress Inert = (Reactive (SelState { persistent: false, transient: false }))
-compress (Reactive a) = (Reactive a)
-
-kindOfBot :: ReactState 𝔹 -> ReactState 𝔹
-kindOfBot (Inert) = Inert
-kindOfBot (Reactive (SelState _)) = Reactive (SelState { persistent: false, transient: false })
-
-kindOfBotS :: ReactState 𝕊 -> ReactState 𝕊
-kindOfBotS (Inert) = Inert
-kindOfBotS (Reactive (SelState _)) = Reactive (SelState { persistent: None, transient: None })
-
---vReact applies the inert set to the reactState (should try to incorporate into ReactState def)
-vReact :: 𝔹 -> SelState 𝔹 -> ReactState 𝔹
-vReact b a = if b then Inert else (Reactive a)
 
 reactState :: 𝔹 -> 𝔹 -> 𝔹 -> ReactState 𝔹
 reactState true _ _ = Inert
@@ -172,7 +146,7 @@ cheatToSel :: ReactState 𝔹 -> SelState 𝔹
 cheatToSel Inert = (SelState { persistent: false, transient: false })
 cheatToSel (Reactive sel) = sel
 
--- methods for obtaining the ReactStates
+-- methods for obtaining the ReactState, designed to accept varying type inputs for redundancy
 as𝕊 :: ReactState 𝔹 -> ReactState 𝔹 -> ReactState 𝕊
 as𝕊 Inert _ = Inert
 as𝕊 _ Inert = Inert
@@ -335,7 +309,7 @@ instance Apply ReactState where
    apply Inert Inert = Inert
    apply (Reactive (SelState fs)) (Reactive (SelState s)) =
       Reactive (SelState { persistent: fs.persistent s.persistent, transient: fs.transient s.transient })
-   apply _ _ = error absurd
+   apply _ _ = shapeMismatch unit
 
 derive instance Ord a => Ord (SelState a)
 derive instance Eq a => Eq (SelState a)
@@ -348,18 +322,16 @@ instance JoinSemilattice a => JoinSemilattice (SelState a) where
 instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a) where
    bot = SelState { persistent: bot, transient: bot }
 
-instance BoundedJoinSemilattice a => BoundedJoinSemilattice (ReactState a) where
-   bot = Inert
-
-instance Eq a => Eq (ReactState a) where
+derive instance Eq a => Eq (ReactState a) {-} where
    eq (Reactive (SelState { persistent: a1, transient: b1 })) (Reactive (SelState { persistent: a2, transient: b2 })) = spy "reactive comparison" (eq a1 a2) && (eq b1 b2)
    eq Inert Inert = spy "inert comparison" true
-   eq Inert _ = spy "inert-reactive" error absurd
-   eq _ Inert = spy "reactive-inert" error absurd
+   eq Inert _ = spy "inert-reactive" false
+   eq _ Inert = spy "reactive-inert" false-}
 
+{-}
 instance BoundedJoinSemilattice 𝕊 where
    bot = None
-
+-}
 {-
 yarn tidy
 yarn build
