@@ -29,6 +29,10 @@ thead {
    border-left: 2px solid white;
 }
 
+.table-cell.inert {
+   background-color: grey;
+}
+
 .table-cell.selected-primary-persistent {
    background-color: #93E9BE;
 }
@@ -52,6 +56,10 @@ thead {
    border-bottom-color: white;
    border-bottom-width: 1px;
    display: inline;
+}
+
+.linked-text.inert {
+   fill: gray;
 }
 
 .linked-text.selected-primary-persistent {
