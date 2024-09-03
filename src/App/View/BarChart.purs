@@ -6,7 +6,7 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, ReactState, Selectable, 𝕊(..), colorShade, from, getPersistentS, getTransientS, get_intOrNumber, record)
+import App.Util (class Reflect, ReactState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
@@ -70,8 +70,8 @@ barChartHelpers =
       StackedBar { bars } = stackedBars ! i
       Bar { z } = bars ! j
       t = snd z
-      persistent = getPersistentS t
-      transient = getTransientS t
+      persistent = getPersistent t
+      transient = getTransient t
       col = indexCol j
 
    tickEvery :: Int -> Int

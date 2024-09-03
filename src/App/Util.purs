@@ -96,15 +96,6 @@ isTransient :: ReactState 𝕊 -> 𝔹
 isTransient (Reactive (SelState { transient })) = transient /= None
 isTransient Inert = false
 
---barchart
-getPersistentS :: ReactState 𝕊 -> 𝕊
-getPersistentS Inert = None
-getPersistentS (Reactive (SelState a)) = a.persistent
-
-getTransientS :: ReactState 𝕊 -> 𝕊
-getTransientS Inert = None
-getTransientS (Reactive (SelState a)) = a.transient
-
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
 compare' None None = EQ
@@ -123,6 +114,9 @@ instance Ord 𝕊 where
 
 instance JoinSemilattice 𝕊 where
    join = max
+
+instance BoundedJoinSemilattice 𝕊 where
+   bot = None
 
 instance JoinSemilattice a => JoinSemilattice (ReactState a)
    where
@@ -163,13 +157,13 @@ to𝕊 Inert = Inert
 to𝕊 (Reactive (sel)) = Reactive (sel <#> if _ then Primary else None)
 
 -- we should be able to negate the need for these with the lift code
-getPersistent :: ReactState 𝔹 -> 𝔹
-getPersistent Inert = false
-getPersistent (Reactive (SelState a)) = a.persistent
+getPersistent :: forall a. BoundedJoinSemilattice a => ReactState a -> a
+getPersistent Inert = bot
+getPersistent (Reactive (SelState { persistent })) = persistent
 
-getTransient :: ReactState 𝔹 -> 𝔹
-getTransient Inert = false
-getTransient (Reactive (SelState a)) = a.transient
+getTransient :: forall a. BoundedJoinSemilattice a => ReactState a -> a
+getTransient Inert = bot
+getTransient (Reactive (SelState { transient })) = transient
 
 getInert :: ReactState 𝔹 -> 𝔹
 getInert Inert = true
