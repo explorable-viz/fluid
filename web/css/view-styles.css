@@ -24,13 +24,13 @@ thead {
 }
 
 .table-cell {
-   border-radius: 2px;
+   border-radius: 0px;
    background-color: White;
    border-left: 2px solid white;
 }
 
 .table-cell.inert {
-   color: grey
+   color: lightgrey;
 }
 
 .table-cell.selected-primary-persistent {
@@ -59,7 +59,7 @@ thead {
 }
 
 .linked-text.inert {
-   fill: gray;
+   fill: lightgrey;
 }
 
 .linked-text.selected-primary-persistent {
