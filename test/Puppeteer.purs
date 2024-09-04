@@ -58,7 +58,7 @@ testScatterPlot page = do
       radius <- getAttributeValue page point "r"
       testCondition (show' point) (radius == "3.2") "radius"
       let caption = T.Selector ("table#" <> fig <> "-input-renewables > caption.table-caption")
-      checkTextContent page caption "renewables (4 of 240)"
+      checkTextContent page caption "renewables (10 of 240)"
 
 testBarChartLineChart :: T.Page -> Aff Unit
 testBarChartLineChart page = do

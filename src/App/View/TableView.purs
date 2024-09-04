@@ -57,7 +57,11 @@ tableViewHelpers =
          k /= rowKey && not isInert (get k r # \(Val α _) -> α)
 
    --helper for "we want to display this record"
-
+   {-}
+   record_isDisplayable :: Dict(Val (SelState 𝕊)) -> FilterType -> Boolean
+   record_isDisplayable r s = 
+   case 1 of
+-} 
    cell_selClassesFor :: String -> SelState 𝕊 -> String
    cell_selClassesFor colName s
       | colName == rowKey = ""
