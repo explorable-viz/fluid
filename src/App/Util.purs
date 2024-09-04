@@ -90,16 +90,11 @@ getTransient :: forall a. BoundedJoinSemilattice a => SelState a -> a
 getTransient Inert = bot
 getTransient (Reactive ({ transient })) = transient
 
--- inline toB
-to𝔹 :: 𝕊 -> 𝔹
-to𝔹 None = false
-to𝔹 _ = true
-
 isPersistent :: SelState 𝕊 -> 𝔹
-isPersistent = getPersistent >>> to𝔹
+isPersistent a = getPersistent a /= None
 
 isTransient :: SelState 𝕊 -> 𝔹
-isTransient = getTransient >>> to𝔹
+isTransient a = getTransient a /= None
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
