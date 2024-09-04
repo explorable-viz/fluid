@@ -94,7 +94,7 @@ function drawLineChart_ (
          rootElement = createRootElement(div)(childId)()
 
          rootElement.selectAll('line')
-            .data(plots.entries())
+            .data([...plots.entries()])
             .enter()
             .append('path')
             .attr('fill', 'none')
@@ -105,8 +105,8 @@ function drawLineChart_ (
 
          for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
-               .data(plot.points.entries().map(([j, p]) => {
-                  return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
+               .data([...plot.points.entries()].map(([j, { x, y } ]) => {
+                  return { name: val(plot.name), x: val(x), y: val(y), i, j }
                }))
                .enter()
                .append('circle')
@@ -115,11 +115,13 @@ function drawLineChart_ (
 
          rootElement
             .append('g')
+            .attr('class', 'x-axis')
             .attr('transform', `translate(0, ${interior.height})`)
             .call(d3.axisBottom(to.x).ticks(ticks.x).tickFormat(d3.format('d')))
 
          rootElement
             .append('g')
+            .attr('class', 'y-axis')
             .call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(ticks.y).tickFormat(d3.format('.1f')))
 
          const legend = createLegend(rootElement)()
