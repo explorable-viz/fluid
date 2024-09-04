@@ -61,15 +61,15 @@ browserTests browserName launchBrowser = do
    page <- T.newPage browser
    let url = "http://127.0.0.1:8080"
    goto (T.URL url) page
-   checkFig4 page
+   testScatterPlot page
    goto (T.URL url) page
-   checkFig1 page
+   testBarChartLineChart page
    goto (T.URL url) page
-   checkFigConv2 page
+   testConvolution page
    T.close browser
 
-checkFig4 :: T.Page -> Aff Unit
-checkFig4 page = do
+testScatterPlot :: T.Page -> Aff Unit
+testScatterPlot page = do
    waitForFigure page (fig <> "-output")
    let toggle = fig <> "-input"
    clickToggle page toggle
@@ -91,8 +91,8 @@ checkFig4 page = do
       let caption = T.Selector ("table#" <> fig <> "-input-renewables > caption.table-caption")
       checkTextContent page caption "renewables (4 of 240)"
 
-checkFig1 :: T.Page -> Aff Unit
-checkFig1 page = do
+testBarChartLineChart :: T.Page -> Aff Unit
+testBarChartLineChart page = do
    waitForFigure page (fig <> "-bar-chart")
    waitForFigure page (fig <> "-line-chart")
    let toggle = fig <> "-input"
@@ -110,8 +110,8 @@ checkFig1 page = do
       fill <- getAttributeValue page selector "fill"
       testCondition (show' selector) (fill == "#57a157") "fill"
 
-checkFigConv2 :: T.Page -> Aff Unit
-checkFigConv2 page = do
+testConvolution :: T.Page -> Aff Unit
+testConvolution page = do
    let fig = "fig-conv-2"
    waitForFigure page (fig <> "-output")
    let toggle = fig <> "-input"
