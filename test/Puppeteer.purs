@@ -2,52 +2,122 @@ module Test.Puppeteer where
 
 import Prelude
 
-import Control.Promise (Promise, fromAff, toAffE)
+import Control.Promise (Promise, fromAff)
 import Data.Foldable (sequence_)
-import Data.Tuple (snd)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
-import Test.Util (TestSuite)
+import Foreign (unsafeFromForeign)
+import Test.Util (testCondition)
+import Test.Util.Puppeteer (click, goto, launchFirefox, show', waitFor)
 import Toppokki as T
-import Util ((×))
-
-launchFirefox :: Aff T.Browser
-launchFirefox = toAffE _launchFirefox
-
-foreign import _launchFirefox :: Effect (Promise T.Browser)
 
 main :: Effect (Promise Unit)
-main = fromAff $ sequence_ (snd <$> tests)
+main = fromAff $ sequence_ tests
 
-tests :: TestSuite
+tests :: Array (Aff Unit)
 tests =
-   [ "firefox-tests" × browserTests (launchFirefox)
-   , "chrome-tests" × browserTests (T.launch {})
+   [ browserTests "chrome" (T.launch {})
+   , browserTests "firefox" (launchFirefox)
    ]
 
-browserTests :: Aff T.Browser -> Aff Unit
-browserTests launchBrowser = do
+-- Test each fig on a fresh page, else earlier tests seem to interfere with element visibility (on Firefox)
+browserTests :: String -> Aff T.Browser -> Aff Unit
+browserTests browserName launchBrowser = do
+   log ("browserTests: " <> browserName)
    browser <- launchBrowser
    page <- T.newPage browser
    let url = "http://127.0.0.1:8080"
-   log ("Going to " <> url)
-   T.goto (T.URL url) page
-   content <- T.content page
-   log content
-   checkForFigure page "fig-4-output"
-   checkForFigure page "fig-1-bar-chart"
-   checkForFigure page "fig-1-line-chart"
-   checkForFigure page "fig-conv-2-output"
-
-   pure unit
-
+   goto (T.URL url) page
+   testScatterPlot page
+   goto (T.URL url) page
+   testBarChartLineChart page
+   goto (T.URL url) page
+   testConvolution page
    T.close browser
 
-checkForFigure :: T.Page -> String -> Aff Unit
-checkForFigure page id = do
-   let selector = "svg#" <> id
-   log ("Waiting for " <> selector)
-   _ <- T.pageWaitForSelector (T.Selector selector) { timeout: 60000 } page
-   log ("Found " <> selector)
+testScatterPlot :: T.Page -> Aff Unit
+testScatterPlot page = do
+   waitForFigure page (fig <> "-output")
+   let toggle = fig <> "-input"
+   clickToggle page toggle
+   waitFor (T.Selector ("div#" <> toggle)) page
+   clickScatterPlotPoint
+
+   where
+   fig = "fig-4"
+
+   clickScatterPlotPoint :: Aff Unit
+   clickScatterPlotPoint = do
+      let point = T.Selector ("div#" <> fig <> " .scatterplot-point")
+      waitFor point page
+      click point page
+      className <- getAttributeValue page point "class"
+      let expectedClass = "scatterplot-point selected-primary-persistent selected-primary-transient"
+      testCondition (show' point) (className == expectedClass) "class"
+      radius <- getAttributeValue page point "r"
+      testCondition (show' point) (radius == "3.2") "radius"
+      let caption = T.Selector ("table#" <> fig <> "-input-renewables > caption.table-caption")
+      checkTextContent page caption "renewables (4 of 240)"
+
+testBarChartLineChart :: T.Page -> Aff Unit
+testBarChartLineChart page = do
+   waitForFigure page barChart
+   waitForFigure page lineChart
+   checkXTicks
+   let toggle = fig <> "-input"
+   clickToggle page toggle
+   waitFor (T.Selector ("div#" <> toggle)) page
+   clickBarChart
+   where
+   fig = "fig-1"
+   barChart = fig <> "-bar-chart"
+   lineChart = (fig <> "-line-chart")
+
+   clickBarChart :: Aff Unit
+   clickBarChart = do
+      let bar = T.Selector ("svg#" <> barChart <> " rect.bar")
+      waitFor bar page
+      click bar page
+      fill <- getAttributeValue page bar "fill"
+      testCondition (show' bar) (fill == "#57a157") "fill"
+
+   checkXTicks :: Aff Unit
+   checkXTicks = do
+      waitFor (T.Selector ("svg#" <> lineChart <> " g.x-axis")) page
+
+testConvolution :: T.Page -> Aff Unit
+testConvolution page = do
+   let fig = "fig-conv-2"
+   waitForFigure page (fig <> "-output")
+   let toggle = fig <> "-input"
+   clickToggle page toggle
+   waitFor (T.Selector ("div#" <> toggle)) page
+
+waitForFigure :: T.Page -> String -> Aff Unit
+waitForFigure page id = do
+   let selector = T.Selector ("svg#" <> id)
+   waitFor selector page
+
+clickToggle :: T.Page -> String -> Aff Unit
+clickToggle page id = do
+   let toggle = T.Selector ("div#" <> id <> " + div > div > span.toggle-button")
+   waitFor toggle page
+   click toggle page
+
+checkTextContent :: T.Page -> T.Selector -> String -> Aff Unit
+checkTextContent page selector expected = do
+   waitFor selector page
+   captionText <- textContentValue page selector
+   testCondition (show' selector) (captionText == expected) "text content"
    pure unit
+
+getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
+getAttributeValue page selector attribute = do
+   attrValue <- T.unsafePageEval selector ("element => element.getAttribute('" <> attribute <> "')") page
+   pure (unsafeFromForeign attrValue)
+
+textContentValue :: T.Page -> T.Selector -> Aff String
+textContentValue page selector = do
+   captionText <- T.unsafePageEval selector "element => element.textContent" page
+   pure (unsafeFromForeign captionText)

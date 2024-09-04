@@ -36,7 +36,9 @@
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
 
     "build-puppeteer": "./script/build.sh test-puppeteer Test.Puppeteer --platform=node",
-    "test-puppeteer": "./script/test-puppeteer.sh"
+    "test-puppeteer": "./script/test-puppeteer.sh",
+
+    "test-all": "./script/test-all.sh"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
@@ -58,8 +60,8 @@
     "karma-chrome-launcher": "3.1.1",
     "karma-mocha": "2.0.1",
     "karma-mocha-reporter": "2.2.5",
-    "mocha": "10.0.0",
-    "puppeteer": "^23.1.0",
+    "mocha": "^10.0.0",
+    "puppeteer": "^23.2.0",
     "purescript-language-server": "0.16.6",
     "purescript-psa": "0.8.2",
     "purs-backend-es": "1.1.0",
