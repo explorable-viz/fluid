@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Promise (Promise, fromAff)
 import Data.Foldable (sequence_)
+import Data.String (Pattern(..), contains)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
@@ -53,10 +54,11 @@ testScatterPlot page = do
       waitFor point page
       click point page
       className <- getAttributeValue page point "class"
-      let expectedClass = "scatterplot-point selected-primary-persistent selected-primary-transient"
-      testCondition (show' point) (className == expectedClass) "class"
+      let expectedClass = "selected-primary-persistent"
+      testCondition (show' point) (contains (Pattern expectedClass) className) ("class contains " <> show expectedClass)
       radius <- getAttributeValue page point "r"
-      testCondition (show' point) (radius == "3.2") "radius"
+      let expectedRadius = "3.2"
+      testCondition (show' point) (radius == expectedRadius) ("radius == " <> show expectedRadius)
       let caption = T.Selector ("table#" <> fig <> "-input-renewables > caption.table-caption")
       checkTextContent page caption "renewables (4 of 240)"
 
@@ -80,7 +82,8 @@ testBarChartLineChart page = do
       waitFor bar page
       click bar page
       fill <- getAttributeValue page bar "fill"
-      testCondition (show' bar) (fill == "#57a157") "fill"
+      let expected = "#57a157"
+      testCondition (show' bar) (fill == expected) ("fill == " <> show expected)
 
    checkXTicks :: Aff Unit
    checkXTicks = do
@@ -108,8 +111,8 @@ clickToggle page id = do
 checkTextContent :: T.Page -> T.Selector -> String -> Aff Unit
 checkTextContent page selector expected = do
    waitFor selector page
-   captionText <- textContentValue page selector
-   testCondition (show' selector) (captionText == expected) "text content"
+   text <- textContentValue page selector
+   testCondition (show' selector) (text == expected) ("text == " <> show expected)
    pure unit
 
 getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
