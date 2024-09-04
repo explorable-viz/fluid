@@ -11,7 +11,7 @@ function prim (v) {
 }
 
 function setSelState (
-   { cell_selClassesFor, rowKey, rrecord_isUsed, rrecord_isReactive, val_selState },
+   { cell_selClassesFor, rowKey, record_isUsed, record_isReactive, val_selState },
    filterToggleListener,
    {
       selClasses,
@@ -34,7 +34,7 @@ function setSelState (
 
    let hidden = 0
    rootElement.selectAll('.table-row').each(function ({ i }) {
-      hide = !rrecord_isReactive(table[i]) && !filter
+      hide = !record_isReactive(table[i]) && !filter
       if (hide)
          hidden++
       d3.select(this) // won't work inside arrow function :/

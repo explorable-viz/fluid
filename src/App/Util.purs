@@ -49,19 +49,15 @@ data SelState a
           }
         )
 
-instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
-   highlightIf Inert = highlightIf false
-   highlightIf (Reactive ({ persistent, transient })) = highlightIf (persistent ∨ transient)
+selState :: 𝔹 -> 𝔹 -> 𝔹 -> SelState 𝔹
+selState true _ _ = Inert
+selState false b1 b2 = Reactive ({ persistent: b1, transient: b2 })
 
 persist :: forall a. Setter (SelState a) a
 persist δα = \sel ->
    case sel of
-      Reactive (s) -> Reactive ({ persistent: δα s.persistent, transient: s.transient })
+      Reactive s -> Reactive ({ persistent: δα s.persistent, transient: s.transient })
       Inert -> Inert
-
-selState :: 𝔹 -> 𝔹 -> 𝔹 -> SelState 𝔹
-selState true _ _ = Inert
-selState false b1 b2 = Reactive ({ persistent: b1, transient: b2 })
 
 data 𝕊 = None | Secondary | Primary
 
@@ -93,6 +89,11 @@ getPersistent (Reactive ({ persistent })) = persistent
 getTransient :: forall a. BoundedJoinSemilattice a => SelState a -> a
 getTransient Inert = bot
 getTransient (Reactive ({ transient })) = transient
+
+-- inline toB
+to𝔹 :: 𝕊 -> 𝔹
+to𝔹 None = false
+to𝔹 _ = true
 
 isPersistent :: SelState 𝕊 -> 𝔹
 isPersistent = getPersistent >>> to𝔹
@@ -136,8 +137,7 @@ as𝕊 (Reactive ({ persistent: a1, transient: b1 })) (Reactive ({ persistent: a
    cross false true = Secondary
    cross true false = error absurd
    cross true true = Primary
-as𝕊 Inert _ = Inert
-as𝕊 _ Inert = Inert
+as𝕊 _ _ = shapeMismatch unit
 
 to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 Inert = Inert
@@ -147,12 +147,8 @@ to𝕊 (Reactive ({ persistent: a, transient: b })) = Reactive ({ persistent: t 
    t true = Primary
    t false = None
 
-to𝔹 :: 𝕊 -> 𝔹
-to𝔹 None = false
-to𝔹 _ = true
-
-createNullSelState :: Unit -> SelState 𝔹
-createNullSelState _ = Reactive ({ persistent: false, transient: false })
+nullSelState :: SelState 𝔹
+nullSelState = Reactive ({ persistent: false, transient: false })
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
@@ -289,3 +285,7 @@ instance JoinSemilattice a => JoinSemilattice (SelState a)
    join _ _ = error absurd
 
 derive instance Eq a => Eq (SelState a)
+
+instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
+   highlightIf Inert = highlightIf false
+   highlightIf (Reactive ({ persistent, transient })) = highlightIf (persistent ∨ transient)

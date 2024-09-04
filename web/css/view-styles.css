@@ -30,7 +30,7 @@ thead {
 }
 
 .table-cell.inert {
-   background-color: grey;
+   color: grey
 }
 
 .table-cell.selected-primary-persistent {

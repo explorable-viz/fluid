@@ -16,6 +16,7 @@ import Data.Maybe (Maybe(..))
 import DataType (cBarChart, cCons, cLineChart, cLinkedText, cMultiView, cNil, cScatterPlot)
 import Val (BaseVal(..), Val(..))
 
+--data FilterType = Everything | Relevant | Reactive
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- Ignore view state for now..
 view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View

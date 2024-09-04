@@ -2,7 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
-import App.Util (Selector, createNullSelState, getPersistent)
+import App.Util (Selector, nullSelState, getPersistent)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -78,7 +78,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
 
-   let out0 = (δv (createNullSelState <$> v)) <#> getPersistent
+   let out0 = (δv (const nullSelState <$> v)) <#> getPersistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))

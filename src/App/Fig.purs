@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, 𝕊, as𝕊, getPersistent, getTransient, isInert, selState, to𝕊)
+import App.Util (SelState, 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -60,37 +60,18 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-lift :: forall f g. Apply f => Apply g => GaloisConnection (f 𝔹) (g 𝔹) -> GaloisConnection (f (SelState 𝔹)) (g (SelState 𝔹))
-lift (GC gc) = (GC { bwd: bwd1, fwd: fwd1 })
-   where
-   fwd1 :: f (SelState 𝔹) -> g (SelState 𝔹)
-   fwd1 γ = selState <$> v0 <*> v1 <*> v2
-      where
-      v0 = gc.fwd (γ <#> isInert)
-      v1 = gc.fwd (γ <#> getPersistent)
-      v2 = gc.fwd (γ <#> getTransient)
-
-   bwd1 :: g (SelState 𝔹) -> f (SelState 𝔹)
-   bwd1 v = selState <$> v0 <*> v1 <*> v2
-      where
-      v0 = gc.bwd (v <#> isInert)
-      v1 = gc.bwd (v <#> getPersistent)
-      v2 = gc.bwd (v <#> getTransient)
-
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
    (as𝕊 <$> v <*> v1) × (to𝕊 <$> report γ1)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   GC gc = fig.gc
-   v1 × γ1 = gc.bwd (v)
+   v1 × γ1 = (unwrap fig.linkedOutputs).bwd (v)
 
 selectionResult fig@{ γ, dir: LinkedInputs } =
    (to𝕊 <$> report v1) × (as𝕊 <$> γ <*> γ1)
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   GC gc = fig.gc_dual
-   γ1 × v1 = gc.bwd (γ)
+   γ1 × v1 = (unwrap fig.linkedInputs).bwd (γ)
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
@@ -113,6 +94,15 @@ unprojExpr (EnvExpr _ e) = GC
    , bwd: \(EnvExpr γ _) -> γ
    }
 
+lift :: forall f g. Apply f => Apply g => f (𝔹 -> 𝔹 -> SelState 𝔹) -> g (𝔹 -> 𝔹 -> SelState 𝔹) -> GaloisConnection (f 𝔹) (g 𝔹) -> GaloisConnection (f (SelState 𝔹)) (g (SelState 𝔹))
+lift selState_f selState_g (GC gc) = GC { bwd, fwd }
+   where
+   fwd :: f (SelState 𝔹) -> g (SelState 𝔹)
+   fwd γ = selState_g <*> gc.fwd (γ <#> getPersistent) <*> gc.fwd (γ <#> getTransient)
+
+   bwd :: g (SelState 𝔹) -> f (SelState 𝔹)
+   bwd v = selState_f <*> gc.bwd (v <#> getPersistent) <*> gc.bwd (v <#> getTransient)
+
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ inputs, imports, file, datasets } = do
    s <- open file
@@ -122,16 +112,19 @@ loadFig spec@{ inputs, imports, file, datasets } = do
    let
       EnvExpr γ e' = erase eval.inα
       focus = unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e')
-      gc1 = focus >>> graphGC eval
-      gc1_dual = graphGC (withOp eval) >>> dual focus
+      gc = focus >>> graphGC eval
+      gc_dual = graphGC (withOp eval) >>> dual focus
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
-      γ0 = neg (unwrap gc1).bwd (topOf outα)
-      v0 = neg (unwrap gc1_dual).bwd (topOf γα)
-      gc_dual = ((lift gc1) `GC.(***)` identity) >>> meet >>> (lift gc1_dual)
-      gc = ((lift gc1_dual) `GC.(***)` identity) >>> meet >>> (lift gc1)
+      γInert = selState <$> neg (unwrap gc).bwd (topOf outα)
+      vInert = selState <$> neg (unwrap gc_dual).bwd (topOf γα)
+      γ0 = botOf γα
+      v0 = botOf outα
 
-   pure { spec, s, γ: selState <$> γ0 <*> botOf γα <*> botOf γα, v: selState <$> v0 <*> botOf outα <*> botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
+      linkedInputs = ((lift γInert vInert gc) `GC.(***)` identity) >>> meet >>> (lift vInert γInert gc_dual)
+      linkedOutputs = ((lift vInert γInert gc_dual) `GC.(***)` identity) >>> meet >>> (lift γInert vInert gc)
+
+   pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
