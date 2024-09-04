@@ -2,7 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
-import App.Util (SelState(..), Selector, getPersistent)
+import App.Util (Selector, createNull, getPersistent)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -16,7 +16,7 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, botOf, erase, topOf)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
@@ -78,7 +78,8 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
 
-   let out0 = (δv (Reactive <$> (botOf v))) <#> getPersistent
+   --let out0 = (δv (Reactive <$> (botOf v))) <#> getPersistent
+   let out0 = (δv (createNull <$> v)) <#> getPersistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
