@@ -13,22 +13,27 @@ import Test.Util (testCondition)
 import Toppokki as T
 import Util (debug)
 
+foreign import _launchFirefox :: Effect (Promise T.Browser)
+
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
 
 show' :: T.Selector -> String
 show' (T.Selector sel) = sel
 
+timeout :: Int
+timeout = 60000
+
 waitFor :: T.Selector -> T.Page -> Aff Unit
 waitFor selector page = do
    log' ("Waiting for " <> show' selector)
-   void $ T.pageWaitForSelector selector { timeout: 60000, visible: true } page
+   void $ T.pageWaitForSelector selector { timeout, visible: true } page
    log' "-> found"
 
 waitForHidden :: T.Selector -> T.Page -> Aff Unit
 waitForHidden selector page = do
    log' ("Waiting for " <> show' selector)
-   void $ T.pageWaitForSelector selector { timeout: 60000, visible: false } page
+   void $ T.pageWaitForSelector selector { timeout, visible: false } page
    log' "-> found"
 
 puppeteerLogging :: Boolean
@@ -36,8 +41,6 @@ puppeteerLogging = false
 
 log' :: forall m. MonadEffect m => String -> m Unit
 log' msg = when (debug.logging || puppeteerLogging) (log msg)
-
-foreign import _launchFirefox :: Effect (Promise T.Browser)
 
 main :: Effect (Promise Unit)
 main = fromAff $ sequence_ tests
