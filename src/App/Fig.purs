@@ -68,7 +68,7 @@ selectionResult fig@{ v, dir: LinkedOutputs } =
    v1 × γ1 = (unwrap fig.linkedOutputs).bwd (v)
    t = cross <$> (getPersistent <$> v) <*> (getPersistent <$> v1)
    s = cross <$> (getTransient <$> v) <*> (getTransient <$> v1)
-   r = isInert <$> v -- could be v1 instead, doesn't matter. we should consider same partial application as lift
+   r = isInert <$> v -- could be v1 instead, doesn't matter. we should possibly consider same partial application as lift
 
 selectionResult fig@{ γ, dir: LinkedInputs } =
    (selState <$> (isInert <$> report v1) <*> (conv <<< getPersistent <$> v1) <*> (conv <<< getTransient <$> v1)) × (selState <$> r <*> t <*> s)
@@ -78,8 +78,6 @@ selectionResult fig@{ γ, dir: LinkedInputs } =
    t = cross <$> (getPersistent <$> γ) <*> (getPersistent <$> γ1)
    s = cross <$> (getTransient <$> γ) <*> (getTransient <$> γ1)
    r = isInert <$> γ
-
-
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do

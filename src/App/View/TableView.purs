@@ -60,7 +60,14 @@ tableViewHelpers =
    {-}
    record_isDisplayable :: Dict(Val (SelState 𝕊)) -> FilterType -> Boolean
    record_isDisplayable r s = 
-   case 1 of
+      not <<< isEmpty $ flip filterKeys r \k ->
+         k /= rowKey && not comparative (get k r # \(Val α _) -> α)
+         where 
+         comparative = outfind s
+         outfind :: FilterType -> (SelState 𝕊 -> 𝔹)
+         outfind Everything = isThere
+         outfind Relevant = isNone
+         outfind Reactive = isInert
 -} 
    cell_selClassesFor :: String -> SelState 𝕊 -> String
    cell_selClassesFor colName s
