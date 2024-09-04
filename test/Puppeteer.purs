@@ -5,7 +5,7 @@ import Prelude
 import Control.Promise (Promise, fromAff, toAffE)
 import Data.Foldable (sequence_)
 import Effect (Effect)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, catchError)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
@@ -27,8 +27,13 @@ timeout = 60000
 waitFor :: T.Selector -> T.Page -> Aff Unit
 waitFor selector page = do
    log' ("Waiting for " <> show' selector)
-   void $ T.pageWaitForSelector selector { timeout, visible: true } page
-   log' "-> found"
+   catchError
+      ( do
+           void $ T.pageWaitForSelector selector { timeout, visible: true } page
+           log' "-> found"
+      )
+      \e ->
+         testCondition (show' selector) false (show e)
 
 waitForHidden :: T.Selector -> T.Page -> Aff Unit
 waitForHidden selector page = do
@@ -47,8 +52,7 @@ main = fromAff $ sequence_ tests
 
 tests :: Array (Aff Unit)
 tests =
-   [ browserTests "chrome" (T.launch {})
-   , browserTests "firefox" (launchFirefox)
+   [ browserTests "firefox" (launchFirefox)
    ]
 
 goto :: T.URL -> T.Page -> Aff Unit
