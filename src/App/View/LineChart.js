@@ -115,11 +115,13 @@ function drawLineChart_ (
 
          rootElement
             .append('g')
+            .attr('class', 'x-axis')
             .attr('transform', `translate(0, ${interior.height})`)
             .call(d3.axisBottom(to.x).ticks(ticks.x).tickFormat(d3.format('d')))
 
          rootElement
             .append('g')
+            .attr('class', 'y-axis')
             .call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(ticks.y).tickFormat(d3.format('.1f')))
 
          const legend = createLegend(rootElement)()

@@ -93,22 +93,29 @@ testScatterPlot page = do
 
 testBarChartLineChart :: T.Page -> Aff Unit
 testBarChartLineChart page = do
-   waitForFigure page (fig <> "-bar-chart")
-   waitForFigure page (fig <> "-line-chart")
+   waitForFigure page barChart
+   waitForFigure page lineChart
+   checkXTicks
    let toggle = fig <> "-input"
    clickToggle page toggle
    waitFor (T.Selector ("div#" <> toggle)) page
    clickBarChart
    where
    fig = "fig-1"
+   barChart = fig <> "-bar-chart"
+   lineChart = (fig <> "-line-chart")
 
    clickBarChart :: Aff Unit
    clickBarChart = do
-      let selector = T.Selector ("svg#" <> fig <> "-bar-chart rect.bar")
-      waitFor selector page
-      void $ T.click selector page
-      fill <- getAttributeValue page selector "fill"
-      testCondition (show' selector) (fill == "#57a157") "fill"
+      let bar = T.Selector ("svg#" <> barChart <> " rect.bar")
+      waitFor bar page
+      void $ T.click bar page
+      fill <- getAttributeValue page bar "fill"
+      testCondition (show' bar) (fill == "#57a157") "fill"
+
+   checkXTicks :: Aff Unit
+   checkXTicks = do
+      waitFor (T.Selector ("svg#" <> lineChart <> " g.x-axis")) page
 
 testConvolution :: T.Page -> Aff Unit
 testConvolution page = do
