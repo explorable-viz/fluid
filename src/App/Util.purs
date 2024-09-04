@@ -35,11 +35,19 @@ import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
 
--- Selection has two dimensions: persistent/transient and primary/secondary/inert. An element can be persistently
+-- Selection can occur on data that can be interacted with, reactive data rather than inert data. Within reactive data,
+-- selection has two dimensions: persistent or transient. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
--- clicking during mouseover visibly changes the state). Primary and secondary also need to be visually
--- distinct but not orthogonal; primary should (visually) subsume secondary.
--- inert is for nodes with no descendants.   
+-- clicking during mouseover visibly changes the state). Types of selection are primary/secondary/none.
+-- These are visually distinct but not orthogonal; primary should (visually) subsume secondary.
+
+data SelState a
+   = Inert
+   | Reactive
+        ( { persistent :: a
+          , transient :: a
+          }
+        )
 
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf Inert = highlightIf false
@@ -54,14 +62,6 @@ persist δα = \sel ->
 selState :: 𝔹 -> 𝔹 -> 𝔹 -> SelState 𝔹
 selState true _ _ = Inert
 selState false b1 b2 = Reactive ({ persistent: b1, transient: b2 })
-
-data SelState a
-   = Inert
-   | Reactive
-        ( { persistent :: a
-          , transient :: a
-          }
-        )
 
 data 𝕊 = None | Secondary | Primary
 
@@ -85,6 +85,14 @@ isNone _ = false
 isInert :: forall a. SelState a -> 𝔹
 isInert Inert = true
 isInert _ = false
+
+getPersistent :: forall a. BoundedJoinSemilattice a => SelState a -> a
+getPersistent Inert = bot
+getPersistent (Reactive ({ persistent })) = persistent
+
+getTransient :: forall a. BoundedJoinSemilattice a => SelState a -> a
+getTransient Inert = bot
+getTransient (Reactive ({ transient })) = transient
 
 isPersistent :: SelState 𝕊 -> 𝔹
 isPersistent = getPersistent >>> to𝔹
@@ -143,16 +151,8 @@ to𝔹 :: 𝕊 -> 𝔹
 to𝔹 None = false
 to𝔹 _ = true
 
-createNull :: Unit -> SelState 𝔹
-createNull _ = Reactive ({ persistent: false, transient: false })
-
-getPersistent :: forall a. BoundedJoinSemilattice a => SelState a -> a
-getPersistent Inert = bot
-getPersistent (Reactive ({ persistent })) = persistent
-
-getTransient :: forall a. BoundedJoinSemilattice a => SelState a -> a
-getTransient Inert = bot
-getTransient (Reactive ({ transient })) = transient
+createNullSelState :: Unit -> SelState 𝔹
+createNullSelState _ = Reactive ({ persistent: false, transient: false })
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))

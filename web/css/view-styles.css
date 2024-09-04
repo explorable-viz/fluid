@@ -87,6 +87,11 @@ thead {
    fill: White;
 }
 
+.matrix-cell.inert {
+   stroke: DarkGray;
+   fill: rgb(185, 185, 185);
+}
+
 .matrix-cell.selected-primary-persistent {
    fill: LightGreen;
 }
@@ -127,6 +132,11 @@ thead {
 
 .scatterplot-point {
    fill: white;
+   stroke: black;
+}
+
+.scatterplot-point.inert {
+   fill: rgb(185,185,185);
    stroke: black;
 }
 
