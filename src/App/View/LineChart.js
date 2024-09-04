@@ -94,7 +94,7 @@ function drawLineChart_ (
          rootElement = createRootElement(div)(childId)()
 
          rootElement.selectAll('line')
-            .data(plots.entries())
+            .data([...plots.entries()])
             .enter()
             .append('path')
             .attr('fill', 'none')
@@ -105,8 +105,8 @@ function drawLineChart_ (
 
          for (const [i, plot] of plots.entries()) {
             rootElement.selectAll('linechart-point')
-               .data([...plot.points.entries()].map(([j, p]) => {
-                  return { name: val(plot.name), x: val(p.x), y: val(p.y), i, j }
+               .data([...plot.points.entries()].map(([j, { x, y } ]) => {
+                  return { name: val(plot.name), x: val(x), y: val(y), i, j }
                }))
                .enter()
                .append('circle')
