@@ -156,6 +156,6 @@ testCondition :: forall m. MonadThrow Error m => MonadEffect m => String -> Bool
 testCondition testName b msg = do
    log (testOutcome b msg')
    when (not b) $
-      throw "Test failed"
+      throw "Test failed" -- could improve this to accumulate test failures rather than "failing fast"
    where
    msg' = testName <> ": " <> msg
