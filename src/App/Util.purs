@@ -49,7 +49,7 @@ data SelState a
           }
         )
 
-selState :: 𝔹 -> 𝔹 -> 𝔹 -> SelState 𝔹
+selState :: forall a. 𝔹 -> a -> a -> SelState a
 selState true _ _ = Inert
 selState false b1 b2 = Reactive ({ persistent: b1, transient: b2 })
 
@@ -118,17 +118,12 @@ instance JoinSemilattice 𝕊 where
 instance BoundedJoinSemilattice 𝕊 where
    bot = None
 
--- methods for obtaining the SelState, designed to accept varying type inputs for redundancy
-as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
-as𝕊 Inert Inert = Inert
-as𝕊 (Reactive ({ persistent: a1, transient: b1 })) (Reactive ({ persistent: a2, transient: b2 })) = (if ((a1 && not a2) || (b1 && not b2)) then Inert else Reactive ({ persistent: cross a1 a2, transient: cross b1 b2 }))
-   where
-   cross :: 𝔹 -> 𝔹 -> 𝕊
-   cross false false = None
-   cross false true = Secondary
-   cross true false = error absurd
-   cross true true = Primary
-as𝕊 _ _ = shapeMismatch unit
+-- methods for obtaining the reactive setting from the bools of selection before and after going through the gc
+cross :: 𝔹 -> 𝔹 -> 𝕊
+cross false false = None
+cross false true = Secondary
+cross true false = error absurd
+cross true true = Primary
 
 to𝕊 :: SelState 𝔹 -> SelState 𝕊
 to𝕊 Inert = Inert
