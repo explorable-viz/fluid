@@ -119,19 +119,16 @@ instance BoundedJoinSemilattice 𝕊 where
    bot = None
 
 -- methods for obtaining the reactive setting from the bools of selection before and after going through the gc
+-- talk to RP about inlining further vs not importing constructors etc
 cross :: 𝔹 -> 𝔹 -> 𝕊
 cross false false = None
 cross false true = Secondary
 cross true false = error absurd
 cross true true = Primary
 
-to𝕊 :: SelState 𝔹 -> SelState 𝕊
-to𝕊 Inert = Inert
-to𝕊 (Reactive ({ persistent: a, transient: b })) = Reactive ({ persistent: t a, transient: t b })
-   where
-   t :: 𝔹 -> 𝕊
-   t true = Primary
-   t false = None
+conv :: 𝔹 -> 𝕊
+conv true = Primary
+conv false = None
 
 nullSelState :: SelState 𝔹
 nullSelState = Reactive ({ persistent: false, transient: false })

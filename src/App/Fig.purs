@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, 𝕊, cross, getPersistent, getTransient, isInert, selState, to𝕊)
+import App.Util (SelState, 𝕊, conv, cross, getPersistent, getTransient, isInert, selState)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -62,7 +62,7 @@ setInputView x δvw fig = fig
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
-   (selState <$> r <*> t <*> s) × (to𝕊 <$> report γ1)
+   (selState <$> r <*> t <*> s) × (selState <$> (isInert <$> report γ1) <*> (conv <<< getPersistent <$> γ1) <*> (conv <<< getTransient <$> γ1)) 
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    v1 × γ1 = (unwrap fig.linkedOutputs).bwd (v)
@@ -71,13 +71,15 @@ selectionResult fig@{ v, dir: LinkedOutputs } =
    r = isInert <$> v -- could be v1 instead, doesn't matter. we should consider same partial application as lift
 
 selectionResult fig@{ γ, dir: LinkedInputs } =
-   (to𝕊 <$> report v1) × (selState <$> r <*> t <*> s)
+   (selState <$> (isInert <$> report v1) <*> (conv <<< getPersistent <$> v1) <*> (conv <<< getTransient <$> v1)) × (selState <$> r <*> t <*> s)
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    γ1 × v1 = (unwrap fig.linkedInputs).bwd (γ)
    t = cross <$> (getPersistent <$> γ) <*> (getPersistent <$> γ1)
    s = cross <$> (getTransient <$> γ) <*> (getTransient <$> γ1)
    r = isInert <$> γ
+
+
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
