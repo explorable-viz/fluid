@@ -6,7 +6,7 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
+import App.Util (class Reflect, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, isInert, record)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
@@ -51,7 +51,7 @@ barChartHelpers =
    where
    bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
    bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
-      fromFoldable
+      fromFoldable if isInert t then [ "fill" ↦ colorShade col (-200), "stroke-width" ↦ "1.5", "stroke-dasharray" ↦ "10 10", "stroke-linecap" ↦ "round", "stroke" ↦ colorShade col (-200)] else
          [ "fill" ↦ case persistent of
               None -> col
               Secondary -> "url(#diagonalHatch-" <> show j <> ")"
