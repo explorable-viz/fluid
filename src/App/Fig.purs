@@ -62,7 +62,7 @@ setInputView x δvw fig = fig
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
-   (selState <$> r <*> t <*> s) × (selState <$> (isInert <$> report γ1) <*> (conv <<< getPersistent <$> γ1) <*> (conv <<< getTransient <$> γ1)) 
+   (selState <$> r <*> t <*> s) × (selState <$> (isInert <$> report γ1) <*> (conv <<< getPersistent <$> γ1) <*> (conv <<< getTransient <$> γ1))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    v1 × γ1 = (unwrap fig.linkedOutputs).bwd (v)
