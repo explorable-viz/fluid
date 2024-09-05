@@ -136,7 +136,7 @@ lineChartHelpers (LineChart { plots }) =
    legend_sep = 15
 
    margin :: Margin
-   margin = { top: 15, right: 15, bottom: 40, left: 15 }
+   margin = { top: 15, right: 15, bottom: 40, left: 25 } -- hack left margin so x-axis ticks are ok
 
    image :: Dimensions
    image = { width: 330, height: 285 }
