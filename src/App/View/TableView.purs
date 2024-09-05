@@ -52,7 +52,7 @@ tableViewHelpers =
          k /= rowKey && not comparative (get k r # \(Val α _) -> α)
          where 
          comparative = outfind filtering
-         outfind :: FilterType -> (SelState 𝕊 -> Boolean)
+         outfind :: FilterType -> SelState 𝕊 -> Boolean
          outfind Everything = isThere
          outfind Interactive = isInert
          outfind Relevant = isNone || isInert
