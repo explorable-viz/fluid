@@ -38,11 +38,10 @@ newtype Point = Point (Coord (Selectable Number))
 type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect D3Selection
    , point_attrs :: (String -> String) -> PointCoordinate -> Object String
-   , interior :: Dimensions
    , ticks :: Coord Ticks
    , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
-   , createAxes :: D3Selection -> Effect D3Selection
+   , createAxes :: D3Selection -> Effect Unit
    , createLegend :: D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
    , caption_attrs :: Object String
@@ -87,14 +86,13 @@ foreign import data D3Selection :: Type
 foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
 foreign import createChildren :: forall a. D3Selection -> String -> Array a -> Object (a -> String) -> Effect D3Selection
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
-foreign import xAxis :: Coord (Endo Number) -> Coord Ticks -> Effect (D3Selection -> Effect Unit)
-foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> Effect (D3Selection -> Effect Unit)
+foreign import xAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
+foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
 
 lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
    { createRootElement
    , point_attrs
-   , interior
    , ticks
    , to
    , legendHelpers
@@ -201,12 +199,13 @@ lineChartHelpers (LineChart { plots }) =
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
 
-   createAxes :: D3Selection -> Effect D3Selection
+   createAxes :: D3Selection -> Effect Unit
    createAxes parent = do
-      createChild parent "g" $ fromFoldable
+      xAxis to ticks =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "x-axis"
          , "transform" ↦ translate { x: 0, y: interior.height }
          ]
+      )
 
    createLegend :: D3Selection -> Effect D3Selection
    createLegend parent = do

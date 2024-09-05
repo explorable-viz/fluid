@@ -42,12 +42,16 @@ function line_ (to, points) {
    }
 }
 
-function xAxis_ (to, ticks) {
-   return d3.axisBottom(to.x).ticks(ticks.x).tickFormat(d3.format('d'))
+function xAxis_ (to, ticks, element) {
+   return () => {
+      return element.call(d3.axisBottom(to.x).ticks(ticks.x).tickFormat(d3.format('d')))
+   }
 }
 
-function yAxis_ (to, ticks) {
-   return d3.axisLeft(to.y).tickSizeOuter(0).ticks(ticks.y).tickFormat(d3.format('.1f'))
+function yAxis_ (to, ticks, element) {
+   return () => {
+      return element.call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(ticks.y).tickFormat(d3.format('.1f')))
+   }
 }
 
 function setSelState (
@@ -80,7 +84,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, interior, ticks, to, legendHelpers, createAxes, createLegend, createLegendEntry, caption_attrs }
+      const { createRootElement, ticks, to, legendHelpers, createAxes, createLegend, createLegendEntry, caption_attrs }
          = lineChartHelpers
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
@@ -121,13 +125,12 @@ function drawLineChart_ (
                .attr('class', 'linechart-point')
          }
 
-         const xAxis_g = createAxes(rootElement)()
-         xAxis(to)(ticks)(xAxis_g)
+         createAxes(rootElement)()
 
          const yAxis_g = rootElement
             .append('g')
             .attr('class', 'y-axis')
-         yAxis_(to, ticks)(yAxis_g)
+         yAxis(to)(ticks)(yAxis_g)()
 
          const legend = createLegend(rootElement)()
          const legendEntry = createLegendEntry(legend)()
@@ -154,5 +157,5 @@ export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).r
 export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
 export var createChildren = x1 => x2 => x3 => x4 => createChildren_(x1, x2, x3, x4)
 export var line = x1 => x2 => line_(x1, x2)
-export var xAxis = x1 => x2 => xAxis_(x1, x2)
-export var yAxis = x1 => x2 => yAxis_(x1, x2)
+export var xAxis = x1 => x2 => x3 => xAxis_(x1, x2, x3)
+export var yAxis = x1 => x2 => x3 => yAxis_(x1, x2, x3)
