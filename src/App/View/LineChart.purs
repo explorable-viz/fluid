@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, scaleLinear, textWidth, xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, scaleLinear, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -45,7 +45,6 @@ type LineChartHelpers =
    , createAxes :: D3Selection -> Effect Unit
    , createLegend :: D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
-   , caption_attrs :: Object String
    }
 
 type LegendHelpers =
@@ -72,7 +71,6 @@ lineChartHelpers (LineChart { plots, caption }) =
    , createAxes
    , createLegend
    , createLegendEntry
-   , caption_attrs
    }
    where
    createRootElement :: D3Selection -> String -> Effect D3Selection
@@ -82,9 +80,11 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "height" ⟼ image.height
          , "id" ↦ childId
          ]
-      createChild rootElement "g" $ fromFoldable
+      g <- createChild rootElement "g" $ fromFoldable
          [ "transform" ↦ translate { x: margin.left, y: margin.top }
          ]
+      text (fst caption) =<< createChild rootElement "text" caption_attrs
+      pure g
 
    point_attrs :: (String -> String) -> PointCoordinate -> Object String
    point_attrs nameCol { i, j, name } =
@@ -217,11 +217,11 @@ lineChartHelpers (LineChart { plots, caption }) =
 
    caption_attrs :: Object String
    caption_attrs = fromFoldable
-      [ "x" ⟼ (image.width - textWidth (fst caption)) / 2
+      [ "x" ⟼ image.width / 2
       , "y" ⟼ interior.height + 35
       , "class" ↦ "title-text"
       , "dominant-baseline" ↦ "bottom"
-      , "text-anchor" ↦ "left" -- couldn't get middle to centre properly
+      , "text-anchor" ↦ "middle"
       ]
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart

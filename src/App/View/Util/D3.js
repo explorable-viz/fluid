@@ -41,7 +41,6 @@ export function textWidth (text) {
    context.font = canvasFont(div)
    const width = Math.ceil(context.measureText(text).width)
    div.remove()
-   console.log(`Width of "${text}$" is ${width}`)
    return width
 }
 
@@ -84,9 +83,16 @@ function yAxis_ (to, ticks, element) {
    }
 }
 
+function text_ (string, element) {
+   return () => {
+      return element.text(string)
+   }
+}
+
 export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
 export var createChildren = x1 => x2 => x3 => x4 => createChildren_(x1, x2, x3, x4)
 export var line = x1 => x2 => line_(x1, x2)
 export var xAxis = x1 => x2 => x3 => xAxis_(x1, x2, x3)
 export var yAxis = x1 => x2 => x3 => yAxis_(x1, x2, x3)
 export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
+export var text = x1 => x2 => text_(x1, x2)

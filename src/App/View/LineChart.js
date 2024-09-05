@@ -32,7 +32,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, to, legendHelpers, line, createAxes, createLegend, createLegendEntry, caption_attrs }
+      const { createRootElement, to, legendHelpers, line, createAxes, createLegend, createLegendEntry }
          = lineChartHelpers
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
@@ -86,11 +86,6 @@ function drawLineChart_ (
          legendEntry.append('circle')
             .attr('fill', ({ name }) => nameCol(name))
             .attrs(legendHelpers.circle_attrs)
-
-         rootElement
-            .append('text')
-            .text(val(caption))
-            .attrs(caption_attrs)
       }
       setSelState(lineChartHelpers, uiHelpers, nameCol, rootElement, listener)
    }

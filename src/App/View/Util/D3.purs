@@ -35,3 +35,4 @@ foreign import xAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Eff
 foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
 foreign import textWidth :: String -> Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> Effect String
+foreign import text :: String -> D3Selection -> Effect Unit
