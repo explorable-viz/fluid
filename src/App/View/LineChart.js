@@ -121,13 +121,14 @@ function drawLineChart_ (
                .attr('class', 'linechart-point')
          }
 
-         createAxes()
+         const xAxis_g = createAxes(rootElement)()
+         xAxis_(to, ticks)(xAxis_g)
+/*
          const xAxis_g = rootElement
             .append('g')
             .attr('class', 'x-axis')
             .attr('transform', `translate(0, ${interior.height})`)
-         xAxis_(to, ticks)(xAxis_g)
-
+*/
          const yAxis_g = rootElement
             .append('g')
             .attr('class', 'y-axis')
