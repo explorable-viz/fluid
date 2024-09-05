@@ -42,6 +42,7 @@ type LineChartHelpers =
    , ticks :: Coord Ticks
    , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
+   , createAxes :: Effect Unit
    , createLegend :: D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
    , caption_attrs :: Object String
@@ -95,6 +96,7 @@ lineChartHelpers (LineChart { plots }) =
    , ticks
    , to
    , legendHelpers
+   , createAxes
    , createLegend
    , createLegendEntry
    , caption_attrs
@@ -196,6 +198,9 @@ lineChartHelpers (LineChart { plots }) =
 
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
+
+   createAxes :: Effect Unit
+   createAxes = pure unit
 
    createLegend :: D3Selection -> Effect D3Selection
    createLegend parent = do

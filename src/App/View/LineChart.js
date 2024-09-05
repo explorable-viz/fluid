@@ -80,7 +80,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, interior, ticks, to, legendHelpers, createLegend, createLegendEntry, caption_attrs }
+      const { createRootElement, interior, ticks, to, legendHelpers, createAxes, createLegend, createLegendEntry, caption_attrs }
          = lineChartHelpers
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
@@ -121,6 +121,7 @@ function drawLineChart_ (
                .attr('class', 'linechart-point')
          }
 
+         createAxes()
          const xAxis_g = rootElement
             .append('g')
             .attr('class', 'x-axis')
