@@ -9,7 +9,7 @@ import App.View.LinkedText (LinkedText)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
 import App.View.ScatterPlot (ScatterPlot)
-import App.View.TableView (TableView(..))
+import App.View.TableView (TableView(..), arrayDictToArray2, headers)
 import App.View.Util (View, pack)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
@@ -29,6 +29,11 @@ view title (Val _ (Constr c (u : Nil))) _
         vws = view title <$> from u
 view title u@(Val _ (Constr c _)) _
    | c == cNil || c == cCons =
-        pack (TableView { title, filter: true, table: record identity <$> from u })
+        pack
+           (TableView { title, filter: true, colNames, table })
+        where
+        records = record identity <$> from u
+        colNames = headers records
+        table = arrayDictToArray2 colNames records
 view title (Val _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })

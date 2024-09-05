@@ -11,7 +11,7 @@ function prim (v) {
 }
 
 function setSelState (
-   { cell_selClassesFor, rowKey, record_isUsed, val_selState },
+   { rowKey, record_isUsed, cell_selClassesFor, val_selState },
    filterToggleListener,
    {
       selClasses,
@@ -22,7 +22,7 @@ function setSelState (
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
       if (cell.colName != rowKey) {
-         const sel = val_selState(table[cell.i][cell.colName])
+         const sel = val_selState(table[cell.i][cell.j])
          d3.select(this) // won't work inside arrow function :/
             .classed(selClasses, false)
             .classed(cell_selClassesFor(cell.colName)(sel), true)
@@ -58,7 +58,7 @@ function drawTable_ (
 ) {
    return () => {
       const { rowKey, val_val } = tableViewHelpers
-      let { table } = view
+      let { colNames, table } = view
       const childId = divId + '-' + suffix
 
       const div = d3.select('#' + divId)
@@ -67,9 +67,7 @@ function drawTable_ (
          return
       }
 
-      table = table.map((r, n) => { return {[ rowKey ]: n + 1, ...r} })
-      const colNames = Object.keys(table[0]).sort()
-
+      colNames.unshift(rowKey)
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
@@ -97,15 +95,13 @@ function drawTable_ (
          const rows = rootElement
             .append('tbody')
             .selectAll('tr')
-               .data([...table.entries()].map((([i, row]) => { return { i, row } })))
+               .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] }))) // data rows have 0-based index, but displayed row numbers start with 1 
                .enter()
                .append('tr')
                .attr('class', 'table-row')
 
          rows.selectAll('td')
-            .data(({ i, row }) => colNames.map(colName => {
-                return { [rowKey]: row[rowKey], i, colName, value: row[colName] }
-            }))
+            .data(({ i, vals }) => vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // the field for row number has j = -1 
             .enter()
             .append('td')
             .attr('class', 'table-cell')
