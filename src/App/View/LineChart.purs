@@ -5,6 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, scaleLinear, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -40,6 +41,7 @@ type LineChartHelpers =
    , point_attrs :: (String -> String) -> PointCoordinate -> Object String
    , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
+   , line :: Coord (Endo Number) -> Array (Coord Number) -> Effect String
    , createAxes :: D3Selection -> Effect Unit
    , createLegend :: D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
@@ -57,37 +59,8 @@ type LegendEntry =
    , name :: String
    }
 
--- d3.js ticks are actually (start, stop, count) but we only supply first argument
-type Ticks = Number
-
-type Margin =
-   { top :: Int
-   , right :: Int
-   , bottom :: Int
-   , left :: Int
-   }
-
-type Coord a =
-   { x :: a
-   , y :: a
-   }
-
-type Dimensions =
-   { width :: Int
-   , height :: Int
-   }
-
 translate :: Coord Int -> String
 translate { x, y } = "translate(" <> show x <> ", " <> show y <> ")"
-
-foreign import data D3Selection :: Type
-
-foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
-foreign import createChildren :: forall a. D3Selection -> String -> Array a -> Object (a -> String) -> Effect D3Selection
-foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
-foreign import xAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
-foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
-foreign import textWidth :: String -> Int
 
 lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
@@ -95,6 +68,7 @@ lineChartHelpers (LineChart { plots }) =
    , point_attrs
    , to
    , legendHelpers
+   , line
    , createAxes
    , createLegend
    , createLegendEntry
@@ -112,7 +86,6 @@ lineChartHelpers (LineChart { plots }) =
          [ "transform" ↦ translate { x: margin.left, y: margin.top }
          ]
 
-   -- TODO: LineChart argument no longer needed
    point_attrs :: (String -> String) -> PointCoordinate -> Object String
    point_attrs nameCol { i, j, name } =
       fromFoldable
