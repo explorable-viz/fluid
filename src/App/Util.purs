@@ -118,7 +118,7 @@ instance BoundedJoinSemilattice 𝕊 where
 cross :: 𝔹 -> 𝔹 -> 𝕊
 cross false false = None
 cross false true = Secondary
-cross true false = error absurd
+cross true false = None -- error absurd would be ideal
 cross true true = Primary
 
 conv :: 𝔹 -> 𝕊
