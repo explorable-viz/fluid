@@ -42,11 +42,11 @@ function line_ (to, points) {
    }
 }
 
-function xAxis (to, ticks) {
+function xAxis_ (to, ticks) {
    return d3.axisBottom(to.x).ticks(ticks.x).tickFormat(d3.format('d'))
 }
 
-function yAxis (to, ticks) {
+function yAxis_ (to, ticks) {
    return d3.axisLeft(to.y).tickSizeOuter(0).ticks(ticks.y).tickFormat(d3.format('.1f'))
 }
 
@@ -126,12 +126,12 @@ function drawLineChart_ (
             .append('g')
             .attr('class', 'x-axis')
             .attr('transform', `translate(0, ${interior.height})`)
+         xAxis_(to, ticks)(xAxis_g)
+
          const yAxis_g = rootElement
             .append('g')
             .attr('class', 'y-axis')
-
-         xAxis(to, ticks)(xAxis_g)
-         yAxis(to, ticks)(yAxis_g)
+         yAxis_(to, ticks)(yAxis_g)
 
          const legend = createLegend(rootElement)()
          const legendEntry = createLegendEntry(legend)()
@@ -158,3 +158,5 @@ export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).r
 export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
 export var createChildren = x1 => x2 => x3 => x4 => createChildren_(x1, x2, x3, x4)
 export var line = x1 => x2 => line_(x1, x2)
+export var xAxis = x1 => x2 => xAxis_(x1, x2)
+export var yAxis = x1 => x2 => yAxis_(x1, x2)
