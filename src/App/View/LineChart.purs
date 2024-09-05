@@ -87,6 +87,7 @@ foreign import createChildren :: forall a. D3Selection -> String -> Array a -> O
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 foreign import xAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
 foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
+foreign import textWidth :: String -> Int
 
 lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
@@ -149,7 +150,7 @@ lineChartHelpers (LineChart { plots }) =
 
    legend_dims :: Dimensions
    legend_dims =
-      { width: 40 -- could compute width based on text labels
+      { width: maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth # nonEmpty) + legend_entry_x
       , height: lineHeight * length plots
       }
 
@@ -177,11 +178,14 @@ lineChartHelpers (LineChart { plots }) =
    legend :: Coord Int
    legend = { x: interior.width + legend_sep, y: (interior.height - legend_dims.height) / 2 }
 
+   legend_entry_x :: Int
+   legend_entry_x = 15
+
    legendHelpers :: LegendHelpers
    legendHelpers =
       { text_attrs: fromFoldable
          [ "font-size" ⟼ 11
-         , "transform" ↦ translate { x: 15, y: 9 } -- align text with boxes
+         , "transform" ↦ translate { x: legend_entry_x, y: 9 } -- align text with boxes
          ]
       , circle_attrs: fromFoldable
          [ "r" ⟼ point_smallRadius

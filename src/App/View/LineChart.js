@@ -16,6 +16,21 @@ d3.selection.prototype.attrFuns = function(m) {
    return this
 }
 
+// Treat as pure as side-effect should be purely local
+// TODO: provide a fixed hidden div in template.html purely for this purpose
+export function textWidth (text) {
+   const div = document.createElement('div')
+   div.textContent = text
+   div.classList.add('legend-text')
+   div.style.visibility = 'hidden'
+   document.body.appendChild(div)
+
+   const font = getCanvasFont(div)
+   const width = getTextWidth(text, font)
+   div.remove()
+   return Math.floor(width)
+}
+
 function createChild_ (parent, elementType, attrs) {
    return () => {
       return parent.append(elementType).attrs(attrs)
@@ -131,6 +146,7 @@ function drawLineChart_ (
          const legendEntry = createLegendEntry(legend)()
 
          legendEntry.append('text')
+            .attr('class', 'legend-text')
             .text(({ name }) => name)
             .attrs(legendHelpers.text_attrs)
 
