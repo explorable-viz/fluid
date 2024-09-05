@@ -218,7 +218,7 @@ lineChartHelpers (LineChart { plots, caption }) =
    caption_attrs :: Object String
    caption_attrs = fromFoldable
       [ "x" ⟼ image.width / 2
-      , "y" ⟼ interior.height + 35
+      , "y" ⟼ image.height
       , "class" ↦ "title-text"
       , "dominant-baseline" ↦ "bottom"
       , "text-anchor" ↦ "middle"
