@@ -47,16 +47,16 @@ tableViewHelpers =
 
    --helper for "we want to display this record"
    record_isDisplayable :: Dict (Val (SelState 𝕊)) -> FilterType -> Boolean
-   record_isDisplayable r s = 
+   record_isDisplayable r filtering = 
       not <<< isEmpty $ flip filterKeys r \k ->
          k /= rowKey && not comparative (get k r # \(Val α _) -> α)
          where 
-         comparative = outfind s
+         comparative = outfind filtering
          outfind :: FilterType -> (SelState 𝕊 -> Boolean)
          outfind Everything = isThere
          outfind Interactive = isInert
          outfind Relevant = isNone || isInert
-         
+
          isThere :: SelState 𝕊 -> Boolean
          isThere _ = false
 
@@ -83,9 +83,14 @@ instance Drawable TableView where
 -- convert mouse event data (here, always rowKey) to view change
 type FilterToggler = String -> Endo TableView
 
--- decide how you want the toggle to act
+-- toggling the sides of a triangle
 filterToggler :: FilterToggler
-filterToggler _ (TableView view) = TableView view { filter = Everything }
+filterToggler _ (TableView view) = TableView view { filter = rot view.filter}
+
+rot :: FilterType -> FilterType
+rot Everything = Interactive
+rot Interactive = Relevant
+rot Relevant = Everything
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }
