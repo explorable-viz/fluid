@@ -63,7 +63,7 @@ translate :: Coord Int -> String
 translate { x, y } = "translate(" <> show x <> ", " <> show y <> ")"
 
 lineChartHelpers :: LineChart -> LineChartHelpers
-lineChartHelpers (LineChart { plots }) =
+lineChartHelpers (LineChart { plots, caption }) =
    { createRootElement
    , point_attrs
    , to
@@ -113,7 +113,7 @@ lineChartHelpers (LineChart { plots }) =
    margin = { top: 15, right: 15, bottom: 40, left: 25 } -- hack left margin so x-axis ticks are ok
 
    image :: Dimensions
-   image = { width: 330, height: 285 }
+   image = { width: max 330 (textWidth (fst caption)), height: 285 }
 
    interior :: Dimensions
    interior =
@@ -217,11 +217,11 @@ lineChartHelpers (LineChart { plots }) =
 
    caption_attrs :: Object String
    caption_attrs = fromFoldable
-      [ "x" ⟼ interior.width / 2
+      [ "x" ⟼ (image.width - textWidth (fst caption)) / 2
       , "y" ⟼ interior.height + 35
       , "class" ↦ "title-text"
       , "dominant-baseline" ↦ "bottom"
-      , "text-anchor" ↦ "middle"
+      , "text-anchor" ↦ "left" -- couldn't get middle to centre properly
       ]
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart

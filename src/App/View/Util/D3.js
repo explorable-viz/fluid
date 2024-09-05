@@ -25,9 +25,9 @@ function canvasFont(el) {
    return `${computed(el, 'font-weight')} ${computed(el, 'font-size')} ${computed(el, 'font-family')}`
 }
 
-// https://stackoverflow.com/questions/118241
+// https://stackoverflow.com/questions/118241 (could assume a div in document set up for this purpose)
 // Pure; side-effects should be unobservable
-// Could assume existing div in document set up for this purpose, rather than creating here
+// Not especially reliable as might not inherit in situ styling that the actual text will
 export function textWidth (text) {
    const div = document.createElement('div')
    div.textContent = text
@@ -39,9 +39,10 @@ export function textWidth (text) {
    const canvas = textWidth.canvas || (textWidth.canvas = document.createElement("canvas"))
    const context = canvas.getContext("2d")
    context.font = canvasFont(div)
-   const width = context.measureText(text).width
+   const width = Math.ceil(context.measureText(text).width)
    div.remove()
-   return Math.floor(width)
+   console.log(`Width of "${text}$" is ${width}`)
+   return width
 }
 
 function createChild_ (parent, elementType, attrs) {
