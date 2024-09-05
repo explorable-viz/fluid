@@ -56,11 +56,12 @@ tableViewHelpers =
          outfind Everything = isThere
          outfind Interactive = isInert
          outfind Relevant = isNone || isInert
+         
          isThere :: SelState 𝕊 -> Boolean
          isThere _ = false
+
          isNone :: SelState 𝕊 -> Boolean
          isNone a = getPersistent a == None && getTransient a == None
-
 
    cell_selClassesFor :: String -> SelState 𝕊 -> String
    cell_selClassesFor colName s
