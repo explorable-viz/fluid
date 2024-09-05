@@ -133,11 +133,11 @@ lineChartHelpers (LineChart { plots }) =
       rightMargin :: Int
       rightMargin = 4
 
-   max :: Coord Number
-   max = { x: maximum points.x, y: maximum points.y }
+   max' :: Coord Number
+   max' = { x: maximum points.x, y: maximum points.y }
 
-   min :: Coord Number
-   min = { x: minimum points.x, y: minimum points.y }
+   min' :: Coord Number
+   min' = { x: minimum points.x, y: minimum points.y }
 
    points :: Coord (NonEmptyArray Number)
    points = { x: ps <#> unwrap >>> _.x >>> fst, y: ps <#> unwrap >>> _.y >>> fst }
@@ -147,15 +147,15 @@ lineChartHelpers (LineChart { plots }) =
 
    to :: Coord (Endo Number)
    to =
-      { x: scaleLinear { min: min.x, max: max.x } { min: 0.0, max: toNumber interior.width }
-      , y: scaleLinear { min: 0.0, max: max.y } { min: toNumber interior.height, max: 0.0 }
+      { x: scaleLinear { min: min'.x, max: max'.x } { min: 0.0, max: toNumber interior.width }
+      , y: scaleLinear { min: 0.0, max: max'.y } { min: toNumber interior.height, max: 0.0 }
       }
 
    ticks :: Coord Ticks
-   ticks = { x: max.x - min.x, y: 3.0 }
+   ticks = { x: max'.x - min'.x, y: 3.0 }
 
    legend :: Coord Int
-   legend = { x: interior.width + legend_sep, y: (interior.height - legend_dims.height) / 2 }
+   legend = { x: interior.width + legend_sep, y: max 0 ((interior.height - legend_dims.height) / 2) }
 
    legend_entry_x :: Int
    legend_entry_x = 15
