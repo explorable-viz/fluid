@@ -84,7 +84,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, ticks, to, legendHelpers, createAxes, createLegend, createLegendEntry, caption_attrs }
+      const { createRootElement, to, legendHelpers, createAxes, createLegend, createLegendEntry, caption_attrs }
          = lineChartHelpers
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
@@ -126,11 +126,6 @@ function drawLineChart_ (
          }
 
          createAxes(rootElement)()
-
-         const yAxis_g = rootElement
-            .append('g')
-            .attr('class', 'y-axis')
-         yAxis(to)(ticks)(yAxis_g)()
 
          const legend = createLegend(rootElement)()
          const legendEntry = createLegendEntry(legend)()

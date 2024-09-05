@@ -38,7 +38,6 @@ newtype Point = Point (Coord (Selectable Number))
 type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect D3Selection
    , point_attrs :: (String -> String) -> PointCoordinate -> Object String
-   , ticks :: Coord Ticks
    , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
    , createAxes :: D3Selection -> Effect Unit
@@ -93,7 +92,6 @@ lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots }) =
    { createRootElement
    , point_attrs
-   , ticks
    , to
    , legendHelpers
    , createAxes
@@ -204,6 +202,10 @@ lineChartHelpers (LineChart { plots }) =
       xAxis to ticks =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "x-axis"
          , "transform" ↦ translate { x: 0, y: interior.height }
+         ]
+      )
+      yAxis to ticks =<< createChild parent "g" (fromFoldable
+         [ "class" ↦ "y-axis"
          ]
       )
 
