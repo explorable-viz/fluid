@@ -2,7 +2,7 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (SelState, 𝕊(..), eventData, getPersistent, getTransient, isInert, isNone, selClassesFor)
+import App.Util (SelState, 𝕊(..), eventData, getPersistent, getTransient, isInert, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
@@ -24,8 +24,6 @@ newtype TableView = TableView
 
 type TableViewHelpers =
    { rowKey :: String
-   , record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
-   , record_isReactive :: Dict (Val (SelState 𝕊)) -> Boolean
    , record_isDisplayable :: Dict (Val (SelState 𝕊)) -> FilterType -> Boolean
    , cell_selClassesFor :: String -> SelState 𝕊 -> String
    -- values in table cells are not "unpacked" to Selectable but remain as Val
@@ -38,8 +36,6 @@ foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableV
 tableViewHelpers :: TableViewHelpers
 tableViewHelpers =
    { rowKey
-   , record_isUsed
-   , record_isReactive
    , record_isDisplayable
    , cell_selClassesFor
    , val_val: \(Val _ v) -> v
@@ -48,17 +44,6 @@ tableViewHelpers =
    where
    rowKey :: String
    rowKey = "__n"
-
-   -- Defined for any record type with fields of primitive type
-   record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
-   record_isUsed r =
-      not <<< isEmpty $ flip filterKeys r \k ->
-         k /= rowKey && not isNone (get k r # \(Val α _) -> α)
-
-   record_isReactive :: Dict (Val (SelState 𝕊)) -> Boolean
-   record_isReactive r =
-      not <<< isEmpty $ flip filterKeys r \k ->
-         k /= rowKey && not isInert (get k r # \(Val α _) -> α)
 
    --helper for "we want to display this record"
    

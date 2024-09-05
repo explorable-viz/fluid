@@ -11,7 +11,7 @@ function prim (v) {
 }
 
 function setSelState (
-   { cell_selClassesFor, rowKey, record_isUsed, record_isReactive,record_isDisplayable, val_selState },
+   { cell_selClassesFor, rowKey,record_isDisplayable, val_selState },
    filterToggleListener,
    {
       selClasses,
