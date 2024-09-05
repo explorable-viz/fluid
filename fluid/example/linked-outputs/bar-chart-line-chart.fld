@@ -6,7 +6,7 @@ MultiView {|
          countryData = [ { x: c, bars: [ { y: "output", z: totalFor c data2015 } ] }
                         | c <- ["China", "USA", "Germany"] ]
       in BarChart {
-         caption: "Total output by country",
+         caption: "Total renewables output by country",
          data: countryData
       },
    "line-chart" :=
