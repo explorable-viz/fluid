@@ -123,9 +123,15 @@ lineChartHelpers (LineChart { plots }) =
 
    legend_dims :: Dimensions
    legend_dims =
-      { width: maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth # nonEmpty) + legend_entry_x
+      { width: legend_entry_x + maxTextWidth + rightMargin
       , height: lineHeight * length plots
       }
+      where
+      maxTextWidth :: Int
+      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth # nonEmpty)
+
+      rightMargin :: Int
+      rightMargin = 4
 
    max :: Coord Number
    max = { x: maximum points.x, y: maximum points.y }
@@ -157,8 +163,7 @@ lineChartHelpers (LineChart { plots }) =
    legendHelpers :: LegendHelpers
    legendHelpers =
       { text_attrs: fromFoldable
-         [ "font-size" ⟼ 11
-         , "transform" ↦ translate { x: legend_entry_x, y: 9 } -- align text with boxes
+         [ "transform" ↦ translate { x: legend_entry_x, y: 9 } -- align text with boxes
          ]
       , circle_attrs: fromFoldable
          [ "r" ⟼ point_smallRadius
