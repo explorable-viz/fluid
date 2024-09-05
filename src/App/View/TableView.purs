@@ -2,7 +2,7 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (𝕊, SelState, eventData, isInert, isNone, selClassesFor)
+import App.Util (SelState, 𝕊(..), eventData, getPersistent, getTransient, isInert, isNone, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Dict (Dict)
@@ -13,9 +13,11 @@ import Util.Set (isEmpty)
 import Val (BaseVal, Val(..))
 import Web.Event.EventTarget (EventListener, eventListener)
 
+data FilterType = Everything | Interactive | Relevant
+
 newtype TableView = TableView
    { title :: String
-   , filter :: Boolean
+   , filter :: FilterType
    -- homogeneous array of records with fields of primitive type
    , table :: Array (Dict (Val (SelState 𝕊))) -- somewhat anomalous, as elsewhere we have Selectables
    }
@@ -24,6 +26,7 @@ type TableViewHelpers =
    { rowKey :: String
    , record_isUsed :: Dict (Val (SelState 𝕊)) -> Boolean
    , record_isReactive :: Dict (Val (SelState 𝕊)) -> Boolean
+   , record_isDisplayable :: Dict (Val (SelState 𝕊)) -> FilterType -> Boolean
    , cell_selClassesFor :: String -> SelState 𝕊 -> String
    -- values in table cells are not "unpacked" to Selectable but remain as Val
    , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
@@ -37,6 +40,7 @@ tableViewHelpers =
    { rowKey
    , record_isUsed
    , record_isReactive
+   , record_isDisplayable
    , cell_selClassesFor
    , val_val: \(Val _ v) -> v
    , val_selState: \(Val α _) -> α
@@ -57,18 +61,23 @@ tableViewHelpers =
          k /= rowKey && not isInert (get k r # \(Val α _) -> α)
 
    --helper for "we want to display this record"
-   {-}
-   record_isDisplayable :: Dict(Val (SelState 𝕊)) -> FilterType -> Boolean
+   
+   record_isDisplayable :: Dict (Val (SelState 𝕊)) -> FilterType -> Boolean
    record_isDisplayable r s = 
       not <<< isEmpty $ flip filterKeys r \k ->
          k /= rowKey && not comparative (get k r # \(Val α _) -> α)
          where 
          comparative = outfind s
-         outfind :: FilterType -> (SelState 𝕊 -> 𝔹)
+         outfind :: FilterType -> (SelState 𝕊 -> Boolean)
          outfind Everything = isThere
-         outfind Relevant = isNone
-         outfind Reactive = isInert
--} 
+         outfind Interactive = isInert
+         outfind Relevant = isNone || isInert
+         isThere :: SelState 𝕊 -> Boolean
+         isThere _ = false
+         isNone :: SelState 𝕊 -> Boolean
+         isNone a = getPersistent a == None && getTransient a == None
+
+
    cell_selClassesFor :: String -> SelState 𝕊 -> String
    cell_selClassesFor colName s
       | colName == rowKey = ""
@@ -90,7 +99,7 @@ instance Drawable TableView where
 type FilterToggler = String -> Endo TableView
 
 filterToggler :: FilterToggler
-filterToggler _ (TableView view) = TableView view { filter = not view.filter }
+filterToggler _ (TableView view) = TableView view { filter = Everything }
 
 -- 1-based index of selected record and name of field; see data binding in .js (0th field name is rowKey)
 type CellIndex = { __n :: Int, colName :: String }

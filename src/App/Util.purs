@@ -73,11 +73,6 @@ isSecondary (Reactive ({ persistent, transient })) =
    persistent == Secondary || transient == Secondary
 isSecondary Inert = false
 
-isNone :: SelState 𝕊 -> 𝔹
-isNone (Reactive ({ persistent, transient })) =
-   persistent == None && transient == None
-isNone _ = false
-
 isInert :: forall a. SelState a -> 𝔹
 isInert Inert = true
 isInert _ = false
