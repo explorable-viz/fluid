@@ -9,24 +9,6 @@
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
    <script>
-      // https://stackoverflow.com/questions/118241
-      function getTextWidth(text, font) {
-         // re-use canvas object
-         const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"))
-         const context = canvas.getContext("2d")
-         context.font = font
-         return context.measureText(text).width
-      }
-
-      function computed(element, prop) {
-         return window.getComputedStyle(element, null).getPropertyValue(prop);
-      }
-
-      // should be always defined
-      function canvasFont(el) {
-         return `${computed(el, 'font-weight')} ${computed(el, 'font-size')} ${computed(el, 'font-family')}`
-      }
-
       // move to PureScript
       function toggle(id) {
          const elem = document.getElementById(id)

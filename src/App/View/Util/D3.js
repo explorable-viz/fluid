@@ -16,8 +16,18 @@ d3.selection.prototype.attrFuns = function(m) {
    return this
 }
 
-// Treat as pure as side-effect should be purely local
-// TODO: provide a fixed hidden div in template.html purely for this purpose
+function computed(element, prop) {
+   return window.getComputedStyle(element, null).getPropertyValue(prop);
+}
+
+// should be always defined
+function canvasFont(el) {
+   return `${computed(el, 'font-weight')} ${computed(el, 'font-size')} ${computed(el, 'font-family')}`
+}
+
+// https://stackoverflow.com/questions/118241
+// Pure; side-effects should be unobservable
+// Could assume existing div in document set up for this purpose, rather than creating here
 export function textWidth (text) {
    const div = document.createElement('div')
    div.textContent = text
@@ -25,7 +35,11 @@ export function textWidth (text) {
    div.style.visibility = 'hidden'
    document.body.appendChild(div)
 
-   const width = getTextWidth(text, canvasFont(div))
+   // re-use canvas object
+   const canvas = textWidth.canvas || (textWidth.canvas = document.createElement("canvas"))
+   const context = canvas.getContext("2d")
+   context.font = canvasFont(div)
+   const width = context.measureText(text).width
    div.remove()
    return Math.floor(width)
 }
