@@ -3,11 +3,12 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
+import App.Util (SelState, 𝕊, cross, getPersistent, getTransient, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
 import Bind (Var)
+import Control.Apply (lift2)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
@@ -62,13 +63,13 @@ setInputView x δvw fig = fig
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
-   (as𝕊 <$> v <*> v1) × (to𝕊 <$> report γ1)
+   (lift2 cross <$> v <*> v1) × ((to𝕊 <$> _ ) <$> (report γ1))
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    v1 × γ1 = (unwrap fig.linkedOutputs).bwd v
 
 selectionResult fig@{ γ, dir: LinkedInputs } =
-   (to𝕊 <$> report v1) × (as𝕊 <$> γ <*> γ1)
+   ((to𝕊 <$> _ ) <$> report v1) × (lift2 cross <$> γ <*> γ1)
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    γ1 × v1 = (unwrap fig.linkedInputs).bwd γ

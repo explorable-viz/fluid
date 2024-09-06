@@ -113,27 +113,15 @@ instance JoinSemilattice 𝕊 where
 instance BoundedJoinSemilattice 𝕊 where
    bot = None
 
-as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
-as𝕊 Inert Inert = Inert
-as𝕊 (Reactive ({ persistent: a1, transient: b1 })) (Reactive ({ persistent: a2, transient: b2 })) =
-   {-if (a1 && not a2) || (b1 && not b2) then Inert
-   else-} Reactive ({ persistent: cross a1 a2, transient: cross b1 b2 })
-   where
-   cross :: 𝔹 -> 𝔹 -> 𝕊
-   cross false false = None
-   cross false true = Secondary
-   cross true false = error absurd
-   cross true true = Primary
+cross :: 𝔹 -> 𝔹 -> 𝕊
+cross false false = None
+cross false true = Secondary
+cross true false = Secondary
+cross true true = Primary
 
-as𝕊 _ _ = shapeMismatch unit
-
-to𝕊 :: SelState 𝔹 -> SelState 𝕊
-to𝕊 Inert = Inert
-to𝕊 (Reactive ({ persistent: a, transient: b })) = Reactive ({ persistent: t a, transient: t b })
-   where
-   t :: 𝔹 -> 𝕊
-   t true = Primary
-   t false = None
+to𝕊 :: 𝔹 -> 𝕊
+to𝕊 true = Primary
+to𝕊 false = None
 
 nullSelState :: SelState 𝔹
 nullSelState = Reactive ({ persistent: false, transient: false })
