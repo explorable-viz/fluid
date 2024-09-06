@@ -27,8 +27,9 @@ import Foreign.Object (Object, empty, fromFoldable, union)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, neg, (∨))
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
+import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, Setter, definitely', error, shapeMismatch)
+import Util (type (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
@@ -158,17 +159,17 @@ eventData = target >>> unsafeEventData
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
 selector :: EventType -> Selector Val
-selector (EventType ev) = (setSel ev <$> _)
+selector (EventType ev) = (report <<< setSel ev <$> _)
    where
-   setSel :: String -> SelState 𝔹 -> SelState 𝔹
+   setSel :: String -> Endo (SelState 𝔹)
    setSel _ Inert = Inert
-   setSel "mousedown" (Reactive { persistent: a, transient: b }) = Reactive { persistent: neg a, transient: b }
-   -- NOTE: omitting 'transient: _' will bork (upgrade PureScript to pick up compiler fix)
-   setSel "mouseenter" (Reactive { persistent: a, transient: _ }) = Reactive { persistent: a, transient: true }
-   setSel "mouseleave" (Reactive { persistent: a, transient: _ }) = Reactive { persistent: a, transient: false }
-   setSel _ _ = error "Unsupported event type"
+   setSel s (Reactive sel)
+      | s == "mousedown" = Reactive (sel { persistent = neg sel.persistent })
+      | s == "mouseenter" = Reactive (sel { transient = true })
+      | s == "mouseleave" = Reactive (sel { transient = false })
+      | otherwise = error "Unsupported event type"
 
---report = spyWhen tracing.mouseEvent "Setting  to " show <<< cheatToSel
+   report = spyWhen tracing.mouseEvent "Setting  to " show
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
@@ -245,6 +246,9 @@ instance Show 𝕊 where
    show = genericShow
 
 derive instance Functor SelState
+derive instance Generic (SelState a) _
+instance Show a => Show (SelState a) where
+   show = genericShow
 
 instance Apply SelState where
    apply Inert Inert = Inert
