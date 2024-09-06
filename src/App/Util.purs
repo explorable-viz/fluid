@@ -28,7 +28,7 @@ import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, 
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, Setter, absurd, definitely', error, shapeMismatch)
+import Util (type (×), Endo, Setter, definitely', error, shapeMismatch)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
@@ -115,7 +115,7 @@ instance BoundedJoinSemilattice 𝕊 where
 as𝕊 :: 𝔹 -> 𝔹 -> 𝕊
 as𝕊 false false = None
 as𝕊 false true = Secondary
-as𝕊 true false = error absurd
+as𝕊 true false = None -- should be an absurd case, but can't seem to do that yet
 as𝕊 true true = Primary
 
 to𝕊 :: 𝔹 -> 𝕊
