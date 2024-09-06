@@ -44,20 +44,18 @@ type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selecti
 data SelState a
    = Inert
    | Reactive
-        ( { persistent :: a
-          , transient :: a
-          }
-        )
+        { persistent :: a
+        , transient :: a
+        }
 
 selState :: forall a. 𝔹 -> a -> a -> SelState a
 selState true _ _ = Inert
-selState false b1 b2 = Reactive ({ persistent: b1, transient: b2 })
+selState false b1 b2 = Reactive { persistent: b1, transient: b2 }
 
 persist :: forall a. Setter (SelState a) a
-persist δα = \sel ->
-   case sel of
-      Reactive s -> Reactive ({ persistent: δα s.persistent, transient: s.transient })
-      Inert -> Inert
+persist δα = case _ of
+   Reactive s -> Reactive ({ persistent: δα s.persistent, transient: s.transient })
+   Inert -> Inert
 
 data 𝕊 = None | Secondary | Primary
 
