@@ -18,6 +18,7 @@ import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
+import Lattice ((∨))
 import Primitive (string, unpack)
 import Util (Endo, nonEmpty, (!))
 import Util.Map (get)
@@ -125,7 +126,7 @@ lineChartHelpers (LineChart { plots }) =
       where
       LinePlot plot = plots ! i
       Point { x , y } = plot.points ! j
-      sel = snd y  -- oof: discard x
+      sel = snd x ∨ snd y
       col = nameCol name
       fill = if isPersistent sel then flip colorShade (-30) else identity
 
