@@ -219,16 +219,14 @@ selClasses = joinWith " " $
    ]
 
 selClassesFor :: SelState 𝕊 -> String
-selClassesFor Inert =
-   joinWith " " $ concat
-      [ [ css.inert ] ]
+selClassesFor Inert = css.inert
 selClassesFor t =
    joinWith " " $ concat
-      [ case (getPersistent t) of
+      [ case getPersistent t of
            Secondary -> [ css.sel.persistent.secondary ]
            Primary -> [ css.sel.persistent.primary ]
            None -> []
-      , case (getTransient t) of
+      , case getTransient t of
            Secondary -> [ css.sel.transient.secondary ]
            Primary -> [ css.sel.transient.primary ]
            None -> []
