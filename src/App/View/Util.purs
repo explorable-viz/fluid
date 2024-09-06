@@ -30,7 +30,7 @@ unpack (View vw) k = vw k
 
 selListener :: forall a. Setter Fig (Val (SelState 𝔹)) -> Redraw -> ViewSelSetter a -> Effect EventListener
 selListener figVal redraw selector =
-   eventListener (selectionEventData >>> uncurry (selector) >>> figVal >>> redraw)
+   eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Val (SelState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit

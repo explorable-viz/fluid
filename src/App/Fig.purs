@@ -63,13 +63,12 @@ setInputView x δvw fig = fig
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
-   (lift2 cross <$> v <*> v1) × ((to𝕊 <$> _) <$> (report γ1))
+   (lift2 as𝕊 <$> v <*> v1) × ((to𝕊 <$> _) <$> report γ1)
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    v1 × γ1 = (unwrap fig.linkedOutputs).bwd v
-
 selectionResult fig@{ γ, dir: LinkedInputs } =
-   ((to𝕊 <$> _) <$> report v1) × (lift2 cross <$> γ <*> γ1)
+   ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> γ <*> γ1)
    where
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    γ1 × v1 = (unwrap fig.linkedInputs).bwd γ
@@ -95,7 +94,14 @@ unprojExpr (EnvExpr _ e) = GC
    , bwd: \(EnvExpr γ _) -> γ
    }
 
-lift :: forall f g. Apply f => Apply g => f (𝔹 -> 𝔹 -> SelState 𝔹) -> g (𝔹 -> 𝔹 -> SelState 𝔹) -> GaloisConnection (f 𝔹) (g 𝔹) -> GaloisConnection (f (SelState 𝔹)) (g (SelState 𝔹))
+lift
+   :: forall f g
+    . Apply f
+   => Apply g
+   => f (𝔹 -> 𝔹 -> SelState 𝔹)
+   -> g (𝔹 -> 𝔹 -> SelState 𝔹)
+   -> GaloisConnection (f 𝔹) (g 𝔹)
+   -> GaloisConnection (f (SelState 𝔹)) (g (SelState 𝔹))
 lift selState_f selState_g (GC gc) = GC { bwd, fwd }
    where
    fwd :: f (SelState 𝔹) -> g (SelState 𝔹)
@@ -117,12 +123,10 @@ loadFig spec@{ inputs, imports, file, datasets } = do
       gc_dual = graphGC (withOp eval) >>> dual focus
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
-      --vInert = selState <$> neg (unwrap gc_dual).bwd (topOf γα)
-      γInert = selState <$> neg (unwrap gc).bwd (topOf outα)
       γ0 = botOf γα
       v0 = botOf outα
+      γInert = selState <$> neg (unwrap gc).bwd (topOf outα)
       vInert = selState <$> (unwrap gc).fwd γ0
-      --γInert = selState <$> (unwrap gc_dual).fwd v0
 
       linkedInputs = ((lift γInert vInert gc) `GC.(***)` identity) >>> meet >>> (lift vInert γInert gc_dual)
       linkedOutputs = ((lift vInert γInert gc_dual) `GC.(***)` identity) >>> meet >>> (lift γInert vInert gc)

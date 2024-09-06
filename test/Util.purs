@@ -2,7 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
-import App.Util (Selector, nullSelState, getPersistent)
+import App.Util (Selector, unselected, getPersistent)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -79,7 +79,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
 
-   let out0 = (δv (const nullSelState <$> v)) <#> getPersistent
+   let out0 = (δv (const unselected <$> v)) <#> getPersistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
@@ -132,7 +132,19 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    when testing.fwdDuals $
       checkEq benchNames.demBy_G_direct benchNames.demBy_G_suff_dual out2 out3
 
-checkEq :: forall m a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => MonadError Error m => String -> String -> a -> a -> m Unit
+checkEq
+   :: forall m a
+    . BotOf a a
+   => Neg a
+   => MeetSemilattice a
+   => Eq a
+   => Pretty a
+   => MonadError Error m
+   => String
+   -> String
+   -> a
+   -> a
+   -> m Unit
 checkEq op1 op2 x y = do
    let left × right = compare op1 op2 x y
    check (left == "") left

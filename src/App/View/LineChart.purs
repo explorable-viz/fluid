@@ -18,6 +18,7 @@ import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
+import Lattice ((∨))
 import Primitive (string, unpack)
 import Util (Endo, nonEmpty, (!))
 import Util.Map (get)
@@ -125,7 +126,7 @@ lineChartHelpers (LineChart { plots }) =
       where
       LinePlot plot = plots ! i
       Point { x , y } = plot.points ! j
-      sel = snd y  -- oof: discard x
+      sel = snd x ∨ snd y
       col = nameCol name
       fill = if isPersistent sel then flip colorShade (-30) else identity
 
@@ -259,7 +260,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
       }
 
 instance Reflect (Val (SelState 𝕊)) LinePlot where
-   from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
+   from (Val _ (Constr c (u : Nil))) | c == cLinePlot = record from u
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
