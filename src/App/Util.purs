@@ -113,25 +113,18 @@ instance JoinSemilattice 𝕊 where
 instance BoundedJoinSemilattice 𝕊 where
    bot = None
 
-as𝕊 :: SelState 𝔹 -> SelState 𝔹 -> SelState 𝕊
-as𝕊 Inert Inert = Inert
-as𝕊 (Reactive ({ persistent: a1, transient: b1 })) (Reactive ({ persistent: a2, transient: b2 })) =
-   Reactive ({ persistent: cross a1 a2, transient: cross b1 b2 })
-   where
-   cross :: 𝔹 -> 𝔹 -> 𝕊
-   cross false false = None
-   cross false true = Secondary
-   cross true false = error absurd
-   cross true true = Primary
-
-as𝕊 _ _ = shapeMismatch unit
+as𝕊 :: 𝔹 -> 𝔹 -> 𝕊
+as𝕊 false false = None
+as𝕊 false true = Secondary
+as𝕊 true false = error absurd
+as𝕊 true true = Primary
 
 to𝕊 :: 𝔹 -> 𝕊
 to𝕊 true = Primary
 to𝕊 false = None
 
-nullSelState :: SelState 𝔹
-nullSelState = Reactive ({ persistent: false, transient: false })
+unselected :: SelState 𝔹
+unselected = Reactive ({ persistent: false, transient: false })
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
