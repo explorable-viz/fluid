@@ -62,18 +62,18 @@ data 𝕊 = None | Secondary | Primary
 type Selectable a = a × SelState 𝕊
 
 isPrimary :: SelState 𝕊 -> 𝔹
+isPrimary Inert = false
 isPrimary (Reactive ({ persistent, transient })) =
    persistent == Primary || transient == Primary
-isPrimary Inert = false
 
 isSecondary :: SelState 𝕊 -> 𝔹
+isSecondary Inert = false
 isSecondary (Reactive ({ persistent, transient })) =
    persistent == Secondary || transient == Secondary
-isSecondary Inert = false
 
 isInert :: forall a. SelState a -> 𝔹
 isInert Inert = true
-isInert _ = false
+isInert (Reactive _) = false
 
 getPersistent :: forall a. BoundedJoinSemilattice a => SelState a -> a
 getPersistent Inert = bot
