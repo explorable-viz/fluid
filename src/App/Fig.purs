@@ -127,7 +127,7 @@ loadFig spec@{ inputs, imports, file, datasets } = do
 
       γ0 = botOf γα
       v0 = botOf outα
-      γInert = selState <$> neg (unwrap gc).bwd (topOf outα)
+      γInert = selState <$> neg (unwrap gc).bwd (topOf outα) -- want to simplify this for ease of computation (attempts similar to v0 result in a lack of inert data)
       vInert = selState <$> (unwrap gc).fwd γ0
 
       linkedInputs = ((lift γInert vInert gc) `GC.(***)` identity) >>> meet >>> (lift vInert γInert gc_dual)
