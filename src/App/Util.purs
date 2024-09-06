@@ -3,6 +3,7 @@ module App.Util where
 import Prelude hiding (absurd, join)
 
 import Bind (Bind, Var)
+import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
 import Data.Either (Either(..))
@@ -54,7 +55,7 @@ selState false b1 b2 = Reactive { persistent: b1, transient: b2 }
 
 persist :: forall a. Setter (SelState a) a
 persist δα = case _ of
-   Reactive s -> Reactive ({ persistent: δα s.persistent, transient: s.transient })
+   Reactive s -> Reactive { persistent: δα s.persistent, transient: s.transient }
    Inert -> Inert
 
 data 𝕊 = None | Secondary | Primary
@@ -63,12 +64,12 @@ type Selectable a = a × SelState 𝕊
 
 isPrimary :: SelState 𝕊 -> 𝔹
 isPrimary Inert = false
-isPrimary (Reactive ({ persistent, transient })) =
+isPrimary (Reactive { persistent, transient }) =
    persistent == Primary || transient == Primary
 
 isSecondary :: SelState 𝕊 -> 𝔹
 isSecondary Inert = false
-isSecondary (Reactive ({ persistent, transient })) =
+isSecondary (Reactive { persistent, transient }) =
    persistent == Secondary || transient == Secondary
 
 isInert :: forall a. SelState a -> 𝔹
@@ -77,11 +78,11 @@ isInert (Reactive _) = false
 
 getPersistent :: forall a. BoundedJoinSemilattice a => SelState a -> a
 getPersistent Inert = bot
-getPersistent (Reactive ({ persistent })) = persistent
+getPersistent (Reactive { persistent }) = persistent
 
 getTransient :: forall a. BoundedJoinSemilattice a => SelState a -> a
 getTransient Inert = bot
-getTransient (Reactive ({ transient })) = transient
+getTransient (Reactive { transient }) = transient
 
 isPersistent :: SelState 𝕊 -> 𝔹
 isPersistent = getPersistent >>> (_ /= None)
@@ -122,7 +123,7 @@ to𝕊 true = Primary
 to𝕊 false = None
 
 unselected :: SelState 𝔹
-unselected = Reactive ({ persistent: false, transient: false })
+unselected = Reactive { persistent: false, transient: false }
 
 get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (get x r))
@@ -161,9 +162,9 @@ selector (EventType ev) = (setSel ev <$> _)
    where
    setSel :: String -> SelState 𝔹 -> SelState 𝔹
    setSel _ Inert = Inert
-   setSel "mousedown" (Reactive ({ persistent: a, transient: b })) = Reactive ({ persistent: neg a, transient: b })
-   setSel "mouseenter" (Reactive ({ persistent: a, transient: _ })) = Reactive ({ persistent: a, transient: true })
-   setSel "mouseleave" (Reactive ({ persistent: a, transient: _ })) = Reactive ({ persistent: a, transient: false })
+   setSel "mousedown" (Reactive { persistent: a, transient: b }) = Reactive { persistent: neg a, transient: b }
+   setSel "mouseenter" (Reactive { persistent: a }) = Reactive { persistent: a, transient: true }
+   setSel "mouseleave" (Reactive { persistent: a }) = Reactive { persistent: a, transient: false }
    setSel _ _ = error "Unsupported event type"
 
 --report = spyWhen tracing.mouseEvent "Setting  to " show <<< cheatToSel
@@ -248,18 +249,16 @@ derive instance Functor SelState
 
 instance Apply SelState where
    apply Inert Inert = Inert
-   apply (Reactive (fs)) (Reactive (s)) =
-      Reactive ({ persistent: fs.persistent s.persistent, transient: fs.transient s.transient })
+   apply (Reactive fs) (Reactive s) =
+      Reactive { persistent: fs.persistent s.persistent, transient: fs.transient s.transient }
    apply _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (SelState a)
    where
-   join Inert Inert = Inert
-   join (Reactive { persistent: s1, transient: t1 }) (Reactive { persistent: s2, transient: t2 }) = Reactive ({ persistent: s1 ∨ s2, transient: t1 ∨ t2 })
-   join _ _ = error absurd
+   join = lift2 (∨)
 
 derive instance Eq a => Eq (SelState a)
 
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf Inert = highlightIf false
-   highlightIf (Reactive ({ persistent, transient })) = highlightIf (persistent ∨ transient)
+   highlightIf (Reactive { persistent, transient }) = highlightIf (persistent ∨ transient)
