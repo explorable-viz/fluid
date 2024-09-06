@@ -30,7 +30,7 @@ view title (Val _ (Constr c (u : Nil))) _
 view title u@(Val _ (Constr c _)) _
    | c == cNil || c == cCons =
         pack
-           (TableView { title, filter: true, colNames, table })
+           (TableView { title, filter: false, colNames, table })
         where
         records = record identity <$> from u
         colNames = headers records

@@ -11,7 +11,7 @@ function prim (v) {
 }
 
 function setSelState (
-   { rowKey, record_isUsed, cell_selClassesFor, val_selState },
+   { record_isUsed, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder, cellShadowStyles },
    filterToggleListener,
    {
       selClasses,
@@ -21,7 +21,7 @@ function setSelState (
    selListener
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
-      if (cell.colName != rowKey) {
+      if (cell.i != -1 && cell.j != -1) {
          const sel = val_selState(table[cell.i][cell.j])
          d3.select(this) // won't work inside arrow function :/
             .classed(selClasses, false)
@@ -43,6 +43,13 @@ function setSelState (
       .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
    rootElement.select('.filter-toggle')
       .on('mousedown', e => { filterToggleListener(e) })
+   
+   rootElement.selectAll('.table-cell').each(function (cell) {
+      d3.select(this)
+         .classed('has-right-border', hasRightBorder(table)(cell.i)(cell.j))
+         .classed('has-bottom-border', hasBottomBorder(table)(cell.i)(cell.j))
+         .attr('style', cellShadowStyles(table)(cell.i)(cell.j))
+   })
 }
 
 function drawTable_ (
@@ -86,11 +93,12 @@ function drawTable_ (
          tableHead
             .append('tr')
             .selectAll('th')
-               .data(colNames)
+               .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
                .enter()
                .append('th')
-               .text(colName => colName == rowKey ? (view.filter ? "▸" : "▾" ) : colName)
+               .text(cell => cell.colName == rowKey ? (view.filter ? "▸" : "▾" ) : cell.colName)
                .classed('filter-toggle toggle-button', colName => colName == rowKey)
+               .attr('class', 'table-cell')
 
          const rows = rootElement
             .append('tbody')
