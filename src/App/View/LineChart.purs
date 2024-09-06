@@ -259,7 +259,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
       }
 
 instance Reflect (Val (SelState 𝕊)) LinePlot where
-   from (Val _ (Constr c (u1 : Nil))) | c == cLinePlot = record from u1
+   from (Val _ (Constr c (u : Nil))) | c == cLinePlot = record from u
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
