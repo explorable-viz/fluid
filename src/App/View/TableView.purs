@@ -45,7 +45,6 @@ tableViewHelpers =
    rowKey :: String
    rowKey = "__n"
 
-   --helper for "we want to display this record"
    record_isDisplayable :: Dict (Val (SelState 𝕊)) -> FilterType -> Boolean
    record_isDisplayable r filtering = 
       not <<< isEmpty $ flip filterKeys r \k ->
@@ -83,7 +82,7 @@ instance Drawable TableView where
 -- convert mouse event data (here, always rowKey) to view change
 type FilterToggler = String -> Endo TableView
 
--- toggling the sides of a triangle
+-- toggling through FilterTypes
 filterToggler :: FilterToggler
 filterToggler _ (TableView view) = TableView view { filter = rot view.filter}
 
