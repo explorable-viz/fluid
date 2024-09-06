@@ -9,7 +9,7 @@ import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
-import Util (Setter, absurd, assert, definitely', error)
+import Util (Setter, absurd, assert, definitely, error)
 import Util.Map (update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
@@ -74,7 +74,7 @@ constrArg c n δv = unsafePartial $ case _ of
    Val α (Constr c' us) | c == c' ->
       Val α (Constr c us')
       where
-      us' = definitely' do
+      us' = definitely "constrArg out of bounds" do
          u1 <- us !! n
          updateAt n (δv u1) us
 
