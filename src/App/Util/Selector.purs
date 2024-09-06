@@ -15,7 +15,7 @@ import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection setters.
-type SelSetter f g = Setter (f (SelState 𝔹)) (g (SelState 𝔹))
+type SelSetter (f :: Type -> Type) (g :: Type -> Type) = Setter (f (SelState 𝔹)) (g (SelState 𝔹))
 type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
 
 fst :: SelSetter Val Val

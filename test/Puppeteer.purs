@@ -60,7 +60,7 @@ testScatterPlot page = do
       let expectedRadius = "3.2"
       testCondition (show' point) (radius == expectedRadius) ("radius == " <> show expectedRadius)
       let caption = T.Selector ("table#" <> fig <> "-input-renewables > caption.table-caption")
-      checkTextContent page caption "renewables (4 of 240)"
+      checkTextContent page caption "renewables (40 of 240)"
 
 testBarChartLineChart :: T.Page -> Aff Unit
 testBarChartLineChart page = do

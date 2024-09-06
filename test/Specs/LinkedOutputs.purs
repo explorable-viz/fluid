@@ -27,6 +27,7 @@ linkedOutputs_spec1 =
                              >>> listElement 1 (linePoint 2 (field f_y neg))
                              >>> listElement 2 (linePoint 2 (field f_y neg))
                              >>> listElement 3 (linePoint 2 (field f_y neg))
+
                         )
                    )
               )
@@ -74,9 +75,8 @@ linkedOutputs_cases =
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           }
-     , δ_out: snd (snd (fst neg))
-     , out_expect: snd (snd (fst neg))
-          >>> fst (fst neg >>> snd (fst neg))
+     , δ_out: snd neg
+     , out_expect: neg
      }
    , { spec:
           { datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
