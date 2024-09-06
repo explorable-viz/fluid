@@ -84,10 +84,10 @@ getTransient Inert = bot
 getTransient (Reactive ({ transient })) = transient
 
 isPersistent :: SelState 𝕊 -> 𝔹
-isPersistent a = getPersistent a /= None
+isPersistent = getPersistent >>> (_ /= None)
 
 isTransient :: SelState 𝕊 -> 𝔹
-isTransient a = getTransient a /= None
+isTransient = getTransient >>> (_ /= None)
 
 -- UI sometimes merges 𝕊 values, e.g. x and y coordinates in a scatter plot
 compare' :: 𝕊 -> 𝕊 -> Ordering
