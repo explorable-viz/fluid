@@ -67,7 +67,6 @@ selectionResult fig@{ v, dir: LinkedOutputs } =
    where
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    v1 × γ1 = (unwrap fig.linkedOutputs).bwd v
-
 selectionResult fig@{ γ, dir: LinkedInputs } =
    ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> γ <*> γ1)
    where
