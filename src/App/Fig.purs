@@ -117,10 +117,12 @@ loadFig spec@{ inputs, imports, file, datasets } = do
       gc_dual = graphGC (withOp eval) >>> dual focus
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
+      --vInert = selState <$> neg (unwrap gc_dual).bwd (topOf γα)
       γInert = selState <$> neg (unwrap gc).bwd (topOf outα)
-      vInert = selState <$> neg (unwrap gc_dual).bwd (topOf γα)
       γ0 = botOf γα
       v0 = botOf outα
+      vInert = selState <$> (unwrap gc).fwd γ0
+      --γInert = selState <$> (unwrap gc_dual).fwd v0
 
       linkedInputs = ((lift γInert vInert gc) `GC.(***)` identity) >>> meet >>> (lift vInert γInert gc_dual)
       linkedOutputs = ((lift vInert γInert gc_dual) `GC.(***)` identity) >>> meet >>> (lift γInert vInert gc)

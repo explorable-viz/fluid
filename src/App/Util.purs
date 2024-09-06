@@ -116,7 +116,7 @@ instance BoundedJoinSemilattice 𝕊 where
 cross :: 𝔹 -> 𝔹 -> 𝕊
 cross false false = None
 cross false true = Secondary
-cross true false = Secondary
+cross true false = None -- this should be error absurd, but see case #
 cross true true = Primary
 
 to𝕊 :: 𝔹 -> 𝕊
