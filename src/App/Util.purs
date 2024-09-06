@@ -163,8 +163,9 @@ selector (EventType ev) = (setSel ev <$> _)
    setSel :: String -> SelState 𝔹 -> SelState 𝔹
    setSel _ Inert = Inert
    setSel "mousedown" (Reactive { persistent: a, transient: b }) = Reactive { persistent: neg a, transient: b }
-   setSel "mouseenter" (Reactive { persistent: a }) = Reactive { persistent: a, transient: true }
-   setSel "mouseleave" (Reactive { persistent: a }) = Reactive { persistent: a, transient: false }
+   -- NOTE: omitting 'transient: _' will bork (upgrade PureScript to pick up compiler fix)
+   setSel "mouseenter" (Reactive { persistent: a, transient: _ }) = Reactive { persistent: a, transient: true }
+   setSel "mouseleave" (Reactive { persistent: a, transient: _ }) = Reactive { persistent: a, transient: false }
    setSel _ _ = error "Unsupported event type"
 
 --report = spyWhen tracing.mouseEvent "Setting  to " show <<< cheatToSel
