@@ -177,6 +177,7 @@ nav ul li a.active-page {
 /* Standalone figures have hardcoded zoom for presentation purposes. */
 .double-size {
    transform: scale(2);
+   transform-origin: top;
 }
 
 body.standalone {
