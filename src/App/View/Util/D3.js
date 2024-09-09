@@ -25,23 +25,22 @@ function canvasFont(el) {
    return `${computed(el, 'font-weight')} ${computed(el, 'font-size')} ${computed(el, 'font-family')}`
 }
 
-// https://stackoverflow.com/questions/118241 (could assume a div in document set up for this purpose)
-// Pure; side-effects should be unobservable
+// Could assume a div in document set up for this purpose. Pure; side-effects should be unobservable
 // Not especially reliable as might not inherit in situ styling that the actual text will
-export function textWidth (text) {
+export function textDimensions (text) {
    const div = document.createElement('div')
    div.textContent = text
    div.classList.add('legend-text')
    div.style.visibility = 'hidden'
    document.body.appendChild(div)
 
-   // re-use canvas object
-   const canvas = textWidth.canvas || (textWidth.canvas = document.createElement("canvas"))
+   const canvas = textDimensions.canvas || (textDimensions.canvas = document.createElement("canvas")) // re-use canvas
    const context = canvas.getContext("2d")
    context.font = canvasFont(div)
    const width = Math.ceil(context.measureText(text).width)
+   const height = Math.ceil(context.measureText(text).height)
    div.remove()
-   return width
+   return { width, height }
 }
 
 function createChild_ (parent, elementType, attrs) {

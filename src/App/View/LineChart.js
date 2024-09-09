@@ -25,7 +25,6 @@ function drawLineChart_ (
       divId,
       suffix,
       view: {
-         caption,   // String
          plots,     // Array LinePlot
       }
    },

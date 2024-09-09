@@ -33,6 +33,6 @@ foreign import createChildren :: forall a. D3Selection -> String -> Array a -> O
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 foreign import xAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
 foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
-foreign import textWidth :: String -> Int
+foreign import textDimensions :: String -> Dimensions
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> Effect String
 foreign import text :: String -> D3Selection -> Effect Unit
