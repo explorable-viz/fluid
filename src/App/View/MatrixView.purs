@@ -12,6 +12,7 @@ import Val (MatrixRep(..), Array2)
 
 --  (Rendered) matrices are required to have element type Int for now.
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
+
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import drawMatrix :: MatrixViewHelpers -> Renderer MatrixView

@@ -28,9 +28,13 @@ thead {
 }
 
 .table-cell {
-   border-radius: 2px;
+   border-radius: 0px;
    background-color: White;
    border-left: 2px solid white;
+}
+
+.table-cell.inert {
+   color: lightgrey;
 }
 
 .table-cell.selected-primary-persistent {
@@ -58,6 +62,10 @@ thead {
    display: inline;
 }
 
+.linked-text.inert {
+   fill: lightgrey;
+}
+
 .linked-text.selected-primary-persistent {
    background-color: #93E9BE;
 }
@@ -81,6 +89,11 @@ thead {
 .matrix-cell {
    stroke: DarkGray;
    fill: White;
+}
+
+.matrix-cell.inert {
+   stroke: DarkGray;
+   fill: rgb(185, 185, 185);
 }
 
 .matrix-cell.selected-primary-persistent {
@@ -123,6 +136,11 @@ thead {
 
 .scatterplot-point {
    fill: white;
+   stroke: black;
+}
+
+.scatterplot-point.inert {
+   fill: rgb(185,185,185);
    stroke: black;
 }
 

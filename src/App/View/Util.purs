@@ -13,7 +13,7 @@ import GaloisConnection (GaloisConnection)
 import Lattice (𝔹, Raw, (∨))
 import Module (File)
 import SExpr as S
-import Util (Endo, Setter)
+import Util (type (×), Endo, Setter)
 import Val (Env, Val)
 import Web.Event.EventTarget (EventListener, eventListener)
 
@@ -79,8 +79,8 @@ type Fig =
    , s :: Raw S.Expr
    , γ :: Env (SelState 𝔹)
    , v :: Val (SelState 𝔹)
-   , gc :: GaloisConnection (Env 𝔹) (Val 𝔹)
-   , gc_dual :: GaloisConnection (Val 𝔹) (Env 𝔹)
+   , linkedOutputs :: GaloisConnection (Val (SelState 𝔹) × Env (SelState 𝔹)) (Val (SelState 𝔹))
+   , linkedInputs :: GaloisConnection (Env (SelState 𝔹) × Val (SelState 𝔹)) (Env (SelState 𝔹))
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View

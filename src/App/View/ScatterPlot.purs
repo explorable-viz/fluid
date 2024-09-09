@@ -2,7 +2,7 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, SelState, Selectable, 𝕊, from, record, isPrimary, isSecondary)
+import App.Util (class Reflect, SelState, Selectable, 𝕊, from, isPrimary, isSecondary, record)
 import App.Util.Selector (ViewSelSetter, field, listElement, scatterPlot)
 import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
