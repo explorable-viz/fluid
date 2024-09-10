@@ -4,7 +4,6 @@ import * as d3 from "d3"
 
 function setSelState (
    { point_attrs },
-   { },
    rootElement,
    listener
 ) {
@@ -30,8 +29,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, legendHelpers, createLegend, createLegendEntry }
-         = lineChartHelpers
+      const { createRootElement, legendHelpers, createLegend, createLegendEntry } = lineChartHelpers
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -62,7 +60,7 @@ function drawLineChart_ (
             .attr('fill', ({ name }) => nameCol(name))
             .attrs(legendHelpers.circle_attrs)
       }
-      setSelState(lineChartHelpers, uiHelpers, rootElement, listener)
+      setSelState(lineChartHelpers, rootElement, listener)
    }
 }
 
