@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, nameCol, scaleLinear, text, textWidth, xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, nameCol, remove, scaleLinear, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -88,7 +88,10 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "dominant-baseline" ↦ "middle"
          , "text-anchor" ↦ "middle"
          ])
-      createAxes g
+      { x: xAxis, y: yAxis } <- createAxes g
+      remove xAxis
+      remove yAxis
+      void $ createAxes g
       createLines g
       createPoints g
       pure g
@@ -206,17 +209,18 @@ lineChartHelpers (LineChart { plots, caption }) =
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
 
-   createAxes :: D3Selection -> Effect Unit
+   createAxes :: D3Selection -> Effect (Coord D3Selection)
    createAxes parent = do
-      xAxis to ticks =<< createChild parent "g" (fromFoldable
+      x <- xAxis to ticks =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "x-axis"
          , "transform" ↦ translate { x: 0, y: interior.height }
          ]
       )
-      yAxis to ticks =<< createChild parent "g" (fromFoldable
+      y <- yAxis to ticks =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "y-axis"
          ]
       )
+      pure { x, y }
 
    createLegend :: D3Selection -> Effect D3Selection
    createLegend parent = do

@@ -60,6 +60,12 @@ function createChildren_ (parent, elementType, class_, data, attrFuns) {
    }
 }
 
+export function remove (element) {
+   return () => {
+      element.remove()
+   }
+}
+
 function line_ (to, points) {
    const line = d3.line()
       .x(d => to.x(d.x))
@@ -91,11 +97,11 @@ function nameCol_ (key, keys) {
    return colScale(keys.indexOf(key))
 }
 
-export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
-export var createChildren = x1 => x2 => x3 => x4 => x5 => createChildren_(x1, x2, x3, x4, x5)
-export var line = x1 => x2 => line_(x1, x2)
-export var xAxis = x1 => x2 => x3 => xAxis_(x1, x2, x3)
-export var yAxis = x1 => x2 => x3 => yAxis_(x1, x2, x3)
-export var nameCol = x1 => x2 => nameCol_(x1, x2)
-export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
-export var text = x1 => x2 => text_(x1, x2)
+export const createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
+export const createChildren = x1 => x2 => x3 => x4 => x5 => createChildren_(x1, x2, x3, x4, x5)
+export const line = x1 => x2 => line_(x1, x2)
+export const xAxis = x1 => x2 => x3 => xAxis_(x1, x2, x3)
+export const yAxis = x1 => x2 => x3 => yAxis_(x1, x2, x3)
+export const nameCol = x1 => x2 => nameCol_(x1, x2)
+export const scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
+export const text = x1 => x2 => text_(x1, x2)
