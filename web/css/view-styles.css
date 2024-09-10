@@ -13,6 +13,10 @@ thead {
    fill: none;
 }
 
+.legend-text {
+   font-size: 9pt;
+}
+
 .title-text {
    fill: Black;
    font-size: 9pt;

@@ -6,7 +6,7 @@ MultiView {|
          countryData = [ { x: c, bars: [ { y: "output", z: totalFor c data2015 } ] }
                         | c <- ["China", "USA", "Germany"] ]
       in BarChart {
-         caption: "Total output by country",
+         caption: "Total renewables output by country",
          data: countryData
       },
    "line-chart" :=
@@ -15,7 +15,7 @@ MultiView {|
          | year <- [2013..2018], row <- renewables,
          row.year == year, row.energyType == type, row.country == country
       ] in LineChart {
-         caption: "Output of USA relative to China",
+         caption: "Change in renewable energy output of USA relative to China",
          plots: [
             LinePlot { name: type, data: plot }
             | type <- ["Bio", "Hydro", "Solar", "Wind"],
