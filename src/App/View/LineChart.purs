@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, dimensions, line, nameCol, remove, scaleLinear, selectAll, text, textWidth, xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, createChild, createChildren, dimensions, line, nameCol, remove, scaleLinear, selectAll, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -231,8 +231,8 @@ lineChartHelpers (LineChart { plots, caption }) =
       )
       pure { x, y }
       where
-      ticks :: Coord Ticks
-      ticks = { x: max'.x - min'.x, y: 3.0 }
+      ticks :: Number
+      ticks = 3.0
 
       tickValues :: Coord (NonEmptyArray Number)
       tickValues = { x: points.x, y: points.y }

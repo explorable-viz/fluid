@@ -7,9 +7,6 @@ import Effect (Effect)
 import Foreign.Object (Object)
 import Util (Endo)
 
--- Try d3.ticks instead (taking (start, stop, count))
-type Ticks = Number
-
 type Margin =
    { top :: Int
    , right :: Int
@@ -40,8 +37,9 @@ foreign import createChildren :: forall a. D3Selection -> String -> String -> Ar
 foreign import remove :: D3Selection -> Effect Unit
 foreign import nameCol :: String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
+-- Currently have two different protocols for x and y axis -- will subsume into something more general
 foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> D3Selection -> Effect D3Selection
-foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect D3Selection
+foreign import yAxis :: Coord (Endo Number) -> Number -> D3Selection -> Effect D3Selection
 foreign import textDimensions :: String -> Dimensions
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import text :: String -> D3Selection -> Effect Unit
