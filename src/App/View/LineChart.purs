@@ -18,7 +18,6 @@ import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
-import Effect.Class.Console (log)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (string, unpack)
@@ -81,7 +80,7 @@ lineChartHelpers (LineChart { plots, caption }) =
          ]
       { x: xAxis, y: yAxis } <- createAxes svg
       let dims = dimensions (selectAll yAxis ".tick") # nonEmpty
-      let tickWidth = { x: maximum (dims <#> _.width) }
+      let _ = { x: maximum (dims <#> _.width) }
       remove xAxis
       remove yAxis
       g <- createChild svg "g" $ fromFoldable
@@ -187,9 +186,6 @@ lineChartHelpers (LineChart { plots, caption }) =
    ticks :: Coord Ticks
    ticks = { x: max'.x - min'.x, y: 3.0 }
 
-   legend :: Coord Int
-   legend = { x: interior.width + legend_sep, y: max 0 ((interior.height - legend_dims.height) / 2) }
-
    legend_entry_x :: Int
    legend_entry_x = 15
 
@@ -228,7 +224,11 @@ lineChartHelpers (LineChart { plots, caption }) =
    createLegend :: D3Selection -> Effect D3Selection
    createLegend parent = do
       legend' <- createChild parent "g" $ fromFoldable
-         [ "transform" ↦ translate { x: legend.x, y: legend.y } ]
+         [ "transform" ↦ translate
+            { x: interior.width + legend_sep
+            , y: max 0 ((interior.height - legend_dims.height) / 2)
+            }
+         ]
       void $ createChild legend' "rect" $ fromFoldable
          [ "class" ↦ "legend-box"
          , "x" ⟼ 0
