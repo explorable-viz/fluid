@@ -16,7 +16,7 @@ fig =
    { datasets: [ "tableData" ↦ "example/explainable-table" ]
    , imports: [  ]
    , file: File "explain-table"
-   , inputs: [ ]
+   , inputs: [ "tableData" ]
    }
 
 main :: Effect Unit
