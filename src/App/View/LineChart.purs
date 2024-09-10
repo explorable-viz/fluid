@@ -103,7 +103,7 @@ lineChartHelpers (LineChart { plots, caption }) =
          ]
       where
       entries :: Array { i :: Int, plot :: LinePlot }
-      entries = mapWithIndex (\i plot -> { i, plot }) plots
+      entries = flip mapWithIndex plots \i plot -> { i, plot }
 
    createPoints :: D3Selection -> Effect Unit
    createPoints parent =
@@ -111,7 +111,7 @@ lineChartHelpers (LineChart { plots, caption }) =
       where
       entries :: Array PointCoordinate
       entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
-         flip mapWithIndex ps \j _ -> { name: fst name, i, j } -- SIMPLIFY
+         flip mapWithIndex ps \j _ -> { name: fst name, i, j }
 
    point_attrs :: PointCoordinate -> Object String
    point_attrs { i, j, name } =
