@@ -31,7 +31,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, to, legendHelpers, line, createAxes, createLegend, createLegendEntry }
+      const { createRootElement, to, legendHelpers, line, createLegend, createLegendEntry }
          = lineChartHelpers
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
