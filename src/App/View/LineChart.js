@@ -49,7 +49,7 @@ function drawLineChart_ (
 
       if (rootElement.empty()) {
          ({ rootElement, interior } = createRootElement(div)(childId)())
-         const legend = createLegend(rootElement)()
+         const legend = createLegend(interior)(rootElement)()
          const legendEntry = createLegendEntry(legend)()
 
          legendEntry.append('text')

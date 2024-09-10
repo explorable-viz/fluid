@@ -41,7 +41,7 @@ type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions }
    , point_attrs :: Dimensions -> PointCoordinate -> Object String
    , legendHelpers :: LegendHelpers
-   , createLegend :: D3Selection -> Effect D3Selection
+   , createLegend :: Dimensions -> D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
    }
 
@@ -93,6 +93,14 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "id" ↦ childId
          ]
       void $ tickLength svg
+
+      let
+         interior :: Dimensions
+         interior =
+            { width: image.width - margin.left - margin.right - legend_dims.width
+            , height: image.height - margin.top - margin.bottom -- minus caption_height?
+            }
+
       g <- createChild svg "g" $ fromFoldable
          [ "transform" ↦ translate { x: margin.left, y: margin.top }
          ]
@@ -157,12 +165,6 @@ lineChartHelpers (LineChart { plots, caption }) =
 
    image :: Dimensions
    image = { width: max 330 (textWidth (fst caption)), height: 285 }
-
-   interior :: Dimensions
-   interior =
-      { width: image.width - margin.left - margin.right - legend_dims.width
-      , height: image.height - margin.top - margin.bottom -- minus caption_height?
-      }
 
    legend_dims :: Dimensions
    legend_dims =
@@ -232,8 +234,8 @@ lineChartHelpers (LineChart { plots, caption }) =
       )
       pure { x, y }
 
-   createLegend :: D3Selection -> Effect D3Selection
-   createLegend parent = do
+   createLegend :: Dimensions -> D3Selection -> Effect D3Selection
+   createLegend interior parent = do
       legend' <- createChild parent "g" $ fromFoldable
          [ "transform" ↦ translate
             { x: interior.width + legend_sep
