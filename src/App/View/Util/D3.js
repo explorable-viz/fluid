@@ -60,14 +60,11 @@ function createChildren_ (parent, elementType, class_, data, attrFuns) {
    }
 }
 
-// Maybe this can be pure?
 function line_ (to, points) {
-   return () => {
-      const line = d3.line()
-         .x(d => to.x(d.x))
-         .y(d => to.y(d.y))
-      return line(points)
-   }
+   const line = d3.line()
+      .x(d => to.x(d.x))
+      .y(d => to.y(d.y))
+   return line(points)
 }
 
 function xAxis_ (to, ticks, element) {
@@ -88,10 +85,15 @@ function text_ (string, element) {
    }
 }
 
+function nameCol_ (key, keys) {
+   return d3.scaleOrdinal(d3.schemePastel1)(keys.indexOf(key))
+}
+
 export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
 export var createChildren = x1 => x2 => x3 => x4 => x5 => createChildren_(x1, x2, x3, x4, x5)
 export var line = x1 => x2 => line_(x1, x2)
 export var xAxis = x1 => x2 => x3 => xAxis_(x1, x2, x3)
 export var yAxis = x1 => x2 => x3 => yAxis_(x1, x2, x3)
+export var nameCol = x1 => x2 => nameCol_(x1, x2)
 export var scaleLinear = x1 => x2 => d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
 export var text = x1 => x2 => text_(x1, x2)

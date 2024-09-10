@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, scaleLinear, text, textWidth, xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, nameCol, scaleLinear, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -42,7 +42,7 @@ type LineChartHelpers =
    , point_attrs :: (String -> String) -> PointCoordinate -> Object String
    , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
-   , line :: Coord (Endo Number) -> Array (Coord Number) -> Effect String
+   , line :: Coord (Endo Number) -> Array (Coord Number) -> String
    , createLegend :: D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
    }
@@ -74,15 +74,15 @@ lineChartHelpers (LineChart { plots, caption }) =
    where
    createRootElement :: D3Selection -> String -> Effect D3Selection
    createRootElement div childId = do
-      rootElement <- createChild div "svg" $ fromFoldable
+      svg <- createChild div "svg" $ fromFoldable
          [ "width" ⟼ image.width
          , "height" ⟼ image.height
          , "id" ↦ childId
          ]
-      g <- createChild rootElement "g" $ fromFoldable
+      g <- createChild svg "g" $ fromFoldable
          [ "transform" ↦ translate { x: margin.left, y: margin.top }
          ]
-      text (fst caption) =<< createChild rootElement "text" (fromFoldable
+      text (fst caption) =<< createChild svg "text" (fromFoldable
          [ "x" ⟼ image.width / 2
          , "y" ⟼ image.height - margin.bottom / 2
          , "class" ↦ "title-text"
@@ -90,23 +90,19 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "text-anchor" ↦ "middle"
          ])
       createAxes g
+      createLines g
       pure g
 
-{-
-   createLines :: D3Selection -> Effect D3Selection
+   createLines :: D3Selection -> Effect Unit
    createLines parent =
-      createChildren parent "path" "linechart-line" plots $ fromFoldable
-         []
-         rootElement.selectAll('.linechart-line')
-            .data([...plots.entries()])
-            .enter()
-            .append('path')
-            .attr('fill', 'none')
-            .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
-            .attr('stroke-width', 1)
-            .attr('class', '.linechart-line')
-            .attr('d', ([, plot]) => line(to)(plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))())
--}
+      void $ createChildren parent "path" "linechart-line" entries $ fromFoldable
+         [ "fill" ↦ const "none"
+         , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) (plots <#> unwrap >>> _.name >>> fst)
+         , "stroke-width" ↦ const "1"
+         , "d" ↦ \{ plot: LinePlot { points: ps } } -> line to (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y } )
+         ]
+      where
+      entries = mapWithIndex (\i plot -> { i, plot }) plots
 
    point_attrs :: (String -> String) -> PointCoordinate -> Object String
    point_attrs nameCol { i, j, name } =
