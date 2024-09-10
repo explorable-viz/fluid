@@ -40,9 +40,7 @@ newtype Point = Point (Coord (Selectable Number))
 type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect D3Selection
    , point_attrs :: PointCoordinate -> Object String
-   , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
-   , line :: Coord (Endo Number) -> Array (Coord Number) -> String
    , createLegend :: D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
    }
@@ -65,9 +63,7 @@ lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { plots, caption }) =
    { createRootElement
    , point_attrs
-   , to
    , legendHelpers
-   , line
    , createLegend
    , createLegendEntry
    }
@@ -93,10 +89,9 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "text-anchor" ↦ "middle"
          ])
       createAxes g
---      createLines g
+      createLines g
       pure g
 
-{-
    createLines :: D3Selection -> Effect Unit
    createLines parent =
       void $ createChildren parent "path" "linechart-line" entries $ fromFoldable
@@ -107,7 +102,7 @@ lineChartHelpers (LineChart { plots, caption }) =
          ]
       where
       entries = mapWithIndex (\i plot -> { i, plot }) plots
--}
+
    point_attrs :: PointCoordinate -> Object String
    point_attrs { i, j, name } =
       fromFoldable

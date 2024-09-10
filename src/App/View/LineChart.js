@@ -30,7 +30,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, to, legendHelpers, line, createLegend, createLegendEntry }
+      const { createRootElement, legendHelpers, createLegend, createLegendEntry }
          = lineChartHelpers
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
@@ -50,17 +50,6 @@ function drawLineChart_ (
 
       if (rootElement.empty()) {
          rootElement = createRootElement(div)(childId)()
-
-         rootElement.selectAll('.linechart-line')
-            .data([...plots.entries()])
-            .enter()
-            .append('path')
-            .attr('fill', 'none')
-            .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
-            .attr('stroke-width', 1)
-            .attr('class', 'linechart-line')
-            .attr('d', ([, plot]) => line(to)(plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } })))
-
          const points = [...plots.entries()].map(([i, plot]) =>
             [...plot.points.entries()].map(([j, { x, y } ]) => {
                return { name: val(plot.name), x: val(x), y: val(y), i, j }
