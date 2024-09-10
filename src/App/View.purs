@@ -29,6 +29,6 @@ view title (Val _ (Constr c (u : Nil))) _
         vws = view title <$> from u
 view title u@(Val _ (Constr c _)) _
    | c == cNil || c == cCons =
-        pack (TableView { title, filter: Interactive, table: record identity <$> from u })
+        pack (TableView { title, filter: Everything, table: record identity <$> from u })
 view title (Val _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
