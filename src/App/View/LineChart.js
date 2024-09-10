@@ -59,17 +59,16 @@ function drawLineChart_ (
             .attr('fill', 'none')
             .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
             .attr('stroke-width', 1)
-            .attr('class', 'line')
+            .attr('class', '.linechart-line')
             .attr('d', ([, plot]) => line(to)(plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))())
 
-         const i_plots = [...plots.entries()]
-         const points = i_plots.map(([i, plot]) => [...plot.points.entries()].map(([j, { x, y } ]) => {
-            return { name: val(plot.name), x: val(x), y: val(y), i, j }
-         }))
-         const points_flat = [].concat.apply([], points)
-
-         rootElement.selectAll('linechart-point')
-            .data(points_flat)
+         const points = [...plots.entries()].map(([i, plot]) =>
+            [...plot.points.entries()].map(([j, { x, y } ]) => {
+               return { name: val(plot.name), x: val(x), y: val(y), i, j }
+            })
+         )
+         rootElement.selectAll('.linechart-point')
+            .data([].concat.apply([], points))
             .enter()
             .append('circle')
             .attr('class', 'linechart-point')
