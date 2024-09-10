@@ -43,7 +43,6 @@ type LineChartHelpers =
    , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
    , line :: Coord (Endo Number) -> Array (Coord Number) -> Effect String
-   , createAxes :: D3Selection -> Effect Unit
    , createLegend :: D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
    }
@@ -69,7 +68,6 @@ lineChartHelpers (LineChart { plots, caption }) =
    , to
    , legendHelpers
    , line
-   , createAxes
    , createLegend
    , createLegendEntry
    }
@@ -91,7 +89,7 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "dominant-baseline" ↦ "middle"
          , "text-anchor" ↦ "middle"
          ])
-
+      createAxes g
       pure g
 
    point_attrs :: (String -> String) -> PointCoordinate -> Object String

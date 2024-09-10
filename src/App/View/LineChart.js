@@ -52,7 +52,7 @@ function drawLineChart_ (
       if (rootElement.empty()) {
          rootElement = createRootElement(div)(childId)()
 
-         rootElement.selectAll('line')
+         rootElement.selectAll('.linechart-line')
             .data([...plots.entries()])
             .enter()
             .append('path')
@@ -71,8 +71,6 @@ function drawLineChart_ (
                .append('circle')
                .attr('class', 'linechart-point')
          }
-
-         createAxes(rootElement)()
 
          const legend = createLegend(rootElement)()
          const legendEntry = createLegendEntry(legend)()
