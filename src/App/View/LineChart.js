@@ -62,15 +62,17 @@ function drawLineChart_ (
             .attr('class', 'line')
             .attr('d', ([, plot]) => line(to)(plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))())
 
-         for (const [i, plot] of plots.entries()) {
-            rootElement.selectAll('linechart-point')
-               .data([...plot.points.entries()].map(([j, { x, y } ]) => {
-                  return { name: val(plot.name), x: val(x), y: val(y), i, j }
-               }))
-               .enter()
-               .append('circle')
-               .attr('class', 'linechart-point')
-         }
+         const i_plots = [...plots.entries()]
+         const points = i_plots.map(([i, plot]) => [...plot.points.entries()].map(([j, { x, y } ]) => {
+            return { name: val(plot.name), x: val(x), y: val(y), i, j }
+         }))
+         const points_flat = [].concat.apply([], points)
+
+         rootElement.selectAll('linechart-point')
+            .data(points_flat)
+            .enter()
+            .append('circle')
+            .attr('class', 'linechart-point')
 
          const legend = createLegend(rootElement)()
          const legendEntry = createLegendEntry(legend)()
