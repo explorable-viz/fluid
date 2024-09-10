@@ -3,13 +3,14 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, 𝕊, as𝕊, selState, to𝕊)
+import App.Util (SelState, 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
 import Bind (Var)
+import Control.Apply (lift2)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap, wrap)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
@@ -18,13 +19,13 @@ import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection ((***)) as GC
 import GaloisConnection (GaloisConnection(..), dual, meet)
-import Lattice (𝔹, class BoundedMeetSemilattice, Raw, botOf, erase, topOf)
+import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topOf)
 import Module (File, initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
-import Util.Map (get, insert, lookup, mapWithKey)
+import Util.Map (insert, lookup, mapWithKey)
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
 
 str
@@ -60,6 +61,20 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
+selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
+selectionResult fig@{ v, dir: LinkedOutputs } =
+   (lift2 as𝕊 <$> v <*> v1) × ((to𝕊 <$> _) <$> report γ1)
+   where
+   v1 × γ1 = (unwrap fig.linkedOutputs).bwd v
+
+   report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
+selectionResult fig@{ γ, dir: LinkedInputs } =
+   ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> γ <*> γ1)
+   where
+   γ1 × v1 = (unwrap fig.linkedInputs).bwd γ
+
+   report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
+
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
@@ -71,23 +86,6 @@ drawFig divId fig = do
       selectionResult fig # unsafePartial
          (flip (view str.output) fig.out_view *** \(Env γ) -> mapWithKey view γ <*> fig.in_views)
 
-selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
-selectionResult fig@{ v, dir: LinkedOutputs } =
-   (as𝕊 <$> v <*> (selState <$> v1 <*> v2)) × (to𝕊 <$> report (selState <$> γ1 <*> γ2))
-   where
-   report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   GC gc = (fig.gc_dual `GC.(***)` identity) >>> meet >>> fig.gc
-   v1 × γ1 = gc.bwd (v <#> unwrap >>> _.persistent)
-   v2 × γ2 = gc.bwd (v <#> unwrap >>> _.transient)
-selectionResult fig@{ γ, dir: LinkedInputs } =
-   (to𝕊 <$> report (selState <$> v1 <*> v2)) ×
-      wrap (mapWithKey (\x v -> as𝕊 <$> get x γ <*> v) (unwrap (selState <$> γ1 <*> γ2)))
-   where
-   report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   GC gc = (fig.gc `GC.(***)` identity) >>> meet >>> fig.gc_dual
-   γ1 × v1 = gc.bwd (γ <#> unwrap >>> _.persistent)
-   γ2 × v2 = gc.bwd (γ <#> unwrap >>> _.transient)
-
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
    addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
@@ -97,6 +95,22 @@ unprojExpr (EnvExpr _ e) = GC
    { fwd: \γ -> EnvExpr γ (topOf e)
    , bwd: \(EnvExpr γ _) -> γ
    }
+
+lift
+   :: forall f g
+    . Apply f
+   => Apply g
+   => f (𝔹 -> 𝔹 -> SelState 𝔹)
+   -> g (𝔹 -> 𝔹 -> SelState 𝔹)
+   -> GaloisConnection (f 𝔹) (g 𝔹)
+   -> GaloisConnection (f (SelState 𝔹)) (g (SelState 𝔹))
+lift selState_f selState_g (GC gc) = GC { bwd, fwd }
+   where
+   fwd :: f (SelState 𝔹) -> g (SelState 𝔹)
+   fwd γ = selState_g <*> gc.fwd (γ <#> getPersistent) <*> gc.fwd (γ <#> getTransient)
+
+   bwd :: g (SelState 𝔹) -> f (SelState 𝔹)
+   bwd v = selState_f <*> gc.bwd (v <#> getPersistent) <*> gc.bwd (v <#> getTransient)
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ inputs, imports, file, datasets } = do
@@ -110,7 +124,16 @@ loadFig spec@{ inputs, imports, file, datasets } = do
       gc = focus >>> graphGC eval
       gc_dual = graphGC (withOp eval) >>> dual focus
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
-   pure { spec, s, γ: botOf γα, v: botOf outα, gc, gc_dual, dir: LinkedOutputs, in_views, out_view: Nothing }
+
+      γ0 = botOf γα
+      v0 = botOf outα
+      γInert = selState <$> neg (unwrap gc).bwd (topOf outα) -- want to simplify this for ease of computation (attempts similar to v0 result in a lack of inert data)
+      vInert = selState <$> (unwrap gc).fwd γ0
+
+      linkedInputs = ((lift γInert vInert gc) `GC.(***)` identity) >>> meet >>> (lift vInert γInert gc_dual)
+      linkedOutputs = ((lift vInert γInert gc_dual) `GC.(***)` identity) >>> meet >>> (lift γInert vInert gc)
+
+   pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
