@@ -14,7 +14,7 @@ import Util ((×))
 fig :: FigSpec
 fig =
    { datasets: [ "tableData" ↦ "example/explainable-table" ]
-   , imports: [  ]
+   , imports: []
    , file: File "explain-table"
    , inputs: [ "tableData" ]
    }
