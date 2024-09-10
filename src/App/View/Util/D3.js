@@ -37,10 +37,9 @@ export function textDimensions (text) {
    const canvas = textDimensions.canvas || (textDimensions.canvas = document.createElement("canvas")) // re-use canvas
    const context = canvas.getContext("2d")
    context.font = canvasFont(div)
-   const width = Math.ceil(context.measureText(text).width)
-   const height = Math.ceil(context.measureText(text).height)
+   const dims = context.measureText(text)
    div.remove()
-   return { width, height }
+   return { width: Math.ceil(dims.width), height: Math.ceil(dims.height) }
 }
 
 function createChild_ (parent, elementType, attrs) {

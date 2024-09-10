@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, scaleLinear, text, textDimensions, xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, scaleLinear, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -121,7 +121,7 @@ lineChartHelpers (LineChart { plots, caption }) =
    margin = { top: 15, right: 15, bottom: 40, left: 25 } -- hack left margin so x-axis ticks are ok
 
    image :: Dimensions
-   image = { width: max 330 ((textDimensions (fst caption)).width), height: 285 }
+   image = { width: max 330 (textWidth (fst caption)), height: 285 }
 
    interior :: Dimensions
    interior =
@@ -136,7 +136,7 @@ lineChartHelpers (LineChart { plots, caption }) =
       }
       where
       maxTextWidth :: Int
-      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> textDimensions >>> _.width # nonEmpty)
+      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth # nonEmpty)
 
       rightMargin :: Int
       rightMargin = 4

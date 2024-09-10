@@ -6,7 +6,7 @@ import Effect (Effect)
 import Foreign.Object (Object)
 import Util (Endo)
 
--- d3.js ticks are actually (start, stop, count) but we only supply first argument
+-- Documentation says d3.ticks takes (start, stop, count) but could only make it work with count
 type Ticks = Number
 
 type Margin =
@@ -25,6 +25,12 @@ type Dimensions =
    { width :: Int
    , height :: Int
    }
+
+textWidth :: String -> Int
+textWidth = textDimensions >>> _.width
+
+textHeight :: String -> Int
+textHeight = textDimensions >>> _.height
 
 foreign import data D3Selection :: Type
 
