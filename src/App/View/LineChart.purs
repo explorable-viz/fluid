@@ -7,7 +7,7 @@ import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElemen
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, nameCol, scaleLinear, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
-import Data.Array (mapWithIndex)
+import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Foldable (length)
 import Data.Int (toNumber)
@@ -90,7 +90,7 @@ lineChartHelpers (LineChart { plots, caption }) =
          ])
       createAxes g
       createLines g
---      createPoints g
+      createPoints g
       pure g
 
    createLines :: D3Selection -> Effect Unit
@@ -104,7 +104,7 @@ lineChartHelpers (LineChart { plots, caption }) =
       where
       entries :: Array { i :: Int, plot :: LinePlot }
       entries = mapWithIndex (\i plot -> { i, plot }) plots
-{-
+
    createPoints :: D3Selection -> Effect Unit
    createPoints parent =
       void $ createChildren parent "circle" "linechart-point" entries $ fromFoldable []
@@ -112,7 +112,7 @@ lineChartHelpers (LineChart { plots, caption }) =
       entries :: Array PointCoordinate
       entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
          flip mapWithIndex ps \j _ -> { name: fst name, i, j } -- SIMPLIFY
--}
+
    point_attrs :: PointCoordinate -> Object String
    point_attrs { i, j, name } =
       fromFoldable

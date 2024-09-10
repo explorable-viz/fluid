@@ -50,17 +50,6 @@ function drawLineChart_ (
 
       if (rootElement.empty()) {
          rootElement = createRootElement(div)(childId)()
-         const points = [...plots.entries()].map(([i, plot]) =>
-            [...plot.points.entries()].map(([j]) => {
-               return { name: val(plot.name), i, j }
-            })
-         )
-         rootElement.selectAll('.linechart-point')
-            .data([].concat.apply([], points))
-            .enter()
-            .append('circle')
-            .attr('class', 'linechart-point')
-
          const legend = createLegend(rootElement)()
          const legendEntry = createLegendEntry(legend)()
 
