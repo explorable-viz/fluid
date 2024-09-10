@@ -90,6 +90,7 @@ lineChartHelpers (LineChart { plots, caption }) =
          ])
       createAxes g
       createLines g
+--      createPoints g
       pure g
 
    createLines :: D3Selection -> Effect Unit
@@ -101,8 +102,17 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "d" ↦ \{ plot: LinePlot { points: ps } } -> line to (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y } )
          ]
       where
+      entries :: Array { i :: Int, plot :: LinePlot }
       entries = mapWithIndex (\i plot -> { i, plot }) plots
-
+{-
+   createPoints :: D3Selection -> Effect Unit
+   createPoints parent =
+      void $ createChildren parent "circle" "linechart-point" entries $ fromFoldable []
+      where
+      entries :: Array PointCoordinate
+      entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
+         flip mapWithIndex ps \j _ -> { name: fst name, i, j } -- SIMPLIFY
+-}
    point_attrs :: PointCoordinate -> Object String
    point_attrs { i, j, name } =
       fromFoldable
