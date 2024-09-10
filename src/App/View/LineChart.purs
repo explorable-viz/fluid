@@ -95,6 +95,9 @@ lineChartHelpers (LineChart { plots, caption }) =
       void $ tickLength svg
 
       let
+         margin :: Margin
+         margin = { top: 15, right: 15, bottom: 40, left: 25 } -- hack left margin so x-axis ticks are ok
+
          interior :: Dimensions
          interior =
             { width: image.width - margin.left - margin.right - legend_dims.width
@@ -159,9 +162,6 @@ lineChartHelpers (LineChart { plots, caption }) =
 
    legend_sep :: Int
    legend_sep = 15
-
-   margin :: Margin
-   margin = { top: 15, right: 15, bottom: 40, left: 25 } -- hack left margin so x-axis ticks are ok
 
    image :: Dimensions
    image = { width: max 330 (textWidth (fst caption)), height: 285 }
