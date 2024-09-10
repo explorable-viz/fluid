@@ -255,7 +255,7 @@ lineChartHelpers (LineChart { plots, caption }) =
          [ "transform" ↦ \{ i } -> translate { x: 0, y: legendHelpers.entry_y i } ]
       where
       entries :: Array LegendEntry
-      entries = mapWithIndex ((\i (LinePlot { name }) -> { i, name: fst name })) plots
+      entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
 
    lineHeight :: Int
    lineHeight = 15
