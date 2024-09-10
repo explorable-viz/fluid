@@ -18,6 +18,7 @@ import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
+import Effect.Class.Console (log)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (string, unpack)
@@ -74,16 +75,15 @@ lineChartHelpers (LineChart { plots, caption }) =
    names :: Array String
    names = plots <#> unwrap >>> _.name >>> fst
 
-   -- Assumes tick dimensions are independent of "range" that axes map into
+   -- Assume tick dimensions are independent of "range" that axes map into
    tickLength :: D3Selection -> Effect (Coord Int)
    tickLength parent = do
       { x: xAxis, y: yAxis } <- createAxes image parent
+      let xDims = dimensions (selectAll xAxis ".tick")
+          yDims = dimensions (selectAll yAxis ".tick")
       remove xAxis
       remove yAxis
-      pure
-         { x: maximum (dimensions (selectAll xAxis ".tick") # nonEmpty <#> _.height)
-         , y: maximum (dimensions (selectAll yAxis ".tick") # nonEmpty <#> _.width)
-         }
+      pure { x: maximum (xDims # nonEmpty <#> _.height), y: maximum (yDims # nonEmpty <#> _.width) }
 
    createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions }
    createRootElement div childId = do
@@ -92,11 +92,11 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "height" ⟼ image.height
          , "id" ↦ childId
          ]
-      void $ tickLength svg
-
+      tickLen <- tickLength svg
+      log (show tickLen)
       let
          margin :: Margin
-         margin = { top: 15, right: 15, bottom: 40, left: 25 } -- hack left margin so x-axis ticks are ok
+         margin = { top: 15, right: 15, bottom: 40, left: tickLen.y }
 
          interior :: Dimensions
          interior =

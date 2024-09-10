@@ -99,7 +99,7 @@ function nameCol_ (key, keys) {
 
 export function dimensions (sel) {
    return sel.nodes().map(node => {
-      let { width, height } = node.getBoundingClientRect()
+      let { width, height } = node.getBBox()
       return { width: Math.ceil(width), height: Math.ceil(height) }
    })
 }
