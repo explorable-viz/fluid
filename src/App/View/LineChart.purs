@@ -56,6 +56,9 @@ type LegendEntry =
    , name :: String
    }
 
+-- 0-based indices of line plot and point within line plot; see data binding in .js
+type PointCoordinate = { i :: Int, j :: Int, name :: String }
+
 translate :: Coord Int -> String
 translate { x, y } = "translate(" <> show x <> ", " <> show y <> ")"
 
@@ -255,6 +258,10 @@ lineChartHelpers (LineChart { plots, caption }) =
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
+-- ======================
+-- boilerplate
+-- ======================
+
 instance Drawable LineChart where
    draw rSpec@{ view } figVal _ redraw =
       drawLineChart (lineChartHelpers view) uiHelpers rSpec =<< selListener figVal redraw point
@@ -283,9 +290,6 @@ instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
 
 instance Reflect (Val (SelState 𝕊)) LinePlot where
    from (Val _ (Constr c (u : Nil))) | c == cLinePlot = record from u
-
--- 0-based indices of line plot and point within line plot; see data binding in .js
-type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
 derive instance Newtype Point _
 derive instance Newtype LinePlot _
