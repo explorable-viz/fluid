@@ -71,6 +71,14 @@ lineChartHelpers (LineChart { plots, caption }) =
    names :: Array String
    names = plots <#> unwrap >>> _.name >>> fst
 
+   tickWidth :: D3Selection -> Effect { x :: Int }
+   tickWidth parent = do
+      { x: xAxis, y: yAxis } <- createAxes parent
+      let dims = dimensions (selectAll yAxis ".tick") # nonEmpty
+      remove xAxis
+      remove yAxis
+      pure { x: maximum (dims <#> _.width) }
+
    createRootElement :: D3Selection -> String -> Effect D3Selection
    createRootElement div childId = do
       svg <- createChild div "svg" $ fromFoldable
@@ -78,11 +86,7 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "height" ⟼ image.height
          , "id" ↦ childId
          ]
-      { x: xAxis, y: yAxis } <- createAxes svg
-      let dims = dimensions (selectAll yAxis ".tick") # nonEmpty
-      let _ = { x: maximum (dims <#> _.width) }
-      remove xAxis
-      remove yAxis
+      void $ tickWidth svg
       g <- createChild svg "g" $ fromFoldable
          [ "transform" ↦ translate { x: margin.left, y: margin.top }
          ]
