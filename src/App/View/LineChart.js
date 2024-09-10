@@ -5,11 +5,12 @@ import * as d3 from "d3"
 function setSelState (
    { point_attrs },
    rootElement,
+   interior,
    listener
 ) {
    rootElement.selectAll('.linechart-point').each(function (point) {
       d3.select(this) // won't work inside arrow function :/
-         .attrs(point_attrs(point))
+         .attrs(point_attrs(interior)(point))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -47,7 +48,7 @@ function drawLineChart_ (
       }
 
       if (rootElement.empty()) {
-         rootElement = createRootElement(div)(childId)()
+         ({ rootElement, interior } = createRootElement(div)(childId)())
          const legend = createLegend(rootElement)()
          const legendEntry = createLegendEntry(legend)()
 
@@ -60,7 +61,7 @@ function drawLineChart_ (
             .attr('fill', ({ name }) => nameCol(name))
             .attrs(legendHelpers.circle_attrs)
       }
-      setSelState(lineChartHelpers, rootElement, listener)
+      setSelState(lineChartHelpers, rootElement, interior, listener)
    }
 }
 

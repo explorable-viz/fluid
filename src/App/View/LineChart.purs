@@ -38,8 +38,8 @@ newtype LinePlot = LinePlot
 newtype Point = Point (Coord (Selectable Number))
 
 type LineChartHelpers =
-   { createRootElement :: D3Selection -> String -> Effect D3Selection
-   , point_attrs :: PointCoordinate -> Object String
+   { createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions }
+   , point_attrs :: Dimensions -> PointCoordinate -> Object String
    , legendHelpers :: LegendHelpers
    , createLegend :: D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
@@ -74,9 +74,10 @@ lineChartHelpers (LineChart { plots, caption }) =
    names :: Array String
    names = plots <#> unwrap >>> _.name >>> fst
 
+   -- Assumes tick dimensions are independent of "range" that axes map into
    tickLength :: D3Selection -> Effect (Coord Int)
    tickLength parent = do
-      { x: xAxis, y: yAxis } <- createAxes parent
+      { x: xAxis, y: yAxis } <- createAxes image parent
       remove xAxis
       remove yAxis
       pure
@@ -84,7 +85,7 @@ lineChartHelpers (LineChart { plots, caption }) =
          , y: maximum (dimensions (selectAll yAxis ".tick") # nonEmpty <#> _.width)
          }
 
-   createRootElement :: D3Selection -> String -> Effect D3Selection
+   createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions }
    createRootElement div childId = do
       svg <- createChild div "svg" $ fromFoldable
          [ "width" ⟼ image.width
@@ -102,18 +103,19 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "dominant-baseline" ↦ "middle"
          , "text-anchor" ↦ "middle"
          ])
-      void $ createAxes g
-      createLines g
+      void $ createAxes interior g
+      createLines interior g
       createPoints g
-      pure g
+      pure { rootElement: g, interior }
 
-   createLines :: D3Selection -> Effect Unit
-   createLines parent =
+   createLines :: Dimensions -> D3Selection -> Effect Unit
+   createLines range parent =
       void $ createChildren parent "path" "linechart-line" entries $ fromFoldable
          [ "fill" ↦ const "none"
          , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) names
          , "stroke-width" ↦ const "1"
-         , "d" ↦ \{ plot: LinePlot { points: ps } } -> line to (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y } )
+         , "d" ↦ \{ plot: LinePlot { points: ps } } ->
+            line (to range) (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y } )
          ]
       where
       entries :: Array { i :: Int, plot :: LinePlot }
@@ -127,15 +129,15 @@ lineChartHelpers (LineChart { plots, caption }) =
       entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
          flip mapWithIndex ps \j _ -> { name: fst name, i, j }
 
-   point_attrs :: PointCoordinate -> Object String
-   point_attrs { i, j, name } =
+   point_attrs :: Dimensions -> PointCoordinate -> Object String
+   point_attrs range { i, j, name } =
       fromFoldable
          [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
          , "stroke-width" ⟼ 1
          , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
          , "fill" ↦ fill col
-         , "cx" ⟼ to.x (fst x)
-         , "cy" ⟼ to.y (fst y)
+         , "cx" ⟼ (to range).x (fst x)
+         , "cy" ⟼ (to range).y (fst y)
          ]
       where
       LinePlot plot = plots ! i
@@ -186,10 +188,10 @@ lineChartHelpers (LineChart { plots, caption }) =
       ps :: NonEmptyArray Point
       ps = plots <#> unwrap >>> _.points # join >>> nonEmpty
 
-   to :: Coord (Endo Number)
-   to =
-      { x: scaleLinear { min: min'.x, max: max'.x } { min: 0.0, max: toNumber interior.width }
-      , y: scaleLinear { min: 0.0, max: max'.y } { min: toNumber interior.height, max: 0.0 }
+   to :: Dimensions -> Coord (Endo Number)
+   to range =
+      { x: scaleLinear { min: min'.x, max: max'.x } { min: 0.0, max: toNumber range.width }
+      , y: scaleLinear { min: 0.0, max: max'.y } { min: toNumber range.height, max: 0.0 }
       }
 
    ticks :: Coord Ticks
@@ -217,14 +219,14 @@ lineChartHelpers (LineChart { plots, caption }) =
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
 
-   createAxes :: D3Selection -> Effect (Coord D3Selection)
-   createAxes parent = do
-      x <- xAxis to ticks =<< createChild parent "g" (fromFoldable
+   createAxes :: Dimensions -> D3Selection -> Effect (Coord D3Selection)
+   createAxes range parent = do
+      x <- xAxis (to range) ticks =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "x-axis"
-         , "transform" ↦ translate { x: 0, y: interior.height }
+         , "transform" ↦ translate { x: 0, y: range.height }
          ]
       )
-      y <- yAxis to ticks =<< createChild parent "g" (fromFoldable
+      y <- yAxis (to range) ticks =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "y-axis"
          ]
       )
