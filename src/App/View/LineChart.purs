@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, line, nameCol, remove, scaleLinear, text, textWidth, xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, Ticks, createChild, createChildren, dimensions, line, nameCol, remove, scaleLinear, selectAll, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -18,6 +18,7 @@ import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
+import Effect.Class.Console (log)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (string, unpack)
@@ -78,6 +79,11 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "height" ⟼ image.height
          , "id" ↦ childId
          ]
+      { x: xAxis, y: yAxis } <- createAxes svg
+      let dims = dimensions (selectAll yAxis ".tick") # nonEmpty
+      let tickWidth = { x: maximum (dims <#> _.width) }
+      remove xAxis
+      remove yAxis
       g <- createChild svg "g" $ fromFoldable
          [ "transform" ↦ translate { x: margin.left, y: margin.top }
          ]
@@ -88,9 +94,6 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "dominant-baseline" ↦ "middle"
          , "text-anchor" ↦ "middle"
          ])
-      { x: xAxis, y: yAxis } <- createAxes g
-      remove xAxis
-      remove yAxis
       void $ createAxes g
       createLines g
       createPoints g

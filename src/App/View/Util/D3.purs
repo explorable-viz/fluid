@@ -44,3 +44,5 @@ foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Eff
 foreign import textDimensions :: String -> Dimensions
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import text :: String -> D3Selection -> Effect Unit
+foreign import dimensions :: D3Selection -> Array Dimensions
+foreign import selectAll :: D3Selection -> String -> D3Selection

@@ -97,6 +97,19 @@ function nameCol_ (key, keys) {
    return colScale(keys.indexOf(key))
 }
 
+export function dimensions (sel) {
+   return sel.nodes().map(node => {
+      let { width, height } = node.getBoundingClientRect()
+      return { width: Math.ceil(width), height: Math.ceil(height) }
+   })
+}
+
+export function selectAll (sel) {
+   return selector => {
+      return sel.selectAll(selector)
+   }
+}
+
 export const createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
 export const createChildren = x1 => x2 => x3 => x4 => x5 => createChildren_(x1, x2, x3, x4, x5)
 export const line = x1 => x2 => line_(x1, x2)
