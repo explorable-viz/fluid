@@ -39,7 +39,7 @@ newtype Point = Point (Coord (Selectable Number))
 
 type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect D3Selection
-   , point_attrs :: (String -> String) -> PointCoordinate -> Object String
+   , point_attrs :: PointCoordinate -> Object String
    , to :: Coord (Endo Number)
    , legendHelpers :: LegendHelpers
    , line :: Coord (Endo Number) -> Array (Coord Number) -> String
@@ -72,6 +72,9 @@ lineChartHelpers (LineChart { plots, caption }) =
    , createLegendEntry
    }
    where
+   names :: Array String
+   names = plots <#> unwrap >>> _.name >>> fst
+
    createRootElement :: D3Selection -> String -> Effect D3Selection
    createRootElement div childId = do
       svg <- createChild div "svg" $ fromFoldable
@@ -90,22 +93,23 @@ lineChartHelpers (LineChart { plots, caption }) =
          , "text-anchor" ↦ "middle"
          ])
       createAxes g
-      createLines g
+--      createLines g
       pure g
 
+{-
    createLines :: D3Selection -> Effect Unit
    createLines parent =
       void $ createChildren parent "path" "linechart-line" entries $ fromFoldable
          [ "fill" ↦ const "none"
-         , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) (plots <#> unwrap >>> _.name >>> fst)
+         , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) names
          , "stroke-width" ↦ const "1"
          , "d" ↦ \{ plot: LinePlot { points: ps } } -> line to (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y } )
          ]
       where
       entries = mapWithIndex (\i plot -> { i, plot }) plots
-
-   point_attrs :: (String -> String) -> PointCoordinate -> Object String
-   point_attrs nameCol { i, j, name } =
+-}
+   point_attrs :: PointCoordinate -> Object String
+   point_attrs { i, j, name } =
       fromFoldable
          [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
          , "stroke-width" ⟼ 1
@@ -118,7 +122,7 @@ lineChartHelpers (LineChart { plots, caption }) =
       LinePlot plot = plots ! i
       Point { x , y } = plot.points ! j
       sel = snd x ∨ snd y
-      col = nameCol name
+      col = nameCol name names
       fill = if isPersistent sel then flip colorShade (-30) else identity
 
    point_smallRadius :: Int

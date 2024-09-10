@@ -85,8 +85,10 @@ function text_ (string, element) {
    }
 }
 
+const colScale = d3.scaleOrdinal(d3.schemePastel1) // stateful but purify by allocating once
+
 function nameCol_ (key, keys) {
-   return d3.scaleOrdinal(d3.schemePastel1)(keys.indexOf(key))
+   return colScale(keys.indexOf(key))
 }
 
 export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
