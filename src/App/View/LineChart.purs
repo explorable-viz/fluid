@@ -92,6 +92,22 @@ lineChartHelpers (LineChart { plots, caption }) =
       createAxes g
       pure g
 
+{-
+   createLines :: D3Selection -> Effect D3Selection
+   createLines parent =
+      createChildren parent "path" "linechart-line" plots $ fromFoldable
+         []
+         rootElement.selectAll('.linechart-line')
+            .data([...plots.entries()])
+            .enter()
+            .append('path')
+            .attr('fill', 'none')
+            .attr('stroke', ([, plot]) => nameCol(val(plot.name)))
+            .attr('stroke-width', 1)
+            .attr('class', '.linechart-line')
+            .attr('d', ([, plot]) => line(to)(plot.points.map(({ x, y }) => { return { x: val(x), y: val(y) } }))())
+-}
+
    point_attrs :: (String -> String) -> PointCoordinate -> Object String
    point_attrs nameCol { i, j, name } =
       fromFoldable
@@ -212,7 +228,7 @@ lineChartHelpers (LineChart { plots, caption }) =
 
    createLegendEntry :: D3Selection -> Effect D3Selection
    createLegendEntry parent =
-      createChildren parent "g" entries $ fromFoldable
+      createChildren parent "g" "legend-entry" entries $ fromFoldable
          [ "transform" ↦ \{ i } -> translate { x: 0, y: legendHelpers.entry_y i } ]
       where
       entries :: Array LegendEntry

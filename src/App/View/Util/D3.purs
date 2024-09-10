@@ -35,7 +35,7 @@ textHeight = textDimensions >>> _.height
 foreign import data D3Selection :: Type
 
 foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
-foreign import createChildren :: forall a. D3Selection -> String -> Array a -> Object (a -> String) -> Effect D3Selection
+foreign import createChildren :: forall a. D3Selection -> String -> String -> Array a -> Object (a -> String) -> Effect D3Selection
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 foreign import xAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit
 foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect Unit

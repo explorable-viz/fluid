@@ -48,13 +48,14 @@ function createChild_ (parent, elementType, attrs) {
    }
 }
 
-function createChildren_ (parent, elementType, data, attrFuns) {
+function createChildren_ (parent, elementType, class_, data, attrFuns) {
    return () => {
       return parent
-         .selectAll(elementType)
+         .selectAll("." + class_)
          .data(data)
          .enter()
          .append(elementType)
+         .classed(class_, true)
          .attrFuns(attrFuns)
    }
 }
@@ -88,7 +89,7 @@ function text_ (string, element) {
 }
 
 export var createChild = x1 => x2 => x3 => createChild_(x1, x2, x3)
-export var createChildren = x1 => x2 => x3 => x4 => createChildren_(x1, x2, x3, x4)
+export var createChildren = x1 => x2 => x3 => x4 => x5 => createChildren_(x1, x2, x3, x4, x5)
 export var line = x1 => x2 => line_(x1, x2)
 export var xAxis = x1 => x2 => x3 => xAxis_(x1, x2, x3)
 export var yAxis = x1 => x2 => x3 => yAxis_(x1, x2, x3)
