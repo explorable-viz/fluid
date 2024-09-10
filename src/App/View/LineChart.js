@@ -51,8 +51,8 @@ function drawLineChart_ (
       if (rootElement.empty()) {
          rootElement = createRootElement(div)(childId)()
          const points = [...plots.entries()].map(([i, plot]) =>
-            [...plot.points.entries()].map(([j, { x, y } ]) => {
-               return { name: val(plot.name), x: val(x), y: val(y), i, j }
+            [...plot.points.entries()].map(([j]) => {
+               return { name: val(plot.name), i, j }
             })
          )
          rootElement.selectAll('.linechart-point')
