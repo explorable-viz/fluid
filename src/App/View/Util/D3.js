@@ -75,13 +75,13 @@ function line_ (to, points) {
 
 function xAxis_ (to, ticks, parent) {
    return () => {
-      return parent.call(d3.axisBottom(to.x).ticks(ticks.x).tickFormat(d3.format('d')))
+      return parent.call(d3.axisBottom(to.x).tickValues(ticks).tickFormat(d3.format('d')))
    }
 }
 
-function yAxis_ (to, ticks, parent) {
+function yAxis_ (to, nTicks, parent) {
    return () => {
-      return parent.call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(ticks.y).tickFormat(d3.format('.1f')))
+      return parent.call(d3.axisLeft(to.y).tickSizeOuter(0).ticks(nTicks.y).tickFormat(d3.format('.1f')))
    }
 }
 

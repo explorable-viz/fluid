@@ -196,9 +196,6 @@ lineChartHelpers (LineChart { plots, caption }) =
       , y: scaleLinear { min: 0.0, max: max'.y } { min: toNumber range.height, max: 0.0 }
       }
 
-   ticks :: Coord Ticks
-   ticks = { x: max'.x - min'.x, y: 3.0 }
-
    legend_entry_x :: Int
    legend_entry_x = 15
 
@@ -223,7 +220,7 @@ lineChartHelpers (LineChart { plots, caption }) =
 
    createAxes :: Dimensions -> D3Selection -> Effect (Coord D3Selection)
    createAxes range parent = do
-      x <- xAxis (to range) ticks =<< createChild parent "g" (fromFoldable
+      x <- xAxis (to range) tickValues.x =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "x-axis"
          , "transform" ↦ translate { x: 0, y: range.height }
          ]
@@ -233,6 +230,12 @@ lineChartHelpers (LineChart { plots, caption }) =
          ]
       )
       pure { x, y }
+      where
+      ticks :: Coord Ticks
+      ticks = { x: max'.x - min'.x, y: 3.0 }
+
+      tickValues :: Coord (NonEmptyArray Number)
+      tickValues = { x: points.x, y: points.y }
 
    createLegend :: Dimensions -> D3Selection -> Effect D3Selection
    createLegend interior parent = do

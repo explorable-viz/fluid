@@ -2,11 +2,12 @@ module App.View.Util.D3 where
 
 import Prelude
 
+import Data.Array.NonEmpty (NonEmptyArray)
 import Effect (Effect)
 import Foreign.Object (Object)
 import Util (Endo)
 
--- Documentation says d3.ticks takes (start, stop, count) but could only make it work with count
+-- Try d3.ticks instead (taking (start, stop, count))
 type Ticks = Number
 
 type Margin =
@@ -39,7 +40,7 @@ foreign import createChildren :: forall a. D3Selection -> String -> String -> Ar
 foreign import remove :: D3Selection -> Effect Unit
 foreign import nameCol :: String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
-foreign import xAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect D3Selection
+foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> D3Selection -> Effect D3Selection
 foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect D3Selection
 foreign import textDimensions :: String -> Dimensions
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
