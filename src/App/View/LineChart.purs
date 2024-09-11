@@ -67,7 +67,7 @@ type LegendEntry =
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
 lineChartHelpers :: LineChart -> LineChartHelpers
-lineChartHelpers (LineChart { size, plots, caption }) =
+lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    { createRootElement
    , point_attrs
    , legendHelpers
@@ -111,9 +111,7 @@ lineChartHelpers (LineChart { size, plots, caption }) =
             , height: height - margin.top - margin.bottom -- minus caption_height?
             }
 
-      g <- createChild svg "g" $ fromFoldable
-         [ translate { x: margin.left, y: margin.top }
-         ]
+      g <- createChild svg "g" $ fromFoldable [ translate { x: margin.left, y: margin.top } ]
       text (fst caption) =<< createChild svg "text"
          ( fromFoldable
               [ "x" ⟼ width / 2
@@ -228,20 +226,24 @@ lineChartHelpers (LineChart { size, plots, caption }) =
 
    createAxes :: Dimensions Int -> D3Selection -> Effect (Coord D3Selection)
    createAxes range parent = do
+      let Point { x: xLabels, y: yLabels } = tickLabels
       x <- xAxis (to range) (nub points.x) =<< createChild parent "g"
          ( fromFoldable
               [ "class" ↦ "x-axis"
               , translate { x: 0, y: (unwrap range).height }
               ]
          )
-      let xLabels = selectAll x "text"
-      void $ attrs xLabels $ fromFoldable [ rotate 45 ]
-      void $ styles xLabels $ fromFoldable [ "text-anchor" ↦ "start" ]
-      y <- yAxis (to range) 3.0 =<< createChild parent "g"
-         ( fromFoldable
-              [ "class" ↦ "y-axis"
-              ]
-         )
+      when (fst xLabels == Rotated) do
+         let labels = selectAll x "text"
+         void $ attrs labels $ fromFoldable [ rotate 45 ]
+         void $ styles labels $ fromFoldable [ "text-anchor" ↦ "start" ]
+
+      y <- yAxis (to range) 3.0 =<< createChild parent "g" (fromFoldable [ "class" ↦ "y-axis" ])
+      when (fst yLabels == Rotated) do
+         let labels = selectAll y "text"
+         void $ attrs labels $ fromFoldable [ rotate 45 ]
+         void $ styles labels $ fromFoldable [ "text-anchor" ↦ "end" ]
+
       pure { x, y }
 
    createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
@@ -284,6 +286,8 @@ instance Drawable LineChart where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =
          linePoint j >>> listElement i >>> field f_plots >>> lineChart
+
+derive instance Eq Orientation
 
 -- Hefty amount of boilerplate just for a data type isomorphic to Bool
 orientation :: forall a. ToFrom Orientation a
