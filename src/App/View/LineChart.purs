@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Margin, createChild, createChildren, dimensions, line, nameCol, remove, scaleLinear, selectAll, text, textWidth, xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Margin, attrs, createChild, createChildren, dimensions, line, nameCol, remove, scaleLinear, selectAll, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -228,6 +228,7 @@ lineChartHelpers (LineChart { size, plots, caption }) =
          , "transform" ↦ translate { x: 0, y: range.height }
          ]
       )
+      void $ attrs (selectAll x "text") $ fromFoldable []
       y <- yAxis (to (Dimensions range)) ticks =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "y-axis"
          ]

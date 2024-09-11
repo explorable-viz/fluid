@@ -136,6 +136,14 @@ export function selectAll (sel) {
    }
 }
 
+export function attrs (sel) {
+   return attrs => {
+      return () => {
+         return sel.attrs(attrs)
+      }
+   }
+}
+
 export function scaleLinear (x1) {
    return x2 => {
       return d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])

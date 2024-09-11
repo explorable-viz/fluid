@@ -42,3 +42,4 @@ foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import text :: String -> D3Selection -> Effect Unit
 foreign import dimensions :: D3Selection -> Array (Dimensions Int)
 foreign import selectAll :: D3Selection -> String -> D3Selection
+foreign import attrs :: D3Selection -> Object String -> Effect D3Selection
