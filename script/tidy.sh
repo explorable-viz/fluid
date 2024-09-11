@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -xe
 
-yarn purs-tidy format-in-place src/*.purs src/**/*.purs test/*.purs test/**/*.purs
+# Got bored of trying to make recursive globs work cross-platform way
+yarn purs-tidy format-in-place src/*.purs src/**/*.purs src/App/**/*.purs test/*.purs test/**/*.purs

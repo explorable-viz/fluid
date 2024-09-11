@@ -26,6 +26,10 @@ import Util (Endo, nonEmpty, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
+data Orientation
+   = Default
+   | Rotated
+
 newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
    , caption :: Selectable String
@@ -77,8 +81,9 @@ lineChartHelpers (LineChart { size, plots, caption }) =
    tickLength :: D3Selection -> Effect (Coord Int)
    tickLength parent = do
       { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent
-      let xDims = dimensions (selectAll xAxis ".tick")
-          yDims = dimensions (selectAll yAxis ".tick")
+      let
+         xDims = dimensions (selectAll xAxis ".tick")
+         yDims = dimensions (selectAll yAxis ".tick")
       remove xAxis
       remove yAxis
       pure
@@ -108,13 +113,15 @@ lineChartHelpers (LineChart { size, plots, caption }) =
       g <- createChild svg "g" $ fromFoldable
          [ translate { x: margin.left, y: margin.top }
          ]
-      text (fst caption) =<< createChild svg "text" (fromFoldable
-         [ "x" ⟼ width / 2
-         , "y" ⟼ height - margin.bottom / 2
-         , "class" ↦ "title-text"
-         , "dominant-baseline" ↦ "middle"
-         , "text-anchor" ↦ "middle"
-         ])
+      text (fst caption) =<< createChild svg "text"
+         ( fromFoldable
+              [ "x" ⟼ width / 2
+              , "y" ⟼ height - margin.bottom / 2
+              , "class" ↦ "title-text"
+              , "dominant-baseline" ↦ "middle"
+              , "text-anchor" ↦ "middle"
+              ]
+         )
       void $ createAxes interior g
       createLines interior g
       createPoints g
@@ -129,7 +136,7 @@ lineChartHelpers (LineChart { size, plots, caption }) =
          , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) names
          , "stroke-width" ↦ const "1"
          , "d" ↦ \{ plot: LinePlot { points: ps } } ->
-            line (to range) (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y } )
+              line (to range) (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y })
          ]
       where
       entries :: Array { i :: Int, plot :: LinePlot }
@@ -155,7 +162,7 @@ lineChartHelpers (LineChart { size, plots, caption }) =
          ]
       where
       LinePlot plot = plots ! i
-      Point { x , y } = plot.points ! j
+      Point { x, y } = plot.points ! j
       sel = snd x ∨ snd y
       col = nameCol name names
       fill = if isPersistent sel then flip colorShade (-30) else identity
@@ -202,13 +209,13 @@ lineChartHelpers (LineChart { size, plots, caption }) =
    legendHelpers :: LegendHelpers
    legendHelpers =
       { text_attrs: fromFoldable
-         [ translate { x: legend_entry_x, y: 9 } -- align text with boxes
-         ]
+           [ translate { x: legend_entry_x, y: 9 } -- align text with boxes
+           ]
       , circle_attrs: fromFoldable
-         [ "r" ⟼ point_smallRadius
-         , "cx" ⟼ circle_centre
-         , "cy" ⟼ circle_centre
-         ]
+           [ "r" ⟼ point_smallRadius
+           , "cx" ⟼ circle_centre
+           , "cy" ⟼ circle_centre
+           ]
       , entry_y
       }
       where
@@ -220,18 +227,20 @@ lineChartHelpers (LineChart { size, plots, caption }) =
 
    createAxes :: Dimensions Int -> D3Selection -> Effect (Coord D3Selection)
    createAxes range parent = do
-      x <- xAxis (to range) (nub points.x) =<< createChild parent "g" (fromFoldable
-         [ "class" ↦ "x-axis"
-         , translate { x: 0, y: (unwrap range).height }
-         ]
-      )
+      x <- xAxis (to range) (nub points.x) =<< createChild parent "g"
+         ( fromFoldable
+              [ "class" ↦ "x-axis"
+              , translate { x: 0, y: (unwrap range).height }
+              ]
+         )
       let xLabels = selectAll x "text"
       void $ attrs xLabels $ fromFoldable [ rotate 45 ]
       void $ styles xLabels $ fromFoldable [ "text-anchor" ↦ "start" ]
-      y <- yAxis (to range) 3.0 =<< createChild parent "g" (fromFoldable
-         [ "class" ↦ "y-axis"
-         ]
-      )
+      y <- yAxis (to range) 3.0 =<< createChild parent "g"
+         ( fromFoldable
+              [ "class" ↦ "y-axis"
+              ]
+         )
       pure { x, y }
 
    createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
@@ -248,7 +257,7 @@ lineChartHelpers (LineChart { size, plots, caption }) =
          ]
       pure legend'
       where
-      Dimensions { height , width } = legend_dims
+      Dimensions { height, width } = legend_dims
 
    createLegendEntry :: D3Selection -> Effect D3Selection
    createLegendEntry parent =
