@@ -41,7 +41,7 @@ linkedOutputs_spec2 =
              , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
              ]
         , imports: []
-        , file: File "linked-outputs/stacked-bar-chart-scatter-plot"
+        , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
         }
    , δ_out: multiViewEntry "stacked-bar-chart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
