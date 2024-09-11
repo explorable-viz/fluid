@@ -143,6 +143,15 @@ eval γ (Project e x) αs = do
       Val _ (V.Record xvs) -> withMsg "Record lookup" (lookup' x xvs)
       Val _ (V.Dictionary (DictRep d)) -> withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
       _ -> throw $ "Found " <> prettyP v <> ", expected record"
+eval γ (DProject e x) α = do
+   v <- eval γ e α
+   v' <- eval γ x α
+   case v of
+      Val _ (V.Dictionary (DictRep d)) ->
+         case v' of
+            Val _ (V.Str s) -> withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
+            _ -> throw $ "Found " <> prettyP v' <> ", expected string"
+      _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval γ (App e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs

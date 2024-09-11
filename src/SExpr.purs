@@ -48,6 +48,7 @@ data Expr a
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (Clauses a)
    | Project (Expr a) Var
+   | DProject (Expr a) (Expr a)
    | App (Expr a) (Expr a)
    | BinaryApp (Expr a) Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
@@ -233,6 +234,7 @@ exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desug) sss
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desug s <@> x × y <*> desug s'
 exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project s x) = E.Project <$> desug s <@> x
+exprFwd (DProject s x) = E.DProject <$> desug s <*> desug x
 exprFwd (App s1 s2) = E.App <$> desug s1 <*> desug s2
 exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (MatchAs s μ) =
@@ -260,7 +262,7 @@ exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
    Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (desugBwd σ μ)
-exprBwd (E.Project e _) (Project s x) = Project (desugBwd e s) x
+exprBwd (E.Project e x) (Project s _) = Project (desugBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)

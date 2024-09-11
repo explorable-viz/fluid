@@ -33,6 +33,7 @@ data Expr a
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | Project (Expr a) Var
+   | DProject (Expr a) (Expr a)
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
@@ -76,6 +77,7 @@ instance FV (Expr a) where
    fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
    fv (Project e _) = fv e
+   fv (DProject e x) = fv e ∪ fv x
    fv (App e1 e2) = fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
    fv (LetRec ρ e) = fv ρ ∪ fv e
