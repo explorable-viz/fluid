@@ -46,21 +46,22 @@ tableViewHelpers =
    rowKey = "__n"
 
    record_isDisplayable :: Dict (Val (SelState 𝕊)) -> FilterType -> Boolean
-   record_isDisplayable r filtering = 
+   record_isDisplayable r filtering =
       not <<< isEmpty $ flip filterKeys r \k ->
          k /= rowKey && not comparative (get k r # \(Val α _) -> α)
-         where 
-         comparative = outfind filtering
-         outfind :: FilterType -> SelState 𝕊 -> Boolean
-         outfind Everything = isThere
-         outfind Interactive = isInert
-         outfind Relevant = isNone || isInert
+      where
+      comparative = outfind filtering
 
-         isThere :: SelState 𝕊 -> Boolean
-         isThere _ = false
+      outfind :: FilterType -> SelState 𝕊 -> Boolean
+      outfind Everything = isThere
+      outfind Interactive = isInert
+      outfind Relevant = isNone || isInert
 
-         isNone :: SelState 𝕊 -> Boolean
-         isNone a = getPersistent a == None && getTransient a == None
+      isThere :: SelState 𝕊 -> Boolean
+      isThere _ = false
+
+      isNone :: SelState 𝕊 -> Boolean
+      isNone a = getPersistent a == None && getTransient a == None
 
    cell_selClassesFor :: String -> SelState 𝕊 -> String
    cell_selClassesFor colName s
@@ -84,7 +85,7 @@ type FilterToggler = String -> Endo TableView
 
 -- toggling through FilterTypes
 filterToggler :: FilterToggler
-filterToggler _ (TableView view) = TableView view { filter = rot view.filter}
+filterToggler _ (TableView view) = TableView view { filter = rot view.filter }
 
 rot :: FilterType -> FilterType
 rot Everything = Interactive

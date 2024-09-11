@@ -2,12 +2,13 @@ module App.View.Util.D3 where
 
 import Prelude
 
+import App.Util (Dimensions)
+import Bind (Bind, (↦))
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Newtype (unwrap)
 import Effect (Effect)
 import Foreign.Object (Object)
 import Util (Endo)
-
--- Documentation says d3.ticks takes (start, stop, count) but could only make it work with count
-type Ticks = Number
 
 type Margin =
    { top :: Int
@@ -21,16 +22,21 @@ type Coord a =
    , y :: a
    }
 
-type Dimensions =
-   { width :: Int
-   , height :: Int
-   }
-
 textWidth :: String -> Int
-textWidth = textDimensions >>> _.width
+textWidth = textDimensions >>> unwrap >>> _.width
 
 textHeight :: String -> Int
-textHeight = textDimensions >>> _.height
+textHeight = textDimensions >>> unwrap >>> _.height
+
+translate :: Coord Int -> Bind String
+translate { x, y } = "transform" ↦ "translate(" <> show x <> ", " <> show y <> ")"
+
+translate' :: forall a. (a -> Coord Int) -> Bind (a -> String)
+translate' f =
+   "transform" ↦ \a -> let { x, y } = f a in "translate(" <> show x <> ", " <> show y <> ")"
+
+rotate :: Int -> Bind String
+rotate n = "transform" ↦ "rotate(" <> show n <> ")"
 
 foreign import data D3Selection :: Type
 
@@ -39,10 +45,13 @@ foreign import createChildren :: forall a. D3Selection -> String -> String -> Ar
 foreign import remove :: D3Selection -> Effect Unit
 foreign import nameCol :: String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
-foreign import xAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect D3Selection
-foreign import yAxis :: Coord (Endo Number) -> Coord Ticks -> D3Selection -> Effect D3Selection
-foreign import textDimensions :: String -> Dimensions
+-- Currently have two different protocols for x and y axis -- will subsume into something more general
+foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> D3Selection -> Effect D3Selection
+foreign import yAxis :: Coord (Endo Number) -> Number -> D3Selection -> Effect D3Selection
+foreign import textDimensions :: String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import text :: String -> D3Selection -> Effect Unit
-foreign import dimensions :: D3Selection -> Array Dimensions
+foreign import dimensions :: D3Selection -> Array (Dimensions Int)
 foreign import selectAll :: D3Selection -> String -> D3Selection
+foreign import attrs :: D3Selection -> Object String -> Effect D3Selection
+foreign import styles :: D3Selection -> Object String -> Effect D3Selection

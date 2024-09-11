@@ -2,9 +2,11 @@ let series type = [
    { x: row.year, y: row.emissions }
    | row <- methane, row.type == type
 ] in LineChart {
+   size: { width: 450, height: 285 },
+   tickLabels: { x: Rotated, y: Default },
    caption: "Methane emissions for Africa and the Middle East",
    plots: [
-      LinePlot { name: type, data: series type }
+      LinePlot { name: type, points: series type }
       | type <- ["Agricultural Waste Burning", "Agriculture", "Energy Sector",
                  "Forest Burning", "Grassland Burning", "Industrial Sector",
                  "Residential Commercial Other", "Transportation Sector", "Waste"]

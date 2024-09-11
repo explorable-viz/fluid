@@ -97,8 +97,8 @@ matrixRep =
         v -> typeError v "Matrix"
    }
 
-record2 :: forall a. ToFrom (Dict (Val a)) a
-record2 =
+record :: forall a. ToFrom (Dict (Val a)) a
+record =
    { pack: Record
    , unpack: case _ of
         Record xvs -> xvs
