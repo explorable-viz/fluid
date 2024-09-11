@@ -14,7 +14,7 @@ linkedOutputs_spec1 =
    { spec:
         { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
         , imports: []
-        , file: File "linked-outputs/bar-chart-line-chart"
+        , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         }
    , δ_out: multiViewEntry "bar-chart" (barChart (barSegment 1 0 neg))
