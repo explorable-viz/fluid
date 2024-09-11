@@ -2,10 +2,10 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
+import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Dimensions, Margin, createChild, createChildren, dimensions, line, nameCol, remove, scaleLinear, selectAll, text, textWidth, xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Margin, createChild, createChildren, dimensions, line, nameCol, remove, scaleLinear, selectAll, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -15,7 +15,7 @@ import Data.List (List(..), (:))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
-import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
+import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_size, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Class.Console (log)
@@ -27,7 +27,8 @@ import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
 newtype LineChart = LineChart
-   { caption :: Selectable String
+   { size :: Dimensions (Selectable Int)
+   , caption :: Selectable String
    , plots :: Array LinePlot
    }
 
@@ -39,10 +40,10 @@ newtype LinePlot = LinePlot
 newtype Point = Point (Coord (Selectable Number))
 
 type LineChartHelpers =
-   { createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions }
-   , point_attrs :: Dimensions -> PointCoordinate -> Object String
+   { createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
+   , point_attrs :: Dimensions Int -> PointCoordinate -> Object String
    , legendHelpers :: LegendHelpers
-   , createLegend :: Dimensions -> D3Selection -> Effect D3Selection
+   , createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
    , createLegendEntry :: D3Selection -> Effect D3Selection
    }
 
@@ -83,13 +84,16 @@ lineChartHelpers (LineChart { plots, caption }) =
           yDims = dimensions (selectAll yAxis ".tick")
       remove xAxis
       remove yAxis
-      pure { x: maximum (xDims # nonEmpty <#> _.height), y: maximum (yDims # nonEmpty <#> _.width) }
+      pure
+         { x: maximum (xDims # nonEmpty <#> unwrap >>> _.height)
+         , y: maximum (yDims # nonEmpty <#> unwrap >>> _.width)
+         }
 
-   createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions }
+   createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
    createRootElement div childId = do
       svg <- createChild div "svg" $ fromFoldable
-         [ "width" ⟼ image.width
-         , "height" ⟼ image.height
+         [ "width" ⟼ width
+         , "height" ⟼ height
          , "id" ↦ childId
          ]
       tickLen <- tickLength svg
@@ -98,18 +102,18 @@ lineChartHelpers (LineChart { plots, caption }) =
          margin :: Margin
          margin = { top: 15, right: 15, bottom: 40, left: tickLen.y }
 
-         interior :: Dimensions
-         interior =
-            { width: image.width - margin.left - margin.right - legend_dims.width
-            , height: image.height - margin.top - margin.bottom -- minus caption_height?
+         interior :: Dimensions Int
+         interior = Dimensions
+            { width: width - margin.left - margin.right - (unwrap legend_dims).width
+            , height: height - margin.top - margin.bottom -- minus caption_height?
             }
 
       g <- createChild svg "g" $ fromFoldable
          [ "transform" ↦ translate { x: margin.left, y: margin.top }
          ]
       text (fst caption) =<< createChild svg "text" (fromFoldable
-         [ "x" ⟼ image.width / 2
-         , "y" ⟼ image.height - margin.bottom / 2
+         [ "x" ⟼ width / 2
+         , "y" ⟼ height - margin.bottom / 2
          , "class" ↦ "title-text"
          , "dominant-baseline" ↦ "middle"
          , "text-anchor" ↦ "middle"
@@ -118,8 +122,10 @@ lineChartHelpers (LineChart { plots, caption }) =
       createLines interior g
       createPoints g
       pure { rootElement: g, interior }
+      where
+      Dimensions { height, width } = image
 
-   createLines :: Dimensions -> D3Selection -> Effect Unit
+   createLines :: Dimensions Int -> D3Selection -> Effect Unit
    createLines range parent =
       void $ createChildren parent "path" "linechart-line" entries $ fromFoldable
          [ "fill" ↦ const "none"
@@ -140,7 +146,7 @@ lineChartHelpers (LineChart { plots, caption }) =
       entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
          flip mapWithIndex ps \j _ -> { name: fst name, i, j }
 
-   point_attrs :: Dimensions -> PointCoordinate -> Object String
+   point_attrs :: Dimensions Int -> PointCoordinate -> Object String
    point_attrs range { i, j, name } =
       fromFoldable
          [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
@@ -163,11 +169,11 @@ lineChartHelpers (LineChart { plots, caption }) =
    legend_sep :: Int
    legend_sep = 15
 
-   image :: Dimensions
-   image = { width: max 330 (textWidth (fst caption)), height: 285 }
+   image :: Dimensions Int
+   image = Dimensions { width: 330, height: 285 }
 
-   legend_dims :: Dimensions
-   legend_dims =
+   legend_dims :: Dimensions Int
+   legend_dims = Dimensions
       { width: legend_entry_x + maxTextWidth + rightMargin
       , height: lineHeight * length plots
       }
@@ -190,8 +196,8 @@ lineChartHelpers (LineChart { plots, caption }) =
       ps :: NonEmptyArray Point
       ps = plots <#> unwrap >>> _.points # join >>> nonEmpty
 
-   to :: Dimensions -> Coord (Endo Number)
-   to range =
+   to :: Dimensions Int -> Coord (Endo Number)
+   to (Dimensions range) =
       { x: scaleLinear { min: min'.x, max: max'.x } { min: 0.0, max: toNumber range.width }
       , y: scaleLinear { min: 0.0, max: max'.y } { min: toNumber range.height, max: 0.0 }
       }
@@ -218,14 +224,14 @@ lineChartHelpers (LineChart { plots, caption }) =
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
 
-   createAxes :: Dimensions -> D3Selection -> Effect (Coord D3Selection)
-   createAxes range parent = do
-      x <- xAxis (to range) tickValues.x =<< createChild parent "g" (fromFoldable
+   createAxes :: Dimensions Int -> D3Selection -> Effect (Coord D3Selection)
+   createAxes (Dimensions range) parent = do
+      x <- xAxis (to (Dimensions range)) tickValues.x =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "x-axis"
          , "transform" ↦ translate { x: 0, y: range.height }
          ]
       )
-      y <- yAxis (to range) ticks =<< createChild parent "g" (fromFoldable
+      y <- yAxis (to (Dimensions range)) ticks =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "y-axis"
          ]
       )
@@ -237,22 +243,24 @@ lineChartHelpers (LineChart { plots, caption }) =
       tickValues :: Coord (NonEmptyArray Number)
       tickValues = { x: points.x, y: points.y }
 
-   createLegend :: Dimensions -> D3Selection -> Effect D3Selection
-   createLegend interior parent = do
+   createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
+   createLegend (Dimensions interior) parent = do
       legend' <- createChild parent "g" $ fromFoldable
          [ "transform" ↦ translate
             { x: interior.width + legend_sep
-            , y: max 0 ((interior.height - legend_dims.height) / 2)
+            , y: max 0 ((interior.height - height) / 2)
             }
          ]
       void $ createChild legend' "rect" $ fromFoldable
          [ "class" ↦ "legend-box"
          , "x" ⟼ 0
          , "y" ⟼ 0
-         , "height" ⟼ legend_dims.height
-         , "width" ⟼ legend_dims.width
+         , "height" ⟼ height
+         , "width" ⟼ width
          ]
       pure legend'
+      where
+      Dimensions { height , width } = legend_dims
 
    createLegendEntry :: D3Selection -> Effect D3Selection
    createLegendEntry parent =
@@ -288,12 +296,13 @@ instance Reflect (Dict (Val (SelState 𝕊))) Point where
 instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
-      , points: record from <$> from ((get f_data r))
+      , points: record from <$> from (get f_data r)
       }
 
 instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
    from r = LineChart
-      { caption: unpack string (get f_caption r)
+      { size: record from (get f_size r)
+      , caption: unpack string (get f_caption r)
       , plots: from <$> (from (get f_plots r) :: Array (Val (SelState 𝕊))) :: Array LinePlot
       }
 

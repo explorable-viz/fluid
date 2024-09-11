@@ -2,7 +2,9 @@ module App.View.Util.D3 where
 
 import Prelude
 
+import App.Util (Dimensions)
 import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Newtype (unwrap)
 import Effect (Effect)
 import Foreign.Object (Object)
 import Util (Endo)
@@ -19,16 +21,11 @@ type Coord a =
    , y :: a
    }
 
-type Dimensions =
-   { width :: Int
-   , height :: Int
-   }
-
 textWidth :: String -> Int
-textWidth = textDimensions >>> _.width
+textWidth = textDimensions >>> unwrap >>> _.width
 
 textHeight :: String -> Int
-textHeight = textDimensions >>> _.height
+textHeight = textDimensions >>> unwrap >>> _.height
 
 foreign import data D3Selection :: Type
 
@@ -40,8 +37,8 @@ foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Numbe
 -- Currently have two different protocols for x and y axis -- will subsume into something more general
 foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> D3Selection -> Effect D3Selection
 foreign import yAxis :: Coord (Endo Number) -> Number -> D3Selection -> Effect D3Selection
-foreign import textDimensions :: String -> Dimensions
+foreign import textDimensions :: String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import text :: String -> D3Selection -> Effect Unit
-foreign import dimensions :: D3Selection -> Array Dimensions
+foreign import dimensions :: D3Selection -> Array (Dimensions Int)
 foreign import selectAll :: D3Selection -> String -> D3Selection

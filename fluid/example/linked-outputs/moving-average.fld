@@ -1,12 +1,12 @@
 let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
-let getByX xVal data = 
+let getByX xVal data =
     let helper [] = [];
-        helper (x : xs) = 
+        helper (x : xs) =
             if x.x == xVal
             then x
             else helper xs
     in helper data;
-    
+
 let points' = newPoints 0;
     cavgs = mAvgChop points' 1;
     cavgs' = mAvgShrink points' 1;
@@ -14,6 +14,7 @@ let points' = newPoints 0;
 in MultiView {|
     "line-chart-1" :=
         LineChart {
+            size: { width: 330, height: 285 },
             caption: "Moving averages",
             plots: [ LinePlot { name: "Simple", data: savgs }
                    , LinePlot { name: "Central", data: cavgs }
@@ -26,5 +27,5 @@ in MultiView {|
                     , numToStr (getByX 2015 cavgs).y, " "
                     , "we see that the simple moving average for the same year is actually "
                     , gradedLeqP (getByX 2015 savgs).y (getByX 2015 cavgs).y ])
-                
+
 |}
