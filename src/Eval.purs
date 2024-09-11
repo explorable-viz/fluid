@@ -149,6 +149,7 @@ eval (EnvExpr γ (Project e x)) α = do
    t × v <- eval (EnvExpr γ e) α
    case v of
       Val _ (V.Record xvs) -> (T.Project t x × _) <$> lookup' x xvs
+      Val _ (V.Dictionary (DictRep d)) -> (T.DProject t x × _) <$> snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found")
       _ -> throw $ "Found " <> prettyP v <> ", expected record"
 eval (EnvExpr γ (App e e')) α = do
    t × v <- eval (EnvExpr γ e) α

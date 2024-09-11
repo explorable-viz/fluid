@@ -14,12 +14,12 @@ import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util ((×))
 
 main :: Effect Unit
-main = run tests
+-- main = run tests
 
---main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = linkedOutputsSuite linkedOutputs_cases
+scratchpad = concat (benchmarks <#> asTestSuite)
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)

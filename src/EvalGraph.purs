@@ -13,7 +13,7 @@ import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
-import Data.Tuple (curry)
+import Data.Tuple (curry, snd)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
@@ -141,6 +141,7 @@ eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
       Val _ (V.Record xvs) -> withMsg "Record lookup" (lookup' x xvs)
+      Val _ (V.Dictionary (DictRep d)) -> withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
       _ -> throw $ "Found " <> prettyP v <> ", expected record"
 eval γ (App e e') αs = do
    v <- eval γ e αs
