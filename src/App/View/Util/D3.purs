@@ -3,6 +3,7 @@ module App.View.Util.D3 where
 import Prelude
 
 import App.Util (Dimensions)
+import Bind (Bind, (↦))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Newtype (unwrap)
 import Effect (Effect)
@@ -27,6 +28,16 @@ textWidth = textDimensions >>> unwrap >>> _.width
 textHeight :: String -> Int
 textHeight = textDimensions >>> unwrap >>> _.height
 
+translate :: Coord Int -> Bind String
+translate { x, y } = "transform" ↦ "translate(" <> show x <> ", " <> show y <> ")"
+
+translate' :: forall a. (a -> Coord Int) -> Bind (a -> String)
+translate' f =
+   "transform" ↦ \a -> let { x, y } = f a in "translate(" <> show x <> ", " <> show y <> ")"
+
+rotate :: Int -> Bind String
+rotate n = "transform" ↦ "rotate(" <> show n <> ")"
+
 foreign import data D3Selection :: Type
 
 foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
@@ -43,3 +54,4 @@ foreign import text :: String -> D3Selection -> Effect Unit
 foreign import dimensions :: D3Selection -> Array (Dimensions Int)
 foreign import selectAll :: D3Selection -> String -> D3Selection
 foreign import attrs :: D3Selection -> Object String -> Effect D3Selection
+foreign import styles :: D3Selection -> Object String -> Effect D3Selection

@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Margin, attrs, createChild, createChildren, dimensions, line, nameCol, remove, scaleLinear, selectAll, text, textWidth, xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Margin, attrs, createChild, createChildren, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, styles, text, textWidth, translate, translate', xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -61,9 +61,6 @@ type LegendEntry =
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
-translate :: Coord Int -> String
-translate { x, y } = "translate(" <> show x <> ", " <> show y <> ")"
-
 lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { size, plots, caption }) =
    { createRootElement
@@ -109,7 +106,7 @@ lineChartHelpers (LineChart { size, plots, caption }) =
             }
 
       g <- createChild svg "g" $ fromFoldable
-         [ "transform" ↦ translate { x: margin.left, y: margin.top }
+         [ translate { x: margin.left, y: margin.top }
          ]
       text (fst caption) =<< createChild svg "text" (fromFoldable
          [ "x" ⟼ width / 2
@@ -205,7 +202,7 @@ lineChartHelpers (LineChart { size, plots, caption }) =
    legendHelpers :: LegendHelpers
    legendHelpers =
       { text_attrs: fromFoldable
-         [ "transform" ↦ translate { x: legend_entry_x, y: 9 } -- align text with boxes
+         [ translate { x: legend_entry_x, y: 9 } -- align text with boxes
          ]
       , circle_attrs: fromFoldable
          [ "r" ⟼ point_smallRadius
@@ -222,32 +219,25 @@ lineChartHelpers (LineChart { size, plots, caption }) =
       circle_centre = lineHeight / 2 - point_smallRadius / 2
 
    createAxes :: Dimensions Int -> D3Selection -> Effect (Coord D3Selection)
-   createAxes (Dimensions range) parent = do
-      x <- xAxis (to (Dimensions range)) tickValues.x =<< createChild parent "g" (fromFoldable
+   createAxes range parent = do
+      x <- xAxis (to range) (nub points.x) =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "x-axis"
-         , "transform" ↦ translate { x: 0, y: range.height }
+         , translate { x: 0, y: (unwrap range).height }
          ]
       )
-      void $ attrs (selectAll x "text") $ fromFoldable []
-      y <- yAxis (to (Dimensions range)) ticks =<< createChild parent "g" (fromFoldable
+      let xLabels = selectAll x "text"
+      void $ attrs xLabels $ fromFoldable [ rotate 45 ]
+      void $ styles xLabels $ fromFoldable [ "text-anchor" ↦ "start" ]
+      y <- yAxis (to range) 3.0 =<< createChild parent "g" (fromFoldable
          [ "class" ↦ "y-axis"
          ]
       )
       pure { x, y }
-      where
-      ticks :: Number
-      ticks = 3.0
-
-      tickValues :: Coord (NonEmptyArray Number)
-      tickValues = { x: nub points.x, y: nub points.y }
 
    createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
    createLegend (Dimensions interior) parent = do
       legend' <- createChild parent "g" $ fromFoldable
-         [ "transform" ↦ translate
-            { x: interior.width + legend_sep
-            , y: max 0 ((interior.height - height) / 2)
-            }
+         [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) }
          ]
       void $ createChild legend' "rect" $ fromFoldable
          [ "class" ↦ "legend-box"
@@ -263,7 +253,7 @@ lineChartHelpers (LineChart { size, plots, caption }) =
    createLegendEntry :: D3Selection -> Effect D3Selection
    createLegendEntry parent =
       createChildren parent "g" "legend-entry" entries $ fromFoldable
-         [ "transform" ↦ \{ i } -> translate { x: 0, y: legendHelpers.entry_y i } ]
+         [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
       where
       entries :: Array LegendEntry
       entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })

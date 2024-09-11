@@ -16,6 +16,13 @@ d3.selection.prototype.attrFuns = function(m) {
    return this
 }
 
+d3.selection.prototype.styles = function(m) {
+   for (const k in m) {
+      this.style(k, m[k])
+   }
+   return this
+}
+
 function computed (element, prop) {
    return window.getComputedStyle(element, null).getPropertyValue(prop);
 }
@@ -140,6 +147,14 @@ export function attrs (sel) {
    return attrs => {
       return () => {
          return sel.attrs(attrs)
+      }
+   }
+}
+
+export function styles (sel) {
+   return styles => {
+      return () => {
+         return sel.styles(styles)
       }
    }
 }
