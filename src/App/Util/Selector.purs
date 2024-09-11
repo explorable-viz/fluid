@@ -6,7 +6,7 @@ import App.Util (SelState, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_stackedBars, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_points, f_stackedBars, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Util (Setter, absurd, assert, definitely', error)
@@ -46,7 +46,7 @@ scatterPlot :: SelSetter Val Val
 scatterPlot = constrArg cScatterPlot 0
 
 scatterPoint :: Int -> SelSetter Val Val
-scatterPoint i = listElement i >>> field f_data
+scatterPoint i = listElement i >>> field f_points
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =

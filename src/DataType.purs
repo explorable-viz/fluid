@@ -108,6 +108,7 @@ f_colour = "c" :: FieldName
 f_data = "data" :: FieldName
 f_name = "name" :: FieldName
 f_plots = "plots" :: FieldName
+f_points = "points" :: FieldName
 f_size = "size" :: FieldName
 f_stackedBars = "stackedBars" :: FieldName
 f_x = "x" :: FieldName
