@@ -4,11 +4,11 @@ MultiView {|
          let [ row ] = [ row | row <- rows, row.year == year, row.country == country ]
          in row.nuclearOut + row.gasOut + row.coalOut + row.petrolOut;
       let stack year = [ { y: country, z: totalFor year country nonRenewables }
-                     | country <- ["BRA", "EGY", "IND", "JPN"] ]
+                       | country <- ["BRA", "EGY", "IND", "JPN"] ]
       in BarChart {
          caption: "Non-renewables by country",
-         data: [ { x: numToStr year, bars: stack year }
-               | year <- [2014..2018] ]
+         stackedBars: [ { x: numToStr year, bars: stack year }
+                      | year <- [2014..2018] ]
       },
    "scatter-plot" :=
       let isCountry name x = name == x.country;

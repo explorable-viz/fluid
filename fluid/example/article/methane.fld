@@ -2,7 +2,7 @@ let series type = [
    { x: row.year, y: row.emissions }
    | row <- methane, row.type == type
 ] in LineChart {
-   size: { width: 330, height: 285 },
+   size: { width: 400, height: 285 },
    caption: "Methane emissions for Africa and the Middle East",
    plots: [
       LinePlot { name: type, data: series type }

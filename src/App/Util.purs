@@ -132,7 +132,7 @@ get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val (SelState 𝕊)) -> a) -> Val (SelState 𝕊) -> a
-record toRecord (Val _ v) = toRecord (P.record2.unpack v)
+record toRecord (Val _ v) = toRecord (P.record.unpack v)
 
 class Reflect a b where
    from :: Partial => a -> b

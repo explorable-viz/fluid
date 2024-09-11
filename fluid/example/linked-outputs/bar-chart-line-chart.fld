@@ -7,7 +7,7 @@ MultiView {|
                         | c <- ["China", "USA", "Germany"] ]
       in BarChart {
          caption: "Total renewables output by country",
-         data: countryData
+         stackedBars: countryData
       },
    "line-chart" :=
       let series type country = [

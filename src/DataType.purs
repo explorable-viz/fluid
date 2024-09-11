@@ -109,6 +109,7 @@ f_data = "data" :: FieldName
 f_name = "name" :: FieldName
 f_plots = "plots" :: FieldName
 f_size = "size" :: FieldName
+f_stackedBars = "stackedBars" :: FieldName
 f_x = "x" :: FieldName
 f_xlabel = "xlabel" :: FieldName
 f_ylabel = "ylabel" :: FieldName
@@ -128,7 +129,7 @@ dataTypes = L.fromFoldable
         , "Infty" × 0
         ]
    , dataType "LinePlot"
-        [ cLinePlot × 1 -- {name: Str, data: List {x: Float, y: Float}}
+        [ cLinePlot × 1
         ]
    , dataType "List"
         [ cNil × 0
@@ -151,10 +152,11 @@ dataTypes = L.fromFoldable
         , "NonEmpty" × 3 -- Tree any × any × Tree any
         ]
    , dataType "View"
-        [ cBarChart × 1 -- {caption: Str, data: List {x: Str, y: Float}}
-        , cLineChart × 1 -- {size: {width: Int, height: Int}, caption: Str, plots: List LinePlot}
-        , cMultiView × 1 -- Dict Plot
-        , cScatterPlot × 1 -- {caption: Str, data: List {x: Float, y: Float}}
+        [ cBarChart × 1
+        , cLineChart × 1
+        , cLinkedText × 1
+        , cMultiView × 1
+        , cScatterPlot × 1
         ]
    ,
      -- Legacy graphics stuff
@@ -185,8 +187,5 @@ dataTypes = L.fromFoldable
         ]
    , dataType "Marker"
         [ "Arrowhead" × 0
-        ]
-   , dataType "LinkedText"
-        [ cLinkedText × 1 -- Str
         ]
    ]
