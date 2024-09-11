@@ -5,7 +5,7 @@ let series type = [
    size: { width: 400, height: 285 },
    caption: "Methane emissions for Africa and the Middle East",
    plots: [
-      LinePlot { name: type, data: series type }
+      LinePlot { name: type, points: series type }
       | type <- ["Agricultural Waste Burning", "Agriculture", "Energy Sector",
                  "Forest Burning", "Grassland Burning", "Industrial Sector",
                  "Residential Commercial Other", "Transportation Sector", "Waste"]

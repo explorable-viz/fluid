@@ -16,9 +16,9 @@ in MultiView {|
         LineChart {
             size: { width: 330, height: 285 },
             caption: "Moving averages",
-            plots: [ LinePlot { name: "Simple", data: savgs }
-                   , LinePlot { name: "Central", data: cavgs }
-                   , LinePlot { name: "Original Curve", data: points' } ]
+            plots: [ LinePlot { name: "Simple", points: savgs }
+                   , LinePlot { name: "Central", points: cavgs }
+                   , LinePlot { name: "Original Curve", points: points' } ]
         },
     "desc" :=
         LinkedText( [ "Simple moving averages are computed using the most recent n examples, "

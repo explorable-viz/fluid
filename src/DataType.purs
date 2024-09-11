@@ -105,7 +105,6 @@ cSome = "Some" :: Ctr
 f_bars = "bars" :: FieldName
 f_caption = "caption" :: FieldName
 f_colour = "c" :: FieldName
-f_data = "data" :: FieldName
 f_name = "name" :: FieldName
 f_plots = "plots" :: FieldName
 f_points = "points" :: FieldName

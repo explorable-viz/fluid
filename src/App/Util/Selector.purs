@@ -6,7 +6,7 @@ import App.Util (SelState, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_points, f_stackedBars, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_points, f_stackedBars, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Util (Setter, absurd, assert, definitely', error)
@@ -37,7 +37,7 @@ lineChart :: SelSetter Val Val
 lineChart = constrArg cLineChart 0
 
 linePoint :: Int -> SelSetter Val Val
-linePoint i = listElement i >>> field f_data >>> constrArg cLinePlot 0
+linePoint i = listElement i >>> field f_points >>> constrArg cLinePlot 0
 
 barChart :: SelSetter Val Val
 barChart = constrArg cBarChart 0

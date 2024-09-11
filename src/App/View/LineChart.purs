@@ -15,7 +15,7 @@ import Data.List (List(..), (:))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
-import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_size, f_x, f_y)
+import DataType (cLinePlot, f_caption, f_name, f_points, f_plots, f_size, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Class.Console (log)
@@ -296,7 +296,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) Point where
 instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
-      , points: record from <$> from (get f_data r)
+      , points: record from <$> from (get f_points r)
       }
 
 instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
