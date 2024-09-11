@@ -8,7 +8,7 @@ import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import App.View.Util.D3 (Coord, D3Selection, Margin, createChild, createChildren, dimensions, line, nameCol, remove, scaleLinear, selectAll, text, textWidth, xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
-import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty (NonEmptyArray, nub)
 import Data.Foldable (length)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
@@ -65,7 +65,7 @@ translate :: Coord Int -> String
 translate { x, y } = "translate(" <> show x <> ", " <> show y <> ")"
 
 lineChartHelpers :: LineChart -> LineChartHelpers
-lineChartHelpers (LineChart { plots, caption }) =
+lineChartHelpers (LineChart { size, plots, caption }) =
    { createRootElement
    , point_attrs
    , legendHelpers
@@ -79,7 +79,7 @@ lineChartHelpers (LineChart { plots, caption }) =
    -- Assume tick dimensions are independent of "range" that axes map into
    tickLength :: D3Selection -> Effect (Coord Int)
    tickLength parent = do
-      { x: xAxis, y: yAxis } <- createAxes image parent
+      { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent
       let xDims = dimensions (selectAll xAxis ".tick")
           yDims = dimensions (selectAll yAxis ".tick")
       remove xAxis
@@ -123,7 +123,7 @@ lineChartHelpers (LineChart { plots, caption }) =
       createPoints g
       pure { rootElement: g, interior }
       where
-      Dimensions { height, width } = image
+      Dimensions { height, width } = size <#> fst
 
    createLines :: Dimensions Int -> D3Selection -> Effect Unit
    createLines range parent =
@@ -168,9 +168,6 @@ lineChartHelpers (LineChart { plots, caption }) =
 
    legend_sep :: Int
    legend_sep = 15
-
-   image :: Dimensions Int
-   image = Dimensions { width: 330, height: 285 }
 
    legend_dims :: Dimensions Int
    legend_dims = Dimensions
@@ -241,7 +238,7 @@ lineChartHelpers (LineChart { plots, caption }) =
       ticks = 3.0
 
       tickValues :: Coord (NonEmptyArray Number)
-      tickValues = { x: points.x, y: points.y }
+      tickValues = { x: nub points.x, y: nub points.y }
 
    createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
    createLegend (Dimensions interior) parent = do

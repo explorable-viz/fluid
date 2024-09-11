@@ -273,6 +273,7 @@ instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) wher
    highlightIf (Reactive { persistent, transient }) = highlightIf (persistent ∨ transient)
 
 derive instance Newtype (Dimensions a) _
+derive instance Functor Dimensions
 
 instance Reflect (Dict (Val (SelState 𝕊))) (Dimensions (Selectable Int)) where
    from r = Dimensions
