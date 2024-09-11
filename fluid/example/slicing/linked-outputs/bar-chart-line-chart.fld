@@ -15,6 +15,7 @@ MultiView {|
          | year <- [2013..2018], row <- renewables,
          row.year == year, row.energyType == type, row.country == country
       ] in LineChart {
+         tickLabels: { x: Default, y: Default },
          size: { width: 330, height: 285 },
          caption: "Output of USA relative to China",
          plots: [

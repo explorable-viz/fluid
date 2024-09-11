@@ -15,13 +15,13 @@ import Data.List (List(..), (:))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
-import DataType (cLinePlot, f_caption, f_name, f_points, f_plots, f_size, f_x, f_y)
+import DataType (cDefault, cLinePlot, cRotated, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Class.Console (log)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
-import Primitive (string, unpack)
+import Primitive (ToFrom, string, typeError, unpack)
 import Util (Endo, nonEmpty, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
@@ -32,16 +32,17 @@ data Orientation
 
 newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
+   , tickLabels :: Point Orientation
    , caption :: Selectable String
    , plots :: Array LinePlot
    }
 
 newtype LinePlot = LinePlot
    { name :: Selectable String
-   , points :: Array Point
+   , points :: Array (Point Number)
    }
 
-newtype Point = Point (Coord (Selectable Number))
+newtype Point a = Point (Coord (Selectable a))
 
 type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
@@ -194,7 +195,7 @@ lineChartHelpers (LineChart { size, plots, caption }) =
    points :: Coord (NonEmptyArray Number)
    points = { x: ps <#> unwrap >>> _.x >>> fst, y: ps <#> unwrap >>> _.y >>> fst }
       where
-      ps :: NonEmptyArray Point
+      ps :: NonEmptyArray (Point Number)
       ps = plots <#> unwrap >>> _.points # join >>> nonEmpty
 
    to :: Dimensions Int -> Coord (Endo Number)
@@ -284,10 +285,29 @@ instance Drawable LineChart where
       point { i, j } =
          linePoint j >>> listElement i >>> field f_plots >>> lineChart
 
-instance Reflect (Dict (Val (SelState 𝕊))) Point where
+-- Hefty amount of boilerplate just for a data type isomorphic to Bool
+orientation :: forall a. ToFrom Orientation a
+orientation =
+   { pack: case _ of
+        Default -> Constr cDefault Nil
+        Rotated -> Constr cRotated Nil
+   , unpack: case _ of
+        Constr c Nil
+           | c == cDefault -> Default
+           | c == cRotated -> Rotated
+        v -> typeError v "Orientation"
+   }
+
+instance Reflect (Dict (Val (SelState 𝕊))) (Point Number) where
    from r = Point
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
+      }
+
+instance Reflect (Dict (Val (SelState 𝕊))) (Point Orientation) where
+   from r = Point
+      { x: unpack orientation (get f_x r)
+      , y: unpack orientation (get f_y r)
       }
 
 instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
@@ -299,6 +319,7 @@ instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
 instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
    from r = LineChart
       { size: record from (get f_size r)
+      , tickLabels: record from (get f_tickLabels r)
       , caption: unpack string (get f_caption r)
       , plots: from <$> (from (get f_plots r) :: Array (Val (SelState 𝕊))) :: Array LinePlot
       }
@@ -306,5 +327,5 @@ instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
 instance Reflect (Val (SelState 𝕊)) LinePlot where
    from (Val _ (Constr c (u : Nil))) | c == cLinePlot = record from u
 
-derive instance Newtype Point _
+derive instance Newtype (Point a) _
 derive instance Newtype LinePlot _

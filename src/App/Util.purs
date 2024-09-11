@@ -137,13 +137,6 @@ record toRecord (Val _ v) = toRecord (P.record.unpack v)
 class Reflect a b where
    from :: Partial => a -> b
 
-instance Reflect (Val (SelState 𝕊)) (Dict (Val (SelState 𝕊))) where
-   from (Val _ (Dictionary (DictRep d))) = d <#> snd
-
-instance Reflect (Val (SelState 𝕊)) (Array (Val (SelState 𝕊))) where
-   from (Val _ (Constr c Nil)) | c == cNil = []
-   from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
-
 runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
 runAffs_ f as = flip runAff_ (sequence as) case _ of
    Left err -> log $ show err
@@ -274,6 +267,13 @@ instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) wher
 
 derive instance Newtype (Dimensions a) _
 derive instance Functor Dimensions
+
+instance Reflect (Val (SelState 𝕊)) (Dict (Val (SelState 𝕊))) where
+   from (Val _ (Dictionary (DictRep d))) = d <#> snd
+
+instance Reflect (Val (SelState 𝕊)) (Array (Val (SelState 𝕊))) where
+   from (Val _ (Constr c Nil)) | c == cNil = []
+   from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
 
 instance Reflect (Dict (Val (SelState 𝕊))) (Dimensions (Selectable Int)) where
    from r = Dimensions

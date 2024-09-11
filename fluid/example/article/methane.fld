@@ -3,6 +3,7 @@ let series type = [
    | row <- methane, row.type == type
 ] in LineChart {
    size: { width: 450, height: 285 },
+   tickLabels: { x: Default, y: Default },
    caption: "Methane emissions for Africa and the Middle East",
    plots: [
       LinePlot { name: type, points: series type }

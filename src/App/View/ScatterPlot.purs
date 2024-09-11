@@ -20,7 +20,7 @@ import Val (Val)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
-   , points :: Array Point
+   , points :: Array (Point Number)
    , xlabel :: Selectable String
    , ylabel :: Selectable String
    }

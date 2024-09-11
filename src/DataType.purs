@@ -87,7 +87,9 @@ checkArity c n = void $
    withMsg ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
 
 -- Used internally by primitives, desugaring or rendering layer.
-cBarChart = "BarChart" :: Ctr -- Plot
+cDefault = "Default" :: Ctr -- Orientation
+cRotated = "Rotated" :: Ctr
+cBarChart = "BarChart" :: Ctr -- View
 cLineChart = "LineChart" :: Ctr
 cLinePlot = "LinePlot" :: Ctr
 cMultiView = "MultiView" :: Ctr
@@ -110,6 +112,7 @@ f_plots = "plots" :: FieldName
 f_points = "points" :: FieldName
 f_size = "size" :: FieldName
 f_stackedBars = "stackedBars" :: FieldName
+f_tickLabels = "tickLabels" :: FieldName
 f_x = "x" :: FieldName
 f_xlabel = "xlabel" :: FieldName
 f_ylabel = "ylabel" :: FieldName
@@ -127,9 +130,6 @@ dataTypes = L.fromFoldable
    , dataType "InfNum"
         [ "FNum" × 1
         , "Infty" × 0
-        ]
-   , dataType "LinePlot"
-        [ cLinePlot × 1
         ]
    , dataType "List"
         [ cNil × 0
@@ -150,6 +150,14 @@ dataTypes = L.fromFoldable
    , dataType "Tree"
         [ "Empty" × 0
         , "NonEmpty" × 3 -- Tree any × any × Tree any
+        ]
+   -- View stuff
+   , dataType "LinePlot"
+        [ cLinePlot × 1
+        ]
+   , dataType "Orientation"
+        [ cDefault × 0
+        , cRotated × 0
         ]
    , dataType "View"
         [ cBarChart × 1
