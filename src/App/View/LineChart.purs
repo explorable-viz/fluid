@@ -89,14 +89,14 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
    createRootElement div childId = do
       svg <- create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
-      axisW <- axisWidth svg
+      { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
       let
          margin :: Margin
          margin =
             { top: point_smallRadius * 3 -- otherwise points at very top are clipped
-            , right: 3 -- otherwise rightmost edge legend box is clipped
-            , bottom: axisW.x
-            , left: axisW.y
+            , right: 3 -- otherwise rightmost edge of legend box is clipped
+            , bottom: xAxisHeight
+            , left: yAxisWidth
             }
 
          interior :: Dimensions Int
