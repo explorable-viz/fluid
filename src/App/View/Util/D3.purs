@@ -1,6 +1,7 @@
 module App.View.Util.D3
    ( Coord
    , D3Selection
+   , D3MultiSelection
    , Margin
    , SVGElementType(..)
    , create
@@ -75,7 +76,7 @@ data SVGElementType
 create :: SVGElementType -> D3Selection -> Array (Bind String) -> Effect D3Selection
 create elementType parent = fromFoldable >>> createChild parent (show elementType)
 
-createMany :: forall a. SVGElementType -> D3Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect D3Selection
+createMany :: forall a. SVGElementType -> D3Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect D3MultiSelection
 createMany elementType parent class_ xs = fromFoldable >>> createChildren parent (show elementType) class_ xs
 
 setAttrs :: D3Selection -> Array (Bind String) -> Effect Unit
@@ -85,9 +86,10 @@ setStyles :: D3Selection -> Array (Bind String) -> Effect Unit
 setStyles sel = fromFoldable >>> styles sel >>> void
 
 foreign import data D3Selection :: Type
+foreign import data D3MultiSelection :: Type
 
 foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
-foreign import createChildren :: forall a. D3Selection -> String -> String -> Array a -> Object (a -> String) -> Effect D3Selection
+foreign import createChildren :: forall a. D3Selection -> String -> String -> Array a -> Object (a -> String) -> Effect D3MultiSelection
 foreign import remove :: D3Selection -> Effect Unit
 foreign import nameCol :: String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number

@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Margin, SVGElementType(..), create, createMany, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3MultiSelection, D3Selection, Margin, SVGElementType(..), create, createMany, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -47,7 +47,7 @@ type LineChartHelpers =
    { createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
    , point_attrs :: Dimensions Int -> PointCoordinate -> Object String
    , legendHelpers :: LegendHelpers
-   , createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
+   , createLegend :: Dimensions Int -> D3Selection -> Effect D3MultiSelection
    }
 
 type LegendHelpers =
@@ -234,7 +234,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
       pure { x, y }
 
-   createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
+   createLegend :: Dimensions Int -> D3Selection -> Effect D3MultiSelection
    createLegend (Dimensions interior) parent = do
       legend' <- create G parent
          [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
