@@ -5,8 +5,8 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 as D3
 import App.View.Util.D3 (Coord, SVGElementType(..))
+import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -242,7 +242,12 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       legendEntries <- D3.createMany G legend' legendEntry_class entries
          [ D3.translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
+      D3.forEach_setText (\{ name } -> name) =<< D3.forEach_create Text legendEntries
+         [ "class" ↦ const "legend-text"
+         , D3.translate' $ const { x: legend_entry_x, y: 9 } -- align text with boxes
+         ]
       pure legendEntries
+
       where
       Dimensions { height, width } = legend_dims
 

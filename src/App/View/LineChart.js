@@ -51,11 +51,6 @@ function drawLineChart_ (
          ({ rootElement, interior } = createRootElement(div)(childId)())
          const legendEntries = createLegend(interior)(rootElement)()
 
-         legendEntries.append('text')
-            .attr('class', 'legend-text')
-            .text(({ name }) => name)
-            .attrs(legendHelpers.text_attrs)
-
          legendEntries.append('circle')
             .attr('fill', ({ name }) => nameCol(name))
             .attrs(legendHelpers.circle_attrs)

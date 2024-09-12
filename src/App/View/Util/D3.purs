@@ -8,6 +8,7 @@ module App.View.Util.D3
    , createMany
    , dimensions
    , forEach_create
+   , forEach_setText
    , line
    , nameCol
    , remove
