@@ -267,6 +267,9 @@ instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) wher
 
 derive instance Newtype (Dimensions a) _
 derive instance Functor Dimensions
+derive instance Generic (Dimensions a) _
+instance Show a => Show (Dimensions a) where
+   show = genericShow
 
 instance Reflect (Val (SelState 𝕊)) (Dict (Val (SelState 𝕊))) where
    from (Val _ (Dictionary (DictRep d))) = d <#> snd

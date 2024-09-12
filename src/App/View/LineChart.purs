@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Margin, SVGElementType(..), create, createMany, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Margin, SVGElementType(..), create, createMany, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -78,49 +78,48 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    names :: Array String
    names = plots <#> unwrap >>> _.name >>> fst
 
-   -- Assume tick dimensions are independent of "range" that axes map into
    tickLength :: D3Selection -> Effect (Coord Int)
    tickLength parent = do
       { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent
-      let
-         xDims = dimensions (selectAll xAxis ".tick")
-         yDims = dimensions (selectAll yAxis ".tick")
+      -- Will this take into account rotation of tick labels?
+      xDims <- dimensions xAxis
+      yDims <- dimensions yAxis
       remove xAxis
       remove yAxis
-      pure
-         { x: maximum (xDims # nonEmpty <#> unwrap >>> _.height)
-         , y: maximum (yDims # nonEmpty <#> unwrap >>> _.width)
-         }
+      pure { x: xDims # unwrap >>> _.height, y: yDims # unwrap >>> _.width }
 
    createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
    createRootElement div childId = do
       svg <- create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
       tickLen <- tickLength svg
-      log (show tickLen)
       let
          margin :: Margin
-         margin = { top: 15, right: 15, bottom: 40, left: tickLen.y }
+         margin = { top: point_smallRadius * 3, right: 15, bottom: tickLen.x, left: tickLen.y }
 
          interior :: Dimensions Int
          interior = Dimensions
             { width: width - margin.left - margin.right - (unwrap legend_dims).width
-            , height: height - margin.top - margin.bottom -- minus caption_height?
+            , height: height - margin.top - margin.bottom - captionHeight
             }
 
+      log (show tickLen)
+      log (show interior)
+
       g <- create G svg [ translate { x: margin.left, y: margin.top } ]
+      void $ createAxes interior g
+      createLines interior g
+      createPoints g
       setText (fst caption) =<< create Text svg
          [ "x" ⟼ width / 2
-         , "y" ⟼ height - margin.bottom / 2
+         , "y" ⟼ height - margin.top - captionHeight / 2
          , "class" ↦ "title-text"
          , "dominant-baseline" ↦ "middle"
          , "text-anchor" ↦ "middle"
          ]
-      void $ createAxes interior g
-      createLines interior g
-      createPoints g
       pure { rootElement: g, interior }
       where
       Dimensions { height, width } = size <#> fst
+      captionHeight = textHeight (fst caption) * 2
 
    createLines :: Dimensions Int -> D3Selection -> Effect Unit
    createLines range parent =
@@ -224,13 +223,13 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       x <- xAxis (to range) (nub points.x) =<<
          create G parent [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ]
       when (fst xLabels == Rotated) do
-         let labels = selectAll x "text"
+         labels <- selectAll x "text"
          setAttrs labels [ rotate 45 ]
          setStyles labels [ "text-anchor" ↦ "start" ]
 
       y <- yAxis (to range) 3.0 =<< create G parent [ "class" ↦ "y-axis" ]
       when (fst yLabels == Rotated) do
-         let labels = selectAll y "text"
+         labels <- selectAll y "text"
          setAttrs labels [ rotate 45 ]
          setStyles labels [ "text-anchor" ↦ "end" ]
 

@@ -97,8 +97,8 @@ foreign import yAxis :: Coord (Endo Number) -> Number -> D3Selection -> Effect D
 foreign import textDimensions :: String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import setText :: String -> D3Selection -> Effect Unit
-foreign import dimensions :: D3Selection -> Array (Dimensions Int)
-foreign import selectAll :: D3Selection -> String -> D3Selection
+foreign import dimensions :: D3Selection -> Effect (Dimensions Int) -- expects singleton selection
+foreign import selectAll :: D3Selection -> String -> Effect D3Selection
 foreign import attrs :: D3Selection -> Object String -> Effect D3Selection
 foreign import styles :: D3Selection -> Object String -> Effect D3Selection
 

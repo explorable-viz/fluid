@@ -131,15 +131,21 @@ export function nameCol (key) {
 }
 
 export function dimensions (sel) {
-   return sel.nodes().map(node => {
+   return () => {
+      if (sel.nodes().length != 1) {
+         throw "Expected singleton selection"
+      }
+      [ node ] = sel.nodes()
       let { width, height } = node.getBBox()
       return { width: Math.ceil(width), height: Math.ceil(height) }
-   })
+   }
 }
 
 export function selectAll (sel) {
    return selector => {
-      return sel.selectAll(selector)
+      return () => {
+         return sel.selectAll(selector)
+      }
    }
 }
 
