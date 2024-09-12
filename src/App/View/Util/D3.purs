@@ -94,7 +94,6 @@ foreign import data MultiSelection :: Type
 
 foreign import createChild :: Selection -> String -> Object String -> Effect Selection
 foreign import createChildren :: forall a. Selection -> String -> String -> Array a -> Object (a -> String) -> Effect MultiSelection
-foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
 foreign import remove :: Selection -> Effect Unit
 foreign import nameCol :: String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
@@ -108,6 +107,10 @@ foreign import dimensions :: Selection -> Effect (Dimensions Int) -- expects sin
 foreign import selectAll :: Selection -> String -> Effect Selection
 foreign import attrs :: Selection -> Object String -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
+
+-- Different type signatures but same underlying implementation as Selection-based analogues
+foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
+foreign import forEach_setText :: forall a. (a -> String) -> MultiSelection -> Effect Unit
 
 -- ======================
 -- boilerplate

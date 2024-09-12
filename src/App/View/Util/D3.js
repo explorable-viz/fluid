@@ -9,6 +9,7 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
+/* Not sure I need this; equivalent to attrs, once type information is disregarded */
 d3.selection.prototype.attrFuns = function(m) {
    for (const k in m) {
       this.attr(k, d => m[k](d))
@@ -133,6 +134,10 @@ export function setText (string) {
          return element.text(string)
       }
    }
+}
+
+export function forEach_setText (f) {
+   return setText(f)
 }
 
 const colScale = d3.scaleOrdinal(d3.schemePastel1) // stateful but purify by allocating once
