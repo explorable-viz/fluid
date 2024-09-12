@@ -48,7 +48,6 @@ type LineChartHelpers =
    , point_attrs :: Dimensions Int -> PointCoordinate -> Object String
    , legendHelpers :: LegendHelpers
    , createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
-   , createLegendEntry :: D3Selection -> Effect D3Selection
    }
 
 type LegendHelpers =
@@ -71,7 +70,6 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    , point_attrs
    , legendHelpers
    , createLegend
-   , createLegendEntry
    }
    where
    names :: Array String
@@ -242,19 +240,15 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
       void $ create Rect legend'
          [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
-      pure legend'
+      createMany G legend' legendEntry_class entries [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
       where
       Dimensions { height, width } = legend_dims
 
-   legendEntry_class :: String
-   legendEntry_class = "legend-entry"
-
-   createLegendEntry :: D3Selection -> Effect D3Selection
-   createLegendEntry parent =
-      createMany G parent legendEntry_class entries [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
-      where
       entries :: Array LegendEntry
       entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
+
+   legendEntry_class :: String
+   legendEntry_class = "legend-entry"
 
    lineHeight :: Int
    lineHeight = 15

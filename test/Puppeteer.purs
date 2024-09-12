@@ -7,7 +7,6 @@ import Data.Foldable (sequence_)
 import Data.String (Pattern(..), contains)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
 import Test.Util (testCondition)
@@ -113,7 +112,6 @@ checkTextContent :: T.Page -> T.Selector -> String -> Aff Unit
 checkTextContent page selector expected = do
    waitFor selector page
    text <- textContentValue page selector
-   liftEffect $ log ("TESTING: " <> text)
    testCondition (show' selector) (text == expected) ("text == " <> show expected)
    pure unit
 

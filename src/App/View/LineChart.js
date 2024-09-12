@@ -30,7 +30,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, legendHelpers, createLegend, createLegendEntry } = lineChartHelpers
+      const { createRootElement, legendHelpers, createLegend } = lineChartHelpers
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
       const names = plots.map(plot => val(plot.name))
@@ -49,15 +49,14 @@ function drawLineChart_ (
 
       if (rootElement.empty()) {
          ({ rootElement, interior } = createRootElement(div)(childId)())
-         const legend = createLegend(interior)(rootElement)()
-         const legendEntry = createLegendEntry(legend)()
+         const legendEntries = createLegend(interior)(rootElement)()
 
-         legendEntry.append('text')
+         legendEntries.append('text')
             .attr('class', 'legend-text')
             .text(({ name }) => name)
             .attrs(legendHelpers.text_attrs)
 
-         legendEntry.append('circle')
+         legendEntries.append('circle')
             .attr('fill', ({ name }) => nameCol(name))
             .attrs(legendHelpers.circle_attrs)
       }
