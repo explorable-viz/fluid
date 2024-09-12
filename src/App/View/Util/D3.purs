@@ -1,4 +1,27 @@
-module App.View.Util.D3 where
+module App.View.Util.D3
+   ( Coord
+   , D3Selection
+   , Margin
+   , SVGElementType(..)
+   , create
+   , createMany
+   , dimensions
+   , line
+   , nameCol
+   , remove
+   , rotate
+   , scaleLinear
+   , selectAll
+   , setAttrs
+   , setStyles
+   , setText
+   , textHeight
+   , textWidth
+   , translate
+   , translate'
+   , xAxis
+   , yAxis
+   ) where
 
 import Prelude
 
@@ -41,14 +64,25 @@ translate' f =
 rotate :: Int -> Bind String
 rotate n = "transform" ↦ "rotate(" <> show n <> ")"
 
-data SVGElementType =
-   Circle | G | Path | Rect | SVG | Text
+data SVGElementType
+   = Circle
+   | G
+   | Path
+   | Rect
+   | SVG
+   | Text
 
 create :: SVGElementType -> D3Selection -> Array (Bind String) -> Effect D3Selection
 create elementType parent = fromFoldable >>> createChild parent (show elementType)
 
 createMany :: forall a. SVGElementType -> D3Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect D3Selection
 createMany elementType parent class_ xs = fromFoldable >>> createChildren parent (show elementType) class_ xs
+
+setAttrs :: D3Selection -> Array (Bind String) -> Effect Unit
+setAttrs sel = fromFoldable >>> attrs sel >>> void
+
+setStyles :: D3Selection -> Array (Bind String) -> Effect Unit
+setStyles sel = fromFoldable >>> styles sel >>> void
 
 foreign import data D3Selection :: Type
 
@@ -62,7 +96,7 @@ foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> D3Selecti
 foreign import yAxis :: Coord (Endo Number) -> Number -> D3Selection -> Effect D3Selection
 foreign import textDimensions :: String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
-foreign import text :: String -> D3Selection -> Effect Unit
+foreign import setText :: String -> D3Selection -> Effect Unit
 foreign import dimensions :: D3Selection -> Array (Dimensions Int)
 foreign import selectAll :: D3Selection -> String -> D3Selection
 foreign import attrs :: D3Selection -> Object String -> Effect D3Selection

@@ -114,7 +114,7 @@ export function yAxis (to) {
    }
 }
 
-export function text (string) {
+export function setText (string) {
    return element => {
       return () => {
          return element.text(string)

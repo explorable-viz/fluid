@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Margin, SVGElementType(..), attrs, create, createMany, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, styles, text, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Margin, SVGElementType(..), create, createMany, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, textWidth, translate, translate', xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -108,7 +108,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
             }
 
       g <- create G svg [ translate { x: margin.left, y: margin.top } ]
-      text (fst caption) =<< create Text svg
+      setText (fst caption) =<< create Text svg
          [ "x" ⟼ width / 2
          , "y" ⟼ height - margin.bottom / 2
          , "class" ↦ "title-text"
@@ -225,14 +225,14 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          create G parent [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ]
       when (fst xLabels == Rotated) do
          let labels = selectAll x "text"
-         void $ attrs labels $ fromFoldable [ rotate 45 ]
-         void $ styles labels $ fromFoldable [ "text-anchor" ↦ "start" ]
+         setAttrs labels [ rotate 45 ]
+         setStyles labels [ "text-anchor" ↦ "start" ]
 
       y <- yAxis (to range) 3.0 =<< create G parent [ "class" ↦ "y-axis" ]
       when (fst yLabels == Rotated) do
          let labels = selectAll y "text"
-         void $ attrs labels $ fromFoldable [ rotate 45 ]
-         void $ styles labels $ fromFoldable [ "text-anchor" ↦ "end" ]
+         setAttrs labels [ rotate 45 ]
+         setStyles labels [ "text-anchor" ↦ "end" ]
 
       pure { x, y }
 
