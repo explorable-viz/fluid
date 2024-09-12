@@ -7,7 +7,7 @@ import Bind (Bind, (↦))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Newtype (unwrap)
 import Effect (Effect)
-import Foreign.Object (Object)
+import Foreign.Object (Object, fromFoldable)
 import Util (Endo)
 
 type Margin =
@@ -37,6 +37,9 @@ translate' f =
 
 rotate :: Int -> Bind String
 rotate n = "transform" ↦ "rotate(" <> show n <> ")"
+
+createSVG :: D3Selection -> Array (Bind String) -> Effect D3Selection
+createSVG sel = fromFoldable >>> createChild sel "svg"
 
 foreign import data D3Selection :: Type
 

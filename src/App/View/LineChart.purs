@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Margin, attrs, createChild, createChildren, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, styles, text, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Margin, attrs, createChild, createChildren, createSVG, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, styles, text, textWidth, translate, translate', xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -94,11 +94,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
    createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
    createRootElement div childId = do
-      svg <- createChild div "svg" $ fromFoldable
-         [ "width" ⟼ width
-         , "height" ⟼ height
-         , "id" ↦ childId
-         ]
+      svg <- createSVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
       tickLen <- tickLength svg
       log (show tickLen)
       let
