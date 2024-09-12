@@ -22,18 +22,13 @@ function drawLineChart_ (
    uiHelpers,
    {
       divId,
-      suffix,
-      view: {
-         plots,     // Array LinePlot
-      }
+      suffix
    },
    listener
 ) {
    return () => {
-      const { createRootElement, legendHelpers, createLegend } = lineChartHelpers
-      const { val } = uiHelpers
+      const { createRootElement, createLegend } = lineChartHelpers
       const childId = divId + '-' + suffix
-      const names = plots.map(plot => val(plot.name))
       const div = d3.select('#' + divId)
       if (div.empty()) {
          console.error('Unable to insert figure: no div found with id ' + divId)
@@ -41,19 +36,10 @@ function drawLineChart_ (
       }
 
       let rootElement = div.selectAll('#' + childId)
-      const color = d3.scaleOrdinal(d3.schemePastel1)
-
-      function nameCol (name) {
-         return color(names.indexOf(name))
-      }
 
       if (rootElement.empty()) {
          ({ rootElement, interior } = createRootElement(div)(childId)())
-         const legendEntries = createLegend(interior)(rootElement)()
-
-         legendEntries.append('circle')
-            .attr('fill', ({ name }) => nameCol(name))
-            .attrs(legendHelpers.circle_attrs)
+         createLegend(interior)(rootElement)()
       }
       setSelState(lineChartHelpers, rootElement, interior, listener)
    }

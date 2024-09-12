@@ -48,7 +48,7 @@ type LineChartHelpers =
    { createRootElement :: D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
    , point_attrs :: Dimensions Int -> PointCoordinate -> Object String
    , legendHelpers :: LegendHelpers
-   , createLegend :: Dimensions Int -> D3.Selection -> Effect D3.MultiSelection
+   , createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    }
 
 type LegendHelpers =
@@ -234,7 +234,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          D3.setStyles labels [ "text-anchor" ↦ "end" ]
       pure { x, y }
 
-   createLegend :: Dimensions Int -> D3.Selection -> Effect D3.MultiSelection
+   createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior) parent = do
       legend' <- D3.create G parent
          [ D3.translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
@@ -246,13 +246,21 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          [ "class" ↦ const "legend-text"
          , D3.translate' $ const { x: legend_entry_x, y: 9 } -- align text with boxes
          ]
-      pure legendEntries
+      void $ D3.forEach_create Circle legendEntries
+         [ "fill" ↦ \{ name } -> D3.nameCol name names
+         , "r" ↦ const (show point_smallRadius)
+         , "cx" ↦ const (show circle_centre)
+         , "cy" ↦ const (show circle_centre)
+         ]
 
       where
       Dimensions { height, width } = legend_dims
 
       entries :: Array LegendEntry
       entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
+
+      circle_centre :: Int
+      circle_centre = lineHeight / 2 - point_smallRadius / 2
 
    legendEntry_class :: String
    legendEntry_class = "legend-entry"
