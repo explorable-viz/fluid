@@ -247,6 +247,7 @@ foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
 drawLineChart2 :: Renderer LineChart
 drawLineChart2 uiHelpers { divId, suffix, view } redraw = do
+   let { createRootElement } = lineChartHelpers view
    ?_
 
 -- ======================
