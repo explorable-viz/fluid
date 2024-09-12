@@ -1,3 +1,4 @@
 let d = {|"a" := 5, "a" ++ "b" := {fst : 6,
-                                      snd : ⸨0⸩}|} in
-d.a * d.["ab"].snd
+                                      snd : ⸨0⸩}|};
+    ab = "ab" in
+d.a * d.[ab].snd
