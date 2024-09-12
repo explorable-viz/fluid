@@ -92,11 +92,16 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       axisW <- axisWidth svg
       let
          margin :: Margin
-         margin = { top: point_smallRadius * 3, right: 15, bottom: axisW.x, left: axisW.y }
+         margin =
+            { top: point_smallRadius * 3 -- otherwise points at very top are clipped
+            , right: 3 -- otherwise rightmost edge legend box is clipped
+            , bottom: axisW.x
+            , left: axisW.y
+            }
 
          interior :: Dimensions Int
          interior = Dimensions
-            { width: width - margin.left - margin.right - (unwrap legend_dims).width
+            { width: width - margin.left - margin.right - (unwrap legend_dims).width - legend_sep
             , height: height - margin.top - margin.bottom - captionHeight
             }
 
@@ -106,7 +111,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       createPoints g
       setText (fst caption) =<< create Text svg
          [ "x" ⟼ width / 2
-         , "y" ⟼ height - margin.top - captionHeight / 2
+         , "y" ⟼ height - captionHeight / 2
          , "class" ↦ "title-text"
          , "dominant-baseline" ↦ "middle"
          , "text-anchor" ↦ "middle"
