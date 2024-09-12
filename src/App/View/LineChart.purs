@@ -78,23 +78,22 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    names :: Array String
    names = plots <#> unwrap >>> _.name >>> fst
 
-   tickLength :: D3Selection -> Effect (Coord Int)
-   tickLength parent = do
+   axisWidth :: D3Selection -> Effect (Coord Int)
+   axisWidth parent = do
       { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent
-      -- Will this take into account rotation of tick labels?
-      xDims <- dimensions xAxis
-      yDims <- dimensions yAxis
+      x <- dimensions xAxis <#> unwrap >>> _.height
+      y <- dimensions yAxis <#> unwrap >>> _.width
       remove xAxis
       remove yAxis
-      pure { x: xDims # unwrap >>> _.height, y: yDims # unwrap >>> _.width }
+      pure { x, y }
 
    createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
    createRootElement div childId = do
       svg <- create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
-      tickLen <- tickLength svg
+      axisW <- axisWidth svg
       let
          margin :: Margin
-         margin = { top: point_smallRadius * 3, right: 15, bottom: tickLen.x, left: tickLen.y }
+         margin = { top: point_smallRadius * 3, right: 15, bottom: axisW.x, left: axisW.y }
 
          interior :: Dimensions Int
          interior = Dimensions
@@ -102,7 +101,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
             , height: height - margin.top - margin.bottom - captionHeight
             }
 
-      log (show tickLen)
+      log (show axisW)
       log (show interior)
 
       g <- create G svg [ translate { x: margin.left, y: margin.top } ]
