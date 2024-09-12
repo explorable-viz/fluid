@@ -245,6 +245,10 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
+drawLineChart2 :: Renderer LineChart
+drawLineChart2 uiHelpers { divId, suffix, view } redraw = do
+   ?_
+
 -- ======================
 -- boilerplate
 -- ======================
