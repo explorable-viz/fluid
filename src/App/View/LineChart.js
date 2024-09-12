@@ -38,7 +38,7 @@ function drawLineChart_ (
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
-         rootElement = createRootElement(div)(childId)()
+         ({ rootElement, interior } = createRootElement(div)(childId)())
       }
       setSelState(lineChartHelpers, rootElement, interior, listener)
    }

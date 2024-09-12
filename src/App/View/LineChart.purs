@@ -45,10 +45,8 @@ newtype LinePlot = LinePlot
 newtype Point a = Point (Coord (Selectable a))
 
 type LineChartHelpers =
-   { createRootElement :: D3.Selection -> String -> Effect D3.Selection
+   { createRootElement :: D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
    , point_attrs :: Dimensions Int -> PointCoordinate -> Object String
-   , legendHelpers :: LegendHelpers
-   , createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    }
 
 type LegendHelpers =
@@ -69,8 +67,6 @@ lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    { createRootElement
    , point_attrs
-   , legendHelpers
-   , createLegend
    }
    where
    names :: Array String
@@ -85,7 +81,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       D3.remove yAxis
       pure { x, y }
 
-   createRootElement :: D3.Selection -> String -> Effect D3.Selection
+   createRootElement :: D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
    createRootElement div childId = do
       svg <- D3.create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
       { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
@@ -116,7 +112,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          , "text-anchor" ↦ "middle"
          ]
       createLegend interior g
-      pure g
+      pure { rootElement: g, interior }
       where
       caption_class = "title-text"
       caption_height = D3.textHeight caption_class (fst caption) * 2
