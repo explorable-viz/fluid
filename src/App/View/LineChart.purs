@@ -101,7 +101,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
             , height: height - margin.top - margin.bottom - captionHeight
             }
 
-      log (show axisW)
+      log ("margin.top:" <> show margin.top <> ", margin.bottom: " <> show margin.bottom <> ", captionHeight: " <> show captionHeight)
       log (show interior)
 
       g <- create G svg [ translate { x: margin.left, y: margin.top } ]
