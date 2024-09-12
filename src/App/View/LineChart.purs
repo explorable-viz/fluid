@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Margin, attrs, createChild, createChildren, createSVG, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, styles, text, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Margin, SVGElementType(..), attrs, create, createMany, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, styles, text, textWidth, translate, translate', xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -94,7 +94,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
    createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
    createRootElement div childId = do
-      svg <- createSVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
+      svg <- create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
       tickLen <- tickLength svg
       log (show tickLen)
       let
@@ -107,16 +107,14 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
             , height: height - margin.top - margin.bottom -- minus caption_height?
             }
 
-      g <- createChild svg "g" $ fromFoldable [ translate { x: margin.left, y: margin.top } ]
-      text (fst caption) =<< createChild svg "text"
-         ( fromFoldable
-              [ "x" ⟼ width / 2
-              , "y" ⟼ height - margin.bottom / 2
-              , "class" ↦ "title-text"
-              , "dominant-baseline" ↦ "middle"
-              , "text-anchor" ↦ "middle"
-              ]
-         )
+      g <- create G svg [ translate { x: margin.left, y: margin.top } ]
+      text (fst caption) =<< create Text svg
+         [ "x" ⟼ width / 2
+         , "y" ⟼ height - margin.bottom / 2
+         , "class" ↦ "title-text"
+         , "dominant-baseline" ↦ "middle"
+         , "text-anchor" ↦ "middle"
+         ]
       void $ createAxes interior g
       createLines interior g
       createPoints g
@@ -126,7 +124,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
    createLines :: Dimensions Int -> D3Selection -> Effect Unit
    createLines range parent =
-      void $ createChildren parent "path" "linechart-line" entries $ fromFoldable
+      void $ createMany Path parent "linechart-line" entries
          [ "fill" ↦ const "none"
          , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) names
          , "stroke-width" ↦ const "1"
@@ -139,7 +137,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
    createPoints :: D3Selection -> Effect Unit
    createPoints parent =
-      void $ createChildren parent "circle" "linechart-point" entries $ fromFoldable []
+      void $ createMany Circle parent "linechart-point" entries []
       where
       entries :: Array PointCoordinate
       entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
@@ -223,18 +221,14 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    createAxes :: Dimensions Int -> D3Selection -> Effect (Coord D3Selection)
    createAxes range parent = do
       let Point { x: xLabels, y: yLabels } = tickLabels
-      x <- xAxis (to range) (nub points.x) =<< createChild parent "g"
-         ( fromFoldable
-              [ "class" ↦ "x-axis"
-              , translate { x: 0, y: (unwrap range).height }
-              ]
-         )
+      x <- xAxis (to range) (nub points.x) =<<
+         create G parent [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ]
       when (fst xLabels == Rotated) do
          let labels = selectAll x "text"
          void $ attrs labels $ fromFoldable [ rotate 45 ]
          void $ styles labels $ fromFoldable [ "text-anchor" ↦ "start" ]
 
-      y <- yAxis (to range) 3.0 =<< createChild parent "g" (fromFoldable [ "class" ↦ "y-axis" ])
+      y <- yAxis (to range) 3.0 =<< create G parent [ "class" ↦ "y-axis" ]
       when (fst yLabels == Rotated) do
          let labels = selectAll y "text"
          void $ attrs labels $ fromFoldable [ rotate 45 ]
@@ -244,24 +238,17 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
    createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
    createLegend (Dimensions interior) parent = do
-      legend' <- createChild parent "g" $ fromFoldable
-         [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) }
-         ]
-      void $ createChild legend' "rect" $ fromFoldable
-         [ "class" ↦ "legend-box"
-         , "x" ⟼ 0
-         , "y" ⟼ 0
-         , "height" ⟼ height
-         , "width" ⟼ width
-         ]
+      legend' <- create G parent
+         [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
+      void $ create Rect legend'
+         [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       pure legend'
       where
       Dimensions { height, width } = legend_dims
 
    createLegendEntry :: D3Selection -> Effect D3Selection
    createLegendEntry parent =
-      createChildren parent "g" "legend-entry" entries $ fromFoldable
-         [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
+      createMany G parent "legend-entry" entries [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
       where
       entries :: Array LegendEntry
       entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
