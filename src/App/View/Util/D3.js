@@ -62,6 +62,16 @@ export function createChild (parent) {
    }
 }
 
+export function forEach_createChild (parent) {
+   return elementType => {
+      return attrFuns => {
+         return () => {
+            return parent.append(elementType).attrFuns(attrFuns)
+         }
+      }
+   }
+}
+
 export function createChildren (parent) {
    return elementType => {
       return class_ => {

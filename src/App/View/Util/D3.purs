@@ -1,12 +1,13 @@
 module App.View.Util.D3
    ( Coord
-   , D3Selection
-   , D3MultiSelection
+   , Selection
+   , MultiSelection
    , Margin
    , SVGElementType(..)
    , create
    , createMany
    , dimensions
+   , forEach_create
    , line
    , nameCol
    , remove
@@ -73,36 +74,40 @@ data SVGElementType
    | SVG
    | Text
 
-create :: SVGElementType -> D3Selection -> Array (Bind String) -> Effect D3Selection
+create :: SVGElementType -> Selection -> Array (Bind String) -> Effect Selection
 create elementType parent = fromFoldable >>> createChild parent (show elementType)
 
-createMany :: forall a. SVGElementType -> D3Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect D3MultiSelection
+forEach_create :: forall a. SVGElementType -> MultiSelection -> Array (Bind (a -> String)) -> Effect MultiSelection
+forEach_create elementType parents = fromFoldable >>> forEach_createChild parents (show elementType)
+
+createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection
 createMany elementType parent class_ xs = fromFoldable >>> createChildren parent (show elementType) class_ xs
 
-setAttrs :: D3Selection -> Array (Bind String) -> Effect Unit
+setAttrs :: Selection -> Array (Bind String) -> Effect Unit
 setAttrs sel = fromFoldable >>> attrs sel >>> void
 
-setStyles :: D3Selection -> Array (Bind String) -> Effect Unit
+setStyles :: Selection -> Array (Bind String) -> Effect Unit
 setStyles sel = fromFoldable >>> styles sel >>> void
 
-foreign import data D3Selection :: Type
-foreign import data D3MultiSelection :: Type
+foreign import data Selection :: Type
+foreign import data MultiSelection :: Type
 
-foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
-foreign import createChildren :: forall a. D3Selection -> String -> String -> Array a -> Object (a -> String) -> Effect D3MultiSelection
-foreign import remove :: D3Selection -> Effect Unit
+foreign import createChild :: Selection -> String -> Object String -> Effect Selection
+foreign import createChildren :: forall a. Selection -> String -> String -> Array a -> Object (a -> String) -> Effect MultiSelection
+foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
+foreign import remove :: Selection -> Effect Unit
 foreign import nameCol :: String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 -- Currently two different protocols for x and y axis -- will subsume into something more general
-foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> D3Selection -> Effect D3Selection
-foreign import yAxis :: Coord (Endo Number) -> Number -> D3Selection -> Effect D3Selection
+foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> Selection -> Effect Selection
+foreign import yAxis :: Coord (Endo Number) -> Number -> Selection -> Effect Selection
 foreign import textDimensions :: String -> String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
-foreign import setText :: String -> D3Selection -> Effect Unit
-foreign import dimensions :: D3Selection -> Effect (Dimensions Int) -- expects singleton selection
-foreign import selectAll :: D3Selection -> String -> Effect D3Selection
-foreign import attrs :: D3Selection -> Object String -> Effect D3Selection
-foreign import styles :: D3Selection -> Object String -> Effect D3Selection
+foreign import setText :: String -> Selection -> Effect Unit
+foreign import dimensions :: Selection -> Effect (Dimensions Int) -- expects singleton selection
+foreign import selectAll :: Selection -> String -> Effect Selection
+foreign import attrs :: Selection -> Object String -> Effect Selection
+foreign import styles :: Selection -> Object String -> Effect Selection
 
 -- ======================
 -- boilerplate

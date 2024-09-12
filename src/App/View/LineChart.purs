@@ -5,7 +5,8 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3MultiSelection, D3Selection, Margin, SVGElementType(..), create, createMany, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 as D3
+import App.View.Util.D3 (Coord, SVGElementType(..))
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -44,10 +45,10 @@ newtype LinePlot = LinePlot
 newtype Point a = Point (Coord (Selectable a))
 
 type LineChartHelpers =
-   { createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
+   { createRootElement :: D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
    , point_attrs :: Dimensions Int -> PointCoordinate -> Object String
    , legendHelpers :: LegendHelpers
-   , createLegend :: Dimensions Int -> D3Selection -> Effect D3MultiSelection
+   , createLegend :: Dimensions Int -> D3.Selection -> Effect D3.MultiSelection
    }
 
 type LegendHelpers =
@@ -75,21 +76,21 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    names :: Array String
    names = plots <#> unwrap >>> _.name >>> fst
 
-   axisWidth :: D3Selection -> Effect (Coord Int)
+   axisWidth :: D3.Selection -> Effect (D3.Coord Int)
    axisWidth parent = do
       { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent
-      x <- dimensions xAxis <#> unwrap >>> _.height
-      y <- dimensions yAxis <#> unwrap >>> _.width
-      remove xAxis
-      remove yAxis
+      x <- D3.dimensions xAxis <#> unwrap >>> _.height
+      y <- D3.dimensions yAxis <#> unwrap >>> _.width
+      D3.remove xAxis
+      D3.remove yAxis
       pure { x, y }
 
-   createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
+   createRootElement :: D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
    createRootElement div childId = do
-      svg <- create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
+      svg <- D3.create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
       { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
       let
-         margin :: Margin
+         margin :: D3.Margin
          margin =
             { top: point_smallRadius * 3 -- otherwise points at very top are clipped
             , right: 3 -- otherwise rightmost edge of legend box is clipped
@@ -103,11 +104,11 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
             , height: height - margin.top - margin.bottom - caption_height
             }
 
-      g <- create G svg [ translate { x: margin.left, y: margin.top } ]
+      g <- D3.create G svg [ D3.translate { x: margin.left, y: margin.top } ]
       void $ createAxes interior g
       createLines interior g
       createPoints g
-      setText (fst caption) =<< create Text svg
+      D3.setText (fst caption) =<< D3.create Text svg
          [ "x" ⟼ width / 2
          , "y" ⟼ height - caption_height / 2
          , "class" ↦ caption_class
@@ -117,25 +118,25 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       pure { rootElement: g, interior }
       where
       caption_class = "title-text"
-      caption_height = textHeight caption_class (fst caption) * 2
+      caption_height = D3.textHeight caption_class (fst caption) * 2
       Dimensions { height, width } = size <#> fst
 
-   createLines :: Dimensions Int -> D3Selection -> Effect Unit
+   createLines :: Dimensions Int -> D3.Selection -> Effect Unit
    createLines range parent =
-      void $ createMany Path parent "linechart-line" entries
+      void $ D3.createMany Path parent "linechart-line" entries
          [ "fill" ↦ const "none"
-         , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) names
+         , "stroke" ↦ \{ plot: LinePlot { name } } -> D3.nameCol (fst name) names
          , "stroke-width" ↦ const "1"
          , "d" ↦ \{ plot: LinePlot { points: ps } } ->
-              line (to range) (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y })
+              D3.line (to range) (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y })
          ]
       where
       entries :: Array { i :: Int, plot :: LinePlot }
       entries = flip mapWithIndex plots \i plot -> { i, plot }
 
-   createPoints :: D3Selection -> Effect Unit
+   createPoints :: D3.Selection -> Effect Unit
    createPoints parent =
-      void $ createMany Circle parent "linechart-point" entries []
+      void $ D3.createMany Circle parent "linechart-point" entries []
       where
       entries :: Array PointCoordinate
       entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
@@ -155,7 +156,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       LinePlot plot = plots ! i
       Point { x, y } = plot.points ! j
       sel = snd x ∨ snd y
-      col = nameCol name names
+      col = D3.nameCol name names
       fill = if isPersistent sel then flip colorShade (-30) else identity
 
    point_smallRadius :: Int
@@ -171,7 +172,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       }
       where
       maxTextWidth :: Int
-      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth legendEntry_class # nonEmpty)
+      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> D3.textWidth legendEntry_class # nonEmpty)
 
       rightMargin :: Int
       rightMargin = 4
@@ -190,8 +191,8 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
    to :: Dimensions Int -> Coord (Endo Number)
    to (Dimensions range) =
-      { x: scaleLinear { min: min'.x, max: max'.x } { min: 0.0, max: toNumber range.width }
-      , y: scaleLinear { min: 0.0, max: max'.y } { min: toNumber range.height, max: 0.0 }
+      { x: D3.scaleLinear { min: min'.x, max: max'.x } { min: 0.0, max: toNumber range.width }
+      , y: D3.scaleLinear { min: 0.0, max: max'.y } { min: toNumber range.height, max: 0.0 }
       }
 
    legend_entry_x :: Int
@@ -200,7 +201,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    legendHelpers :: LegendHelpers
    legendHelpers =
       { text_attrs: fromFoldable
-           [ translate { x: legend_entry_x, y: 9 } -- align text with boxes
+           [ D3.translate { x: legend_entry_x, y: 9 } -- align text with boxes
            ]
       , circle_attrs: fromFoldable
            [ "r" ⟼ point_smallRadius
@@ -216,31 +217,32 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
 
-   createAxes :: Dimensions Int -> D3Selection -> Effect (Coord D3Selection)
+   createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
    createAxes range parent = do
       let Point { x: xLabels, y: yLabels } = tickLabels
-      x <- xAxis (to range) (nub points.x) =<<
-         create G parent [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ]
+      x <- D3.xAxis (to range) (nub points.x) =<<
+         D3.create G parent [ "class" ↦ "x-axis", D3.translate { x: 0, y: (unwrap range).height } ]
       when (fst xLabels == Rotated) do
-         labels <- selectAll x "text"
-         setAttrs labels [ rotate 45 ]
-         setStyles labels [ "text-anchor" ↦ "start" ]
+         labels <- D3.selectAll x "text"
+         D3.setAttrs labels [ D3.rotate 45 ]
+         D3.setStyles labels [ "text-anchor" ↦ "start" ]
 
-      y <- yAxis (to range) 3.0 =<< create G parent [ "class" ↦ "y-axis" ]
+      y <- D3.yAxis (to range) 3.0 =<< D3.create G parent [ "class" ↦ "y-axis" ]
       when (fst yLabels == Rotated) do
-         labels <- selectAll y "text"
-         setAttrs labels [ rotate 45 ]
-         setStyles labels [ "text-anchor" ↦ "end" ]
-
+         labels <- D3.selectAll y "text"
+         D3.setAttrs labels [ D3.rotate 45 ]
+         D3.setStyles labels [ "text-anchor" ↦ "end" ]
       pure { x, y }
 
-   createLegend :: Dimensions Int -> D3Selection -> Effect D3MultiSelection
+   createLegend :: Dimensions Int -> D3.Selection -> Effect D3.MultiSelection
    createLegend (Dimensions interior) parent = do
-      legend' <- create G parent
-         [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
-      void $ create Rect legend'
+      legend' <- D3.create G parent
+         [ D3.translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
+      void $ D3.create Rect legend'
          [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
-      createMany G legend' legendEntry_class entries [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
+      legendEntries <- D3.createMany G legend' legendEntry_class entries
+         [ D3.translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
+      pure legendEntries
       where
       Dimensions { height, width } = legend_dims
 
