@@ -10,6 +10,7 @@ import Data.Foldable (foldr)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
 import Data.List.NonEmpty (NonEmptyList(..))
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (second)
@@ -174,10 +175,15 @@ evalBwd' v (T.Project t x) =
    γ × Project e x × α
    where
    γ × e × α = evalBwd' (Val bot (V.Record (maplet x v))) t
-evalBwd' v (T.DProject t x) =
+evalBwd' v (T.DProject t Nothing x) =
    γ × Project e x × α
    where
    γ × e × α = evalBwd' (Val bot (V.Dictionary (DictRep $ maplet x (bot × v)))) t
+evalBwd' v (T.DProject t (Just t') x) =
+   γ × DProject e x' × α
+   where
+   γ × e × α = evalBwd' (Val bot (V.Dictionary (DictRep $ maplet x (bot × v)))) t
+   _ × x' × _ = evalBwd' (Val bot (V.Str x)) t'
 evalBwd' v (T.App t1 t2 t3) =
    (γ ∨ γ') × App e e' × (α ∨ α')
    where

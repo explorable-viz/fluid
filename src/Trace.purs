@@ -23,7 +23,7 @@ data Trace
    | Constr Ctr (List Trace)
    | Matrix (Array2 Trace) (Var × Var) (Int × Int) Trace
    | Project Trace Var
-   | DProject Trace Var
+   | DProject Trace (Maybe Trace) Var
    | App Trace Trace AppTrace
    | Let VarDef Trace
    | LetRec (Raw RecDefs) Trace

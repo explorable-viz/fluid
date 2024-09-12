@@ -1,2 +1,2 @@
 let d = {| "a" := 5, "a" ++ "b" := {fst: 6, snd: 0} |}
-in d.a * (d.ab).snd
+in d.a * d.["ab"].snd

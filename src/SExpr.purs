@@ -282,7 +282,8 @@ exprBwd e (ListComp _ s qs) =
    let α × qs' × s' = listCompBwd e (qs × s) in ListComp α s' qs'
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 exprBwd (E.LetRec xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBwd e s)
-exprBwd _ _ = error absurd
+exprBwd (E.DProject ed ek) (DProject sd sk) = DProject (exprBwd ed sd) (exprBwd ek sk)
+exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
