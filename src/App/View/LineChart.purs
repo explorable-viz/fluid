@@ -49,12 +49,6 @@ type LineChartHelpers =
    , point_attrs :: Dimensions Int -> PointCoordinate -> Object String
    }
 
-type LegendHelpers =
-   { text_attrs :: Object String
-   , circle_attrs :: Object String
-   , entry_y :: Int -> Int
-   }
-
 type LegendEntry =
    { i :: Int
    , name :: String
@@ -195,25 +189,6 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    legend_entry_x :: Int
    legend_entry_x = 15
 
-   legendHelpers :: LegendHelpers
-   legendHelpers =
-      { text_attrs: fromFoldable
-           [ D3.translate { x: legend_entry_x, y: 9 } -- align text with boxes
-           ]
-      , circle_attrs: fromFoldable
-           [ "r" ⟼ point_smallRadius
-           , "cx" ⟼ circle_centre
-           , "cy" ⟼ circle_centre
-           ]
-      , entry_y
-      }
-      where
-      entry_y :: Int -> Int
-      entry_y i = i * lineHeight + 2 -- tweak to emulate vertical centering of text
-
-      circle_centre :: Int
-      circle_centre = lineHeight / 2 - point_smallRadius / 2
-
    createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
    createAxes range parent = do
       let Point { x: xLabels, y: yLabels } = tickLabels
@@ -238,7 +213,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       void $ D3.create Rect legend'
          [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       legendEntries <- D3.createMany G legend' legendEntry_class entries
-         [ D3.translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
+         [ D3.translate' \{ i } -> { x: 0, y: entry_y i } ]
       D3.forEach_setText (\{ name } -> name) =<< D3.forEach_create Text legendEntries
          [ "class" ↦ const "legend-text"
          , D3.translate' $ const { x: legend_entry_x, y: 9 } -- align text with boxes
@@ -255,6 +230,9 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
       entries :: Array LegendEntry
       entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
+
+      entry_y :: Int -> Int
+      entry_y i = i * lineHeight + 2 -- tweak to emulate vertical centering of text
 
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
