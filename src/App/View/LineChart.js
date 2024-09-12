@@ -27,7 +27,7 @@ function drawLineChart_ (
    listener
 ) {
    return () => {
-      const { createRootElement, createLegend } = lineChartHelpers
+      const { createRootElement } = lineChartHelpers
       const childId = divId + '-' + suffix
       const div = d3.select('#' + divId)
       if (div.empty()) {
@@ -38,8 +38,7 @@ function drawLineChart_ (
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
-         ({ rootElement, interior } = createRootElement(div)(childId)())
-         createLegend(interior)(rootElement)()
+         rootElement = createRootElement(div)(childId)()
       }
       setSelState(lineChartHelpers, rootElement, interior, listener)
    }
