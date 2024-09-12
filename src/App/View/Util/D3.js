@@ -9,14 +9,6 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
-/* Not sure I need this; equivalent to attrs, once type information is disregarded */
-d3.selection.prototype.attrFuns = function(m) {
-   for (const k in m) {
-      this.attr(k, d => m[k](d))
-   }
-   return this
-}
-
 d3.selection.prototype.styles = function(m) {
    for (const k in m) {
       this.style(k, m[k])
@@ -67,7 +59,7 @@ export function forEach_createChild (parent) {
    return elementType => {
       return attrFuns => {
          return () => {
-            return parent.append(elementType).attrFuns(attrFuns)
+            return parent.append(elementType).attrs(attrFuns)
          }
       }
    }
@@ -85,7 +77,7 @@ export function createChildren (parent) {
                      .enter()
                      .append(elementType)
                      .classed(class_, true)
-                     .attrFuns(attrFuns)
+                     .attrs(attrFuns)
                }
             }
          }
