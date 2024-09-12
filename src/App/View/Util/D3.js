@@ -34,20 +34,22 @@ function canvasFont (el) {
 
 // Could assume a div in document set up for this purpose. Pure; side-effects should be unobservable.
 // Not especially reliable as might not inherit in situ styling that the actual text will
-export function textDimensions (text) {
-   const div = document.createElement('div')
-   div.textContent = text
-   div.classList.add('legend-text')
-   div.style.visibility = 'hidden'
-   document.body.appendChild(div)
+export function textDimensions (class_) {
+   return text => {
+      const div = document.createElement('div')
+      div.textContent = text
+      div.classList.add(class_)
+      div.style.visibility = 'hidden'
+      document.body.appendChild(div)
 
-   const canvas = textDimensions.canvas || (textDimensions.canvas = document.createElement("canvas")) // re-use canvas
-   const context = canvas.getContext("2d")
-   context.font = canvasFont(div)
-   const width = Math.ceil(context.measureText(text).width)
-   const height = Math.ceil(div.offsetHeight)
-   div.remove()
-   return { width, height }
+      const canvas = textDimensions.canvas || (textDimensions.canvas = document.createElement("canvas")) // re-use canvas
+      const context = canvas.getContext("2d")
+      context.font = canvasFont(div)
+      const width = Math.ceil(context.measureText(text).width)
+      const height = Math.ceil(div.offsetHeight)
+      div.remove()
+      return { width, height }
+   }
 }
 
 export function createChild (parent) {

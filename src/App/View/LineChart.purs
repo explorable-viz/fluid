@@ -102,7 +102,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          interior :: Dimensions Int
          interior = Dimensions
             { width: width - margin.left - margin.right - (unwrap legend_dims).width - legend_sep
-            , height: height - margin.top - margin.bottom - captionHeight
+            , height: height - margin.top - margin.bottom - caption_height
             }
 
       g <- create G svg [ translate { x: margin.left, y: margin.top } ]
@@ -111,15 +111,16 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       createPoints g
       setText (fst caption) =<< create Text svg
          [ "x" ⟼ width / 2
-         , "y" ⟼ height - captionHeight / 2
-         , "class" ↦ "title-text"
+         , "y" ⟼ height - caption_height / 2
+         , "class" ↦ caption_class
          , "dominant-baseline" ↦ "middle"
          , "text-anchor" ↦ "middle"
          ]
       pure { rootElement: g, interior }
       where
+      caption_class = "title-text"
+      caption_height = textHeight caption_class (fst caption) * 2
       Dimensions { height, width } = size <#> fst
-      captionHeight = textHeight (fst caption) * 2
 
    createLines :: Dimensions Int -> D3Selection -> Effect Unit
    createLines range parent =
@@ -172,7 +173,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       }
       where
       maxTextWidth :: Int
-      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth # nonEmpty)
+      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth legendEntry_class # nonEmpty)
 
       rightMargin :: Int
       rightMargin = 4
@@ -245,9 +246,12 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       where
       Dimensions { height, width } = legend_dims
 
+   legendEntry_class :: String
+   legendEntry_class = "legend-entry"
+
    createLegendEntry :: D3Selection -> Effect D3Selection
    createLegendEntry parent =
-      createMany G parent "legend-entry" entries [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
+      createMany G parent legendEntry_class entries [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
       where
       entries :: Array LegendEntry
       entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })

@@ -48,11 +48,11 @@ type Coord a =
    , y :: a
    }
 
-textWidth :: String -> Int
-textWidth = textDimensions >>> unwrap >>> _.width
+textWidth :: String -> String -> Int
+textWidth class_ = textDimensions class_ >>> unwrap >>> _.width
 
-textHeight :: String -> Int
-textHeight = textDimensions >>> unwrap >>> _.height
+textHeight :: String -> String -> Int
+textHeight class_ = textDimensions class_ >>> unwrap >>> _.height
 
 translate :: Coord Int -> Bind String
 translate { x, y } = "transform" ↦ "translate(" <> show x <> ", " <> show y <> ")"
@@ -94,7 +94,7 @@ foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Numbe
 -- Currently two different protocols for x and y axis -- will subsume into something more general
 foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> D3Selection -> Effect D3Selection
 foreign import yAxis :: Coord (Endo Number) -> Number -> D3Selection -> Effect D3Selection
-foreign import textDimensions :: String -> Dimensions Int
+foreign import textDimensions :: String -> String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import setText :: String -> D3Selection -> Effect Unit
 foreign import dimensions :: D3Selection -> Effect (Dimensions Int) -- expects singleton selection
