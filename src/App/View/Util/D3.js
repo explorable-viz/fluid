@@ -34,19 +34,22 @@ function canvasFont (el) {
 
 // Could assume a div in document set up for this purpose. Pure; side-effects should be unobservable.
 // Not especially reliable as might not inherit in situ styling that the actual text will
-export function textDimensions (text) {
-   const div = document.createElement('div')
-   div.textContent = text
-   div.classList.add('legend-text')
-   div.style.visibility = 'hidden'
-   document.body.appendChild(div)
+export function textDimensions (class_) {
+   return text => {
+      const div = document.createElement('div')
+      div.textContent = text
+      div.classList.add(class_)
+      div.style.visibility = 'hidden'
+      document.body.appendChild(div)
 
-   const canvas = textDimensions.canvas || (textDimensions.canvas = document.createElement("canvas")) // re-use canvas
-   const context = canvas.getContext("2d")
-   context.font = canvasFont(div)
-   const dims = context.measureText(text)
-   div.remove()
-   return { width: Math.ceil(dims.width), height: Math.ceil(dims.height) }
+      const canvas = textDimensions.canvas || (textDimensions.canvas = document.createElement("canvas")) // re-use canvas
+      const context = canvas.getContext("2d")
+      context.font = canvasFont(div)
+      const width = Math.ceil(context.measureText(text).width)
+      const height = Math.ceil(div.offsetHeight)
+      div.remove()
+      return { width, height }
+   }
 }
 
 export function createChild (parent) {
@@ -114,7 +117,7 @@ export function yAxis (to) {
    }
 }
 
-export function text (string) {
+export function setText (string) {
    return element => {
       return () => {
          return element.text(string)
@@ -131,15 +134,21 @@ export function nameCol (key) {
 }
 
 export function dimensions (sel) {
-   return sel.nodes().map(node => {
+   return () => {
+      if (sel.nodes().length != 1) {
+         throw "Expected singleton selection"
+      }
+      [ node ] = sel.nodes()
       let { width, height } = node.getBBox()
       return { width: Math.ceil(width), height: Math.ceil(height) }
-   })
+   }
 }
 
 export function selectAll (sel) {
    return selector => {
-      return sel.selectAll(selector)
+      return () => {
+         return sel.selectAll(selector)
+      }
    }
 }
 

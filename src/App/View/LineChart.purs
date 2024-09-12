@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, D3Selection, Margin, attrs, createChild, createChildren, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, styles, text, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, D3Selection, Margin, SVGElementType(..), create, createMany, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -18,7 +18,6 @@ import Data.Tuple (fst, snd)
 import DataType (cDefault, cLinePlot, cRotated, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
-import Effect.Class.Console (log)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (ToFrom, string, typeError, unpack)
@@ -78,59 +77,54 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    names :: Array String
    names = plots <#> unwrap >>> _.name >>> fst
 
-   -- Assume tick dimensions are independent of "range" that axes map into
-   tickLength :: D3Selection -> Effect (Coord Int)
-   tickLength parent = do
+   axisWidth :: D3Selection -> Effect (Coord Int)
+   axisWidth parent = do
       { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent
-      let
-         xDims = dimensions (selectAll xAxis ".tick")
-         yDims = dimensions (selectAll yAxis ".tick")
+      x <- dimensions xAxis <#> unwrap >>> _.height
+      y <- dimensions yAxis <#> unwrap >>> _.width
       remove xAxis
       remove yAxis
-      pure
-         { x: maximum (xDims # nonEmpty <#> unwrap >>> _.height)
-         , y: maximum (yDims # nonEmpty <#> unwrap >>> _.width)
-         }
+      pure { x, y }
 
    createRootElement :: D3Selection -> String -> Effect { rootElement :: D3Selection, interior :: Dimensions Int }
    createRootElement div childId = do
-      svg <- createChild div "svg" $ fromFoldable
-         [ "width" ⟼ width
-         , "height" ⟼ height
-         , "id" ↦ childId
-         ]
-      tickLen <- tickLength svg
-      log (show tickLen)
+      svg <- create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
+      { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
       let
          margin :: Margin
-         margin = { top: 15, right: 15, bottom: 40, left: tickLen.y }
+         margin =
+            { top: point_smallRadius * 3 -- otherwise points at very top are clipped
+            , right: 3 -- otherwise rightmost edge of legend box is clipped
+            , bottom: xAxisHeight
+            , left: yAxisWidth
+            }
 
          interior :: Dimensions Int
          interior = Dimensions
-            { width: width - margin.left - margin.right - (unwrap legend_dims).width
-            , height: height - margin.top - margin.bottom -- minus caption_height?
+            { width: width - margin.left - margin.right - (unwrap legend_dims).width - legend_sep
+            , height: height - margin.top - margin.bottom - caption_height
             }
 
-      g <- createChild svg "g" $ fromFoldable [ translate { x: margin.left, y: margin.top } ]
-      text (fst caption) =<< createChild svg "text"
-         ( fromFoldable
-              [ "x" ⟼ width / 2
-              , "y" ⟼ height - margin.bottom / 2
-              , "class" ↦ "title-text"
-              , "dominant-baseline" ↦ "middle"
-              , "text-anchor" ↦ "middle"
-              ]
-         )
+      g <- create G svg [ translate { x: margin.left, y: margin.top } ]
       void $ createAxes interior g
       createLines interior g
       createPoints g
+      setText (fst caption) =<< create Text svg
+         [ "x" ⟼ width / 2
+         , "y" ⟼ height - caption_height / 2
+         , "class" ↦ caption_class
+         , "dominant-baseline" ↦ "middle"
+         , "text-anchor" ↦ "middle"
+         ]
       pure { rootElement: g, interior }
       where
+      caption_class = "title-text"
+      caption_height = textHeight caption_class (fst caption) * 2
       Dimensions { height, width } = size <#> fst
 
    createLines :: Dimensions Int -> D3Selection -> Effect Unit
    createLines range parent =
-      void $ createChildren parent "path" "linechart-line" entries $ fromFoldable
+      void $ createMany Path parent "linechart-line" entries
          [ "fill" ↦ const "none"
          , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) names
          , "stroke-width" ↦ const "1"
@@ -143,7 +137,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
    createPoints :: D3Selection -> Effect Unit
    createPoints parent =
-      void $ createChildren parent "circle" "linechart-point" entries $ fromFoldable []
+      void $ createMany Circle parent "linechart-point" entries []
       where
       entries :: Array PointCoordinate
       entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
@@ -179,7 +173,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       }
       where
       maxTextWidth :: Int
-      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth # nonEmpty)
+      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth legendEntry_class # nonEmpty)
 
       rightMargin :: Int
       rightMargin = 4
@@ -227,45 +221,37 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    createAxes :: Dimensions Int -> D3Selection -> Effect (Coord D3Selection)
    createAxes range parent = do
       let Point { x: xLabels, y: yLabels } = tickLabels
-      x <- xAxis (to range) (nub points.x) =<< createChild parent "g"
-         ( fromFoldable
-              [ "class" ↦ "x-axis"
-              , translate { x: 0, y: (unwrap range).height }
-              ]
-         )
+      x <- xAxis (to range) (nub points.x) =<<
+         create G parent [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ]
       when (fst xLabels == Rotated) do
-         let labels = selectAll x "text"
-         void $ attrs labels $ fromFoldable [ rotate 45 ]
-         void $ styles labels $ fromFoldable [ "text-anchor" ↦ "start" ]
+         labels <- selectAll x "text"
+         setAttrs labels [ rotate 45 ]
+         setStyles labels [ "text-anchor" ↦ "start" ]
 
-      y <- yAxis (to range) 3.0 =<< createChild parent "g" (fromFoldable [ "class" ↦ "y-axis" ])
+      y <- yAxis (to range) 3.0 =<< create G parent [ "class" ↦ "y-axis" ]
       when (fst yLabels == Rotated) do
-         let labels = selectAll y "text"
-         void $ attrs labels $ fromFoldable [ rotate 45 ]
-         void $ styles labels $ fromFoldable [ "text-anchor" ↦ "end" ]
+         labels <- selectAll y "text"
+         setAttrs labels [ rotate 45 ]
+         setStyles labels [ "text-anchor" ↦ "end" ]
 
       pure { x, y }
 
    createLegend :: Dimensions Int -> D3Selection -> Effect D3Selection
    createLegend (Dimensions interior) parent = do
-      legend' <- createChild parent "g" $ fromFoldable
-         [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) }
-         ]
-      void $ createChild legend' "rect" $ fromFoldable
-         [ "class" ↦ "legend-box"
-         , "x" ⟼ 0
-         , "y" ⟼ 0
-         , "height" ⟼ height
-         , "width" ⟼ width
-         ]
+      legend' <- create G parent
+         [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
+      void $ create Rect legend'
+         [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       pure legend'
       where
       Dimensions { height, width } = legend_dims
 
+   legendEntry_class :: String
+   legendEntry_class = "legend-entry"
+
    createLegendEntry :: D3Selection -> Effect D3Selection
    createLegendEntry parent =
-      createChildren parent "g" "legend-entry" entries $ fromFoldable
-         [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
+      createMany G parent legendEntry_class entries [ translate' \{ i } -> { x: 0, y: legendHelpers.entry_y i } ]
       where
       entries :: Array LegendEntry
       entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
