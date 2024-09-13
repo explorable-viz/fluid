@@ -33,6 +33,8 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
+import Foreign.Object (Object)
+import Foreign.Object as Object
 
 debug
    :: { logging :: Boolean -- logging via "log"; requires an effect context
@@ -291,3 +293,12 @@ instance NonEmpty List NonEmptyList where
 
 instance NonEmpty Array NonEmptyArray where
    nonEmpty = definitely "non-empty" <<< fromArray
+
+class IsEmpty a where
+   isEmpty :: a -> Boolean
+
+instance IsEmpty (Set a) where
+   isEmpty = Set.isEmpty
+
+instance IsEmpty (Object a) where
+   isEmpty = Object.isEmpty

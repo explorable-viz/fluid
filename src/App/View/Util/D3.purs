@@ -8,15 +8,17 @@ module App.View.Util.D3
    , createMany
    , dimensions
    , forEach_create
+   , forEach_setAttrs
+   , forEach_setStyles
    , forEach_setText
    , line
    , nameCol
    , remove
    , rotate
+   , rotate'
    , scaleLinear
+   , select
    , selectAll
-   , setAttrs
-   , setStyles
    , setText
    , textHeight
    , textWidth
@@ -37,7 +39,7 @@ import Data.Show.Generic (genericShow)
 import Data.String (toLower)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
-import Util (Endo)
+import Util (class IsEmpty, Endo)
 
 type Margin =
    { top :: Int
@@ -67,6 +69,9 @@ translate' f =
 rotate :: Int -> Bind String
 rotate n = "transform" ↦ "rotate(" <> show n <> ")"
 
+rotate' :: forall a. (a -> Int) -> Bind (a -> String)
+rotate' f = "transform" ↦ \a -> "rotate(" <> show (f a) <> ")"
+
 data SVGElementType
    = Circle
    | G
@@ -84,11 +89,11 @@ forEach_create elementType parents = fromFoldable >>> forEach_createChild parent
 createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection
 createMany elementType parent class_ xs = fromFoldable >>> createChildren parent (show elementType) class_ xs
 
-setAttrs :: Selection -> Array (Bind String) -> Effect Unit
-setAttrs sel = fromFoldable >>> attrs sel >>> void
+forEach_setAttrs :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect Unit
+forEach_setAttrs sel = fromFoldable >>> forEach_attrs sel >>> void
 
-setStyles :: Selection -> Array (Bind String) -> Effect Unit
-setStyles sel = fromFoldable >>> styles sel >>> void
+forEach_setStyles :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect Unit
+forEach_setStyles sel = fromFoldable >>> forEach_styles sel >>> void
 
 foreign import data Selection :: Type
 foreign import data MultiSelection :: Type
@@ -101,16 +106,19 @@ foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Numbe
 -- Currently two different protocols for x and y axis -- will subsume into something more general
 foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> Selection -> Effect Selection
 foreign import yAxis :: Coord (Endo Number) -> Number -> Selection -> Effect Selection
+foreign import dimensions :: Selection -> Effect (Dimensions Int) -- expects singleton selection
 foreign import textDimensions :: String -> String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
+foreign import select :: Selection -> String -> Effect Selection
+foreign import selectAll :: Selection -> String -> Effect MultiSelection
 foreign import setText :: String -> Selection -> Effect Unit
-foreign import dimensions :: Selection -> Effect (Dimensions Int) -- expects singleton selection
-foreign import selectAll :: Selection -> String -> Effect Selection
 foreign import attrs :: Selection -> Object String -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
 
 -- Different type signatures but same underlying implementation as Selection-based analogues
+foreign import forEach_attrs :: forall a. MultiSelection -> Object (a -> String) -> Effect MultiSelection
 foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
+foreign import forEach_styles :: forall a. MultiSelection -> Object (a -> String) -> Effect MultiSelection
 foreign import forEach_setText :: forall a. (a -> String) -> MultiSelection -> Effect Unit
 
 -- ======================

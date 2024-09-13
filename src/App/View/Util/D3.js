@@ -151,6 +151,14 @@ export function dimensions (sel) {
    }
 }
 
+export function select (sel) {
+   return selector => {
+      return () => {
+         return sel.select(selector)
+      }
+   }
+}
+
 export function selectAll (sel) {
    return selector => {
       return () => {
@@ -167,12 +175,20 @@ export function attrs (sel) {
    }
 }
 
+export function forEach_attrs (sel) {
+   return attrs(sel)
+}
+
 export function styles (sel) {
    return styles => {
       return () => {
          return sel.styles(styles)
       }
    }
+}
+
+export function forEach_styles (sel) {
+   return styles(sel)
 }
 
 export function scaleLinear (x1) {

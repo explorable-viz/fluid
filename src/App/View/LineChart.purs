@@ -196,14 +196,14 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          D3.create G parent [ "class" ↦ "x-axis", D3.translate { x: 0, y: (unwrap range).height } ]
       when (fst xLabels == Rotated) do
          labels <- D3.selectAll x "text"
-         D3.setAttrs labels [ D3.rotate 45 ]
-         D3.setStyles labels [ "text-anchor" ↦ "start" ]
+         D3.forEach_setAttrs labels [ D3.rotate' (const 45) ]
+         D3.forEach_setStyles labels [ "text-anchor" ↦ const "start" ]
 
       y <- D3.yAxis (to range) 3.0 =<< D3.create G parent [ "class" ↦ "y-axis" ]
       when (fst yLabels == Rotated) do
          labels <- D3.selectAll y "text"
-         D3.setAttrs labels [ D3.rotate 45 ]
-         D3.setStyles labels [ "text-anchor" ↦ "end" ]
+         D3.forEach_setAttrs labels [ D3.rotate' (const 45) ]
+         D3.forEach_setStyles labels [ "text-anchor" ↦ const "end" ]
       pure { x, y }
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
@@ -245,10 +245,14 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
+{-
 drawLineChart2 :: Renderer LineChart
 drawLineChart2 uiHelpers { divId, suffix, view } redraw = do
    let { createRootElement } = lineChartHelpers view
-   ?_
+   let childId = divId <> "-" <> suffix
+   let div = d3.select('#' + divId)
+    ?_
+-}
 
 -- ======================
 -- boilerplate

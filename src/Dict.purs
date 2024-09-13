@@ -12,6 +12,7 @@ import Data.Newtype (class Newtype)
 import Data.Traversable (class Foldable, class Traversable)
 import Foreign.Object (Object) as O
 import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, isSubmap, lookup, mapWithKey, member, singleton, toArrayWithKey, union, unionWith)
+import Util (class IsEmpty)
 import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, toUnfoldable, values)
 import Util.Map as Map
 import Util.Set (class Set, difference, size, (∈))
@@ -42,9 +43,11 @@ instance FoldableWithIndex String Dict where
    foldrWithIndex f = foldrWithIndexDefault f
    foldMapWithIndex f = foldMapWithIndexDefaultL f
 
+instance IsEmpty (Dict a) where
+   isEmpty (Dict d) = isEmpty d
+
 instance Set (Dict a) String where
    empty = Dict empty
-   isEmpty (Dict d) = isEmpty d
    filter p (Dict d) = Dict (filterKeys p d)
    size (Dict d) = size d
    member x (Dict d) = x ∈ d
