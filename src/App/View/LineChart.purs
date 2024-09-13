@@ -22,7 +22,7 @@ import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (ToFrom, string, typeError, unpack)
-import Util (Endo, nonEmpty, (!))
+import Util (Endo, check, error, nonEmpty, unimplemented, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
@@ -245,14 +245,20 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
-{-
 drawLineChart2 :: Renderer LineChart
-drawLineChart2 uiHelpers { divId, suffix, view } redraw = do
-   let { createRootElement } = lineChartHelpers view
+drawLineChart2 _ { divId, suffix, view } _ = do
+   let {} = lineChartHelpers view
    let childId = divId <> "-" <> suffix
-   let div = d3.select('#' + divId)
-    ?_
+   div <- D3.rootSelect ("#" <> divId)
+   D3.isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
+   _ <- D3.selectAll div ("#" <> childId)
+   {-
+   if (rootElement.empty()) {
+      ({ rootElement, interior } = createRootElement(div)(childId)())
+   }
+   setSelState(lineChartHelpers, rootElement, interior, listener)
 -}
+   error unimplemented
 
 -- ======================
 -- boilerplate

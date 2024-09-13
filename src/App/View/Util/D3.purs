@@ -1,5 +1,6 @@
 module App.View.Util.D3
-   ( Coord
+   ( class IsEmpty
+   , Coord
    , Selection
    , MultiSelection
    , Margin
@@ -11,9 +12,11 @@ module App.View.Util.D3
    , forEach_setAttrs
    , forEach_setStyles
    , forEach_setText
+   , isEmpty
    , line
    , nameCol
    , remove
+   , rootSelect
    , rotate
    , rotate'
    , scaleLinear
@@ -119,6 +122,7 @@ foreign import empty :: Selection -> Effect Boolean
 foreign import dimensions :: Selection -> Effect (Dimensions Int) -- expects singleton selection
 foreign import textDimensions :: String -> String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
+foreign import rootSelect :: String -> Effect Selection
 foreign import select :: Selection -> String -> Effect Selection
 foreign import selectAll :: Selection -> String -> Effect MultiSelection
 foreign import setText :: String -> Selection -> Effect Unit

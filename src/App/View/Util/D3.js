@@ -143,6 +143,12 @@ export function empty (sel) {
    }
 }
 
+export function rootSelect (selector) {
+   return () => {
+      return ds3.select(selector)
+   }
+}
+
 export function select (sel) {
    return selector => {
       return () => {
