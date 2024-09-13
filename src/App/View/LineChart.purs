@@ -256,7 +256,14 @@ drawLineChart2 _ { divId, suffix, view } _ = do
    if (rootElement.empty()) {
       ({ rootElement, interior } = createRootElement(div)(childId)())
    }
-   setSelState(lineChartHelpers, rootElement, interior, listener)
+
+   rootElement.selectAll('.linechart-point').each(function (point) {
+      d3.select(this) // won't work inside arrow function :/
+         .attrs(point_attrs(interior)(point))
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
+   })
 -}
    error unimplemented
 
