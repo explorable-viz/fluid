@@ -251,7 +251,7 @@ drawLineChart2 _ { divId, suffix, view } _ = do
    let childId = divId <> "-" <> suffix
    div <- D3.rootSelect ("#" <> divId)
    D3.isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
-   _ <- D3.selectAll div ("#" <> childId)
+   _ <- D3.select div ("#" <> childId)
    {-
    if (rootElement.empty()) {
       ({ rootElement, interior } = createRootElement(div)(childId)())
@@ -274,7 +274,7 @@ instance Drawable LineChart where
 
 derive instance Eq Orientation
 
--- Hefty amount of boilerplate just for a data type isomorphic to Bool
+-- Hefty amount of boilerplate just for a type isomorphic to Bool :-o
 orientation :: forall a. ToFrom Orientation a
 orientation =
    { pack: case _ of

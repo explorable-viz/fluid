@@ -84,19 +84,24 @@ data SVGElementType
    | Text
 
 create :: SVGElementType -> Selection -> Array (Bind String) -> Effect Selection
-create elementType parent = fromFoldable >>> createChild parent (show elementType)
+create elementType parent =
+   fromFoldable >>> createChild parent (show elementType)
 
 forEach_create :: forall a. SVGElementType -> MultiSelection -> Array (Bind (a -> String)) -> Effect MultiSelection
-forEach_create elementType parents = fromFoldable >>> forEach_createChild parents (show elementType)
+forEach_create elementType parents =
+   fromFoldable >>> forEach_createChild parents (show elementType)
 
 createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection
-createMany elementType parent class_ xs = fromFoldable >>> createChildren parent (show elementType) class_ xs
+createMany elementType parent class_ xs =
+   fromFoldable >>> createChildren parent (show elementType) class_ xs
 
 forEach_setAttrs :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect Unit
-forEach_setAttrs sel = fromFoldable >>> forEach_attrs sel >>> void
+forEach_setAttrs sel =
+   fromFoldable >>> forEach_attrs sel >>> void
 
 forEach_setStyles :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect Unit
-forEach_setStyles sel = fromFoldable >>> forEach_styles sel >>> void
+forEach_setStyles sel =
+   fromFoldable >>> forEach_styles sel >>> void
 
 foreign import data Selection :: Type
 foreign import data MultiSelection :: Type
