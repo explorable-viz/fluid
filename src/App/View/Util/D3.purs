@@ -39,7 +39,7 @@ import Data.Show.Generic (genericShow)
 import Data.String (toLower)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
-import Util (class IsEmpty, Endo)
+import Util (Endo)
 
 type Margin =
    { top :: Int
@@ -98,6 +98,15 @@ forEach_setStyles sel = fromFoldable >>> forEach_styles sel >>> void
 foreign import data Selection :: Type
 foreign import data MultiSelection :: Type
 
+class IsEmpty a where
+   isEmpty :: a -> Effect Boolean
+
+instance IsEmpty Selection where
+   isEmpty = empty
+
+instance IsEmpty MultiSelection where
+   isEmpty = multi_isEmpty
+
 foreign import createChild :: Selection -> String -> Object String -> Effect Selection
 foreign import createChildren :: forall a. Selection -> String -> String -> Array a -> Object (a -> String) -> Effect MultiSelection
 foreign import remove :: Selection -> Effect Unit
@@ -106,6 +115,7 @@ foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Numbe
 -- Currently two different protocols for x and y axis -- will subsume into something more general
 foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> Selection -> Effect Selection
 foreign import yAxis :: Coord (Endo Number) -> Number -> Selection -> Effect Selection
+foreign import empty :: Selection -> Effect Boolean
 foreign import dimensions :: Selection -> Effect (Dimensions Int) -- expects singleton selection
 foreign import textDimensions :: String -> String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
@@ -120,6 +130,7 @@ foreign import forEach_attrs :: forall a. MultiSelection -> Object (a -> String)
 foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
 foreign import forEach_styles :: forall a. MultiSelection -> Object (a -> String) -> Effect MultiSelection
 foreign import forEach_setText :: forall a. (a -> String) -> MultiSelection -> Effect Unit
+foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
 
 -- ======================
 -- boilerplate

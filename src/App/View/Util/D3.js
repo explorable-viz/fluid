@@ -55,16 +55,6 @@ export function createChild (parent) {
    }
 }
 
-export function forEach_createChild (parent) {
-   return elementType => {
-      return attrFuns => {
-         return () => {
-            return parent.append(elementType).attrs(attrFuns)
-         }
-      }
-   }
-}
-
 export function createChildren (parent) {
    return elementType => {
       return class_ => {
@@ -128,10 +118,6 @@ export function setText (string) {
    }
 }
 
-export function forEach_setText (f) {
-   return setText(f)
-}
-
 const colScale = d3.scaleOrdinal(d3.schemePastel1) // stateful but purify by allocating once
 
 export function nameCol (key) {
@@ -148,6 +134,12 @@ export function dimensions (sel) {
       [ node ] = sel.nodes()
       let { width, height } = node.getBBox()
       return { width: Math.ceil(width), height: Math.ceil(height) }
+   }
+}
+
+export function empty (sel) {
+   return () => {
+      return sel.empty()
    }
 }
 
@@ -175,10 +167,6 @@ export function attrs (sel) {
    }
 }
 
-export function forEach_attrs (sel) {
-   return attrs(sel)
-}
-
 export function styles (sel) {
    return styles => {
       return () => {
@@ -187,12 +175,14 @@ export function styles (sel) {
    }
 }
 
-export function forEach_styles (sel) {
-   return styles(sel)
-}
-
 export function scaleLinear (x1) {
    return x2 => {
       return d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
    }
 }
+
+export const forEach_createChild = createChild
+export const forEach_styles = styles
+export const forEach_attrs = attrs
+export const forEach_setText = setText
+export const multi_isEmpty = empty
