@@ -2,20 +2,10 @@
 
 import * as d3 from "d3"
 
-// Similar to d3-selection-multi function of the same name. TODO: check we still need the 'function' case.
+// TODO: Drop this in favour of static "attrs" function (and similarly for "styles").
 d3.selection.prototype.attrs = function(m) {
-   if (typeof m == 'function') {
-      const this_ = this
-      this.each(function (d) {
-         m_ = m(d)
-         for (const k in m_) {
-            this_.attr(k, m_[k])
-         }
-      })
-   } else {
-      for (const k in m) {
-         this.attr(k, m[k])
-      }
+   for (const k in m) {
+      this.attr(k, m[k])
    }
    return this
 }
@@ -156,7 +146,7 @@ export function empty (sel) {
 
 export function rootSelect (selector) {
    return () => {
-      return ds3.select(selector)
+      return d3.select(selector)
    }
 }
 
@@ -176,10 +166,23 @@ export function selectAll (sel) {
    }
 }
 
+// Similar to d3-selection-multi function of the same name.
 export function attrs (sel) {
    return attrs => {
       return () => {
-         return sel.attrs(attrs)
+         if (typeof attrs == 'function') {
+            sel.each(function (d) {
+               const attrs_ = attrs(d)
+               sel_ = d3.select(this)
+               for (const k in attrs_) {
+                  sel_.attr(k, attrs_[k])
+               }
+            })
+         } else {
+            for (const k in attrs) {
+               sel.attr(k, attrs[k])
+            }
+         }
       }
    }
 }

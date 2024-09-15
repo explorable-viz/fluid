@@ -271,8 +271,9 @@ drawLineChart2 _ { divId, suffix, view } redraw = do
 -- ======================
 
 instance Drawable LineChart where
-   draw rSpec@{ view } figVal _ redraw =
-      drawLineChart (lineChartHelpers view) uiHelpers rSpec =<< selListener figVal redraw point
+   draw rSpec figVal _ redraw =
+      --      drawLineChart (lineChartHelpers view) uiHelpers rSpec =<< selListener figVal redraw point
+      drawLineChart2 uiHelpers rSpec =<< selListener figVal redraw point
       where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =
