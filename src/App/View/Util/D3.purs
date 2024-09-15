@@ -12,7 +12,6 @@ module App.View.Util.D3
    , dimensions
    , each
    , forEach_create
-   , forEach_setText
    , isEmpty
    , line
    , nameCol
@@ -28,6 +27,7 @@ module App.View.Util.D3
    , setAttrs'
    , setStyles
    , setText
+   , setText_
    , textHeight
    , textWidth
    , translate
@@ -141,7 +141,8 @@ foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import rootSelect :: String -> Effect Selection
 foreign import select :: Selection -> String -> Effect Selection
 foreign import selectAll :: Selection -> String -> Effect MultiSelection
-foreign import setText :: String -> Selection -> Effect Unit
+foreign import setText :: String -> Selection -> Effect Selection
+foreign import setText_ :: forall a. (a -> String) -> Selection -> Effect Selection
 foreign import attrs :: Selection -> Object String -> Effect Selection
 foreign import attrs_ :: forall a. Selection -> (a -> Object String) -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
@@ -151,7 +152,6 @@ foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effe
 
 -- Different type signatures but same underlying implementation as Selection-based analogues
 foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
-foreign import forEach_setText :: forall a. (a -> String) -> MultiSelection -> Effect Unit
 foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
 
 -- ======================

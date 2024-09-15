@@ -167,6 +167,7 @@ export function selectAll (sel) {
 }
 
 // Similar to d3-selection-multi function of the same name.
+// TODO: drop support for multi-selections from this method in favour of explicit 'each'?
 export function attrs (sel) {
    return attrs => {
       return () => {
@@ -233,6 +234,6 @@ export function each (f) {
 }
 
 export const attrs_ = attrs
+export const setText_ = setText
 export const forEach_createChild = createChild
-export const forEach_setText = setText
 export const multi_isEmpty = empty

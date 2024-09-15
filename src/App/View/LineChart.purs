@@ -6,7 +6,7 @@ import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colo
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, Margin, SVGElementType(..), create, createMany, dimensions, each, forEach_create, forEach_setText, isEmpty, line, nameCol, on, remove, rootSelect, rotate, scaleLinear, select, selectAll, setAttrs, setAttrs', setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, Margin, SVGElementType(..), create, createMany, dimensions, each, forEach_create, isEmpty, line, nameCol, on, remove, rootSelect, rotate, scaleLinear, select, selectAll, setAttrs, setAttrs', setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind (Bind, (↦), (⟼))
@@ -98,7 +98,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       void $ createAxes interior g
       createLines interior g
       createPoints interior g
-      setText (fst caption) =<< create Text svg
+      void $ setText (fst caption) =<< create Text svg
          [ "x" ⟼ width / 2
          , "y" ⟼ height - caption_height / 2
          , "class" ↦ caption_class
@@ -217,7 +217,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       legendEntries <- createMany G legend' "legend-entry" entries
          [ translate' \{ i } -> { x: 0, y: entry_y i } ]
-      forEach_setText (\{ name } -> name) =<< forEach_create Text legendEntries
+      void $ each (setText_ (\{ name } -> name)) =<< forEach_create Text legendEntries
          [ "class" ↦ const "legend-text"
          , translate' $ const { x: legend_entry_x, y: 9 } -- align text with boxes
          ]
