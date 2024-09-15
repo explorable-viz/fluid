@@ -101,17 +101,17 @@ createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Arra
 createMany elementType parent class_ xs =
    fromFoldable >>> createChildren parent (show elementType) class_ xs
 
-forEach_setAttrs :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect Unit
+forEach_setAttrs :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect MultiSelection
 forEach_setAttrs sel =
-   fromFoldable >>> forEach_attrs sel >>> void
+   fromFoldable >>> forEach_attrs sel
 
-forEach_setAttrs_ :: forall a. MultiSelection -> (a -> Array (Bind String)) -> Effect Unit
+forEach_setAttrs_ :: forall a. MultiSelection -> (a -> Array (Bind String)) -> Effect MultiSelection
 forEach_setAttrs_ sel =
-   (_ >>> fromFoldable) >>> forEach_attrs_ sel >>> void
+   (_ >>> fromFoldable) >>> forEach_attrs_ sel
 
-forEach_setStyles :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect Unit
+forEach_setStyles :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect MultiSelection
 forEach_setStyles sel =
-   fromFoldable >>> forEach_styles sel >>> void
+   fromFoldable >>> forEach_styles sel
 
 foreign import data Selection :: Type
 foreign import data MultiSelection :: Type

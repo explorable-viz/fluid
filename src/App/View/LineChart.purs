@@ -198,15 +198,15 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       x <- D3.xAxis (to range) (nub points.x) =<<
          D3.create G parent [ "class" ↦ "x-axis", D3.translate { x: 0, y: (unwrap range).height } ]
       when (fst xLabels == Rotated) do
-         labels <- D3.selectAll x "text"
-         D3.forEach_setAttrs labels [ D3.rotate' (const 45) ]
-         D3.forEach_setStyles labels [ "text-anchor" ↦ const "start" ]
+         void $ D3.selectAll x "text"
+            >>= flip D3.forEach_setAttrs [ D3.rotate' (const 45) ]
+            >>= flip D3.forEach_setStyles [ "text-anchor" ↦ const "start" ]
 
       y <- D3.yAxis (to range) 3.0 =<< D3.create G parent [ "class" ↦ "y-axis" ]
       when (fst yLabels == Rotated) do
-         labels <- D3.selectAll y "text"
-         D3.forEach_setAttrs labels [ D3.rotate' (const 45) ]
-         D3.forEach_setStyles labels [ "text-anchor" ↦ const "end" ]
+         void $ D3.selectAll y "text"
+            >>= flip D3.forEach_setAttrs [ D3.rotate' (const 45) ]
+            >>= flip D3.forEach_setStyles [ "text-anchor" ↦ const "end" ]
       pure { x, y }
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
@@ -254,7 +254,7 @@ drawLineChart _ { divId, suffix, view } redraw = do
       if _ then createRootElement div childId <#> _.rootElement
       else pure maybeRootElement
    points <- D3.selectAll rootElement ".linechart-point"
-   D3.forEach_setAttrs_ points point_attrs'
+   void $ D3.forEach_setAttrs_ points point_attrs'
    sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
       <#> EventType >>> flip (D3.forEach_on points) redraw
 
