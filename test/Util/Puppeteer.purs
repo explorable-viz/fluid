@@ -66,14 +66,14 @@ checkAttribute :: T.Page -> T.Selector -> String -> String -> Aff Unit
 checkAttribute page sel attr expected = do
    found <- getAttributeValue page sel attr
    let errorMsg = if found == expected then "" else (" (got " <> found <> ")")
-   testCondition (show' sel) (found == expected) (found <> " == " <> show expected <> errorMsg)
+   testCondition (show' sel) (found == expected) (attr <> " == " <> show expected <> errorMsg)
 
 checkAttributeContains :: T.Page -> T.Selector -> String -> String -> Aff Unit
 checkAttributeContains page sel attr expected = do
    found <- getAttributeValue page sel attr
    let success = contains (Pattern expected) found
    let errorMsg = if success then "" else (" (got " <> found <> ")")
-   testCondition (show' sel) success (found <> " contains " <> show expected <> errorMsg)
+   testCondition (show' sel) success (attr <> " contains " <> show expected <> errorMsg)
 
 checkTextContent :: T.Page -> T.Selector -> String -> Aff Unit
 checkTextContent page selector expected = do

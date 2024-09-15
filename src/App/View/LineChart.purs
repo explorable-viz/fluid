@@ -82,6 +82,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    createRootElement div childId = do
       svg <- D3.create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
       { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
+
       let
          margin :: D3.Margin
          margin =
@@ -132,7 +133,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    createPoints range parent =
       void $ D3.createMany Circle parent "linechart-point" entries
          [ "stroke-width" ↦ const "1"
-         -- profoundly silly
+         -- silly
          , "cx" ↦ \{ i, j } -> let Point { x } = (unwrap (plots ! i)).points ! j in show $ (to range).x (fst x)
          , "cy" ↦ \{ i, j } -> let Point { y } = (unwrap (plots ! i)).points ! j in show $ (to range).y (fst y)
          ]
@@ -249,10 +250,8 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    lineHeight :: Int
    lineHeight = 15
 
-foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
-
-drawLineChart2 :: Renderer LineChart
-drawLineChart2 _ { divId, suffix, view } redraw = do
+drawLineChart :: Renderer LineChart
+drawLineChart _ { divId, suffix, view } redraw = do
    let { createRootElement, point_attrs' } = lineChartHelpers view
    let childId = divId <> "-" <> suffix
    div <- D3.rootSelect ("#" <> divId)
@@ -272,8 +271,7 @@ drawLineChart2 _ { divId, suffix, view } redraw = do
 
 instance Drawable LineChart where
    draw rSpec figVal _ redraw =
-      --      drawLineChart (lineChartHelpers view) uiHelpers rSpec =<< selListener figVal redraw point
-      drawLineChart2 uiHelpers rSpec =<< selListener figVal redraw point
+      drawLineChart uiHelpers rSpec =<< selListener figVal redraw point
       where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =
