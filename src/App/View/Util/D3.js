@@ -30,7 +30,7 @@ function canvasFont (el) {
 // Not especially reliable as might not inherit in situ styling that the actual text will
 export function textDimensions (class_) {
    return text => {
-      const element = document.createElement('div')
+      const element = document.createElement('text')
       element.textContent = text
       element.classList.add(class_)
       element.style.visibility = 'hidden'

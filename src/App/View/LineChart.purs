@@ -166,7 +166,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       }
       where
       maxTextWidth :: Int
-      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> D3.textWidth legendEntry_class # nonEmpty)
+      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> D3.textWidth "legend-text" # nonEmpty)
 
       rightMargin :: Int
       rightMargin = 4
@@ -215,7 +215,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          [ D3.translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
       void $ D3.create Rect legend'
          [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
-      legendEntries <- D3.createMany G legend' legendEntry_class entries
+      legendEntries <- D3.createMany G legend' "legend-entry" entries
          [ D3.translate' \{ i } -> { x: 0, y: entry_y i } ]
       D3.forEach_setText (\{ name } -> name) =<< D3.forEach_create Text legendEntries
          [ "class" ↦ const "legend-text"
@@ -239,9 +239,6 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
       circle_centre :: Int
       circle_centre = lineHeight / 2 - point_smallRadius / 2
-
-   legendEntry_class :: String
-   legendEntry_class = "legend-entry"
 
    lineHeight :: Int
    lineHeight = 15
