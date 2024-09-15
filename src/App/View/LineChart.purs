@@ -5,12 +5,12 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (Coord, SVGElementType(..))
+import App.View.Util.D3 (Coord, SVGElementType(..), isEmpty)
 import App.View.Util.D3 as D3
-import Bind ((↦), (⟼))
+import Bind (Bind, (↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
-import Data.Foldable (length)
+import Data.Foldable (length, sequence_)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype, unwrap)
@@ -22,9 +22,10 @@ import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (ToFrom, string, typeError, unpack)
-import Util (Endo, check, error, nonEmpty, unimplemented, (!))
+import Util (Endo, check, nonEmpty, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
+import Web.Event.Event (EventType(..))
 
 data Orientation
    = Default
@@ -46,7 +47,8 @@ newtype Point a = Point (Coord (Selectable a))
 
 type LineChartHelpers =
    { createRootElement :: D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
-   , point_attrs :: Dimensions Int -> PointCoordinate -> Object String
+   , point_attrs :: PointCoordinate -> Object String
+   , point_attrs' :: PointCoordinate -> Array (Bind String)
    }
 
 type LegendEntry =
@@ -61,6 +63,7 @@ lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    { createRootElement
    , point_attrs
+   , point_attrs'
    }
    where
    names :: Array String
@@ -97,7 +100,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       g <- D3.create G svg [ D3.translate { x: margin.left, y: margin.top } ]
       void $ createAxes interior g
       createLines interior g
-      createPoints g
+      createPoints interior g
       D3.setText (fst caption) =<< D3.create Text svg
          [ "x" ⟼ width / 2
          , "y" ⟼ height - caption_height / 2
@@ -125,27 +128,30 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       entries :: Array { i :: Int, plot :: LinePlot }
       entries = flip mapWithIndex plots \i plot -> { i, plot }
 
-   createPoints :: D3.Selection -> Effect Unit
-   createPoints parent =
-      void $ D3.createMany Circle parent "linechart-point" entries []
+   createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
+   createPoints range parent =
+      void $ D3.createMany Circle parent "linechart-point" entries
+         [ "stroke-width" ↦ const "1"
+         -- profoundly silly
+         , "cx" ↦ \{ i, j } -> let Point { x } = (unwrap (plots ! i)).points ! j in show $ (to range).x (fst x)
+         , "cy" ↦ \{ i, j } -> let Point { y } = (unwrap (plots ! i)).points ! j in show $ (to range).y (fst y)
+         ]
       where
       entries :: Array PointCoordinate
       entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
          flip mapWithIndex ps \j _ -> { name: fst name, i, j }
 
-   point_attrs :: Dimensions Int -> PointCoordinate -> Object String
-   point_attrs range { i, j, name } =
-      fromFoldable
-         [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
-         , "stroke-width" ⟼ 1
-         , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
-         , "fill" ↦ fill col
-         , "cx" ⟼ (to range).x (fst x)
-         , "cy" ⟼ (to range).y (fst y)
-         ]
+   point_attrs :: PointCoordinate -> Object String
+   point_attrs = point_attrs' >>> fromFoldable
+
+   point_attrs' :: PointCoordinate -> Array (Bind String)
+   point_attrs' { i, j, name } =
+      [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
+      , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
+      , "fill" ↦ fill col
+      ]
       where
-      LinePlot plot = plots ! i
-      Point { x, y } = plot.points ! j
+      Point { x, y } = (unwrap (plots ! i)).points ! j
       sel = snd x ∨ snd y
       col = D3.nameCol name names
       fill = if isPersistent sel then flip colorShade (-30) else identity
@@ -246,26 +252,19 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 foreign import drawLineChart :: LineChartHelpers -> Renderer LineChart
 
 drawLineChart2 :: Renderer LineChart
-drawLineChart2 _ { divId, suffix, view } _ = do
-   let {} = lineChartHelpers view
+drawLineChart2 _ { divId, suffix, view } redraw = do
+   let { createRootElement, point_attrs' } = lineChartHelpers view
    let childId = divId <> "-" <> suffix
    div <- D3.rootSelect ("#" <> divId)
    D3.isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
-   _ <- D3.select div ("#" <> childId)
-   {-
-   if (rootElement.empty()) {
-      ({ rootElement, interior } = createRootElement(div)(childId)())
-   }
-
-   rootElement.selectAll('.linechart-point').each(function (point) {
-      d3.select(this) // won't work inside arrow function :/
-         .attrs(point_attrs(interior)(point))
-         .on('mousedown', e => { listener(e) })
-         .on('mouseenter', e => { listener(e) })
-         .on('mouseleave', e => { listener(e) })
-   })
--}
-   error unimplemented
+   maybeRootElement <- D3.select div ("#" <> childId)
+   rootElement <- isEmpty maybeRootElement >>=
+      if _ then createRootElement div childId <#> _.rootElement
+      else pure maybeRootElement
+   points <- D3.selectAll rootElement ".linechart-point"
+   D3.forEach_setAttrs_ points point_attrs'
+   sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
+      <#> EventType >>> flip (D3.forEach_on points) redraw
 
 -- ======================
 -- boilerplate

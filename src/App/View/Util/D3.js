@@ -2,9 +2,20 @@
 
 import * as d3 from "d3"
 
+// Similar to d3-selection-multi function of the same name. TODO: check we still need the 'function' case.
 d3.selection.prototype.attrs = function(m) {
-   for (const k in m) {
-      this.attr(k, m[k])
+   if (typeof m == 'function') {
+      const this_ = this
+      this.each(function (d) {
+         m_ = m(d)
+         for (const k in m_) {
+            this_.attr(k, m_[k])
+         }
+      })
+   } else {
+      for (const k in m) {
+         this.attr(k, m[k])
+      }
    }
    return this
 }
@@ -20,7 +31,7 @@ function computed (element, prop) {
    return window.getComputedStyle(element, null).getPropertyValue(prop);
 }
 
-// should be always defined
+// Should be always defined
 function canvasFont (el) {
    return `${computed(el, 'font-weight')} ${computed(el, 'font-size')} ${computed(el, 'font-family')}`
 }
@@ -187,8 +198,26 @@ export function scaleLinear (x1) {
    }
 }
 
+export function datum (sel) {
+   return () => {
+      return sel.datum()
+   }
+}
+
+export function on (sel) {
+   return eventType => {
+      return listener => {
+         return () => {
+            return sel.on(eventType, e => listener(e))
+         }
+      }
+   }
+}
+
 export const forEach_createChild = createChild
 export const forEach_styles = styles
 export const forEach_attrs = attrs
+export const forEach_attrs_ = attrs
+export const forEach_on = on
 export const forEach_setText = setText
 export const multi_isEmpty = empty

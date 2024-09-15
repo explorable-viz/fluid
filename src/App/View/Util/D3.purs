@@ -7,14 +7,18 @@ module App.View.Util.D3
    , SVGElementType(..)
    , create
    , createMany
+   , datum
    , dimensions
    , forEach_create
+   , forEach_on
    , forEach_setAttrs
+   , forEach_setAttrs_
    , forEach_setStyles
    , forEach_setText
    , isEmpty
    , line
    , nameCol
+   , on
    , remove
    , rootSelect
    , rotate
@@ -43,6 +47,8 @@ import Data.String (toLower)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util (Endo)
+import Web.Event.Event (EventType)
+import Web.Event.EventTarget (EventListener)
 
 type Margin =
    { top :: Int
@@ -99,6 +105,10 @@ forEach_setAttrs :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Ef
 forEach_setAttrs sel =
    fromFoldable >>> forEach_attrs sel >>> void
 
+forEach_setAttrs_ :: forall a. MultiSelection -> (a -> Array (Bind String)) -> Effect Unit
+forEach_setAttrs_ sel =
+   (_ >>> fromFoldable) >>> forEach_attrs_ sel >>> void
+
 forEach_setStyles :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect Unit
 forEach_setStyles sel =
    fromFoldable >>> forEach_styles sel >>> void
@@ -133,10 +143,14 @@ foreign import selectAll :: Selection -> String -> Effect MultiSelection
 foreign import setText :: String -> Selection -> Effect Unit
 foreign import attrs :: Selection -> Object String -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
+foreign import datum :: forall a. Selection -> Effect a -- currently unused
+foreign import on :: Selection -> EventListener -> Effect Unit
 
 -- Different type signatures but same underlying implementation as Selection-based analogues
 foreign import forEach_attrs :: forall a. MultiSelection -> Object (a -> String) -> Effect MultiSelection
+foreign import forEach_attrs_ :: forall a. MultiSelection -> (a -> Object String) -> Effect MultiSelection
 foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
+foreign import forEach_on :: MultiSelection -> EventType -> EventListener -> Effect Unit
 foreign import forEach_styles :: forall a. MultiSelection -> Object (a -> String) -> Effect MultiSelection
 foreign import forEach_setText :: forall a. (a -> String) -> MultiSelection -> Effect Unit
 foreign import multi_isEmpty :: MultiSelection -> Effect Boolean

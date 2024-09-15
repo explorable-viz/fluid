@@ -3,10 +3,12 @@ module Test.Util.Puppeteer where
 import Prelude
 
 import Control.Promise (Promise, toAffE)
+import Data.String (Pattern(..), contains)
 import Effect (Effect)
 import Effect.Aff (Aff, catchError)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
+import Foreign (unsafeFromForeign)
 import Test.Util (testCondition)
 import Toppokki as T
 import Util (debug)
@@ -59,3 +61,33 @@ click :: T.Selector -> T.Page -> Aff Unit
 click element page = do
    T.click element page
    testCondition (show' element) true "click"
+
+checkAttribute :: T.Page -> T.Selector -> String -> String -> Aff Unit
+checkAttribute page sel attr expected = do
+   found <- getAttributeValue page sel attr
+   let errorMsg = if found == expected then "" else (" (got " <> found <> ")")
+   testCondition (show' sel) (found == expected) (found <> " == " <> show expected <> errorMsg)
+
+checkAttributeContains :: T.Page -> T.Selector -> String -> String -> Aff Unit
+checkAttributeContains page sel attr expected = do
+   found <- getAttributeValue page sel attr
+   let success = contains (Pattern expected) found
+   let errorMsg = if success then "" else (" (got " <> found <> ")")
+   testCondition (show' sel) success (found <> " contains " <> show expected <> errorMsg)
+
+checkTextContent :: T.Page -> T.Selector -> String -> Aff Unit
+checkTextContent page selector expected = do
+   waitFor selector page
+   text <- textContentValue page selector
+   testCondition (show' selector) (text == expected) ("text == " <> show expected)
+   pure unit
+
+getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
+getAttributeValue page selector attribute = do
+   attrValue <- T.unsafePageEval selector ("element => element.getAttribute('" <> attribute <> "')") page
+   pure (unsafeFromForeign attrValue)
+
+textContentValue :: T.Page -> T.Selector -> Aff String
+textContentValue page selector = do
+   captionText <- T.unsafePageEval selector "element => element.textContent" page
+   pure (unsafeFromForeign captionText)
