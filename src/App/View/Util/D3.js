@@ -30,18 +30,18 @@ function canvasFont (el) {
 // Not especially reliable as might not inherit in situ styling that the actual text will
 export function textDimensions (class_) {
    return text => {
-      const div = document.createElement('div')
-      div.textContent = text
-      div.classList.add(class_)
-      div.style.visibility = 'hidden'
-      document.body.appendChild(div)
+      const element = document.createElement('div')
+      element.textContent = text
+      element.classList.add(class_)
+      element.style.visibility = 'hidden'
+      document.body.appendChild(element)
 
       const canvas = textDimensions.canvas || (textDimensions.canvas = document.createElement("canvas")) // re-use canvas
       const context = canvas.getContext("2d")
-      context.font = canvasFont(div)
+      context.font = canvasFont(element)
       const width = Math.ceil(context.measureText(text).width)
-      const height = Math.ceil(div.offsetHeight)
-      div.remove()
+      const height = Math.ceil(element.offsetHeight)
+      element.remove()
       return { width, height }
    }
 }
