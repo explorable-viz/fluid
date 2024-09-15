@@ -6,7 +6,7 @@ import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colo
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, Margin, SVGElementType(..), create, createMany, dimensions, each, forEach_create, forEach_on, forEach_setText, isEmpty, line, nameCol, remove, rootSelect, rotate, scaleLinear, select, selectAll, setAttrs, setAttrs', setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, Margin, SVGElementType(..), create, createMany, dimensions, each, forEach_create, forEach_setText, isEmpty, line, nameCol, on, remove, rootSelect, rotate, scaleLinear, select, selectAll, setAttrs, setAttrs', setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind (Bind, (↦), (⟼))
@@ -256,7 +256,7 @@ drawLineChart _ { divId, suffix, view } redraw = do
    points <- selectAll rootElement ".linechart-point"
    void $ each (setAttrs' point_attrs') points
    sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
-      <#> EventType >>> flip (forEach_on points) redraw
+      <#> \ev -> each (on (EventType ev) redraw) points
 
 -- ======================
 -- boilerplate

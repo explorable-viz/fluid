@@ -208,9 +208,9 @@ export function datum (sel) {
    }
 }
 
-export function on (sel) {
-   return eventType => {
-      return listener => {
+export function on (eventType) {
+   return listener => {
+      return sel => {
          return () => {
             return sel.on(eventType, e => {
                if (e.button == 0) { // assumes e is a mouse event, which is the case for now
@@ -234,7 +234,5 @@ export function each (f) {
 
 export const attrs_ = attrs
 export const forEach_createChild = createChild
-export const forEach_attrs_ = attrs
-export const forEach_on = on
 export const forEach_setText = setText
 export const multi_isEmpty = empty

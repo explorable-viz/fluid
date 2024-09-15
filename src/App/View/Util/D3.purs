@@ -12,7 +12,6 @@ module App.View.Util.D3
    , dimensions
    , each
    , forEach_create
-   , forEach_on
    , forEach_setText
    , isEmpty
    , line
@@ -147,13 +146,11 @@ foreign import attrs :: Selection -> Object String -> Effect Selection
 foreign import attrs_ :: forall a. Selection -> (a -> Object String) -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
 foreign import datum :: forall a. Selection -> Effect a -- currently unused
-foreign import on :: Selection -> EventListener -> Effect Unit
+foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
 foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effect MultiSelection
 
 -- Different type signatures but same underlying implementation as Selection-based analogues
-foreign import forEach_attrs_ :: forall a. MultiSelection -> (a -> Object String) -> Effect MultiSelection
 foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
-foreign import forEach_on :: MultiSelection -> EventType -> EventListener -> Effect Unit
 foreign import forEach_setText :: forall a. (a -> String) -> MultiSelection -> Effect Unit
 foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
 
