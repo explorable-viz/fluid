@@ -4,8 +4,8 @@ import Prelude
 
 import App.Util (class Reflect, SelState, Selectable, 𝕊, from, isPrimary, isSecondary, record)
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.LineChart (Point(..))
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util.Point (Point(..))
 import Bind ((⟼))
 import Data.Int (toNumber)
 import Data.Tuple (snd)

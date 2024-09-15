@@ -2,12 +2,13 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
+import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import App.View.Util.Axes (Orientation(..), orientation)
+import App.View.Util.Axes (Orientation(..))
 import App.View.Util.D3 (Coord, SVGElementType(..), isEmpty)
 import App.View.Util.D3 as D3
+import App.View.Util.Point (Point(..))
 import Bind (Bind, (↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
@@ -17,7 +18,7 @@ import Data.List (List(..), (:))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
-import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels, f_x, f_y)
+import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels)
 import Dict (Dict)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
@@ -39,8 +40,6 @@ newtype LinePlot = LinePlot
    { name :: Selectable String
    , points :: Array (Point Number)
    }
-
-newtype Point a = Point (Coord (Selectable a))
 
 type LineChartHelpers =
    { createRootElement :: D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
@@ -274,18 +273,6 @@ instance Drawable LineChart where
       point { i, j } =
          linePoint j >>> listElement i >>> field f_plots >>> lineChart
 
-instance Reflect (Dict (Val (SelState 𝕊))) (Point Number) where
-   from r = Point
-      { x: get_intOrNumber f_x r
-      , y: get_intOrNumber f_y r
-      }
-
-instance Reflect (Dict (Val (SelState 𝕊))) (Point Orientation) where
-   from r = Point
-      { x: unpack orientation (get f_x r)
-      , y: unpack orientation (get f_y r)
-      }
-
 instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
@@ -303,5 +290,4 @@ instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
 instance Reflect (Val (SelState 𝕊)) LinePlot where
    from (Val _ (Constr c (u : Nil))) | c == cLinePlot = record from u
 
-derive instance Newtype (Point a) _
 derive instance Newtype LinePlot _
