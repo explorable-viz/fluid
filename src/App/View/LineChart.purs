@@ -5,6 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, get_intOrNumber, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util.Axes (Orientation(..), orientation)
 import App.View.Util.D3 (Coord, SVGElementType(..), isEmpty)
 import App.View.Util.D3 as D3
 import Bind (Bind, (↦), (⟼))
@@ -16,20 +17,16 @@ import Data.List (List(..), (:))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
-import DataType (cDefault, cLinePlot, cRotated, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels, f_x, f_y)
+import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels, f_x, f_y)
 import Dict (Dict)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
-import Primitive (ToFrom, string, typeError, unpack)
+import Primitive (string, unpack)
 import Util (Endo, check, nonEmpty, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 import Web.Event.Event (EventType(..))
-
-data Orientation
-   = Default
-   | Rotated
 
 newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
@@ -276,21 +273,6 @@ instance Drawable LineChart where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =
          linePoint j >>> listElement i >>> field f_plots >>> lineChart
-
-derive instance Eq Orientation
-
--- Hefty amount of boilerplate just for a type isomorphic to Bool :-o
-orientation :: forall a. ToFrom Orientation a
-orientation =
-   { pack: case _ of
-        Default -> Constr cDefault Nil
-        Rotated -> Constr cRotated Nil
-   , unpack: case _ of
-        Constr c Nil
-           | c == cDefault -> Default
-           | c == cRotated -> Rotated
-        v -> typeError v "Orientation"
-   }
 
 instance Reflect (Dict (Val (SelState 𝕊))) (Point Number) where
    from r = Point
