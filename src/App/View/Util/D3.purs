@@ -5,15 +5,14 @@ module App.View.Util.D3
    , MultiSelection
    , Margin
    , SVGElementType(..)
+   , attrs
    , create
    , createMany
    , datum
    , dimensions
+   , each
    , forEach_create
    , forEach_on
-   , forEach_setAttrs
-   , forEach_setAttrs_
-   , forEach_setStyles
    , forEach_setText
    , isEmpty
    , line
@@ -26,6 +25,9 @@ module App.View.Util.D3
    , scaleLinear
    , select
    , selectAll
+   , setAttrs
+   , setAttrs'
+   , setStyles
    , setText
    , textHeight
    , textWidth
@@ -101,17 +103,17 @@ createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Arra
 createMany elementType parent class_ xs =
    fromFoldable >>> createChildren parent (show elementType) class_ xs
 
-forEach_setAttrs :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect MultiSelection
-forEach_setAttrs sel =
-   fromFoldable >>> forEach_attrs sel
+setAttrs :: Array (Bind String) -> Selection -> Effect Selection
+setAttrs as sel =
+   fromFoldable as # attrs sel
 
-forEach_setAttrs_ :: forall a. MultiSelection -> (a -> Array (Bind String)) -> Effect MultiSelection
-forEach_setAttrs_ sel =
-   (_ >>> fromFoldable) >>> forEach_attrs_ sel
+setAttrs' :: forall a. (a -> Array (Bind String)) -> Selection -> Effect Selection
+setAttrs' asF sel =
+   (asF >>> fromFoldable) # attrs_ sel
 
-forEach_setStyles :: forall a. MultiSelection -> Array (Bind (a -> String)) -> Effect MultiSelection
-forEach_setStyles sel =
-   fromFoldable >>> forEach_styles sel
+setStyles :: Array (Bind String) -> Selection -> Effect Selection
+setStyles as sel =
+   fromFoldable as # styles sel
 
 foreign import data Selection :: Type
 foreign import data MultiSelection :: Type
@@ -142,16 +144,16 @@ foreign import select :: Selection -> String -> Effect Selection
 foreign import selectAll :: Selection -> String -> Effect MultiSelection
 foreign import setText :: String -> Selection -> Effect Unit
 foreign import attrs :: Selection -> Object String -> Effect Selection
+foreign import attrs_ :: forall a. Selection -> (a -> Object String) -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
 foreign import datum :: forall a. Selection -> Effect a -- currently unused
 foreign import on :: Selection -> EventListener -> Effect Unit
+foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effect MultiSelection
 
 -- Different type signatures but same underlying implementation as Selection-based analogues
-foreign import forEach_attrs :: forall a. MultiSelection -> Object (a -> String) -> Effect MultiSelection
 foreign import forEach_attrs_ :: forall a. MultiSelection -> (a -> Object String) -> Effect MultiSelection
 foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
 foreign import forEach_on :: MultiSelection -> EventType -> EventListener -> Effect Unit
-foreign import forEach_styles :: forall a. MultiSelection -> Object (a -> String) -> Effect MultiSelection
 foreign import forEach_setText :: forall a. (a -> String) -> MultiSelection -> Effect Unit
 foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
 

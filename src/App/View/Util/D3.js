@@ -171,9 +171,9 @@ export function attrs (sel) {
    return attrs => {
       return () => {
          if (typeof attrs == 'function') {
-            sel.each(function (d) {
+            return sel.each(function (d) {
                const attrs_ = attrs(d)
-               sel_ = d3.select(this)
+               const sel_ = d3.select(this)
                for (const k in attrs_) {
                   sel_.attr(k, attrs_[k])
                }
@@ -182,6 +182,7 @@ export function attrs (sel) {
             for (const k in attrs) {
                sel.attr(k, attrs[k])
             }
+            return sel
          }
       }
    }
@@ -211,15 +212,28 @@ export function on (sel) {
    return eventType => {
       return listener => {
          return () => {
-            return sel.on(eventType, e => listener(e))
+            return sel.on(eventType, e => {
+               if (e.button == 0) { // assumes e is a mouse event, which is the case for now
+                  listener(e)
+               }
+            })
          }
       }
    }
 }
 
+export function each (f) {
+   return sel => {
+      return () => {
+         return sel.each(function () {
+            f(d3.select(this))()
+         })
+      }
+   }
+}
+
+export const attrs_ = attrs
 export const forEach_createChild = createChild
-export const forEach_styles = styles
-export const forEach_attrs = attrs
 export const forEach_attrs_ = attrs
 export const forEach_on = on
 export const forEach_setText = setText
