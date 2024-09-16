@@ -14,7 +14,7 @@ linkedOutputs_spec1 =
    { spec:
         { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
         , imports: []
-        , file: File "linked-outputs/bar-chart-line-chart"
+        , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         }
    , δ_out: multiViewEntry "bar-chart" (barChart (barSegment 1 0 neg))
@@ -27,6 +27,7 @@ linkedOutputs_spec1 =
                              >>> listElement 1 (linePoint 2 (field f_y neg))
                              >>> listElement 2 (linePoint 2 (field f_y neg))
                              >>> listElement 3 (linePoint 2 (field f_y neg))
+
                         )
                    )
               )
@@ -40,7 +41,7 @@ linkedOutputs_spec2 =
              , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
              ]
         , imports: []
-        , file: File "linked-outputs/stacked-bar-chart-scatter-plot"
+        , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
         }
    , δ_out: multiViewEntry "stacked-bar-chart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
@@ -74,9 +75,8 @@ linkedOutputs_cases =
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           }
-     , δ_out: snd (snd (fst neg))
-     , out_expect: snd (snd (fst neg))
-          >>> fst (fst neg >>> snd (fst neg))
+     , δ_out: snd neg
+     , out_expect: neg
      }
    , { spec:
           { datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]

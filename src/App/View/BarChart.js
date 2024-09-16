@@ -9,22 +9,6 @@ d3.selection.prototype.attrs = function(m) {
    return this
 }
 
-function setSelState (
-   { bar_attrs },
-   indexCol,
-   rootElement,
-   chart,
-   listener
-) {
-   rootElement.selectAll('.bar').each(function (bar) {
-      d3.select(this) // won't work inside arrow function :/
-         .attrs(bar_attrs(indexCol)(chart)(bar))
-         .on('mousedown', e => { listener(e) })
-         .on('mouseenter', e => { listener(e) })
-         .on('mouseleave', e => { listener(e) })
-   })
-}
-
 // CSS background-image + gradient fill doesn't work with SVG
 // SVG patterns don't support per-usage styling so generate one per colour
 // Masks eliminate dependency on specific colours but seem to clip the stroke a bit
@@ -48,6 +32,23 @@ function addHatchPattern (rootElement, j, col_j) {
       .attr('y2', 3.5)
       .attr('stroke', 'rgba(255, 255, 255, 1)')
       .attr('stroke-width', "1")
+}
+
+
+function setSelState (
+   { bar_attrs },
+   indexCol,
+   rootElement,
+   chart,
+   listener
+) {
+   rootElement.selectAll('.bar').each(function (bar) {
+      d3.select(this) // won't work inside arrow function :/
+         .attrs(bar_attrs(indexCol)(chart)(bar))
+         .on('mousedown', e => { listener(e) })
+         .on('mouseenter', e => { listener(e) })
+         .on('mouseleave', e => { listener(e) })
+   })
 }
 
 function drawBarChart_ (

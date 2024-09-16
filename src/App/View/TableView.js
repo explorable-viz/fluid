@@ -11,13 +11,13 @@ function prim (v) {
 }
 
 function setSelState (
-   { record_isUsed, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder, cellShadowStyles },
+   { record_isDisplayable, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder, cellShadowStyles },
    filterToggleListener,
    {
       selClasses,
    },
    rootElement,
-   { title, filter, table },
+   { title, table },
    selListener
 ) {
    rootElement.selectAll('.table-cell').each(function (cell) {
@@ -31,19 +31,21 @@ function setSelState (
             .on('mouseleave', e => { selListener(e) })
       }
    })
+
    let hidden = 0
    rootElement.selectAll('.table-row').each(function ({ i }) {
-      hide = !record_isUsed(table[i]) && filter
+      hide = !record_isDisplayable(table[i])
       if (hide)
          hidden++
       d3.select(this) // won't work inside arrow function :/
          .classed('hidden', hide)
    })
+
    rootElement.select('.table-caption')
       .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
    rootElement.select('.filter-toggle')
       .on('mousedown', e => { filterToggleListener(e) })
-   
+
    rootElement.selectAll('.table-cell').each(function (cell) {
       d3.select(this)
          .classed('has-right-border', hasRightBorder(table)(cell.i)(cell.j))
@@ -103,13 +105,13 @@ function drawTable_ (
          const rows = rootElement
             .append('tbody')
             .selectAll('tr')
-               .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] }))) // data rows have 0-based index, but displayed row numbers start with 1 
+               .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] }))) // data rows have 0-based index, but displayed row numbers start with 1
                .enter()
                .append('tr')
                .attr('class', 'table-row')
 
          rows.selectAll('td')
-            .data(({ i, vals }) => vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // the field for row number has j = -1 
+            .data(({ i, vals }) => vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // the field for row number has j = -1
             .enter()
             .append('td')
             .attr('class', 'table-cell')

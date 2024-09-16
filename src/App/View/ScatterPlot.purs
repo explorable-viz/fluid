@@ -2,14 +2,14 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, SelState, Selectable, 𝕊, from, record, isPrimary, isSecondary)
-import App.Util.Selector (ViewSelSetter, field, listElement, scatterPlot)
-import App.View.LineChart (Point(..))
+import App.Util (class Reflect, SelState, Selectable, 𝕊, from, isPrimary, isSecondary, record)
+import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util.Point (Point(..))
 import Bind ((⟼))
 import Data.Int (toNumber)
 import Data.Tuple (snd)
-import DataType (f_caption, f_data, f_xlabel, f_ylabel)
+import DataType (f_caption, f_points, f_xlabel, f_ylabel)
 import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
@@ -20,7 +20,7 @@ import Val (Val)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
-   , points :: Array Point
+   , points :: Array (Point Number)
    , xlabel :: Selectable String
    , ylabel :: Selectable String
    }
@@ -50,12 +50,12 @@ instance Drawable ScatterPlot where
       drawScatterPlot scatterPlotHelpers uiHelpers rSpec =<< selListener figVal redraw point
       where
       point :: ViewSelSetter PointIndex
-      point { i } = listElement i >>> field f_data >>> scatterPlot
+      point { i } = scatterPoint i >>> scatterPlot
 
 instance Reflect (Dict (Val (SelState 𝕊))) ScatterPlot where
    from r = ScatterPlot
       { caption: unpack string (get f_caption r)
-      , points: record from <$> from (get f_data r)
+      , points: record from <$> from (get f_points r)
       , xlabel: unpack string (get f_xlabel r)
       , ylabel: unpack string (get f_ylabel r)
       }
