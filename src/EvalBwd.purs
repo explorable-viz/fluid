@@ -27,10 +27,10 @@ import Lattice (Raw, 𝔹, bot, botOf, expand, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), Endo, absurd, defined, definitely', error, nonEmpty, singleton, (!), (×))
+import Util (type (×), (!), (×), Endo, absurd, definitely', error, isEmpty, nonEmpty, singleton, defined)
 import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, intersectionWith, keys, maplet, toUnfoldable, (<+>))
 import Util.Pair (zip) as P
-import Util.Set (empty, isEmpty, (∪))
+import Util.Set (empty, (∪))
 import Val (BaseVal(..), Fun(..)) as V
 import Val (class Ann, DictRep(..), Env, EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..))
 
