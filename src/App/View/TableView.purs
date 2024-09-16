@@ -130,15 +130,12 @@ tableViewHelpers =
 
    record_isDisplayable :: Array (Val (SelState 𝕊)) -> Boolean
    record_isDisplayable r =
-      not <<< null $ flip filter r \(Val α _) -> not (outFind defaultFilter α)
+      not <<< null $ flip filter r \(Val α _) -> outFind defaultFilter α
       where
       outFind :: FilterType -> SelState 𝕊 -> Boolean
-      outFind Everything = isThere
-      outFind Interactive = isInert
-      outFind Relevant = isNone || isInert
-
-      isThere :: SelState 𝕊 -> Boolean
-      isThere _ = false
+      outFind Everything = const true
+      outFind Interactive = not isInert
+      outFind Relevant = not (isNone || isInert)
 
       isNone :: SelState 𝕊 -> Boolean
       isNone a = getPersistent a == None && getTransient a == None
