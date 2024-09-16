@@ -139,6 +139,7 @@ tableViewHelpers =
            Nothing -> isCellTransient table i j
            Just next -> isCellTransient table i j /= isCellTransient table next j
 
+-- If I try to make this local to tableViewHelpers something goes wrong, can't see why..
 isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
 isCellTransient table i j
    | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
