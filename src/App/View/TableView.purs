@@ -39,11 +39,6 @@ arrayDictToArray2 colNames = map (dictToArray colNames)
    where
    dictToArray keys d = map (flip get d) keys
 
-isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
-isCellTransient table i j
-   | i == -1 || j == -1 = false -- header row now has j = -1 and rowKey column now has i = -1
-   | otherwise = isTransient <<< tableViewHelpers.val_selState $ table ! i ! j
-
 foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
 
 type TableViewHelpers =
@@ -66,15 +61,16 @@ tableViewHelpers =
    { rowKey
    , record_isDisplayable
    , cell_selClassesFor
-   , val_val: \(Val _ v) -> v
-   , val_selState: \(Val α _) -> α
+   , val_val
+   , val_selState
    , hasRightBorder
    , hasBottomBorder
    , cellShadowStyles
    }
    where
-   rowKey :: String
    rowKey = "__n"
+   val_val (Val _ v) = v
+   val_selState (Val α _) = α
 
    width :: Array RecordRow -> Int
    width table = length <<< definitely' $ head table
@@ -142,6 +138,11 @@ tableViewHelpers =
       | otherwise = case nextVisibleRow table i of
            Nothing -> isCellTransient table i j
            Just next -> isCellTransient table i j /= isCellTransient table next j
+
+isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
+isCellTransient table i j
+   | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
+   | otherwise = isTransient <<< tableViewHelpers.val_selState $ table ! i ! j
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
