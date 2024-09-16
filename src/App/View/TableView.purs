@@ -71,17 +71,6 @@ nextVisibleRow table this
    | tableViewHelpers.record_isDisplayable $ table ! (this + 1) = Just (this + 1)
    | otherwise = nextVisibleRow table (this + 1)
 
-cellShadowStyles :: Array RecordRow -> Int -> Int -> String
-cellShadowStyles table i j = combineStyles $ map (isCellTransient table i j && _)
-   [ isNothing prev || not (isCellTransient table (definitely' prev) j)
-   , j == width table - 1 || not (isCellTransient table i (j + 1))
-   , isNothing next || not (isCellTransient table (definitely' next) j)
-   , j == -1 || not (isCellTransient table i (j - 1))
-   ]
-   where
-   prev = prevVisibleRow table i
-   next = nextVisibleRow table i
-
 combineStyles :: Array Boolean -> String
 combineStyles [ false, false, false, false ] = "box-shadow: none;"
 combineStyles dirs =
@@ -142,6 +131,17 @@ tableViewHelpers =
    cell_selClassesFor colName s
       | colName == rowKey = ""
       | otherwise = selClassesFor s
+
+   cellShadowStyles :: Array RecordRow -> Int -> Int -> String
+   cellShadowStyles table i j = combineStyles $ map (isCellTransient table i j && _)
+      [ isNothing prev || not (isCellTransient table (definitely' prev) j)
+      , j == width table - 1 || not (isCellTransient table i (j + 1))
+      , isNothing next || not (isCellTransient table (definitely' next) j)
+      , j == -1 || not (isCellTransient table i (j - 1))
+      ]
+      where
+      prev = prevVisibleRow table i
+      next = nextVisibleRow table i
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
