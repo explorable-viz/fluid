@@ -31,11 +31,10 @@ newtype TableView = TableView
 
 -- helper functions used by View.purs to decompose array of records (Dict (Val (SelState 𝕊))) into colNames and table
 headers :: Array (Dict (Val (SelState 𝕊))) -> Array String
-headers records =
-   sort <<< toUnfoldable <<< keys <<< definitely' $ head records
+headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
-arrayDictToArray2 colNames = map (flip (map <<< flip get) colNames)
+arrayDictToArray2 = map <<< flip (map <<< flip get)
 
 foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
 
