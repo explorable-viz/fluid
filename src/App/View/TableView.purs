@@ -47,18 +47,6 @@ isCellTransient table i j
    | i == -1 || j == -1 = false -- header row now has j = -1 and rowKey column now has i = -1
    | otherwise = isTransient <<< tableViewHelpers.val_selState $ table ! i ! j
 
-hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
-hasRightBorder table i j
-   | j == width table - 1 = isCellTransient table i j
-   | otherwise = isCellTransient table i j /= isCellTransient table i (j + 1)
-
-hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
-hasBottomBorder table i j
-   | i /= -1 && (not <<< tableViewHelpers.record_isDisplayable $ table ! i) = false -- change this
-   | otherwise = case nextVisibleRow table i of
-        Nothing -> isCellTransient table i j
-        Just next -> isCellTransient table i j /= isCellTransient table next j
-
 prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
 prevVisibleRow table this
    | this <= 0 = Nothing
@@ -142,6 +130,18 @@ tableViewHelpers =
             , "inset 0 -1px 1px rgba(0, 0, 255, 0.3)" -- bottom
             , "inset 1px 0 1px rgba(0, 0, 255, 0.3)" -- left
             ]
+
+   hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
+   hasRightBorder table i j
+      | j == width table - 1 = isCellTransient table i j
+      | otherwise = isCellTransient table i j /= isCellTransient table i (j + 1)
+
+   hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
+   hasBottomBorder table i j
+      | i /= -1 && (not <<< tableViewHelpers.record_isDisplayable $ table ! i) = false -- change this
+      | otherwise = case nextVisibleRow table i of
+           Nothing -> isCellTransient table i j
+           Just next -> isCellTransient table i j /= isCellTransient table next j
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
