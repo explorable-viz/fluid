@@ -35,9 +35,7 @@ headers records =
    sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
-arrayDictToArray2 colNames = map (dictToArray colNames)
-   where
-   dictToArray keys d = map (flip get d) keys
+arrayDictToArray2 colNames = map (flip (map <<< flip get) colNames)
 
 foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
 
