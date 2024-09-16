@@ -15,9 +15,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
--- main = run tests
+main = run tests
 
-main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite [ { file: "dict/match", imports: [], bwd_expect_file: "dict/match.expect", δv: neg, fwd_expect: "", datasets: [] } ]
