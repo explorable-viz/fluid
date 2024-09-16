@@ -6,15 +6,14 @@ import App.Util (SelState, 𝕊(..), eventData, getPersistent, getTransient, isI
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Array (filter, head, length, null, sort, zip)
-import Data.Maybe (Maybe(..), fromJust, isNothing)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Set (toUnfoldable)
 import Data.String (joinWith)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Effect (Effect)
-import Partial.Unsafe (unsafePartial)
-import Util (Endo, (!))
-import Util.Map (keys, lookup)
+import Util (Endo, definitely', (!))
+import Util.Map (get, keys)
 import Val (BaseVal, Val(..), Array2)
 import Web.Event.EventTarget (EventListener, eventListener)
 
@@ -32,15 +31,16 @@ newtype TableView = TableView
 
 -- helper functions used by View.purs to decompose array of records (Dict (Val (SelState 𝕊))) into colNames and table
 headers :: Array (Dict (Val (SelState 𝕊))) -> Array String
-headers records = sort <<< toUnfoldable <<< keys <<< unsafePartial fromJust $ head records
+headers records =
+   sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 colNames = map (dictToArray colNames)
    where
-   dictToArray keys d = map (\k -> unsafePartial fromJust $ lookup k d) keys
+   dictToArray keys d = map (flip get d) keys
 
 width :: Array RecordRow -> Int
-width table = length <<< unsafePartial fromJust $ head table
+width table = length <<< definitely' $ head table
 
 isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
 isCellTransient table i j
@@ -73,9 +73,9 @@ nextVisibleRow table this
 
 cellShadowStyles :: Array RecordRow -> Int -> Int -> String
 cellShadowStyles table i j = combineStyles $ map (isCellTransient table i j && _)
-   [ isNothing prev || not (isCellTransient table (unsafePartial fromJust prev) j)
+   [ isNothing prev || not (isCellTransient table (definitely' prev) j)
    , j == width table - 1 || not (isCellTransient table i (j + 1))
-   , isNothing next || not (isCellTransient table (unsafePartial fromJust next) j)
+   , isNothing next || not (isCellTransient table (definitely' next) j)
    , j == -1 || not (isCellTransient table i (j - 1))
    ]
    where
