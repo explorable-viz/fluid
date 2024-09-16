@@ -5,11 +5,9 @@ import Prelude
 import App.Util (SelState, 𝕊(..), eventData, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import Data.Array (filter, head, length, null, sort, zip)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Array (filter, head, length, null, sort)
+import Data.Maybe (Maybe(..))
 import Data.Set (toUnfoldable)
-import Data.String (joinWith)
-import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Effect (Effect)
 import Util (Endo, definitely', (!))
@@ -47,7 +45,6 @@ type TableViewHelpers =
    , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
    , hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
    , hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
-   , cellShadowStyles :: Array RecordRow -> Int -> Int -> String
    }
 
 defaultFilter :: Filter
@@ -62,7 +59,6 @@ tableViewHelpers =
    , val_selState
    , hasRightBorder
    , hasBottomBorder
-   , cellShadowStyles
    }
    where
    rowKey = "__n"
@@ -100,7 +96,7 @@ tableViewHelpers =
       | this == length table - 1 = Nothing
       | record_isDisplayable $ table ! (this + 1) = Just (this + 1)
       | otherwise = nextVisibleRow table (this + 1)
-
+{-
    cellShadowStyles :: Array RecordRow -> Int -> Int -> String
    cellShadowStyles table i j = combineStyles $ map (isCellTransient table i j && _)
       [ isNothing prev || not (isCellTransient table (definitely' prev) j)
@@ -123,7 +119,7 @@ tableViewHelpers =
             , "inset 0 -1px 1px rgba(0, 0, 255, 0.3)" -- bottom
             , "inset 1px 0 1px rgba(0, 0, 255, 0.3)" -- left
             ]
-
+-}
    hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
    hasRightBorder table i j
       | j == width table - 1 = isCellTransient table i j

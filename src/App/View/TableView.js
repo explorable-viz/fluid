@@ -50,7 +50,6 @@ function setSelState (
       d3.select(this)
          .classed('has-right-border', hasRightBorder(table)(cell.i)(cell.j))
          .classed('has-bottom-border', hasBottomBorder(table)(cell.i)(cell.j))
-         .attr('style', cellShadowStyles(table)(cell.i)(cell.j))
    })
 }
 
@@ -111,11 +110,16 @@ function drawTable_ (
                .attr('class', 'table-row')
 
          rows.selectAll('td')
-            .data(({ i, vals }) => vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // the field for row number has j = -1
+            .data(({ i, vals }) =>
+               vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // field for row number has j = -1
             .enter()
             .append('td')
             .attr('class', 'table-cell')
-            .text(cell => cell.colName == rowKey ? cell.value : prim(val_val(cell.value)))
+            .style('border-top', "1px solid transparent")
+            .style('border-left', "1px solid transparent")
+            .style('border-right', ({ j }) => j == colNames.length - 2 ? "1px solid transparent" : null)
+            .style('border-bottom', ({ i }) => i == table.length -1 ? "1px solid transparent" : null)
+            .text(({ colName, value }) => colName == rowKey ? value : prim(val_val(value)))
       }
 
       setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, selListener)
