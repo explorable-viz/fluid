@@ -39,9 +39,6 @@ arrayDictToArray2 colNames = map (dictToArray colNames)
    where
    dictToArray keys d = map (flip get d) keys
 
-width :: Array RecordRow -> Int
-width table = length <<< definitely' $ head table
-
 isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
 isCellTransient table i j
    | i == -1 || j == -1 = false -- header row now has j = -1 and rowKey column now has i = -1
@@ -78,6 +75,9 @@ tableViewHelpers =
    where
    rowKey :: String
    rowKey = "__n"
+
+   width :: Array RecordRow -> Int
+   width table = length <<< definitely' $ head table
 
    record_isDisplayable :: Array (Val (SelState 𝕊)) -> Boolean
    record_isDisplayable r =
