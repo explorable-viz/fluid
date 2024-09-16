@@ -47,18 +47,6 @@ isCellTransient table i j
    | i == -1 || j == -1 = false -- header row now has j = -1 and rowKey column now has i = -1
    | otherwise = isTransient <<< tableViewHelpers.val_selState $ table ! i ! j
 
-prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
-prevVisibleRow table this
-   | this <= 0 = Nothing
-   | tableViewHelpers.record_isDisplayable $ table ! (this - 1) = Just (this - 1)
-   | otherwise = prevVisibleRow table (this - 1)
-
-nextVisibleRow :: Array RecordRow -> Int -> Maybe Int
-nextVisibleRow table this
-   | this == length table - 1 = Nothing
-   | tableViewHelpers.record_isDisplayable $ table ! (this + 1) = Just (this + 1)
-   | otherwise = nextVisibleRow table (this + 1)
-
 foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
 
 type TableViewHelpers =
@@ -107,6 +95,18 @@ tableViewHelpers =
    cell_selClassesFor colName s
       | colName == rowKey = ""
       | otherwise = selClassesFor s
+
+   prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
+   prevVisibleRow table this
+      | this <= 0 = Nothing
+      | record_isDisplayable $ table ! (this - 1) = Just (this - 1)
+      | otherwise = prevVisibleRow table (this - 1)
+
+   nextVisibleRow :: Array RecordRow -> Int -> Maybe Int
+   nextVisibleRow table this
+      | this == length table - 1 = Nothing
+      | record_isDisplayable $ table ! (this + 1) = Just (this + 1)
+      | otherwise = nextVisibleRow table (this + 1)
 
    cellShadowStyles :: Array RecordRow -> Int -> Int -> String
    cellShadowStyles table i j = combineStyles $ map (isCellTransient table i j && _)
