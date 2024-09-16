@@ -1,20 +1,33 @@
 module App.View.Util.D3
-   ( Coord
-   , D3Selection
+   ( class IsEmpty
+   , Coord
+   , Selection
+   , MultiSelection
    , Margin
    , SVGElementType(..)
+   , attrs
    , create
    , createMany
+   , datum
    , dimensions
+   , each
+   , forEach_create
+   , isEmpty
    , line
    , nameCol
+   , on
    , remove
+   , rootSelect
    , rotate
+   , rotate'
    , scaleLinear
+   , select
    , selectAll
    , setAttrs
+   , setAttrs'
    , setStyles
    , setText
+   , setText_
    , textHeight
    , textWidth
    , translate
@@ -35,6 +48,8 @@ import Data.String (toLower)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util (Endo)
+import Web.Event.Event (EventType)
+import Web.Event.EventTarget (EventListener)
 
 type Margin =
    { top :: Int
@@ -64,6 +79,9 @@ translate' f =
 rotate :: Int -> Bind String
 rotate n = "transform" ↦ "rotate(" <> show n <> ")"
 
+rotate' :: forall a. (a -> Int) -> Bind (a -> String)
+rotate' f = "transform" ↦ \a -> "rotate(" <> show (f a) <> ")"
+
 data SVGElementType
    = Circle
    | G
@@ -72,35 +90,69 @@ data SVGElementType
    | SVG
    | Text
 
-create :: SVGElementType -> D3Selection -> Array (Bind String) -> Effect D3Selection
-create elementType parent = fromFoldable >>> createChild parent (show elementType)
+create :: SVGElementType -> Selection -> Array (Bind String) -> Effect Selection
+create elementType parent =
+   fromFoldable >>> createChild parent (show elementType)
 
-createMany :: forall a. SVGElementType -> D3Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect D3Selection
-createMany elementType parent class_ xs = fromFoldable >>> createChildren parent (show elementType) class_ xs
+forEach_create :: forall a. SVGElementType -> MultiSelection -> Array (Bind (a -> String)) -> Effect MultiSelection
+forEach_create elementType parents =
+   fromFoldable >>> forEach_createChild parents (show elementType)
 
-setAttrs :: D3Selection -> Array (Bind String) -> Effect Unit
-setAttrs sel = fromFoldable >>> attrs sel >>> void
+createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection
+createMany elementType parent class_ xs =
+   fromFoldable >>> createChildren parent (show elementType) class_ xs
 
-setStyles :: D3Selection -> Array (Bind String) -> Effect Unit
-setStyles sel = fromFoldable >>> styles sel >>> void
+setAttrs :: Array (Bind String) -> Selection -> Effect Selection
+setAttrs as sel =
+   fromFoldable as # attrs sel
 
-foreign import data D3Selection :: Type
+setAttrs' :: forall a. (a -> Array (Bind String)) -> Selection -> Effect Selection
+setAttrs' asF sel =
+   (asF >>> fromFoldable) # attrs_ sel
 
-foreign import createChild :: D3Selection -> String -> Object String -> Effect D3Selection
-foreign import createChildren :: forall a. D3Selection -> String -> String -> Array a -> Object (a -> String) -> Effect D3Selection
-foreign import remove :: D3Selection -> Effect Unit
+setStyles :: Array (Bind String) -> Selection -> Effect Selection
+setStyles as sel =
+   fromFoldable as # styles sel
+
+foreign import data Selection :: Type
+foreign import data MultiSelection :: Type
+
+class IsEmpty a where
+   isEmpty :: a -> Effect Boolean
+
+instance IsEmpty Selection where
+   isEmpty = empty
+
+instance IsEmpty MultiSelection where
+   isEmpty = multi_isEmpty
+
+foreign import createChild :: Selection -> String -> Object String -> Effect Selection
+foreign import createChildren :: forall a. Selection -> String -> String -> Array a -> Object (a -> String) -> Effect MultiSelection
+foreign import remove :: Selection -> Effect Unit
 foreign import nameCol :: String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 -- Currently two different protocols for x and y axis -- will subsume into something more general
-foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> D3Selection -> Effect D3Selection
-foreign import yAxis :: Coord (Endo Number) -> Number -> D3Selection -> Effect D3Selection
+foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> Selection -> Effect Selection
+foreign import yAxis :: Coord (Endo Number) -> Number -> Selection -> Effect Selection
+foreign import empty :: Selection -> Effect Boolean
+foreign import dimensions :: Selection -> Effect (Dimensions Int) -- expects singleton selection
 foreign import textDimensions :: String -> String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
-foreign import setText :: String -> D3Selection -> Effect Unit
-foreign import dimensions :: D3Selection -> Effect (Dimensions Int) -- expects singleton selection
-foreign import selectAll :: D3Selection -> String -> Effect D3Selection
-foreign import attrs :: D3Selection -> Object String -> Effect D3Selection
-foreign import styles :: D3Selection -> Object String -> Effect D3Selection
+foreign import rootSelect :: String -> Effect Selection
+foreign import select :: Selection -> String -> Effect Selection
+foreign import selectAll :: Selection -> String -> Effect MultiSelection
+foreign import setText :: String -> Selection -> Effect Selection
+foreign import setText_ :: forall a. (a -> String) -> Selection -> Effect Selection
+foreign import attrs :: Selection -> Object String -> Effect Selection
+foreign import attrs_ :: forall a. Selection -> (a -> Object String) -> Effect Selection
+foreign import styles :: Selection -> Object String -> Effect Selection
+foreign import datum :: forall a. Selection -> Effect a -- currently unused
+foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
+foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effect MultiSelection
+
+-- Different type signatures but same underlying implementation as Selection-based analogues
+foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
+foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
 
 -- ======================
 -- boilerplate

@@ -4,14 +4,10 @@ import Prelude
 
 import Control.Promise (Promise, fromAff)
 import Data.Foldable (sequence_)
-import Data.String (Pattern(..), contains)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Foreign (unsafeFromForeign)
-import Test.Util (testCondition)
-import Test.Util.Puppeteer (click, goto, launchFirefox, show', waitFor)
+import Test.Util.Puppeteer (checkAttribute, checkAttributeContains, checkTextContent, click, goto, launchFirefox, waitFor)
 import Toppokki as T
 
 main :: Effect (Promise Unit)
@@ -54,12 +50,8 @@ testScatterPlot page = do
       let point = T.Selector ("div#" <> fig <> " .scatterplot-point")
       waitFor point page
       click point page
-      className <- getAttributeValue page point "class"
-      let expectedClass = "selected-primary-persistent"
-      testCondition (show' point) (contains (Pattern expectedClass) className) ("class contains " <> show expectedClass)
-      radius <- getAttributeValue page point "r"
-      let expectedRadius = "3.2"
-      testCondition (show' point) (radius == expectedRadius) ("radius == " <> show expectedRadius)
+      checkAttributeContains page point "class" "selected-primary-persistent"
+      checkAttribute page point "r" "3.2"
       let caption = T.Selector ("table#" <> fig <> "-input-renewables > caption.table-caption")
       checkTextContent page caption "renewables (40 of 240)"
 
@@ -68,6 +60,8 @@ testBarChartLineChart page = do
    waitForFigure page barChart
    waitForFigure page lineChart
    checkXTicks
+   checkPointRadius
+
    let toggle = fig <> "-input"
    clickToggle page toggle
    waitFor (T.Selector ("div#" <> toggle)) page
@@ -82,13 +76,17 @@ testBarChartLineChart page = do
       let bar = T.Selector ("svg#" <> barChart <> " rect.bar")
       waitFor bar page
       click bar page
-      fill <- getAttributeValue page bar "fill"
-      let expected = "#57a157"
-      testCondition (show' bar) (fill == expected) ("fill == " <> show expected)
+      checkAttribute page bar "fill" "#57a157"
 
    checkXTicks :: Aff Unit
-   checkXTicks = do
+   checkXTicks =
       waitFor (T.Selector ("svg#" <> lineChart <> " g.x-axis")) page
+
+   checkPointRadius :: Aff Unit
+   checkPointRadius = do
+      let point = T.Selector ("svg#" <> lineChart <> " circle.linechart-point")
+      waitFor point page
+      checkAttribute page point "r" "2.0"
 
 testConvolution :: T.Page -> Aff Unit
 testConvolution page = do
@@ -99,30 +97,11 @@ testConvolution page = do
    waitFor (T.Selector ("div#" <> toggle)) page
 
 waitForFigure :: T.Page -> String -> Aff Unit
-waitForFigure page id = do
-   let selector = T.Selector ("svg#" <> id)
-   waitFor selector page
+waitForFigure page id =
+   waitFor (T.Selector ("svg#" <> id)) page
 
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
    let toggle = T.Selector ("div#" <> id <> " + div > div > span.toggle-button")
    waitFor toggle page
    click toggle page
-
-checkTextContent :: T.Page -> T.Selector -> String -> Aff Unit
-checkTextContent page selector expected = do
-   waitFor selector page
-   text <- textContentValue page selector
-   liftEffect $ log ("TESTING: " <> text)
-   testCondition (show' selector) (text == expected) ("text == " <> show expected)
-   pure unit
-
-getAttributeValue :: T.Page -> T.Selector -> String -> Aff String
-getAttributeValue page selector attribute = do
-   attrValue <- T.unsafePageEval selector ("element => element.getAttribute('" <> attribute <> "')") page
-   pure (unsafeFromForeign attrValue)
-
-textContentValue :: T.Page -> T.Selector -> Aff String
-textContentValue page selector = do
-   captionText <- T.unsafePageEval selector "element => element.textContent" page
-   pure (unsafeFromForeign captionText)

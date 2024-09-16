@@ -153,14 +153,14 @@ eventData = target >>> unsafeEventData
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
 selector :: EventType -> Selector Val
-selector (EventType ev) = (report <<< setSel ev <$> _)
+selector (EventType ev) = (report <<< setSel <$> _)
    where
-   setSel :: String -> Endo (SelState 𝔹)
-   setSel _ Inert = Inert
-   setSel s (Reactive sel)
-      | s == "mousedown" = Reactive (sel { persistent = neg sel.persistent })
-      | s == "mouseenter" = Reactive (sel { transient = true })
-      | s == "mouseleave" = Reactive (sel { transient = false })
+   setSel :: Endo (SelState 𝔹)
+   setSel Inert = Inert
+   setSel (Reactive sel)
+      | ev == "mousedown" = Reactive (sel { persistent = neg sel.persistent })
+      | ev == "mouseenter" = Reactive (sel { transient = true })
+      | ev == "mouseleave" = Reactive (sel { transient = false })
       | otherwise = error "Unsupported event type"
 
    report = spyWhen tracing.mouseEvent "Setting  to " show

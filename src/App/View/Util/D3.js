@@ -2,16 +2,10 @@
 
 import * as d3 from "d3"
 
+// TODO: Drop this in favour of static "attrs" function (and similarly for "styles").
 d3.selection.prototype.attrs = function(m) {
    for (const k in m) {
       this.attr(k, m[k])
-   }
-   return this
-}
-
-d3.selection.prototype.attrFuns = function(m) {
-   for (const k in m) {
-      this.attr(k, d => m[k](d))
    }
    return this
 }
@@ -27,7 +21,7 @@ function computed (element, prop) {
    return window.getComputedStyle(element, null).getPropertyValue(prop);
 }
 
-// should be always defined
+// Should be always defined
 function canvasFont (el) {
    return `${computed(el, 'font-weight')} ${computed(el, 'font-size')} ${computed(el, 'font-family')}`
 }
@@ -36,18 +30,18 @@ function canvasFont (el) {
 // Not especially reliable as might not inherit in situ styling that the actual text will
 export function textDimensions (class_) {
    return text => {
-      const div = document.createElement('div')
-      div.textContent = text
-      div.classList.add(class_)
-      div.style.visibility = 'hidden'
-      document.body.appendChild(div)
+      const element = document.createElement('text')
+      element.textContent = text
+      element.classList.add(class_)
+      element.style.visibility = 'hidden'
+      document.body.appendChild(element)
 
       const canvas = textDimensions.canvas || (textDimensions.canvas = document.createElement("canvas")) // re-use canvas
       const context = canvas.getContext("2d")
-      context.font = canvasFont(div)
+      context.font = canvasFont(element)
       const width = Math.ceil(context.measureText(text).width)
-      const height = Math.ceil(div.offsetHeight)
-      div.remove()
+      const height = Math.ceil(element.offsetHeight)
+      element.remove()
       return { width, height }
    }
 }
@@ -74,7 +68,7 @@ export function createChildren (parent) {
                      .enter()
                      .append(elementType)
                      .classed(class_, true)
-                     .attrFuns(attrFuns)
+                     .attrs(attrFuns)
                }
             }
          }
@@ -144,6 +138,26 @@ export function dimensions (sel) {
    }
 }
 
+export function empty (sel) {
+   return () => {
+      return sel.empty()
+   }
+}
+
+export function rootSelect (selector) {
+   return () => {
+      return d3.select(selector)
+   }
+}
+
+export function select (sel) {
+   return selector => {
+      return () => {
+         return sel.select(selector)
+      }
+   }
+}
+
 export function selectAll (sel) {
    return selector => {
       return () => {
@@ -152,10 +166,25 @@ export function selectAll (sel) {
    }
 }
 
+// Similar to d3-selection-multi function of the same name.
+// TODO: drop support for multi-selections from this method in favour of explicit 'each'?
 export function attrs (sel) {
    return attrs => {
       return () => {
-         return sel.attrs(attrs)
+         if (typeof attrs == 'function') {
+            return sel.each(function (d) {
+               const attrs_ = attrs(d)
+               const sel_ = d3.select(this)
+               for (const k in attrs_) {
+                  sel_.attr(k, attrs_[k])
+               }
+            })
+         } else {
+            for (const k in attrs) {
+               sel.attr(k, attrs[k])
+            }
+            return sel
+         }
       }
    }
 }
@@ -173,3 +202,38 @@ export function scaleLinear (x1) {
       return d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
    }
 }
+
+export function datum (sel) {
+   return () => {
+      return sel.datum()
+   }
+}
+
+export function on (eventType) {
+   return listener => {
+      return sel => {
+         return () => {
+            return sel.on(eventType, e => {
+               if (e.button == 0) { // assumes e is a mouse event, which is the case for now
+                  listener(e)
+               }
+            })
+         }
+      }
+   }
+}
+
+export function each (f) {
+   return sel => {
+      return () => {
+         return sel.each(function () {
+            f(d3.select(this))()
+         })
+      }
+   }
+}
+
+export const attrs_ = attrs
+export const setText_ = setText
+export const forEach_createChild = createChild
+export const multi_isEmpty = empty
