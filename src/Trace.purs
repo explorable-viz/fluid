@@ -44,9 +44,11 @@ data Match
    | MatchVarAnon (Raw Val)
    | MatchConstr Ctr (List Match)
    | MatchRecord (Dict Match)
+   | MatchDict (Dict Match)
 
 instance BV Match where
    bv (MatchVar x _) = singleton x
    bv (MatchVarAnon _) = empty
    bv (MatchConstr _ ws) = unions (bv <$> ws)
    bv (MatchRecord xws) = unions (bv <$> xws)
+   bv (MatchDict xws) = unions (bv <$> xws)

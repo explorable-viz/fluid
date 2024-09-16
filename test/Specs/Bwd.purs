@@ -105,6 +105,7 @@ bwd_cases =
      , fwd_expect: "⸨40.22222222222222⸩"
      , datasets: []
      }
+   , { file: "dict/match", imports: [], bwd_expect_file: "dict/match.expect", δv: neg, fwd_expect: "", datasets: [] }
    , { file: "dtw/compute-dtw"
      , imports:
           [ "lib/fnum"

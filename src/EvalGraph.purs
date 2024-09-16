@@ -8,7 +8,7 @@ import Data.Array (range) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Newtype (wrap)
+import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
@@ -63,6 +63,13 @@ match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
       $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
    γ × κ' × αs <- matchMany (flip get xvs <$> xs') κ
+   pure $ γ × κ' × (insert α αs)
+match (Val α (V.Dictionary (DictRep xvs))) (ElimRecord xs κ) = do
+   check (Set.subset xs (Set.fromFoldable $ keys xvs))
+      $ patternMismatch (show (keys xvs)) (show xs)
+   let xs' = xs # Set.toUnfoldable
+   let xvs' = unwrap xvs
+   γ × κ' × αs <- matchMany (map (\k -> snd (get k xvs')) xs') κ
    pure $ γ × κ' × (insert α αs)
 match v (ElimRecord xs _) = throw (patternMismatch (prettyP v) (show xs))
 

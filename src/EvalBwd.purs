@@ -23,11 +23,11 @@ import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), bv)
 import GaloisConnection (GaloisConnection(..))
-import Lattice (Raw, 𝔹, (∨), bot, botOf, expand, top)
+import Lattice (Raw, 𝔹, bot, botOf, expand, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (!), (×), Endo, absurd, definitely', error, nonEmpty, singleton, defined)
+import Util (type (×), Endo, absurd, defined, definitely', error, nonEmpty, singleton, (!), (×))
 import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, intersectionWith, keys, maplet, toUnfoldable, (<+>))
 import Util.Pair (zip) as P
 import Util.Set (empty, isEmpty, (∪))
@@ -61,6 +61,12 @@ matchBwd ρ κ α (MatchRecord xws) = Val α (V.Record (zip xs vs # D.fromFoldab
    where
    xs × ws = xws # toUnfoldable # unzip
    vs × κ' = matchManyBwd ρ κ α (ws # reverse)
+matchBwd ρ κ α (MatchDict xws) = Val α (V.Dictionary (DictRep $ wrap $ zip xs vs' # D.fromFoldable)) ×
+   ElimRecord (Set.fromFoldable $ keys xws) κ'
+   where
+   xs × ws = xws # toUnfoldable # unzip
+   vs × κ' = matchManyBwd ρ κ α (ws # reverse)
+   vs' = (bot × _) <$> vs
 
 matchManyBwd :: forall a. Ann a => Env a -> Cont a -> a -> List Match -> List (Val a) × Cont a
 matchManyBwd γ κ _ Nil

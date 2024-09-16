@@ -57,7 +57,7 @@ match (Val α (V.Dictionary (V.DictRep xvs))) (ElimRecord xs κ) = do
    let xs' = xs # Set.toUnfoldable
    let xvs' = unwrap xvs
    γ × κ' × α' × ws <- matchMany (map (\k -> snd (get k xvs')) xs') κ
-   pure (γ × κ' × (α ∧ α') × MatchRecord (wrap $ D.fromFoldable (zip xs' ws)))
+   pure (γ × κ' × (α ∧ α') × MatchDict (wrap $ D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = throw $ patternMismatch (prettyP v) (show xs)
 
 matchMany :: forall a m. MonadError Error m => Ann a => List (Val a) -> Cont a -> m (Env a × Cont a × a × List Match)
