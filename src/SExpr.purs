@@ -60,6 +60,10 @@ data Expr a
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
+data DictKey a
+   = VarKey Var
+   | ExprKey (Expr a)
+
 data ListRest a
    = End a
    | Next a (Expr a) (ListRest a)
@@ -543,6 +547,7 @@ derive instance Newtype (RecDef a) _
 derive instance Functor Clause
 derive instance Functor Clauses
 derive instance Functor Expr
+derive instance Functor DictKey
 derive instance Functor ListRest
 derive instance Functor VarDef
 derive instance Functor Qualifier
@@ -560,6 +565,11 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
 derive instance Eq a => Eq (Expr a)
 derive instance Generic (Expr a) _
 instance Show a => Show (Expr a) where
+   show c = genericShow c
+
+derive instance Eq a => Eq (DictKey a)
+derive instance Generic (DictKey a) _
+instance Show a => Show (DictKey a) where
    show c = genericShow c
 
 derive instance Eq a => Eq (ListRest a)
