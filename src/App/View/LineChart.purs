@@ -205,6 +205,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior) parent = do
+      let Dimensions { height, width } = legend_dims
       legend' <- create G parent
          [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
       void $ create Rect legend'
@@ -224,8 +225,6 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          ]
 
       where
-      Dimensions { height, width } = legend_dims
-
       entries :: Array LegendEntry
       entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
 
