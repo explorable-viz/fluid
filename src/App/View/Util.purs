@@ -2,8 +2,10 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
+import App.Util (Dimensions, SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
 import App.Util.Selector (ViewSelSetter)
+import App.View.Util.D3 (isEmpty, rootSelect, select)
+import App.View.Util.D3 as D3
 import Bind (Bind, Var)
 import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)
@@ -13,7 +15,7 @@ import GaloisConnection (GaloisConnection)
 import Lattice (𝔹, Raw, (∨))
 import Module (File)
 import SExpr as S
-import Util (type (×), Endo, Setter)
+import Util (type (×), Endo, Setter, check)
 import Val (Env, Val)
 import Web.Event.EventTarget (EventListener, eventListener)
 
@@ -34,6 +36,23 @@ selListener figVal redraw selector =
 
 class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Val (SelState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
+
+-- Merge into Drawable once JS->PS transition complete
+class Drawable2 a where
+   createRootElement :: a -> D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
+   setSelState :: a -> EventListener -> D3.Selection -> Effect Unit
+
+draw' :: forall a. Drawable2 a => Renderer a
+draw' _ { divId, suffix, view } redraw = do
+   let childId = divId <> "-" <> suffix
+   div <- rootSelect ("#" <> divId)
+   isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
+   maybeRootElement <- select div ("#" <> childId)
+   setSelState view redraw =<<
+      ( isEmpty maybeRootElement >>=
+           if _ then createRootElement view div childId <#> _.rootElement
+           else pure maybeRootElement
+      )
 
 drawView :: RendererSpec View -> Setter Fig (Val (SelState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal figView redraw =

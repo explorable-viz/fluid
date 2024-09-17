@@ -4,9 +4,9 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, Margin, SVGElementType(..), create, createMany, dimensions, each, forEach_create, isEmpty, line, nameCol, on, remove, rootSelect, rotate, scaleLinear, select, selectAll, setAttrs, setAttrs', setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, Margin, SVGElementType(..), create, createMany, dimensions, each, forEach_create, line, nameCol, on, remove, rotate, scaleLinear, selectAll, setAttrs, setAttrs', setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind (Bind, (↦), (⟼))
@@ -23,11 +23,10 @@ import Dict (Dict)
 import Effect (Effect)
 import Lattice ((∨))
 import Primitive (string, unpack)
-import Util (Endo, check, nonEmpty, (!))
+import Util (Endo, nonEmpty, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 import Web.Event.Event (EventType(..))
-import Web.Event.EventTarget (EventListener)
 
 newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
@@ -61,6 +60,24 @@ point_smallRadius = 2
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
 instance Drawable2 LineChart where
+   setSelState (LineChart { plots }) redraw rootElement = do
+      points' <- selectAll rootElement ".linechart-point"
+      void $ each (setAttrs' selAttrs) points'
+      sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
+         <#> \ev -> each (on (EventType ev) redraw) points'
+      where
+      selAttrs :: PointCoordinate -> Array (Bind String)
+      selAttrs { i, j, name } =
+         [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
+         , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
+         , "fill" ↦ fill col
+         ]
+         where
+         Point { x, y } = (unwrap (plots ! i)).points ! j
+         sel = snd x ∨ snd y
+         col = nameCol name (names plots)
+         fill = if isPersistent sel then flip colorShade (-30) else identity
+
    createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
       svg <- create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
       { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
@@ -217,42 +234,9 @@ instance Drawable2 LineChart where
          rightMargin :: Int
          rightMargin = 4
 
-   setSelState (LineChart { plots }) redraw rootElement = do
-      points' <- selectAll rootElement ".linechart-point"
-      void $ each (setAttrs' selAttrs) points'
-      sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
-         <#> \ev -> each (on (EventType ev) redraw) points'
-      where
-      selAttrs :: PointCoordinate -> Array (Bind String)
-      selAttrs { i, j, name } =
-         [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
-         , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
-         , "fill" ↦ fill col
-         ]
-         where
-         Point { x, y } = (unwrap (plots ! i)).points ! j
-         sel = snd x ∨ snd y
-         col = nameCol name (names plots)
-         fill = if isPersistent sel then flip colorShade (-30) else identity
-
-drawLineChart :: forall a. Drawable2 a => Renderer a
-drawLineChart _ { divId, suffix, view } redraw = do
-   let childId = divId <> "-" <> suffix
-   div <- rootSelect ("#" <> divId)
-   isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
-   maybeRootElement <- select div ("#" <> childId)
-   setSelState view redraw =<< (isEmpty maybeRootElement >>=
-      if _ then createRootElement view div childId <#> _.rootElement
-      else pure maybeRootElement)
-
--- Merge into Drawable once JS->PS transition complete
-class Drawable2 a where
-   createRootElement :: a -> D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
-   setSelState :: a -> EventListener -> D3.Selection -> Effect Unit
-
 instance Drawable LineChart where
    draw rSpec figVal _ redraw =
-      drawLineChart uiHelpers rSpec =<< selListener figVal redraw point
+      draw' uiHelpers rSpec =<< selListener figVal redraw point
       where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =
