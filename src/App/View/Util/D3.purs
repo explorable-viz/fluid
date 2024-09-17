@@ -90,12 +90,12 @@ data SVGElementType
    | SVG
    | Text
 
-create :: SVGElementType -> Selection -> Array (Bind String) -> Effect Selection
-create elementType parent =
-   fromFoldable >>> createChild parent (show elementType)
+create :: SVGElementType -> Array (Bind String) -> Selection -> Effect Selection
+create elementType as parent =
+   fromFoldable as # createChild parent (show elementType)
 
-forEach_create :: forall a. SVGElementType -> MultiSelection -> (a -> Array (Bind String)) -> Effect MultiSelection
-forEach_create elementType parents asF =
+forEach_create :: forall a. SVGElementType -> (a -> Array (Bind String)) -> MultiSelection -> Effect MultiSelection
+forEach_create elementType asF parents =
    asF >>> fromFoldable # forEach_createChild parents (show elementType)
 
 createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection

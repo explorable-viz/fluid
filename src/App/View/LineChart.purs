@@ -79,7 +79,7 @@ instance Drawable2 LineChart where
          fill = if isPersistent sel then flip colorShade (-30) else identity
 
    createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
-      svg <- create SVG div [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
+      svg <- div # create SVG [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
       { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
 
       let
@@ -97,17 +97,19 @@ instance Drawable2 LineChart where
             , height: height - margin.top - margin.bottom - caption_height
             }
 
-      g <- create G svg [ translate { x: margin.left, y: margin.top } ]
+      g <- svg # create G [ translate { x: margin.left, y: margin.top } ]
       void $ createAxes interior g
       createLines interior g
       createPoints interior g
-      void $ setText (fst caption) =<< create Text svg
-         [ "x" ⟼ width / 2
-         , "y" ⟼ height - caption_height / 2
-         , "class" ↦ caption_class
-         , "dominant-baseline" ↦ "middle"
-         , "text-anchor" ↦ "middle"
-         ]
+      void $ setText (fst caption) =<<
+         ( svg # create Text
+              [ "x" ⟼ width / 2
+              , "y" ⟼ height - caption_height / 2
+              , "class" ↦ caption_class
+              , "dominant-baseline" ↦ "middle"
+              , "text-anchor" ↦ "middle"
+              ]
+         )
       createLegend interior g
       pure { rootElement: g, interior }
       where
@@ -128,13 +130,13 @@ instance Drawable2 LineChart where
       createAxes range parent = do
          let Point { x: xLabels, y: yLabels } = tickLabels
          x <- xAxis (to range) (nub points.x) =<<
-            create G parent [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ]
+            (parent # create G [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ])
          when (fst xLabels == Rotated) do
             void $ selectAll x "text"
                >>= each (setAttrs [ rotate 45 ])
                >>= each (setStyles [ "text-anchor" ↦ "start" ])
 
-         y <- yAxis (to range) 3.0 =<< create G parent [ "class" ↦ "y-axis" ]
+         y <- yAxis (to range) 3.0 =<< (parent # create G [ "class" ↦ "y-axis" ])
          when (fst yLabels == Rotated) do
             void $ selectAll y "text"
                >>= each (setAttrs [ rotate 45 ])
@@ -170,18 +172,20 @@ instance Drawable2 LineChart where
       createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
       createLegend (Dimensions interior) parent = do
          let Dimensions { height, width } = legend_dims
-         legend' <- create G parent
+         legend' <- parent # create G
             [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
-         void $ create Rect legend'
+         void $ legend' # create Rect
             [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
          legendEntries <- createMany G legend' "legend-entry" entries
             [ translate' \{ i } -> { x: 0, y: entry_y i } ]
-         void $ each (setText_ (\{ name } -> name)) =<< forEach_create Text legendEntries \_ ->
-            [ "class" ↦ "legend-text"
-            , translate { x: legend_entry_x, y: 9 } -- align text with boxes
-            ]
+         void $ each (setText_ (\{ name } -> name)) =<<
+            ( legendEntries # forEach_create Text \_ ->
+                 [ "class" ↦ "legend-text"
+                 , translate { x: legend_entry_x, y: 9 } -- align text with boxes
+                 ]
+            )
          let circle_centre = lineHeight / 2 - point_smallRadius / 2
-         void $ forEach_create Circle legendEntries \{ name } ->
+         void $ legendEntries # forEach_create Circle \{ name } ->
             [ "fill" ↦ nameCol name (names plots)
             , "r" ⟼ point_smallRadius
             , "cx" ⟼ circle_centre
