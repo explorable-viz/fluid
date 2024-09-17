@@ -84,7 +84,8 @@ rotate' f = "transform" ↦ \a -> "rotate(" <> show (f a) <> ")"
 
 -- Might be some PureScript library that could help here
 data ElementType
-   = Circle
+   = Caption
+   | Circle
    | G
    | Path
    | Rect

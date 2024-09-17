@@ -78,8 +78,7 @@ function createRootElement_ (
          .attr('dominant-baseline', 'middle')
          .attr('text-anchor', 'left')
 
-      const tableHead = rootElement.append('thead')
-      tableHead
+      rootElement.append('thead')
          .append('tr')
          .selectAll('th')
             .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))

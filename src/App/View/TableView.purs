@@ -131,6 +131,11 @@ createRootElement2 :: TableView -> TableViewHelpers -> D3.Selection -> String ->
 createRootElement2 (TableView { colNames }) _ div childId = do
    let _ = [ rowKey ] <> colNames
    rootElement <- div # create Table [ "id" ↦ childId ]
+   void $ rootElement # create Caption
+      [ "class" ↦ "title-text table-caption"
+      , "dominant-baseline" ↦ "middle"
+      , "text-anchor" ↦ "left"
+      ]
    pure rootElement
 
 instance Drawable TableView where
