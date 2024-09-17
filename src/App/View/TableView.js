@@ -55,6 +55,7 @@ function setSelState (
 
 function createRootElement_ (
    view,
+   viewHelpers,
    div,
    childId
 ) {
