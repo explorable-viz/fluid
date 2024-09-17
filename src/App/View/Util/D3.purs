@@ -103,16 +103,13 @@ createMany elementType parent class_ xs =
    fromFoldable >>> createChildren parent (show elementType) class_ xs
 
 setAttrs :: Array (Bind String) -> Selection -> Effect Selection
-setAttrs as sel =
-   fromFoldable as # attrs sel
+setAttrs as sel = fromFoldable as # attrs sel
 
 setAttrs' :: forall a. (a -> Array (Bind String)) -> Selection -> Effect Selection
-setAttrs' asF sel =
-   (asF >>> fromFoldable) # attrs_ sel
+setAttrs' asF sel = (asF >>> fromFoldable) # attrs_ sel
 
 setStyles :: Array (Bind String) -> Selection -> Effect Selection
-setStyles as sel =
-   fromFoldable as # styles sel
+setStyles as sel = fromFoldable as # styles sel
 
 foreign import data Selection :: Type
 foreign import data MultiSelection :: Type
@@ -154,12 +151,12 @@ foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effe
 foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
 foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
 
+instance Show SVGElementType
+   where
+   show = genericShow >>> toLower
+
 -- ======================
 -- boilerplate
 -- ======================
 
 derive instance Generic SVGElementType _
-
-instance Show SVGElementType
-   where
-   show = genericShow >>> toLower
