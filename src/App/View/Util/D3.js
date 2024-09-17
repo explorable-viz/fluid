@@ -48,9 +48,9 @@ export function textDimensions (class_) {
 
 export function createChild (parent) {
    return elementType => {
-      return attrs => {
+      return as => {
          return () => {
-            return parent.append(elementType).attrs(attrs)
+            return attrs(parent.append(elementType))(as)()
          }
       }
    }

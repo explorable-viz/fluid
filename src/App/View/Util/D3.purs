@@ -94,9 +94,9 @@ create :: SVGElementType -> Selection -> Array (Bind String) -> Effect Selection
 create elementType parent =
    fromFoldable >>> createChild parent (show elementType)
 
-forEach_create :: forall a. SVGElementType -> MultiSelection -> Array (Bind (a -> String)) -> Effect MultiSelection
-forEach_create elementType parents =
-   fromFoldable >>> forEach_createChild parents (show elementType)
+forEach_create :: forall a. SVGElementType -> MultiSelection -> (a -> Array (Bind String)) -> Effect MultiSelection
+forEach_create elementType parents asF =
+   asF >>> fromFoldable # forEach_createChild parents (show elementType)
 
 createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection
 createMany elementType parent class_ xs =
@@ -148,7 +148,7 @@ foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
 foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effect MultiSelection
 
 -- Different type signatures but same underlying implementation as Selection-based analogues
-foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
+foreign import forEach_createChild :: forall a. MultiSelection -> String -> (a -> Object String) -> Effect MultiSelection
 foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
 
 instance Show SVGElementType

@@ -176,16 +176,16 @@ instance Drawable2 LineChart where
             [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
          legendEntries <- createMany G legend' "legend-entry" entries
             [ translate' \{ i } -> { x: 0, y: entry_y i } ]
-         void $ each (setText_ (\{ name } -> name)) =<< forEach_create Text legendEntries
-            [ "class" ↦ const "legend-text"
-            , translate' $ const { x: legend_entry_x, y: 9 } -- align text with boxes
+         void $ each (setText_ (\{ name } -> name)) =<< forEach_create Text legendEntries \_ ->
+            [ "class" ↦ "legend-text"
+            , translate { x: legend_entry_x, y: 9 } -- align text with boxes
             ]
          let circle_centre = lineHeight / 2 - point_smallRadius / 2
-         void $ forEach_create Circle legendEntries
-            [ "fill" ↦ \{ name } -> nameCol name (names plots)
-            , "r" ↦ const (show point_smallRadius)
-            , "cx" ↦ const (show circle_centre)
-            , "cy" ↦ const (show circle_centre)
+         void $ forEach_create Circle legendEntries \{ name } ->
+            [ "fill" ↦ nameCol name (names plots)
+            , "r" ⟼ point_smallRadius
+            , "cx" ⟼ circle_centre
+            , "cy" ⟼ circle_centre
             ]
 
          where
