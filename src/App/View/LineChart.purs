@@ -222,16 +222,19 @@ drawLineChart _ { divId, suffix, view } redraw = do
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
    maybeRootElement <- select div ("#" <> childId)
-   rootElement <- isEmpty maybeRootElement >>=
+   setSelState =<< (isEmpty maybeRootElement >>=
       if _ then createRootElement view div childId <#> _.rootElement
-      else pure maybeRootElement
-   points' <- selectAll rootElement ".linechart-point"
-   void $ each (setAttrs' selAttrs) points'
-   sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
-      <#> \ev -> each (on (EventType ev) redraw) points'
+      else pure maybeRootElement)
 
    where
    LineChart { plots } = view
+
+   setSelState :: D3.Selection -> Effect Unit
+   setSelState rootElement = do
+      points' <- selectAll rootElement ".linechart-point"
+      void $ each (setAttrs' selAttrs) points'
+      sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
+         <#> \ev -> each (on (EventType ev) redraw) points'
 
    selAttrs :: PointCoordinate -> Array (Bind String)
    selAttrs { i, j, name } =
