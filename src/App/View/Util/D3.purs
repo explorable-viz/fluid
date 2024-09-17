@@ -4,7 +4,7 @@ module App.View.Util.D3
    , Selection
    , MultiSelection
    , Margin
-   , SVGElementType(..)
+   , ElementType(..)
    , attrs
    , create
    , createMany
@@ -82,23 +82,25 @@ rotate n = "transform" ↦ "rotate(" <> show n <> ")"
 rotate' :: forall a. (a -> Int) -> Bind (a -> String)
 rotate' f = "transform" ↦ \a -> "rotate(" <> show (f a) <> ")"
 
-data SVGElementType
+-- Might be some PureScript library that could help here
+data ElementType
    = Circle
    | G
    | Path
    | Rect
    | SVG
+   | Table
    | Text
 
-create :: SVGElementType -> Array (Bind String) -> Selection -> Effect Selection
+create :: ElementType -> Array (Bind String) -> Selection -> Effect Selection
 create elementType as parent =
    fromFoldable as # createChild parent (show elementType)
 
-forEach_create :: forall a. SVGElementType -> (a -> Array (Bind String)) -> MultiSelection -> Effect MultiSelection
+forEach_create :: forall a. ElementType -> (a -> Array (Bind String)) -> MultiSelection -> Effect MultiSelection
 forEach_create elementType asF parents =
    asF >>> fromFoldable # forEach_createChild parents (show elementType)
 
-createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection
+createMany :: forall a. ElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection
 createMany elementType parent class_ xs =
    fromFoldable >>> createChildren parent (show elementType) class_ xs
 
@@ -151,7 +153,7 @@ foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effe
 foreign import forEach_createChild :: forall a. MultiSelection -> String -> (a -> Object String) -> Effect MultiSelection
 foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
 
-instance Show SVGElementType
+instance Show ElementType
    where
    show = genericShow >>> toLower
 
@@ -159,4 +161,4 @@ instance Show SVGElementType
 -- boilerplate
 -- ======================
 
-derive instance Generic SVGElementType _
+derive instance Generic ElementType _

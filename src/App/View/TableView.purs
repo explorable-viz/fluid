@@ -5,14 +5,16 @@ import Prelude
 import App.Util (SelState, 𝕊(..), getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
+import App.View.Util.D3 (ElementType(..), create)
 import App.View.Util.D3 as D3
+import Bind ((↦))
 import Data.Array (filter, head, length, null, sort)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (toUnfoldable)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, definitely', error, unimplemented, (!))
+import Util (Endo, definitely', (!))
 import Util.Map (get, keys)
 import Val (BaseVal, Val(..), Array2)
 import Web.Event.EventTarget (EventListener)
@@ -53,6 +55,9 @@ newtype TableViewHelpers = TableViewHelpers
 defaultFilter :: Filter
 defaultFilter = Interactive
 
+rowKey :: String
+rowKey = "__n"
+
 tableViewHelpers :: TableViewHelpers
 tableViewHelpers =
    TableViewHelpers
@@ -65,7 +70,6 @@ tableViewHelpers =
       , hasBottomBorder
       }
    where
-   rowKey = "__n"
    val_val (Val _ v) = v
    val_selState (Val α _) = α
 
@@ -124,8 +128,10 @@ instance Drawable2 TableView TableViewHelpers where
    setSelState = setSelState
 
 createRootElement2 :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
-createRootElement2 = do
-   error unimplemented
+createRootElement2 (TableView { colNames }) _ div childId = do
+   let _ = [ rowKey ] <> colNames
+   rootElement <- div # create Table [ "id" ↦ childId ]
+   pure rootElement
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
