@@ -10,16 +10,24 @@ function prim (v) {
    }
 }
 
+function setSelState_ (
+   { title, table },
+   { record_isDisplayable, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder },
+   selListener,
+   rootElement
+) {
+}
+
 function setSelState (
    { record_isDisplayable, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder },
-   filterToggleListener,
-   {
-      selClasses,
-   },
    rootElement,
    { title, table },
    selListener
 ) {
+   // This definition available PureScript-side
+   const selClasses =
+      "selected-primary-transient selected-secondary-transient selected-primary-persistent selected-secondary-persistent inert"
+
    rootElement.selectAll('.table-cell').each(function (cell) {
       if (cell.i != -1 && cell.j != -1) {
          const sel = val_selState(table[cell.i][cell.j])
@@ -43,8 +51,6 @@ function setSelState (
 
    rootElement.select('.table-caption')
       .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
-   rootElement.select('.filter-toggle')
-      .on('mousedown', e => { filterToggleListener(e) })
 
    rootElement.selectAll('.table-cell').each(function (cell) {
       d3.select(this)
@@ -136,10 +142,10 @@ function drawTable_ (
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
-         rootElement = createRootElement_(view, div, childId)
+         rootElement = createRootElement_(view, tableViewHelpers, div, childId)
       }
 
-      setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, selListener)
+      setSelState(tableViewHelpers, rootElement, view, selListener)
    }
 }
 
