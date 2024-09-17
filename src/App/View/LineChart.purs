@@ -235,7 +235,7 @@ instance Drawable2 LineChart where
          col = nameCol name (names plots)
          fill = if isPersistent sel then flip colorShade (-30) else identity
 
-drawLineChart :: Renderer LineChart
+drawLineChart :: forall a. Drawable2 a => Renderer a
 drawLineChart _ { divId, suffix, view } redraw = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
@@ -245,6 +245,7 @@ drawLineChart _ { divId, suffix, view } redraw = do
       if _ then createRootElement view div childId <#> _.rootElement
       else pure maybeRootElement)
 
+-- Merge into Drawable once JS->PS transition complete
 class Drawable2 a where
    createRootElement :: a -> D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
    setSelState :: a -> EventListener -> D3.Selection -> Effect Unit
