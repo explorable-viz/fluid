@@ -63,11 +63,11 @@ export function createChildren (parent) {
             return attrFuns => {
                return () => {
                   return parent
-                     .selectAll("." + class_)
+                     .selectAll()
                      .data(data)
                      .enter()
                      .append(elementType)
-                     .classed(class_, true)
+                     .classed(class_, true) // no-op if class_ == ""
                      .attrs(attrFuns)
                }
             }

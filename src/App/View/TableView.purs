@@ -139,7 +139,6 @@ createRootElement2 (TableView { colNames }) _ div childId = do
    void $ rootElement # create THead []
       >>= create TR []
    {-
-      .append('tr')
       .selectAll('th')
          .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
          .enter()
