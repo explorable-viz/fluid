@@ -21,7 +21,6 @@ import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels)
 import Dict (Dict)
 import Effect (Effect)
-import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (string, unpack)
 import Util (Endo, check, nonEmpty, (!))
@@ -43,8 +42,7 @@ newtype LinePlot = LinePlot
 
 type LineChartHelpers =
    { createRootElement :: D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
-   , point_attrs :: PointCoordinate -> Object String
-   , point_attrs' :: PointCoordinate -> Array (Bind String)
+   , point_attrs :: PointCoordinate -> Array (Bind String)
    }
 
 type LegendEntry =
@@ -59,7 +57,6 @@ lineChartHelpers :: LineChart -> LineChartHelpers
 lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    { createRootElement
    , point_attrs
-   , point_attrs'
    }
    where
    names :: Array String
@@ -138,11 +135,8 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
          flip mapWithIndex ps \j _ -> { name: fst name, i, j }
 
-   point_attrs :: PointCoordinate -> Object String
-   point_attrs = point_attrs' >>> fromFoldable
-
-   point_attrs' :: PointCoordinate -> Array (Bind String)
-   point_attrs' { i, j, name } =
+   point_attrs :: PointCoordinate -> Array (Bind String)
+   point_attrs { i, j, name } =
       [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
       , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
       , "fill" ↦ fill col
@@ -221,6 +215,7 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
          [ "class" ↦ const "legend-text"
          , translate' $ const { x: legend_entry_x, y: 9 } -- align text with boxes
          ]
+      let circle_centre = lineHeight / 2 - point_smallRadius / 2
       void $ forEach_create Circle legendEntries
          [ "fill" ↦ \{ name } -> nameCol name names
          , "r" ↦ const (show point_smallRadius)
@@ -237,15 +232,12 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
       entry_y :: Int -> Int
       entry_y i = i * lineHeight + 2 -- tweak to emulate vertical centering of text
 
-      circle_centre :: Int
-      circle_centre = lineHeight / 2 - point_smallRadius / 2
-
    lineHeight :: Int
    lineHeight = 15
 
 drawLineChart :: Renderer LineChart
 drawLineChart _ { divId, suffix, view } redraw = do
-   let { createRootElement, point_attrs' } = lineChartHelpers view
+   let { createRootElement, point_attrs } = lineChartHelpers view
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
@@ -254,7 +246,7 @@ drawLineChart _ { divId, suffix, view } redraw = do
       if _ then createRootElement div childId <#> _.rootElement
       else pure maybeRootElement
    points <- selectAll rootElement ".linechart-point"
-   void $ each (setAttrs' point_attrs') points
+   void $ each (setAttrs' point_attrs) points
    sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
       <#> \ev -> each (on (EventType ev) redraw) points
 
