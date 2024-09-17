@@ -11,7 +11,7 @@ function prim (v) {
 }
 
 function setSelState (
-   { record_isDisplayable, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder, cellShadowStyles },
+   { record_isDisplayable, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder },
    filterToggleListener,
    {
       selClasses,
