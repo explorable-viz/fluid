@@ -140,8 +140,8 @@ instance Drawable2 LineChart Unit where
          pure { x, y }
 
       createLines :: Dimensions Int -> D3.Selection -> Effect Unit
-      createLines range parent =
-         void $ createMany Path parent "linechart-line" entries
+      createLines range =
+         void <$> createMany Path "linechart-line" entries
             [ "fill" ↦ const "none"
             , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) (names plots)
             , "stroke-width" ↦ const "1"
@@ -153,8 +153,8 @@ instance Drawable2 LineChart Unit where
          entries = flip mapWithIndex plots \i plot -> { i, plot }
 
       createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
-      createPoints range parent =
-         void $ createMany Circle parent "linechart-point" entries
+      createPoints range =
+         void <$> createMany Circle "linechart-point" entries
             [ "stroke-width" ↦ const "1"
             -- silly
             , "cx" ↦ \{ i, j } -> let Point { x } = (unwrap (plots ! i)).points ! j in show $ (to range).x (fst x)
@@ -172,7 +172,7 @@ instance Drawable2 LineChart Unit where
             [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
          void $ legend' # create Rect
             [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
-         legendEntries <- createMany G legend' "legend-entry" entries
+         legendEntries <- legend' # createMany G "legend-entry" entries
             [ translate' \{ i } -> { x: 0, y: entry_y i } ]
          void $ each (setText_ (\{ name } -> name)) =<<
             ( legendEntries # forEach_create Text \_ ->

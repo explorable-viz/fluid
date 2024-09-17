@@ -92,6 +92,9 @@ data ElementType
    | SVG
    | Table
    | Text
+   | TH
+   | THead
+   | TR
 
 create :: ElementType -> Array (Bind String) -> Selection -> Effect Selection
 create elementType as parent =
@@ -101,9 +104,9 @@ forEach_create :: forall a. ElementType -> (a -> Array (Bind String)) -> MultiSe
 forEach_create elementType asF parents =
    asF >>> fromFoldable # forEach_createChild parents (show elementType)
 
-createMany :: forall a. ElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection
-createMany elementType parent class_ xs =
-   fromFoldable >>> createChildren parent (show elementType) class_ xs
+createMany :: forall a. ElementType -> String -> Array a -> Array (Bind (a -> String)) -> Selection -> Effect MultiSelection
+createMany elementType class_ xs as parent =
+   fromFoldable as # createChildren parent (show elementType) class_ xs
 
 setAttrs :: Array (Bind String) -> Selection -> Effect Selection
 setAttrs as sel = fromFoldable as # attrs sel

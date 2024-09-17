@@ -136,6 +136,18 @@ createRootElement2 (TableView { colNames }) _ div childId = do
       , "dominant-baseline" ↦ "middle"
       , "text-anchor" ↦ "left"
       ]
+   void $ rootElement # create THead []
+      >>= create TR []
+   {-
+      .append('tr')
+      .selectAll('th')
+         .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
+         .enter()
+         .append('th')
+         .text(cell => cell.colName == rowKey ? (view.filter ? "▸" : "▾" ) : cell.colName)
+         .classed('filter-toggle toggle-button', colName => colName == rowKey)
+         .attr('class', 'table-cell')
+-}
    pure rootElement
 
 instance Drawable TableView where
