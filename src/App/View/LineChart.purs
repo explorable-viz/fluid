@@ -40,11 +40,6 @@ newtype LinePlot = LinePlot
    , points :: Array (Point Number)
    }
 
-type LineChartHelpers =
-   { createRootElement :: D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
-   , point_attrs :: PointCoordinate -> Array (Bind String)
-   }
-
 type LegendEntry =
    { i :: Int
    , name :: String
@@ -111,7 +106,8 @@ instance Drawable2 LineChart where
               ]
          )
       createLegend interior g
-      pure { rootElement: g, interior }
+      pure g
+
       where
       caption_class = "title-text"
       caption_height = textHeight caption_class (fst caption) * 2

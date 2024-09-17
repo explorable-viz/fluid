@@ -53,6 +53,62 @@ function setSelState (
    })
 }
 
+function createRootElement_ (
+   view,
+   div,
+   childId
+) {
+   const { colNames, table } = view
+   // These definitions will be available on PureScript side
+   const rowKey = "__n"
+   function val_val (v) {
+      return v._2
+   }
+   rootElement = div
+      .append('table')
+      .attr('id', childId)
+
+   rootElement.append('caption')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('class', 'title-text table-caption')
+      .attr('dominant-baseline', 'middle')
+      .attr('text-anchor', 'left')
+
+   const tableHead = rootElement.append('thead')
+   tableHead
+      .append('tr')
+      .selectAll('th')
+         .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
+         .enter()
+         .append('th')
+         .text(cell => cell.colName == rowKey ? (view.filter ? "▸" : "▾" ) : cell.colName)
+         .classed('filter-toggle toggle-button', colName => colName == rowKey)
+         .attr('class', 'table-cell')
+
+   const rows = rootElement
+      .append('tbody')
+      .selectAll('tr')
+         .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] }))) // data rows have 0-based index, but displayed row numbers start with 1
+         .enter()
+         .append('tr')
+         .attr('class', 'table-row')
+
+   rows.selectAll('td')
+      .data(({ i, vals }) =>
+         vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // field for row number has j = -1
+      .enter()
+      .append('td')
+      .attr('class', 'table-cell')
+      .style('border-top', "1px solid transparent")
+      .style('border-left', "1px solid transparent")
+      .style('border-right', ({ j }) => j == colNames.length - 2 ? "1px solid transparent" : null)
+      .style('border-bottom', ({ i }) => i == table.length -1 ? "1px solid transparent" : null)
+      .text(({ colName, value }) => colName == rowKey ? value : prim(val_val(value)))
+
+   return rootElement
+}
+
 function drawTable_ (
    tableViewHelpers,
    filterToggleListener,
@@ -65,8 +121,8 @@ function drawTable_ (
    selListener
 ) {
    return () => {
-      const { rowKey, val_val } = tableViewHelpers
-      let { colNames, table } = view
+      const { rowKey } = tableViewHelpers
+      let { colNames } = view
       const childId = divId + '-' + suffix
 
       const div = d3.select('#' + divId)
@@ -79,47 +135,7 @@ function drawTable_ (
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
-         rootElement = div
-            .append('table')
-            .attr('id', childId)
-
-         rootElement.append('caption')
-            .attr('x', 0)
-            .attr('y', 0)
-            .attr('class', 'title-text table-caption')
-            .attr('dominant-baseline', 'middle')
-            .attr('text-anchor', 'left')
-
-         const tableHead = rootElement.append('thead')
-         tableHead
-            .append('tr')
-            .selectAll('th')
-               .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
-               .enter()
-               .append('th')
-               .text(cell => cell.colName == rowKey ? (view.filter ? "▸" : "▾" ) : cell.colName)
-               .classed('filter-toggle toggle-button', colName => colName == rowKey)
-               .attr('class', 'table-cell')
-
-         const rows = rootElement
-            .append('tbody')
-            .selectAll('tr')
-               .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] }))) // data rows have 0-based index, but displayed row numbers start with 1
-               .enter()
-               .append('tr')
-               .attr('class', 'table-row')
-
-         rows.selectAll('td')
-            .data(({ i, vals }) =>
-               vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // field for row number has j = -1
-            .enter()
-            .append('td')
-            .attr('class', 'table-cell')
-            .style('border-top', "1px solid transparent")
-            .style('border-left', "1px solid transparent")
-            .style('border-right', ({ j }) => j == colNames.length - 2 ? "1px solid transparent" : null)
-            .style('border-bottom', ({ i }) => i == table.length -1 ? "1px solid transparent" : null)
-            .text(({ colName, value }) => colName == rowKey ? value : prim(val_val(value)))
+         rootElement = createRootElement_(view, div, childId)
       }
 
       setSelState(tableViewHelpers, filterToggleListener, uiHelpers, rootElement, view, selListener)

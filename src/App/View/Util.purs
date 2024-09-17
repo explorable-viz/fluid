@@ -2,7 +2,7 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (Dimensions, SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
+import App.Util (SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
 import App.Util.Selector (ViewSelSetter)
 import App.View.Util.D3 (isEmpty, rootSelect, select)
 import App.View.Util.D3 as D3
@@ -39,7 +39,7 @@ class Drawable a where
 
 -- Merge into Drawable once JS->PS transition complete
 class Drawable2 a where
-   createRootElement :: a -> D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
+   createRootElement :: a -> D3.Selection -> String -> Effect D3.Selection
    setSelState :: a -> EventListener -> D3.Selection -> Effect Unit
 
 draw' :: forall a. Drawable2 a => Renderer a
@@ -50,7 +50,7 @@ draw' _ { divId, suffix, view } redraw = do
    maybeRootElement <- select div ("#" <> childId)
    setSelState view redraw =<<
       ( isEmpty maybeRootElement >>=
-           if _ then createRootElement view div childId <#> _.rootElement
+           if _ then createRootElement view div childId
            else pure maybeRootElement
       )
 
