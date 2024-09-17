@@ -104,7 +104,7 @@ tableViewHelpers =
 
    hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
    hasBottomBorder table i j
-      | i /= -1 && (not <<< tableViewHelpers.record_isDisplayable $ table ! i) = false -- change this
+      | i /= -1 && (not <<< record_isDisplayable $ table ! i) = false -- change this
       | otherwise = case nextVisibleRow table i of
            Nothing -> isCellTransient table i j
            Just next -> isCellTransient table i j /= isCellTransient table next j
