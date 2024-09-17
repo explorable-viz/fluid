@@ -96,30 +96,7 @@ tableViewHelpers =
       | this == length table - 1 = Nothing
       | record_isDisplayable $ table ! (this + 1) = Just (this + 1)
       | otherwise = nextVisibleRow table (this + 1)
-{-
-   cellShadowStyles :: Array RecordRow -> Int -> Int -> String
-   cellShadowStyles table i j = combineStyles $ map (isCellTransient table i j && _)
-      [ isNothing prev || not (isCellTransient table (definitely' prev) j)
-      , j == width table - 1 || not (isCellTransient table i (j + 1))
-      , isNothing next || not (isCellTransient table (definitely' next) j)
-      , j == -1 || not (isCellTransient table i (j - 1))
-      ]
-      where
-      prev = prevVisibleRow table i
-      next = nextVisibleRow table i
 
-      combineStyles :: Array Boolean -> String
-      combineStyles [ false, false, false, false ] = "box-shadow: none;"
-      combineStyles dirs =
-         "box-shadow:" <> (joinWith ", " <<< map snd <<< filter fst $ zip dirs shadowStyles) <> ";"
-         where
-         shadowStyles =
-            [ "inset 0px 1px 1px rgba(0, 0, 255, 0.3)" -- top
-            , "inset -1px 0 1px rgba(0, 0, 255, 0.3)" -- right
-            , "inset 0 -1px 1px rgba(0, 0, 255, 0.3)" -- bottom
-            , "inset 1px 0 1px rgba(0, 0, 255, 0.3)" -- left
-            ]
--}
    hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
    hasRightBorder table i j
       | j == width table - 1 = isCellTransient table i j
