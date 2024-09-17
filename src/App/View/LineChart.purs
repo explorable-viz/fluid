@@ -27,6 +27,7 @@ import Util (Endo, check, nonEmpty, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 import Web.Event.Event (EventType(..))
+import Web.Event.EventTarget (EventListener)
 
 newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
@@ -216,40 +217,37 @@ instance Drawable2 LineChart where
          rightMargin :: Int
          rightMargin = 4
 
+   setSelState (LineChart { plots }) redraw rootElement = do
+      points' <- selectAll rootElement ".linechart-point"
+      void $ each (setAttrs' selAttrs) points'
+      sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
+         <#> \ev -> each (on (EventType ev) redraw) points'
+      where
+      selAttrs :: PointCoordinate -> Array (Bind String)
+      selAttrs { i, j, name } =
+         [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
+         , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
+         , "fill" ↦ fill col
+         ]
+         where
+         Point { x, y } = (unwrap (plots ! i)).points ! j
+         sel = snd x ∨ snd y
+         col = nameCol name (names plots)
+         fill = if isPersistent sel then flip colorShade (-30) else identity
+
 drawLineChart :: Renderer LineChart
 drawLineChart _ { divId, suffix, view } redraw = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
    maybeRootElement <- select div ("#" <> childId)
-   setSelState =<< (isEmpty maybeRootElement >>=
+   setSelState view redraw =<< (isEmpty maybeRootElement >>=
       if _ then createRootElement view div childId <#> _.rootElement
       else pure maybeRootElement)
 
-   where
-   LineChart { plots } = view
-
-   setSelState :: D3.Selection -> Effect Unit
-   setSelState rootElement = do
-      points' <- selectAll rootElement ".linechart-point"
-      void $ each (setAttrs' selAttrs) points'
-      sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
-         <#> \ev -> each (on (EventType ev) redraw) points'
-
-   selAttrs :: PointCoordinate -> Array (Bind String)
-   selAttrs { i, j, name } =
-      [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
-      , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
-      , "fill" ↦ fill col
-      ]
-      where
-      Point { x, y } = (unwrap (plots ! i)).points ! j
-      sel = snd x ∨ snd y
-      col = nameCol name (names plots)
-      fill = if isPersistent sel then flip colorShade (-30) else identity
-
 class Drawable2 a where
    createRootElement :: a -> D3.Selection -> String -> Effect { rootElement :: D3.Selection, interior :: Dimensions Int }
+   setSelState :: a -> EventListener -> D3.Selection -> Effect Unit
 
 instance Drawable LineChart where
    draw rSpec figVal _ redraw =
