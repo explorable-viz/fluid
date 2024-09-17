@@ -5,10 +5,10 @@ import Prelude
 import App.Util (SelState, 𝕊(..), getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create)
+import App.View.Util.D3 (ElementType(..), create, createMany)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (filter, head, length, null, sort)
+import Data.Array (filter, head, length, mapWithIndex, null, sort)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (toUnfoldable)
@@ -138,15 +138,12 @@ createRootElement2 (TableView { colNames }) _ div childId = do
       ]
    void $ rootElement # create THead []
       >>= create TR []
+      >>= createMany TH "" (flip mapWithIndex colNames \j colName -> { i: -1, j: j - 1, colName })
+         [ "class" ↦ \{ colName } -> "table-cell" <> (if colName == rowKey then " filter-toggle toggle-button" else "")
+         ]
    {-
-      .selectAll('th')
-         .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
-         .enter()
-         .append('th')
          .text(cell => cell.colName == rowKey ? (view.filter ? "▸" : "▾" ) : cell.colName)
-         .classed('filter-toggle toggle-button', colName => colName == rowKey)
-         .attr('class', 'table-cell')
--}
+   -}
    pure rootElement
 
 instance Drawable TableView where
