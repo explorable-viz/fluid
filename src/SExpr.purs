@@ -11,7 +11,7 @@ import Data.Filterable (filterMap)
 import Data.Foldable (length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, take, zip, zipWith, (:), (\\))
+import Data.List (List(..), drop, take, zip, zipWith, (:), (\\), unzip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, unsnoc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
@@ -44,7 +44,7 @@ data Expr a
    | Str a String
    | Constr a Ctr (List (Expr a))
    | Record a (List (Bind (Expr a)))
-   | Dictionary a (List (Pair (Expr a)))
+   | Dictionary a (List (DictKey a × Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (Clauses a)
    | Project (Expr a) Var
@@ -132,6 +132,14 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 instance Desugarable Expr E.Expr where
    desug = exprFwd
    desugBwd = exprBwd
+
+instance Desugarable DictKey E.Expr where
+   desug (VarKey s) = pure $ E.Var s
+   desug (ExprKey e) = desug e
+
+   desugBwd (E.Var _) (VarKey s) = VarKey s
+   desugBwd e (ExprKey e') = ExprKey $ desugBwd e e'
+   desugBwd _ _ = error "DictKeyBackward Desug"
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
@@ -234,7 +242,11 @@ exprFwd (Float α n) = pure (E.Float α n)
 exprFwd (Str α s) = pure (E.Str α s)
 exprFwd (Constr α c ss) = E.Constr α c <$> traverse desug ss
 exprFwd (Record α xss) = E.Record α <$> wrap <<< D.fromFoldable <$> traverse (traverse desug) xss
-exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desug) sss
+exprFwd (Dictionary α sss) = do
+   let (ks × vs) = unzip sss
+   ks' <- traverse desug ks
+   vs' <- traverse desug vs
+   E.Dictionary α <$> (pure $ zipWith (\k v -> Pair k v) ks' vs')
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desug s <@> x × y <*> desug s'
 exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project s x) = E.Project <$> desug s <@> x
@@ -262,7 +274,7 @@ exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry desugBwd <$> z
 exprBwd (E.Record α xes) (Record _ xss) =
    Record α $ xss # filterMap \(x ↦ s) -> lookup x xes <#> \e -> x ↦ desugBwd e s
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
-   Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (desugBwd e s) (desugBwd e' s')) ees sss)
+   Dictionary α (zipWith (\(Pair e e') (s × s') -> (desugBwd e s) × (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
    Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (desugBwd σ μ)

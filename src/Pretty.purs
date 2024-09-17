@@ -24,7 +24,7 @@ import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictKey(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -168,6 +168,15 @@ prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a))
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
 prettyOperator sep (Cons s xss) = sep (prettyOperator sep (toList (singleton s)) .<>. text str.comma) (prettyOperator sep xss)
 prettyOperator _ Nil = empty
+
+instance Ann a => Pretty (DictKey a) where
+   pretty (VarKey k) = pretty k
+   pretty (ExprKey k) = pretty k
+
+instance Ann a => Pretty (List (DictKey a × Expr a)) where
+   pretty Nil = empty
+   pretty ((k × v) : Nil) = pretty k .<>. text str.colonEq .<>. pretty v
+   pretty ((k × v) : xs) = pretty k .<>. text str.colonEq .<>. pretty v .<>. text str.comma .<>. pretty xs
 
 instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
