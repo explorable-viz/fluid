@@ -16,14 +16,6 @@ function setSelState_ (
    selListener,
    rootElement
 ) {
-}
-
-function setSelState (
-   { record_isDisplayable, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder },
-   rootElement,
-   { title, table },
-   selListener
-) {
    // This definition available PureScript-side
    const selClasses =
       "selected-primary-transient selected-secondary-transient selected-primary-persistent selected-secondary-persistent inert"
@@ -145,7 +137,7 @@ function drawTable_ (
          rootElement = createRootElement_(view, tableViewHelpers, div, childId)
       }
 
-      setSelState(tableViewHelpers, rootElement, view, selListener)
+      setSelState_(view, tableViewHelpers, selListener, rootElement)
    }
 }
 
