@@ -141,4 +141,6 @@ function drawTable_ (
    }
 }
 
-export var drawTable = x1 => x2 => x3 => x4 => x5 => drawTable_(x1, x2, x3, x4, x5)
+export const drawTable = x1 => x2 => x3 => x4 => x5 => drawTable_(x1, x2, x3, x4, x5)
+export const setSelState = x1 => x2 => x3 => x4 => setSelState_(x1, x2, x3, x4)
+export const createRootElement = x1 => x2 => x3 => x4 => createRootElement_(x1, x2, x3, x4)

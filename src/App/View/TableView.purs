@@ -4,9 +4,11 @@ import Prelude
 
 import App.Util (SelState, 𝕊(..), eventData, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Renderer, selListener, uiHelpers)
+import App.View.Util.D3 as D3
 import Data.Array (filter, head, length, null, sort)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype, unwrap)
 import Data.Set (toUnfoldable)
 import Dict (Dict)
 import Effect (Effect)
@@ -35,8 +37,10 @@ arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 = map <<< flip (map <<< flip get)
 
 foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
+foreign import createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
+foreign import setSelState :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
 
-type TableViewHelpers =
+newtype TableViewHelpers = TableViewHelpers
    { rowKey :: String
    , record_isDisplayable :: Array (Val (SelState 𝕊)) -> Boolean
    , cell_selClassesFor :: String -> SelState 𝕊 -> String
@@ -52,14 +56,15 @@ defaultFilter = Interactive
 
 tableViewHelpers :: TableViewHelpers
 tableViewHelpers =
-   { rowKey
-   , record_isDisplayable
-   , cell_selClassesFor
-   , val_val
-   , val_selState
-   , hasRightBorder
-   , hasBottomBorder
-   }
+   TableViewHelpers
+      { rowKey
+      , record_isDisplayable
+      , cell_selClassesFor
+      , val_val
+      , val_selState
+      , hasRightBorder
+      , hasBottomBorder
+      }
    where
    rowKey = "__n"
    val_val (Val _ v) = v
@@ -113,7 +118,11 @@ tableViewHelpers =
 isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
 isCellTransient table i j
    | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
-   | otherwise = isTransient <<< tableViewHelpers.val_selState $ table ! i ! j
+   | otherwise = isTransient <<< (unwrap tableViewHelpers).val_selState $ table ! i ! j
+
+instance Drawable2 TableView TableViewHelpers where
+   createRootElement = createRootElement
+   setSelState = setSelState
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
@@ -140,3 +149,5 @@ filterToggler _ (TableView view) = TableView view { filter = rot view.filter }
 
 -- 0-based index of selected record and name of field; see data binding in .js (-1th field name is __n, the rowKey)
 type CellIndex = { i :: Int, colName :: String }
+
+derive instance Newtype TableViewHelpers _
