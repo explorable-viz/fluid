@@ -130,7 +130,7 @@ function drawTable_ (
          return
       }
 
-      colNames.unshift(rowKey)
+      colNames.unshift(rowKey) // why effectful?
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
