@@ -53,11 +53,20 @@ type LegendEntry =
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
-lineChartHelpers :: LineChart -> LineChartHelpers
-lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
-   { createRootElement
-   , point_attrs
-   }
+drawLineChart :: Renderer LineChart
+drawLineChart _ { divId, suffix, view: LineChart { size, tickLabels, plots, caption } } redraw = do
+   let childId = divId <> "-" <> suffix
+   div <- rootSelect ("#" <> divId)
+   isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
+   maybeRootElement <- select div ("#" <> childId)
+   rootElement <- isEmpty maybeRootElement >>=
+      if _ then createRootElement div childId <#> _.rootElement
+      else pure maybeRootElement
+   points' <- selectAll rootElement ".linechart-point"
+   void $ each (setAttrs' point_attrs) points'
+   sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
+      <#> \ev -> each (on (EventType ev) redraw) points'
+
    where
    names :: Array String
    names = plots <#> unwrap >>> _.name >>> fst
@@ -234,25 +243,6 @@ lineChartHelpers (LineChart { size, tickLabels, plots, caption }) =
    lineHeight :: Int
    lineHeight = 15
 
-drawLineChart :: Renderer LineChart
-drawLineChart _ { divId, suffix, view } redraw = do
-   let { createRootElement, point_attrs } = lineChartHelpers view
-   let childId = divId <> "-" <> suffix
-   div <- rootSelect ("#" <> divId)
-   isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
-   maybeRootElement <- select div ("#" <> childId)
-   rootElement <- isEmpty maybeRootElement >>=
-      if _ then createRootElement div childId <#> _.rootElement
-      else pure maybeRootElement
-   points <- selectAll rootElement ".linechart-point"
-   void $ each (setAttrs' point_attrs) points
-   sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
-      <#> \ev -> each (on (EventType ev) redraw) points
-
--- ======================
--- boilerplate
--- ======================
-
 instance Drawable LineChart where
    draw rSpec figVal _ redraw =
       drawLineChart uiHelpers rSpec =<< selListener figVal redraw point
@@ -260,6 +250,10 @@ instance Drawable LineChart where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =
          linePoint j >>> listElement i >>> field f_plots >>> lineChart
+
+-- ======================
+-- boilerplate
+-- ======================
 
 instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
    from r = LinePlot
