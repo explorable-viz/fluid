@@ -54,8 +54,8 @@ point_smallRadius = 2
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
-instance Drawable2 LineChart where
-   setSelState (LineChart { plots }) redraw rootElement = do
+instance Drawable2 LineChart Unit where
+   setSelState (LineChart { plots }) _ redraw rootElement = do
       points' <- selectAll rootElement ".linechart-point"
       void $ each (setAttrs' selAttrs) points'
       sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
@@ -73,7 +73,7 @@ instance Drawable2 LineChart where
          col = nameCol name (names plots)
          fill = if isPersistent sel then flip colorShade (-30) else identity
 
-   createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
+   createRootElement (LineChart { size, tickLabels, caption, plots }) _ div childId = do
       svg <- div # create SVG [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
       { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
 
@@ -236,7 +236,7 @@ instance Drawable2 LineChart where
 
 instance Drawable LineChart where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw point
+      draw' unit uiHelpers rSpec =<< selListener figVal redraw point
       where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =

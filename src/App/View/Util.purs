@@ -38,19 +38,19 @@ class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Val (SelState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
 
 -- Merge into Drawable once JS->PS transition complete
-class Drawable2 a where
-   createRootElement :: a -> D3.Selection -> String -> Effect D3.Selection
-   setSelState :: a -> EventListener -> D3.Selection -> Effect Unit
+class Drawable2 a b where
+   createRootElement :: a -> b -> D3.Selection -> String -> Effect D3.Selection
+   setSelState :: a -> b -> EventListener -> D3.Selection -> Effect Unit
 
-draw' :: forall a. Drawable2 a => Renderer a
-draw' _ { divId, suffix, view } redraw = do
+draw' :: forall a b. Drawable2 a b => b -> Renderer a
+draw' viewHelpers _ { divId, suffix, view } redraw = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
    maybeRootElement <- select div ("#" <> childId)
-   setSelState view redraw =<<
+   setSelState view viewHelpers redraw =<<
       ( isEmpty maybeRootElement >>=
-           if _ then createRootElement view div childId
+           if _ then createRootElement view viewHelpers div childId
            else pure maybeRootElement
       )
 
