@@ -16,39 +16,41 @@ function setSelState_ (
    selListener,
    rootElement
 ) {
-   // This definition available PureScript-side
-   const selClasses =
-      "selected-primary-transient selected-secondary-transient selected-primary-persistent selected-secondary-persistent inert"
+   return () => {
+      // This definition available PureScript-side
+      const selClasses =
+         "selected-primary-transient selected-secondary-transient selected-primary-persistent selected-secondary-persistent inert"
 
-   rootElement.selectAll('.table-cell').each(function (cell) {
-      if (cell.i != -1 && cell.j != -1) {
-         const sel = val_selState(table[cell.i][cell.j])
+      rootElement.selectAll('.table-cell').each(function (cell) {
+         if (cell.i != -1 && cell.j != -1) {
+            const sel = val_selState(table[cell.i][cell.j])
+            d3.select(this) // won't work inside arrow function :/
+               .classed(selClasses, false)
+               .classed(cell_selClassesFor(cell.colName)(sel), true)
+               .on('mousedown', e => { selListener(e) })
+               .on('mouseenter', e => { selListener(e) })
+               .on('mouseleave', e => { selListener(e) })
+         }
+      })
+
+      let hidden = 0
+      rootElement.selectAll('.table-row').each(function ({ i }) {
+         hide = !record_isDisplayable(table[i])
+         if (hide)
+            hidden++
          d3.select(this) // won't work inside arrow function :/
-            .classed(selClasses, false)
-            .classed(cell_selClassesFor(cell.colName)(sel), true)
-            .on('mousedown', e => { selListener(e) })
-            .on('mouseenter', e => { selListener(e) })
-            .on('mouseleave', e => { selListener(e) })
-      }
-   })
+            .classed('hidden', hide)
+      })
 
-   let hidden = 0
-   rootElement.selectAll('.table-row').each(function ({ i }) {
-      hide = !record_isDisplayable(table[i])
-      if (hide)
-         hidden++
-      d3.select(this) // won't work inside arrow function :/
-         .classed('hidden', hide)
-   })
+      rootElement.select('.table-caption')
+         .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
 
-   rootElement.select('.table-caption')
-      .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
-
-   rootElement.selectAll('.table-cell').each(function (cell) {
-      d3.select(this)
-         .classed('has-right-border', hasRightBorder(table)(cell.i)(cell.j))
-         .classed('has-bottom-border', hasBottomBorder(table)(cell.i)(cell.j))
-   })
+      rootElement.selectAll('.table-cell').each(function (cell) {
+         d3.select(this)
+            .classed('has-right-border', hasRightBorder(table)(cell.i)(cell.j))
+            .classed('has-bottom-border', hasBottomBorder(table)(cell.i)(cell.j))
+      })
+   }
 }
 
 function createRootElement_ (
@@ -57,90 +59,59 @@ function createRootElement_ (
    div,
    childId
 ) {
-   const { colNames, table } = view
-   // These definitions will be available on PureScript side
-   const rowKey = "__n"
-   function val_val (v) {
-      return v._2
-   }
-   rootElement = div
-      .append('table')
-      .attr('id', childId)
-
-   rootElement.append('caption')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('class', 'title-text table-caption')
-      .attr('dominant-baseline', 'middle')
-      .attr('text-anchor', 'left')
-
-   const tableHead = rootElement.append('thead')
-   tableHead
-      .append('tr')
-      .selectAll('th')
-         .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
-         .enter()
-         .append('th')
-         .text(cell => cell.colName == rowKey ? (view.filter ? "▸" : "▾" ) : cell.colName)
-         .classed('filter-toggle toggle-button', colName => colName == rowKey)
-         .attr('class', 'table-cell')
-
-   const rows = rootElement
-      .append('tbody')
-      .selectAll('tr')
-         .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] }))) // data rows have 0-based index, but displayed row numbers start with 1
-         .enter()
-         .append('tr')
-         .attr('class', 'table-row')
-
-   rows.selectAll('td')
-      .data(({ i, vals }) =>
-         vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // field for row number has j = -1
-      .enter()
-      .append('td')
-      .attr('class', 'table-cell')
-      .style('border-top', "1px solid transparent")
-      .style('border-left', "1px solid transparent")
-      .style('border-right', ({ j }) => j == colNames.length - 2 ? "1px solid transparent" : null)
-      .style('border-bottom', ({ i }) => i == table.length -1 ? "1px solid transparent" : null)
-      .text(({ colName, value }) => colName == rowKey ? value : prim(val_val(value)))
-
-   return rootElement
-}
-
-function drawTable_ (
-   tableViewHelpers,
-   filterToggleListener,
-   uiHelpers,
-   {
-      divId,
-      suffix,
-      view
-   },
-   selListener
-) {
    return () => {
-      const { rowKey } = tableViewHelpers
-      let { colNames } = view
-      const childId = divId + '-' + suffix
-
-      const div = d3.select('#' + divId)
-      if (div.empty()) {
-         console.error('Unable to insert figure: no div found with id ' + divId)
-         return
+      let { colNames, table } = view
+      // These definitions will be available on PureScript side
+      const rowKey = "__n"
+      function val_val (v) {
+         return v._2
       }
+      colNames = [rowKey, ...colNames]
+      rootElement = div
+         .append('table')
+         .attr('id', childId)
 
-      colNames.unshift(rowKey) // why effectful?
-      let rootElement = div.selectAll('#' + childId)
+      rootElement.append('caption')
+         .attr('x', 0)
+         .attr('y', 0)
+         .attr('class', 'title-text table-caption')
+         .attr('dominant-baseline', 'middle')
+         .attr('text-anchor', 'left')
 
-      if (rootElement.empty()) {
-         rootElement = createRootElement_(view, tableViewHelpers, div, childId)
-      }
+      const tableHead = rootElement.append('thead')
+      tableHead
+         .append('tr')
+         .selectAll('th')
+            .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
+            .enter()
+            .append('th')
+            .text(cell => cell.colName == rowKey ? (view.filter ? "▸" : "▾" ) : cell.colName)
+            .classed('filter-toggle toggle-button', colName => colName == rowKey)
+            .attr('class', 'table-cell')
 
-      setSelState_(view, tableViewHelpers, selListener, rootElement)
+      const rows = rootElement
+         .append('tbody')
+         .selectAll('tr')
+            .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] }))) // data rows have 0-based index, but displayed row numbers start with 1
+            .enter()
+            .append('tr')
+            .attr('class', 'table-row')
+
+      rows.selectAll('td')
+         .data(({ i, vals }) =>
+            vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // field for row number has j = -1
+         .enter()
+         .append('td')
+         .attr('class', 'table-cell')
+         .style('border-top', "1px solid transparent")
+         .style('border-left', "1px solid transparent")
+         .style('border-right', ({ j }) => j == colNames.length - 2 ? "1px solid transparent" : null)
+         .style('border-bottom', ({ i }) => i == table.length -1 ? "1px solid transparent" : null)
+         .text(({ colName, value }) => colName == rowKey ? value : prim(val_val(value)))
+
+      return rootElement
    }
 }
 
-export const drawTable = x1 => x2 => x3 => x4 => x5 => drawTable_(x1, x2, x3, x4, x5)
 export const setSelState = x1 => x2 => x3 => x4 => setSelState_(x1, x2, x3, x4)
 export const createRootElement = x1 => x2 => x3 => x4 => createRootElement_(x1, x2, x3, x4)

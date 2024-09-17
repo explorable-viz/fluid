@@ -2,9 +2,9 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (SelState, 𝕊(..), eventData, getPersistent, getTransient, isInert, isTransient, selClassesFor)
+import App.Util (SelState, 𝕊(..), getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
-import App.View.Util (class Drawable, class Drawable2, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
 import App.View.Util.D3 as D3
 import Data.Array (filter, head, length, null, sort)
 import Data.Maybe (Maybe(..))
@@ -12,10 +12,10 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Set (toUnfoldable)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, definitely', (!))
+import Util (Endo, definitely', error, unimplemented, (!))
 import Util.Map (get, keys)
 import Val (BaseVal, Val(..), Array2)
-import Web.Event.EventTarget (EventListener, eventListener)
+import Web.Event.EventTarget (EventListener)
 
 type RecordRow = Array (Val (SelState 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
 
@@ -36,7 +36,6 @@ headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 = map <<< flip (map <<< flip get)
 
-foreign import drawTable :: TableViewHelpers -> EventListener -> Renderer TableView
 foreign import createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
 foreign import setSelState :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
 
@@ -124,17 +123,21 @@ instance Drawable2 TableView TableViewHelpers where
    createRootElement = createRootElement
    setSelState = setSelState
 
+createRootElement2 :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
+createRootElement2 = do
+   error unimplemented
+
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
-      toggleListener <- filterToggleListener filterToggler
-      drawTable tableViewHelpers toggleListener uiHelpers rSpec
-         =<< selListener figVal redraw tableViewSelSetter
+      draw' tableViewHelpers uiHelpers rSpec =<< selListener figVal redraw tableViewSelSetter
       where
       tableViewSelSetter :: ViewSelSetter CellIndex
       tableViewSelSetter { i, colName } = listElement i <<< field colName
 
-      filterToggleListener :: FilterToggler -> Effect EventListener
-      filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)
+--      toggleListener <- filterToggleListener filterToggler
+--
+--      filterToggleListener :: FilterToggler -> Effect EventListener
+--      filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)
 
 -- convert mouse event data (here, always rowKey) to view change
 type FilterToggler = String -> Endo TableView
