@@ -12,7 +12,7 @@ let points' = newPoints 0;
     cavgs' = mAvgShrink points' 1;
     savgs = sAvgShrink points' 2
 in MultiView {|
-    "line-chart-1" :=
+    ["line-chart-1"]:
         LineChart {
             tickLabels: { x: Default, y: Default },
             size: { width: 330, height: 285 },
@@ -21,7 +21,7 @@ in MultiView {|
                    , LinePlot { name: "Central", points: cavgs }
                    , LinePlot { name: "Original Curve", points: points' } ]
         },
-    "desc" :=
+    ["desc"]:
         LinkedText( [ "Simple moving averages are computed using the most recent n examples, "
                     , "whereas central moving averages use datapoints either side of the year in question. "
                     , "The moving average for 2015 was "
