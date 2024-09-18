@@ -350,12 +350,11 @@ expr_ =
             constr = Constr unit <$> ctr <@> empty
 
             dict :: SParser (Raw Expr)
-            dict = sepBy (Tuple <$> (ExprKey <$> expr') <*> (colonEq *> expr')) token.comma <#> Dictionary unit #
+            dict = sepBy exprkey token.comma <#> Dictionary unit #
                between (token.symbol str.dictLBracket) (token.symbol str.dictRBracket)
-
-            -- where
-            -- varkey :: SParser (Raw DictKey × Raw Expr)
-            -- varkey = (VarKey <$> ident) `lift2 (Tuple)` (token.colon *> expr')
+               where
+               exprkey :: SParser (Raw DictKey × Raw Expr)
+               exprkey = ((ExprKey <$> expr') # token.brackets) `lift2 (Tuple)` (token.colon *> expr')
 
             record :: SParser (Raw Expr)
             record = sepBy (field expr') token.comma <#> Record unit # token.braces

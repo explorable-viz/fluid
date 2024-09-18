@@ -74,6 +74,7 @@ testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let γ = erase gconfig.γ
    { gc: GC desug, e } <- desugGC s
+   -- log (prettyP e)
    traced@{ gc: GC evalT, v } <- traceBenchmark benchNames.eval \_ ->
       traceGC (EnvExpr γ e)
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->

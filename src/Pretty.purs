@@ -175,8 +175,8 @@ instance Ann a => Pretty (DictKey a) where
 
 instance Ann a => Pretty (List (DictKey a × Expr a)) where
    pretty Nil = empty
-   pretty ((k × v) : Nil) = pretty k .<>. text str.colonEq .<>. pretty v
-   pretty ((k × v) : xs) = pretty k .<>. text str.colonEq .<>. pretty v .<>. text str.comma .<>. pretty xs
+   pretty ((k × v) : Nil) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v
+   pretty ((k × v) : xs) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty xs
 
 instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
@@ -341,18 +341,22 @@ prettyRecordOrDict
     . Pretty d
    => Doc
    -> Endo Doc
+   -> Endo Doc
    -> (b -> Doc)
    -> List (b × d)
    -> Doc
-prettyRecordOrDict sep bracify prettyKey xvs =
-   xvs <#> first prettyKey <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
+prettyRecordOrDict sep keybrace bracify prettyKey xvs =
+   xvs <#> first (prettyKey >>> keybrace) <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
       # hcomma >>> bracify
 
+bracketKeys :: Endo Doc
+bracketKeys = between (text str.lBracket) (text str.rBracket)
+
 prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colonEq)
+prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # (prettyRecordOrDict (text str.colon) bracketKeys)
 
 prettyRecord :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon)
+prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon) identity
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
 prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text (i <> "×" <> j) .<>. text str.in_ .<>. pretty e2)
