@@ -1,5 +1,6 @@
-module Standalone.FluidCmd where
+module Standalone.Article where
 
+--see npm-publish.sh
 import Prelude hiding (absurd)
 
 import App.Fig (drawFig, loadFig)

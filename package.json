@@ -1,6 +1,6 @@
 {
   "name": "@explorable-viz/fluid",
-  "version": "0.0.13",
+  "version": "0.0.21",
   "description": "Fluid is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.",
   "main": "index.js",
   "repository": {
@@ -17,6 +17,7 @@
     "url": "https://github.com/explorable-viz/fluid/issues"
   },
   "homepage": "https://f.luid.org",
+  "files": ["dist/article/"],
   "scripts": {
     "tidy": "./script/tidy.sh",
 
@@ -39,7 +40,7 @@
     "build-puppeteer": "./script/build.sh test-puppeteer Test.Puppeteer --platform=node",
     "test-puppeteer": "./script/test-puppeteer.sh",
 
-    "build-fluid": "./script/build-article.sh",
+    "build-article": "./script/build-article.sh",
 
     "npm-publish": "./script/npm-publish.sh"
   },

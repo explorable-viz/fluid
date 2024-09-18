@@ -29,9 +29,7 @@ jobs:
         node-version: 22
         registry-url: 'https://registry.npmjs.org'
     - run: |
-        ./script/publish-single.sh Fluid
-        yarn build-fluid # remove once we have an artifact to download
-        npm publish --provenance --access public
+        yarn npm-publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
