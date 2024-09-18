@@ -91,7 +91,8 @@ function createRootElement_ (
       const rows = rootElement
          .append('tbody')
          .selectAll('tr')
-            .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] }))) // data rows have 0-based index, but displayed row numbers start with 1
+            // data rows have 0-based index, but displayed row numbers start with 1
+            .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] })))
             .enter()
             .append('tr')
             .attr('class', 'table-row')

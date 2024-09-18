@@ -2,10 +2,10 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (SelState, 𝕊(..), getPersistent, getTransient, isInert, isTransient, selClassesFor)
+import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, createMany)
+import App.View.Util.D3 (ElementType(..), create, createMany, each, setText_)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, length, mapWithIndex, null, sort)
@@ -21,7 +21,7 @@ import Web.Event.EventTarget (EventListener)
 
 type RecordRow = Array (Val (SelState 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
 
-data Filter = Everything | Interactive | Relevant -- TODO: rename to Filter
+data Filter = Everything | Interactive | Relevant
 
 newtype TableView = TableView
    { title :: String
@@ -128,7 +128,7 @@ instance Drawable2 TableView TableViewHelpers where
    setSelState = setSelState
 
 createRootElement2 :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
-createRootElement2 (TableView { colNames }) _ div childId = do
+createRootElement2 (TableView { colNames, filter }) _ div childId = do
    let _ = [ rowKey ] <> colNames
    rootElement <- div # create Table [ "id" ↦ childId ]
    void $ rootElement # create Caption
@@ -136,14 +136,17 @@ createRootElement2 (TableView { colNames }) _ div childId = do
       , "dominant-baseline" ↦ "middle"
       , "text-anchor" ↦ "left"
       ]
+   let headerEntries = flip mapWithIndex colNames \j colName -> { i: -1, j: j - 1, colName }
    void $ rootElement # create THead []
       >>= create TR []
-      >>= createMany TH "" (flip mapWithIndex colNames \j colName -> { i: -1, j: j - 1, colName })
-         [ "class" ↦ \{ colName } -> "table-cell" <> (if colName == rowKey then " filter-toggle toggle-button" else "")
+      >>= createMany TH "" headerEntries
+         [ "class" ↦ \{ colName } ->
+              classes ([ "table-cell" ] <> if colName == rowKey then [ "filter-toggle", "toggle-button" ] else [])
          ]
-   {-
-         .text(cell => cell.colName == rowKey ? (view.filter ? "▸" : "▾" ) : cell.colName)
-   -}
+      >>= each
+         ( setText_ \{ colName } ->
+              if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName
+         )
    pure rootElement
 
 instance Drawable TableView where
@@ -162,14 +165,18 @@ instance Drawable TableView where
 type FilterToggler = String -> Endo TableView
 
 filterToggler :: FilterToggler
-filterToggler _ (TableView view) = TableView view { filter = rot view.filter }
+filterToggler _ (TableView view) = TableView view { filter = rotate view.filter }
    where
-   rot :: Endo Filter
-   rot Everything = Interactive
-   rot Interactive = Relevant
-   rot Relevant = Everything
+   rotate :: Endo Filter
+   rotate Everything = Interactive
+   rotate Interactive = Relevant
+   rotate Relevant = Everything
 
 -- 0-based index of selected record and name of field; see data binding in .js (-1th field name is __n, the rowKey)
 type CellIndex = { i :: Int, colName :: String }
 
+-- ======================
+-- boilerplate
+-- ======================
 derive instance Newtype TableViewHelpers _
+derive instance Eq Filter

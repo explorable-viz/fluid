@@ -57,9 +57,9 @@ type PointCoordinate = { i :: Int, j :: Int, name :: String }
 instance Drawable2 LineChart Unit where
    setSelState (LineChart { plots }) _ redraw rootElement = do
       points' <- selectAll rootElement ".linechart-point"
-      void $ each (setAttrs' selAttrs) points'
+         >>= each (setAttrs' selAttrs)
       sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
-         <#> \ev -> each (on (EventType ev) redraw) points'
+         <#> \ev -> points' # each (on (EventType ev) redraw)
       where
       selAttrs :: PointCoordinate -> Array (Bind String)
       selAttrs { i, j, name } =
