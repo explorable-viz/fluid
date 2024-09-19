@@ -5,19 +5,21 @@ import Prelude
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, setText)
+import App.View.Util.D3 (ElementType(..), create, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, length, null, sort)
+import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
+import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Data.Traversable (for_)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, definitely', (!))
+import Util (Endo, definitely', error, (!))
 import Util.Map (get, keys)
-import Val (BaseVal, Val(..), Array2)
+import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
 type RecordRow = Array (Val (SelState 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
@@ -29,7 +31,7 @@ newtype TableView = TableView
    , filter :: Filter
    , colNames :: Array String
    -- homogeneous array of records with fields of primitive type; each row has same length as colNames
-   , table :: Array RecordRow
+   , rows :: Array RecordRow
    }
 
 -- helper functions used by View.purs to decompose array of records (Dict (Val (SelState 𝕊))) into colNames and table
@@ -128,8 +130,15 @@ instance Drawable2 TableView TableViewHelpers where
    createRootElement = createRootElement
    setSelState = setSelState
 
+prim :: Val (SelState 𝕊) -> String
+prim (Val _ v) = v # case _ of
+   Int n -> show n
+   Float n -> toStringWith (fixed 2) n
+   Str s -> s
+   _ -> error $ "TableView only supports primitive values."
+
 createRootElement2 :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
-createRootElement2 (TableView { colNames, filter }) _ div childId = do
+createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
    let _ = [ rowKey ] <> colNames
    rootElement <- div # create Table [ "id" ↦ childId ]
    void $ rootElement # create Caption
@@ -137,14 +146,30 @@ createRootElement2 (TableView { colNames, filter }) _ div childId = do
       , "dominant-baseline" ↦ "middle"
       , "text-anchor" ↦ "left"
       ]
-   row <- rootElement # create THead [] >>= create TR []
-   for_ colNames \colName ->
-      row
-         # create TH [ "class" ↦ classes ([ "table-cell" ] <> cellClasses colName) ]
-         >>= setText (if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName)
-   void $ rootElement # create TBody []
+   rootElement # createHeader
+   body <- rootElement # create TBody []
+   forWithIndex_ rows \i row -> do
+      row' <- body # create TR [ "class" ↦ "table-row" ]
+      forWithIndex_ row \j v -> do
+         cell <- row' # create TD
+            [ "class" ↦ "table-cell"
+            ]
+         void $ cell # setStyles
+            [ "border-top" ↦ "1px solid transparent"
+            , "border-left" ↦ "1px solid transparent"
+            , "border-right" ↦ if j == length colNames - 2 then "1px solid transparent" else ""
+            , "border-bottom" ↦ if i == length rows - 1 then "1px solid transparent" else ""
+            ]
+         cell # setText (if i == 0 then show (i + 1) else prim v)
    pure rootElement
    where
+   createHeader rootElement = do
+      row <- rootElement # create THead [] >>= create TR []
+      for_ colNames \colName ->
+         row
+            # create TH [ "class" ↦ classes ([ "table-cell" ] <> cellClasses colName) ]
+            >>= setText (if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName)
+
    cellClasses colName
       | colName == rowKey = [ "filter-toggle", "toggle-button" ]
       | otherwise = []

@@ -46,7 +46,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Newtype (unwrap)
 import Data.Show.Generic (genericShow)
 import Data.String (toLower)
-import Data.Traversable (for, sequence, traverse)
+import Data.Traversable (for)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util (Endo)
@@ -95,6 +95,7 @@ data ElementType
    | Table
    | Text
    | TBody
+   | TD
    | TH
    | THead
    | TR

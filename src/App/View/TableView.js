@@ -11,7 +11,7 @@ function prim (v) {
 }
 
 function setSelState_ (
-   { title, table },
+   { title, rows },
    { record_isDisplayable, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder },
    selListener,
    rootElement
@@ -23,7 +23,7 @@ function setSelState_ (
 
       rootElement.selectAll('.table-cell').each(function (cell) {
          if (cell.i != -1 && cell.j != -1) {
-            const sel = val_selState(table[cell.i][cell.j])
+            const sel = val_selState(rows[cell.i][cell.j])
             d3.select(this) // won't work inside arrow function :/
                .classed(selClasses, false)
                .classed(cell_selClassesFor(cell.colName)(sel), true)
@@ -35,7 +35,7 @@ function setSelState_ (
 
       let hidden = 0
       rootElement.selectAll('.table-row').each(function ({ i }) {
-         hide = !record_isDisplayable(table[i])
+         hide = !record_isDisplayable(rows[i])
          if (hide)
             hidden++
          d3.select(this) // won't work inside arrow function :/
@@ -43,12 +43,12 @@ function setSelState_ (
       })
 
       rootElement.select('.table-caption')
-         .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
+         .text(title + ' (' + (rows.length - hidden) + ' of ' + rows.length + ')' )
 
       rootElement.selectAll('.table-cell').each(function (cell) {
          d3.select(this)
-            .classed('has-right-border', hasRightBorder(table)(cell.i)(cell.j))
-            .classed('has-bottom-border', hasBottomBorder(table)(cell.i)(cell.j))
+            .classed('has-right-border', hasRightBorder(rows)(cell.i)(cell.j))
+            .classed('has-bottom-border', hasBottomBorder(rows)(cell.i)(cell.j))
       })
    }
 }
@@ -60,7 +60,7 @@ function createRootElement_ (
    childId
 ) {
    return () => {
-      let { colNames, table } = view
+      let { colNames, rows } = view
       // These definitions will be available on PureScript side
       const rowKey = "__n"
       function val_val (v) {
@@ -88,16 +88,16 @@ function createRootElement_ (
             .classed('filter-toggle toggle-button', colName => colName == rowKey)
             .attr('class', 'table-cell')
 
-      const rows = rootElement
+      const rows_ = rootElement
          .append('tbody')
          .selectAll()
             // data rows have 0-based index, but displayed row numbers start with 1
-            .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] })))
+            .data(rows.map((row, i) => ({ i, vals: [i + 1, ...row] })))
             .enter()
             .append('tr')
             .attr('class', 'table-row')
 
-      rows.selectAll()
+      rows_.selectAll()
          .data(({ i, vals }) =>
             vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // field for row number has j = -1
          .enter()
@@ -106,7 +106,7 @@ function createRootElement_ (
          .style('border-top', "1px solid transparent")
          .style('border-left', "1px solid transparent")
          .style('border-right', ({ j }) => j == colNames.length - 2 ? "1px solid transparent" : null)
-         .style('border-bottom', ({ i }) => i == table.length -1 ? "1px solid transparent" : null)
+         .style('border-bottom', ({ i }) => i == rows.length -1 ? "1px solid transparent" : null)
          .text(({ colName, value }) => colName == rowKey ? value : prim(val_val(value)))
 
       return rootElement
