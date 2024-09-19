@@ -2,8 +2,8 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
-import App.Util (Selector)
-import Control.Monad.Error.Class (class MonadError)
+import App.Util (Selector, unselected, getPersistent)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
@@ -11,12 +11,13 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Desug (Desugaring, desugGC)
 import Effect.Aff (Aff)
+import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, botOf, erase, topOf)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
@@ -24,7 +25,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Thunk, check, checkSatisfies, debug, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Thunk, Endo, check, checkSatisfies, debug, spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite = Array (String × Aff Unit)
@@ -78,7 +79,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
 
-   let out0 = δv (botOf v) <#> unwrap >>> _.persistent
+   let out0 = (δv (const unselected <$> v)) <#> getPersistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
@@ -131,7 +132,19 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    when testing.fwdDuals $
       checkEq benchNames.demBy_G_direct benchNames.demBy_G_suff_dual out2 out3
 
-checkEq :: forall m a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => MonadError Error m => String -> String -> a -> a -> m Unit
+checkEq
+   :: forall m a
+    . BotOf a a
+   => Neg a
+   => MeetSemilattice a
+   => Eq a
+   => Pretty a
+   => MonadError Error m
+   => String
+   -> String
+   -> a
+   -> a
+   -> m Unit
 checkEq op1 op2 x y = do
    let left × right = compare op1 op2 x y
    check (left == "") left
@@ -147,3 +160,14 @@ checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Un
 checkPretty msg expect x =
    unless (expect `eq` prettyP x) $
       throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
+
+testOutcome :: Boolean -> Endo String
+testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s
+
+testCondition :: forall m. MonadThrow Error m => MonadEffect m => String -> Boolean -> String -> m Unit
+testCondition testName b msg = do
+   log (testOutcome b msg')
+   when (not b) $
+      throw "Test failed" -- could improve this to accumulate test failures rather than "failing fast"
+   where
+   msg' = testName <> ": " <> msg

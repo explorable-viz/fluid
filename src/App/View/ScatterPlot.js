@@ -2,6 +2,7 @@
 
 import * as d3 from "d3"
 
+
 function setSelState (
    { point_attrs },
    {
@@ -28,7 +29,7 @@ function setSelState (
 }
 
 function drawScatterPlot_ (
-   ScatterPlotHelpers,
+   scatterPlotHelpers,
    uiHelpers,
    {
       divId,
@@ -121,7 +122,7 @@ function drawScatterPlot_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(ScatterPlotHelpers, uiHelpers, rootElement, { points }, listener)
+      setSelState(scatterPlotHelpers, uiHelpers, rootElement, { points }, listener)
    }
 }
 

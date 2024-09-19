@@ -2,6 +2,8 @@
 # run from project root
 set -xe
 
+# TODO: some consolidation with build-standalone.sh
+
 rm -rf dist/article
 mkdir -p dist/article
 

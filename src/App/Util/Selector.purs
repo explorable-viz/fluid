@@ -6,16 +6,16 @@ import App.Util (SelState, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_data, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_points, f_stackedBars, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
-import Util (Setter, absurd, assert, definitely', error)
+import Util (Setter, absurd, assert, definitely, error)
 import Util.Map (update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
 
 -- Selection setters.
-type SelSetter f g = Setter (f (SelState 𝔹)) (g (SelState 𝔹))
+type SelSetter (f :: Type -> Type) (g :: Type -> Type) = Setter (f (SelState 𝔹)) (g (SelState 𝔹))
 type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
 
 fst :: SelSetter Val Val
@@ -37,9 +37,8 @@ lineChart :: SelSetter Val Val
 lineChart = constrArg cLineChart 0
 
 linePoint :: Int -> SelSetter Val Val
-linePoint i = listElement i >>> field f_data >>> constrArg cLinePlot 0
+linePoint i = listElement i >>> field f_points >>> constrArg cLinePlot 0
 
--- linePoint i = field f_y >>> listElement i >>> field f_data >>> constrArg cLinePlot 0
 barChart :: SelSetter Val Val
 barChart = constrArg cBarChart 0
 
@@ -47,11 +46,11 @@ scatterPlot :: SelSetter Val Val
 scatterPlot = constrArg cScatterPlot 0
 
 scatterPoint :: Int -> SelSetter Val Val
-scatterPoint i = listElement i >>> field f_data
+scatterPoint i = listElement i >>> field f_points
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
-   field f_z >>> listElement j >>> field f_bars >>> listElement i >>> field f_data
+   field f_z >>> listElement j >>> field f_bars >>> listElement i >>> field f_stackedBars
 
 linkedText :: SelSetter Val Val
 linkedText = constrArg cLinkedText 0
@@ -74,7 +73,7 @@ constrArg c n δv = unsafePartial $ case _ of
    Val α (Constr c' us) | c == c' ->
       Val α (Constr c us')
       where
-      us' = definitely' do
+      us' = definitely "constrArg out of bounds" do
          u1 <- us !! n
          updateAt n (δv u1) us
 

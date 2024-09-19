@@ -87,7 +87,9 @@ checkArity c n = void $
    withMsg ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
 
 -- Used internally by primitives, desugaring or rendering layer.
-cBarChart = "BarChart" :: Ctr -- Plot
+cDefault = "Default" :: Ctr -- Orientation
+cRotated = "Rotated" :: Ctr
+cBarChart = "BarChart" :: Ctr -- View
 cLineChart = "LineChart" :: Ctr
 cLinePlot = "LinePlot" :: Ctr
 cMultiView = "MultiView" :: Ctr
@@ -105,17 +107,17 @@ cSome = "Some" :: Ctr
 f_bars = "bars" :: FieldName
 f_caption = "caption" :: FieldName
 f_colour = "c" :: FieldName
-f_data = "data" :: FieldName
 f_name = "name" :: FieldName
 f_plots = "plots" :: FieldName
+f_points = "points" :: FieldName
+f_size = "size" :: FieldName
+f_stackedBars = "stackedBars" :: FieldName
+f_tickLabels = "tickLabels" :: FieldName
 f_x = "x" :: FieldName
 f_xlabel = "xlabel" :: FieldName
 f_ylabel = "ylabel" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
-f_contents = "contents" :: FieldName
-f_text = "text" :: FieldName
-f_val = "val" :: FieldName
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable
@@ -129,12 +131,9 @@ dataTypes = L.fromFoldable
         [ "FNum" × 1
         , "Infty" × 0
         ]
-   , dataType "LinePlot"
-        [ cLinePlot × 1 -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
-        ]
    , dataType "List"
         [ cNil × 0
-        , cCons × 2 -- any × List<any>
+        , cCons × 2 -- any × List any
         ]
    , dataType "Option"
         [ cNone × 0
@@ -148,15 +147,24 @@ dataTypes = L.fromFoldable
    , dataType "Pair"
         [ "Pair" × 2 -- any × any
         ]
-   , dataType "Plot"
-        [ cBarChart × 1 -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
-        , cLineChart × 1 -- Record<caption: Str, plots: List<LinePlot>>
-        , cMultiView × 1 -- Dict<Plot>
-        , cScatterPlot × 1 -- Record<Caption: Str, data: List<Record<x: Number, y: Number>>>
-        ]
    , dataType "Tree"
         [ "Empty" × 0
-        , "NonEmpty" × 3 -- Tree<any> × any × Tree<any>
+        , "NonEmpty" × 3 -- Tree any × any × Tree any
+        ]
+   -- View stuff
+   , dataType "LinePlot"
+        [ cLinePlot × 1
+        ]
+   , dataType "Orientation"
+        [ cDefault × 0
+        , cRotated × 0
+        ]
+   , dataType "View"
+        [ cBarChart × 1
+        , cLineChart × 1
+        , cLinkedText × 1
+        , cMultiView × 1
+        , cScatterPlot × 1
         ]
    ,
      -- Legacy graphics stuff
@@ -170,10 +178,10 @@ dataTypes = L.fromFoldable
         ]
    , dataType "GraphicsElement"
         [ "Circle" × 4 -- Float (x), Float (y), Float (radius), Str (fill)
-        , "Group" × 1 -- List<GraphicsElement>
+        , "Group" × 1 -- List GraphicsElement
         , "Line" × 4 -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth)
-        , "Polyline" × 3 -- List<Point> (points), Str (stroke), Float (strokeWidth)
-        , "Polymarkers" × 2 -- List<Point> (points), List<GraphicsElement> (markers)
+        , "Polyline" × 3 -- List Point (points), Str (stroke), Float (strokeWidth)
+        , "Polymarkers" × 2 -- List Point (points), List GraphicsElement (markers)
         , "Rect" × 5 -- Float (x), Float (y), Float (width), Float (height), Str (fill)
         -- SVG text-anchor and alignment-baseline properties
         , "Text" × 5 -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
@@ -187,8 +195,5 @@ dataTypes = L.fromFoldable
         ]
    , dataType "Marker"
         [ "Arrowhead" × 0
-        ]
-   , dataType "LinkedText"
-        [ cLinkedText × 1 -- Str
         ]
    ]

@@ -30,7 +30,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
-import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
+import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
 import Util.Set ((∈))
@@ -80,6 +80,10 @@ pVarAnon = PVar varAnon
 
 pListVarAnon :: ListRestPattern
 pListVarAnon = PListVar varAnon
+
+showPattern :: Pattern + ListRestPattern -> String
+showPattern (Left p') = show p'
+showPattern (Right p') = show p'
 
 ctrFor :: Pattern + ListRestPattern -> Maybe Ctr
 ctrFor (Left (PVar _)) = Nothing
@@ -373,7 +377,7 @@ popConstrFwd d (((p : π') × π'' × s) : ks) =
       forConstrFwd c ((π <> π') × π'' × s) <$> popConstrFwd d ks
    where
    π = subpatts p
-   c = definitely' (ctrFor p)
+   c = definitely ("Failed to distinguish constructor: " <> showPattern p) (ctrFor p)
 popConstrFwd _ Nil = pure Nil
 
 forConstrFwd :: forall a. Ctr -> ClauseState' a -> Endo (List (Ctr × ClausesState' a))
@@ -429,7 +433,7 @@ clausesStateFwd ks = case ks of
    ((Right (PListVar x) : _) × _) : _ ->
       ContElim <$> ElimVar x <$> (clausesStateFwd =<< popListVarFwd x ks)
    ((p : _) × _) : _ -> do
-      kss <- popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks
+      kss <- popConstrFwd (defined (dataTypeFor (definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)))) ks
       ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
 
 -- Recovers (subset of) clauses in order consistent with their original order.

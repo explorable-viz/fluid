@@ -23,10 +23,10 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, expand, topOf, (∨))
-import Util (type (×), Endo, assert, assertWith, definitely, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
+import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
-import Util.Set (class Set, difference, empty, filter, isEmpty, size, union, (\\), (∈), (∪))
+import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
 
 data Val a = Val a (BaseVal a)
 
@@ -78,9 +78,11 @@ instance Ord ForeignOp where
 -- Environments.
 newtype Env a = Env (Dict (Val a))
 
+instance IsEmpty (Env a) where
+   isEmpty (Env γ) = isEmpty γ
+
 instance Set (Env a) String where
    empty = Env empty
-   isEmpty (Env γ) = isEmpty γ
    filter p (Env γ) = Env (filter p γ)
    size (Env γ) = size γ
    member x (Env γ) = x ∈ γ
@@ -101,6 +103,17 @@ instance Map (Env a) String (Val a) where
 data EnvExpr a = EnvExpr (Env a) (Expr a)
 
 -- Goes from smaller environment to larger (injection into a biproduct).
+{-}
+unrestrictGC :: forall a. BoundedMeetSemilattice (Env a) => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
+unrestrictGC γ xs =
+   assertWith (show xs <> " are in environment ") (xs ⊆ keys γ) $ GC
+      { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ (γ_top \\ γ')
+      , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
+      }
+   where
+   γ_top = topOf γ
+
+-}
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
 unrestrictGC γ xs =
    assertWith (show xs <> " are in environment ") (xs ⊆ keys γ) $ GC

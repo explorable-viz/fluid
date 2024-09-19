@@ -11,7 +11,7 @@ function prim (v) {
 }
 
 function setSelState (
-   { cell_selClassesFor, rowKey, record_isUsed, val_selState },
+   { cell_selClassesFor, rowKey,record_isDisplayable, val_selState },
    filterToggleListener,
    {
       selClasses,
@@ -31,14 +31,16 @@ function setSelState (
             .on('mouseleave', e => { selListener(e) })
       }
    })
+
    let hidden = 0
    rootElement.selectAll('.table-row').each(function ({ i }) {
-      hide = !record_isUsed(table[i]) && filter
+      hide = !record_isDisplayable(table[i])(filter)
       if (hide)
          hidden++
       d3.select(this) // won't work inside arrow function :/
          .classed('hidden', hide)
    })
+
    rootElement.select('.table-caption')
       .text(title + ' (' + (table.length - hidden) + ' of ' + table.length + ')' )
    rootElement.select('.filter-toggle')

@@ -29,9 +29,12 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Debug as Debug
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
+import Effect.Class.Console (log)
 import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
+import Foreign.Object (Object)
+import Foreign.Object as Object
 
 debug
    :: { logging :: Boolean -- logging via "log"; requires an effect context
@@ -116,6 +119,9 @@ trace = traceWhen true
 traceWhen :: forall m. Applicative m => Boolean -> String -> m Unit
 traceWhen true msg | debug.tracing == true = Debug.trace msg \_ -> pure unit
 traceWhen _ _ = pure unit
+
+log' :: forall m. MonadEffect m => String -> m Unit
+log' msg = when debug.logging (log msg)
 
 absurd :: String
 absurd = "absurd"
@@ -287,3 +293,12 @@ instance NonEmpty List NonEmptyList where
 
 instance NonEmpty Array NonEmptyArray where
    nonEmpty = definitely "non-empty" <<< fromArray
+
+class IsEmpty a where
+   isEmpty :: a -> Boolean
+
+instance IsEmpty (Set a) where
+   isEmpty = Set.isEmpty
+
+instance IsEmpty (Object a) where
+   isEmpty = Object.isEmpty

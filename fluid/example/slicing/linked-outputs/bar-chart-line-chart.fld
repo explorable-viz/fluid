@@ -7,7 +7,7 @@ MultiView {|
                         | c <- ["China", "USA", "Germany"] ]
       in BarChart {
          caption: "Total output by country",
-         data: countryData
+         stackedBars: countryData
       },
    "line-chart" :=
       let series type country = [
@@ -15,9 +15,11 @@ MultiView {|
          | year <- [2013..2018], row <- renewables,
          row.year == year, row.energyType == type, row.country == country
       ] in LineChart {
+         tickLabels: { x: Default, y: Default },
+         size: { width: 330, height: 285 },
          caption: "Output of USA relative to China",
          plots: [
-            LinePlot { name: type, data: plot }
+            LinePlot { name: type, points: plot }
             | type <- ["Bio", "Hydro", "Solar", "Wind"],
             let plot = zipWith (fun p1 p2 -> { x: p1.x, y: p1.y / p2.y })
                                (series type "USA") (series type "China")

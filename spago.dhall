@@ -19,6 +19,7 @@ You can edit this file as you like.
   , "exists"
   , "filterable"
   , "foldable-traversable"
+  , "foreign"
   , "foreign-object"
   , "functors"
   , "graphs"

@@ -1,15 +1,19 @@
-module App.View.BarChart where
+module App.View.BarChart
+   ( Bar(..)
+   , BarChart(..)
+   , StackedBar(..)
+   ) where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState(..), Selectable, 𝕊(..), colorShade, from, get_intOrNumber, record)
+import App.Util (class Reflect, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
 import Data.Tuple (snd)
-import DataType (f_bars, f_caption, f_data, f_x, f_y, f_z)
+import DataType (f_bars, f_caption, f_stackedBars, f_x, f_y, f_z)
 import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
@@ -65,7 +69,9 @@ barChartHelpers =
       where
       StackedBar { bars } = stackedBars ! i
       Bar { z } = bars ! j
-      SelState { persistent, transient } = snd z
+      t = snd z
+      persistent = getPersistent t
+      transient = getTransient t
       col = indexCol j
 
    tickEvery :: Int -> Int
@@ -85,7 +91,7 @@ instance Drawable BarChart where
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart
       { caption: unpack string (get f_caption r)
-      , stackedBars: record from <$> from (get f_data r)
+      , stackedBars: record from <$> from (get f_stackedBars r)
       }
 
 instance Reflect (Dict (Val (SelState 𝕊))) StackedBar where

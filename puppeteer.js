@@ -1,4 +1,3 @@
-
 const express = require('express');
 const serve = require('express-static');
 require('http-shutdown').extend();
@@ -7,7 +6,7 @@ const app = express();
 
 app.use(serve(__dirname + '/dist/app'));
 
-const server = app.listen(8080, function(){
+const server = app.listen(8080, function() {
   console.log("Server running");
 }).withShutdown();
 
@@ -23,8 +22,7 @@ const server = app.listen(8080, function(){
   }
 })();
 
-function serverDown()
-{
+function serverDown() {
   console.log('Shutting down server')
   server.shutdown(function(err) {
     if (err) {

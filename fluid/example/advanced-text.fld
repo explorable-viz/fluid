@@ -1,0 +1,7 @@
+let explain [] d baseStr = (0.0, baseStr);
+    explain [k] d baseStr = (dict_get k d, baseStr ++ " " ++ k);
+    explain (k : k' : ks) d baseStr = explain (k' : ks) (dict_get k d) (baseStr ++ " " ++ k);
+
+let dictUSA = {| "Agriculture" := {| "CO2" := 16.7 |}, "Manufacturing" := {| "CO2" := 24.4 |} |};
+    (val, desc) = explain [ "Agriculture", "CO2" ] dictUSA "US"
+in LinkedText( [ desc, " has the value ", numToStr val ] )

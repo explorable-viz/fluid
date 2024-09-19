@@ -11,7 +11,7 @@ in MultiView {|
    "bar-chart" :=
       BarChart {
          caption: "Total output by country",
-         data: countryData
+         stackedBars: countryData
       },
    "one" :=
        LinkedText( ["The total for the USA is: "

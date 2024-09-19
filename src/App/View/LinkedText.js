@@ -54,7 +54,7 @@ function drawLinkedText_ (
             .attr('class', 'linked-text-parent')
 
          rootElement.selectAll('span')
-            .data(view.entries().map(([i, conts]) => { return {i, conts}}))
+            .data([...view.entries()].map(([i, conts]) => { return {i, conts}}))
             .enter()
             .append('span')
             .attr('id', childId)

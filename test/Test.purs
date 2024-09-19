@@ -7,7 +7,7 @@ import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Test.Benchmark (benchmarks)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
-import Test.Specs.LinkedOutputs (linkedOutputs_cases, movingAverages_spec)
+import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Util (TestSuite)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite)
@@ -19,9 +19,7 @@ main = run tests
 --main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = linkedOutputsSuite
-   [ movingAverages_spec
-   ]
+scratchpad = linkedOutputsSuite linkedOutputs_cases
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
