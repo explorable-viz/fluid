@@ -140,13 +140,14 @@ createRootElement2 (TableView { colNames, filter }) _ div childId = do
    row <- rootElement # create THead [] >>= create TR []
    for_ colNames \colName ->
       row
-         # create TH
-              [ "class" ↦
-                   classes ([ "table-cell" ] <> if colName == rowKey then [ "filter-toggle", "toggle-button" ] else [])
-              ]
+         # create TH [ "class" ↦ classes ([ "table-cell" ] <> cellClasses colName) ]
          >>= setText (if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName)
    void $ rootElement # create TBody []
    pure rootElement
+   where
+   cellClasses colName
+      | colName == rowKey = [ "filter-toggle", "toggle-button" ]
+      | otherwise = []
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
