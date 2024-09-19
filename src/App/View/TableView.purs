@@ -5,13 +5,14 @@ import Prelude
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, createMany, each, setText_)
+import App.View.Util.D3 (ElementType(..), create, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (filter, head, length, mapWithIndex, null, sort)
+import Data.Array (filter, head, length, null, sort)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (toUnfoldable)
+import Data.Traversable (for_)
 import Dict (Dict)
 import Effect (Effect)
 import Util (Endo, definitely', (!))
@@ -136,17 +137,14 @@ createRootElement2 (TableView { colNames, filter }) _ div childId = do
       , "dominant-baseline" ↦ "middle"
       , "text-anchor" ↦ "left"
       ]
-   let headerEntries = flip mapWithIndex colNames \j colName -> { i: -1, j: j - 1, colName }
-   void $ rootElement # create THead []
-      >>= create TR []
-      >>= createMany TH "" headerEntries
-         [ "class" ↦ \{ colName } ->
-              classes ([ "table-cell" ] <> if colName == rowKey then [ "filter-toggle", "toggle-button" ] else [])
-         ]
-      >>= each
-         ( setText_ \{ colName } ->
-              if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName
-         )
+   row <- rootElement # create THead [] >>= create TR []
+   for_ colNames \colName ->
+      row
+         # create TH
+              [ "class" ↦
+                   classes ([ "table-cell" ] <> if colName == rowKey then [ "filter-toggle", "toggle-button" ] else [])
+              ]
+         >>= setText (if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName)
    void $ rootElement # create TBody []
    pure rootElement
 
