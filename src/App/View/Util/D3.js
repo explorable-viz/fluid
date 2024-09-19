@@ -209,6 +209,14 @@ export function datum (sel) {
    }
 }
 
+export function setData (sel) {
+   return d => {
+      return () => {
+         return sel.data(d)
+      }
+   }
+}
+
 export function on (eventType) {
    return listener => {
       return sel => {

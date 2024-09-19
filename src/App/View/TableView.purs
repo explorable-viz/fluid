@@ -5,7 +5,7 @@ import Prelude
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, setStyles, setText)
+import App.View.Util.D3 (ElementType(..), create, setData, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, length, null, sort)
@@ -137,6 +137,10 @@ prim (Val _ v) = v # case _ of
    Str s -> s
    _ -> error $ "TableView only supports primitive values."
 
+setSelState2 :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
+setSelState2 _ _ _ _ = do
+   pure unit
+
 createRootElement2 :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
 createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
    let _ = [ rowKey ] <> colNames
@@ -160,7 +164,9 @@ createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
             , "border-right" ↦ if j == length colNames - 2 then "1px solid transparent" else ""
             , "border-bottom" ↦ if i == length rows - 1 then "1px solid transparent" else ""
             ]
-         cell # setText (if i == 0 then show (i + 1) else prim v)
+         let value = if i == 0 then show (i + 1) else prim v
+         void $ cell # setText value
+         cell # setData { i, j: j - 1, value, colName: colNames ! j }
    pure rootElement
    where
    createHeader rootElement = do
