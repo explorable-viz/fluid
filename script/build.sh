@@ -2,4 +2,4 @@
 set -xe
 
 . script/compile.sh
-. script/bundle.sh $1 $2 ${@:3}
+. script/bundle.sh ${@:1}
