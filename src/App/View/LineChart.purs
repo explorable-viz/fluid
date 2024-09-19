@@ -12,7 +12,7 @@ import App.View.Util.Point (Point(..))
 import Bind (Bind, (↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
-import Data.Foldable (length, sequence_)
+import Data.Foldable (for_, length, sequence_)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype, unwrap)
@@ -57,8 +57,8 @@ type PointCoordinate = { i :: Int, j :: Int, name :: String }
 instance Drawable2 LineChart Unit where
    setSelState (LineChart { plots }) _ redraw rootElement = do
       points' <- selectAll rootElement ".linechart-point" >>= each (setAttrs' selAttrs)
-      sequence_ $ [ "mousedown", "mouseenter", "mouseleave" ]
-         <#> \ev -> points' # each (on (EventType ev) redraw)
+      for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
+         points' # each (on (EventType ev) redraw)
       where
       selAttrs :: PointCoordinate -> Array (Bind String)
       selAttrs { i, j, name } =
