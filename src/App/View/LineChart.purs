@@ -169,6 +169,7 @@ instance Drawable2 LineChart Unit where
             [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
          void $ legend' # create Rect
             [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
+         -- Re-express in terms of sequence and create (to lose data binding)
          legendEntries <- legend' # createMany G "legend-entry" entries
             [ translate' \{ i } -> { x: 0, y: entry_y i } ]
          void $ each (setText_ (\{ name } -> name)) =<<
