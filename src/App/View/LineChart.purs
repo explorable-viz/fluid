@@ -6,7 +6,7 @@ import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colo
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, Margin, ElementType(..), create, createMany, dimensions, each, forEach_create, line, nameCol, on, remove, rotate, scaleLinear, selectAll, setAttrs, setAttrs', setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', dimensions, each, forEach_create, line, nameCol, on, remove, rotate, scaleLinear, selectAll, setAttrs, setAttrs', setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind (Bind, (↦), (⟼))
@@ -141,16 +141,13 @@ instance Drawable2 LineChart Unit where
 
       createLines :: Dimensions Int -> D3.Selection -> Effect Unit
       createLines range =
-         void <$> createMany Path "linechart-line" entries
+         void <$> createMany' Path plots
             [ "fill" ↦ const "none"
-            , "stroke" ↦ \{ plot: LinePlot { name } } -> nameCol (fst name) (names plots)
+            , "stroke" ↦ \(LinePlot { name }) -> nameCol (fst name) (names plots)
             , "stroke-width" ↦ const "1"
-            , "d" ↦ \{ plot: LinePlot { points: ps } } ->
+            , "d" ↦ \(LinePlot { points: ps }) ->
                  line (to range) (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y })
             ]
-         where
-         entries :: Array { i :: Int, plot :: LinePlot }
-         entries = flip mapWithIndex plots \i plot -> { i, plot }
 
       createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
       createPoints range =

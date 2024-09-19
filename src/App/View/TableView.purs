@@ -147,6 +147,7 @@ createRootElement2 (TableView { colNames, filter }) _ div childId = do
          ( setText_ \{ colName } ->
               if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName
          )
+   void $ rootElement # create TBody []
    pure rootElement
 
 instance Drawable TableView where

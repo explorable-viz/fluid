@@ -8,6 +8,7 @@ module App.View.Util.D3
    , attrs
    , create
    , createMany
+   , createMany'
    , datum
    , dimensions
    , each
@@ -45,6 +46,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Newtype (unwrap)
 import Data.Show.Generic (genericShow)
 import Data.String (toLower)
+import Data.Traversable (sequence)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util (Endo)
@@ -92,6 +94,7 @@ data ElementType
    | SVG
    | Table
    | Text
+   | TBody
    | TH
    | THead
    | TR
@@ -104,6 +107,11 @@ forEach_create :: forall a. ElementType -> (a -> Array (Bind String)) -> MultiSe
 forEach_create elementType asF parents =
    asF >>> fromFoldable # forEach_createChild parents (show elementType)
 
+createMany' :: forall a. ElementType -> Array a -> Array (Bind (a -> String)) -> Selection -> Effect (Array Selection)
+createMany' elementType xs as parent =
+   sequence $ flip (create elementType) parent <$> ((\a -> (_ <@> a) <$> as) <$> xs)
+
+-- Deprecated; also probably want to lose MultiSelection
 createMany :: forall a. ElementType -> String -> Array a -> Array (Bind (a -> String)) -> Selection -> Effect MultiSelection
 createMany elementType class_ xs as parent =
    fromFoldable as # createChildren parent (show elementType) class_ xs

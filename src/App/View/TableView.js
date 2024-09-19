@@ -80,7 +80,7 @@ function createRootElement_ (
 
       rootElement.append('thead')
          .append('tr')
-         .selectAll('th')
+         .selectAll()
             .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
             .enter()
             .append('th')
@@ -90,14 +90,14 @@ function createRootElement_ (
 
       const rows = rootElement
          .append('tbody')
-         .selectAll('tr')
+         .selectAll()
             // data rows have 0-based index, but displayed row numbers start with 1
             .data(table.map((row, i) => ({ i, vals: [i + 1, ...row] })))
             .enter()
             .append('tr')
             .attr('class', 'table-row')
 
-      rows.selectAll('td')
+      rows.selectAll()
          .data(({ i, vals }) =>
             vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // field for row number has j = -1
          .enter()
