@@ -21,6 +21,6 @@ rm -rf dist/app/$NAME_LISP_CASE
 mkdir -p dist/app/$NAME_LISP_CASE
 
 ./script/compile.sh
-yarn purs-backend-es bundle-app --main Standalone.$NAME --to dist/app/$NAME_LISP_CASE/app.js
+./script/bundle.sh app/$NAME_LISP_CASE Standalone.$NAME
 
 cp web/template.html dist/app/$NAME_LISP_CASE/index.html
