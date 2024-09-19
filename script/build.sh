@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -xe
 
-. script/compile.sh $1
+. script/compile.sh
 . script/bundle.sh $1 $2
