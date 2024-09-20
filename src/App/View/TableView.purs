@@ -40,7 +40,6 @@ headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 = map <<< flip (map <<< flip get)
 
-foreign import createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
 foreign import setSelState :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
 
 newtype TableViewHelpers = TableViewHelpers

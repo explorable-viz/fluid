@@ -2,14 +2,6 @@
 
 import * as d3 from "d3"
 
-function prim (v) {
-   if (isNaN(parseFloat(v._1))) {
-      return v._1
-   } else {
-      return +parseFloat(v._1).toFixed(2)
-   }
-}
-
 function setSelState_ (
    { title, rows },
    { record_isDisplayable, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder },
@@ -53,63 +45,4 @@ function setSelState_ (
    }
 }
 
-function createRootElement_ (
-   view,
-   viewHelpers,
-   div,
-   childId
-) {
-   return () => {
-      let { colNames, rows } = view
-      // These definitions will be available on PureScript side
-      const rowKey = "__n"
-      function val_val (v) {
-         return v._2
-      }
-      colNames = [rowKey, ...colNames]
-      rootElement = div
-         .append('table')
-         .attr('id', childId)
-
-      rootElement.append('caption')
-         .attr('class', 'title-text table-caption')
-         .attr('dominant-baseline', 'middle')
-         .attr('text-anchor', 'left')
-
-      rootElement.append('thead')
-         .append('tr')
-         .selectAll()
-            .data(colNames.map((colName, j) => ({ i: -1, j: j - 1, colName })))
-            .enter()
-            .append('th')
-            .text(cell => cell.colName == rowKey ? (view.filter ? "▸" : "▾" ) : cell.colName)
-            .classed('filter-toggle toggle-button', colName => colName == rowKey)
-            .attr('class', 'table-cell')
-
-      const rows_ = rootElement
-         .append('tbody')
-         .selectAll()
-            // data rows have 0-based index, but displayed row numbers start with 1
-            .data(rows.map((row, i) => ({ i, vals: [i + 1, ...row] })))
-            .enter()
-            .append('tr')
-            .attr('class', 'table-row')
-
-      rows_.selectAll()
-         .data(({ i, vals }) =>
-            vals.map((val, j) => ({ i, j: j - 1, value: val, colName: colNames[j] }))) // field for row number has j = -1
-         .enter()
-         .append('td')
-         .attr('class', 'table-cell')
-         .style('border-top', "1px solid transparent")
-         .style('border-left', "1px solid transparent")
-         .style('border-right', ({ j }) => j == colNames.length - 2 ? "1px solid transparent" : null)
-         .style('border-bottom', ({ i }) => i == rows.length -1 ? "1px solid transparent" : null)
-         .text(({ colName, value }) => colName == rowKey ? value : prim(val_val(value)))
-
-      return rootElement
-   }
-}
-
 export const setSelState = x1 => x2 => x3 => x4 => setSelState_(x1, x2, x3, x4)
-export const createRootElement = x1 => x2 => x3 => x4 => createRootElement_(x1, x2, x3, x4)
