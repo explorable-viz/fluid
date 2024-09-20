@@ -158,10 +158,22 @@ export function select (sel) {
    }
 }
 
-export function selectAll (sel) {
-   return selector => {
+export function selectAll (selector) {
+   return sel => {
       return () => {
          return sel.selectAll(selector)
+      }
+   }
+}
+
+export function selectAll_ (selector) {
+   return sel => {
+      return () => {
+         const sels = [];
+         sel.selectAll(selector).each(function () {
+            sels.push(d3.select(this))
+         })
+         return sels
       }
    }
 }

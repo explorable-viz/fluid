@@ -56,7 +56,7 @@ type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
 instance Drawable2 LineChart Unit where
    setSelState (LineChart { plots }) _ redraw rootElement = do
-      points' <- selectAll rootElement ".linechart-point" >>= each (setAttrs' selAttrs)
+      points' <- rootElement # selectAll ".linechart-point" >>= each (setAttrs' selAttrs)
       for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
          points' # each (on (EventType ev) redraw)
       where
@@ -127,13 +127,13 @@ instance Drawable2 LineChart Unit where
          x <- xAxis (to range) (nub points.x) =<<
             (parent # create G [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ])
          when (fst xLabels == Rotated) do
-            void $ selectAll x "text"
+            void $ x # selectAll "text"
                >>= each (setAttrs [ rotate 45 ])
                >>= each (setStyles [ "text-anchor" ↦ "start" ])
 
          y <- yAxis (to range) 3.0 =<< (parent # create G [ "class" ↦ "y-axis" ])
          when (fst yLabels == Rotated) do
-            void $ selectAll y "text"
+            void $ y # selectAll "text"
                >>= each (setAttrs [ rotate 45 ])
                >>= each (setStyles [ "text-anchor" ↦ "end" ])
          pure { x, y }
