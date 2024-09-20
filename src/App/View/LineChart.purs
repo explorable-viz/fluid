@@ -134,7 +134,7 @@ instance Drawable2 LineChart Unit where
          x <- xAxis (to range) (nub points.x) =<<
             (parent # create G [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ])
          when (fst xLabels == Rotated) do
-            labels <-x # selectAll "text"
+            labels <- x # selectAll "text"
             for_ labels $
                setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
          y <- yAxis (to range) 3.0 =<< (parent # create G [ "class" ↦ "y-axis" ])
