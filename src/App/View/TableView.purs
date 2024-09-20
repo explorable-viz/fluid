@@ -48,7 +48,7 @@ newtype TableViewHelpers = TableViewHelpers
    { rowKey :: String
    , record_isDisplayable :: Array (Val (SelState 𝕊)) -> Boolean
    , cell_selClassesFor :: String -> SelState 𝕊 -> String
-   -- values in table cells are not "unpacked" to Selectable but remain as Val
+   -- values in rows cells are not "unpacked" to Selecrows but remain as Val
    , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
    , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
    , hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
@@ -77,16 +77,16 @@ tableViewHelpers =
    val_selState (Val α _) = α
 
    width :: Array RecordRow -> Int
-   width table = length <<< definitely' $ head table
+   width rows = length <<< definitely' $ head rows
 
    record_isDisplayable :: Array (Val (SelState 𝕊)) -> Boolean
    record_isDisplayable r =
-      not <<< null $ flip filter r \(Val α _) -> outFind defaultFilter α
+      not <<< null $ flip filter r \(Val α _) -> display defaultFilter α
       where
-      outFind :: Filter -> SelState 𝕊 -> Boolean
-      outFind Everything = const true
-      outFind Interactive = not isInert
-      outFind Relevant = not (isNone || isInert)
+      display :: Filter -> SelState 𝕊 -> Boolean
+      display Everything = const true
+      display Interactive = not isInert
+      display Relevant = not (isNone || isInert)
 
       isNone :: SelState 𝕊 -> Boolean
       isNone a = getPersistent a == None && getTransient a == None
@@ -97,34 +97,34 @@ tableViewHelpers =
       | otherwise = selClassesFor s
 
    prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
-   prevVisibleRow table this
+   prevVisibleRow rows this
       | this <= 0 = Nothing
-      | record_isDisplayable $ table ! (this - 1) = Just (this - 1)
-      | otherwise = prevVisibleRow table (this - 1)
+      | record_isDisplayable $ rows ! (this - 1) = Just (this - 1)
+      | otherwise = prevVisibleRow rows (this - 1)
 
    nextVisibleRow :: Array RecordRow -> Int -> Maybe Int
-   nextVisibleRow table this
-      | this == length table - 1 = Nothing
-      | record_isDisplayable $ table ! (this + 1) = Just (this + 1)
-      | otherwise = nextVisibleRow table (this + 1)
+   nextVisibleRow rows this
+      | this == length rows - 1 = Nothing
+      | record_isDisplayable $ rows ! (this + 1) = Just (this + 1)
+      | otherwise = nextVisibleRow rows (this + 1)
 
    hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
-   hasRightBorder table i j
-      | j == width table - 1 = isCellTransient table i j
-      | otherwise = isCellTransient table i j /= isCellTransient table i (j + 1)
+   hasRightBorder rows i j
+      | j == width rows - 1 = isCellTransient rows i j
+      | otherwise = isCellTransient rows i j /= isCellTransient rows i (j + 1)
 
    hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
-   hasBottomBorder table i j
-      | i /= -1 && (not <<< record_isDisplayable $ table ! i) = false -- change this
-      | otherwise = case nextVisibleRow table i of
-           Nothing -> isCellTransient table i j
-           Just next -> isCellTransient table i j /= isCellTransient table next j
+   hasBottomBorder rows i j
+      | i /= -1 && (not <<< record_isDisplayable $ rows ! i) = false -- change this
+      | otherwise = case nextVisibleRow rows i of
+           Nothing -> isCellTransient rows i j
+           Just next -> isCellTransient rows i j /= isCellTransient rows next j
 
 -- If I try to make this local to tableViewHelpers something goes wrong, can't see why..
 isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
-isCellTransient table i j
+isCellTransient rows i j
    | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
-   | otherwise = isTransient <<< (unwrap tableViewHelpers).val_selState $ table ! i ! j
+   | otherwise = isTransient <<< (unwrap tableViewHelpers).val_selState $ rows ! i ! j
 
 instance Drawable2 TableView TableViewHelpers where
    createRootElement = createRootElement

@@ -28,10 +28,10 @@ view title (Val _ (Constr c (u : Nil))) _
         where
         vws = view title <$> from u
 view title u@(Val _ (Constr c _)) _
-   | c == cNil || c == cCons = pack (TableView { title, filter: defaultFilter, colNames, table })
+   | c == cNil || c == cCons = pack (TableView { title, filter: defaultFilter, colNames, rows })
         where
         records = record identity <$> from u
         colNames = headers records
-        table = arrayDictToArray2 colNames records
+        rows = arrayDictToArray2 colNames records
 view title (Val _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
