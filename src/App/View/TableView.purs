@@ -5,17 +5,15 @@ import Prelude
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, datum, setData, setStyles, setText)
+import App.View.Util.D3 (ElementType(..), create, setData, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, length, null, sort)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
-import Data.Number (log)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
-import Data.Traversable (for_)
 import Dict (Dict)
 import Effect (Effect)
 import Util (Endo, definitely', error, (!))
@@ -167,19 +165,20 @@ createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
                  ]
             >>= setText value
             >>= setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
-         log <$> (cell # datum)
    pure rootElement
    where
    createHeader colNames' rootElement = do
       row <- rootElement # create THead [] >>= create TR []
-      for_ colNames' \colName ->
+      forWithIndex_ colNames' \j colName -> do
+         let value = if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName
          row
-            # create TH [ "class" ↦ cellClasses colName ]
-            >>= setText (if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName)
+            # create TH [ "class" ↦ classes ([ "table-cell" ] <> cellClasses colName) ]
+            >>= setText value
+            >>= setData { i: -1, j: j - 1, value, colName: colNames' ! j }
 
    cellClasses colName
-      | colName == rowKey = classes [ "filter-toggle", "toggle-button" ]
-      | otherwise = ""
+      | colName == rowKey = [ "filter-toggle", "toggle-button" ]
+      | otherwise = []
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
