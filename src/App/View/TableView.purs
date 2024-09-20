@@ -143,14 +143,13 @@ setSelState2 _ _ _ _ = do
 
 createRootElement2 :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
 createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
-   let _ = [ rowKey ] <> colNames
    rootElement <- div # create Table [ "id" ↦ childId ]
    void $ rootElement # create Caption
       [ "class" ↦ "title-text table-caption"
       , "dominant-baseline" ↦ "middle"
       , "text-anchor" ↦ "left"
       ]
-   rootElement # createHeader
+   rootElement # createHeader ([ rowKey ] <> colNames)
    body <- rootElement # create TBody []
    forWithIndex_ rows \i row -> do
       row' <- body # create TR [ "class" ↦ "table-row" ]
@@ -169,9 +168,9 @@ createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
          cell # setData { i, j: j - 1, value, colName: colNames ! j }
    pure rootElement
    where
-   createHeader rootElement = do
+   createHeader colNames' rootElement = do
       row <- rootElement # create THead [] >>= create TR []
-      for_ colNames \colName ->
+      for_ colNames' \colName ->
          row
             # create TH [ "class" ↦ classes ([ "table-cell" ] <> cellClasses colName) ]
             >>= setText (if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName)
