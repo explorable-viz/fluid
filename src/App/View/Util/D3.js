@@ -112,9 +112,9 @@ export function yAxis (to) {
 }
 
 export function setText (string) {
-   return element => {
+   return sel => {
       return () => {
-         return element.text(string)
+         return sel.text(string)
       }
    }
 }
@@ -209,8 +209,8 @@ export function datum (sel) {
    }
 }
 
-export function setData (sel) {
-   return d => {
+export function setData (d) {
+   return sel => {
       return () => {
          return sel.data(d)
       }

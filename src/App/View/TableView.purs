@@ -127,7 +127,7 @@ isCellTransient rows i j
    | otherwise = isTransient <<< (unwrap tableViewHelpers).val_selState $ rows ! i ! j
 
 instance Drawable2 TableView TableViewHelpers where
-   createRootElement = createRootElement
+   createRootElement = createRootElement2
    setSelState = setSelState
 
 prim :: Val (SelState 𝕊) -> String
