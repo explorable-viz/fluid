@@ -162,7 +162,7 @@ createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
             # setStyles
                  [ "border-top" ↦ "1px solid transparent"
                  , "border-left" ↦ "1px solid transparent"
-                 , "border-right" ↦ if j == length colNames - 1 then "1px solid transparent" else ""
+                 , "border-right" ↦ if j == length colNames' - 1 then "1px solid transparent" else ""
                  , "border-bottom" ↦ if i == length rows - 1 then "1px solid transparent" else ""
                  ]
             >>= setText value
