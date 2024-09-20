@@ -6,7 +6,7 @@ import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colo
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', dimensions, each, forEach_create, line, nameCol, on, remove, rotate, scaleLinear, selectAll, selectAll_, setAttrs, setAttrs', setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', dimensions, each, forEach_create, line, nameCol, on, remove, rotate, scaleLinear, selectAll, setAttrs, setAttrs', setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind (Bind, (↦), (⟼))
@@ -56,7 +56,7 @@ type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
 instance Drawable2 LineChart Unit where
    setSelState (LineChart { plots }) _ redraw rootElement = do
-      points2' <- rootElement # selectAll_ ".linechart-point"
+      points2' <- rootElement # selectAll ".linechart-point"
       for_ points2' \point -> do
          void $ point # setAttrs' selAttrs
          for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
@@ -134,15 +134,14 @@ instance Drawable2 LineChart Unit where
          x <- xAxis (to range) (nub points.x) =<<
             (parent # create G [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ])
          when (fst xLabels == Rotated) do
-            void $ x # selectAll "text"
-               >>= each (setAttrs [ rotate 45 ])
-               >>= each (setStyles [ "text-anchor" ↦ "start" ])
-
+            labels <-x # selectAll "text"
+            for_ labels $
+               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
          y <- yAxis (to range) 3.0 =<< (parent # create G [ "class" ↦ "y-axis" ])
          when (fst yLabels == Rotated) do
-            void $ y # selectAll "text"
-               >>= each (setAttrs [ rotate 45 ])
-               >>= each (setStyles [ "text-anchor" ↦ "end" ])
+            labels <- y # selectAll "text"
+            for_ labels $
+               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "end" ]
          pure { x, y }
 
       createLines :: Dimensions Int -> D3.Selection -> Effect Unit
