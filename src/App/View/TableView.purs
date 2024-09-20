@@ -125,7 +125,7 @@ isCellTransient rows i j
    | otherwise = isTransient <<< (unwrap tableViewHelpers).val_selState $ rows ! i ! j
 
 instance Drawable2 TableView TableViewHelpers where
-   createRootElement = createRootElement2
+   createRootElement = createRootElement
    setSelState = setSelState
 
 prim :: Val (SelState 𝕊) -> String
@@ -139,8 +139,8 @@ setSelState2 :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -
 setSelState2 _ _ _ _ = do
    pure unit
 
-createRootElement2 :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
-createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
+createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
+createRootElement (TableView { colNames, filter, rows }) _ div childId = do
    rootElement <- div # create Table [ "id" ↦ childId ]
    void $ rootElement # create Caption
       [ "class" ↦ classes [ "title-text", "table-caption" ]
