@@ -5,13 +5,14 @@ import Prelude
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, setData, setStyles, setText)
+import App.View.Util.D3 (ElementType(..), create, datum, setData, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, length, null, sort)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
+import Data.Number (log)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Data.Traversable (for_)
@@ -149,23 +150,22 @@ createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
       , "dominant-baseline" ↦ "middle"
       , "text-anchor" ↦ "left"
       ]
-   rootElement # createHeader ([ rowKey ] <> colNames)
+   let colNames' = [ rowKey ] <> colNames
+   rootElement # createHeader colNames'
    body <- rootElement # create TBody []
    forWithIndex_ rows \i row -> do
       row' <- body # create TR [ "class" ↦ "table-row" ]
-      forWithIndex_ row \j v -> do
-         cell <- row' # create TD
-            [ "class" ↦ "table-cell"
-            ]
+      forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
+         cell <- row' # create TD [ "class" ↦ "table-cell" ]
          void $ cell # setStyles
             [ "border-top" ↦ "1px solid transparent"
             , "border-left" ↦ "1px solid transparent"
             , "border-right" ↦ if j == length colNames - 2 then "1px solid transparent" else ""
             , "border-bottom" ↦ if i == length rows - 1 then "1px solid transparent" else ""
             ]
-         let value = if i == 0 then show (i + 1) else prim v
          void $ cell # setText value
-         cell # setData { i, j: j - 1, value, colName: colNames ! j }
+         cell # setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
+         log <$> (cell # datum)
    pure rootElement
    where
    createHeader colNames' rootElement = do

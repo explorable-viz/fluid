@@ -212,7 +212,7 @@ export function datum (sel) {
 export function setData (d) {
    return sel => {
       return () => {
-         return sel.data(d)
+         return sel.data([d]) // must be an array of data, even for singleton selection
       }
    }
 }
