@@ -4,7 +4,7 @@ import * as d3 from "d3"
 
 function setSelState_ (
    { title, rows },
-   { record_isDisplayable, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder },
+   { record_isVisible, cell_selClassesFor, val_selState, hasRightBorder, hasBottomBorder },
    selListener,
    rootElement
 ) {
@@ -27,7 +27,7 @@ function setSelState_ (
 
       let hidden = 0
       rootElement.selectAll('.table-row').each(function ({ i }) {
-         hide = !record_isDisplayable(rows[i])
+         hide = !record_isVisible(rows[i])
          if (hide)
             hidden++
          d3.select(this) // won't work inside arrow function :/

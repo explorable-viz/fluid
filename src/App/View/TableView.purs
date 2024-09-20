@@ -44,7 +44,7 @@ foreign import setSelState :: TableView -> TableViewHelpers -> EventListener -> 
 
 newtype TableViewHelpers = TableViewHelpers
    { rowKey :: String
-   , record_isDisplayable :: Array (Val (SelState 𝕊)) -> Boolean
+   , record_isVisible :: Array (Val (SelState 𝕊)) -> Boolean
    , cell_selClassesFor :: String -> SelState 𝕊 -> String
    -- values in rows cells are not "unpacked" to Selecrows but remain as Val
    , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
@@ -63,7 +63,7 @@ tableViewHelpers :: TableViewHelpers
 tableViewHelpers =
    TableViewHelpers
       { rowKey
-      , record_isDisplayable
+      , record_isVisible
       , cell_selClassesFor
       , val_val
       , val_selState
@@ -77,14 +77,14 @@ tableViewHelpers =
    width :: Array RecordRow -> Int
    width rows = length <<< definitely' $ head rows
 
-   record_isDisplayable :: Array (Val (SelState 𝕊)) -> Boolean
-   record_isDisplayable r =
-      not <<< null $ flip filter r \(Val α _) -> display defaultFilter α
+   record_isVisible :: Array (Val (SelState 𝕊)) -> Boolean
+   record_isVisible r =
+      not <<< null $ flip filter r \(Val α _) -> visible defaultFilter α
       where
-      display :: Filter -> SelState 𝕊 -> Boolean
-      display Everything = const true
-      display Interactive = not isInert
-      display Relevant = not (isNone || isInert)
+      visible :: Filter -> SelState 𝕊 -> Boolean
+      visible Everything = const true
+      visible Interactive = not isInert
+      visible Relevant = not (isNone || isInert)
 
       isNone :: SelState 𝕊 -> Boolean
       isNone a = getPersistent a == None && getTransient a == None
@@ -97,13 +97,13 @@ tableViewHelpers =
    prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
    prevVisibleRow rows this
       | this <= 0 = Nothing
-      | record_isDisplayable $ rows ! (this - 1) = Just (this - 1)
+      | record_isVisible $ rows ! (this - 1) = Just (this - 1)
       | otherwise = prevVisibleRow rows (this - 1)
 
    nextVisibleRow :: Array RecordRow -> Int -> Maybe Int
    nextVisibleRow rows this
       | this == length rows - 1 = Nothing
-      | record_isDisplayable $ rows ! (this + 1) = Just (this + 1)
+      | record_isVisible $ rows ! (this + 1) = Just (this + 1)
       | otherwise = nextVisibleRow rows (this + 1)
 
    hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
@@ -113,7 +113,7 @@ tableViewHelpers =
 
    hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
    hasBottomBorder rows i j
-      | i /= -1 && (not <<< record_isDisplayable $ rows ! i) = false -- change this
+      | i /= -1 && (not <<< record_isVisible $ rows ! i) = false -- change this
       | otherwise = case nextVisibleRow rows i of
            Nothing -> isCellTransient rows i j
            Just next -> isCellTransient rows i j /= isCellTransient rows next j
