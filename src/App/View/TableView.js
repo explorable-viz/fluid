@@ -72,8 +72,6 @@ function createRootElement_ (
          .attr('id', childId)
 
       rootElement.append('caption')
-         .attr('x', 0)
-         .attr('y', 0)
          .attr('class', 'title-text table-caption')
          .attr('dominant-baseline', 'middle')
          .attr('text-anchor', 'left')

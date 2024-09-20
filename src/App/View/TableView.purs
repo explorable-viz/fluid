@@ -146,7 +146,7 @@ createRootElement2 :: TableView -> TableViewHelpers -> D3.Selection -> String ->
 createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
    rootElement <- div # create Table [ "id" ↦ childId ]
    void $ rootElement # create Caption
-      [ "class" ↦ "title-text table-caption"
+      [ "class" ↦ classes [ "title-text", "table-caption" ]
       , "dominant-baseline" ↦ "middle"
       , "text-anchor" ↦ "left"
       ]
@@ -156,7 +156,7 @@ createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
    forWithIndex_ rows \i row -> do
       row' <- body # create TR [ "class" ↦ "table-row" ]
       forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
-         cell <- row' # create TD [ "class" ↦ "table-cell" ]
+         cell <- row' # create TD [ "class" ↦ if j >= 0 then "table-cell" else "" ]
          void $ cell # setStyles
             [ "border-top" ↦ "1px solid transparent"
             , "border-left" ↦ "1px solid transparent"
@@ -172,12 +172,12 @@ createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
       row <- rootElement # create THead [] >>= create TR []
       for_ colNames' \colName ->
          row
-            # create TH [ "class" ↦ classes ([ "table-cell" ] <> cellClasses colName) ]
+            # create TH [ "class" ↦ cellClasses colName ]
             >>= setText (if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName)
 
    cellClasses colName
-      | colName == rowKey = [ "filter-toggle", "toggle-button" ]
-      | otherwise = []
+      | colName == rowKey = classes [ "filter-toggle", "toggle-button" ]
+      | otherwise = ""
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
