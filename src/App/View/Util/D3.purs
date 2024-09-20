@@ -24,6 +24,7 @@ module App.View.Util.D3
    , scaleLinear
    , select
    , selectAll
+   , selectAll_
    , setAttrs
    , setAttrs'
    , setData
