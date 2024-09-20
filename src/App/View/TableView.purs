@@ -155,16 +155,18 @@ createRootElement2 (TableView { colNames, filter, rows }) _ div childId = do
    body <- rootElement # create TBody []
    forWithIndex_ rows \i row -> do
       row' <- body # create TR [ "class" ↦ "table-row" ]
+         >>= setData { i }
       forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
          cell <- row' # create TD [ "class" ↦ if j >= 0 then "table-cell" else "" ]
-         void $ cell # setStyles
-            [ "border-top" ↦ "1px solid transparent"
-            , "border-left" ↦ "1px solid transparent"
-            , "border-right" ↦ if j == length colNames - 2 then "1px solid transparent" else ""
-            , "border-bottom" ↦ if i == length rows - 1 then "1px solid transparent" else ""
-            ]
-         void $ cell # setText value
-         cell # setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
+         void $ cell
+            # setStyles
+                 [ "border-top" ↦ "1px solid transparent"
+                 , "border-left" ↦ "1px solid transparent"
+                 , "border-right" ↦ if j == length colNames - 1 then "1px solid transparent" else ""
+                 , "border-bottom" ↦ if i == length rows - 1 then "1px solid transparent" else ""
+                 ]
+            >>= setText value
+            >>= setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
          log <$> (cell # datum)
    pure rootElement
    where

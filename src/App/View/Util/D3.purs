@@ -160,7 +160,7 @@ foreign import setText_ :: forall a. (a -> String) -> Selection -> Effect Select
 foreign import attrs :: Selection -> Object String -> Effect Selection
 foreign import attrs_ :: forall a. Selection -> (a -> Object String) -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
-foreign import setData :: forall a. a -> Selection -> Effect Unit
+foreign import setData :: forall a. a -> Selection -> Effect Selection
 foreign import datum :: forall a. Selection -> Effect a -- currently unused
 foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
 foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effect MultiSelection
