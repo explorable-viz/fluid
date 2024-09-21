@@ -47,7 +47,7 @@ draw' viewHelpers _ { divId, suffix, view } redraw = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
-   maybeRootElement <- select div ("#" <> childId)
+   maybeRootElement <- div # select ("#" <> childId)
    setSelState view viewHelpers redraw =<<
       ( isEmpty maybeRootElement >>=
            if _ then createRootElement view viewHelpers div childId

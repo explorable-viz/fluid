@@ -79,6 +79,33 @@ record_isVisible r =
    isNone :: SelState 𝕊 -> Boolean
    isNone a = getPersistent a == None && getTransient a == None
 
+width :: Array RecordRow -> Int
+width rows = length <<< definitely' $ head rows
+
+prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
+prevVisibleRow rows this
+   | this <= 0 = Nothing
+   | record_isVisible $ rows ! (this - 1) = Just (this - 1)
+   | otherwise = prevVisibleRow rows (this - 1)
+
+nextVisibleRow :: Array RecordRow -> Int -> Maybe Int
+nextVisibleRow rows this
+   | this == length rows - 1 = Nothing
+   | record_isVisible $ rows ! (this + 1) = Just (this + 1)
+   | otherwise = nextVisibleRow rows (this + 1)
+
+hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
+hasRightBorder rows i j
+   | j == width rows - 1 = isCellTransient rows i j
+   | otherwise = isCellTransient rows i j /= isCellTransient rows i (j + 1)
+
+hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
+hasBottomBorder rows i j
+   | i /= -1 && (not <<< record_isVisible $ rows ! i) = false -- change this
+   | otherwise = case nextVisibleRow rows i of
+        Nothing -> isCellTransient rows i j
+        Just next -> isCellTransient rows i j /= isCellTransient rows next j
+
 tableViewHelpers :: TableViewHelpers
 tableViewHelpers =
    TableViewHelpers
@@ -93,33 +120,6 @@ tableViewHelpers =
    where
    val_val (Val _ v) = v
    val_selState (Val α _) = α
-
-   width :: Array RecordRow -> Int
-   width rows = length <<< definitely' $ head rows
-
-   prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
-   prevVisibleRow rows this
-      | this <= 0 = Nothing
-      | record_isVisible $ rows ! (this - 1) = Just (this - 1)
-      | otherwise = prevVisibleRow rows (this - 1)
-
-   nextVisibleRow :: Array RecordRow -> Int -> Maybe Int
-   nextVisibleRow rows this
-      | this == length rows - 1 = Nothing
-      | record_isVisible $ rows ! (this + 1) = Just (this + 1)
-      | otherwise = nextVisibleRow rows (this + 1)
-
-   hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
-   hasRightBorder rows i j
-      | j == width rows - 1 = isCellTransient rows i j
-      | otherwise = isCellTransient rows i j /= isCellTransient rows i (j + 1)
-
-   hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
-   hasBottomBorder rows i j
-      | i /= -1 && (not <<< record_isVisible $ rows ! i) = false -- change this
-      | otherwise = case nextVisibleRow rows i of
-           Nothing -> isCellTransient rows i j
-           Just next -> isCellTransient rows i j /= isCellTransient rows next j
 
 -- If I try to make this local to tableViewHelpers something goes wrong, can't see why..
 isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
@@ -147,14 +147,15 @@ setSelState2 (TableView { title, rows }) _ redraw rootElement = do
          void $ cell # setAttrs [ "class" ↦ cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α) ]
          for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
             cell # on (EventType ev) redraw
-
+      cell # classed "has-right-border" (hasRightBorder rows i j)
+         >>= classed "has-bottom-border" (hasBottomBorder rows i j)
    rows' <- rootElement # selectAll ".table-row"
    hidden :: List _ <- flip filterM (fromFoldable rows') \row -> do
       { i } <- datum row
       pure $ not (record_isVisible (rows ! i))
    for_ hidden $ classed "hidden" true
-   void $ rootElement # select ".table-caption"
-      >>= setText (title <> " (" <> show (length rows - length hidden) <> " of " <> show (length rows) <> ")")
+   let caption = title <> " (" <> show (length rows - length hidden) <> " of " <> show (length rows) <> ")"
+   void $ rootElement # select ".table-caption" >>= setText caption
 
 createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) _ div childId = do
