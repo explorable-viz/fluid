@@ -43,8 +43,6 @@ headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 = map <<< flip (map <<< flip get)
 
-foreign import setSelState :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
-
 newtype TableViewHelpers = TableViewHelpers
    { rowKey :: String
    , record_isVisible :: Array (Val (SelState 𝕊)) -> Boolean
@@ -129,7 +127,7 @@ isCellTransient rows i j
 
 instance Drawable2 TableView TableViewHelpers where
    createRootElement = createRootElement
-   setSelState = setSelState2
+   setSelState = setSelState
 
 prim :: Val (SelState 𝕊) -> String
 prim (Val _ v) = v # case _ of
@@ -138,8 +136,8 @@ prim (Val _ v) = v # case _ of
    Str s -> s
    _ -> error $ "TableView only supports primitive values."
 
-setSelState2 :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
-setSelState2 (TableView { title, rows }) _ redraw rootElement = do
+setSelState :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
+setSelState (TableView { title, rows }) _ redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
    for_ cells \cell -> do
       { i, j, colName } :: CellIndex <- datum cell
