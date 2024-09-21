@@ -150,7 +150,7 @@ foreign import dimensions :: Selection -> Effect (Dimensions Int) -- expects sin
 foreign import textDimensions :: String -> String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import rootSelect :: String -> Effect Selection
-foreign import select :: Selection -> String -> Effect Selection
+foreign import select :: String -> Selection -> Effect Selection
 foreign import selectAll :: String -> Selection -> Effect (Array Selection)
 foreign import setText :: String -> Selection -> Effect Selection
 foreign import setText_ :: forall a. (a -> String) -> Selection -> Effect Selection

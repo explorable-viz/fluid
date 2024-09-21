@@ -150,8 +150,8 @@ export function rootSelect (selector) {
    }
 }
 
-export function select (sel) {
-   return selector => {
+export function select (selector) {
+   return sel => {
       return () => {
          return sel.select(selector)
       }

@@ -7,6 +7,7 @@ import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError
 import Control.Monad.Except (Except, ExceptT, runExcept)
 import Control.MonadPlus (class Alternative, guard)
 import Data.Array ((!!), updateAt)
+import Data.Array as A
 import Data.Array.NonEmpty (NonEmptyArray, fromArray)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
@@ -14,6 +15,7 @@ import Data.Functor.Compose (Compose)
 import Data.Functor.Product (Product)
 import Data.Identity (Identity(..))
 import Data.List (List, intercalate)
+import Data.List as L
 import Data.List.NonEmpty (NonEmptyList(..), fromList)
 import Data.Map (Map)
 import Data.Map as M
@@ -302,3 +304,13 @@ instance IsEmpty (Set a) where
 
 instance IsEmpty (Object a) where
    isEmpty = Object.isEmpty
+
+-- Foldable.length returns an arbitrary semiring which is a bit too general
+class Length (f :: Type -> Type) where
+   length :: forall a. f a -> Int
+
+instance Length List where
+   length = L.length
+
+instance Length Array where
+   length = A.length

@@ -5,20 +5,20 @@ import Prelude
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), classed, create, datum, on, selectAll, setAttrs, setData, setStyles, setText)
+import App.View.Util.D3 (ElementType(..), classed, create, datum, on, select, selectAll, setAttrs, setData, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (filter, head, length, null, sort)
+import Data.Array (filter, head, null, sort)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.List (filterM, fromFoldable)
+import Data.List (List, filterM, fromFoldable)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, definitely', error, (!))
+import Util (Endo, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.Event (EventType(..))
@@ -139,7 +139,7 @@ prim (Val _ v) = v # case _ of
    _ -> error $ "TableView only supports primitive values."
 
 setSelState2 :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
-setSelState2 (TableView { rows }) _ redraw rootElement = do
+setSelState2 (TableView { title, rows }) _ redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
    for_ cells \cell -> do
       { i, j, colName } :: CellIndex <- datum cell
@@ -149,10 +149,12 @@ setSelState2 (TableView { rows }) _ redraw rootElement = do
             cell # on (EventType ev) redraw
 
    rows' <- rootElement # selectAll ".table-row"
-   hidden <- flip filterM (fromFoldable rows') \row -> do
+   hidden :: List _ <- flip filterM (fromFoldable rows') \row -> do
       { i } <- datum row
       pure $ not (record_isVisible (rows ! i))
    for_ hidden $ classed "hidden" true
+   void $ rootElement # select ".table-caption"
+      >>= setText (title <> " (" <> show (length rows - length hidden) <> " of " <> show (length rows) <> ")")
 
 createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) _ div childId = do
