@@ -201,13 +201,11 @@ export function styles (sel) {
    }
 }
 
-export function classed () {
-   return classes => {
-      return hasClass => {
-         return sel => {
-            return () => {
-               return sel.classed(classes, hasClass)
-            }
+export function classed (classes) {
+   return hasClass => {
+      return sel => {
+         return () => {
+            return sel.classed(classes, hasClass)
          }
       }
    }

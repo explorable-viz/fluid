@@ -121,7 +121,7 @@ tableViewHelpers =
    val_val (Val _ v) = v
    val_selState (Val α _) = α
 
--- If I try to make this local to tableViewHelpers something goes wrong, can't see why..
+-- If I make this local to tableViewHelpers something goes wrong, can't see why..
 isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
 isCellTransient rows i j
    | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
