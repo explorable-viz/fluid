@@ -25,7 +25,6 @@ module App.View.Util.D3
    , select
    , selectAll
    , setAttrs
-   , setAttrs'
    , setData
    , setStyles
    , setText
@@ -122,9 +121,6 @@ createMany elementType class_ xs as parent =
 setAttrs :: Array (Bind String) -> Selection -> Effect Selection
 setAttrs as sel = fromFoldable as # attrs sel
 
-setAttrs' :: forall a. (a -> Array (Bind String)) -> Selection -> Effect Selection
-setAttrs' asF sel = (asF >>> fromFoldable) # attrs_ sel
-
 setStyles :: Array (Bind String) -> Selection -> Effect Selection
 setStyles as sel = fromFoldable as # styles sel
 
@@ -158,10 +154,9 @@ foreign import selectAll :: String -> Selection -> Effect (Array Selection)
 foreign import setText :: String -> Selection -> Effect Selection
 foreign import setText_ :: forall a. (a -> String) -> Selection -> Effect Selection
 foreign import attrs :: Selection -> Object String -> Effect Selection
-foreign import attrs_ :: forall a. Selection -> (a -> Object String) -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
 foreign import setData :: forall a. a -> Selection -> Effect Selection
-foreign import datum :: forall a. Selection -> Effect a -- currently unused
+foreign import datum :: forall a. Selection -> Effect a -- maybe prefer this to attrs_, etc
 foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
 foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effect MultiSelection
 

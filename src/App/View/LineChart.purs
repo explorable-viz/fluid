@@ -6,7 +6,7 @@ import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colo
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', dimensions, each, forEach_create, line, nameCol, on, remove, rotate, scaleLinear, selectAll, setAttrs, setAttrs', setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', datum, dimensions, each, forEach_create, line, nameCol, on, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind (Bind, (↦), (⟼))
@@ -56,16 +56,12 @@ type PointCoordinate = { i :: Int, j :: Int, name :: String }
 
 instance Drawable2 LineChart Unit where
    setSelState (LineChart { plots }) _ redraw rootElement = do
-      points2' <- rootElement # selectAll ".linechart-point"
-      for_ points2' \point -> do
-         void $ point # setAttrs' selAttrs
+      points <- rootElement # selectAll ".linechart-point"
+      for_ points \point -> do
+         point' <- datum point
+         void $ point # setAttrs (selAttrs point')
          for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
             point # on (EventType ev) redraw
-      {-
-      points' <- rootElement # selectAll ".linechart-point" >>= each (setAttrs' selAttrs)
-      for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
-         points' # each (on (EventType ev) redraw)
--}
       where
       selAttrs :: PointCoordinate -> Array (Bind String)
       selAttrs { i, j, name } =

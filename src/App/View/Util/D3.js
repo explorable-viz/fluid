@@ -245,7 +245,6 @@ export function each (f) {
    }
 }
 
-export const attrs_ = attrs
 export const setText_ = setText
 export const forEach_createChild = createChild
 export const multi_isEmpty = empty

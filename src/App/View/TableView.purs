@@ -5,10 +5,11 @@ import Prelude
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, setData, setStyles, setText)
+import App.View.Util.D3 (ElementType(..), create, datum, on, selectAll, setAttrs, setData, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, length, null, sort)
+import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -19,6 +20,7 @@ import Effect (Effect)
 import Util (Endo, definitely', error, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
+import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener)
 
 type RecordRow = Array (Val (SelState 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
@@ -59,6 +61,11 @@ defaultFilter = Interactive
 rowKey :: String
 rowKey = "__n"
 
+cell_selClassesFor :: String -> SelState 𝕊 -> String
+cell_selClassesFor colName s
+   | colName == rowKey = ""
+   | otherwise = selClassesFor s
+
 tableViewHelpers :: TableViewHelpers
 tableViewHelpers =
    TableViewHelpers
@@ -88,11 +95,6 @@ tableViewHelpers =
 
       isNone :: SelState 𝕊 -> Boolean
       isNone a = getPersistent a == None && getTransient a == None
-
-   cell_selClassesFor :: String -> SelState 𝕊 -> String
-   cell_selClassesFor colName s
-      | colName == rowKey = ""
-      | otherwise = selClassesFor s
 
    prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
    prevVisibleRow rows this
@@ -136,8 +138,14 @@ prim (Val _ v) = v # case _ of
    _ -> error $ "TableView only supports primitive values."
 
 setSelState2 :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
-setSelState2 _ _ _ _ = do
-   pure unit
+setSelState2 (TableView { rows }) _ redraw rootElement = do
+   cells <- rootElement # selectAll ".table-cell"
+   for_ cells \cell -> do
+      { i, j, colName } <- datum cell
+      unless (i == -1 || j == -1) do
+         void $ cell # setAttrs [ "class" ↦ cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α) ]
+         for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
+            cell # on (EventType ev) redraw
 
 createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) _ div childId = do
