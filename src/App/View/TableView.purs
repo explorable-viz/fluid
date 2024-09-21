@@ -2,16 +2,16 @@ module App.View.TableView where
 
 import Prelude
 
-import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
+import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), classed, create, datum, on, select, selectAll, setAttrs, setData, setStyles, setText)
+import App.View.Util.D3 (ElementType(..), classed, create, datum, on, select, selectAll, setData, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, null, sort)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.List (List, filterM, fromFoldable)
+import Data.List (filterM, fromFoldable)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Number.Format (fixed, toStringWith)
@@ -129,7 +129,7 @@ isCellTransient rows i j
 
 instance Drawable2 TableView TableViewHelpers where
    createRootElement = createRootElement
-   setSelState = setSelState
+   setSelState = setSelState2
 
 prim :: Val (SelState 𝕊) -> String
 prim (Val _ v) = v # case _ of
@@ -143,14 +143,16 @@ setSelState2 (TableView { title, rows }) _ redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
    for_ cells \cell -> do
       { i, j, colName } :: CellIndex <- datum cell
-      unless (i == -1 || j == -1) do
-         void $ cell # setAttrs [ "class" ↦ cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α) ]
+      if i == -1 || j == -1 then pure unit
+      else do
+         void $ cell # classed selClasses false
+            >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α)) true
          for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
             cell # on (EventType ev) redraw
       cell # classed "has-right-border" (hasRightBorder rows i j)
          >>= classed "has-bottom-border" (hasBottomBorder rows i j)
    rows' <- rootElement # selectAll ".table-row"
-   hidden :: List _ <- flip filterM (fromFoldable rows') \row -> do
+   hidden <- flip filterM (fromFoldable rows') \row -> do
       { i } <- datum row
       pure $ not (record_isVisible (rows ! i))
    for_ hidden $ classed "hidden" true
