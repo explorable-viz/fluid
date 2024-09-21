@@ -201,6 +201,18 @@ export function styles (sel) {
    }
 }
 
+export function classed () {
+   return classes => {
+      return hasClass => {
+         return sel => {
+            return () => {
+               return sel.classed(classes, hasClass)
+            }
+         }
+      }
+   }
+}
+
 export function scaleLinear (x1) {
    return x2 => {
       return d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])

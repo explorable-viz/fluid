@@ -6,6 +6,7 @@ module App.View.Util.D3
    , Margin
    , ElementType(..)
    , attrs
+   , classed
    , create
    , createMany
    , createMany'
@@ -155,6 +156,7 @@ foreign import setText :: String -> Selection -> Effect Selection
 foreign import setText_ :: forall a. (a -> String) -> Selection -> Effect Selection
 foreign import attrs :: Selection -> Object String -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
+foreign import classed :: String -> Boolean -> Selection -> Effect Selection
 foreign import setData :: forall a. a -> Selection -> Effect Selection
 foreign import datum :: forall a. Selection -> Effect a -- maybe prefer this to attrs_, etc
 foreign import on :: EventType -> EventListener -> Selection -> Effect Selection

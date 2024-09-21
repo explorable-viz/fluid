@@ -5,12 +5,13 @@ import Prelude
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, datum, on, selectAll, setAttrs, setData, setStyles, setText)
+import App.View.Util.D3 (ElementType(..), classed, create, datum, on, selectAll, setAttrs, setData, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, length, null, sort)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
+import Data.List (filterM, fromFoldable)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Number.Format (fixed, toStringWith)
@@ -66,6 +67,18 @@ cell_selClassesFor colName s
    | colName == rowKey = ""
    | otherwise = selClassesFor s
 
+record_isVisible :: RecordRow -> Boolean
+record_isVisible r =
+   not <<< null $ flip filter r \(Val α _) -> visible defaultFilter α
+   where
+   visible :: Filter -> SelState 𝕊 -> Boolean
+   visible Everything = const true
+   visible Interactive = not isInert
+   visible Relevant = not (isNone || isInert)
+
+   isNone :: SelState 𝕊 -> Boolean
+   isNone a = getPersistent a == None && getTransient a == None
+
 tableViewHelpers :: TableViewHelpers
 tableViewHelpers =
    TableViewHelpers
@@ -83,18 +96,6 @@ tableViewHelpers =
 
    width :: Array RecordRow -> Int
    width rows = length <<< definitely' $ head rows
-
-   record_isVisible :: Array (Val (SelState 𝕊)) -> Boolean
-   record_isVisible r =
-      not <<< null $ flip filter r \(Val α _) -> visible defaultFilter α
-      where
-      visible :: Filter -> SelState 𝕊 -> Boolean
-      visible Everything = const true
-      visible Interactive = not isInert
-      visible Relevant = not (isNone || isInert)
-
-      isNone :: SelState 𝕊 -> Boolean
-      isNone a = getPersistent a == None && getTransient a == None
 
    prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
    prevVisibleRow rows this
@@ -141,11 +142,17 @@ setSelState2 :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -
 setSelState2 (TableView { rows }) _ redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
    for_ cells \cell -> do
-      { i, j, colName } <- datum cell
+      { i, j, colName } :: CellIndex <- datum cell
       unless (i == -1 || j == -1) do
          void $ cell # setAttrs [ "class" ↦ cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α) ]
          for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
             cell # on (EventType ev) redraw
+
+   rows' <- rootElement # selectAll ".table-row"
+   hidden <- flip filterM (fromFoldable rows') \row -> do
+      { i } <- datum row
+      pure $ not (record_isVisible (rows ! i))
+   for_ hidden $ classed "hidden" true
 
 createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) _ div childId = do
@@ -159,8 +166,7 @@ createRootElement (TableView { colNames, filter, rows }) _ div childId = do
    rootElement # createHeader colNames'
    body <- rootElement # create TBody []
    forWithIndex_ rows \i row -> do
-      row' <- body # create TR [ "class" ↦ "table-row" ]
-         >>= setData { i }
+      row' <- body # create TR [ "class" ↦ "table-row" ] >>= setData { i }
       forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
          cell <- row' # create TD [ "class" ↦ if j >= 0 then "table-cell" else "" ]
          void $ cell
@@ -211,7 +217,7 @@ filterToggler _ (TableView view) = TableView view { filter = rotate view.filter 
    rotate Relevant = Everything
 
 -- 0-based index of selected record and name of field; see data binding in .js (-1th field name is __n, the rowKey)
-type CellIndex = { i :: Int, colName :: String }
+type CellIndex = { i :: Int, j :: Int, colName :: String, value :: String }
 
 -- ======================
 -- boilerplate
