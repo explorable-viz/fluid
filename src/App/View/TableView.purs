@@ -64,39 +64,6 @@ record_isVisible r =
    isNone :: SelState 𝕊 -> Boolean
    isNone a = getPersistent a == None && getTransient a == None
 
-width :: Array Record' -> Int
-width = head >>> definitely' >>> length
-
-prevVisibleRow :: Array Record' -> Int -> Maybe Int
-prevVisibleRow rows this
-   | this <= 0 = Nothing
-   | record_isVisible $ rows ! (this - 1) = Just (this - 1)
-   | otherwise = prevVisibleRow rows (this - 1)
-
-nextVisibleRow :: Array Record' -> Int -> Maybe Int
-nextVisibleRow rows this
-   | this == length rows - 1 = Nothing
-   | record_isVisible $ rows ! (this + 1) = Just (this + 1)
-   | otherwise = nextVisibleRow rows (this + 1)
-
-hasRightBorder :: Array Record' -> Int -> Int -> Boolean
-hasRightBorder rows i j
-   | j == width rows - 1 = isCellTransient rows i j
-   | otherwise = isCellTransient rows i j /= isCellTransient rows i (j + 1)
-
-hasBottomBorder :: Array Record' -> Int -> Int -> Boolean
-hasBottomBorder rows i j
-   | i /= -1 && (not <<< record_isVisible $ rows ! i) = false -- change this
-   | otherwise = case nextVisibleRow rows i of
-        Nothing -> isCellTransient rows i j
-        Just next -> isCellTransient rows i j /= isCellTransient rows next j
-
--- If I make this local to tableViewHelpers something goes wrong, can't see why..
-isCellTransient :: Array Record' -> Int -> Int -> Boolean
-isCellTransient rows i j
-   | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
-   | otherwise = isTransient <<< (\(Val α _) -> α) $ rows ! i ! j
-
 instance Drawable2 TableView where
    createRootElement = createRootElement
    setSelState = setSelState
@@ -117,8 +84,8 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       else cell # classed selClasses false
          >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α)) true
          >>= registerMouseListeners redraw
-      cell # classed "has-right-border" (hasRightBorder rows i j)
-         >>= classed "has-bottom-border" (hasBottomBorder rows i j)
+      cell # classed "has-right-border" (hasRightBorder i j)
+         >>= classed "has-bottom-border" (hasBottomBorder i j)
    hideRecords >>= setCaption
    where
    hideRecords :: Effect Int
@@ -134,6 +101,38 @@ setSelState (TableView { title, rows }) redraw rootElement = do
    setCaption numHidden = do
       let caption = title <> " (" <> show (length rows - numHidden) <> " of " <> show (length rows) <> ")"
       void $ rootElement # select ".table-caption" >>= setText caption
+
+   width :: Array Record' -> Int
+   width = head >>> definitely' >>> length
+
+   prevVisibleRow :: Int -> Maybe Int
+   prevVisibleRow this
+      | this <= 0 = Nothing
+      | record_isVisible $ rows ! (this - 1) = Just (this - 1)
+      | otherwise = prevVisibleRow (this - 1)
+
+   nextVisibleRow :: Int -> Maybe Int
+   nextVisibleRow this
+      | this == length rows - 1 = Nothing
+      | record_isVisible $ rows ! (this + 1) = Just (this + 1)
+      | otherwise = nextVisibleRow (this + 1)
+
+   hasRightBorder :: Int -> Int -> Boolean
+   hasRightBorder i j
+      | j == width rows - 1 = isCellTransient i j
+      | otherwise = isCellTransient i j /= isCellTransient i (j + 1)
+
+   hasBottomBorder :: Int -> Int -> Boolean
+   hasBottomBorder i j
+      | i /= -1 && (not <<< record_isVisible $ rows ! i) = false -- change this
+      | otherwise = case nextVisibleRow i of
+           Nothing -> isCellTransient i j
+           Just next -> isCellTransient i j /= isCellTransient next j
+
+   isCellTransient :: Int -> Int -> Boolean
+   isCellTransient i j
+      | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
+      | otherwise = isTransient <<< (\(Val α _) -> α) $ rows ! i ! j
 
 createRootElement :: TableView -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) div childId = do
