@@ -105,17 +105,17 @@ setSelState (TableView { title, rows }) redraw rootElement = do
    width :: Array Record' -> Int
    width = head >>> definitely' >>> length
 
-   prevVisibleRow :: Int -> Maybe Int
-   prevVisibleRow this
+   visiblePred :: Int -> Maybe Int
+   visiblePred this
       | this <= 0 = Nothing
       | record_isVisible $ rows ! (this - 1) = Just (this - 1)
-      | otherwise = prevVisibleRow (this - 1)
+      | otherwise = visiblePred (this - 1)
 
-   nextVisibleRow :: Int -> Maybe Int
-   nextVisibleRow this
+   visibleSucc :: Int -> Maybe Int
+   visibleSucc this
       | this == length rows - 1 = Nothing
       | record_isVisible $ rows ! (this + 1) = Just (this + 1)
-      | otherwise = nextVisibleRow (this + 1)
+      | otherwise = visibleSucc (this + 1)
 
    hasRightBorder :: Int -> Int -> Boolean
    hasRightBorder i j
@@ -125,7 +125,7 @@ setSelState (TableView { title, rows }) redraw rootElement = do
    hasBottomBorder :: Int -> Int -> Boolean
    hasBottomBorder i j
       | i /= -1 && (not <<< record_isVisible $ rows ! i) = false -- change this
-      | otherwise = case nextVisibleRow i of
+      | otherwise = case visibleSucc i of
            Nothing -> isCellTransient i j
            Just next -> isCellTransient i j /= isCellTransient next j
 
