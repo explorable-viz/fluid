@@ -1,5 +1,6 @@
 let newDataTable offset = map (fun s -> { scenario: s.scenario, bE2140: s.bE2140 + offset, lR2140: s.lR2140, bE4160: s.bE4160, lR4160: s.lR4160, bE81100: s.bE81100, lR81100: s.lR81100 }) tableData;
 let newModel offset = map (fun s -> { model: s.model, probability: s.probability + offset}) modelProbs;
+
 let getByScenario scenario data = 
         let helper [] = [];
             helper (x: xs) =

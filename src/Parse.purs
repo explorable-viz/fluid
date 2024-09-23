@@ -357,7 +357,11 @@ expr_ =
                exprkey = ((ExprKey <$> expr') # token.brackets) `lift2 (Tuple)` (token.colon *> expr')
 
             record :: SParser (Raw Expr)
-            record = sepBy (field expr') token.comma <#> Record unit # token.braces
+            record = sepBy varkey token.comma <#> Dictionary unit #
+               between (token.symbol str.curlylBrace) (token.symbol str.curlyrBrace)
+               where
+               varkey :: SParser (Raw DictKey × Raw Expr)
+               varkey = ((VarKey <$> ident) `lift2 (Tuple)` (token.colon *> expr'))
 
             variable :: SParser (Raw Expr)
             variable = ident <#> Var
