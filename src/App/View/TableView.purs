@@ -138,13 +138,13 @@ setSelState (TableView { title, rows }) redraw rootElement = do
    hasBottomBorder :: Int -> Int -> Boolean
    hasBottomBorder i j = virtualTopBorder || virtualBottomBorder
       where
-      virtualTopBorder = i < length rows - 1 && isCellTransient (i + 1) j
+      virtualTopBorder =
+         i < length rows - 1 && isCellTransient i j /= isCellTransient (i + 1) j
       virtualBottomBorder = case visibleSucc i of
          Nothing -> isCellTransient i j -- my own bottom-border
          Just i' -> case visiblePred i' of
             Nothing -> false -- no visible cell for me to provide bottom-border for
-            Just i'' ->
-               isCellTransient i'' j && i == i' - 1 -- virtual bottom-border for a cell above me
+            Just i'' -> isCellTransient i'' j && i == i' - 1 -- virtual bottom-border for a cell above me
 
    isCellTransient :: Int -> Int -> Boolean
    isCellTransient i j
