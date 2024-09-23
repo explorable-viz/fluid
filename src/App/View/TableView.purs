@@ -157,7 +157,6 @@ createRootElement (TableView { colNames, filter, rows }) div childId = do
                  [ "border-top" ↦ transparentBorder
                  , "border-left" ↦ transparentBorder
                  , "border-right" ↦ if j == length colNames' - 1 then transparentBorder else ""
-                 , "border-bottom" ↦ if i == length rows - 1 then transparentBorder else ""
                  ]
             >>= setText value
             >>= setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
