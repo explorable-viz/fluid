@@ -4,10 +4,12 @@ module App.View.Util.D3
    , Selection
    , MultiSelection
    , Margin
-   , SVGElementType(..)
+   , ElementType(..)
    , attrs
+   , classed
    , create
    , createMany
+   , createMany'
    , datum
    , dimensions
    , each
@@ -24,7 +26,7 @@ module App.View.Util.D3
    , select
    , selectAll
    , setAttrs
-   , setAttrs'
+   , setData
    , setStyles
    , setText
    , setText_
@@ -38,13 +40,14 @@ module App.View.Util.D3
 
 import Prelude
 
-import App.Util (Dimensions)
+import App.Util (Dimensions, Attrs)
 import Bind (Bind, (↦))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Generic.Rep (class Generic)
 import Data.Newtype (unwrap)
 import Data.Show.Generic (genericShow)
 import Data.String (toLower)
+import Data.Traversable (for)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util (Endo)
@@ -82,37 +85,45 @@ rotate n = "transform" ↦ "rotate(" <> show n <> ")"
 rotate' :: forall a. (a -> Int) -> Bind (a -> String)
 rotate' f = "transform" ↦ \a -> "rotate(" <> show (f a) <> ")"
 
-data SVGElementType
-   = Circle
+-- Might be some PureScript library that could help here
+data ElementType
+   = Caption
+   | Circle
    | G
    | Path
    | Rect
    | SVG
+   | Table
    | Text
+   | TBody
+   | TD
+   | TH
+   | THead
+   | TR
 
-create :: SVGElementType -> Selection -> Array (Bind String) -> Effect Selection
-create elementType parent =
-   fromFoldable >>> createChild parent (show elementType)
+create :: ElementType -> Attrs -> Selection -> Effect Selection
+create elementType as parent =
+   fromFoldable as # createChild parent (show elementType)
 
-forEach_create :: forall a. SVGElementType -> MultiSelection -> Array (Bind (a -> String)) -> Effect MultiSelection
-forEach_create elementType parents =
-   fromFoldable >>> forEach_createChild parents (show elementType)
+forEach_create :: forall a. ElementType -> (a -> Attrs) -> MultiSelection -> Effect MultiSelection
+forEach_create elementType asF parents =
+   asF >>> fromFoldable # forEach_createChild parents (show elementType)
 
-createMany :: forall a. SVGElementType -> Selection -> String -> Array a -> Array (Bind (a -> String)) -> Effect MultiSelection
-createMany elementType parent class_ xs =
-   fromFoldable >>> createChildren parent (show elementType) class_ xs
+createMany' :: forall a. ElementType -> Array a -> Array (Bind (a -> String)) -> Selection -> Effect (Array Selection)
+createMany' elementType xs as parent =
+   for ((\a -> (_ <@> a) <$> as) <$> xs) $
+      flip (create elementType) parent
 
-setAttrs :: Array (Bind String) -> Selection -> Effect Selection
-setAttrs as sel =
-   fromFoldable as # attrs sel
+-- Deprecated; also probably want to lose MultiSelection
+createMany :: forall a. ElementType -> String -> Array a -> Array (Bind (a -> String)) -> Selection -> Effect MultiSelection
+createMany elementType class_ xs as parent =
+   fromFoldable as # createChildren parent (show elementType) class_ xs
 
-setAttrs' :: forall a. (a -> Array (Bind String)) -> Selection -> Effect Selection
-setAttrs' asF sel =
-   (asF >>> fromFoldable) # attrs_ sel
+setAttrs :: Attrs -> Selection -> Effect Selection
+setAttrs as sel = fromFoldable as # attrs sel
 
-setStyles :: Array (Bind String) -> Selection -> Effect Selection
-setStyles as sel =
-   fromFoldable as # styles sel
+setStyles :: Attrs -> Selection -> Effect Selection
+setStyles as sel = fromFoldable as # styles sel
 
 foreign import data Selection :: Type
 foreign import data MultiSelection :: Type
@@ -139,27 +150,28 @@ foreign import dimensions :: Selection -> Effect (Dimensions Int) -- expects sin
 foreign import textDimensions :: String -> String -> Dimensions Int
 foreign import line :: Coord (Endo Number) -> Array (Coord Number) -> String
 foreign import rootSelect :: String -> Effect Selection
-foreign import select :: Selection -> String -> Effect Selection
-foreign import selectAll :: Selection -> String -> Effect MultiSelection
+foreign import select :: String -> Selection -> Effect Selection
+foreign import selectAll :: String -> Selection -> Effect (Array Selection)
 foreign import setText :: String -> Selection -> Effect Selection
 foreign import setText_ :: forall a. (a -> String) -> Selection -> Effect Selection
 foreign import attrs :: Selection -> Object String -> Effect Selection
-foreign import attrs_ :: forall a. Selection -> (a -> Object String) -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
-foreign import datum :: forall a. Selection -> Effect a -- currently unused
+foreign import classed :: String -> Boolean -> Selection -> Effect Selection
+foreign import setData :: forall a. a -> Selection -> Effect Selection
+foreign import datum :: forall a. Selection -> Effect a -- maybe prefer this to attrs_, etc
 foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
 foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effect MultiSelection
 
 -- Different type signatures but same underlying implementation as Selection-based analogues
-foreign import forEach_createChild :: forall a. MultiSelection -> String -> Object (a -> String) -> Effect MultiSelection
+foreign import forEach_createChild :: forall a. MultiSelection -> String -> (a -> Object String) -> Effect MultiSelection
 foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
+
+instance Show ElementType
+   where
+   show = genericShow >>> toLower
 
 -- ======================
 -- boilerplate
 -- ======================
 
-derive instance Generic SVGElementType _
-
-instance Show SVGElementType
-   where
-   show = genericShow >>> toLower
+derive instance Generic ElementType _

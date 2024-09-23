@@ -48,9 +48,9 @@ export function textDimensions (class_) {
 
 export function createChild (parent) {
    return elementType => {
-      return attrs => {
+      return as => {
          return () => {
-            return parent.append(elementType).attrs(attrs)
+            return attrs(parent.append(elementType))(as)()
          }
       }
    }
@@ -63,11 +63,11 @@ export function createChildren (parent) {
             return attrFuns => {
                return () => {
                   return parent
-                     .selectAll("." + class_)
+                     .selectAll()
                      .data(data)
                      .enter()
                      .append(elementType)
-                     .classed(class_, true)
+                     .classed(class_, true) // no-op if class_ == ""
                      .attrs(attrFuns)
                }
             }
@@ -112,9 +112,9 @@ export function yAxis (to) {
 }
 
 export function setText (string) {
-   return element => {
+   return sel => {
       return () => {
-         return element.text(string)
+         return sel.text(string)
       }
    }
 }
@@ -150,18 +150,22 @@ export function rootSelect (selector) {
    }
 }
 
-export function select (sel) {
-   return selector => {
+export function select (selector) {
+   return sel => {
       return () => {
          return sel.select(selector)
       }
    }
 }
 
-export function selectAll (sel) {
-   return selector => {
+export function selectAll (selector) {
+   return sel => {
       return () => {
-         return sel.selectAll(selector)
+         const sels = [];
+         sel.selectAll(selector).each(function () {
+            sels.push(d3.select(this))
+         })
+         return sels
       }
    }
 }
@@ -197,6 +201,16 @@ export function styles (sel) {
    }
 }
 
+export function classed (classes) {
+   return hasClass => {
+      return sel => {
+         return () => {
+            return sel.classed(classes, hasClass)
+         }
+      }
+   }
+}
+
 export function scaleLinear (x1) {
    return x2 => {
       return d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
@@ -206,6 +220,14 @@ export function scaleLinear (x1) {
 export function datum (sel) {
    return () => {
       return sel.datum()
+   }
+}
+
+export function setData (d) {
+   return sel => {
+      return () => {
+         return sel.data([d]) // must be an array of data, even for singleton selection
+      }
    }
 }
 
@@ -233,7 +255,6 @@ export function each (f) {
    }
 }
 
-export const attrs_ = attrs
 export const setText_ = setText
 export const forEach_createChild = createChild
 export const multi_isEmpty = empty

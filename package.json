@@ -20,30 +20,21 @@
   "files": ["dist/article/"],
   "scripts": {
     "tidy": "./script/tidy.sh",
-
     "build-app": "./script/build.sh app App",
     "serve-app": "./script/serve.sh app",
-
     "build-artifact": "./script/build.sh artifact Artifact",
     "serve-artifact": "./script/serve.sh artifact",
-
     "build-standalone-all": "./script/build-standalone-all.sh",
     "build-standalone": "./script/build-standalone.sh",
-
     "build-article": "./script/build-article.sh",
-
     "build-bench": "./script/build.sh bench Test.Benchmark",
     "bench": "./script/serve.sh bench",
-
     "build": "./script/build.sh test Test.Test",
     "test": "./script/test.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
-
     "build-puppeteer": "./script/build.sh test-puppeteer Test.Puppeteer --platform=node",
     "test-puppeteer": "./script/test-puppeteer.sh",
-
     "test-all": "./script/test-all.sh",
-
     "npm-publish": "./script/npm-publish.sh"
   },
   "dependencies": {
@@ -78,5 +69,6 @@
   },
   "bin": {
     "fluid": "./fluid.js"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
