@@ -124,7 +124,7 @@ isCellTransient rows i j
    | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
    | otherwise = isTransient <<< (unwrap tableViewHelpers).val_selState $ rows ! i ! j
 
-instance Drawable2 TableView TableViewHelpers where
+instance Drawable2 TableView Unit where
    createRootElement = createRootElement
    setSelState = setSelState
 
@@ -135,7 +135,7 @@ prim (Val _ v) = v # case _ of
    Str s -> s
    _ -> error $ "TableView only supports primitive values."
 
-setSelState :: TableView -> TableViewHelpers -> EventListener -> D3.Selection -> Effect Unit
+setSelState :: TableView -> Unit -> EventListener -> D3.Selection -> Effect Unit
 setSelState (TableView { title, rows }) _ redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
    for_ cells \cell -> do
@@ -154,7 +154,7 @@ setSelState (TableView { title, rows }) _ redraw rootElement = do
    let caption = title <> " (" <> show (length rows - length hidden) <> " of " <> show (length rows) <> ")"
    void $ rootElement # select ".table-caption" >>= setText caption
 
-createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> Effect D3.Selection
+createRootElement :: TableView -> Unit -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) _ div childId = do
    rootElement <- div # create Table [ "id" ↦ childId ]
    void $ rootElement # create Caption
@@ -197,7 +197,7 @@ createRootElement (TableView { colNames, filter, rows }) _ div childId = do
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
-      draw' tableViewHelpers uiHelpers rSpec =<< selListener figVal redraw tableViewSelSetter
+      draw' unit uiHelpers rSpec =<< selListener figVal redraw tableViewSelSetter
       where
       tableViewSelSetter :: ViewSelSetter CellIndex
       tableViewSelSetter { i, colName } = listElement i <<< field colName
