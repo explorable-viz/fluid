@@ -4,8 +4,8 @@ import Prelude
 
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
-import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), classed, create, datum, on, select, selectAll, setData, setStyles, setText)
+import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setData, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, null, sort)
@@ -21,7 +21,6 @@ import Effect (Effect)
 import Util (Endo, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
-import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener)
 
 type RecordRow = Array (Val (SelState 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
@@ -142,11 +141,9 @@ setSelState (TableView { title, rows }) _ redraw rootElement = do
    for_ cells \cell -> do
       { i, j, colName } :: CellIndex <- datum cell
       if i == -1 || j == -1 then pure unit
-      else do
-         void $ cell # classed selClasses false
-            >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α)) true
-         for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
-            cell # on (EventType ev) redraw
+      else cell # classed selClasses false
+         >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α)) true
+         >>= registerMouseListeners redraw
       cell # classed "has-right-border" (hasRightBorder rows i j)
          >>= classed "has-bottom-border" (hasBottomBorder rows i j)
    rows' <- rootElement # selectAll ".table-row"

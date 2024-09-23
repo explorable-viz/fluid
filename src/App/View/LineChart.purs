@@ -4,9 +4,9 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, 𝕊, classes, colorShade, from, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', datum, dimensions, each, forEach_create, line, nameCol, on, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', datum, dimensions, each, forEach_create, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
@@ -26,7 +26,6 @@ import Primitive (string, unpack)
 import Util (Endo, nonEmpty, (!))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
-import Web.Event.Event (EventType(..))
 
 newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
@@ -59,9 +58,7 @@ instance Drawable2 LineChart Unit where
       points <- rootElement # selectAll ".linechart-point"
       for_ points \point -> do
          point' <- datum point
-         void $ point # setAttrs (selAttrs point')
-         for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
-            point # on (EventType ev) redraw
+         point # setAttrs (selAttrs point') >>= registerMouseListeners redraw
       where
       selAttrs :: PointCoordinate -> Attrs
       selAttrs { i, j, name } =

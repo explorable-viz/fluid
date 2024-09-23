@@ -4,9 +4,10 @@ import Prelude
 
 import App.Util (SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
 import App.Util.Selector (ViewSelSetter)
-import App.View.Util.D3 (isEmpty, rootSelect, select)
+import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
 import Bind (Bind, Var)
+import Data.Foldable (for_)
 import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
@@ -17,6 +18,7 @@ import Module (File)
 import SExpr as S
 import Util (type (×), Endo, Setter, check)
 import Val (Env, Val)
+import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener, eventListener)
 
 type HTMLId = String
@@ -57,6 +59,11 @@ draw' viewHelpers _ { divId, suffix, view } redraw = do
 drawView :: RendererSpec View -> Setter Fig (Val (SelState 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal figView redraw =
    unpack vw (\view -> draw (rSpec { view = view }) figVal figView redraw)
+
+registerMouseListeners :: EventListener -> D3.Selection -> Effect Unit
+registerMouseListeners redraw element = do
+   for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
+      element # on (EventType ev) redraw
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =
