@@ -119,13 +119,22 @@ setSelState (TableView { title, rows }) redraw rootElement = do
          >>= registerMouseListeners redraw
       cell # classed "has-right-border" (hasRightBorder rows i j)
          >>= classed "has-bottom-border" (hasBottomBorder rows i j)
-   rows' <- rootElement # selectAll ".table-row"
-   hidden <- flip filterM (fromFoldable rows') \row -> do
-      { i } <- datum row
-      pure $ not (record_isVisible (rows ! i))
-   for_ hidden $ classed "hidden" true
-   let caption = title <> " (" <> show (length rows - length hidden) <> " of " <> show (length rows) <> ")"
-   void $ rootElement # select ".table-caption" >>= setText caption
+   hideRecords >>= setCaption
+   where
+   hideRecords :: Effect Int
+   hideRecords = do
+      rows' <- rootElement # selectAll ".table-row"
+      hidden <- flip filterM (fromFoldable rows') \row -> do
+         { i } <- datum row
+         pure $ not (record_isVisible (rows ! i))
+      for_ hidden $ classed "hidden" true
+      pure (length hidden)
+
+   setCaption :: Int -> Effect Unit
+   setCaption numHidden = do
+      let caption = title <> " (" <> show (length rows - numHidden) <> " of " <> show (length rows) <> ")"
+      void $ rootElement # select ".table-caption" >>= setText caption
+
 
 createRootElement :: TableView -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) div childId = do
