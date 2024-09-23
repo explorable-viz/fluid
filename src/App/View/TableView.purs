@@ -1,6 +1,6 @@
 module App.View.TableView where
 
-import Prelude
+import Prelude hiding (absurd)
 
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
@@ -17,7 +17,7 @@ import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, definitely', error, length, (!))
+import Util (Endo, absurd, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
@@ -125,6 +125,14 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       | record_isVisible $ rows ! (i + 1) = Just (i + 1)
       | otherwise = visibleSucc (i + 1)
 
+   -- For a non-header (>=0) row, the immediately prior visible row (potentially the header)
+   visiblePred' :: Int -> Int
+   visiblePred' i
+      | i < 0 = error absurd
+      | i == 0 = -1
+      | record_isVisible (rows ! (i - 1)) = i - 1
+      | otherwise = visiblePred' (i - 1)
+
    border :: Boolean -> Boolean -> String
    border true _ = solidBorder
    border false true = transparentBorder
@@ -138,17 +146,24 @@ setSelState (TableView { title, rows }) redraw rootElement = do
    hasBottomBorder :: Int -> Int -> Boolean
    hasBottomBorder i j = virtualTopBorder || virtualBottomBorder
       where
-      virtualTopBorder =
-         i < length rows - 1 && isCellTransient i j /= isCellTransient (i + 1) j
+      virtualTopBorder = i < length rows - 1 && wantsTopBorder (i + 1) j
       virtualBottomBorder = case visibleSucc i of
          Nothing -> isCellTransient i j -- my own bottom-border
          Just i' -> case visiblePred i' of
             Nothing -> false -- no visible cell for me to provide bottom-border for
             Just i'' -> isCellTransient i'' j && i == i' - 1 -- virtual bottom-border for a cell above me
 
+   wantsTopBorder :: Int -> Int -> Boolean
+   wantsTopBorder i j = isCellTransient i j /= isCellTransient (visiblePred' i) j
+
+   wantsBottomBorder :: Int -> Int -> Boolean
+   wantsBottomBorder i j = case visibleSucc i of
+      Nothing -> true
+      Just i' -> isCellTransient i j /= isCellTransient i' j
+
    isCellTransient :: Int -> Int -> Boolean
    isCellTransient i j
-      | i == -1 || j == -1 = false -- do we need to allow for these cases?
+      | i == -1 || j == -1 = false
       | otherwise = isTransient <<< (\(Val α _) -> α) $ rows ! i ! j
 
 createRootElement :: TableView -> D3.Selection -> String -> Effect D3.Selection
