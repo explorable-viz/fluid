@@ -84,7 +84,7 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       else cell # classed selClasses false
          >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α)) true
          >>= registerMouseListeners redraw
-      cell # classed "has-right-border" (hasRightBorder i j)
+      cell # setStyles [ "border-right" ↦ if hasRightBorder i j then "1px solid blue" else if j == width - 1 then "1px solid transparent" else "" ]
          >>= classed "has-bottom-border" (hasBottomBorder i j)
    hideRecords >>= setCaption
    where
@@ -153,7 +153,11 @@ createRootElement (TableView { colNames, filter, rows }) div childId = do
       row' <- body # create TR [ classes [ "table-row" ] ] >>= setData { i }
       forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
          row' # create TD [ classes if j >= 0 then [ "table-cell" ] else [] ]
-            >>= setStyles [ "border-top" ↦ transparentBorder, "border-left" ↦ transparentBorder ]
+            >>= setStyles
+               [ "border-top" ↦ transparentBorder
+               , "border-left" ↦ transparentBorder
+               , "border-right" ↦ if j == length colNames' - 1 then transparentBorder else ""
+               ]
             >>= setText value
             >>= setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
    pure rootElement
