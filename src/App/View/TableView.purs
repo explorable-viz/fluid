@@ -102,10 +102,9 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       let caption = title <> " (" <> show (length rows - numHidden) <> " of " <> show (length rows) <> ")"
       void $ rootElement # select ".table-caption" >>= setText caption
 
-   {-
-   width :: Array Record' -> Int
-   width = head >>> definitely' >>> length
--}
+   width :: Int
+   width = length (definitely' (head rows))
+
    visiblePred :: Int -> Maybe Int
    visiblePred i
       | i <= 0 = Nothing
@@ -119,7 +118,9 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       | otherwise = visibleSucc (i + 1)
 
    hasRightBorder :: Int -> Int -> Boolean
-   hasRightBorder _ _ = false
+   hasRightBorder i j
+      | j == width - 1 = isCellTransient i j
+      | otherwise = isCellTransient i j /= isCellTransient i (j + 1)
 
    hasBottomBorder :: Int -> Int -> Boolean
    hasBottomBorder i j = virtualTopBorder || virtualBottomBorder
@@ -151,13 +152,8 @@ createRootElement (TableView { colNames, filter, rows }) div childId = do
    forWithIndex_ rows \i row -> do
       row' <- body # create TR [ classes [ "table-row" ] ] >>= setData { i }
       forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
-         cell <- row' # create TD [ classes if j >= 0 then [ "table-cell" ] else [] ]
-         void $ cell
-            # setStyles
-                 [ "border-top" ↦ transparentBorder
-                 , "border-left" ↦ transparentBorder
-                 , "border-right" ↦ if j == length colNames' - 1 then transparentBorder else ""
-                 ]
+         row' # create TD [ classes if j >= 0 then [ "table-cell" ] else [] ]
+            >>= setStyles [ "border-top" ↦ transparentBorder, "border-left" ↦ transparentBorder ]
             >>= setText value
             >>= setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
    pure rootElement
