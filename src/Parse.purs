@@ -17,6 +17,7 @@ import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
+import Data.Tuple (Tuple(..))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Lattice (Raw)
 import Parse.Constants (str)
@@ -28,9 +29,9 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictKey(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
-import Util.Pair (Pair(..))
+-- import Util.Pair (Pair(..))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
 languageDef :: LanguageDef
@@ -277,10 +278,16 @@ expr_ =
 
          simpleExprOrProjection :: SParser (Raw Expr)
          simpleExprOrProjection =
-            simpleExpr >>= projections
+            simpleExpr >>= projection
             where
-            projections :: Raw Expr -> SParser (Raw Expr)
-            projections e = (Project e <$> (token.reservedOp str.dot *> ident)) <|> pure e
+            projection :: Raw Expr -> SParser (Raw Expr)
+            projection e = dprojection e <|> rprojection e
+
+            rprojection :: Raw Expr -> SParser (Raw Expr)
+            rprojection e = (Project e <$> (token.reservedOp str.dot *> ident)) <|> pure e
+
+            dprojection :: Raw Expr -> SParser (Raw Expr)
+            dprojection e = (DProject e <$> (token.reservedOp str.dot *> token.brackets expr_))
 
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
          simpleExpr :: SParser (Raw Expr)
@@ -343,8 +350,11 @@ expr_ =
             constr = Constr unit <$> ctr <@> empty
 
             dict :: SParser (Raw Expr)
-            dict = sepBy (Pair <$> (expr' <* colonEq) <*> expr') token.comma <#> Dictionary unit #
+            dict = sepBy exprkey token.comma <#> Dictionary unit #
                between (token.symbol str.dictLBracket) (token.symbol str.dictRBracket)
+               where
+               exprkey :: SParser (Raw DictKey × Raw Expr)
+               exprkey = ((ExprKey <$> expr') # token.brackets) `lift2 (Tuple)` (token.colon *> expr')
 
             record :: SParser (Raw Expr)
             record = sepBy (field expr') token.comma <#> Record unit # token.braces

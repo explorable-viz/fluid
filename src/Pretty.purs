@@ -24,7 +24,7 @@ import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictKey(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -81,6 +81,7 @@ exprType (Dictionary _ _) = Simple
 exprType (Matrix _ _ _ _) = Simple
 exprType (Lambda _) = Simple
 exprType (Project _ _) = Simple
+exprType (DProject _ _) = Simple
 exprType (App _ _) = Expression
 exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
@@ -149,6 +150,7 @@ instance Ann a => Pretty (Expr a) where
          )
    pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
    pretty (Project s x) = prettySimple s .<>. text str.dot .<>. text x
+   pretty (DProject s x) = prettySimple s .<>. text str.dot .<>. text str.lBracket .<>. prettySimple x .<>. text str.rBracket
    pretty (App s s') = prettyAppChain (App s s')
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
@@ -166,6 +168,15 @@ prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a))
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
 prettyOperator sep (Cons s xss) = sep (prettyOperator sep (toList (singleton s)) .<>. text str.comma) (prettyOperator sep xss)
 prettyOperator _ Nil = empty
+
+instance Ann a => Pretty (DictKey a) where
+   pretty (VarKey k) = pretty k
+   pretty (ExprKey k) = pretty k
+
+instance Ann a => Pretty (List (DictKey a × Expr a)) where
+   pretty Nil = empty
+   pretty ((k × v) : Nil) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v
+   pretty ((k × v) : xs) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty xs
 
 instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
@@ -330,18 +341,22 @@ prettyRecordOrDict
     . Pretty d
    => Doc
    -> Endo Doc
+   -> Endo Doc
    -> (b -> Doc)
    -> List (b × d)
    -> Doc
-prettyRecordOrDict sep bracify prettyKey xvs =
-   xvs <#> first prettyKey <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
+prettyRecordOrDict sep keybrace bracify prettyKey xvs =
+   xvs <#> first (prettyKey >>> keybrace) <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
       # hcomma >>> bracify
 
+bracketKeys :: Endo Doc
+bracketKeys = between (text str.lBracket) (text str.rBracket)
+
 prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colonEq)
+prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # (prettyRecordOrDict (text str.colon) bracketKeys)
 
 prettyRecord :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon)
+prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon) identity
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
 prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text (i <> "×" <> j) .<>. text str.in_ .<>. pretty e2)
@@ -361,6 +376,7 @@ instance Highlightable a => Pretty (E.Expr a) where
       (pretty e')
    pretty (E.LetRec (E.RecDefs _ ρ) e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
+   pretty (E.DProject e x) = pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
