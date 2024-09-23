@@ -135,7 +135,6 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       let caption = title <> " (" <> show (length rows - numHidden) <> " of " <> show (length rows) <> ")"
       void $ rootElement # select ".table-caption" >>= setText caption
 
-
 createRootElement :: TableView -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) div childId = do
    rootElement <- div # create Table [ "id" ↦ childId ]
