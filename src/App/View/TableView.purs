@@ -102,36 +102,39 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       let caption = title <> " (" <> show (length rows - numHidden) <> " of " <> show (length rows) <> ")"
       void $ rootElement # select ".table-caption" >>= setText caption
 
+   {-
    width :: Array Record' -> Int
    width = head >>> definitely' >>> length
-
+-}
    visiblePred :: Int -> Maybe Int
-   visiblePred this
-      | this <= 0 = Nothing
-      | record_isVisible $ rows ! (this - 1) = Just (this - 1)
-      | otherwise = visiblePred (this - 1)
+   visiblePred i
+      | i <= 0 = Nothing
+      | record_isVisible $ rows ! (i - 1) = Just (i - 1)
+      | otherwise = visiblePred (i - 1)
 
    visibleSucc :: Int -> Maybe Int
-   visibleSucc this
-      | this == length rows - 1 = Nothing
-      | record_isVisible $ rows ! (this + 1) = Just (this + 1)
-      | otherwise = visibleSucc (this + 1)
+   visibleSucc i
+      | i == length rows - 1 = Nothing
+      | record_isVisible $ rows ! (i + 1) = Just (i + 1)
+      | otherwise = visibleSucc (i + 1)
 
    hasRightBorder :: Int -> Int -> Boolean
-   hasRightBorder i j
-      | j == width rows - 1 = isCellTransient i j
-      | otherwise = isCellTransient i j /= isCellTransient i (j + 1)
+   hasRightBorder _ _ = false
 
    hasBottomBorder :: Int -> Int -> Boolean
-   hasBottomBorder i j
-      | i /= -1 && (not <<< record_isVisible $ rows ! i) = false -- change this
-      | otherwise = case visibleSucc i of
-           Nothing -> isCellTransient i j
-           Just next -> isCellTransient i j /= isCellTransient next j
+   hasBottomBorder i j = virtualTopBorder || virtualBottomBorder
+      where
+      virtualTopBorder = i < length rows - 1 && isCellTransient (i + 1) j
+      virtualBottomBorder = case visibleSucc i of
+         Nothing -> isCellTransient i j -- my own bottom-border
+         Just i' -> case visiblePred i' of
+            Nothing -> false -- no visible cell for me to provide bottom-border for
+            Just i'' ->
+               isCellTransient i'' j && i == i' - 1 -- virtual bottom-border for a cell above me
 
    isCellTransient :: Int -> Int -> Boolean
    isCellTransient i j
-      | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
+      | i == -1 || j == -1 = false -- do we need to allow for these cases?
       | otherwise = isTransient <<< (\(Val α _) -> α) $ rows ! i ! j
 
 createRootElement :: TableView -> D3.Selection -> String -> Effect D3.Selection
