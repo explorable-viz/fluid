@@ -22,19 +22,19 @@ import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
-type RecordRow = Array (Val (SelState 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
+type Record' = Array (Val (SelState 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
 
 data Filter = Everything | Interactive | Relevant
 
+-- homogeneous array of records with fields of primitive type; each row has same length as colNames
 newtype TableView = TableView
    { title :: String
    , filter :: Filter
    , colNames :: Array String
-   -- homogeneous array of records with fields of primitive type; each row has same length as colNames
-   , rows :: Array RecordRow
+   , rows :: Array Record' -- would list make more sense given the filtering?
    }
 
--- helper functions used by View.purs to decompose array of records (Dict (Val (SelState 𝕊))) into colNames and table
+-- helpers to decompose array of records represented as dictionaries into colNames and rows
 headers :: Array (Dict (Val (SelState 𝕊))) -> Array String
 headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 
@@ -52,7 +52,7 @@ cell_selClassesFor colName s
    | colName == rowKey = ""
    | otherwise = selClassesFor s
 
-record_isVisible :: RecordRow -> Boolean
+record_isVisible :: Record' -> Boolean
 record_isVisible r =
    not <<< null $ flip filter r \(Val α _) -> visible defaultFilter α
    where
@@ -64,27 +64,27 @@ record_isVisible r =
    isNone :: SelState 𝕊 -> Boolean
    isNone a = getPersistent a == None && getTransient a == None
 
-width :: Array RecordRow -> Int
+width :: Array Record' -> Int
 width = head >>> definitely' >>> length
 
-prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
+prevVisibleRow :: Array Record' -> Int -> Maybe Int
 prevVisibleRow rows this
    | this <= 0 = Nothing
    | record_isVisible $ rows ! (this - 1) = Just (this - 1)
    | otherwise = prevVisibleRow rows (this - 1)
 
-nextVisibleRow :: Array RecordRow -> Int -> Maybe Int
+nextVisibleRow :: Array Record' -> Int -> Maybe Int
 nextVisibleRow rows this
    | this == length rows - 1 = Nothing
    | record_isVisible $ rows ! (this + 1) = Just (this + 1)
    | otherwise = nextVisibleRow rows (this + 1)
 
-hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
+hasRightBorder :: Array Record' -> Int -> Int -> Boolean
 hasRightBorder rows i j
    | j == width rows - 1 = isCellTransient rows i j
    | otherwise = isCellTransient rows i j /= isCellTransient rows i (j + 1)
 
-hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
+hasBottomBorder :: Array Record' -> Int -> Int -> Boolean
 hasBottomBorder rows i j
    | i /= -1 && (not <<< record_isVisible $ rows ! i) = false -- change this
    | otherwise = case nextVisibleRow rows i of
@@ -92,7 +92,7 @@ hasBottomBorder rows i j
         Just next -> isCellTransient rows i j /= isCellTransient rows next j
 
 -- If I make this local to tableViewHelpers something goes wrong, can't see why..
-isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
+isCellTransient :: Array Record' -> Int -> Int -> Boolean
 isCellTransient rows i j
    | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
    | otherwise = isTransient <<< (\(Val α _) -> α) $ rows ! i ! j
