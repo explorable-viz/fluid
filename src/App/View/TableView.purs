@@ -8,16 +8,17 @@ import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListe
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setData, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (filter, head, null, sort)
+import Data.Array (filter, head, null, partition, sort)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.List (filterM, fromFoldable)
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
+import Data.Traversable (for)
+import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, absurd, definitely', error, length, (!))
+import Util (Endo, (×), absurd, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
@@ -42,7 +43,7 @@ arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 = map <<< flip (map <<< flip get)
 
 defaultFilter :: Filter
-defaultFilter = Interactive
+defaultFilter = Relevant
 
 rowKey :: String
 rowKey = "__n"
@@ -99,10 +100,11 @@ setSelState (TableView { title, rows }) redraw rootElement = do
    hideRecords :: Effect Int
    hideRecords = do
       rows' <- rootElement # selectAll ".table-row"
-      hidden <- flip filterM (fromFoldable rows') \row -> do
+      { no: hidden, yes: visible } <- partition snd <$> for rows' \row -> do
          { i } <- datum row
-         pure $ not (record_isVisible (rows ! i))
-      for_ hidden $ classed "hidden" true
+         pure (row × record_isVisible (rows ! i))
+      for_ hidden $ fst >>> classed "hidden" true
+      for_ visible $ fst >>> classed "hidden" false
       pure (length hidden)
 
    setCaption :: Int -> Effect Unit
