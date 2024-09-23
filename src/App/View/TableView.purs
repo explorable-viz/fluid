@@ -191,7 +191,7 @@ filterToggler _ (TableView view) = TableView view { filter = rotate view.filter 
    rotate Interactive = Relevant
    rotate Relevant = Everything
 
--- 0-based index of selected record and name of field; see data binding in .js (-1th field name is __n, the rowKey)
+-- 0-based index of selected record and name of field; -1th field name is "__n" (rowKey)
 type CellIndex = { i :: Int, j :: Int, colName :: String, value :: String }
 
 -- ======================
