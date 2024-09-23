@@ -113,12 +113,6 @@ setSelState (TableView { title, rows }) redraw rootElement = do
    width :: Int
    width = length (definitely' (head rows))
 
-   visiblePred :: Int -> Maybe Int
-   visiblePred i
-      | i <= 0 = Nothing
-      | record_isVisible $ rows ! (i - 1) = Just (i - 1)
-      | otherwise = visiblePred (i - 1)
-
    visibleSucc :: Int -> Maybe Int
    visibleSucc i
       | i == length rows - 1 = Nothing
@@ -126,12 +120,12 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       | otherwise = visibleSucc (i + 1)
 
    -- For a non-header (>=0) row, the immediately prior visible row (potentially the header)
-   visiblePred' :: Int -> Int
-   visiblePred' i
+   visiblePred :: Int -> Int
+   visiblePred i
       | i < 0 = error absurd
       | i == 0 = -1
       | record_isVisible (rows ! (i - 1)) = i - 1
-      | otherwise = visiblePred' (i - 1)
+      | otherwise = visiblePred (i - 1)
 
    border :: Boolean -> Boolean -> String
    border true _ = solidBorder
@@ -144,22 +138,10 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       | otherwise = isCellTransient i j /= isCellTransient i (j + 1)
 
    hasBottomBorder :: Int -> Int -> Boolean
-   hasBottomBorder i j = virtualTopBorder || virtualBottomBorder
-      where
-      virtualTopBorder = i < length rows - 1 && wantsTopBorder (i + 1) j
-      virtualBottomBorder = case visibleSucc i of
-         Nothing -> isCellTransient i j -- my own bottom-border
-         Just i' -> case visiblePred i' of
-            Nothing -> false -- no visible cell for me to provide bottom-border for
-            Just i'' -> isCellTransient i'' j && i == i' - 1 -- virtual bottom-border for a cell above me
-
-   wantsTopBorder :: Int -> Int -> Boolean
-   wantsTopBorder i j = isCellTransient i j /= isCellTransient (visiblePred' i) j
-
-   wantsBottomBorder :: Int -> Int -> Boolean
-   wantsBottomBorder i j = case visibleSucc i of
-      Nothing -> true
-      Just i' -> isCellTransient i j /= isCellTransient i' j
+   hasBottomBorder i j =
+      case visibleSucc i of
+         Nothing -> isCellTransient i j
+         Just i' -> (isCellTransient i' j /= isCellTransient (visiblePred i') j) && i == i' - 1
 
    isCellTransient :: Int -> Int -> Boolean
    isCellTransient i j
