@@ -75,6 +75,12 @@ prim (Val _ v) = v # case _ of
    Str s -> s
    _ -> error $ "TableView only supports primitive values."
 
+transparentBorder :: String
+transparentBorder = "1px solid transparent"
+
+solidBorder :: String
+solidBorder = "1px solid blue"
+
 setSelState :: TableView -> EventListener -> D3.Selection -> Effect Unit
 setSelState (TableView { title, rows }) redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
@@ -84,8 +90,10 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       else cell # classed selClasses false
          >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α)) true
          >>= registerMouseListeners redraw
-      cell # setStyles [ "border-right" ↦ if hasRightBorder i j then "1px solid blue" else if j == width - 1 then "1px solid transparent" else "" ]
-         >>= classed "has-bottom-border" (hasBottomBorder i j)
+      cell # setStyles
+         [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
+         , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
+         ]
    hideRecords >>= setCaption
    where
    hideRecords :: Effect Int
@@ -116,6 +124,11 @@ setSelState (TableView { title, rows }) redraw rootElement = do
       | i == length rows - 1 = Nothing
       | record_isVisible $ rows ! (i + 1) = Just (i + 1)
       | otherwise = visibleSucc (i + 1)
+
+   border :: Boolean -> Boolean -> String
+   border true _ = solidBorder
+   border false true = transparentBorder
+   border false false = ""
 
    hasRightBorder :: Int -> Int -> Boolean
    hasRightBorder i j
@@ -153,17 +166,11 @@ createRootElement (TableView { colNames, filter, rows }) div childId = do
       row' <- body # create TR [ classes [ "table-row" ] ] >>= setData { i }
       forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
          row' # create TD [ classes if j >= 0 then [ "table-cell" ] else [] ]
-            >>= setStyles
-               [ "border-top" ↦ transparentBorder
-               , "border-left" ↦ transparentBorder
-               , "border-right" ↦ if j == length colNames' - 1 then transparentBorder else ""
-               ]
+            >>= setStyles [ "border-top" ↦ transparentBorder, "border-left" ↦ transparentBorder ]
             >>= setText value
             >>= setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
    pure rootElement
    where
-   transparentBorder = "1px solid transparent"
-
    createHeader colNames' rootElement = do
       row <- rootElement # create THead [] >>= create TR []
       forWithIndex_ colNames' \j colName -> do
