@@ -13,7 +13,6 @@ import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.List (filterM, fromFoldable)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, unwrap)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Dict (Dict)
@@ -41,17 +40,6 @@ headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 = map <<< flip (map <<< flip get)
-
-newtype TableViewHelpers = TableViewHelpers
-   { rowKey :: String
-   , record_isVisible :: Array (Val (SelState 𝕊)) -> Boolean
-   , cell_selClassesFor :: String -> SelState 𝕊 -> String
-   -- values in rows cells are not "unpacked" to Selecrows but remain as Val
-   , val_val :: Val (SelState 𝕊) -> BaseVal (SelState 𝕊)
-   , val_selState :: Val (SelState 𝕊) -> SelState 𝕊
-   , hasRightBorder :: Array RecordRow -> Int -> Int -> Boolean
-   , hasBottomBorder :: Array RecordRow -> Int -> Int -> Boolean
-   }
 
 defaultFilter :: Filter
 defaultFilter = Interactive
@@ -103,28 +91,13 @@ hasBottomBorder rows i j
         Nothing -> isCellTransient rows i j
         Just next -> isCellTransient rows i j /= isCellTransient rows next j
 
-tableViewHelpers :: TableViewHelpers
-tableViewHelpers =
-   TableViewHelpers
-      { rowKey
-      , record_isVisible
-      , cell_selClassesFor
-      , val_val
-      , val_selState
-      , hasRightBorder
-      , hasBottomBorder
-      }
-   where
-   val_val (Val _ v) = v
-   val_selState (Val α _) = α
-
 -- If I make this local to tableViewHelpers something goes wrong, can't see why..
 isCellTransient :: Array RecordRow -> Int -> Int -> Boolean
 isCellTransient rows i j
    | i == -1 || j == -1 = false -- header row has j = -1 and rowKey column has i = -1
-   | otherwise = isTransient <<< (unwrap tableViewHelpers).val_selState $ rows ! i ! j
+   | otherwise = isTransient <<< (\(Val α _) -> α) $ rows ! i ! j
 
-instance Drawable2 TableView Unit where
+instance Drawable2 TableView where
    createRootElement = createRootElement
    setSelState = setSelState
 
@@ -135,8 +108,8 @@ prim (Val _ v) = v # case _ of
    Str s -> s
    _ -> error $ "TableView only supports primitive values."
 
-setSelState :: TableView -> Unit -> EventListener -> D3.Selection -> Effect Unit
-setSelState (TableView { title, rows }) _ redraw rootElement = do
+setSelState :: TableView -> EventListener -> D3.Selection -> Effect Unit
+setSelState (TableView { title, rows }) redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
    for_ cells \cell -> do
       { i, j, colName } :: CellIndex <- datum cell
@@ -154,8 +127,8 @@ setSelState (TableView { title, rows }) _ redraw rootElement = do
    let caption = title <> " (" <> show (length rows - length hidden) <> " of " <> show (length rows) <> ")"
    void $ rootElement # select ".table-caption" >>= setText caption
 
-createRootElement :: TableView -> Unit -> D3.Selection -> String -> Effect D3.Selection
-createRootElement (TableView { colNames, filter, rows }) _ div childId = do
+createRootElement :: TableView -> D3.Selection -> String -> Effect D3.Selection
+createRootElement (TableView { colNames, filter, rows }) div childId = do
    rootElement <- div # create Table [ "id" ↦ childId ]
    void $ rootElement # create Caption
       [ classes [ "title-text", "table-caption" ]
@@ -197,7 +170,7 @@ createRootElement (TableView { colNames, filter, rows }) _ div childId = do
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
-      draw' unit uiHelpers rSpec =<< selListener figVal redraw tableViewSelSetter
+      draw' uiHelpers rSpec =<< selListener figVal redraw tableViewSelSetter
       where
       tableViewSelSetter :: ViewSelSetter CellIndex
       tableViewSelSetter { i, colName } = listElement i <<< field colName
@@ -224,5 +197,4 @@ type CellIndex = { i :: Int, j :: Int, colName :: String, value :: String }
 -- ======================
 -- boilerplate
 -- ======================
-derive instance Newtype TableViewHelpers _
 derive instance Eq Filter
