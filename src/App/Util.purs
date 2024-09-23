@@ -2,7 +2,7 @@ module App.Util where
 
 import Prelude hiding (absurd, join)
 
-import Bind (Bind, Var)
+import Bind (Bind, Var, (↦))
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
@@ -207,11 +207,11 @@ css =
    , inert: "inert"
    }
 
-classes :: Array String -> String
-classes = joinWith " "
+classes :: Array String -> Bind String
+classes = joinWith " " >>> ("class" ↦ _)
 
 selClasses :: String
-selClasses = classes $
+selClasses = joinWith " " $
    [ css.sel.transient.primary
    , css.sel.transient.secondary
    , css.sel.persistent.primary
@@ -222,7 +222,7 @@ selClasses = classes $
 selClassesFor :: SelState 𝕊 -> String
 selClassesFor Inert = css.inert
 selClassesFor t =
-   classes $ concat
+   joinWith " " $ concat
       [ case getPersistent t of
            Secondary -> [ css.sel.persistent.secondary ]
            Primary -> [ css.sel.persistent.primary ]

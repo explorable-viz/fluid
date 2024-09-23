@@ -161,7 +161,7 @@ createRootElement :: TableView -> TableViewHelpers -> D3.Selection -> String -> 
 createRootElement (TableView { colNames, filter, rows }) _ div childId = do
    rootElement <- div # create Table [ "id" ↦ childId ]
    void $ rootElement # create Caption
-      [ "class" ↦ classes [ "title-text", "table-caption" ]
+      [ classes [ "title-text", "table-caption" ]
       , "dominant-baseline" ↦ "middle"
       , "text-anchor" ↦ "left"
       ]
@@ -169,26 +169,28 @@ createRootElement (TableView { colNames, filter, rows }) _ div childId = do
    rootElement # createHeader colNames'
    body <- rootElement # create TBody []
    forWithIndex_ rows \i row -> do
-      row' <- body # create TR [ "class" ↦ "table-row" ] >>= setData { i }
+      row' <- body # create TR [ classes [ "table-row" ] ] >>= setData { i }
       forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
-         cell <- row' # create TD [ "class" ↦ if j >= 0 then "table-cell" else "" ]
+         cell <- row' # create TD [ classes if j >= 0 then [ "table-cell" ] else [] ]
          void $ cell
             # setStyles
-                 [ "border-top" ↦ "1px solid transparent"
-                 , "border-left" ↦ "1px solid transparent"
-                 , "border-right" ↦ if j == length colNames' - 1 then "1px solid transparent" else ""
-                 , "border-bottom" ↦ if i == length rows - 1 then "1px solid transparent" else ""
+                 [ "border-top" ↦ transparentBorder
+                 , "border-left" ↦ transparentBorder
+                 , "border-right" ↦ if j == length colNames' - 1 then transparentBorder else ""
+                 , "border-bottom" ↦ if i == length rows - 1 then transparentBorder else ""
                  ]
             >>= setText value
             >>= setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
    pure rootElement
    where
+   transparentBorder = "1px solid transparent"
+
    createHeader colNames' rootElement = do
       row <- rootElement # create THead [] >>= create TR []
       forWithIndex_ colNames' \j colName -> do
          let value = if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName
          row
-            # create TH [ "class" ↦ classes ([ "table-cell" ] <> cellClasses colName) ]
+            # create TH [ classes ([ "table-cell" ] <> cellClasses colName) ]
             >>= setText value
             >>= setData { i: -1, j: j - 1, value, colName: colNames' ! j }
 

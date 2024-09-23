@@ -40,7 +40,7 @@ module App.View.Util.D3
 
 import Prelude
 
-import App.Util (Dimensions)
+import App.Util (Dimensions, Attrs)
 import Bind (Bind, (↦))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Generic.Rep (class Generic)
@@ -101,11 +101,11 @@ data ElementType
    | THead
    | TR
 
-create :: ElementType -> Array (Bind String) -> Selection -> Effect Selection
+create :: ElementType -> Attrs -> Selection -> Effect Selection
 create elementType as parent =
    fromFoldable as # createChild parent (show elementType)
 
-forEach_create :: forall a. ElementType -> (a -> Array (Bind String)) -> MultiSelection -> Effect MultiSelection
+forEach_create :: forall a. ElementType -> (a -> Attrs) -> MultiSelection -> Effect MultiSelection
 forEach_create elementType asF parents =
    asF >>> fromFoldable # forEach_createChild parents (show elementType)
 
@@ -119,10 +119,10 @@ createMany :: forall a. ElementType -> String -> Array a -> Array (Bind (a -> St
 createMany elementType class_ xs as parent =
    fromFoldable as # createChildren parent (show elementType) class_ xs
 
-setAttrs :: Array (Bind String) -> Selection -> Effect Selection
+setAttrs :: Attrs -> Selection -> Effect Selection
 setAttrs as sel = fromFoldable as # attrs sel
 
-setStyles :: Array (Bind String) -> Selection -> Effect Selection
+setStyles :: Attrs -> Selection -> Effect Selection
 setStyles as sel = fromFoldable as # styles sel
 
 foreign import data Selection :: Type

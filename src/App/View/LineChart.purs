@@ -2,14 +2,14 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Dimensions(..), SelState, Selectable, 𝕊, colorShade, from, isPersistent, isPrimary, isSecondary, isTransient, record)
+import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, 𝕊, classes, colorShade, from, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
 import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', datum, dimensions, each, forEach_create, line, nameCol, on, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
-import Bind (Bind, (↦), (⟼))
+import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, nub)
 import Data.Foldable (for_, length)
@@ -63,7 +63,7 @@ instance Drawable2 LineChart Unit where
          for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
             point # on (EventType ev) redraw
       where
-      selAttrs :: PointCoordinate -> Array (Bind String)
+      selAttrs :: PointCoordinate -> Attrs
       selAttrs { i, j, name } =
          [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
          , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
@@ -102,7 +102,7 @@ instance Drawable2 LineChart Unit where
          ( svg # create Text
               [ "x" ⟼ width / 2
               , "y" ⟼ height - caption_height / 2
-              , "class" ↦ caption_class
+              , classes [ caption_class ]
               , "dominant-baseline" ↦ "middle"
               , "text-anchor" ↦ "middle"
               ]
@@ -128,12 +128,12 @@ instance Drawable2 LineChart Unit where
       createAxes range parent = do
          let Point { x: xLabels, y: yLabels } = tickLabels
          x <- xAxis (to range) (nub points.x) =<<
-            (parent # create G [ "class" ↦ "x-axis", translate { x: 0, y: (unwrap range).height } ])
+            (parent # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
          when (fst xLabels == Rotated) do
             labels <- x # selectAll "text"
             for_ labels $
                setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
-         y <- yAxis (to range) 3.0 =<< (parent # create G [ "class" ↦ "y-axis" ])
+         y <- yAxis (to range) 3.0 =<< (parent # create G [ classes [ "y-axis" ] ])
          when (fst yLabels == Rotated) do
             labels <- y # selectAll "text"
             for_ labels $
@@ -169,13 +169,13 @@ instance Drawable2 LineChart Unit where
          legend' <- parent # create G
             [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
          void $ legend' # create Rect
-            [ "class" ↦ "legend-box", "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
+            [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
          -- Re-express in terms of for and create (to lose data binding)
          legendEntries <- legend' # createMany G "legend-entry" entries
             [ translate' \{ i } -> { x: 0, y: entry_y i } ]
          void $ each (setText_ (\{ name } -> name)) =<<
             ( legendEntries # forEach_create Text \_ ->
-                 [ "class" ↦ "legend-text"
+                 [ classes [ "legend-text" ]
                  , translate { x: legend_entry_x, y: 9 } -- align text with boxes
                  ]
             )
