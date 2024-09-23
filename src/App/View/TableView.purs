@@ -65,7 +65,7 @@ record_isVisible r =
    isNone a = getPersistent a == None && getTransient a == None
 
 width :: Array RecordRow -> Int
-width rows = length <<< definitely' $ head rows
+width = head >>> definitely' >>> length
 
 prevVisibleRow :: Array RecordRow -> Int -> Maybe Int
 prevVisibleRow rows this
