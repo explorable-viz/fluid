@@ -6,7 +6,6 @@ module App.View.Util.D3
    , attrs
    , classed
    , create
-   , createMany
    , datum
    , dimensions
    , isEmpty
@@ -27,7 +26,6 @@ module App.View.Util.D3
    , textHeight
    , textWidth
    , translate
-   , translate'
    , xAxis
    , yAxis
    ) where
@@ -41,7 +39,6 @@ import Data.Generic.Rep (class Generic)
 import Data.Newtype (unwrap)
 import Data.Show.Generic (genericShow)
 import Data.String (toLower)
-import Data.Traversable (for)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util (Endo)
@@ -69,10 +66,6 @@ textHeight class_ = textDimensions class_ >>> unwrap >>> _.height
 translate :: Coord Int -> Bind String
 translate { x, y } = "transform" ↦ "translate(" <> show x <> ", " <> show y <> ")"
 
-translate' :: forall a. (a -> Coord Int) -> Bind (a -> String)
-translate' f =
-   "transform" ↦ \a -> let { x, y } = f a in "translate(" <> show x <> ", " <> show y <> ")"
-
 rotate :: Int -> Bind String
 rotate n = "transform" ↦ "rotate(" <> show n <> ")"
 
@@ -98,11 +91,6 @@ data ElementType
 create :: ElementType -> Attrs -> Selection -> Effect Selection
 create elementType as parent =
    fromFoldable as # createChild parent (show elementType)
-
-createMany :: forall a. ElementType -> Array a -> Array (Bind (a -> String)) -> Selection -> Effect (Array Selection)
-createMany elementType xs as parent =
-   for ((\a -> (_ <@> a) <$> as) <$> xs) $
-      flip (create elementType) parent
 
 setAttrs :: Attrs -> Selection -> Effect Selection
 setAttrs as sel = fromFoldable as # attrs sel

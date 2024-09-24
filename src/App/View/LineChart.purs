@@ -6,7 +6,7 @@ import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, �
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, datum, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, create, datum, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
@@ -24,7 +24,7 @@ import Dict (Dict)
 import Effect (Effect)
 import Lattice ((∨))
 import Primitive (string, unpack)
-import Util (type (×), Endo, init, nonEmpty, tail, zip, zipWith, (!), (×))
+import Util (type (×), Endo, init, nonEmpty, tail, zipWith, (!), (×))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
@@ -167,7 +167,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       for_ entries \(Point { x, y } × { i, j }) ->
          parent #
             ( create Circle
-                 [ "class" ↦ "linechart-point"
+                 [ classes [ "linechart-point" ]
                  , "stroke-width" ⟼ 1
                  , "cx" ⟼ (to range).x (fst x)
                  , "cy" ⟼ (to range).y (fst y)
@@ -187,14 +187,10 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       let circle_centre = lineHeight / 2 - point_smallRadius / 2
-      legendEntries <- legend' # createMany G entries
-         [ "class" ↦ const "legend-entry"
-         , translate' \{ i } -> { x: 0, y: entry_y i }
-         ]
-      for_ (zip legendEntries entries) \(entry × { name }) ->
-         entry
-            # -- align text with boxes
-               (create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ] >=> setText name)
+      for_ entries \{ i, name } ->
+         legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
+            -- align text with boxes
+            >>= (create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ] >=> setText name)
             >>= create Circle
                [ "fill" ↦ nameCol name (names plots)
                , "r" ⟼ point_smallRadius
