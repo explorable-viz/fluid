@@ -11,10 +11,11 @@ import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
-import Data.Array.NonEmpty (NonEmptyArray, nub)
+import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
 import Data.Foldable (for_, length)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
@@ -23,7 +24,7 @@ import Dict (Dict)
 import Effect (Effect)
 import Lattice ((∨))
 import Primitive (string, unpack)
-import Util (type (×), Endo, nonEmpty, zip, (!), (×))
+import Util (type (×), Endo, init, nonEmpty, tail, zip, (!), (×))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
@@ -149,6 +150,11 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
          , "d" ↦ \(LinePlot { points: ps }) ->
               line (to range) (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y })
          ]
+      where
+      segments :: LinePlot -> Array (Point Number × Point Number)
+      segments (LinePlot { points: ps }) = case fromArray ps of
+         Nothing -> []
+         Just ps' -> zip (init ps') (tail ps')
 
    createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
    createPoints range parent = do
