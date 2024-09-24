@@ -18,6 +18,7 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
+import Data.Traversable (for)
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels)
 import Dict (Dict)
@@ -164,12 +165,13 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
 
    createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
    createPoints range parent = do
-      ps <- parent # createMany Circle entries
-         [ "class" ↦ const "linechart-point"
-         , "stroke-width" ↦ const "1"
-         , "cx" ↦ \(Point { x } × _) -> show $ (to range).x (fst x)
-         , "cy" ↦ \(Point { y } × _) -> show $ (to range).y (fst y)
-         ]
+      ps <- for entries \(Point { x, y } × _) ->
+         parent # create Circle
+            [ "class" ↦ "linechart-point"
+            , "stroke-width" ⟼ 1
+            , "cx" ⟼ (to range).x (fst x)
+            , "cy" ⟼ (to range).y (fst y)
+            ]
       for_ (zip ps entries) \(point × _ × (p :: PointCoordinate)) ->
          point # setDatum p
       where
