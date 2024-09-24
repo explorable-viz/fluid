@@ -325,9 +325,12 @@ instance Length Array where
 
 class Zip (f :: Type -> Type) where
    zip :: forall a b. f a -> f b -> f (a × b)
+   zipWith :: forall a b c. (a -> b -> c) -> f a -> f b -> f c
 
 instance Zip Array where
    zip = A.zip
+   zipWith = A.zipWith
 
 instance Zip List where
    zip = L.zip
+   zipWith = L.zipWith

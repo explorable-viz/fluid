@@ -24,7 +24,7 @@ import Dict (Dict)
 import Effect (Effect)
 import Lattice ((∨))
 import Primitive (string, unpack)
-import Util (type (×), Endo, init, nonEmpty, tail, zip, (!), (×))
+import Util (type (×), Endo, init, nonEmpty, tail, zip, zipWith, (!), (×))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
@@ -142,19 +142,25 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       pure { x, y }
 
    createLines :: Dimensions Int -> D3.Selection -> Effect Unit
-   createLines range =
-      void <$> createMany Path plots
-         [ "fill" ↦ const "none"
-         , "stroke" ↦ \(LinePlot { name }) -> nameCol (fst name) (names plots)
-         , "stroke-width" ↦ const "1"
-         , "d" ↦ \(LinePlot { points: ps }) ->
-              line (to range) (ps <#> \(Point { x, y }) -> { x: fst x, y: fst y })
-         ]
+   createLines range parent = do
+      for_ (concat $ plots <#> segments) \{ name, start, end } ->
+         parent # create Path
+            [ classes [ "linechart-segment" ]
+            , "fill" ↦ "none"
+            , "stroke" ↦ nameCol name (names plots)
+            , "stroke-width" ⟼ 1
+            , "d" ↦ line (to range) [ start, end ]
+            ]
       where
-      segments :: LinePlot -> Array (Point Number × Point Number)
-      segments (LinePlot { points: ps }) = case fromArray ps of
+      segments :: LinePlot -> Array { name :: String, start :: Coord Number, end :: Coord Number }
+      segments (LinePlot { name, points: ps }) = case fromArray ps of
          Nothing -> []
-         Just ps' -> zip (init ps') (tail ps')
+         Just ps' -> zipWith (\start end -> { name: fst name, start: segment start, end: segment end })
+            (init ps')
+            (tail ps')
+         where
+         segment :: Point Number -> Coord Number
+         segment (Point { x, y }) = { x: fst x, y: fst y }
 
    createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
    createPoints range parent = do
