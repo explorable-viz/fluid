@@ -51,7 +51,7 @@ point_smallRadius :: Int
 point_smallRadius = 2
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
-type PointCoordinate = { i :: Int, j :: Int, name :: String }
+type PointCoordinate = { i :: Int, j :: Int }
 
 instance Drawable2 LineChart where
    setSelState (LineChart { plots }) redraw rootElement = do
@@ -61,15 +61,16 @@ instance Drawable2 LineChart where
          point # setAttrs (selAttrs point') >>= registerMouseListeners redraw
       where
       selAttrs :: PointCoordinate -> Attrs
-      selAttrs { i, j, name } =
+      selAttrs { i, j } =
          [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
          , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
          , "fill" ↦ fill col
          ]
          where
-         Point { x, y } = (unwrap (plots ! i)).points ! j
+         LinePlot { name, points } = plots ! i
+         Point { x, y } = points ! j
          sel = snd x ∨ snd y
-         col = nameCol name (names plots)
+         col = nameCol (fst name) (names plots)
          fill = if isPersistent sel then flip colorShade (-30) else identity
 
    createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
@@ -95,13 +96,14 @@ instance Drawable2 LineChart where
       void $ createAxes interior g
       createLines interior g
       createPoints interior g
-      void $ svg # create Text
-         [ "x" ⟼ width / 2
-         , "y" ⟼ height - caption_height / 2
-         , classes [ caption_class ]
-         , "dominant-baseline" ↦ "middle"
-         , "text-anchor" ↦ "middle"
-         ]
+      void $ svg
+         # create Text
+              [ "x" ⟼ width / 2
+              , "y" ⟼ height - caption_height / 2
+              , classes [ caption_class ]
+              , "dominant-baseline" ↦ "middle"
+              , "text-anchor" ↦ "middle"
+              ]
          >>= setText (fst caption)
       createLegend interior g
       pure g
@@ -156,8 +158,8 @@ instance Drawable2 LineChart where
             ]
          where
          entries :: Array PointCoordinate
-         entries = concat $ flip mapWithIndex plots \i (LinePlot { name, points: ps }) ->
-            flip mapWithIndex ps \j _ -> { name: fst name, i, j }
+         entries = concat $ flip mapWithIndex plots \i (LinePlot { points: ps }) ->
+            flip mapWithIndex ps \j _ -> { i, j }
 
       createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
       createLegend (Dimensions interior) parent = do
