@@ -223,7 +223,7 @@ export function datum (sel) {
    }
 }
 
-export function setData (d) {
+export function setDatum (d) {
    return sel => {
       return () => {
          return sel.data([d]) // must be an array of data, even for singleton selection

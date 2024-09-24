@@ -314,3 +314,12 @@ instance Length List where
 
 instance Length Array where
    length = A.length
+
+class Zip (f :: Type -> Type) where
+   zip :: forall a b. f a -> f b -> f (a × b)
+
+instance Zip Array where
+   zip = A.zip
+
+instance Zip List where
+   zip = L.zip

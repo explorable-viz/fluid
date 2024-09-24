@@ -26,7 +26,7 @@ module App.View.Util.D3
    , select
    , selectAll
    , setAttrs
-   , setData
+   , setDatum
    , setStyles
    , setText
    , setText_
@@ -157,7 +157,7 @@ foreign import setText_ :: forall a. (a -> String) -> Selection -> Effect Select
 foreign import attrs :: Selection -> Object String -> Effect Selection
 foreign import styles :: Selection -> Object String -> Effect Selection
 foreign import classed :: String -> Boolean -> Selection -> Effect Selection
-foreign import setData :: forall a. a -> Selection -> Effect Selection
+foreign import setDatum :: forall a. a -> Selection -> Effect Selection
 foreign import datum :: forall a. Selection -> Effect a -- maybe prefer this to attrs_, etc
 foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
 foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effect MultiSelection

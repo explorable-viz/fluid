@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor)
 import App.Util.Selector (ViewSelSetter, field, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setData, setStyles, setText)
+import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, null, partition, sort)
@@ -162,12 +162,12 @@ createRootElement (TableView { colNames, filter, rows }) div childId = do
    rootElement # createHeader colNames'
    body <- rootElement # create TBody []
    forWithIndex_ rows \i row -> do
-      row' <- body # create TR [ classes [ "table-row" ] ] >>= setData { i }
+      row' <- body # create TR [ classes [ "table-row" ] ] >>= setDatum { i }
       forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
          row' # create TD [ classes if j >= 0 then [ "table-cell" ] else [] ]
             >>= setStyles [ "border-top" ↦ transparentBorder, "border-left" ↦ transparentBorder ]
             >>= setText value
-            >>= setData { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
+            >>= setDatum { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
    pure rootElement
    where
    createHeader colNames' rootElement = do
@@ -177,7 +177,7 @@ createRootElement (TableView { colNames, filter, rows }) div childId = do
          row
             # create TH [ classes ([ "table-cell" ] <> cellClasses colName) ]
             >>= setText value
-            >>= setData { i: -1, j: j - 1, value, colName: colNames' ! j }
+            >>= setDatum { i: -1, j: j - 1, value, colName: colNames' ! j }
 
    cellClasses colName
       | colName == rowKey = [ "filter-toggle", "toggle-button" ]

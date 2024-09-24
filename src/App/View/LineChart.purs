@@ -6,7 +6,7 @@ import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, �
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', datum, dimensions, each, forEach_create, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', datum, dimensions, each, forEach_create, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
@@ -23,7 +23,7 @@ import Dict (Dict)
 import Effect (Effect)
 import Lattice ((∨))
 import Primitive (string, unpack)
-import Util (Endo, nonEmpty, (!))
+import Util (type (×), Endo, nonEmpty, zip, (!), (×))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 
@@ -149,17 +149,19 @@ instance Drawable2 LineChart where
             ]
 
       createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
-      createPoints range =
-         void <$> createMany Circle "linechart-point" entries
-            [ "stroke-width" ↦ const "1"
-            -- silly
-            , "cx" ↦ \{ i, j } -> let Point { x } = (unwrap (plots ! i)).points ! j in show $ (to range).x (fst x)
-            , "cy" ↦ \{ i, j } -> let Point { y } = (unwrap (plots ! i)).points ! j in show $ (to range).y (fst y)
+      createPoints range parent = do
+         ps <- parent # createMany' Circle entries
+            [ "class" ↦ const "linechart-point"
+            , "stroke-width" ↦ const "1"
+            , "cx" ↦ \(Point { x } × _) -> show $ (to range).x (fst x)
+            , "cy" ↦ \(Point { y } × _) -> show $ (to range).y (fst y)
             ]
+         for_ (zip ps entries) \(point × _ × (p :: PointCoordinate)) ->
+            point # setDatum p
          where
-         entries :: Array PointCoordinate
+         entries :: Array (Point Number × PointCoordinate)
          entries = concat $ flip mapWithIndex plots \i (LinePlot { points: ps }) ->
-            flip mapWithIndex ps \j _ -> { i, j }
+            flip mapWithIndex ps \j p -> p × { i, j }
 
       createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
       createLegend (Dimensions interior) parent = do
