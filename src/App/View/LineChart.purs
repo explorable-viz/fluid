@@ -95,15 +95,14 @@ instance Drawable2 LineChart where
       void $ createAxes interior g
       createLines interior g
       createPoints interior g
-      void $ setText (fst caption) =<<
-         ( svg # create Text
-              [ "x" ⟼ width / 2
-              , "y" ⟼ height - caption_height / 2
-              , classes [ caption_class ]
-              , "dominant-baseline" ↦ "middle"
-              , "text-anchor" ↦ "middle"
-              ]
-         )
+      void $ svg # create Text
+         [ "x" ⟼ width / 2
+         , "y" ⟼ height - caption_height / 2
+         , classes [ caption_class ]
+         , "dominant-baseline" ↦ "middle"
+         , "text-anchor" ↦ "middle"
+         ]
+         >>= setText (fst caption)
       createLegend interior g
       pure g
 
