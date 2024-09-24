@@ -241,7 +241,6 @@ instance Drawable LineChart where
 -- ======================
 -- boilerplate
 -- ======================
-
 instance Reflect (Dict (Val (SelState 𝕊))) LinePlot where
    from r = LinePlot
       { name: unpack string (get f_name r)
