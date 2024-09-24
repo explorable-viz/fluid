@@ -18,7 +18,6 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
-import Data.Traversable (for)
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels)
 import Dict (Dict)
@@ -143,7 +142,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       pure { x, y }
 
    createLines :: Dimensions Int -> D3.Selection -> Effect Unit
-   createLines range parent = do
+   createLines range parent =
       for_ (concat $ plots <#> segments) \{ name, start, end } ->
          parent # create Path
             [ classes [ "linechart-segment" ]
@@ -164,16 +163,17 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
          segment (Point { x, y }) = { x: fst x, y: fst y }
 
    createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
-   createPoints range parent = do
-      ps <- for entries \(Point { x, y } × _) ->
-         parent # create Circle
-            [ "class" ↦ "linechart-point"
-            , "stroke-width" ⟼ 1
-            , "cx" ⟼ (to range).x (fst x)
-            , "cy" ⟼ (to range).y (fst y)
-            ]
-      for_ (zip ps entries) \(point × _ × (p :: PointCoordinate)) ->
-         point # setDatum p
+   createPoints range parent =
+      for_ entries \(Point { x, y } × { i, j }) ->
+         parent #
+            ( create Circle
+                 [ "class" ↦ "linechart-point"
+                 , "stroke-width" ⟼ 1
+                 , "cx" ⟼ (to range).x (fst x)
+                 , "cy" ⟼ (to range).y (fst y)
+                 ]
+                 >=> setDatum { i, j }
+            )
       where
       entries :: Array (Point Number × PointCoordinate)
       entries = concat $ flip mapWithIndex plots \i (LinePlot { points: ps }) ->
@@ -186,11 +186,11 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
          [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
+      let circle_centre = lineHeight / 2 - point_smallRadius / 2
       legendEntries <- legend' # createMany G entries
          [ "class" ↦ const "legend-entry"
          , translate' \{ i } -> { x: 0, y: entry_y i }
          ]
-      let circle_centre = lineHeight / 2 - point_smallRadius / 2
       for_ (zip legendEntries entries) \(entry × { name }) ->
          entry
             # -- align text with boxes
