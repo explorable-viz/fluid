@@ -65,10 +65,6 @@ record_isVisible r =
    isNone :: SelState 𝕊 -> Boolean
    isNone a = getPersistent a == None && getTransient a == None
 
-instance Drawable2 TableView where
-   createRootElement = createRootElement
-   setSelState = setSelState
-
 prim :: Val (SelState 𝕊) -> String
 prim (Val _ v) = v # case _ of
    Int n -> show n
@@ -182,6 +178,10 @@ createRootElement (TableView { colNames, filter, rows }) div childId = do
    cellClasses colName
       | colName == rowKey = [ "filter-toggle", "toggle-button" ]
       | otherwise = []
+
+instance Drawable2 TableView where
+   createRootElement = createRootElement
+   setSelState = setSelState
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
