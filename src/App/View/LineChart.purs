@@ -6,7 +6,7 @@ import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, �
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, createMany', datum, dimensions, each, forEach_create, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, setText_, textHeight, textWidth, translate, translate', xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, create, createMany, datum, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, translate', xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
@@ -140,7 +140,7 @@ instance Drawable2 LineChart where
 
       createLines :: Dimensions Int -> D3.Selection -> Effect Unit
       createLines range =
-         void <$> createMany' Path plots
+         void <$> createMany Path plots
             [ "fill" ↦ const "none"
             , "stroke" ↦ \(LinePlot { name }) -> nameCol (fst name) (names plots)
             , "stroke-width" ↦ const "1"
@@ -150,7 +150,7 @@ instance Drawable2 LineChart where
 
       createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
       createPoints range parent = do
-         ps <- parent # createMany' Circle entries
+         ps <- parent # createMany Circle entries
             [ "class" ↦ const "linechart-point"
             , "stroke-width" ↦ const "1"
             , "cx" ↦ \(Point { x } × _) -> show $ (to range).x (fst x)
@@ -170,23 +170,21 @@ instance Drawable2 LineChart where
             [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
          void $ legend' # create Rect
             [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
-         -- Re-express in terms of for and create (to lose data binding)
-         legendEntries <- legend' # createMany G "legend-entry" entries
-            [ translate' \{ i } -> { x: 0, y: entry_y i } ]
-         void $ each (setText_ (\{ name } -> name)) =<<
-            ( legendEntries # forEach_create Text \_ ->
-                 [ classes [ "legend-text" ]
-                 , translate { x: legend_entry_x, y: 9 } -- align text with boxes
-                 ]
-            )
-         let circle_centre = lineHeight / 2 - point_smallRadius / 2
-         void $ legendEntries # forEach_create Circle \{ name } ->
-            [ "fill" ↦ nameCol name (names plots)
-            , "r" ⟼ point_smallRadius
-            , "cx" ⟼ circle_centre
-            , "cy" ⟼ circle_centre
+         legendEntries <- legend' # createMany G entries
+            [ "class" ↦ const "legend-entry"
+            , translate' \{ i } -> { x: 0, y: entry_y i }
             ]
-
+         let circle_centre = lineHeight / 2 - point_smallRadius / 2
+         for_ (zip legendEntries entries) \(entry × { name }) ->
+            entry
+               # -- align text with boxes
+                  (create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ] >=> setText name)
+               >>= create Circle
+                  [ "fill" ↦ nameCol name (names plots)
+                  , "r" ⟼ point_smallRadius
+                  , "cx" ⟼ circle_centre
+                  , "cy" ⟼ circle_centre
+                  ]
          where
          entries :: Array LegendEntry
          entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })

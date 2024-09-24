@@ -9,11 +9,9 @@ module App.View.Util.D3
    , classed
    , create
    , createMany
-   , createMany'
    , datum
    , dimensions
    , each
-   , forEach_create
    , isEmpty
    , line
    , nameCol
@@ -105,19 +103,10 @@ create :: ElementType -> Attrs -> Selection -> Effect Selection
 create elementType as parent =
    fromFoldable as # createChild parent (show elementType)
 
-forEach_create :: forall a. ElementType -> (a -> Attrs) -> MultiSelection -> Effect MultiSelection
-forEach_create elementType asF parents =
-   asF >>> fromFoldable # forEach_createChild parents (show elementType)
-
-createMany' :: forall a. ElementType -> Array a -> Array (Bind (a -> String)) -> Selection -> Effect (Array Selection)
-createMany' elementType xs as parent =
+createMany :: forall a. ElementType -> Array a -> Array (Bind (a -> String)) -> Selection -> Effect (Array Selection)
+createMany elementType xs as parent =
    for ((\a -> (_ <@> a) <$> as) <$> xs) $
       flip (create elementType) parent
-
--- Deprecated; also probably want to lose MultiSelection
-createMany :: forall a. ElementType -> String -> Array a -> Array (Bind (a -> String)) -> Selection -> Effect MultiSelection
-createMany elementType class_ xs as parent =
-   fromFoldable as # createChildren parent (show elementType) class_ xs
 
 setAttrs :: Attrs -> Selection -> Effect Selection
 setAttrs as sel = fromFoldable as # attrs sel
@@ -138,7 +127,6 @@ instance IsEmpty MultiSelection where
    isEmpty = multi_isEmpty
 
 foreign import createChild :: Selection -> String -> Object String -> Effect Selection
-foreign import createChildren :: forall a. Selection -> String -> String -> Array a -> Object (a -> String) -> Effect MultiSelection
 foreign import remove :: Selection -> Effect Unit
 foreign import nameCol :: String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
@@ -163,7 +151,6 @@ foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
 foreign import each :: (Selection -> Effect Selection) -> MultiSelection -> Effect MultiSelection
 
 -- Different type signatures but same underlying implementation as Selection-based analogues
-foreign import forEach_createChild :: forall a. MultiSelection -> String -> (a -> Object String) -> Effect MultiSelection
 foreign import multi_isEmpty :: MultiSelection -> Effect Boolean
 
 instance Show ElementType

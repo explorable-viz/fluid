@@ -55,27 +55,6 @@ export function createChild (parent) {
       }
    }
 }
-
-export function createChildren (parent) {
-   return elementType => {
-      return class_ => {
-         return data => {
-            return attrFuns => {
-               return () => {
-                  return parent
-                     .selectAll()
-                     .data(data)
-                     .enter()
-                     .append(elementType)
-                     .classed(class_, true) // no-op if class_ == ""
-                     .attrs(attrFuns)
-               }
-            }
-         }
-      }
-   }
-}
-
 export function remove (element) {
    return () => {
       element.remove()
@@ -256,5 +235,4 @@ export function each (f) {
 }
 
 export const setText_ = setText
-export const forEach_createChild = createChild
 export const multi_isEmpty = empty
