@@ -22,7 +22,7 @@ import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels)
 import Dict (Dict)
 import Effect (Effect)
-import Lattice ((∨))
+import Lattice ((∨), (∧))
 import Primitive (string, unpack)
 import Util (type (×), Endo, init, nonEmpty, tail, zipWith, (!), (×))
 import Util.Map (get)
@@ -54,26 +54,36 @@ point_smallRadius = 2
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int }
+type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
+type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 
 setSelState :: LineChart -> EventListener -> D3.Selection -> Effect Unit
 setSelState (LineChart { plots }) redraw rootElement = do
    points <- rootElement # selectAll ".linechart-point"
    for_ points \point -> do
       point' <- datum point
-      point # setAttrs (selAttrs point') >>= registerMouseListeners redraw
+      point # setAttrs (pointAttrs point') >>= registerMouseListeners redraw
    where
-   selAttrs :: PointCoordinate -> Attrs
-   selAttrs { i, j } =
+   pointAttrs :: PointCoordinate -> Attrs
+   pointAttrs { i, j } =
       [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
       , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
       , "fill" ↦ fill col
       ]
       where
       LinePlot { name, points } = plots ! i
-      Point { x, y } = points ! j
-      sel = snd x ∨ snd y
+      sel = selState (points ! j)
       col = nameCol (fst name) (names plots)
       fill = if isPersistent sel then flip colorShade (-30) else identity
+
+   segmentAttrs :: SegmentCoordinates -> Attrs
+   segmentAttrs { i, j1, j2 } = ?_
+      where
+      LinePlot { name, points } = plots ! i
+      sel = selState (points ! j1) ∧ selState (points ! j2)
+
+   selState :: Point Number -> SelState 𝕊
+   selState (Point { x, y }) = snd x ∨ snd y
 
 createRootElement :: LineChart -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
@@ -143,24 +153,29 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
 
    createLines :: Dimensions Int -> D3.Selection -> Effect Unit
    createLines range parent =
-      for_ (concat $ plots <#> segments) \{ name, start, end } ->
-         parent # create Path
-            [ classes [ "linechart-segment" ]
-            , "fill" ↦ "none"
-            , "stroke" ↦ nameCol name (names plots)
-            , "stroke-width" ⟼ 1
-            , "d" ↦ line (to range) [ start, end ]
-            ]
+      for_ (concat $ mapWithIndex segments plots)
+         \({ name, start, end } × segmentCoords) ->
+            parent #
+               ( create Path
+                    [ classes [ "linechart-segment" ]
+                    , "fill" ↦ "none"
+                    , "stroke" ↦ nameCol name (names plots)
+                    , "stroke-width" ⟼ 1
+                    , "d" ↦ line (to range) [ start, end ]
+                    ]
+                    >=> setDatum segmentCoords
+               )
       where
-      segments :: LinePlot -> Array { name :: String, start :: Coord Number, end :: Coord Number }
-      segments (LinePlot { name, points: ps }) = case fromArray ps of
+      segments :: Int -> LinePlot -> Array (Segment × SegmentCoordinates)
+      segments i (LinePlot { name, points: ps }) = case fromArray ps of
          Nothing -> []
-         Just ps' -> zipWith (\start end -> { name: fst name, start: segment start, end: segment end })
-            (init ps')
-            (tail ps')
-         where
-         segment :: Point Number -> Coord Number
-         segment (Point { x, y }) = { x: fst x, y: fst y }
+         Just ps' -> zipWith
+            (\(start × j1) (end × j2) -> { name: fst name, start, end } × { i, j1, j2 })
+            (mapWithIndex (\j point -> coord point × j) (init ps'))
+            (mapWithIndex (\j point -> coord point × (j + 1)) (tail ps'))
+
+      coord :: Point Number -> Coord Number
+      coord (Point { x, y }) = { x: fst x, y: fst y }
 
    createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
    createPoints range parent =
