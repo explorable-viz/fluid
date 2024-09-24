@@ -117,7 +117,7 @@ export function dimensions (sel) {
    }
 }
 
-export function empty (sel) {
+export function isEmpty (sel) {
    return () => {
       return sel.empty()
    }
@@ -150,7 +150,6 @@ export function selectAll (selector) {
 }
 
 // Similar to d3-selection-multi function of the same name.
-// TODO: drop support for multi-selections from this method in favour of explicit 'each'?
 export function attrs (sel) {
    return attrs => {
       return () => {
@@ -223,16 +222,3 @@ export function on (eventType) {
       }
    }
 }
-
-export function each (f) {
-   return sel => {
-      return () => {
-         return sel.each(function () {
-            f(d3.select(this))()
-         })
-      }
-   }
-}
-
-export const setText_ = setText
-export const multi_isEmpty = empty
