@@ -206,16 +206,19 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       let circle_centre = lineHeight / 2 - point_smallRadius / 2
-      for_ entries \{ i, name } ->
-         legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
+      for_ entries \{ i, name } -> do
+         g <- legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
+         void $ g #
             -- align text with boxes
-            >>= (create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ] >=> setText name)
-            >>= create Circle
-               [ "fill" ↦ nameCol name (names plots)
-               , "r" ⟼ point_smallRadius
-               , "cx" ⟼ circle_centre
-               , "cy" ⟼ circle_centre
-               ]
+            ( create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ]
+                 >=> setText name
+            )
+         g # create Circle
+            [ "fill" ↦ nameCol name (names plots)
+            , "r" ⟼ point_smallRadius
+            , "cx" ⟼ circle_centre
+            , "cy" ⟼ circle_centre
+            ]
       where
       entries :: Array LegendEntry
       entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
