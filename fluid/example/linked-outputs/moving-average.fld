@@ -9,7 +9,6 @@ let getByX xVal data =
 
 let points' = newPoints 0;
     cavgs = mAvgChop points' 1;
-    cavgs' = mAvgShrink points' 1;
     savgs = sAvgShrink points' 2
 in
 LineChart {
