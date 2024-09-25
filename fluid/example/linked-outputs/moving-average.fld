@@ -1,8 +1,8 @@
 let nthPad n xs =
-      nth (min (max n 1)) xs;
-    movingAvg ps window =
-      let total = 0 in
-      total / (1 + 2 * window);
+      nth (min (max n 0) (length xs - 1)) xs;
+    movingAvg xs window =
+      [ sum [ nth 0 [ 1 ] | n <- [ i - window .. i + window ] ] / (1 + 2 * window)
+      | i <- [ 0 .. length xs - 1 ] ];
 let points' =
       let offset = 0 in
       map (fun point -> { x: point.x, y: point.y + offset }) points;
@@ -12,7 +12,7 @@ in
 LineChart {
    tickLabels: { x: Default, y: Default },
    size: { width: 330, height: 285 },
-   caption: "Moving averages",
+   caption: "Moving averages " ++ numToStr (head (movingAvg (getXs points') 1)),
    plots: [ LinePlot { name: "Simple", points: savgs },
             LinePlot { name: "Central", points: cavgs },
             LinePlot { name: "Original Curve", points: points' } ]
