@@ -1,12 +1,4 @@
 let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
-let getByX xVal data =
-    let helper [] = [];
-        helper (x : xs) =
-            if x.x == xVal
-            then x
-            else helper xs
-    in helper data;
-
 let points' = newPoints 0;
     cavgs = mAvgChop points' 1;
     savgs = sAvgShrink points' 2
