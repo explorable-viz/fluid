@@ -1,4 +1,4 @@
-let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
+let newPoints offset = map (fun point -> { x: point.x, y: point.y + offset }) points;
 let points' = newPoints 0;
     cavgs = mAvgChop points' 1;
     savgs = sAvgShrink points' 2
