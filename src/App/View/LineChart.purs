@@ -57,8 +57,8 @@ fill sel = if isPersistent sel then flip colorShade (-30) else identity
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int }
-type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
+type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 
 setSelState :: LineChart -> EventListener -> D3.Selection -> Effect Unit
 setSelState (LineChart { plots }) redraw rootElement = do
@@ -69,7 +69,7 @@ setSelState (LineChart { plots }) redraw rootElement = do
    segments <- rootElement # selectAll ".linechart-segment"
    for_ segments \segment -> do
       segment' <- datum segment
-      segment # setAttrs (segmentAttrs segment') >>= registerMouseListeners redraw
+      segment # setAttrs (segmentAttrs segment')
    where
    pointAttrs :: PointCoordinate -> Attrs
    pointAttrs { i, j } =
