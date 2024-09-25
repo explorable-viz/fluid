@@ -1,3 +1,5 @@
+let getXs = map (fun rec -> rec.x);
+    getYs = map (fun rec -> rec.y);
 let nthPad n xs =
       nth (min (max n 0) (length xs - 1)) xs;
     movingAvg ys window =
@@ -7,16 +9,11 @@ let nthPad n xs =
       zipWith (fun x y -> {x: x, y: y}) (getXs ps) (movingAvg (getYs ps) window);
 let points' =
       let offset = 0 in
-      map (fun point -> { x: point.x, y: point.y + offset }) points;
-    cavgs = mAvgChop points' 1;
-    savgs = sAvgShrink points' 2
-in
-LineChart {
+      map (fun point -> { x: point.x, y: point.y + offset }) points
+in LineChart {
    tickLabels: { x: Default, y: Default },
    size: { width: 330, height: 285 },
    caption: "Moving averages",
-   plots: [ LinePlot { name: "Simple", points: savgs },
-            LinePlot { name: "Central", points: cavgs },
-            LinePlot { name: "New", points: movingAvg' points' 1 },
+   plots: [ LinePlot { name: "Moving average", points: movingAvg' points' 1 },
             LinePlot { name: "Original Curve", points: points' } ]
 }
