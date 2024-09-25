@@ -52,35 +52,51 @@ names plots = plots <#> unwrap >>> _.name >>> fst
 point_smallRadius :: Int
 point_smallRadius = 2
 
+fill :: SelState 𝕊 -> String -> String
+fill sel = if isPersistent sel then flip colorShade (-30) else identity
+
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 
+{-
+type SelAttr =
+{
+   none
+}
+-}
 setSelState :: LineChart -> EventListener -> D3.Selection -> Effect Unit
 setSelState (LineChart { plots }) redraw rootElement = do
    points <- rootElement # selectAll ".linechart-point"
    for_ points \point -> do
       point' <- datum point
       point # setAttrs (pointAttrs point') >>= registerMouseListeners redraw
+   segments <- rootElement # selectAll ".linechart-segment"
+   for_ segments \segment -> do
+      segment' <- datum segment
+      segment # setAttrs (segmentAttrs segment') >>= registerMouseListeners redraw
    where
    pointAttrs :: PointCoordinate -> Attrs
    pointAttrs { i, j } =
       [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
-      , "stroke" ↦ (fill col # if isTransient sel then flip colorShade (-30) else identity)
-      , "fill" ↦ fill col
+      , "stroke" ↦ (fill' # if isTransient sel then flip colorShade (-30) else identity)
+      , "fill" ↦ fill'
       ]
       where
       LinePlot { name, points } = plots ! i
       sel = selState (points ! j)
-      col = nameCol (fst name) (names plots)
-      fill = if isPersistent sel then flip colorShade (-30) else identity
+      fill' = fill sel (nameCol (fst name) (names plots))
 
    segmentAttrs :: SegmentCoordinates -> Attrs
-   segmentAttrs { i, j1, j2 } = ?_
+   segmentAttrs { i, j1, j2 } =
+      [ "stroke" ↦ (fill' # if isTransient sel then flip colorShade (-30) else identity)
+      , "stroke-width" ⟼ if isTransient sel then 2 else if isPersistent sel then 2 else 1
+      ]
       where
       LinePlot { name, points } = plots ! i
       sel = selState (points ! j1) ∧ selState (points ! j2)
+      fill' = fill sel (nameCol (fst name) (names plots))
 
    selState :: Point Number -> SelState 𝕊
    selState (Point { x, y }) = snd x ∨ snd y
@@ -154,15 +170,9 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
    createLines :: Dimensions Int -> D3.Selection -> Effect Unit
    createLines range parent =
       for_ (concat $ mapWithIndex segments plots)
-         \({ name, start, end } × segmentCoords) ->
+         \({ start, end } × segmentCoords) ->
             parent #
-               ( create Path
-                    [ classes [ "linechart-segment" ]
-                    , "fill" ↦ "none"
-                    , "stroke" ↦ nameCol name (names plots)
-                    , "stroke-width" ⟼ 1
-                    , "d" ↦ line (to range) [ start, end ]
-                    ]
+               ( create Path [ classes [ "linechart-segment" ], "d" ↦ line (to range) [ start, end ] ]
                     >=> setDatum segmentCoords
                )
       where

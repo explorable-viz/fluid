@@ -25,7 +25,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class.Console (log)
 import Foreign.Object (Object, empty, fromFoldable, union)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∨), (∧))
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∨))
 import Pretty (prettyP)
 import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
