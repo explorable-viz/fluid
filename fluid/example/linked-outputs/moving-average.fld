@@ -3,6 +3,8 @@ let nthPad n xs =
     movingAvg ys window =
       [ sum [ nthPad n ys | n <- [ i - window .. i + window ] ] / (1 + 2 * window)
       | i <- [ 0 .. length ys - 1 ] ];
+    movingAvg' ps window =
+      zipWith (fun x y -> {x: x, y: y}) (getXs ps) (movingAvg (getYs ps) window);
 let points' =
       let offset = 0 in
       map (fun point -> { x: point.x, y: point.y + offset }) points;
@@ -12,8 +14,9 @@ in
 LineChart {
    tickLabels: { x: Default, y: Default },
    size: { width: 330, height: 285 },
-   caption: "Moving averages " ++ numToStr (head (movingAvg (getYs points') 1)),
+   caption: "Moving averages",
    plots: [ LinePlot { name: "Simple", points: savgs },
             LinePlot { name: "Central", points: cavgs },
+            LinePlot { name: "New", points: movingAvg' points' 1 },
             LinePlot { name: "Original Curve", points: points' } ]
 }
