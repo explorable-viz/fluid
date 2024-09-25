@@ -59,11 +59,11 @@ movingAverages_spec :: TestLinkedOutputsSpec
 movingAverages_spec =
    { spec:
         { datasets: [ "points" ↦ "example/linked-outputs/moving-average-data" ]
-        , imports: [ "lib/moving-average", "lib/nombre" ]
+        , imports: [ "lib/nombre" ]
         , file: File "linked-outputs/moving-average"
         , inputs: [ "points" ]
         }
-   , δ_out: identity
+   , δ_out: identity -- TODO: make this a non-trivial test
    , out_expect: identity
    }
 
