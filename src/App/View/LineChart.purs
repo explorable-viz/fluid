@@ -60,12 +60,6 @@ type PointCoordinate = { i :: Int, j :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 
-{-
-type SelAttr =
-{
-   none
-}
--}
 setSelState :: LineChart -> EventListener -> D3.Selection -> Effect Unit
 setSelState (LineChart { plots }) redraw rootElement = do
    points <- rootElement # selectAll ".linechart-point"
