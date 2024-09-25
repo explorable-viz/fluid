@@ -55,27 +55,6 @@ export function createChild (parent) {
       }
    }
 }
-
-export function createChildren (parent) {
-   return elementType => {
-      return class_ => {
-         return data => {
-            return attrFuns => {
-               return () => {
-                  return parent
-                     .selectAll()
-                     .data(data)
-                     .enter()
-                     .append(elementType)
-                     .classed(class_, true) // no-op if class_ == ""
-                     .attrs(attrFuns)
-               }
-            }
-         }
-      }
-   }
-}
-
 export function remove (element) {
    return () => {
       element.remove()
@@ -138,7 +117,7 @@ export function dimensions (sel) {
    }
 }
 
-export function empty (sel) {
+export function isEmpty (sel) {
    return () => {
       return sel.empty()
    }
@@ -171,7 +150,6 @@ export function selectAll (selector) {
 }
 
 // Similar to d3-selection-multi function of the same name.
-// TODO: drop support for multi-selections from this method in favour of explicit 'each'?
 export function attrs (sel) {
    return attrs => {
       return () => {
@@ -223,7 +201,7 @@ export function datum (sel) {
    }
 }
 
-export function setData (d) {
+export function setDatum (d) {
    return sel => {
       return () => {
          return sel.data([d]) // must be an array of data, even for singleton selection
@@ -244,17 +222,3 @@ export function on (eventType) {
       }
    }
 }
-
-export function each (f) {
-   return sel => {
-      return () => {
-         return sel.each(function () {
-            f(d3.select(this))()
-         })
-      }
-   }
-}
-
-export const setText_ = setText
-export const forEach_createChild = createChild
-export const multi_isEmpty = empty
