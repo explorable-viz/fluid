@@ -13,10 +13,10 @@ import Util ((×))
 
 fig :: FigSpec
 fig =
-   { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
-   , imports: [ "lib/nombre" ]
-   , file: File "text"
-   , inputs: [ "renewables" ]
+   { datasets: [ "tableData" ↦ "example/explainable-table" ]
+   , imports: []
+   , file: File "explain-table"
+   , inputs: [ "tableData" ]
    }
 
 main :: Effect Unit

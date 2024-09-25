@@ -39,13 +39,13 @@ fig3 =
 main :: Effect Unit
 main = do
    runAffs_ drawFile
-      [ loadFile' (Folder "fluid/example/linked-outputs") (File "bar-chart-line-chart")
+      [ loadFile' (Folder "fluid/example/slicing/linked-outputs") (File "bar-chart-line-chart")
       , loadFile' (Folder "fluid/example/linked-outputs") (File "renewables")
       , loadFile' (Folder "fluid/lib") (File "convolution")
       , loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss-wrap")
       ]
    runAffs_ (uncurry drawFig)
-      [ ("fig-4" × _) <$> loadFig energyScatter
+      [ ("fig-4" × _) <$> loadFig energyScatter --loadFig is the significant part for loading
       , ("fig-conv-2" × _) <$> loadFig fig2
       , ("fig-1" × _) <$> loadFig linkedOutputs_spec1.spec
       ]

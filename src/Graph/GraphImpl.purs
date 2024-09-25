@@ -22,7 +22,7 @@ import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
 import Test.Util.Debug (checking)
-import Util (type (×), assertWhen, definitely, error, singleton, (×))
+import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, toUnfoldable)
 import Util.Set (empty, size)
 
@@ -74,7 +74,7 @@ instance Vertices GraphImpl where
 -- This is better but still slow if there are thousands of sinks.
 sinks' :: AdjMap -> Set Vertex
 sinks' m = D.toArrayWithKey (×) (unwrap m)
-   # filter (snd >>> Set.isEmpty)
+   # filter (snd >>> isEmpty)
    <#> (fst >>> Vertex)
    # Set.fromFoldable
 
