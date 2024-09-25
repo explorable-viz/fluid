@@ -1,3 +1,6 @@
+let movingAvg ps window =
+      let total = 0 in
+      total / (1 + 2 * window);
 let points' =
       let offset = 0 in
       map (fun point -> { x: point.x, y: point.y + offset }) points;
