@@ -48,34 +48,13 @@ export function textDimensions (class_) {
 
 export function createChild (parent) {
    return elementType => {
-      return attrs => {
+      return as => {
          return () => {
-            return parent.append(elementType).attrs(attrs)
+            return attrs(parent.append(elementType))(as)()
          }
       }
    }
 }
-
-export function createChildren (parent) {
-   return elementType => {
-      return class_ => {
-         return data => {
-            return attrFuns => {
-               return () => {
-                  return parent
-                     .selectAll("." + class_)
-                     .data(data)
-                     .enter()
-                     .append(elementType)
-                     .classed(class_, true)
-                     .attrs(attrFuns)
-               }
-            }
-         }
-      }
-   }
-}
-
 export function remove (element) {
    return () => {
       element.remove()
@@ -112,9 +91,9 @@ export function yAxis (to) {
 }
 
 export function setText (string) {
-   return element => {
+   return sel => {
       return () => {
-         return element.text(string)
+         return sel.text(string)
       }
    }
 }
@@ -138,7 +117,7 @@ export function dimensions (sel) {
    }
 }
 
-export function empty (sel) {
+export function isEmpty (sel) {
    return () => {
       return sel.empty()
    }
@@ -150,24 +129,27 @@ export function rootSelect (selector) {
    }
 }
 
-export function select (sel) {
-   return selector => {
+export function select (selector) {
+   return sel => {
       return () => {
          return sel.select(selector)
       }
    }
 }
 
-export function selectAll (sel) {
-   return selector => {
+export function selectAll (selector) {
+   return sel => {
       return () => {
-         return sel.selectAll(selector)
+         const sels = [];
+         sel.selectAll(selector).each(function () {
+            sels.push(d3.select(this))
+         })
+         return sels
       }
    }
 }
 
 // Similar to d3-selection-multi function of the same name.
-// TODO: drop support for multi-selections from this method in favour of explicit 'each'?
 export function attrs (sel) {
    return attrs => {
       return () => {
@@ -197,6 +179,16 @@ export function styles (sel) {
    }
 }
 
+export function classed (classes) {
+   return hasClass => {
+      return sel => {
+         return () => {
+            return sel.classed(classes, hasClass)
+         }
+      }
+   }
+}
+
 export function scaleLinear (x1) {
    return x2 => {
       return d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
@@ -206,6 +198,14 @@ export function scaleLinear (x1) {
 export function datum (sel) {
    return () => {
       return sel.datum()
+   }
+}
+
+export function setDatum (d) {
+   return sel => {
+      return () => {
+         return sel.data([d]) // must be an array of data, even for singleton selection
+      }
    }
 }
 
@@ -222,18 +222,3 @@ export function on (eventType) {
       }
    }
 }
-
-export function each (f) {
-   return sel => {
-      return () => {
-         return sel.each(function () {
-            f(d3.select(this))()
-         })
-      }
-   }
-}
-
-export const attrs_ = attrs
-export const setText_ = setText
-export const forEach_createChild = createChild
-export const multi_isEmpty = empty

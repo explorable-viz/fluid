@@ -2,7 +2,7 @@ module App.Util where
 
 import Prelude hiding (absurd, join)
 
-import Bind (Bind, Var)
+import Bind (Bind, Var, (↦))
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
@@ -25,7 +25,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class.Console (log)
 import Foreign.Object (Object, empty, fromFoldable, union)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, neg, (∨))
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∨))
+import Pretty (prettyP)
 import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
@@ -111,6 +112,9 @@ instance Ord 𝕊 where
 instance JoinSemilattice 𝕊 where
    join = max
 
+instance MeetSemilattice 𝕊 where
+   meet = min
+
 instance BoundedJoinSemilattice 𝕊 where
    bot = None
 
@@ -153,7 +157,8 @@ eventData = target >>> unsafeEventData
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
 selector :: EventType -> Selector Val
-selector (EventType ev) = (report <<< setSel <$> _)
+selector (EventType ev) v =
+   reportSelState <<< setSel <$> reportTarget v
    where
    setSel :: Endo (SelState 𝔹)
    setSel Inert = Inert
@@ -163,7 +168,8 @@ selector (EventType ev) = (report <<< setSel <$> _)
       | ev == "mouseleave" = Reactive (sel { transient = false })
       | otherwise = error "Unsupported event type"
 
-   report = spyWhen tracing.mouseEvent "Setting  to " show
+   reportSelState = spyWhen tracing.mouseEvent "to " show
+   reportTarget = spyWhen tracing.mouseEvent "Setting selState of " prettyP
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
@@ -203,6 +209,9 @@ css =
         }
    , inert: "inert"
    }
+
+classes :: Array String -> Bind String
+classes = joinWith " " >>> ("class" ↦ _)
 
 selClasses :: String
 selClasses = joinWith " " $

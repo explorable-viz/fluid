@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -xe
 
-yarn tidy
+. script/compile.sh
 . script/clean.sh $1
-spago build --purs-args '--strict --censor-codes=UserDefinedWarning'
-purs-backend-es bundle-app --main $2 --to dist/$1/app.js ${@:3}
+. script/bundle.sh ${@:1}

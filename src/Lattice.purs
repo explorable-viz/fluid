@@ -110,15 +110,16 @@ symmetricDiff x y = (x - y) × (y - x)
 type 𝔹 = Boolean
 type Raw (f :: Type -> Type) = f Unit
 
+-- Don't lift to arbitrary functor because we relax join to allow different (but compatible) shapes
 instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) where
    join (a × a') (b × b') = (a ∨ b) × (a' ∨ b')
 
 instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) where
    meet (a × a') (b × b') = meet a b × meet a' b'
 else instance MeetSemilattice a => MeetSemilattice (Dict a) where
-   meet = unionWith (∧)
+   meet = unionWith (∧) -- intersectionWith? in fact shouldn't we require equal domains?
 else instance (Functor f, Apply f, MeetSemilattice a) => MeetSemilattice (f a) where
-   meet a = (a `lift2 (∧)` _)
+   meet = lift2 (∧)
 
 instance (BoundedJoinSemilattice a, BoundedJoinSemilattice b) => BoundedJoinSemilattice (a × b) where
    bot = bot × bot
