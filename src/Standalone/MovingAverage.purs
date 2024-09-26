@@ -10,4 +10,6 @@ import Test.Specs.LinkedOutputs (movingAverages_spec)
 import Util ((×))
 
 main :: Effect Unit
-main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig movingAverages_spec.spec ]
+main = runAffs_ (uncurry drawFig)
+   [ ("fig" × _) <$> loadFig movingAverages_spec.spec
+   ]

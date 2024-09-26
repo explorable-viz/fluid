@@ -87,6 +87,14 @@ let filter p [] = [];
       let ys = filter p xs in
       if p x then x : ys else ys;
 
+-- (a -> Option b) -> List a -> List b
+let filterMap p [] = [];
+    filterMap p (x : xs) =
+      match p x as {
+         None -> filterMap f xs;
+         Some y -> y : filterMap f xs
+      };
+
 -- (a -> b -> a) -> a -> List b -> a
 let foldl op z [] = z;
     foldl op z (x : xs) = foldl op (op z x) xs;
