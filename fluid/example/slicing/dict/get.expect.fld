@@ -1,3 +1,4 @@
 let d = {|"a" := 5, "a" ++ "b" := {fst : 6,
-                                      snd : ⸨0⸩}|} in
-dict_get "a" d * (dict_get "ab" d).snd
+                                      snd : ⸨0⸩}|};
+    a = "a" in
+d.a * d.[(a ++ "b")].snd

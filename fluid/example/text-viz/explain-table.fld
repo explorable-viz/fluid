@@ -1,0 +1,34 @@
+let newDataTable offset = map (fun s -> { scenario: s.scenario, bE2140: s.bE2140 + offset, lR2140: s.lR2140, bE4160: s.bE4160, lR4160: s.lR4160, bE81100: s.bE81100, lR81100: s.lR81100 }) tableData;
+let newModel offset = map (fun s -> { model: s.model, probability: s.probability + offset}) modelProbs;
+let getByScenario scenario data = 
+        let helper [] = [];
+            helper (x: xs) =
+                if x.scenario == scenario
+                then x
+                else helper xs
+        in helper data;
+
+let likelihoodMap prob = 
+    if prob >= 0.99
+    then "virtually certain"
+    else if prob >= 0.9
+    then "very likely"
+    else if prob >= 0.66
+    then "likely"
+    else if prob >= 0.33
+    then "about as likely as not"
+    else if prob >= 0.1
+    then "unlikely"
+    else if prob >= 0.01
+    then "very unlikely"
+    else "exceptionally unlikely";
+
+
+let realTable = newDataTable 0;
+    probTable = newModel 0.0
+in MultiView {|
+    "table" := tableData,
+    "explanation":=
+        LinkedText [ "The low-emissions scenario -- SSP1-1.9 -- projects a temperature increase of "
+                     , numToStr (getByScenario "SSP1-1.9" realTable).bE81100, " by the end of the century."
+                     , "Under this model, it is ", likelihoodMap (head probTable).probability, " that global temperature increase will meet the target of 2c by the end of the century." ] |}

@@ -13,10 +13,10 @@ import Util ((×))
 
 fig :: FigSpec
 fig =
-   { datasets: [ "tableData" ↦ "example/explainable-table" ]
+   { datasets: [ "tableData" ↦ "example/text-viz/explainable-table", "modelProbs" ↦ "example/text-viz/fake-probabilities" ]
    , imports: []
-   , file: File "explain-table"
-   , inputs: [ "tableData" ]
+   , file: File "text-viz/explain-table"
+   , inputs: [ "tableData", "modelProbs" ]
    }
 
 main :: Effect Unit

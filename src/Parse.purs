@@ -277,10 +277,16 @@ expr_ =
 
          simpleExprOrProjection :: SParser (Raw Expr)
          simpleExprOrProjection =
-            simpleExpr >>= projections
+            simpleExpr >>= projection
             where
-            projections :: Raw Expr -> SParser (Raw Expr)
-            projections e = (Project e <$> (token.reservedOp str.dot *> ident)) <|> pure e
+            projection :: Raw Expr -> SParser (Raw Expr)
+            projection e = dprojection e <|> rprojection e
+
+            rprojection :: Raw Expr -> SParser (Raw Expr)
+            rprojection e = (Project e <$> (token.reservedOp str.dot *> ident)) <|> pure e
+
+            dprojection :: Raw Expr -> SParser (Raw Expr)
+            dprojection e = (DProject e <$> (token.reservedOp str.dot *> token.brackets expr_))
 
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
          simpleExpr :: SParser (Raw Expr)
