@@ -1,9 +1,0 @@
-[
-    { year: 2010, quantity: 10.3 },
-    { year: 2011, quantity: 14.06 },
-    { year: 2012, quantity: 23.22 },
-    { year: 2013, quantity: 34.94 },
-    { year: 2014, quantity: 43.0 },
-    { year: 2015, quantity: 65.17 },
-    { year: 2016, quantity: 72.2 }
-]
