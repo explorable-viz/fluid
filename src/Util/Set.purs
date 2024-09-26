@@ -7,12 +7,11 @@ import Data.Set (Set)
 import Data.Set as Set
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Util (Endo)
+import Util (class IsEmpty, Endo)
 
 -- Generalises Set but also supports a fixed element type. Doesn't support transforming element type.
-class Set a b | a -> b where
+class IsEmpty a <= Set a b | a -> b where
    empty :: a
-   isEmpty :: a -> Boolean
    filter :: (b -> Boolean) -> Endo a
    size :: a -> Int
    difference :: a -> Endo a
@@ -25,7 +24,6 @@ infixr 6 union as ∪
 
 instance Ord a => Set (Set a) a where
    empty = Set.empty
-   isEmpty = Set.isEmpty
    filter = Set.filter
    size = Set.size
    difference = Set.difference
@@ -34,7 +32,6 @@ instance Ord a => Set (Set a) a where
 
 instance Set (Object a) String where
    empty = Object.empty
-   isEmpty = Object.isEmpty
    filter = Object.filterKeys
    size = Object.size
    difference x y = foldl (flip Object.delete) x (Object.keys y)

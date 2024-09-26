@@ -18,7 +18,7 @@ import Util (definitely, (×))
 
 main :: Effect Unit
 main = launchAff_ do
-   outs <- sequence $ (\(str × row) -> (str × _) <$> row) <$> (concat (benchmarks <#> (_ $ (10 × true))))
+   outs <- sequence $ (\(str × row) -> (str × _) <$> row) <$> (concat (benchmarks <@> (10 × true)))
    logShow $ BenchAcc $ definitely "More than one benchmark" $ fromArray outs
 
 benchmarks :: Array BenchSuite

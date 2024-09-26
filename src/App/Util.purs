@@ -2,7 +2,7 @@ module App.Util where
 
 import Prelude hiding (absurd, join)
 
-import Bind (Bind, Var)
+import Bind (Bind, Var, (↦))
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
@@ -12,6 +12,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
+import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
@@ -24,8 +25,9 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class.Console (log)
 import Foreign.Object (Object, empty, fromFoldable, union)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, bot, neg, (∨))
-import Primitive (as, intOrNumber, unpack)
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∨))
+import Pretty (prettyP)
+import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
@@ -110,6 +112,9 @@ instance Ord 𝕊 where
 instance JoinSemilattice 𝕊 where
    join = max
 
+instance MeetSemilattice 𝕊 where
+   meet = min
+
 instance BoundedJoinSemilattice 𝕊 where
    bot = None
 
@@ -131,17 +136,10 @@ get_intOrNumber x r = first as (unpack intOrNumber (get x r))
 
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val (SelState 𝕊)) -> a) -> Val (SelState 𝕊) -> a
-record toRecord (Val _ v) = toRecord (P.record2.unpack v)
+record toRecord (Val _ v) = toRecord (P.record.unpack v)
 
 class Reflect a b where
    from :: Partial => a -> b
-
-instance Reflect (Val (SelState 𝕊)) (Dict (Val (SelState 𝕊))) where
-   from (Val _ (Dictionary (DictRep d))) = d <#> snd
-
-instance Reflect (Val (SelState 𝕊)) (Array (Val (SelState 𝕊))) where
-   from (Val _ (Constr c Nil)) | c == cNil = []
-   from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
 
 runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
 runAffs_ f as = flip runAff_ (sequence as) case _ of
@@ -159,17 +157,19 @@ eventData = target >>> unsafeEventData
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
 selector :: EventType -> Selector Val
-selector (EventType ev) = (report <<< setSel ev <$> _)
+selector (EventType ev) v =
+   reportSelState <<< setSel <$> reportTarget v
    where
-   setSel :: String -> Endo (SelState 𝔹)
-   setSel _ Inert = Inert
-   setSel s (Reactive sel)
-      | s == "mousedown" = Reactive (sel { persistent = neg sel.persistent })
-      | s == "mouseenter" = Reactive (sel { transient = true })
-      | s == "mouseleave" = Reactive (sel { transient = false })
+   setSel :: Endo (SelState 𝔹)
+   setSel Inert = Inert
+   setSel (Reactive sel)
+      | ev == "mousedown" = Reactive (sel { persistent = neg sel.persistent })
+      | ev == "mouseenter" = Reactive (sel { transient = true })
+      | ev == "mouseleave" = Reactive (sel { transient = false })
       | otherwise = error "Unsupported event type"
 
-   report = spyWhen tracing.mouseEvent "Setting  to " show
+   reportSelState = spyWhen tracing.mouseEvent "to " show
+   reportTarget = spyWhen tracing.mouseEvent "Setting selState of " prettyP
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
@@ -210,6 +210,9 @@ css =
    , inert: "inert"
    }
 
+classes :: Array String -> Bind String
+classes = joinWith " " >>> ("class" ↦ _)
+
 selClasses :: String
 selClasses = joinWith " " $
    [ css.sel.transient.primary
@@ -238,6 +241,11 @@ type Attrs = Array (Bind String)
 attrs :: Array Attrs -> Object String
 attrs = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
 
+newtype Dimensions a = Dimensions
+   { width :: a
+   , height :: a
+   }
+
 -- ======================
 -- boilerplate
 -- ======================
@@ -265,3 +273,22 @@ derive instance Eq a => Eq (SelState a)
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf Inert = highlightIf false
    highlightIf (Reactive { persistent, transient }) = highlightIf (persistent ∨ transient)
+
+derive instance Newtype (Dimensions a) _
+derive instance Functor Dimensions
+derive instance Generic (Dimensions a) _
+instance Show a => Show (Dimensions a) where
+   show = genericShow
+
+instance Reflect (Val (SelState 𝕊)) (Dict (Val (SelState 𝕊))) where
+   from (Val _ (Dictionary (DictRep d))) = d <#> snd
+
+instance Reflect (Val (SelState 𝕊)) (Array (Val (SelState 𝕊))) where
+   from (Val _ (Constr c Nil)) | c == cNil = []
+   from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
+
+instance Reflect (Dict (Val (SelState 𝕊))) (Dimensions (Selectable Int)) where
+   from r = Dimensions
+      { width: unpack int (get "width" r)
+      , height: unpack int (get "height" r)
+      }
