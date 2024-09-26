@@ -1,19 +1,19 @@
-let getXs = map (fun rec -> rec.x);
-    getYs = map (fun rec -> rec.y);
 let nthPad n xs =
       nth (min (max n 0) (length xs - 1)) xs;
     movingAvg ys window =
       [ sum [ nthPad n ys | n <- [ i - window .. i + window ] ] / (1 + 2 * window)
       | i <- [ 0 .. length ys - 1 ] ];
     movingAvg' ps window =
-      zipWith (fun x y -> {x: x, y: y}) (getXs ps) (movingAvg (getYs ps) window);
+      zipWith
+         (fun year quantity -> {x: year, y: quantity})
+         (map (fun p -> p.year) ps)
+         (movingAvg (map (fun p -> p.quantity) ps) window);
 let points' =
-      let offset = 0 in
-      map (fun point -> { x: point.x, y: point.y + offset }) points
+      map (fun p -> { x: p.year, y: floor p.quantity }) dataset
 in LineChart {
    tickLabels: { x: Default, y: Default },
    size: { width: 330, height: 285 },
    caption: "Moving averages",
-   plots: [ LinePlot { name: "Moving average", points: movingAvg' points' 1 },
-            LinePlot { name: "Original Curve", points: points' } ]
+   plots: [ LinePlot { name: "Moving average", points: movingAvg' dataset 1 },
+            LinePlot { name: "Original curve", points: points' } ]
 }

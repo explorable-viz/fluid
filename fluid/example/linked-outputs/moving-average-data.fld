@@ -1,9 +1,9 @@
 [
-    { x: 2010, y: 10 },
-    { x: 2011, y: 14 },
-    { x: 2012, y: 23 },
-    { x: 2013, y: 34 },
-    { x: 2014, y: 43 },
-    { x: 2015, y: 65 },
-    { x: 2016, y: 72 }
+    { year: 2010, quantity: 10.3 },
+    { year: 2011, quantity: 14.06 },
+    { year: 2012, quantity: 23.22 },
+    { year: 2013, quantity: 34.94 },
+    { year: 2014, quantity: 43.0 },
+    { year: 2015, quantity: 65.17 },
+    { year: 2016, quantity: 72.2 }
 ]
