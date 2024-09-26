@@ -3,17 +3,17 @@ let nthPad n xs =
     movingAvg ys window =
       [ sum [ nthPad n ys | n <- [ i - window .. i + window ] ] / (1 + 2 * window)
       | i <- [ 0 .. length ys - 1 ] ];
-    movingAvg' ps window =
+    movingAvg' rs window =
       zipWith
-         (fun year quantity -> {x: year, y: quantity})
-         (map (fun p -> p.year) ps)
-         (movingAvg (map (fun p -> p.quantity) ps) window);
-let points' =
-      map (fun p -> { x: p.year, y: floor p.quantity }) dataset
+         (fun x y -> {x: x, y: y})
+         (map (fun r -> r.x) rs)
+         (movingAvg (map (fun r -> r.y) rs) window);
+let points =
+      [ { x: r.year, y: r.emissions } | r <- methane, r.type == "Agriculture" ]
 in LineChart {
-   tickLabels: { x: Default, y: Default },
+   tickLabels: { x: Rotated, y: Default },
    size: { width: 330, height: 285 },
-   caption: "Moving averages",
-   plots: [ LinePlot { name: "Moving average", points: movingAvg' dataset 1 },
-            LinePlot { name: "Original curve", points: points' } ]
+   caption: "SSP5-8.5 projected methane emissions (Agriculture)",
+   plots: [ LinePlot { name: "Moving average", points: movingAvg' points 1 },
+            LinePlot { name: "Original curve", points: points } ]
 }
