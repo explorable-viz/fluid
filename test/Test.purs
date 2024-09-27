@@ -2,6 +2,7 @@ module Test.Test where
 
 import Prelude hiding (add)
 
+import App.Util.Selector (dictKey)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
@@ -20,8 +21,14 @@ main :: Effect Unit
 main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite
-   [ { file: "records", imports: [], fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
+scratchpad = asTestSuite $ bwdSuite
+   [ { file: "dict/create"
+     , imports: []
+     , bwd_expect_file: "dict/create.expect"
+     , δv: dictKey "ab" neg
+     , fwd_expect: "{|[\"a\"] : 5, [⸨\"ab\"⸩] : 6|}"
+     , datasets: []
+     }
    ]
 
 asTestSuite :: BenchSuite -> TestSuite

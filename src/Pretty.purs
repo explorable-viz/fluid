@@ -24,7 +24,7 @@ import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictKey(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -172,16 +172,13 @@ prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (va
 prettyOperator sep (Cons s xss) = sep (prettyOperator sep (toList (singleton s)) .<>. text str.comma) (prettyOperator sep xss)
 prettyOperator _ Nil = empty
 
-instance Ann a => Pretty (DictKey a) where
-   pretty (VarKey k) = pretty k
-   pretty (ExprKey k) = pretty k
-
-instance Ann a => Pretty (List (DictKey a × Expr a)) where
+instance Ann a => Pretty (List (DictEntry a × Expr a)) where
    pretty Nil = empty
-   pretty (((VarKey k) × v) : Nil) = pretty k .<>. text str.colon .<>. pretty v
-   pretty (((ExprKey k) × v) : Nil) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v
-   pretty (((VarKey k) × v) : xs) = pretty k .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty xs
-   pretty (((ExprKey k) × v) : xs) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty xs
+   pretty ((k × v) : Nil) = pretty k .<>. text str.colon .<>. pretty v
+   pretty ((k × v) : kvs) = pretty k .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty kvs
+
+instance Ann a => Pretty (DictEntry a) where
+   pretty (ExprKey k) = text str.lBracket .<>. pretty k .<>. text str.rBracket
 
 instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
@@ -350,15 +347,15 @@ prettyRecordOrDict
    -> (b -> Doc)
    -> List (b × d)
    -> Doc
-prettyRecordOrDict sep keybrace bracify prettyKey xvs =
-   xvs <#> first (prettyKey >>> keybrace) <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
+prettyRecordOrDict sep kdelim bracify prettyKey xvs =
+   xvs <#> first (prettyKey <#> kdelim) <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
       # hcomma >>> bracify
 
-bracketKeys :: Endo Doc
-bracketKeys = between (text str.lBracket) (text str.rBracket)
+keyBracks :: Endo Doc
+keyBracks = between (text str.lBracket) (text str.rBracket)
 
 prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # (prettyRecordOrDict (text str.colon) bracketKeys)
+prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colon) keyBracks
 
 prettyRecord :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
 prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon) identity

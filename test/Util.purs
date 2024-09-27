@@ -80,7 +80,6 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    log "Trace works"
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
-   log "Graph works"
    let out0 = (δv (const unselected <$> v)) <#> getPersistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP

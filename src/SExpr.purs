@@ -11,7 +11,7 @@ import Data.Filterable (filterMap)
 import Data.Foldable (length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, take, zip, zipWith, (:), (\\))
+import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, unsnoc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap, wrap)
@@ -23,7 +23,7 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd, uncurry)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
-import Desugarable (class Desugarable, desugBwd, desug)
+import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -45,7 +45,7 @@ data Expr a
    | Str a String
    | Constr a Ctr (List (Expr a))
    | Record a (List (Bind (Expr a)))
-   | Dictionary a (List (Pair (Expr a)))
+   | Dictionary a (List (DictEntry a × Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (Clauses a)
    | Project (Expr a) Var
@@ -61,9 +61,7 @@ data Expr a
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
-data DictKey a
-   = VarKey Var
-   | ExprKey (Expr a)
+data DictEntry a = ExprKey (Expr a)
 
 data ListRest a
    = End a
@@ -129,6 +127,10 @@ data Qualifier a
    | ListCompDecl (VarDef a) -- could allow VarDefs instead
 
 data Module a = Module (List (VarDefs a + RecDefs a))
+
+instance Desugarable DictEntry E.Expr where
+   desug (ExprKey e) = desug e
+   desugBwd e (ExprKey e') = ExprKey $ desugBwd e e'
 
 instance Desugarable Expr E.Expr where
    desug = exprFwd
@@ -244,7 +246,7 @@ exprFwd (Str α s) = pure (E.Str α s)
 exprFwd (Constr α c ss) = E.Constr α c <$> traverse desug ss
 exprFwd (Record α xss) = E.Record α <$> wrap <<< D.fromFoldable <$> traverse (traverse desug) xss
 exprFwd (Dictionary α sss) = do
-   let (ks × vs) = P.unzip sss
+   let ks × vs = unzip sss
    ks' <- traverse desug ks
    vs' <- traverse desug vs
    E.Dictionary α <$> (pure $ zipWith (\k v -> Pair k v) ks' vs')
@@ -275,7 +277,7 @@ exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry desugBwd <$> z
 exprBwd (E.Record α xes) (Record _ xss) =
    Record α $ xss # filterMap \(x ↦ s) -> lookup x xes <#> \e -> x ↦ desugBwd e s
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
-   Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (desugBwd e s) (desugBwd e' s')) ees sss)
+   Dictionary α (zipWith (\(Pair e e') ((ExprKey s) × s') -> (ExprKey (desugBwd e s)) × (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
    Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (desugBwd σ μ)
@@ -560,7 +562,7 @@ derive instance Newtype (RecDef a) _
 derive instance Functor Clause
 derive instance Functor Clauses
 derive instance Functor Expr
-derive instance Functor DictKey
+derive instance Functor DictEntry
 derive instance Functor ListRest
 derive instance Functor VarDef
 derive instance Functor Qualifier
@@ -574,6 +576,11 @@ instance Functor Module where
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ = error unimplemented
+
+derive instance Eq a => Eq (DictEntry a)
+derive instance Generic (DictEntry a) _
+instance Show a => Show (DictEntry a) where
+   show c = genericShow c
 
 derive instance Eq a => Eq (Expr a)
 derive instance Generic (Expr a) _
