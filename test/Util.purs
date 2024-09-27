@@ -74,13 +74,10 @@ testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let γ = erase gconfig.γ
    { gc: GC desug, e } <- desugGC s
-   log "desugged"
    traced@{ gc: GC evalT, v } <- traceBenchmark benchNames.eval \_ ->
       traceGC (EnvExpr γ e)
-   log "traced"
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
-   log $ "v:" <> (prettyP v)
    let out0 = (δv (const unselected <$> v)) <#> getPersistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP

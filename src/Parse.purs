@@ -352,7 +352,7 @@ expr_ =
                between (token.symbol str.dictLBracket) (token.symbol str.dictRBracket)
                where
                kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
-               kvPair = (((ExprKey <$> expr') # token.brackets) <* colonEq) `lift2 (×)` expr'
+               kvPair = (((ExprKey <$> expr') # token.brackets) <* token.colon) `lift2 (×)` expr'
 
             record :: SParser (Raw Expr)
             record = sepBy (field expr') token.comma <#> Record unit # token.braces

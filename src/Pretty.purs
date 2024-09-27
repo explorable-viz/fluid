@@ -171,8 +171,8 @@ prettyOperator _ Nil = empty
 
 instance Ann a => Pretty (List (DictEntry a × Expr a)) where
    pretty Nil = empty
-   pretty ((k × v) : Nil) = pretty k .<>. text str.colonEq .<>. pretty v
-   pretty ((k × v) : kvs) = pretty k .<>. text str.colonEq .<>. pretty v .<>. text str.comma .<>. pretty kvs
+   pretty ((k × v) : Nil) = pretty k .<>. text str.colon .<>. pretty v
+   pretty ((k × v) : kvs) = pretty k .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty kvs
 
 instance Ann a => Pretty (DictEntry a) where
    pretty (ExprKey k) = text str.lBracket .<>. pretty k .<>. text str.rBracket
@@ -352,7 +352,7 @@ keyBracks :: Endo Doc
 keyBracks = between (text str.lBracket) (text str.rBracket)
 
 prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colonEq) keyBracks
+prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colon) keyBracks
 
 prettyRecord :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
 prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon) identity

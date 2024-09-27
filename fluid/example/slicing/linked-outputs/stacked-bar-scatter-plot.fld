@@ -1,5 +1,5 @@
 MultiView {|
-   "stacked-bar-chart" :=
+   ["stacked-bar-chart"] :
       let totalFor year country rows =
          let [ row ] = [ row | row <- rows, row.year == year, row.country == country ]
          in row.nuclearOut + row.gasOut + row.coalOut + row.petrolOut;
@@ -10,7 +10,7 @@ MultiView {|
          stackedBars: [ { x: numToStr year, bars: stack year }
                       | year <- [2014..2018] ]
       },
-   "scatter-plot" :=
+   ["scatter-plot"] :
       let isCountry name x = name == x.country;
          isYear year x = year == x.year;
 

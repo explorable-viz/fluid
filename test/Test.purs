@@ -16,9 +16,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
--- main = run tests
+main = run tests
 
-main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite
@@ -26,7 +26,7 @@ scratchpad = asTestSuite $ bwdSuite
      , imports: []
      , bwd_expect_file: "dict/create.expect"
      , δv: dictKey "ab" neg
-     , fwd_expect: "{|[\"a\"] := 5, [⸨\"ab\"⸩] := 6|}"
+     , fwd_expect: "{|[\"a\"] : 5, [⸨\"ab\"⸩] : 6|}"
      , datasets: []
      }
    ]
