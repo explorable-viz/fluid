@@ -5,7 +5,7 @@ import Prelude hiding (absurd, between)
 import Bind (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), fromFoldable, head, null, uncons, (:))
+import Data.List (List(..), fromFoldable, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
@@ -141,10 +141,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Str α str) = highlightIf α $ text ("\"" <> str <> "\"")
    pretty (Constr α c x) = highlightIf α $ prettyConstr c x
    pretty (Record α xss) = highlightIf α $ curlyBraces (prettyOperator (.-.) xss)
-   pretty (Dictionary α sss) =
-      case head sss of
-         Just (VarKey _ × _) -> highlightIf α $ curlyBraces (pretty sss)
-         _ -> highlightIf α $ dictBrackets (pretty sss)
+   pretty (Dictionary α sss) = highlightIf α $ dictBrackets (pretty sss)
    pretty (Matrix α e (x × y) e') =
       highlightIf α $ arrayBrackets
          ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)

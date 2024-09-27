@@ -33,7 +33,6 @@ import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
-import Util.Pair (unzip) as P
 import Util.Set ((∈))
 
 -- Surface language expressions.
@@ -135,14 +134,6 @@ instance Desugarable DictEntry E.Expr where
 instance Desugarable Expr E.Expr where
    desug = exprFwd
    desugBwd = exprBwd
-
-instance Desugarable DictKey E.Expr where
-   desug (VarKey s) = pure $ E.Var s
-   desug (ExprKey e) = desug e
-
-   desugBwd (E.Var _) (VarKey s) = VarKey s
-   desugBwd e (ExprKey e') = ExprKey $ desugBwd e e'
-   desugBwd _ _ = error "DictKeyBackward Desug"
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
@@ -585,11 +576,6 @@ instance Show a => Show (DictEntry a) where
 derive instance Eq a => Eq (Expr a)
 derive instance Generic (Expr a) _
 instance Show a => Show (Expr a) where
-   show c = genericShow c
-
-derive instance Eq a => Eq (DictKey a)
-derive instance Generic (DictKey a) _
-instance Show a => Show (DictKey a) where
    show c = genericShow c
 
 derive instance Eq a => Eq (ListRest a)
