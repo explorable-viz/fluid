@@ -5,7 +5,7 @@ import Prelude hiding (absurd, between)
 import Bind (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), fromFoldable, null, uncons, (:))
+import Data.List (List(..), fromFoldable, head, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
@@ -141,7 +141,10 @@ instance Ann a => Pretty (Expr a) where
    pretty (Str α str) = highlightIf α $ text ("\"" <> str <> "\"")
    pretty (Constr α c x) = highlightIf α $ prettyConstr c x
    pretty (Record α xss) = highlightIf α $ curlyBraces (prettyOperator (.-.) xss)
-   pretty (Dictionary α sss) = highlightIf α $ dictBrackets (pretty sss)
+   pretty (Dictionary α sss) =
+      case head sss of
+         Just (VarKey _ × _) -> highlightIf α $ curlyBraces (pretty sss)
+         _ -> highlightIf α $ dictBrackets (pretty sss)
    pretty (Matrix α e (x × y) e') =
       highlightIf α $ arrayBrackets
          ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
@@ -175,8 +178,10 @@ instance Ann a => Pretty (DictKey a) where
 
 instance Ann a => Pretty (List (DictKey a × Expr a)) where
    pretty Nil = empty
-   pretty ((k × v) : Nil) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v
-   pretty ((k × v) : xs) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty xs
+   pretty (((VarKey k) × v) : Nil) = pretty k .<>. text str.colon .<>. pretty v
+   pretty (((ExprKey k) × v) : Nil) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v
+   pretty (((VarKey k) × v) : xs) = pretty k .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty xs
+   pretty (((ExprKey k) × v) : xs) = text str.lBracket .<>. pretty k .<>. text str.rBracket .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty xs
 
 instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l

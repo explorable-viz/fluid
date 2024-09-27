@@ -15,17 +15,13 @@ import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, suite
 import Util ((×))
 
 main :: Effect Unit
-main = run tests
+-- main = run tests
 
--- main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite
-   [ { file: "dicts"
-     , imports: []
-     , fwd_expect:
-          "{|[\"d\"] : {||}, [\"e\"] : {|[\"a\"] : 5, [\"ab\"] : 6|}, [\"e_ab\"] : 6, [\"f\"] : {|[\"a\"] : 6, [\"ab\"] : 7|}, [\"g\"] : {|[\"a\"] : 5|}, [\"h\"] : {|[\"fst\"] : 4, [\"snd\"] : (6 : (7 : []))|}|}"
-     }
+   [ { file: "records", imports: [], fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
    ]
 
 asTestSuite :: BenchSuite -> TestSuite
