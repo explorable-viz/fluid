@@ -143,6 +143,10 @@ nav ul li a.active-page {
    max-width: 50vw; /* undo effect of transform: scale(2) for layout purposes */
 }
 
+.grid-container > :last-child {
+  padding-right: 10px;
+}
+
 .flex-left-align {
    display: flex;
    flex-direction: column;
