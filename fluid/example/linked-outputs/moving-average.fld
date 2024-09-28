@@ -1,32 +1,19 @@
-let newPoints offset = map (fun point -> { x: point.x, y: (point.y + offset) }) points;
-let getByX xVal data =
-    let helper [] = [];
-        helper (x : xs) =
-            if x.x == xVal
-            then x
-            else helper xs
-    in helper data;
-
-let points' = newPoints 0;
-    cavgs = mAvgChop points' 1;
-    cavgs' = mAvgShrink points' 1;
-    savgs = sAvgShrink points' 2
-in MultiView {|
-    "line-chart-1" :=
-        LineChart {
-            tickLabels: { x: Default, y: Default },
-            size: { width: 330, height: 285 },
-            caption: "Moving averages",
-            plots: [ LinePlot { name: "Simple", points: savgs }
-                   , LinePlot { name: "Central", points: cavgs }
-                   , LinePlot { name: "Original Curve", points: points' } ]
-        },
-    "desc" :=
-        LinkedText( [ "Simple moving averages are computed using the most recent n examples, "
-                    , "whereas central moving averages use datapoints either side of the year in question. "
-                    , "The moving average for 2015 was "
-                    , numToStr (getByX 2015 cavgs).y, " "
-                    , "we see that the simple moving average for the same year is actually "
-                    , gradedLeqP (getByX 2015 savgs).y (getByX 2015 cavgs).y ])
-
-|}
+let nthPad n xs =
+      nth (min (max n 0) (length xs - 1)) xs;
+    movingAvg ys window =
+      [ sum [ nthPad n ys | n <- [ i - window .. i + window ] ] / (1 + 2 * window)
+      | i <- [ 0 .. length ys - 1 ] ];
+    movingAvg' rs window =
+      zipWith
+         (fun x y -> {x: x, y: y})
+         (map (fun r -> r.x) rs)
+         (movingAvg (map (fun r -> r.y) rs) window);
+let points =
+      [ { x: r.year, y: r.emissions } | r <- methane, r.type == "Agriculture" ]
+in LineChart {
+   tickLabels: { x: Rotated, y: Default },
+   size: { width: 330, height: 285 },
+   caption: "SSP5-8.5 projected methane emissions (Agriculture)",
+   plots: [ LinePlot { name: "Moving average", points: movingAvg' points 1 },
+            LinePlot { name: "Original curve", points: points } ]
+}
