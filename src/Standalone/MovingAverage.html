@@ -30,22 +30,24 @@
    </div>
 
    <div></div>
-   <div id="fig-input" class="flex-right-align data-pane"></div>
+   <div id="data-pane" class="flex-right-align data-pane">
+      <p>Each <b>year</b> contributes to <b>one</b> point of each curve.
+      <br>Each <b>emissions</b> value contributes to <b>one</b> point of the original curve but <b>three</b> of the moving average.
+      </p>
+      <div id="fig-input"></div>
+   </div>
    <div>
-      <div onclick="toggle('fig-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+      <div onclick="toggle('data-pane')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig"></div>
-      <p>Each <b>year</b> contributes to <b>one</b> point of each curve.
-      <br>Each <b>emissions</b> value contributes to <b>one</b> point of the original curve and <b>three</b> points of the moving average.
-      </p>
    </div>
 </div>
 
 <script src="app.js"></script>
 <script>
    // move to PureScript
-   toggle('fig-input')
+   toggle('data-pane')
 </script>
 </body>
 </html>

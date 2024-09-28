@@ -32,6 +32,10 @@ body {
    margin-bottom: 10em;
 }
 
+p {
+   margin-block-start: 0pt;
+}
+
 .center {
    height: 100%;
 }
@@ -86,7 +90,7 @@ li:last-child {
 }
 
 table {
-   margin: 4mm;
+/*   margin: 4mm;*/
 }
 
 .table-caption {
