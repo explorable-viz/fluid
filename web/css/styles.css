@@ -33,7 +33,7 @@ body {
 }
 
 p {
-   margin-block-start: 0pt;
+   margin-block-start: 0.1em;
 }
 
 .center {
