@@ -136,7 +136,11 @@ nav ul li a.active-page {
 .grid-container {
    display: grid;
    width: 100%;
-   grid-template-columns: 10px 47.5% fit-content(10px) 47.5%;
+   grid-template-columns: 10px 47.5% fit-content(10px) 1fr;
+}
+
+.grid-container.double-size {
+   max-width: 50vw; /* undo effect of transform: scale(2) for layout purposes */
 }
 
 .flex-left-align {

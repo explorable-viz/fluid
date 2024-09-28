@@ -24,9 +24,9 @@
    <div></div>
    <div></div>
    <div></div>
-   <div class="flex-left-align">
+   <div>
       <h3>Matrix convolution</h3>
-      <p>Explain your figure here</p>
+      <p>Click the grey toggle to enable the <b>data pane</b>. Mouse over output elements to see what inputs are being used.</p>
    </div>
 
    <div></div>
@@ -34,7 +34,11 @@
    <div>
       <div onclick="toggle('fig-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
-   <div id="fig"></div>
+   <div class="flex-left-align">
+      <div id="fig"></div>
+      <p>What happens at the <b>edge</b> of the output matrix?</p>
+      <p>What about a <b>corner</b>?</p>
+   </div>
 </div>
 
 <script src="app.js"></script>
