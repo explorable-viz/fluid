@@ -178,7 +178,7 @@ nav ul li a.active-page {
    background-color: #F5F5F5;
 }
 
-/* Standalone figures have hardcoded zoom for presentation purposes. */
+/* Standalone figures have hardcoded scale for presentation purposes. */
 .double-size {
    transform: scale(2);
    transform-origin: top;
@@ -186,8 +186,9 @@ nav ul li a.active-page {
 
 body.standalone {
    height: 100%;
-   display: grid; /* outer grid for vertical centering of inner */
-   place-items: center;
+   display: grid;
+   justify-items: center;
+   align-items: start;
 }
 
 /* Needed for contained height specifications to work */
