@@ -45,7 +45,7 @@ main = do
       , loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss-wrap")
       ]
    runAffs_ (uncurry drawFig)
-      [ ("fig-4" × _) <$> loadFig energyScatter --loadFig is the significant part for loading
+      [ ("fig-4" × _) <$> loadFig energyScatter
       , ("fig-conv-2" × _) <$> loadFig fig2
       , ("fig-1" × _) <$> loadFig linkedOutputs_spec1.spec
       ]

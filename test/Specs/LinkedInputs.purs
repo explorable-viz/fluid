@@ -62,8 +62,8 @@ linkedInputs_spec5 =
         { file: File "linked-inputs/mini-energyscatter"
         , imports: []
         , datasets:
-             [ "nonRenewables" ↦ "example/linked-inputs/mini-non-renewables"
-             , "renewables" ↦ "example/linked-inputs/mini-renewables"
+             [ "nonRenewables" ↦ "dataset/mini-non-renewables"
+             , "renewables" ↦ "dataset/mini-renewables"
              ]
         , inputs: [ "nonRenewables", "renewables" ]
         }
