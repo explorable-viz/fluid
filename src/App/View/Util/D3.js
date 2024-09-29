@@ -98,12 +98,18 @@ export function setText (string) {
    }
 }
 
-const colScale = d3.scaleOrdinal(d3.schemePastel1) // stateful but purify by allocating once
+// stateful but purify by allocating once
+const colorScale_ = {
+   schemePastel1: d3.scaleOrdinal(d3.schemePastel1),
+   schemeAccent: d3.scaleOrdinal(d3.schemeAccent)
+}
 
 // TODO: better name
-export function nameCol (key) {
-   return keys => {
-      return colScale(keys.indexOf(key))
+export function colorScale (scheme) {
+   return key => {
+      return keys => {
+         return colorScale_[scheme](keys.indexOf(key))
+      }
    }
 }
 
