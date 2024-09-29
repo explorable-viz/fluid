@@ -100,6 +100,7 @@ export function setText (string) {
 
 const colScale = d3.scaleOrdinal(d3.schemePastel1) // stateful but purify by allocating once
 
+// TODO: better name
 export function nameCol (key) {
    return keys => {
       return colScale(keys.indexOf(key))
