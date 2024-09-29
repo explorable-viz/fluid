@@ -8,18 +8,22 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Renderer, selListener, uiHelpers)
+import App.View.Util.D3 (ElementType(..), create)
+import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
 import Data.Tuple (snd)
 import DataType (f_bars, f_caption, f_stackedBars, f_x, f_y, f_z)
 import Dict (Dict)
+import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Primitive (string, unpack)
 import Util ((!))
 import Util.Map (get)
 import Val (Val)
+import Web.Event.EventTarget (EventListener)
 
 newtype BarChart = BarChart
    { caption :: Selectable String
@@ -80,6 +84,19 @@ barChartHelpers =
       else pow 10 m
       where
       m = floor (log (toNumber n) / log 10.0)
+
+setSelState2 :: BarChart -> EventListener -> D3.Selection -> Effect Unit
+setSelState2 _ _ _ =
+   pure unit
+
+createRootElement2 :: BarChart -> D3.Selection -> String -> Effect D3.Selection
+createRootElement2 _ div _ = do
+   rootElement <- div # create SVG []
+   pure rootElement
+
+instance Drawable2 BarChart where
+   createRootElement = createRootElement2
+   setSelState = setSelState2
 
 instance Drawable BarChart where
    draw rSpec figVal _ redraw =
