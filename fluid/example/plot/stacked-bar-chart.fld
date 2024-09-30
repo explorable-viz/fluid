@@ -7,14 +7,7 @@ let totalFor year country =
     nuclearOut year =
        sum [ row.nuclearOut | row <- nonRenewables, row.year == year, row.country `elem` countries ];
     nuclearCap year =
-       sum [ row.nuclearCap | row <- nonRenewables, row.year == year, row.country `elem` countries ];
-let scatter = ScatterPlot {
-  caption: "Nuclear capacity vs. output",
-  points: [ { x: nuclearCap year, y: nuclearOut year  }
-          | year <- [2014..2018] ],
-  xlabel: "Nuclear capacity",
-  ylabel: "Nuclear output"
-}
+       sum [ row.nuclearCap | row <- nonRenewables, row.year == year, row.country `elem` countries ]
 in MultiView {|
    "bar-chart" := BarChart {
       caption: "Non-renewable output",
@@ -22,5 +15,11 @@ in MultiView {|
       stackedBars: [ { x: numToStr year, bars: stack year }
                    | year <- [2014..2018] ]
    },
-   "scatter-plot" := scatter
+   "scatter-plot" := ScatterPlot {
+      caption: "Nuclear capacity vs. output",
+      points: [ { x: nuclearCap year, y: nuclearOut year  }
+               | year <- [2014..2018] ],
+      xlabel: "Nuclear capacity",
+      ylabel: "Nuclear output"
+   }
 |}

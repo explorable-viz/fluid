@@ -16,8 +16,8 @@ function addHatchPattern (rootElement, j, col_j) {
    pattern = rootElement.append('pattern')
       .attr('id', 'diagonalHatch-' + j)
       .attr('patternUnits', 'userSpaceOnUse')
-      .attr('width', 3.5)
-      .attr('height', 3.5)
+      .attr('width', 2)
+      .attr('height', 2)
       .attr('patternTransform', 'rotate(45)')
 
    pattern.append('rect')

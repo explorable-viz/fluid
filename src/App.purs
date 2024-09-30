@@ -40,7 +40,7 @@ main :: Effect Unit
 main = do
    runAffs_ drawFile
       [ loadFile' (Folder "fluid/example/slicing/linked-outputs") (File "bar-chart-line-chart")
-      , loadFile' (Folder "fluid/example/linked-outputs") (File "renewables")
+      , loadFile' (Folder "fluid/dataset") (File "renewables")
       , loadFile' (Folder "fluid/lib") (File "convolution")
       , loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss-wrap")
       ]
