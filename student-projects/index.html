@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Fluid: Data-Linked Visualisations</title>
+  <script src="https://use.fontawesome.com/1091715d00.js"></script>
+  <link href="/css/styles.css" rel="stylesheet" type="text/css">
+  <link href="/css/simplegrid.css" rel="stylesheet" type="text/css">
+  <link href="/css/data-viz.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+<div class="grid grid-pad">
+   <div class="col-3-12 align-right">
+      <img src="https://i.ibb.co/bFjzrXR/Untitled.jpg" width="80%">
+      <img src="https://i.ibb.co/zNqHKg7/University-of-Bristol-logo.png" width="80%">
+      <img src="https://dorchard.github.io/images/iccs-full-logo.png" alt="ICCS logo" width="80%">
+   </div>
+   <div class="col-9-12">
+      <nav>
+         <ul>
+            <li>
+               <a href="." class="active-page">Latest</a>
+            </li>
+            <li>
+            <a href="https://f.luid.org/0.3.1">v0.3.1</a>
+            </li>
+         </ul>
+      </nav><br>
+      <p><a href="https://github.com/explorable-viz/fluid">GitHub</a> &#183;
+      <a href="https://dl.acm.org/doi/10.1145/3498668">POPL 2022 paper</a> &#183;
+      <a href="https://www.youtube.com/watch?v=M_ePrtD9axk">POPL 2022 talk</a> &#183;
+      <a href="https://www.youtube.com/watch?v=2-S6yVyzypU">PROPL 2024 talk</a> &#183;
+      <a href="https://www.youtube.com/watch?v=F3JaftEnFfM">ICCS Summer School</a>
+      <h2>Fluid: A Programming Language for Transparent, Self-Explanatory Research Outputs</h2>
+   </div>
+</div>
+
+<div id="FLUID" class="grid grid-pad">
+   <div class="col-3-12 align-right">
+      <h3 class="title lowercase">Cambridge MPhil/Part III 2024-25 Projects</h3>
+   </div>
+   <div class="col-9-12">
+      <p>Fluid is an exciting opportunity to work on new programming language foundations designed to make
+      data science more open, intelligible and accessible. If you are a University of Cambridge MPhil or Part
+      III student in Computer Science looking for a project this October, and would like to discuss the
+      possibility of working on Fluid, please contact <a href="roly.perera@cl.cam.ac.uk">Dr Roly Perera</a>,
+      Early Career Advanced Fellow, Institute of Computing for Climate Science, University of Cambridge.</p>
+
+      <h4>Project description</h4>
+      <p>Charts and other visual summaries, curated by journalists and scientists from real-world data and
+      simulations, are how we understand our changing world and the anthopogenic sources of that change. But
+      the visual artifacts we are actually presented with are opaque: any relationship to the underlying data
+      is lost. How can we expect to understand, critique or evaluate claims based on a bitmap? This is
+      challenging enough for an expert with access to the source code and data used to derive the outputs; for
+      a non-expert the prospects are even worse.
+
+      <a href="f.luid.org">Fluid</a> is a new “transparent” programming language, being developed at the
+      Institute of Computing for Climate Science in Cambridge in collaboration with University of Bristol,
+      that makes it easy to create charts and figures which are linked to data, enabling a user to
+      interactively discover what visual elements actually represent. The key idea is to incorporating a
+      bidirectional dynamic dependency analysis into the language runtime, allowing it to track dependencies
+      that arise as as outputs (such as charts and tables) are computed from data. It uses this information to
+      automatically enrich rendered output with interactions that allow a reader to explore the relationship
+      to data directly through the artefact, by selecting visual features of interest. Fluid uses so-called
+      “program slicing” techniques based on Galois connections, a neat mathematical abstraction which
+      characterises exactly the relationship between sets of inputs and sets of outputs which depend on
+      them.</p>
+
+      <p>The live demos on the website show the interactive queries we currently support, but these only
+      scratch the surface of what this kind of infrastructure makes possible. There are many opportunities for
+      an imaginative and technically strong student to help move this idea forward. Your project could go in a
+      number of directions, depending on whether your interests lie more towards programming languages, formal
+      methods or data science. A programming languages project would extend Fluid into a literate programming
+      tool, by adding Markdown support and the ability to embed computational content via a Lisp-style
+      backquote mechanism. A more mathematical project might add multidimensional arrays to the language,
+      along with various array operations inspired by linear algebra and an extension of the dependency
+      analysis to these new operations. A project focused more around science communication would use Fluid to
+      adapt a piece of real-world climate science into a “long-form” essay or interactive explanation intended
+      for a non-specialist audience. (See <a href="https://distill.pub">distill.pub</a> for some
+      examples.)</p>
+
+      <p>If you think this sounds interesting, please get in touch and we can arrange an initial meeting.
+      Whatever form your project takes, we would aim for your work to be incorporated into our main
+      development codebase, and so would form a genuine contribution to a new programming language. You will
+      get to present your work to researchers and data scientists at the Institute of Computing for Climate
+      Science and The Alan Turing Institute, and work with PhD students at Cambridge and Bristol. A strong
+      background in functional programming, maths and/or science is a must. You can expect to gain experience
+      in programming languages research, data analysis and data visualisation, with close supervisor
+      support.</p>
+   </div>
+</div>
+</body>
+</html>
