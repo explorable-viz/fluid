@@ -13,7 +13,7 @@ let getByScenario scenario data =
 
 let likelihoodMap prob = 
     let go (x:xs) = 
-        if x.prob <= prob
+        if x.prob < prob
         then x.msg
         else go xs;
         go [] = "not found"
