@@ -77,7 +77,7 @@ let head [] = error "Can't take head of empty list";
 let tail [] = error "Can't take tail of empty list";
     tail (_ : xs) = xs;
 
--- Int -> List Int -> Bool
+-- Eq a => a -> List a -> Bool
 let elem x [] = False;
     elem x (x' : xs) = (x == x') `or` (elem x xs);
 
