@@ -70,7 +70,7 @@ function drawBarChart_ (
       const childId = divId + '-' + suffix
       const margin = {top: 3, right: 75, bottom: 20, left: 40},
             width = 275 - margin.left - margin.right,
-            height = 170 - margin.top - margin.bottom
+            height = 150 - margin.top - margin.bottom
       const div = d3.select('#' + divId)
       if (div.empty()) {
          console.error('Unable to insert figure: no div found with id ' + divId)
