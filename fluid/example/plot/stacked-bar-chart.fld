@@ -7,7 +7,13 @@ let totalFor year country =
        sum [ row.nuclearOut | row <- nonRenewables, row.year == year ];
     nuclearCap year =
        sum [ row.nuclearCap | row <- nonRenewables, row.year == year ];
-let points = [ { x: nuclearCap year, y: nuclearOut year  } | year <- [2014..2018] ]
+let scatter = ScatterPlot {
+  caption: "Nuclear capacity vs. output",
+  points: [ { x: nuclearCap year, y: nuclearOut year  }
+          | year <- [2014..2018] ],
+  xlabel: "Nuclear capacity",
+  ylabel: "Nuclear output"
+}
 in BarChart {
    caption: "Non-renewable output",
    size: { width: 275, height: 185 },
