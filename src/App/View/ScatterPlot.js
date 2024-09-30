@@ -79,7 +79,7 @@ function drawScatterPlot_ (
             .range([0, width])
          rootElement.append('g')
             .attr('transform', "translate(0," + height + ")")
-            .call(d3.axisBottom(x))
+            .call(d3.axisBottom(x).tickSizeOuter(0))
             .selectAll('text')
             .style('text-anchor', 'middle')
 
@@ -87,7 +87,7 @@ function drawScatterPlot_ (
             .domain([Math.min(0, y_min), y_max])
             .range([height, 0])
          rootElement.append('g')
-            .call(d3.axisLeft(y))
+            .call(d3.axisLeft(y).tickSizeOuter(0))
 
          rootElement.append("text")
             .attr("x", width)
