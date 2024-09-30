@@ -27,27 +27,28 @@
    <div></div>
    <div>
       <h3>Non-renewable energy output</h3>
-      <p>Click the grey toggle and mouse over the bars.</p>
+      <p>Click the grey toggle and mouse over the bars.
+      <br>
+      <b>Clicking</b> makes a selection “persistent”.</p>
    </div>
 
    <div></div>
-   <div id="fig-input" class="flex-right-align data-pane"></div>
+   <div id="data-pane" class="flex-right-align data-pane">
+      <div id="fig-input"></div>
+      <p>What about <b>inputs</b>? Note some rows are hidden.</p>
+   </div>
    <div>
-      <div onclick="toggle('fig-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+      <div onclick="toggle('data-pane')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig"></div>
-      <p>Now try mousing over <b>input cells</b>.
-      <br>
-      Why are some input rows hidden or greyed out?
-      </p>
    </div>
 </div>
 
 <script src="app.js"></script>
 <script>
    // move to PureScript
-   toggle('fig-input')
+   toggle('data-pane')
 </script>
 </body>
 </html>
