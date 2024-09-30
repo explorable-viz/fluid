@@ -16,7 +16,7 @@ in MultiView {|
                    | year <- [2014..2018] ]
    },
    "scatter-plot" := ScatterPlot {
-      caption: "Nuclear capacity vs. output",
+      caption: "",
       points: [ { x: nuclearCap year, y: nuclearOut year  }
                | year <- [2014..2018] ],
       xlabel: "Nuclear capacity",

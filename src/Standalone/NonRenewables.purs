@@ -1,4 +1,4 @@
-module Standalone.StackedBarChart where
+module Standalone.NonRenewables where
 
 import Prelude
 
