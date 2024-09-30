@@ -68,9 +68,9 @@ function drawBarChart_ (
       const { val } = uiHelpers
       const { tickEvery } = barChartHelpers
       const childId = divId + '-' + suffix
-      const margin = {top: 15, right: 75, bottom: 25, left: 40},
+      const margin = {top: 3, right: 75, bottom: 20, left: 40},
             width = 275 - margin.left - margin.right,
-            height = 185 - margin.top - margin.bottom
+            height = 170 - margin.top - margin.bottom
       const div = d3.select('#' + divId)
       if (div.empty()) {
          console.error('Unable to insert figure: no div found with id ' + divId)
@@ -84,7 +84,7 @@ function drawBarChart_ (
          rootElement = div
             .append('svg')
                .attr('width', width + margin.left + margin.right)
-               .attr('height', height + margin.top + margin.bottom)
+               .attr('height', height + margin.top + margin.bottom + margin.bottom) // hackery from hell
                .attr('id', childId)
                .append('g')
                   .attr('transform', `translate(${margin.left}, ${margin.top})`)
