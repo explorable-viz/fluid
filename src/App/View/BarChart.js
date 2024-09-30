@@ -86,10 +86,8 @@ function drawBarChart_ (
                .attr('width', width + margin.left + margin.right)
                .attr('height', height + margin.top + margin.bottom)
                .attr('id', childId)
-
-         rootElement
-            .append('g')
-               .attr('transform', `translate(${margin.left}, ${margin.top})`)
+               .append('g')
+                  .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
          // x-axis
          const x = d3.scaleBand()
