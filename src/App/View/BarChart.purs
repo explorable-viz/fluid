@@ -60,11 +60,11 @@ barChartHelpers =
               None -> col
               Secondary -> "url(#diagonalHatch-" <> show j <> ")"
               Primary -> colorShade col (-40)
-         , "stroke-width" ↦ "1.5"
+         , "stroke-width" ↦ "1"
          , "stroke-dasharray" ↦ case transient of
               None -> "none"
-              Secondary -> "1 2"
-              Primary -> "2 2"
+              Secondary -> "0.5 1" -- "1 2"
+              Primary -> "0.5 1" -- "2 2"
          , "stroke-linecap" ↦ "round"
          , "stroke" ↦
               if persistent /= None || transient /= None then colorShade col (-70)

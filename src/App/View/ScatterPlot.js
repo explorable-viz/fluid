@@ -46,8 +46,8 @@ function drawScatterPlot_ (
    return () => {
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
-      var max_width = 360
-      var max_height = 360
+      var max_width = 280
+      var max_height = 200
       const x_max = Math.ceil(Math.max(...points.map(point => val(point.x))))
       const x_min = Math.ceil(Math.min(...points.map(point => val(point.x))))
       const y_max = Math.ceil(Math.max(...points.map(point => val(point.y))))
