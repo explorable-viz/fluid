@@ -9,20 +9,15 @@ let getByScenario scenario data =
                 else helper xs
         in helper data;
 
+
+
 let likelihoodMap prob = 
-    if prob >= 0.99
-    then "virtually certain"
-    else if prob >= 0.9
-    then "very likely"
-    else if prob >= 0.66
-    then "likely"
-    else if prob >= 0.33
-    then "about as likely as not"
-    else if prob >= 0.1
-    then "unlikely"
-    else if prob >= 0.01
-    then "very unlikely"
-    else "exceptionally unlikely";
+    let go (x:xs) = 
+        if x.prob <= prob
+        then x.msg
+        else go xs;
+        go [] = "not found"
+    in go likelihoods;
 
 let findLikelihood (min, max) target = 
     if target > max
@@ -38,9 +33,9 @@ let realTable = newDataTable 0;
 in MultiView {|
     ["table"]: tableData,
     ["explanation"] :
-        LinkedText [ "The low-emissions scenario -- SSP1-1.9 -- projects a temperature increase of "
+        LinkedText [ "The low-emissions scenario -- ", sspone.scenario ," -- projects a temperature increase of "
                      , numToStr sspone.bE81100, " by the end of the century."
-                     , "Under this model, it is ", likelihoodMap (findLikelihood (sspone.low81100, sspone.low81100) 2.0)
+                     , "Under this model, it is ", likelihoodMap (findLikelihood (sspone.low81100, sspone.high81100) 2.0)
                      , " that global temperature increase will exceed the target of 2c by the end of the century."
                      , " On the other hand, in a higher emissions scenario, like the intermediate scenario SSP2-4.5, it is "
                      , likelihoodMap (findLikelihood (ssptwo.low81100, ssptwo.high81100) 2.0)
