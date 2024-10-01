@@ -9,7 +9,7 @@ import Data.Bifunctor (bimap)
 import Data.Exists (mkExists, runExists)
 import Data.List (List(..), (:), length, range, zip)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (wrap)
+import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (fromFoldable, toUnfoldable) as Set
 import Data.Set (subset)
@@ -25,12 +25,12 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (×), both, check, orElse, singleton, defined, throw, unzip, withMsg)
+import Util (type (×), both, check, defined, orElse, singleton, throw, unzip, withMsg, (×))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set (empty, (∪))
-import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
+import Val (BaseVal(..), DictRep(..), Fun(..)) as V
+import Val (class Ann, Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -52,6 +52,12 @@ match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
    let xs' = xs # Set.toUnfoldable
    γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
    pure (γ × κ' × (α ∧ α') × MatchRecord (wrap $ D.fromFoldable (zip xs' ws)))
+match (Val α (V.Dictionary (V.DictRep xvs))) (ElimRecord xs κ) = do
+   check (subset xs (Set.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
+   let xs' = xs # Set.toUnfoldable
+   let xvs' = unwrap xvs
+   γ × κ' × α' × ws <- matchMany (map (\k -> snd (get k xvs')) xs') κ
+   pure (γ × κ' × (α ∧ α') × MatchDict (wrap $ D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = throw $ patternMismatch (prettyP v) (show xs)
 
 matchMany :: forall a m. MonadError Error m => Ann a => List (Val a) -> Cont a -> m (Env a × Cont a × a × List Match)
@@ -122,7 +128,7 @@ eval (EnvExpr γ (Dictionary α ees)) α' = do
    let
       ss × αs = vs <#> unpack string # unzip
       d = wrap $ D.fromFoldable $ zip ss (zip αs us)
-   pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (DictRep d))
+   pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (V.DictRep d))
 eval (EnvExpr γ (Constr α c es)) α' = do
    checkArity c (length es)
    ts × vs <- traverse (\e -> eval (EnvExpr γ e) α') es <#> unzip
@@ -149,7 +155,17 @@ eval (EnvExpr γ (Project e x)) α = do
    t × v <- eval (EnvExpr γ e) α
    case v of
       Val _ (V.Record xvs) -> (T.Project t x × _) <$> lookup' x xvs
+      Val _ (V.Dictionary (V.DictRep d)) -> (T.DProject t Nothing x × _) <$> snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found")
       _ -> throw $ "Found " <> prettyP v <> ", expected record"
+eval (EnvExpr γ (DProject e x)) α = do
+   t × v <- eval (EnvExpr γ e) α
+   t' × v' <- eval (EnvExpr γ x) α
+   case v of
+      Val _ (V.Dictionary (V.DictRep d)) ->
+         case v' of
+            Val _ (V.Str s) -> (T.DProject t (Just t') s × _) <$> snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
+            _ -> throw $ "Found " <> prettyP v' <> ", expected string"
+      _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval (EnvExpr γ (App e e')) α = do
    t × v <- eval (EnvExpr γ e) α
    t' × v' <- eval (EnvExpr γ e') α

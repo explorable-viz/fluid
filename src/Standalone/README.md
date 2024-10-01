@@ -1,3 +1,3 @@
 # README
 
-- Place a suitable FileName.purs here and a script will publish it at file-name/index.html
+- See script/build-standalone.sh for how these files are processed

@@ -12,7 +12,7 @@ import Test.Util.Suite (TestLinkedOutputsSpec)
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
-        { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
+        { datasets: [ "renewables" ↦ "dataset/renewables" ]
         , imports: []
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
@@ -37,8 +37,8 @@ linkedOutputs_spec2 :: TestLinkedOutputsSpec
 linkedOutputs_spec2 =
    { spec:
         { datasets:
-             [ "renewables" ↦ "example/linked-inputs/renewables"
-             , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
+             [ "renewables" ↦ "dataset/renewables-new"
+             , "nonRenewables" ↦ "dataset/non-renewables"
              ]
         , imports: []
         , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"

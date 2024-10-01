@@ -46,8 +46,8 @@ function drawScatterPlot_ (
    return () => {
       const { val } = uiHelpers
       const childId = divId + '-' + suffix
-      var max_width = 360
-      var max_height = 360
+      var max_width = 280
+      var max_height = 200
       const x_max = Math.ceil(Math.max(...points.map(point => val(point.x))))
       const x_min = Math.ceil(Math.min(...points.map(point => val(point.x))))
       const y_max = Math.ceil(Math.max(...points.map(point => val(point.y))))
@@ -79,7 +79,7 @@ function drawScatterPlot_ (
             .range([0, width])
          rootElement.append('g')
             .attr('transform', "translate(0," + height + ")")
-            .call(d3.axisBottom(x))
+            .call(d3.axisBottom(x).tickSizeOuter(0))
             .selectAll('text')
             .style('text-anchor', 'middle')
 
@@ -87,20 +87,20 @@ function drawScatterPlot_ (
             .domain([Math.min(0, y_min), y_max])
             .range([height, 0])
          rootElement.append('g')
-            .call(d3.axisLeft(y))
+            .call(d3.axisLeft(y).tickSizeOuter(0))
 
          rootElement.append("text")
             .attr("x", width)
             .attr("y", height + 25)
             .style("text-anchor", "end")
-            .style("font-size", "8px")
+            .style("font-size", "10px")
             .text(val(xlabel))
          rootElement.append("text")
             .attr("transform", "rotate(-90)")
             .attr("x", -margin.top)
             .attr("y", -margin.left + 20)
             .style("text-anchor", "end")
-            .style("font-size", "8px")
+            .style("font-size", "10px")
             .text(val(ylabel))
 
          rootElement.append('g')

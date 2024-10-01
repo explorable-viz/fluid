@@ -1,4 +1,4 @@
-let input_image =
+let inputImage =
    let image = [[15, 13,  6, 9, 16],
                  [12,  5, 15, 4, 13],
                  [14,  9, 20, 8,  1],

@@ -15,7 +15,7 @@ import Util ((×))
 
 figSpec :: FigSpec
 figSpec =
-   { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
+   { datasets: [ "renewables" ↦ "dataset/renewables" ]
    , imports: []
    , file: File "linked-outputs/line-chart"
    , inputs: [ "renewables" ]

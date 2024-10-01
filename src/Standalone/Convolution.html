@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Fluid: Data-Linked Visualisations</title>
+   <link href="/css/styles.css" rel="stylesheet" type="text/css">
+   <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
+   <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <script>
+      // move to PureScript
+      function toggle(id) {
+         const elem = document.getElementById(id)
+         if (elem.style.visibility == 'hidden')
+            elem.style.visibility = 'visible'
+         else
+            elem.style.visibility = 'hidden'
+      }
+   </script>
+</head>
+<body class="standalone">
+<div class="grid-container double-size">
+   <div></div>
+   <div></div>
+   <div></div>
+   <div>
+      <h3>Matrix convolution</h3>
+      <p>Click the grey toggle to see the <b>input matrix</b> and <b>filter</b>. Mouse over output elements to see how the inputs are being used.</p>
+   </div>
+
+   <div></div>
+   <div id="fig-input" class="flex-right-align data-pane"></div>
+   <div>
+      <div onclick="toggle('fig-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig"></div>
+      <p>Why do the used inputs not match the shape of the filter?
+      <br>
+      What happens at the <b>edge</b> of the output matrix?
+      <br>
+      What about a <b>corner</b>?</p>
+      <p style="margin-left: auto; width: fit-content;"><a href="../convolution-wrapped/">continued..</a></p>
+   </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+   // move to PureScript
+   toggle('fig-input')
+</script>
+</body>
+</html>

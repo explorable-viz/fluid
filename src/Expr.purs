@@ -33,6 +33,7 @@ data Expr a
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | Project (Expr a) Var
+   | DProject (Expr a) (Expr a)
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
@@ -76,6 +77,7 @@ instance FV (Expr a) where
    fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
    fv (Project e _) = fv e
+   fv (DProject e x) = fv e ∪ fv x
    fv (App e1 e2) = fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
    fv (LetRec ρ e) = fv ρ ∪ fv e
@@ -164,6 +166,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
       Matrix (α ∨ α') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
    join (Project e x) (Project e' x') = Project (e ∨ e') (x ≜ x')
+   join (DProject e x) (DProject e' x') = DProject (e ∨ e') (x ∨ x')
    join (App e1 e2) (App e1' e2') = App (e1 ∨ e1') (e2 ∨ e2')
    join (Let def e) (Let def' e') = Let (def ∨ def') (e ∨ e')
    join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
@@ -182,6 +185,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
       Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
    expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
+   expand (DProject e x) (DProject e' x') = DProject (expand e e') (expand x x')
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
@@ -225,6 +229,7 @@ instance Apply Expr where
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
+   apply (DProject fd fk) (DProject d k) = DProject (fd <*> d) (fk <*> k)
    apply _ _ = shapeMismatch unit
 
 instance Apply Elim where

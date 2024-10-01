@@ -23,4 +23,8 @@ mkdir -p dist/app/$NAME_LISP_CASE
 ./script/compile.sh
 ./script/bundle.sh app/$NAME_LISP_CASE Standalone.$NAME
 
-cp web/template.html dist/app/$NAME_LISP_CASE/index.html
+if [[ -e "src/Standalone/$NAME.html" ]]; then
+  cp src/Standalone/$NAME.html dist/app/$NAME_LISP_CASE/index.html
+else
+  cp web/template.html dist/app/$NAME_LISP_CASE/index.html
+fi

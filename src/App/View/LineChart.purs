@@ -6,7 +6,7 @@ import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, �
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, create, datum, dimensions, line, nameCol, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
@@ -54,6 +54,9 @@ point_smallRadius = 2
 
 fill :: SelState 𝕊 -> String -> String
 fill sel = if isPersistent sel then flip colorShade (-30) else identity
+
+nameCol :: String -> Array String -> String
+nameCol = colorScale "schemePastel1"
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
 type PointCoordinate = { i :: Int, j :: Int }
