@@ -4,27 +4,27 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, 𝕊, classes, colorShade, from, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
-import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, createSVG, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util (class Drawable, class Drawable2, class HasAxes, createAxes, draw', registerMouseListeners, selListener, to, uiHelpers)
+import App.View.Util.Axes (Orientation)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, createSVG, datum, dimensions, line, remove, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
-import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
+import Data.Array.NonEmpty (NonEmptyArray, fromArray)
 import Data.Foldable (for_, length)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
-import Data.Semigroup.Foldable (maximum, minimum)
+import Data.Semigroup.Foldable (maximum)
 import Data.Tuple (fst, snd)
 import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels)
 import Dict (Dict)
 import Effect (Effect)
 import Lattice ((∨), (∧))
 import Primitive (string, unpack)
-import Util (type (×), Endo, init, nonEmpty, tail, zipWith, (!), (×))
+import Util (type (×), init, nonEmpty, tail, zipWith, (!), (×))
 import Util.Map (get)
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
@@ -98,8 +98,16 @@ setSelState (LineChart { plots }) redraw rootElement = do
    selState :: Point Number -> SelState 𝕊
    selState (Point { x, y }) = snd x ∨ snd y
 
+instance HasAxes LineChart where
+   points (LineChart { plots }) = { x: ps <#> unwrap >>> _.x >>> fst, y: ps <#> unwrap >>> _.y >>> fst }
+      where
+      ps :: NonEmptyArray (Point Number)
+      ps = plots <#> unwrap >>> _.points # join >>> nonEmpty
+
+   tickLabels = unwrap >>> _.tickLabels
+
 createRootElement :: LineChart -> D3.Selection -> String -> Effect D3.Selection
-createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
+createRootElement view@(LineChart { size, caption, plots }) div childId = do
    svg <- div # createSVG (size <#> fst) childId
    { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
 
@@ -119,7 +127,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
          }
 
    g <- svg # create G [ translate { x: margin.left, y: margin.top } ]
-   void $ createAxes interior g
+   void $ createAxes view interior g
    createLines interior g
    createPoints interior g
    void $ svg
@@ -138,30 +146,15 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
    caption_class = "title-text"
    caption_height = textHeight caption_class (fst caption) * 2
    Dimensions { height, width } = size <#> fst
+   to' = to view
 
    axisWidth :: D3.Selection -> Effect (Coord Int)
    axisWidth parent = do
-      { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent
+      { x: xAxis, y: yAxis } <- createAxes view (size <#> fst) parent
       x <- dimensions xAxis <#> unwrap >>> _.height
       y <- dimensions yAxis <#> unwrap >>> _.width
       remove xAxis
       remove yAxis
-      pure { x, y }
-
-   createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
-   createAxes range parent = do
-      let Point { x: xLabels, y: yLabels } = tickLabels
-      x <- xAxis (to range) (nub points.x) =<<
-         (parent # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
-      when (fst xLabels == Rotated) do
-         labels <- x # selectAll "text"
-         for_ labels $
-            setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
-      y <- yAxis (to range) 3.0 =<< (parent # create G [ classes [ "y-axis" ] ])
-      when (fst yLabels == Rotated) do
-         labels <- y # selectAll "text"
-         for_ labels $
-            setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "end" ]
       pure { x, y }
 
    createLines :: Dimensions Int -> D3.Selection -> Effect Unit
@@ -169,7 +162,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       for_ (concat $ mapWithIndex segments plots)
          \({ start, end } × segmentCoords) ->
             parent #
-               ( create Path [ classes [ "linechart-segment" ], "d" ↦ line (to range) [ start, end ] ]
+               ( create Path [ classes [ "linechart-segment" ], "d" ↦ line (to' range) [ start, end ] ]
                     >=> setDatum segmentCoords
                )
       where
@@ -191,8 +184,8 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
             ( create Circle
                  [ classes [ "linechart-point" ]
                  , "stroke-width" ⟼ 1
-                 , "cx" ⟼ (to range).x (fst x)
-                 , "cy" ⟼ (to range).y (fst y)
+                 , "cx" ⟼ (to' range).x (fst x)
+                 , "cy" ⟼ (to' range).y (fst y)
                  ]
                  >=> setDatum { i, j }
             )
@@ -223,24 +216,6 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       where
       entry_y :: Int -> Int
       entry_y i = i * lineHeight + 2 -- tweak to emulate vertical centering of text
-
-   to :: Dimensions Int -> Coord (Endo Number)
-   to (Dimensions range) =
-      { x: scaleLinear { min: min'.x, max: max'.x } { min: 0.0, max: toNumber range.width }
-      , y: scaleLinear { min: 0.0, max: max'.y } { min: toNumber range.height, max: 0.0 }
-      }
-      where
-      min' :: Coord Number
-      min' = { x: minimum points.x, y: minimum points.y }
-
-      max' :: Coord Number
-      max' = { x: maximum points.x, y: maximum points.y }
-
-   points :: Coord (NonEmptyArray Number)
-   points = { x: ps <#> unwrap >>> _.x >>> fst, y: ps <#> unwrap >>> _.y >>> fst }
-      where
-      ps :: NonEmptyArray (Point Number)
-      ps = plots <#> unwrap >>> _.points # join >>> nonEmpty
 
    legend_sep :: Int
    legend_sep = 15
@@ -298,4 +273,5 @@ instance Reflect (Dict (Val (SelState 𝕊))) LineChart where
 instance Reflect (Val (SelState 𝕊)) LinePlot where
    from (Val _ (Constr c (u : Nil))) | c == cLinePlot = record from u
 
+derive instance Newtype LineChart _
 derive instance Newtype LinePlot _
