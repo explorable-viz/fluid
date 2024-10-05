@@ -209,13 +209,11 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       let circle_centre = lineHeight / 2 - point_smallRadius / 2
-      for_ entries \{ i, name } -> do
+      for_ legend_entries \{ i, name } -> do
          g <- legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
          void $ g #
             -- align text with boxes
-            ( create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ]
-                 >=> setText name
-            )
+            (create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ] >=> setText name)
          g # create Circle
             [ "fill" ↦ nameCol name (names plots)
             , "r" ⟼ point_smallRadius
@@ -223,9 +221,6 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
             , "cy" ⟼ circle_centre
             ]
       where
-      entries :: Array LegendEntry
-      entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
-
       entry_y :: Int -> Int
       entry_y i = i * lineHeight + 2 -- tweak to emulate vertical centering of text
 
@@ -253,6 +248,9 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
    lineHeight :: Int
    lineHeight = 15
 
+   legend_entries :: Array LegendEntry
+   legend_entries = flip mapWithIndex plots (\i (LinePlot { name }) -> { i, name: fst name })
+
    legend_entry_x :: Int
    legend_entry_x = 15
 
@@ -263,7 +261,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       }
       where
       maxTextWidth :: Int
-      maxTextWidth = maximum (plots <#> unwrap >>> _.name >>> fst >>> textWidth "legend-text" # nonEmpty)
+      maxTextWidth = maximum (legend_entries <#> _.name >>> textWidth "legend-text" # nonEmpty)
 
       rightMargin :: Int
       rightMargin = 4

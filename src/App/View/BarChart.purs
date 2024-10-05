@@ -6,7 +6,7 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
+import App.Util (class Reflect, Dimensions, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, class Drawable2, Renderer, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), create)
@@ -15,7 +15,7 @@ import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
 import Data.Tuple (snd)
-import DataType (f_bars, f_caption, f_stackedBars, f_x, f_y, f_z)
+import DataType (f_bars, f_caption, f_size, f_stackedBars, f_x, f_y, f_z)
 import Dict (Dict)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
@@ -26,7 +26,8 @@ import Val (Val)
 import Web.Event.EventTarget (EventListener)
 
 newtype BarChart = BarChart
-   { caption :: Selectable String
+   { size :: Dimensions (Selectable Int)
+   , caption :: Selectable String
    , stackedBars :: Array StackedBar
    }
 
@@ -90,7 +91,7 @@ setSelState2 _ _ _ =
    pure unit
 
 createRootElement2 :: BarChart -> D3.Selection -> String -> Effect D3.Selection
-createRootElement2 _ div _ = do
+createRootElement2 (BarChart {}) div _ = do
    rootElement <- div # create SVG []
    pure rootElement
 
@@ -107,7 +108,8 @@ instance Drawable BarChart where
 
 instance Reflect (Dict (Val (SelState 𝕊))) BarChart where
    from r = BarChart
-      { caption: unpack string (get f_caption r)
+      { size: record from (get f_size r)
+      , caption: unpack string (get f_caption r)
       , stackedBars: record from <$> from (get f_stackedBars r)
       }
 
