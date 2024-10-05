@@ -4,9 +4,10 @@ import Prelude
 
 import App.Util (SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
 import App.Util.Selector (ViewSelSetter)
-import App.View.Util.D3 (isEmpty, on, rootSelect, select)
+import App.View.Util.D3 (Coord, isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
 import Bind (Bind, Var)
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)
@@ -43,6 +44,10 @@ class Drawable a where
 class Drawable2 a where
    createRootElement :: a -> D3.Selection -> String -> Effect D3.Selection
    setSelState :: a -> EventListener -> D3.Selection -> Effect Unit
+
+class HasAxes a where
+   -- all data elements to be plotted, for computing axis mappings
+   points :: a -> Coord (NonEmptyArray Number)
 
 draw' :: forall a. Drawable2 a => Renderer a
 draw' _ { divId, suffix, view } redraw = do

@@ -224,17 +224,17 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       entry_y :: Int -> Int
       entry_y i = i * lineHeight + 2 -- tweak to emulate vertical centering of text
 
-   min' :: Coord Number
-   min' = { x: minimum points.x, y: minimum points.y }
-
-   max' :: Coord Number
-   max' = { x: maximum points.x, y: maximum points.y }
-
    to :: Dimensions Int -> Coord (Endo Number)
    to (Dimensions range) =
       { x: scaleLinear { min: min'.x, max: max'.x } { min: 0.0, max: toNumber range.width }
       , y: scaleLinear { min: 0.0, max: max'.y } { min: toNumber range.height, max: 0.0 }
       }
+      where
+      min' :: Coord Number
+      min' = { x: minimum points.x, y: minimum points.y }
+
+      max' :: Coord Number
+      max' = { x: maximum points.x, y: maximum points.y }
 
    points :: Coord (NonEmptyArray Number)
    points = { x: ps <#> unwrap >>> _.x >>> fst, y: ps <#> unwrap >>> _.y >>> fst }
