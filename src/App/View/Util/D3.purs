@@ -7,6 +7,7 @@ module App.View.Util.D3
    , classed
    , colorScale
    , create
+   , createSVG
    , datum
    , dimensions
    , isEmpty
@@ -32,8 +33,8 @@ module App.View.Util.D3
 
 import Prelude
 
-import App.Util (Dimensions, Attrs)
-import Bind (Bind, (↦))
+import App.Util (Attrs, Dimensions(..))
+import Bind (Bind, (↦), (⟼))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Generic.Rep (class Generic)
 import Data.Newtype (unwrap)
@@ -91,6 +92,10 @@ data ElementType
 create :: ElementType -> Attrs -> Selection -> Effect Selection
 create elementType as parent =
    fromFoldable as # createChild parent (show elementType)
+
+createSVG :: Dimensions Int -> String -> Selection -> Effect Selection
+createSVG (Dimensions { height, width }) childId =
+   create SVG [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
 
 setAttrs :: Attrs -> Selection -> Effect Selection
 setAttrs as sel = fromFoldable as # attrs sel

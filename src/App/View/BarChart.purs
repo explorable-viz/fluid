@@ -9,12 +9,12 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Dimensions, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, class Drawable2, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create)
+import App.View.Util.D3 (createSVG)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
-import Data.Tuple (snd)
+import Data.Tuple (fst, snd)
 import DataType (f_bars, f_caption, f_size, f_stackedBars, f_x, f_y, f_z)
 import Dict (Dict)
 import Effect (Effect)
@@ -91,8 +91,8 @@ setSelState2 _ _ _ =
    pure unit
 
 createRootElement2 :: BarChart -> D3.Selection -> String -> Effect D3.Selection
-createRootElement2 (BarChart {}) div _ = do
-   rootElement <- div # create SVG []
+createRootElement2 (BarChart { size }) div childId = do
+   rootElement <- div # createSVG (size <#> fst) childId
    pure rootElement
 
 instance Drawable2 BarChart where

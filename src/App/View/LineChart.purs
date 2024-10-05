@@ -6,7 +6,7 @@ import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, �
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, createSVG, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
@@ -100,7 +100,7 @@ setSelState (LineChart { plots }) redraw rootElement = do
 
 createRootElement :: LineChart -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
-   svg <- div # create SVG [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
+   svg <- div # createSVG (size <#> fst) childId
    { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
 
    let
