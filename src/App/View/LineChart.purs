@@ -4,10 +4,11 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, 𝕊, classes, colorShade, from, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, class Drawable2, class HasAxes, createAxes, draw', registerMouseListeners, selListener, to, uiHelpers)
-import App.View.Util.Axes (Orientation)
+import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util.Axes (class HasAxes, createAxes, to)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, createSVG, datum, dimensions, line, remove, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 (Selection) as D3
+import App.View.Util.Orientation (Orientation)
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import Data.Array (concat, mapWithIndex)
@@ -99,7 +100,8 @@ setSelState (LineChart { plots }) redraw rootElement = do
    selState (Point { x, y }) = snd x ∨ snd y
 
 instance HasAxes LineChart where
-   points (LineChart { plots }) = { x: ps <#> unwrap >>> _.x >>> fst, y: ps <#> unwrap >>> _.y >>> fst }
+   points (LineChart { plots }) =
+      { x: ps <#> unwrap >>> _.x >>> fst, y: ps <#> unwrap >>> _.y >>> fst }
       where
       ps :: NonEmptyArray (Point Number)
       ps = plots <#> unwrap >>> _.points # join >>> nonEmpty

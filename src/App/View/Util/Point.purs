@@ -1,7 +1,7 @@
 module App.View.Util.Point where
 
 import App.Util (class Reflect, SelState, Selectable, 𝕊, get_intOrNumber)
-import App.View.Util.Axes (Orientation, orientation)
+import App.View.Util.Orientation (Orientation, orientation)
 import App.View.Util.D3 (Coord)
 import Data.Newtype (class Newtype)
 import DataType (f_x, f_y)
