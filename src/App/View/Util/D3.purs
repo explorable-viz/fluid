@@ -4,9 +4,11 @@ module App.View.Util.D3
    , Margin
    , ElementType(..)
    , attrs
+   , captionHeight
    , classed
    , colorScale
    , create
+   , createCaption
    , createSVG
    , datum
    , dimensions
@@ -33,7 +35,7 @@ module App.View.Util.D3
 
 import Prelude
 
-import App.Util (Attrs, Dimensions(..))
+import App.Util (Attrs, Dimensions(..), classes)
 import Bind (Bind, (↦), (⟼))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Generic.Rep (class Generic)
@@ -96,6 +98,23 @@ create elementType as parent =
 createSVG :: Dimensions Int -> String -> Selection -> Effect Selection
 createSVG (Dimensions { height, width }) childId =
    create SVG [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
+
+createCaption :: forall r. { height :: Int, width :: Int | r } -> String -> Selection -> Effect Selection
+createCaption { width, height } caption =
+   create Text
+      [ "x" ⟼ width / 2
+      , "y" ⟼ height - captionHeight caption / 2
+      , classes [ captionClass ]
+      , "dominant-baseline" ↦ "middle"
+      , "text-anchor" ↦ "middle"
+      ]
+      >=> setText caption
+
+captionClass :: String
+captionClass = "title-text"
+
+captionHeight :: String -> Int
+captionHeight caption = textHeight captionClass caption * 2
 
 setAttrs :: Attrs -> Selection -> Effect Selection
 setAttrs as sel = fromFoldable as # attrs sel

@@ -5,8 +5,8 @@ import Prelude hiding (absurd)
 import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, 𝕊, classes, colorShade, from, isPersistent, isPrimary, isSecondary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, field, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
-import App.View.Util.Axes (class HasAxes, createAxes, to)
-import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, createSVG, datum, dimensions, line, remove, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
+import App.View.Util.Axes (class HasAxes, axisWidth, createAxes, to)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, captionHeight, colorScale, create, createCaption, createSVG, datum, line, selectAll, setAttrs, setDatum, setText, textWidth, translate)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Orientation (Orientation)
 import App.View.Util.Point (Point(..))
@@ -110,8 +110,8 @@ instance HasAxes LineChart where
 
 createRootElement :: LineChart -> D3.Selection -> String -> Effect D3.Selection
 createRootElement view@(LineChart { size, caption, plots }) div childId = do
-   svg <- div # createSVG (size <#> fst) childId
-   { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
+   svg <- div # createSVG size' childId
+   { x: xAxisHeight, y: yAxisWidth } <- axisWidth view size' svg
 
    let
       margin :: Margin
@@ -125,39 +125,19 @@ createRootElement view@(LineChart { size, caption, plots }) div childId = do
       interior :: Dimensions Int
       interior = Dimensions
          { width: width - margin.left - margin.right - (unwrap legend_dims).width - legend_sep
-         , height: height - margin.top - margin.bottom - caption_height
+         , height: height - margin.top - margin.bottom - captionHeight (fst caption)
          }
 
    g <- svg # create G [ translate { x: margin.left, y: margin.top } ]
    void $ createAxes view interior g
    createLines interior g
    createPoints interior g
-   void $ svg
-      # create Text
-           [ "x" ⟼ width / 2
-           , "y" ⟼ height - caption_height / 2
-           , classes [ caption_class ]
-           , "dominant-baseline" ↦ "middle"
-           , "text-anchor" ↦ "middle"
-           ]
-      >>= setText (fst caption)
+   void $ svg # createCaption (unwrap size') (fst caption)
    createLegend interior g
    pure g
-
    where
-   caption_class = "title-text"
-   caption_height = textHeight caption_class (fst caption) * 2
-   Dimensions { height, width } = size <#> fst
+   size'@(Dimensions { height, width }) = size <#> fst
    to' = to view
-
-   axisWidth :: D3.Selection -> Effect (Coord Int)
-   axisWidth parent = do
-      { x: xAxis, y: yAxis } <- createAxes view (size <#> fst) parent
-      x <- dimensions xAxis <#> unwrap >>> _.height
-      y <- dimensions yAxis <#> unwrap >>> _.width
-      remove xAxis
-      remove yAxis
-      pure { x, y }
 
    createLines :: Dimensions Int -> D3.Selection -> Effect Unit
    createLines range parent =

@@ -3,7 +3,7 @@ module App.View.Util.Axes where
 import Prelude
 
 import App.Util (Dimensions(..), classes)
-import App.View.Util.D3 (Coord, ElementType(..), create, rotate, scaleLinear, selectAll, setAttrs, setStyles, translate, xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), create, dimensions, remove, rotate, scaleLinear, selectAll, setAttrs, setStyles, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import App.View.Util.Orientation (Orientation(..))
 import App.View.Util.Point (Point(..))
@@ -54,3 +54,12 @@ createAxes view range parent = do
    where
    to' = to view
    points' = points view
+
+axisWidth :: forall a. HasAxes a => a -> Dimensions Int -> D3.Selection -> Effect (Coord Int)
+axisWidth view range parent = do
+   { x: xAxis, y: yAxis } <- createAxes view range parent
+   x <- dimensions xAxis <#> unwrap >>> _.height
+   y <- dimensions yAxis <#> unwrap >>> _.width
+   remove xAxis
+   remove yAxis
+   pure { x, y }
