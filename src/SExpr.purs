@@ -61,6 +61,9 @@ data Expr a
 
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
 
+-- Start with only Integers
+data Types = Integer
+
 data ListRest a
    = End a
    | Next a (Expr a) (ListRest a)
@@ -588,6 +591,11 @@ instance Show a => Show (ListRest a) where
 derive instance Eq Pattern
 derive instance Generic Pattern _
 instance Show Pattern where
+   show c = genericShow c
+
+derive instance Eq Types
+derive instance Generic Types _
+instance Show Types where
    show c = genericShow c
 
 derive instance Eq ListRestPattern

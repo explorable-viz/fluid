@@ -31,6 +31,7 @@ import Primitive.Parse (OpDef, opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
+import SExpr (Types(..))
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef)
@@ -43,7 +44,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
    , opStart = opChar
    , opLetter = opChar
    , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow ]
-   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_ ]
+   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, "Integer" ]
    , caseSensitive = true
    }
    where
@@ -201,7 +202,7 @@ varDefs :: SParser (Raw Expr) -> SParser (Raw VarDefs)
 varDefs expr' = keyword str.let_ *> sepBy1_try branch token.semi
    where
    branch :: SParser (Raw VarDef)
-   branch = VarDef <$> (pattern <* equals) <*> expr'
+   branch = VarDef <$> (pattern <* token.reserved "Integer" <* equals) <*> expr'
 
 -- changed clause function to branch function
 recDefs :: SParser (Raw Expr) -> SParser (Raw RecDefs)
