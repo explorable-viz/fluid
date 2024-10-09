@@ -18,7 +18,7 @@ spec =
         , "nonRenewables" ↦ "dataset/non-renewables"
         ]
    , imports: []
-   , file: File "plot/stacked-bar-chart"
+   , file: File "plot/non-renewables"
    , inputs: [ "nonRenewables" ]
    }
 

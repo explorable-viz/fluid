@@ -13,8 +13,8 @@ in MultiView {|
    "scatter-plot" := ScatterPlot {
       caption: "",
       points: [ {
-         x: sum [ row.nuclearOut | row <- yearData year ],
-         y: sum [ row.nuclearCap | row <- yearData year ]
+         x: sum [ row.nuclearCap | row <- yearData year ],
+         y: sum [ row.nuclearOut | row <- yearData year ]
       } | year <- [2014..2018] ],
       xlabel: "Nuclear capacity",
       ylabel: "Nuclear output"
