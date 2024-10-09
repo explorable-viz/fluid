@@ -14,6 +14,6 @@ in LineChart {
    tickLabels: { x: Rotated, y: Default },
    size: { width: 330, height: 285 },
    caption: "SSP5-8.5 projected methane emissions (Agriculture)",
-   plots: [ LinePlot { name: "Moving average", points: movingAvg' points 1 },
-            LinePlot { name: "Original curve", points: points } ]
+   plots: [ LinePlot { name: "Original curve", points: points },
+            LinePlot { name: "Moving average", points: movingAvg' points 1 } ]
 }

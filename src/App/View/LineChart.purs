@@ -78,7 +78,7 @@ setSelState (LineChart { plots }) redraw rootElement = do
    pointAttrs :: PointCoordinate -> Attrs
    pointAttrs { i, j } =
       [ "r" ⟼ toNumber point_smallRadius * if isPrimary sel then 2.0 else if isSecondary sel then 1.4 else 1.0
-      , "stroke" ↦ (fill' # if isTransient sel then flip colorShade (-30) else identity)
+      , "stroke" ↦ if isTransient sel then "blue" else fill' -- not very general, but will do for now
       , "fill" ↦ fill'
       ]
       where

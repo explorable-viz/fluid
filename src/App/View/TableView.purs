@@ -35,7 +35,6 @@ newtype TableView = TableView
    , rows :: Array Record' -- would list make more sense given the filtering?
    }
 
--- helpers to decompose array of records represented as dictionaries into colNames and rows
 headers :: Array (Dict (Val (SelState 𝕊))) -> Array String
 headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 
