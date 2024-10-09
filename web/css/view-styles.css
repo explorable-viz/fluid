@@ -147,7 +147,6 @@ td.table-cell {
 
 .scatterplot-point.selected-primary-persistent {
    fill: LightGreen;
-   stroke: teal;
 }
 
 .scatterplot-point.selected-secondary-transient {
