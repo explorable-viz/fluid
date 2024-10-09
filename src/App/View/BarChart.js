@@ -79,6 +79,7 @@ function drawBarChart_ (
 
       // const color = d3.scaleOrdinal(d3.schemeAccent) // has a green which clashes a bit with table highlighting
       const color = d3.scaleOrdinal(d3.schemePastel2)
+      color(-3); color(-2); color(-1) // dump first three colours
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {

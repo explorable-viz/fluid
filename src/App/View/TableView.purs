@@ -42,7 +42,7 @@ arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 = map <<< flip (map <<< flip get)
 
 defaultFilter :: Filter
-defaultFilter = Interactive
+defaultFilter = Relevant
 
 rowKey :: String
 rowKey = "__n"
