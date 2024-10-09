@@ -77,9 +77,8 @@ function drawBarChart_ (
          return
       }
 
-      // const color = d3.scaleOrdinal(d3.schemeAccent)
-      // color(-1) // has side-effect of removing first color (green) from palette, which clashes with table highlighting
-      const color = d3.scaleOrdinal(d3.schemePastel1)
+      // const color = d3.scaleOrdinal(d3.schemeAccent) // has a green which clashes a bit with table highlighting
+      const color = d3.scaleOrdinal(d3.schemePastel2)
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
