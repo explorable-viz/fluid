@@ -6,7 +6,7 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Dimensions, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, getTransient, get_intOrNumber, record)
+import App.Util (class Reflect, Dimensions, SelState, Selectable, 𝕊(..), colorShade, from, getPersistent, get_intOrNumber, isPersistent, isPrimary, isTransient, record)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, class Drawable2, Renderer, selListener, uiHelpers)
 import App.View.Util.D3 (createSVG)
@@ -66,16 +66,15 @@ barChartHelpers =
          , "stroke-linecap" ↦ "round"
          , "stroke" ↦
               -- ok for transient to trump persistent here because fill also indicates persistence
-              if transient /= None then "blue" -- hardly general but will do for now
-              else if persistent /= None then colorShade col (-70)
+              if (isTransient && isPrimary) sel then "blue" -- hardly general but will do for now
+              else if (isPersistent && isPrimary) sel then colorShade col (-70)
               else col
          ]
       where
       StackedBar { bars } = stackedBars ! i
       Bar { z } = bars ! j
-      t = snd z
-      persistent = getPersistent t
-      transient = getTransient t
+      sel = snd z
+      persistent = getPersistent sel
       col = indexCol j
 
    tickEvery :: Int -> Int
