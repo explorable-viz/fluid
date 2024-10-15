@@ -71,11 +71,6 @@ a {
    transition-timing-function: ease-out
 }
 
-a.not_decorated,
-a:hover {
-   text-decoration: none;
-}
-
 ul {
    padding-left: 0
 }
