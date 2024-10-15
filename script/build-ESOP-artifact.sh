@@ -2,6 +2,9 @@
 # run from project root
 set -xe
 
+cp -r fluid dist/app
+cp -r web/css dist/app
+
 ./script/build-standalone.sh EsopFig2
 ./script/build-standalone.sh EsopFig4
 
