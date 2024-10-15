@@ -2,5 +2,5 @@
 # run from project root
 set -xe
 
-./script/build-standalone.sh MovingAverage
-./script/build-standalone.sh NonRenewables
+./script/build-standalone.sh ESOPFig2
+./script/build-standalone.sh ESOPFig4
