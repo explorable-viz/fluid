@@ -2,6 +2,7 @@
 # run from project root
 set -xe
 
+mkdir -p dist/app
 cp -r fluid dist/app
 cp -r web/css dist/app
 
