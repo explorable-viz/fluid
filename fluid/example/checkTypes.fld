@@ -1,1 +1,1 @@
-let Integer x = 20;
+let x : Integer = 20 in x;

@@ -62,7 +62,11 @@ data Expr a
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
 
 -- Start with only Integers
-data Types = Integer
+data Types = 
+   TInt Int
+   | TStr String
+-- Edit to make --> let x : Integer = 20 in x;
+
 
 data ListRest a
    = End a
@@ -120,6 +124,7 @@ type RecDefs a = NonEmptyList (Branch a)
 
 -- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
 data VarDef a = VarDef Pattern (Expr a)
+-- Pattern (Types) (Expr a)
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a

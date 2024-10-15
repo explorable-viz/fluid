@@ -202,7 +202,8 @@ varDefs :: SParser (Raw Expr) -> SParser (Raw VarDefs)
 varDefs expr' = keyword str.let_ *> sepBy1_try branch token.semi
    where
    branch :: SParser (Raw VarDef)
-   branch = VarDef <$> (pattern <* token.reserved "Integer" <* equals) <*> expr'
+   branch = VarDef <$> (token.reserved "Integer" *> pattern <* equals) <*> expr'
+   --branch = VarDef <$> (token.reserved "Integer" *> pattern <* equals) <*> expr'
 
 -- changed clause function to branch function
 recDefs :: SParser (Raw Expr) -> SParser (Raw RecDefs)
@@ -430,3 +431,5 @@ program = topLevel expr_
 
 module_ :: SParser (Raw Module)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
+
+-- SParser Types
