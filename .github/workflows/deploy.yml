@@ -50,19 +50,19 @@ jobs:
         publish_dir: dist/app/
         keep_files: true
 
-  deploy-artifact:
+  deploy-ESOP-artifact:
     runs-on: ubuntu-22.04
     needs: build
-    if: github.ref == 'refs/heads/develop' && github.repository == 'rolyp/popl25-web-artifact'
+    if: github.ref == 'refs/heads/develop' && github.repository == 'rolyp/esop25-web-artifact'
     steps:
     - uses: actions/checkout@v4
     - name: build
       run: |
         yarn install
-        yarn build-artifact
+        yarn build-ESOP-artifact
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/artifact/
-        keep_files: true
+        publish_dir: dist/app/
+        keep_files: false

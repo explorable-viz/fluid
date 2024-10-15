@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Fluid: Data-Linked Visualisations</title>
+   <link href="/css/styles.css" rel="stylesheet" type="text/css">
+   <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
+   <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <script>
+      // move to PureScript
+      function toggle(id) {
+         const elem = document.getElementById(id)
+         if (elem.style.visibility == 'hidden')
+            elem.style.visibility = 'visible'
+         else
+            elem.style.visibility = 'hidden'
+      }
+   </script>
+</head>
+<body class="standalone">
+<div class="grid-container double-size" style="grid-template-columns: 10px 53% fit-content(10px) 1fr;
+">
+   <div></div>
+   <div></div>
+   <div></div>
+   <div>
+      <h3>Non-renewables energy output</h3>
+      <p>Click the grey toggle and mouse over the bars.
+      <br>
+      <b>Clicking</b> makes a selection “persistent”.</p>
+   </div>
+
+   <div></div>
+   <div id="data-pane" class="flex-right-align data-pane">
+      <div id="fig-input"></div>
+      <p>What about <b>inputs</b>? (Unused rows are hidden.)</p>
+   </div>
+   <div>
+      <div onclick="toggle('data-pane')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig"></div>
+   </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+   // move to PureScript
+   toggle('data-pane')
+</script>
+</body>
+</html>
