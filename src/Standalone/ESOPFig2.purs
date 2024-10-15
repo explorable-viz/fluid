@@ -1,4 +1,4 @@
-module Standalone.ESOPFig2 where
+module Standalone.EsopFig2 where
 
 import Prelude hiding (absurd)
 

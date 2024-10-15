@@ -1,4 +1,4 @@
-module Standalone.ESOPFig4 where
+module Standalone.EsopFig4 where
 
 import Prelude
 
