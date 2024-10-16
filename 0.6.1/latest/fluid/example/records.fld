@@ -1,0 +1,11 @@
+let f {fst: x, snd: []} = x;
+    f {fst: x, snd: (y: xs)} = y;
+
+    g {} = 7
+in {
+   a: f {snd: [], fst: 2},
+   b: f {fst: 4, snd: [6, 7]},
+   c: g {unused: 22},
+   d: [ x | {fst: x, snd: []} <- [{fst: 5, third: "hello", snd: []}, {fst: 6, snd: [7, 8]}] ],
+   e: {a: 4, h: {i: 6, j: 7}}.h.j
+}

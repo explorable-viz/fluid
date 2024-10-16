@@ -1,0 +1,16 @@
+let zero n = const n;
+    wrap n n_max = ((n - 1) `mod` n_max) + 1;
+    extend n = min (max n 1);
+
+let convolve image kernel method =
+    let ((m, n), (i, j)) = (dims image, dims kernel);
+        (half_i, half_j) = (i `quot` 2, j `quot` 2);
+        area = i * j
+    in  [| let weightedSum = sum [
+           image!(x, y) * kernel!(i' + 1, j' + 1)
+           | (i', j') <- range (0, 0) (i - 1, j - 1),
+             let x = method (m' + i' - half_i) m,
+             let y = method (n' + j' - half_j) n,
+             x >= 1, x <= m, y >= 1, y <= n
+         ] in weightedSum `quot` area
+         | (m', n') in (m, n) |];

@@ -1,0 +1,2 @@
+let mat = [| (n, m) | (n,m) in (3, 3)|]
+in matrixUpdate mat (1,1) 100

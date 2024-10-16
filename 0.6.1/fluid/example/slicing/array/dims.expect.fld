@@ -1,0 +1,3 @@
+let (x, y) = ⸨(⸨3⸩, ⸨3⸩)⸩;
+    yss = ⸨[|0|(i, j) in (x, y)|]⸩ in
+dims yss

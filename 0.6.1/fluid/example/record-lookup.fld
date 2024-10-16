@@ -1,0 +1,3 @@
+let city = { name: "Germany" };
+    country = { cities: [ "Germany" ] }
+in city.name `elem` country.cities

@@ -1,0 +1,12 @@
+let country_water country cities =
+        sum [city.water | city <- cities, elem city.name country.cities];
+let germany = {
+        cities: ["Berlin", "Hamburg", "Munich"]
+    };
+let all_cities = [
+        {name: "Berlin", water: 100, country: "Germany"},
+        {name: "Munich", water: 80,  country: "Germany"},
+        {name: "Hamburg", water: 60, country: "Germany"},
+        {name: "London", water: 200, country: "UK"}
+    ]
+in country_water germany all_cities

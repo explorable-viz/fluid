@@ -1,0 +1,301 @@
+[
+   { year: 2013, country: "BRA", energyType: "Bio", output: 39.27, capacity: 101.62},
+   { year: 2013, country: "BRA", energyType: "Hydro", output: 390.99, capacity: 753.54},
+   { year: 2013, country: "BRA", energyType: "Solar", output: 0.0, capacity: 0.09},
+   { year: 2013, country: "BRA", energyType: "Wind", output: 6.58, capacity: 19.27},
+
+   { year: 2013, country: "CHN", energyType: "Bio", output: 37.13, capacity: 38.46},
+   { year: 2013, country: "CHN", energyType: "Hydro", output: 909.61, capacity: 2268.05},
+   { year: 2013, country: "CHN", energyType: "Solar", output: 8.37, capacity: 155.58},
+   { year: 2013, country: "CHN", energyType: "Wind", output: 138.26, capacity: 672.15},
+
+   { year: 2013, country: "DEU", energyType: "Bio", output: 45.51, capacity: 61.58},
+   { year: 2013, country: "DEU", energyType: "Hydro", output: 23.0, capacity: 48.97},
+   { year: 2013, country: "DEU", energyType: "Solar", output: 30.62, capacity: 321.58},
+   { year: 2013, country: "DEU", energyType: "Wind", output: 52.74, capacity: 293.28},
+
+   { year: 2013, country: "FRA", energyType: "Bio", output: 5.68, capacity: 6.66},
+   { year: 2013, country: "FRA", energyType: "Hydro", output: 71.92, capacity: 208.84},
+   { year: 2013, country: "FRA", energyType: "Solar", output: 5.19, capacity: 46.25},
+   { year: 2013, country: "FRA", energyType: "Wind", output: 16.13, capacity: 71.48},
+
+   { year: 2013, country: "EGY", energyType: "Bio", output: 0.0, capacity: 0.61},
+   { year: 2013, country: "EGY", energyType: "Hydro", output: 13.22, capacity: 24.53},
+   { year: 2013, country: "EGY", energyType: "Solar", output: 0.11, capacity: 0.26},
+   { year: 2013, country: "EGY", energyType: "Wind", output: 1.33, capacity: 4.91},
+
+   { year: 2013, country: "IND", energyType: "Bio", output: 22.48, capacity: 35.74},
+   { year: 2013, country: "IND", energyType: "Hydro", output: 131.98, capacity: 345.06},
+   { year: 2013, country: "IND", energyType: "Solar", output: 3.43, capacity: 14.02},
+   { year: 2013, country: "IND", energyType: "Wind", output: 30.01, capacity: 161.36},
+
+   { year: 2013, country: "JPN", energyType: "Bio", output: 23.18, capacity: 5.78},
+   { year: 2013, country: "JPN", energyType: "Hydro", output: 79.33, capacity: 243.62},
+   { year: 2013, country: "JPN", energyType: "Solar", output: 12.91, capacity: 119.14},
+   { year: 2013, country: "JPN", energyType: "Wind", output: 5.13, capacity: 23.21},
+
+   { year: 2013, country: "MEX", energyType: "Bio", output: 6.89, capacity: 4.47},
+   { year: 2013, country: "MEX", energyType: "Hydro", output: 27.72, capacity: 101.88},
+   { year: 2013, country: "MEX", energyType: "Solar", output: 0.11, capacity: 0.96},
+   { year: 2013, country: "MEX", energyType: "Wind", output: 4.17, capacity: 18.57},
+
+   { year: 2013, country: "NGA", energyType: "Bio", output: 0.02, capacity: 0.09},
+   { year: 2013, country: "NGA", energyType: "Hydro", output: 5.27, capacity: 18.48},
+   { year: 2013, country: "NGA", energyType: "Solar", output: 0.02, capacity: 0.00},
+   { year: 2013, country: "NGA", energyType: "Wind", output: 0.0, capacity: 0.00},
+
+   { year: 2013, country: "USA", energyType: "Bio", output: 60.86, capacity: 97.85},
+   { year: 2013, country: "USA", energyType: "Hydro", output: 263.88, capacity: 727.17},
+   { year: 2013, country: "USA", energyType: "Solar", output: 9.04, capacity: 116.07},
+   { year: 2013, country: "USA", energyType: "Wind", output: 167.84, capacity: 527.35},
+
+   { year: 2014, country: "BRA", energyType: "Bio", output: 45.15, capacity: 108.10},
+   { year: 2014, country: "BRA", energyType: "Hydro", output: 373.44, capacity: 781.30},
+   { year: 2014, country: "BRA", energyType: "Solar", output: 0.02, capacity: 0.18},
+   { year: 2014, country: "BRA", energyType: "Wind", output: 12.21, capacity: 42.84},
+
+   { year: 2014, country: "CHN", energyType: "Bio", output: 46.27, capacity: 41.70},
+   { year: 2014, country: "CHN", energyType: "Hydro", output: 1059.69, capacity: 2476.89},
+   { year: 2014, country: "CHN", energyType: "Solar", output: 23.51, capacity: 248.78},
+   { year: 2014, country: "CHN", energyType: "Wind", output: 159.76, capacity: 848.14},
+
+   { year: 2014, country: "DEU", energyType: "Bio", output: 48.29, capacity: 63.60},
+   { year: 2014, country: "DEU", energyType: "Hydro", output: 19.59, capacity: 48.88},
+   { year: 2014, country: "DEU", energyType: "Solar", output: 35.45, capacity: 332.00},
+   { year: 2014, country: "DEU", energyType: "Wind", output: 58.5, capacity: 338.22},
+
+   { year: 2014, country: "FRA", energyType: "Bio", output: 5.99, capacity: 7.18},
+   { year: 2014, country: "FRA", energyType: "Hydro", output: 63.77, capacity: 208.93},
+   { year: 2014, country: "FRA", energyType: "Solar", output: 6.39, capacity: 52.82},
+   { year: 2014, country: "FRA", energyType: "Wind", output: 17.32, capacity: 80.59},
+
+   { year: 2014, country: "EGY", energyType: "Bio", output: 0.0, capacity: 0.61},
+   { year: 2014, country: "EGY", energyType: "Hydro", output: 13.68, capacity: 24.53},
+   { year: 2014, country: "EGY", energyType: "Solar", output: 0.24, capacity: 0.26},
+   { year: 2014, country: "EGY", energyType: "Wind", output: 1.44, capacity: 4.91},
+
+   { year: 2014, country: "IND", energyType: "Bio", output: 24.68, capacity: 43.01},
+   { year: 2014, country: "IND", energyType: "Hydro", output: 139.0, capacity: 355.83},
+   { year: 2014, country: "IND", energyType: "Solar", output: 4.91, capacity: 33.11},
+   { year: 2014, country: "IND", energyType: "Wind", output: 33.45, capacity: 196.84},
+
+   { year: 2014, country: "JPN", energyType: "Bio", output: 23.63, capacity: 6.57},
+   { year: 2014, country: "JPN", energyType: "Hydro", output: 81.71, capacity: 244.14},
+   { year: 2014, country: "JPN", energyType: "Solar", output: 23.55, capacity: 204.46},
+   { year: 2014, country: "JPN", energyType: "Wind", output: 5.01, capacity: 24.09},
+
+   { year: 2014, country: "MEX", energyType: "Bio", output: 6.62, capacity: 5.34},
+   { year: 2014, country: "MEX", energyType: "Hydro", output: 38.55, capacity: 109.15},
+   { year: 2014, country: "MEX", energyType: "Solar", output: 0.22, capacity: 1.49},
+   { year: 2014, country: "MEX", energyType: "Wind", output: 6.35, capacity: 22.51},
+
+   { year: 2014, country: "NGA", energyType: "Bio", output: 0.03, capacity: 0.09},
+   { year: 2014, country: "NGA", energyType: "Hydro", output: 5.29, capacity: 18.48},
+   { year: 2014, country: "NGA", energyType: "Solar", output: 0.02, capacity: 0.00},
+   { year: 2014, country: "NGA", energyType: "Wind", output: 0.0, capacity: 0.00},
+
+   { year: 2014, country: "USA", energyType: "Bio", output: 63.99, capacity: 98.99},
+   { year: 2014, country: "USA", energyType: "Hydro", output: 253.19, capacity: 731.37},
+   { year: 2014, country: "USA", energyType: "Solar", output: 28.92, capacity: 158.64},
+   { year: 2014, country: "USA", energyType: "Wind", output: 181.65, capacity: 564.41},
+
+   { year: 2015, country: "BRA", energyType: "Bio", output: 47.54, capacity: 116.60},
+   { year: 2015, country: "BRA", energyType: "Hydro", output: 359.74, capacity: 802.85},
+   { year: 2015, country: "BRA", energyType: "Solar", output: 0.06, capacity: 0.44},
+   { year: 2015, country: "BRA", energyType: "Wind", output: 21.47, capacity: 66.84},
+
+   { year: 2015, country: "CHN", energyType: "Bio", output: 54.07, capacity: 49.41},
+   { year: 2015, country: "CHN", energyType: "Hydro", output: 1114.52, capacity: 2597.34},
+   { year: 2015, country: "CHN", energyType: "Solar", output: 39.48, capacity: 381.50},
+   { year: 2015, country: "CHN", energyType: "Wind", output: 185.59, capacity: 1148.00},
+
+   { year: 2015, country: "DEU", energyType: "Bio", output: 50.33, capacity: 65.44},
+   { year: 2015, country: "DEU", energyType: "Hydro", output: 18.98, capacity: 48.97},
+   { year: 2015, country: "DEU", energyType: "Solar", output: 38.08, capacity: 343.57},
+   { year: 2015, country: "DEU", energyType: "Wind", output: 80.62, capacity: 390.52},
+
+   { year: 2015, country: "FRA", energyType: "Bio", output: 6.53, capacity: 8.15},
+   { year: 2015, country: "FRA", energyType: "Hydro", output: 55.56, capacity: 208.66},
+   { year: 2015, country: "FRA", energyType: "Solar", output: 7.75, capacity: 62.55},
+   { year: 2015, country: "FRA", energyType: "Wind", output: 21.42, capacity: 90.23},
+
+   { year: 2015, country: "EGY", energyType: "Bio", output: 0.0, capacity: 0.61},
+   { year: 2015, country: "EGY", energyType: "Hydro", output: 13.41, capacity: 24.53},
+   { year: 2015, country: "EGY", energyType: "Solar", output: 0.17, capacity: 0.35},
+   { year: 2015, country: "EGY", energyType: "Wind", output: 2.06, capacity: 6.57},
+
+   { year: 2015, country: "IND", energyType: "Bio", output: 30.62, capacity: 46.78},
+   { year: 2015, country: "IND", energyType: "Hydro", output: 133.28, capacity: 370.72},
+   { year: 2015, country: "IND", energyType: "Solar", output: 6.57, capacity: 49.93},
+   { year: 2015, country: "IND", energyType: "Wind", output: 32.74, capacity: 219.79},
+
+   { year: 2015, country: "JPN", energyType: "Bio", output: 28.49, capacity: 8.76},
+   { year: 2015, country: "JPN", energyType: "Hydro", output: 85.77, capacity: 246.24},
+   { year: 2015, country: "JPN", energyType: "Solar", output: 34.54, capacity: 299.15},
+   { year: 2015, country: "JPN", energyType: "Wind", output: 5.22, capacity: 24.62},
+
+   { year: 2015, country: "MEX", energyType: "Bio", output: 7.12, capacity: 6.31},
+   { year: 2015, country: "MEX", energyType: "Hydro", output: 30.61, capacity: 107.05},
+   { year: 2015, country: "MEX", energyType: "Solar", output: 0.24, capacity: 2.54},
+   { year: 2015, country: "MEX", energyType: "Wind", output: 8.45, capacity: 28.65},
+
+   { year: 2015, country: "NGA", energyType: "Bio", output: 0.02, capacity: 0.09},
+   { year: 2015, country: "NGA", energyType: "Hydro", output: 5.66, capacity: 18.48},
+   { year: 2015, country: "NGA", energyType: "Solar", output: 0.03, capacity: 0.09},
+   { year: 2015, country: "NGA", energyType: "Wind", output: 0.0, capacity: 0.00},
+
+   { year: 2015, country: "USA", energyType: "Bio", output: 63.63, capacity: 103.81},
+   { year: 2015, country: "USA", energyType: "Hydro", output: 243.99, capacity: 731.46},
+   { year: 2015, country: "USA", energyType: "Solar", output: 39.03, capacity: 212.34},
+   { year: 2015, country: "USA", energyType: "Wind", output: 190.72, capacity: 637.47},
+
+   { year: 2016, country: "BRA", energyType: "Bio", output: 49.14, capacity: 124.22},
+   { year: 2016, country: "BRA", energyType: "Hydro", output: 380.91, capacity: 849.11},
+   { year: 2016, country: "BRA", energyType: "Solar", output: 0.08, capacity: 1.14},
+   { year: 2016, country: "BRA", energyType: "Wind", output: 33.24, capacity: 88.74},
+
+   { year: 2016, country: "CHN", energyType: "Bio", output: 62.13, capacity: 56.06},
+   { year: 2016, country: "CHN", energyType: "Hydro", output: 1153.27, capacity: 2675.13},
+   { year: 2016, country: "CHN", energyType: "Solar", output: 66.53, capacity: 681.70},
+   { year: 2016, country: "CHN", energyType: "Wind", output: 240.86, capacity: 1301.04},
+
+   { year: 2016, country: "DEU", energyType: "Bio", output: 50.93, capacity: 67.28},
+   { year: 2016, country: "DEU", energyType: "Hydro", output: 20.55, capacity: 49.32},
+   { year: 2016, country: "DEU", energyType: "Solar", output: 37.56, capacity: 356.36},
+   { year: 2016, country: "DEU", energyType: "Wind", output: 79.92, capacity: 433.09},
+
+   { year: 2016, country: "FRA", energyType: "Bio", output: 7.52, capacity: 9.11},
+   { year: 2016, country: "FRA", energyType: "Hydro", output: 60.84, capacity: 209.28},
+   { year: 2016, country: "FRA", energyType: "Solar", output: 8.66, capacity: 67.45},
+   { year: 2016, country: "FRA", energyType: "Wind", output: 21.38, capacity: 101.35},
+
+   { year: 2016, country: "EGY", energyType: "Bio", output: 0.0, capacity: 0.61},
+   { year: 2016, country: "EGY", energyType: "Hydro", output: 12.72, capacity: 24.53},
+   { year: 2016, country: "EGY", energyType: "Solar", output: 0.58, capacity: 0.53},
+   { year: 2016, country: "EGY", energyType: "Wind", output: 2.2, capacity: 6.57},
+
+   { year: 2016, country: "IND", energyType: "Bio", output: 24.82, capacity: 76.74},
+   { year: 2016, country: "IND", energyType: "Hydro", output: 128.38, capacity: 375.28},
+   { year: 2016, country: "IND", energyType: "Solar", output: 11.56, capacity: 87.42},
+   { year: 2016, country: "IND", energyType: "Wind", output: 43.45, capacity: 251.41},
+
+   { year: 2016, country: "JPN", energyType: "Bio", output: 23.67, capacity: 11.30},
+   { year: 2016, country: "JPN", energyType: "Hydro", output: 79.43, capacity: 246.68},
+   { year: 2016, country: "JPN", energyType: "Solar", output: 43.33, capacity: 368.27},
+   { year: 2016, country: "JPN", energyType: "Wind", output: 5.34, capacity: 28.12},
+
+   { year: 2016, country: "MEX", energyType: "Bio", output: 7.02, capacity: 7.36},
+   { year: 2016, country: "MEX", energyType: "Hydro", output: 29.74, capacity: 110.20},
+   { year: 2016, country: "MEX", energyType: "Solar", output: 0.46, capacity: 5.52},
+   { year: 2016, country: "MEX", energyType: "Wind", output: 9.93, capacity: 35.48},
+
+   { year: 2016, country: "NGA", energyType: "Bio", output: 0.02, capacity: 0.09},
+   { year: 2016, country: "NGA", energyType: "Hydro", output: 8.07, capacity: 18.48},
+   { year: 2016, country: "NGA", energyType: "Solar", output: 0.03, capacity: 0.09},
+   { year: 2016, country: "NGA", energyType: "Wind", output: 0.0, capacity: 0.00},
+
+   { year: 2016, country: "USA", energyType: "Bio", output: 62.76, capacity: 103.19},
+   { year: 2016, country: "USA", energyType: "Hydro", output: 261.13, capacity: 734.26},
+   { year: 2016, country: "USA", energyType: "Solar", output: 54.87, capacity: 310.37},
+   { year: 2016, country: "USA", energyType: "Wind", output: 226.99, capacity: 713.94},
+
+   { year: 2017, country: "BRA", energyType: "Bio", output: 50.6, capacity: 127.63},
+   { year: 2017, country: "BRA", energyType: "Hydro", output: 370.91, capacity: 878.89},
+   { year: 2017, country: "BRA", energyType: "Solar", output: 0.83, capacity: 10.60},
+   { year: 2017, country: "BRA", energyType: "Wind", output: 42.06, capacity: 107.75},
+
+   { year: 2017, country: "CHN", energyType: "Bio", output: 79.6, capacity: 66.49},
+   { year: 2017, country: "CHN", energyType: "Hydro", output: 1165.06, capacity: 2753.97},
+   { year: 2017, country: "CHN", energyType: "Solar", output: 117.8, capacity: 1146.07},
+   { year: 2017, country: "CHN", energyType: "Wind", output: 304.6, capacity: 1439.88},
+
+   { year: 2017, country: "DEU", energyType: "Bio", output: 50.92, capacity: 69.90},
+   { year: 2017, country: "DEU", energyType: "Hydro", output: 20.15, capacity: 49.32},
+   { year: 2017, country: "DEU", energyType: "Solar", output: 38.76, capacity: 370.46},
+   { year: 2017, country: "DEU", energyType: "Wind", output: 105.69, capacity: 486.88},
+
+   { year: 2017, country: "FRA", energyType: "Bio", output: 7.78, capacity: 9.55},
+   { year: 2017, country: "FRA", energyType: "Hydro", output: 50.0, capacity: 210.06},
+   { year: 2017, country: "FRA", energyType: "Solar", output: 9.59, capacity: 75.42},
+   { year: 2017, country: "FRA", energyType: "Wind", output: 24.61, capacity: 118.26},
+
+   { year: 2017, country: "EGY", energyType: "Bio", output: 0.0, capacity: 0.61},
+   { year: 2017, country: "EGY", energyType: "Hydro", output: 12.6, capacity: 24.53},
+   { year: 2017, country: "EGY", energyType: "Solar", output: 0.6, capacity: 1.58},
+   { year: 2017, country: "EGY", energyType: "Wind", output: 2.33, capacity: 6.57},
+
+   { year: 2017, country: "IND", energyType: "Bio", output: 24.91, capacity: 81.21},
+   { year: 2017, country: "IND", energyType: "Hydro", output: 135.82, capacity: 391.92},
+   { year: 2017, country: "IND", energyType: "Solar", output: 21.54, capacity: 159.96},
+   { year: 2017, country: "IND", energyType: "Wind", output: 52.63, capacity: 287.77},
+
+   { year: 2017, country: "JPN", energyType: "Bio", output: 27.39, capacity: 14.63},
+   { year: 2017, country: "JPN", energyType: "Hydro", output: 79.29, capacity: 246.33},
+   { year: 2017, country: "JPN", energyType: "Solar", output: 54.24, capacity: 433.62},
+   { year: 2017, country: "JPN", energyType: "Wind", output: 5.83, capacity: 30.48},
+
+   { year: 2017, country: "MEX", energyType: "Bio", output: 7.4, capacity: 7.62},
+   { year: 2017, country: "MEX", energyType: "Hydro", output: 31.74, capacity: 110.64},
+   { year: 2017, country: "MEX", energyType: "Solar", output: 1.07, capacity: 9.90},
+   { year: 2017, country: "MEX", energyType: "Wind", output: 9.91, capacity: 36.62},
+
+   { year: 2017, country: "NGA", energyType: "Bio", output: 0.02, capacity: 0.09},
+   { year: 2017, country: "NGA", energyType: "Hydro", output: 7.67, capacity: 18.48},
+   { year: 2017, country: "NGA", energyType: "Solar", output: 0.03, capacity: 0.18},
+   { year: 2017, country: "NGA", energyType: "Wind", output: 0.0, capacity: 0.00},
+
+   { year: 2017, country: "USA", energyType: "Bio", output: 62.73, capacity: 102.67},
+   { year: 2017, country: "USA", energyType: "Hydro", output: 293.84, capacity: 734.00},
+   { year: 2017, country: "USA", energyType: "Solar", output: 77.28, capacity: 383.43},
+   { year: 2017, country: "USA", energyType: "Wind", output: 254.3, capacity: 769.39},
+
+   { year: 2018, country: "BRA", energyType: "Bio", output: 52.13, capacity: 129.74},
+   { year: 2018, country: "BRA", energyType: "Hydro", output: 388.97, capacity: 915.24},
+   { year: 2018, country: "BRA", energyType: "Solar", output: 3.44, capacity: 21.37},
+   { year: 2018, country: "BRA", energyType: "Wind", output: 48.12, capacity: 130.00},
+
+   { year: 2018, country: "CHN", energyType: "Bio", output: 93.73, capacity: 75.86},
+   { year: 2018, country: "CHN", energyType: "Hydro", output: 1198.89, capacity: 2823.09},
+   { year: 2018, country: "CHN", energyType: "Solar", output: 176.9, capacity: 1535.28},
+   { year: 2018, country: "CHN", energyType: "Wind", output: 365.8, capacity: 1617.62},
+
+   { year: 2018, country: "DEU", energyType: "Bio", output: 50.79, capacity: 75.34},
+   { year: 2018, country: "DEU", energyType: "Hydro", output: 17.69, capacity: 46.69},
+   { year: 2018, country: "DEU", energyType: "Solar", output: 44.32, capacity: 395.60},
+   { year: 2018, country: "DEU", energyType: "Wind", output: 109.95, capacity: 514.39},
+
+   { year: 2018, country: "FRA", energyType: "Bio", output: 8.38, capacity: 11.48},
+   { year: 2018, country: "FRA", energyType: "Hydro", output: 65.11, capacity: 210.24},
+   { year: 2018, country: "FRA", energyType: "Solar", output: 10.81, capacity: 84.71},
+   { year: 2018, country: "FRA", energyType: "Wind", output: 28.6, capacity: 130.52},
+
+   { year: 2018, country: "EGY", energyType: "Bio", output: 0.0, capacity: 0.61},
+   { year: 2018, country: "EGY", energyType: "Hydro", output: 12.77, capacity: 24.79},
+   { year: 2018, country: "EGY", energyType: "Solar", output: 1.52, capacity: 6.66},
+   { year: 2018, country: "EGY", energyType: "Wind", output: 3.02, capacity: 9.90},
+
+   { year: 2018, country: "IND", energyType: "Bio", output: 27.22, capacity: 87.42},
+   { year: 2018, country: "IND", energyType: "Hydro", output: 139.75, capacity: 397.00},
+   { year: 2018, country: "IND", energyType: "Solar", output: 36.33, capacity: 240.72},
+   { year: 2018, country: "IND", energyType: "Wind", output: 60.31, capacity: 309.14},
+
+   { year: 2018, country: "JPN", energyType: "Bio", output: 30.13, capacity: 18.22},
+   { year: 2018, country: "JPN", energyType: "Hydro", output: 81.11, capacity: 246.51},
+   { year: 2018, country: "JPN", energyType: "Solar", output: 62.11, capacity: 491.96},
+   { year: 2018, country: "JPN", energyType: "Wind", output: 6.44, capacity: 30.66},
+
+   { year: 2018, country: "MEX", energyType: "Bio", output: 6.85, capacity: 7.62},
+   { year: 2018, country: "MEX", energyType: "Hydro", output: 32.3, capacity: 110.73},
+   { year: 2018, country: "MEX", energyType: "Solar", output: 1.36, capacity: 22.60},
+   { year: 2018, country: "MEX", energyType: "Wind", output: 12.53, capacity: 36.62},
+
+   { year: 2018, country: "NGA", energyType: "Bio", output: 0.02, capacity: 0.09},
+   { year: 2018, country: "NGA", energyType: "Hydro", output: 7.69, capacity: 18.48},
+   { year: 2018, country: "NGA", energyType: "Solar", output: 0.03, capacity: 0.18},
+   { year: 2018, country: "NGA", energyType: "Wind", output: 0.0, capacity: 0.00},
+
+   { year: 2018, country: "USA", energyType: "Bio", output: 61.83, capacity: 100.74},
+   { year: 2018, country: "USA", energyType: "Hydro", output: 286.62, capacity: 734.79},
+   { year: 2018, country: "USA", energyType: "Solar", output: 93.36, capacity: 455.43},
+   { year: 2018, country: "USA", energyType: "Wind", output: 272.67, capacity: 829.31}
+]

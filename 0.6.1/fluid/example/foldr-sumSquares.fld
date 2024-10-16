@@ -1,0 +1,1 @@
+foldr (fun x y -> x * x + y * y) 0 [6, 3, 2]

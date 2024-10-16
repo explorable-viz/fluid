@@ -1,0 +1,3 @@
+let (x, y) = (6.0, 12.0);
+    sum = x + y in
+(floor (x * 100.0 / sum), floor (y * 100 / sum))

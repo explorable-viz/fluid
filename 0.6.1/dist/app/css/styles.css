@@ -1,0 +1,199 @@
+@charset "UTF-8";
+@font-face {
+   font-family: "Fira Code";
+   src: url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
+ }
+
+.glowing, a {
+   transition: all .25s;
+}
+
+a:hover {
+   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
+}
+
+.nowrap {
+   white-space: nowrap;
+}
+
+code {
+   font-size: 11pt;
+}
+
+body {
+   font-size: 11pt;
+   font-family: "Roboto", sans-serif;
+   font-weight: 300;
+   line-height: 1.25;
+   padding: 0;
+   margin: 0;
+   background-color: #FFFFFF; /* #181818; */
+   color: #404040;
+   margin-bottom: 10em;
+}
+
+p {
+   margin-block-start: 0.1em;
+}
+
+.center {
+   height: 100%;
+}
+
+.align-right {
+   text-align: right;
+}
+
+.title {
+   color: darkblue;
+}
+
+h3 {
+   font-family: "Roboto", sans-serif;
+   font-weight: 600;
+   margin-top: 10pt;
+   margin-bottom: 0;
+   font-size: '24px'
+}
+
+h4 {
+   margin-top: 10pt;
+   margin-block-start: 1em;
+   margin-bottom: 0;
+}
+
+.glowing {
+   transition-timing-function: ease-out
+}
+
+a {
+   color: inherit;
+   transition-timing-function: ease-out
+}
+
+ul {
+   padding-left: 0
+}
+
+li {
+   margin-bottom: 1ex
+}
+
+li:last-child {
+   margin-bottom: 0
+}
+
+table {
+/*   margin: 4mm;*/
+}
+
+.table-caption {
+   text-align: left;
+}
+
+th {
+   font-size: 11px;
+   text-align: left;
+   border-bottom: 'thin solid';
+}
+
+td {
+   font-size: 11px;
+}
+
+td:nth-child(1) {
+   color: lightgray;
+}
+
+nav ul {
+   list-style: none;
+}
+
+nav ul li {
+   float: left;
+   overflow: hidden;
+}
+
+nav ul li a {
+   display: block;
+   width: 100%;
+   text-align: left;
+   padding-right: 8px;
+   text-decoration: none;
+}
+
+nav ul li a.active-page {
+   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
+}
+
+.cm-line {
+   font-family: 'Fira Code';
+   font-size: 8pt;
+}
+
+.grid-container {
+   display: grid;
+   width: 100%;
+   grid-template-columns: 10px 47.5% fit-content(10px) 1fr;
+}
+
+.grid-container.double-size {
+   max-width: 50vw; /* undo effect of transform: scale(2) for layout purposes */
+}
+
+.grid-container > :last-child {
+  padding-right: 10px;
+}
+
+.flex-left-align {
+   display: flex;
+   flex-direction: column;
+   align-items: start;
+}
+
+.flex-right-align {
+   display: flex;
+   flex-direction: column;
+   align-items: flex-end;
+}
+
+.flex-bottom-align {
+   display: flex;
+   flex-direction: row;
+   align-items: flex-end;
+}
+
+.data-pane-button {
+   font-size: 9pt;
+}
+
+.toggle-button {
+   color: #CCCCCC;
+   user-select: none;
+}
+
+.toggle-button:hover {
+   color: #999999;
+}
+
+.data-pane {
+   background-color: #F5F5F5;
+}
+
+/* Standalone figures have hardcoded scale for presentation purposes. */
+.double-size {
+   transform: scale(2);
+   transform-origin: top;
+}
+
+body.standalone {
+   height: 100%;
+   display: grid;
+   justify-items: center;
+   align-items: start;
+}
+
+/* Needed for contained height specifications to work */
+html {
+   height: 100%;
+}
