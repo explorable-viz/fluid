@@ -1,0 +1,14 @@
+MultiView {|
+    "bar-chart" :=
+        let data = [{ x: "Scenario 1", bars: [ { y: "emissions", z: 40 } ] }
+                   ,{ x: "Scenario 2", bars: [ { y: "emissions", z: 30 } ] }
+                   ,{ x: "Scenario 3", bars: [ { y: "emissions", z: 60 } ] }
+                   ,{ x: "Scenario 4", bars: [ { y: "emissions", z: 35 } ] }
+                   ,{ x: "Scenario 5", bars: [ { y: "emissions", z: 40 } ] }
+                   ,{ x: "Scenario 6", bars: [ { y: "emissions", z: 20 } ] } ]
+        in BarChart {
+            caption: "Example bar chart for text-viz",
+            size: { width: 275, height: 185 },
+            stackedBars: data
+        }
+|}

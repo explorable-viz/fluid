@@ -5,12 +5,12 @@ module App.View.Util.D3
    , ElementType(..)
    , attrs
    , classed
+   , colorScale
    , create
    , datum
    , dimensions
    , isEmpty
    , line
-   , nameCol
    , on
    , remove
    , rootSelect
@@ -103,7 +103,7 @@ foreign import data Selection :: Type
 
 foreign import createChild :: Selection -> String -> Object String -> Effect Selection
 foreign import remove :: Selection -> Effect Unit
-foreign import nameCol :: String -> Array String -> String
+foreign import colorScale :: String -> String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 -- Currently two different protocols for x and y axis; will subsume into something more general
 foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> Selection -> Effect Selection

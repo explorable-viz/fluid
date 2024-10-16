@@ -77,7 +77,7 @@ let head [] = error "Can't take head of empty list";
 let tail [] = error "Can't take tail of empty list";
     tail (_ : xs) = xs;
 
--- Int -> List Int -> Bool
+-- Eq a => a -> List a -> Bool
 let elem x [] = False;
     elem x (x' : xs) = (x == x') `or` (elem x xs);
 
@@ -86,6 +86,14 @@ let filter p [] = [];
     filter p (x : xs) =
       let ys = filter p xs in
       if p x then x : ys else ys;
+
+-- (a -> Option b) -> List a -> List b
+let filterMap p [] = [];
+    filterMap p (x : xs) =
+      match p x as {
+         None -> filterMap f xs;
+         Some y -> y : filterMap f xs
+      };
 
 -- (a -> b -> a) -> a -> List b -> a
 let foldl op z [] = z;

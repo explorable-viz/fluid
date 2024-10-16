@@ -150,6 +150,11 @@ td.table-cell {
    stroke: teal;
 }
 
+.scatterplot-point.selected-secondary-transient {
+   stroke: blue;
+   stroke-width: 1;
+}
+
 .scatterplot-point.selected-primary-transient {
    stroke: blue;
    stroke-width: 1;

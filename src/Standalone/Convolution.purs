@@ -19,7 +19,7 @@ fig =
         , "example/slicing/convolution/filter/emboss"
         ]
    , datasets: []
-   , inputs: [ "input_image", "filter" ]
+   , inputs: [ "inputImage", "filter" ]
    }
 
 main :: Effect Unit

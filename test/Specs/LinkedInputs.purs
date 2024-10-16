@@ -13,8 +13,8 @@ energyScatter :: FigSpec
 energyScatter =
    { imports: []
    , datasets:
-        [ "renewables" ↦ "example/linked-inputs/renewables"
-        , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
+        [ "renewables" ↦ "dataset/renewables-new"
+        , "nonRenewables" ↦ "dataset/non-renewables"
         ]
    , file: File "linked-inputs/energyscatter"
    , inputs: [ "renewables", "nonRenewables" ]
@@ -62,8 +62,8 @@ linkedInputs_spec5 =
         { file: File "linked-inputs/mini-energyscatter"
         , imports: []
         , datasets:
-             [ "nonRenewables" ↦ "example/linked-inputs/mini-non-renewables"
-             , "renewables" ↦ "example/linked-inputs/mini-renewables"
+             [ "nonRenewables" ↦ "dataset/mini-non-renewables"
+             , "renewables" ↦ "dataset/mini-renewables"
              ]
         , inputs: [ "nonRenewables", "renewables" ]
         }

@@ -11,6 +11,7 @@ in MultiView {|
    "bar-chart" :=
       BarChart {
          caption: "Total output by country",
+         size: { width: 275, height: 185 },
          stackedBars: countryData
       },
    "one" :=

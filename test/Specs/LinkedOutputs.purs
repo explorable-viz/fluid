@@ -12,7 +12,7 @@ import Test.Util.Suite (TestLinkedOutputsSpec)
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
-        { datasets: [ "renewables" ↦ "example/linked-outputs/renewables" ]
+        { datasets: [ "renewables" ↦ "dataset/renewables" ]
         , imports: []
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
@@ -37,8 +37,8 @@ linkedOutputs_spec2 :: TestLinkedOutputsSpec
 linkedOutputs_spec2 =
    { spec:
         { datasets:
-             [ "renewables" ↦ "example/linked-inputs/renewables"
-             , "nonRenewables" ↦ "example/linked-inputs/non-renewables"
+             [ "renewables" ↦ "dataset/renewables-new"
+             , "nonRenewables" ↦ "dataset/non-renewables"
              ]
         , imports: []
         , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
@@ -58,12 +58,12 @@ linkedOutputs_spec2 =
 movingAverages_spec :: TestLinkedOutputsSpec
 movingAverages_spec =
    { spec:
-        { datasets: [ "points" ↦ "example/linked-outputs/moving-average-data" ]
-        , imports: [ "lib/moving-average", "lib/nombre" ]
+        { datasets: [ "methane" ↦ "dataset/methane-emissions" ]
+        , imports: []
         , file: File "linked-outputs/moving-average"
-        , inputs: [ "points" ]
+        , inputs: [ "methane" ]
         }
-   , δ_out: identity
+   , δ_out: identity -- TODO: make this a non-trivial test
    , out_expect: identity
    }
 
