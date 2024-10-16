@@ -21,7 +21,7 @@
   "scripts": {
     "tidy": "./script/tidy.sh",
     "build-website": "./script/build-website.sh",
-    "serve-website": "./script/serve.sh \"\"",
+    "serve-website": "./script/serve.sh /",
     "build-ESOP-artifact": "./script/build-ESOP-artifact.sh",
     "build-standalone-all": "./script/build-standalone-all.sh",
     "build-standalone": "./script/build-standalone.sh",
