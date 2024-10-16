@@ -20,7 +20,7 @@ module.exports = function (config) {
          }
       },
       colors: true,
-      failOnEmptyTestSuite: false,
+      failOnEmptyTestSuite: true,
       files: [
          "./dist/test/fluid.js",
          {
