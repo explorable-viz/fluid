@@ -1,0 +1,21 @@
+name: v0.6.1
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/release'
+    steps:
+    - uses: actions/checkout@v4
+    - name: build
+      run: |
+        yarn install
+        yarn build-app
+    - name: gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: dist/app/
+        keep_files: true
