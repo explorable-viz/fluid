@@ -23,6 +23,7 @@ jobs:
         yarn install
         set -x -e
         yarn purs-tidy check src/**/*.purs test/**/*.purs
+        yarn build
         yarn build-website
         yarn build-puppeteer
         yarn test-all
