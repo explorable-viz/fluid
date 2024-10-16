@@ -24,7 +24,7 @@ import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -168,6 +168,14 @@ prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a))
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
 prettyOperator sep (Cons s xss) = sep (prettyOperator sep (toList (singleton s)) .<>. text str.comma) (prettyOperator sep xss)
 prettyOperator _ Nil = empty
+
+instance Ann a => Pretty (List (DictEntry a × Expr a)) where
+   pretty Nil = empty
+   pretty ((k × v) : Nil) = pretty k .<>. text str.colon .<>. pretty v
+   pretty ((k × v) : kvs) = pretty k .<>. text str.colon .<>. pretty v .<>. text str.comma .<>. pretty kvs
+
+instance Ann a => Pretty (DictEntry a) where
+   pretty (ExprKey k) = text str.lBracket .<>. pretty k .<>. text str.rBracket
 
 instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
@@ -332,18 +340,22 @@ prettyRecordOrDict
     . Pretty d
    => Doc
    -> Endo Doc
+   -> Endo Doc
    -> (b -> Doc)
    -> List (b × d)
    -> Doc
-prettyRecordOrDict sep bracify prettyKey xvs =
-   xvs <#> first prettyKey <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
+prettyRecordOrDict sep kdelim bracify prettyKey xvs =
+   xvs <#> first (prettyKey <#> kdelim) <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
       # hcomma >>> bracify
 
+keyBracks :: Endo Doc
+keyBracks = between (text str.lBracket) (text str.rBracket)
+
 prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colonEq)
+prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colon) keyBracks
 
 prettyRecord :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon)
+prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon) identity
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
 prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text (i <> "×" <> j) .<>. text str.in_ .<>. pretty e2)

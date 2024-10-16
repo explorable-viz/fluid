@@ -1,5 +1,6 @@
-let newDataTable offset = map (fun s -> { scenario: s.scenario, bE2140: s.bE2140 + offset, lR2140: s.lR2140, bE4160: s.bE4160, lR4160: s.lR4160, bE81100: s.bE81100, lR81100: s.lR81100 }) tableData;
+let newDataTable offset = map (fun s -> { scenario: s.scenario, bE2140: s.bestEst2140 + offset, low2140: s.low2140, high2140: s.high2140, bE4160: s.bestEst4160, low4160: s.low4160, high4160: s.high4160, bE81100: s.bestEst81100, low81100: s.low81100, high81100: s.high81100}) tableData;
 let newModel offset = map (fun s -> { model: s.model, probability: s.probability + offset}) modelProbs;
+
 let getByScenario scenario data = 
         let helper [] = [];
             helper (x: xs) =
@@ -8,27 +9,34 @@ let getByScenario scenario data =
                 else helper xs
         in helper data;
 
-let likelihoodMap prob = 
-    if prob >= 0.99
-    then "virtually certain"
-    else if prob >= 0.9
-    then "very likely"
-    else if prob >= 0.66
-    then "likely"
-    else if prob >= 0.33
-    then "about as likely as not"
-    else if prob >= 0.1
-    then "unlikely"
-    else if prob >= 0.01
-    then "very unlikely"
-    else "exceptionally unlikely";
 
+
+let likelihoodMap prob = 
+    let go (x:xs) = 
+        if x.prob < prob
+        then x.msg
+        else go xs;
+        go [] = "not found"
+    in go likelihoods;
+
+let findLikelihood (min, max) target = 
+    if target > max
+    then 0.0
+    else if target < min 
+    then 1.0
+    else (target - min)/(max - min);
 
 let realTable = newDataTable 0;
-    probTable = newModel 0.0
+    probTable = newModel 0.0;
+    sspone = getByScenario "SSP1-1.9" realTable;
+    ssptwo = getByScenario "SSP2-4.5" realTable
 in MultiView {|
-    "table" := tableData,
-    "explanation":=
-        LinkedText [ "The low-emissions scenario -- SSP1-1.9 -- projects a temperature increase of "
-                     , numToStr (getByScenario "SSP1-1.9" realTable).bE81100, " by the end of the century."
-                     , "Under this model, it is ", likelihoodMap (head probTable).probability, " that global temperature increase will meet the target of 2c by the end of the century." ] |}
+    ["table"]: tableData,
+    ["explanation"] :
+        LinkedText [ "The low-emissions scenario -- ", sspone.scenario ," -- projects a temperature increase of "
+                     , numToStr sspone.bE81100, " by the end of the century."
+                     , "Under this model, it is ", likelihoodMap (findLikelihood (sspone.low81100, sspone.high81100) 2.0)
+                     , " that global temperature increase will exceed the target of 2c by the end of the century."
+                     , " On the other hand, in a higher emissions scenario, like the intermediate scenario SSP2-4.5, it is "
+                     , likelihoodMap (findLikelihood (ssptwo.low81100, ssptwo.high81100) 2.0)
+                     , " that global temperature increase will exceed this target." ]|}
