@@ -1,0 +1,21 @@
+name: v0.6.1
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: unzip
+      run: |
+        set -x -e
+        unzip archive/0.6.1.zip
+        ls -la /home/runner/work/fluid/fluid/0.6.1/
+    - name: gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: 0.6.1/
+        destination_dir: 0.6.1/
