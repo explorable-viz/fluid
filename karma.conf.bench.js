@@ -21,7 +21,7 @@ module.exports = function (config) {
       colors: true,
       failOnEmptyTestSuite: false,
       files: [
-         "./dist/bench/app.js",
+         "./dist/bench/fluid.js",
          {
             pattern: "./fluid/**/*.fld",
             watched: true,

@@ -31,6 +31,6 @@ Fluid is an experimental programming language which integrates a bidirectional d
 - Hit Debug in the browser window that opens, and then open Developer Tools or equivalent
 
 #### Running web app
-- `yarn build-app`
-- `yarn serve-app`
+- `yarn build-website`
+- `yarn serve-website`
 - Open a browser at the served URL (usually `127.0.0.1:8080`)
