@@ -22,7 +22,7 @@ module.exports = function (config) {
       colors: true,
       failOnEmptyTestSuite: false,
       files: [
-         "./dist/test/app.js",
+         "./dist/test/fluid.js",
          {
             pattern: "./fluid/**/*.fld",
             watched: true,

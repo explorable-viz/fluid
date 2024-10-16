@@ -1,4 +1,4 @@
-module App where
+module Website where
 
 import Prelude hiding (absurd)
 
