@@ -9,13 +9,14 @@ import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module (File(..))
 import Util ((×))
+import Bind ((↦))
 
 fig :: FigSpec
 fig =
-   { datasets: []
+   { datasets: [ "likelihoods" ↦ "example/text-viz/likelihoods", "barData" ↦ "example/text-viz/barchart-table" ]
    , imports: []
    , file: File "text-viz/explain-barchart"
-   , inputs: []
+   , inputs: [ "likelihoods", "barData" ]
    }
 
 main :: Effect Unit
