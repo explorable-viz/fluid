@@ -20,7 +20,7 @@
   "files": ["dist/article/"],
   "scripts": {
     "tidy": "./script/tidy.sh",
-    "build-website": "./script/build.sh \"\" Website",
+    "build-website": "./script/build-website.sh",
     "serve-website": "./script/serve.sh \"\"",
     "build-ESOP-artifact": "./script/build-ESOP-artifact.sh",
     "build-standalone-all": "./script/build-standalone-all.sh",
