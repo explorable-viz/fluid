@@ -1,8 +1,5 @@
 @charset "UTF-8";
-@font-face {
-   font-family: "Fira Code";
-   src: url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
- }
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
 
 .glowing, a {
    transition: all .25s;
