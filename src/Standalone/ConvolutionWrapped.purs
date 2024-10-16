@@ -7,11 +7,20 @@ import App.Util (runAffs_)
 import App.View.Util (FigSpec)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Standalone.Convolution as Convolution
+import Module (File(..))
 import Util ((×))
 
 fig :: FigSpec
-fig = Convolution.fig { inputs = [ "inputImage" ] }
+fig =
+   { file: File "slicing/convolution/emboss-wrap"
+   , imports:
+        [ "lib/convolution"
+        , "example/slicing/convolution/test-image"
+        , "example/slicing/convolution/filter/emboss"
+        ]
+   , datasets: []
+   , inputs: [ "inputImage", "filter" ]
+   }
 
 main :: Effect Unit
 main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig fig ]
