@@ -9,3 +9,4 @@ for FILE in src/Standalone/Test/*.purs; do
    echo $FILE -> $MODULE
    . script/test-standalone.sh $MODULE
    done
+
