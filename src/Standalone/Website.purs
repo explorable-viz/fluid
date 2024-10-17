@@ -1,4 +1,4 @@
-module Website where
+module Standalone.Website where
 
 import Prelude hiding (absurd)
 

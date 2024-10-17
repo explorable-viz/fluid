@@ -1,4 +1,4 @@
-module Test.Website where
+module Standalone.Test.Website where
 
 import Prelude
 
