@@ -32,7 +32,7 @@
     "test": "./script/test.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
     "build-puppeteer": "./script/build.sh test-puppeteer Test.Puppeteer --platform=node",
-    "test-puppeteer": "./script/test-puppeteer.sh",
+    "test-puppeteer": "./script/test-standalone.sh Test.Puppeteer",
     "test-all": "./script/test-all.sh",
     "npm-publish": "./script/npm-publish.sh"
   },
