@@ -32,6 +32,7 @@
     "test": "./script/test.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
     "build-test-website": "./script/build.sh test-website Test.Website --platform=node",
+    "test-standalone": "./script/test-standalone.sh",
     "test-website": "./script/test-standalone.sh Test.Website",
     "test-all": "./script/test-all.sh",
     "npm-publish": "./script/npm-publish.sh"
