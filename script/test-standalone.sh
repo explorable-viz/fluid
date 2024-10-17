@@ -3,4 +3,4 @@ set -e
 
 yarn puppeteer browsers install chrome
 yarn puppeteer browsers install firefox
-node puppeteer.js $1
+node puppeteer.js Standalone.Test.$1

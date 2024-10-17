@@ -3,10 +3,8 @@
 set -e
 
 for FILE in src/Standalone/Test/*.purs; do
-   FILE1=${FILE#src/}
-   FILE2=${FILE1%.purs}
-   MODULE=${FILE2//\//.}
-   echo $FILE -> $MODULE
-   . script/test-standalone.sh $MODULE
+   BASENAME=$(basename "$FILE" .purs)
+   echo $FILE -> $BASENAME
+   . script/test-standalone.sh $BASENAME
    done
 
