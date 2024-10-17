@@ -1,8 +1,5 @@
 @charset "UTF-8";
-@font-face {
-   font-family: "Fira Code";
-   src: url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
- }
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
 
 .glowing, a {
    transition: all .25s;
@@ -30,7 +27,7 @@ body {
    background-color: #FFFFFF; /* #181818; */
    color: #404040;
    margin-bottom: 10em;
-}
+}bo
 
 p {
    margin-block-start: 0.1em;

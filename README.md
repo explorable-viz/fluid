@@ -4,7 +4,6 @@ Fluid is an experimental programming language which integrates a bidirectional d
 
 [![develop](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml)
 [![GitHub pages](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment)
-[![v0.3.1-typescript](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml)
 
 ## Installation
 
@@ -23,8 +22,7 @@ Fluid is an experimental programming language which integrates a bidirectional d
 	- Install WSL extension in VSCode
 
 #### Running tests on command line
-- `yarn build` and then `yarn test` for core tests
-- `yarn build-puppeteer` and then `yarn test-puppeteer` to run puppeteer tests
+- `yarn build` and then `yarn test-all`
 
 #### Running tests in browser
 - As per command-line tests above, but run `yarn test-browser`

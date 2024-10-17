@@ -1,4 +1,4 @@
-module Test.Puppeteer where
+module Standalone.Test.Website where
 
 import Prelude
 
@@ -7,7 +7,7 @@ import Data.Foldable (sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
-import Test.Util.Puppeteer (checkAttribute, checkAttributeContains, checkTextContent, click, goto, launchFirefox, waitFor)
+import Test.Util.Puppeteer (checkAttribute, checkAttributeContains, checkTextContent, click, clickToggle, goto, launchFirefox, waitFor, waitForFigure)
 import Toppokki as T
 
 main :: Effect (Promise Unit)
@@ -95,13 +95,3 @@ testConvolution page = do
    let toggle = fig <> "-input"
    clickToggle page toggle
    waitFor (T.Selector ("div#" <> toggle)) page
-
-waitForFigure :: T.Page -> String -> Aff Unit
-waitForFigure page id =
-   waitFor (T.Selector ("svg#" <> id)) page
-
-clickToggle :: T.Page -> String -> Aff Unit
-clickToggle page id = do
-   let toggle = T.Selector ("div#" <> id <> " + div > div > span.toggle-button")
-   waitFor toggle page
-   click toggle page

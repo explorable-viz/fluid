@@ -22,5 +22,9 @@ fig =
    , inputs: [ "inputImage", "filter" ]
    }
 
+--    Incorporate these:
+--      , loadFile' (Folder "fluid/lib") (File "convolution")
+--      , loadFile' (Folder "fluid/example/slicing/convolution") (File "emboss-wrap")
+
 main :: Effect Unit
 main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig fig ]
