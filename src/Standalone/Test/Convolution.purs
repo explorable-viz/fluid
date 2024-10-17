@@ -7,8 +7,7 @@ import Data.Foldable (sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
-import Test.Puppeteer (clickToggle, waitForFigure)
-import Test.Util.Puppeteer (goto, launchFirefox, waitFor)
+import Test.Util.Puppeteer (clickToggle, goto, launchFirefox, waitFor, waitForFigure)
 import Toppokki as T
 
 tests :: Array (Aff Unit)

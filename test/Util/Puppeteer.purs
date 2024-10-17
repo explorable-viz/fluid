@@ -91,3 +91,13 @@ textContentValue :: T.Page -> T.Selector -> Aff String
 textContentValue page selector = do
    captionText <- T.unsafePageEval selector "element => element.textContent" page
    pure (unsafeFromForeign captionText)
+
+waitForFigure :: T.Page -> String -> Aff Unit
+waitForFigure page id =
+   waitFor (T.Selector ("svg#" <> id)) page
+
+clickToggle :: T.Page -> String -> Aff Unit
+clickToggle page id = do
+   let toggle = T.Selector ("div#" <> id <> " + div > div > span.toggle-button")
+   waitFor toggle page
+   click toggle page
