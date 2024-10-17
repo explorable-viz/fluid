@@ -9,7 +9,8 @@ import Effect (Effect)
 import Module (File(..), Folder(..), loadFile')
 import Standalone.Convolution as Convolution
 import Standalone.EnergyScatter as EnergyScatter
-import Standalone.NonRenewables as NonRenewables
+--import Standalone.NonRenewables as NonRenewables
+import Standalone.RenewablesLinked as RenewablesLinked
 import Util ((×))
 
 main :: Effect Unit
@@ -21,5 +22,5 @@ main = do
    runAffs_ (uncurry drawFig)
       [ ("fig-4" × _) <$> loadFig EnergyScatter.fig
       , ("fig-conv-2" × _) <$> loadFig Convolution.fig
-      , ("fig-1" × _) <$> loadFig NonRenewables.fig
+      , ("fig-1" × _) <$> loadFig RenewablesLinked.fig
       ]
