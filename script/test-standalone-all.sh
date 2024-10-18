@@ -4,7 +4,6 @@ set -e
 
 for FILE in src/Standalone/Test/*.purs; do
    BASENAME=$(basename "$FILE" .purs)
-   echo $FILE -> $BASENAME
+   echo "$BASENAME Puppeteer tests"
    . script/test-standalone.sh $BASENAME
    done
-
