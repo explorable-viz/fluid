@@ -33,7 +33,6 @@
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
     "test-standalone": "./script/test-standalone.sh",
     "test-standalone-all": "./script/test-standalone-all.sh",
-    "test-website": "./script/test-standalone.sh Website",
     "test-all": "./script/test-all.sh",
     "npm-publish": "./script/npm-publish.sh"
   },

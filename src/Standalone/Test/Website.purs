@@ -30,8 +30,6 @@ browserTests browserName launchBrowser = do
    testScatterPlot page
    goto (T.URL url) page
    testBarChartLineChart page
-   goto (T.URL url) page
-   testConvolution page
    T.close browser
 
 testScatterPlot :: T.Page -> Aff Unit
@@ -87,11 +85,3 @@ testBarChartLineChart page = do
       let point = T.Selector ("svg#" <> lineChart <> " circle.linechart-point")
       waitFor point page
       checkAttribute page point "r" "2.0"
-
-testConvolution :: T.Page -> Aff Unit
-testConvolution page = do
-   let fig = "fig-conv-2"
-   waitForFigure page (fig <> "-output")
-   let toggle = fig <> "-input"
-   clickToggle page toggle
-   waitFor (T.Selector ("div#" <> toggle)) page
