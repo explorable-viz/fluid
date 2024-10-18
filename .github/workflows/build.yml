@@ -26,5 +26,4 @@ jobs:
         yarn build-website
         yarn build
         yarn build-standalone-all
-        yarn build-test-website
         yarn test-all

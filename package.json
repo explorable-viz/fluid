@@ -27,7 +27,6 @@
     "build-ESOP-artifact": "./script/build-ESOP-artifact.sh",
     "build-standalone-all": "./script/build-standalone-all.sh",
     "build-standalone": "./script/build-standalone.sh",
-    "build-test-website": "./script/build.sh test-website Standalone.Test.Website --platform=node",
     "serve-website": "./script/serve.sh /",
     "bench": "./script/serve.sh bench",
     "test": "./script/test.sh",
