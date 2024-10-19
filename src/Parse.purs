@@ -28,10 +28,9 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..) )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
-import SExpr (Types(..))
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef)
@@ -44,7 +43,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
    , opStart = opChar
    , opLetter = opChar
    , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow ]
-   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, "Integer" ]
+   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, "Integer", "String"]
    , caseSensitive = true
    }
    where
@@ -199,11 +198,10 @@ branches expr' branch_ =
 
 -- changed clause to branch function
 varDefs :: SParser (Raw Expr) -> SParser (Raw VarDefs)
-varDefs expr' = keyword str.let_ *> sepBy1_try branch token.semi
+varDefs expr' = keyword str.let_ *> types <* sepBy1_try branch token.semi
    where
    branch :: SParser (Raw VarDef)
-   branch = VarDef <$> (token.reserved "Integer" *> pattern <* equals) <*> expr'
-   --branch = VarDef <$> (token.reserved "Integer" *> pattern <* equals) <*> expr'
+   branch = VarDef <$> (pattern <* types <* equals) <*> expr'
 
 -- changed clause function to branch function
 recDefs :: SParser (Raw Expr) -> SParser (Raw RecDefs)
@@ -433,3 +431,7 @@ module_ :: SParser (Raw Module)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
 
 -- SParser Types
+-- TInt is a TInt followed by a natural number
+-- TStr is a TStr followed by a string literal
+types :: SParser Types
+types = (TInt <$> token.natural) <|> (TStr <$> token.stringLiteral)

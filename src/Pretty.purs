@@ -24,7 +24,7 @@ import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..))
 import Util (type (+), type (×), Endo, assert, error, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -208,6 +208,10 @@ instance Pretty Pattern where
    pretty (PListEmpty) = brackets empty
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
 
+instance Pretty Types where
+   pretty (TInt x) = (text (show x))
+   pretty (TStr x) = text x
+
 instance Pretty (List (Bind Pattern)) where
    pretty (Cons xp Nil) = text (key xp) .<>. text str.colon .<>. pretty (val xp)
    pretty (Cons xp xps) = text (key xp) .<>. text str.colon .<>. pretty (val xp) .<>. text str.comma .-. pretty xps
@@ -243,7 +247,7 @@ instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
       intersperse' (prettyClause (text str.rArrow) <$> (Clause <$> toList (helperMatch pss))) (text str.semiColon)
 
 instance Ann a => Pretty (VarDef a) where
-   pretty (VarDef p s) = pretty p .<>. text str.equals .<>. pretty s
+   pretty (VarDef p t s) = pretty p .<>. pretty t .<>. text str.equals .<>. pretty s
 
 instance Ann a => Pretty (VarDefs a) where
    pretty ds = intersperse' (toList (map pretty ds)) (text str.semiColon)

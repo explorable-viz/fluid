@@ -123,8 +123,7 @@ newtype RecDef a = RecDef (NonEmptyList (Branch a))
 type RecDefs a = NonEmptyList (Branch a)
 
 -- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
-data VarDef a = VarDef Pattern (Expr a)
--- Pattern (Types) (Expr a)
+data VarDef a = VarDef Pattern (Types) (Expr a)
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a
@@ -195,7 +194,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- "rest of module" to use as continuation. So use empty dictionary (unit tuple) as continuation, and disregard
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
-varDefFwd (VarDef p s) =
+varDefFwd (VarDef p t s) =
    E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Dictionary top Nil)))) <*> desug s
 
 -- VarDefs
@@ -312,7 +311,7 @@ listCompFwd (α × Nil × s) =
 listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
    E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
-listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
+listCompFwd (α × (ListCompDecl (VarDef p t s) : qs) × s') = do
    σ <- clausesStateFwd (((Left p : Nil) × Nil × ListComp α s' qs) : Nil)
    E.App (E.Lambda α (asElim σ)) <$> desug s
 listCompFwd (α × (ListCompGen p s : qs) × s') = do
