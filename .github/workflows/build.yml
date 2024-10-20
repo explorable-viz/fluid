@@ -25,5 +25,5 @@ jobs:
         yarn purs-tidy check src/**/*.purs test/**/*.purs
         yarn build-website
         yarn build
-        yarn build-test-website
+        yarn build-standalone-all
         yarn test-all
