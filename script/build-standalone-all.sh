@@ -4,5 +4,6 @@
 set -e
 
 for FILE in src/Standalone/*.purs; do
-   . script/build-standalone.sh $FILE
+   NAME=$(basename $FILE .purs)
+   . script/build-standalone.sh $NAME
    done

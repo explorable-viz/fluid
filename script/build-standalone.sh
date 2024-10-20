@@ -3,7 +3,7 @@
 # set -x
 set -e
 
-NAME=$(basename $1 .purs)
+NAME=$1
 
 if [[ ! -e "src/Standalone/$NAME.purs" ]]; then
   echo "Error: '$NAME.purs' not found."
