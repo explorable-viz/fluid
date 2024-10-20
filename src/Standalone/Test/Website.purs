@@ -11,21 +11,21 @@ import Test.Util.Puppeteer (checkAttribute, checkAttributeContains, checkTextCon
 import Toppokki as T
 
 main :: Effect (Promise Unit)
-main = fromAff $ sequence_ tests
+main = fromAff $ sequence_ $ tests "/"
 
-tests :: Array (Aff Unit)
-tests =
-   [ browserTests "chrome" (T.launch {})
-   , browserTests "firefox" (launchFirefox)
+tests :: String -> Array (Aff Unit)
+tests suffix =
+   [ browserTests suffix "chrome" (T.launch {})
+   , browserTests suffix "firefox" (launchFirefox)
    ]
 
 -- Test each fig on a fresh page, else earlier tests seem to interfere with element visibility (on Firefox)
-browserTests :: String -> Aff T.Browser -> Aff Unit
-browserTests browserName launchBrowser = do
+browserTests :: String -> String -> Aff T.Browser -> Aff Unit
+browserTests suffix browserName launchBrowser = do
    log ("browserTests: " <> browserName)
    browser <- launchBrowser
    page <- T.newPage browser
-   let url = "http://127.0.0.1:8080"
+   let url = "http://127.0.0.1:8080" <> suffix
    goto (T.URL url) page
    testScatterPlot page
    goto (T.URL url) page
