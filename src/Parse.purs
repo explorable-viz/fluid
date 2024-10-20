@@ -43,7 +43,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
    , opStart = opChar
    , opLetter = opChar
    , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow ]
-   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, "Integer", "String"]
+   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, "Integer", "String", str.colon ]
    , caseSensitive = true
    }
    where
@@ -198,10 +198,16 @@ branches expr' branch_ =
 
 -- changed clause to branch function
 varDefs :: SParser (Raw Expr) -> SParser (Raw VarDefs)
-varDefs expr' = keyword str.let_ *> types <* sepBy1_try branch token.semi
+varDefs expr' = keyword str.let_ *> sepBy1_try branch token.semi
    where
-   branch :: SParser (Raw VarDef)
-   branch = VarDef <$> (pattern <* types <* equals) <*> expr'
+      branch :: SParser (Raw VarDef)
+      branch = do
+         p <- pattern
+         _ <- token.reserved str.colon
+         t <- typeP
+         equals
+         exp <- expr'
+         pure (VarDef p t exp)
 
 -- changed clause function to branch function
 recDefs :: SParser (Raw Expr) -> SParser (Raw RecDefs)
@@ -337,7 +343,14 @@ expr_ =
                qualifier :: SParser (Raw Qualifier)
                qualifier =
                   ListCompGen <$> pattern <* lArrow <*> expr'
-                     <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
+                     <|> Declaration <$> (VarDef <$> (keyword str.let_ *> pattern <* token.reserved str.colon <* typeP <* equals) <*> expr')
+                     -- (do
+                     --    p <- keyword str.let_
+                     --    token.reserved str.colon
+                     --    t <- typeP
+                     --    exp <- expr'
+                     --    VarDef <$> (keywork str.let_ *>p <* t <* equals) <*> exp)
+                    -- <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
                      <|> ListCompGuard <$> expr'
 
             explained :: SParser (Raw Expr)
@@ -431,7 +444,5 @@ module_ :: SParser (Raw Module)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
 
 -- SParser Types
--- TInt is a TInt followed by a natural number
--- TStr is a TStr followed by a string literal
-types :: SParser Types
-types = (TInt <$> token.natural) <|> (TStr <$> token.stringLiteral)
+typeP :: SParser Types
+typeP = (token.reserved "Integer" *> pure (TInt 0)) <|> (token.reserved "String" *> pure (TStr ""))
