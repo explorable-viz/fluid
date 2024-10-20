@@ -6,31 +6,14 @@ import Control.Promise (Promise, fromAff)
 import Data.Foldable (sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Class.Console (log)
-import Test.Util.Puppeteer (checkAttribute, checkAttributeContains, checkTextContent, click, clickToggle, goto, launchFirefox, waitFor, waitForFigure)
+import Test.Util.Puppeteer (checkAttribute, checkAttributeContains, checkTextContent, click, clickToggle, testURL, waitFor, waitForFigure)
 import Toppokki as T
 
 main :: Effect (Promise Unit)
-main = fromAff $ sequence_ $ tests "/"
-
-tests :: String -> Array (Aff Unit)
-tests suffix =
-   [ browserTests suffix "chrome" (T.launch {})
-   , browserTests suffix "firefox" (launchFirefox)
+main = fromAff $ sequence_ $ testURL "/"
+   [ testScatterPlot
+   , testBarChartLineChart
    ]
-
--- Test each fig on a fresh page, else earlier tests seem to interfere with element visibility (on Firefox)
-browserTests :: String -> String -> Aff T.Browser -> Aff Unit
-browserTests suffix browserName launchBrowser = do
-   log ("browserTests: " <> browserName)
-   browser <- launchBrowser
-   page <- T.newPage browser
-   let url = "http://127.0.0.1:8080" <> suffix
-   goto (T.URL url) page
-   testScatterPlot page
-   goto (T.URL url) page
-   testBarChartLineChart page
-   T.close browser
 
 testScatterPlot :: T.Page -> Aff Unit
 testScatterPlot page = do
