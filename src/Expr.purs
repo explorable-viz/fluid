@@ -27,7 +27,6 @@ data Expr a
    | Int a Int
    | Float a Number
    | Str a String
-   | Record a (Dict (Expr a))
    | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
    | Constr a Ctr (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
@@ -71,7 +70,6 @@ instance FV (Expr a) where
    fv (Int _ _) = empty
    fv (Float _ _) = empty
    fv (Str _ _) = empty
-   fv (Record _ xes) = unions (fv <$> xes)
    fv (Dictionary _ ees) = unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
    fv (Constr _ _ es) = unions (fv <$> es)
    fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
@@ -159,7 +157,6 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Int α n) (Int α' n') = Int (α ∨ α') (n ≜ n')
    join (Str α str) (Str α' str') = Str (α ∨ α') (str ≜ str')
    join (Float α n) (Float α' n') = Float (α ∨ α') (n ≜ n')
-   join (Record α xes) (Record α' xes') = Record (α ∨ α') (xes ∨ xes')
    join (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') (ees ∨ ees')
    join (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') (c ≜ c') (es ∨ es') -- TODO: assert consistentWith
    join (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
@@ -178,7 +175,6 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Int α n) (Int _ n') = Int α (n ≜ n')
    expand (Str α str) (Str _ str') = Str α (str ≜ str')
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Record α xes) (Record _ xes') = Record α (expand xes xes')
    expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
    expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
    expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
@@ -219,7 +215,6 @@ instance Apply Expr where
    apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
    apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
    apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Record fα fxes) (Record α xes) = Record (fα α) (((<*>) <$> fxes) <*> xes)
    apply (Dictionary fα fxes) (Dictionary α xes) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxes xes)
    apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
    apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =

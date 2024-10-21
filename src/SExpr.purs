@@ -8,7 +8,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Bitraversable (rtraverse)
 import Data.Either (Either(..))
 import Data.Filterable (filterMap)
-import Data.Foldable (length)
+import Data.Foldable (foldl, length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
@@ -179,11 +179,11 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
    flatten (Right δ) = pure (Right δ)
 
 -- Use of eliminators to establish module bindings is a bit naff, because we don't really have a notion of
--- "rest of module" to use as continuation. So use empty record (unit tuple) as continuation, and disregard
+-- "rest of module" to use as continuation. So use empty dictionary (unit tuple) as continuation, and disregard
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Record top Nil)))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Dictionary top Nil)))) <*> desug s
 
 -- VarDefs
 varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
@@ -235,12 +235,15 @@ exprFwd (Int α n) = pure (E.Int α n)
 exprFwd (Float α n) = pure (E.Float α n)
 exprFwd (Str α s) = pure (E.Str α s)
 exprFwd (Constr α c ss) = E.Constr α c <$> traverse desug ss
-exprFwd (Record α xss) = E.Record α <$> wrap <<< D.fromFoldable <$> traverse (traverse desug) xss
+exprFwd (Record α xss) = do
+   let ks × ss = unzip xss
+   es <- traverse desug ss
+   E.Dictionary α <$> pure (zipWith (\k v -> Pair k v) (ks <#> E.Str α) es)
 exprFwd (Dictionary α sss) = do
-   let ks × vs = unzip sss
+   let ks × ss = unzip sss
    ks' <- traverse desug ks
-   vs' <- traverse desug vs
-   E.Dictionary α <$> (pure $ zipWith (\k v -> Pair k v) ks' vs')
+   es <- traverse desug ss
+   E.Dictionary α <$> pure (zipWith (\k v -> Pair k v) ks' es)
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desug s <@> x × y <*> desug s'
 exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project s x) = E.Project <$> desug s <@> x
@@ -265,8 +268,11 @@ exprBwd (E.Int α _) (Int _ n) = Int α n
 exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
 exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry desugBwd <$> zip es ss)
-exprBwd (E.Record α xes) (Record _ xss) =
-   Record α $ xss # filterMap \(x ↦ s) -> lookup x xes <#> \e -> x ↦ desugBwd e s
+exprBwd (E.Dictionary α ees) (Record _ xss) =
+   let
+      αs = (ees <#> unsafePartial \(Pair (E.Str β _) _) -> β) :: List a
+   in
+      Record (foldl (∨) α αs) (zipWith (\(Pair _ e) (x × s) -> x × desugBwd e s) ees xss)
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') ((ExprKey s) × s') -> (ExprKey (desugBwd e s)) × (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =

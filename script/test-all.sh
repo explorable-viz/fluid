@@ -2,4 +2,4 @@
 set -xe
 
 . script/test.sh
-. script/test-puppeteer.sh
+. script/test-standalone-all.sh

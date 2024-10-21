@@ -13,7 +13,7 @@ import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
 import Data.Set as Set
-import Data.Traversable (for, sequence, traverse)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
@@ -62,7 +62,6 @@ primitives = wrap $ wrap $ D.fromFoldable
    , extern dict_difference
    , extern dict_disjointUnion
    , extern dict_foldl
-   , extern dict_fromRecord
    , extern dict_get
    , extern dict_intersectionWith
    , extern dict_map
@@ -181,25 +180,6 @@ dict_difference =
    bwd :: Partial => OpBwd Unit
    bwd (_ × Val α (Dictionary d)) =
       Val α (Dictionary d) : Val α (Dictionary (DictRep empty)) : Nil
-
-dict_fromRecord :: ForeignOp
-dict_fromRecord =
-   ForeignOp ("dict_fromRecord" × mkExists (ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }))
-   where
-   op :: OpGraph
-   op (Val α (Record xvs) : Nil) = do
-      xvs' <- for xvs (\v -> new (singleton α) <#> (_ × v))
-      Val <$> new (singleton α) <@> Dictionary (DictRep xvs')
-   op _ = throw "Record expected."
-
-   fwd :: OpFwd Unit
-   fwd (Val α (Record xvs) : Nil) =
-      pure $ unit × Val α (Dictionary (DictRep $ xvs <#> (α × _)))
-   fwd _ = throw "Record expected."
-
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × Val α (Dictionary (DictRep d))) =
-      Val (foldl (∨) α (d <#> fst)) (Record (d <#> snd)) : Nil
 
 dict_disjointUnion :: ForeignOp
 dict_disjointUnion =

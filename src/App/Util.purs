@@ -131,12 +131,12 @@ to𝕊 false = None
 unselected :: SelState 𝔹
 unselected = Reactive { persistent: false, transient: false }
 
-get_intOrNumber :: Var -> Dict (Val (SelState 𝕊)) -> Selectable Number
-get_intOrNumber x r = first as (unpack intOrNumber (get x r))
+get_intOrNumber :: Var -> Dict (SelState 𝕊 × Val (SelState 𝕊)) -> Selectable Number
+get_intOrNumber x r = first as (unpack intOrNumber (snd (get x r)))
 
 -- Assumes fields are all of primitive type.
-record :: forall a. (Dict (Val (SelState 𝕊)) -> a) -> Val (SelState 𝕊) -> a
-record toRecord (Val _ v) = toRecord (P.record.unpack v)
+dict :: forall a. (Dict (SelState 𝕊 × Val (SelState 𝕊)) -> a) -> Val (SelState 𝕊) -> a
+dict toDict (Val _ v) = toDict (P.dict.unpack v)
 
 class Reflect a b where
    from :: Partial => a -> b
@@ -280,15 +280,15 @@ derive instance Generic (Dimensions a) _
 instance Show a => Show (Dimensions a) where
    show = genericShow
 
-instance Reflect (Val (SelState 𝕊)) (Dict (Val (SelState 𝕊))) where
-   from (Val _ (Dictionary (DictRep d))) = d <#> snd
+instance Reflect (Val (SelState 𝕊)) (Dict (SelState 𝕊 × Val (SelState 𝕊))) where
+   from (Val _ (Dictionary (DictRep d))) = d
 
 instance Reflect (Val (SelState 𝕊)) (Array (Val (SelState 𝕊))) where
    from (Val _ (Constr c Nil)) | c == cNil = []
    from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
 
-instance Reflect (Dict (Val (SelState 𝕊))) (Dimensions (Selectable Int)) where
+instance Reflect (Dict (SelState 𝕊 × Val (SelState 𝕊))) (Dimensions (Selectable Int)) where
    from r = Dimensions
-      { width: unpack int (get "width" r)
-      , height: unpack int (get "height" r)
+      { width: unpack int (snd (get "width" r))
+      , height: unpack int (snd (get "height" r))
       }

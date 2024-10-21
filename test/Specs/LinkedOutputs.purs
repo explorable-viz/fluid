@@ -2,31 +2,27 @@ module Test.Specs.LinkedOutputs where
 
 import Prelude
 
-import App.Util.Selector (barChart, barSegment, field, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd)
+import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd)
 import Bind ((↦))
 import DataType (f_plots, f_y)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
+import Standalone.RenewablesLinked as RenewablesLinked
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
-   { spec:
-        { datasets: [ "renewables" ↦ "dataset/renewables" ]
-        , imports: []
-        , file: File "slicing/linked-outputs/bar-chart-line-chart"
-        , inputs: [ "renewables" ]
-        }
+   { spec: RenewablesLinked.fig
    , δ_out: multiViewEntry "bar-chart" (barChart (barSegment 1 0 neg))
    , out_expect:
         multiViewEntry "bar-chart" (barChart (barSegment 1 0 neg))
            >>> multiViewEntry "line-chart"
               ( lineChart
-                   ( field f_plots
-                        ( listElement 0 (linePoint 2 (field f_y neg))
-                             >>> listElement 1 (linePoint 2 (field f_y neg))
-                             >>> listElement 2 (linePoint 2 (field f_y neg))
-                             >>> listElement 3 (linePoint 2 (field f_y neg))
+                   ( dictVal f_plots
+                        ( listElement 0 (linePoint 2 (dictVal f_y neg))
+                             >>> listElement 1 (linePoint 2 (dictVal f_y neg))
+                             >>> listElement 2 (linePoint 2 (dictVal f_y neg))
+                             >>> listElement 3 (linePoint 2 (dictVal f_y neg))
 
                         )
                    )
@@ -49,8 +45,8 @@ linkedOutputs_spec2 =
         multiViewEntry "stacked-bar-chart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
            >>> multiViewEntry "scatter-plot"
               ( scatterPlot
-                   ( scatterPoint 4 (field f_y neg)
-                        >>> scatterPoint 6 (field f_y neg)
+                   ( scatterPoint 4 (dictVal f_y neg)
+                        >>> scatterPoint 6 (dictVal f_y neg)
                    )
               )
    }

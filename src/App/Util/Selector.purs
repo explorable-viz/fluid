@@ -37,7 +37,7 @@ lineChart :: SelSetter Val Val
 lineChart = constrArg cLineChart 0
 
 linePoint :: Int -> SelSetter Val Val
-linePoint i = listElement i >>> field f_points >>> constrArg cLinePlot 0
+linePoint i = listElement i >>> dictVal f_points >>> constrArg cLinePlot 0
 
 barChart :: SelSetter Val Val
 barChart = constrArg cBarChart 0
@@ -46,11 +46,11 @@ scatterPlot :: SelSetter Val Val
 scatterPlot = constrArg cScatterPlot 0
 
 scatterPoint :: Int -> SelSetter Val Val
-scatterPoint i = listElement i >>> field f_points
+scatterPoint i = listElement i >>> dictVal f_points
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
-   field f_z >>> listElement j >>> field f_bars >>> listElement i >>> field f_stackedBars
+   dictVal f_z >>> listElement j >>> dictVal f_bars >>> listElement i >>> dictVal f_stackedBars
 
 linkedText :: SelSetter Val Val
 linkedText = constrArg cLinkedText 0
@@ -63,10 +63,6 @@ listElement :: Int -> SelSetter Val Val
 listElement n δv = unsafePartial $ case _ of
    Val α (Constr c (v : v' : Nil)) | n == 0 && c == cCons -> Val α (Constr c (δv v : v' : Nil))
    Val α (Constr c (v : v' : Nil)) | c == cCons -> Val α (Constr c (v : listElement (n - 1) δv v' : Nil))
-
-field :: Var -> SelSetter Val Val
-field f δv = unsafePartial $ case _ of
-   Val α (Record r) -> Val α $ Record $ update δv f r
 
 constrArg :: Ctr -> Int -> SelSetter Val Val
 constrArg c n δv = unsafePartial $ case _ of
