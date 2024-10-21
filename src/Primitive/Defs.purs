@@ -190,11 +190,14 @@ dict_fromRecord =
    op (Val α (Record xvs) : Nil) = do
       xvs' <- for xvs (\v -> new (singleton α) <#> (_ × v))
       Val <$> new (singleton α) <@> Dictionary (DictRep xvs')
+   op ((v@(Val _ (Dictionary _)) : Nil)) = pure v
    op _ = throw "Record expected."
 
    fwd :: OpFwd Unit
    fwd (Val α (Record xvs) : Nil) =
       pure $ unit × Val α (Dictionary (DictRep $ xvs <#> (α × _)))
+   fwd (v@(Val _ (Dictionary _)) : Nil) =
+      pure $ unit × v
    fwd _ = throw "Record expected."
 
    bwd :: Partial => OpBwd Unit
