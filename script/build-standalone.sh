@@ -20,7 +20,7 @@ echo "$1 -> $NAME_LISP_CASE"
 rm -rf dist/$NAME_LISP_CASE
 mkdir -p dist/$NAME_LISP_CASE
 
-./script/compile.sh
+# ./script/compile.sh
 ./script/bundle.sh $NAME_LISP_CASE Standalone.$NAME
 
 if [[ -e "src/Standalone/$NAME.html" ]]; then
