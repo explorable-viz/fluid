@@ -41,7 +41,7 @@ misc_cases =
    , { file: "nub", imports: [], fwd_expect: "(1 : (2 : (3 : (4 : []))))" }
    , { file: "pattern-match", imports: [], fwd_expect: "4" }
    , { file: "range", imports: [], fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
-   , { file: "records", imports: [], fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
+   , { file: "records", imports: [], fwd_expect: "{|[⸨\"a\"⸩] : 2, [⸨\"b\"⸩] : 6, [⸨\"c\"⸩] : 7, [⸨\"d\"⸩] : (5 : []), [⸨\"e\"⸩] : 7|}" }
    , { file: "record-lookup", imports: [], fwd_expect: "True" }
    , { file: "reverse", imports: [], fwd_expect: "(2 : (1 : []))" }
    ]
