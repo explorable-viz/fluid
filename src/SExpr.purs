@@ -8,7 +8,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Bitraversable (rtraverse)
 import Data.Either (Either(..))
 import Data.Filterable (filterMap)
-import Data.Foldable (length)
+import Data.Foldable (foldl, length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
@@ -238,7 +238,7 @@ exprFwd (Constr α c ss) = E.Constr α c <$> traverse desug ss
 exprFwd (Record α xss) = do
    let ks × ss = unzip xss
    es <- traverse desug ss
-   E.Dictionary α <$> pure (zipWith (\k v -> Pair k v) (ks <#> E.Str top) es)
+   E.Dictionary α <$> pure (zipWith (\k v -> Pair k v) (ks <#> E.Str α) es)
 exprFwd (Dictionary α sss) = do
    let ks × ss = unzip sss
    ks' <- traverse desug ks
@@ -269,7 +269,10 @@ exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
 exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry desugBwd <$> zip es ss)
 exprBwd (E.Dictionary α ees) (Record _ xss) =
-   Record α (zipWith (\(Pair _ e) (x × s) -> x × desugBwd e s) ees xss)
+   let
+      αs = (ees <#> unsafePartial \(Pair (E.Str β _) _) -> β) :: List a
+   in
+      Record (foldl (∨) α αs) (zipWith (\(Pair _ e) (x × s) -> x × desugBwd e s) ees xss)
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') ((ExprKey s) × s') -> (ExprKey (desugBwd e s)) × (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =

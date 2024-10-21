@@ -13,7 +13,7 @@ import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
 import Data.Set as Set
-import Data.Traversable (for, sequence, traverse)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
@@ -187,22 +187,17 @@ dict_fromRecord =
    ForeignOp ("dict_fromRecord" × mkExists (ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
-   op (Val α (Record xvs) : Nil) = do
-      xvs' <- for xvs (\v -> new (singleton α) <#> (_ × v))
-      Val <$> new (singleton α) <@> Dictionary (DictRep xvs')
    op ((v@(Val _ (Dictionary _)) : Nil)) = pure v
    op _ = throw "Record expected."
 
    fwd :: OpFwd Unit
-   fwd (Val α (Record xvs) : Nil) =
-      pure $ unit × Val α (Dictionary (DictRep $ xvs <#> (α × _)))
    fwd (v@(Val _ (Dictionary _)) : Nil) =
       pure $ unit × v
    fwd _ = throw "Record expected."
 
    bwd :: Partial => OpBwd Unit
    bwd (_ × Val α (Dictionary (DictRep d))) =
-      Val (foldl (∨) α (d <#> fst)) (Record (d <#> snd)) : Nil
+      Val (foldl (∨) α (d <#> fst)) (Dictionary (DictRep d)) : Nil
 
 dict_disjointUnion :: ForeignOp
 dict_disjointUnion =

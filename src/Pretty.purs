@@ -354,9 +354,6 @@ keyBracks = between (text str.lBracket) (text str.rBracket)
 prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
 prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colon) keyBracks
 
-prettyRecord :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon) identity
-
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
 prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text (i <> "×" <> j) .<>. text str.in_ .<>. pretty e2)
 
@@ -365,7 +362,6 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Int α n) = highlightIf α (text (show n))
    pretty (E.Float α n) = highlightIf α (text (show n))
    pretty (E.Str α str) = highlightIf α (text (show str))
-   pretty (E.Record α xes) = highlightIf α $ prettyRecord text (xes # toUnfoldable)
    pretty (E.Dictionary α ees) = highlightIf α $ prettyDict pretty (ees <#> toTuple)
    pretty (E.Constr α c es) = highlightIf α $ prettyConstr c es
    pretty (E.Matrix α e1 (i × j) e2) = (highlightIf α (prettyMatrix e1 i j e2))
@@ -422,7 +418,6 @@ instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Int n) = text (show n)
    pretty (V.Float n) = text (show n)
    pretty (V.Str str) = text (show str)
-   pretty (V.Record xvs) = prettyRecord text (xvs # toUnfoldable)
    pretty (V.Dictionary (DictRep svs)) = prettyDict
       (\(s × β) -> highlightIf β (text (show s)))
       (svs # toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)

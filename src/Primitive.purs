@@ -1,6 +1,7 @@
 module Primitive where
 
 import Prelude hiding (absurd, apply, div, top)
+
 import Bind (Bind)
 import Data.Either (Either(..))
 import Data.Exists (Exists, mkExists)
@@ -15,7 +16,7 @@ import Lattice (class BoundedJoinSemilattice, Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), (×), error, singleton)
-import Val (BaseVal(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
+import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
 -- work with required higher-rank polymorphism.
@@ -97,12 +98,12 @@ matrixRep =
         v -> typeError v "Matrix"
    }
 
-record :: forall a. ToFrom (Dict (Val a)) a
-record =
-   { pack: Record
+dict :: forall a. ToFrom (Dict (a × Val a)) a
+dict =
+   { pack: Dictionary <<< DictRep
    , unpack: case _ of
-        Record xvs -> xvs
-        v -> typeError v "Record"
+        Dictionary (DictRep d) -> d
+        v -> typeError v "Dictionary"
    }
 
 boolean :: forall a. ToFrom Boolean a
