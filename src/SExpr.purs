@@ -448,7 +448,7 @@ clausesStateFwd ks = case ks of
    ((Left (PVar x) : _) × _) : _ ->
       ContElim <$> ElimVar x <$> (clausesStateFwd =<< popVarFwd x ks)
    ((Left (PRecord xps) : _) × _) : _ ->
-      ContElim <$> ElimRecord (B.keys xps) <$> (clausesStateFwd =<< popRecordFwd (xps <#> fst) ks)
+      ContElim <$> ElimDict (B.keys xps) <$> (clausesStateFwd =<< popRecordFwd (xps <#> fst) ks)
    ((Right (PListVar x) : _) × _) : _ ->
       ContElim <$> ElimVar x <$> (clausesStateFwd =<< popListVarFwd x ks)
    ((p : _) × _) : _ -> do
@@ -466,7 +466,7 @@ clausesStateBwd κ0 ks = case κ0 × ks of
    ContExpr _ × _ -> error absurd
    ContElim (ElimVar x κ) × ((Left (PVar _) : _) × _) : _ ->
       popVarBwd x (clausesStateBwd κ (defined (popVarFwd x ks)))
-   ContElim (ElimRecord _ κ) × ((Left (PRecord xps) : _) × _) : _ ->
+   ContElim (ElimDict _ κ) × ((Left (PRecord xps) : _) × _) : _ ->
       popRecordBwd (xps <#> fst) (clausesStateBwd κ (defined (popRecordFwd (xps <#> fst) ks)))
    ContElim (ElimVar x κ) × ((Right (PListVar _) : _) × _) : _ ->
       popListVarBwd x (clausesStateBwd κ (defined (popListVarFwd x ks)))

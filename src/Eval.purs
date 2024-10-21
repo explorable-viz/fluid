@@ -47,13 +47,13 @@ match (Val α (V.Constr c vs)) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
-match (Val α (V.Dictionary (V.DictRep xvs))) (ElimRecord xs κ) = do
+match (Val α (V.Dictionary (V.DictRep xvs))) (ElimDict xs κ) = do
    check (subset xs (Set.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
    let xvs' = unwrap xvs
    γ × κ' × α' × ws <- matchMany (map (\k -> snd (get k xvs')) xs') κ
    pure (γ × κ' × (α ∧ α') × MatchDict (wrap $ D.fromFoldable (zip xs' ws)))
-match v (ElimRecord xs _) = throw $ patternMismatch (prettyP v) (show xs)
+match v (ElimDict xs _) = throw $ patternMismatch (prettyP v) (show xs)
 
 matchMany :: forall a m. MonadError Error m => Ann a => List (Val a) -> Cont a -> m (Env a × Cont a × a × List Match)
 matchMany Nil κ = pure (empty × κ × top × Nil)

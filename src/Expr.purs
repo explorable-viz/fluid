@@ -44,7 +44,7 @@ data RecDefs a = RecDefs a (Dict (Elim a))
 data Elim a
    = ElimVar Var (Cont a)
    | ElimConstr (Dict (Cont a))
-   | ElimRecord (Set Var) (Cont a)
+   | ElimDict (Set Var) (Cont a)
 
 -- Continuation of an eliminator branch.
 data Cont a
@@ -83,7 +83,7 @@ instance FV (Expr a) where
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ \\ singleton x
    fv (ElimConstr m) = unions (fv <$> m)
-   fv (ElimRecord _ κ) = fv κ
+   fv (ElimDict _ κ) = fv κ
 
 instance FV (Cont a) where
    fv (ContElim σ) = fv σ
@@ -108,7 +108,7 @@ class BV a where
 instance BV (Elim a) where
    bv (ElimVar x κ) = singleton x ∪ bv κ
    bv (ElimConstr m) = bv (snd (asMaplet m))
-   bv (ElimRecord _ κ) = bv κ
+   bv (ElimDict _ κ) = bv κ
 
 instance BV (VarDef a) where
    bv (VarDef σ _) = bv σ
@@ -120,13 +120,13 @@ instance BV (Cont a) where
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    join (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (κ ∨ κ')
    join (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (cκs ∨ cκs')
-   join (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (κ ∨ κ')
+   join (ElimDict xs κ) (ElimDict ys κ') = ElimDict (xs ≜ ys) (κ ∨ κ')
    join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
    expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
-   expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
+   expand (ElimDict xs κ) (ElimDict ys κ') = ElimDict (xs ≜ ys) (expand κ κ')
    expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
@@ -230,7 +230,7 @@ instance Apply Expr where
 instance Apply Elim where
    apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
    apply (ElimConstr fk) (ElimConstr k) = ElimConstr (((<*>) <$> fk) <*> k)
-   apply (ElimRecord xs fk) (ElimRecord _ k) = ElimRecord xs (fk <*> k)
+   apply (ElimDict xs fk) (ElimDict _ k) = ElimDict xs (fk <*> k)
    apply _ _ = shapeMismatch unit
 
 instance Apply Cont where

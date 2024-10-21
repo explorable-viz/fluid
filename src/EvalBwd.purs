@@ -57,7 +57,7 @@ matchBwd ρ κ α (MatchConstr c ws) = Val α (V.Constr c vs) × ElimConstr (map
    where
    vs × κ' = matchManyBwd ρ κ α (reverse ws)
 matchBwd ρ κ α (MatchDict xws) = Val α (V.Dictionary (DictRep $ wrap $ zip xs vs' # D.fromFoldable)) ×
-   ElimRecord (Set.fromFoldable $ keys xws) κ'
+   ElimDict (Set.fromFoldable $ keys xws) κ'
    where
    xs × ws = xws # toUnfoldable # unzip
    vs × κ' = matchManyBwd ρ κ α (ws # reverse)

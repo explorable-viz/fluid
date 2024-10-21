@@ -58,14 +58,14 @@ match (Val α (V.Constr c vs)) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
-match (Val α (V.Dictionary (DictRep xvs))) (ElimRecord xs κ) = do
+match (Val α (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    check (Set.subset xs (Set.fromFoldable $ keys xvs))
       $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
    let xvs' = unwrap xvs
    γ × κ' × αs <- matchMany (map (\k -> snd (get k xvs')) xs') κ
    pure $ γ × κ' × (insert α αs)
-match v (ElimRecord xs _) = throw (patternMismatch (prettyP v) (show xs))
+match v (ElimDict xs _) = throw (patternMismatch (prettyP v) (show xs))
 
 matchMany :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (empty × κ × empty)
