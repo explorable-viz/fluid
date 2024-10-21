@@ -64,7 +64,7 @@ waitForHidden selector page = do
    log' "-> found"
 
 puppeteerLogging :: Boolean
-puppeteerLogging = false
+puppeteerLogging = true
 
 log' :: forall m. MonadEffect m => String -> m Unit
 log' msg =
@@ -73,7 +73,7 @@ log' msg =
 
 goto :: T.URL -> T.Page -> Aff Unit
 goto (T.URL url) page = do
-   log' ("Going to " <> show url)
+   log ("Going to " <> show url)
    T.goto (T.URL url) page
 
 click :: T.Selector -> T.Page -> Aff Unit
