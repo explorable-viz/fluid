@@ -24,5 +24,5 @@ jobs:
         set -x -e
         yarn purs-tidy check src/**/*.purs test/**/*.purs
         yarn build
-        yarn bundle-standalone-all.sh
+        yarn bundle-standalone-all
         yarn test-all
