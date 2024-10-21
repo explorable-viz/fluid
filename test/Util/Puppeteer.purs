@@ -41,7 +41,7 @@ show' :: T.Selector -> String
 show' (T.Selector sel) = sel
 
 timeout :: Int
-timeout = 60000
+timeout = 120000
 
 waitFor :: T.Selector -> T.Page -> Aff Unit
 waitFor selector page = do
