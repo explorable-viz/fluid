@@ -23,6 +23,6 @@ jobs:
         yarn install
         set -x -e
         yarn purs-tidy check src/**/*.purs test/**/*.purs
-        yarn build-app
-        yarn build-puppeteer
+        yarn build
+        yarn bundle-standalone-all
         yarn test-all
