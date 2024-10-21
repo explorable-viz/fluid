@@ -3,6 +3,7 @@ module Test.Util.Puppeteer where
 import Prelude
 
 import Control.Promise (Promise, toAffE)
+import Data.Foldable (for_)
 import Data.String (Pattern(..), contains)
 import Effect (Effect)
 import Effect.Aff (Aff, catchError)
@@ -17,6 +18,24 @@ foreign import _launchFirefox :: Effect (Promise T.Browser)
 
 launchFirefox :: Aff T.Browser
 launchFirefox = toAffE _launchFirefox
+
+browserTests :: String -> String -> Aff T.Browser -> Array (T.Page -> Aff Unit) -> Aff Unit
+browserTests suffix browserName launchBrowser tests = do
+   log ("browserTests: " <> browserName)
+   browser <- launchBrowser
+   page <- T.newPage browser
+   let url = "http://127.0.0.1:8080/" <> suffix
+   -- Test each fig on fresh page, else earlier tests seem to interfere with element visibility (on Firefox)
+   for_ tests $ \test -> do
+      goto (T.URL url) page
+      test page
+   T.close browser
+
+testURL :: String -> Array (T.Page -> Aff Unit) -> Array (Aff Unit)
+testURL suffix tests = do
+   [ browserTests suffix "chrome" (T.launch {}) tests
+   , browserTests suffix "firefox" (launchFirefox) tests
+   ]
 
 show' :: T.Selector -> String
 show' (T.Selector sel) = sel
@@ -91,3 +110,13 @@ textContentValue :: T.Page -> T.Selector -> Aff String
 textContentValue page selector = do
    captionText <- T.unsafePageEval selector "element => element.textContent" page
    pure (unsafeFromForeign captionText)
+
+waitForFigure :: T.Page -> String -> Aff Unit
+waitForFigure page id =
+   waitFor (T.Selector ("svg#" <> id)) page
+
+clickToggle :: T.Page -> String -> Aff Unit
+clickToggle page id = do
+   let toggle = T.Selector ("div#" <> id <> " + div > div > span.toggle-button")
+   waitFor toggle page
+   click toggle page

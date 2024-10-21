@@ -3,26 +3,15 @@ module Test.Specs.LinkedInputs where
 import Prelude
 
 import App.Util.Selector (envVal, field, listElement)
-import App.View.Util (FigSpec)
 import Bind ((↦))
 import Lattice (neg)
 import Module (File(..))
+import Standalone.EnergyScatter as EnergyScatter
 import Test.Util.Suite (TestLinkedInputsSpec)
-
-energyScatter :: FigSpec
-energyScatter =
-   { imports: []
-   , datasets:
-        [ "renewables" ↦ "dataset/renewables-new"
-        , "nonRenewables" ↦ "dataset/non-renewables"
-        ]
-   , file: File "linked-inputs/energyscatter"
-   , inputs: [ "renewables", "nonRenewables" ]
-   }
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
-   { spec: energyScatter
+   { spec: EnergyScatter.fig
    , δ_in: "nonRenewables" ↦ listElement 51 (field "coalCap" neg)
    , in_expect:
         envVal "nonRenewables" (listElement 51 (field "coalCap" neg >>> field "gasCap" neg >>> field "nuclearCap" neg >>> field "petrolCap" neg)) >>>
@@ -36,7 +25,7 @@ linkedInputs_spec3 =
 
 linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
-   { spec: energyScatter
+   { spec: EnergyScatter.fig
    , δ_in: "renewables" ↦ listElement 204 (field "capacity" neg)
    , in_expect:
         envVal "nonRenewables"
