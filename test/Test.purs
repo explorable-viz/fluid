@@ -2,15 +2,17 @@ module Test.Test where
 
 import Prelude hiding (add)
 
+import App.Util.Selector (dictKey)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
+import Lattice (neg)
 import Test.Benchmark (benchmarks)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Util (TestSuite)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, linkedInputsSuite, linkedOutputsSuite, suite)
+import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite)
 import Util ((×))
 
 main :: Effect Unit
@@ -19,11 +21,13 @@ main = run tests
 --main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite
-   [ { file: "dicts"
+scratchpad = asTestSuite $ bwdSuite
+   [ { file: "dict/fromRecord"
      , imports: []
-     , fwd_expect:
-          "{|[\"d\"] : {||}, [\"e\"] : {|[\"a\"] : 5, [\"ab\"] : 6|}, [\"e_ab\"] : 6, [\"f\"] : {|[\"a\"] : 6, [\"ab\"] : 7|}, [\"g\"] : {|[\"a\"] : 5|}, [\"h\"] : {|[\"fst\"] : 4, [\"snd\"] : (6 : (7 : []))|}|}"
+     , bwd_expect_file: "dict/fromRecord.expect"
+     , δv: dictKey "ab" neg
+     , fwd_expect: "⸨{|[⸨\"a\"⸩] : 5, [⸨\"ab\"⸩] : 6|}⸩"
+     , datasets: []
      }
    ]
 

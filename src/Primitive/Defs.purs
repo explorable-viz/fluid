@@ -62,7 +62,6 @@ primitives = wrap $ wrap $ D.fromFoldable
    , extern dict_difference
    , extern dict_disjointUnion
    , extern dict_foldl
-   , extern dict_fromRecord
    , extern dict_get
    , extern dict_intersectionWith
    , extern dict_map
@@ -181,23 +180,6 @@ dict_difference =
    bwd :: Partial => OpBwd Unit
    bwd (_ × Val α (Dictionary d)) =
       Val α (Dictionary d) : Val α (Dictionary (DictRep empty)) : Nil
-
-dict_fromRecord :: ForeignOp
-dict_fromRecord =
-   ForeignOp ("dict_fromRecord" × mkExists (ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }))
-   where
-   op :: OpGraph
-   op ((v@(Val _ (Dictionary _)) : Nil)) = pure v
-   op _ = throw "Record expected."
-
-   fwd :: OpFwd Unit
-   fwd (v@(Val _ (Dictionary _)) : Nil) =
-      pure $ unit × v
-   fwd _ = throw "Record expected."
-
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × Val α (Dictionary (DictRep d))) =
-      Val (foldl (∨) α (d <#> fst)) (Dictionary (DictRep d)) : Nil
 
 dict_disjointUnion :: ForeignOp
 dict_disjointUnion =
