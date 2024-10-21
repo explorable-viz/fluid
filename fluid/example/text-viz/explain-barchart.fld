@@ -1,7 +1,7 @@
 let likelihoodMap prob = 
     let go (x:xs) = 
         if x.prob < prob
-        then x.msg
+        then x.msg ++ ""
         else go xs;
         go [] = "not found"
     in go likelihoods;
@@ -13,18 +13,34 @@ let findLikelihood (min, max) target =
     then 1.0
     else (target - min)/(max - min);
 
-let modTable offset table = map (fun bar -> { x: bar.x, bars: [{ y: bar.y, z: bar.z + offset}] }) table;
+let getByX x table =
+    let helper (bar:rest) = 
+            if bar.x == x 
+            then bar
+            else getByX x rest;
+        helper [] = {}
+    in helper table;
 
-let moddedData = modTable 0 barData
+let mkPercent num = (numToStr (num * 100)) ++ "%";
+
+let explainBar bar = "the bar representing scenario " ++ bar.x ++ " has a z value of " ++ (numToStr (head bar.bars).z);
+
+let modTable offset table = map (fun bar -> { x: numToStr (bar.x + offset), bars: [{ y: bar.y, z: bar.z + offset}] }) table;
+
+let barContents = modTable 0 barData;
+    bar6 = getByX "6" barContents;
+    bar6height = (head bar6.bars).z;
+    bar2 = getByX "2" barContents
 in MultiView {|
     ["bar-chart"] :
         BarChart {
             caption: "Example bar chart for text-viz",
             size: { width: 275, height: 185 },
-            stackedBars: moddedData
+            stackedBars: barContents
         },
     ["explanation"] :
-        LinkedText [ "From the barchart shown above, we see that the bar representing scenario 6, "
-                   , "suggests that in the high-emissions scenario, it is ", likelihoodMap (findLikelihood (40, 80) 80)
-                   , " that warming will exceed the global warming target of 2c by 2100." ]
+        LinkedText [ "From the barchart shown above, we see that ", explainBar bar6
+                   , "  which suggests that in the high-emissions scenario it is ", likelihoodMap (findLikelihood (40, 80) bar6height)
+                   , " that warming will exceed the global warming target of 2c by 2100."
+                   , " In contrast, in the lowest-emission scenario, the probability of exceeding the target is only ",  mkPercent (findLikelihood (25, 45) (head bar2.bars).z) ]
 |}
