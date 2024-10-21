@@ -21,7 +21,7 @@
   "scripts": {
     "tidy": "./script/tidy.sh",
     "build-website": "./script/build-website.sh",
-    "build": "./script/build.sh test Test.Test",
+    "build-test": "./script/build.sh test Test.Test",
     "build-article": "./script/build-article.sh",
     "build-bench": "./script/build.sh bench Test.Benchmark",
     "build-ESOP-artifact": "./script/build-ESOP-artifact.sh",

@@ -10,7 +10,6 @@ if [[ ! -e "src/Standalone/$NAME.purs" ]]; then
   exit 1
 fi
 
-# Could factor this through build.sh but currently these are shared by all standalone figures
 cp -r fluid dist
 cp -r web/css dist
 
@@ -20,8 +19,7 @@ echo "$1 -> $NAME_LISP_CASE"
 rm -rf dist/$NAME_LISP_CASE
 mkdir -p dist/$NAME_LISP_CASE
 
-# ./script/compile.sh
-./script/bundle.sh $NAME_LISP_CASE Standalone.$NAME
+./script/util/bundle.sh $NAME_LISP_CASE Standalone.$NAME
 
 if [[ -e "src/Standalone/$NAME.html" ]]; then
   cp src/Standalone/$NAME.html dist/$NAME_LISP_CASE/index.html

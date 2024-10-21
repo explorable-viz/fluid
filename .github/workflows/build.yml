@@ -23,7 +23,8 @@ jobs:
         yarn install
         set -x -e
         yarn purs-tidy check src/**/*.purs test/**/*.purs
-        yarn build-website
-        yarn build
-        yarn build-standalone-all
+        ./script/compile.sh
+        ./script/bundle-website.sh
+        ./script/bundle.sh test Test.Test
+        ./script/bundle-standalone-all.sh
         yarn test-all

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -xe
 
-./script/build.sh / Standalone.Website
+./script/bundle.sh / Standalone.Website
 
 # TODO: run build-standalone.sh for each separate page that features on the website
 
