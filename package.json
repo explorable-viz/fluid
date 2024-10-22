@@ -22,7 +22,7 @@
     "tidy": "./script/tidy.sh",
     "build": "./script/build.sh",
     "bundle-article": "./script/bundle-article.sh",
-    "bundle-bench": "./script/bundle.sh bench Test.Benchmark",
+    "bundle-bench": "./script/bundle-bench.sh",
     "bundle-ESOP-artifact": "./script/bundle-ESOP-artifact.sh",
     "bundle-standalone-all": "./script/bundle-standalone-all.sh",
     "bundle-standalone": "./script/bundle-standalone.sh",
