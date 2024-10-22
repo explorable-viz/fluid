@@ -25,7 +25,7 @@
     "build-test": "./script/build-test.sh",
     "bundle-article": "./script/bundle-article.sh",
     "bundle-bench": "./script/bundle-bench.sh",
-    "bundle-ESOP-artifact": "./script/bundle-ESOP-artifact.sh",
+    "bundle-esop2025-artifact": "./script/bundle-esop2025-artifact.sh",
     "bundle-page": "./script/bundle-page.sh",
     "bundle-website": "./script/bundle-website-new.sh",
     "bundle-website-all": "./script/bundle-website-all.sh",
