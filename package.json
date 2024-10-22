@@ -21,6 +21,7 @@
   "scripts": {
     "tidy": "./script/tidy.sh",
     "build": "./script/build.sh",
+    "build-test": "./script/build-test.sh",
     "bundle-article": "./script/bundle-article.sh",
     "bundle-bench": "./script/bundle-bench.sh",
     "bundle-ESOP-artifact": "./script/bundle-ESOP-artifact.sh",

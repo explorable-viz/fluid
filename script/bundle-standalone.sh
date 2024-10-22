@@ -10,9 +10,6 @@ if [[ ! -e "src/Standalone/$NAME.purs" ]]; then
   exit 1
 fi
 
-cp -r fluid dist
-cp -r web/css dist
-
 NAME_LISP_CASE=$(echo $NAME | sed 's/\([A-Z]\)/-\1/g' | tr 'A-Z' 'a-z' | sed 's/^-//')
 echo "$1 -> $NAME_LISP_CASE"
 
