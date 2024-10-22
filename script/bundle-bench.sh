@@ -2,9 +2,9 @@
 # run from project root
 set -xe
 
-BENCH=bench
+WEBSITE=bench
 
-. script/clean.sh $BENCH
-./script/bundle.sh $BENCH Test.Benchmark
-cp web/bench.html dist/$BENCH/index.html
-./script/util/copy-static.sh $BENCH
+. script/clean.sh $WEBSITE
+./script/bundle.sh $WEBSITE Test.Benchmark
+cp web/bench.html dist/$WEBSITE/index.html
+./script/util/copy-static.sh $WEBSITE
