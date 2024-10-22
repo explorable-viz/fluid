@@ -2,5 +2,5 @@
 set -xe
 
 yarn build
-yarn bundle-standalone-all
+yarn bundle-website-all
 yarn test-all
