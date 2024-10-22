@@ -1,4 +1,4 @@
-module Standalone.Website where
+module Website.Fluid.HomePage where
 
 import Prelude hiding (absurd)
 
