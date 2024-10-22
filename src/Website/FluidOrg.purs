@@ -1,4 +1,4 @@
-module Website.Fluid where
+module Website.FluidOrg where
 
 import Prelude hiding (absurd)
 

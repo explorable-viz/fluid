@@ -1,4 +1,4 @@
-module Website.Test.Fluid where
+module Website.Test.FluidOrg where
 
 import Prelude
 
@@ -10,7 +10,7 @@ import Test.Util.Puppeteer (testURL)
 import Toppokki as T
 
 main :: Effect (Promise Unit)
-main = fromAff $ sequence_ $ testURL "example"
+main = fromAff $ sequence_ $ testURL "fluid-org/example"
    [ testFig
    ]
 
