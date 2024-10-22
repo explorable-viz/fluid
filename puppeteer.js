@@ -4,7 +4,7 @@ require('http-shutdown').extend();
 
 const app = express();
 
-app.use(serve(__dirname + '/dist'));
+app.use(serve(__dirname + '/dist/' + process.argv[3]));
 
 const server = app.listen(8080, function() {
   console.log("Server running");

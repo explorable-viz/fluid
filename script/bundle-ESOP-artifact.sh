@@ -2,11 +2,13 @@
 # run from project root
 set -xe
 
-mkdir -p dist
-cp -r fluid dist
-cp -r web/css dist
+WEBSITE=ESOP-artifact
 
-./script/bundle-standalone.sh EsopFig2
-./script/bundle-standalone.sh EsopFig4
+mkdir -p dist/$WEBSITE
+cp -r fluid dist/$WEBSITE
+cp -r web/css dist/$WEBSITE
 
-cp -r web/ESOP-artifact.html dist/index.html
+./script/bundle-standalone.sh EsopFig2 $WEBSITE
+./script/bundle-standalone.sh EsopFig4 $WEBSITE
+
+cp -r web/ESOP-artifact.html dist/$WEBSITE/index.html
