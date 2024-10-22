@@ -3,9 +3,19 @@
 # set -x
 set -e
 
-WEBSITE=Fluid
+for WEBSITE in src/Website/*.{purs,html}; do
+   NAME=$(basename "$WEBSITE")
+   NAME=${NAME%.*}
+   . script/bundle-page.sh $NAME
 
-for FILE in src/Website/$WEBSITE/*.purs; do
-   NAME=$(basename $FILE .purs)
-   . script/bundle-page.sh $WEBSITE $NAME
+   # Only support one level of nesting for now
+   shopt -s nullglob
+   for FILE in src/Website/$NAME/*.{purs,html}; do
+      PAGE=$(basename "$FILE")
+      PAGE=${PAGE%.*}
+      . script/bundle-page.sh $NAME.$PAGE
+      done
+   shopt -u nullglob
+   echo "Bundled website $NAME"
+
    done
