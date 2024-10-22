@@ -3,9 +3,20 @@
 # set -x
 set -e
 
+toLispCase() {
+   INPUT="$1"
+   RESULT=$(echo "$INPUT" | sed -E 's/([a-z0-9])([A-Z])/\1-\2/g' | tr '[:upper:]' '[:lower:]')
+   echo "$RESULT"
+}
+
+EXAMPLE="Fluid/StandaloneExample/Test"
+CONVERTED=$(toLispCase "$EXAMPLE")
+echo "Original: $EXAMPLE"
+echo "Converted: $CONVERTED"
+
 MODULE=$1
 SRC_PATH=${MODULE//./\/}
-SRC_PATH_LISP_CASE=$(echo $SRC_PATH | sed 's/\([A-Z]\)/-\1/g' | tr 'A-Z' 'a-z' | sed 's/^-//')
+SRC_PATH_LISP_CASE=$(toLispCase "$SRC_PATH")
 echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
 
 if [[ ! -e "src/Website/$SRC_PATH.purs" ]]; then
