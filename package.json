@@ -33,6 +33,8 @@
     "serve-bench": "./script/serve.sh bench",
     "test": "./script/test.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
+    "test-page": "./script/test-page.sh",
+    "test-page-all": "./script/test-page-all.sh",
     "test-standalone": "./script/test-standalone.sh",
     "test-standalone-all": "./script/test-standalone-all.sh",
     "test-all": "./script/test-all.sh",

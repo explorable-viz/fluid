@@ -12,8 +12,8 @@ const server = app.listen(8080, function() {
 
 (async () => {
   try {
-    const testFile = process.argv[2]
-    import('./output-es/' + testFile + '/index.js').then(({ main }) => {
+    const module = process.argv[2]
+    import('./output-es/' + module + '/index.js').then(({ main }) => {
       main().then(serverDown);
     }).catch(err => {
       console.error("Failed to load PureScript output:", err);
