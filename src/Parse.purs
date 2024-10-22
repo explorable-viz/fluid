@@ -32,6 +32,8 @@ import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
+import Debug
+
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef)
    { commentStart = "{-"
@@ -43,7 +45,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
    , opStart = opChar
    , opLetter = opChar
    , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow ]
-   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, "Integer", "String", str.colon ]
+   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, str.colon ]
    , caseSensitive = true
    }
    where
@@ -123,10 +125,10 @@ field p = ident `lift2 (↦)` (token.colon *> p)
 simplePattern :: Endo (SParser Pattern)
 simplePattern pattern' =
    try listEmpty
-      <|> listNonEmpty
+      <|> try listNonEmpty
       <|> try constr
-      <|> try record
       <|> try var
+      <|> try record
       <|> try (token.parens pattern')
       <|> pair
 
@@ -202,8 +204,8 @@ varDefs expr' = keyword str.let_ *> sepBy1_try branch token.semi
    where
       branch :: SParser (Raw VarDef)
       branch = do
-         p <- pattern
-         _ <- token.reserved str.colon
+         p <- trace "before pattern" $ \_ -> pattern
+         _ <- trace "got pattern" $ \_ -> token.reserved str.colon *> token.reserved str.colon
          t <- typeP
          equals
          exp <- expr'
@@ -444,5 +446,10 @@ module_ :: SParser (Raw Module)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
 
 -- SParser Types
+-- typeP :: SParser Types
+-- typeP = (token.reserved "Integer" *> pure (TInt 0)) <|> (token.reserved "String" *> pure (TStr ""))
+
 typeP :: SParser Types
-typeP = (token.reserved "Integer" *> pure (TInt 0)) <|> (token.reserved "String" *> pure (TStr ""))
+typeP = TCons <$> ctr
+-- After parsing check the types
+-- new module (SExpr -> Bool or something)

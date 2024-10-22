@@ -211,6 +211,7 @@ instance Pretty Pattern where
 instance Pretty Types where
    pretty (TInt x) = (text (show x))
    pretty (TStr x) = text x
+   pretty (TCons x) = text x
 
 instance Pretty (List (Bind Pattern)) where
    pretty (Cons xp Nil) = text (key xp) .<>. text str.colon .<>. pretty (val xp)

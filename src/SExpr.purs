@@ -65,7 +65,8 @@ data DictEntry a = ExprKey (Expr a) | VarKey a Var
 data Types = 
    TInt Int
    | TStr String
--- Edit to make --> let x : Integer = 20 in x;
+   | TCons String
+-- Edit to make --> let x :: Integer = 20 in x;
 
 
 data ListRest a
