@@ -2,7 +2,7 @@
 # run from project root
 set -e
 
-WEBSITE=$1
+WEBSITE=${1?Please specify website}
 
 for FILE in src/Standalone/Test/*.purs; do
    BASENAME=$(basename "$FILE" .purs)

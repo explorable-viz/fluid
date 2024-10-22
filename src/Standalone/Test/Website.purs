@@ -10,7 +10,7 @@ import Test.Util.Puppeteer (testURL)
 import Toppokki as T
 
 main :: Effect (Promise Unit)
-main = fromAff $ sequence_ $ testURL ""
+main = fromAff $ sequence_ $ testURL "example"
    [ testFig
    ]
 

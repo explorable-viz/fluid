@@ -14,13 +14,15 @@ fi
 NAME_LISP_CASE=$(echo $NAME | sed 's/\([A-Z]\)/-\1/g' | tr 'A-Z' 'a-z' | sed 's/^-//')
 echo "$1 -> $NAME_LISP_CASE"
 
-rm -rf dist/$WEBSITE/$NAME_LISP_CASE
-mkdir -p dist/$WEBSITE/$NAME_LISP_CASE
+SUBFOLDER=$WEBSITE/example/$NAME_LISP_CASE
 
-./script/util/bundle.sh $WEBSITE/$NAME_LISP_CASE Standalone.$NAME
+rm -rf dist/$SUBFOLDER
+mkdir -p dist/$SUBFOLDER
+
+./script/util/bundle.sh $SUBFOLDER Standalone.$NAME
 
 if [[ -e "src/Standalone/$NAME.html" ]]; then
-  cp src/Standalone/$NAME.html dist/$WEBSITE/$NAME_LISP_CASE/index.html
+  cp src/Standalone/$NAME.html dist/$SUBFOLDER/index.html
 else
-  cp web/template.html dist/$WEBSITE/$NAME_LISP_CASE/index.html
+  cp web/template.html dist/$SUBFOLDER/index.html
 fi
