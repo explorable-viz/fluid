@@ -13,6 +13,7 @@ const server = app.listen(8080, function() {
 (async () => {
   try {
     const module = process.argv[2]
+    console.log('Loading module:', module);
     import('./output-es/' + module + '/index.js').then(({ main }) => {
       main().then(serverDown);
     }).catch(err => {

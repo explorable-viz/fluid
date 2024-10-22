@@ -21,4 +21,4 @@ fi
 
 # don't need to have "deployed" this to dist/
 # instead the following just picks up from output-es/
-node puppeteer.js Website.$MODULE $SRC_PATH_LISP_CASE
+node puppeteer.js Website.Test.$MODULE $SRC_PATH_LISP_CASE
