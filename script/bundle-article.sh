@@ -2,11 +2,12 @@
 # run from project root
 set -xe
 
-rm -rf dist/article
-mkdir -p dist/article
+WEBSITE=article
 
-cp -r fluid dist/article
-cp -r web/css dist/article
-cp web/template.html dist/article/index.html
+rm -rf dist/$WEBSITE
+mkdir -p dist/$WEBSITE
 
-./script/util/bundle.sh article Standalone.Article
+./script/util/copy-static.sh $WEBSITE
+cp web/template.html dist/$WEBSITE/index.html
+
+./script/util/bundle.sh $WEBSITE Standalone.Article

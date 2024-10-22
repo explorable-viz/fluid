@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -xe
 
-rm -rf dist/fluid
-rm -rf dist/css
-rm -rf dist/pdf
-cp -r fluid dist/
-cp -r web/css dist/
-cp -r web/pdf dist/
+WEBSITE=$1
+
+rm -rf dist/$WEBSITE/fluid
+rm -rf dist/$WEBSITE/css
+cp -r fluid dist/$WEBSITE
+cp -r web/css dist/$WEBSITE

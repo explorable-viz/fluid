@@ -27,7 +27,7 @@
     "bundle-ESOP-artifact": "./script/bundle-ESOP-artifact.sh",
     "bundle-standalone-all": "./script/bundle-standalone-all.sh",
     "bundle-standalone": "./script/bundle-standalone.sh",
-    "serve-website": "./script/serve.sh /",
+    "serve-website": "./script/serve.sh website",
     "serve-bench": "./script/serve.sh bench",
     "test": "./script/test.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",

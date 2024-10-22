@@ -7,4 +7,4 @@ BENCH=bench
 . script/clean.sh $BENCH
 ./script/bundle.sh $BENCH Test.Benchmark
 cp web/bench.html dist/$BENCH/index.html
-cp -r fluid dist/$BENCH
+./script/util/copy-static.sh $BENCH

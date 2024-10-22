@@ -47,7 +47,7 @@ jobs:
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/
+        publish_dir: dist/website
         keep_files: true # student-projects and internships folders may exist in "release"
 
   deploy-ESOP-artifact:
@@ -64,5 +64,5 @@ jobs:
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/
+        publish_dir: dist/ESOP-artifact
         keep_files: false
