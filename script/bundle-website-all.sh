@@ -10,5 +10,5 @@ done | sort -u))
 echo "Bundling websites: ${WEBSITES[@]}"
 
 for WEBSITE in "${WEBSITES[@]}"; do
-   . script/bundle-website-new.sh $WEBSITE
+   . script/bundle-website.sh $WEBSITE
    done

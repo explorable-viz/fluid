@@ -12,7 +12,7 @@ WEBSITE_LISP_CASE=$(toLispCase "$WEBSITE")
 
 rm -rf dist/
 ./script/compile.sh
-./script/bundle-website-new.sh $WEBSITE
+./script/bundle-website.sh $WEBSITE
 ./script/util/copy-static.sh $WEBSITE_LISP_CASE
 cp -r web/pdf dist/$WEBSITE_LISP_CASE
 
