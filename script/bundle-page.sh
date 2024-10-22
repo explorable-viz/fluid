@@ -9,11 +9,6 @@ toLispCase() {
    echo "$RESULT"
 }
 
-EXAMPLE="Fluid/StandaloneExample/Test"
-CONVERTED=$(toLispCase "$EXAMPLE")
-echo "Original: $EXAMPLE"
-echo "Converted: $CONVERTED"
-
 MODULE=$1
 SRC_PATH=${MODULE//./\/}
 SRC_PATH_LISP_CASE=$(toLispCase "$SRC_PATH")
