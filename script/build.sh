@@ -10,12 +10,4 @@ toLispCase() {
 rm -rf dist/
 ./script/compile.sh
 ./script/bundle.sh test Test.Test
-
-WEBSITE=FluidOrg
-./script/bundle-website.sh $WEBSITE
-
-WEBSITE_LISP_CASE=$(toLispCase "$WEBSITE")
-./script/util/copy-static.sh $WEBSITE_LISP_CASE
-cp -r web/pdf dist/$WEBSITE_LISP_CASE
-
-# Don't include standalone examples yet as they take a long time
+./script/bundle-fluid-org
