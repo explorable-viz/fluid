@@ -3,18 +3,22 @@
 set -e
 
 WEBSITE=$1
-if [ -e "src/Website/Test/$WEBSITE" ]; then
+if [ -e "src/Website/Test/$WEBSITE" ] || [ -e "src/Website/Test/$WEBSITE.purs" ]; then
    echo "Testing website: ${WEBSITE}"
 
    if [ -e "src/Website/Test/$WEBSITE.purs" ]; then
       . script/test-page.sh $WEBSITE $WEBSITE
    fi
 
-   FILES=($(for FILE in src/Website/Test/$WEBSITE/*.purs; do
-      basename "$FILE" | sed 's/\.[^.]*$//'
-   done | sort -u))
+   if [ -e "src/Website/Test/$WEBSITE" ]; then
+      FILES=($(for FILE in src/Website/Test/$WEBSITE/*.purs; do
+         basename "$FILE" | sed 's/\.[^.]*$//'
+      done | sort -u))
+   else
+      FILES=()
+   fi
 
-   echo "Processing Test/${WEBSITE} files: ${FILES[@]}"
+   echo "Processing ${#FILES[@]} additional Test/${WEBSITE} files: ${FILES[@]}"
 
    for FILE in "${FILES[@]}"; do
       PAGE=$(basename "$FILE")
