@@ -67,13 +67,11 @@ puppeteerLogging :: Boolean
 puppeteerLogging = false
 
 log' :: forall m. MonadEffect m => String -> m Unit
-log' msg =
-   when (debug.logging || puppeteerLogging)
-      (log msg)
+log' = log >>> when (debug.logging || puppeteerLogging)
 
 goto :: T.URL -> T.Page -> Aff Unit
 goto (T.URL url) page = do
-   log' ("Going to " <> show url)
+   log ("Going to " <> show url)
    T.goto (T.URL url) page
 
 click :: T.Selector -> T.Page -> Aff Unit
