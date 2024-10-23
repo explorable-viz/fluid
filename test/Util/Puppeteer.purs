@@ -64,12 +64,10 @@ waitForHidden selector page = do
    log' "-> found"
 
 puppeteerLogging :: Boolean
-puppeteerLogging = true
+puppeteerLogging = false
 
 log' :: forall m. MonadEffect m => String -> m Unit
-log' msg =
-   when (debug.logging || puppeteerLogging)
-      (log msg)
+log' = log >>> when (debug.logging || puppeteerLogging)
 
 goto :: T.URL -> T.Page -> Aff Unit
 goto (T.URL url) page = do
