@@ -1,4 +1,4 @@
-module Standalone.EsopFig2 where
+module Website.Misc.MovingAverage where
 
 import Prelude hiding (absurd)
 

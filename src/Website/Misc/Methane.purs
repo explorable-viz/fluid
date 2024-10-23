@@ -1,4 +1,4 @@
-module Standalone.Methane where
+module Website.Misc.Methane where
 
 import Prelude
 

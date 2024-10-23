@@ -177,7 +177,7 @@ nav ul li a.active-page {
    background-color: #F5F5F5;
 }
 
-/* Standalone figures have hardcoded scale for presentation purposes. */
+/* Useful for demos/presentations */
 .double-size {
    transform: scale(2);
    transform-origin: top;

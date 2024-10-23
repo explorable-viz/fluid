@@ -8,7 +8,7 @@ import DataType (f_plots, f_y)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
-import Standalone.RenewablesLinked as RenewablesLinked
+import Website.Misc.RenewablesLinked as RenewablesLinked
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =

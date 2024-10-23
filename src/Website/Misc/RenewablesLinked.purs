@@ -1,4 +1,4 @@
-module Standalone.RenewablesLinked where
+module Website.Misc.RenewablesLinked where
 
 import Prelude hiding (absurd)
 

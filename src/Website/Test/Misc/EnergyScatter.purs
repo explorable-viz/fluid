@@ -1,4 +1,4 @@
-module Standalone.Test.EnergyScatter where
+module Website.Test.Misc.EnergyScatter where
 
 import Prelude
 

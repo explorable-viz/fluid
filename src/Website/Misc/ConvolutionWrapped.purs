@@ -1,4 +1,4 @@
-module Standalone.ConvolutionWrapped where
+module Website.Misc.ConvolutionWrapped where
 
 import Prelude hiding (absurd)
 

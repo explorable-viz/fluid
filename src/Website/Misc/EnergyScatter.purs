@@ -1,4 +1,4 @@
-module Standalone.TextViz where
+module Website.Misc.EnergyScatter where
 
 import Prelude hiding (absurd)
 
@@ -13,10 +13,13 @@ import Util ((×))
 
 fig :: FigSpec
 fig =
-   { datasets: [ "tableData" ↦ "example/text-viz/explainable-table", "modelProbs" ↦ "example/text-viz/fake-probabilities" ]
-   , imports: []
-   , file: File "text-viz/explain-table"
-   , inputs: [ "tableData", "modelProbs" ]
+   { imports: []
+   , datasets:
+        [ "renewables" ↦ "dataset/renewables-new"
+        , "nonRenewables" ↦ "dataset/non-renewables"
+        ]
+   , file: File "linked-inputs/energyscatter"
+   , inputs: [ "renewables", "nonRenewables" ]
    }
 
 main :: Effect Unit

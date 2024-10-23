@@ -6,7 +6,7 @@ import App.Fig (drawFig, loadFig)
 import App.Util (runAffs_)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Standalone.EnergyScatter as EnergyScatter
+import Website.Misc.EnergyScatter as EnergyScatter
 import Util ((×))
 
 main :: Effect Unit

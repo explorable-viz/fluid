@@ -1,4 +1,4 @@
-module Standalone.Test.Convolution where
+module Website.Test.Misc.Convolution where
 
 import Prelude hiding (absurd)
 

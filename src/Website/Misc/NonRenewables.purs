@@ -1,4 +1,4 @@
-module Standalone.EsopFig4 where
+module Website.Misc.NonRenewables where
 
 import Prelude
 
@@ -11,8 +11,8 @@ import Effect (Effect)
 import Module (File(..))
 import Util ((×))
 
-spec :: FigSpec
-spec =
+fig :: FigSpec
+fig =
    { datasets:
         [ "renewables" ↦ "dataset/renewables-new"
         , "nonRenewables" ↦ "dataset/non-renewables"
@@ -24,5 +24,5 @@ spec =
 
 main :: Effect Unit
 main = runAffs_ (uncurry drawFig)
-   [ ("fig" × _) <$> loadFig spec
+   [ ("fig" × _) <$> loadFig fig
    ]
