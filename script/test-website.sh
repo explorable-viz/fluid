@@ -8,4 +8,6 @@ if [ -e "src/Website/Test/$WEBSITE.purs" ]; then
    . script/test-page.sh $WEBSITE
 
    # TODO: test nested pages
+else
+   echo "No tests found for: ${WEBSITE}"
 fi

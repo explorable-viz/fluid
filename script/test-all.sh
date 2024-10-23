@@ -2,4 +2,4 @@
 set -xe
 
 . script/test.sh
-. script/test-website.sh FluidOrg
+. script/test-website-all.sh
