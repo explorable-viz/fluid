@@ -3,9 +3,12 @@
 set -e
 
 WEBSITE=$1
-if [ -e "src/Website/Test/$WEBSITE.purs" ]; then
+if [ -e "src/Website/Test/$WEBSITE" ]; then
    echo "Testing website: ${WEBSITE}"
-   . script/test-page.sh $WEBSITE
+
+   if [ -e "src/Website/Test/$WEBSITE.purs" ]; then
+      . script/test-page.sh $WEBSITE
+   fi
 
    # TODO: test nested pages
 else
