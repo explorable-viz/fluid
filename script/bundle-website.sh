@@ -3,6 +3,12 @@
 # set -x
 set -e
 
+toLispCase() {
+   INPUT="$1"
+   RESULT=$(echo "$INPUT" | sed -E 's/([a-z0-9])([A-Z])/\1-\2/g' | tr '[:upper:]' '[:lower:]')
+   echo "$RESULT"
+}
+
 WEBSITE=$1
 . script/bundle-page.sh $WEBSITE
 
@@ -21,5 +27,8 @@ for FILE in "${FILES[@]}"; do
    . script/bundle-page.sh $WEBSITE.$PAGE
    done
 shopt -u nullglob
+
+WEBSITE_LISP_CASE=$(toLispCase "$WEBSITE")
+./script/util/copy-static.sh $WEBSITE_LISP_CASE
 
 echo "Bundled website $WEBSITE"
