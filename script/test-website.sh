@@ -10,7 +10,17 @@ if [ -e "src/Website/Test/$WEBSITE" ]; then
       . script/test-page.sh $WEBSITE
    fi
 
-   # TODO: test nested pages
+   FILES=($(for FILE in src/Website/Test/$WEBSITE/*.purs; do
+      basename "$FILE" | sed 's/\.[^.]*$//'
+   done | sort -u))
+
+   echo "Processing Test/${WEBSITE} files: ${FILES[@]}"
+
+   for FILE in "${FILES[@]}"; do
+      PAGE=$(basename "$FILE")
+      PAGE=${PAGE%.*}
+      . script/test-page.sh $WEBSITE.$PAGE
+      done
 else
    echo "No tests found for: ${WEBSITE}"
 fi

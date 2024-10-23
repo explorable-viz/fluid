@@ -10,7 +10,7 @@ import Test.Util.Puppeteer (checkAttribute, checkAttributeContains, checkTextCon
 import Toppokki as T
 
 main :: Effect (Promise Unit)
-main = fromAff $ sequence_ $ testURL "example/energy-scatter"
+main = fromAff $ sequence_ $ testURL "energy-scatter"
    [ testFig
    ]
 

@@ -10,7 +10,7 @@ import Test.Util.Puppeteer (clickToggle, testURL, waitFor, waitForFigure)
 import Toppokki as T
 
 main :: Effect (Promise Unit)
-main = fromAff $ sequence_ $ testURL "example/convolution"
+main = fromAff $ sequence_ $ testURL "convolution"
    [ testFig
    ]
 

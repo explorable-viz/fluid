@@ -10,7 +10,7 @@ import Test.Util.Puppeteer (checkAttribute, click, clickToggle, testURL, waitFor
 import Toppokki as T
 
 main :: Effect (Promise Unit)
-main = fromAff $ sequence_ $ testURL "example/renewables-linked"
+main = fromAff $ sequence_ $ testURL "renewables-linked"
    [ testFig
    ]
 

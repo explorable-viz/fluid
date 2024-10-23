@@ -26,6 +26,7 @@
     "bundle-article": "./script/bundle-article.sh",
     "bundle-bench": "./script/bundle-bench.sh",
     "bundle-esop2025-artifact": "./script/bundle-esop2025-artifact.sh",
+    "bundle-misc": "./script/bundle-misc.sh",
     "bundle-page": "./script/bundle-page.sh",
     "bundle-website": "./script/bundle-website.sh",
     "bundle-website-all": "./script/bundle-website-all.sh",

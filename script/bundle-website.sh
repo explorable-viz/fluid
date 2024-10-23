@@ -21,4 +21,5 @@ for FILE in "${FILES[@]}"; do
    . script/bundle-page.sh $WEBSITE.$PAGE
    done
 shopt -u nullglob
+
 echo "Bundled website $WEBSITE"
