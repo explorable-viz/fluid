@@ -22,7 +22,6 @@
     "tidy": "./script/tidy.sh",
     "build": "./script/build.sh",
     "build-test": "./script/build-test.sh",
-    "bundle-bench": "./script/bundle-bench.sh",
     "bundle-page": "./script/bundle-page.sh",
     "bundle-website": "./script/bundle-website.sh",
     "bundle-website-all": "./script/bundle-website-all.sh",

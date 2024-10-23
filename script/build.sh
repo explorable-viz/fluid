@@ -7,13 +7,14 @@ toLispCase() {
    echo "$RESULT"
 }
 
-WEBSITE=FluidOrg
-WEBSITE_LISP_CASE=$(toLispCase "$WEBSITE")
-
 rm -rf dist/
 ./script/compile.sh
-./script/bundle-website.sh $WEBSITE
 ./script/bundle.sh test Test.Test
+
+WEBSITE=FluidOrg
+./script/bundle-website.sh $WEBSITE
+
+WEBSITE_LISP_CASE=$(toLispCase "$WEBSITE")
 ./script/util/copy-static.sh $WEBSITE_LISP_CASE
 cp -r web/pdf dist/$WEBSITE_LISP_CASE
 

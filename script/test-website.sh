@@ -7,7 +7,7 @@ if [ -e "src/Website/Test/$WEBSITE" ]; then
    echo "Testing website: ${WEBSITE}"
 
    if [ -e "src/Website/Test/$WEBSITE.purs" ]; then
-      . script/test-page.sh $WEBSITE
+      . script/test-page.sh $WEBSITE $WEBSITE
    fi
 
    FILES=($(for FILE in src/Website/Test/$WEBSITE/*.purs; do
@@ -19,7 +19,7 @@ if [ -e "src/Website/Test/$WEBSITE" ]; then
    for FILE in "${FILES[@]}"; do
       PAGE=$(basename "$FILE")
       PAGE=${PAGE%.*}
-      . script/test-page.sh $WEBSITE.$PAGE
+      . script/test-page.sh $WEBSITE $WEBSITE.$PAGE
       done
 else
    echo "No tests found for: ${WEBSITE}"
