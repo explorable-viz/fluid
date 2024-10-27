@@ -9,7 +9,7 @@ import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy)
 import Data.List.NonEmpty (NonEmptyList(..), toList )
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..) )
+import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..), VarDef )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Data.String(null)
 import Data.Maybe (Maybe(..), maybe)
@@ -40,9 +40,11 @@ typeCheck expr = case expr of
     ListEmpty _ ->  true
     -- ListEnum
     -- ListComp
-    -- Let
+    Let _ _ -> true
     -- LetRec
     _ -> false
+
+
 
 reduce :: forall a. Expr a -> Maybe (Expr a)
 reduce expr = case expr of
@@ -94,8 +96,17 @@ reduce expr = case expr of
                         Float u2 n2 -> Just (BinaryApp (maybe e1 identity (reduce e1)) op e2)
                         _ -> Just (BinaryApp (maybe e1 identity (reduce e1)) op (maybe e2 identity (reduce e2)))
         _ -> Nothing
-
+    (Let varDefs bodyExpr) ->
+        let validDefs = reduceVarDefs varDefs
+        in validDefs && typeCheck bodyExpr
     _ -> Nothing
+
+reduceVarDefs :: forall a. VarDefs a -> Boolean
+reduceVarDefs (VarDefs defs) = all isValidVarDef defs
+  where
+    isValidVarDef :: VarDef a -> Boolean
+    isValidVarDef (VarDef pattern _ expr) =
+      checkExprValidity expr  -- Check if the expression is valid
 
 identity :: forall a. a -> a
 identity x = x
