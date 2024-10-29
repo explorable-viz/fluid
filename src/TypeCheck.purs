@@ -3,12 +3,12 @@ module TypeCheck where
 import Prelude
 
 import Control.Alt ((<|>))
-import Data.Array (cons, elem, fromFoldable, all)
+import Data.Array (cons, elem, fromFoldable)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy)
-import Data.List.NonEmpty (NonEmptyList(..), toList )
+import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\))
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..), VarDef )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Data.String(null)
@@ -17,106 +17,110 @@ import Data.Either (Either(..))
 import Data.Eq (class Eq, eq)
 import Data.Ring
 import Data.Field
--- import Data.Fractional (Fractional, (/) )
+import Debug
+
+-- Error types for the reduction function
+data ReduceError
+  = TypeMismatch String String
+  | InvalidOperator String
+  | OtherError String
+
+-- Allow the error messages to be displayed, make an instance of Show
+instance showReduceError :: Show ReduceError where
+  show (TypeMismatch expected actual) = "TypeMismatch: expected " <> expected <> ", got " <> actual
+  show (InvalidOperator op) = "InvalidOperator: " <> op <> " is not a valid operator"
+  show (OtherError msg) = "OtherError: " <> msg
+
 
 -- Type checking function
 typeCheck :: forall a. Expr a -> Boolean
 typeCheck expr = case expr of
+    -- Var "test"
     Var s -> not (null s)
+    -- Op "+"
     Op s -> not (null s)
+    -- Int unit 3
     Int _ _ -> true
+    -- Float unit 2.3
     Float _ _ -> true
+    -- Str unit "hello"
     Str _ _ -> true
-    -- Constr
+
+    --  Constr unit "Var" ((Var "x") : Nil)
+    -- Constr a ctr exprs -> true
     -- Record
     -- Dictionary
     -- Matrix
     -- Lambda
     -- Project exp s
     -- App exp1 exp2
-    -- BinaryApp
+
+    BinaryApp e1 op e2 -> case reduce (BinaryApp e1 op e2) of
+        Left (err) -> false
+        Right (exp) -> true
+
     -- MatchAs
     -- IfElse 
+
     ListEmpty _ ->  true
+    
     -- ListEnum
     -- ListComp
+    
+    -- Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (TCons "Integer") (Int unit 20)) Nil)) (Var "x")
     Let _ _ -> true
+    
     -- LetRec
     _ -> false
 
 
-
-reduce :: forall a. Expr a -> Maybe (Expr a)
+reduce :: forall a. Expr a -> Either ReduceError (Expr a)
 reduce expr = case expr of
-    Var _ -> Nothing
-    Op _ -> Nothing
-    Int _ _ -> Nothing
-    Float _ _ -> Nothing
-    Str _ _ -> Nothing
-    -- Check with Dominic, this could be for binary operations
-    BinaryApp e1 op e2 -> case getArithmeticOpFromString op of
-        Just (RingOp operation) ->
-            case e1 of
-                Int u1 n1 ->
-                    case e2 of 
-                        Int u2 n2 -> Just (Int u1 (operation n1 n2))
-                        Float u2 n2 -> error "Cannot mix data types"
-                        _ -> Just (BinaryApp e1 op (maybe e2 identity (reduce e2)))
-                Float u1 n1 ->
-                    case e2 of 
-                        Float u2 n2 -> Just (Float u1 (operation n1 n2))
-                        Int u2 n2 -> error "Cannot mix data types"
-                        _ -> Just (BinaryApp e1 op (maybe e2 identity (reduce e2)))
-                _ -> 
-                    case e2 of
-                        Int u2 n2 -> Just (BinaryApp (maybe e1 identity (reduce e1)) op e2)
-                        Float u2 n2 -> Just (BinaryApp (maybe e1 identity (reduce e1)) op e2)
-                        _ -> Just (BinaryApp (maybe e1 identity (reduce e1)) op (maybe e2 identity (reduce e2)))
-        Just (Div operation) -> 
-            case e1 of
-                Int u1 n1 ->
-                    case e2 of 
-                        Int u2 n2 -> do
-                            case division (Left n1) (Left n2) of
-                                Left ans -> Just (Int u1 ans)
-                                _ -> Nothing
-                        Float u2 n2 -> error "Cannot mix data types"
-                        _ -> Just (BinaryApp e1 op (maybe e2 identity (reduce e2)))
-                Float u1 n1 ->
-                    case e2 of 
-                        Float u2 n2 -> do
-                            case division (Right n1) (Right n2) of
-                                Right ans -> Just (Float u1 ans)
-                                _ -> Nothing
-                        Int u2 n2 -> error "Cannot mix data types"
-                        _ -> Just (BinaryApp e1 op (maybe e2 identity (reduce e2)))
-                _ -> 
-                    case e2 of
-                        Int u2 n2 -> Just (BinaryApp (maybe e1 identity (reduce e1)) op e2)
-                        Float u2 n2 -> Just (BinaryApp (maybe e1 identity (reduce e1)) op e2)
-                        _ -> Just (BinaryApp (maybe e1 identity (reduce e1)) op (maybe e2 identity (reduce e2)))
-        _ -> Nothing
-    (Let varDefs bodyExpr) ->
-        let validDefs = reduceVarDefs varDefs
-        in validDefs && typeCheck bodyExpr
-    _ -> Nothing
+    -- Base-level definitions can just return
+    Var var -> Right (Var var)
+    Op op -> Right (Op op)
+    Int a num -> Right (Int a num)
+    Float a num -> Right (Float a num)
+    Str a string -> Right (Str a string)
 
-reduceVarDefs :: forall a. VarDefs a -> Boolean
-reduceVarDefs (VarDefs defs) = all isValidVarDef defs
-  where
-    isValidVarDef :: VarDef a -> Boolean
-    isValidVarDef (VarDef pattern _ expr) =
-      checkExprValidity expr  -- Check if the expression is valid
+    BinaryApp e1 op e2 -> do
+        reducedE1 <- reduce e1
+        reducedE2 <- reduce e2
+        case reducedE1 of
+            -- If 1st exp is Int, we only allow Int or another expression
+            Int u1 n1 -> case reducedE2 of
+                Int u2 n2 -> 
+                    case getArithmeticOpFromString op of
+                        Just (RingOp operation) -> Right (Int u1 (operation n1 n2))
+                        Just (Div operation) -> case division (Left n1) (Left n2) of
+                            Left (ans) -> Right (Int u1 ans)
+                            _ -> Left (OtherError "Division error")
+                        _ -> Left (InvalidOperator op)
+                Float _ _ -> Left (TypeMismatch "Int" "Float")
+                Str _ _ -> Left (TypeMismatch "Int" "Str")
+                _ -> Right (BinaryApp reducedE1 op reducedE2)
+            -- If 1st exp is Float, we onlt allow Float or another expression
+            Float u1 n1 -> case reducedE2 of
+                Float u2 n2 -> 
+                    case getArithmeticOpFromString op of
+                        Just (RingOp operation) -> Right (Float u1 (operation n1 n2))
+                        Just (Div operation) -> case division (Right n1) (Right n2) of
+                            Right (ans) -> Right (Float u1 ans)
+                            _ -> Left (OtherError "Division error")
+                        _ -> Left (InvalidOperator op)
+                Int _ _ -> Left (TypeMismatch "Float" "Int")
+                Str _ _ -> Left (TypeMismatch "Float" "Str")
+                _ -> Right (BinaryApp reducedE1 op reducedE2)
+            -- We do not allow operations to be performed on Strings
+            Str _ _ -> Left (TypeMismatch "Expr" "Str")
+            -- Everything else is an expression
+            _ -> Right (BinaryApp reducedE1 op reducedE2)
+    
+    Let vardefs expr -> Right (Let vardefs expr)
+    
+    _ -> Left (OtherError "not supported yet")
 
-identity :: forall a. a -> a
-identity x = x
 
-class Division a where
-  divide :: a -> a -> a
-instance Division Int where
-  divide a b = a / b
-instance Division Number where
-  divide a b = a / b
 
 data ArithmeticOperator = 
     RingOp (forall a. Ring a => a -> a -> a) 
@@ -139,3 +143,7 @@ division :: Either Int Number -> Either Int Number -> Either Int Number
 division (Left x) (Left y) = Left (x / y)
 division (Right x) (Right y) = Right (x / y)
 division _ _ = error "Cannot mix types"
+
+
+typeCheckTest :: Boolean
+typeCheckTest = typeCheck (Constr unit "Var" (Var "x" : Nil))
