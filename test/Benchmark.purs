@@ -18,6 +18,7 @@ import Util (definitely, (×))
 
 main :: Effect Unit
 main = launchAff_ do
+   -- Mocha.run doesn't allow values to be returned from tests, so must run via HTML entrypoint
    outs <- sequence $ (\(str × row) -> (str × _) <$> row) <$> (concat (benchmarks <@> (10 × true)))
    logShow $ BenchAcc $ definitely "More than one benchmark" $ fromArray outs
 

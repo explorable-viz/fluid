@@ -15,10 +15,10 @@ import Data.Newtype (unwrap, wrap)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable) as Set
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (fst, snd)
 import DataType (cPair)
-import Dict (Dict(..))
-import Dict (empty, fromFoldable) as D
+import Dict (Dict)
+import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), bv)
@@ -28,7 +28,7 @@ import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), (!), (×), Endo, absurd, definitely', error, isEmpty, nonEmpty, singleton, defined)
-import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, intersectionWith, keys, maplet, toUnfoldable, (<+>))
+import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, keys, maplet, toUnfoldable, (<+>))
 import Util.Pair (zip) as P
 import Util.Set (empty, (∪))
 import Val (BaseVal(..), Fun(..)) as V
@@ -56,13 +56,8 @@ matchBwd γ κ _ (MatchVarAnon v)
 matchBwd ρ κ α (MatchConstr c ws) = Val α (V.Constr c vs) × ElimConstr (maplet c κ')
    where
    vs × κ' = matchManyBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws) = Val α (V.Record (zip xs vs # D.fromFoldable # wrap)) ×
-   ElimRecord (Set.fromFoldable $ keys xws) κ'
-   where
-   xs × ws = xws # toUnfoldable # unzip
-   vs × κ' = matchManyBwd ρ κ α (ws # reverse)
 matchBwd ρ κ α (MatchDict xws) = Val α (V.Dictionary (DictRep $ wrap $ zip xs vs' # D.fromFoldable)) ×
-   ElimRecord (Set.fromFoldable $ keys xws) κ'
+   ElimDict (Set.fromFoldable $ keys xws) κ'
    where
    xs × ws = xws # toUnfoldable # unzip
    vs × κ' = matchManyBwd ρ κ α (ws # reverse)
@@ -129,13 +124,6 @@ evalBwd' (Val α (V.Str str)) T.Const = empty × Str α str × α
 evalBwd' (Val α (V.Int n)) T.Const = empty × Int α n × α
 evalBwd' (Val α (V.Float n)) T.Const = empty × Float α n × α
 evalBwd' (Val α (V.Fun (V.Closure γ _ σ))) T.Const = γ × Lambda α σ × α
-evalBwd' (Val α (V.Record xvs)) (T.Record xts) =
-   foldr (∨) empty (xγeαs <#> fst)
-      × Record α (xγeαs <#> (fst <<< snd))
-      × foldr (∨) α (xγeαs <#> (snd <<< snd))
-   where
-   xvts = intersectionWith (×) xvs xts
-   xγeαs = xvts <#> uncurry evalBwd'
 evalBwd' (Val α (V.Dictionary (DictRep sαvs))) (T.Dictionary stts sus) =
    foldr (∨) empty ((γeαs <#> fst) <> (γeαs' <#> fst))
       × Dictionary α ((γeαs <#> (fst <<< snd)) `P.zip` (γeαs' <#> (fst <<< snd)))
@@ -180,7 +168,7 @@ evalBwd' (Val α (V.Matrix (MatrixRep (vss × (_ × βi) × (_ × βj))))) (T.Ma
 evalBwd' v (T.Project t x) =
    γ × Project e x × α
    where
-   γ × e × α = evalBwd' (Val bot (V.Record (maplet x v))) t
+   γ × e × α = evalBwd' (Val bot (V.Dictionary (DictRep $ maplet x (bot × v)))) t
 evalBwd' v (T.DProject t Nothing x) =
    γ × Project e x × α
    where
@@ -201,7 +189,7 @@ evalBwd' v (T.Let (T.VarDef w t1) t2) =
    where
    γ1γ2 × e2 × α2 = evalBwd' v t2
    γ1 × γ2 = append_inv (bv w) γ1γ2
-   v' × σ = matchBwd γ2 (ContExpr (Record bot (Dict D.empty))) α2 w
+   v' × σ = matchBwd γ2 (ContExpr (Dictionary bot Nil)) α2 w
    γ1' × e1 × α1 = evalBwd' v' t1
 evalBwd' v (T.LetRec (RecDefs _ ρ) t) =
    (γ1 ∨ γ1') × LetRec (RecDefs (α ∨ α') ρ') e × (α ∨ α')

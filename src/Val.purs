@@ -35,7 +35,6 @@ data BaseVal a
    | Float Number
    | Str String
    | Constr Ctr (List (Val a)) -- always saturated
-   | Record (Dict (Val a)) -- always saturated
    | Dictionary (DictRep a)
    | Matrix (MatrixRep a)
    | Fun (Fun a)
@@ -187,7 +186,6 @@ instance Apply BaseVal where
    apply (Float n) (Float n') = Float (n ≜ n')
    apply (Str s) (Str s') = Str (s ≜ s')
    apply (Constr c fes) (Constr c' es) = Constr (c ≜ c') (zipWith (<*>) fes es)
-   apply (Record fxvs) (Record xvs) = Record (((<*>) <$> fxvs) <*> xvs)
    apply (Dictionary fxvs) (Dictionary xvs) = Dictionary (fxvs <*> xvs)
    apply (Matrix fm) (Matrix m) = Matrix (fm <*> m)
    apply (Fun ff) (Fun f) = Fun (ff <*> f)
@@ -251,7 +249,6 @@ instance JoinSemilattice a => JoinSemilattice (BaseVal a) where
    join (Int n) (Int n') = Int (n ≜ n')
    join (Float n) (Float n') = Float (n ≜ n')
    join (Str s) (Str s') = Str (s ≜ s')
-   join (Record xvs) (Record xvs') = Record (xvs ∨ xvs')
    join (Dictionary d) (Dictionary d') = Dictionary (d ∨ d')
    join (Constr c vs) (Constr c' us) = Constr (c ≜ c') (vs ∨ us)
    join (Matrix m) (Matrix m') = Matrix (m ∨ m')
@@ -284,7 +281,6 @@ instance BoundedJoinSemilattice a => Expandable (BaseVal a) (Raw BaseVal) where
    expand (Int n) (Int n') = Int (n ≜ n')
    expand (Float n) (Float n') = Float (n ≜ n')
    expand (Str s) (Str s') = Str (s ≜ s')
-   expand (Record xvs) (Record xvs') = Record (expand xvs xvs')
    expand (Dictionary d) (Dictionary d') = Dictionary (expand d d')
    expand (Constr c vs) (Constr c' us) = Constr (c ≜ c') (expand vs us)
    expand (Matrix m) (Matrix m') = Matrix (expand m m')

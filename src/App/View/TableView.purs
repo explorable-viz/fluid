@@ -3,7 +3,7 @@ module App.View.TableView where
 import Prelude hiding (absurd)
 
 import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor)
-import App.Util.Selector (ViewSelSetter, field, listElement)
+import App.Util.Selector (ViewSelSetter, dictVal, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
@@ -18,7 +18,7 @@ import Data.Traversable (for)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, (×), absurd, definitely', error, length, (!))
+import Util (Endo, type (×), (×), absurd, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
@@ -36,7 +36,7 @@ newtype TableView = TableView
    }
 
 -- helpers to decompose array of records represented as dictionaries into colNames and rows
-headers :: Array (Dict (Val (SelState 𝕊))) -> Array String
+headers :: Array (Dict (SelState 𝕊 × Val (SelState 𝕊))) -> Array String
 headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
@@ -188,7 +188,7 @@ instance Drawable TableView where
       draw' uiHelpers rSpec =<< selListener figVal redraw tableViewSelSetter
       where
       tableViewSelSetter :: ViewSelSetter CellIndex
-      tableViewSelSetter { i, colName } = listElement i <<< field colName
+      tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
 
 --      toggleListener <- filterToggleListener filterToggler
 --

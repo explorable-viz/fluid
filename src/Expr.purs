@@ -27,7 +27,6 @@ data Expr a
    | Int a Int
    | Float a Number
    | Str a String
-   | Record a (Dict (Expr a))
    | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
    | Constr a Ctr (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
@@ -45,7 +44,7 @@ data RecDefs a = RecDefs a (Dict (Elim a))
 data Elim a
    = ElimVar Var (Cont a)
    | ElimConstr (Dict (Cont a))
-   | ElimRecord (Set Var) (Cont a)
+   | ElimDict (Set Var) (Cont a)
 
 -- Continuation of an eliminator branch.
 data Cont a
@@ -71,7 +70,6 @@ instance FV (Expr a) where
    fv (Int _ _) = empty
    fv (Float _ _) = empty
    fv (Str _ _) = empty
-   fv (Record _ xes) = unions (fv <$> xes)
    fv (Dictionary _ ees) = unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
    fv (Constr _ _ es) = unions (fv <$> es)
    fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
@@ -85,7 +83,7 @@ instance FV (Expr a) where
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ \\ singleton x
    fv (ElimConstr m) = unions (fv <$> m)
-   fv (ElimRecord _ κ) = fv κ
+   fv (ElimDict _ κ) = fv κ
 
 instance FV (Cont a) where
    fv (ContElim σ) = fv σ
@@ -110,7 +108,7 @@ class BV a where
 instance BV (Elim a) where
    bv (ElimVar x κ) = singleton x ∪ bv κ
    bv (ElimConstr m) = bv (snd (asMaplet m))
-   bv (ElimRecord _ κ) = bv κ
+   bv (ElimDict _ κ) = bv κ
 
 instance BV (VarDef a) where
    bv (VarDef σ _) = bv σ
@@ -122,13 +120,13 @@ instance BV (Cont a) where
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    join (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (κ ∨ κ')
    join (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (cκs ∨ cκs')
-   join (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (κ ∨ κ')
+   join (ElimDict xs κ) (ElimDict ys κ') = ElimDict (xs ≜ ys) (κ ∨ κ')
    join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
    expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
-   expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
+   expand (ElimDict xs κ) (ElimDict ys κ') = ElimDict (xs ≜ ys) (expand κ κ')
    expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
@@ -159,7 +157,6 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Int α n) (Int α' n') = Int (α ∨ α') (n ≜ n')
    join (Str α str) (Str α' str') = Str (α ∨ α') (str ≜ str')
    join (Float α n) (Float α' n') = Float (α ∨ α') (n ≜ n')
-   join (Record α xes) (Record α' xes') = Record (α ∨ α') (xes ∨ xes')
    join (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') (ees ∨ ees')
    join (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') (c ≜ c') (es ∨ es') -- TODO: assert consistentWith
    join (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
@@ -178,7 +175,6 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Int α n) (Int _ n') = Int α (n ≜ n')
    expand (Str α str) (Str _ str') = Str α (str ≜ str')
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Record α xes) (Record _ xes') = Record α (expand xes xes')
    expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
    expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
    expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
@@ -219,7 +215,6 @@ instance Apply Expr where
    apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
    apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
    apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Record fα fxes) (Record α xes) = Record (fα α) (((<*>) <$> fxes) <*> xes)
    apply (Dictionary fα fxes) (Dictionary α xes) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxes xes)
    apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
    apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
@@ -235,7 +230,7 @@ instance Apply Expr where
 instance Apply Elim where
    apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
    apply (ElimConstr fk) (ElimConstr k) = ElimConstr (((<*>) <$> fk) <*> k)
-   apply (ElimRecord xs fk) (ElimRecord _ k) = ElimRecord xs (fk <*> k)
+   apply (ElimDict xs fk) (ElimDict _ k) = ElimDict xs (fk <*> k)
    apply _ _ = shapeMismatch unit
 
 instance Apply Cont where

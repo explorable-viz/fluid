@@ -1,0 +1,2 @@
+- notification icon (bell in bottom-right corner) can give clues if things aren't working
+- ensure "Add NPM Path" is selected in VS Code PureScript settings (to add ./node_modules/.bin to path)

@@ -18,7 +18,6 @@ data Trace
    = Var Var
    | Op Var
    | Const
-   | Record (Dict Trace)
    | Dictionary (List (String × Trace × Trace)) (Dict (Raw Val))
    | Constr Ctr (List Trace)
    | Matrix (Array2 Trace) (Var × Var) (Int × Int) Trace
@@ -43,12 +42,10 @@ data Match
    = MatchVar Var (Raw Val)
    | MatchVarAnon (Raw Val)
    | MatchConstr Ctr (List Match)
-   | MatchRecord (Dict Match)
    | MatchDict (Dict Match)
 
 instance BV Match where
    bv (MatchVar x _) = singleton x
    bv (MatchVarAnon _) = empty
    bv (MatchConstr _ ws) = unions (bv <$> ws)
-   bv (MatchRecord xws) = unions (bv <$> xws)
    bv (MatchDict xws) = unions (bv <$> xws)

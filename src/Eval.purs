@@ -47,18 +47,13 @@ match (Val α (V.Constr c vs)) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
-match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
-   check (subset xs (Set.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
-   let xs' = xs # Set.toUnfoldable
-   γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
-   pure (γ × κ' × (α ∧ α') × MatchRecord (wrap $ D.fromFoldable (zip xs' ws)))
-match (Val α (V.Dictionary (V.DictRep xvs))) (ElimRecord xs κ) = do
+match (Val α (V.Dictionary (V.DictRep xvs))) (ElimDict xs κ) = do
    check (subset xs (Set.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
    let xvs' = unwrap xvs
    γ × κ' × α' × ws <- matchMany (map (\k -> snd (get k xvs')) xs') κ
    pure (γ × κ' × (α ∧ α') × MatchDict (wrap $ D.fromFoldable (zip xs' ws)))
-match v (ElimRecord xs _) = throw $ patternMismatch (prettyP v) (show xs)
+match v (ElimDict xs _) = throw $ patternMismatch (prettyP v) (show xs)
 
 matchMany :: forall a m. MonadError Error m => Ann a => List (Val a) -> Cont a -> m (Env a × Cont a × a × List Match)
 matchMany Nil κ = pure (empty × κ × top × Nil)
@@ -120,9 +115,6 @@ eval (EnvExpr γ (Op op)) _ = (T.Op op × _) <$> lookup' op γ
 eval (EnvExpr _ (Int α n)) α' = pure (T.Const × Val (α ∧ α') (V.Int n))
 eval (EnvExpr _ (Float α n)) α' = pure (T.Const × Val (α ∧ α') (V.Float n))
 eval (EnvExpr _ (Str α str)) α' = pure (T.Const × Val (α ∧ α') (V.Str str))
-eval (EnvExpr γ (Record α xes)) α' = do
-   xts × xvs <- traverse (\e -> eval (EnvExpr γ e) α') xes <#> unzip
-   pure $ T.Record xts × Val (α ∧ α') (V.Record xvs)
 eval (EnvExpr γ (Dictionary α ees)) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (\e -> eval (EnvExpr γ e) α')) ees <#> (P.unzip >>> (unzip # both))
    let
@@ -154,7 +146,6 @@ eval (EnvExpr γ (Lambda α σ)) α' =
 eval (EnvExpr γ (Project e x)) α = do
    t × v <- eval (EnvExpr γ e) α
    case v of
-      Val _ (V.Record xvs) -> (T.Project t x × _) <$> lookup' x xvs
       Val _ (V.Dictionary (V.DictRep d)) -> (T.DProject t Nothing x × _) <$> snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found")
       _ -> throw $ "Found " <> prettyP v <> ", expected record"
 eval (EnvExpr γ (DProject e x)) α = do

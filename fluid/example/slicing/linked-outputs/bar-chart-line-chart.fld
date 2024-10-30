@@ -1,4 +1,4 @@
-MultiView {|
+MultiView {
    ["bar-chart"] :
       let totalFor c rows =
          sum [ row.output | row <- rows, row.country == c ];
@@ -26,4 +26,4 @@ MultiView {|
                                (series type "USA") (series type "China")
          ]
       }
-|}
+}

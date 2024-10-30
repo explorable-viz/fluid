@@ -58,20 +58,14 @@ match (Val α (V.Constr c vs)) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
-match (Val α (V.Record xvs)) (ElimRecord xs κ) = do
-   check (Set.subset xs (Set.fromFoldable $ keys xvs))
-      $ patternMismatch (show (keys xvs)) (show xs)
-   let xs' = xs # Set.toUnfoldable
-   γ × κ' × αs <- matchMany (flip get xvs <$> xs') κ
-   pure $ γ × κ' × (insert α αs)
-match (Val α (V.Dictionary (DictRep xvs))) (ElimRecord xs κ) = do
+match (Val α (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    check (Set.subset xs (Set.fromFoldable $ keys xvs))
       $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
    let xvs' = unwrap xvs
    γ × κ' × αs <- matchMany (map (\k -> snd (get k xvs')) xs') κ
    pure $ γ × κ' × (insert α αs)
-match v (ElimRecord xs _) = throw (patternMismatch (prettyP v) (show xs))
+match v (ElimDict xs _) = throw (patternMismatch (prettyP v) (show xs))
 
 matchMany :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (empty × κ × empty)
@@ -116,9 +110,6 @@ eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval _ (Int α n) αs = Val <$> new (insert α αs) <@> V.Int n
 eval _ (Float α n) αs = Val <$> new (insert α αs) <@> V.Float n
 eval _ (Str α s) αs = Val <$> new (insert α αs) <@> V.Str s
-eval γ (Record α xes) αs = do
-   xvs <- traverse (flip (eval γ) αs) xes
-   Val <$> new (insert α αs) <@> V.Record xvs
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
@@ -147,9 +138,8 @@ eval γ (Lambda α σ) αs =
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
-      Val _ (V.Record xvs) -> withMsg "Record lookup" (lookup' x xvs)
       Val _ (V.Dictionary (DictRep d)) -> withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
-      _ -> throw $ "Found " <> prettyP v <> ", expected record"
+      _ -> throw $ "Found " <> prettyP v <> ", expected dictionary"
 eval γ (DProject e x) α = do
    v <- eval γ e α
    v' <- eval γ x α

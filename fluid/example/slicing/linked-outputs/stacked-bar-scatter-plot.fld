@@ -1,4 +1,4 @@
-MultiView {|
+MultiView {
    ["stacked-bar-chart"] :
       let totalFor year country rows =
          let [ row ] = [ row | row <- rows, row.year == year, row.country == country ]
@@ -36,4 +36,4 @@ MultiView {|
          xlabel: "Renewables/TotalEnergyCap",
          ylabel: "Clean Capacity Factor"
       }
-|}
+}

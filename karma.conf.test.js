@@ -16,13 +16,13 @@ module.exports = function (config) {
       },
       client: {
          mocha: {
-            timeout: 60000
+            timeout: 240000
          }
       },
       colors: true,
-      failOnEmptyTestSuite: false,
+      failOnEmptyTestSuite: true,
       files: [
-         "./dist/test/app.js",
+         "./dist/test/fluid.js",
          {
             pattern: "./fluid/**/*.fld",
             watched: true,
