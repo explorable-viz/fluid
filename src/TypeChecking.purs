@@ -57,16 +57,9 @@ check g (Str u s) (TCons "Str") = case synth g (Str u s) (TCons "Str") of
 check g (Float u n) (TCons "Float") = case synth g (Float u n) (TCons "Float") of
       Nothing -> false
       Just _ -> true
-check g (BinaryApp e1 op e2) ty = 
-      case synth g e1 (TCons "Int") of
-            Just (TCons "Int") -> case synth g e2 (TCons "Int") of
-                  Just (TCons "Int") -> true
-                  _ -> false
-            Just (TCons "Float") -> case synth g e2 (TCons "Float") of
-                  Just (TCons "Float") -> true
-                  _ -> false
-            _ -> false
-
+check g (BinaryApp e1 op e2) ty = case synth g (BinaryApp e1 op e2) ty of
+      Nothing -> false
+      Just _ -> true
 check _ _ _ = false
 
 synth :: forall a. Context -> Expr a -> Types -> Maybe Types
@@ -76,7 +69,7 @@ synth g (Float _ n) (TCons "Float") = Just (TCons "Float")
 synth g (BinaryApp e1 op e2) ty =
       if op == "+" || op == "-" || op == "*" || op == "/" then
             do
-                  -- Just (TCons "Int")
+                  -- Left and right should be the same type
                   left <- synth g e1 (TCons "Int") <|> synth g e1 (TCons "Float")
                   right <- synth g e2 (TCons "Int") <|> synth g e2 (TCons "Float")
                   case left of 
@@ -87,7 +80,8 @@ synth g (BinaryApp e1 op e2) ty =
                                           Nothing
                         _ -> Nothing
       else if op == ">" || op == "<" || op == ">=" || op == "<=" || op == "==" then
-            -- Comparison operators which should return Booleans
+            -- Left and right should be the same type
+            -- Return type is Bool
             do
                   left <- synth g e1 (TCons "Int") <|> synth g e1 (TCons "Float") <|> synth g e1 (TCons "Str")
                   right <- synth g e2 (TCons "Int") <|> synth g e2 (TCons "Float") <|> synth g e1 (TCons "Str")
@@ -110,5 +104,7 @@ exampleCheckInt = check (singleton (Tuple "x" (TCons "Int"))) (Int unit 42) (TCo
 exampleCheckString = check (singleton (Tuple "x" (TCons "Str"))) (Str unit "hello") (TCons "Str")
 exampleCheckFloat = check (singleton (Tuple "x" (TCons "Float"))) (Float unit 5.0) (TCons "Float")
 exampleCheckInvalid = check (singleton (Tuple "x" (TCons "Str"))) (Str unit "hello") (TCons "Int")
-exampleBinaryApp = synth (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Int unit 2) ">" (Int unit 5)) (TCons "Bool")
-exampleBinaryAppInvalid = synth (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Str unit "2") ">" (Int unit 5)) (TCons "Bool")
+exampleBinaryApp = check (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Int unit 2) "+" (Int unit 5)) (TCons "Int")
+exampleBinaryAppBool = check (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Int unit 2) ">" (Int unit 5)) (TCons "Bool")
+exampleSynthBool = synth (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Int unit 2) ">" (Int unit 5)) (TCons "Bool")
+exampleBinaryAppInvalid = check (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Str unit "2") ">" (Int unit 5)) (TCons "Bool")
