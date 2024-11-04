@@ -2,6 +2,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
 
 @font-face {
+   font-family: 'OdiseanTech';
+   src: url('/font/OdiseanTech.woff2') format('woff2');
+   font-weight: normal;
+   font-style: normal;
+}
+
+@font-face {
    font-family: 'GraphikLight';
    src: url('/font/GraphikLight.woff2') format('woff2');
    font-weight: 300;
@@ -27,6 +34,12 @@
    src: url('/font/GraphikMediumItalic.woff2') format('woff2');
    font-weight: 500;
    font-style: italic;
+}
+
+.fluid-logo {
+   color: #BCDEC3;
+   font-family: "OdiseanTech", sans-serif;
+   font-size: 24pt;
 }
 
 .glowing, a {
@@ -70,7 +83,7 @@ p {
 }
 
 .title {
-   color: darkblue;
+   color: green;
 }
 
 h3 {
