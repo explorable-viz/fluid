@@ -1,6 +1,34 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
 
+@font-face {
+   font-family: 'GraphikLight';
+   src: url('/font/GraphikLight.woff2') format('woff2');
+   font-weight: 300;
+   font-style: normal;
+}
+
+@font-face {
+   font-family: 'GraphikLightItalic';
+   src: url('/font/GraphikLightItalic.woff2') format('woff2');
+   font-weight: 300;
+   font-style: italic;
+}
+
+@font-face {
+   font-family: 'GraphikMedium';
+   src: url('/font/GraphikMedium.woff2') format('woff2');
+   font-weight: 500;
+   font-style: normal;
+}
+
+@font-face {
+   font-family: 'GraphikMediumItalic';
+   src: url('/font/GraphikMediumItalic.woff2') format('woff2');
+   font-weight: 500;
+   font-style: italic;
+}
+
 .glowing, a {
    transition: all .25s;
 }
@@ -19,7 +47,7 @@ code {
 
 body {
    font-size: 11pt;
-   font-family: "Roboto", sans-serif;
+   font-family: "GraphikLight", sans-serif;
    font-weight: 300;
    line-height: 1.25;
    padding: 0;
@@ -27,7 +55,7 @@ body {
    background-color: #FFFFFF; /* #181818; */
    color: #404040;
    margin-bottom: 10em;
-}bo
+}
 
 p {
    margin-block-start: 0.1em;
@@ -46,8 +74,8 @@ p {
 }
 
 h3 {
-   font-family: "Roboto", sans-serif;
-   font-weight: 600;
+   font-family: "GraphikMedium", sans-serif;
+   font-weight: 500;
    margin-top: 10pt;
    margin-bottom: 0;
    font-size: '24px'
