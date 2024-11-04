@@ -1,4 +1,4 @@
-let newDataTable offset = map (fun s -> { scenario: s.scenario, bE2140: s.bestEst2140 + offset, low2140: s.low2140, high2140: s.high2140, bE4160: s.bestEst4160, low4160: s.low4160, high4160: s.high4160, bE81100: s.bestEst81100, low81100: s.low81100, high81100: s.high81100}) tableData;
+let newDataTable offset = map (fun s -> { scenario: s.scenario, bENear: s.bestEstNear + offset, lowNear: s.lowNear, highNear: s.highNear, bEMid: s.bestEstMid, lowMid: s.lowMid, highMid: s.highMid, bELate: s.bestEstLate, lowLate: s.lowLate, highLate: s.highLate}) tableData;
 let newModel offset = map (fun s -> { model: s.model, probability: s.probability + offset}) modelProbs;
 
 let getByScenario scenario data = 
@@ -13,7 +13,7 @@ let getByScenario scenario data =
 
 let likelihoodMap prob = 
     let go (x:xs) = 
-        if x.prob < prob
+        if x.prob <= prob
         then x.msg
         else go xs;
         go [] = "not found"
@@ -30,13 +30,13 @@ let realTable = newDataTable 0;
     probTable = newModel 0.0;
     sspone = getByScenario "SSP1-1.9" realTable;
     ssptwo = getByScenario "SSP2-4.5" realTable
-in MultiView {|
+in MultiView {
     ["table"]: tableData,
     ["explanation"] :
-        LinkedText [ "The low-emissions scenario -- ", sspone.scenario ," -- projects a temperature increase of "
-                     , numToStr sspone.bE81100, " by the end of the century."
-                     , "Under this model, it is ", likelihoodMap (findLikelihood (sspone.low81100, sspone.high81100) 2.0)
+        LinkedText [ "The low-emissions scenario - ", sspone.scenario ," - projects a temperature increase of "
+                     , numToStr sspone.bELate, " by the end of the century."
+                     , "Under this model, it is ", likelihoodMap (findLikelihood (sspone.lowLate, sspone.highLate) 2.0)
                      , " that global temperature increase will exceed the target of 2c by the end of the century."
                      , " On the other hand, in a higher emissions scenario, like the intermediate scenario SSP2-4.5, it is "
-                     , likelihoodMap (findLikelihood (ssptwo.low81100, ssptwo.high81100) 2.0)
-                     , " that global temperature increase will exceed this target." ]|}
+                     , likelihoodMap (findLikelihood (ssptwo.lowLate, ssptwo.highLate) 2.0)
+                     , " that global temperature increase will exceed this target." ]}

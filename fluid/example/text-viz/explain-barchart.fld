@@ -23,7 +23,7 @@ let getByX x table =
 
 let mkPercent num = (numToStr (num * 100)) ++ "%";
 
-let explainBar bar = "the bar representing scenario " ++ bar.x ++ " has a z value of " ++ (numToStr (head bar.bars).z);
+let referToBar bar = "the bar representing scenario " ++ bar.x ++ " has a z value of " ++ (numToStr (head bar.bars).z);
 
 let modTable offset table = map (fun bar -> { x: numToStr (bar.x + offset), bars: [{ y: bar.y, z: bar.z + offset}] }) table;
 
@@ -31,7 +31,7 @@ let barContents = modTable 0 barData;
     bar6 = getByX "6" barContents;
     bar6height = (head bar6.bars).z;
     bar2 = getByX "2" barContents
-in MultiView {|
+in MultiView {
     ["bar-chart"] :
         BarChart {
             caption: "Example bar chart for text-viz",
@@ -39,8 +39,8 @@ in MultiView {|
             stackedBars: barContents
         },
     ["explanation"] :
-        LinkedText [ "From the barchart shown above, we see that ", explainBar bar6
+        LinkedText [ "From the barchart shown above, we see that ", referToBar bar6
                    , "  which suggests that in the high-emissions scenario it is ", likelihoodMap (findLikelihood (40, 80) bar6height)
                    , " that warming will exceed the global warming target of 2c by 2100."
                    , " In contrast, in the lowest-emission scenario, the probability of exceeding the target is only ",  mkPercent (findLikelihood (25, 45) (head bar2.bars).z) ]
-|}
+}
