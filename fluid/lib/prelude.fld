@@ -83,7 +83,7 @@ let elem x [] = False;
 
 -- (a -> Bool) -> List a -> Option a
 let find p [] = error "not found";
-    find p (x : xs) = if p x then x else find p xs;
+    find p (x : xs) = if p x then Some x else find p xs;
 
 -- String -> String -> List (Dict) -> Option Dict
 let getByField fname fval table = find (fun y -> y.[fname] == fval) table;

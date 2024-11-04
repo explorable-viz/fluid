@@ -18,7 +18,7 @@ fig =
       , "modelProbs" ↦ "example/text-viz/fake-probabilities"
       , "likelihoods" ↦ "example/text-viz/likelihoods"
       ]
-   , imports: []
+   , imports: [ "lib/text-viz" ]
    , file: File "text-viz/explain-table"
    , inputs: [ "tableData", "modelProbs", "likelihoods" ]
    }
