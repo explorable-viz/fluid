@@ -61,13 +61,11 @@ data Expr a
 
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
 
--- Start with only Integers
 data Types = 
    TInt Int
    | TStr String
+   -- List of accepted types
    | TCons String
--- Edit to make --> let x :: Integer = 20 in x;
-
 
 data ListRest a
    = End a

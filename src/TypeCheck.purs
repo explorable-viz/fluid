@@ -208,11 +208,12 @@ checkVarDefType ty exp = case ty of
         _ -> Left (OtherError "Something went wrong")
     _ -> Left (OtherError "Not implemented yet")
 
-reduceVarDefs :: forall a.  NonEmptyList (VarDef a) -> Either ReduceError (NonEmptyList (VarDef a))
-reduceVarDefs (Let varDef exp) = do 
-    reducedVarDef <- reduceVarDef varDef
-    reducedExp <- reduce exp
-    Right (Let reducedVarDef reducedExp)
+-- reduceVarDefs :: forall a.  NonEmptyList (VarDef a) -> Either ReduceError (NonEmptyList (VarDef a))
+-- reduceVarDefs (NonEmptyList (NonEmpty (Let varDef exp))) = do
+-- reduceVarDefs (Let varDef exp) = do 
+--     reducedVarDef <- reduceVarDef varDef
+--     reducedExp <- reduce exp
+--     Right (Let reducedVarDef reducedExp)
 
 
 data ArithmeticOperator = 
@@ -240,3 +241,13 @@ division _ _ = error "Cannot mix types"
 --typeCheckTest = typeCheck (Constr unit "Mylist" ((ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit)))) : Nil))
 --typeCheckTest2 = typeCheck ((ListNonEmpty unit (Int unit 1) (End unit)))
 --reductionTest = reduceVarDef (VarDef (PVar "x") (TCons "Int") (Int unit 42))
+
+
+-- Use the videos for synth and check formulas
+
+-- Arithmetic operations work for Int and Float so need to check both are the same
+-- e1 + e2
+-- infer by looking at '+' and check that e1 is type t and e2 is also type t
+-- then return TCons "..."
+
+-- Lookup table
