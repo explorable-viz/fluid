@@ -13,13 +13,7 @@ let findLikelihood (min, max) target =
     then 1.0
     else (target - min)/(max - min);
 
-let getByX x table =
-    let helper (bar:rest) = 
-            if bar.x == x 
-            then bar
-            else getByX x rest;
-        helper [] = {}
-    in helper table;
+let getByX x table = getByField "x" x table;
 
 let mkPercent num = (numToStr (num * 100)) ++ "%";
 
