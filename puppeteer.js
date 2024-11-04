@@ -4,16 +4,18 @@ require('http-shutdown').extend();
 
 const app = express();
 
-app.use(serve(__dirname + '/dist/' + process.argv[3]));
+const root = __dirname + '/dist/' + process.argv[3];
+app.use(serve(root));
 
 const server = app.listen(8080, function() {
-  console.log("Server running");
+  console.log("Serving content from " + root);
 }).withShutdown();
 
 (async () => {
   try {
-    const testFile = process.argv[2]
-    import('./output-es/' + testFile + '/index.js').then(({ main }) => {
+    const module = process.argv[2]
+    console.log('Loading Puppeteer test module:', module);
+    import('./output-es/' + module + '/index.js').then(({ main }) => {
       main().then(serverDown);
     }).catch(err => {
       console.error("Failed to load PureScript output:", err);

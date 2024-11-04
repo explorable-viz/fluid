@@ -6,7 +6,7 @@ import App.Util.Selector (dictVal, envVal, listElement)
 import Bind ((↦))
 import Lattice (neg)
 import Module (File(..))
-import Standalone.EnergyScatter as EnergyScatter
+import Website.Misc.EnergyScatter as EnergyScatter
 import Test.Util.Suite (TestLinkedInputsSpec)
 
 linkedInputs_spec3 :: TestLinkedInputsSpec

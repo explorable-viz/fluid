@@ -1,5 +1,5 @@
 MultiView {
-   ["bar-chart"] :
+   barChart:
       let totalFor c rows =
          sum [ row.output | row <- rows, row.country == c ];
       let data2015 = [ row | row <- renewables, row.year == 2015 ];
@@ -10,7 +10,7 @@ MultiView {
          size: { width: 275, height: 185 },
          stackedBars: countryData
       },
-   ["line-chart"] :
+   lineChart:
       let series type country = [
          { x: row.year, y: row.output }
          | year <- [2013..2018], row <- renewables,

@@ -42,13 +42,13 @@ jobs:
     - name: build
       run: |
         yarn install
-        yarn build-website
+        yarn build-fluid-org
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/website
-        keep_files: true # student-projects and internships folders may exist in "release"
+        publish_dir: dist/fluid-org
+        keep_files: false
 
   deploy-ESOP-artifact:
     runs-on: ubuntu-22.04
@@ -59,10 +59,10 @@ jobs:
     - name: build
       run: |
         yarn install
-        yarn build-ESOP-artifact
+        yarn build-esop2025-artifact
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/ESOP-artifact
+        publish_dir: dist/esop2025-artifact
         keep_files: false

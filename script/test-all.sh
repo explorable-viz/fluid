@@ -2,4 +2,4 @@
 set -xe
 
 . script/test.sh
-. script/test-standalone-all.sh website
+. script/test-website-all.sh

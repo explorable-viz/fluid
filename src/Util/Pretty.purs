@@ -36,28 +36,14 @@ newtype Doc = Doc
 
 derive instance Eq Doc
 
--- | Get the width of a document.
 width :: Doc -> Int
 width (Doc doc) = doc.width
 
--- | Get the height of a document.
 height :: Doc -> Int
 height (Doc doc) = doc.height
 
--- | Render a document to a string.
 render :: Doc -> String
 render (Doc doc) = intercalate "\n" doc.lines
-
--- | An empty document
--- empty :: Int -> Int -> Doc
--- empty w h =
---    Doc
---       { width: w
---       , height: h
---       , lines: case h of
---            0 -> []
---            _ -> range 1 h $> ""
---       }
 
 empty :: Doc
 empty = Doc
@@ -79,7 +65,6 @@ checkOneLine xs = case uncons xs of
    Just { head: _, tail: _ } -> error U.absurd
    Nothing -> error U.absurd
 
--- | Place one document on top of another.
 atop :: Doc -> Doc -> Doc
 atop (Doc d1) (Doc d2) =
    Doc
@@ -88,7 +73,6 @@ atop (Doc d1) (Doc d2) =
       , lines: d1.lines <> d2.lines
       }
 
--- | Beside with a space
 space :: Doc -> Doc -> Doc
 space d1 d2 = d1 :<>: text " " :<>: d2
 
@@ -128,11 +112,9 @@ indentedExpression (Doc d1) (Doc d2) =
 beside :: Doc -> Doc -> Doc
 beside (Doc d1) (Doc d2) = Doc { width: d1.width + d2.width, height: d1.height + d2.height, lines: allButLast (Doc d1) <> (singleton (lastLine (Doc d1) <> "" <> firstLine (Doc d2))) <> indentedExpression (Doc d1) (Doc d2) }
 
--- | Place documents in columns
 hcat :: forall f. Foldable f => f Doc -> Doc
 hcat = ala Columns foldMap
 
--- | Stack documents vertically
 vcat :: forall f. Foldable f => f Doc -> Doc
 vcat = ala Stack foldMap
 

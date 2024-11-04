@@ -1,9 +1,9 @@
 let likelihoodMap prob = (getByField "prob" prob likelihoods).msg ++ "";
 
-let findLikelihood (min, max) target = 
+let findLikelihood (min, max) target =
     if target > max
     then 0.0
-    else if target < min 
+    else if target < min
     then 1.0
     else (target - min)/(max - min);
 
@@ -20,13 +20,13 @@ let barContents = modTable 0 barData;
     bar6height = (head bar6.bars).z;
     bar2 = getByX "2" barContents
 in MultiView {
-    ["bar-chart"] :
+    bar-chart:
         BarChart {
             caption: "Example bar chart for text-viz",
             size: { width: 275, height: 185 },
             stackedBars: barContents
         },
-    ["explanation"] :
+    explanation:
         LinkedText [ "From the barchart shown above, we see that ", referToBar bar6
                    , "  which suggests that in the high-emissions scenario it is ", likelihoodMap (findLikelihood (40, 80) bar6height)
                    , " that warming will exceed the global warming target of 2c by 2100."

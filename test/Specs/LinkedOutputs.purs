@@ -8,15 +8,15 @@ import DataType (f_plots, f_y)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
-import Standalone.RenewablesLinked as RenewablesLinked
+import Website.Misc.RenewablesLinked as RenewablesLinked
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec: RenewablesLinked.fig
-   , δ_out: multiViewEntry "bar-chart" (barChart (barSegment 1 0 neg))
+   , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
    , out_expect:
-        multiViewEntry "bar-chart" (barChart (barSegment 1 0 neg))
-           >>> multiViewEntry "line-chart"
+        multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
+           >>> multiViewEntry "lineChart"
               ( lineChart
                    ( dictVal f_plots
                         ( listElement 0 (linePoint 2 (dictVal f_y neg))
@@ -40,10 +40,10 @@ linkedOutputs_spec2 =
         , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
         }
-   , δ_out: multiViewEntry "stacked-bar-chart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
+   , δ_out: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
    , out_expect:
-        multiViewEntry "stacked-bar-chart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
-           >>> multiViewEntry "scatter-plot"
+        multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
+           >>> multiViewEntry "scatterPlot"
               ( scatterPlot
                    ( scatterPoint 4 (dictVal f_y neg)
                         >>> scatterPoint 6 (dictVal f_y neg)

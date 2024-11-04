@@ -1,2 +1,2 @@
-{[⸨"a"⸩] : 5,
-  ["b"] : 6} `dict_disjointUnion` {["c"] : ⸨7⸩}
+{⸨a⸩ : 5,
+  b : 6} `dict_disjointUnion` {c : ⸨7⸩}

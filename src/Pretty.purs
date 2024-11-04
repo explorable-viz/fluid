@@ -76,7 +76,6 @@ exprType (Float _ _) = Simple
 exprType (Str _ _) = Simple
 exprType (Constr _ _ Nil) = Simple
 exprType (Constr _ _ _) = Expression
-exprType (Record _ _) = Simple
 exprType (Dictionary _ _) = Simple
 exprType (Matrix _ _ _ _) = Simple
 exprType (Lambda _) = Simple
@@ -140,7 +139,6 @@ instance Ann a => Pretty (Expr a) where
    pretty (Float α n) = highlightIf α $ text (show n)
    pretty (Str α str) = highlightIf α $ text ("\"" <> str <> "\"")
    pretty (Constr α c x) = highlightIf α $ prettyConstr c x
-   pretty (Record α xss) = highlightIf α $ curlyBraces (prettyOperator (.-.) xss)
    pretty (Dictionary α sss) = highlightIf α $ curlyBraces (prettyDictEntries (.-.) sss)
    pretty (Matrix α e (x × y) e') =
       highlightIf α $ arrayBrackets
