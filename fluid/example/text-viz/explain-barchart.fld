@@ -1,10 +1,4 @@
-let likelihoodMap prob = 
-    let go (x:xs) = 
-        if x.prob < prob
-        then x.msg ++ ""
-        else go xs;
-        go [] = "not found"
-    in go likelihoods;
+let likelihoodMap prob = (getByField "prob" prob likelihoods).msg ++ "";
 
 let findLikelihood (min, max) target = 
     if target > max
