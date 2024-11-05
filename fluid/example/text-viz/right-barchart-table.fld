@@ -1,0 +1,5 @@
+[
+    { x: "Total", y: "emissions", z: 120 },
+    { x: "Consumer", y: "emissions", z: 40 },
+    { x: "Industry", y: "emissions", z: 80 }
+]
