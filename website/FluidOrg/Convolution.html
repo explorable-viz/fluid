@@ -9,11 +9,14 @@
    <link href="/css/styles.css" rel="stylesheet" type="text/css">
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
-   <script src="fluid.js"></script>
    <script src="/util.js"></script>
+   <script>
+      loadHeader()
+   </script>
+   <script src="fluid.js"></script>
 </head>
 <body class="standalone">
-<div class="grid-container">
+<div id="grid" class="grid-container">
    <div></div>
    <div></div>
    <div></div>
@@ -50,7 +53,6 @@
 </div>
 
 <script>
-   loadHeader()
    toggle('fig-input')
 </script>
 </body>

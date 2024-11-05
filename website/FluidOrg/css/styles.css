@@ -38,25 +38,27 @@
 
 .fluid-logo {
    /* color: #BCDEC3; */
+   margin-bottom: 0em;
    color: green;
    font-family: "OdiseanTech", sans-serif;
-   font-size: 24pt;
+   font-size: 32pt;
 }
 
 a:link {
-   color: #00695c;
+  color: #00796b;
 }
 
 a:visited {
-   color: #6a1b9a;
+  color: #004d40;
 }
 
 a:hover {
-   color: #00897b;
+  color: #009688;
+  text-decoration: none;
 }
 
 a:active {
-   color: #004d40;
+  color: #003d33;
 }
 
 .nowrap {
@@ -155,7 +157,7 @@ nav ul li a {
    display: block;
    width: 100%;
    text-align: left;
-   padding-right: 8px;
+   margin-right: 8px;
    text-decoration: none;
 }
 
