@@ -22,5 +22,5 @@ jobs:
       run: |
         yarn install
         set -x -e
-        yarn purs-tidy check src/**/*.purs test/**/*.purs
+        yarn purs-tidy check src/**/*.purs test/**/*.purs website/**/*.purs
         yarn build-test

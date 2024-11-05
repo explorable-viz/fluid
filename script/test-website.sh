@@ -4,15 +4,15 @@ set -e
 
 WEBSITE=$1
 
-if [[ -e "src/Website/$WEBSITE.purs" || -e "src/Website/$WEBSITE.html" ]]; then
+if [[ -e "website/$WEBSITE.purs" || -e "website/$WEBSITE.html" ]]; then
    echo "Testing website: ${WEBSITE}"
 
-   if [[ -e "src/Website/Test/$WEBSITE.purs" ]]; then
+   if [[ -e "website/Test/$WEBSITE.purs" ]]; then
       . script/test-page.sh $WEBSITE $WEBSITE
    fi
 
-   if [[ -e "src/Website/Test/$WEBSITE" ]]; then
-      PAGES=($(for FILE in src/Website/Test/$WEBSITE/*.purs; do
+   if [[ -e "website/Test/$WEBSITE" ]]; then
+      PAGES=($(for FILE in website/Test/$WEBSITE/*.purs; do
          basename "$FILE" | sed 's/\.[^.]*$//'
       done | sort -u))
    else

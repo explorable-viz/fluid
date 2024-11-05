@@ -1,48 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Fluid: Data-Linked Visualisations</title>
-  <script src="https://use.fontawesome.com/1091715d00.js"></script>
-  <link href="/css/styles.css" rel="stylesheet" type="text/css">
-  <link href="/css/simplegrid.css" rel="stylesheet" type="text/css">
-  <link href="/css/data-viz.css" rel="stylesheet" type="text/css">
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Fluid: Data-Linked Visualisations</title>
+   <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <link href="/css/styles.css" rel="stylesheet" type="text/css">
+   <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
+   <script src="/util.js"></script>
 </head>
 <body>
 
-<div class="grid grid-pad">
-   <div class="col-3-12 align-right">
-      <img src="https://i.ibb.co/bFjzrXR/Untitled.jpg" width="80%">
-      <img src="https://i.ibb.co/zNqHKg7/University-of-Bristol-logo.png" width="80%">
-      <img src="https://dorchard.github.io/images/iccs-full-logo.png" alt="ICCS logo" width="80%">
-   </div>
-   <div class="col-9-12">
-      <nav>
-         <ul>
-            <li>
-               <a href="." class="active-page">Latest</a>
-            </li>
-            <li>
-            <a href="https://f.luid.org/0.3.1">v0.3.1</a>
-            </li>
-         </ul>
-      </nav><br>
-      <p><a href="https://github.com/explorable-viz/fluid">GitHub</a> &#183;
-      <a href="https://dl.acm.org/doi/10.1145/3498668">POPL 2022 paper</a> &#183;
-      <a href="https://www.youtube.com/watch?v=M_ePrtD9axk">POPL 2022 talk</a> &#183;
-      <a href="https://www.youtube.com/watch?v=2-S6yVyzypU">PROPL 2024 talk</a> &#183;
-      <a href="https://www.youtube.com/watch?v=F3JaftEnFfM">ICCS Summer School</a>
-      <h2>Fluid: A Programming Language for Transparent, Self-Explanatory Research Outputs</h2>
-   </div>
-</div>
-
-<div id="FLUID" class="grid grid-pad">
-   <div class="col-3-12 align-right">
+<div id="grid" class="grid grid-container">
+   <div></div>
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
       <h3 class="title lowercase">Cambridge MPhil/Part III<br> 2024-25 Projects</h3>
-   </div>
-   <div class="col-9-12">
       <p>Fluid is an exciting opportunity to work on new programming language foundations designed to make
       data science more open, intelligible and accessible. If you are a University of Cambridge MPhil or Part
       III student in Computer Science looking for a project this October, and would like to discuss the
@@ -91,5 +66,9 @@
       research, data analysis and data visualisation, with close supervisor support.</p>
    </div>
 </div>
+
+<script>
+   loadHeader()
+</script>
 </body>
 </html>

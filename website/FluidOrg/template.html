@@ -9,6 +9,8 @@
    <link href="/css/styles.css" rel="stylesheet" type="text/css">
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <script src="fluid.js"></script>
+   <script src="/util.js"></script>
 </head>
 <body class="standalone">
 <div class="grid-container double-size">
@@ -16,11 +18,23 @@
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <h3>Miscellaneous examples</h3>
-      <p>See subfolders for individual pages</p>
+      <h3>Title</h3>
+      <p>Explain your figure here</p>
+   </div>
+
+   <div></div>
+   <div id="fig-input" class="flex-right-align data-pane"></div>
+   <div>
+      <div onclick="toggle('fig-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   </div>
+   <div id="fig">
+      <div class="fig-loading">loading figure(s)</div>
    </div>
 </div>
 
-<script src="fluid.js"></script>
+<script>
+   loadHeader()
+   toggle('fig-input')
+</script>
 </body>
 </html>

@@ -9,17 +9,8 @@
    <link href="css/styles.css" rel="stylesheet" type="text/css">
    <link href="css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <script src="/util.js"></script>
    <script src="fluid.js"></script>
-   <script>
-      // move to PureScript
-      function toggle(id) {
-         const elem = document.getElementById(id)
-         if (elem.style.visibility == 'hidden')
-            elem.style.visibility = 'visible'
-         else
-            elem.style.visibility = 'hidden'
-      }
-   </script>
 </head>
 <body>
 
@@ -29,6 +20,11 @@
    <div></div>
    <div class="flex-left-align">
       <h3 class="title lowercase">Transparent research outputs</h3>
+      <div>
+         <a href="." class="active-page">Introduction</a> ·
+         <a href="convolution">Matrix convolution</a> ·
+         <a href="moving-average">Moving average</a>
+      </div>
       <p>Some intro blurb to go here.</p>
    </div>
 
@@ -50,21 +46,7 @@
 </div>
 
 <script>
-   fetch('header.html')
-      .then(response => response.text())
-      .then(data => {
-         const header = document.createElement('div')
-         header.innerHTML = data
-
-         const divElements = header.querySelectorAll('div')
-         const grid = document.getElementById('grid')
-         for (let i = Math.min(3, divElements.length - 1); i >= 0; --i) {
-            grid.insertBefore(divElements[i], grid.firstChild)
-         }
-      })
-      .catch(error => console.error('Error loading shared HTML:', error))
-
-   // move to PureScript
+   loadHeader()
    toggle('fig-input')
 </script>
 </body>

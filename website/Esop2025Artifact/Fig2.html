@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Fluid: Data-Linked Visualisations</title>
+   <link href="/css/styles.css" rel="stylesheet" type="text/css">
+   <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
+   <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <script src="fluid.js"></script>
+   <script src="/util.js"></script>
+</head>
+<body class="standalone">
+<div class="grid-container double-size">
+   <div></div>
+   <div></div>
+   <div></div>
+   <div>
+      <h3>Moving Average</h3>
+      <p>Essentially a <b>1-dimensional convolution</b> with a uniform (<b>boxcar</b>) filter. Click the grey toggle to reveal the underlying data set.</p>
+   </div>
+
+   <div></div>
+   <div id="data-pane" class="flex-right-align data-pane">
+      <p>How are the <b>year</b> values used?
+      <br>What about <b>emissions</b>?
+      <br>(Mousing over <b>type</b> will be slow for now)
+      </p>
+      <div id="fig-input"></div>
+   </div>
+   <div>
+      <div onclick="toggle('data-pane')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig">
+         <div class="fig-loading">loading figure(s)</div>
+      </div>
+   </div>
+</div>
+
+<script>
+   toggle('data-pane')
+</script>
+</body>
+</html>

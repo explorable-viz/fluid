@@ -9,7 +9,7 @@ WEBSITE=$1
 shopt -s nullglob
 
 set +x
-PAGES=($(for FILE in src/Website/$WEBSITE/*.purs; do
+PAGES=($(for FILE in website/$WEBSITE/*.purs; do
    basename "$FILE" | sed 's/\.[^.]*$//'
 done | sort -u))
 set -x
@@ -22,15 +22,23 @@ for PAGE in "${PAGES[@]}"; do
 
 WEBSITE_LISP_CASE=$(./script/util/lisp-case.sh "$WEBSITE")
 
-for HTML_FILE in src/Website/$WEBSITE/*.html; do
-   BASENAME="$(basename "$HTML_FILE")"
+set +x
+TO_COPY=()
+for CHILD in website/$WEBSITE/*; do
+   BASENAME="$(basename "$CHILD")"
    if [[ "$BASENAME" =~ ^[a-z] ]]; then
-      cp "$HTML_FILE" "dist/$WEBSITE_LISP_CASE/$BASENAME"
+      TO_COPY+=("$CHILD")
    fi
+done
+set -x
+
+echo "Processing static files:"
+
+for CHILD in "${TO_COPY[@]}"; do
+   BASENAME="$(basename "$CHILD")"
+   cp -rL "$CHILD" "dist/$WEBSITE_LISP_CASE/$BASENAME"
    done
 
 shopt -u nullglob
-
-./script/util/copy-static.sh $WEBSITE_LISP_CASE
-
+cp -r fluid dist/$WEBSITE_LISP_CASE
 echo "Bundled website $WEBSITE"

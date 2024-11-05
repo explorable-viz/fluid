@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+   <link rel="icon" href="/favicon.ico" type="image/x-icon">
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <meta http-equiv="X-UA-Compatible" content="ie=edge">
@@ -8,16 +9,8 @@
    <link href="/css/styles.css" rel="stylesheet" type="text/css">
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
-   <script>
-      // move to PureScript
-      function toggle(id) {
-         const elem = document.getElementById(id)
-         if (elem.style.visibility == 'hidden')
-            elem.style.visibility = 'visible'
-         else
-            elem.style.visibility = 'hidden'
-      }
-   </script>
+   <script src="fluid.js"></script>
+   <script src="/util.js"></script>
 </head>
 <body class="standalone">
 <div class="grid-container double-size" style="grid-template-columns: 10px 53% fit-content(10px) 1fr;
@@ -49,7 +42,6 @@
 
 <script src="fluid.js"></script>
 <script>
-   // move to PureScript
    toggle('data-pane')
 </script>
 </body>

@@ -3,7 +3,7 @@
 # set -x
 set -e
 
-WEBSITES=($(for FILE in src/Website/*.{purs,html}; do
+WEBSITES=($(for FILE in website/*.{purs,html}; do
    basename "$FILE" | sed 's/\.[^.]*$//'
 done | sort -u))
 

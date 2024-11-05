@@ -131,7 +131,7 @@ nav ul li a.active-page {
 .grid-container {
    display: grid;
    width: 100%;
-   grid-template-columns: 10px 47.5% fit-content(10px) 1fr;
+   grid-template-columns: 10px 47.5% 24px 1fr;
 }
 
 .grid-container.double-size {

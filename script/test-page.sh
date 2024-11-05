@@ -8,8 +8,8 @@ WEBSITE=$1
 MODULE=$2
 
 SRC_PATH=${MODULE//./\/}
-if [[ ! -e "src/Website/$SRC_PATH.purs" ]]; then
-  echo "Error: 'Website/$SRC_PATH.purs' not found."
+if [[ ! -e "website/$SRC_PATH.purs" ]]; then
+  echo "Error: 'website/$SRC_PATH.purs' not found."
   exit 1
 fi
 
