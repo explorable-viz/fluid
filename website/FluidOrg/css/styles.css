@@ -37,17 +37,26 @@
 }
 
 .fluid-logo {
-   color: #BCDEC3;
+   /* color: #BCDEC3; */
+   color: green;
    font-family: "OdiseanTech", sans-serif;
    font-size: 24pt;
 }
 
-.glowing, a {
-   transition: all .25s;
+a:link {
+   color: #00695c;
+}
+
+a:visited {
+   color: #6a1b9a;
 }
 
 a:hover {
-   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
+   color: #00897b;
+}
+
+a:active {
+   color: #004d40;
 }
 
 .nowrap {
@@ -87,26 +96,17 @@ p {
 }
 
 h3 {
-   font-family: "GraphikMedium", sans-serif;
-   font-weight: 500;
+   font-size: 18pt;
+   font-weight: bold;
    margin-top: 10pt;
-   margin-bottom: 0;
-   font-size: '24px'
+   margin-bottom: 4pt;
 }
 
 h4 {
+   font-size: 14pt;
+   font-weight: bold;
    margin-top: 10pt;
-   margin-block-start: 1em;
-   margin-bottom: 0;
-}
-
-.glowing {
-   transition-timing-function: ease-out
-}
-
-a {
-   color: inherit;
-   transition-timing-function: ease-out
+   margin-bottom: 3pt
 }
 
 ul {
@@ -122,7 +122,6 @@ li:last-child {
 }
 
 table {
-/*   margin: 4mm;*/
 }
 
 .table-caption {
@@ -161,7 +160,7 @@ nav ul li a {
 }
 
 nav ul li a.active-page {
-   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
+   background-color: #F5F5F5;
 }
 
 .cm-line {
