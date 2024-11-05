@@ -97,6 +97,10 @@ p {
    color: green;
 }
 
+.no-bottom-margin {
+  margin-bottom: 0;
+}
+
 h3 {
    font-size: 18pt;
    font-weight: bold;
@@ -172,6 +176,7 @@ nav ul li a.active-page {
 
 .header-grid-container {
    display: grid;
+   background-color: #f0f0f0;
    width: 100%;
    grid-template-columns: 10px 47.5% 24px 1fr;
 }

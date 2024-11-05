@@ -21,12 +21,9 @@ function loadHeader2 () {
          const header = document.createElement('div')
          header.innerHTML = data
 
-         const divElements = header.querySelectorAll('div')
-         if (divElements.length != 1) {
-            throw "Expected single div element"
-         }
+         const divElement = header.querySelector('div')
          const grid = document.getElementById('grid')
-         grid.insertBefore(divElements[1], grid)
+         grid.parentNode.insertBefore(divElement, grid)
       })
       .catch(error => console.error('Error loading shared HTML:', error))
 }
