@@ -14,9 +14,9 @@ import Bind ((↦))
 fig :: FigSpec
 fig =
    { datasets:
-      [ "likelihoods" ↦ "example/text-viz/likelihoods"
-      , "barData" ↦ "example/text-viz/barchart-table"
-      ]
+        [ "likelihoods" ↦ "example/text-viz/likelihoods"
+        , "barData" ↦ "example/text-viz/barchart-table"
+        ]
    , imports: [ "lib/text-viz" ]
    , file: File "text-viz/explain-barchart"
    , inputs: [ "likelihoods", "barData" ]
