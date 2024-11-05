@@ -1,5 +1,6 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
 
 @font-face {
    font-family: 'OdiseanTech';
@@ -42,6 +43,11 @@
    color: green;
    font-family: "OdiseanTech", sans-serif;
    font-size: 32pt;
+}
+
+.fluid-subtitle {
+  margin-bottom: 0;
+  margin-top: 0;
 }
 
 a:link {
@@ -94,11 +100,6 @@ p {
 }
 
 .title {
-   color: green;
-}
-
-.no-bottom-margin {
-  margin-bottom: 0;
 }
 
 h3 {
@@ -170,7 +171,7 @@ nav ul li a.active-page {
 }
 
 .cm-line {
-   font-family: 'Fira Code';
+   font-family: 'Ubuntu Mono';
    font-size: 8pt;
 }
 
@@ -178,7 +179,7 @@ nav ul li a.active-page {
    display: grid;
    background-color: #f0f0f0;
    width: 100%;
-   grid-template-columns: 10px 47.5% 24px 1fr;
+   grid-template-columns: 35% 24px 1fr;
 }
 
 .grid-container {
@@ -254,6 +255,7 @@ html {
 }
 
 .fig-loading:only-child {
+   color: fuchsia;
    animation: fadeIn 2s ease-in-out infinite alternate;
 }
 
