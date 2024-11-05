@@ -14,6 +14,23 @@ function loadHeader () {
       .catch(error => console.error('Error loading shared HTML:', error))
 }
 
+function loadHeader2 () {
+   fetch('/header2.html')
+      .then(response => response.text())
+      .then(data => {
+         const header = document.createElement('div')
+         header.innerHTML = data
+
+         const divElements = header.querySelectorAll('div')
+         if (divElements.length != 1) {
+            throw "Expected single div element"
+         }
+         const grid = document.getElementById('grid')
+         grid.insertBefore(divElements[1], grid)
+      })
+      .catch(error => console.error('Error loading shared HTML:', error))
+}
+
 function toggle(id) {
    const elem = document.getElementById(id)
    if (elem.style.visibility == 'hidden')
