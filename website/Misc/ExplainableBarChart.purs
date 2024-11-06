@@ -19,7 +19,7 @@ fig =
         , "rightBarData" ↦ "example/text-viz/right-barchart-table"
         ]
    , imports: [ "lib/text-viz" ]
-   , file: File "text-viz/explain-barchart"
+   , file: File "text-viz/figure-spm-4"
    , inputs: [ "likelihoods", "leftBarData", "rightBarData" ]
    }
 

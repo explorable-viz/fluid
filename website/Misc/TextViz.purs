@@ -19,7 +19,7 @@ fig =
         , "likelihoods" ↦ "example/text-viz/likelihoods"
         ]
    , imports: [ "lib/text-viz" ]
-   , file: File "text-viz/explain-table"
+   , file: File "text-viz/table-spm-1"
    , inputs: [ "tableData", "modelProbs", "likelihoods" ]
    }
 
