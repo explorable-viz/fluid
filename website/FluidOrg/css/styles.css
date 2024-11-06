@@ -162,8 +162,11 @@ nav ul li a {
    display: block;
    width: 100%;
    text-align: left;
-   margin-right: 8px;
    text-decoration: none;
+}
+
+nav ul li:not(:last-child) {
+   margin-right: 8px;
 }
 
 nav ul li a.active-page {
@@ -228,7 +231,7 @@ nav ul li a.active-page {
 }
 
 .data-pane {
-   background-color: #F5F5F5;
+   border-right: 1px dotted #CCCCCC;
 }
 
 /* Useful for demos/presentations */
