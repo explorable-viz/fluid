@@ -1,4 +1,4 @@
-let newDataTable offset = map (fun s -> { scenario: s.scenario, bENear: s.bestEstNear + offset, lowNear: s.lowNear, highNear: s.highNear, bEMid: s.bestEstMid, lowMid: s.lowMid, highMid: s.highMid, bELate: s.bestEstLate, lowLate: s.lowLate, highLate: s.highLate}) tableData;
+let newDataTable offset = map (fun s -> { scenario: s.scenario, ["beNear (°C)"]: s.bestEstNear + offset, lowNear: s.lowNear, highNear: s.highNear, ["beMid (°C)"]: s.bestEstMid, lowMid: s.lowMid, highMid: s.highMid, ["beLate (°C)"]: s.bestEstLate, lowLate: s.lowLate, highLate: s.highLate}) tableData;
 let newModel offset = map (fun s -> { model: s.model, probability: s.probability + offset}) modelProbs;
 
 let getByScenario data scenario = match (getByField "scenario" scenario data) as {
@@ -15,7 +15,7 @@ let realTable = newDataTable 0;
 in MultiView {
     explanation :
         LinkedText [ "The low-emissions scenario - ", ssp119.scenario ," - projects a temperature increase of "
-                     , numToStr ssp119.bELate, " by the end of the century."
+                     , numToStr ssp119.["beLate (°C)"], " by the end of the century."
                      , "Under this model, it is ", probAsText (computeProb (ssp119.lowLate, ssp119.highLate) 1.5)
                      , " that global temperature increase will exceed the target of 2°C by the end of the century."
                      , " On the other hand, in a higher emissions scenario, like the intermediate scenario SSP2-4.5, it is "
