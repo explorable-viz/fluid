@@ -38,7 +38,6 @@
 }
 
 .fluid-logo {
-   /* color: #BCDEC3; */
    margin-bottom: 0em;
    color: green;
    font-family: "OdiseanTech", sans-serif;
@@ -173,9 +172,24 @@ nav ul li a.active-page {
    background-color: #F5F5F5;
 }
 
+.cm-editor {
+   background: #2D2D2D;
+   color: #F0F0F0;
+}
+
 .cm-line {
    font-family: 'Ubuntu Mono';
    font-size: 9pt;
+}
+
+.cm-gutter {
+   background-color: #232323;
+}
+
+.cm-gutterElement {
+   font-family: 'Ubuntu Mono';
+   font-size: 9pt;
+   color: #88C0D0;
 }
 
 .header-grid-container {
@@ -203,6 +217,10 @@ nav ul li a.active-page {
    display: flex;
    flex-direction: column;
    align-items: start;
+}
+
+.flex-left-align p {
+   max-width: 800px;
 }
 
 .flex-right-align {
