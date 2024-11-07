@@ -4,7 +4,8 @@ function loadSubHeader (n) {
       .then(data => {
          const header = document.createElement('div')
          header.innerHTML = data
-
+         const listItems = header.querySelectorAll('li')
+         listItems[n].classList.add('active-page')
          const divElements = header.children
          const grid = document.getElementById('grid')
          for (let i = Math.min(3, divElements.length - 1); i >= 0; --i) {
@@ -20,7 +21,6 @@ function loadHeader () {
       .then(data => {
          const header = document.createElement('div')
          header.innerHTML = data
-
          const divElement = header.children[0]
          const grid = document.getElementById('grid')
          grid.parentNode.insertBefore(divElement, grid)

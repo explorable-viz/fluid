@@ -59,7 +59,6 @@ a:visited {
 
 a:hover {
   color: #009688;
-  text-decoration: none;
 }
 
 a:active {
@@ -141,10 +140,6 @@ nav ul li {
 }
 
 nav ul li a {
-   display: block;
-   width: 100%;
-   text-align: left;
-   text-decoration: none;
 }
 
 nav ul li:not(:last-child) {
