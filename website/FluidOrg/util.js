@@ -1,11 +1,11 @@
-function loadHeader () {
-   fetch('/header.html')
+function loadSubHeader (n) {
+   fetch('/sub-header.html')
       .then(response => response.text())
       .then(data => {
          const header = document.createElement('div')
          header.innerHTML = data
 
-         const divElements = header.querySelectorAll('div')
+         const divElements = header.children
          const grid = document.getElementById('grid')
          for (let i = Math.min(3, divElements.length - 1); i >= 0; --i) {
             grid.insertBefore(divElements[i], grid.firstChild)
@@ -14,14 +14,14 @@ function loadHeader () {
       .catch(error => console.error('Error loading shared HTML:', error))
 }
 
-function loadHeader2 () {
-   fetch('/header2.html')
+function loadHeader () {
+   fetch('/header.html')
       .then(response => response.text())
       .then(data => {
          const header = document.createElement('div')
          header.innerHTML = data
 
-         const divElement = header.querySelector('div')
+         const divElement = header.children[0]
          const grid = document.getElementById('grid')
          grid.parentNode.insertBefore(divElement, grid)
       })
