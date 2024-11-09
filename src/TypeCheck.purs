@@ -238,7 +238,8 @@ division (Left x) (Left y) = Left (x / y)
 division (Right x) (Right y) = Right (x / y)
 division _ _ = error "Cannot mix types"
 
---typeCheckTest = typeCheck (Constr unit "Mylist" ((ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit)))) : Nil))
+typeCheckTest = typeCheck (Constr unit "Mylist" ((ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit)))) : Nil))
+
 --typeCheckTest2 = typeCheck ((ListNonEmpty unit (Int unit 1) (End unit)))
 --reductionTest = reduceVarDef (VarDef (PVar "x") (TCons "Int") (Int unit 42))
 
