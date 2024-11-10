@@ -2,7 +2,7 @@ module TypeChecking where
 
 import Prelude
 
-import Data.Array (fromFoldable, singleton, foldl, find)
+import Data.Array (fromFoldable, singleton, foldl, find, elem)
 import Data.List.NonEmpty (NonEmptyList(..), cons)
 import Data.NonEmpty (NonEmpty(..), (:|))
 import Data.Tuple (Tuple(..))
@@ -53,6 +53,14 @@ G |- e <= A
 G |- (e : A) => A
 -}
 
+-- List of accepted types
+acceptedTypes :: Array String
+acceptedTypes = ["Int", "Str", "Float", "Bool"]
+
+isValidType :: Types -> Boolean
+isValidType (TCons ty) = elem ty acceptedTypes
+isValidType (TList ty) = isValidType ty
+
 -- LOOKUP TABLE FOR OPERATOR TYPES
 type OperatorType = {opTy :: Types, argTy :: Array Types}
 operatorTypes :: Var -> Maybe OperatorType
@@ -93,6 +101,7 @@ check :: forall a. Context -> Expr a -> Types -> Boolean
 check g (Int u n) (TCons "Int") = true
 check g (Str u s) (TCons "Str") = true
 check g (Float u n) (TCons "Float") = true
+-- BinaryApp needs to check e1 and e2 are of the same type
 check g (BinaryApp e1 op e2) (TCons "Int") = 
       case check g e1 (TCons "Int") of
             true -> case check g e2 (TCons "Int") of
@@ -105,20 +114,45 @@ check g (BinaryApp e1 op e2) (TCons "Bool") =
                   true -> true
                   _ -> false
             _ -> false
+
+-- Var needs a lookup to see if it's in the context
 check g (Var varName) ty = case find (\(Tuple n t) -> n == varName) g of
-      Just (Tuple _ t) -> show t == show ty
+      Just (Tuple _ t) -> if isValidType t then show t == show ty else false
       Nothing -> false
 
-check g (Let defs expr) expectedType = case defs of
-      NonEmptyList (NonEmpty (VarDef (PVar varName) varType val) Nil) -> case val of
-            -- Only for Integers currently
-            Int _ 20 -> 
-                  -- Add the PVar to the context
-                  let updatedContext = pushVarDef g varName varType
-                  in check updatedContext expr expectedType
-            _ -> false
+-- Let needs to add to the context, the ty' needs to be the same as the val and also ty
+check g (Let varDefs expr) ty = case varDefs of
+      NonEmptyList (NonEmpty (VarDef pattern ty' val) Nil) -> case check g val ty' of
+            true -> 
+                  if isValidType ty && ty == ty' then
+                        case pattern of 
+                              PVar varName ->
+                                    let updatedG = pushVarDef g varName ty'
+                                    in check updatedG expr ty
+                              PListEmpty -> true
+                              -- Only for single-item constructors (no lists yet)
+                              PConstr ctr pattern -> check g val ty'
+                              _ -> false
+                  else
+                        false
+            false -> false
       _ -> false
+
+-- The empty list
+check g (ListEmpty u) (TList _) = true 
 check _ _ _ = false
+
+checkListNonEmpty :: forall a. Types -> Expr a -> Types -> Boolean
+checkListNonEmpty givenTy (ListNonEmpty _ expr rest) expectedTy = 
+      check [] expr givenTy && check [] expr expectedTy && checkRest rest givenTy expectedTy
+checkListNonEmpty _ (ListEmpty _) _ = true
+checkListNonEmpty _ _ _ = false
+
+checkRest :: forall a. ListRest a -> Types -> Types -> Boolean
+checkRest (End _) _ _ = true
+checkRest (Next _ nextElem rest) givenTy expectedTy =
+      check [] nextElem givenTy && check [] nextElem expectedTy && checkRest rest givenTy expectedTy
+
 
 pushVarDef :: Context -> String -> Types -> Context
 pushVarDef g varName varType = g <> singleton (Tuple varName varType)
@@ -134,7 +168,7 @@ synth g (BinaryApp e1 op e2) =
             Just t1 -> case synth g e2 of
                   Nothing -> Nothing
                   Just t2 -> case operatorTypes op of
-                        Just {opTy, argTy} ->  -- Corrected field order
+                        Just {opTy, argTy} -> 
                               if t1 == t2 && allEqual t1 argTy then
                                     Just opTy
                               else
@@ -143,6 +177,22 @@ synth g (BinaryApp e1 op e2) =
 synth g (Var varName) = case find (\(Tuple n t) -> n == varName) g of
       Just (Tuple _ t) -> Just t
       _ -> Nothing
+synth g (Let varDefs expr) = case varDefs of
+      NonEmptyList (NonEmpty (VarDef pattern ty' val) Nil) -> case synth g val of
+            Just valTy -> 
+                  if valTy == ty' then 
+                        case pattern of
+                              PVar varName -> 
+                                    let updatedG = pushVarDef g varName ty'
+                                    in synth updatedG expr
+                              PListEmpty -> Just ty'
+                              PConstr ctr _ -> Just ty'
+                              _ -> Nothing
+                  else
+                        Nothing
+            Nothing -> Nothing
+      _ -> Nothing
+synth g (ListEmpty _) = Just (TList (TCons "unknown"))
 synth _ _ = Nothing
 
 

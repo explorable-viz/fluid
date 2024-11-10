@@ -62,10 +62,9 @@ data Expr a
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
 
 data Types = 
-   TInt Int
-   | TStr String
    -- List of accepted types
-   | TCons String
+   TCons String
+   | TList Types
 
 data ListRest a
    = End a

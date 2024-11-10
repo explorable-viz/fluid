@@ -209,9 +209,8 @@ instance Pretty Pattern where
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
 
 instance Pretty Types where
-   pretty (TInt x) = (text (show x))
-   pretty (TStr x) = text x
    pretty (TCons x) = text x
+   pretty (TList ty) = brackets (pretty ty)
 
 instance Pretty (List (Bind Pattern)) where
    pretty (Cons xp Nil) = text (key xp) .<>. text str.colon .<>. pretty (val xp)
