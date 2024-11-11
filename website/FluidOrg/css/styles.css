@@ -192,11 +192,11 @@ nav ul li.active-page a {
 .grid-container {
    display: grid;
    width: 100%;
-   grid-template-columns: 10px 47.5% 24px 1fr;
+   grid-template-columns: 10px 0 24px 1fr;
 }
 
-.grid-container.data-pane-hidden {
-   grid-template-columns: 10px 0 24px 1fr;
+.grid-container.data-pane-visible {
+   grid-template-columns: 10px 47.5% 24px 1fr;
 }
 
 .grid-container.double-size {
@@ -244,10 +244,11 @@ nav ul li.active-page a {
 
 .data-pane {
    border-right: 1px dotted #CCCCCC;
+   visibility: hidden;
 }
 
-.data-pane-hidden .data-pane {
-   visibility: hidden;
+.data-pane-visible .data-pane {
+   visibility: visible;
 }
 
 /* Useful for demos/presentations */
