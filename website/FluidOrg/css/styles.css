@@ -93,15 +93,12 @@ p {
    text-align: right;
 }
 
-.title {
-   width: 100%;
-}
-
 h2 {
    font-size: 18pt;
 }
 
 h3 {
+   width: 100%;
    font-size: 16pt;
    font-weight: bold;
    margin-top: 10pt;
@@ -193,16 +190,16 @@ nav ul li.active-page a {
 
 .grid-container {
    display: grid;
-   grid-template-columns: 10px 0 var(--toggle-button-width) var(--text-pane-width);
+   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
    justify-content: center;
 }
 
 .grid-container.data-pane-visible {
-   grid-template-columns: 10px 47.5% var(--toggle-button-width) var(--text-pane-width);
+   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
 }
 
 .grid-container.double-size {
-   max-width: 50vw; /* undo effect of transform: scale(2) for layout purposes */
+   max-width: 66.7vw; /* undo effect of transform: scale(1.5) for layout purposes */
 }
 
 .grid-container > :last-child {
@@ -249,10 +246,11 @@ nav ul li.active-page a {
    visibility: visible;
 }
 
-/* Useful for demos/presentations */
+/* Not actually double-size any more.. */
 .double-size {
-   transform: scale(2);
+   transform: scale(1.5);
    transform-origin: top;
+   --text-pane-width: 600px;
 }
 
 body.standalone {
