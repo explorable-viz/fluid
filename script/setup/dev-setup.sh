@@ -4,4 +4,4 @@
 set -e
 
 git config --local include.path "../.gitconfig.include" # install Git aliases
-./script/install-hooks.sh
+./script/setup/install-hooks.sh
