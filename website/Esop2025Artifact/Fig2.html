@@ -12,7 +12,7 @@
    <script src="/util.js"></script>
 </head>
 <body class="standalone">
-<div class="grid-container double-size">
+<div id="grid" class="grid-container double-size">
    <div></div>
    <div></div>
    <div></div>
@@ -30,7 +30,7 @@
       <div id="fig-input"></div>
    </div>
    <div>
-      <div onclick="toggle('data-pane')"><span class="data-pane-button toggle-button">◀▶</span></div>
+      <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig">
@@ -40,7 +40,7 @@
 </div>
 
 <script>
-   toggle('data-pane')
+   toggleDataPane('grid')
 </script>
 </body>
 </html>

@@ -195,6 +195,10 @@ nav ul li.active-page a {
    grid-template-columns: 10px 47.5% 24px 1fr;
 }
 
+.grid-container.data-pane-hidden {
+   grid-template-columns: 10px 0 24px 1fr;
+}
+
 .grid-container.double-size {
    max-width: 50vw; /* undo effect of transform: scale(2) for layout purposes */
 }
@@ -240,6 +244,10 @@ nav ul li.active-page a {
 
 .data-pane {
    border-right: 1px dotted #CCCCCC;
+}
+
+.data-pane-hidden .data-pane {
+   visibility: hidden;
 }
 
 /* Useful for demos/presentations */

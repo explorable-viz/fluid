@@ -13,7 +13,7 @@
    <script src="/util.js"></script>
 </head>
 <body class="standalone">
-<div class="grid-container double-size">
+<div id="grid" class="grid-container double-size">
    <div></div>
    <div></div>
    <div></div>
@@ -25,7 +25,7 @@
    <div></div>
    <div id="fig-input" class="flex-right-align data-pane"></div>
    <div>
-      <div onclick="toggle('fig-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+      <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig">
@@ -45,7 +45,7 @@
 
 <script src="fluid.js"></script>
 <script>
-   toggle('fig-input')
+   toggleDataPane('grid')
 </script>
 </body>
 </html>

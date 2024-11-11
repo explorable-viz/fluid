@@ -12,7 +12,7 @@
    <script src="/util.js"></script>
 </head>
 <body class="standalone">
-<div class="grid-container double-size" style="grid-template-columns: 10px 53% fit-content(10px) 1fr;
+<div id="grid" class="grid-container double-size" style="grid-template-columns: 10px 53% fit-content(10px) 1fr;
 ">
    <div></div>
    <div></div>
@@ -30,7 +30,7 @@
       <p>What about <b>inputs</b>? (Unused rows are hidden.)</p>
    </div>
    <div>
-      <div onclick="toggle('data-pane')"><span class="data-pane-button toggle-button">◀▶</span></div>
+      <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig">
@@ -41,7 +41,7 @@
 
 <script src="fluid.js"></script>
 <script>
-   toggle('data-pane')
+   toggleDataPane('grid')
 </script>
 </body>
 </html>

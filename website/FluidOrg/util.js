@@ -28,10 +28,12 @@ function loadHeader () {
       .catch(error => console.error('Error loading shared HTML:', error))
 }
 
-function toggle(id) {
-   const elem = document.getElementById(id)
-   if (elem.style.visibility == 'hidden')
-      elem.style.visibility = 'visible'
-   else
-      elem.style.visibility = 'hidden'
+function toggleDataPane(gridId) {
+   const grid = document.getElementById(gridId)
+
+   if (grid.classList.contains('data-pane-hidden')) {
+      grid.classList.remove('data-pane-hidden');
+   } else {
+      grid.classList.add('data-pane-hidden');
+   }
 }
