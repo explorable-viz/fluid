@@ -21,11 +21,19 @@
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <p>With traditional print media, the content we consume &mdash; figures, text and other summaries
-      &mdash; is disconnected from the underlying data. With digital media, we can do things differently: we
-      can make visual artifacts that are connected to data and able to reveal those fine-grained relationships
-      to an interested user. This will enable research outputs and other data-driven artifacts to be more
-      transparent, self-explanatory and explorable.</p>
+      <p>With traditional print media, the figures, text and other content we consume are disconnected from
+      the underlying data. With digital media, we can do things differently: we can make visual artifacts that
+      are connected to data and able to reveal those fine-grained relationships to an interested user. This
+      will enable research outputs, news articles and other data-driven artifacts to be more transparent,
+      self-explanatory and explorable. <b>Fluid</b> is a programming language for authoring computational
+      outputs that come with these transparency features built-in.</p>
+
+      <p>When the figures below have finished loading, click on the button in the margin to reveal a view of
+      the underlying data set. Records are shown only if any of their fields are used somewhere in either of
+      the two figures. Any records that are completely unused &mdash; as well as any unused fields of other
+      records, which are greyed out &mdash; are called
+      <emph>inert</emph>. By hiding inert data, the reader is already restricted to a view containing only the
+      relevant data.</p>
    </div>
 
    <div id="fig-input" class="flex-right-align data-pane"></div>
@@ -36,7 +44,12 @@
       <div id="fig">
          <div class="fig-loading">loading figure(s)</div>
       </div>
-      <h4>Source code</h4>
+      <h4>Computational transparency as infrastructure</h4>
+      <p>The key idea of Fluid is that these interactivity features, that allow an interested user to explore
+      the relationships between inputs and outputs, are provided automatically. The Fluid source code for
+      these two figures is shown below. The author of the content expresses a visualisation or other output as
+      a pure function of the input; the runtime automatically keeps track of dependencies and then surfaces
+      that dependency information via UI affordances automatically added to the output.</p>
       <details>
          <summary>non-renewables.fld</summary>
          <div id="codemirror-non-renewables"></div>

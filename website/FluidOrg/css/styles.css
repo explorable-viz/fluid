@@ -118,6 +118,7 @@ h4 {
 
 .sub-header * {
    font-size: 16pt;
+   margin-bottom: 1px;
 }
 
 ul {
