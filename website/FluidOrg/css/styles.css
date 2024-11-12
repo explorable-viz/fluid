@@ -42,7 +42,7 @@
    color: green;
    font-family: "OdiseanTech", sans-serif;
    font-size: 32pt;
-   height: 40px;
+   height: 42px;
 }
 
 .fluid-subtitle {
@@ -182,14 +182,18 @@ nav ul li.active-page a {
 
 .right-border {
    border-right: 0.5px solid lightgray;
-   padding-right: 2px;
+   padding-right: 3px;
+}
+
+.right-border + div {
+   padding-left: 4px
 }
 
 .header-grid-container {
    display: grid;
    background-color: #f0f0f0;
    width: 100%;
-   grid-template-columns: 35% 24px 1fr;
+   grid-template-columns: 25% auto 1fr;
 }
 
 :root {
