@@ -9,35 +9,33 @@
    <link href="css/styles.css" rel="stylesheet" type="text/css">
    <link href="css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
-   <script src="/util.js"></script>
-   <script src="fluid.js"></script>
+   <script src="/shared/util.js"></script>
+   <script>
+      loadHeader()
+      loadSubHeader(0)
+   </script>
 </head>
 <body>
 
 <div id="grid" class="grid-container">
    <div></div>
    <div></div>
-   <div></div>
    <div class="flex-left-align">
-      <h3 class="title lowercase">Transparent research outputs</h3>
-      <div>
-         <a href="." class="active-page">Introduction</a> ·
-         <a href="convolution">Matrix convolution</a> ·
-         <a href="moving-average">Moving average</a>
-      </div>
-      <p>Some intro blurb to go here.</p>
+      <p>In traditional print media, there is a disconnect between the content we consume &mdash; figures,
+      text and other summaries &mdash; and the underlying data. For digital media we can do things
+      differently. We can make visual artifacts that are more “self-explanatory” and able to reveal the
+      relationship to data to an interested user.</p>
    </div>
 
-   <div></div>
    <div id="fig-input" class="flex-right-align data-pane"></div>
    <div>
-      <div onclick="toggle('fig-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+      <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig">
          <div class="fig-loading">loading figure(s)</div>
       </div>
-      <p>Source code:</p>
+      <h4>Source code</h4>
       <details>
          <summary>non-renewables.fld</summary>
          <div id="codemirror-non-renewables"></div>
@@ -45,9 +43,6 @@
    </div>
 </div>
 
-<script>
-   loadHeader()
-   toggle('fig-input')
-</script>
+<script src="fluid.js"></script>
 </body>
 </html>

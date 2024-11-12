@@ -1,12 +1,68 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
 
-.glowing, a {
-   transition: all .25s;
+@font-face {
+   font-family: 'OdiseanTech';
+   src: url('/font/OdiseanTech.woff2') format('woff2');
+   font-weight: normal;
+   font-style: normal;
+}
+
+@font-face {
+   font-family: 'GraphikLight';
+   src: url('/font/GraphikLight.woff2') format('woff2');
+   font-weight: 300;
+   font-style: normal;
+}
+
+@font-face {
+   font-family: 'GraphikLightItalic';
+   src: url('/font/GraphikLightItalic.woff2') format('woff2');
+   font-weight: 300;
+   font-style: italic;
+}
+
+@font-face {
+   font-family: 'GraphikMedium';
+   src: url('/font/GraphikMedium.woff2') format('woff2');
+   font-weight: 500;
+   font-style: normal;
+}
+
+@font-face {
+   font-family: 'GraphikMediumItalic';
+   src: url('/font/GraphikMediumItalic.woff2') format('woff2');
+   font-weight: 500;
+   font-style: italic;
+}
+
+.fluid-logo {
+   margin-bottom: 0em;
+   color: green;
+   font-family: "OdiseanTech", sans-serif;
+   font-size: 32pt;
+}
+
+.fluid-subtitle {
+  margin-bottom: 0;
+  margin-top: 0;
+}
+
+a:link {
+  color: #00796b;
+}
+
+a:visited {
+  color: #004d40;
 }
 
 a:hover {
-   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
+  color: #009688;
+}
+
+a:active {
+  color: #003d33;
 }
 
 .nowrap {
@@ -19,53 +75,46 @@ code {
 
 body {
    font-size: 11pt;
-   font-family: "Roboto", sans-serif;
+   font-family: "GraphikLight", sans-serif;
    font-weight: 300;
    line-height: 1.25;
    padding: 0;
    margin: 0;
-   background-color: #FFFFFF; /* #181818; */
+   background-color: #FFFFFF;
    color: #404040;
    margin-bottom: 10em;
-}bo
+}
 
 p {
    margin-block-start: 0.1em;
-}
-
-.center {
-   height: 100%;
 }
 
 .align-right {
    text-align: right;
 }
 
-.title {
-   color: darkblue;
+h2 {
+   font-size: 18pt;
 }
 
 h3 {
-   font-family: "Roboto", sans-serif;
-   font-weight: 600;
+   width: 100%;
+   font-size: 16pt;
+   font-weight: bold;
    margin-top: 10pt;
-   margin-bottom: 0;
-   font-size: '24px'
+   margin-bottom: 4pt;
+   border-bottom: 0.5px solid lightgray;
 }
 
 h4 {
+   font-size: 16pt;
+   font-weight: bold;
    margin-top: 10pt;
-   margin-block-start: 1em;
-   margin-bottom: 0;
+   margin-bottom: 3pt
 }
 
-.glowing {
-   transition-timing-function: ease-out
-}
-
-a {
-   color: inherit;
-   transition-timing-function: ease-out
+.sub-header * {
+   font-size: 16pt;
 }
 
 ul {
@@ -80,26 +129,8 @@ li:last-child {
    margin-bottom: 0
 }
 
-table {
-/*   margin: 4mm;*/
-}
-
 .table-caption {
    text-align: left;
-}
-
-th {
-   font-size: 11px;
-   text-align: left;
-   border-bottom: 'thin solid';
-}
-
-td {
-   font-size: 11px;
-}
-
-td:nth-child(1) {
-   color: lightgray;
 }
 
 nav ul {
@@ -111,31 +142,64 @@ nav ul li {
    overflow: hidden;
 }
 
-nav ul li a {
-   display: block;
-   width: 100%;
-   text-align: left;
-   padding-right: 8px;
-   text-decoration: none;
+nav ul li:not(:last-child)::after {
+   content: "•";
+   margin-right: 5px;
+   margin-left: 5px;
 }
 
-nav ul li a.active-page {
-   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0;
+nav ul li.active-page a {
+  pointer-events: none;
+  color: inherit;
+  text-decoration: none;
+  cursor: default;
+  font-weight: bold;
+}
+
+.cm-editor {
+   background: #2D2D2D;
+   color: #F0F0F0;
 }
 
 .cm-line {
-   font-family: 'Fira Code';
-   font-size: 8pt;
+   font-family: 'Ubuntu Mono';
+   font-size: 9pt;
+}
+
+.cm-gutter {
+   background-color: #232323;
+}
+
+.cm-gutterElement {
+   font-family: 'Ubuntu Mono';
+   font-size: 9pt;
+   color: #88C0D0;
+}
+
+.header-grid-container {
+   display: grid;
+   background-color: #f0f0f0;
+   width: 100%;
+   grid-template-columns: 35% 24px 1fr;
+}
+
+:root {
+  --toggle-button-width: 24px;
+  --text-pane-width: 800px;
 }
 
 .grid-container {
    display: grid;
-   width: 100%;
-   grid-template-columns: 10px 47.5% 24px 1fr;
+   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
+   justify-content: center;
+}
+
+.grid-container.data-pane-visible {
+   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
 }
 
 .grid-container.double-size {
-   max-width: 50vw; /* undo effect of transform: scale(2) for layout purposes */
+   max-width: 66.7vw; /* undo effect of transform: scale(1.5) for layout purposes */
 }
 
 .grid-container > :last-child {
@@ -174,13 +238,19 @@ nav ul li a.active-page {
 }
 
 .data-pane {
-   background-color: #F5F5F5;
+   border-right: 1px dotted #CCCCCC;
+   visibility: hidden;
 }
 
-/* Useful for demos/presentations */
+.data-pane-visible .data-pane {
+   visibility: visible;
+}
+
+/* Not actually double-size any more.. */
 .double-size {
-   transform: scale(2);
+   transform: scale(1.5);
    transform-origin: top;
+   --text-pane-width: 600px;
 }
 
 body.standalone {
@@ -201,6 +271,7 @@ html {
 }
 
 .fig-loading:only-child {
+   color: fuchsia;
    animation: fadeIn 2s ease-in-out infinite alternate;
 }
 

@@ -11,7 +11,21 @@
 .title-text {
    fill: Black;
    font-size: 9pt;
-   font-family: "Roboto", sans-serif;
+   font-family: "GraphikLight", sans-serif;
+}
+
+.table-view th {
+   font-size: 11px;
+   text-align: left;
+   border-bottom: 'thin solid';
+}
+
+.table-view td {
+   font-size: 11px;
+}
+
+.table-view td:nth-child(1) {
+   color: lightgray;
 }
 
 table {
@@ -113,7 +127,7 @@ td.table-cell {
 
 .matrix-cell-text {
    font-size: 10pt;
-   font-family: "Roboto", sans-serif;
+   font-family: "GraphikLight", sans-serif;
    color: rgb(205, 205, 205)
 }
 

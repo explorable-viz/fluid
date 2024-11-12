@@ -9,13 +9,10 @@
    <link href="/css/styles.css" rel="stylesheet" type="text/css">
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
-   <script src="fluid.js"></script>
-   <script src="/util.js"></script>
+   <script src="/shared/util.js"></script>
 </head>
 <body class="standalone">
-<div class="grid-container double-size" style="grid-template-columns: 10px 53% fit-content(10px) 1fr;
-">
-   <div></div>
+<div id="grid" class="grid-container double-size">
    <div></div>
    <div></div>
    <div>
@@ -25,13 +22,12 @@
       <b>Clicking</b> makes a selection “persistent”.</p>
    </div>
 
-   <div></div>
    <div id="data-pane" class="flex-right-align data-pane">
       <div id="fig-input"></div>
       <p>What about <b>inputs</b>? (Unused rows are hidden.)</p>
    </div>
    <div>
-      <div onclick="toggle('data-pane')"><span class="data-pane-button toggle-button">◀▶</span></div>
+      <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig">
@@ -41,8 +37,5 @@
 </div>
 
 <script src="fluid.js"></script>
-<script>
-   toggle('data-pane')
-</script>
 </body>
 </html>

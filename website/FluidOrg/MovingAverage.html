@@ -9,20 +9,20 @@
    <link href="/css/styles.css" rel="stylesheet" type="text/css">
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
-   <script src="fluid.js"></script>
-   <script src="/util.js"></script>
+   <script src="/shared/util.js"></script>
+   <script>
+      loadHeader()
+      loadSubHeader(2)
+   </script>
 </head>
-<body class="standalone">
-<div class="grid-container">
+<body>
+<div id="grid" class="grid-container">
    <div></div>
    <div></div>
-   <div></div>
-   <div>
-      <h3>Moving Average</h3>
+   <div class="flex-left-align">
       <p>Essentially a <b>1-dimensional convolution</b> with a uniform (<b>boxcar</b>) filter.</p>
    </div>
 
-   <div></div>
    <div id="data-pane" class="flex-right-align data-pane">
       <p>How are the <b>year</b> values used?
       <br>What about <b>emissions</b>?
@@ -30,7 +30,7 @@
       <div id="fig-input"></div>
    </div>
    <div>
-      <div onclick="toggle('data-pane')"><span class="data-pane-button toggle-button">◀▶</span></div>
+      <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
       <div id="fig">
@@ -44,9 +44,6 @@
    </div>
 </div>
 
-<script>
-   loadHeader()
-   toggle('data-pane')
-</script>
+<script src="fluid.js"></script>
 </body>
 </html>
