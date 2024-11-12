@@ -73,7 +73,7 @@ a:active {
 }
 
 code {
-   font-size: 11pt;
+   font-size: 10pt;
 }
 
 body {
@@ -94,6 +94,11 @@ p {
 
 details {
    margin-block-end: 1em;
+}
+
+.highlight {
+   font-family: 'GraphikMedium';
+   color: rgba(13, 0, 255, 0.496);
 }
 
 .align-right {
@@ -126,15 +131,17 @@ h4 {
 }
 
 ul {
-   padding-left: 0
+   padding-left: 0;
+   margin-block-start: 0;
+   margin-block-end: 0;
 }
 
 li {
-   margin-bottom: 1ex
+   margin-bottom: 1ex;
 }
 
 li:last-child {
-   margin-bottom: 0
+   margin-bottom: 0;
 }
 
 .table-caption {
@@ -143,7 +150,6 @@ li:last-child {
 
 nav ul {
    list-style: none;
-   margin-block-start: 0;
 }
 
 nav ul li {
