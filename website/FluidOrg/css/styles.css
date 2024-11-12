@@ -42,7 +42,8 @@
    color: green;
    font-family: "OdiseanTech", sans-serif;
    font-size: 32pt;
-   height: 42px;
+   height: 35px;
+   transform: translateY(-5px);
 }
 
 .fluid-subtitle {
