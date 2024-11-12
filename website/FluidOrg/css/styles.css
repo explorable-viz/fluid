@@ -38,15 +38,17 @@
 }
 
 .fluid-logo {
-   margin-bottom: 0em;
+   margin-bottom: 0;
    color: green;
    font-family: "OdiseanTech", sans-serif;
    font-size: 32pt;
+   height: 40px;
 }
 
 .fluid-subtitle {
-  margin-bottom: 0;
-  margin-top: 0;
+   margin-bottom: 0;
+   margin-top: 0;
+   font-size: 11pt;
 }
 
 a:link {
@@ -135,11 +137,13 @@ li:last-child {
 
 nav ul {
    list-style: none;
+   margin-block-start: 0;
 }
 
 nav ul li {
    float: left;
    overflow: hidden;
+   margin-bottom: 0;
 }
 
 nav ul li:not(:last-child)::after {
