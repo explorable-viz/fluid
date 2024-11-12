@@ -92,6 +92,10 @@ p {
    margin-block-start: 0.1em;
 }
 
+details {
+   margin-block-end: 1em;
+}
+
 .align-right {
    text-align: right;
 }
@@ -118,7 +122,7 @@ h4 {
 
 .sub-header * {
    font-size: 16pt;
-   margin-bottom: 1px;
+   margin-bottom: 4px;
 }
 
 ul {
