@@ -2,8 +2,9 @@ module Test.Util.Puppeteer where
 
 import Prelude
 
-import Control.Promise (Promise, toAffE)
+import Control.Promise (Promise)
 import Data.Foldable (for_)
+import Data.Function.Uncurried as FU
 import Data.String (Pattern(..), contains)
 import Effect (Effect)
 import Effect.Aff (Aff, catchError)
@@ -11,13 +12,18 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Foreign (unsafeFromForeign)
 import Test.Util (testCondition)
+import Toppokki (runPromiseAffE1)
 import Toppokki as T
 import Util (debug)
 
-foreign import _launchFirefox :: Effect (Promise T.Browser)
+foreign import _launch :: forall options. FU.Fn1 options (Effect (Promise T.Browser))
 
-launchFirefox :: Aff T.Browser
-launchFirefox = toAffE _launchFirefox
+launch ::
+   { browser :: String
+   , defaultViewport :: Record T.DefaultViewPort
+   , headless :: Boolean
+   } -> Aff T.Browser
+launch = runPromiseAffE1 _launch
 
 browserTests :: String -> String -> Aff T.Browser -> Array (T.Page -> Aff Unit) -> Aff Unit
 browserTests suffix browserName launchBrowser tests = do
@@ -31,11 +37,23 @@ browserTests suffix browserName launchBrowser tests = do
       test page
    T.close browser
 
+defaultViewport :: Record T.DefaultViewPort
+defaultViewport =
+   { deviceScaleFactor: 1.0
+   , hasTouch: false
+   , height: 800.0
+   , isLandscape: false
+   , isMobile: false
+   , width: 1200.0
+   }
+
 testURL :: String -> Array (T.Page -> Aff Unit) -> Array (Aff Unit)
-testURL suffix tests = do
-   [ browserTests suffix "chrome" (T.launch {}) tests
-   , browserTests suffix "firefox" (launchFirefox) tests
-   ]
+testURL suffix tests =
+   [ testOn "chrome", testOn "firefox" ]
+   where
+   -- Use { headless: false } to run in browser
+   testOn :: String -> Aff Unit
+   testOn browser = browserTests suffix browser (launch { browser, defaultViewport, headless: false }) tests
 
 show' :: T.Selector -> String
 show' (T.Selector sel) = sel
@@ -64,7 +82,7 @@ waitForHidden selector page = do
    log' "-> found"
 
 puppeteerLogging :: Boolean
-puppeteerLogging = false
+puppeteerLogging = true
 
 log' :: forall m. MonadEffect m => String -> m Unit
 log' = log >>> when (debug.logging || puppeteerLogging)
@@ -115,6 +133,6 @@ waitForFigure page id =
 
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
-   let toggle = T.Selector ("div#" <> id <> " + div > div > span.toggle-button")
+   let toggle = T.Selector ("div#" <> id <> " + div span.toggle-button")
    waitFor toggle page
    click toggle page
