@@ -22,21 +22,21 @@
    <div></div>
    <div class="flex-left-align">
       <p>With traditional print media, the figures, text and other content are disconnected from the
-      underlying data. This can mae them hard to understand, evaluate or trust. With digital media, there is
-      an opportunity to make visual artifacts that are connected to data and able to reveal those fine-grained
-      relationships to an interested user. This would enable research outputs, news articles and other
-      data-driven artifacts to be more transparent, self-explanatory and explorable &mdash; a nice goal but
-      one which would be impractical to implement by hand for each output. <span
-      class="highlight">Fluid</span> is a programming language that tracks how data flows through a
-      computation and makes it possible to author computational outputs where various transparency features
-      are built-in.</p>
+      underlying data, making them hard to understand, evaluate and trust. Digital media, such as online
+      papers and articles, present an opportunity to make visual artifacts which are connected to data and
+      able to reveal those fine-grained relationships to an interested user. This would enable research
+      outputs, news articles and other data-driven artifacts to be more transparent, self-explanatory and
+      explorable &mdash; a nice goal but one which would be impractical if we had to implement these features
+      by hand for each output. <span class="highlight">Fluid</span> is a programming language that tracks how
+      data flows through a computation and makes it possible to author computational outputs where various
+      transparency features are built-in.</p>
 
       <p>When the figures below have finished loading, click on the button in the margin to reveal the
       underlying data set. Records are shown only if any of their fields are used somewhere in either of the
-      two figures. Any records that are completely unused &mdash; as well as any unused fields of other
-      records, which are greyed out &mdash; are called
-      <span class="highlight">inert</span>. By hiding inert data, the reader is already restricted to a view
-      containing only the relevant data.</p>
+      two figures. Records that are completely unused &mdash; as well as any unused fields of other records,
+      which are greyed out &mdash; are called
+      <span class="highlight">inert</span>. By hiding inert data, we can present the reader with a view
+      containing only the used data (a useful default setting).</p>
    </div>
 
    <div id="fig-input" class="flex-right-align data-pane"></div>
@@ -52,32 +52,37 @@
       unused data. Try some of the following:</p>
 
       <ul>
-         <li>Mouse over the data in the <code>nuclearCap</code> column. As you move around in that column,
-         various points in the scatter plot are highlighted in blue: these are the outputs which consume the
-         data element under your mouse. For any <code>nuclearCap</code> value your mouse is over, you will
-         notice that 3 other values are also highlighted. These are the <span class="highlight">related
-         inputs</span> for that value: the other inputs needed to compute the highlighted scatter plot point.
-         In this case there are 4 values (one for each country) which are mutually related, because each point
-         in the scatter plot represents a year and the nuclear capacities for that year of 4 countries was
-         added together to compute the x-coordinate of the point.</li>
+         <li>Mouse over the data in the <code>nuclearCap</code> column. Various points in the scatter plot
+         will be highlighted in blue as you move around: these are the outputs which consume the data element
+         under your mouse. For any <code>nuclearCap</code> value of interest you will notice that 3 other
+         values are also highlighted with the blue border. These are the <span class="highlight">related
+         inputs</span>
+         of that value: the other inputs needed to compute the highlighted scatter plot point. The reason we
+         see 4 mutually related values here, one for each country, is that each point in the scatter plot
+         represents a year, and for a given year the nuclear capacities of 4 countries were added together to
+         compute the x-coordinate of the point.</li>
 
          <li>Now try the same with the <code>nuclearOut</code> column. Now the related inputs also include the
          coal, gas and petrol output for that country; that's because these data are also used to compute the
-         bar segments in the stacked bar chart on the left. If you look carefully you'll see the various bar
-         segments being highlighted with a thin border as you move around in that column.</li>
+         <span class="highlight">bar segments</span> in the stacked bar chart on the left. If you look
+         carefully you'll see the various bar segments being highlighted with a thin border as you move around
+         in that column.</li>
 
          <li>Move your mouse to the stacked bar chart. If you're over a bar segment you'll see the data needed
-         to compute the height of the segment. You'll also see that there is always a scatter plot point which
-         is highlighted. This secondary highlighting picks out the <span class="highlight">related
+         to compute the height of the segment. You'll also see that there is always a scatter plot point
+         highlighted on the right. This secondary highlighting picks out the <span class="highlight">related
          outputs</span>: the other outputs that are competing for the same inputs in the sense of having
          overlapping demand. This feature is called <span class="highlight">brushing and linking</span> in
-         data visualisation, but here we can do it in a transparent way.</li>
+         data visualisation, but here we can do it in a transparent way. Related input and related outputs are
+         <span class="highlight">dual</span> notions.</li>
 
-         <li>Click on a bar segment. That turns the highlighting on the bar into a <span
-         class="highlight">persistent selection</span>; the corresponding input selection will turn green.
-         This selection will remain active if you now move your mouse to the related scatter plot point. The
-         transient blue highlighting on the input then shows how the two data dependencies overlap; the two
-         outputs are related because this overlap is non-empty.</li>
+         <li>Now click on one of the bar segments. That turns the highlighting on the bar into a <span
+         class="highlight">persistent selection</span>; the bar will become darker and the corresponding input
+         selection will turn green. This selection will remain active if you now move your mouse over to the
+         scatter plot. With that persistent selection active, you can now interacts with different scatter
+         plot points to see how the data they demand intersects with the data needed for the bar segment. In
+         particular any scatter plot points which are “related” to the selected bar segment will demand data
+         which overlaps with the data needed for the bar segment.</li>
       </ul>
 
       <h4>Computational transparency as infrastructure</h4>
@@ -91,7 +96,9 @@
          <div id="codemirror-non-renewables"></div>
       </details>
       <p>There are several limitations of the current system, and lots of directions in which we plan to
-      things; see <a href="/roadmap">Roadmap</a> for details.</p>
+      things; see <a href="/roadmap">Roadmap</a> for details. One of the advantages of treating transparency
+      as infrastructure is that as the infrastructure gets better, the benefits become available to all users,
+      with no additional effort required on the part of authors.</p>
    </div>
 </div>
 
