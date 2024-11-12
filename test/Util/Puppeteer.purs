@@ -16,13 +16,23 @@ import Toppokki (runPromiseAffE1)
 import Toppokki as T
 import Util (debug)
 
+puppeteerTests
+   :: { logging :: Boolean
+      , headless :: Boolean
+      }
+puppeteerTests =
+   { logging: true
+   , headless: true
+   }
+
 foreign import _launch :: forall options. FU.Fn1 options (Effect (Promise T.Browser))
 
-launch ::
-   { browser :: String
-   , defaultViewport :: Record T.DefaultViewPort
-   , headless :: Boolean
-   } -> Aff T.Browser
+launch
+   :: { browser :: String
+      , defaultViewport :: Record T.DefaultViewPort
+      , headless :: Boolean
+      }
+   -> Aff T.Browser
 launch = runPromiseAffE1 _launch
 
 browserTests :: String -> String -> Aff T.Browser -> Array (T.Page -> Aff Unit) -> Aff Unit
@@ -51,9 +61,11 @@ testURL :: String -> Array (T.Page -> Aff Unit) -> Array (Aff Unit)
 testURL suffix tests =
    [ testOn "chrome", testOn "firefox" ]
    where
-   -- Use { headless: false } to run in browser
    testOn :: String -> Aff Unit
-   testOn browser = browserTests suffix browser (launch { browser, defaultViewport, headless: false }) tests
+   testOn browser = browserTests suffix browser launchBrowser tests
+      where
+      launchBrowser :: Aff T.Browser
+      launchBrowser = launch { browser, defaultViewport, headless: puppeteerTests.headless }
 
 show' :: T.Selector -> String
 show' (T.Selector sel) = sel
@@ -81,11 +93,8 @@ waitForHidden selector page = do
    void $ T.pageWaitForSelector selector { timeout, visible: false } page
    log' "-> found"
 
-puppeteerLogging :: Boolean
-puppeteerLogging = true
-
 log' :: forall m. MonadEffect m => String -> m Unit
-log' = log >>> when (debug.logging || puppeteerLogging)
+log' = log >>> when (debug.logging || puppeteerTests.logging)
 
 goto :: T.URL -> T.Page -> Aff Unit
 goto (T.URL url) page = do
