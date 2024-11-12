@@ -180,6 +180,11 @@ nav ul li.active-page a {
    color: #88C0D0;
 }
 
+.right-border {
+   border-right: 0.5px solid lightgray;
+   padding-right: 2px;
+}
+
 .header-grid-container {
    display: grid;
    background-color: #f0f0f0;
