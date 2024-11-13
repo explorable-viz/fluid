@@ -14,20 +14,40 @@
       loadHeader()
       loadSubHeader()
    </script>
+   <style>
+      .data-pane {
+         max-width: 400px;
+      }
+   </style>
 </head>
 <body>
 <div id="grid" class="grid-container">
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <p>Essentially a <b>1-dimensional convolution</b> with a uniform (<b>boxcar</b>) filter.</p>
+      <p>As our final example, the following chart shows a moving average (or rolling average) plot for
+      methane emissions under projected emissions scenario <a
+      href="https://en.wikipedia.org/wiki/Shared_Socioeconomic_Pathways"></a>SSP5-8.5</a>. A moving average is
+      essentially a <span class="highlight">1-dimensional convolution</span> with a uniform (<a
+      href="https://en.wikipedia.org/wiki/Boxcar_function">boxcar</a>) filter. Toggle the <span
+      class="highlight">data pane</span> in the margin, and the try some of the suggestions there.</p>
    </div>
 
    <div id="data-pane" class="flex-right-align data-pane">
-      <p>How are the <b>year</b> values used?
-      <br>What about <b>emissions</b>?
-      </p>
+      <p>How are the <code>year</code> values used? (Try to avoid moving your mouse over
+      <code>Agriculture</code> &mdash; these nodes currently participate in a lot of dependency edges and so
+      the system is not as responsive as we would like!) You'll see that every year is used in both the
+      original curve and its moving average.
+
       <div id="fig-input"></div>
+
+      <p>Now try <code>emissions</code>. The behaviour here is different: each emissions value contributes to
+      <span class="highlight">one</span> point in the original curve but <span class="highlight">three</span>
+      in the moving average.</p>
+
+      <p>As with the other examples, you can also interact with the output. This confirms that each point in
+      the moving average consumes 3 emissions inputs and 1 year, as one might expect. Interacting with the
+      points in the original curve is a bit laggy at the moment.</p>
    </div>
    <div>
       <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
@@ -36,7 +56,12 @@
       <div id="fig">
          <div class="fig-loading">loading figure(s)</div>
       </div>
-      <p>Source code:</p>
+      <h4>From passive to active reading</h4>
+      <p></p>
+
+      <p>As before, the author or data scientist needs only implement their analysis, and the infrastructure
+      used to execute and host the visualisations provides the interactive transparency features
+      automatically.</p>
       <details>
          <summary>moving-average.fld</summary>
          <div id="codemirror-moving-average"></div>

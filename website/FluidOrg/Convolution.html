@@ -14,6 +14,16 @@
       loadHeader()
       loadSubHeader()
    </script>
+   <style>
+      .when-data-pane-visible {
+         display: none;
+      }
+
+      .grid-container.data-pane-visible p.when-data-pane-visible {
+         display: block;
+         font-size: 9pt;
+      }
+   </style>
 </head>
 <body>
 <div id="grid" class="grid-container">
@@ -53,19 +63,23 @@
       <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
    </div>
    <div class="flex-left-align">
-      <div id="fig">
-         <div class="fig-loading">loading figure(s)</div>
-      </div>
-      <p>In particular, notice how only certain parts of the input are relevant to a given output cell. Can
-      some of the irrelevant inputs be attributed to zeros in the filter? Which ones? Also notice how the
-      demand varies as we approach the edge of the output image: because this implementation of convolution
-      treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant
-      to the computation of output cells near the edge. Interactions like these would be more useful if we
-      could show the actual computation involved for a given element, rather than just the IO relationships,
-      but even this simple extensional view already reveals interesting things about the implementation,
-      without the need for a bespoke visualisation.</p>
+      <div class="flex-bottom-align">
+         <div id="fig">
+            <div class="fig-loading">loading figure(s)</div>
+         </div>
+         <div>
+            <p class="when-data-pane-visible">Notice how only certain parts of the input are relevant to a given
+            output cell. Can some of the irrelevant inputs be attributed to zeros in the filter? Which ones? Also
+            notice how the demand varies as we approach the edge of the output image: because this implementation
+            of convolution treats the input as though it were padded with zeros at the boundary, parts of the
+            filter are irrelevant to the computation of output cells near the edge. Interactions like these would
+            be more useful if we could show the actual computation involved for a given element, rather than just
+            the IO relationships, but even this simple extensional view already reveals interesting things about
+            the implementation, without the need for a bespoke visualisation.</p>
 
-      <p>What happens when you mouse over a corner of the output?</p>
+            <p class="when-data-pane-visible">What happens when you mouse over a corner of the output?</p>
+         </div>
+      </div>
 
       <h4>Relations of cognacy</h4>
 
