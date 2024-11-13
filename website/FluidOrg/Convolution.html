@@ -61,24 +61,26 @@
       demand varies as we approach the edge of the output image: because this implementation of convolution
       treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant
       to the computation of output cells near the edge. Interactions like these would be more useful if we
-      could show the actual computation involved for a given element, but even this simple extensional view
-      already reveals interesting things about the implementation, without the developer having to implement a
-      bespoke visualisation.</p>
+      could show the actual computation involved for a given element, rather than just the IO relationships,
+      but even this simple extensional view already reveals interesting things about the implementation,
+      without the need for a bespoke visualisation.</p>
 
       <p>What happens when you mouse over a corner of the output?</p>
 
-      <p>The <span class="highlight">related inputs</span> we introduced earlier can also be informative. Move
-      your mouse over the <code>inputImage</code>. The highlighted elements in the <code>output</code> are the
-      output elements that consume the data point under your mouse; the blue region in <code>inputImage</code>
-      includes all the <span class="highlight">cognates</span> of that data point, i.e. those inputs that have
-      the highlighted outputs common ancestors in the dependence graph. This is a kind of “light cone”,
-      picking out a causally closed region of the dependence graph.</p>
+      <h4>Relations of cognacy</h4>
+
+      <p>The idea of <span class="highlight">related inputs</span> introduced earlier can also be informative.
+      Try interacting with the <code>inputImage</code> instead. The highlighted <code>output</code> now shows
+      the elements that consume the data point under your mouse; the highlighted <code>inputImage</code>
+      region includes all the <span class="highlight">cognates</span> of that data point: all the inputs that
+      have one of those outputs as an ancestor in the dependence graph. The highlighted region is a kind of
+      “light cone”, picking out a causally closed region of the dependence graph.</p>
 
       <p>The key take away here is that the author can simply express convolution as a pure functional
-      algorithm; the Fluid runtime and visualisation front-end takes care of providing the interactions above.
-      Here the library function <code>convolve</code> implements the convolution algorithm itself, and helper
-      functions <code>zero</code>, <code>wrap</code> and <code></code>extend</code> implement specific
-      policies (“methods”) for dealing with the boundary.</p>
+      algorithm; the Fluid runtime and visualisation front-end takes care of providing the interactions. The
+      library function <code>convolve</code> below implements the convolution algorithm, and helper functions
+      <code>zero</code>, <code>wrap</code> and <code></code>extend</code> implement specific policies
+      (“methods”) for dealing with the boundary.</p>
       <details>
          <summary>convolution.fld</summary>
          <div id="codemirror-convolution"></div>
