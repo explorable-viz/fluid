@@ -92,13 +92,18 @@ p {
    margin-block-start: 0.1em;
 }
 
-details {
+details:not(:has(+ details)) {
    margin-block-end: 1em;
+}
+
+.faq-question {
+   font-family: 'GraphikMedium';
+   color: darkslategrey;
 }
 
 .highlight {
    font-family: 'GraphikMedium';
-   color: rgba(13, 0, 255, 0.496);
+   color: rgb(135, 129, 255);
 }
 
 .align-right {
@@ -131,7 +136,7 @@ h4 {
 }
 
 ul {
-   padding-left: 0;
+   padding-left: 20px;
    margin-block-start: 0;
    margin-block-end: 0;
 }
@@ -149,6 +154,7 @@ li:last-child {
 }
 
 nav ul {
+   padding-left: 0;
    list-style: none;
 }
 

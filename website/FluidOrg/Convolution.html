@@ -20,8 +20,17 @@
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <p>Click the grey toggle to see the <b>input matrix</b> and <b>filter</b>. Mouse over output elements to
-      see how the inputs are being used.</p>
+      <p><span class="highlight">Explorable explanations</span> are interactive web essays that explain
+      challenging technical ideas. How might Fluid help with these? We can use the provenance-tracking
+      infrastructure to allow the user to explore the relationships between the stages of the computational
+      pipeline using interactions like the ones shown earlier.</p>
+
+      <p>Consider the following implementation of <span class="highlight">matrix convolution</span>, an image
+      processing technique which transforms an input matrix using a small matrix called a filter (or a kernel)
+      to apply effects like blurring or embossing. Click the grey toggle to reveal the input matrix and
+      filter; then mouse over output elements (the matrix on right) to see how the inputs are being used.
+      Trying selecting different cells in the output to see how they demand cells in the input array and
+      filter.</p>
    </div>
 
    <div id="fig-input" class="flex-right-align data-pane"></div>
@@ -32,11 +41,15 @@
       <div id="fig">
          <div class="fig-loading">loading figure(s)</div>
       </div>
-      <p>Why do the used inputs not match the shape of the filter?
-      <br>
-      What happens at the <b>edge</b> of the output matrix?
-      <br>
-      What about a <b>corner</b>?</p>
+      <p>In particular, notice how only certain parts of the input are relevant to a given output cell. Can
+      some of the irrelevant inputs be attributed to zeros in the filter? Also notice how the demand varies as
+      we approach the edge of the output image: because this implementation of convolution treats the input as
+      though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation
+      of output cells near the edge. Interactions like these would be more useful if we could show the actual
+      computation involved for a given element, but even this simple extensional view already reveals
+      interesting things about the implementation.</p>
+
+      <p>What about a <b>corner</b>?</p>
       <p style="margin-left: auto; width: fit-content;"><a href="../convolution-wrapped/">continued..</a></p>
       <p>Source code:</p>
       <details>
