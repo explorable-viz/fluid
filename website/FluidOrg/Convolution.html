@@ -51,7 +51,12 @@
 
       <p>What happens when the mouse over a corner of the output?</p>
       <p style="margin-left: auto; width: fit-content;"><a href="../convolution-wrapped/">continued..</a></p>
-      <p>Source code:</p>
+
+      <p>Here the author can simply express convolution as a pure functional algorithm. The Fluid
+      infrastructure takes care of providing the interactions above. Here the library function
+      <code>convolve</code> implements the convolution algorithm itself, and helper functions
+      <code>zero</code>, <code>wrap</code> and
+      <code></code>extend</code> implement specific policies (“methods”) for dealing with the boundary.</p>
       <details>
          <summary>convolution.fld</summary>
          <div id="codemirror-convolution"></div>
