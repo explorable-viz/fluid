@@ -73,7 +73,7 @@ a:active {
 }
 
 code {
-   font-size: 10pt;
+   font-family: 'Ubuntu Mono', monospace;
 }
 
 body {
@@ -102,7 +102,6 @@ details:not(:has(+ details)) {
 }
 
 .highlight {
-   font-family: 'GraphikMedium';
    color: rgb(135, 129, 255);
 }
 
