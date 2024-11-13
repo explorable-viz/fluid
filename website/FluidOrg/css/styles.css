@@ -171,11 +171,12 @@ nav ul li:not(:last-child)::after {
 }
 
 nav ul li.active-page a {
-  pointer-events: none;
-  color: inherit;
-  text-decoration: none;
-  cursor: default;
-  font-weight: bold;
+   pointer-events: none;
+   color: inherit;
+   text-decoration: none;
+   cursor: default;
+   font-weight: bold;
+   color: rgb(135, 129, 255);
 }
 
 .cm-editor {

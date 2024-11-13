@@ -4,6 +4,7 @@ function loadHeader () {
       .then(data => {
          const header = document.createElement('div')
          header.innerHTML = data
+         activateCurrentLink(header)
          const divElement = header.children[0]
          const grid = document.getElementById('grid')
          grid.parentNode.insertBefore(divElement, grid)
