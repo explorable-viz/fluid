@@ -11,8 +11,20 @@ function loadHeader () {
       .catch(error => console.error('Error loading shared HTML:', error))
 }
 
-function eqPaths(path1, path2) {
-  return path1.replace(/\/+$/, '') === path2.replace(/\/+$/, '')
+function eqPaths (path1, path2) {
+   const trailingSlashes = /\/+$/
+   return path1.replace(trailingSlashes, '') === path2.replace(trailingSlashes, '')
+}
+
+function activateCurrentLink (el) {
+   const listItems = el.querySelectorAll('li')
+   const n_ = Array.from(listItems).findIndex(li => {
+      const link = li.querySelector('a')
+      return link && eqPaths(link.getAttribute('href'), window.location.pathname)
+   })
+   if (n_ !== -1) {
+      listItems[n_].classList.add('active-page')
+   }
 }
 
 function loadSubHeader () {
@@ -21,18 +33,7 @@ function loadSubHeader () {
       .then(data => {
          const header = document.createElement('div')
          header.innerHTML = data
-
-         const listItems = header.querySelectorAll('li')
-
-         const n_ = Array.from(listItems).findIndex(li => {
-            const link = li.querySelector('a')
-            return link && eqPaths(link.getAttribute('href'), window.location.pathname)
-         })
-
-         if (n_ !== -1) {
-            listItems[n_].classList.add('active-page')
-         }
-
+         activateCurrentLink(header)
          const divElements = header.children
          const grid = document.getElementById('grid')
          for (let i = Math.min(3, divElements.length - 1); i >= 0; --i) {
