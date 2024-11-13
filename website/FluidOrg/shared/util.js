@@ -15,7 +15,7 @@ function eqPaths(path1, path2) {
   return path1.replace(/\/+$/, '') === path2.replace(/\/+$/, '')
 }
 
-function loadSubHeader (n) {
+function loadSubHeader () {
    fetch('/shared/sub-header.html')
       .then(response => response.text())
       .then(data => {
