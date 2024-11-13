@@ -21,23 +21,29 @@
    <div></div>
    <div class="flex-left-align">
       <p><span class="highlight">Explorable explanations</span> are interactive web essays that explain
-      challenging technical ideas. Examples like this <a
-      href="https://distill.pub/2021/understanding-gnns/">distill.pub article</a> are inspiring but
-      labour-intensive to create, especially for the kind of interactive graphics we might want to use to
-      reveal how an algorithm works. How might Fluid help with this? One possibility is to use the built-in
-      provenance-tracking infrastructure to allow an end-user to explore the relationships between the stages
-      of the computational pipeline, using interactions like the ones shown below. This moves the
-      implementation closer to being a <span class="highlight">self-explanatory artifact</span>, rather than
-      something that needs a separate, custom-crafted explanation. Enriched with integrated documentation,
-      this could become a kind of <span class="highlight">literate execution</span>.</p>
+      challenging technical ideas. This elegant <a
+      href="https://distill.pub/2019/computing-receptive-fields/">distill.pub article</a> explains <span
+      class="highlight">matrix convolution</span> and related ideas like <span class="highlight">receptive
+      field</span>, important notions in CNNs that also have applications in image processing. Educational
+      efforts like these are valuable but labour-intensive, especially for the kind of interactive graphics we
+      might want to show how an algorithm like convolution works.</p>
 
-      <p>Consider the following implementation of <span class="highlight">matrix convolution</span>, an image
-      processing technique which transforms an input matrix using a small matrix called a filter (or kernel)
-      to apply effects like blurring or embossing. Toggle the <span class="highlight">data pane</span> on the
-      left to reveal the <code>inputImage</code> and
+      <p>How might Fluid help with this? For an algorithm like convolution, one possibility is to use Fluid's
+      built-in provenance-tracking infrastructure to allow an end-user to explore the relationships between
+      the stages of the convolution pipeline, using interactions like the ones shown below. This moves a real
+      implementation closer to being a <span class="highlight">self-explanatory artifact</span>, reducing the
+      need for a separate, custom-crafted explanation. Enriched with integrated documentation, “open
+      implementations” like these could form the basis of a kind of <span class="highlight">literate
+      execution</span> and way of authoring explorable explanations in a less labour-intensive way.</p>
+
+      <p>As a simple illustration, consider the following Fluid implementation of convolution. The program
+      takes an input matrix and transforms it using a small matrix called a filter (or kernel); in image
+      processing, this is used to apply effects like blurring or embossing. Toggle the <span
+      class="highlight">data pane</span>
+      on the left to reveal the <code>inputImage</code> and
       <code>filter</code>; then mouse over the <code>output</code> (matrix on right) to see how the inputs are
-      being used. As you will see, different cells in the output demand different cells in the input array and
-      filter.</p>
+      being used. This implementation can automatically reveal how different cells in the output demand
+      different cells in the input array and filter.</p>
    </div>
 
    <div id="fig-input" class="flex-right-align data-pane"></div>
@@ -54,15 +60,16 @@
       treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant
       to the computation of output cells near the edge. Interactions like these would be more useful if we
       could show the actual computation involved for a given element, but even this simple extensional view
-      already reveals interesting things about the implementation.</p>
+      already reveals interesting things about the implementation, without the developer having to implement a
+      bespoke visualisation.</p>
 
       <p>What happens when you mouse over a corner of the output?</p>
 
-      <p>Here the author can simply express convolution as a pure functional algorithm; the Fluid runtime and
-      visualisation front-end takes care of providing the interactions above. Here the library function
-      <code>convolve</code> implements the convolution algorithm itself, and helper functions
-      <code>zero</code>, <code>wrap</code> and <code></code>extend</code> implement specific policies
-      (“methods”) for dealing with the boundary.</p>
+      <p>The key take away here is that the author can simply express convolution as a pure functional
+      algorithm; the Fluid runtime and visualisation front-end takes care of providing the interactions above.
+      Here the library function <code>convolve</code> implements the convolution algorithm itself, and helper
+      functions <code>zero</code>, <code>wrap</code> and <code></code>extend</code> implement specific
+      policies (“methods”) for dealing with the boundary.</p>
       <details>
          <summary>convolution.fld</summary>
          <div id="codemirror-convolution"></div>
