@@ -25,9 +25,9 @@
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <p>As our final example, the following chart shows a moving average (or rolling average) plot for
-      methane emissions under projected emissions scenario <a
-      href="https://en.wikipedia.org/wiki/Shared_Socioeconomic_Pathways"></a>SSP5-8.5</a>. A moving average is
+      <p>As a final example, the following chart shows a moving average (or rolling average) plot for methane
+      emissions under projected emissions scenario <a
+      href="https://en.wikipedia.org/wiki/Shared_Socioeconomic_Pathways">SSP5-8.5</a>. A moving average is
       essentially a <span class="highlight">1-dimensional convolution</span> with a uniform (<a
       href="https://en.wikipedia.org/wiki/Boxcar_function">boxcar</a>) filter. Toggle the <span
       class="highlight">data pane</span> in the margin, and the try some of the suggestions there.</p>
@@ -57,11 +57,17 @@
          <div class="fig-loading">loading figure(s)</div>
       </div>
       <h4>From passive to active reading</h4>
-      <p></p>
+      <p>The vision of the Fluid project is to support comprehension as an <span class="highlight">active
+      inferential activity</span>, where the reader not only formulates hypotheses about what they are looking
+      at, but is able to actively test those hypotheses via the artifact. In the example above, we can
+      conjecture that each moving average point consumes three inputs, representing the “window” for the
+      moving average, and test that by interacting with the output. If we could enrich this with additional
+      (intensional) information revealing that these three numbers were added together and then divided by
+      three, we would be approaching a fully self-explanatory implementation.</p>
 
-      <p>As before, the author or data scientist needs only implement their analysis, and the infrastructure
-      used to execute and host the visualisations provides the interactive transparency features
-      automatically.</p>
+      <p>As before, the infrastructure used to execute and host the visualisations provides these interactive
+      transparency features automatically. The moving average itself is computed as a pure function of data,
+      as shown below:</p>
       <details>
          <summary>moving-average.fld</summary>
          <div id="codemirror-moving-average"></div>
