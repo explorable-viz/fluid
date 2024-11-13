@@ -68,6 +68,11 @@ a:active {
   color: #003d33;
 }
 
+.right-justified {
+   margin-left: auto;
+   width: fit-content;
+}
+
 .nowrap {
    white-space: nowrap;
 }

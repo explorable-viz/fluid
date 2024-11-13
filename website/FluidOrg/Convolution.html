@@ -21,15 +21,22 @@
    <div></div>
    <div class="flex-left-align">
       <p><span class="highlight">Explorable explanations</span> are interactive web essays that explain
-      challenging technical ideas. How might Fluid help with these? We can use the provenance-tracking
-      infrastructure to allow the user to explore the relationships between the stages of the computational
-      pipeline using interactions like the ones shown earlier.</p>
+      challenging technical ideas. Examples like this <a
+      href="https://distill.pub/2021/understanding-gnns/">distill.pub article</a> are inspiring but
+      labour-intensive to create, especially for the kind of interactive graphics we might want to use to
+      reveal how an algorithm works. How might Fluid help with this? One possibility is to use the built-in
+      provenance-tracking infrastructure to allow an end-user to explore the relationships between the stages
+      of the computational pipeline, using interactions like the ones shown below. This moves the
+      implementation closer to being a <span class="highlight">self-explanatory artifact</span>, rather than
+      something that needs a separate, custom-crafted explanation. Enriched with integrated documentation,
+      this could become a kind of <span class="highlight">literate execution</span>.</p>
 
       <p>Consider the following implementation of <span class="highlight">matrix convolution</span>, an image
-      processing technique which transforms an input matrix using a small matrix called a filter (or a kernel)
-      to apply effects like blurring or embossing. Toggling the data pane here to reveal the input matrix and
-      filter; then mouse over output elements (the matrix on right) to see how the inputs are being used.
-      Trying selecting different cells in the output to see how they demand cells in the input array and
+      processing technique which transforms an input matrix using a small matrix called a filter (or kernel)
+      to apply effects like blurring or embossing. Toggle the <span class="highlight">data pane</span> on the
+      left to reveal the <code>inputImage</code> and
+      <code>filter</code>; then mouse over the <code>output</code> (matrix on right) to see how the inputs are
+      being used. As you will see, different cells in the output demand different cells in the input array and
       filter.</p>
    </div>
 
@@ -49,14 +56,13 @@
       could show the actual computation involved for a given element, but even this simple extensional view
       already reveals interesting things about the implementation.</p>
 
-      <p>What happens when the mouse over a corner of the output?</p>
-      <p style="margin-left: auto; width: fit-content;"><a href="../convolution-wrapped/">continued..</a></p>
+      <p>What happens when you mouse over a corner of the output?</p>
 
-      <p>Here the author can simply express convolution as a pure functional algorithm. The Fluid
-      infrastructure takes care of providing the interactions above. Here the library function
+      <p>Here the author can simply express convolution as a pure functional algorithm; the Fluid runtime and
+      visualisation front-end takes care of providing the interactions above. Here the library function
       <code>convolve</code> implements the convolution algorithm itself, and helper functions
-      <code>zero</code>, <code>wrap</code> and
-      <code></code>extend</code> implement specific policies (“methods”) for dealing with the boundary.</p>
+      <code>zero</code>, <code>wrap</code> and <code></code>extend</code> implement specific policies
+      (“methods”) for dealing with the boundary.</p>
       <details>
          <summary>convolution.fld</summary>
          <div id="codemirror-convolution"></div>
@@ -65,6 +71,8 @@
          <summary>emboss.fld</summary>
          <div id="codemirror-emboss"></div>
       </details>
+
+      <p class="right-justified"><a href="../convolution-wrapped/">continued..</a></p>
    </div>
 </div>
 
