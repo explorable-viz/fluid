@@ -287,7 +287,7 @@ nav ul li.active-page a {
    visibility: hidden;
 }
 
-.data-pane p {
+.data-pane :not(table) {
    font-size: 9pt;
 }
 
