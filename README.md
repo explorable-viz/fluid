@@ -17,7 +17,7 @@ Fluid is an experimental programming language which integrates a bidirectional d
 - Clone the repository under Ubuntu WSL
 
 ### Notes
-- Run `script/setup/dev-setup.sh` after cloning repository
+- Run `./script/setup/dev-setup.sh` after cloning repository
 - Avoid having PureScript installed globally
 - `Add Npm Path` is selected in PureScript IDE extension settings
 - VSCode for Windows users:
@@ -37,5 +37,6 @@ Fluid is an experimental programming language which integrates a bidirectional d
 - Open a browser at the served URL (usually `127.0.0.1:8080`)
 
 #### Run Puppeteer tests for page Y of website X
+Rebuild with `puppeteerTests.headless` set to `false` to run in browser. Then:
 - `yarn bundle-website X`
 - `./script/test-page.sh X X.Y`
