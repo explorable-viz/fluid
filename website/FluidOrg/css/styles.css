@@ -94,11 +94,12 @@ body {
 }
 
 p {
-   margin-top: 0.1em;
+   margin-top: 1em;
+   margin-bottom: 1em;
 }
 
-details:not(:has(+ details)) {
-   margin-bottom: 1em;
+p + p {
+   margin-top: 0;
 }
 
 .faq-question {
@@ -130,8 +131,8 @@ h3 {
 h4 {
    font-size: 16pt;
    font-weight: bold;
-   margin-top: 10pt;
-   margin-bottom: 3pt
+   margin-top: 0.4em;
+   margin-bottom: 0;
 }
 
 .sub-header * {
