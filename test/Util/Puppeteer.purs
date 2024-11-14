@@ -22,7 +22,7 @@ puppeteerTests
       }
 puppeteerTests =
    { logging: true
-   , headless: false
+   , headless: true
    }
 
 foreign import _launch :: forall options. FU.Fn1 options (Effect (Promise T.Browser))
