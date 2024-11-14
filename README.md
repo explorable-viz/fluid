@@ -35,3 +35,7 @@ Fluid is an experimental programming language which integrates a bidirectional d
 - `yarn build`
 - `yarn serve fluid-org`
 - Open a browser at the served URL (usually `127.0.0.1:8080`)
+
+#### Run Puppeteer tests for page Y of website X
+- `yarn bundle-website X`
+- `./script/test-page.sh X X.Y`

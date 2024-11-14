@@ -22,7 +22,7 @@ puppeteerTests
       }
 puppeteerTests =
    { logging: true
-   , headless: true
+   , headless: false
    }
 
 foreign import _launch :: forall options. FU.Fn1 options (Effect (Promise T.Browser))
@@ -142,6 +142,6 @@ waitForFigure page id =
 
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page id = do
-   let toggle = T.Selector ("div#" <> id <> " + div span.toggle-button")
+   let toggle = T.Selector ("div#" <> id <> " + div .toggle-button")
    waitFor toggle page
    click toggle page
