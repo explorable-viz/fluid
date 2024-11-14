@@ -8,16 +8,21 @@
    <title>Fluid: Data-Linked Visualisations</title>
    <link href="css/styles.css" rel="stylesheet" type="text/css">
    <link href="css/view-styles.css" rel="stylesheet" type="text/css">
-   <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
    <script>
       loadHeader()
       loadSubHeader()
    </script>
+   <style>
+      .data-pane {
+         max-width: 475px;
+      }
+   </style>
 </head>
 <body>
 
-<div id="grid" class="grid-container">
+<div id="grid" class="grid-container data-pane-hidden">
    <div></div>
    <div></div>
    <div class="flex-left-align">
@@ -39,66 +44,70 @@
       containing only the used data (a useful default setting).</p>
    </div>
 
-   <div id="fig-input" class="flex-right-align data-pane"></div>
-   <div>
-      <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
-   </div>
-   <div class="flex-left-align">
-      <div id="fig">
-         <div class="fig-loading">loading figure(s)</div>
-      </div>
-      <h4>Interactive data provenance</h4>
-      <p>By tracking how data flows through a computation, we can do more than just hide away or grey out
+   <div class="flex-right-align data-pane">
+      <div id="fig-input"></div>
+      <p>Tracking how data flows through a computation allows us to do more than just hide away or grey out
       unused data. Try some of the following:</p>
 
       <ul>
-         <li>Mouse over the data in the <code>nuclearCap</code> column. Various points in the scatter plot
-         will be highlighted in blue as you move around: these are the outputs which consume the data element
-         under your mouse. For any <code>nuclearCap</code> value of interest you will notice that 3 other
-         values are also highlighted with the blue border. These are the <span class="highlight">related
-         inputs</span>
-         of that value: the other inputs needed to compute the highlighted scatter plot point. The reason we
-         see 4 mutually related values here, one for each country, is that each point in the scatter plot
-         represents a year, and for a given year the nuclear capacities of 4 countries were added together to
-         compute the x-coordinate of the point.</li>
+         <li>Mouse over the <code>nuclearCap</code> data. Various points in the scatter plot will be
+         highlighted in blue as you move around: these are the outputs which consume the data element under
+         your mouse.</li>
+
+         <li>As you move over <code>nuclearCap</code> values, notice that three other values are also
+         highlighted with the blue border. These are its <span class="highlight">related inputs</span>: the
+         other inputs needed to compute the scatter plot point. Each point in the scatter plot represents a
+         year; for a given year, the nuclear capacities of 4 countries were added together to compute the
+         x-coordinate, which is why in this case we see 4 mutually related values.</li>
 
          <li>Now try the same with <code>nuclearOut</code>. Now the related inputs also include the coal, gas
          and petrol output for that country. That's because these data are also used to compute the
-         <span class="highlight">bar segments</span> in the bar chart. (If you look carefully you'll see the
-         various bar segments being highlighted with a thin border as you move around in that column.)</li>
-
-         <li>Move your mouse to the stacked bar chart. If you're over a bar segment you'll see the data needed
-         to compute the height of the segment. You'll also see that there is always a scatter plot point
-         highlighted on the right. This secondary highlighting picks out the <span class="highlight">related
-         outputs</span>: the other outputs that are competing for the same inputs in the sense of having
-         overlapping demand. This feature is called <span class="highlight">brushing and linking</span> in
-         data visualisation, but here we can do it in a transparent way. Related input and related outputs are
+         <span class="highlight">bar segments</span> in the bar chart. You'll see the various bar segments
+         being highlighted with a thin border as you move around in that column.</li>
+      </ul>
+   </div>
+   <div onclick="toggleDataPane('grid')">
+      <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig">
+         <div class="fig-loading">
+         loading figure(s) &mdash; see the FAQ for why this is slow!
+         </div>
+      </div>
+      <p>You can also interact with the output. Try the following:</p>
+      <ul>
+         <li>Move your mouse over segments in the bar chart. You'll see the data needed to compute the height
+         of the segment. You'll also see that there is always a scatter plot point highlighted on the right.
+         This secondary highlighting picks out the <span class="highlight">related outputs</span>: the other
+         outputs that make use of the selected data. This feature is called <span class="highlight">brushing
+         and linking</span> in data visualisation, but here we can do it in a transparent way. Related input
+         and related outputs are
          <span class="highlight">dual</span> notions.</li>
 
          <li>Now click on one of the bar segments. That turns the highlighting on the bar into a <span
          class="highlight">persistent selection</span>; the bar will become darker and the corresponding input
-         selection will turn green. This selection will remain active if you now move your mouse over to the
-         scatter plot. With that persistent selection active, you can now interacts with different scatter
-         plot points to see how the data they demand intersects with the data needed for the bar segment. In
-         particular any scatter plot points which are “related” to the selected bar segment will demand data
-         which overlaps with the data needed for the bar segment.</li>
+         selection will turn green. Now move your mouse over to the scatter plot. With the first selection
+         still active, you can now interact with different scatter plot points to see how the data they use
+         intersects with the data for the bar segment. In particular any scatter plot points which are
+         “related” to the selected bar segment will demand data which overlaps with the data needed for the
+         bar segment.</li>
       </ul>
 
       <h4>Computational transparency as infrastructure</h4>
-      <p>The key idea of Fluid is that these interactivity features, that allow an interested user to explore
-      the relationships between inputs and outputs, are provided automatically. The language runtime keeps
-      track of dependencies and then surfaces that dependency information via UI affordances which are
-      automatically added to the output; the author of the content can simply expresses their visualisation or
-      other output as a pure function of the input. The Fluid source code for the figures above is given
-      here.</p>
+      <p>This only scratches the surface of what is possible, but hints at how we might help a reader
+      understand or evaluate a research paper or news article in situ. The key idea is that the transparency
+      features are provided automatically; the author of the content need only express their visualisation as
+      a pure function of the input. As the infrastructure improves, the transparency benefits become available
+      to all users, with no additional effort required on the part of authors. Here is the Fluid code for the
+      figures above:</p>
       <details>
          <summary>non-renewables.fld</summary>
          <div id="codemirror-non-renewables"></div>
       </details>
+
       <p>There are several limitations of the current system, as well as lots of directions in which we plan
-      to move things forward; see <a href="/roadmap">Roadmap</a> for details. One of the advantages of
-      treating transparency as infrastructure is that as the infrastructure improves, the benefits become
-      available to all users, with no additional effort required on the part of authors.</p>
+      to move things forward; see the <a href="/faq">FAQ</a> for details.</p>
    </div>
 </div>
 

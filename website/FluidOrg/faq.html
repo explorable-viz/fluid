@@ -8,7 +8,7 @@
    <title>Fluid: Data-Linked Visualisations</title>
    <link href="css/styles.css" rel="stylesheet" type="text/css">
    <link href="css/view-styles.css" rel="stylesheet" type="text/css">
-   <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
    <script>
       loadHeader()
@@ -16,7 +16,7 @@
 </head>
 <body>
 
-<div id="grid" class="grid-container">
+<div id="grid" class="grid-container data-pane-hidden">
    <div></div>
    <div></div>
    <div class="flex-left-align">
@@ -63,7 +63,10 @@
       dependence graph can take a long time. We hope to be able to make some improvements to the performance
       of the interpreter soon, potentially by <a
       href="https://github.com/explorable-viz/fluid/issues/1008">building the graph imperatively</a>, and are
-      also considering ways to precalculate the dependence graph and bundle it with the visualisation.</p>
+      also considering ways to precalculate the dependence graph and bundle it with the visualisation.
+      Finally, moving to a <a href="https://github.com/explorable-viz/fluid/issues/1162">Single-Page
+      Application model</a> for websites built using Fluid will mean the figure won't be reloaded if you
+      navigate back to the page.</p>
 
       <p><span class="faq-question">Can I get involved as a student or intern?</span> If you are a student at
       University of Bristol, Charles University (Prague) or University of Cambridge you may be able to do a

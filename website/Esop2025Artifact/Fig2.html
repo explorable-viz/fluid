@@ -7,7 +7,7 @@
    <title>Fluid: Data-Linked Visualisations</title>
    <link href="/css/styles.css" rel="stylesheet" type="text/css">
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
-   <script src="https://use.fontawesome.com/1091715d00.js"></script>
+   <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
 </head>
 <body class="standalone">
@@ -19,15 +19,15 @@
       <p>Essentially a <b>1-dimensional convolution</b> with a uniform (<b>boxcar</b>) filter. Click the grey toggle to reveal the underlying data set.</p>
    </div>
 
-   <div id="data-pane" class="flex-right-align data-pane">
+   <div class="flex-right-align data-pane">
       <p>How are the <b>year</b> values used?
       <br>What about <b>emissions</b>?
       <br>(Mousing over <b>type</b> will be slow for now)
       </p>
       <div id="fig-input"></div>
    </div>
-   <div>
-      <div onclick="toggleDataPane('grid')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   <div onclick="toggleDataPane('grid')">
+      <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
    </div>
    <div class="flex-left-align">
       <div id="fig">

@@ -10,6 +10,17 @@ function loadHeader () {
          grid.parentNode.insertBefore(divElement, grid)
       })
       .catch(error => console.error('Error loading shared HTML:', error))
+
+   fetch('/shared/footer.html')
+      .then(response => response.text())
+      .then(data => {
+         const footer = document.createElement('div')
+         footer.innerHTML = data
+         const divElement = footer.children[0]
+         const grid = document.getElementById('grid')
+         grid.parentNode.appendChild(divElement)
+      })
+      .catch(error => console.error('Error loading shared HTML:', error))
 }
 
 function eqPaths (path1, path2) {
@@ -46,10 +57,16 @@ function loadSubHeader () {
 
 function toggleDataPane(gridId) {
    const grid = document.getElementById(gridId)
+   const hidden = grid.classList.contains('data-pane-hidden')
+   const dataPaneButton = document.querySelector('.data-pane-button')
 
-   if (grid.classList.contains('data-pane-visible')) {
-      grid.classList.remove('data-pane-visible');
+   if (hidden) {
+      grid.classList.remove('data-pane-hidden')
+      dataPaneButton.classList.remove('fa-eye-slash')
+      dataPaneButton.classList.add('fa-eye')
    } else {
-      grid.classList.add('data-pane-visible');
+      grid.classList.add('data-pane-hidden')
+      dataPaneButton.classList.remove('fa-eye')
+      dataPaneButton.classList.add('fa-eye-slash')
    }
 }

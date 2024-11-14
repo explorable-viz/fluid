@@ -39,11 +39,12 @@
 
 .fluid-logo {
    margin-bottom: 0;
-   color: rgb(135, 129, 255);
+/*   color: rgb(135, 129, 255);
    font-family: "OdiseanTech", sans-serif;
    font-size: 32pt;
    height: 35px;
    transform: translateY(-5px);
+*/
 }
 
 .fluid-subtitle {
@@ -53,7 +54,7 @@
 }
 
 a:link {
-  color: #00796b;
+  color: darkslategray;
 }
 
 a:visited {
@@ -94,11 +95,12 @@ body {
 }
 
 p {
-   margin-block-start: 0.1em;
+   margin-top: 1em;
+   margin-bottom: 1em;
 }
 
-details:not(:has(+ details)) {
-   margin-block-end: 1em;
+p + p {
+   margin-top: 0;
 }
 
 .faq-question {
@@ -130,8 +132,8 @@ h3 {
 h4 {
    font-size: 16pt;
    font-weight: bold;
-   margin-top: 10pt;
-   margin-bottom: 3pt
+   margin-top: 0.4em;
+   margin-bottom: 0;
 }
 
 .sub-header * {
@@ -141,8 +143,8 @@ h4 {
 
 ul {
    padding-left: 20px;
-   margin-block-start: 0;
-   margin-block-end: 0;
+   margin-top: 0;
+   margin-bottom: 0;
 }
 
 li {
@@ -216,7 +218,17 @@ nav ul li.active-page a {
    display: grid;
    background-color: #f0f0f0;
    width: 100%;
-   grid-template-columns: 25% auto 1fr;
+   grid-template-columns: 35% 1fr;
+   padding-top: 2px;
+   padding-bottom: 2px;
+}
+
+.footer-grid-container {
+   display: grid;
+   background-color: #f0f0f0;
+   width: 100%;
+   grid-template-columns: 35% 1fr;
+   margin-top: 10px;
 }
 
 :root {
@@ -226,12 +238,12 @@ nav ul li.active-page a {
 
 .grid-container {
    display: grid;
-   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
+   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
    justify-content: center;
 }
 
-.grid-container.data-pane-visible {
-   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
+.grid-container.data-pane-hidden {
+   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
 }
 
 .grid-container.double-size {
@@ -280,19 +292,24 @@ nav ul li.active-page a {
 
 .toggle-button:hover {
    color: #999999;
+   cursor: pointer;
 }
 
 .data-pane {
    border-right: 1px dotted #CCCCCC;
+}
+
+.data-pane-hidden .data-pane {
    visibility: hidden;
 }
 
-.data-pane p {
-   font-size: 9pt;
+.data-pane-hidden .data-pane * {
+   display: none;
 }
 
-.data-pane-visible .data-pane {
-   visibility: visible;
+.data-pane :not(table) {
+   font-size: 9pt;
+   margin-right: 3px;
 }
 
 /* Not actually double-size any more.. */
