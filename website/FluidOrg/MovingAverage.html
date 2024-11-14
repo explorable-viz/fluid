@@ -33,7 +33,7 @@
       class="highlight">data pane</span> in the margin, and the try some of the suggestions there.</p>
    </div>
 
-   <div id="data-pane" class="flex-right-align data-pane">
+   <div class="flex-right-align data-pane">
       <p>How are the <code>year</code> values used? (Try to avoid moving your mouse over
       <code>Agriculture</code> &mdash; these nodes currently participate in a lot of dependency edges and so
       the system is not as responsive as we would like!) You'll see that every year is used in both the
@@ -57,13 +57,13 @@
          <div class="fig-loading">loading figure(s)</div>
       </div>
       <h4>From passive to active reading</h4>
-      <p>The vision of the Fluid project is to support comprehension as an <span class="highlight">active
-      inferential activity</span>, where the reader not only formulates hypotheses about what they are looking
-      at, but is able to actively test those hypotheses via the artifact. In the example above, we can
-      conjecture that each moving average point consumes three inputs, representing the “window” for the
-      moving average, and test that by interacting with the output. If we could enrich this with additional
-      (intensional) information revealing that these three numbers were added together and then divided by
-      three, we would be approaching a fully self-explanatory implementation.</p>
+      <p>One of our goals is to support comprehension as an <span class="highlight">active inferential
+      activity</span>, where the reader not only formulates hypotheses about what they are looking at, but is
+      able to actively test those hypotheses via the artifact. In the example above, we can conjecture that
+      each moving average point consumes three inputs, representing the “window” for the moving average, and
+      test that by interacting with the output. If we could enrich this with additional (intensional)
+      information revealing that these three numbers were added together and then divided by three, we would
+      be approaching a fully self-explanatory implementation.</p>
 
       <p>As before, the infrastructure used to execute and host the visualisations provides these interactive
       transparency features automatically. The moving average itself is computed as a pure function of data,
