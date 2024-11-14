@@ -46,10 +46,16 @@ function loadSubHeader () {
 
 function toggleDataPane(gridId) {
    const grid = document.getElementById(gridId)
+   const visible = grid.classList.contains('data-pane-visible')
+   const dataPaneButton = document.querySelector('.data-pane-button')
 
-   if (grid.classList.contains('data-pane-visible')) {
-      grid.classList.remove('data-pane-visible');
+   if (visible) {
+      grid.classList.remove('data-pane-visible')
+      dataPaneButton.classList.remove('fa-eye')
+      dataPaneButton.classList.add('fa-eye-slash')
    } else {
-      grid.classList.add('data-pane-visible');
+      grid.classList.add('data-pane-visible')
+      dataPaneButton.classList.remove('fa-eye-slash')
+      dataPaneButton.classList.add('fa-eye')
    }
 }

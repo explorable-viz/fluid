@@ -39,11 +39,12 @@
 
 .fluid-logo {
    margin-bottom: 0;
-   color: rgb(135, 129, 255);
+/*   color: rgb(135, 129, 255);
    font-family: "OdiseanTech", sans-serif;
    font-size: 32pt;
    height: 35px;
    transform: translateY(-5px);
+*/
 }
 
 .fluid-subtitle {
@@ -53,7 +54,7 @@
 }
 
 a:link {
-  color: #00796b;
+  color: darkslategray;
 }
 
 a:visited {
@@ -218,6 +219,8 @@ nav ul li.active-page a {
    background-color: #f0f0f0;
    width: 100%;
    grid-template-columns: 25% auto 1fr;
+   padding-top: 2px;
+   padding-bottom: 2px;
 }
 
 :root {
@@ -281,6 +284,7 @@ nav ul li.active-page a {
 
 .toggle-button:hover {
    color: #999999;
+   cursor: pointer;
 }
 
 .data-pane {
