@@ -294,6 +294,7 @@ nav ul li.active-page a {
 
 .data-pane :not(table) {
    font-size: 9pt;
+   margin-right: 3px;
 }
 
 .data-pane-visible .data-pane {
