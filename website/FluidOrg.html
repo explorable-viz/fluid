@@ -58,7 +58,7 @@
          highlighted with the blue border. These are its <span class="highlight">related inputs</span>: the
          other inputs needed to compute the scatter plot point. Each point in the scatter plot represents a
          year; for a given year, the nuclear capacities of 4 countries were added together to compute the
-         x-coordinate, which is why we see 4 mutually related values.</li>
+         x-coordinate, which is why in this case we see 4 mutually related values.</li>
 
          <li>Now try the same with <code>nuclearOut</code>. Now the related inputs also include the coal, gas
          and petrol output for that country. That's because these data are also used to compute the
@@ -76,7 +76,7 @@
          </div>
       </div>
       <h4>Interactive data provenance</h4>
-      <p></p>You can also interact with the output instead:</p>
+      <p>You can also interact with the output. Try the following:</p>
       <ul>
          <li>Move your mouse over segments in the bar chart. You'll see the data needed to compute the height
          of the segment. You'll also see that there is always a scatter plot point highlighted on the right.
@@ -96,20 +96,20 @@
       </ul>
 
       <h4>Computational transparency as infrastructure</h4>
-      <p>The key idea of Fluid is that these interactivity features, that allow an interested user to explore
-      the relationships between inputs and outputs, are provided automatically. The language runtime keeps
-      track of dependencies and then surfaces that dependency information via UI affordances which are
-      automatically added to the output; the author of the content can simply expresses their visualisation or
-      other output as a pure function of the input. The Fluid source code for the figures above is given
-      here.</p>
+      <p><p>This only scratches the surface of what is possible, but hopefully hints at how linking outputs to
+      inputs might help a reader understand or evaluate a research paper or news article “in situ”. The key
+      idea is that these transparency features are provided automatically. The language runtime keeps track of
+      dependencies and then make that information available to the user via additional interactions. One
+      advantage of this is that as the infrastructure improves, the transparency benefits become available to
+      all users, with no additional effort required on the part of authors. The author of the content need
+      only expresses their visualisation (or other output) as a pure function of the input. The Fluid source
+      code for the figures above is given here:</p>
       <details>
          <summary>non-renewables.fld</summary>
          <div id="codemirror-non-renewables"></div>
       </details>
       <p>There are several limitations of the current system, as well as lots of directions in which we plan
-      to move things forward; see <a href="/roadmap">Roadmap</a> for details. One of the advantages of
-      treating transparency as infrastructure is that as the infrastructure improves, the benefits become
-      available to all users, with no additional effort required on the part of authors.</p>
+      to move things forward; see the <a href="/faq">FAQ</a> for details.</p>
    </div>
 </div>
 
