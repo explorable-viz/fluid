@@ -16,17 +16,16 @@
    </script>
    <style>
       .when-data-pane-visible {
-         display: none;
+         font-size: 9pt;
       }
 
-      .grid-container.data-pane-visible p.when-data-pane-visible {
-         display: block;
-         font-size: 9pt;
+      .grid-container.data-pane-hidden .when-data-pane-visible {
+         display: none;
       }
    </style>
 </head>
 <body>
-<div id="grid" class="grid-container">
+<div id="grid" class="grid-container data-pane-hidden">
    <div></div>
    <div></div>
    <div class="flex-left-align">
@@ -93,7 +92,7 @@
       <p>The key take away here is that the author can simply express convolution as a pure functional
       algorithm; the Fluid runtime and visualisation front-end takes care of providing the interactions. The
       library function <code>convolve</code> below implements the convolution algorithm, and helper functions
-      <code>zero</code>, <code>wrap</code> and <code></code>extend</code> implement specific policies
+      <code>zero</code>, <code>wrap</code> and <code>extend</code> implement specific policies
       (“methods”) for dealing with the boundary.</p>
       <details>
          <summary>convolution.fld</summary>
