@@ -5,6 +5,7 @@ You can edit this file as you like.
 { name = ""
 , dependencies =
   [ "aff"
+  , "aff-promise"
   , "affjax"
   , "affjax-web"
   , "arrays"
@@ -16,8 +17,13 @@ You can edit this file as you like.
   , "either"
   , "exceptions"
   , "exists"
+  , "filterable"
   , "foldable-traversable"
+  , "foreign"
   , "foreign-object"
+  , "functions"
+  , "functors"
+  , "graphs"
   , "http-methods"
   , "identity"
   , "integers"
@@ -31,10 +37,10 @@ You can edit this file as you like.
   , "partial"
   , "prelude"
   , "profunctor"
-  , "spec"
   , "st"
   , "strings"
   , "tailrec"
+  , "toppokki"
   , "transformers"
   , "tuples"
   , "unfoldable"
@@ -43,6 +49,6 @@ You can edit this file as you like.
   , "web-events"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs", "example/**/*.purs" ]
+, sources = [ "src/**/*.purs", "test/**/*.purs", "website/**/*.purs" ]
 , backend = "purs-backend-es build"
 }

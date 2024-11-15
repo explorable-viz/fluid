@@ -77,10 +77,9 @@ let groupRight sep gs =
 -- Float -> Float
 let tickEvery n =
    let m = floor (logBase 10 n) in
-   match n <= 2 * 10 ** m as {
-      True -> 2 * 10 ** (m - 1);
-      False -> 10 ** m
-   };
+   if n <= 2 * 10 ** m
+   then 2 * 10 ** (m - 1)
+   else 10 ** m;
 
 let axisStrokeWidth = 0.5;
     axisColour = "black";

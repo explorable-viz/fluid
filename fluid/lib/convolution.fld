@@ -1,7 +1,6 @@
 let zero n = const n;
     wrap n n_max = ((n - 1) `mod` n_max) + 1;
     extend n = min (max n 1);
-    nth2 i j xss = nth (j - 1) (nth (i - 1) xss);
 
 let convolve image kernel method =
     let ((m, n), (i, j)) = (dims image, dims kernel);

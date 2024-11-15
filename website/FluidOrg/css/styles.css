@@ -1,0 +1,343 @@
+@charset "UTF-8";
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
+
+@font-face {
+   font-family: 'OdiseanTech';
+   src: url('/font/OdiseanTech.woff2') format('woff2');
+   font-weight: normal;
+   font-style: normal;
+}
+
+@font-face {
+   font-family: 'GraphikLight';
+   src: url('/font/GraphikLight.woff2') format('woff2');
+   font-weight: 300;
+   font-style: normal;
+}
+
+@font-face {
+   font-family: 'GraphikLightItalic';
+   src: url('/font/GraphikLightItalic.woff2') format('woff2');
+   font-weight: 300;
+   font-style: italic;
+}
+
+@font-face {
+   font-family: 'GraphikMedium';
+   src: url('/font/GraphikMedium.woff2') format('woff2');
+   font-weight: 500;
+   font-style: normal;
+}
+
+@font-face {
+   font-family: 'GraphikMediumItalic';
+   src: url('/font/GraphikMediumItalic.woff2') format('woff2');
+   font-weight: 500;
+   font-style: italic;
+}
+
+.fluid-logo {
+   margin-bottom: 0;
+}
+
+.fluid-subtitle {
+   margin-bottom: 0;
+   margin-top: 0;
+   font-size: 12pt;
+}
+
+a:link {
+  color: darkslategray;
+}
+
+a:visited {
+  color: #004d40;
+}
+
+a:hover {
+  color: #009688;
+}
+
+a:active {
+  color: #003d33;
+}
+
+.right-justified {
+   margin-left: auto;
+   width: fit-content;
+}
+
+.nowrap {
+   white-space: nowrap;
+}
+
+code {
+   font-family: 'Ubuntu Mono', monospace;
+}
+
+body {
+   font-size: 12pt;
+   font-family: "GraphikLight", sans-serif;
+   font-weight: 300;
+   line-height: 1.25;
+   padding: 0;
+   margin: 0;
+   background-color: #FFFFFF;
+   color: #404040;
+   margin-bottom: 10em;
+}
+
+p {
+   margin-top: 1em;
+   margin-bottom: 1em;
+}
+
+p + p {
+   margin-top: 0;
+}
+
+.faq-question {
+   font-family: 'GraphikMedium';
+   color: darkslategrey;
+}
+
+.highlight {
+   font-family: 'GraphikMedium';
+}
+
+.align-right {
+   text-align: right;
+}
+
+h2 {
+   font-size: 18pt;
+}
+
+h3 {
+   width: 100%;
+   font-size: 16pt;
+   font-weight: bold;
+   margin-top: 10pt;
+   margin-bottom: 4pt;
+   border-bottom: 0.5px solid lightgray;
+}
+
+h4 {
+   font-size: 16pt;
+   font-weight: bold;
+   margin-top: 0.4em;
+   margin-bottom: 0;
+}
+
+.sub-header * {
+   font-size: 16pt;
+   margin-bottom: 4px;
+}
+
+ul {
+   padding-left: 20px;
+   margin-top: 0;
+   margin-bottom: 0;
+}
+
+li {
+   margin-bottom: 1ex;
+}
+
+li:last-child {
+   margin-bottom: 0;
+}
+
+.table-caption {
+   text-align: left;
+}
+
+nav ul {
+   padding-left: 0;
+   list-style: none;
+}
+
+nav ul li {
+   float: left;
+   overflow: hidden;
+   margin-bottom: 0;
+}
+
+nav ul li:not(:last-child)::after {
+   content: "•";
+   margin-right: 5px;
+   margin-left: 5px;
+}
+
+nav ul li.active-page a {
+   pointer-events: none;
+   color: inherit;
+   text-decoration: none;
+   cursor: default;
+   font-weight: bold;
+   color: rgb(135, 129, 255);
+}
+
+.cm-editor {
+   background: #2D2D2D;
+   color: #F0F0F0;
+}
+
+.cm-line {
+   font-family: 'Ubuntu Mono';
+   font-size: 10pt;
+}
+
+.cm-gutter {
+   background-color: #232323;
+}
+
+.cm-gutterElement {
+   font-family: 'Ubuntu Mono';
+   font-size: 10pt;
+   color: #88C0D0;
+}
+
+.right-border {
+   border-right: 0.5px solid lightgray;
+   padding-right: 6px;
+}
+
+.right-border + div {
+   padding-left: 4px
+}
+
+.header-grid-container {
+   display: grid;
+   background-color: #f0f0f0;
+   width: 100%;
+   grid-template-columns: 35% 1fr;
+   padding-top: 7px;
+   padding-bottom: 7px;
+}
+
+.footer-grid-container {
+   display: grid;
+   background-color: #f0f0f0;
+   width: 100%;
+   grid-template-columns: 35% 1fr;
+   margin-top: 10px;
+}
+
+:root {
+  --toggle-button-width: 24px;
+  --text-pane-width: 800px;
+}
+
+.grid-container {
+   display: grid;
+   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
+   justify-content: center;
+}
+
+.grid-container.data-pane-hidden {
+   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
+}
+
+.grid-container.double-size {
+   max-width: 66.7vw; /* undo effect of transform: scale(1.5) for layout purposes */
+}
+
+.grid-container > :last-child {
+  padding-right: 10px;
+}
+
+.flex-bottom-align {
+   display: flex;
+   flex-direction: row;
+}
+
+.flex-bottom-align:first-child {
+   margin-top: auto;
+}
+
+.flex-left-align {
+   display: flex;
+   flex-direction: column;
+   align-items: start;
+}
+
+.flex-right-align {
+   display: flex;
+   flex-direction: column;
+   align-items: flex-end;
+}
+
+.flex-bottom-align {
+   display: flex;
+   flex-direction: row;
+   align-items: flex-end;
+}
+
+.data-pane-button {
+   font-size: 10pt;
+}
+
+.toggle-button {
+   color: #CCCCCC;
+   user-select: none;
+}
+
+.toggle-button:hover {
+   color: #999999;
+   cursor: pointer;
+}
+
+.data-pane {
+   border-right: 1px dotted #CCCCCC;
+}
+
+.data-pane-hidden .data-pane {
+   visibility: hidden;
+}
+
+.data-pane-hidden .data-pane * {
+   display: none;
+}
+
+.data-pane * {
+   font-size: 10pt;
+}
+
+.data-pane p {
+   margin-right: 3px;
+}
+
+/* Not actually double-size any more.. */
+.double-size {
+   transform: scale(1.5);
+   transform-origin: top;
+   --text-pane-width: 600px;
+}
+
+body.standalone {
+   height: 100%;
+   display: grid;
+   justify-items: center;
+   align-items: start;
+}
+
+/* Needed for contained height specifications to work */
+html {
+   height: 100%;
+}
+
+@keyframes fadeIn {
+   from { opacity: 0; }
+   to { opacity: 1; }
+}
+
+.fig-loading:only-child {
+   color: fuchsia;
+   animation: fadeIn 2s ease-in-out infinite alternate;
+}
+
+.fig-loading:not(:only-child) {
+   display: none;
+}

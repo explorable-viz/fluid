@@ -8,62 +8,59 @@ import Data.List as L
 import Data.Map (Map, lookup)
 import Data.Map as M
 import Data.Maybe (maybe)
-import Data.Set (Set, empty, insert, singleton)
+import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, inEdges, inEdges', op, outN, sinks, vertices)
-import Graph.GraphWriter (WithGraph, extend, runWithGraph)
-import Util (type (×), (×), (∈), (\\))
-import Val (Val)
+import Graph (class Graph, Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources, vertices)
+import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
+import Test.Util.Debug (checking)
+import Util (type (×), singleton, validateWhen, (×), (⊆), (∩))
+import Util.Set ((∈))
+
+type BwdConfig =
+   { visited :: Set Vertex
+   , αs :: List Vertex
+   , pending :: List HyperEdge
+   }
+
+bwdSlice :: forall g. Graph g => Set Vertex × g -> g
+bwdSlice (αs × g) = fst $
+   αs
+      -- No outputsAreSources analog of inputAreSinks; we do however need to restrict to sources (see #818).
+      # validateWhen checking.outputsInGraph "inputs are sinks" (_ ⊆ vertices g)
+      # (_ ∩ sources g)
+      # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
+   where
+   go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
+   go { αs: Nil, pending: Nil } = pure $ Done unit
+   go { visited, αs: Nil, pending: (α × βs) : pending } = do
+      if α ∈ visited then
+         pure $ Loop { visited, αs: Nil, pending }
+      else do
+         extend α βs
+         pure $ Loop { visited: insert α visited, αs: Nil, pending }
+   go { visited, αs: α : αs', pending } = do
+      let βs = outN g α
+      pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: (α × βs) : pending }
 
 type PendingVertices = Map Vertex (Set Vertex)
+type FwdConfig =
+   { pending :: PendingVertices
+   , es :: List Edge
+   }
 
--- | Backward slicing (◁_G)
-bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs0)
+fwdSlice :: forall g. Graph g => Set Vertex × g -> g
+fwdSlice (αs × g) = fst $
+   αs
+      # validateWhen checking.inputsAreSinks "inputs are sinks" (_ ⊆ sinks g)
+      # runWithGraph_spy (tailRecM go { pending: M.empty, es: inEdges g αs })
    where
-   go :: Set Vertex × List Vertex -> WithGraph (Step _ Unit)
-   go (_ × Nil) = pure $ Done unit
-   go (visited × (α : αs)) =
-      if α ∈ visited then
-         pure $ Loop (visited × αs)
-      else do
-         let βs = outN g0 α
+   go :: FwdConfig -> WithGraph (Step FwdConfig Unit)
+   go { es: Nil } = pure $ Done unit
+   go { pending, es: (α × β) : es } =
+      if βs == outN g α then do
          extend α βs
-         pure $ Loop ((visited # insert α) × (L.fromFoldable βs <> αs))
-
--- | De Morgan dual of backward slicing (◁_G)° ≡ Forward slicing on the opposite graph (▷_{G_op})
-bwdSliceDualAsFwdOp :: forall g. Graph g => Set Vertex -> g -> g
-bwdSliceDualAsFwdOp αs0 g0 = fwdSlice αs0 (op g0)
-
--- | De Morgan dual of Backward slicing ◁_G° - missing final negation
-bwdSliceDual :: forall g. Graph g => Val Vertex -> Set Vertex -> g -> g
-bwdSliceDual vα αs0 g0 = bwdSlice (vertices vα \\ αs0) g0
-
--- | Forward slicing (▷_G)
-fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
-   where
-   go :: PendingVertices × List Edge -> WithGraph (Step _ PendingVertices)
-   go (h × Nil) = pure $ Done h
-   go (h × ((α × β) : es)) = do
-      let βs = maybe (singleton β) (insert β) (lookup α h)
-      if βs == outN g0 α then do
-         extend α βs
-         pure $ Loop (M.delete α h × (inEdges' g0 α <> es))
+         pure $ Loop { pending: M.delete α pending, es: inEdges' g α <> es }
       else
-         pure $ Loop (M.insert α βs h × es)
-
--- | Forward slicing (▷_G) ≡ De Morgan dual of backward slicing on the opposite graph (◁_{G_op})°
--- Also doesn't do the final negation..
-fwdSliceAsDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceAsDeMorgan αs0 g0 =
-   bwdSlice (sinks g0 \\ αs0) (op g0)
-
--- | De Morgan dual of forward slicing (▷_G)°
--- Doesn't do the final negation..
-fwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceDual αs0 g0 = fwdSlice (sinks g0 \\ αs0) g0
-
--- | De Morgan dual of forward slicing (▷_G)° ≡ Backward slicing on the opposite graph (◁_{G_op})
-fwdSliceDualAsBwdOp :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceDualAsBwdOp αs0 g0 = bwdSlice αs0 (op g0)
+         pure $ Loop { pending: M.insert α βs pending, es }
+      where
+      βs = maybe (singleton β) (insert β) (lookup α pending)

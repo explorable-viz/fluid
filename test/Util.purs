@@ -1,38 +1,34 @@
 module Test.Util where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, compare)
 
-import Control.Monad.Error.Class (class MonadThrow)
+import App.Util (Selector, unselected, getPersistent)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
-import Data.List (elem)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
-import Data.Set (subset)
 import Data.String (null)
-import DataType (dataTypeFor, typeName)
-import Desug (desugGC)
+import Desug (Desugaring, desugGC)
+import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
-import EvalGraph (GraphConfig, graphGC)
-import Expr (ProgCxt)
-import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
-import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSliceDualAsFwdOp, fwdSliceDualAsBwdOp, fwdSliceAsDeMorgan, bwdSliceDual, fwdSliceDual) as G
-import Lattice (Raw, 𝔹, botOf, erase, topOf)
+import EvalGraph (GraphConfig, graphEval, graphGC, withOp)
+import GaloisConnection (GaloisConnection(..), dual)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
 import Module (File, initialConfig, open, parse)
 import Parse (program)
-import Pretty (class Pretty, PrettyShow(..), prettyP)
+import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
+import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
-import Test.Spec.Assertions (fail)
-import Util (type (×), (×), AffError, EffectError, successful)
-import Val (class Ann, Env, Val(..))
+import Test.Util.Debug (testing, tracing)
+import Util (type (×), AffError, EffectError, Thunk, Endo, check, checkSatisfies, debug, spyWhen, throw, (×))
+import Val (class Ann, EnvExpr(..), Val)
 
-type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
+type TestSuite = Array (String × Aff Unit)
 
 type SelectionSpec =
    { δv :: Selector Val
@@ -40,131 +36,137 @@ type SelectionSpec =
    , bwd_expect :: String
    }
 
-logging :: Boolean
-logging = false
-
-logAs :: forall m. MonadEffect m => String -> String -> m Unit
-logAs tag s = log $ tag <> ": " <> s
-
-test ∷ forall m. File -> ProgCxt Unit -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
-test file progCxt spec (n × benchmarking) = do
-   gconfig <- initialConfig progCxt
+test ∷ forall m. File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test file progCxt spec (n × _) = do
    s <- open file
+   { e } :: Desugaring Unit <- desugGC s
+   when debug.logging $ log ("**** initialConfig")
+   gconfig <- initialConfig e progCxt
    testPretty s
-   _ × row_accum <- runWriterT
-      ( replicateM n $ do
-           testTrace s gconfig.γ spec
-           testGraph s gconfig spec benchmarking
-      )
-   pure $ row_accum `divRow` n
+   _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
+   pure $ res `divRow` n
+
+traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
+traceBenchmark name = benchmark ("T" <> "-" <> name)
+
+graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
+graphBenchmark name = benchmark ("G" <> "-" <> name)
+
+benchNames
+   :: { eval :: String
+      , bwd :: String
+      , demBy :: String
+      , fwd :: String
+      , demBy_G_direct :: String
+      , demBy_G_suff_dual :: String
+      }
+
+benchNames =
+   { eval: "Eval"
+   , bwd: "Demands"
+   , demBy: "DemBy"
+   , fwd: "Suffices" -- needed?
+   , demBy_G_direct: "DemBy-Dir"
+   , demBy_G_suff_dual: "DemBy-Suff"
+   }
+
+testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
+testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
+   let γ = erase gconfig.γ
+   { gc: GC desug, e } <- desugGC s
+   traced@{ gc: GC evalT, v } <- traceBenchmark benchNames.eval \_ ->
+      traceGC (EnvExpr γ e)
+   graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
+      graphEval gconfig e
+   let out0 = (δv (const unselected <$> v)) <#> getPersistent
+   EnvExpr in_γ in_e <- do
+      let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
+      traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
+
+   let in_s = desug.bwd in_e
+   out0' <- do
+      let in_e' = desug.fwd in_s
+      unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
+      traceBenchmark benchNames.fwd \_ -> pure (evalT.fwd (EnvExpr in_γ in_e'))
+   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out0')
+
+   let GC dualed = dual traced.gc
+   out0'' <- do
+      let in0'' = desug.fwd in_s
+      traceBenchmark benchNames.demBy \_ -> pure (dualed.bwd (EnvExpr in_γ in0''))
+   unwrap >>> (_ >= out0'') # checkSatisfies "Force evaluation of DemBy" (PrettyShow out0'')
+
+   let in_top = EnvExpr (topOf in_γ) (topOf in_e)
+   let out_top = evalT.fwd in_top
+   when testing.fwdPreservesTop $
+      unwrap >>> (_ == topOf v) # checkSatisfies "trace fwd preserves ⊤" (PrettyShow out_top)
+
+   -- empty string somewhat hacky encoding for "don't care"
+   unless (null bwd_expect) $
+      checkPretty ("bwd_expect") bwd_expect in_s
+   unless (null fwd_expect) do
+      let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
+      checkPretty ("fwd_expect") fwd_expect (report out0')
+
+   recordGraphSize g
+   let GC evalG = graphGC graphed
+
+   in0 <- graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd out0)
+   -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
+   -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
+   checkEq "Graph bwd" "Trace bwd" ((\(EnvExpr _ e') -> e') in0) in_e
+   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd in0)
+   checkEq ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
+
+   -- Already testing extensional equivalence above, but specifically test this too.
+   let out_top' = evalG.fwd in_top
+   when testing.fwdPreservesTop $
+      unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
+
+   let GC evalG_dual = dual (GC evalG)
+   let GC evalG_op = withOp graphed # graphGC
+
+   out2 <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
+   out3 <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)
+   when testing.fwdDuals $
+      checkEq benchNames.demBy_G_direct benchNames.demBy_G_suff_dual out2 out3
+
+checkEq
+   :: forall m a
+    . BotOf a a
+   => Neg a
+   => MeetSemilattice a
+   => Eq a
+   => Pretty a
+   => MonadError Error m
+   => String
+   -> String
+   -> a
+   -> a
+   -> m Unit
+checkEq op1 op2 x y = do
+   let left × right = compare op1 op2 x y
+   check (left == "") left
+   check (right == "") right
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
    s' <- parse (prettyP s) program
-   unless (eq (erase s) (erase s')) do
-      logAs "Original" $ show (erase s)
-      logAs "New" $ show (erase s')
-      fail "parse/prettyP round trip"
+   unless (eq (erase s) (erase s')) $
+      throw ("parse/prettyP round trip:\nOriginal\n" <> show (erase s) <> "\nNew\n" <> show (erase s'))
 
 checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
 checkPretty msg expect x =
-   unless (expect `eq` prettyP x) $ do
-      logAs "\nExpected" $ "\n" <> expect
-      logAs "\nReceived" $ "\n" <> prettyP x
-      fail msg
+   unless (expect `eq` prettyP x) $
+      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
 
-validate :: forall m. String -> SelectionSpec -> SE.Expr 𝔹 -> Val 𝔹 -> EffectError m Unit
-validate method { bwd_expect, fwd_expect } s𝔹 v𝔹 = do
-   unless (null bwd_expect) $
-      checkPretty (method <> "-based bwd_expect") bwd_expect s𝔹
-   unless (isGraphical v𝔹) do
-      when logging $ logAs (method <> "-based fwd ⚬ bwd") (prettyP v𝔹)
-      checkPretty (method <> "-based fwd_expect") fwd_expect v𝔹
+testOutcome :: Boolean -> Endo String
+testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s
 
-testTrace :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> Env Vertex -> SelectionSpec -> AffError m Unit
-testTrace s γα spec@{ δv } = do
-   let method = "T"
-
-   { gc: GC eval, v } <- do
-      GC desug <- desugGC s
-      let
-         e = desug.fwd s
-         γ = erase <$> γα
-      benchmark (method <> "-Eval") $ \_ -> traceGC γ e
-
-   let v𝔹 = δv (botOf v)
-   γ𝔹 × e𝔹 × _ <- do
-      unless (isGraphical v𝔹) $
-         when logging (logAs "Selection for bwd" (prettyP v𝔹))
-      benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd v𝔹)
-
-   GC desug𝔹 <- desugGC s
-   let s𝔹 = desug𝔹.bwd e𝔹
-   v𝔹' <- do
-      let e𝔹' = desug𝔹.fwd s𝔹
-      PrettyShow e𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (desugar)"` (unwrap >>> (_ >= e𝔹))
-      benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd (γ𝔹 × e𝔹' × top))
-   PrettyShow v𝔹' `shouldSatisfy "fwd ⚬ bwd round-trip (eval)"` (unwrap >>> (_ >= v𝔹))
-
-   let
-      v𝔹_top = topOf v
-      γ𝔹_top × e𝔹_top × _ = eval.bwd v𝔹_top
-      s𝔹_top = desug𝔹.bwd e𝔹_top
-      e𝔹_top' = desug𝔹.fwd s𝔹_top
-      v𝔹_top' = eval.fwd (γ𝔹_top × e𝔹_top' × top)
-   PrettyShow v𝔹_top' `shouldSatisfy "fwd ⚬ bwd round-trip (eval ⚬ desugar)"` (unwrap >>> (_ >= v𝔹_top))
-
-   validate method spec s𝔹 v𝔹'
-
-testGraph :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig GraphImpl -> SelectionSpec -> Boolean -> AffError m Unit
-testGraph s gconfig spec@{ δv } benchmarking = do
-   let method = "G"
-   GC desug𝔹 <- desugGC s
-
-   { gc: GC eval, eα, g, vα } <- do
-      GC desug <- desugGC s
-      let e = desug.fwd s
-      benchmark (method <> "-Eval") $ \_ -> graphGC gconfig e
-
-   let αs_out = selectαs (δv (botOf vα)) vα
-   αs_in <- benchmark (method <> "-Bwd") $ \_ -> pure (eval.bwd αs_out)
-   let e𝔹 = select𝔹s eα αs_in
-
-   αs_out' <- benchmark (method <> "-Fwd") $ \_ -> pure (eval.fwd αs_in)
-   let v𝔹' = select𝔹s vα αs_out'
-
-   validate method spec (desug𝔹.bwd e𝔹) v𝔹'
-   αs_out `shouldSatisfy "fwd ⚬ bwd round-trip"` (flip subset αs_out')
-   recordGraphSize g
-
-   when benchmarking do
-      do
-         let αs = selectαs (δv (botOf vα)) vα
-         g' <- benchmark (method <> "-BwdDlFwdOp") $ \_ -> pure (G.bwdSliceDualAsFwdOp αs g)
-         g'' <- benchmark (method <> "-BwdDlCmp") $ \_ -> pure (G.bwdSliceDual vα αs g)
-         when logging (logAs "BwdDlFwdOp/input slice" (prettyP $ select𝔹s eα (sinks g')))
-         when logging (logAs "BwdDlCmp/ input slice" (prettyP $ (select𝔹s eα (sinks g'') <#> not)))
-      do
-         let αs = vertices vα
-         αs' <- benchmark (method <> "-BwdAll") $ \_ -> pure (eval.bwd αs)
-         when logging (logAs "BwdAll/input slice" (prettyP $ select𝔹s eα αs'))
-
-      do
-         g' <- benchmark (method <> "-FwdDlBwdOp") $ \_ -> pure (G.fwdSliceDualAsBwdOp αs_in g)
-         g'' <- benchmark (method <> "-FwdDlCmp") $ \_ -> pure (G.fwdSliceDual αs_in g)
-         when logging (logAs "FwdDlBwdOp/output slice" (prettyP $ select𝔹s vα (vertices g')))
-         when logging (logAs "FwdDlCmp/output slice" (prettyP $ select𝔹s vα (vertices g'') <#> not))
-      do
-         g' <- benchmark "Naive-Fwd" $ \_ -> pure (G.fwdSliceAsDeMorgan αs_in g)
-         when logging (logAs "FwdAsDeMorgan/output slice" (prettyP $ select𝔹s vα (vertices g') <#> not))
-
--- Don't enforce fwd_expect values for graphics tests (values too complex).
-isGraphical :: forall a. Val a -> Boolean
-isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
-isGraphical _ = false
-
--- Like version in Test.Spec.Assertions but with error message.
-shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
-shouldSatisfy msg v pred =
-   unless (pred v) $
-      fail (show v <> " doesn't satisfy predicate: " <> msg)
+testCondition :: forall m. MonadThrow Error m => MonadEffect m => String -> Boolean -> String -> m Unit
+testCondition testName b msg = do
+   log (testOutcome b msg')
+   when (not b) $
+      throw "Test failed" -- could improve this to accumulate test failures rather than "failing fast"
+   where
+   msg' = testName <> ": " <> msg

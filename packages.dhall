@@ -1,3 +1,4 @@
+
 {-
 Welcome to your new Dhall package-set!
 
@@ -86,50 +87,41 @@ let additions =
        }
   , etc.
   }
--------------------------------
-
-Example:
--------------------------------
-let additions =
-  { benchotron =
-      { dependencies =
-          [ "arrays"
-          , "exists"
-          , "profunctor"
-          , "strings"
-          , "quickcheck"
-          , "lcg"
-          , "transformers"
-          , "foldable-traversable"
-          , "exceptions"
-          , "node-fs"
-          , "node-buffer"
-          , "node-readline"
-          , "datetime"
-          , "now"
-          ]
-      , repo =
-          "https://github.com/hdgarrood/purescript-benchotron.git"
-      , version =
-          "v7.0.0"
-      }
-  }
--------------------------------
 -}
+
 let upstream =
       https://github.com/purescript/package-sets/releases/download/psc-0.15.4-20220808/packages.dhall sha256:60eee64b04ca0013fae3e02a69fc3b176105c6baa2f31865c67cd5f881a412fd
 
-let overrides = 
+let overrides =
 { node-fs =
     upstream.node-fs // {version = "v9.1.0"}
 }
 
 let additions =
-      { benchotron =
-        { dependencies = [ "arrays", "unfoldable", "strings", "datetime" ]
-        , repo = "https://github.com/JordanMartinez/purescript-benchotron"
-        , version = "0c5342d"
+  { toppokki =
+    { dependencies =
+        [ "aff-promise"
+        , "functions"
+        , "node-buffer"
+        , "node-fs"
+        , "node-http"
+        , "prelude"
+        , "record"
+        , "console"
+        , "effect"
+        , "assert"
+        ]
+    , repo =
+      "https://github.com/justinwoo/purescript-toppokki.git"
+    , version =
+         "v4.0.0"
+    }
+
+  , js-promise-aff =
+        { dependencies = [ "prelude" ]
+        , repo = "https://github.com/purescript-contrib/purescript-js-promise-aff.git"
+        , version = "v4.0.0"
         }
-      }
+  }
 
 in  upstream // overrides // additions

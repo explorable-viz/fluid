@@ -1,6 +1,6 @@
 module Test.Util.Mocha
    ( run
-   , MOCHA()
+   , MOCHA
    ) where
 
 import Prelude

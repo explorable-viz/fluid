@@ -1,91 +1,71 @@
 -- Better name and more consistent interface to Foreign.Object, plus some additional functions.
--- Maybe upgrade Dict into a full replacement of Foreign.Object; in particular Ord instance
--- seems broken (rather than isSubmap, compares on toAscArray).
+-- Newtype wrapper so we can fix Ord instance be consistent with Eq (i.e. to use isSubmap vs. toAscArray).
 module Dict
    ( module Foreign.Object
-   , Dict
-   , (\\)
-   , (∩)
-   , (∪)
-   , apply
-   , apply2
-   , lift2
-   , asSingletonMap
-   , difference
-   , disjointUnion
-   , disjointUnion_inv
-   , get
-   , insertWith
-   , intersection
-   , intersectionWith
-   , keys
-   , values
-   , toUnfoldable
-   , unzip
+   , Dict(..)
    ) where
 
 import Prelude hiding (apply)
 
-import Data.Foldable (foldl)
-import Data.List (List, head)
-import Data.List (fromFoldable) as L
-import Data.Maybe (Maybe(..), maybe)
-import Data.Set (Set)
-import Data.Set (fromFoldable) as S
-import Data.Tuple (fst, snd)
-import Data.Unfoldable (class Unfoldable)
-import Foreign.Object (Object, keys, toAscUnfoldable, values) as O
-import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, lookup, member, singleton, size, toArrayWithKey, union, unionWith, update)
-import Util (Endo, type (×), (×), (∈), assert, definitely, error)
+import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultL, foldlWithIndex, foldrWithIndexDefault)
+import Data.Newtype (class Newtype)
+import Data.Traversable (class Foldable, class Traversable)
+import Foreign.Object (Object) as O
+import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, isSubmap, lookup, mapWithKey, member, singleton, toArrayWithKey, union, unionWith)
+import Util (class IsEmpty)
+import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, toUnfoldable, values)
+import Util.Map as Map
+import Util.Set (class Set, difference, size, (∈))
 
-type Dict a = O.Object a
+-- Think we can generalise to keys of any type coercible to String.
+newtype Dict a = Dict (O.Object a)
 
--- `Apply` instance would be an orphan
-apply :: forall a b. Dict (a -> b) -> Dict a -> Dict b
-apply = intersectionWith ($) -- why not require dicts to have same shape?
+derive instance Newtype (Dict a) _
+derive newtype instance Eq a => Eq (Dict a)
 
-apply2 :: forall f a b. Apply f => Dict (f (a -> b)) -> Dict (f a) -> Dict (f b)
-apply2 d = apply ((<*>) <$> d)
+-- More sensible than Foreign.Object Ord instance.
+instance Ord a => Ord (Dict a) where
+   compare (Dict d) (Dict d') =
+      if isSubmap d d' then
+         if isSubmap d' d then EQ
+         else LT
+      else GT
 
-lift2 :: forall f a b c. Apply f => (a -> b -> c) -> Dict (f a) -> Dict (f b) -> Dict (f c)
-lift2 f d1 = apply2 ((f <$> _) <$> d1)
+instance Apply Dict where
+   apply (Dict f) (Dict x) = Dict (intersectionWith ($) f x)
 
--- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
-foreign import intersectionWith :: forall a b c. (a -> b -> c) -> Dict a -> Dict b -> Dict c
+derive instance Functor Dict
+derive instance Foldable Dict
+derive instance Traversable Dict
 
-intersection :: forall a b. Dict a -> Dict b -> Dict a
-intersection = intersectionWith const
+instance FoldableWithIndex String Dict where
+   foldlWithIndex f z (Dict d) = foldlWithIndex f z d
+   foldrWithIndex f = foldrWithIndexDefault f
+   foldMapWithIndex f = foldMapWithIndexDefaultL f
 
-difference :: forall a b. Dict a -> Dict b -> Dict a
-difference m1 m2 = foldl (flip delete) m1 (O.keys m2)
+instance IsEmpty (Dict a) where
+   isEmpty (Dict d) = isEmpty d
 
-infixr 7 intersection as ∩
-infixr 6 union as ∪
-infix 5 difference as \\
+instance Set (Dict a) String where
+   empty = Dict empty
+   filter p (Dict d) = Dict (filterKeys p d)
+   size (Dict d) = size d
+   member x (Dict d) = x ∈ d
+   difference (Dict d) (Dict d') = Dict (difference d d')
+   union (Dict d) (Dict d') = Dict (union d d')
 
-keys :: forall a. Dict a -> Set String
-keys = O.keys >>> S.fromFoldable
+instance Map (Dict a) String a where
+   maplet k v = Dict (maplet k v)
+   keys (Dict d) = keys d
+   values (Dict d) = values d
+   filterKeys p (Dict d) = Dict (filterKeys p d)
+   unionWith f (Dict d) (Dict d') = Dict (unionWith f d d')
+   lookup k (Dict d) = lookup k d
+   delete k (Dict d) = Dict (delete k d)
+   insert k v (Dict d) = Dict (insert k v d)
+   toUnfoldable (Dict d) = toUnfoldable d
 
-values :: forall a. Dict a -> List a
-values = O.values >>> L.fromFoldable
-
-asSingletonMap :: forall a. Dict a -> String × a
-asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
-
-get :: forall a. String -> Dict a -> a
-get k = definitely ("Key \"" <> k <> "\" exists in dictionary") <<< lookup k
-
-disjointUnion :: forall a. Dict a -> Endo (Dict a)
-disjointUnion = unionWith (\_ _ -> error "not disjoint")
-
-disjointUnion_inv :: forall a. Set String -> Dict a -> Dict a × Dict a
-disjointUnion_inv ks m = filterKeys (_ ∈ ks) m × filterKeys (_ `not <<< (∈)` ks) m
-
-toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
-toUnfoldable = O.toAscUnfoldable
-
-unzip :: forall a b. Dict (a × b) -> Dict a × Dict b
-unzip kvs = (kvs <#> fst) × (kvs <#> snd)
-
-insertWith :: forall a. (a -> a -> a) -> String -> a -> Dict a -> Dict a
-insertWith f k v = alter (Just <<< maybe v (flip f v)) k
+instance MapF Dict String where
+   intersectionWith f (Dict d) (Dict d') = Dict (intersectionWith f d d')
+   difference (Dict d) (Dict d') = Dict (Map.difference d d')
+   mapWithKey f (Dict d) = Dict (mapWithKey f d)

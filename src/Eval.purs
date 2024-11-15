@@ -2,33 +2,35 @@ module Eval where
 
 import Prelude hiding (absurd, apply, top)
 
-import Bindings (varAnon)
+import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
-import Data.Either (Either(..))
 import Data.Exists (mkExists, runExists)
-import Data.List (List(..), (:), length, range, singleton, unzip, zip)
+import Data.List (List(..), (:), length, range, zip)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong (first)
-import Data.Set (fromFoldable, toUnfoldable, singleton) as S
+import Data.Set (fromFoldable, toUnfoldable) as Set
 import Data.Set (subset)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (fst, snd)
+import Data.Tuple (snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
-import Dict (disjointUnion, get, empty, lookup, keys)
-import Dict (fromFoldable, singleton, unzip) as D
+import Dict (Dict)
+import Dict (fromFoldable) as D
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs(..), VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
 import Pretty (prettyP)
-import Primitive (intPair, string)
+import Primitive (intPair, string, unpack)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace(..), ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), (×), (∪), absurd, both, check, error, orElse, successful, throw, with)
+import Util (type (×), both, check, defined, orElse, singleton, throw, unzip, withMsg, (×))
+import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
-import Val (Fun(..), Val(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+import Util.Set (empty, (∪))
+import Val (BaseVal(..), DictRep(..), Fun(..)) as V
+import Val (class Ann, Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -36,21 +38,22 @@ patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 match :: forall a m. MonadError Error m => Ann a => Val a -> Elim a -> m (Env a × Cont a × a × Match)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
-   | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
-match (V.Constr α c vs) (ElimConstr m) = do
-   with "Pattern mismatch" $ S.singleton c `consistentWith` keys m
+   | otherwise = pure (maplet x v × κ × top × MatchVar x (erase v))
+match (Val α (V.Constr c vs)) (ElimConstr m) = do
+   withMsg "Pattern mismatch" $ singleton c `consistentWith` keys m
    κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × α' × ws <- matchMany vs κ
    pure (γ × κ' × (α ∧ α') × MatchConstr c ws)
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
-match (V.Record α xvs) (ElimRecord xs κ) = do
-   check (subset xs (S.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
-   let xs' = xs # S.toUnfoldable
-   γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
-   pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
-match v (ElimRecord xs _) = throw $ patternMismatch (prettyP v) (show xs)
+match (Val α (V.Dictionary (V.DictRep xvs))) (ElimDict xs κ) = do
+   check (subset xs (Set.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
+   let xs' = xs # Set.toUnfoldable
+   let xvs' = unwrap xvs
+   γ × κ' × α' × ws <- matchMany (map (\k -> snd (get k xvs')) xs') κ
+   pure (γ × κ' × (α ∧ α') × MatchDict (wrap $ D.fromFoldable (zip xs' ws)))
+match v (ElimDict xs _) = throw $ patternMismatch (prettyP v) (show xs)
 
 matchMany :: forall a m. MonadError Error m => Ann a => List (Val a) -> Cont a -> m (Env a × Cont a × a × List Match)
 matchMany Nil κ = pure (empty × κ × top × Nil)
@@ -60,11 +63,12 @@ matchMany (v : vs) (ContElim σ) = do
    pure $ γ `disjointUnion` γ' × κ'' × (α ∧ β) × (w : ws)
 matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
-matchMany _ _ = error absurd
 
-closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
-closeDefs γ ρ α = ρ <#> \σ ->
-   let ρ' = ρ `for` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' ∪ fv σ)) ρ' σ
+closeDefs :: forall a. Env a -> Dict (Elim a) -> a -> Env a
+closeDefs γ ρ α = Env
+   ( ρ <#> \σ ->
+        let ρ' = ρ `forDefs` σ in Val α (V.Fun $ V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
+   )
 
 checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = do
@@ -72,12 +76,12 @@ checkArity c n = do
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
 apply :: forall a m. MonadError Error m => Ann a => Val a × Val a -> m (AppTrace × Val a)
-apply (V.Fun β (V.Closure γ1 ρ σ) × v) = do
+apply (Val β (V.Fun (V.Closure γ1 ρ σ)) × v) = do
    let γ2 = closeDefs γ1 ρ β
    γ3 × e'' × β' × w <- match v σ
-   t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
-   pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs) × v) = do
+   t'' × v'' <- eval (EnvExpr (γ1 <+> γ2 <+> γ3) (asExpr e'')) (β ∧ β')
+   pure $ T.AppClosure (Set.fromFoldable (keys ρ)) w t'' × v''
+apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs)) × v) = do
    t × v'' <- runExists apply' φ
    pure $ T.AppForeign (length vs + 1) t × v''
    where
@@ -86,17 +90,17 @@ apply (V.Fun α (V.Foreign (ForeignOp (id × φ)) vs) × v) = do
    apply' :: forall t. ForeignOp' t -> m (ForeignTrace × Val _)
    apply' (ForeignOp' φ') = do
       t × v'' <- do
-         if φ'.arity > length vs' then pure $ Nothing × V.Fun α (V.Foreign (ForeignOp (id × φ)) vs')
+         if φ'.arity > length vs' then pure $ Nothing × Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs'))
          else first Just <$> φ'.op vs'
       pure $ ForeignTrace (id × mkExists (ForeignTrace' (ForeignOp' φ') t)) × v''
-apply (V.Fun α (V.PartialConstr c vs) × v) = do
+apply (Val α (V.Fun (V.PartialConstr c vs)) × v) = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    pure $ T.AppConstr c × v'
    where
-   n = successful (arity c)
+   n = defined (arity c)
    v' =
-      if length vs < n - 1 then V.Fun α $ V.PartialConstr c (vs <> singleton v)
-      else V.Constr α c (vs <> singleton v)
+      if length vs < n - 1 then Val α (V.Fun $ V.PartialConstr c (vs <> singleton v))
+      else Val α (V.Constr c (vs <> singleton v))
 apply (_ × v) = throw $ "Found " <> prettyP v <> ", expected function"
 
 apply2 :: forall a m. MonadError Error m => Ann a => Val a × Val a × Val a -> m ((AppTrace × AppTrace) × Val a)
@@ -105,71 +109,65 @@ apply2 (u1 × v1 × v2) = do
    t2 × v <- apply (u2 × v2)
    pure $ (t1 × t2) × v
 
-eval :: forall a m. MonadError Error m => Ann a => Env a -> Expr a -> a -> m (Trace × Val a)
-eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
-eval γ (Op op) _ = (T.Op op × _) <$> lookup' op γ
-eval _ (Int α n) α' = pure (T.Const × V.Int (α ∧ α') n)
-eval _ (Float α n) α' = pure (T.Const × V.Float (α ∧ α') n)
-eval _ (Str α str) α' = pure (T.Const × V.Str (α ∧ α') str)
-eval γ (Record α xes) α' = do
-   xts × xvs <- traverse (flip (eval γ) α') xes <#> D.unzip
-   pure $ T.Record xts × V.Record (α ∧ α') xvs
-eval γ (Dictionary α ees) α' = do
-   (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
+eval :: forall a m. MonadError Error m => Ann a => EnvExpr a -> a -> m (Trace × Val a)
+eval (EnvExpr γ (Var x)) _ = (T.Var x × _) <$> lookup' x γ
+eval (EnvExpr γ (Op op)) _ = (T.Op op × _) <$> lookup' op γ
+eval (EnvExpr _ (Int α n)) α' = pure (T.Const × Val (α ∧ α') (V.Int n))
+eval (EnvExpr _ (Float α n)) α' = pure (T.Const × Val (α ∧ α') (V.Float n))
+eval (EnvExpr _ (Str α str)) α' = pure (T.Const × Val (α ∧ α') (V.Str str))
+eval (EnvExpr γ (Dictionary α ees)) α' = do
+   (ts × vs) × (ts' × us) <- traverse (traverse (\e -> eval (EnvExpr γ e) α')) ees <#> (P.unzip >>> (unzip # both))
    let
-      ss × αs = (vs <#> \u -> string.unpack u) # unzip
-      d = D.fromFoldable $ zip ss (zip αs us)
-   pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × V.Dictionary (α ∧ α') (DictRep d)
-eval γ (Constr α c es) α' = do
+      ss × αs = vs <#> unpack string # unzip
+      d = wrap $ D.fromFoldable $ zip ss (zip αs us)
+   pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (V.DictRep d))
+eval (EnvExpr γ (Constr α c es)) α' = do
    checkArity c (length es)
-   ts × vs <- traverse (flip (eval γ) α') es <#> unzip
-   pure (T.Constr c ts × V.Constr (α ∧ α') c vs)
-eval γ (Matrix α e (x × y) e') α' = do
-   t × v <- eval γ e' α'
-   let (i' × β) × (j' × β') = fst (intPair.unpack v)
+   ts × vs <- traverse (\e -> eval (EnvExpr γ e) α') es <#> unzip
+   pure (T.Constr c ts × Val (α ∧ α') (V.Constr c vs))
+eval (EnvExpr γ (Matrix α e (x × y) e')) α' = do
+   t × Val _ v <- eval (EnvExpr γ e') α'
+   let (i' × β) × (j' × β') = intPair.unpack v
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
       ( sequence do
            i <- range 1 i'
            singleton $ sequence do
               j <- range 1 j'
-              let γ' = D.singleton x (V.Int β i) `disjointUnion` (D.singleton y (V.Int β' j))
-              singleton (eval (γ <+> γ') e α')
+              let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
+              singleton (eval (EnvExpr (γ <+> γ') e) α')
       )
-   pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (MatrixRep (vss × (i' × β) × (j' × β')))
+   pure $ T.Matrix tss (x × y) (i' × j') t × Val (α ∧ α') (V.Matrix (MatrixRep (vss × (i' × β) × (j' × β'))))
    where
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
-eval γ (Lambda α σ) α' =
-   pure $ T.Const × V.Fun (α ∧ α') (V.Closure (γ `restrict` fv σ) empty σ)
-eval γ (Project e x) α = do
-   t × v <- eval γ e α
+eval (EnvExpr γ (Lambda α σ)) α' =
+   pure $ T.Const × Val (α ∧ α') (V.Fun (V.Closure (restrict (fv σ) γ) empty σ))
+eval (EnvExpr γ (Project e x)) α = do
+   t × v <- eval (EnvExpr γ e) α
    case v of
-      V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
+      Val _ (V.Dictionary (V.DictRep d)) -> (T.DProject t Nothing x × _) <$> snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found")
       _ -> throw $ "Found " <> prettyP v <> ", expected record"
-eval γ (App e e') α = do
-   t × v <- eval γ e α
-   t' × v' <- eval γ e' α
+eval (EnvExpr γ (DProject e x)) α = do
+   t × v <- eval (EnvExpr γ e) α
+   t' × v' <- eval (EnvExpr γ x) α
+   case v of
+      Val _ (V.Dictionary (V.DictRep d)) ->
+         case v' of
+            Val _ (V.Str s) -> (T.DProject t (Just t') s × _) <$> snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
+            _ -> throw $ "Found " <> prettyP v' <> ", expected string"
+      _ -> throw $ "Found " <> prettyP v <> ", expected dict"
+eval (EnvExpr γ (App e e')) α = do
+   t × v <- eval (EnvExpr γ e) α
+   t' × v' <- eval (EnvExpr γ e') α
    t'' × v'' <- apply (v × v')
    pure $ T.App t t' t'' × v''
-eval γ (Let (VarDef σ e) e') α = do
-   t × v <- eval γ e α
+eval (EnvExpr γ (Let (VarDef σ e) e')) α = do
+   t × v <- eval (EnvExpr γ e) α
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
-   t' × v' <- eval (γ <+> γ') e' α' -- (α ∧ α') for consistency with functions? (similarly for module defs)
+   t' × v' <- eval (EnvExpr (γ <+> γ') e') α' -- (α ∧ α') for consistency with functions? (similarly for module defs)
    pure $ T.Let (T.VarDef w t) t' × v'
-eval γ (LetRec α ρ e) α' = do
+eval (EnvExpr γ (LetRec (RecDefs α ρ) e)) α' = do
    let γ' = closeDefs γ ρ (α ∧ α')
-   t × v <- eval (γ <+> γ') e (α ∧ α')
-   pure $ T.LetRec (erase <$> ρ) t × v
-
-eval_module :: forall a m. MonadError Error m => Ann a => Env a -> Module a -> a -> m (Env a)
-eval_module γ = go empty
-   where
-   go :: Env a -> Module a -> a -> m (Env a)
-   go γ' (Module Nil) _ = pure γ'
-   go y' (Module (Left (VarDef σ e) : ds)) α = do
-      _ × v <- eval (γ <+> y') e α
-      γ'' × _ × α' × _ <- match v σ
-      go (y' <+> γ'') (Module ds) α'
-   go γ' (Module (Right ρ : ds)) α =
-      go (γ' <+> closeDefs (γ <+> γ') ρ α) (Module ds) α
+   t × v <- eval (EnvExpr (γ <+> γ') e) (α ∧ α')
+   pure $ T.LetRec (RecDefs unit $ erase <$> ρ) t × v

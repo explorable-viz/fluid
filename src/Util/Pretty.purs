@@ -36,28 +36,14 @@ newtype Doc = Doc
 
 derive instance Eq Doc
 
--- | Get the width of a document.
 width :: Doc -> Int
 width (Doc doc) = doc.width
 
--- | Get the height of a document.
 height :: Doc -> Int
 height (Doc doc) = doc.height
 
--- | Render a document to a string.
 render :: Doc -> String
 render (Doc doc) = intercalate "\n" doc.lines
-
--- | An empty document
--- empty :: Int -> Int -> Doc
--- empty w h =
---    Doc
---       { width: w
---       , height: h
---       , lines: case h of
---            0 -> []
---            _ -> range 1 h $> ""
---       }
 
 empty :: Doc
 empty = Doc
@@ -79,7 +65,6 @@ checkOneLine xs = case uncons xs of
    Just { head: _, tail: _ } -> error U.absurd
    Nothing -> error U.absurd
 
--- | Place one document on top of another.
 atop :: Doc -> Doc -> Doc
 atop (Doc d1) (Doc d2) =
    Doc
@@ -88,7 +73,6 @@ atop (Doc d1) (Doc d2) =
       , lines: d1.lines <> d2.lines
       }
 
--- | Beside with a space
 space :: Doc -> Doc -> Doc
 space d1 d2 = d1 :<>: text " " :<>: d2
 
@@ -116,7 +100,7 @@ lastLine :: Doc -> String
 lastLine (Doc d) = helperUnwrapMaybe (last d.lines)
 
 -- takes all but the first lines of d2 so say e.g. [s1, s2] and spaces returns "  " (length of last line of d1) and we do ["  ", " "]
--- we then zip this with all but the first line of d2 so we have indented the document by the length of the last line of d1 
+-- we then zip this with all but the first line of d2 so we have indented the document by the length of the last line of d1
 indentedExpression :: Doc -> Doc -> Array String
 indentedExpression (Doc d1) (Doc d2) =
    zipWith (<>)
@@ -128,32 +112,30 @@ indentedExpression (Doc d1) (Doc d2) =
 beside :: Doc -> Doc -> Doc
 beside (Doc d1) (Doc d2) = Doc { width: d1.width + d2.width, height: d1.height + d2.height, lines: allButLast (Doc d1) <> (singleton (lastLine (Doc d1) <> "" <> firstLine (Doc d2))) <> indentedExpression (Doc d1) (Doc d2) }
 
--- | Place documents in columns
 hcat :: forall f. Foldable f => f Doc -> Doc
 hcat = ala Columns foldMap
 
--- | Stack documents vertically
 vcat :: forall f. Foldable f => f Doc -> Doc
 vcat = ala Stack foldMap
 
 -- | A wrapper for `Doc` with a `Monoid` instance which stacks documents vertically.
 newtype Stack = Stack Doc
 
-derive instance newtypeStack :: Newtype Stack _
+derive instance Newtype Stack _
 
-instance semigroupStack :: Semigroup Stack where
+instance Semigroup Stack where
    append (Stack d1) (Stack d2) = Stack (d1 `atop` d2)
 
-instance monoidStack :: Monoid Stack where
+instance Monoid Stack where
    mempty = Stack empty
 
 -- | A wrapper for `Doc` with a `Monoid` instance which stacks documents in columns.
 newtype Columns = Columns Doc
 
-derive instance newtypeColumns :: Newtype Columns _
+derive instance Newtype Columns _
 
-instance semigroupColumns :: Semigroup Columns where
+instance Semigroup Columns where
    append (Columns d1) (Columns d2) = Columns (d1 `beside` d2)
 
-instance monoidColumns :: Monoid Columns where
+instance Monoid Columns where
    mempty = Columns empty

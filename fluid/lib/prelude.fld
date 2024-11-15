@@ -77,7 +77,7 @@ let head [] = error "Can't take head of empty list";
 let tail [] = error "Can't take tail of empty list";
     tail (_ : xs) = xs;
 
--- Int -> List Int -> Bool
+-- Eq a => a -> List a -> Bool
 let elem x [] = False;
     elem x (x' : xs) = (x == x') `or` (elem x xs);
 
@@ -86,6 +86,14 @@ let filter p [] = [];
     filter p (x : xs) =
       let ys = filter p xs in
       if p x then x : ys else ys;
+
+-- (a -> Option b) -> List a -> List b
+let filterMap p [] = [];
+    filterMap p (x : xs) =
+      match p x as {
+         None -> filterMap f xs;
+         Some y -> y : filterMap f xs
+      };
 
 -- (a -> b -> a) -> a -> List b -> a
 let foldl op z [] = z;
@@ -186,6 +194,10 @@ let lastN n xs =
 let nth n (x : xs) =
    if n == 0 then x else nth (n - 1) xs;
 
+-- Matrix Int -> Int -> Int -> Int
+let nth2 i j xss =
+   nth (j - 1) (nth (i - 1) xss);
+
 -- Partial; requires k to be in the map.
 -- Int -> List (Int, b) -> b
 let lookup k [] = error "Key not found in map";
@@ -227,5 +239,16 @@ let enumFromTo n m =
 let range (m1, n1) (m2, n2) =
       [ (i1, i2) | i1 <- [m1 .. m2], i2 <- [n1 .. n2] ];
 
--- Int -> Int -> Int (should probably be defined differently but this works for now)
-let abs x y = if x - y < 0 then negate (x - y) else (x - y);
+-- Int -> Int -> Int
+let abs x y =
+   if x - y < 0 then negate (x - y) else (x - y);
+
+-- Eq a => [a] -> [a]
+let nub xs =
+    let nub' [] _ = [];
+        nub' (x : xs) ys = if x `elem` ys then nub' xs ys else x : nub' xs (x : ys) in
+    nub' xs [];
+
+-- Int -> Int -> [a] -> [a]
+let slice begin end xs =
+   take (end - begin) (drop begin xs);

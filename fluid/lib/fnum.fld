@@ -12,10 +12,9 @@ let fmin x y =
 
 let minimal = foldl1 fmin;
 
-let add Infty (FNum x) = Infty;
+let add Infty _ = Infty;
     add (FNum x) Infty = Infty;
     add (FNum x) (FNum y) = FNum (x + y);
-    add Infty Infty = Infty;
 
 let eq Infty Infty = True;
     eq Infty (FNum x) = False;

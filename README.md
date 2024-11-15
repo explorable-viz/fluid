@@ -4,25 +4,39 @@ Fluid is an experimental programming language which integrates a bidirectional d
 
 [![develop](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml)
 [![GitHub pages](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment)
-[![v0.3.1-typescript](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml)
+
+## Installation
 
 ### Software required
-
+- Windows users: Ubuntu (WSL)
 - git
+- Node.js >=14.0.0
 - yarn
-- `yarn install` to install application dependencies
 
-#### Running the tests on the command line
+### For Windows Users
+- Clone the repository under Ubuntu WSL
 
-- `yarn build-tests` and then `yarn tests` for core tests
-- `yarn build-app-tests` and then `yarn app-tests` for app tests
+### Notes
+- Run `./script/setup/dev-setup.sh` after cloning repository
+- Avoid having PureScript installed globally
+- `Add Npm Path` is selected in PureScript IDE extension settings
+- VSCode for Windows users:
+	- Launch VSCode through Ubuntu (WSL) terminal
+	- Install WSL extension in VSCode
 
-#### Running the tests in the browser
+#### Running tests on command line
+- `yarn build` and then `yarn test-all`
 
-- `yarn build-tests` as above, then `yarn tests-browser`
-- hit Debug in the browser window that opens, and then open Developer Tools
+#### Running tests in browser
+- As per command-line tests above, but run `yarn test-browser`
+- Hit Debug in the browser window that opens, and then open Developer Tools or equivalent
 
-#### Running the web app
+#### Running the fluid.org website locally
+- `yarn build`
+- `yarn serve fluid-org`
+- Open a browser at the served URL (usually `127.0.0.1:8080`)
 
-- `yarn serve-app` to build and serve app
-- open a browser (preferably Chrome) at the served URL (usually `127.0.0.1:8080`).
+#### Run Puppeteer tests for page Y of website X
+Rebuild with `puppeteerTests.headless` set to `false` to run in browser. Then:
+- `yarn bundle-website X`
+- `./script/test-page.sh X X.Y`

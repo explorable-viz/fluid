@@ -1,48 +1,40 @@
 module App.View where
 
 import Prelude hiding (absurd)
-import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.BubbleChart (BubbleChart, bubbleChartHandler, drawBubbleChart)
-import App.LineChart (LineChart, drawLineChart, lineChartHandler)
-import App.MatrixView (MatrixView(..), drawMatrix, matrixRep, matrixViewHandler)
-import App.TableView (TableView(..), drawTable, tableViewHandler)
-import App.Util (HTMLId, OnSel, from, record)
+
+import App.Util (SelState, 𝕊, dict, from)
+import App.View.BarChart (BarChart)
+import App.View.LineChart (LineChart)
+import App.View.LinkedText (LinkedText)
+import App.View.MatrixView (MatrixView(..), matrixRep)
+import App.View.MultiView (MultiView(..))
+import App.View.ScatterPlot (ScatterPlot)
+import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
+import App.View.Util (View, pack)
 import Data.List (List(..), (:))
-import Data.Tuple (fst)
-import DataType (cBarChart, cBubbleChart, cCons, cLineChart, cNil)
-import Effect (Effect)
-import Lattice (𝔹)
-import Partial.Unsafe (unsafePartial)
-import Primitive as P
-import Util (absurd, error)
-import Val (Val(..))
-import Web.Event.EventTarget (eventListener)
+import Data.Maybe (Maybe(..))
+import Data.Tuple (snd)
+import DataType (cBarChart, cCons, cLineChart, cLinkedText, cMultiView, cNil, cScatterPlot)
+import Dict (Dict)
+import Util (type (×))
+import Val (BaseVal(..), Val(..))
 
-data View
-   = MatrixFig MatrixView
-   | TableFig TableView
-   | LineChartFig LineChart
-   | BarChartFig BarChart
-   | BubbleChartFig BubbleChart
-
-drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
-drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
-drawView divId onSel n (TableFig vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
-drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
-drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
-drawView divId onSel n (BubbleChartFig vw) = drawBubbleChart divId n vw =<< eventListener (onSel <<< bubbleChartHandler)
-
--- Convert sliced value to appropriate View, discarding top-level annotations for now.
--- 'from' is partial; encapsulate that here.
-view :: String -> Val 𝔹 -> View
-view _ (Constr _ c (u1 : Nil)) | c == cBarChart =
-   BarChartFig (unsafePartial $ record from u1)
-view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
-   LineChartFig (unsafePartial $ record from u1)
-view _ (Constr _ c (u1 : Nil)) | c == cBubbleChart =
-   BubbleChartFig (unsafePartial $ record from u1)
-view title u@(Constr _ c _) | c == cNil || c == cCons =
-   TableFig (TableView { title, filter: true, table: unsafePartial $ record identity <$> from u })
-view title u@(Matrix _ _) =
-   MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.unpack u) })
-view _ _ = error absurd
+-- Convert annotated value to appropriate view, discarding top-level annotations for now.
+-- Ignore view state for now..
+view :: Partial => String -> Val (SelState 𝕊) -> Maybe View -> View
+view title (Val _ (Constr c (u : Nil))) _
+   | c == cBarChart = pack (dict from u :: BarChart)
+   | c == cLineChart = pack (dict from u :: LineChart)
+   | c == cScatterPlot = pack (dict from u :: ScatterPlot)
+   | c == cLinkedText = pack (from u :: LinkedText)
+   | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
+        where
+        vws = view title <$> ((from u :: Dict (SelState 𝕊 × Val (SelState 𝕊))) # map snd)
+view title u@(Val _ (Constr c _)) _
+   | c == cNil || c == cCons = pack (TableView { title, filter: defaultFilter, colNames, rows })
+        where
+        records = dict identity <$> from u
+        colNames = headers records
+        rows = arrayDictToArray2 colNames records <#> map snd
+view title (Val _ (Matrix r)) _ =
+   pack (MatrixView { title, matrix: matrixRep r })
