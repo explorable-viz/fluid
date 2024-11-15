@@ -307,7 +307,7 @@ nav ul li.active-page a {
    display: none;
 }
 
-.data-pane :not(table) {
+.data-pane p {
    font-size: 9pt;
    margin-right: 3px;
 }
