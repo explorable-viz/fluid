@@ -88,6 +88,11 @@ let find p [] = error "not found";
 -- String -> String -> List (Dict) -> Option Dict
 let getByField fname fval table = find (fun y -> y.[fname] == fval) table;
 
+let fromSome option = match option as {
+    None -> error "Expected Some!";
+    Some x -> x
+};
+
 -- (a -> Bool) -> List a -> List a
 let filter p [] = [];
     filter p (x : xs) =

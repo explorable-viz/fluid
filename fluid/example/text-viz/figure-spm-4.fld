@@ -1,7 +1,4 @@
-let getByX x table = match getByField "x" x table as {
-    None -> error "absurd";
-    Some x -> x
-};
+let getByX x table = fromSome (getByField "x" x table);
 
 let mkPercent num = (numToStr (num * 100)) ++ "%";
 
@@ -13,40 +10,34 @@ let modTable offset table = map (fun bar -> { x: bar.x ++ "", bars: [{ y: bar.y,
 
 let stackedBarHeight stackedBar = sum [ bar.z | bar <- stackedBar.bars ];
 
-let getFirstBar stackedBars = match getByField "x" "Total" stackedBars as {
-    None -> error "absurd";
-    Some bar -> bar
-};
+let getTotal stackedBars = fromSome (getByField "x" "Total" stackedBars);
 
 let explainCorrespondingBars bars x = 
     if length bars == length (filter (fun bar -> bar.x == x) bars)
     then "the bars on the left of each chart which represent " ++ x ++ " emissions"
     else error "absurd";
 
-let leftBarContents = modTable 0 leftBarData;
-    rightBarContents = modTable 0 rightBarData;
-    rightBar3 = getByX "Industry" rightBarContents;
-    rightBar3height = (head rightBar3.bars).z;
-    leftBar2 = getByX "Consumer" leftBarContents;
-    firstBars = map getFirstBar [leftBarContents, rightBarContents];
-    meanFirstBar = (sum (map stackedBarHeight firstBars)) / (length firstBars)
+let mkBarChart scenName table = 
+    BarChart {
+        caption: "Example bar chart for scenario " ++ scenName,
+        size: { width: 275, height: 185 },
+        stackedBars: table
+    };
+
+let ssp119 = modTable 0 ssp119Source;
+    ssp245 = modTable 0 ssp245Source;
+    ssp245Industry = getByX "Industry" ssp245;
+    ssp245Industryheight = (head ssp245Industry.bars).z;
+    ssp119Consumer = getByX "Consumer" ssp119;
+    total = map getTotal [ssp119, ssp245];
+    meanTotal = (sum (map stackedBarHeight total)) / (length total)
 in MultiView {
-    leftBarChart:
-        BarChart {
-            caption: "Example bar chart for text-viz",
-            size: { width: 275, height: 185 },
-            stackedBars: leftBarContents
-        },
-    rightBarChart: 
-        BarChart {
-            caption: "Second example bar chart",
-            size: { width: 275, heigh: 185 },
-            stackedBars: rightBarContents
-        },
+    leftBarChart: mkBarChart "SSP1-1.9" ssp119,
+    rightBarChart: mkBarChart "SSP-4.5" ssp245,
     explanation:
-        LinkedText [ "From the barchart shown above, we see that ", referToBar rightBar3
-                   , "  which suggests that in the high-emissions scenario it is ", probAsText (computeProb (40, 80) rightBar3height)
+        LinkedText [ "From the barchart shown above, we see that ", referToBar ssp245Industry
+                   , "  which suggests that in the high-emissions scenario it is ", probAsText (computeProb (40, 80) ssp245Industryheight)
                    , " that warming will exceed the global warming target of 2c by 2100."
-                   , " In contrast, in the lowest-emission scenario, the probability of exceeding the target is only ",  mkPercent (computeProb (25, 45) (head leftBar2.bars).z)
-                   , " and we can see that ", explainCorrespondingBars firstBars "Total", " have an average value of ", numToStr meanFirstBar, "." ]
+                   , " In contrast, in the lowest-emission scenario, the probability of exceeding the target is only ",  mkPercent (computeProb (25, 45) (head ssp119Consumer.bars).z)
+                   , " and we can see that ", explainCorrespondingBars total "Total", " have an average value of ", numToStr meanTotal, "." ]
 }
