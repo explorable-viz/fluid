@@ -39,18 +39,12 @@
 
 .fluid-logo {
    margin-bottom: 0;
-/*   color: rgb(135, 129, 255);
-   font-family: "OdiseanTech", sans-serif;
-   font-size: 32pt;
-   height: 35px;
-   transform: translateY(-5px);
-*/
 }
 
 .fluid-subtitle {
    margin-bottom: 0;
    margin-top: 0;
-   font-size: 11pt;
+   font-size: 12pt;
 }
 
 a:link {
@@ -83,7 +77,7 @@ code {
 }
 
 body {
-   font-size: 11pt;
+   font-size: 12pt;
    font-family: "GraphikLight", sans-serif;
    font-weight: 300;
    line-height: 1.25;
@@ -109,7 +103,7 @@ p + p {
 }
 
 .highlight {
-   color: rgb(135, 129, 255);
+   font-family: 'GraphikMedium';
 }
 
 .align-right {
@@ -192,7 +186,7 @@ nav ul li.active-page a {
 
 .cm-line {
    font-family: 'Ubuntu Mono';
-   font-size: 9pt;
+   font-size: 10pt;
 }
 
 .cm-gutter {
@@ -201,13 +195,13 @@ nav ul li.active-page a {
 
 .cm-gutterElement {
    font-family: 'Ubuntu Mono';
-   font-size: 9pt;
+   font-size: 10pt;
    color: #88C0D0;
 }
 
 .right-border {
    border-right: 0.5px solid lightgray;
-   padding-right: 3px;
+   padding-right: 6px;
 }
 
 .right-border + div {
@@ -219,8 +213,8 @@ nav ul li.active-page a {
    background-color: #f0f0f0;
    width: 100%;
    grid-template-columns: 35% 1fr;
-   padding-top: 2px;
-   padding-bottom: 2px;
+   padding-top: 7px;
+   padding-bottom: 7px;
 }
 
 .footer-grid-container {
@@ -282,7 +276,7 @@ nav ul li.active-page a {
 }
 
 .data-pane-button {
-   font-size: 9pt;
+   font-size: 10pt;
 }
 
 .toggle-button {
@@ -307,8 +301,11 @@ nav ul li.active-page a {
    display: none;
 }
 
-.data-pane :not(table) {
-   font-size: 9pt;
+.data-pane * {
+   font-size: 10pt;
+}
+
+.data-pane p {
    margin-right: 3px;
 }
 
