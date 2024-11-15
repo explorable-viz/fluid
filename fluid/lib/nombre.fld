@@ -1,0 +1,14 @@
+let leqP n m = 
+    if n <= m
+    then "less"
+    else "more";
+
+let gradedLeqP n m = 
+    let ratio = n / m 
+    in if ratio <= 1.0 
+        then if ratio <=0.5
+            then "much less"
+            else "less"
+        else if ratio >= 2.0
+            then "much more"
+            else "more";

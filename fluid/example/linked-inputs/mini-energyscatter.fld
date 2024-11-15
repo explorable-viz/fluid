@@ -21,7 +21,7 @@ let energy year c_names =
     map energy_per_country c_names
 in ScatterPlot {
     caption: "Clean energy efficiency against proportion of renewable energy cap",
-    data: [{
+    points: [{
                 x: country.nonRenewables / country.totalCap,
                 y: country.renCapFactor
             }| country <- energy 2018 ["USA"]],
