@@ -16,12 +16,16 @@ function curry4 (f) {
 }
 
 import {EditorState} from "@codemirror/state"
-import {EditorView, keymap} from "@codemirror/view"
+import {EditorView, keymap, lineNumbers} from "@codemirror/view"
 import {defaultKeymap} from "@codemirror/commands"
 
 let startState = EditorState.create({
-  doc: "",
-  extensions: [keymap.of(defaultKeymap), EditorView.editable.of(false)]
+   doc: "",
+   extensions:
+      [ keymap.of(defaultKeymap)
+      , EditorView.editable.of(false)
+      , lineNumbers()
+      ]
 })
 
 function getContentsLength_ (ed) {

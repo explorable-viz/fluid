@@ -46,6 +46,7 @@
     "datetime": "^0.0.3",
     "express": "^4.19.2",
     "express-static": "^1.2.6",
+    "http-serve": "^1.0.1",
     "http-shutdown": "^1.2.2",
     "node": "^22.11.0",
     "node-process": "^1.0.1",
@@ -62,7 +63,7 @@
     "puppeteer": "^23.2.0",
     "purescript-language-server": "0.16.6",
     "purescript-psa": "0.8.2",
-    "purs-backend-es": "1.1.0",
+    "purs-backend-es": "1.4.2",
     "purs-tidy": "^0.9.3",
     "spago": "^0.21.0",
     "typescript": "^5.5.3"

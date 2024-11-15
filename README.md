@@ -13,8 +13,11 @@ Fluid is an experimental programming language which integrates a bidirectional d
 - Node.js >=14.0.0
 - yarn
 
+### For Windows Users
+- Clone the repository under Ubuntu WSL
+
 ### Notes
-- Run `script/dev-setup.sh` after cloning repository
+- Run `./script/setup/dev-setup.sh` after cloning repository
 - Avoid having PureScript installed globally
 - `Add Npm Path` is selected in PureScript IDE extension settings
 - VSCode for Windows users:
@@ -28,7 +31,12 @@ Fluid is an experimental programming language which integrates a bidirectional d
 - As per command-line tests above, but run `yarn test-browser`
 - Hit Debug in the browser window that opens, and then open Developer Tools or equivalent
 
-#### Running web app
-- `yarn build-website`
-- `yarn serve-website`
+#### Running the fluid.org website locally
+- `yarn build`
+- `yarn serve fluid-org`
 - Open a browser at the served URL (usually `127.0.0.1:8080`)
+
+#### Run Puppeteer tests for page Y of website X
+Rebuild with `puppeteerTests.headless` set to `false` to run in browser. Then:
+- `yarn bundle-website X`
+- `./script/test-page.sh X X.Y`

@@ -8,39 +8,40 @@
    <title>Fluid: Data-Linked Visualisations</title>
    <link href="/css/styles.css" rel="stylesheet" type="text/css">
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
-   <script src="https://use.fontawesome.com/1091715d00.js"></script>
-   <script src="fluid.js"></script>
-   <script src="/util.js"></script>
+   <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
+   <script src="/shared/util.js"></script>
+   <script>
+      loadHeader()
+      loadSubHeader()
+   </script>
 </head>
-<body class="standalone">
-<div class="grid-container">
+<body>
+<div id="grid" class="grid-container data-pane-hidden">
    <div></div>
    <div></div>
-   <div></div>
-   <div>
-      <h3>Matrix convolution</h3>
-      <p>This version uses a different method for dealing with the <b>boundaries</b> of the input image.</p>
+   <div class="flex-left-align">
+      <p>Contrast the <a href="../convolution/">previous</a> example, which used <code>zero</code> as the
+      boundary method, with this one, which uses <code>wrap</code>. Toggle the <span class="highlight">data
+      pane</span> again; then select an output cell near the edge. This implementation has a quite different
+      behaviour: instead of some of the <code>filter</code> elements becoming irrelevant, we can see visually
+      that the <code>inputImage</code> behaves as though opposite sides were connected. These examples show
+      how just making the input-output relationships fine-grained rather than monolithic already reveals quite
+      a lot about what a computation actually does.</p>
    </div>
 
-   <div></div>
    <div id="fig-input" class="flex-right-align data-pane"></div>
-   <div>
-      <div onclick="toggle('fig-input')"><span class="data-pane-button toggle-button">◀▶</span></div>
+   <div onclick="toggleDataPane('grid')">
+      <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
    </div>
    <div class="flex-left-align">
       <div id="fig">
          <div class="fig-loading">loading figure(s)</div>
       </div>
-      <p>What happens now at the edges of the output matrix?
-      <br>
-      And what about the corners?</p>
-      <p style="margin-left: auto; width: fit-content;"><a href="../convolution/">previous..</a></p>
+      <p>What happens now at the corners of the output matrix?</p>
+      <p class="right-justified"><a href="../convolution/">previous..</a></p>
    </div>
 </div>
 
-<script>
-   loadHeader()
-   toggle('fig-input')
-</script>
+<script src="fluid.js"></script>
 </body>
 </html>
