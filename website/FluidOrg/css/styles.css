@@ -44,7 +44,7 @@
 .fluid-subtitle {
    margin-bottom: 0;
    margin-top: 0;
-   font-size: 11pt;
+   font-size: 12pt;
 }
 
 a:link {
@@ -77,7 +77,7 @@ code {
 }
 
 body {
-   font-size: 11pt;
+   font-size: 12pt;
    font-family: "GraphikLight", sans-serif;
    font-weight: 300;
    line-height: 1.25;
@@ -103,7 +103,7 @@ p + p {
 }
 
 .highlight {
-   color: rgb(135, 129, 255);
+   font-family: 'GraphikMedium';
 }
 
 .align-right {
@@ -186,7 +186,7 @@ nav ul li.active-page a {
 
 .cm-line {
    font-family: 'Ubuntu Mono';
-   font-size: 9pt;
+   font-size: 10pt;
 }
 
 .cm-gutter {
@@ -195,7 +195,7 @@ nav ul li.active-page a {
 
 .cm-gutterElement {
    font-family: 'Ubuntu Mono';
-   font-size: 9pt;
+   font-size: 10pt;
    color: #88C0D0;
 }
 
@@ -276,7 +276,7 @@ nav ul li.active-page a {
 }
 
 .data-pane-button {
-   font-size: 9pt;
+   font-size: 10pt;
 }
 
 .toggle-button {
@@ -301,8 +301,11 @@ nav ul li.active-page a {
    display: none;
 }
 
+.data-pane * {
+   font-size: 10pt;
+}
+
 .data-pane p {
-   font-size: 9pt;
    margin-right: 3px;
 }
 
