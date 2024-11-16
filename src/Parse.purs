@@ -445,11 +445,7 @@ program = topLevel expr_
 module_ :: SParser (Raw Module)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
 
--- SParser Types
--- typeP :: SParser Types
--- typeP = (token.reserved "Integer" *> pure (TInt 0)) <|> (token.reserved "String" *> pure (TStr ""))
-
 typeP :: SParser Types
-typeP = TCons <$> ctr
--- After parsing check the types
--- new module (SExpr -> Bool or something)
+typeP = fix $ \typeP' ->
+   TCons <$> ctr
+  <|> (TList <$> (token.symbol str.lBracket *> typeP' <* token.symbol str.rBracket))

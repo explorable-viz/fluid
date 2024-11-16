@@ -15,7 +15,6 @@ import Util (Endo, type (×), (×), type (+), error, onlyIf)
 
 import Effect (Effect)
 import Effect.Console (log)  -- For logging
-
 {-
 G ::= G, x : A | .
       (x : A) in G
@@ -105,23 +104,25 @@ check g (Float u n) (TCons "Float") = true
 check g (BinaryApp e1 op e2) ty = (synth g (BinaryApp e1 op e2)) == Just ty
 
 -- Var needs a lookup to see if it's in the context
-check g (Var varName) ty = case find (\(Tuple n t) -> n == varName) g of
-      Just (Tuple _ t) -> if isValidType t then show t == show ty else false
+check g (Var varName) ty = case lookup g varName of
+      Just t -> if isValidType t then show t == show ty else false
       Nothing -> false
 
--- Let needs to add to the context, the ty' needs to be the same as the val and also ty
 check g (Let varDefs expr) ty = case varDefs of
       NonEmptyList (NonEmpty (VarDef pattern ty' val) Nil) -> case check g val ty' of
             true -> 
-                  if isValidType ty then
-                        case pattern of 
-                              PVar varName ->
-                                    let updatedG = pushVarDef g varName ty'
-                                    in check updatedG expr ty
-                              PListEmpty -> true
-                              -- Only for single-item constructors (no lists yet)
-                              PConstr ctr pattern -> check g val ty'
-                              _ -> false
+                  if isValidType ty then 
+                        case (checkPattern g pattern) of
+                              Just t -> case pattern of
+                                    PVar varName -> 
+                                          let updatedG = pushVarDef g varName ty'
+                                          in check updatedG expr ty
+                                    _ -> t == ty
+                              Nothing -> case pattern of
+                                    PVar varName ->
+                                          let updatedG = pushVarDef g varName ty'
+                                          in check updatedG expr ty
+                                    _ -> false
                   else
                         false
             false -> false
@@ -141,9 +142,63 @@ check g (IfElse e1 e2 e3) ty =
       else
             false
 -- Record data structures can have different types
-check g (Record _ exprs) = true
+-- check g (Record _ exprs) ty = true
 check g expr ty = (synth g expr) == Just ty
 
+checkPatternList :: Context -> List Pattern -> List Types -> Maybe Types
+checkPatternList _ Nil Nil = Just (TCons "unknown")
+checkPatternList g (x : xs) (t : ts) = case checkPattern g x of
+  Just _ -> checkPatternList g xs ts
+  Nothing -> Nothing
+checkPatternList _ _ _ = Nothing
+
+getCtrTy :: Types -> List Types
+getCtrTy (TCons _) = Nil
+getCtrTy (TList t) = (t : Nil)
+
+lookup :: Context -> String -> Maybe Types
+lookup g x = case find (\(Tuple n t) -> n == x) g of
+      Just (Tuple _ t) -> Just t
+      Nothing -> Nothing
+
+checkListRestPattern :: Context -> ListRestPattern -> Types -> Maybe Types
+checkListRestPattern g PEnd (TList t) = Just (TList t)
+checkListRestPattern g (PNext pattern listRestPattern) (TList t) = do
+  case (checkPattern g pattern) of
+      Just ty -> checkListRestPattern g listRestPattern ty
+      Nothing -> Nothing
+checkListRestPattern _ _ _ = Nothing
+
+checkBind :: Context -> Bind Pattern -> Maybe Types
+checkBind g (x ↦ pattern) = do
+      expectedTy <- lookup g x
+      patternTy <- checkPattern g pattern
+      if patternTy == expectedTy then Just (expectedTy) else Nothing
+
+checkBindings :: Context -> List (Bind Pattern) -> Maybe Types
+checkBindings _ Nil = Just (TCons "Record")
+checkBindings g (b : bs) = do
+      _ <- checkBind g b
+      checkBindings g bs
+
+checkPattern :: Context -> Pattern -> Maybe Types
+checkPattern g (PVar x) = case lookup g x of
+      Just existingType -> Just existingType
+      Nothing -> Nothing
+checkPattern g (PConstr ctr patterns) = do
+      ctrTy <- lookup g ctr
+      let argTy = getCtrTy ctrTy
+      case checkPatternList g patterns argTy of
+            Just _ -> Just ctrTy
+            Nothing -> Nothing
+checkPattern g (PRecord bindings) = checkBindings g bindings
+checkPattern g (PListEmpty) = Just (TList (TCons "unknown"))
+checkPattern g (PListNonEmpty head tail) = do
+      case (checkPattern g head) of
+            Just ty -> case checkListRestPattern g tail ty of
+                  Just ty' -> if ty == ty' then Just (ty) else Nothing
+                  _ -> Nothing
+            _ -> Nothing
 
 checkNonEmptyList :: forall a. ListRest a -> Types -> Boolean
 checkNonEmptyList (End _) ty = true
@@ -160,7 +215,9 @@ synthRest g (Next _ exp rest) expectedType = do
 
 
 pushVarDef :: Context -> String -> Types -> Context
-pushVarDef g varName varType = g <> singleton (Tuple varName varType)
+pushVarDef g varName varType = case lookup g varName of
+      Just _ -> g -- No modification if the variable already exists
+      Nothing -> g <> singleton (Tuple varName varType)
 
 synth :: forall a. Context -> Expr a -> Maybe Types
 synth g (Int _ _) = Just (TCons "Int")
@@ -178,21 +235,22 @@ synth g (BinaryApp e1 op e2) = case synth g e1 of
                         in
                               findMap checkOperatorType operatorTypesArray
                   Nothing -> Nothing
-synth g (Var varName) = case find (\(Tuple n t) -> n == varName) g of
-      Just (Tuple _ t) -> Just t
-      _ -> Nothing
+synth g (Var varName) = lookup g varName
 synth g (Let varDefs expr) = case varDefs of
       NonEmptyList (NonEmpty (VarDef pattern ty' val) Nil) -> case check g val ty' of
             true -> 
-                  case pattern of
-                        PVar varName -> 
-                              let updatedG = pushVarDef g varName ty'
-                              in synth updatedG expr
-                        PListEmpty -> synth g expr
-                        -- implement a function that does typing for pattern matches
-                        -- check pattern match has that type & binds variables in the process
-                        PConstr ctr _ -> synth g expr 
-                        _ -> Nothing
+                  case (checkPattern g pattern) of
+                        Just t -> case pattern of 
+                              -- varName already exists
+                              PVar varName -> if t == ty' then Just t else Nothing
+                                    -- let updatedG = pushVarDef g varName ty'
+                                    -- in synth updatedG expr
+                              _ -> if t == ty' then Just t else Nothing
+                        Nothing -> case pattern of 
+                              PVar varName ->
+                                    let updatedG = pushVarDef g varName ty'
+                                    in synth updatedG expr
+                              _ -> Nothing
             false -> Nothing
       _ -> Nothing
 synth g (ListEmpty _) = Just (TList (TCons "unknown"))
@@ -254,3 +312,12 @@ runTest = do
   -- Log the context after third update
   log ("Context after adding z: " <> show updatedContext3) 
 
+-- TESTING checkPattern
+-- Contexts
+constrContext = [(Tuple "C" (TList (TCons "Int"))), (Tuple "x" (TCons "Int"))]
+
+testPVar = check (singleton (Tuple "x" (TCons "Int"))) (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (TCons "Int") (Int unit 20)) Nil)) (Var "x")) (TCons "Int")
+testPConstr = check constrContext (Let (NonEmptyList (NonEmpty (VarDef (PConstr "C" ((PVar "x") : Nil)) (TList (TCons "Int")) (ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit))))) Nil)) (Constr unit "C" Nil)) (TList (TCons "Int"))
+testPConstr' = synth constrContext (Let (NonEmptyList (NonEmpty (VarDef (PConstr "C" ((PVar "x") : Nil)) (TList (TCons "Int")) (ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit))))) Nil)) (Constr unit "C" Nil))
+testPListNonEmpty = check (singleton (Tuple "x" (TList (TCons "Int")))) ((Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (TList (TCons "Int")) (ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit))))) Nil)) (Var "x"))) (TList (TCons "Int"))
+-- testPRecord = check [(Tuple "x" (TCons "Int")), (Tuple "y" (TCons "Str")), (Tuple "z" (TList (TCons "Int")))] (Let (NonEmptyList (NonEmpty (VarDef (PRecord ( ("x" ↦ PVar "x"):("z" ↦ PVar "z"):Nil)) (TCons "Record") (PRecord (("x" ↦ PVar "x"):("y" ↦ PVar "y"):Nil))) Nil)) (PVar "x")) (TCons "Record")
