@@ -54,7 +54,7 @@ G |- (e : A) => A
 
 -- List of accepted types
 acceptedTypes :: Array String
-acceptedTypes = ["Int", "Str", "Float", "Bool"]
+acceptedTypes = ["Int", "Str", "Float", "Bool", "Record"]
 
 isValidType :: Types -> Boolean
 isValidType (TCons ty) = elem ty acceptedTypes
@@ -117,6 +117,9 @@ check g (Let varDefs expr) ty = case varDefs of
                                     PVar varName -> 
                                           let updatedG = pushVarDef g varName ty'
                                           in check updatedG expr ty
+                                    PListEmpty -> case ty' of
+                                          TList _ -> true
+                                          _ -> false
                                     _ -> t == ty
                               Nothing -> case pattern of
                                     PVar varName ->
@@ -245,6 +248,7 @@ synth g (Let varDefs expr) = case varDefs of
                               PVar varName -> if t == ty' then Just t else Nothing
                                     -- let updatedG = pushVarDef g varName ty'
                                     -- in synth updatedG expr
+                              PListEmpty -> Just ty'
                               _ -> if t == ty' then Just t else Nothing
                         Nothing -> case pattern of 
                               PVar varName ->
@@ -270,54 +274,3 @@ synth g (IfElse e1 e2 e3) =
       else
             Nothing
 synth _ _ = Nothing
-
-
------------------------------- TESTING ---------------------------------------------------------------------
-exampleCheckInt = check (singleton (Tuple "x" (TCons "Int"))) (Int unit 42) (TCons "Int")
-exampleCheckString = check (singleton (Tuple "x" (TCons "Str"))) (Str unit "hello") (TCons "Str")
-exampleCheckFloat = check (singleton (Tuple "x" (TCons "Float"))) (Float unit 5.0) (TCons "Float")
-exampleCheckInvalid = check (singleton (Tuple "x" (TCons "Str"))) (Str unit "hello") (TCons "Int")
-exampleBinaryApp = check (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Int unit 2) "+" (Int unit 5)) (TCons "Int")
-exampleBinaryAppBool = check (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Int unit 2) ">" (Int unit 5)) (TCons "Bool")
-exampleBinaryAppInvalid = check (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Str unit "2") ">" (Int unit 5)) (TCons "Bool")
-recursionCheck = check (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (BinaryApp (Int unit 2) "+" (Int unit 1)) "+" (Int unit 3)) (TCons "Int")
-recursionCompCheck = check (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (BinaryApp (Int unit 2) "+" (Int unit 1)) "==" (Int unit 4)) (TCons "Int")
-exampleSynthBool = synth (singleton (Tuple "x" (TCons "Int"))) (BinaryApp (Int unit 2) "+" (Int unit 5))
-
-context = singleton (Tuple "x" (TCons "Int"))
-context'' = singleton (Tuple "y" (TCons "Str"))
-resultCheck = check context (Var "x") (TCons "Int")
-resultSynth = synth context (Var "x") 
-resultCheckInvalid = check context (Var "y") (TCons "Int")
-resultSynthInvalid = synth context'' (Var "x")
-
-exampleLet = check (singleton (Tuple "x" (TCons "Int"))) (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (TCons "Int") (Int unit 20)) Nil)) (Var "x")) (TCons "Int")
-exampleLetInvalid = check (singleton (Tuple "x" (TCons "Int"))) (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (TCons "Int") (Str unit "20")) Nil)) (Var "x")) (TCons "Int")
-
--- Test function to check that the context is updated
-runTest :: Effect Unit
-runTest = do
-  -- Initialize the context as empty
-  let initContext = [] :: Context
-  -- First, add "x" of type "Int"
-  let updatedContext1 = pushVarDef initContext "x" (TCons "Int")
-  -- Log the context after first update
-  log ("Context after adding x: " <> show updatedContext1) 
-  -- Then, add "y" of type "Str"
-  let updatedContext2 = pushVarDef updatedContext1 "y" (TCons "Str")
-  -- Log the context after second update
-  log ("Context after adding y: " <> show updatedContext2) 
-  -- Finally, add "z" of type "Bool"
-  let updatedContext3 = pushVarDef updatedContext2 "z" (TCons "Bool")
-  -- Log the context after third update
-  log ("Context after adding z: " <> show updatedContext3) 
-
--- TESTING checkPattern
--- Contexts
-constrContext = [(Tuple "C" (TList (TCons "Int"))), (Tuple "x" (TCons "Int"))]
-
-testPVar = check (singleton (Tuple "x" (TCons "Int"))) (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (TCons "Int") (Int unit 20)) Nil)) (Var "x")) (TCons "Int")
-testPConstr = check constrContext (Let (NonEmptyList (NonEmpty (VarDef (PConstr "C" ((PVar "x") : Nil)) (TList (TCons "Int")) (ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit))))) Nil)) (Constr unit "C" Nil)) (TList (TCons "Int"))
-testPConstr' = synth constrContext (Let (NonEmptyList (NonEmpty (VarDef (PConstr "C" ((PVar "x") : Nil)) (TList (TCons "Int")) (ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit))))) Nil)) (Constr unit "C" Nil))
-testPListNonEmpty = check (singleton (Tuple "x" (TList (TCons "Int")))) ((Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (TList (TCons "Int")) (ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit))))) Nil)) (Var "x"))) (TList (TCons "Int"))
--- testPRecord = check [(Tuple "x" (TCons "Int")), (Tuple "y" (TCons "Str")), (Tuple "z" (TList (TCons "Int")))] (Let (NonEmptyList (NonEmpty (VarDef (PRecord ( ("x" ↦ PVar "x"):("z" ↦ PVar "z"):Nil)) (TCons "Record") (PRecord (("x" ↦ PVar "x"):("y" ↦ PVar "y"):Nil))) Nil)) (PVar "x")) (TCons "Record")

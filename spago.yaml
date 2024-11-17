@@ -1,0 +1,59 @@
+package:
+  name: fluid-1
+  dependencies:
+    # - console
+    # - effect
+    # - lists
+    # - parsing
+    # - prelude
+    - aff
+    - affjax
+    - affjax-web
+    - arrays
+    - assert
+    - bifunctors
+    - console
+    - control
+    - debug
+    - effect
+    - either
+    - exceptions
+    - exists
+    - filterable
+    - foldable-traversable
+    - foreign-object
+    - functors
+    - graphs
+    - http-methods
+    - identity
+    - integers
+    - lists
+    - maybe
+    - newtype
+    - nonempty
+    - numbers
+    - ordered-collections
+    - parsing
+    - partial
+    - prelude
+    - profunctor
+    - spec
+    - spec-discovery
+    - spec-node
+    - st
+    - strings
+    - strings-extra
+    - tailrec
+    - transformers
+    - tuples
+    - unfoldable
+    - unicode
+    - unsafe-coerce
+    - web-events
+  test:
+    main: Test.Main
+    dependencies: []
+workspace:
+  packageSet:
+    registry: 60.2.1
+  extraPackages: {}

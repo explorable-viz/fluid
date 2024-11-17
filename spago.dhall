@@ -39,6 +39,7 @@ You can edit this file as you like.
   , "profunctor"
   , "st"
   , "strings"
+  , "strings-extra"
   , "tailrec"
   , "toppokki"
   , "transformers"
@@ -47,8 +48,9 @@ You can edit this file as you like.
   , "unicode"
   , "unsafe-coerce"
   , "web-events"
+  , "debug"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs", "website/**/*.purs" ]
+, sources = [ "src/**/*.purs", "src/*.purs", "test/**/*.purs", "website/**/*.purs" ]
 , backend = "purs-backend-es build"
 }
