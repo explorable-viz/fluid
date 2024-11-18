@@ -18,6 +18,7 @@ function setSelState (
       join
    },
    div,
+   tooltip,
    view,
    selListener
 ) {
@@ -27,8 +28,10 @@ function setSelState (
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
          .on('mousedown', e => { selListener(e) })
-         .on('mouseenter', e => { selListener(e) })
-         .on('mouseleave', e => { selListener(e) })
+         .on('mouseover', e => { tooltip.style("opacity", 1).html("The exact value of this cell is TODO").style("left", (d3.mouse(this)[0]+70)+"px").style("top", (d3.mouse(this)[1]) + "px")})
+         .on('mouseenter', e =>{ selListener(e)})
+         .on('mouseleave', e => { selListener(e)})
+         .on("mouseout", e => { tooltip.style("opacity", 0)})
    })
 }
 
@@ -46,6 +49,7 @@ function drawLinkedText_ (
       const div = d3.select('#' + divId)
       const childId = divId + '-' + suffix
       let rootElement = div.selectAll('#' + childId)
+      var Tooltip
       if (rootElement.empty()) {
          rootElement = div
             .append("div")
@@ -60,9 +64,19 @@ function drawLinkedText_ (
             .attr('id', childId)
             .text(d => d.conts._1)
             .attr('class', 'linked-text')
-      }
 
-      setSelState(linkedTextHelpers, uiHelpers, rootElement, view,  selListener)
+         Tooltip = div
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("background-color", "white")
+            .style("border", "solid")
+            .style("border-color", "#40BFA0")
+            .style("border-width", "2px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
+      }
+      setSelState(linkedTextHelpers, uiHelpers, rootElement, Tooltip, view, selListener)
    }
 }
 
