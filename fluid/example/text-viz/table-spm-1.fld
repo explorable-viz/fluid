@@ -1,10 +1,7 @@
-let newDataTable offset = map (fun s -> { scenario: s.scenario, ["beNear (°C)"]: s.bestEstNear + offset, lowNear: s.lowNear, highNear: s.highNear, ["beMid (°C)"]: s.bestEstMid, lowMid: s.lowMid, highMid: s.highMid, ["beLate (°C)"]: s.bestEstLate, lowLate: s.lowLate, highLate: s.highLate}) tableData;
+let newDataTable offset = map (fun s -> { scenario: s.scenario, beNear: s.bestEstNear + offset, lowNear: s.lowNear, highNear: s.highNear, beMid: s.bestEstMid, lowMid: s.lowMid, highMid: s.highMid, beLate: s.bestEstLate, lowLate: s.lowLate, highLate: s.highLate}) tableData;
 let newModel offset = map (fun s -> { model: s.model, probability: s.probability + offset}) modelProbs;
 
-let getByScenario data scenario = match (getByField "scenario" scenario data) as {
-        None -> error "absurd";
-        Some x -> x
-    };
+let getByScenario data scenario = fromSome (getByField "scenario" scenario data);
 
 let probAsText = likelihoodMap likelihoods;
 

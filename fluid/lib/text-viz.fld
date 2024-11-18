@@ -5,7 +5,5 @@ let computeProb (min, max) target =
     then 1.0
     else (target - min)/(max - min);
 
-let likelihoodMap table prob = match find (fun x -> x.prob <= prob) table as {
-    None -> error "absurd";
-    Some x -> x.msg ++ ""
-};
+let likelihoodMap table prob = (fromSome (find (fun x -> x.prob <= prob) table)).msg;
+
