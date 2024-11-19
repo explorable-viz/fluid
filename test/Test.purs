@@ -5,7 +5,7 @@ import Prelude hiding (add)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
-import Lattice (neg)
+-- import Lattice (neg)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Util (TestSuite)
@@ -15,13 +15,13 @@ import Util ((×))
 import Website.Benchmark (benchmarks)
 
 main :: Effect Unit
-main = run tests
+-- main = run tests
 
--- main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite
-   [ { file: "dict/match", imports: [], bwd_expect_file: "dict/match.expect", δv: neg, fwd_expect: "", datasets: [] }
+   [ { file: "explained", fwd_expect: "Explained (\"(1 + 1) \") (2)", imports: [], bwd_expect_file: "explained.expect", δv: identity, datasets: [] }
    ]
 
 asTestSuite :: BenchSuite -> TestSuite

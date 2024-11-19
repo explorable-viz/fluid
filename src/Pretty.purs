@@ -5,7 +5,7 @@ import Prelude hiding (absurd, between)
 import Bind (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), fromFoldable, null, uncons, (:))
+import Data.List (List(..), fromFoldable, head, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
@@ -25,7 +25,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), Endo, assert, intersperse, (×))
+import Util (type (+), type (×), Endo, assert, error, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
@@ -59,6 +59,7 @@ replacement =
    , " |" × "|"
    , "⸨ " × "⸨"
    , " ⸩" × "⸩"
+   , " @" × "@"
    ]
 
 pattRepPairs :: Array (DS.Pattern × DS.Replacement)
@@ -138,7 +139,11 @@ instance Ann a => Pretty (Expr a) where
    pretty (Int α n) = highlightIf α $ text (show n)
    pretty (Float α n) = highlightIf α $ text (show n)
    pretty (Str α str) = highlightIf α $ text ("\"" <> str <> "\"")
-   pretty (Constr α c x) = highlightIf α $ prettyConstr c x
+   pretty (Constr α c x)
+      | c == "Explained" = case (head x) of
+           (Just (Str _ x')) -> highlightIf α $ text "@" .<>. text x' .<>. text "@"
+           _ -> error "malformed explanation"
+      | otherwise = highlightIf α $ prettyConstr c x
    pretty (Dictionary α sss) = highlightIf α $ curlyBraces (prettyDictEntries (.-.) sss)
    pretty (Matrix α e (x × y) e') =
       highlightIf α $ arrayBrackets
