@@ -446,6 +446,10 @@ module_ :: SParser (Raw Module)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
 
 typeP :: SParser Types
-typeP = fix $ \typeP' ->
-   TCons <$> ctr
-  <|> (TList <$> (token.symbol str.lBracket *> typeP' <* token.symbol str.rBracket))
+typeP = fix $ \typeP' -> 
+   try (token.parens (FunTy <$> typeP' <* token.reservedOp str.rArrow <*> typeP'))
+    <|> try (typeAtom typeP')
+    <|> try (TList <$> (token.symbol str.lBracket *> typeP' <* token.symbol str.rBracket))
+
+typeAtom :: SParser Types -> SParser Types
+typeAtom typeP' = (TCons <$> ctr)  <|> try (token.parens typeP')

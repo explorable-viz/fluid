@@ -211,6 +211,7 @@ instance Pretty Pattern where
 instance Pretty Types where
    pretty (TCons x) = text x
    pretty (TList ty) = brackets (pretty ty)
+   pretty (FunTy ty1 ty2) = (pretty ty1) .<>. text str.rArrow .<>. (pretty ty2)
 
 instance Pretty (List (Bind Pattern)) where
    pretty (Cons xp Nil) = text (key xp) .<>. text str.colon .<>. pretty (val xp)

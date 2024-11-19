@@ -65,6 +65,7 @@ data Types =
    -- List of accepted types
    TCons String
    | TList Types
+   | FunTy Types Types
 
 data ListRest a
    = End a

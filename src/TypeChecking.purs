@@ -2,7 +2,7 @@ module TypeChecking where
 
 import Prelude
 
-import Data.Array (fromFoldable, singleton, foldl, find, elem, findMap)
+import Data.Array (fromFoldable, singleton, foldl, find, elem, findMap, concat, head)
 import Data.List.NonEmpty (NonEmptyList(..), cons)
 import Data.NonEmpty (NonEmpty(..), (:|))
 import Data.Tuple (Tuple(..))
@@ -59,6 +59,7 @@ acceptedTypes = ["Int", "Str", "Float", "Bool", "Record"]
 isValidType :: Types -> Boolean
 isValidType (TCons ty) = elem ty acceptedTypes
 isValidType (TList ty) = isValidType ty
+isValidType _  = true
 
 -- LOOKUP TABLE FOR OPERATOR TYPES
 type OperatorType = {opTy :: Types, argTy :: Array Types}
@@ -112,24 +113,22 @@ check g (Let varDefs expr) ty = case varDefs of
       NonEmptyList (NonEmpty (VarDef pattern ty' val) Nil) -> case check g val ty' of
             true -> 
                   if isValidType ty then 
-                        case (checkPattern g pattern) of
-                              Just t -> case pattern of
+                        case checkPattern' g pattern ty' of
+                              Just updatedG -> case pattern of
                                     PVar varName -> 
-                                          let updatedG = pushVarDef g varName ty'
-                                          in check updatedG expr ty
-                                    PListEmpty -> case ty' of
-                                          TList _ -> true
-                                          _ -> false
-                                    _ -> t == ty
+                                          let updatedG' = pushVarDef updatedG varName ty'
+                                          in check updatedG' expr ty
+                                    _ -> true
                               Nothing -> case pattern of
-                                    PVar varName ->
-                                          let updatedG = pushVarDef g varName ty'
-                                          in check updatedG expr ty
+                                    PVar varName -> 
+                                          let updatedG' = pushVarDef g varName ty'
+                                          in check updatedG' expr ty
                                     _ -> false
-                  else
+                  else 
                         false
-            false -> false
+            _ -> false
       _ -> false
+
 
 -- The empty list
 check g (ListEmpty u) (TList _) = true 
@@ -148,60 +147,77 @@ check g (IfElse e1 e2 e3) ty =
 -- check g (Record _ exprs) ty = true
 check g expr ty = (synth g expr) == Just ty
 
-checkPatternList :: Context -> List Pattern -> List Types -> Maybe Types
-checkPatternList _ Nil Nil = Just (TCons "unknown")
-checkPatternList g (x : xs) (t : ts) = case checkPattern g x of
-  Just _ -> checkPatternList g xs ts
-  Nothing -> Nothing
-checkPatternList _ _ _ = Nothing
-
-getCtrTy :: Types -> List Types
-getCtrTy (TCons _) = Nil
-getCtrTy (TList t) = (t : Nil)
-
 lookup :: Context -> String -> Maybe Types
 lookup g x = case find (\(Tuple n t) -> n == x) g of
       Just (Tuple _ t) -> Just t
       Nothing -> Nothing
 
-checkListRestPattern :: Context -> ListRestPattern -> Types -> Maybe Types
-checkListRestPattern g PEnd (TList t) = Just (TList t)
-checkListRestPattern g (PNext pattern listRestPattern) (TList t) = do
-  case (checkPattern g pattern) of
-      Just ty -> checkListRestPattern g listRestPattern ty
-      Nothing -> Nothing
-checkListRestPattern _ _ _ = Nothing
-
-checkBind :: Context -> Bind Pattern -> Maybe Types
-checkBind g (x ↦ pattern) = do
-      expectedTy <- lookup g x
-      patternTy <- checkPattern g pattern
-      if patternTy == expectedTy then Just (expectedTy) else Nothing
-
-checkBindings :: Context -> List (Bind Pattern) -> Maybe Types
-checkBindings _ Nil = Just (TCons "Record")
-checkBindings g (b : bs) = do
-      _ <- checkBind g b
-      checkBindings g bs
-
-checkPattern :: Context -> Pattern -> Maybe Types
-checkPattern g (PVar x) = case lookup g x of
-      Just existingType -> Just existingType
-      Nothing -> Nothing
-checkPattern g (PConstr ctr patterns) = do
-      ctrTy <- lookup g ctr
-      let argTy = getCtrTy ctrTy
-      case checkPatternList g patterns argTy of
-            Just _ -> Just ctrTy
-            Nothing -> Nothing
-checkPattern g (PRecord bindings) = checkBindings g bindings
-checkPattern g (PListEmpty) = Just (TList (TCons "unknown"))
-checkPattern g (PListNonEmpty head tail) = do
-      case (checkPattern g head) of
-            Just ty -> case checkListRestPattern g tail ty of
-                  Just ty' -> if ty == ty' then Just (ty) else Nothing
+checkPattern' :: Context -> Pattern -> Types -> Maybe Context
+checkPattern' g (PVar x) ty = Just (singleton (Tuple x ty))
+checkPattern' g (PConstr ctr patterns) ty = case ty of
+      TCons ty' -> checkPatterns g patterns (TCons ty')
+      FunTy t1 t2 -> do
+            case liftTypes (FunTy t1 t2) of
+                  [Tuple argTypes returnType] -> do
+                        case head argTypes of
+                              Just argTy -> do
+                                    g' <- checkPatterns g patterns argTy
+                                    checkPatterns g' patterns returnType
+                              _ -> Nothing
                   _ -> Nothing
+      TList ty' -> checkPatterns g patterns (TList ty')
+checkPattern' g (PListEmpty) ty = case ty of
+      TList _ -> Just g
+      _ -> Nothing
+checkPattern' g (PListNonEmpty head tail) ty = case ty of
+      TList ty' -> do
+            g' <- checkPattern' g head (TList ty')
+            checkListPattern g' tail (TList ty')
+      _ -> Nothing
+checkPattern' g (PRecord bindings) ty = case ty of
+      TCons "Record" -> checkRecordFields g bindings ty
+      _ -> Nothing
+
+checkBind' :: Context -> Bind Pattern -> Types -> Maybe Context
+checkBind' g (x ↦ pattern) ty = checkPattern' g pattern ty
+
+checkRecordFields :: Context -> List (Bind Pattern) -> Types -> Maybe Context
+checkRecordFields g Nil _ = Just g
+checkRecordFields g (b : bs) ty = do
+      g' <- checkBind' g b ty
+      checkRecordFields g' bs ty
+
+checkPatterns :: Context -> List Pattern -> Types -> Maybe Context
+checkPatterns g Nil _ = Just g
+checkPatterns g (p : ps) ty = do
+      g' <- checkPattern' g p ty
+      checkPatterns g' ps ty
+
+checkListPattern :: Context -> ListRestPattern -> Types -> Maybe Context
+checkListPattern g (PEnd) _ = Just g
+checkListPattern g (PNext next rest) ty = do
+      case ty of
+            TList ty' -> do
+              g' <- checkPattern' g next ty'
+              checkListPattern g' rest ty
             _ -> Nothing
+
+
+-- Function: 
+-- from a definition C:t0 -> (t1 -> ...(tn-1 -> tn)) recursively processes the list of patterns
+-- (FunTy t1 t2) (p : ps) ---> check t1 p ... checkPat t2 ps
+-- check pattern = A, this needs to be equal to tn
+
+-- Function to extract argument type and return type
+-- c = t0 -> (t1 -> (t2 -> tn))
+-- fn should return ([t0, t1, t2], tn)
+liftTypes :: Types -> Array (Tuple (Array Types) Types)
+liftTypes (TCons ty) = (singleton (Tuple [TCons ty] (TCons ty)))
+liftTypes (TList ty) = (singleton (Tuple [TList ty] (TList ty)))
+liftTypes (FunTy ty1 ty2) = case liftTypes ty2 of
+      [Tuple args ret] -> singleton (Tuple (concat [singleton ty1, args]) ret)
+      _ -> singleton (Tuple [] (TCons "unknown"))
+
 
 checkNonEmptyList :: forall a. ListRest a -> Types -> Boolean
 checkNonEmptyList (End _) ty = true
@@ -218,9 +234,7 @@ synthRest g (Next _ exp rest) expectedType = do
 
 
 pushVarDef :: Context -> String -> Types -> Context
-pushVarDef g varName varType = case lookup g varName of
-      Just _ -> g -- No modification if the variable already exists
-      Nothing -> g <> singleton (Tuple varName varType)
+pushVarDef g varName varType = g <> singleton (Tuple varName varType)
 
 synth :: forall a. Context -> Expr a -> Maybe Types
 synth g (Int _ _) = Just (TCons "Int")
@@ -241,21 +255,19 @@ synth g (BinaryApp e1 op e2) = case synth g e1 of
 synth g (Var varName) = lookup g varName
 synth g (Let varDefs expr) = case varDefs of
       NonEmptyList (NonEmpty (VarDef pattern ty' val) Nil) -> case check g val ty' of
-            true -> 
-                  case (checkPattern g pattern) of
-                        Just t -> case pattern of 
-                              -- varName already exists
-                              PVar varName -> if t == ty' then Just t else Nothing
-                                    -- let updatedG = pushVarDef g varName ty'
-                                    -- in synth updatedG expr
-                              PListEmpty -> Just ty'
-                              _ -> if t == ty' then Just t else Nothing
-                        Nothing -> case pattern of 
-                              PVar varName ->
-                                    let updatedG = pushVarDef g varName ty'
-                                    in synth updatedG expr
-                              _ -> Nothing
-            false -> Nothing
+            true -> case checkPattern' g pattern ty' of
+                  Just updatedG -> case pattern of
+                        PVar varName -> 
+                              let updatedG' = pushVarDef updatedG varName ty'
+                              in synth updatedG' expr
+                        PListEmpty -> Just ty'
+                        _ -> Just ty' 
+                  Nothing -> case pattern of
+                        PVar varName -> 
+                              let updatedG' = pushVarDef g varName ty'
+                              in synth updatedG' expr
+                        _ -> Nothing
+            _ -> Nothing
       _ -> Nothing
 synth g (ListEmpty _) = Just (TList (TCons "unknown"))
 synth g (ListNonEmpty _ exp rest) = do

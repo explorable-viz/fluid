@@ -2,7 +2,7 @@ module TypeCheckingTest where
 
 import Prelude
 
-import TypeChecking (check, synth, pushVarDef, Context)
+import TypeChecking (check, synth, pushVarDef, liftTypes, Context)
 import Data.Array (fromFoldable, singleton, foldl, find, elem, findMap, length)
 import Data.List.NonEmpty (NonEmptyList(..), cons)
 import Data.NonEmpty (NonEmpty(..), (:|))
@@ -138,3 +138,10 @@ updateContextTest = do
     log ("Context after adding y: " <> show updatedContext2) 
     let updatedContext3 = pushVarDef updatedContext2 "z" (TCons "Bool")
     log ("Context after adding z: " <> show updatedContext3) 
+
+
+-- Test function for lifting types
+liftTypesTest :: Effect Unit
+liftTypesTest = do
+    let tst = liftTypes (FunTy (TCons "t0") (FunTy (TCons "t1") (FunTy (TCons "t2") (TCons "tn"))))
+    logTestResult "Lifting types test" (tst == [(Tuple [(TCons "t0"),(TCons "t1"),(TCons "t2"),(TCons "tn")] (TCons "tn"))])
