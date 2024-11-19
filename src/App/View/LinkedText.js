@@ -18,7 +18,6 @@ function setSelState (
       join
    },
    div,
-   tooltip,
    view,
    selListener
 ) {
@@ -28,10 +27,8 @@ function setSelState (
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
          .on('mousedown', e => { selListener(e) })
-         .on('mouseover', e => { tooltip.style("opacity", 1).html("The exact value of this cell is TODO").style("left", (d3.mouse(this)[0]+70)+"px").style("top", (d3.mouse(this)[1]) + "px")})
          .on('mouseenter', e =>{ selListener(e)})
          .on('mouseleave', e => { selListener(e)})
-         .on("mouseout", e => { tooltip.style("opacity", 0)})
    })
 }
 
@@ -49,14 +46,23 @@ function drawLinkedText_ (
       const div = d3.select('#' + divId)
       const childId = divId + '-' + suffix
       let rootElement = div.selectAll('#' + childId)
-      var Tooltip
       if (rootElement.empty()) {
          rootElement = div
             .append("div")
             .attr("id", childId)
             .text(view._1)
             .attr('class', 'linked-text-parent')
-
+         var tooltip = div
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("position", "absolute")
+            .style("background-color", "white")
+            .style("border", "solid")
+            .style("border-color", "#40BFA0")
+            .style("border-width", "2px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
          rootElement.selectAll('span')
             .data([...view.entries()].map(([i, conts]) => { return {i, conts}}))
             .enter()
@@ -64,19 +70,11 @@ function drawLinkedText_ (
             .attr('id', childId)
             .text(d => d.conts._1)
             .attr('class', 'linked-text')
-
-         Tooltip = div
-            .append("div")
-            .style("opacity", 0)
-            .attr("class", "tooltip")
-            .style("background-color", "white")
-            .style("border", "solid")
-            .style("border-color", "#40BFA0")
-            .style("border-width", "2px")
-            .style("border-radius", "5px")
-            .style("padding", "5px")
+            .on("mousemove", (e, d) => { tooltip.html("The exact value of this cell is " + d.conts._1).style("left", (e.pageX+70)+"px").style("top", e.pageY + "px") })
+            .on("mouseover", (e, d)=> { tooltip.style("opacity", 1)} )
+            .on("mouseout", d=> { tooltip.style("opacity", 0)})
       }
-      setSelState(linkedTextHelpers, uiHelpers, rootElement, Tooltip, view, selListener)
+      setSelState(linkedTextHelpers, uiHelpers, rootElement, view, selListener)
    }
 }
 
