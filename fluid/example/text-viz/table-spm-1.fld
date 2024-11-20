@@ -12,7 +12,7 @@ let realTable = newDataTable 0;
 in MultiView {
     explanation119:
         LinkedText [ "Under the low GHG emissions scenario (SSP1-1.9), global warming of 2°C would ",
-                     probAsText (computeProb (ssp119.lowLate, ssp119.highLate) 2.0), 
+                     @ probAsText (computeProb (ssp119.lowLate, ssp119.highLate) 2.0) @, 
                      " be exceeded by the end of the 21st century."  ],
     explanation245:
         LinkedText [ "Under the intermediate GHG emissions scenario (SSP2-4.5), global warming of 2°C would ",
