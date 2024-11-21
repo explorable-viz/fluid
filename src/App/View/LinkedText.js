@@ -10,7 +10,7 @@ d3.selection.prototype.attrs = function(m) {
 }
 
 function setSelState (
-   { },
+   { accessAnn },
    {
       selState,
       selClasses,
@@ -23,14 +23,15 @@ function setSelState (
 ) {
    div.selectAll('span').each(function (textElem) {
       var sel
+      console.log("Overall View: ", view)
       if (textElem.conts.tag == "Left") {
          console.log("SetSelState left, View: ", view[textElem.i])
-         sel = selState((view[textElem.i])._1)
+         sel = accessAnn(view[textElem.i])
       }
       else {
          console.log("TextElem: ", textElem.conts)
          console.log("View: ", (view[textElem.i]))
-         sel = (view[textElem.i])._1._1._1
+         sel = accessAnn(view[textElem.i])
       }
       d3.select(this)
          .classed(selClasses, false)
@@ -42,7 +43,11 @@ function setSelState (
 }
 
 function drawLinkedText_ (
-   linkedTextHelpers,
+   {
+      explanation,
+      contents,
+      accessAnn
+   },
    uiHelpers,
    {
       divId,
@@ -77,60 +82,14 @@ function drawLinkedText_ (
             .enter()
             .append('span')
             .attr('id', childId)
-            .text(d => chooseText(d))
+            .text(d => contents(d.conts))
             .attr('class', 'linked-text')
-            .on("mousemove", (e, d) => { tooltip.html("This cell is explained by: " + explainChoice(d)).style("left", (e.pageX+70)+"px").style("top", e.pageY + "px") })
+            .on("mousemove", (e, d) => { tooltip.html("This cell is explained by: " + explanation(d.conts)).style("left", (e.pageX+70)+"px").style("top", e.pageY + "px") })
             .on("mouseover", (e, d)=> { tooltip.style("opacity", 1)} )
             .on("mouseout", d=> { tooltip.style("opacity", 0)})
       }
-      setSelState(linkedTextHelpers, uiHelpers, rootElement, view, selListener)
+      setSelState({ accessAnn }, uiHelpers, rootElement, view, selListener)
    }
-}
-
-
-// function test() {
-//    {
-//       "tag":"Right",
-//       "_1": {
-//          "tag":"Tuple",
-//          "_1":{
-//             "tag":"Explanation",
-//             "_1":"probAsText (computeProb (ssp119.lowLate, ssp119.highLate) 2.0) ",
-//             "_2":{
-//                "tag":"Val",
-//                "_1":{
-//                   "tag":"Reactive",
-//                   "_1":{"persistent":{"tag":"None"},"transient":{"tag":"None"}}
-//                   },
-//                "_2":{
-//                   "tag":"Str",
-//                   "_1":"exceptionally unlikely"
-//                }}},
-//          "_2":{"tag":"Inert"}}}
-
-// }
-
-function chooseText(d) {
-   if (d.conts.tag == "Left") {
-      console.log("chooseText Left: ", d.conts)
-      return d.conts._1._1
-   } else {
-      console.log("chooseText Right: ", d.conts)
-      return d.conts._1._1._3._2._1
-   }
-}
-
-function explainChoice(d) {
-   console.log("Explanation: ", d.conts)
-   if (d.conts.tag == "Left")
-   {
-      console.log("Left")
-      return d.conts._1._1
-   } else {
-      console.log("Right")
-      console.log(d.conts._1)
-      return d.conts._1._1._2
-   }  
 }
 
 export var drawLinkedText = x1 => x2 => x3 => x4 => drawLinkedText_(x1, x2, x3, x4)
