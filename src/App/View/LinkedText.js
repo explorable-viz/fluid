@@ -22,16 +22,15 @@ function setSelState (
    selListener
 ) {
    div.selectAll('span').each(function (textElem) {
-      console.log("TextElem: ", textElem.conts)
-      console.log("View: ", (view[textElem.i]))
       var sel
       if (textElem.conts.tag == "Left") {
+         console.log("SetSelState left, View: ", view[textElem.i])
          sel = selState((view[textElem.i])._1)
       }
       else {
          console.log("TextElem: ", textElem.conts)
          console.log("View: ", (view[textElem.i]))
-         sel = (view[textElem.i])._1._2
+         sel = (view[textElem.i])._1._1._2._1
       }
       d3.select(this)
          .classed(selClasses, false)
