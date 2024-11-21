@@ -30,7 +30,7 @@ function setSelState (
       else {
          console.log("TextElem: ", textElem.conts)
          console.log("View: ", (view[textElem.i]))
-         sel = (view[textElem.i])._1._1._2._1
+         sel = (view[textElem.i])._1._1._1
       }
       d3.select(this)
          .classed(selClasses, false)
@@ -116,7 +116,7 @@ function chooseText(d) {
       return d.conts._1._1
    } else {
       console.log("chooseText Right: ", d.conts)
-      return d.conts._1._1._2._2._1
+      return d.conts._1._1._3._2._1
    }
 }
 
@@ -129,7 +129,7 @@ function explainChoice(d) {
    } else {
       console.log("Right")
       console.log(d.conts._1)
-      return d.conts._1._1._1
+      return d.conts._1._1._2
    }  
 }
 

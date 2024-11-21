@@ -36,6 +36,6 @@ exch (e × a) = case e of
    Right ex -> Right (ex × a)
 
 instance Reflect (Val (SelState 𝕊)) LinkedText where
-   from r = LinkedText (exch <$> unpack linkedTextEntry <$> from r)
+   from r = LinkedText (exch <$> unpack linkedTextEntry <$> ((from r)))
 
 type LinkedTextElem = { i :: Int }

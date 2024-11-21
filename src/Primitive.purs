@@ -58,16 +58,16 @@ string =
         v -> typeError v "Str"
    }
 
-data Explanation a = Explanation String (Val a)
+data Explanation a = Explanation a String (Val a)
 
 linkedTextEntry :: forall a. ToFrom (String + Explanation a) a
 linkedTextEntry =
    { pack: case _ of
         Left str -> Str str
-        Right (Explanation s (Val α v)) -> Constr "Explained" ((Val α (Str s)) : (Val α v) : Nil)
+        Right (Explanation α s (Val α' v)) -> Constr "Explained" ((Val α (Str s)) : (Val α' v) : Nil)
    , unpack: case _ of
         Str str -> Left str
-        Constr c ((Val _ (Str s)) : v : Nil) | c == "Explained" -> Right (Explanation s v)
+        Constr c ((Val _ (Str s)) : v@(Val α _bv) : Nil) | c == "Explained" -> Right (Explanation α s v)
         v -> typeError v "String or Explanation"
    }
 
