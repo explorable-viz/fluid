@@ -23,14 +23,15 @@ function setSelState (
 ) {
    div.selectAll('span').each(function (textElem) {
       console.log("TextElem: ", textElem.conts)
-      console.log("View: ", (view[textElem.i])._1)
+      console.log("View: ", (view[textElem.i]))
       var sel
-      if (textElem.tag == "Left") {
+      if (textElem.conts.tag == "Left") {
          sel = selState((view[textElem.i])._1)
       }
       else {
-         
-         sel = selState((view[textElem.i])._1)
+         console.log("TextElem: ", textElem.conts)
+         console.log("View: ", (view[textElem.i]))
+         sel = (view[textElem.i])._1._2
       }
       d3.select(this)
          .classed(selClasses, false)
@@ -73,7 +74,7 @@ function drawLinkedText_ (
             .style("border-radius", "5px")
             .style("padding", "5px")
          rootElement.selectAll('span')
-            .data([...view.entries()].map(([i, conts]) => { console.log(JSON.stringify(conts)); return {i, conts}}))
+            .data([...view.entries()].map(([i, conts]) => { console.log("Contents:", conts); return {i, conts}}))
             .enter()
             .append('span')
             .attr('id', childId)
@@ -111,23 +112,25 @@ function drawLinkedText_ (
 // }
 
 function chooseText(d) {
-   if (d.conts._1.tag == "Left") {
+   if (d.conts.tag == "Left") {
+      console.log("chooseText Left: ", d.conts)
       return d.conts._1._1
    } else {
-      return d.conts._1._1._2._1._2._1
+      console.log("chooseText Right: ", d.conts)
+      return d.conts._1._1._2._2._1
    }
 }
 
 function explainChoice(d) {
    console.log("Explanation: ", d.conts)
-   if (d.conts._1.tag == "Left")
+   if (d.conts.tag == "Left")
    {
       console.log("Left")
       return d.conts._1._1
    } else {
       console.log("Right")
       console.log(d.conts._1)
-      return d.conts._1._1
+      return d.conts._1._1._1
    }  
 }
 
