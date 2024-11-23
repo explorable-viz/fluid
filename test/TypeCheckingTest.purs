@@ -119,7 +119,7 @@ testSynth = do
     let listNonEmptyValid = synth [] (ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Int unit 3) (End unit))))
     logTestResult "Synth ListNonEmpty valid" (listNonEmptyValid == (Just (TList(TCons "Int"))))
     let listNonEmptyInvalid = synth [] (ListNonEmpty unit (Int unit 1) (Next unit (Int unit 2) (Next unit (Str unit "3") (End unit))))
-    logTestResult "Synth ListNonEmpty valid" (listNonEmptyInvalid == Nothing)
+    logTestResult "Synth ListNonEmpty invalid" (listNonEmptyInvalid == Nothing)
     -- -- IfElse
     let ifElseValid = synth [] (IfElse (BinaryApp (Int unit 1) ">" (Int unit 2)) (Int unit 1) (Int unit 0))
     logTestResult "Synth IfElse valid" (ifElseValid == (Just (TCons "Int")))

@@ -10,11 +10,11 @@ import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestP
 import Data.Maybe (Maybe(..))
 import Control.Alt ((<|>))
 import Bind (Bind, Var, varAnon, (↦), keys)
-import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\))
+import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\), nub)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
-
-import Effect (Effect)
-import Effect.Console (log)  -- For logging
+import Data.Foldable (all)
+import Data.Traversable (traverse)
+import Util.Pair (Pair(..))
 {-
 G ::= G, x : A | .
       (x : A) in G
@@ -54,7 +54,7 @@ G |- (e : A) => A
 
 -- List of accepted types
 acceptedTypes :: Array String
-acceptedTypes = ["Int", "Str", "Float", "Bool", "Record"]
+acceptedTypes = ["Int", "Str", "Float", "Bool", "Record", "Dictionary"]
 
 isValidType :: Types -> Boolean
 isValidType (TCons ty) = elem ty acceptedTypes
@@ -86,9 +86,6 @@ type Identifier = String
 type Context = Array (Tuple Identifier Types)
 
 -- data Expr a
---    | Constr a Ctr (List (Expr a))
---    | Record a (List (Bind (Expr a)))
---    | Dictionary a (List (Pair (Expr a)))
 --    | Matrix a (Expr a) (Var × Var) (Expr a)
 --    | Lambda (Clauses a)
 --    | Project (Expr a) Var
@@ -143,9 +140,47 @@ check g (IfElse e1 e2 e3) ty =
             (synth g e2) == (synth g e3)
       else
             false
--- Record data structures can have different types
--- check g (Record _ exprs) ty = true
+-- Record data structures can have different types, just check it's type 'Record' & fieldNames are differnet
+check _ (Record _ exprs) (TCons "Record") = 
+      let fields = extractFieldNames exprs in
+      isUnique fields
+check g (Constr u ctr exprs) (TCons ctrName) = 
+      if ctr == ctrName then
+            -- check the list of expressions
+            case exprs of
+                  Nil -> true
+                  (x : Nil) -> case synth g x of
+                        Just _ -> true
+                        _ -> false
+                  (x : xs) -> case synth g x of
+                        Just _ -> 
+                              all(\y -> case synth g y of
+                                    Just _ -> true
+                                    _ -> false
+                              ) xs
+                        _ -> false
+                  _ -> true
+      else
+            false
+check g (Dictionary _ exprs) (TCons "Dictionary") = 
+      case traverse (\(Pair key val) -> do
+            case (synth g key) of
+                  Just _ -> case (synth g val) of
+                        Just ty -> Just ty
+                        _ -> Nothing
+                  _ -> Nothing
+      ) exprs of
+            Just _ -> true
+            Nothing -> false
 check g expr ty = (synth g expr) == Just ty
+
+extractFieldNames :: forall a. List (Bind (Expr a)) -> List Var
+extractFieldNames Nil = Nil
+extractFieldNames (x : xs) = case x of
+      (varName ↦ _) -> varName : extractFieldNames xs
+            
+isUnique :: List Var -> Boolean
+isUnique vars = length vars == length (nub vars)
 
 lookup :: Context -> String -> Maybe Types
 lookup g x = case find (\(Tuple n t) -> n == x) g of
@@ -285,4 +320,30 @@ synth g (IfElse e1 e2 e3) =
                         Nothing
       else
             Nothing
+synth g (Record _ exprs) = 
+      let fieldNames = extractFieldNames exprs in
+      if isUnique fieldNames then 
+            Just (TCons "Record")
+      else
+            Nothing
+synth g (Constr _ ctr exprs) = case traverse (synth g) exprs of
+      Just _ -> Just (TCons ctr)
+      _ -> Nothing
+synth g (Dictionary _ exprs) = 
+      case traverse (\(Pair key val) -> do
+            case (synth g key) of
+                  Just _ -> case (synth g val) of
+                        Just ty -> Just ty
+                        _ -> Nothing
+                  _ -> Nothing
+      ) exprs of
+            Just _ -> Just (TCons "Dictionary")
+            Nothing -> Nothing
+synth g (App exp1 exp2) =
+  -- Make sure both expressions are valid
+  case synth g exp1 of
+      Nothing -> Nothing
+      Just ty1' -> case synth g exp2 of
+            Nothing -> Nothing
+            Just ty2' -> Just (FunTy ty1' ty2')
 synth _ _ = Nothing
