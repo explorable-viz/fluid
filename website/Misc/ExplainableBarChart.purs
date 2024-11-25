@@ -15,11 +15,12 @@ fig :: FigSpec
 fig =
    { datasets:
         [ "likelihoods" ↦ "example/text-viz/likelihoods"
-        , "barData" ↦ "example/text-viz/barchart-table"
+        , "ssp119Source" ↦ "example/text-viz/left-barchart-table"
+        , "ssp245Source" ↦ "example/text-viz/right-barchart-table"
         ]
-   , imports: []
-   , file: File "text-viz/explain-barchart"
-   , inputs: [ "likelihoods", "barData" ]
+   , imports: [ "lib/text-viz" ]
+   , file: File "text-viz/figure-spm-4"
+   , inputs: [ "likelihoods", "ssp119Source", "ssp245Source" ]
    }
 
 main :: Effect Unit

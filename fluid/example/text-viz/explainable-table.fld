@@ -1,7 +1,7 @@
- [
-    { scenario: "SSP1-1.9", bestEst2140: 1.5, low2140: 1.2, high2140: 1.7, bestEst4160: 1.6, low4160: 1.2, high4160: 2.0, bestEst81100: 1.4, low81100: 1.0, high81100: 1.8},
-    { scenario: "SSP1-2.6", bestEst2140: 1.5, low2140: 1.2, high2140: 1.8, bestEst4160: 1.7, low4160: 1.3, high4160: 2.2, bestEst81100: 1.8, low81100: 1.3, high81100: 2.4},
-    { scenario: "SSP2-4.5", bestEst2140: 1.5, low2140: 1.2, high2140: 1.8, bestEst4160: 2.0, low4160: 1.6, high4160: 2.5, bestEst81100: 2.7, low81100: 2.1, high81100: 3.5},
-    { scenario: "SSP3-7.0", bestEst2140: 1.5, low2140: 1.2, high2140: 1.8, bestEst4160: 2.1, low4160: 1.7, high4160: 2.6, bestEst81100: 3.6, low81100: 2.8, high81100: 4.6},
-    { scenario: "SSP5-8.5", bestEst2140: 1.6, low2140: 1.3, high2140: 1.9, bestEst4160: 2.4, low4160: 1.9, high4160: 3.0, bestEst81100: 4.4, low81100: 3.3, high81100: 5.7}
+[
+    { scenario: "SSP1-1.9", bestEstNear: 1.5, lowNear: 1.2, highNear: 1.7, bestEstMid: 1.6, lowMid: 1.2, highMid: 2.0, bestEstLate: 1.4, lowLate: 1.0, highLate: 1.8},
+    { scenario: "SSP1-2.6", bestEstNear: 1.5, lowNear: 1.2, highNear: 1.8, bestEstMid: 1.7, lowMid: 1.3, highMid: 2.2, bestEstLate: 1.8, lowLate: 1.3, highLate: 2.4},
+    { scenario: "SSP2-4.5", bestEstNear: 1.5, lowNear: 1.2, highNear: 1.8, bestEstMid: 2.0, lowMid: 1.6, highMid: 2.5, bestEstLate: 2.7, lowLate: 2.1, highLate: 3.5},
+    { scenario: "SSP3-7.0", bestEstNear: 1.5, lowNear: 1.2, highNear: 1.8, bestEstMid: 2.1, lowMid: 1.7, highMid: 2.6, bestEstLate: 3.6, lowLate: 2.8, highLate: 4.6},
+    { scenario: "SSP5-8.5", bestEstNear: 1.6, lowNear: 1.3, highNear: 1.9, bestEstMid: 2.4, lowMid: 1.9, highMid: 3.0, bestEstLate: 4.4, lowLate: 3.3, highLate: 5.7}
 ]

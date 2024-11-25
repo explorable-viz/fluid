@@ -10,7 +10,7 @@ d3.selection.prototype.attrs = function(m) {
 }
 
 function setSelState (
-   { },
+   { accessAnn },
    {
       selState,
       selClasses,
@@ -22,18 +22,32 @@ function setSelState (
    selListener
 ) {
    div.selectAll('span').each(function (textElem) {
-      const sel = selState(view[textElem.i])
+      var sel
+      console.log("Overall View: ", view)
+      if (textElem.conts.tag == "Left") {
+         console.log("SetSelState left, View: ", view[textElem.i])
+         sel = accessAnn(view[textElem.i])
+      }
+      else {
+         console.log("TextElem: ", textElem.conts)
+         console.log("View: ", (view[textElem.i]))
+         sel = accessAnn(view[textElem.i])
+      }
       d3.select(this)
          .classed(selClasses, false)
          .classed(selClassesFor(sel), true)
          .on('mousedown', e => { selListener(e) })
-         .on('mouseenter', e => { selListener(e) })
-         .on('mouseleave', e => { selListener(e) })
+         .on('mouseenter', e =>{ selListener(e)})
+         .on('mouseleave', e => { selListener(e)})
    })
 }
 
 function drawLinkedText_ (
-   linkedTextHelpers,
+   {
+      explanation,
+      contents,
+      accessAnn
+   },
    uiHelpers,
    {
       divId,
@@ -52,17 +66,29 @@ function drawLinkedText_ (
             .attr("id", childId)
             .text(view._1)
             .attr('class', 'linked-text-parent')
-
+         var tooltip = div
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("position", "absolute")
+            .style("background-color", "white")
+            .style("border", "solid")
+            .style("border-color", "#40BFA0")
+            .style("border-width", "2px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
          rootElement.selectAll('span')
-            .data([...view.entries()].map(([i, conts]) => { return {i, conts}}))
+            .data([...view.entries()].map(([i, conts]) => { console.log("Contents:", conts); return {i, conts}}))
             .enter()
             .append('span')
             .attr('id', childId)
-            .text(d => d.conts._1)
+            .text(d => contents(d.conts))
             .attr('class', 'linked-text')
+            .on("mousemove", (e, d) => { tooltip.html("This cell is explained by: " + explanation(d.conts)).style("left", (e.pageX+70)+"px").style("top", e.pageY + "px") })
+            .on("mouseover", (e, d)=> { tooltip.style("opacity", 1)} )
+            .on("mouseout", d=> { tooltip.style("opacity", 0)})
       }
-
-      setSelState(linkedTextHelpers, uiHelpers, rootElement, view,  selListener)
+      setSelState({ accessAnn }, uiHelpers, rootElement, view, selListener)
    }
 }
 
