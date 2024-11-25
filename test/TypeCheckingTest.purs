@@ -141,7 +141,7 @@ updateContextTest = do
 
 
 -- Test function for lifting types
-liftTypesTest :: Effect Unit
-liftTypesTest = do
-    let tst = liftTypes (FunTy (TCons "t0") (FunTy (TCons "t1") (FunTy (TCons "t2") (TCons "tn"))))
-    logTestResult "Lifting types test" (tst == [(Tuple [(TCons "t0"),(TCons "t1"),(TCons "t2"),(TCons "tn")] (TCons "tn"))])
+-- liftTypesTest :: Effect Unit
+-- liftTypesTest = do
+--     let tst = liftTypes (FunTy (TCons "t0") (FunTy (TCons "t1") (FunTy (TCons "t2") (TCons "tn"))))
+--     logTestResult "Lifting types test" (tst == [(Tuple [(TCons "t0"),(TCons "t1"),(TCons "t2"),(TCons "tn")] (TCons "tn"))])

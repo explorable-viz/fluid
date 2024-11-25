@@ -83,7 +83,7 @@ allEqual :: forall a. Eq a => a -> Array a -> Boolean
 allEqual t1 arr = foldl (\acc x -> acc && (x == t1)) true arr
 
 type Identifier = String
-type Context = Array (Tuple Identifier Types)
+type Context = List (Tuple Identifier Types)
 
 -- data Expr a
 --    | Matrix a (Expr a) (Var × Var) (Expr a)
@@ -187,20 +187,22 @@ lookup g x = case find (\(Tuple n t) -> n == x) g of
       Just (Tuple _ t) -> Just t
       Nothing -> Nothing
 
+checkPatterns' :: Context -> List Types -> List Pattern -> Maybe Context
+checkPatterns' g (arg : args) (p : ps) = do
+      g' <- checkPattern' g arg p
+      g'' <- checkPatterns' g args ps
+      Just ([concat [g', g'']])
+
 checkPattern' :: Context -> Pattern -> Types -> Maybe Context
 checkPattern' g (PVar x) ty = Just (singleton (Tuple x ty))
-checkPattern' g (PConstr ctr patterns) ty = case ty of
-      TCons ty' -> checkPatterns g patterns (TCons ty')
-      FunTy t1 t2 -> do
-            case liftTypes (FunTy t1 t2) of
-                  [Tuple argTypes returnType] -> do
-                        case head argTypes of
-                              Just argTy -> do
-                                    g' <- checkPatterns g patterns argTy
-                                    checkPatterns g' patterns returnType
-                              _ -> Nothing
-                  _ -> Nothing
-      TList ty' -> checkPatterns g patterns (TList ty')
+checkPattern' g (PConstr ctr patterns) ty = case (lookup g ctr) of
+      Just ty' -> case liftTypes ty' of
+            Tuple argTy returnTy -> do
+                  if returnTy == ty then
+                        checkPatterns' argTy patterns
+                  else
+                        Nothing -- some error
+      _ -> Nothing
 checkPattern' g (PListEmpty) ty = case ty of
       TList _ -> Just g
       _ -> Nothing
@@ -246,12 +248,11 @@ checkListPattern g (PNext next rest) ty = do
 -- Function to extract argument type and return type
 -- c = t0 -> (t1 -> (t2 -> tn))
 -- fn should return ([t0, t1, t2], tn)
-liftTypes :: Types -> Array (Tuple (Array Types) Types)
-liftTypes (TCons ty) = (singleton (Tuple [TCons ty] (TCons ty)))
-liftTypes (TList ty) = (singleton (Tuple [TList ty] (TList ty)))
+liftTypes :: Types -> (Tuple (List Types) Types)
+liftTypes (TCons ty) = (Tuple Nil (TCons ty))
+liftTypes (TList ty) = (Tuple Nil (TList ty))
 liftTypes (FunTy ty1 ty2) = case liftTypes ty2 of
-      [Tuple args ret] -> singleton (Tuple (concat [singleton ty1, args]) ret)
-      _ -> singleton (Tuple [] (TCons "unknown"))
+      Tuple args ret -> (Tuple (ty1:args) ret)
 
 
 checkNonEmptyList :: forall a. ListRest a -> Types -> Boolean
@@ -269,7 +270,7 @@ synthRest g (Next _ exp rest) expectedType = do
 
 
 pushVarDef :: Context -> String -> Types -> Context
-pushVarDef g varName varType = g <> singleton (Tuple varName varType)
+pushVarDef g varName varType = (Tuple varName varType) : g
 
 synth :: forall a. Context -> Expr a -> Maybe Types
 synth g (Int _ _) = Just (TCons "Int")
