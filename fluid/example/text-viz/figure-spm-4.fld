@@ -36,7 +36,7 @@ in MultiView {
     rightBarChart: mkBarChart "SSP-4.5" ssp245,
     explanation:
         LinkedText [ "From the barchart shown above, we see that ", referToBar ssp245Industry
-                   , "  which suggests that in the high-emissions scenario it is ", @ probAsText (computeProb (40, 80) ssp245Industryheight) @
+                   , "  which suggests that in the high-emissions scenario it is ", probAsText (computeProb (40, 80) ssp245Industryheight)
                    , " that warming will exceed the global warming target of 2c by 2100."
                    , " In contrast, in the lowest-emission scenario, the probability of exceeding the target is only ",  @ mkPercent (computeProb (25, 45) (head ssp119Consumer.bars).z) @
                    , " and we can see that ", explainCorrespondingBars total "Total", " have an average value of ", @ numToStr meanTotal @, "." ]
