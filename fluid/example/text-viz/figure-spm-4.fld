@@ -11,10 +11,13 @@ let modTable offset table = map (fun bar -> { x: bar.x ++ "", bars: [{ y: bar.y,
 let stackedBarHeight stackedBar = sum [ bar.z | bar <- stackedBar.bars ];
 
 let getTotal stackedBars = fromSome (getByField "x" "Total" stackedBars);
+let getCO2 stackedBars = fromSome (getByField "x" "CO2" stackedBars);
+let getNonCO2 stackedBars = fromSome (getByField "x" "Non-CO2" stackedBars);
 
-let explainCorrespondingBars bars x = 
+
+let explainBars bars x = 
     if length bars == length (filter (fun bar -> bar.x == x) bars)
-    then "the bars on the left of each chart which represent " ++ x ++ " emissions"
+    then "(°C; " ++ x ++ " bar)"
     else error "absurd";
 
 let mkBarChart scenName table = 
@@ -24,20 +27,18 @@ let mkBarChart scenName table =
         stackedBars: table
     };
 
+let getHeight bar offset = (head bar.bars).z + offset;
+
 let ssp119 = modTable 0 ssp119Source;
     ssp245 = modTable 0 ssp245Source;
-    ssp245Industry = getByX "Industry" ssp245;
-    ssp245Industryheight = (head ssp245Industry.bars).z;
-    ssp119Consumer = getByX "Consumer" ssp119;
     total = map getTotal [ssp119, ssp245];
+    co2 = map getCO2 [ssp119, ssp245];
+    nonco2 = map getNonCO2 [ssp119, ssp245];
     meanTotal = (sum (map stackedBarHeight total)) / (length total)
 in MultiView {
     leftBarChart: mkBarChart "SSP1-1.9" ssp119,
-    rightBarChart: mkBarChart "SSP-4.5" ssp245,
+    rightBarChart: mkBarChart "SSP2-4.5" ssp245,
     explanation:
-        LinkedText [ "From the barchart shown above, we see that ", referToBar ssp245Industry
-                   , "  which suggests that in the high-emissions scenario it is ", probAsText (computeProb (40, 80) ssp245Industryheight)
-                   , " that warming will exceed the global warming target of 2c by 2100."
-                   , " In contrast, in the lowest-emission scenario, the probability of exceeding the target is only ",  @ mkPercent (computeProb (25, 45) (head ssp119Consumer.bars).z) @
-                   , " and we can see that ", explainCorrespondingBars total "Total", " have an average value of ", @ numToStr meanTotal @, "." ]
+        LinkedText [ "Within each scenario bar plot, the bars represent: total warming ", explainBars total "Total",
+                     ", warming contributions from CO2 ", explainBars co2 "CO2", " and from non-CO2 GHG's ", explainBars nonco2 "Non-CO2"]
 }

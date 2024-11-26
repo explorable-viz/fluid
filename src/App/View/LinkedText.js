@@ -23,14 +23,10 @@ function setSelState (
 ) {
    div.selectAll('span').each(function (textElem) {
       var sel
-      console.log("Overall View: ", view)
       if (textElem.conts.tag == "Left") {
-         console.log("SetSelState left, View: ", view[textElem.i])
          sel = accessAnn(view[textElem.i])
       }
       else {
-         console.log("TextElem: ", textElem.conts)
-         console.log("View: ", (view[textElem.i]))
          sel = accessAnn(view[textElem.i])
       }
       d3.select(this)
@@ -78,7 +74,7 @@ function drawLinkedText_ (
             .style("border-radius", "5px")
             .style("padding", "5px")
          rootElement.selectAll('span')
-            .data([...view.entries()].map(([i, conts]) => { console.log("Contents:", conts); return {i, conts}}))
+            .data([...view.entries()].map(([i, conts]) => {return {i, conts}}))
             .enter()
             .append('span')
             .attr('id', childId)

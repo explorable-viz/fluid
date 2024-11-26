@@ -1,4 +1,4 @@
-module Website.Misc.ExplainableBarChart where
+module Website.Misc.FigureSPM1 where
 
 import Prelude
 

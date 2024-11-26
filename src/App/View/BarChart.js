@@ -106,7 +106,7 @@ function drawBarChart_ (
          }
 
          // y-axis
-         const nearest = 100,
+         const nearest = 10,
                y_max = Math.ceil(Math.max(...stackedBars.map(d => barHeight(d.bars))) / nearest) * nearest
          const y = d3.scaleLinear()
             .domain([0, y_max])
