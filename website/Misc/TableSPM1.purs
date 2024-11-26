@@ -1,4 +1,4 @@
-module Website.Misc.TextViz where
+module Website.Misc.TableSPM1 where
 
 import Prelude hiding (absurd)
 
