@@ -1,7 +1,5 @@
 let getByX x table = fromSome (getByField "x" x table);
 
-let mkPercent num = (numToStr (num * 100)) ++ "%";
-
 let referToBar bar = "the bar representing scenario " ++ bar.x ++ " has a z value of " ++ (numToStr (head bar.bars).z);
 
 let probAsText = likelihoodMap likelihoods;
