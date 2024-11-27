@@ -85,8 +85,8 @@ let elem x [] = False;
 let find p [] = error "not found";
     find p (x : xs) = if p x then Some x else find p xs;
 
--- String -> String -> List (Dict) -> Option Dict
-let getByField fname fval table = find (fun y -> y.[fname] == fval) table;
+-- String -> String -> List Dict -> Option Dict
+let findWithKey fname fval table = find (fun y -> y.[fname] == fval) table;
 
 let fromSome option = match option as {
     None -> error "Expected Some!";

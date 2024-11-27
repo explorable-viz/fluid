@@ -1,5 +1,5 @@
 [
-    { x: "Total", y: "emissions", z: 2.7 },
-    { x: "CO2", y: "emissions", z: 2.2 },
-    { x: "Non-CO2", y: "emissions", z: 0.5 }
+    { type: "Total", emissions: 2.7 },
+    { type: "CO2", emissions: 2.2 },
+    { type: "Non-CO2", emissions: 0.5 }
 ]

@@ -1,4 +1,4 @@
-module Website.Misc.FigureSPM1 where
+module Website.Misc.FigureSPM4b where
 
 import Prelude
 
