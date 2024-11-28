@@ -20,7 +20,7 @@ fig =
         ]
    , imports: [ "lib/text-viz" ]
    , file: File "text-viz/figure-spm-4"
-   , inputs: [ "likelihoods", "ssp119Source", "ssp245Source" ]
+   , inputs: [ "ssp119Source", "ssp245Source" ]
    }
 
 main :: Effect Unit

@@ -15,12 +15,11 @@ fig :: FigSpec
 fig =
    { datasets:
         [ "tableData" ↦ "example/text-viz/explainable-table"
-        , "modelProbs" ↦ "example/text-viz/fake-probabilities"
         , "likelihoods" ↦ "example/text-viz/likelihoods"
         ]
    , imports: [ "lib/text-viz" ]
    , file: File "text-viz/table-spm-1"
-   , inputs: [ "tableData", "modelProbs", "likelihoods" ]
+   , inputs: [ "tableData", "likelihoods" ]
    }
 
 main :: Effect Unit

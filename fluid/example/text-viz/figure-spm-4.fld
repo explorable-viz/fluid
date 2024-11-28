@@ -2,10 +2,6 @@ let getByX x table = fromSome (findWithKey "x" x table);
 
 let referToBar bar = "the bar representing scenario " ++ bar.x ++ " has a z value of " ++ (numToStr (head bar.bars).z);
 
-let probAsText = likelihoodMap likelihoods;
-
-let modTable offset table = map (fun bar -> { x: bar.x ++ "", bars: [{ y: bar.y, z: bar.z + offset}] }) table;
-
 let stackedBarHeight stackedBar = sum [ bar.z | bar <- stackedBar.bars ];
 
 let getTotal (BarChart record) = fromSome (findWithKey "x" "Total" record.stackedBars);
