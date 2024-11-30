@@ -20,7 +20,7 @@ import Data.Profunctor.Strong (first, second)
 import Data.Set (toUnfoldable) as S
 import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (fst, snd, Tuple(..), uncurry)
 import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desug, desugBwd)
@@ -65,6 +65,7 @@ data Types =
    -- List of accepted types
    TCons String
    | TList Types
+   | TRecord (List (Tuple String Types))
    | FunTy Types Types
 
 data ListRest a

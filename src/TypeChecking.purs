@@ -2,19 +2,20 @@ module TypeChecking where
 
 import Prelude
 
-import Data.Array (fromFoldable, singleton, foldl, find, elem, findMap, concat, head)
+import Data.Array (fromFoldable, foldl, elem, findMap, concat, head)
 import Data.List.NonEmpty (NonEmptyList(..), cons)
 import Data.NonEmpty (NonEmpty(..), (:|))
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), snd)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..), VarDef )
 import Data.Maybe (Maybe(..))
 import Control.Alt ((<|>))
 import Bind (Bind, Var, varAnon, (↦), keys)
-import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\), nub)
+import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\), nub, find, singleton)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Data.Foldable (all)
 import Data.Traversable (traverse)
 import Util.Pair (Pair(..))
+import Data.Semigroup
 {-
 G ::= G, x : A | .
       (x : A) in G
@@ -54,12 +55,13 @@ G |- (e : A) => A
 
 -- List of accepted types
 acceptedTypes :: Array String
-acceptedTypes = ["Int", "Str", "Float", "Bool", "Record", "Dictionary"]
+acceptedTypes = ["Int", "Str", "Float", "Bool", "Dictionary"]
 
 isValidType :: Types -> Boolean
 isValidType (TCons ty) = elem ty acceptedTypes
 isValidType (TList ty) = isValidType ty
-isValidType _  = true
+isValidType (FunTy t1 t2) = isValidType t1 && isValidType t2
+isValidType (TRecord fields) = all (\(Tuple _ ty) -> isValidType ty) fields
 
 -- LOOKUP TABLE FOR OPERATOR TYPES
 type OperatorType = {opTy :: Types, argTy :: Array Types}
@@ -144,6 +146,20 @@ check g (IfElse e1 e2 e3) ty =
 check _ (Record _ exprs) (TCons "Record") = 
       let fields = extractFieldNames exprs in
       isUnique fields
+-- check g (Record _ exprs) (TRecord fieldTypes) = 
+--       let fields = extractFieldNames exprs in 
+--       if isUnique fields then
+--             all (\(Tuple field expectedTy) ->
+--                   case exprs of
+--                         (fieldName ↦ fieldExpr : rest) -> 
+--                               if fieldName == field then 
+--                                     check g fieldExpr expectedTy
+--                               else
+--                                     false
+--                         _ -> false
+--             ) fieldTypes
+--       else
+--             false
 check g (Constr u ctr exprs) (TCons ctrName) = 
       if ctr == ctrName then
             -- check the list of expressions
@@ -178,7 +194,7 @@ extractFieldNames :: forall a. List (Bind (Expr a)) -> List Var
 extractFieldNames Nil = Nil
 extractFieldNames (x : xs) = case x of
       (varName ↦ _) -> varName : extractFieldNames xs
-            
+
 isUnique :: List Var -> Boolean
 isUnique vars = length vars == length (nub vars)
 
@@ -188,10 +204,17 @@ lookup g x = case find (\(Tuple n t) -> n == x) g of
       Nothing -> Nothing
 
 checkPatterns' :: Context -> List Types -> List Pattern -> Maybe Context
-checkPatterns' g (arg : args) (p : ps) = do
-      g' <- checkPattern' g arg p
-      g'' <- checkPatterns' g args ps
-      Just ([concat [g', g'']])
+checkPatterns' g Nil Nil = Just g
+checkPatterns' g Nil ((PVar var):Nil) = Just g
+checkPatterns' g (arg : args) (p : ps) =
+      if length (arg : args) == length (p : ps) then
+            do
+            g' <- checkPattern' g p arg
+            g'' <- checkPatterns' g args ps
+            Just (append g' g'')
+      else
+            Nothing
+checkPatterns' _ _ _ = Nothing
 
 checkPattern' :: Context -> Pattern -> Types -> Maybe Context
 checkPattern' g (PVar x) ty = Just (singleton (Tuple x ty))
@@ -199,7 +222,7 @@ checkPattern' g (PConstr ctr patterns) ty = case (lookup g ctr) of
       Just ty' -> case liftTypes ty' of
             Tuple argTy returnTy -> do
                   if returnTy == ty then
-                        checkPatterns' argTy patterns
+                        checkPatterns' g argTy patterns
                   else
                         Nothing -- some error
       _ -> Nothing
@@ -214,6 +237,7 @@ checkPattern' g (PListNonEmpty head tail) ty = case ty of
 checkPattern' g (PRecord bindings) ty = case ty of
       TCons "Record" -> checkRecordFields g bindings ty
       _ -> Nothing
+checkPattern' _ _ _ = Nothing
 
 checkBind' :: Context -> Bind Pattern -> Types -> Maybe Context
 checkBind' g (x ↦ pattern) ty = checkPattern' g pattern ty
@@ -223,12 +247,7 @@ checkRecordFields g Nil _ = Just g
 checkRecordFields g (b : bs) ty = do
       g' <- checkBind' g b ty
       checkRecordFields g' bs ty
-
-checkPatterns :: Context -> List Pattern -> Types -> Maybe Context
-checkPatterns g Nil _ = Just g
-checkPatterns g (p : ps) ty = do
-      g' <- checkPattern' g p ty
-      checkPatterns g' ps ty
+checkRecordFields _ _ _ = Nothing
 
 checkListPattern :: Context -> ListRestPattern -> Types -> Maybe Context
 checkListPattern g (PEnd) _ = Just g
@@ -253,11 +272,15 @@ liftTypes (TCons ty) = (Tuple Nil (TCons ty))
 liftTypes (TList ty) = (Tuple Nil (TList ty))
 liftTypes (FunTy ty1 ty2) = case liftTypes ty2 of
       Tuple args ret -> (Tuple (ty1:args) ret)
-
+liftTypes (TRecord fields) = case fields of
+      Nil -> Tuple Nil (TRecord Nil)
+      (f : fs) -> case liftTypes (snd f) of
+            Tuple args ret -> case liftTypes (TRecord fs) of
+                  Tuple args' ret' -> Tuple (args <> args') (TRecord (f : fs))
 
 checkNonEmptyList :: forall a. ListRest a -> Types -> Boolean
 checkNonEmptyList (End _) ty = true
-checkNonEmptyList (Next _ nextElem rest) ty = check [] nextElem ty && checkNonEmptyList rest ty
+checkNonEmptyList (Next _ nextElem rest) ty = check Nil nextElem ty && checkNonEmptyList rest ty
 
 
 synthRest :: forall a. Context -> ListRest a -> Types -> Maybe Types
@@ -327,6 +350,7 @@ synth g (Record _ exprs) =
             Just (TCons "Record")
       else
             Nothing
+      
 synth g (Constr _ ctr exprs) = case traverse (synth g) exprs of
       Just _ -> Just (TCons ctr)
       _ -> Nothing
@@ -348,3 +372,8 @@ synth g (App exp1 exp2) =
             Nothing -> Nothing
             Just ty2' -> Just (FunTy ty1' ty2')
 synth _ _ = Nothing
+
+catMaybes :: forall a. List (Maybe a) -> List a
+catMaybes Nil = Nil
+catMaybes (Nothing : xs) = catMaybes xs
+catMaybes (Just x : xs) = x : catMaybes xs

@@ -6,6 +6,7 @@ import Bind (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, head, null, uncons, (:))
+import Data.List (foldl) as L
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
@@ -15,6 +16,7 @@ import Data.Profunctor.Strong (first)
 import Data.Set (toUnfoldable) as S
 import Data.String (Pattern(..), Replacement(..), contains) as DS
 import Data.String (drop, replaceAll)
+import Data.Tuple (Tuple(..))
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Expr (Cont(..), Elim(..))
@@ -211,6 +213,14 @@ instance Pretty Pattern where
 instance Pretty Types where
    pretty (TCons x) = text x
    pretty (TList ty) = brackets (pretty ty)
+   pretty (TRecord fields) = text "{" .<>. L.foldl prettyFields (text "") fields .<>. text "}"
+      where
+         prettyFields :: Doc -> Tuple String Types -> Doc
+         prettyFields acc (Tuple fieldName ty) = 
+            if acc == text "" then 
+               text fieldName .<>. text ": " .<>. (pretty ty)
+            else
+               acc .<>. text ", " .<>. text fieldName .<>. text ": " .<>. (pretty ty)
    pretty (FunTy ty1 ty2) = (pretty ty1) .<>. text str.rArrow .<>. (pretty ty2)
 
 instance Pretty (List (Bind Pattern)) where

@@ -17,6 +17,7 @@ import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
+import Data.Tuple (Tuple(..))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Lattice (Raw)
 import Parse.Constants (str)
@@ -450,6 +451,10 @@ typeP = fix $ \typeP' ->
    try (token.parens (FunTy <$> typeP' <* token.reservedOp str.rArrow <*> typeP'))
     <|> try (typeAtom typeP')
     <|> try (TList <$> (token.symbol str.lBracket *> typeP' <* token.symbol str.rBracket))
+    <|> try (TRecord <$> (token.symbol str.curlylBrace *> (fieldP typeP' `sepBy` token.symbol str.comma) <* token.symbol str.curlyrBrace))
 
 typeAtom :: SParser Types -> SParser Types
 typeAtom typeP' = (TCons <$> ctr)  <|> try (token.parens typeP')
+
+fieldP :: SParser Types -> SParser (Tuple String Types)
+fieldP typeP' = Tuple <$> (token.identifier) <*> (token.reservedOp str.colon *> typeP')
