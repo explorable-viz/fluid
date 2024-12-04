@@ -32,6 +32,7 @@ You can edit this file as you like.
   , "newtype"
   , "nonempty"
   , "numbers"
+  , "optparse"
   , "ordered-collections"
   , "parsing"
   , "partial"
