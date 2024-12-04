@@ -9,6 +9,10 @@ let getCO2 (BarChart record)= fromSome (findWithKey "x" "CO2" record.stackedBars
 let getNonCO2 (BarChart record) = fromSome (findWithKey "x" "Non-CO2" record.stackedBars);
 
 
+let barHeight (BarChart bc) x =
+    let bar = fromSome (findWithKey "x" x bc.stackedBars)
+    in sum [ segment.z | segment <- bar.bars ];
+
 let explainBars bars x = 
     if length bars == length (filter (fun bar -> bar.x == x) bars)
     then "(°C; " ++ x ++ " bar)"
