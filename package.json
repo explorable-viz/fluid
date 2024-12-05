@@ -24,7 +24,7 @@
     "tidy": "./script/tidy.sh",
     "build": "./script/build.sh",
     "build-test": "./script/build-test.sh",
-    "build-commandline": "./script/build-commandline.sh",
+    "build-interpreter": "./script/build-commandline.sh",
     "bundle-page": "./script/bundle-page.sh",
     "bundle-website": "./script/bundle-website.sh",
     "bundle-website-all": "./script/bundle-website-all.sh",
