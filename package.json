@@ -7,7 +7,6 @@
     "type": "git",
     "url": "git+https://github.com/explorable-viz/fluid.git#release"
   },
-  "type":"module",
   "keywords": [
     "PureScript",
     "JavaScript"
@@ -25,6 +24,7 @@
     "tidy": "./script/tidy.sh",
     "build": "./script/build.sh",
     "build-test": "./script/build-test.sh",
+    "build-commandline": "./script/build-commandline.sh",
     "bundle-page": "./script/bundle-page.sh",
     "bundle-website": "./script/bundle-website.sh",
     "bundle-website-all": "./script/bundle-website-all.sh",
@@ -35,7 +35,8 @@
     "test-website": "./script/test-website.sh",
     "test-website-all": "./script/test-website-all.sh",
     "test-all": "./script/test-all.sh",
-    "npm-publish": "./script/npm-publish.sh"
+    "npm-publish": "./script/npm-publish.sh",
+    "fluid": "node commandline.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
