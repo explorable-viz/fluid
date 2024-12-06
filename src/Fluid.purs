@@ -3,6 +3,7 @@ module Fluid where
 import Prelude hiding (between)
 
 import Bind (Bind, (↦))
+import Control.Alt ((<|>))
 import Data.Array (filter)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -20,8 +21,8 @@ import Module.Local (File(..), initialConfig, loadProgCxt, open)
 import Options.Applicative (Parser, eitherReader, execParser, fullDesc, header, help, helper, long, option, progDesc, short, strOption, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
+import Util (Endo)
 import Val (Val)
-import Control.Alt ((<|>))
 
 -- import Util (error)
 
@@ -36,29 +37,27 @@ data Program = Program
 instance Show Program where
    show (Program { fileName }) = "Program { fileName: " <> fileName <> " }"
 
+between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
+between p1 p2 = \f s -> do
+   case (stripPrefix p1) s >>= (stripSuffix p2) of
+      Just rest -> f rest
+      Nothing -> Left ("Expected " <> show p1 <> "..." <> show p2 <> " but got ...")
+
 parsePair :: String -> Either String (Bind String)
-parsePair = \s -> do
-   case stripPrefix (Pattern "(") s >>= stripSuffix (Pattern ")") of
-      Just rest -> do
-         case split (Pattern ",") rest of
-            [ k, v ] -> Right (trim k ↦ trim v)
-            _ -> Left $ "Expected a pair but got " <> s
-      Nothing -> Left $ "Expected ( ... ) but got " <> s
+parsePair = between (Pattern "(") (Pattern ")") $ \s -> do
+   case split (Pattern ",") s of
+      [ k, v ] -> Right (trim k ↦ trim v)
+      _ -> Left $ "Expected a pair but got " <> s
 
 parseDatasets' :: String -> Either String (Array (Bind String))
-parseDatasets' = \s -> do
-   case stripPrefix (Pattern "[") s >>= stripSuffix (Pattern "]") of
-      Just rest -> do
-         let pairs = map trim $ split (Pattern ";") rest
-         datasets <- traverse parsePair pairs
-         Right (datasets :: Array (Bind String))
-      Nothing -> Left $ "Expected [ ... ] but got " <> s
+parseDatasets' = between (Pattern "[") (Pattern "]") $ \s -> do
+   let pairs = map trim $ split (Pattern ";") s
+   datasets <- traverse parsePair pairs
+   Right (datasets :: Array (Bind String))
 
 parseImports' :: Pattern -> Pattern -> (String -> Either String (Array String))
-parseImports' open close = \s -> do
-   case (stripPrefix open s) >>= (stripSuffix close) of
-      Just rest -> Right (map trim $ filter (not <<< String.null) $ split (Pattern ",") rest)
-      Nothing -> Left $ "Expected " <> show open <> " ... " <> show close <> " but got " <> s
+parseImports' open close = between open close $ \s -> do
+   Right (map trim $ filter (not <<< String.null) $ split (Pattern ",") s)
 
 parseDatasets :: Parser (Array (Bind String))
 parseDatasets =

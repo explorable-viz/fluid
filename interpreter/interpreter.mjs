@@ -28149,7 +28149,6 @@ var execParserPure = (pprefs) => (pinfo) => (args) => {
 
 // output-es/Fluid/index.js
 var $Program = (_1) => ({ tag: "Program", _1 });
-var traverse = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither))();
 var desugGC2 = /* @__PURE__ */ desugGC(monadErrorAff)(eqUnit)({
   BoundedJoinSemilattice0: () => boundedJoinSemilatticeUni,
   BoundedMeetSemilattice1: () => boundedMeetSemilatticeUni
@@ -28157,11 +28156,33 @@ var desugGC2 = /* @__PURE__ */ desugGC(monadErrorAff)(eqUnit)({
 var loadProgCxt2 = /* @__PURE__ */ loadProgCxt(monadAffAff)(monadErrorAff);
 var initialConfig2 = /* @__PURE__ */ initialConfig(monadErrorAff)(fVExpr);
 var graphEval2 = /* @__PURE__ */ graphEval(monadErrorAff);
-var parsePair = (s) => {
-  const $0 = stripPrefix("(")(s);
+var traverse = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither))();
+var output = (v) => {
+  const $0 = v._1.datasets;
+  const $1 = v._1.imports;
+  return _bind(parseProgram("../fluid/fluid/example")(v._1.fileName)(monadAffAff)(monadErrorAff))((s) => _bind(desugGC2(s))((v1) => {
+    const $2 = v1.e;
+    return _bind(loadProgCxt2($1)($0))((progCxt) => _bind(initialConfig2($2)(progCxt))((gconfig) => _bind(graphEval2(gconfig)($2))((v2) => _pure($Val(
+      void 0,
+      functorBaseVal.map((v$1) => {
+      })(v2["out\u03B1"]._2)
+    )))));
+  }));
+};
+var callback = (v) => {
+  if (v.tag === "Left") {
+    return log2(showErrorImpl(v._1));
+  }
+  if (v.tag === "Right") {
+    return log2(intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(v._1)).lines));
+  }
+  fail();
+};
+var between3 = (p1) => (p2) => (f) => (s) => {
+  const $0 = stripPrefix(p1)(s);
   const v = (() => {
     if ($0.tag === "Just") {
-      return stripSuffix(")")($0._1);
+      return stripSuffix(p2)($0._1);
     }
     if ($0.tag === "Nothing") {
       return Nothing;
@@ -28169,36 +28190,17 @@ var parsePair = (s) => {
     fail();
   })();
   if (v.tag === "Just") {
-    const v1 = split(",")(v._1);
-    if (v1.length === 2) {
-      return $Either("Right", $Tuple(trim(v1[0]), trim(v1[1])));
-    }
-    return $Either("Left", "Expected a pair but got " + s);
+    return f(v._1);
   }
   if (v.tag === "Nothing") {
-    return $Either("Left", "Expected ( ... ) but got " + s);
+    return $Either("Left", "Expected (Pattern " + showStringImpl(p1) + ")...(Pattern " + showStringImpl(p2) + ") but got ...");
   }
   fail();
 };
-var parseImports$p = (open2) => (close2) => (s) => {
-  const $0 = stripPrefix(open2)(s);
-  const v = (() => {
-    if ($0.tag === "Just") {
-      return stripSuffix(close2)($0._1);
-    }
-    if ($0.tag === "Nothing") {
-      return Nothing;
-    }
-    fail();
-  })();
-  if (v.tag === "Just") {
-    return $Either("Right", arrayMap(trim)(filter((x) => x !== "")(split(",")(v._1))));
-  }
-  if (v.tag === "Nothing") {
-    return $Either("Left", "Expected (Pattern " + showStringImpl(open2) + ") ... (Pattern " + showStringImpl(close2) + ") but got " + s);
-  }
-  fail();
-};
+var parseImports$p = (open2) => (close2) => between3(open2)(close2)((s) => $Either(
+  "Right",
+  arrayMap(trim)(filter((x) => x !== "")(split(",")(s)))
+));
 var parseImports = /* @__PURE__ */ $Parser(
   "AltP",
   /* @__PURE__ */ option(/* @__PURE__ */ eitherReader(/* @__PURE__ */ parseImports$p("[")("]")))(/* @__PURE__ */ (() => {
@@ -28217,36 +28219,27 @@ var parseImports = /* @__PURE__ */ $Parser(
   })()),
   /* @__PURE__ */ $Parser("NilP", [])
 );
-var parseDatasets$p = (s) => {
-  const $0 = stripPrefix("[")(s);
-  const v = (() => {
-    if ($0.tag === "Just") {
-      return stripSuffix("]")($0._1);
+var parsePair = /* @__PURE__ */ between3("(")(")")((s) => {
+  const v = split(",")(s);
+  if (v.length === 2) {
+    return $Either("Right", $Tuple(trim(v[0]), trim(v[1])));
+  }
+  return $Either("Left", "Expected a pair but got " + s);
+});
+var parseDatasets$p = /* @__PURE__ */ between3("[")("]")((s) => {
+  const $0 = traverse(parsePair)(arrayMap(trim)(split(";")(s)));
+  return (() => {
+    if ($0.tag === "Left") {
+      const $1 = $0._1;
+      return (v) => $Either("Left", $1);
     }
-    if ($0.tag === "Nothing") {
-      return Nothing;
+    if ($0.tag === "Right") {
+      const $1 = $0._1;
+      return (f) => f($1);
     }
     fail();
-  })();
-  if (v.tag === "Just") {
-    const $1 = traverse(parsePair)(arrayMap(trim)(split(";")(v._1)));
-    return (() => {
-      if ($1.tag === "Left") {
-        const $2 = $1._1;
-        return (v$1) => $Either("Left", $2);
-      }
-      if ($1.tag === "Right") {
-        const $2 = $1._1;
-        return (f) => f($2);
-      }
-      fail();
-    })()((datasets) => $Either("Right", datasets));
-  }
-  if (v.tag === "Nothing") {
-    return $Either("Left", "Expected [ ... ] but got " + s);
-  }
-  fail();
-};
+  })()((datasets) => $Either("Right", datasets));
+});
 var parseDatasets = /* @__PURE__ */ $Parser(
   "AltP",
   /* @__PURE__ */ option(/* @__PURE__ */ eitherReader(parseDatasets$p))(/* @__PURE__ */ (() => {
@@ -28291,27 +28284,6 @@ var program = /* @__PURE__ */ (() => $Parser(
     })())
   )
 ))();
-var output = (v) => {
-  const $0 = v._1.datasets;
-  const $1 = v._1.imports;
-  return _bind(parseProgram("../fluid/fluid/example")(v._1.fileName)(monadAffAff)(monadErrorAff))((s) => _bind(desugGC2(s))((v1) => {
-    const $2 = v1.e;
-    return _bind(loadProgCxt2($1)($0))((progCxt) => _bind(initialConfig2($2)(progCxt))((gconfig) => _bind(graphEval2(gconfig)($2))((v2) => _pure($Val(
-      void 0,
-      functorBaseVal.map((v$1) => {
-      })(v2["out\u03B1"]._2)
-    )))));
-  }));
-};
-var callback = (v) => {
-  if (v.tag === "Left") {
-    return log2(showErrorImpl(v._1));
-  }
-  if (v.tag === "Right") {
-    return log2(intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(v._1)).lines));
-  }
-  fail();
-};
 var main = /* @__PURE__ */ (() => {
   const $0 = runAff(callback)(_bind(_liftEffect((() => {
     const $02 = header("parse - a simple parser")(progDesc("Parse a file")({
