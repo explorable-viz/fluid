@@ -16,6 +16,7 @@ import Data.Foldable (all)
 import Data.Traversable (traverse)
 import Util.Pair (Pair(..))
 import Data.Semigroup
+
 {-
 G ::= G, x : A | .
       (x : A) in G
@@ -93,10 +94,7 @@ type Context = List (Tuple Identifier Types)
 --    | Project (Expr a) Var
 --    | App (Expr a) (Expr a)
 --    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
---    | ListEnum (Expr a) (Expr a)
---    | ListComp a (Expr a) (List (Qualifier a))
 --    | LetRec (RecDefs a) (Expr a)
-
 check :: forall a. Context -> Expr a -> Types -> Boolean
 check g (Int u n) (TCons "Int") = true
 check g (Str u s) (TCons "Str") = true
@@ -142,24 +140,24 @@ check g (IfElse e1 e2 e3) ty =
             (synth g e2) == (synth g e3)
       else
             false
--- Record data structures can have different types, just check it's type 'Record' & fieldNames are differnet
-check _ (Record _ exprs) (TCons "Record") = 
-      let fields = extractFieldNames exprs in
-      isUnique fields
--- check g (Record _ exprs) (TRecord fieldTypes) = 
---       let fields = extractFieldNames exprs in 
---       if isUnique fields then
---             all (\(Tuple field expectedTy) ->
---                   case exprs of
---                         (fieldName ↦ fieldExpr : rest) -> 
---                               if fieldName == field then 
---                                     check g fieldExpr expectedTy
---                               else
---                                     false
---                         _ -> false
---             ) fieldTypes
---       else
---             false
+
+check g (Record u exprs) (TRecord fieldTypes) = 
+      -- Just the names (the "a" and "b")
+      if isUnique (extractFieldNames exprs) then
+            -- Get the expressions
+            checkRecordFieldTypes g (extractRecordExprs exprs) fieldTypes
+      else
+            false
+      where 
+      checkRecordFieldTypes :: forall a. Context -> List (Expr a) -> List (Tuple String Types) -> Boolean
+      checkRecordFieldTypes g Nil Nil = true
+      checkRecordFieldTypes g (expr : exprs) (t : ts) = do
+            if check g expr (snd t) then 
+                  checkRecordFieldTypes g exprs ts
+            else
+                  false
+      checkRecordFieldTypes _ _ _ = false
+
 check g (Constr u ctr exprs) (TCons ctrName) = 
       if ctr == ctrName then
             -- check the list of expressions
@@ -188,12 +186,44 @@ check g (Dictionary _ exprs) (TCons "Dictionary") =
       ) exprs of
             Just _ -> true
             Nothing -> false
+check g (ListEnum e1 e2) (TList ty) = case synth g e1 of
+      Nothing -> false
+      Just e1Synth -> case synth g e2 of
+            Nothing -> false
+            Just e2Synth -> e1Synth == e2Synth && e1Synth == ty
+
+check g (ListComp u expr qualifiers) (TList ty) = 
+      if (check g expr ty) then 
+            case qualifiers of
+                  (q : qs) -> case q of
+                        Guard guardExpr -> check g guardExpr ty && check g (ListComp u expr qs) (TList ty) 
+                        Generator pattern genExpr -> 
+                              let newContext = (checkPattern' g pattern ty) in
+                              case newContext of
+                                    Nothing -> false
+                                    Just context -> check context genExpr ty && check context (ListComp u expr qs) (TList ty)
+                        Declaration varDef -> case varDef of
+                              (VarDef pattern ty' val) ->
+                                    let newContext = (checkPattern' g pattern ty') in
+                                    case newContext of
+                                          Nothing -> false
+                                          Just context -> check context val ty' && check context (ListComp u expr qs) (TList ty)
+                        _ -> false
+                  Nil -> true
+      else 
+            false
 check g expr ty = (synth g expr) == Just ty
 
 extractFieldNames :: forall a. List (Bind (Expr a)) -> List Var
 extractFieldNames Nil = Nil
 extractFieldNames (x : xs) = case x of
       (varName ↦ _) -> varName : extractFieldNames xs
+
+extractRecordExprs :: forall a. List (Bind (Expr a)) -> List (Expr a)
+extractRecordExprs Nil = Nil
+extractRecordExprs (x : xs) = case x of
+      (_ ↦ varExpr) -> varExpr : extractRecordExprs xs
+
 
 isUnique :: List Var -> Boolean
 isUnique vars = length vars == length (nub vars)
@@ -235,18 +265,21 @@ checkPattern' g (PListNonEmpty head tail) ty = case ty of
             checkListPattern g' tail (TList ty')
       _ -> Nothing
 checkPattern' g (PRecord bindings) ty = case ty of
-      TCons "Record" -> checkRecordFields g bindings ty
+      TRecord fieldTypes -> checkRecordFields g bindings fieldTypes
       _ -> Nothing
 checkPattern' _ _ _ = Nothing
 
 checkBind' :: Context -> Bind Pattern -> Types -> Maybe Context
 checkBind' g (x ↦ pattern) ty = checkPattern' g pattern ty
 
-checkRecordFields :: Context -> List (Bind Pattern) -> Types -> Maybe Context
+checkRecordFields :: Context -> List (Bind Pattern) -> List (Tuple String Types) -> Maybe Context
 checkRecordFields g Nil _ = Just g
-checkRecordFields g (b : bs) ty = do
-      g' <- checkBind' g b ty
-      checkRecordFields g' bs ty
+checkRecordFields g (b : bs) ty = 
+      case ty of
+            (t : ts) -> do
+                  g' <- checkBind' g b (snd t)
+                  checkRecordFields g' bs ts
+            Nil -> Nothing
 checkRecordFields _ _ _ = Nothing
 
 checkListPattern :: Context -> ListRestPattern -> Types -> Maybe Context
@@ -344,13 +377,23 @@ synth g (IfElse e1 e2 e3) =
                         Nothing
       else
             Nothing
-synth g (Record _ exprs) = 
-      let fieldNames = extractFieldNames exprs in
-      if isUnique fieldNames then 
-            Just (TCons "Record")
-      else
+
+synth g (Record _ exprs) = let
+      synthFields = getSynthRecord g (extractFieldNames exprs) (extractRecordExprs exprs) in
+      if synthFields == Nil then 
             Nothing
-      
+      else 
+            Just (TRecord synthFields)
+      where 
+            getSynthRecord :: forall a. Context -> List Var -> List (Expr a) -> List (Tuple String Types)
+            getSynthRecord _ Nil Nil = Nil
+            getSynthRecord g (n : ns) (expr : exprs) = 
+                  case synth g expr of
+                        Nothing -> Nil
+                        Just ty -> (Tuple n ty) : getSynthRecord g ns exprs
+            getSynthRecord _ _ _ = Nil
+
+
 synth g (Constr _ ctr exprs) = case traverse (synth g) exprs of
       Just _ -> Just (TCons ctr)
       _ -> Nothing
@@ -364,6 +407,42 @@ synth g (Dictionary _ exprs) =
       ) exprs of
             Just _ -> Just (TCons "Dictionary")
             Nothing -> Nothing
+synth g (ListEnum e1 e2) = case synth g e1 of
+      Nothing -> Nothing
+      Just e1Synth -> case synth g e2 of
+            Nothing -> Nothing
+            Just e2Synth -> if e1Synth == e2Synth then Just (TList e2Synth) else Nothing
+synth g (ListComp u expr qualifiers) = 
+      case synth g expr of
+            Nothing -> Nothing
+            Just ty -> case qualifiers of
+                  (q : qs) -> case q of
+                        Guard guardExpr -> do
+                              ty' <- synth g guardExpr
+                              if ty == ty' then 
+                                    synth g (ListComp u expr qs)
+                              else 
+                                    Nothing
+                        Generator pattern genExpr ->
+                              let newContext = checkPattern' g pattern ty in 
+                              case newContext of
+                                    Nothing -> Nothing
+                                    Just context ->
+                                          if check context genExpr ty then 
+                                                synth context (ListComp u expr qs)
+                                          else
+                                                Nothing
+                        Declaration varDef -> case varDef of
+                              (VarDef pattern ty' val) ->
+                                    let newContext = checkPattern' g pattern ty' in
+                                    case newContext of
+                                          Nothing -> Nothing
+                                          Just context -> 
+                                                if check context val ty' then 
+                                                      synth context (ListComp u expr qs)
+                                                else
+                                                      Nothing
+                  _ -> Just (TList ty)
 synth g (App exp1 exp2) =
   -- Make sure both expressions are valid
   case synth g exp1 of
@@ -372,8 +451,3 @@ synth g (App exp1 exp2) =
             Nothing -> Nothing
             Just ty2' -> Just (FunTy ty1' ty2')
 synth _ _ = Nothing
-
-catMaybes :: forall a. List (Maybe a) -> List a
-catMaybes Nil = Nil
-catMaybes (Nothing : xs) = catMaybes xs
-catMaybes (Just x : xs) = x : catMaybes xs
