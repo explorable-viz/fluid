@@ -140,7 +140,7 @@ check g (IfElse e1 e2 e3) ty =
             (synth g e2) == (synth g e3)
       else
             false
-
+-- FORCES ORDERING (change needed)
 check g (Record u exprs) (TRecord fieldTypes) = 
       -- Just the names (the "a" and "b")
       if isUnique (extractFieldNames exprs) then
@@ -397,6 +397,7 @@ synth g (Record _ exprs) = let
 synth g (Constr _ ctr exprs) = case traverse (synth g) exprs of
       Just _ -> Just (TCons ctr)
       _ -> Nothing
+-- might not be needed - check new commits
 synth g (Dictionary _ exprs) = 
       case traverse (\(Pair key val) -> do
             case (synth g key) of
@@ -407,6 +408,7 @@ synth g (Dictionary _ exprs) =
       ) exprs of
             Just _ -> Just (TCons "Dictionary")
             Nothing -> Nothing
+-- can synth one and check the other
 synth g (ListEnum e1 e2) = case synth g e1 of
       Nothing -> Nothing
       Just e1Synth -> case synth g e2 of
