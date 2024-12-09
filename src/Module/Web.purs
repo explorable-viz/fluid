@@ -11,7 +11,7 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
-import Data.Newtype (class Newtype)
+import Module (Folder(..), File(..), Loader)
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -35,15 +35,7 @@ import Util (type (×), AffError, concatM, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 
-newtype File = File String
-newtype Folder = Folder String
-
-derive instance Newtype File _
-derive newtype instance Show File
-derive newtype instance Semigroup File
-derive newtype instance Monoid File
-
-loadFile :: forall m. Folder -> File -> AffError m String
+loadFile :: Loader
 loadFile (Folder folder) (File file) = do
    let url = "/" <> folder <> "/" <> file <> ".fld"
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
@@ -60,12 +52,12 @@ loadFile' folder file = (file × _) <$> loadFile folder file
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. Folder -> File -> AffError m (Raw S.Expr)
-parseProgram folder file =
-   loadFile folder file >>= flip parse P.program
+parseProgram :: forall m. Loader -> Folder -> File -> AffError m (Raw S.Expr)
+parseProgram load folder file =
+   load folder file >>= flip parse P.program
 
 open :: forall m. File -> AffError m (Raw S.Expr)
-open = parseProgram (Folder "fluid/example")
+open = parseProgram loadFile (Folder "fluid/example")
 
 module_ :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ file (ProgCxt r@{ mods }) = do
@@ -75,7 +67,7 @@ module_ file (ProgCxt r@{ mods }) = do
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- parseProgram (Folder "fluid") file >>= desug
+   eα <- parseProgram loadFile (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)

@@ -6,7 +6,8 @@ import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Module.Web (File(..), Folder(..), loadFile')
+import Module (File(..), Folder(..))
+import Module.Web (loadFile')
 import Util ((×))
 import Website.Misc.NonRenewables as NonRenewables
 
