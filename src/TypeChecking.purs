@@ -443,11 +443,11 @@ synth g (ListComp u expr qualifiers) =
                                                 else
                                                       Nothing
                   _ -> Just (TList ty)
-synth g (App exp1 exp2) =
-  -- Make sure both expressions are valid
-  case synth g exp1 of
-      Nothing -> Nothing
-      Just ty1' -> case synth g exp2 of
-            Nothing -> Nothing
-            Just ty2' -> Just (FunTy ty1' ty2')
+-- synth g (App exp1 exp2) =
+--   -- Make sure both expressions are valid
+--   case synth g exp1 of
+--       Nothing -> Nothing
+--       Just ty1' -> case synth g exp2 of
+--             Nothing -> Nothing
+--             Just ty2' -> Just (FunTy ty1' ty2')
 synth _ _ = Nothing
