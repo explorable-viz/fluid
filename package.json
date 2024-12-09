@@ -52,6 +52,7 @@
     "http-shutdown": "^1.2.2",
     "node": "^22.11.0",
     "node-process": "^1.0.1",
+    "os": "^0.1.2",
     "purescript": "^0.15.10"
   },
   "devDependencies": {

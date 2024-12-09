@@ -17,25 +17,19 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
 import Lattice (erase)
-import Module.Local (File(..), initialConfig, loadProgCxt, open)
+import Module.Local (File(..), Folder(..), initialConfig, loadProgCxt, open)
 import Options.Applicative (Parser, eitherReader, execParser, fullDesc, header, help, helper, long, option, progDesc, short, strOption, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
 import Util (Endo)
 import Val (Val)
 
--- import Util (error)
-
--- import Pretty (prettyP)
-
 data Program = Program
    { imports :: Array String
    , datasets :: Array (Bind String)
+   , root :: String
    , fileName :: String
    }
-
-instance Show Program where
-   show (Program { fileName }) = "Program { fileName: " <> fileName <> " }"
 
 between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
 between p1 p2 = \f s -> do
@@ -50,8 +44,8 @@ parsePair = between (Pattern "(") (Pattern ")") $ \s -> do
       _ -> Left $ "Expected a pair but got " <> s
 
 parseDatasets' :: String -> Either String (Array (Bind String))
-parseDatasets' = between (Pattern "[") (Pattern "]") $ \s -> do
-   let pairs = map trim $ split (Pattern ";") s
+parseDatasets' = \s -> do
+   let pairs = map trim $ split (Pattern " ") s
    datasets <- traverse parsePair pairs
    Right (datasets :: Array (Bind String))
 
@@ -75,12 +69,17 @@ parseImports =
            <> help "A comma separated list of import file locations"
       ) <|> pure []
 
+parseRoot :: Parser String
+parseRoot =
+   strOption (long "root" <> short 'r' <> help "The root director") <|> pure "../fluid/fluid"
+
 program :: Parser Program
 program = ado
    imports <- parseImports
    datasets <- parseDatasets
+   root <- parseRoot
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
-   in Program { imports, datasets, fileName }
+   in Program { imports, datasets, root, fileName }
 
 main :: Effect Unit
 main = runAff_ callback do
@@ -94,10 +93,10 @@ callback = case _ of
    Right v -> log (prettyP v)
 
 output :: Program -> Aff (Val Unit)
-output (Program { imports, datasets, fileName }) = do
-   s <- open (File fileName)
+output (Program { root, imports, datasets, fileName }) = do
+   s <- open (Folder root) (File fileName)
    { e } :: Desugaring Unit <- desugGC s
-   progCxt <- (loadProgCxt imports datasets)
+   progCxt <- (loadProgCxt (Folder root) imports datasets)
    gconfig <- initialConfig e progCxt
    { outα } <- graphEval gconfig e
    pure (erase outα)

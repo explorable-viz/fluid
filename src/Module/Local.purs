@@ -53,25 +53,25 @@ parseProgram :: forall m. Folder -> File -> AffError m (Raw S.Expr)
 parseProgram folder file =
    loadFile folder file >>= flip parse P.program
 
-open :: forall m. File -> AffError m (Raw S.Expr)
-open = parseProgram (Folder "../fluid/fluid/example")
+open :: forall m. Folder -> File -> AffError m (Raw S.Expr)
+open = parseProgram
 
-module_ :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ file (ProgCxt r@{ mods }) = do
-   src <- loadFile (Folder "../fluid/fluid/") file
+module_ :: forall m. MonadAff m => MonadError Error m => Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
+module_ root file (ProgCxt r@{ mods }) = do
+   src <- loadFile root file
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
-datasetAs (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- parseProgram (Folder "../fluid/fluid/dataset") file >>= desug
+datasetAs :: forall m. MonadAff m => MonadError Error m => Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs (Folder root) (x ↦ file) (ProgCxt r@{ datasets }) = do
+   eα <- parseProgram (Folder $ root <> "/dataset") file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt mods datasets =
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt root mods datasets =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= concatM (File >>> module_ <$> [ "lib/prelude" ] <> mods)
-      >>= concatM (second File >>> datasetAs <$> datasets)
+      >>= concatM (File >>> module_ root <$> [ "lib/prelude" ] <> mods)
+      >>= concatM (second File >>> datasetAs root <$> datasets)
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
