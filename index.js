@@ -24902,7 +24902,7 @@ var traversableProgCxt = {
   Foldable1: () => foldableProgCxt
 };
 
-// output-es/Module.Local/index.js
+// output-es/Module.Node/index.js
 var boundedLattice2 = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeUni, BoundedMeetSemilattice1: () => boundedMeetSemilatticeUni };
 var verticesVertex2 = /* @__PURE__ */ verticesVertex(functorProgCxt)(foldableProgCxt);
 var concatM2 = (dictMonad) => foldrArray((() => {

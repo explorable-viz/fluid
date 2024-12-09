@@ -1,4 +1,4 @@
-module Module.Local where
+module Module.Node where
 
 import Prelude
 
