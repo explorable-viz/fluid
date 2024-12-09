@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -xe
 
-node output-es/Fluid/index.mjs "$@"
+node ~/Documents/fluid/output-es/Fluid/index.mjs "$@"
