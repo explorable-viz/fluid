@@ -5,13 +5,11 @@ import Prelude
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
 import Bind (Bind, (↦))
-import Control.Monad.Error.Class (liftEither, throwError)
+import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (class MonadError)
-import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.List (List(..), (:))
-import Module (Folder(..), File(..), Loader)
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -24,18 +22,17 @@ import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
-import Parse (module_, program) as P
-import Parsing (runParser)
+import Module (Folder(..), File(..), FileLoader)
+import Module (parse, parseProgram, module_) as M
 import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Expr) as S
-import SExpr (desugarModuleFwd)
 import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 
-loadFile :: Loader
+loadFile :: FileLoader
 loadFile (Folder folder) (File file) = do
    let url = "/" <> folder <> "/" <> file <> ".fld"
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
@@ -50,24 +47,20 @@ loadFile' :: forall m. Folder -> File -> AffError m (File × String)
 loadFile' folder file = (file × _) <$> loadFile folder file
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
-parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
+parse = M.parse
 
-parseProgram :: forall m. Loader -> Folder -> File -> AffError m (Raw S.Expr)
-parseProgram load folder file =
-   load folder file >>= flip parse P.program
+parseProgram :: forall m. Folder -> File -> AffError m (Raw S.Expr)
+parseProgram = M.parseProgram loadFile
 
 open :: forall m. File -> AffError m (Raw S.Expr)
-open = parseProgram loadFile (Folder "fluid/example")
+open = parseProgram (Folder "fluid/example")
 
 module_ :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ file (ProgCxt r@{ mods }) = do
-   src <- loadFile (Folder "fluid") file
-   mod <- parse src P.module_ >>= desugarModuleFwd
-   pure $ ProgCxt r { mods = mod : mods }
+module_ = M.module_ loadFile (Folder "fluid")
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- parseProgram loadFile (Folder "fluid") file >>= desug
+   eα <- parseProgram (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)

@@ -24,7 +24,7 @@
     "tidy": "./script/tidy.sh",
     "build": "./script/build.sh",
     "build-test": "./script/build-test.sh",
-    "build-interpreter": "./script/build-interpreter.sh",
+    "build-fluid": "./script/build-fluid.sh",
     "bundle-page": "./script/bundle-page.sh",
     "bundle-website": "./script/bundle-website.sh",
     "bundle-website-all": "./script/bundle-website-all.sh",
@@ -36,7 +36,7 @@
     "test-website-all": "./script/test-website-all.sh",
     "test-all": "./script/test-all.sh",
     "npm-publish": "./script/npm-publish.sh",
-    "fluid": "node interpreter/interpreter.mjs"
+    "fluid": "./script/fluid.sh"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",

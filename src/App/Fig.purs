@@ -113,9 +113,10 @@ lift selState_f selState_g (GC gc) = GC { bwd, fwd }
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ inputs, imports, file, datasets } = do
+   progCxt <- loadProgCxt imports datasets
    s <- open file
    e <- desug s
-   gconfig <- loadProgCxt imports datasets >>= initialConfig e
+   gconfig <- initialConfig e progCxt
    eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
    let
       EnvExpr γ e' = erase eval.inα

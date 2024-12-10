@@ -10,14 +10,14 @@ import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split, stripPrefix, stripSuffix, trim)
 import Data.String as String
 import Data.Traversable (traverse)
-import Desug (Desugaring, desugGC)
+import Desugarable (desug)
 import Effect (Effect)
 import Effect.Aff (Aff, Error, runAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
 import Lattice (erase)
-import Module (Folder(..), File(..))
+import Module (File(..))
 import Module.Node (initialConfig, loadProgCxt, open)
 import Options.Applicative (Parser, eitherReader, execParser, fullDesc, header, help, helper, long, option, progDesc, short, strOption, (<**>))
 import Options.Applicative.Builder (info)
@@ -28,7 +28,6 @@ import Val (Val)
 data Program = Program
    { imports :: Array String
    , datasets :: Array (Bind String)
-   , root :: String
    , fileName :: String
    }
 
@@ -70,17 +69,12 @@ parseImports =
            <> help "A comma separated list of import file locations"
       ) <|> pure []
 
-parseRoot :: Parser String
-parseRoot =
-   strOption (long "root" <> short 'r' <> help "The root director") <|> pure "../fluid/fluid"
-
 program :: Parser Program
 program = ado
    imports <- parseImports
    datasets <- parseDatasets
-   root <- parseRoot
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
-   in Program { imports, datasets, root, fileName }
+   in Program { imports, datasets, fileName }
 
 main :: Effect Unit
 main = runAff_ callback do
@@ -94,10 +88,10 @@ callback = case _ of
    Right v -> log (prettyP v)
 
 output :: Program -> Aff (Val Unit)
-output (Program { root, imports, datasets, fileName }) = do
-   s <- open (Folder root) (File fileName)
-   { e } :: Desugaring Unit <- desugGC s
-   progCxt <- (loadProgCxt (Folder root) imports datasets)
+output (Program { imports, datasets, fileName }) = do
+   progCxt <- loadProgCxt imports datasets
+   s <- open (File fileName)
+   e <- desug s
    gconfig <- initialConfig e progCxt
    { outα } <- graphEval gconfig e
    pure (erase outα)
