@@ -3,13 +3,12 @@ module Fluid where
 import Prelude hiding (between)
 
 import Bind (Bind, (↦))
-import Control.Alt ((<|>))
-import Data.Array (filter)
+import Data.Array (filter, fromFoldable)
 import Data.Either (Either(..))
+import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split, stripPrefix, stripSuffix, trim)
 import Data.String as String
-import Data.Traversable (traverse)
 import Desugarable (desug)
 import Effect (Effect)
 import Effect.Aff (Aff, Error, runAff_)
@@ -19,7 +18,7 @@ import EvalGraph (graphEval)
 import Lattice (erase)
 import Module.Files (File(..))
 import Module.Node (initialConfig, loadProgCxt, open)
-import Options.Applicative (Parser, eitherReader, execParser, fullDesc, header, help, helper, long, option, progDesc, short, strOption, (<**>))
+import Options.Applicative (Parser, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
 import Util (Endo)
@@ -43,36 +42,35 @@ parsePair = between (Pattern "(") (Pattern ")") $ \s -> do
       [ k, v ] -> Right (trim k ↦ trim v)
       _ -> Left $ "Expected a pair but got " <> s
 
-parseDatasets' :: String -> Either String (Array (Bind String))
-parseDatasets' = \s -> do
-   let pairs = map trim $ split (Pattern " ") s
-   datasets <- traverse parsePair pairs
-   Right (datasets :: Array (Bind String))
+parseDataset' :: String -> Either String (Bind String)
+parseDataset' = \s -> do
+   dataset <- parsePair s
+   Right (dataset :: (Bind String))
 
 parseImports' :: Pattern -> Pattern -> (String -> Either String (Array String))
 parseImports' open close = between open close $ \s -> do
    Right (map trim $ filter (not <<< String.null) $ split (Pattern ",") s)
 
-parseDatasets :: Parser (Array (Bind String))
+parseDatasets :: Parser (List (Bind String))
 parseDatasets =
-   option (eitherReader $ parseDatasets')
+   many $ option (eitherReader $ parseDataset')
       ( long "datasets"
            <> short 'd'
            <> help "A comma separated list of datasets"
-      ) <|> pure []
+      )
 
-parseImports :: Parser (Array String)
+parseImports :: Parser (List String)
 parseImports =
-   option (eitherReader $ parseImports' (Pattern "[") (Pattern "]"))
+   many $ strOption
       ( long "imports"
            <> short 'i'
            <> help "A comma separated list of import file locations"
-      ) <|> pure []
+      )
 
 program :: Parser Program
 program = ado
-   imports <- parseImports
-   datasets <- parseDatasets
+   imports <- fromFoldable <$> parseImports
+   datasets <- fromFoldable <$> parseDatasets
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
    in Program { imports, datasets, fileName }
 
