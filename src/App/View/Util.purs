@@ -14,7 +14,7 @@ import Dict (Dict)
 import Effect (Effect)
 import GaloisConnection (GaloisConnection)
 import Lattice (𝔹, Raw, (∨))
-import Module (File)
+import Module.Files (File)
 import SExpr as S
 import Util (type (×), Endo, Setter, check)
 import Val (Env, Val)

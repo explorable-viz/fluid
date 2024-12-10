@@ -20,7 +20,7 @@ import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection ((***)) as GC
 import GaloisConnection (GaloisConnection(..), dual, meet)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topOf)
-import Module (File)
+import Module.Files (File)
 import Module.Web (initialConfig, loadProgCxt, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)

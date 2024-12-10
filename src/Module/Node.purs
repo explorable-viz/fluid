@@ -9,7 +9,7 @@ import Effect.Exception (Error)
 import EvalGraph (GraphConfig)
 import Expr (class FV)
 import Lattice (Raw)
-import Module (File(..), FileLoader, Folder(..))
+import Module.Files (File(..), Folder(..), FileLoader)
 import Module (datasetAs, loadProgCxt, module_, parse, parseProgram, initialConfig) as M
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile)

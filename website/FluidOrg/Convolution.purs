@@ -7,7 +7,7 @@ import App.Util (runAffs_)
 import App.View.Util (FigSpec)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Module (File(..), Folder(..))
+import Module.Files (File(..), Folder(..))
 import Module.Web (loadFile')
 import Util ((×))
 

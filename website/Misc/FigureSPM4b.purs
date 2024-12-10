@@ -7,7 +7,7 @@ import App.Util (runAffs_)
 import App.View.Util (FigSpec)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Module (File(..))
+import Module.Files (File(..))
 import Util ((×))
 import Bind ((↦))
 

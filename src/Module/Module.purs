@@ -8,7 +8,6 @@ import Control.Monad.Except (class MonadError)
 import Data.Bifunctor (lmap)
 import Graph (vertices)
 import Data.List (List(..), (:))
-import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
@@ -29,16 +28,7 @@ import Test.Util.Debug (checking)
 import Util (AffError, concatM, type (×), (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
-
-type FileLoader = forall m. Folder -> File -> AffError m String
-
-newtype File = File String
-newtype Folder = Folder String
-
-derive instance Newtype File _
-derive newtype instance Show File
-derive newtype instance Semigroup File
-derive newtype instance Monoid File
+import Module.Files (File(..), Folder, FileLoader)
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src

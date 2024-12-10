@@ -1,4 +1,14 @@
-module Module.Web where
+module Module.Web
+   ( loadFile
+   , loadFile'
+   , parse
+   , parseProgram
+   , open
+   , module_
+   , datasetAs
+   , loadProgCxt
+   , initialConfig
+   ) where
 
 import Prelude
 
@@ -16,7 +26,7 @@ import Effect.Exception (error) as E
 import EvalGraph (GraphConfig)
 import Expr (class FV)
 import Lattice (Raw)
-import Module (Folder(..), File(..), FileLoader)
+import Module.Files (FileLoader, Folder(..), File(..))
 import Module (datasetAs, loadProgCxt, module_, parse, parseProgram, initialConfig) as M
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
