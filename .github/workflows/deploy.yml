@@ -29,6 +29,7 @@ jobs:
         node-version: 22
         registry-url: 'https://registry.npmjs.org'
     - run: |
+        yarn install
         yarn npm-publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
