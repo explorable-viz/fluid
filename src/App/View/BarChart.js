@@ -110,7 +110,7 @@ function drawBarChart_ (
          const nearest = 10,
                y_max = Math.ceil(Math.max(...stackedBars.map(d => barHeight(d.bars))) / nearest) * nearest
          const y = d3.scaleLinear()
-            .domain([-y_max, y_max])
+            .domain([0, y_max])
             .range([height, 0])
             .nice()
          const tickEvery_n = tickEvery(y_max),
@@ -145,9 +145,9 @@ function drawBarChart_ (
             .append('rect')
                .attr('class', 'bar')
                .attr('x', bar => { return x(bar.x) })
-               .attr('y', bar => { return y(Math.max(bar.y + bar.height, 0)) })
+               .attr('y', bar => { return y(bar.y + bar.height) })
                .attr('width', x.bandwidth())
-               .attr('height', bar => { return Math.abs(height - y(bar.height) - strokeWidth - y(0)) }) // stop bars overplotting
+               .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
                .attr('stroke-width', _ => strokeWidth)
 
          const legendLineHeight = 15,
