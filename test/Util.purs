@@ -9,7 +9,7 @@ import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
-import Desug (Desugaring, desugGC)
+import Desug (desugGC)
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
@@ -18,8 +18,7 @@ import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
-import Module.Files (File)
-import Module.Web (initialConfig, open, parse)
+import Module.Web (File, parse, prepConfig)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import ProgCxt (ProgCxt)
@@ -39,10 +38,8 @@ type SelectionSpec =
 
 test ∷ forall m. File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file progCxt spec (n × _) = do
-   s <- open file
-   { e } :: Desugaring Unit <- desugGC s
+   { s, gconfig } <- prepConfig file progCxt
    when debug.logging $ log ("**** initialConfig")
-   gconfig <- initialConfig e progCxt
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n

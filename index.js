@@ -241,24 +241,6 @@ var choose = (dictAlt) => {
   const $0 = dictAlt.Functor0();
   return (a) => (b) => dictAlt.alt($0.map(Left)(a))($0.map(Right)(b));
 };
-var applyEither = {
-  apply: (v) => (v1) => {
-    if (v.tag === "Left") {
-      return $Either("Left", v._1);
-    }
-    if (v.tag === "Right") {
-      if (v1.tag === "Left") {
-        return $Either("Left", v1._1);
-      }
-      if (v1.tag === "Right") {
-        return $Either("Right", v._1(v1._1));
-      }
-    }
-    fail();
-  },
-  Functor0: () => functorEither
-};
-var applicativeEither = { pure: Right, Apply0: () => applyEither };
 
 // output-es/Data.Identity/index.js
 var Identity = (x) => x;
@@ -961,225 +943,6 @@ var mapMaybe = (f) => concatMap((x) => {
   fail();
 });
 
-// output-es/Data.String.Unsafe/foreign.js
-var charAt = function(i) {
-  return function(s) {
-    if (i >= 0 && i < s.length)
-      return s.charAt(i);
-    throw new Error("Data.String.Unsafe.charAt: Invalid index.");
-  };
-};
-
-// output-es/Data.String.CodeUnits/foreign.js
-var fromCharArray = function(a) {
-  return a.join("");
-};
-var toCharArray = function(s) {
-  return s.split("");
-};
-var singleton = function(c) {
-  return c;
-};
-var _charAt = function(just) {
-  return function(nothing) {
-    return function(i) {
-      return function(s) {
-        return i >= 0 && i < s.length ? just(s.charAt(i)) : nothing;
-      };
-    };
-  };
-};
-var _toChar = function(just) {
-  return function(nothing) {
-    return function(s) {
-      return s.length === 1 ? just(s) : nothing;
-    };
-  };
-};
-var length2 = function(s) {
-  return s.length;
-};
-var _indexOf = function(just) {
-  return function(nothing) {
-    return function(x) {
-      return function(s) {
-        var i = s.indexOf(x);
-        return i === -1 ? nothing : just(i);
-      };
-    };
-  };
-};
-var take = function(n) {
-  return function(s) {
-    return s.substr(0, n);
-  };
-};
-var drop2 = function(n) {
-  return function(s) {
-    return s.substring(n);
-  };
-};
-var splitAt = function(i) {
-  return function(s) {
-    return { before: s.substring(0, i), after: s.substring(i) };
-  };
-};
-
-// output-es/Data.String.CodeUnits/index.js
-var uncons2 = (v) => {
-  if (v === "") {
-    return Nothing;
-  }
-  return $Maybe("Just", { head: charAt(0)(v), tail: drop2(1)(v) });
-};
-var toChar = /* @__PURE__ */ _toChar(Just)(Nothing);
-var stripSuffix = (v) => (str) => {
-  const v1 = splitAt(length2(str) - length2(v) | 0)(str);
-  if (v1.after === v) {
-    return $Maybe("Just", v1.before);
-  }
-  return Nothing;
-};
-var stripPrefix = (v) => (str) => {
-  const v1 = splitAt(length2(v))(str);
-  if (v1.before === v) {
-    return $Maybe("Just", v1.after);
-  }
-  return Nothing;
-};
-var indexOf = /* @__PURE__ */ _indexOf(Just)(Nothing);
-var contains = (pat) => {
-  const $0 = indexOf(pat);
-  return (x) => {
-    const $1 = $0(x);
-    if ($1.tag === "Nothing") {
-      return false;
-    }
-    if ($1.tag === "Just") {
-      return true;
-    }
-    fail();
-  };
-};
-var charAt2 = /* @__PURE__ */ _charAt(Just)(Nothing);
-
-// output-es/Data.String.Common/foreign.js
-var replaceAll = function(s1) {
-  return function(s2) {
-    return function(s3) {
-      return s3.replace(new RegExp(s1.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "g"), s2);
-    };
-  };
-};
-var split = function(sep) {
-  return function(s) {
-    return s.split(sep);
-  };
-};
-var toLower = function(s) {
-  return s.toLowerCase();
-};
-var trim = function(s) {
-  return s.trim();
-};
-var joinWith = function(s) {
-  return function(xs) {
-    return xs.join(s);
-  };
-};
-
-// output-es/Control.Monad.Except.Trans/index.js
-var bindExceptT = (dictMonad) => ({
-  bind: (v) => (k) => dictMonad.Bind1().bind(v)((v2) => {
-    if (v2.tag === "Left") {
-      return dictMonad.Applicative0().pure($Either("Left", v2._1));
-    }
-    if (v2.tag === "Right") {
-      return k(v2._1);
-    }
-    fail();
-  }),
-  Apply0: () => applyExceptT(dictMonad)
-});
-var applyExceptT = (dictMonad) => {
-  const $0 = dictMonad.Bind1().Apply0().Functor0();
-  const functorExceptT1 = {
-    map: (f) => $0.map((m) => {
-      if (m.tag === "Left") {
-        return $Either("Left", m._1);
-      }
-      if (m.tag === "Right") {
-        return $Either("Right", f(m._1));
-      }
-      fail();
-    })
-  };
-  return {
-    apply: (() => {
-      const $1 = bindExceptT(dictMonad);
-      return (f) => (a) => $1.bind(f)((f$p) => $1.bind(a)((a$p) => applicativeExceptT(dictMonad).pure(f$p(a$p))));
-    })(),
-    Functor0: () => functorExceptT1
-  };
-};
-var applicativeExceptT = (dictMonad) => ({ pure: (x) => dictMonad.Applicative0().pure($Either("Right", x)), Apply0: () => applyExceptT(dictMonad) });
-var monadThrowExceptT = (dictMonad) => {
-  const monadExceptT1 = { Applicative0: () => applicativeExceptT(dictMonad), Bind1: () => bindExceptT(dictMonad) };
-  return { throwError: (x) => dictMonad.Applicative0().pure($Either("Left", x)), Monad0: () => monadExceptT1 };
-};
-var monadErrorExceptT = (dictMonad) => {
-  const monadThrowExceptT1 = monadThrowExceptT(dictMonad);
-  return {
-    catchError: (v) => (k) => dictMonad.Bind1().bind(v)((v2) => {
-      if (v2.tag === "Left") {
-        return k(v2._1);
-      }
-      if (v2.tag === "Right") {
-        return dictMonad.Applicative0().pure($Either("Right", v2._1));
-      }
-      fail();
-    }),
-    MonadThrow0: () => monadThrowExceptT1
-  };
-};
-var altExceptT = (dictSemigroup) => (dictMonad) => {
-  const Bind1 = dictMonad.Bind1();
-  const $0 = dictMonad.Applicative0();
-  const $1 = Bind1.Apply0().Functor0();
-  const functorExceptT1 = {
-    map: (f) => $1.map((m) => {
-      if (m.tag === "Left") {
-        return $Either("Left", m._1);
-      }
-      if (m.tag === "Right") {
-        return $Either("Right", f(m._1));
-      }
-      fail();
-    })
-  };
-  return {
-    alt: (v) => (v1) => Bind1.bind(v)((rm2) => {
-      if (rm2.tag === "Right") {
-        return $0.pure($Either("Right", rm2._1));
-      }
-      if (rm2.tag === "Left") {
-        const $2 = rm2._1;
-        return Bind1.bind(v1)((rn) => {
-          if (rn.tag === "Right") {
-            return $0.pure($Either("Right", rn._1));
-          }
-          if (rn.tag === "Left") {
-            return $0.pure($Either("Left", dictSemigroup.append($2)(rn._1)));
-          }
-          fail();
-        });
-      }
-      fail();
-    }),
-    Functor0: () => functorExceptT1
-  };
-};
-
 // output-es/Data.NonEmpty/index.js
 var $NonEmpty = (_1, _2) => ({ tag: "NonEmpty", _1, _2 });
 var NonEmpty = (value0) => (value1) => $NonEmpty(value0, value1);
@@ -1599,8 +1362,1305 @@ var bindNonEmptyList = {
 };
 var applicativeList = { pure: (a) => $List("Cons", a, Nil), Apply0: () => applyList };
 
+// output-es/Data.String.Unsafe/foreign.js
+var charAt = function(i) {
+  return function(s) {
+    if (i >= 0 && i < s.length)
+      return s.charAt(i);
+    throw new Error("Data.String.Unsafe.charAt: Invalid index.");
+  };
+};
+
+// output-es/Data.String.CodeUnits/foreign.js
+var fromCharArray = function(a) {
+  return a.join("");
+};
+var toCharArray = function(s) {
+  return s.split("");
+};
+var singleton = function(c) {
+  return c;
+};
+var _charAt = function(just) {
+  return function(nothing) {
+    return function(i) {
+      return function(s) {
+        return i >= 0 && i < s.length ? just(s.charAt(i)) : nothing;
+      };
+    };
+  };
+};
+var _toChar = function(just) {
+  return function(nothing) {
+    return function(s) {
+      return s.length === 1 ? just(s) : nothing;
+    };
+  };
+};
+var length2 = function(s) {
+  return s.length;
+};
+var _indexOf = function(just) {
+  return function(nothing) {
+    return function(x) {
+      return function(s) {
+        var i = s.indexOf(x);
+        return i === -1 ? nothing : just(i);
+      };
+    };
+  };
+};
+var take = function(n) {
+  return function(s) {
+    return s.substr(0, n);
+  };
+};
+var drop2 = function(n) {
+  return function(s) {
+    return s.substring(n);
+  };
+};
+var splitAt = function(i) {
+  return function(s) {
+    return { before: s.substring(0, i), after: s.substring(i) };
+  };
+};
+
+// output-es/Data.String.CodeUnits/index.js
+var uncons2 = (v) => {
+  if (v === "") {
+    return Nothing;
+  }
+  return $Maybe("Just", { head: charAt(0)(v), tail: drop2(1)(v) });
+};
+var toChar = /* @__PURE__ */ _toChar(Just)(Nothing);
+var stripSuffix = (v) => (str) => {
+  const v1 = splitAt(length2(str) - length2(v) | 0)(str);
+  if (v1.after === v) {
+    return $Maybe("Just", v1.before);
+  }
+  return Nothing;
+};
+var stripPrefix = (v) => (str) => {
+  const v1 = splitAt(length2(v))(str);
+  if (v1.before === v) {
+    return $Maybe("Just", v1.after);
+  }
+  return Nothing;
+};
+var indexOf = /* @__PURE__ */ _indexOf(Just)(Nothing);
+var contains = (pat) => {
+  const $0 = indexOf(pat);
+  return (x) => {
+    const $1 = $0(x);
+    if ($1.tag === "Nothing") {
+      return false;
+    }
+    if ($1.tag === "Just") {
+      return true;
+    }
+    fail();
+  };
+};
+var charAt2 = /* @__PURE__ */ _charAt(Just)(Nothing);
+
+// output-es/Data.String.Common/foreign.js
+var replaceAll = function(s1) {
+  return function(s2) {
+    return function(s3) {
+      return s3.replace(new RegExp(s1.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "g"), s2);
+    };
+  };
+};
+var split = function(sep) {
+  return function(s) {
+    return s.split(sep);
+  };
+};
+var toLower = function(s) {
+  return s.toLowerCase();
+};
+var trim = function(s) {
+  return s.trim();
+};
+var joinWith = function(s) {
+  return function(xs) {
+    return xs.join(s);
+  };
+};
+
+// output-es/Effect.Exception/foreign.js
+function showErrorImpl(err) {
+  return err.stack || err.toString();
+}
+function error(msg) {
+  return new Error(msg);
+}
+function message(e) {
+  return e.message;
+}
+function throwException(e) {
+  return function() {
+    throw e;
+  };
+}
+
+// output-es/Control.Monad.Error.Class/index.js
+var $$try = (dictMonadError) => {
+  const Monad0 = dictMonadError.MonadThrow0().Monad0();
+  return (a) => dictMonadError.catchError(Monad0.Bind1().Apply0().Functor0().map(Right)(a))((x) => Monad0.Applicative0().pure($Either("Left", x)));
+};
+
+// output-es/Partial/foreign.js
+var _crashWith = function(msg) {
+  throw new Error(msg);
+};
+
+// output-es/Effect.Aff/foreign.js
+var Aff = function() {
+  var EMPTY = {};
+  var PURE = "Pure";
+  var THROW = "Throw";
+  var CATCH = "Catch";
+  var SYNC = "Sync";
+  var ASYNC = "Async";
+  var BIND = "Bind";
+  var BRACKET = "Bracket";
+  var FORK = "Fork";
+  var SEQ = "Sequential";
+  var MAP = "Map";
+  var APPLY = "Apply";
+  var ALT = "Alt";
+  var CONS = "Cons";
+  var RESUME = "Resume";
+  var RELEASE = "Release";
+  var FINALIZER = "Finalizer";
+  var FINALIZED = "Finalized";
+  var FORKED = "Forked";
+  var FIBER = "Fiber";
+  var THUNK = "Thunk";
+  function Aff2(tag, _1, _2, _3) {
+    this.tag = tag;
+    this._1 = _1;
+    this._2 = _2;
+    this._3 = _3;
+  }
+  function AffCtr(tag) {
+    var fn = function(_1, _2, _3) {
+      return new Aff2(tag, _1, _2, _3);
+    };
+    fn.tag = tag;
+    return fn;
+  }
+  function nonCanceler2(error3) {
+    return new Aff2(PURE, void 0);
+  }
+  function runEff(eff) {
+    try {
+      eff();
+    } catch (error3) {
+      setTimeout(function() {
+        throw error3;
+      }, 0);
+    }
+  }
+  function runSync(left, right, eff) {
+    try {
+      return right(eff());
+    } catch (error3) {
+      return left(error3);
+    }
+  }
+  function runAsync(left, eff, k) {
+    try {
+      return eff(k)();
+    } catch (error3) {
+      k(left(error3))();
+      return nonCanceler2;
+    }
+  }
+  var Scheduler = function() {
+    var limit = 1024;
+    var size6 = 0;
+    var ix = 0;
+    var queue = new Array(limit);
+    var draining = false;
+    function drain() {
+      var thunk;
+      draining = true;
+      while (size6 !== 0) {
+        size6--;
+        thunk = queue[ix];
+        queue[ix] = void 0;
+        ix = (ix + 1) % limit;
+        thunk();
+      }
+      draining = false;
+    }
+    return {
+      isDraining: function() {
+        return draining;
+      },
+      enqueue: function(cb) {
+        var i, tmp;
+        if (size6 === limit) {
+          tmp = draining;
+          drain();
+          draining = tmp;
+        }
+        queue[(ix + size6) % limit] = cb;
+        size6++;
+        if (!draining) {
+          drain();
+        }
+      }
+    };
+  }();
+  function Supervisor(util2) {
+    var fibers = {};
+    var fiberId = 0;
+    var count = 0;
+    return {
+      register: function(fiber) {
+        var fid = fiberId++;
+        fiber.onComplete({
+          rethrow: true,
+          handler: function(result) {
+            return function() {
+              count--;
+              delete fibers[fid];
+            };
+          }
+        })();
+        fibers[fid] = fiber;
+        count++;
+      },
+      isEmpty: function() {
+        return count === 0;
+      },
+      killAll: function(killError, cb) {
+        return function() {
+          if (count === 0) {
+            return cb();
+          }
+          var killCount = 0;
+          var kills = {};
+          function kill(fid) {
+            kills[fid] = fibers[fid].kill(killError, function(result) {
+              return function() {
+                delete kills[fid];
+                killCount--;
+                if (util2.isLeft(result) && util2.fromLeft(result)) {
+                  setTimeout(function() {
+                    throw util2.fromLeft(result);
+                  }, 0);
+                }
+                if (killCount === 0) {
+                  cb();
+                }
+              };
+            })();
+          }
+          for (var k in fibers) {
+            if (fibers.hasOwnProperty(k)) {
+              killCount++;
+              kill(k);
+            }
+          }
+          fibers = {};
+          fiberId = 0;
+          count = 0;
+          return function(error3) {
+            return new Aff2(SYNC, function() {
+              for (var k2 in kills) {
+                if (kills.hasOwnProperty(k2)) {
+                  kills[k2]();
+                }
+              }
+            });
+          };
+        };
+      }
+    };
+  }
+  var SUSPENDED = 0;
+  var CONTINUE = 1;
+  var STEP_BIND = 2;
+  var STEP_RESULT = 3;
+  var PENDING = 4;
+  var RETURN = 5;
+  var COMPLETED = 6;
+  function Fiber(util2, supervisor, aff) {
+    var runTick = 0;
+    var status = SUSPENDED;
+    var step = aff;
+    var fail3 = null;
+    var interrupt = null;
+    var bhead = null;
+    var btail = null;
+    var attempts = null;
+    var bracketCount = 0;
+    var joinId = 0;
+    var joins = null;
+    var rethrow = true;
+    function run2(localRunTick) {
+      var tmp, result, attempt;
+      while (true) {
+        tmp = null;
+        result = null;
+        attempt = null;
+        switch (status) {
+          case STEP_BIND:
+            status = CONTINUE;
+            try {
+              step = bhead(step);
+              if (btail === null) {
+                bhead = null;
+              } else {
+                bhead = btail._1;
+                btail = btail._2;
+              }
+            } catch (e) {
+              status = RETURN;
+              fail3 = util2.left(e);
+              step = null;
+            }
+            break;
+          case STEP_RESULT:
+            if (util2.isLeft(step)) {
+              status = RETURN;
+              fail3 = step;
+              step = null;
+            } else if (bhead === null) {
+              status = RETURN;
+            } else {
+              status = STEP_BIND;
+              step = util2.fromRight(step);
+            }
+            break;
+          case CONTINUE:
+            switch (step.tag) {
+              case BIND:
+                if (bhead) {
+                  btail = new Aff2(CONS, bhead, btail);
+                }
+                bhead = step._2;
+                status = CONTINUE;
+                step = step._1;
+                break;
+              case PURE:
+                if (bhead === null) {
+                  status = RETURN;
+                  step = util2.right(step._1);
+                } else {
+                  status = STEP_BIND;
+                  step = step._1;
+                }
+                break;
+              case SYNC:
+                status = STEP_RESULT;
+                step = runSync(util2.left, util2.right, step._1);
+                break;
+              case ASYNC:
+                status = PENDING;
+                step = runAsync(util2.left, step._1, function(result2) {
+                  return function() {
+                    if (runTick !== localRunTick) {
+                      return;
+                    }
+                    runTick++;
+                    Scheduler.enqueue(function() {
+                      if (runTick !== localRunTick + 1) {
+                        return;
+                      }
+                      status = STEP_RESULT;
+                      step = result2;
+                      run2(runTick);
+                    });
+                  };
+                });
+                return;
+              case THROW:
+                status = RETURN;
+                fail3 = util2.left(step._1);
+                step = null;
+                break;
+              case CATCH:
+                if (bhead === null) {
+                  attempts = new Aff2(CONS, step, attempts, interrupt);
+                } else {
+                  attempts = new Aff2(CONS, step, new Aff2(CONS, new Aff2(RESUME, bhead, btail), attempts, interrupt), interrupt);
+                }
+                bhead = null;
+                btail = null;
+                status = CONTINUE;
+                step = step._1;
+                break;
+              case BRACKET:
+                bracketCount++;
+                if (bhead === null) {
+                  attempts = new Aff2(CONS, step, attempts, interrupt);
+                } else {
+                  attempts = new Aff2(CONS, step, new Aff2(CONS, new Aff2(RESUME, bhead, btail), attempts, interrupt), interrupt);
+                }
+                bhead = null;
+                btail = null;
+                status = CONTINUE;
+                step = step._1;
+                break;
+              case FORK:
+                status = STEP_RESULT;
+                tmp = Fiber(util2, supervisor, step._2);
+                if (supervisor) {
+                  supervisor.register(tmp);
+                }
+                if (step._1) {
+                  tmp.run();
+                }
+                step = util2.right(tmp);
+                break;
+              case SEQ:
+                status = CONTINUE;
+                step = sequential(util2, supervisor, step._1);
+                break;
+            }
+            break;
+          case RETURN:
+            bhead = null;
+            btail = null;
+            if (attempts === null) {
+              status = COMPLETED;
+              step = interrupt || fail3 || step;
+            } else {
+              tmp = attempts._3;
+              attempt = attempts._1;
+              attempts = attempts._2;
+              switch (attempt.tag) {
+                case CATCH:
+                  if (interrupt && interrupt !== tmp && bracketCount === 0) {
+                    status = RETURN;
+                  } else if (fail3) {
+                    status = CONTINUE;
+                    step = attempt._2(util2.fromLeft(fail3));
+                    fail3 = null;
+                  }
+                  break;
+                case RESUME:
+                  if (interrupt && interrupt !== tmp && bracketCount === 0 || fail3) {
+                    status = RETURN;
+                  } else {
+                    bhead = attempt._1;
+                    btail = attempt._2;
+                    status = STEP_BIND;
+                    step = util2.fromRight(step);
+                  }
+                  break;
+                case BRACKET:
+                  bracketCount--;
+                  if (fail3 === null) {
+                    result = util2.fromRight(step);
+                    attempts = new Aff2(CONS, new Aff2(RELEASE, attempt._2, result), attempts, tmp);
+                    if (interrupt === tmp || bracketCount > 0) {
+                      status = CONTINUE;
+                      step = attempt._3(result);
+                    }
+                  }
+                  break;
+                case RELEASE:
+                  attempts = new Aff2(CONS, new Aff2(FINALIZED, step, fail3), attempts, interrupt);
+                  status = CONTINUE;
+                  if (interrupt && interrupt !== tmp && bracketCount === 0) {
+                    step = attempt._1.killed(util2.fromLeft(interrupt))(attempt._2);
+                  } else if (fail3) {
+                    step = attempt._1.failed(util2.fromLeft(fail3))(attempt._2);
+                  } else {
+                    step = attempt._1.completed(util2.fromRight(step))(attempt._2);
+                  }
+                  fail3 = null;
+                  bracketCount++;
+                  break;
+                case FINALIZER:
+                  bracketCount++;
+                  attempts = new Aff2(CONS, new Aff2(FINALIZED, step, fail3), attempts, interrupt);
+                  status = CONTINUE;
+                  step = attempt._1;
+                  break;
+                case FINALIZED:
+                  bracketCount--;
+                  status = RETURN;
+                  step = attempt._1;
+                  fail3 = attempt._2;
+                  break;
+              }
+            }
+            break;
+          case COMPLETED:
+            for (var k in joins) {
+              if (joins.hasOwnProperty(k)) {
+                rethrow = rethrow && joins[k].rethrow;
+                runEff(joins[k].handler(step));
+              }
+            }
+            joins = null;
+            if (interrupt && fail3) {
+              setTimeout(function() {
+                throw util2.fromLeft(fail3);
+              }, 0);
+            } else if (util2.isLeft(step) && rethrow) {
+              setTimeout(function() {
+                if (rethrow) {
+                  throw util2.fromLeft(step);
+                }
+              }, 0);
+            }
+            return;
+          case SUSPENDED:
+            status = CONTINUE;
+            break;
+          case PENDING:
+            return;
+        }
+      }
+    }
+    function onComplete(join2) {
+      return function() {
+        if (status === COMPLETED) {
+          rethrow = rethrow && join2.rethrow;
+          join2.handler(step)();
+          return function() {
+          };
+        }
+        var jid = joinId++;
+        joins = joins || {};
+        joins[jid] = join2;
+        return function() {
+          if (joins !== null) {
+            delete joins[jid];
+          }
+        };
+      };
+    }
+    function kill(error3, cb) {
+      return function() {
+        if (status === COMPLETED) {
+          cb(util2.right(void 0))();
+          return function() {
+          };
+        }
+        var canceler = onComplete({
+          rethrow: false,
+          handler: function() {
+            return cb(util2.right(void 0));
+          }
+        })();
+        switch (status) {
+          case SUSPENDED:
+            interrupt = util2.left(error3);
+            status = COMPLETED;
+            step = interrupt;
+            run2(runTick);
+            break;
+          case PENDING:
+            if (interrupt === null) {
+              interrupt = util2.left(error3);
+            }
+            if (bracketCount === 0) {
+              if (status === PENDING) {
+                attempts = new Aff2(CONS, new Aff2(FINALIZER, step(error3)), attempts, interrupt);
+              }
+              status = RETURN;
+              step = null;
+              fail3 = null;
+              run2(++runTick);
+            }
+            break;
+          default:
+            if (interrupt === null) {
+              interrupt = util2.left(error3);
+            }
+            if (bracketCount === 0) {
+              status = RETURN;
+              step = null;
+              fail3 = null;
+            }
+        }
+        return canceler;
+      };
+    }
+    function join(cb) {
+      return function() {
+        var canceler = onComplete({
+          rethrow: false,
+          handler: cb
+        })();
+        if (status === SUSPENDED) {
+          run2(runTick);
+        }
+        return canceler;
+      };
+    }
+    return {
+      kill,
+      join,
+      onComplete,
+      isSuspended: function() {
+        return status === SUSPENDED;
+      },
+      run: function() {
+        if (status === SUSPENDED) {
+          if (!Scheduler.isDraining()) {
+            Scheduler.enqueue(function() {
+              run2(runTick);
+            });
+          } else {
+            run2(runTick);
+          }
+        }
+      }
+    };
+  }
+  function runPar(util2, supervisor, par, cb) {
+    var fiberId = 0;
+    var fibers = {};
+    var killId = 0;
+    var kills = {};
+    var early = new Error("[ParAff] Early exit");
+    var interrupt = null;
+    var root = EMPTY;
+    function kill(error3, par2, cb2) {
+      var step = par2;
+      var head = null;
+      var tail4 = null;
+      var count = 0;
+      var kills2 = {};
+      var tmp, kid;
+      loop:
+        while (true) {
+          tmp = null;
+          switch (step.tag) {
+            case FORKED:
+              if (step._3 === EMPTY) {
+                tmp = fibers[step._1];
+                kills2[count++] = tmp.kill(error3, function(result) {
+                  return function() {
+                    count--;
+                    if (count === 0) {
+                      cb2(result)();
+                    }
+                  };
+                });
+              }
+              if (head === null) {
+                break loop;
+              }
+              step = head._2;
+              if (tail4 === null) {
+                head = null;
+              } else {
+                head = tail4._1;
+                tail4 = tail4._2;
+              }
+              break;
+            case MAP:
+              step = step._2;
+              break;
+            case APPLY:
+            case ALT:
+              if (head) {
+                tail4 = new Aff2(CONS, head, tail4);
+              }
+              head = step;
+              step = step._1;
+              break;
+          }
+        }
+      if (count === 0) {
+        cb2(util2.right(void 0))();
+      } else {
+        kid = 0;
+        tmp = count;
+        for (; kid < tmp; kid++) {
+          kills2[kid] = kills2[kid]();
+        }
+      }
+      return kills2;
+    }
+    function join(result, head, tail4) {
+      var fail3, step, lhs, rhs, tmp, kid;
+      if (util2.isLeft(result)) {
+        fail3 = result;
+        step = null;
+      } else {
+        step = result;
+        fail3 = null;
+      }
+      loop:
+        while (true) {
+          lhs = null;
+          rhs = null;
+          tmp = null;
+          kid = null;
+          if (interrupt !== null) {
+            return;
+          }
+          if (head === null) {
+            cb(fail3 || step)();
+            return;
+          }
+          if (head._3 !== EMPTY) {
+            return;
+          }
+          switch (head.tag) {
+            case MAP:
+              if (fail3 === null) {
+                head._3 = util2.right(head._1(util2.fromRight(step)));
+                step = head._3;
+              } else {
+                head._3 = fail3;
+              }
+              break;
+            case APPLY:
+              lhs = head._1._3;
+              rhs = head._2._3;
+              if (fail3) {
+                head._3 = fail3;
+                tmp = true;
+                kid = killId++;
+                kills[kid] = kill(early, fail3 === lhs ? head._2 : head._1, function() {
+                  return function() {
+                    delete kills[kid];
+                    if (tmp) {
+                      tmp = false;
+                    } else if (tail4 === null) {
+                      join(fail3, null, null);
+                    } else {
+                      join(fail3, tail4._1, tail4._2);
+                    }
+                  };
+                });
+                if (tmp) {
+                  tmp = false;
+                  return;
+                }
+              } else if (lhs === EMPTY || rhs === EMPTY) {
+                return;
+              } else {
+                step = util2.right(util2.fromRight(lhs)(util2.fromRight(rhs)));
+                head._3 = step;
+              }
+              break;
+            case ALT:
+              lhs = head._1._3;
+              rhs = head._2._3;
+              if (lhs === EMPTY && util2.isLeft(rhs) || rhs === EMPTY && util2.isLeft(lhs)) {
+                return;
+              }
+              if (lhs !== EMPTY && util2.isLeft(lhs) && rhs !== EMPTY && util2.isLeft(rhs)) {
+                fail3 = step === lhs ? rhs : lhs;
+                step = null;
+                head._3 = fail3;
+              } else {
+                head._3 = step;
+                tmp = true;
+                kid = killId++;
+                kills[kid] = kill(early, step === lhs ? head._2 : head._1, function() {
+                  return function() {
+                    delete kills[kid];
+                    if (tmp) {
+                      tmp = false;
+                    } else if (tail4 === null) {
+                      join(step, null, null);
+                    } else {
+                      join(step, tail4._1, tail4._2);
+                    }
+                  };
+                });
+                if (tmp) {
+                  tmp = false;
+                  return;
+                }
+              }
+              break;
+          }
+          if (tail4 === null) {
+            head = null;
+          } else {
+            head = tail4._1;
+            tail4 = tail4._2;
+          }
+        }
+    }
+    function resolve(fiber) {
+      return function(result) {
+        return function() {
+          delete fibers[fiber._1];
+          fiber._3 = result;
+          join(result, fiber._2._1, fiber._2._2);
+        };
+      };
+    }
+    function run2() {
+      var status = CONTINUE;
+      var step = par;
+      var head = null;
+      var tail4 = null;
+      var tmp, fid;
+      loop:
+        while (true) {
+          tmp = null;
+          fid = null;
+          switch (status) {
+            case CONTINUE:
+              switch (step.tag) {
+                case MAP:
+                  if (head) {
+                    tail4 = new Aff2(CONS, head, tail4);
+                  }
+                  head = new Aff2(MAP, step._1, EMPTY, EMPTY);
+                  step = step._2;
+                  break;
+                case APPLY:
+                  if (head) {
+                    tail4 = new Aff2(CONS, head, tail4);
+                  }
+                  head = new Aff2(APPLY, EMPTY, step._2, EMPTY);
+                  step = step._1;
+                  break;
+                case ALT:
+                  if (head) {
+                    tail4 = new Aff2(CONS, head, tail4);
+                  }
+                  head = new Aff2(ALT, EMPTY, step._2, EMPTY);
+                  step = step._1;
+                  break;
+                default:
+                  fid = fiberId++;
+                  status = RETURN;
+                  tmp = step;
+                  step = new Aff2(FORKED, fid, new Aff2(CONS, head, tail4), EMPTY);
+                  tmp = Fiber(util2, supervisor, tmp);
+                  tmp.onComplete({
+                    rethrow: false,
+                    handler: resolve(step)
+                  })();
+                  fibers[fid] = tmp;
+                  if (supervisor) {
+                    supervisor.register(tmp);
+                  }
+              }
+              break;
+            case RETURN:
+              if (head === null) {
+                break loop;
+              }
+              if (head._1 === EMPTY) {
+                head._1 = step;
+                status = CONTINUE;
+                step = head._2;
+                head._2 = EMPTY;
+              } else {
+                head._2 = step;
+                step = head;
+                if (tail4 === null) {
+                  head = null;
+                } else {
+                  head = tail4._1;
+                  tail4 = tail4._2;
+                }
+              }
+          }
+        }
+      root = step;
+      for (fid = 0; fid < fiberId; fid++) {
+        fibers[fid].run();
+      }
+    }
+    function cancel(error3, cb2) {
+      interrupt = util2.left(error3);
+      var innerKills;
+      for (var kid in kills) {
+        if (kills.hasOwnProperty(kid)) {
+          innerKills = kills[kid];
+          for (kid in innerKills) {
+            if (innerKills.hasOwnProperty(kid)) {
+              innerKills[kid]();
+            }
+          }
+        }
+      }
+      kills = null;
+      var newKills = kill(error3, root, cb2);
+      return function(killError) {
+        return new Aff2(ASYNC, function(killCb) {
+          return function() {
+            for (var kid2 in newKills) {
+              if (newKills.hasOwnProperty(kid2)) {
+                newKills[kid2]();
+              }
+            }
+            return nonCanceler2;
+          };
+        });
+      };
+    }
+    run2();
+    return function(killError) {
+      return new Aff2(ASYNC, function(killCb) {
+        return function() {
+          return cancel(killError, killCb);
+        };
+      });
+    };
+  }
+  function sequential(util2, supervisor, par) {
+    return new Aff2(ASYNC, function(cb) {
+      return function() {
+        return runPar(util2, supervisor, par, cb);
+      };
+    });
+  }
+  Aff2.EMPTY = EMPTY;
+  Aff2.Pure = AffCtr(PURE);
+  Aff2.Throw = AffCtr(THROW);
+  Aff2.Catch = AffCtr(CATCH);
+  Aff2.Sync = AffCtr(SYNC);
+  Aff2.Async = AffCtr(ASYNC);
+  Aff2.Bind = AffCtr(BIND);
+  Aff2.Bracket = AffCtr(BRACKET);
+  Aff2.Fork = AffCtr(FORK);
+  Aff2.Seq = AffCtr(SEQ);
+  Aff2.ParMap = AffCtr(MAP);
+  Aff2.ParApply = AffCtr(APPLY);
+  Aff2.ParAlt = AffCtr(ALT);
+  Aff2.Fiber = Fiber;
+  Aff2.Supervisor = Supervisor;
+  Aff2.Scheduler = Scheduler;
+  Aff2.nonCanceler = nonCanceler2;
+  return Aff2;
+}();
+var _pure = Aff.Pure;
+var _throwError = Aff.Throw;
+function _catchError(aff) {
+  return function(k) {
+    return Aff.Catch(aff, k);
+  };
+}
+function _map(f) {
+  return function(aff) {
+    if (aff.tag === Aff.Pure.tag) {
+      return Aff.Pure(f(aff._1));
+    } else {
+      return Aff.Bind(aff, function(value) {
+        return Aff.Pure(f(value));
+      });
+    }
+  };
+}
+function _bind(aff) {
+  return function(k) {
+    return Aff.Bind(aff, k);
+  };
+}
+var _liftEffect = Aff.Sync;
+var makeAff = Aff.Async;
+function _makeFiber(util2, aff) {
+  return function() {
+    return Aff.Fiber(util2, null, aff);
+  };
+}
+var _delay = function() {
+  function setDelay(n, k) {
+    if (n === 0 && typeof setImmediate !== "undefined") {
+      return setImmediate(k);
+    } else {
+      return setTimeout(k, n);
+    }
+  }
+  function clearDelay(n, t) {
+    if (n === 0 && typeof clearImmediate !== "undefined") {
+      return clearImmediate(t);
+    } else {
+      return clearTimeout(t);
+    }
+  }
+  return function(right, ms) {
+    return Aff.Async(function(cb) {
+      return function() {
+        var timer = setDelay(ms, cb(right()));
+        return function() {
+          return Aff.Sync(function() {
+            return right(clearDelay(ms, timer));
+          });
+        };
+      };
+    });
+  };
+}();
+var _sequential = Aff.Seq;
+
+// output-es/Effect.Aff/index.js
+var functorAff = { map: _map };
+var ffiUtil = {
+  isLeft: (v) => {
+    if (v.tag === "Left") {
+      return true;
+    }
+    if (v.tag === "Right") {
+      return false;
+    }
+    fail();
+  },
+  fromLeft: (v) => {
+    if (v.tag === "Left") {
+      return v._1;
+    }
+    if (v.tag === "Right") {
+      return _crashWith("unsafeFromLeft: Right");
+    }
+    fail();
+  },
+  fromRight: (v) => {
+    if (v.tag === "Right") {
+      return v._1;
+    }
+    if (v.tag === "Left") {
+      return _crashWith("unsafeFromRight: Left");
+    }
+    fail();
+  },
+  left: Left,
+  right: Right
+};
+var monadAff = { Applicative0: () => applicativeAff, Bind1: () => bindAff };
+var bindAff = { bind: _bind, Apply0: () => applyAff };
+var applyAff = { apply: (f) => (a) => _bind(f)((f$p) => _bind(a)((a$p) => applicativeAff.pure(f$p(a$p)))), Functor0: () => functorAff };
+var applicativeAff = { pure: _pure, Apply0: () => applyAff };
+var monadEffectAff = { liftEffect: _liftEffect, Monad0: () => monadAff };
+var monadThrowAff = { throwError: _throwError, Monad0: () => monadAff };
+var monadErrorAff = { catchError: _catchError, MonadThrow0: () => monadThrowAff };
+var $$try2 = /* @__PURE__ */ $$try(monadErrorAff);
+var runAff = (k) => (aff) => {
+  const $0 = _makeFiber(ffiUtil, _bind($$try2(aff))((x) => _liftEffect(k(x))));
+  return () => {
+    const fiber = $0();
+    fiber.run();
+    return fiber;
+  };
+};
+var nonCanceler = /* @__PURE__ */ (() => {
+  const $0 = _pure();
+  return (v) => $0;
+})();
+
+// output-es/Control.Monad.Except.Trans/index.js
+var bindExceptT = (dictMonad) => ({
+  bind: (v) => (k) => dictMonad.Bind1().bind(v)((v2) => {
+    if (v2.tag === "Left") {
+      return dictMonad.Applicative0().pure($Either("Left", v2._1));
+    }
+    if (v2.tag === "Right") {
+      return k(v2._1);
+    }
+    fail();
+  }),
+  Apply0: () => applyExceptT(dictMonad)
+});
+var applyExceptT = (dictMonad) => {
+  const $0 = dictMonad.Bind1().Apply0().Functor0();
+  const functorExceptT1 = {
+    map: (f) => $0.map((m) => {
+      if (m.tag === "Left") {
+        return $Either("Left", m._1);
+      }
+      if (m.tag === "Right") {
+        return $Either("Right", f(m._1));
+      }
+      fail();
+    })
+  };
+  return {
+    apply: (() => {
+      const $1 = bindExceptT(dictMonad);
+      return (f) => (a) => $1.bind(f)((f$p) => $1.bind(a)((a$p) => applicativeExceptT(dictMonad).pure(f$p(a$p))));
+    })(),
+    Functor0: () => functorExceptT1
+  };
+};
+var applicativeExceptT = (dictMonad) => ({ pure: (x) => dictMonad.Applicative0().pure($Either("Right", x)), Apply0: () => applyExceptT(dictMonad) });
+var monadThrowExceptT = (dictMonad) => {
+  const monadExceptT1 = { Applicative0: () => applicativeExceptT(dictMonad), Bind1: () => bindExceptT(dictMonad) };
+  return { throwError: (x) => dictMonad.Applicative0().pure($Either("Left", x)), Monad0: () => monadExceptT1 };
+};
+var monadErrorExceptT = (dictMonad) => {
+  const monadThrowExceptT1 = monadThrowExceptT(dictMonad);
+  return {
+    catchError: (v) => (k) => dictMonad.Bind1().bind(v)((v2) => {
+      if (v2.tag === "Left") {
+        return k(v2._1);
+      }
+      if (v2.tag === "Right") {
+        return dictMonad.Applicative0().pure($Either("Right", v2._1));
+      }
+      fail();
+    }),
+    MonadThrow0: () => monadThrowExceptT1
+  };
+};
+var altExceptT = (dictSemigroup) => (dictMonad) => {
+  const Bind1 = dictMonad.Bind1();
+  const $0 = dictMonad.Applicative0();
+  const $1 = Bind1.Apply0().Functor0();
+  const functorExceptT1 = {
+    map: (f) => $1.map((m) => {
+      if (m.tag === "Left") {
+        return $Either("Left", m._1);
+      }
+      if (m.tag === "Right") {
+        return $Either("Right", f(m._1));
+      }
+      fail();
+    })
+  };
+  return {
+    alt: (v) => (v1) => Bind1.bind(v)((rm2) => {
+      if (rm2.tag === "Right") {
+        return $0.pure($Either("Right", rm2._1));
+      }
+      if (rm2.tag === "Left") {
+        const $2 = rm2._1;
+        return Bind1.bind(v1)((rn) => {
+          if (rn.tag === "Right") {
+            return $0.pure($Either("Right", rn._1));
+          }
+          if (rn.tag === "Left") {
+            return $0.pure($Either("Left", dictSemigroup.append($2)(rn._1)));
+          }
+          fail();
+        });
+      }
+      fail();
+    }),
+    Functor0: () => functorExceptT1
+  };
+};
+
+// output-es/Data.Lazy/foreign.js
+var defer = function(thunk) {
+  var v = null;
+  return function() {
+    if (thunk === void 0)
+      return v;
+    v = thunk();
+    thunk = void 0;
+    return v;
+  };
+};
+var force = function(l) {
+  return l();
+};
+
+// output-es/Control.Monad.Reader.Trans/index.js
+var bindReaderT = (dictBind) => {
+  const $0 = dictBind.Apply0();
+  const $1 = $0.Functor0();
+  const applyReaderT1 = (() => {
+    const functorReaderT1 = {
+      map: (x) => {
+        const $2 = $1.map(x);
+        return (v) => (x$1) => $2(v(x$1));
+      }
+    };
+    return { apply: (v) => (v1) => (r) => $0.apply(v(r))(v1(r)), Functor0: () => functorReaderT1 };
+  })();
+  return { bind: (v) => (k) => (r) => dictBind.bind(v(r))((a) => k(a)(r)), Apply0: () => applyReaderT1 };
+};
+var monadReaderT = (dictMonad) => {
+  const $0 = dictMonad.Applicative0();
+  const $1 = $0.Apply0();
+  const applicativeReaderT1 = (() => {
+    const $2 = $1.Functor0();
+    const functorReaderT1 = {
+      map: (x) => {
+        const $3 = $2.map(x);
+        return (v) => (x$1) => $3(v(x$1));
+      }
+    };
+    const applyReaderT1 = { apply: (v) => (v1) => (r) => $1.apply(v(r))(v1(r)), Functor0: () => functorReaderT1 };
+    return {
+      pure: (x) => {
+        const $3 = $0.pure(x);
+        return (v) => $3;
+      },
+      Apply0: () => applyReaderT1
+    };
+  })();
+  const bindReaderT1 = bindReaderT(dictMonad.Bind1());
+  return { Applicative0: () => applicativeReaderT1, Bind1: () => bindReaderT1 };
+};
+
+// output-es/Control.Monad.State.Trans/index.js
+var evalStateT = (dictFunctor) => (v) => (s) => dictFunctor.map(fst)(v(s));
+var bindStateT = (dictMonad) => ({ bind: (v) => (f) => (s) => dictMonad.Bind1().bind(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) });
+var applyStateT = (dictMonad) => {
+  const $0 = dictMonad.Bind1().Apply0().Functor0();
+  const functorStateT1 = { map: (f) => (v) => (s) => $0.map((v1) => $Tuple(f(v1._1), v1._2))(v(s)) };
+  return {
+    apply: (() => {
+      const $1 = bindStateT(dictMonad);
+      return (f) => (a) => $1.bind(f)((f$p) => $1.bind(a)((a$p) => applicativeStateT(dictMonad).pure(f$p(a$p))));
+    })(),
+    Functor0: () => functorStateT1
+  };
+};
+var applicativeStateT = (dictMonad) => ({ pure: (a) => (s) => dictMonad.Applicative0().pure($Tuple(a, s)), Apply0: () => applyStateT(dictMonad) });
+var monadRecStateT = (dictMonadRec) => {
+  const Monad0 = dictMonadRec.Monad0();
+  const monadStateT1 = { Applicative0: () => applicativeStateT(Monad0), Bind1: () => bindStateT(Monad0) };
+  return {
+    tailRecM: (f) => (a) => (s) => dictMonadRec.tailRecM((v) => Monad0.Bind1().bind(f(v._1)(v._2))((v2) => Monad0.Applicative0().pure((() => {
+      if (v2._1.tag === "Loop") {
+        return $Step("Loop", $Tuple(v2._1._1, v2._2));
+      }
+      if (v2._1.tag === "Done") {
+        return $Step("Done", $Tuple(v2._1._1, v2._2));
+      }
+      fail();
+    })())))($Tuple(a, s)),
+    Monad0: () => monadStateT1
+  };
+};
+var monadStateStateT = (dictMonad) => {
+  const monadStateT1 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+  return { state: (f) => (x) => dictMonad.Applicative0().pure(f(x)), Monad0: () => monadStateT1 };
+};
+var monadThrowStateT = (dictMonadThrow) => {
+  const Monad0 = dictMonadThrow.Monad0();
+  const monadStateT1 = { Applicative0: () => applicativeStateT(Monad0), Bind1: () => bindStateT(Monad0) };
+  return {
+    throwError: (e) => {
+      const $0 = dictMonadThrow.throwError(e);
+      return (s) => Monad0.Bind1().bind($0)((x) => Monad0.Applicative0().pure($Tuple(x, s)));
+    },
+    Monad0: () => monadStateT1
+  };
+};
+var monadErrorStateT = (dictMonadError) => {
+  const monadThrowStateT1 = monadThrowStateT(dictMonadError.MonadThrow0());
+  return { catchError: (v) => (h) => (s) => dictMonadError.catchError(v(s))((e) => h(e)(s)), MonadThrow0: () => monadThrowStateT1 };
+};
+
+// output-es/Effect.Aff.Class/index.js
+var monadAffAff = { liftAff: (x) => x, MonadEffect0: () => monadEffectAff };
+
+// output-es/Effect.Console/foreign.js
+var log = function(s) {
+  return function() {
+    console.log(s);
+  };
+};
+
 // output-es/Data.List/index.js
-var identity6 = (x) => x;
+var identity7 = (x) => x;
 var unzip = /* @__PURE__ */ (() => foldableList.foldr((v) => {
   const $0 = v._1;
   const $1 = v._2;
@@ -1969,21 +3029,6 @@ var difference = (dictEq) => {
   return go;
 };
 
-// output-es/Data.Lazy/foreign.js
-var defer = function(thunk) {
-  var v = null;
-  return function() {
-    if (thunk === void 0)
-      return v;
-    v = thunk();
-    thunk = void 0;
-    return v;
-  };
-};
-var force = function(l) {
-  return l();
-};
-
 // output-es/Data.List.Lazy.Types/index.js
 var $Step2 = (tag, _1, _2) => ({ tag, _1, _2 });
 var Nil2 = /* @__PURE__ */ $Step2("Nil");
@@ -2155,11 +3200,6 @@ var replicate2 = (dictUnfoldable) => (n) => (v) => dictUnfoldable.unfoldr((i) =>
   }
   return $Maybe("Just", $Tuple(v, i - 1 | 0));
 })(n);
-
-// output-es/Partial/foreign.js
-var _crashWith = function(msg) {
-  throw new Error(msg);
-};
 
 // output-es/Data.Map.Internal/index.js
 var $KickUp = (_1, _2, _3, _4) => ({ tag: "KickUp", _1, _2, _3, _4 });
@@ -3263,864 +4303,11 @@ var difference2 = (dictOrd) => (s1) => (s2) => {
   return go(s1)(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s2));
 };
 
-// output-es/Data.FoldableWithIndex/index.js
-var monoidEndo2 = /* @__PURE__ */ (() => {
-  const semigroupEndo1 = { append: (v) => (v1) => (x) => v(v1(x)) };
-  return { mempty: (x) => x, Semigroup0: () => semigroupEndo1 };
-})();
-var foldrWithIndexDefault = (dictFoldableWithIndex) => {
-  const foldMapWithIndex1 = dictFoldableWithIndex.foldMapWithIndex(monoidEndo2);
-  return (c) => (u) => (xs) => foldMapWithIndex1((i) => c(i))(xs)(u);
-};
-
-// output-es/Foreign.Object/foreign.js
-var empty = {};
-function _fmapObject(m0, f) {
-  var m = {};
-  for (var k in m0) {
-    if (hasOwnProperty.call(m0, k)) {
-      m[k] = f(m0[k]);
-    }
-  }
-  return m;
-}
-function _mapWithKey(m0, f) {
-  var m = {};
-  for (var k in m0) {
-    if (hasOwnProperty.call(m0, k)) {
-      m[k] = f(k)(m0[k]);
-    }
-  }
-  return m;
-}
-function _foldM(bind3) {
-  return function(f) {
-    return function(mz) {
-      return function(m) {
-        var acc = mz;
-        function g(k2) {
-          return function(z) {
-            return f(z)(k2)(m[k2]);
-          };
-        }
-        for (var k in m) {
-          if (hasOwnProperty.call(m, k)) {
-            acc = bind3(acc)(g(k));
-          }
-        }
-        return acc;
-      };
-    };
-  };
-}
-function all2(f) {
-  return function(m) {
-    for (var k in m) {
-      if (hasOwnProperty.call(m, k) && !f(k)(m[k]))
-        return false;
-    }
-    return true;
-  };
-}
-function size3(m) {
-  var s = 0;
-  for (var k in m) {
-    if (hasOwnProperty.call(m, k)) {
-      ++s;
-    }
-  }
-  return s;
-}
-function _lookup(no, yes, k, m) {
-  return k in m ? yes(m[k]) : no;
-}
-function toArrayWithKey(f) {
-  return function(m) {
-    var r = [];
-    for (var k in m) {
-      if (hasOwnProperty.call(m, k)) {
-        r.push(f(k)(m[k]));
-      }
-    }
-    return r;
-  };
-}
-var keys = Object.keys || toArrayWithKey(function(k) {
-  return function() {
-    return k;
-  };
-});
-
-// output-es/Foreign.Object/index.js
-var identity8 = (x) => x;
-var values = /* @__PURE__ */ toArrayWithKey((v) => (v1) => v1);
-var toAscUnfoldable = (dictUnfoldable) => {
-  const $0 = sortWith(ordString)(fst);
-  const $1 = toArrayWithKey(Tuple);
-  return (x) => toUnfoldable(dictUnfoldable)($0($1(x)));
-};
-var singleton3 = (k) => (v) => {
-  const $0 = {};
-  $0[k] = v;
-  return $0;
-};
-var mutate = (f) => (m) => {
-  const s = { ...m };
-  f(s)();
-  return s;
-};
-var member2 = ($0) => ($1) => _lookup(false, (v) => true, $0, $1);
-var mapWithKey = (f) => (m) => _mapWithKey(m, f);
-var lookup2 = ($0) => ($1) => _lookup(Nothing, Just, $0, $1);
-var isSubmap = (dictEq) => (m1) => (m2) => all2((k) => (v) => _lookup(false, dictEq.eq(v), k, m2))(m1);
-var isEmpty2 = /* @__PURE__ */ all2((v) => (v1) => false);
-var insert2 = (k) => (v) => mutate(($0) => () => {
-  $0[k] = v;
-  return $0;
-});
-var functorObject = { map: (f) => (m) => _fmapObject(m, f) };
-var functorWithIndexObject = { mapWithIndex: mapWithKey, Functor0: () => functorObject };
-var fromFoldable2 = (dictFoldable) => {
-  const fromFoldable114 = fromFoldableImpl(dictFoldable.foldr);
-  return (l) => {
-    const s = {};
-    for (const v of fromFoldable114(l)) {
-      s[v._1] = v._2;
-    }
-    return s;
-  };
-};
-var foldM = (dictMonad) => {
-  const bind12 = dictMonad.Bind1().bind;
-  return (f) => (z) => _foldM(bind12)(f)(dictMonad.Applicative0().pure(z));
-};
-var foldM1 = /* @__PURE__ */ foldM(monadST);
-var union2 = (m) => mutate((s) => foldM1((s$p) => (k) => (v) => () => {
-  s$p[k] = v;
-  return s$p;
-})(s)(m));
-var unionWith2 = (f) => (m1) => (m2) => mutate((s1) => foldM1((s2) => (k) => (v1) => {
-  const $0 = _lookup(v1, (v2) => f(v1)(v2), k, m2);
-  return () => {
-    s2[k] = $0;
-    return s2;
-  };
-})(s1)(m1))(m2);
-var fold = /* @__PURE__ */ _foldM(applyFlipped);
-var foldMap = (dictMonoid) => {
-  const mempty = dictMonoid.mempty;
-  return (f) => fold((acc) => (k) => (v) => dictMonoid.Semigroup0().append(acc)(f(k)(v)))(mempty);
-};
-var foldableObject = {
-  foldl: (f) => fold((z) => (v) => f(z)),
-  foldr: (f) => (z) => (m) => foldrArray(f)(z)(values(m)),
-  foldMap: (dictMonoid) => {
-    const foldMap1 = foldMap(dictMonoid);
-    return (f) => foldMap1((v) => f);
-  }
-};
-var foldableWithIndexObject = {
-  foldlWithIndex: (f) => fold((b) => (a) => f(a)(b)),
-  foldrWithIndex: (f) => (z) => (m) => foldrArray((v) => f(v._1)(v._2))(z)(toArrayWithKey(Tuple)(m)),
-  foldMapWithIndex: (dictMonoid) => foldMap(dictMonoid),
-  Foldable0: () => foldableObject
-};
-var traversableWithIndexObject = {
-  traverseWithIndex: (dictApplicative) => {
-    const Apply0 = dictApplicative.Apply0();
-    return (f) => (ms) => fold((acc) => (k) => (v) => Apply0.apply(Apply0.Functor0().map((b) => (a) => mutate(($0) => () => {
-      $0[k] = a;
-      return $0;
-    })(b))(acc))(f(k)(v)))(dictApplicative.pure(empty))(ms);
-  },
-  FunctorWithIndex0: () => functorWithIndexObject,
-  FoldableWithIndex1: () => foldableWithIndexObject,
-  Traversable2: () => traversableObject
-};
-var traversableObject = {
-  traverse: (dictApplicative) => {
-    const $0 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
-    return (x) => $0((v) => x);
-  },
-  sequence: (dictApplicative) => traversableObject.traverse(dictApplicative)(identity8),
-  Functor0: () => functorObject,
-  Foldable1: () => foldableObject
-};
-var filterWithKey2 = (predicate) => (m) => {
-  const m$p = {};
-  return foldM1((acc) => (k) => (v) => {
-    if (predicate(k)(v)) {
-      return () => {
-        acc[k] = v;
-        return acc;
-      };
-    }
-    return () => acc;
-  })(m$p)(m)();
-};
-var filterKeys = (predicate) => filterWithKey2((x) => {
-  const $0 = predicate(x);
-  return (v) => $0;
-});
-var eqObject = (dictEq) => ({ eq: (m1) => (m2) => isSubmap(dictEq)(m1)(m2) && isSubmap(dictEq)(m2)(m1) });
-var $$delete2 = (k) => mutate(($0) => () => {
-  delete $0[k];
-  return $0;
-});
-
-// output-es/Effect.Exception/foreign.js
-function showErrorImpl(err) {
-  return err.stack || err.toString();
-}
-function error(msg) {
-  return new Error(msg);
-}
-function message(e) {
-  return e.message;
-}
-function throwException(e) {
-  return function() {
-    throw e;
-  };
-}
-
-// output-es/Control.Category/index.js
-var categoryFn = { identity: (x) => x, Semigroupoid0: () => semigroupoidFn };
-
-// output-es/Data.Semigroup/foreign.js
-var concatString = function(s1) {
-  return function(s2) {
-    return s1 + s2;
-  };
-};
-var concatArray = function(xs) {
-  return function(ys) {
-    if (xs.length === 0)
-      return ys;
-    if (ys.length === 0)
-      return xs;
-    return xs.concat(ys);
-  };
-};
-
-// output-es/Data.Semigroup/index.js
-var semigroupString = { append: concatString };
-var semigroupArray = { append: concatArray };
-
-// output-es/Data.Semigroup.Foldable/index.js
-var minimum = (dictOrd) => {
-  const semigroupMin = {
-    append: (v) => (v1) => {
-      const v$1 = dictOrd.compare(v)(v1);
-      if (v$1 === "LT") {
-        return v;
-      }
-      if (v$1 === "EQ") {
-        return v;
-      }
-      if (v$1 === "GT") {
-        return v1;
-      }
-      fail();
-    }
-  };
-  return (dictFoldable1) => dictFoldable1.foldMap1(semigroupMin)(unsafeCoerce);
-};
-
-// output-es/Data.Array.NonEmpty.Internal/foreign.js
-var traverse1Impl = function() {
-  function Cont(fn) {
-    this.fn = fn;
-  }
-  var emptyList = {};
-  var ConsCell = function(head, tail4) {
-    this.head = head;
-    this.tail = tail4;
-  };
-  function finalCell(head) {
-    return new ConsCell(head, emptyList);
-  }
-  function consList(x) {
-    return function(xs) {
-      return new ConsCell(x, xs);
-    };
-  }
-  function listToArray(list) {
-    var arr = [];
-    var xs = list;
-    while (xs !== emptyList) {
-      arr.push(xs.head);
-      xs = xs.tail;
-    }
-    return arr;
-  }
-  return function(apply6) {
-    return function(map2) {
-      return function(f) {
-        var buildFrom = function(x, ys) {
-          return apply6(map2(consList)(f(x)))(ys);
-        };
-        var go = function(acc, currentLen, xs) {
-          if (currentLen === 0) {
-            return acc;
-          } else {
-            var last2 = xs[currentLen - 1];
-            return new Cont(function() {
-              var built = go(buildFrom(last2, acc), currentLen - 1, xs);
-              return built;
-            });
-          }
-        };
-        return function(array) {
-          var acc = map2(finalCell)(f(array[array.length - 1]));
-          var result = go(acc, array.length - 1, array);
-          while (result instanceof Cont) {
-            result = result.fn();
-          }
-          return map2(listToArray)(result);
-        };
-      };
-    };
-  };
-}();
-
-// output-es/Data.List.NonEmpty/index.js
-var wrappedOperation = (name2) => (f) => (v) => {
-  const v1 = f($List("Cons", v._1, v._2));
-  if (v1.tag === "Cons") {
-    return $NonEmpty(v1._1, v1._2);
-  }
-  if (v1.tag === "Nil") {
-    return _crashWith("Impossible: empty list in NonEmptyList " + name2);
-  }
-  fail();
-};
-var unsnoc3 = (v) => {
-  const v1 = unsnoc2(v._2);
-  if (v1.tag === "Nothing") {
-    return { init: Nil, last: v._1 };
-  }
-  if (v1.tag === "Just") {
-    return { init: $List("Cons", v._1, v1._1.init), last: v1._1.last };
-  }
-  fail();
-};
-var tail2 = (v) => v._2;
-var init2 = (v) => {
-  const $0 = unsnoc2(v._2);
-  if ($0.tag === "Just") {
-    return $List("Cons", v._1, $0._1.init);
-  }
-  return Nil;
-};
-
-// output-es/Data.Profunctor/index.js
-var profunctorFn = { dimap: (a2b) => (c2d) => (b2c) => (x) => c2d(b2c(a2b(x))) };
-
-// output-es/Data.Profunctor.Strong/index.js
-var identity11 = (x) => x;
-var strongFn = /* @__PURE__ */ (() => ({ first: (a2b) => (v) => $Tuple(a2b(v._1), v._2), second: functorTuple.map, Profunctor0: () => profunctorFn }))();
-var fanout = (dictCategory) => {
-  const identity1 = dictCategory.identity;
-  const $0 = dictCategory.Semigroupoid0();
-  const $1 = dictCategory.Semigroupoid0();
-  return (dictStrong) => (l) => (r) => $0.compose($1.compose(dictStrong.second(r))(dictStrong.first(l)))(dictStrong.Profunctor0().dimap(identity11)((a) => $Tuple(a, a))(identity1));
-};
-
-// output-es/Debug/foreign.js
-var req = typeof module === "undefined" ? void 0 : module.require;
-var util = function() {
-  try {
-    return req === void 0 ? void 0 : req("util");
-  } catch (e) {
-    return void 0;
-  }
-}();
-function _trace(x, k) {
-  if (util !== void 0) {
-    console.log(util.inspect(x, { depth: null, colors: true }));
-  } else {
-    console.log(x);
-  }
-  return k({});
-}
-var now = function() {
-  var perf;
-  if (typeof performance !== "undefined") {
-    perf = performance;
-  } else if (req) {
-    try {
-      perf = req("perf_hooks").performance;
-    } catch (e) {
-    }
-  }
-  return function() {
-    return (perf || Date).now();
-  };
-}();
-
-// output-es/Util/index.js
-var fanout2 = /* @__PURE__ */ fanout(categoryFn)(strongFn);
-var intercalate2 = (sep) => (xs) => {
-  const go = (go$a0$copy) => (go$a1$copy) => {
-    let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-    while (go$c) {
-      const b = go$a0, v = go$a1;
-      if (v.tag === "Nil") {
-        go$c = false;
-        go$r = b;
-        continue;
-      }
-      if (v.tag === "Cons") {
-        go$a0 = b.init ? { init: false, acc: v._1 } : { init: false, acc: foldableList.foldr(Cons)(foldableList.foldr(Cons)(v._1)(sep))(b.acc) };
-        go$a1 = v._2;
-        continue;
-      }
-      fail();
-    }
-    return go$r;
-  };
-  return go({ init: true, acc: Nil })(xs).acc;
-};
-var identity12 = (x) => x;
-var isEmptySet = { isEmpty };
-var isEmptyObject = { isEmpty: isEmpty2 };
-var unzip3 = (dictFunctor) => fanout2((v) => dictFunctor.map(fst)(v))((v) => dictFunctor.map(snd)(v));
-var $$throw = (dictMonadThrow) => (x) => dictMonadThrow.throwError(error(x));
-var withMsg = (dictMonadError) => {
-  const throw2 = $$throw(dictMonadError.MonadThrow0());
-  return (msg) => (m) => dictMonadError.catchError(m)((e) => throw2(message(e) + (msg === "" ? "" : "\n" + msg)));
-};
-var orElse = (dictMonadThrow) => (v) => (v1) => {
-  if (v1.tag === "Nothing") {
-    return dictMonadThrow.throwError(error(v));
-  }
-  if (v1.tag === "Just") {
-    return dictMonadThrow.Monad0().Applicative0().pure(v1._1);
-  }
-  fail();
-};
-var mayFailEq = (dictMonadThrow) => (dictShow) => (dictEq) => (x) => (x$p) => orElse(dictMonadThrow)(dictShow.show(x) + " \u2260 " + dictShow.show(x$p))((() => {
-  const $0 = dictEq.eq(x)(x$p);
-  if (!$0) {
-    return Nothing;
-  }
-  if ($0) {
-    return $Maybe("Just", x);
-  }
-  fail();
-})());
-var definitely = (v) => (v1) => {
-  if (v1.tag === "Just") {
-    return v1._1;
-  }
-  if (v1.tag === "Nothing") {
-    return throwException(error("definitely " + v))();
-  }
-  fail();
-};
-var mustEq = (dictEq) => (dictShow) => (x) => (x$p) => definitely(dictShow.show(x) + " equal to " + dictShow.show(x$p))((() => {
-  const $0 = dictEq.eq(x)(x$p);
-  if (!$0) {
-    return Nothing;
-  }
-  if ($0) {
-    return $Maybe("Just", x);
-  }
-  fail();
-})());
-var unsafeUpdateAt = (i) => (x) => {
-  const $0 = updateAt(i)(x);
-  return (x$1) => definitely("index within bounds")($0(x$1));
-};
-var nonEmptyListNonEmptyList = {
-  nonEmpty: (x) => definitely("non-empty")((() => {
-    if (x.tag === "Nil") {
-      return Nothing;
-    }
-    if (x.tag === "Cons") {
-      return $Maybe("Just", $NonEmpty(x._1, x._2));
-    }
-    fail();
-  })()),
-  init: init2,
-  tail: tail2
-};
-var defined = (x) => {
-  if (x.tag === "Right") {
-    return x._1;
-  }
-  if (x.tag === "Left") {
-    return throwException(error(showErrorImpl(x._1)))();
-  }
-  fail();
-};
-var spyWhen = (v) => (v1) => (v2) => (v3) => {
-  if (v) {
-    return _trace(v1 + ":", (v4) => _trace(v2(v3), (v$1) => v3));
-  }
-  return v3;
-};
-var spyFunWhenM = (dictFunctor) => (b) => (s) => (showIn) => (showOut) => (f) => (x) => dictFunctor.map(spyWhen(b)(s + " output")(showOut))(f(spyWhen(b)(s + " input")(showIn)(x)));
-var spyFunWhen = (b) => (s) => (showIn) => (showOut) => (f) => spyFunWhenM(functorIdentity)(b)(s)(showIn)(showOut)((x) => f(x));
-var check = (dictMonadThrow) => (v) => {
-  if (!v) {
-    return $$throw(dictMonadThrow);
-  }
-  if (v) {
-    const $0 = dictMonadThrow.Monad0().Applicative0().pure();
-    return (v$1) => $0;
-  }
-  fail();
-};
-var bind2Flipped = (dictMonad) => {
-  const Bind1 = dictMonad.Bind1();
-  const $0 = Bind1.Apply0();
-  return (f) => (x) => (y) => Bind1.bind($0.apply($0.Functor0().map(f)(x))(y))(identity2);
-};
-var assertWith = (v) => (v1) => {
-  if (v1) {
-    return identity12;
-  }
-  return (v2) => throwException(error("Assertion failure: " + v))();
-};
-var assertWhen = (v) => (v1) => {
-  if (!v) {
-    return (v$1) => identity12;
-  }
-  if (v) {
-    return (x) => assertWith(v1)(x());
-  }
-  fail();
-};
-
-// output-es/Util.Set/index.js
-var setSet = (dictOrd) => ({
-  empty: Leaf2,
-  filter: filter3(dictOrd),
-  size: size2,
-  difference: difference2(dictOrd),
-  member: member(dictOrd),
-  union: union(dictOrd),
-  IsEmpty0: () => isEmptySet
-});
-var setObjectString = {
-  empty,
-  filter: filterKeys,
-  size: size3,
-  difference: (x) => (y) => foldlArray((b) => (a) => mutate(($0) => () => {
-    delete $0[a];
-    return $0;
-  })(b))(x)(Object.keys(y)),
-  member: member2,
-  union: union2,
-  IsEmpty0: () => isEmptyObject
-};
-
-// output-es/Util.Map/foreign.js
-function intersectionWith_Object(f) {
-  return function(m1) {
-    return function(m2) {
-      var m = {};
-      for (var k in m1) {
-        if (hasOwnProperty.call(m1, k) && hasOwnProperty.call(m2, k)) {
-          m[k] = f(m1[k])(m2[k]);
-        }
-      }
-      return m;
-    };
-  };
-}
-
-// output-es/Util.Map/index.js
-var identity13 = (x) => x;
-var mapObjectString = {
-  maplet: singleton3,
-  keys: /* @__PURE__ */ (() => {
-    const $0 = foldlArray((m) => (a) => insert(ordString)(a)()(m))(Leaf2);
-    return (x) => $0(Object.keys(x));
-  })(),
-  values: /* @__PURE__ */ (() => {
-    const $0 = foldrArray(Cons)(Nil);
-    return (x) => $0(values(x));
-  })(),
-  filterKeys,
-  unionWith: unionWith2,
-  lookup: lookup2,
-  delete: $$delete2,
-  insert: insert2,
-  toUnfoldable: (dictUnfoldable) => toAscUnfoldable(dictUnfoldable),
-  Set0: () => setObjectString
-};
-var lookup$p = (dictMonadThrow) => (dictShow) => (dictMap) => (k) => (\u03B3) => orElse(dictMonadThrow)("Key " + dictShow.show(k) + " exists in map")(dictMap.lookup(k)(\u03B3));
-var $$get = (dictShow) => (dictMap) => (k) => {
-  const $0 = dictMap.lookup(k);
-  const $1 = definitely("Key " + dictShow.show(k) + " exists in map");
-  return (x) => $1($0(x));
-};
-var disjointUnion_inv = (dictOrd) => {
-  const $0 = setSet(dictOrd);
-  return (dictMap) => (ks) => (m) => $Tuple(dictMap.filterKeys((v) => $0.member(v)(ks))(m), dictMap.filterKeys((v) => !$0.member(v)(ks))(m));
-};
-var disjointUnion = (dictMap) => dictMap.unionWith((v) => (v1) => throwException(error("not disjoint"))());
-var mapFObjectString = {
-  intersectionWith: intersectionWith_Object,
-  difference: (m1) => (m2) => foldlArray((b) => (a) => mutate(($0) => () => {
-    delete $0[a];
-    return $0;
-  })(b))(m1)(Object.keys(m2)),
-  mapWithKey
-};
-var asMaplet = (dictMap) => {
-  const toUnfoldable17 = dictMap.toUnfoldable(unfoldableList);
-  return (m) => assertWith("")(dictMap.Set0().size(m) === 1)(definitely("singleton map")((() => {
-    const $0 = toUnfoldable17(m);
-    if ($0.tag === "Nil") {
-      return Nothing;
-    }
-    if ($0.tag === "Cons") {
-      return $Maybe("Just", $0._1);
-    }
-    fail();
-  })()));
-};
-var append_inv = (dictOrd) => (dictMap) => (xs) => (\u03B3) => $Tuple(
-  dictMap.filterKeys((v) => !setSet(dictOrd).member(v)(xs))(\u03B3),
-  dictMap.filterKeys((v) => setSet(dictOrd).member(v)(xs))(\u03B3)
-);
-
-// output-es/Dict/index.js
-var identity14 = (x) => x;
-var isEmptyDict = { isEmpty: (v) => isEmpty2(v) };
-var setDictString = {
-  empty,
-  filter: (p) => (v) => filterWithKey2((x) => {
-    const $0 = p(x);
-    return (v$1) => $0;
-  })(v),
-  size: (v) => size3(v),
-  member: (x) => (v) => Object.hasOwn(v, x),
-  difference: (v) => (v1) => setObjectString.difference(v)(v1),
-  union: (v) => (v1) => union2(v)(v1),
-  IsEmpty0: () => isEmptyDict
-};
-var mapDictString = {
-  maplet: (k) => (v) => {
-    const $0 = {};
-    $0[k] = v;
-    return $0;
-  },
-  keys: (v) => mapObjectString.keys(v),
-  values: (v) => mapObjectString.values(v),
-  filterKeys: (p) => (v) => filterWithKey2((x) => {
-    const $0 = p(x);
-    return (v$1) => $0;
-  })(v),
-  unionWith: (f) => (v) => (v1) => unionWith2(f)(v)(v1),
-  lookup: (k) => (v) => _lookup(Nothing, Just, k, v),
-  delete: (k) => (v) => mutate(($0) => () => {
-    delete $0[k];
-    return $0;
-  })(v),
-  insert: (k) => (v) => (v1) => mutate(($0) => () => {
-    $0[k] = v;
-    return $0;
-  })(v1),
-  toUnfoldable: (dictUnfoldable) => toAscUnfoldable(dictUnfoldable),
-  Set0: () => setDictString
-};
-var functorDict = { map: (f) => (m) => _fmapObject(m, f) };
-var foldableDict = {
-  foldl: (f) => (z) => (m) => fold((z$1) => (v) => f(z$1))(z)(m),
-  foldr: (f) => (z) => (m) => foldrArray(f)(z)(values(m)),
-  foldMap: (dictMonoid) => {
-    const foldMap1 = foldMap(dictMonoid);
-    return (f) => foldMap1((v) => f);
-  }
-};
-var foldableWithIndexStringDi = {
-  foldlWithIndex: (f) => (z) => (v) => fold((b) => (a) => f(a)(b))(z)(v),
-  foldrWithIndex: (f) => foldrWithIndexDefault(foldableWithIndexStringDi)(f),
-  foldMapWithIndex: (dictMonoid) => (f) => foldableWithIndexStringDi.foldlWithIndex((i) => (acc) => (x) => dictMonoid.Semigroup0().append(acc)(f(i)(x)))(dictMonoid.mempty),
-  Foldable0: () => foldableDict
-};
-var traversableDict = {
-  traverse: (dictApplicative) => {
-    const $0 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
-    return (f) => (m) => dictApplicative.Apply0().Functor0().map((v1) => v1)($0((v) => f)(m));
-  },
-  sequence: (dictApplicative) => (v) => traversableDict.traverse(dictApplicative)(identity14)(v),
-  Functor0: () => functorDict,
-  Foldable1: () => foldableDict
-};
-
-// output-es/Util.Pair/index.js
-var $Pair = (_1, _2) => ({ tag: "Pair", _1, _2 });
-var Pair = (value0) => (value1) => $Pair(value0, value1);
-var functorPair = { map: (f) => (v) => $Pair(f(v._1), f(v._2)) };
-var foldablePair = {
-  foldl: (f) => (z) => (v) => f(f(z)(v._1))(v._2),
-  foldr: (f) => foldrDefault(foldablePair)(f),
-  foldMap: (dictMonoid) => (f) => foldablePair.foldl((acc) => (x) => dictMonoid.Semigroup0().append(acc)(f(x)))(dictMonoid.mempty)
-};
-var traversablePair = {
-  traverse: (dictApplicative) => {
-    const Apply0 = dictApplicative.Apply0();
-    return (f) => (v) => Apply0.apply(Apply0.Functor0().map(Pair)(f(v._1)))(f(v._2));
-  },
-  sequence: (dictApplicative) => traversablePair.traverse(dictApplicative)(identity4),
-  Functor0: () => functorPair,
-  Foldable1: () => foldablePair
-};
-var toTuple = (v) => $Tuple(v._1, v._2);
-var unzip4 = (xys) => unzip(listMap(toTuple)(xys));
-var fromTuple = (v) => $Pair(v._1, v._2);
-
-// output-es/Lattice/index.js
-var identity15 = (x) => x;
-var length4 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
-var meetSemilatticeUnit = { meet: (v) => identity15 };
-var joinSemilatticeUnit = { join: (v) => identity15 };
-var boundedMeetSemilatticeUni = { top: void 0, MeetSemilattice0: () => meetSemilatticeUnit };
-var boundedJoinSemilatticeUni = { bot: void 0, JoinSemilattice0: () => joinSemilatticeUnit };
-var joinSemilatticeArray = (dictJoinSemilattice) => {
-  const join1 = dictJoinSemilattice.join;
-  return {
-    join: (xs) => (ys) => {
-      if (length4(xs) === length4(ys)) {
-        return zipWith(join1)(xs)(ys);
-      }
-      return throwException(error("Shape mismatch"))();
-    }
-  };
-};
-var joinSemilatticeList = (dictJoinSemilattice) => {
-  const join1 = dictJoinSemilattice.join;
-  return {
-    join: (xs) => (ys) => {
-      if ((() => {
-        const go = (go$a0$copy) => (go$a1$copy) => {
-          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-          while (go$c) {
-            const b = go$a0, v = go$a1;
-            if (v.tag === "Nil") {
-              go$c = false;
-              go$r = b;
-              continue;
-            }
-            if (v.tag === "Cons") {
-              go$a0 = 1 + b | 0;
-              go$a1 = v._2;
-              continue;
-            }
-            fail();
-          }
-          return go$r;
-        };
-        const go$1 = (go$1$a0$copy) => (go$1$a1$copy) => {
-          let go$1$a0 = go$1$a0$copy, go$1$a1 = go$1$a1$copy, go$1$c = true, go$1$r;
-          while (go$1$c) {
-            const b = go$1$a0, v = go$1$a1;
-            if (v.tag === "Nil") {
-              go$1$c = false;
-              go$1$r = b;
-              continue;
-            }
-            if (v.tag === "Cons") {
-              go$1$a0 = 1 + b | 0;
-              go$1$a1 = v._2;
-              continue;
-            }
-            fail();
-          }
-          return go$1$r;
-        };
-        return go(0)(xs) === go$1(0)(ys);
-      })()) {
-        return zipWith2(join1)(xs)(ys);
-      }
-      return throwException(error("Shape mismatch"))();
-    }
-  };
-};
-var expandableDictDict = (dictBotOf) => {
-  const botOf3 = dictBotOf.botOf;
-  return (dictExpandable) => {
-    const expand1 = dictExpandable.expand;
-    return {
-      expand: (kvs) => (kvs$p) => assertWith("")(difference2(ordString)(mapObjectString.keys(kvs))(mapObjectString.keys(kvs$p)).tag === "Leaf")(union2(intersectionWith_Object(expand1)(kvs)(kvs$p))(_fmapObject(
-        mapFObjectString.difference(kvs$p)(kvs),
-        botOf3
-      )))
-    };
-  };
-};
-
-// output-es/Bind/index.js
-var union4 = /* @__PURE__ */ (() => setSet(ordString).union)();
-var keys2 = (v) => {
-  if (v.tag === "Nil") {
-    return Leaf2;
-  }
-  if (v.tag === "Cons") {
-    return union4($$$Map("Two", Leaf2, v._1._1, void 0, Leaf2))(keys2(v._2));
-  }
-  fail();
-};
-
-// output-es/Data.Bifoldable/index.js
-var bifoldableTuple = {
-  bifoldMap: (dictMonoid) => (f) => (g) => (v) => dictMonoid.Semigroup0().append(f(v._1))(g(v._2)),
-  bifoldr: (f) => (g) => (z) => (v) => f(v._1)(g(v._2)(z)),
-  bifoldl: (f) => (g) => (z) => (v) => g(f(z)(v._1))(v._2)
-};
-
-// output-es/Data.Bifunctor/index.js
-var bifunctorTuple = { bimap: (f) => (g) => (v) => $Tuple(f(v._1), g(v._2)) };
-
-// output-es/Data.Bitraversable/index.js
-var bitraversableTuple = {
-  bitraverse: (dictApplicative) => {
-    const Apply0 = dictApplicative.Apply0();
-    return (f) => (g) => (v) => Apply0.apply(Apply0.Functor0().map(Tuple)(f(v._1)))(g(v._2));
-  },
-  bisequence: (dictApplicative) => {
-    const Apply0 = dictApplicative.Apply0();
-    return (v) => Apply0.apply(Apply0.Functor0().map(Tuple)(v._1))(v._2);
-  },
-  Bifunctor0: () => bifunctorTuple,
-  Bifoldable1: () => bifoldableTuple
-};
-
-// output-es/Data.Show.Generic/foreign.js
-var intercalate3 = function(separator) {
-  return function(xs) {
-    return xs.join(separator);
-  };
-};
-
-// output-es/Data.Show.Generic/index.js
-var genericShowArgsNoArguments = { genericShowArgs: (v) => [] };
-var genericShowArgsProduct = (dictGenericShowArgs) => (dictGenericShowArgs1) => ({ genericShowArgs: (v) => [...dictGenericShowArgs.genericShowArgs(v._1), ...dictGenericShowArgs1.genericShowArgs(v._2)] });
-var genericShowConstructor = (dictGenericShowArgs) => (dictIsSymbol) => ({
-  "genericShow'": (v) => {
-    const ctor = dictIsSymbol.reflectSymbol($$Proxy);
-    const v1 = dictGenericShowArgs.genericShowArgs(v);
-    if (v1.length === 0) {
-      return ctor;
-    }
-    return "(" + intercalate3(" ")([ctor, ...v1]) + ")";
-  }
-});
-
-// output-es/Data.Unit/index.js
-var showUnit = { show: (v) => "unit" };
-
 // output-es/Data.Number/foreign.js
 var isFiniteImpl = isFinite;
 var ceil = Math.ceil;
 var floor = Math.floor;
-var log = Math.log;
+var log2 = Math.log;
 var pow = function(n) {
   return function(p) {
     return Math.pow(n, p);
@@ -9288,6 +9475,616 @@ function fromCharCode(c) {
   return String.fromCharCode(c);
 }
 
+// output-es/Foreign.Object/foreign.js
+var empty = {};
+function _fmapObject(m0, f) {
+  var m = {};
+  for (var k in m0) {
+    if (hasOwnProperty.call(m0, k)) {
+      m[k] = f(m0[k]);
+    }
+  }
+  return m;
+}
+function _mapWithKey(m0, f) {
+  var m = {};
+  for (var k in m0) {
+    if (hasOwnProperty.call(m0, k)) {
+      m[k] = f(k)(m0[k]);
+    }
+  }
+  return m;
+}
+function _foldM(bind3) {
+  return function(f) {
+    return function(mz) {
+      return function(m) {
+        var acc = mz;
+        function g(k2) {
+          return function(z) {
+            return f(z)(k2)(m[k2]);
+          };
+        }
+        for (var k in m) {
+          if (hasOwnProperty.call(m, k)) {
+            acc = bind3(acc)(g(k));
+          }
+        }
+        return acc;
+      };
+    };
+  };
+}
+function all2(f) {
+  return function(m) {
+    for (var k in m) {
+      if (hasOwnProperty.call(m, k) && !f(k)(m[k]))
+        return false;
+    }
+    return true;
+  };
+}
+function size3(m) {
+  var s = 0;
+  for (var k in m) {
+    if (hasOwnProperty.call(m, k)) {
+      ++s;
+    }
+  }
+  return s;
+}
+function _lookup(no, yes, k, m) {
+  return k in m ? yes(m[k]) : no;
+}
+function toArrayWithKey(f) {
+  return function(m) {
+    var r = [];
+    for (var k in m) {
+      if (hasOwnProperty.call(m, k)) {
+        r.push(f(k)(m[k]));
+      }
+    }
+    return r;
+  };
+}
+var keys = Object.keys || toArrayWithKey(function(k) {
+  return function() {
+    return k;
+  };
+});
+
+// output-es/Foreign.Object/index.js
+var identity9 = (x) => x;
+var values = /* @__PURE__ */ toArrayWithKey((v) => (v1) => v1);
+var toAscUnfoldable = (dictUnfoldable) => {
+  const $0 = sortWith(ordString)(fst);
+  const $1 = toArrayWithKey(Tuple);
+  return (x) => toUnfoldable(dictUnfoldable)($0($1(x)));
+};
+var singleton3 = (k) => (v) => {
+  const $0 = {};
+  $0[k] = v;
+  return $0;
+};
+var mutate = (f) => (m) => {
+  const s = { ...m };
+  f(s)();
+  return s;
+};
+var member2 = ($0) => ($1) => _lookup(false, (v) => true, $0, $1);
+var mapWithKey = (f) => (m) => _mapWithKey(m, f);
+var lookup2 = ($0) => ($1) => _lookup(Nothing, Just, $0, $1);
+var isSubmap = (dictEq) => (m1) => (m2) => all2((k) => (v) => _lookup(false, dictEq.eq(v), k, m2))(m1);
+var isEmpty2 = /* @__PURE__ */ all2((v) => (v1) => false);
+var insert2 = (k) => (v) => mutate(($0) => () => {
+  $0[k] = v;
+  return $0;
+});
+var functorObject = { map: (f) => (m) => _fmapObject(m, f) };
+var functorWithIndexObject = { mapWithIndex: mapWithKey, Functor0: () => functorObject };
+var fromFoldable2 = (dictFoldable) => {
+  const fromFoldable114 = fromFoldableImpl(dictFoldable.foldr);
+  return (l) => {
+    const s = {};
+    for (const v of fromFoldable114(l)) {
+      s[v._1] = v._2;
+    }
+    return s;
+  };
+};
+var foldM = (dictMonad) => {
+  const bind12 = dictMonad.Bind1().bind;
+  return (f) => (z) => _foldM(bind12)(f)(dictMonad.Applicative0().pure(z));
+};
+var foldM1 = /* @__PURE__ */ foldM(monadST);
+var union2 = (m) => mutate((s) => foldM1((s$p) => (k) => (v) => () => {
+  s$p[k] = v;
+  return s$p;
+})(s)(m));
+var unionWith2 = (f) => (m1) => (m2) => mutate((s1) => foldM1((s2) => (k) => (v1) => {
+  const $0 = _lookup(v1, (v2) => f(v1)(v2), k, m2);
+  return () => {
+    s2[k] = $0;
+    return s2;
+  };
+})(s1)(m1))(m2);
+var fold = /* @__PURE__ */ _foldM(applyFlipped);
+var foldMap = (dictMonoid) => {
+  const mempty = dictMonoid.mempty;
+  return (f) => fold((acc) => (k) => (v) => dictMonoid.Semigroup0().append(acc)(f(k)(v)))(mempty);
+};
+var foldableObject = {
+  foldl: (f) => fold((z) => (v) => f(z)),
+  foldr: (f) => (z) => (m) => foldrArray(f)(z)(values(m)),
+  foldMap: (dictMonoid) => {
+    const foldMap1 = foldMap(dictMonoid);
+    return (f) => foldMap1((v) => f);
+  }
+};
+var foldableWithIndexObject = {
+  foldlWithIndex: (f) => fold((b) => (a) => f(a)(b)),
+  foldrWithIndex: (f) => (z) => (m) => foldrArray((v) => f(v._1)(v._2))(z)(toArrayWithKey(Tuple)(m)),
+  foldMapWithIndex: (dictMonoid) => foldMap(dictMonoid),
+  Foldable0: () => foldableObject
+};
+var traversableWithIndexObject = {
+  traverseWithIndex: (dictApplicative) => {
+    const Apply0 = dictApplicative.Apply0();
+    return (f) => (ms) => fold((acc) => (k) => (v) => Apply0.apply(Apply0.Functor0().map((b) => (a) => mutate(($0) => () => {
+      $0[k] = a;
+      return $0;
+    })(b))(acc))(f(k)(v)))(dictApplicative.pure(empty))(ms);
+  },
+  FunctorWithIndex0: () => functorWithIndexObject,
+  FoldableWithIndex1: () => foldableWithIndexObject,
+  Traversable2: () => traversableObject
+};
+var traversableObject = {
+  traverse: (dictApplicative) => {
+    const $0 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
+    return (x) => $0((v) => x);
+  },
+  sequence: (dictApplicative) => traversableObject.traverse(dictApplicative)(identity9),
+  Functor0: () => functorObject,
+  Foldable1: () => foldableObject
+};
+var filterWithKey2 = (predicate) => (m) => {
+  const m$p = {};
+  return foldM1((acc) => (k) => (v) => {
+    if (predicate(k)(v)) {
+      return () => {
+        acc[k] = v;
+        return acc;
+      };
+    }
+    return () => acc;
+  })(m$p)(m)();
+};
+var filterKeys = (predicate) => filterWithKey2((x) => {
+  const $0 = predicate(x);
+  return (v) => $0;
+});
+var eqObject = (dictEq) => ({ eq: (m1) => (m2) => isSubmap(dictEq)(m1)(m2) && isSubmap(dictEq)(m2)(m1) });
+var $$delete2 = (k) => mutate(($0) => () => {
+  delete $0[k];
+  return $0;
+});
+
+// output-es/Control.Category/index.js
+var categoryFn = { identity: (x) => x, Semigroupoid0: () => semigroupoidFn };
+
+// output-es/Data.Semigroup/foreign.js
+var concatString = function(s1) {
+  return function(s2) {
+    return s1 + s2;
+  };
+};
+var concatArray = function(xs) {
+  return function(ys) {
+    if (xs.length === 0)
+      return ys;
+    if (ys.length === 0)
+      return xs;
+    return xs.concat(ys);
+  };
+};
+
+// output-es/Data.Semigroup/index.js
+var semigroupString = { append: concatString };
+var semigroupArray = { append: concatArray };
+
+// output-es/Data.FoldableWithIndex/index.js
+var monoidEndo2 = /* @__PURE__ */ (() => {
+  const semigroupEndo1 = { append: (v) => (v1) => (x) => v(v1(x)) };
+  return { mempty: (x) => x, Semigroup0: () => semigroupEndo1 };
+})();
+var foldrWithIndexDefault = (dictFoldableWithIndex) => {
+  const foldMapWithIndex1 = dictFoldableWithIndex.foldMapWithIndex(monoidEndo2);
+  return (c) => (u) => (xs) => foldMapWithIndex1((i) => c(i))(xs)(u);
+};
+
+// output-es/Data.Semigroup.Foldable/index.js
+var minimum = (dictOrd) => {
+  const semigroupMin = {
+    append: (v) => (v1) => {
+      const v$1 = dictOrd.compare(v)(v1);
+      if (v$1 === "LT") {
+        return v;
+      }
+      if (v$1 === "EQ") {
+        return v;
+      }
+      if (v$1 === "GT") {
+        return v1;
+      }
+      fail();
+    }
+  };
+  return (dictFoldable1) => dictFoldable1.foldMap1(semigroupMin)(unsafeCoerce);
+};
+
+// output-es/Data.Array.NonEmpty.Internal/foreign.js
+var traverse1Impl = function() {
+  function Cont(fn) {
+    this.fn = fn;
+  }
+  var emptyList = {};
+  var ConsCell = function(head, tail4) {
+    this.head = head;
+    this.tail = tail4;
+  };
+  function finalCell(head) {
+    return new ConsCell(head, emptyList);
+  }
+  function consList(x) {
+    return function(xs) {
+      return new ConsCell(x, xs);
+    };
+  }
+  function listToArray(list) {
+    var arr = [];
+    var xs = list;
+    while (xs !== emptyList) {
+      arr.push(xs.head);
+      xs = xs.tail;
+    }
+    return arr;
+  }
+  return function(apply6) {
+    return function(map2) {
+      return function(f) {
+        var buildFrom = function(x, ys) {
+          return apply6(map2(consList)(f(x)))(ys);
+        };
+        var go = function(acc, currentLen, xs) {
+          if (currentLen === 0) {
+            return acc;
+          } else {
+            var last2 = xs[currentLen - 1];
+            return new Cont(function() {
+              var built = go(buildFrom(last2, acc), currentLen - 1, xs);
+              return built;
+            });
+          }
+        };
+        return function(array) {
+          var acc = map2(finalCell)(f(array[array.length - 1]));
+          var result = go(acc, array.length - 1, array);
+          while (result instanceof Cont) {
+            result = result.fn();
+          }
+          return map2(listToArray)(result);
+        };
+      };
+    };
+  };
+}();
+
+// output-es/Data.List.NonEmpty/index.js
+var wrappedOperation = (name2) => (f) => (v) => {
+  const v1 = f($List("Cons", v._1, v._2));
+  if (v1.tag === "Cons") {
+    return $NonEmpty(v1._1, v1._2);
+  }
+  if (v1.tag === "Nil") {
+    return _crashWith("Impossible: empty list in NonEmptyList " + name2);
+  }
+  fail();
+};
+var unsnoc3 = (v) => {
+  const v1 = unsnoc2(v._2);
+  if (v1.tag === "Nothing") {
+    return { init: Nil, last: v._1 };
+  }
+  if (v1.tag === "Just") {
+    return { init: $List("Cons", v._1, v1._1.init), last: v1._1.last };
+  }
+  fail();
+};
+var tail2 = (v) => v._2;
+var init2 = (v) => {
+  const $0 = unsnoc2(v._2);
+  if ($0.tag === "Just") {
+    return $List("Cons", v._1, $0._1.init);
+  }
+  return Nil;
+};
+
+// output-es/Data.Profunctor/index.js
+var profunctorFn = { dimap: (a2b) => (c2d) => (b2c) => (x) => c2d(b2c(a2b(x))) };
+
+// output-es/Data.Profunctor.Strong/index.js
+var identity12 = (x) => x;
+var strongFn = /* @__PURE__ */ (() => ({ first: (a2b) => (v) => $Tuple(a2b(v._1), v._2), second: functorTuple.map, Profunctor0: () => profunctorFn }))();
+var fanout = (dictCategory) => {
+  const identity1 = dictCategory.identity;
+  const $0 = dictCategory.Semigroupoid0();
+  const $1 = dictCategory.Semigroupoid0();
+  return (dictStrong) => (l) => (r) => $0.compose($1.compose(dictStrong.second(r))(dictStrong.first(l)))(dictStrong.Profunctor0().dimap(identity12)((a) => $Tuple(a, a))(identity1));
+};
+
+// output-es/Debug/foreign.js
+var req = typeof module === "undefined" ? void 0 : module.require;
+var util = function() {
+  try {
+    return req === void 0 ? void 0 : req("util");
+  } catch (e) {
+    return void 0;
+  }
+}();
+function _trace(x, k) {
+  if (util !== void 0) {
+    console.log(util.inspect(x, { depth: null, colors: true }));
+  } else {
+    console.log(x);
+  }
+  return k({});
+}
+var now = function() {
+  var perf;
+  if (typeof performance !== "undefined") {
+    perf = performance;
+  } else if (req) {
+    try {
+      perf = req("perf_hooks").performance;
+    } catch (e) {
+    }
+  }
+  return function() {
+    return (perf || Date).now();
+  };
+}();
+
+// output-es/Util/index.js
+var fanout2 = /* @__PURE__ */ fanout(categoryFn)(strongFn);
+var intercalate2 = (sep) => (xs) => {
+  const go = (go$a0$copy) => (go$a1$copy) => {
+    let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+    while (go$c) {
+      const b = go$a0, v = go$a1;
+      if (v.tag === "Nil") {
+        go$c = false;
+        go$r = b;
+        continue;
+      }
+      if (v.tag === "Cons") {
+        go$a0 = b.init ? { init: false, acc: v._1 } : { init: false, acc: foldableList.foldr(Cons)(foldableList.foldr(Cons)(v._1)(sep))(b.acc) };
+        go$a1 = v._2;
+        continue;
+      }
+      fail();
+    }
+    return go$r;
+  };
+  return go({ init: true, acc: Nil })(xs).acc;
+};
+var identity13 = (x) => x;
+var isEmptySet = { isEmpty };
+var isEmptyObject = { isEmpty: isEmpty2 };
+var unzip3 = (dictFunctor) => fanout2((v) => dictFunctor.map(fst)(v))((v) => dictFunctor.map(snd)(v));
+var $$throw = (dictMonadThrow) => (x) => dictMonadThrow.throwError(error(x));
+var withMsg = (dictMonadError) => {
+  const throw2 = $$throw(dictMonadError.MonadThrow0());
+  return (msg) => (m) => dictMonadError.catchError(m)((e) => throw2(message(e) + (msg === "" ? "" : "\n" + msg)));
+};
+var orElse = (dictMonadThrow) => (v) => (v1) => {
+  if (v1.tag === "Nothing") {
+    return dictMonadThrow.throwError(error(v));
+  }
+  if (v1.tag === "Just") {
+    return dictMonadThrow.Monad0().Applicative0().pure(v1._1);
+  }
+  fail();
+};
+var mayFailEq = (dictMonadThrow) => (dictShow) => (dictEq) => (x) => (x$p) => orElse(dictMonadThrow)(dictShow.show(x) + " \u2260 " + dictShow.show(x$p))((() => {
+  const $0 = dictEq.eq(x)(x$p);
+  if (!$0) {
+    return Nothing;
+  }
+  if ($0) {
+    return $Maybe("Just", x);
+  }
+  fail();
+})());
+var definitely = (v) => (v1) => {
+  if (v1.tag === "Just") {
+    return v1._1;
+  }
+  if (v1.tag === "Nothing") {
+    return throwException(error("definitely " + v))();
+  }
+  fail();
+};
+var mustEq = (dictEq) => (dictShow) => (x) => (x$p) => definitely(dictShow.show(x) + " equal to " + dictShow.show(x$p))((() => {
+  const $0 = dictEq.eq(x)(x$p);
+  if (!$0) {
+    return Nothing;
+  }
+  if ($0) {
+    return $Maybe("Just", x);
+  }
+  fail();
+})());
+var unsafeUpdateAt = (i) => (x) => {
+  const $0 = updateAt(i)(x);
+  return (x$1) => definitely("index within bounds")($0(x$1));
+};
+var nonEmptyListNonEmptyList = {
+  nonEmpty: (x) => definitely("non-empty")((() => {
+    if (x.tag === "Nil") {
+      return Nothing;
+    }
+    if (x.tag === "Cons") {
+      return $Maybe("Just", $NonEmpty(x._1, x._2));
+    }
+    fail();
+  })()),
+  init: init2,
+  tail: tail2
+};
+var defined = (x) => {
+  if (x.tag === "Right") {
+    return x._1;
+  }
+  if (x.tag === "Left") {
+    return throwException(error(showErrorImpl(x._1)))();
+  }
+  fail();
+};
+var spyWhen = (v) => (v1) => (v2) => (v3) => {
+  if (v) {
+    return _trace(v1 + ":", (v4) => _trace(v2(v3), (v$1) => v3));
+  }
+  return v3;
+};
+var spyFunWhenM = (dictFunctor) => (b) => (s) => (showIn) => (showOut) => (f) => (x) => dictFunctor.map(spyWhen(b)(s + " output")(showOut))(f(spyWhen(b)(s + " input")(showIn)(x)));
+var spyFunWhen = (b) => (s) => (showIn) => (showOut) => (f) => spyFunWhenM(functorIdentity)(b)(s)(showIn)(showOut)((x) => f(x));
+var check = (dictMonadThrow) => (v) => {
+  if (!v) {
+    return $$throw(dictMonadThrow);
+  }
+  if (v) {
+    const $0 = dictMonadThrow.Monad0().Applicative0().pure();
+    return (v$1) => $0;
+  }
+  fail();
+};
+var bind2Flipped = (dictMonad) => {
+  const Bind1 = dictMonad.Bind1();
+  const $0 = Bind1.Apply0();
+  return (f) => (x) => (y) => Bind1.bind($0.apply($0.Functor0().map(f)(x))(y))(identity2);
+};
+var assertWith = (v) => (v1) => {
+  if (v1) {
+    return identity13;
+  }
+  return (v2) => throwException(error("Assertion failure: " + v))();
+};
+var assertWhen = (v) => (v1) => {
+  if (!v) {
+    return (v$1) => identity13;
+  }
+  if (v) {
+    return (x) => assertWith(v1)(x());
+  }
+  fail();
+};
+
+// output-es/Util.Set/index.js
+var setSet = (dictOrd) => ({
+  empty: Leaf2,
+  filter: filter3(dictOrd),
+  size: size2,
+  difference: difference2(dictOrd),
+  member: member(dictOrd),
+  union: union(dictOrd),
+  IsEmpty0: () => isEmptySet
+});
+var setObjectString = {
+  empty,
+  filter: filterKeys,
+  size: size3,
+  difference: (x) => (y) => foldlArray((b) => (a) => mutate(($0) => () => {
+    delete $0[a];
+    return $0;
+  })(b))(x)(Object.keys(y)),
+  member: member2,
+  union: union2,
+  IsEmpty0: () => isEmptyObject
+};
+
+// output-es/Util.Map/foreign.js
+function intersectionWith_Object(f) {
+  return function(m1) {
+    return function(m2) {
+      var m = {};
+      for (var k in m1) {
+        if (hasOwnProperty.call(m1, k) && hasOwnProperty.call(m2, k)) {
+          m[k] = f(m1[k])(m2[k]);
+        }
+      }
+      return m;
+    };
+  };
+}
+
+// output-es/Util.Map/index.js
+var identity14 = (x) => x;
+var mapObjectString = {
+  maplet: singleton3,
+  keys: /* @__PURE__ */ (() => {
+    const $0 = foldlArray((m) => (a) => insert(ordString)(a)()(m))(Leaf2);
+    return (x) => $0(Object.keys(x));
+  })(),
+  values: /* @__PURE__ */ (() => {
+    const $0 = foldrArray(Cons)(Nil);
+    return (x) => $0(values(x));
+  })(),
+  filterKeys,
+  unionWith: unionWith2,
+  lookup: lookup2,
+  delete: $$delete2,
+  insert: insert2,
+  toUnfoldable: (dictUnfoldable) => toAscUnfoldable(dictUnfoldable),
+  Set0: () => setObjectString
+};
+var lookup$p = (dictMonadThrow) => (dictShow) => (dictMap) => (k) => (\u03B3) => orElse(dictMonadThrow)("Key " + dictShow.show(k) + " exists in map")(dictMap.lookup(k)(\u03B3));
+var $$get = (dictShow) => (dictMap) => (k) => {
+  const $0 = dictMap.lookup(k);
+  const $1 = definitely("Key " + dictShow.show(k) + " exists in map");
+  return (x) => $1($0(x));
+};
+var disjointUnion_inv = (dictOrd) => {
+  const $0 = setSet(dictOrd);
+  return (dictMap) => (ks) => (m) => $Tuple(dictMap.filterKeys((v) => $0.member(v)(ks))(m), dictMap.filterKeys((v) => !$0.member(v)(ks))(m));
+};
+var disjointUnion = (dictMap) => dictMap.unionWith((v) => (v1) => throwException(error("not disjoint"))());
+var mapFObjectString = {
+  intersectionWith: intersectionWith_Object,
+  difference: (m1) => (m2) => foldlArray((b) => (a) => mutate(($0) => () => {
+    delete $0[a];
+    return $0;
+  })(b))(m1)(Object.keys(m2)),
+  mapWithKey
+};
+var asMaplet = (dictMap) => {
+  const toUnfoldable17 = dictMap.toUnfoldable(unfoldableList);
+  return (m) => assertWith("")(dictMap.Set0().size(m) === 1)(definitely("singleton map")((() => {
+    const $0 = toUnfoldable17(m);
+    if ($0.tag === "Nil") {
+      return Nothing;
+    }
+    if ($0.tag === "Cons") {
+      return $Maybe("Just", $0._1);
+    }
+    fail();
+  })()));
+};
+var append_inv = (dictOrd) => (dictMap) => (xs) => (\u03B3) => $Tuple(
+  dictMap.filterKeys((v) => !setSet(dictOrd).member(v)(xs))(\u03B3),
+  dictMap.filterKeys((v) => setSet(dictOrd).member(v)(xs))(\u03B3)
+);
+
 // output-es/DataType/index.js
 var $DataType = (_1, _2) => ({ tag: "DataType", _1, _2 });
 var fromFoldable3 = /* @__PURE__ */ fromFoldable2(foldableArray);
@@ -9349,7 +10146,7 @@ var dataTypes = /* @__PURE__ */ foldrArray(Cons)(Nil)([
 var ctrToDataType = /* @__PURE__ */ (() => fromFoldable2(foldableList)(bindList.bind(listMap((d) => listMap((v) => $Tuple(
   v,
   d
-))(toUnfoldable5(fromFoldable12(mapObjectString.keys(d._2)))))(dataTypes))(identity6)))();
+))(toUnfoldable5(fromFoldable12(mapObjectString.keys(d._2)))))(dataTypes))(identity7)))();
 var dataTypeForCtr = {
   dataTypeFor: (dictMonadThrow) => (c) => orElse(dictMonadThrow)("Unknown constructor " + showCtr(c))(_lookup(
     Nothing,
@@ -9391,6 +10188,173 @@ var checkArity = (dictMonadError) => {
   return (c) => (n) => $$void(withMsg2("Checking arity of " + showCtr(c))(bind2Flipped2(mayFailEq(MonadThrow0)(showInt)(eqInt))(arity(MonadThrow0)(c))(Monad0.Applicative0().pure(n))));
 };
 
+// output-es/Dict/index.js
+var identity15 = (x) => x;
+var isEmptyDict = { isEmpty: (v) => isEmpty2(v) };
+var setDictString = {
+  empty,
+  filter: (p) => (v) => filterWithKey2((x) => {
+    const $0 = p(x);
+    return (v$1) => $0;
+  })(v),
+  size: (v) => size3(v),
+  member: (x) => (v) => Object.hasOwn(v, x),
+  difference: (v) => (v1) => setObjectString.difference(v)(v1),
+  union: (v) => (v1) => union2(v)(v1),
+  IsEmpty0: () => isEmptyDict
+};
+var mapDictString = {
+  maplet: (k) => (v) => {
+    const $0 = {};
+    $0[k] = v;
+    return $0;
+  },
+  keys: (v) => mapObjectString.keys(v),
+  values: (v) => mapObjectString.values(v),
+  filterKeys: (p) => (v) => filterWithKey2((x) => {
+    const $0 = p(x);
+    return (v$1) => $0;
+  })(v),
+  unionWith: (f) => (v) => (v1) => unionWith2(f)(v)(v1),
+  lookup: (k) => (v) => _lookup(Nothing, Just, k, v),
+  delete: (k) => (v) => mutate(($0) => () => {
+    delete $0[k];
+    return $0;
+  })(v),
+  insert: (k) => (v) => (v1) => mutate(($0) => () => {
+    $0[k] = v;
+    return $0;
+  })(v1),
+  toUnfoldable: (dictUnfoldable) => toAscUnfoldable(dictUnfoldable),
+  Set0: () => setDictString
+};
+var functorDict = { map: (f) => (m) => _fmapObject(m, f) };
+var foldableDict = {
+  foldl: (f) => (z) => (m) => fold((z$1) => (v) => f(z$1))(z)(m),
+  foldr: (f) => (z) => (m) => foldrArray(f)(z)(values(m)),
+  foldMap: (dictMonoid) => {
+    const foldMap1 = foldMap(dictMonoid);
+    return (f) => foldMap1((v) => f);
+  }
+};
+var foldableWithIndexStringDi = {
+  foldlWithIndex: (f) => (z) => (v) => fold((b) => (a) => f(a)(b))(z)(v),
+  foldrWithIndex: (f) => foldrWithIndexDefault(foldableWithIndexStringDi)(f),
+  foldMapWithIndex: (dictMonoid) => (f) => foldableWithIndexStringDi.foldlWithIndex((i) => (acc) => (x) => dictMonoid.Semigroup0().append(acc)(f(i)(x)))(dictMonoid.mempty),
+  Foldable0: () => foldableDict
+};
+var traversableDict = {
+  traverse: (dictApplicative) => {
+    const $0 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
+    return (f) => (m) => dictApplicative.Apply0().Functor0().map((v1) => v1)($0((v) => f)(m));
+  },
+  sequence: (dictApplicative) => (v) => traversableDict.traverse(dictApplicative)(identity15)(v),
+  Functor0: () => functorDict,
+  Foldable1: () => foldableDict
+};
+
+// output-es/Util.Pair/index.js
+var $Pair = (_1, _2) => ({ tag: "Pair", _1, _2 });
+var Pair = (value0) => (value1) => $Pair(value0, value1);
+var functorPair = { map: (f) => (v) => $Pair(f(v._1), f(v._2)) };
+var foldablePair = {
+  foldl: (f) => (z) => (v) => f(f(z)(v._1))(v._2),
+  foldr: (f) => foldrDefault(foldablePair)(f),
+  foldMap: (dictMonoid) => (f) => foldablePair.foldl((acc) => (x) => dictMonoid.Semigroup0().append(acc)(f(x)))(dictMonoid.mempty)
+};
+var traversablePair = {
+  traverse: (dictApplicative) => {
+    const Apply0 = dictApplicative.Apply0();
+    return (f) => (v) => Apply0.apply(Apply0.Functor0().map(Pair)(f(v._1)))(f(v._2));
+  },
+  sequence: (dictApplicative) => traversablePair.traverse(dictApplicative)(identity4),
+  Functor0: () => functorPair,
+  Foldable1: () => foldablePair
+};
+var toTuple = (v) => $Tuple(v._1, v._2);
+var unzip4 = (xys) => unzip(listMap(toTuple)(xys));
+var fromTuple = (v) => $Pair(v._1, v._2);
+
+// output-es/Lattice/index.js
+var identity16 = (x) => x;
+var length4 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
+var meetSemilatticeUnit = { meet: (v) => identity16 };
+var joinSemilatticeUnit = { join: (v) => identity16 };
+var boundedMeetSemilatticeUni = { top: void 0, MeetSemilattice0: () => meetSemilatticeUnit };
+var boundedJoinSemilatticeUni = { bot: void 0, JoinSemilattice0: () => joinSemilatticeUnit };
+var joinSemilatticeArray = (dictJoinSemilattice) => {
+  const join1 = dictJoinSemilattice.join;
+  return {
+    join: (xs) => (ys) => {
+      if (length4(xs) === length4(ys)) {
+        return zipWith(join1)(xs)(ys);
+      }
+      return throwException(error("Shape mismatch"))();
+    }
+  };
+};
+var joinSemilatticeList = (dictJoinSemilattice) => {
+  const join1 = dictJoinSemilattice.join;
+  return {
+    join: (xs) => (ys) => {
+      if ((() => {
+        const go = (go$a0$copy) => (go$a1$copy) => {
+          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+          while (go$c) {
+            const b = go$a0, v = go$a1;
+            if (v.tag === "Nil") {
+              go$c = false;
+              go$r = b;
+              continue;
+            }
+            if (v.tag === "Cons") {
+              go$a0 = 1 + b | 0;
+              go$a1 = v._2;
+              continue;
+            }
+            fail();
+          }
+          return go$r;
+        };
+        const go$1 = (go$1$a0$copy) => (go$1$a1$copy) => {
+          let go$1$a0 = go$1$a0$copy, go$1$a1 = go$1$a1$copy, go$1$c = true, go$1$r;
+          while (go$1$c) {
+            const b = go$1$a0, v = go$1$a1;
+            if (v.tag === "Nil") {
+              go$1$c = false;
+              go$1$r = b;
+              continue;
+            }
+            if (v.tag === "Cons") {
+              go$1$a0 = 1 + b | 0;
+              go$1$a1 = v._2;
+              continue;
+            }
+            fail();
+          }
+          return go$1$r;
+        };
+        return go(0)(xs) === go$1(0)(ys);
+      })()) {
+        return zipWith2(join1)(xs)(ys);
+      }
+      return throwException(error("Shape mismatch"))();
+    }
+  };
+};
+var expandableDictDict = (dictBotOf) => {
+  const botOf3 = dictBotOf.botOf;
+  return (dictExpandable) => {
+    const expand1 = dictExpandable.expand;
+    return {
+      expand: (kvs) => (kvs$p) => assertWith("")(difference2(ordString)(mapObjectString.keys(kvs))(mapObjectString.keys(kvs$p)).tag === "Leaf")(union2(intersectionWith_Object(expand1)(kvs)(kvs$p))(_fmapObject(
+        mapFObjectString.difference(kvs$p)(kvs),
+        botOf3
+      )))
+    };
+  };
+};
+
 // output-es/Expr/index.js
 var $Cont = (tag, _1) => ({ tag, _1 });
 var $Elim = (tag, _1, _2) => ({ tag, _1, _2 });
@@ -9398,7 +10362,7 @@ var $Expr = (tag, _1, _2, _3, _4) => ({ tag, _1, _2, _3, _4 });
 var $RecDefs = (_1, _2) => ({ tag: "RecDefs", _1, _2 });
 var $VarDef = (_1, _2) => ({ tag: "VarDef", _1, _2 });
 var eqSet = { eq: (v) => (v1) => eqMap(eqString)(eqUnit).eq(v)(v1) };
-var identity18 = (x) => x;
+var identity17 = (x) => x;
 var setSet2 = /* @__PURE__ */ setSet(ordString);
 var fromFoldable4 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert(ordString)(a)()(m))(Leaf2))();
 var asMaplet2 = /* @__PURE__ */ asMaplet(mapDictString);
@@ -9957,7 +10921,7 @@ var traversableVarDef = {
     const Apply0 = dictApplicative.Apply0();
     return (f) => (m) => Apply0.apply(Apply0.Functor0().map((v2) => (v3) => $VarDef(v2, v3))(traversableElim.traverse(dictApplicative)(f)(m._1)))(traversableExpr.traverse(dictApplicative)(f)(m._2));
   },
-  sequence: (dictApplicative) => (v) => traversableVarDef.traverse(dictApplicative)(identity18)(v),
+  sequence: (dictApplicative) => (v) => traversableVarDef.traverse(dictApplicative)(identity17)(v),
   Functor0: () => functorVarDef,
   Foldable1: () => foldableVarDef
 };
@@ -9967,7 +10931,7 @@ var traversableRecDefs = {
     const traverse5 = traversableDict.traverse(dictApplicative);
     return (f) => (m) => Apply0.apply(Apply0.Functor0().map((v2) => (v3) => $RecDefs(v2, v3))(f(m._1)))(traverse5(traversableElim.traverse(dictApplicative)(f))(m._2));
   },
-  sequence: (dictApplicative) => (v) => traversableRecDefs.traverse(dictApplicative)(identity18)(v),
+  sequence: (dictApplicative) => (v) => traversableRecDefs.traverse(dictApplicative)(identity17)(v),
   Functor0: () => functorRecDefs,
   Foldable1: () => foldableRecDefs
 };
@@ -10029,7 +10993,7 @@ var traversableExpr = {
       fail();
     };
   },
-  sequence: (dictApplicative) => (v) => traversableExpr.traverse(dictApplicative)(identity18)(v),
+  sequence: (dictApplicative) => (v) => traversableExpr.traverse(dictApplicative)(identity17)(v),
   Functor0: () => functorExpr,
   Foldable1: () => foldableExpr
 };
@@ -10052,7 +11016,7 @@ var traversableElim = {
       fail();
     };
   },
-  sequence: (dictApplicative) => (v) => traversableElim.traverse(dictApplicative)(identity18)(v),
+  sequence: (dictApplicative) => (v) => traversableElim.traverse(dictApplicative)(identity17)(v),
   Functor0: () => functorElim,
   Foldable1: () => foldableElim
 };
@@ -10069,7 +11033,7 @@ var traversableCont = {
       fail();
     };
   },
-  sequence: (dictApplicative) => (v) => traversableCont.traverse(dictApplicative)(identity18)(v),
+  sequence: (dictApplicative) => (v) => traversableCont.traverse(dictApplicative)(identity17)(v),
   Functor0: () => functorCont,
   Foldable1: () => foldableCont
 };
@@ -10560,6 +11524,1823 @@ var asElim = (v) => {
   return throwException(error("Eliminator expected"))();
 };
 
+// output-es/Graph/index.js
+var fromFoldable5 = /* @__PURE__ */ (() => fromFoldableImpl(foldableSet.foldr))();
+var fromFoldable13 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
+var fromFoldable22 = /* @__PURE__ */ (() => foldableSet.foldr(Cons)(Nil))();
+var Vertex = (x) => x;
+var eqVertex = { eq: (x) => (y) => x === y };
+var ordVertex = { compare: (x) => (y) => ordString.compare(x)(y), Eq0: () => eqVertex };
+var verticesVertex = (dictFunctor) => (dictFoldable) => ({
+  vertices: (() => {
+    const $0 = dictFoldable.foldl(union(ordVertex))(Leaf2);
+    return (x) => $0(dictFunctor.map(singleton2)(x));
+  })()
+});
+var showVertices = (\u03B1s) => "{" + joinWith(", ")(fromFoldable5(map(ordString)(unsafeCoerce)(\u03B1s))) + "}";
+var showEdgeList = (es) => joinWith("\n")([
+  "digraph G {",
+  ...arrayMap((v) => "   " + v)([
+    "rankdir = RL",
+    ...arrayMap((v) => v._1 + " -> {" + joinWith(", ")(fromFoldable5(map(ordString)(unsafeCoerce)(v._2))) + "}")(fromFoldable13(reverse2(es)))
+  ]),
+  "}"
+]);
+var toEdgeList = (dictGraph) => (g) => {
+  const $0 = (v) => {
+    if (v._1.tag === "Nil") {
+      return $Step("Done", v._2);
+    }
+    if (v._1.tag === "Cons") {
+      return $Step("Loop", $Tuple(v._1._2, $List("Cons", $Tuple(v._1._1, dictGraph.outN(g)(v._1._1)), v._2)));
+    }
+    fail();
+  };
+  const go = (go$a0$copy) => {
+    let go$a0 = go$a0$copy, go$c = true, go$r;
+    while (go$c) {
+      const v = go$a0;
+      if (v.tag === "Loop") {
+        go$a0 = $0(v._1);
+        continue;
+      }
+      if (v.tag === "Done") {
+        go$c = false;
+        go$r = v._1;
+        continue;
+      }
+      fail();
+    }
+    return go$r;
+  };
+  return go($0($Tuple(dictGraph.topologicalSort(g), Nil)));
+};
+var showGraph = (dictGraph) => (x) => showEdgeList(toEdgeList(dictGraph)(x));
+var inEdges$p = (dictGraph) => (g) => (\u03B1) => fromFoldable22(map(ordTuple(ordVertex)(ordVertex))((v) => $Tuple(v, \u03B1))(dictGraph.inN(g)(\u03B1)));
+var inEdges = (dictGraph) => (g) => (\u03B1s) => {
+  const $0 = (v) => {
+    if (v._1.tag === "Nil") {
+      return $Step("Done", v._2);
+    }
+    if (v._1.tag === "Cons") {
+      return $Step(
+        "Loop",
+        $Tuple(v._1._2, foldableList.foldr(Cons)(v._2)(inEdges$p(dictGraph)(g)(v._1._1)))
+      );
+    }
+    fail();
+  };
+  const go = (go$a0$copy) => {
+    let go$a0 = go$a0$copy, go$c = true, go$r;
+    while (go$c) {
+      const v = go$a0;
+      if (v.tag === "Loop") {
+        go$a0 = $0(v._1);
+        continue;
+      }
+      if (v.tag === "Done") {
+        go$c = false;
+        go$r = v._1;
+        continue;
+      }
+      fail();
+    }
+    return go$r;
+  };
+  return go($0($Tuple(fromFoldable22(\u03B1s), Nil)));
+};
+
+// output-es/Data.CatQueue/index.js
+var $CatQueue = (_1, _2) => ({ tag: "CatQueue", _1, _2 });
+var uncons3 = (uncons$a0$copy) => {
+  let uncons$a0 = uncons$a0$copy, uncons$c = true, uncons$r;
+  while (uncons$c) {
+    const v = uncons$a0;
+    if (v._1.tag === "Nil") {
+      if (v._2.tag === "Nil") {
+        uncons$c = false;
+        uncons$r = Nothing;
+        continue;
+      }
+      uncons$a0 = $CatQueue(reverse2(v._2), Nil);
+      continue;
+    }
+    if (v._1.tag === "Cons") {
+      uncons$c = false;
+      uncons$r = $Maybe("Just", $Tuple(v._1._1, $CatQueue(v._1._2, v._2)));
+      continue;
+    }
+    fail();
+  }
+  return uncons$r;
+};
+
+// output-es/Data.CatList/index.js
+var $CatList = (tag, _1, _2) => ({ tag, _1, _2 });
+var CatNil = /* @__PURE__ */ $CatList("CatNil");
+var link = (v) => (v1) => {
+  if (v.tag === "CatNil") {
+    return v1;
+  }
+  if (v1.tag === "CatNil") {
+    return v;
+  }
+  if (v.tag === "CatCons") {
+    return $CatList("CatCons", v._1, $CatQueue(v._2._1, $List("Cons", v1, v._2._2)));
+  }
+  fail();
+};
+var foldr = (k) => (b) => (q) => {
+  const foldl = (foldl$a0$copy) => (foldl$a1$copy) => (foldl$a2$copy) => {
+    let foldl$a0 = foldl$a0$copy, foldl$a1 = foldl$a1$copy, foldl$a2 = foldl$a2$copy, foldl$c = true, foldl$r;
+    while (foldl$c) {
+      const v = foldl$a0, v1 = foldl$a1, v2 = foldl$a2;
+      if (v2.tag === "Nil") {
+        foldl$c = false;
+        foldl$r = v1;
+        continue;
+      }
+      if (v2.tag === "Cons") {
+        foldl$a0 = v;
+        foldl$a1 = v(v1)(v2._1);
+        foldl$a2 = v2._2;
+        continue;
+      }
+      fail();
+    }
+    return foldl$r;
+  };
+  const go = (go$a0$copy) => (go$a1$copy) => {
+    let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+    while (go$c) {
+      const xs = go$a0, ys = go$a1;
+      const v = uncons3(xs);
+      if (v.tag === "Nothing") {
+        go$c = false;
+        go$r = foldl((x) => (i) => i(x))(b)(ys);
+        continue;
+      }
+      if (v.tag === "Just") {
+        go$a0 = v._1._2;
+        go$a1 = $List("Cons", k(v._1._1), ys);
+        continue;
+      }
+      fail();
+    }
+    return go$r;
+  };
+  return go(q)(Nil);
+};
+var uncons4 = (v) => {
+  if (v.tag === "CatNil") {
+    return Nothing;
+  }
+  if (v.tag === "CatCons") {
+    return $Maybe("Just", $Tuple(v._1, v._2._1.tag === "Nil" && v._2._2.tag === "Nil" ? CatNil : foldr(link)(CatNil)(v._2)));
+  }
+  fail();
+};
+var singleton5 = (a) => $CatList("CatCons", a, $CatQueue(Nil, Nil));
+var semigroupCatList = { append: link };
+var monoidCatList = { mempty: CatNil, Semigroup0: () => semigroupCatList };
+var snoc2 = (cat) => (a) => {
+  if (cat.tag === "CatNil") {
+    return $CatList("CatCons", a, $CatQueue(Nil, Nil));
+  }
+  if (cat.tag === "CatCons") {
+    return $CatList(
+      "CatCons",
+      cat._1,
+      $CatQueue(
+        cat._2._1,
+        $List("Cons", $CatList("CatCons", a, $CatQueue(Nil, Nil)), cat._2._2)
+      )
+    );
+  }
+  fail();
+};
+
+// output-es/Data.Graph/index.js
+var $SortStep = (tag, _1) => ({ tag, _1 });
+var fromFoldable6 = /* @__PURE__ */ (() => {
+  const foldMap1 = foldableList.foldMap(monoidCatList);
+  return (f) => foldMap1(singleton5)(f);
+})();
+var fromFoldable14 = /* @__PURE__ */ (() => {
+  const foldMap1 = foldableArray.foldMap(monoidCatList);
+  return (f) => foldMap1(singleton5)(f);
+})();
+var Visit = (value0) => $SortStep("Visit", value0);
+var topologicalSort = (dictOrd) => (v) => {
+  const visit = (visit$a0$copy) => (visit$a1$copy) => {
+    let visit$a0 = visit$a0$copy, visit$a1 = visit$a1$copy, visit$c = true, visit$r;
+    while (visit$c) {
+      const state = visit$a0, stack = visit$a1;
+      const v1 = uncons4(stack);
+      if (v1.tag === "Nothing") {
+        visit$c = false;
+        visit$r = state;
+        continue;
+      }
+      if (v1.tag === "Just") {
+        if (v1._1._1.tag === "Emit") {
+          visit$a0 = { result: $List("Cons", v1._1._1._1, state.result), unvisited: state.unvisited };
+          visit$a1 = v1._1._2;
+          continue;
+        }
+        if (v1._1._1.tag === "Visit") {
+          if ((() => {
+            const $0 = lookup(dictOrd)(v1._1._1._1)(state.unvisited);
+            if ($0.tag === "Nothing") {
+              return false;
+            }
+            if ($0.tag === "Just") {
+              return true;
+            }
+            fail();
+          })()) {
+            visit$a0 = { result: state.result, unvisited: $$delete(dictOrd)(v1._1._1._1)(state.unvisited) };
+            visit$a1 = (() => {
+              const $0 = fromFoldable6(listMap(Visit)((() => {
+                const $02 = lookup(dictOrd)(v1._1._1._1)(v);
+                if ($02.tag === "Nothing") {
+                  return Nil;
+                }
+                if ($02.tag === "Just") {
+                  return $02._1._2;
+                }
+                fail();
+              })()));
+              const $1 = v1._1._2.tag === "CatNil" ? $CatList("CatCons", $SortStep("Emit", v1._1._1._1), $CatQueue(Nil, Nil)) : $CatList(
+                "CatCons",
+                $SortStep("Emit", v1._1._1._1),
+                $CatQueue(Nil, $List("Cons", v1._1._2, Nil))
+              );
+              if ($0.tag === "CatNil") {
+                return $1;
+              }
+              if ($1.tag === "CatNil") {
+                return $0;
+              }
+              if ($0.tag === "CatCons") {
+                return $CatList("CatCons", $0._1, $CatQueue($0._2._1, $List("Cons", $1, $0._2._2)));
+              }
+              fail();
+            })();
+            continue;
+          }
+          visit$a0 = state;
+          visit$a1 = v1._1._2;
+          continue;
+        }
+      }
+      fail();
+    }
+    return visit$r;
+  };
+  const go = (go$a0$copy) => {
+    let go$a0 = go$a0$copy, go$c = true, go$r;
+    while (go$c) {
+      const v1 = go$a0;
+      const v2 = findMin(v1.unvisited);
+      if (v2.tag === "Just") {
+        go$a0 = visit(v1)(fromFoldable14([$SortStep("Visit", v2._1.key)]));
+        continue;
+      }
+      if (v2.tag === "Nothing") {
+        go$c = false;
+        go$r = v1.result;
+        continue;
+      }
+      fail();
+    }
+    return go$r;
+  };
+  return go({ unvisited: v, result: Nil });
+};
+
+// output-es/Foreign.Object.ST/foreign.js
+function peekImpl2(just) {
+  return function(nothing) {
+    return function(k) {
+      return function(m) {
+        return function() {
+          return {}.hasOwnProperty.call(m, k) ? just(m[k]) : nothing;
+        };
+      };
+    };
+  };
+}
+
+// output-es/Foreign.Object.ST/index.js
+var peek = /* @__PURE__ */ peekImpl2(Just)(Nothing);
+
+// output-es/Graph.GraphImpl/index.js
+var $GraphImpl = (_1) => ({ tag: "GraphImpl", _1 });
+var eqSet2 = { eq: (v) => (v1) => eqMap(eqVertex)(eqUnit).eq(v)(v1) };
+var eq = /* @__PURE__ */ (() => eqObject(eqSet2).eq)();
+var fromFoldable7 = /* @__PURE__ */ foldlArray((m) => (a) => insert(ordVertex)(a)()(m))(Leaf2);
+var toUnfoldable6 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+var fromFoldable15 = /* @__PURE__ */ (() => foldableSet.foldr(Cons)(Nil))();
+var fromFoldable23 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert(ordVertex)(a)()(m))(Leaf2))();
+var toUnfoldable12 = /* @__PURE__ */ toAscUnfoldable(unfoldableArray);
+var fromFoldable32 = /* @__PURE__ */ fromFoldable(ordVertex)(foldableArray);
+var verticesGraphImpl = { vertices: (v) => v._1.vertices };
+var eqGraphImpl = { eq: (v) => (v1) => eq(v._1.out)(v1._1.out) };
+var sinks$p = (m) => fromFoldable7(arrayMap((x) => x._1)(filter((x) => x._2.tag === "Leaf")(toArrayWithKey(Tuple)(m))));
+var init4 = (\u03B1s) => () => {
+  const obj = {};
+  return monadRecST.tailRecM((v) => {
+    if (v._1.tag === "Nil") {
+      return () => $Step("Done", v._2);
+    }
+    if (v._1.tag === "Cons") {
+      const $0 = v._1._1;
+      const $1 = v._1._2;
+      const $2 = v._2;
+      return () => {
+        $2[$0] = Leaf2;
+        return $Step("Loop", $Tuple($1, $2));
+      };
+    }
+    fail();
+  })($Tuple(\u03B1s, obj))();
+};
+var assertPresent = (v) => (v1) => {
+  if (v1.tag === "Nil") {
+    return () => $Step("Done", void 0);
+  }
+  if (v1.tag === "Cons") {
+    const $0 = v1._1;
+    const $1 = v1._2;
+    const $2 = peek($0)(v);
+    return () => {
+      const $3 = $2();
+      const present = (() => {
+        if ($3.tag === "Nothing") {
+          return false;
+        }
+        if ($3.tag === "Just") {
+          return true;
+        }
+        fail();
+      })();
+      return assertWhen(true)($0 + " is an existing vertex")((v2) => present)(() => $Step("Loop", $1))();
+    };
+  }
+  fail();
+};
+var addIfMissing = (acc) => (v) => {
+  const $0 = peek(v)(acc);
+  return () => {
+    const v1 = $0();
+    if (v1.tag === "Nothing") {
+      acc[v] = Leaf2;
+      return acc;
+    }
+    if (v1.tag === "Just") {
+      return acc;
+    }
+    fail();
+  };
+};
+var addIfMissing$p = (\u03B1s) => (acc) => monadRecST.tailRecM((v) => {
+  if (v._1.tag === "Nil") {
+    return () => $Step("Done", v._2);
+  }
+  if (v._1.tag === "Cons") {
+    const $0 = v._1._2;
+    const $1 = addIfMissing(v._2)(v._1._1);
+    return () => {
+      const acc$p$p = $1();
+      return $Step("Loop", $Tuple($0, acc$p$p));
+    };
+  }
+  fail();
+})($Tuple(\u03B1s, acc));
+var outMap = (\u03B1s) => (es) => {
+  const $0 = init4(\u03B1s);
+  return () => {
+    const out = $0();
+    return monadRecST.tailRecM((v) => {
+      if (v._1.tag === "Nil") {
+        return () => $Step("Done", v._2);
+      }
+      if (v._1.tag === "Cons") {
+        const $1 = v._2;
+        const $2 = v._1._2;
+        const $3 = v._1._1._1;
+        const $4 = v._1._1._2;
+        const $5 = peek($3)($1);
+        return () => {
+          const $6 = $5();
+          if ((() => {
+            if ($6.tag === "Nothing") {
+              return true;
+            }
+            if ($6.tag === "Just") {
+              return eqMap(eqVertex)(eqUnit).eq($6._1)(Leaf2);
+            }
+            fail();
+          })()) {
+            const \u03B2s$p = toUnfoldable6($4);
+            monadRecST.tailRecM(assertPresent($1))(\u03B2s$p)();
+            $1[$3] = $4;
+            const acc$p = addIfMissing$p(\u03B2s$p)($1)();
+            return $Step("Loop", $Tuple($2, acc$p));
+          }
+          return throwException(error("Duplicate edge list entry for " + showStringImpl($3)))()();
+        };
+      }
+      fail();
+    })($Tuple(es, out))();
+  };
+};
+var inMap = (\u03B1s) => (es) => {
+  const $0 = init4(\u03B1s);
+  return () => {
+    const in_ = $0();
+    return monadRecST.tailRecM((v) => {
+      if (v._1.tag === "Nil") {
+        return () => $Step("Done", v._2);
+      }
+      if (v._1.tag === "Cons") {
+        const $1 = v._1._2;
+        const $2 = v._1._1._1;
+        const $3 = monadRecST.tailRecM((v1) => {
+          if (v1._1.tag === "Nil") {
+            return () => $Step("Done", v1._2);
+          }
+          if (v1._1.tag === "Cons") {
+            const $32 = v1._2;
+            const $4 = v1._1._1;
+            const $5 = v1._1._2;
+            const $6 = peek($4)($32);
+            return () => {
+              const v1$1 = $6();
+              const acc$p = (() => {
+                if (v1$1.tag === "Nothing") {
+                  $32[$4] = $$$Map("Two", Leaf2, $2, void 0, Leaf2);
+                  return $32;
+                }
+                if (v1$1.tag === "Just") {
+                  $32[$4] = insert(ordVertex)($2)()(v1$1._1);
+                  return $32;
+                }
+                fail();
+              })();
+              return $Step("Loop", $Tuple($5, acc$p));
+            };
+          }
+          fail();
+        })($Tuple(toUnfoldable6(v._1._1._2), v._2));
+        return () => {
+          const a = $3();
+          const acc$p = addIfMissing(a)($2)();
+          return $Step("Loop", $Tuple($1, acc$p));
+        };
+      }
+      fail();
+    })($Tuple(es, in_))();
+  };
+};
+var graphGraphImpl = {
+  outN: (v) => (\u03B1) => definitely("in graph")(_lookup(Nothing, Just, \u03B1, v._1.out)),
+  inN: (g) => graphGraphImpl.outN(graphGraphImpl.op(g)),
+  elem: (\u03B1) => (v) => {
+    const $0 = _lookup(Nothing, Just, \u03B1, v._1.out);
+    if ($0.tag === "Nothing") {
+      return false;
+    }
+    if ($0.tag === "Just") {
+      return true;
+    }
+    fail();
+  },
+  size: (v) => size3(v._1.out),
+  sinks: (v) => v._1.sinks,
+  sources: (v) => v._1.sources,
+  op: (v) => $GraphImpl({ out: v._1.in_, in_: v._1.out, sinks: v._1.sources, sources: v._1.sinks, vertices: v._1.vertices }),
+  empty: /* @__PURE__ */ $GraphImpl({
+    out: empty,
+    in_: empty,
+    sinks: Leaf2,
+    sources: Leaf2,
+    vertices: Leaf2
+  }),
+  fromEdgeList: (\u03B1s) => (es) => {
+    const \u03B1s$p = fromFoldable15(\u03B1s);
+    const es$p = reverse2(es);
+    const in_ = inMap(\u03B1s$p)(es$p)();
+    const out = outMap(\u03B1s$p)(es$p)();
+    return $GraphImpl({
+      out,
+      in_,
+      sinks: sinks$p(out),
+      sources: sinks$p(in_),
+      vertices: fromFoldable23(map(ordVertex)(Vertex)(mapObjectString.keys(out)))
+    });
+  },
+  topologicalSort: (v) => reverse2(topologicalSort(ordVertex)(fromFoldable32(arrayMap((x) => $Tuple(
+    x._1,
+    $Tuple(void 0, x._2)
+  ))(toUnfoldable12(_fmapObject(v._1.out, toUnfoldable6)))))),
+  Eq0: () => eqGraphImpl,
+  Vertices1: () => verticesGraphImpl
+};
+
+// output-es/Graph.WithGraph/index.js
+var fromFoldable8 = /* @__PURE__ */ (() => {
+  const go = (go$a0$copy) => (go$a1$copy) => {
+    let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+    while (go$c) {
+      const b = go$a0, v = go$a1;
+      if (v.tag === "Nil") {
+        go$c = false;
+        go$r = b;
+        continue;
+      }
+      if (v.tag === "Cons") {
+        go$a0 = insert(ordVertex)(v._1)()(b);
+        go$a1 = v._2;
+        continue;
+      }
+      fail();
+    }
+    return go$r;
+  };
+  return go(Leaf2);
+})();
+var monadWithGraphWithGraphT = (dictMonad) => {
+  const $0 = dictMonad.Bind1().Apply0().Functor0();
+  const $1 = monadStateStateT(dictMonad);
+  const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+  return {
+    extend: (\u03B1) => (\u03B1s) => {
+      const $2 = Cons($Tuple(\u03B1, \u03B1s));
+      const $3 = $1.state((s) => $Tuple(void 0, $2(s)));
+      return (s) => $0.map((v1) => $Tuple(void 0, v1._2))($3(s));
+    },
+    Monad0: () => monadStateT2
+  };
+};
+var monadAllocAllocT = (dictMonad) => {
+  const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+  return {
+    fresh: bindStateT(dictMonad).bind(monadStateStateT(dictMonad).state((s) => {
+      const s$p = 1 + s | 0;
+      return $Tuple(s$p, s$p);
+    }))((n) => applicativeStateT(dictMonad).pure(showIntImpl(n))),
+    Monad0: () => monadStateT2
+  };
+};
+var runAllocT = (dictMonad) => (m) => (n) => dictMonad.Bind1().bind(m(n))((v) => dictMonad.Applicative0().pure($Tuple(
+  v._2,
+  $Tuple(
+    fromFoldable8(listMap((x) => showIntImpl(x))((() => {
+      const $0 = n + 1 | 0;
+      if (v._2 < $0) {
+        return Nil;
+      }
+      return range3($0)(v._2);
+    })())),
+    v._1
+  )
+)));
+var monadAllocWithGraphAllocT = (dictMonad) => {
+  const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+  const monadStateT1 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
+  return {
+    fresh: (() => {
+      const $0 = monadAllocAllocT(dictMonad).fresh;
+      return (s) => monadStateT2.Bind1().bind($0)((x) => monadStateT2.Applicative0().pure($Tuple(x, s)));
+    })(),
+    Monad0: () => monadStateT1
+  };
+};
+var freezeGraph = (dictMonad) => {
+  const $0 = dictMonad.Bind1().Apply0().Functor0();
+  return (dictGraph) => (m) => (\u03B1s) => {
+    const $1 = dictGraph.fromEdgeList(\u03B1s);
+    return $0.map((v) => $Tuple($1(spyWhen(false)("runWithGraphT edge list")(showEdgeList)(v._1)), v._2))($0.map(swap)(m(Nil)));
+  };
+};
+var runWithGraphT = (dictMonad) => {
+  const freezeGraph1 = freezeGraph(dictMonad);
+  return (dictGraph) => {
+    const freezeGraph2 = freezeGraph1(dictGraph);
+    return (m) => (\u03B1s) => dictMonad.Bind1().bind(freezeGraph2(m)(\u03B1s))((v) => {
+      const $0 = v._1;
+      return assertWhen(true)("edgeListGC")((v1) => dictGraph.Eq0().eq($0)(dictGraph.fromEdgeList(Leaf2)(toEdgeList(dictGraph)($0))))(dictMonad.Applicative0().pure($Tuple(
+        $0,
+        v._2
+      )));
+    });
+  };
+};
+var runWithGraphT_spy = (dictMonad) => {
+  const runWithGraphT2 = runWithGraphT(dictMonad);
+  const spyFunWhenM2 = spyFunWhenM(dictMonad.Bind1().Apply0().Functor0());
+  return (dictGraph) => {
+    const $0 = runWithGraphT2(dictGraph);
+    const $1 = spyFunWhenM2(false)("runWithGraphT")(showVertices)((x) => showEdgeList(toEdgeList(dictGraph)(x._1)));
+    return (x) => $1($0(x));
+  };
+};
+var runWithGraphT_spy1 = /* @__PURE__ */ runWithGraphT_spy(monadIdentity);
+var monadWithGraphAllocWithGr = (dictMonadError) => {
+  const Monad0 = dictMonadError.MonadThrow0().Monad0();
+  const monadStateT2 = { Applicative0: () => applicativeStateT(Monad0), Bind1: () => bindStateT(Monad0) };
+  const bindStateT2 = bindStateT(monadStateT2);
+  const monadAllocWithGraphAllocT1 = monadAllocWithGraphAllocT(Monad0);
+  const fresh1 = monadAllocWithGraphAllocT1.fresh;
+  const monadWithGraphWithGraphT1 = monadWithGraphWithGraphT(monadStateT2);
+  const monadErrorStateT2 = monadErrorStateT(monadErrorStateT(dictMonadError));
+  return {
+    new: (\u03B1s) => bindStateT2.bind(fresh1)((\u03B1) => bindStateT2.bind(monadWithGraphWithGraphT1.extend(\u03B1)(\u03B1s))(() => applicativeStateT(monadStateT2).pure(\u03B1))),
+    MonadAlloc0: () => monadAllocWithGraphAllocT1,
+    MonadError1: () => monadErrorStateT2,
+    MonadWithGraph2: () => monadWithGraphWithGraphT1
+  };
+};
+
+// output-es/Graph.Slice/index.js
+var pure = /* @__PURE__ */ (() => applicativeStateT(monadIdentity).pure)();
+var extend = /* @__PURE__ */ (() => monadWithGraphWithGraphT(monadIdentity).extend)();
+var tailRecM = /* @__PURE__ */ (() => monadRecStateT(monadRecIdentity).tailRecM)();
+var member3 = /* @__PURE__ */ (() => setSet(ordVertex).member)();
+var fromFoldable9 = /* @__PURE__ */ (() => foldableSet.foldr(Cons)(Nil))();
+var intersection2 = /* @__PURE__ */ intersection(ordVertex);
+var fwdSlice = (dictGraph) => {
+  const runWithGraph_spy = runWithGraphT_spy1(dictGraph);
+  return (v) => {
+    const $0 = v._2;
+    const $1 = v._1;
+    return runWithGraph_spy(tailRecM((v1) => {
+      if (v1.es.tag === "Nil") {
+        return pure($Step("Done", void 0));
+      }
+      if (v1.es.tag === "Cons") {
+        const $2 = lookup(ordVertex)(v1.es._1._1)(v1.pending);
+        const \u03B2s = (() => {
+          if ($2.tag === "Nothing") {
+            return $$$Map("Two", Leaf2, v1.es._1._2, void 0, Leaf2);
+          }
+          if ($2.tag === "Just") {
+            return insert(ordVertex)(v1.es._1._2)()($2._1);
+          }
+          fail();
+        })();
+        if (eqMap(eqVertex)(eqUnit).eq(\u03B2s)(dictGraph.outN($0)(v1.es._1._1))) {
+          return bindStateT(monadIdentity).bind(extend(v1.es._1._1)(\u03B2s))(() => pure($Step(
+            "Loop",
+            {
+              pending: $$delete(ordVertex)(v1.es._1._1)(v1.pending),
+              es: foldableList.foldr(Cons)(v1.es._2)(inEdges$p(dictGraph)($0)(v1.es._1._1))
+            }
+          )));
+        }
+        return pure($Step("Loop", { pending: insert(ordVertex)(v1.es._1._1)(\u03B2s)(v1.pending), es: v1.es._2 }));
+      }
+      fail();
+    })({ pending: Leaf2, es: inEdges(dictGraph)($0)($1) }))(assertWhen(true)("inputs are sinks")((v$1) => difference2(ordVertex)($1)(dictGraph.sinks($0)).tag === "Leaf")($1))._1;
+  };
+};
+var bwdSlice = (dictGraph) => {
+  const runWithGraph_spy = runWithGraphT_spy1(dictGraph);
+  return (v) => {
+    const $0 = v._2;
+    const $1 = v._1;
+    return runWithGraph_spy(tailRecM((v1) => {
+      if (v1["\u03B1s"].tag === "Nil") {
+        if (v1.pending.tag === "Nil") {
+          return pure($Step("Done", void 0));
+        }
+        if (v1.pending.tag === "Cons") {
+          if (member3(v1.pending._1._1)(v1.visited)) {
+            return pure($Step("Loop", { visited: v1.visited, "\u03B1s": Nil, pending: v1.pending._2 }));
+          }
+          return bindStateT(monadIdentity).bind(extend(v1.pending._1._1)(v1.pending._1._2))(() => pure($Step(
+            "Loop",
+            { visited: insert(ordVertex)(v1.pending._1._1)()(v1.visited), "\u03B1s": Nil, pending: v1.pending._2 }
+          )));
+        }
+        fail();
+      }
+      if (v1["\u03B1s"].tag === "Cons") {
+        const \u03B2s = dictGraph.outN($0)(v1["\u03B1s"]._1);
+        return pure($Step(
+          "Loop",
+          {
+            visited: v1.visited,
+            "\u03B1s": foldableList.foldr(Cons)(v1["\u03B1s"]._2)(fromFoldable9(\u03B2s)),
+            pending: $List("Cons", $Tuple(v1["\u03B1s"]._1, \u03B2s), v1.pending)
+          }
+        ));
+      }
+      fail();
+    })({
+      visited: Leaf2,
+      "\u03B1s": fromFoldable9(intersection2(assertWhen(true)("inputs are sinks")((v$1) => difference2(ordVertex)($1)(dictGraph.Vertices1().vertices($0)).tag === "Leaf")($1))(dictGraph.sources($0))),
+      pending: Nil
+    }))(Leaf2)._1;
+  };
+};
+
+// output-es/Data.Profunctor.Choice/index.js
+var identity18 = (x) => x;
+var fanin = (dictCategory) => {
+  const identity1 = dictCategory.identity;
+  const $0 = dictCategory.Semigroupoid0();
+  const $1 = dictCategory.Semigroupoid0();
+  return (dictChoice) => (l) => (r) => $0.compose(dictChoice.Profunctor0().dimap((v2) => {
+    if (v2.tag === "Left") {
+      return v2._1;
+    }
+    if (v2.tag === "Right") {
+      return v2._1;
+    }
+    fail();
+  })(identity18)(identity1))($1.compose(dictChoice.right(r))(dictChoice.left(l)));
+};
+var choiceFn = /* @__PURE__ */ (() => ({
+  left: (v) => (v1) => {
+    if (v1.tag === "Left") {
+      return $Either("Left", v(v1._1));
+    }
+    if (v1.tag === "Right") {
+      return $Either("Right", v1._1);
+    }
+    fail();
+  },
+  right: functorEither.map,
+  Profunctor0: () => profunctorFn
+}))();
+
+// output-es/Data.Semiring/foreign.js
+var intAdd = function(x) {
+  return function(y) {
+    return x + y | 0;
+  };
+};
+var intMul = function(x) {
+  return function(y) {
+    return x * y | 0;
+  };
+};
+var numAdd = function(n1) {
+  return function(n2) {
+    return n1 + n2;
+  };
+};
+var numMul = function(n1) {
+  return function(n2) {
+    return n1 * n2;
+  };
+};
+
+// output-es/Data.Ring/foreign.js
+var intSub = function(x) {
+  return function(y) {
+    return x - y | 0;
+  };
+};
+var numSub = function(n1) {
+  return function(n2) {
+    return n1 - n2;
+  };
+};
+
+// output-es/Data.EuclideanRing/foreign.js
+var intDiv2 = function(x) {
+  return function(y) {
+    if (y === 0)
+      return 0;
+    return y > 0 ? Math.floor(x / y) : -Math.floor(x / -y);
+  };
+};
+var intMod = function(x) {
+  return function(y) {
+    if (y === 0)
+      return 0;
+    var yy = Math.abs(y);
+    return (x % yy + yy) % yy;
+  };
+};
+var numDiv = function(n1) {
+  return function(n2) {
+    return n1 / n2;
+  };
+};
+
+// output-es/Data.String.CodePoints/foreign.js
+var hasArrayFrom = typeof Array.from === "function";
+var hasStringIterator = typeof Symbol !== "undefined" && Symbol != null && typeof Symbol.iterator !== "undefined" && typeof String.prototype[Symbol.iterator] === "function";
+var hasFromCodePoint = typeof String.prototype.fromCodePoint === "function";
+var hasCodePointAt = typeof String.prototype.codePointAt === "function";
+var _unsafeCodePointAt0 = function(fallback) {
+  return hasCodePointAt ? function(str) {
+    return str.codePointAt(0);
+  } : fallback;
+};
+var _codePointAt = function(fallback) {
+  return function(Just2) {
+    return function(Nothing2) {
+      return function(unsafeCodePointAt02) {
+        return function(index3) {
+          return function(str) {
+            var length5 = str.length;
+            if (index3 < 0 || index3 >= length5)
+              return Nothing2;
+            if (hasStringIterator) {
+              var iter = str[Symbol.iterator]();
+              for (var i = index3; ; --i) {
+                var o = iter.next();
+                if (o.done)
+                  return Nothing2;
+                if (i === 0)
+                  return Just2(unsafeCodePointAt02(o.value));
+              }
+            }
+            return fallback(index3)(str);
+          };
+        };
+      };
+    };
+  };
+};
+var _fromCodePointArray = function(singleton7) {
+  return hasFromCodePoint ? function(cps) {
+    if (cps.length < 1e4) {
+      return String.fromCodePoint.apply(String, cps);
+    }
+    return cps.map(singleton7).join("");
+  } : function(cps) {
+    return cps.map(singleton7).join("");
+  };
+};
+var _singleton = function(fallback) {
+  return hasFromCodePoint ? String.fromCodePoint : fallback;
+};
+var _take = function(fallback) {
+  return function(n) {
+    if (hasStringIterator) {
+      return function(str) {
+        var accum = "";
+        var iter = str[Symbol.iterator]();
+        for (var i = 0; i < n; ++i) {
+          var o = iter.next();
+          if (o.done)
+            return accum;
+          accum += o.value;
+        }
+        return accum;
+      };
+    }
+    return fallback(n);
+  };
+};
+var _toCodePointArray = function(fallback) {
+  return function(unsafeCodePointAt02) {
+    if (hasArrayFrom) {
+      return function(str) {
+        return Array.from(str, unsafeCodePointAt02);
+      };
+    }
+    return fallback;
+  };
+};
+
+// output-es/Data.String.CodePoints/index.js
+var uncons5 = (s) => {
+  const v = length2(s);
+  if (v === 0) {
+    return Nothing;
+  }
+  if (v === 1) {
+    return $Maybe("Just", { head: toCharCode(charAt(0)(s)), tail: "" });
+  }
+  const cu1 = toCharCode(charAt(1)(s));
+  const cu0 = toCharCode(charAt(0)(s));
+  if (55296 <= cu0 && cu0 <= 56319 && 56320 <= cu1 && cu1 <= 57343) {
+    return $Maybe("Just", { head: (((cu0 - 55296 | 0) * 1024 | 0) + (cu1 - 56320 | 0) | 0) + 65536 | 0, tail: drop2(2)(s) });
+  }
+  return $Maybe("Just", { head: cu0, tail: drop2(1)(s) });
+};
+var unconsButWithTuple = (s) => {
+  const $0 = uncons5(s);
+  if ($0.tag === "Just") {
+    return $Maybe("Just", $Tuple($0._1.head, $0._1.tail));
+  }
+  return Nothing;
+};
+var toCodePointArrayFallback = (s) => unfoldableArray.unfoldr(unconsButWithTuple)(s);
+var unsafeCodePointAt0Fallback = (s) => {
+  const cu0 = toCharCode(charAt(0)(s));
+  if (55296 <= cu0 && cu0 <= 56319 && length2(s) > 1) {
+    const cu1 = toCharCode(charAt(1)(s));
+    if (56320 <= cu1 && cu1 <= 57343) {
+      return (((cu0 - 55296 | 0) * 1024 | 0) + (cu1 - 56320 | 0) | 0) + 65536 | 0;
+    }
+  }
+  return cu0;
+};
+var unsafeCodePointAt0 = /* @__PURE__ */ _unsafeCodePointAt0(unsafeCodePointAt0Fallback);
+var toCodePointArray = /* @__PURE__ */ _toCodePointArray(toCodePointArrayFallback)(unsafeCodePointAt0);
+var indexOf2 = (p) => (s) => {
+  const $0 = indexOf(p)(s);
+  if ($0.tag === "Just") {
+    return $Maybe("Just", toCodePointArray(take($0._1)(s)).length);
+  }
+  return Nothing;
+};
+var fromCharCode2 = (x) => singleton((() => {
+  if (x >= -2147483648 && x <= 2147483647) {
+    return fromCharCode(x);
+  }
+  if (x < 0) {
+    return "\0";
+  }
+  return "\uFFFF";
+})());
+var singletonFallback = (v) => {
+  if (v <= 65535) {
+    return fromCharCode2(v);
+  }
+  return fromCharCode2(intDiv(v - 65536 | 0, 1024) + 55296 | 0) + fromCharCode2(intMod(v - 65536 | 0)(1024) + 56320 | 0);
+};
+var fromCodePointArray = /* @__PURE__ */ _fromCodePointArray(singletonFallback);
+var singleton6 = /* @__PURE__ */ _singleton(singletonFallback);
+var takeFallback = (v) => (v1) => {
+  if (v < 1) {
+    return "";
+  }
+  const v2 = uncons5(v1);
+  if (v2.tag === "Just") {
+    return singleton6(v2._1.head) + takeFallback(v - 1 | 0)(v2._1.tail);
+  }
+  return v1;
+};
+var take3 = /* @__PURE__ */ _take(takeFallback);
+var codePointAtFallback = (codePointAtFallback$a0$copy) => (codePointAtFallback$a1$copy) => {
+  let codePointAtFallback$a0 = codePointAtFallback$a0$copy, codePointAtFallback$a1 = codePointAtFallback$a1$copy, codePointAtFallback$c = true, codePointAtFallback$r;
+  while (codePointAtFallback$c) {
+    const n = codePointAtFallback$a0, s = codePointAtFallback$a1;
+    const v = uncons5(s);
+    if (v.tag === "Just") {
+      if (n === 0) {
+        codePointAtFallback$c = false;
+        codePointAtFallback$r = $Maybe("Just", v._1.head);
+        continue;
+      }
+      codePointAtFallback$a0 = n - 1 | 0;
+      codePointAtFallback$a1 = v._1.tail;
+      continue;
+    }
+    codePointAtFallback$c = false;
+    codePointAtFallback$r = Nothing;
+  }
+  return codePointAtFallback$r;
+};
+var codePointAt = (v) => (v1) => {
+  if (v < 0) {
+    return Nothing;
+  }
+  if (v === 0) {
+    if (v1 === "") {
+      return Nothing;
+    }
+    return $Maybe("Just", unsafeCodePointAt0(v1));
+  }
+  return _codePointAt(codePointAtFallback)(Just)(Nothing)(unsafeCodePointAt0)(v)(v1);
+};
+
+// output-es/Data.Show.Generic/foreign.js
+var intercalate3 = function(separator) {
+  return function(xs) {
+    return xs.join(separator);
+  };
+};
+
+// output-es/Data.Show.Generic/index.js
+var genericShowArgsNoArguments = { genericShowArgs: (v) => [] };
+var genericShowArgsProduct = (dictGenericShowArgs) => (dictGenericShowArgs1) => ({ genericShowArgs: (v) => [...dictGenericShowArgs.genericShowArgs(v._1), ...dictGenericShowArgs1.genericShowArgs(v._2)] });
+var genericShowConstructor = (dictGenericShowArgs) => (dictIsSymbol) => ({
+  "genericShow'": (v) => {
+    const ctor = dictIsSymbol.reflectSymbol($$Proxy);
+    const v1 = dictGenericShowArgs.genericShowArgs(v);
+    if (v1.length === 0) {
+      return ctor;
+    }
+    return "(" + intercalate3(" ")([ctor, ...v1]) + ")";
+  }
+});
+
+// output-es/Parsing/index.js
+var $ParseError = (_1, _2) => ({ tag: "ParseError", _1, _2 });
+var $ParseState = (_1, _2, _3) => ({ tag: "ParseState", _1, _2, _3 });
+var $RunParser = (tag, _1, _2) => ({ tag, _1, _2 });
+var More = (value0) => $RunParser("More", value0);
+var Lift = (value0) => $RunParser("Lift", value0);
+var lazyParserT = {
+  defer: (f) => {
+    const m = defer(f);
+    return (state1, more, lift12, $$throw2, done) => force(m)(state1, more, lift12, $$throw2, done);
+  }
+};
+var genericShow = /* @__PURE__ */ (() => {
+  const $0 = genericShowConstructor({
+    genericShowArgs: (v) => [
+      (() => {
+        const v$1 = cons(intercalate(": ")(["column", showIntImpl(v.column)]))(cons(intercalate(": ")([
+          "index",
+          showIntImpl(v.index)
+        ]))(cons(intercalate(": ")(["line", showIntImpl(v.line)]))([])));
+        if (v$1.length === 0) {
+          return "{}";
+        }
+        return intercalate(" ")(["{", intercalate(", ")(v$1), "}"]);
+      })()
+    ]
+  })({ reflectSymbol: () => "Position" });
+  return (x) => $0["genericShow'"](x);
+})();
+var functorParserT = { map: (f) => (v) => (state1, more, lift12, $$throw2, done) => more((v1) => v(state1, more, lift12, $$throw2, (state2, a) => more((v2) => done(state2, f(a))))) };
+var applyParserT = {
+  apply: (v) => (v1) => (state1, more, lift12, $$throw2, done) => more((v2) => v(
+    state1,
+    more,
+    lift12,
+    $$throw2,
+    (state2, f) => more((v3) => v1(state2, more, lift12, $$throw2, (state3, a) => more((v4) => done(state3, f(a)))))
+  )),
+  Functor0: () => functorParserT
+};
+var bindParserT = {
+  bind: (v) => (next) => (state1, more, lift12, $$throw2, done) => more((v1) => v(state1, more, lift12, $$throw2, (state2, a) => more((v2) => next(a)(state2, more, lift12, $$throw2, done)))),
+  Apply0: () => applyParserT
+};
+var applicativeParserT = { pure: (a) => (state1, v, v1, v2, done) => done(state1, a), Apply0: () => applyParserT };
+var monadParserT = { Applicative0: () => applicativeParserT, Bind1: () => bindParserT };
+var monadRecParserT = {
+  tailRecM: (next) => (initArg) => (state1, more, lift12, $$throw2, done) => {
+    const loop = (state2, arg, gas) => next(arg)(
+      state2,
+      more,
+      lift12,
+      $$throw2,
+      (state3, step) => {
+        if (step.tag === "Loop") {
+          if (gas === 0) {
+            return more((v1) => loop(state3, step._1, 30));
+          }
+          return loop(state3, step._1, gas - 1 | 0);
+        }
+        if (step.tag === "Done") {
+          return done(state3, step._1);
+        }
+        fail();
+      }
+    );
+    return loop(state1, initArg, 30);
+  },
+  Monad0: () => monadParserT
+};
+var altParserT = {
+  alt: (v) => (v1) => (v2, $0, $1, $2, $3) => {
+    const $4 = v2._1;
+    const $5 = v2._2;
+    return $0((v3) => v(
+      $ParseState($4, $5, false),
+      $0,
+      $1,
+      (v4, $6) => {
+        const $7 = v4._3;
+        return $0((v5) => {
+          if ($7) {
+            return $2(v4, $6);
+          }
+          return v1(v2, $0, $1, $2, $3);
+        });
+      },
+      $3
+    ));
+  },
+  Functor0: () => functorParserT
+};
+var showParseError = { show: (v) => "(ParseError " + showStringImpl(v._1) + " " + genericShow(v._2) + ")" };
+var runParserT$p = (dictMonadRec) => {
+  const Monad0 = dictMonadRec.Monad0();
+  return (state1) => (v) => {
+    const go = (go$a0$copy) => {
+      let go$a0 = go$a0$copy, go$c = true, go$r;
+      while (go$c) {
+        const step = go$a0;
+        const v1 = step();
+        if (v1.tag === "More") {
+          go$a0 = v1._1;
+          continue;
+        }
+        if (v1.tag === "Lift") {
+          go$c = false;
+          go$r = Monad0.Bind1().Apply0().Functor0().map(Loop)(v1._1);
+          continue;
+        }
+        if (v1.tag === "Stop") {
+          go$c = false;
+          go$r = Monad0.Applicative0().pure($Step("Done", $Tuple(v1._2, v1._1)));
+          continue;
+        }
+        fail();
+      }
+      return go$r;
+    };
+    return dictMonadRec.tailRecM(go)((v1) => v(
+      state1,
+      More,
+      Lift,
+      (state2, err) => $RunParser("Stop", state2, $Either("Left", err)),
+      (state2, res) => $RunParser("Stop", state2, $Either("Right", res))
+    ));
+  };
+};
+var position = (state1, v, v1, v2, done) => done(state1, state1._2);
+var initialPos = { index: 0, line: 1, column: 1 };
+var runParserT = (dictMonadRec) => {
+  const runParserT$p1 = runParserT$p(dictMonadRec);
+  return (s) => (p) => dictMonadRec.Monad0().Bind1().Apply0().Functor0().map(fst)(runParserT$p1($ParseState(s, initialPos, false))(p));
+};
+var runParserT1 = /* @__PURE__ */ runParserT(monadRecIdentity);
+var fail2 = (message2) => (state1, more, lift12, $$throw2, done) => more((v1) => position(
+  state1,
+  more,
+  lift12,
+  $$throw2,
+  (state2, a) => more((v2) => $$throw2(state2, $ParseError(message2, a)))
+));
+var plusParserT = { empty: /* @__PURE__ */ fail2("No alternative"), Alt0: () => altParserT };
+var alternativeParserT = { Applicative0: () => applicativeParserT, Plus1: () => plusParserT };
+
+// output-es/Parsing.Combinators/index.js
+var manyRec2 = /* @__PURE__ */ manyRec(monadRecParserT)(alternativeParserT);
+var withLazyErrorMessage = (p) => (msg) => {
+  const $0 = lazyParserT.defer((v) => fail2("Expected " + msg()));
+  return (v2, $1, $2, $3, $4) => {
+    const $5 = v2._1;
+    const $6 = v2._2;
+    return $1((v3) => p(
+      $ParseState($5, $6, false),
+      $1,
+      $2,
+      (v4, $7) => {
+        const $8 = v4._3;
+        return $1((v5) => {
+          if ($8) {
+            return $3(v4, $7);
+          }
+          return $0(v2, $1, $2, $3, $4);
+        });
+      },
+      $4
+    ));
+  };
+};
+var withErrorMessage = (p) => (msg) => {
+  const $0 = fail2("Expected " + msg);
+  return (v2, $1, $2, $3, $4) => {
+    const $5 = v2._1;
+    const $6 = v2._2;
+    return $1((v3) => p(
+      $ParseState($5, $6, false),
+      $1,
+      $2,
+      (v4, $7) => {
+        const $8 = v4._3;
+        return $1((v5) => {
+          if ($8) {
+            return $3(v4, $7);
+          }
+          return $0(v2, $1, $2, $3, $4);
+        });
+      },
+      $4
+    ));
+  };
+};
+var skipMany1 = (p) => (state1, more, lift12, $$throw2, done) => more((v2) => more((v1) => p(
+  state1,
+  more,
+  lift12,
+  $$throw2,
+  (state2, a) => more((v2$1) => more((v3) => {
+    const loop = (state2$1, arg, gas) => {
+      const $0 = (state3, step) => {
+        if (step.tag === "Loop") {
+          if (gas === 0) {
+            return more((v1$1) => loop(state3, step._1, 30));
+          }
+          return loop(state3, step._1, gas - 1 | 0);
+        }
+        if (step.tag === "Done") {
+          const $02 = step._1;
+          return more((v4) => done(state3, $02));
+        }
+        fail();
+      };
+      const $1 = state2$1._1;
+      const $2 = state2$1._2;
+      return more((v3$1) => more((v1$1) => p(
+        $ParseState($1, $2, false),
+        more,
+        lift12,
+        (v4, $3) => {
+          const $4 = v4._3;
+          return more((v5) => {
+            if ($4) {
+              return $$throw2(v4, $3);
+            }
+            return $0(state2$1, $Step("Done", void 0));
+          });
+        },
+        (state2$2, a$1) => more((v2$2) => $0(state2$2, $Step("Loop", void 0)))
+      )));
+    };
+    return loop(state2, void 0, 30);
+  }))
+)));
+var skipMany = (p) => (v2, $0, $1, $2, $3) => {
+  const $4 = v2._1;
+  const $5 = v2._2;
+  return $0((v3) => skipMany1(p)(
+    $ParseState($4, $5, false),
+    $0,
+    $1,
+    (v4, $6) => {
+      const $7 = v4._3;
+      return $0((v5) => {
+        if ($7) {
+          return $2(v4, $6);
+        }
+        return $3(v2, void 0);
+      });
+    },
+    $3
+  ));
+};
+var sepBy1 = (p) => (sep) => (state1, more, lift12, $$throw2, done) => more((v1) => p(
+  state1,
+  more,
+  lift12,
+  $$throw2,
+  (state2, a) => more((v2) => {
+    const $0 = manyRec2((state1$1, more$1, lift1$1, throw$1, done$1) => more$1((v2$1) => more$1((v1$1) => sep(
+      state1$1,
+      more$1,
+      lift1$1,
+      throw$1,
+      (state2$1, a$1) => more$1((v2$2) => more$1((v3) => p(state2$1, more$1, lift1$1, throw$1, (state3, a$2) => more$1((v4) => done$1(state3, a$2)))))
+    ))));
+    return more((v1$1) => $0(state2, more, lift12, $$throw2, (state2$1, a$1) => more((v2$1) => done(state2$1, $NonEmpty(a, a$1)))));
+  })
+));
+var sepBy = (p) => (sep) => (v2, $0, $1, $2, $3) => {
+  const $4 = v2._1;
+  const $5 = v2._2;
+  return $0((v3) => $0((v1) => sepBy1(p)(sep)(
+    $ParseState($4, $5, false),
+    $0,
+    $1,
+    (v4, $6) => {
+      const $7 = v4._3;
+      return $0((v5) => {
+        if ($7) {
+          return $2(v4, $6);
+        }
+        return $3(v2, Nil);
+      });
+    },
+    (state2, a) => $0((v2$1) => $3(state2, $List("Cons", a._1, a._2)))
+  )));
+};
+var notFollowedBy = (p) => (v1, $0, $1, $2, $3) => {
+  const $4 = v1._3;
+  const $5 = v1._1;
+  const $6 = v1._2;
+  return $0((v3) => {
+    const $7 = (v4, $72) => {
+      const $8 = v4._3;
+      return $0((v5) => {
+        if ($8) {
+          return $2($ParseState(v4._1, v4._2, $4), $72);
+        }
+        return $3(v1, void 0);
+      });
+    };
+    return $0((v2) => $0((v1$1) => p(
+      $ParseState($5, $6, false),
+      $0,
+      $1,
+      (v2$1, $8) => $7($ParseState(v2$1._1, v2$1._2, false), $8),
+      (state2, a) => $0((v2$1) => $0((v3$1) => fail2("Negated parser succeeded")(state2, $0, $1, $7, (state3, a$1) => $0((v4) => $3(state3, a$1)))))
+    )));
+  });
+};
+var choice = (dictFoldable) => {
+  const $0 = dictFoldable.foldr((p1) => (v) => {
+    if (v.tag === "Nothing") {
+      return $Maybe("Just", p1);
+    }
+    if (v.tag === "Just") {
+      return $Maybe(
+        "Just",
+        (v2, $02, $1, $2, $3) => {
+          const $4 = v2._1;
+          const $5 = v2._2;
+          return $02((v3) => p1(
+            $ParseState($4, $5, false),
+            $02,
+            $1,
+            (v4, $6) => {
+              const $7 = v4._3;
+              return $02((v5) => {
+                if ($7) {
+                  return $2(v4, $6);
+                }
+                return v._1(v2, $02, $1, $2, $3);
+              });
+            },
+            $3
+          ));
+        }
+      );
+    }
+    fail();
+  })(Nothing);
+  return (x) => {
+    const $1 = $0(x);
+    if ($1.tag === "Nothing") {
+      return fail2("No alternative");
+    }
+    if ($1.tag === "Just") {
+      return $1._1;
+    }
+    fail();
+  };
+};
+var between = (open2) => (close2) => (p) => (state1, more, lift12, $$throw2, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => open2(
+  state1,
+  more,
+  lift12,
+  $$throw2,
+  (state2, a) => more((v2$2) => more((v3) => p(
+    state2,
+    more,
+    lift12,
+    $$throw2,
+    (state3, a$1) => more((v4) => more((v2$3) => more((v3$1) => close2(state3, more, lift12, $$throw2, (state3$1, a$2) => more((v4$1) => done(state3$1, a$1))))))
+  )))
+)))));
+
+// output-es/Parsing.Expr/index.js
+var $Assoc = (tag) => tag;
+var $Operator = (tag, _1, _2) => ({ tag, _1, _2 });
+var choice2 = /* @__PURE__ */ choice(foldableList);
+var identity19 = (x) => x;
+var AssocNone = /* @__PURE__ */ $Assoc("AssocNone");
+var AssocLeft = /* @__PURE__ */ $Assoc("AssocLeft");
+var AssocRight = /* @__PURE__ */ $Assoc("AssocRight");
+var splitOp = (v) => (v1) => {
+  if (v.tag === "Infix") {
+    if (v._2 === "AssocNone") {
+      return { rassoc: v1.rassoc, lassoc: v1.lassoc, nassoc: $List("Cons", v._1, v1.nassoc), prefix: v1.prefix, postfix: v1.postfix };
+    }
+    if (v._2 === "AssocLeft") {
+      return { rassoc: v1.rassoc, lassoc: $List("Cons", v._1, v1.lassoc), nassoc: v1.nassoc, prefix: v1.prefix, postfix: v1.postfix };
+    }
+    if (v._2 === "AssocRight") {
+      return { rassoc: $List("Cons", v._1, v1.rassoc), lassoc: v1.lassoc, nassoc: v1.nassoc, prefix: v1.prefix, postfix: v1.postfix };
+    }
+    fail();
+  }
+  if (v.tag === "Prefix") {
+    return { rassoc: v1.rassoc, lassoc: v1.lassoc, nassoc: v1.nassoc, prefix: $List("Cons", v._1, v1.prefix), postfix: v1.postfix };
+  }
+  if (v.tag === "Postfix") {
+    return { rassoc: v1.rassoc, lassoc: v1.lassoc, nassoc: v1.nassoc, prefix: v1.prefix, postfix: $List("Cons", v._1, v1.postfix) };
+  }
+  fail();
+};
+var rassocP1 = (x) => (rassocOp) => (prefixP) => (term) => (postfixP) => {
+  const $0 = rassocP(x)(rassocOp)(prefixP)(term)(postfixP);
+  return (v2, $1, $2, $3, $4) => {
+    const $5 = v2._1;
+    const $6 = v2._2;
+    return $1((v3) => $0(
+      $ParseState($5, $6, false),
+      $1,
+      $2,
+      (v4, $7) => {
+        const $8 = v4._3;
+        return $1((v5) => {
+          if ($8) {
+            return $3(v4, $7);
+          }
+          return $4(v2, x);
+        });
+      },
+      $4
+    ));
+  };
+};
+var rassocP = (x) => (rassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift12, $$throw2, done) => more((v1) => rassocOp(
+  state1,
+  more,
+  lift12,
+  $$throw2,
+  (state2, a) => more((v2) => more((v1$1) => more((v1$2) => more((v1$3) => prefixP(
+    state2,
+    more,
+    lift12,
+    $$throw2,
+    (state2$1, a$1) => more((v2$1) => more((v1$4) => term(
+      state2$1,
+      more,
+      lift12,
+      $$throw2,
+      (state2$2, a$2) => more((v2$2) => more((v1$5) => postfixP(
+        state2$2,
+        more,
+        lift12,
+        $$throw2,
+        (state2$3, a$3) => more((v2$3) => {
+          const $0 = a$3(a$1(a$2));
+          return more((v2$4) => rassocP1($0)(rassocOp)(prefixP)(term)(postfixP)(state2$3, more, lift12, $$throw2, (state2$4, a$4) => more((v2$5) => done(state2$4, a(x)(a$4)))));
+        })
+      )))
+    )))
+  )))))
+));
+var nassocP = (x) => (nassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift12, $$throw2, done) => more((v1) => nassocOp(
+  state1,
+  more,
+  lift12,
+  $$throw2,
+  (state2, a) => more((v2) => more((v1$1) => more((v1$2) => prefixP(
+    state2,
+    more,
+    lift12,
+    $$throw2,
+    (state2$1, a$1) => more((v2$1) => more((v1$3) => term(
+      state2$1,
+      more,
+      lift12,
+      $$throw2,
+      (state2$2, a$2) => more((v2$2) => more((v1$4) => postfixP(
+        state2$2,
+        more,
+        lift12,
+        $$throw2,
+        (state2$3, a$3) => more((v2$3) => {
+          const $0 = a$3(a$1(a$2));
+          return more((v2$4) => done(state2$3, a(x)($0)));
+        })
+      )))
+    )))
+  ))))
+));
+var lassocP1 = (x) => (lassocOp) => (prefixP) => (term) => (postfixP) => {
+  const $0 = lassocP(x)(lassocOp)(prefixP)(term)(postfixP);
+  return (v2, $1, $2, $3, $4) => {
+    const $5 = v2._1;
+    const $6 = v2._2;
+    return $1((v3) => $0(
+      $ParseState($5, $6, false),
+      $1,
+      $2,
+      (v4, $7) => {
+        const $8 = v4._3;
+        return $1((v5) => {
+          if ($8) {
+            return $3(v4, $7);
+          }
+          return $4(v2, x);
+        });
+      },
+      $4
+    ));
+  };
+};
+var lassocP = (x) => (lassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift12, $$throw2, done) => more((v1) => lassocOp(
+  state1,
+  more,
+  lift12,
+  $$throw2,
+  (state2, a) => more((v2) => more((v1$1) => more((v1$2) => prefixP(
+    state2,
+    more,
+    lift12,
+    $$throw2,
+    (state2$1, a$1) => more((v2$1) => more((v1$3) => term(
+      state2$1,
+      more,
+      lift12,
+      $$throw2,
+      (state2$2, a$2) => more((v2$2) => more((v1$4) => postfixP(
+        state2$2,
+        more,
+        lift12,
+        $$throw2,
+        (state2$3, a$3) => more((v2$3) => {
+          const $0 = a$3(a$1(a$2));
+          return more((v2$4) => lassocP1(a(x)($0))(lassocOp)(prefixP)(term)(postfixP)(state2$3, more, lift12, $$throw2, done));
+        })
+      )))
+    )))
+  ))))
+));
+var makeParser = (term) => (ops) => {
+  const accum = foldrArray(splitOp)({
+    rassoc: Nil,
+    lassoc: Nil,
+    nassoc: Nil,
+    prefix: Nil,
+    postfix: Nil
+  })(ops);
+  const lassocOp = choice2(accum.lassoc);
+  const nassocOp = choice2(accum.nassoc);
+  const postfixOp = withErrorMessage(choice2(accum.postfix))("");
+  const prefixOp = withErrorMessage(choice2(accum.prefix))("");
+  const rassocOp = choice2(accum.rassoc);
+  return (state1, more, lift12, $$throw2, done) => more((v1) => {
+    const $0 = (state2, a) => more((v2) => {
+      const $02 = rassocP(a)(rassocOp)((v2$1, $03, $12, $22, $32) => {
+        const $42 = v2$1._1;
+        const $52 = v2$1._2;
+        return $03((v3) => prefixOp(
+          $ParseState($42, $52, false),
+          $03,
+          $12,
+          (v4, $6) => {
+            const $7 = v4._3;
+            return $03((v5) => {
+              if ($7) {
+                return $22(v4, $6);
+              }
+              return $32(v2$1, identity19);
+            });
+          },
+          $32
+        ));
+      })(term)((v2$1, $03, $12, $22, $32) => {
+        const $42 = v2$1._1;
+        const $52 = v2$1._2;
+        return $03((v3) => postfixOp(
+          $ParseState($42, $52, false),
+          $03,
+          $12,
+          (v4, $6) => {
+            const $7 = v4._3;
+            return $03((v5) => {
+              if ($7) {
+                return $22(v4, $6);
+              }
+              return $32(v2$1, identity19);
+            });
+          },
+          $32
+        ));
+      });
+      const $1 = lassocP(a)(lassocOp)((v2$1, $12, $22, $32, $42) => {
+        const $52 = v2$1._1;
+        const $6 = v2$1._2;
+        return $12((v3) => prefixOp(
+          $ParseState($52, $6, false),
+          $12,
+          $22,
+          (v4, $7) => {
+            const $8 = v4._3;
+            return $12((v5) => {
+              if ($8) {
+                return $32(v4, $7);
+              }
+              return $42(v2$1, identity19);
+            });
+          },
+          $42
+        ));
+      })(term)((v2$1, $12, $22, $32, $42) => {
+        const $52 = v2$1._1;
+        const $6 = v2$1._2;
+        return $12((v3) => postfixOp(
+          $ParseState($52, $6, false),
+          $12,
+          $22,
+          (v4, $7) => {
+            const $8 = v4._3;
+            return $12((v5) => {
+              if ($8) {
+                return $32(v4, $7);
+              }
+              return $42(v2$1, identity19);
+            });
+          },
+          $42
+        ));
+      });
+      const $2 = nassocP(a)(nassocOp)((v2$1, $22, $32, $42, $52) => {
+        const $6 = v2$1._1;
+        const $7 = v2$1._2;
+        return $22((v3) => prefixOp(
+          $ParseState($6, $7, false),
+          $22,
+          $32,
+          (v4, $8) => {
+            const $9 = v4._3;
+            return $22((v5) => {
+              if ($9) {
+                return $42(v4, $8);
+              }
+              return $52(v2$1, identity19);
+            });
+          },
+          $52
+        ));
+      })(term)((v2$1, $22, $32, $42, $52) => {
+        const $6 = v2$1._1;
+        const $7 = v2$1._2;
+        return $22((v3) => postfixOp(
+          $ParseState($6, $7, false),
+          $22,
+          $32,
+          (v4, $8) => {
+            const $9 = v4._3;
+            return $22((v5) => {
+              if ($9) {
+                return $42(v4, $8);
+              }
+              return $52(v2$1, identity19);
+            });
+          },
+          $52
+        ));
+      });
+      const $3 = withErrorMessage((state1$1, v, v1$1, v2$1, done$1) => done$1(state1$1, a))("operator");
+      const $4 = state2._1;
+      const $5 = state2._2;
+      return more((v3) => $02(
+        $ParseState($4, $5, false),
+        more,
+        lift12,
+        (v4, $6) => {
+          const $7 = v4._3;
+          return more((v5) => {
+            if ($7) {
+              return $$throw2(v4, $6);
+            }
+            const $8 = state2._1;
+            const $9 = state2._2;
+            return more((v3$1) => $1(
+              $ParseState($8, $9, false),
+              more,
+              lift12,
+              (v4$1, $10) => {
+                const $11 = v4$1._3;
+                return more((v5$1) => {
+                  if ($11) {
+                    return $$throw2(v4$1, $10);
+                  }
+                  const $12 = state2._1;
+                  const $13 = state2._2;
+                  return more((v3$2) => $2(
+                    $ParseState($12, $13, false),
+                    more,
+                    lift12,
+                    (v4$2, $14) => {
+                      const $15 = v4$2._3;
+                      return more((v5$2) => {
+                        if ($15) {
+                          return $$throw2(v4$2, $14);
+                        }
+                        return $3(state2, more, lift12, $$throw2, done);
+                      });
+                    },
+                    done
+                  ));
+                });
+              },
+              done
+            ));
+          });
+        },
+        done
+      ));
+    });
+    return more((v1$1) => {
+      const $1 = (state2, a) => more((v2) => more((v1$2) => term(
+        state2,
+        more,
+        lift12,
+        $$throw2,
+        (state2$1, a$1) => more((v2$1) => more((v1$3) => {
+          const $12 = state2$1._1;
+          const $22 = state2$1._2;
+          return more((v3) => postfixOp(
+            $ParseState($12, $22, false),
+            more,
+            lift12,
+            (v4, $32) => {
+              const $4 = v4._3;
+              return more((v5) => {
+                if ($4) {
+                  return $$throw2(v4, $32);
+                }
+                return more((v2$2) => $0(state2$1, a(a$1)));
+              });
+            },
+            (state2$2, a$2) => more((v2$2) => $0(state2$2, a$2(a(a$1))))
+          ));
+        }))
+      )));
+      const $2 = state1._1;
+      const $3 = state1._2;
+      return more((v3) => prefixOp(
+        $ParseState($2, $3, false),
+        more,
+        lift12,
+        (v4, $4) => {
+          const $5 = v4._3;
+          return more((v5) => {
+            if ($5) {
+              return $$throw2(v4, $4);
+            }
+            return $1(state1, identity19);
+          });
+        },
+        $1
+      ));
+    });
+  });
+};
+var buildExprParser = (operators2) => (simpleExpr) => foldlArray(makeParser)(simpleExpr)(operators2);
+
+// output-es/Primitive.Parse/index.js
+var opDefs = /* @__PURE__ */ fromFoldable(ordString)(foldableArray)([
+  /* @__PURE__ */ $Tuple(".", { op: ".", prec: 8, assoc: AssocLeft }),
+  /* @__PURE__ */ $Tuple("!", { op: "!", prec: 8, assoc: AssocLeft }),
+  /* @__PURE__ */ $Tuple("**", { op: "**", prec: 8, assoc: AssocRight }),
+  /* @__PURE__ */ $Tuple("*", { op: "*", prec: 7, assoc: AssocLeft }),
+  /* @__PURE__ */ $Tuple("/", { op: "/", prec: 7, assoc: AssocLeft }),
+  /* @__PURE__ */ $Tuple("+", { op: "+", prec: 6, assoc: AssocLeft }),
+  /* @__PURE__ */ $Tuple("-", { op: "-", prec: 6, assoc: AssocLeft }),
+  /* @__PURE__ */ $Tuple(":", { op: ":", prec: 6, assoc: AssocRight }),
+  /* @__PURE__ */ $Tuple("++", { op: "++", prec: 5, assoc: AssocRight }),
+  /* @__PURE__ */ $Tuple("==", { op: "==", prec: 4, assoc: AssocNone }),
+  /* @__PURE__ */ $Tuple("/=", { op: "/=", prec: 4, assoc: AssocNone }),
+  /* @__PURE__ */ $Tuple("<", { op: "<", prec: 4, assoc: AssocLeft }),
+  /* @__PURE__ */ $Tuple(">", { op: ">", prec: 4, assoc: AssocLeft }),
+  /* @__PURE__ */ $Tuple("<=", { op: "<=", prec: 4, assoc: AssocLeft }),
+  /* @__PURE__ */ $Tuple(">=", { op: ">=", prec: 4, assoc: AssocLeft })
+]);
+
+// output-es/Bind/index.js
+var union4 = /* @__PURE__ */ (() => setSet(ordString).union)();
+var keys2 = (v) => {
+  if (v.tag === "Nil") {
+    return Leaf2;
+  }
+  if (v.tag === "Cons") {
+    return union4($$$Map("Two", Leaf2, v._1._1, void 0, Leaf2))(keys2(v._2));
+  }
+  fail();
+};
+
+// output-es/Data.Bifoldable/index.js
+var bifoldableTuple = {
+  bifoldMap: (dictMonoid) => (f) => (g) => (v) => dictMonoid.Semigroup0().append(f(v._1))(g(v._2)),
+  bifoldr: (f) => (g) => (z) => (v) => f(v._1)(g(v._2)(z)),
+  bifoldl: (f) => (g) => (z) => (v) => g(f(z)(v._1))(v._2)
+};
+
+// output-es/Data.Bifunctor/index.js
+var bifunctorTuple = { bimap: (f) => (g) => (v) => $Tuple(f(v._1), g(v._2)) };
+
+// output-es/Data.Bitraversable/index.js
+var bitraversableTuple = {
+  bitraverse: (dictApplicative) => {
+    const Apply0 = dictApplicative.Apply0();
+    return (f) => (g) => (v) => Apply0.apply(Apply0.Functor0().map(Tuple)(f(v._1)))(g(v._2));
+  },
+  bisequence: (dictApplicative) => {
+    const Apply0 = dictApplicative.Apply0();
+    return (v) => Apply0.apply(Apply0.Functor0().map(Tuple)(v._1))(v._2);
+  },
+  Bifunctor0: () => bifunctorTuple,
+  Bifoldable1: () => bifoldableTuple
+};
+
+// output-es/Data.Unit/index.js
+var showUnit = { show: (v) => "unit" };
+
 // output-es/SExpr/index.js
 var $DictEntry = (tag, _1, _2) => ({ tag, _1, _2 });
 var $Expr2 = (tag, _1, _2, _3, _4) => ({ tag, _1, _2, _3, _4 });
@@ -10695,11 +13476,11 @@ var VarKeyIsSymbol = { reflectSymbol: () => "VarKey" };
 var ClausesIsSymbol = { reflectSymbol: () => "Clauses" };
 var ClauseIsSymbol = { reflectSymbol: () => "Clause" };
 var difference3 = /* @__PURE__ */ difference(eqString);
-var toUnfoldable6 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+var toUnfoldable7 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
 var monadThrowExceptT2 = /* @__PURE__ */ monadThrowExceptT(monadIdentity);
-var fromFoldable5 = /* @__PURE__ */ fromFoldable2(foldableArray);
-var fromFoldable13 = /* @__PURE__ */ fromFoldable2(foldableNonEmptyList);
-var fromFoldable22 = /* @__PURE__ */ fromFoldable2(foldableList);
+var fromFoldable10 = /* @__PURE__ */ fromFoldable2(foldableArray);
+var fromFoldable16 = /* @__PURE__ */ fromFoldable2(foldableNonEmptyList);
+var fromFoldable24 = /* @__PURE__ */ fromFoldable2(foldableList);
 var monadErrorExceptT2 = /* @__PURE__ */ monadErrorExceptT(monadIdentity);
 var PListEnd = /* @__PURE__ */ $ListRestPattern("PListEnd");
 var PListNext = (value0) => (value1) => $ListRestPattern("PListNext", value0, value1);
@@ -12368,7 +15149,7 @@ var unless = (v) => {
       return listMap((c$p) => $Either(
         "Left",
         $Pattern("PConstr", c$p, replicate2(unfoldableList)(defined(arity(monadThrowExceptT2)(c$p)))($Pattern("PVar", "_")))
-      ))(difference3(toUnfoldable6(fromFoldable12(mapObjectString.keys(defined(dataTypeForCtr.dataTypeFor(monadThrowExceptT2)(v._1._1))._2))))($List(
+      ))(difference3(toUnfoldable7(fromFoldable12(mapObjectString.keys(defined(dataTypeForCtr.dataTypeFor(monadThrowExceptT2)(v._1._1))._2))))($List(
         "Cons",
         v._1._1,
         Nil
@@ -12437,7 +15218,7 @@ var forConstrBwd = (v) => (v1) => {
   }
   fail();
 };
-var elimBool = (\u03BA) => (\u03BA$p) => $Elim("ElimConstr", fromFoldable5([$Tuple("True", \u03BA), $Tuple("False", \u03BA$p)]));
+var elimBool = (\u03BA) => (\u03BA$p) => $Elim("ElimConstr", fromFoldable10([$Tuple("True", \u03BA), $Tuple("False", \u03BA$p)]));
 var econs = (\u03B1) => (e) => (e$p) => $Expr("Constr", \u03B1, ":", $List("Cons", e, $List("Cons", e$p, Nil)));
 var ctrFor = (v) => {
   if (v.tag === "Left") {
@@ -12846,7 +15627,7 @@ var recDefsFwd = (dictMonadError) => {
     const top = dictBoundedLattice.BoundedMeetSemilattice1().top;
     return (xcs) => Monad0.Bind1().Apply0().Functor0().map((() => {
       const $0 = RecDefs(top);
-      return (x) => $0(fromFoldable13(x));
+      return (x) => $0(fromFoldable16(x));
     })())(traverse2(recDefFwd(dictMonadError)(dictBoundedLattice))((() => {
       const $0 = wrappedOperation("groupBy")(groupBy2((x) => (y) => x._1 === y._1))(xcs);
       return $NonEmpty($0._1, listMap(RecDef)($0._2));
@@ -12898,7 +15679,7 @@ var listCompFwd = (dictMonadError) => {
           $1,
           $Elim(
             "ElimConstr",
-            fromFoldable5([
+            fromFoldable10([
               $Tuple("True", $Cont("ContExpr", e)),
               $Tuple("False", $Cont("ContExpr", $Expr("Constr", $1, "Nil", Nil)))
             ])
@@ -13351,7 +16132,7 @@ var clausesStateFwd = (dictBoundedLattice) => {
     return (ks) => {
       const $1 = (p) => Bind1.bind(popConstrFwd2(defined(dataTypeForCtr.dataTypeFor(monadThrowExceptT2)(definitely("clausesStateFwd ctrFor failed for: " + showPattern(p))(ctrFor(p)))))(ks))((kss) => $0.map((x) => $Cont(
         "ContElim",
-        $Elim("ElimConstr", fromFoldable22(x))
+        $Elim("ElimConstr", fromFoldable24(x))
       ))(sequence1(listMap(rtraverse1(clausesStateFwd(dictBoundedLattice)(dictMonadError)))(kss))));
       if (ks.tag === "Nil") {
         return throwException(error("absurd"))();
@@ -13487,2816 +16268,6 @@ var moduleFwd = (dictMonadError) => {
   };
 };
 
-// output-es/Desug/index.js
-var desug1 = /* @__PURE__ */ (() => {
-  const $0 = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeUni, BoundedMeetSemilattice1: () => boundedMeetSemilatticeUni };
-  return exprFwd($0)(monadErrorExceptT(monadIdentity))($0.BoundedJoinSemilattice0().JoinSemilattice0());
-})();
-var desugGC = (dictMonadError) => (dictEq) => (dictBoundedLattice) => {
-  const desug2 = exprFwd(dictBoundedLattice)(monadErrorExceptT(monadIdentity))(dictBoundedLattice.BoundedJoinSemilattice0().JoinSemilattice0());
-  const desugBwd1 = exprBwd(dictBoundedLattice.BoundedJoinSemilattice0());
-  return (s) => dictMonadError.MonadThrow0().Monad0().Applicative0().pure({ gc: { fwd: (s$p) => defined(desug2(s$p)), bwd: (e$p) => desugBwd1(e$p)(s) }, e: defined(desug1(s)) });
-};
-
-// output-es/Control.Monad.Error.Class/index.js
-var $$try = (dictMonadError) => {
-  const Monad0 = dictMonadError.MonadThrow0().Monad0();
-  return (a) => dictMonadError.catchError(Monad0.Bind1().Apply0().Functor0().map(Right)(a))((x) => Monad0.Applicative0().pure($Either("Left", x)));
-};
-
-// output-es/Effect.Aff/foreign.js
-var Aff = function() {
-  var EMPTY = {};
-  var PURE = "Pure";
-  var THROW = "Throw";
-  var CATCH = "Catch";
-  var SYNC = "Sync";
-  var ASYNC = "Async";
-  var BIND = "Bind";
-  var BRACKET = "Bracket";
-  var FORK = "Fork";
-  var SEQ = "Sequential";
-  var MAP = "Map";
-  var APPLY = "Apply";
-  var ALT = "Alt";
-  var CONS = "Cons";
-  var RESUME = "Resume";
-  var RELEASE = "Release";
-  var FINALIZER = "Finalizer";
-  var FINALIZED = "Finalized";
-  var FORKED = "Forked";
-  var FIBER = "Fiber";
-  var THUNK = "Thunk";
-  function Aff2(tag, _1, _2, _3) {
-    this.tag = tag;
-    this._1 = _1;
-    this._2 = _2;
-    this._3 = _3;
-  }
-  function AffCtr(tag) {
-    var fn = function(_1, _2, _3) {
-      return new Aff2(tag, _1, _2, _3);
-    };
-    fn.tag = tag;
-    return fn;
-  }
-  function nonCanceler2(error3) {
-    return new Aff2(PURE, void 0);
-  }
-  function runEff(eff) {
-    try {
-      eff();
-    } catch (error3) {
-      setTimeout(function() {
-        throw error3;
-      }, 0);
-    }
-  }
-  function runSync(left, right, eff) {
-    try {
-      return right(eff());
-    } catch (error3) {
-      return left(error3);
-    }
-  }
-  function runAsync(left, eff, k) {
-    try {
-      return eff(k)();
-    } catch (error3) {
-      k(left(error3))();
-      return nonCanceler2;
-    }
-  }
-  var Scheduler = function() {
-    var limit = 1024;
-    var size6 = 0;
-    var ix = 0;
-    var queue = new Array(limit);
-    var draining = false;
-    function drain() {
-      var thunk;
-      draining = true;
-      while (size6 !== 0) {
-        size6--;
-        thunk = queue[ix];
-        queue[ix] = void 0;
-        ix = (ix + 1) % limit;
-        thunk();
-      }
-      draining = false;
-    }
-    return {
-      isDraining: function() {
-        return draining;
-      },
-      enqueue: function(cb) {
-        var i, tmp;
-        if (size6 === limit) {
-          tmp = draining;
-          drain();
-          draining = tmp;
-        }
-        queue[(ix + size6) % limit] = cb;
-        size6++;
-        if (!draining) {
-          drain();
-        }
-      }
-    };
-  }();
-  function Supervisor(util2) {
-    var fibers = {};
-    var fiberId = 0;
-    var count = 0;
-    return {
-      register: function(fiber) {
-        var fid = fiberId++;
-        fiber.onComplete({
-          rethrow: true,
-          handler: function(result) {
-            return function() {
-              count--;
-              delete fibers[fid];
-            };
-          }
-        })();
-        fibers[fid] = fiber;
-        count++;
-      },
-      isEmpty: function() {
-        return count === 0;
-      },
-      killAll: function(killError, cb) {
-        return function() {
-          if (count === 0) {
-            return cb();
-          }
-          var killCount = 0;
-          var kills = {};
-          function kill(fid) {
-            kills[fid] = fibers[fid].kill(killError, function(result) {
-              return function() {
-                delete kills[fid];
-                killCount--;
-                if (util2.isLeft(result) && util2.fromLeft(result)) {
-                  setTimeout(function() {
-                    throw util2.fromLeft(result);
-                  }, 0);
-                }
-                if (killCount === 0) {
-                  cb();
-                }
-              };
-            })();
-          }
-          for (var k in fibers) {
-            if (fibers.hasOwnProperty(k)) {
-              killCount++;
-              kill(k);
-            }
-          }
-          fibers = {};
-          fiberId = 0;
-          count = 0;
-          return function(error3) {
-            return new Aff2(SYNC, function() {
-              for (var k2 in kills) {
-                if (kills.hasOwnProperty(k2)) {
-                  kills[k2]();
-                }
-              }
-            });
-          };
-        };
-      }
-    };
-  }
-  var SUSPENDED = 0;
-  var CONTINUE = 1;
-  var STEP_BIND = 2;
-  var STEP_RESULT = 3;
-  var PENDING = 4;
-  var RETURN = 5;
-  var COMPLETED = 6;
-  function Fiber(util2, supervisor, aff) {
-    var runTick = 0;
-    var status = SUSPENDED;
-    var step = aff;
-    var fail3 = null;
-    var interrupt = null;
-    var bhead = null;
-    var btail = null;
-    var attempts = null;
-    var bracketCount = 0;
-    var joinId = 0;
-    var joins = null;
-    var rethrow = true;
-    function run2(localRunTick) {
-      var tmp, result, attempt;
-      while (true) {
-        tmp = null;
-        result = null;
-        attempt = null;
-        switch (status) {
-          case STEP_BIND:
-            status = CONTINUE;
-            try {
-              step = bhead(step);
-              if (btail === null) {
-                bhead = null;
-              } else {
-                bhead = btail._1;
-                btail = btail._2;
-              }
-            } catch (e) {
-              status = RETURN;
-              fail3 = util2.left(e);
-              step = null;
-            }
-            break;
-          case STEP_RESULT:
-            if (util2.isLeft(step)) {
-              status = RETURN;
-              fail3 = step;
-              step = null;
-            } else if (bhead === null) {
-              status = RETURN;
-            } else {
-              status = STEP_BIND;
-              step = util2.fromRight(step);
-            }
-            break;
-          case CONTINUE:
-            switch (step.tag) {
-              case BIND:
-                if (bhead) {
-                  btail = new Aff2(CONS, bhead, btail);
-                }
-                bhead = step._2;
-                status = CONTINUE;
-                step = step._1;
-                break;
-              case PURE:
-                if (bhead === null) {
-                  status = RETURN;
-                  step = util2.right(step._1);
-                } else {
-                  status = STEP_BIND;
-                  step = step._1;
-                }
-                break;
-              case SYNC:
-                status = STEP_RESULT;
-                step = runSync(util2.left, util2.right, step._1);
-                break;
-              case ASYNC:
-                status = PENDING;
-                step = runAsync(util2.left, step._1, function(result2) {
-                  return function() {
-                    if (runTick !== localRunTick) {
-                      return;
-                    }
-                    runTick++;
-                    Scheduler.enqueue(function() {
-                      if (runTick !== localRunTick + 1) {
-                        return;
-                      }
-                      status = STEP_RESULT;
-                      step = result2;
-                      run2(runTick);
-                    });
-                  };
-                });
-                return;
-              case THROW:
-                status = RETURN;
-                fail3 = util2.left(step._1);
-                step = null;
-                break;
-              case CATCH:
-                if (bhead === null) {
-                  attempts = new Aff2(CONS, step, attempts, interrupt);
-                } else {
-                  attempts = new Aff2(CONS, step, new Aff2(CONS, new Aff2(RESUME, bhead, btail), attempts, interrupt), interrupt);
-                }
-                bhead = null;
-                btail = null;
-                status = CONTINUE;
-                step = step._1;
-                break;
-              case BRACKET:
-                bracketCount++;
-                if (bhead === null) {
-                  attempts = new Aff2(CONS, step, attempts, interrupt);
-                } else {
-                  attempts = new Aff2(CONS, step, new Aff2(CONS, new Aff2(RESUME, bhead, btail), attempts, interrupt), interrupt);
-                }
-                bhead = null;
-                btail = null;
-                status = CONTINUE;
-                step = step._1;
-                break;
-              case FORK:
-                status = STEP_RESULT;
-                tmp = Fiber(util2, supervisor, step._2);
-                if (supervisor) {
-                  supervisor.register(tmp);
-                }
-                if (step._1) {
-                  tmp.run();
-                }
-                step = util2.right(tmp);
-                break;
-              case SEQ:
-                status = CONTINUE;
-                step = sequential(util2, supervisor, step._1);
-                break;
-            }
-            break;
-          case RETURN:
-            bhead = null;
-            btail = null;
-            if (attempts === null) {
-              status = COMPLETED;
-              step = interrupt || fail3 || step;
-            } else {
-              tmp = attempts._3;
-              attempt = attempts._1;
-              attempts = attempts._2;
-              switch (attempt.tag) {
-                case CATCH:
-                  if (interrupt && interrupt !== tmp && bracketCount === 0) {
-                    status = RETURN;
-                  } else if (fail3) {
-                    status = CONTINUE;
-                    step = attempt._2(util2.fromLeft(fail3));
-                    fail3 = null;
-                  }
-                  break;
-                case RESUME:
-                  if (interrupt && interrupt !== tmp && bracketCount === 0 || fail3) {
-                    status = RETURN;
-                  } else {
-                    bhead = attempt._1;
-                    btail = attempt._2;
-                    status = STEP_BIND;
-                    step = util2.fromRight(step);
-                  }
-                  break;
-                case BRACKET:
-                  bracketCount--;
-                  if (fail3 === null) {
-                    result = util2.fromRight(step);
-                    attempts = new Aff2(CONS, new Aff2(RELEASE, attempt._2, result), attempts, tmp);
-                    if (interrupt === tmp || bracketCount > 0) {
-                      status = CONTINUE;
-                      step = attempt._3(result);
-                    }
-                  }
-                  break;
-                case RELEASE:
-                  attempts = new Aff2(CONS, new Aff2(FINALIZED, step, fail3), attempts, interrupt);
-                  status = CONTINUE;
-                  if (interrupt && interrupt !== tmp && bracketCount === 0) {
-                    step = attempt._1.killed(util2.fromLeft(interrupt))(attempt._2);
-                  } else if (fail3) {
-                    step = attempt._1.failed(util2.fromLeft(fail3))(attempt._2);
-                  } else {
-                    step = attempt._1.completed(util2.fromRight(step))(attempt._2);
-                  }
-                  fail3 = null;
-                  bracketCount++;
-                  break;
-                case FINALIZER:
-                  bracketCount++;
-                  attempts = new Aff2(CONS, new Aff2(FINALIZED, step, fail3), attempts, interrupt);
-                  status = CONTINUE;
-                  step = attempt._1;
-                  break;
-                case FINALIZED:
-                  bracketCount--;
-                  status = RETURN;
-                  step = attempt._1;
-                  fail3 = attempt._2;
-                  break;
-              }
-            }
-            break;
-          case COMPLETED:
-            for (var k in joins) {
-              if (joins.hasOwnProperty(k)) {
-                rethrow = rethrow && joins[k].rethrow;
-                runEff(joins[k].handler(step));
-              }
-            }
-            joins = null;
-            if (interrupt && fail3) {
-              setTimeout(function() {
-                throw util2.fromLeft(fail3);
-              }, 0);
-            } else if (util2.isLeft(step) && rethrow) {
-              setTimeout(function() {
-                if (rethrow) {
-                  throw util2.fromLeft(step);
-                }
-              }, 0);
-            }
-            return;
-          case SUSPENDED:
-            status = CONTINUE;
-            break;
-          case PENDING:
-            return;
-        }
-      }
-    }
-    function onComplete(join2) {
-      return function() {
-        if (status === COMPLETED) {
-          rethrow = rethrow && join2.rethrow;
-          join2.handler(step)();
-          return function() {
-          };
-        }
-        var jid = joinId++;
-        joins = joins || {};
-        joins[jid] = join2;
-        return function() {
-          if (joins !== null) {
-            delete joins[jid];
-          }
-        };
-      };
-    }
-    function kill(error3, cb) {
-      return function() {
-        if (status === COMPLETED) {
-          cb(util2.right(void 0))();
-          return function() {
-          };
-        }
-        var canceler = onComplete({
-          rethrow: false,
-          handler: function() {
-            return cb(util2.right(void 0));
-          }
-        })();
-        switch (status) {
-          case SUSPENDED:
-            interrupt = util2.left(error3);
-            status = COMPLETED;
-            step = interrupt;
-            run2(runTick);
-            break;
-          case PENDING:
-            if (interrupt === null) {
-              interrupt = util2.left(error3);
-            }
-            if (bracketCount === 0) {
-              if (status === PENDING) {
-                attempts = new Aff2(CONS, new Aff2(FINALIZER, step(error3)), attempts, interrupt);
-              }
-              status = RETURN;
-              step = null;
-              fail3 = null;
-              run2(++runTick);
-            }
-            break;
-          default:
-            if (interrupt === null) {
-              interrupt = util2.left(error3);
-            }
-            if (bracketCount === 0) {
-              status = RETURN;
-              step = null;
-              fail3 = null;
-            }
-        }
-        return canceler;
-      };
-    }
-    function join(cb) {
-      return function() {
-        var canceler = onComplete({
-          rethrow: false,
-          handler: cb
-        })();
-        if (status === SUSPENDED) {
-          run2(runTick);
-        }
-        return canceler;
-      };
-    }
-    return {
-      kill,
-      join,
-      onComplete,
-      isSuspended: function() {
-        return status === SUSPENDED;
-      },
-      run: function() {
-        if (status === SUSPENDED) {
-          if (!Scheduler.isDraining()) {
-            Scheduler.enqueue(function() {
-              run2(runTick);
-            });
-          } else {
-            run2(runTick);
-          }
-        }
-      }
-    };
-  }
-  function runPar(util2, supervisor, par, cb) {
-    var fiberId = 0;
-    var fibers = {};
-    var killId = 0;
-    var kills = {};
-    var early = new Error("[ParAff] Early exit");
-    var interrupt = null;
-    var root = EMPTY;
-    function kill(error3, par2, cb2) {
-      var step = par2;
-      var head = null;
-      var tail4 = null;
-      var count = 0;
-      var kills2 = {};
-      var tmp, kid;
-      loop:
-        while (true) {
-          tmp = null;
-          switch (step.tag) {
-            case FORKED:
-              if (step._3 === EMPTY) {
-                tmp = fibers[step._1];
-                kills2[count++] = tmp.kill(error3, function(result) {
-                  return function() {
-                    count--;
-                    if (count === 0) {
-                      cb2(result)();
-                    }
-                  };
-                });
-              }
-              if (head === null) {
-                break loop;
-              }
-              step = head._2;
-              if (tail4 === null) {
-                head = null;
-              } else {
-                head = tail4._1;
-                tail4 = tail4._2;
-              }
-              break;
-            case MAP:
-              step = step._2;
-              break;
-            case APPLY:
-            case ALT:
-              if (head) {
-                tail4 = new Aff2(CONS, head, tail4);
-              }
-              head = step;
-              step = step._1;
-              break;
-          }
-        }
-      if (count === 0) {
-        cb2(util2.right(void 0))();
-      } else {
-        kid = 0;
-        tmp = count;
-        for (; kid < tmp; kid++) {
-          kills2[kid] = kills2[kid]();
-        }
-      }
-      return kills2;
-    }
-    function join(result, head, tail4) {
-      var fail3, step, lhs, rhs, tmp, kid;
-      if (util2.isLeft(result)) {
-        fail3 = result;
-        step = null;
-      } else {
-        step = result;
-        fail3 = null;
-      }
-      loop:
-        while (true) {
-          lhs = null;
-          rhs = null;
-          tmp = null;
-          kid = null;
-          if (interrupt !== null) {
-            return;
-          }
-          if (head === null) {
-            cb(fail3 || step)();
-            return;
-          }
-          if (head._3 !== EMPTY) {
-            return;
-          }
-          switch (head.tag) {
-            case MAP:
-              if (fail3 === null) {
-                head._3 = util2.right(head._1(util2.fromRight(step)));
-                step = head._3;
-              } else {
-                head._3 = fail3;
-              }
-              break;
-            case APPLY:
-              lhs = head._1._3;
-              rhs = head._2._3;
-              if (fail3) {
-                head._3 = fail3;
-                tmp = true;
-                kid = killId++;
-                kills[kid] = kill(early, fail3 === lhs ? head._2 : head._1, function() {
-                  return function() {
-                    delete kills[kid];
-                    if (tmp) {
-                      tmp = false;
-                    } else if (tail4 === null) {
-                      join(fail3, null, null);
-                    } else {
-                      join(fail3, tail4._1, tail4._2);
-                    }
-                  };
-                });
-                if (tmp) {
-                  tmp = false;
-                  return;
-                }
-              } else if (lhs === EMPTY || rhs === EMPTY) {
-                return;
-              } else {
-                step = util2.right(util2.fromRight(lhs)(util2.fromRight(rhs)));
-                head._3 = step;
-              }
-              break;
-            case ALT:
-              lhs = head._1._3;
-              rhs = head._2._3;
-              if (lhs === EMPTY && util2.isLeft(rhs) || rhs === EMPTY && util2.isLeft(lhs)) {
-                return;
-              }
-              if (lhs !== EMPTY && util2.isLeft(lhs) && rhs !== EMPTY && util2.isLeft(rhs)) {
-                fail3 = step === lhs ? rhs : lhs;
-                step = null;
-                head._3 = fail3;
-              } else {
-                head._3 = step;
-                tmp = true;
-                kid = killId++;
-                kills[kid] = kill(early, step === lhs ? head._2 : head._1, function() {
-                  return function() {
-                    delete kills[kid];
-                    if (tmp) {
-                      tmp = false;
-                    } else if (tail4 === null) {
-                      join(step, null, null);
-                    } else {
-                      join(step, tail4._1, tail4._2);
-                    }
-                  };
-                });
-                if (tmp) {
-                  tmp = false;
-                  return;
-                }
-              }
-              break;
-          }
-          if (tail4 === null) {
-            head = null;
-          } else {
-            head = tail4._1;
-            tail4 = tail4._2;
-          }
-        }
-    }
-    function resolve(fiber) {
-      return function(result) {
-        return function() {
-          delete fibers[fiber._1];
-          fiber._3 = result;
-          join(result, fiber._2._1, fiber._2._2);
-        };
-      };
-    }
-    function run2() {
-      var status = CONTINUE;
-      var step = par;
-      var head = null;
-      var tail4 = null;
-      var tmp, fid;
-      loop:
-        while (true) {
-          tmp = null;
-          fid = null;
-          switch (status) {
-            case CONTINUE:
-              switch (step.tag) {
-                case MAP:
-                  if (head) {
-                    tail4 = new Aff2(CONS, head, tail4);
-                  }
-                  head = new Aff2(MAP, step._1, EMPTY, EMPTY);
-                  step = step._2;
-                  break;
-                case APPLY:
-                  if (head) {
-                    tail4 = new Aff2(CONS, head, tail4);
-                  }
-                  head = new Aff2(APPLY, EMPTY, step._2, EMPTY);
-                  step = step._1;
-                  break;
-                case ALT:
-                  if (head) {
-                    tail4 = new Aff2(CONS, head, tail4);
-                  }
-                  head = new Aff2(ALT, EMPTY, step._2, EMPTY);
-                  step = step._1;
-                  break;
-                default:
-                  fid = fiberId++;
-                  status = RETURN;
-                  tmp = step;
-                  step = new Aff2(FORKED, fid, new Aff2(CONS, head, tail4), EMPTY);
-                  tmp = Fiber(util2, supervisor, tmp);
-                  tmp.onComplete({
-                    rethrow: false,
-                    handler: resolve(step)
-                  })();
-                  fibers[fid] = tmp;
-                  if (supervisor) {
-                    supervisor.register(tmp);
-                  }
-              }
-              break;
-            case RETURN:
-              if (head === null) {
-                break loop;
-              }
-              if (head._1 === EMPTY) {
-                head._1 = step;
-                status = CONTINUE;
-                step = head._2;
-                head._2 = EMPTY;
-              } else {
-                head._2 = step;
-                step = head;
-                if (tail4 === null) {
-                  head = null;
-                } else {
-                  head = tail4._1;
-                  tail4 = tail4._2;
-                }
-              }
-          }
-        }
-      root = step;
-      for (fid = 0; fid < fiberId; fid++) {
-        fibers[fid].run();
-      }
-    }
-    function cancel(error3, cb2) {
-      interrupt = util2.left(error3);
-      var innerKills;
-      for (var kid in kills) {
-        if (kills.hasOwnProperty(kid)) {
-          innerKills = kills[kid];
-          for (kid in innerKills) {
-            if (innerKills.hasOwnProperty(kid)) {
-              innerKills[kid]();
-            }
-          }
-        }
-      }
-      kills = null;
-      var newKills = kill(error3, root, cb2);
-      return function(killError) {
-        return new Aff2(ASYNC, function(killCb) {
-          return function() {
-            for (var kid2 in newKills) {
-              if (newKills.hasOwnProperty(kid2)) {
-                newKills[kid2]();
-              }
-            }
-            return nonCanceler2;
-          };
-        });
-      };
-    }
-    run2();
-    return function(killError) {
-      return new Aff2(ASYNC, function(killCb) {
-        return function() {
-          return cancel(killError, killCb);
-        };
-      });
-    };
-  }
-  function sequential(util2, supervisor, par) {
-    return new Aff2(ASYNC, function(cb) {
-      return function() {
-        return runPar(util2, supervisor, par, cb);
-      };
-    });
-  }
-  Aff2.EMPTY = EMPTY;
-  Aff2.Pure = AffCtr(PURE);
-  Aff2.Throw = AffCtr(THROW);
-  Aff2.Catch = AffCtr(CATCH);
-  Aff2.Sync = AffCtr(SYNC);
-  Aff2.Async = AffCtr(ASYNC);
-  Aff2.Bind = AffCtr(BIND);
-  Aff2.Bracket = AffCtr(BRACKET);
-  Aff2.Fork = AffCtr(FORK);
-  Aff2.Seq = AffCtr(SEQ);
-  Aff2.ParMap = AffCtr(MAP);
-  Aff2.ParApply = AffCtr(APPLY);
-  Aff2.ParAlt = AffCtr(ALT);
-  Aff2.Fiber = Fiber;
-  Aff2.Supervisor = Supervisor;
-  Aff2.Scheduler = Scheduler;
-  Aff2.nonCanceler = nonCanceler2;
-  return Aff2;
-}();
-var _pure = Aff.Pure;
-var _throwError = Aff.Throw;
-function _catchError(aff) {
-  return function(k) {
-    return Aff.Catch(aff, k);
-  };
-}
-function _map(f) {
-  return function(aff) {
-    if (aff.tag === Aff.Pure.tag) {
-      return Aff.Pure(f(aff._1));
-    } else {
-      return Aff.Bind(aff, function(value) {
-        return Aff.Pure(f(value));
-      });
-    }
-  };
-}
-function _bind(aff) {
-  return function(k) {
-    return Aff.Bind(aff, k);
-  };
-}
-var _liftEffect = Aff.Sync;
-var makeAff = Aff.Async;
-function _makeFiber(util2, aff) {
-  return function() {
-    return Aff.Fiber(util2, null, aff);
-  };
-}
-var _delay = function() {
-  function setDelay(n, k) {
-    if (n === 0 && typeof setImmediate !== "undefined") {
-      return setImmediate(k);
-    } else {
-      return setTimeout(k, n);
-    }
-  }
-  function clearDelay(n, t) {
-    if (n === 0 && typeof clearImmediate !== "undefined") {
-      return clearImmediate(t);
-    } else {
-      return clearTimeout(t);
-    }
-  }
-  return function(right, ms) {
-    return Aff.Async(function(cb) {
-      return function() {
-        var timer = setDelay(ms, cb(right()));
-        return function() {
-          return Aff.Sync(function() {
-            return right(clearDelay(ms, timer));
-          });
-        };
-      };
-    });
-  };
-}();
-var _sequential = Aff.Seq;
-
-// output-es/Effect.Aff/index.js
-var functorAff = { map: _map };
-var ffiUtil = {
-  isLeft: (v) => {
-    if (v.tag === "Left") {
-      return true;
-    }
-    if (v.tag === "Right") {
-      return false;
-    }
-    fail();
-  },
-  fromLeft: (v) => {
-    if (v.tag === "Left") {
-      return v._1;
-    }
-    if (v.tag === "Right") {
-      return _crashWith("unsafeFromLeft: Right");
-    }
-    fail();
-  },
-  fromRight: (v) => {
-    if (v.tag === "Right") {
-      return v._1;
-    }
-    if (v.tag === "Left") {
-      return _crashWith("unsafeFromRight: Left");
-    }
-    fail();
-  },
-  left: Left,
-  right: Right
-};
-var monadAff = { Applicative0: () => applicativeAff, Bind1: () => bindAff };
-var bindAff = { bind: _bind, Apply0: () => applyAff };
-var applyAff = { apply: (f) => (a) => _bind(f)((f$p) => _bind(a)((a$p) => applicativeAff.pure(f$p(a$p)))), Functor0: () => functorAff };
-var applicativeAff = { pure: _pure, Apply0: () => applyAff };
-var monadEffectAff = { liftEffect: _liftEffect, Monad0: () => monadAff };
-var monadThrowAff = { throwError: _throwError, Monad0: () => monadAff };
-var monadErrorAff = { catchError: _catchError, MonadThrow0: () => monadThrowAff };
-var $$try2 = /* @__PURE__ */ $$try(monadErrorAff);
-var runAff = (k) => (aff) => {
-  const $0 = _makeFiber(ffiUtil, _bind($$try2(aff))((x) => _liftEffect(k(x))));
-  return () => {
-    const fiber = $0();
-    fiber.run();
-    return fiber;
-  };
-};
-var nonCanceler = /* @__PURE__ */ (() => {
-  const $0 = _pure();
-  return (v) => $0;
-})();
-
-// output-es/Control.Monad.Reader.Trans/index.js
-var bindReaderT = (dictBind) => {
-  const $0 = dictBind.Apply0();
-  const $1 = $0.Functor0();
-  const applyReaderT1 = (() => {
-    const functorReaderT1 = {
-      map: (x) => {
-        const $2 = $1.map(x);
-        return (v) => (x$1) => $2(v(x$1));
-      }
-    };
-    return { apply: (v) => (v1) => (r) => $0.apply(v(r))(v1(r)), Functor0: () => functorReaderT1 };
-  })();
-  return { bind: (v) => (k) => (r) => dictBind.bind(v(r))((a) => k(a)(r)), Apply0: () => applyReaderT1 };
-};
-var monadReaderT = (dictMonad) => {
-  const $0 = dictMonad.Applicative0();
-  const $1 = $0.Apply0();
-  const applicativeReaderT1 = (() => {
-    const $2 = $1.Functor0();
-    const functorReaderT1 = {
-      map: (x) => {
-        const $3 = $2.map(x);
-        return (v) => (x$1) => $3(v(x$1));
-      }
-    };
-    const applyReaderT1 = { apply: (v) => (v1) => (r) => $1.apply(v(r))(v1(r)), Functor0: () => functorReaderT1 };
-    return {
-      pure: (x) => {
-        const $3 = $0.pure(x);
-        return (v) => $3;
-      },
-      Apply0: () => applyReaderT1
-    };
-  })();
-  const bindReaderT1 = bindReaderT(dictMonad.Bind1());
-  return { Applicative0: () => applicativeReaderT1, Bind1: () => bindReaderT1 };
-};
-
-// output-es/Control.Monad.State.Trans/index.js
-var evalStateT = (dictFunctor) => (v) => (s) => dictFunctor.map(fst)(v(s));
-var bindStateT = (dictMonad) => ({ bind: (v) => (f) => (s) => dictMonad.Bind1().bind(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) });
-var applyStateT = (dictMonad) => {
-  const $0 = dictMonad.Bind1().Apply0().Functor0();
-  const functorStateT1 = { map: (f) => (v) => (s) => $0.map((v1) => $Tuple(f(v1._1), v1._2))(v(s)) };
-  return {
-    apply: (() => {
-      const $1 = bindStateT(dictMonad);
-      return (f) => (a) => $1.bind(f)((f$p) => $1.bind(a)((a$p) => applicativeStateT(dictMonad).pure(f$p(a$p))));
-    })(),
-    Functor0: () => functorStateT1
-  };
-};
-var applicativeStateT = (dictMonad) => ({ pure: (a) => (s) => dictMonad.Applicative0().pure($Tuple(a, s)), Apply0: () => applyStateT(dictMonad) });
-var monadRecStateT = (dictMonadRec) => {
-  const Monad0 = dictMonadRec.Monad0();
-  const monadStateT1 = { Applicative0: () => applicativeStateT(Monad0), Bind1: () => bindStateT(Monad0) };
-  return {
-    tailRecM: (f) => (a) => (s) => dictMonadRec.tailRecM((v) => Monad0.Bind1().bind(f(v._1)(v._2))((v2) => Monad0.Applicative0().pure((() => {
-      if (v2._1.tag === "Loop") {
-        return $Step("Loop", $Tuple(v2._1._1, v2._2));
-      }
-      if (v2._1.tag === "Done") {
-        return $Step("Done", $Tuple(v2._1._1, v2._2));
-      }
-      fail();
-    })())))($Tuple(a, s)),
-    Monad0: () => monadStateT1
-  };
-};
-var monadStateStateT = (dictMonad) => {
-  const monadStateT1 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-  return { state: (f) => (x) => dictMonad.Applicative0().pure(f(x)), Monad0: () => monadStateT1 };
-};
-var monadThrowStateT = (dictMonadThrow) => {
-  const Monad0 = dictMonadThrow.Monad0();
-  const monadStateT1 = { Applicative0: () => applicativeStateT(Monad0), Bind1: () => bindStateT(Monad0) };
-  return {
-    throwError: (e) => {
-      const $0 = dictMonadThrow.throwError(e);
-      return (s) => Monad0.Bind1().bind($0)((x) => Monad0.Applicative0().pure($Tuple(x, s)));
-    },
-    Monad0: () => monadStateT1
-  };
-};
-var monadErrorStateT = (dictMonadError) => {
-  const monadThrowStateT1 = monadThrowStateT(dictMonadError.MonadThrow0());
-  return { catchError: (v) => (h) => (s) => dictMonadError.catchError(v(s))((e) => h(e)(s)), MonadThrow0: () => monadThrowStateT1 };
-};
-
-// output-es/Effect.Aff.Class/index.js
-var monadAffAff = { liftAff: (x) => x, MonadEffect0: () => monadEffectAff };
-
-// output-es/Effect.Console/foreign.js
-var log2 = function(s) {
-  return function() {
-    console.log(s);
-  };
-};
-
-// output-es/Graph/index.js
-var fromFoldable6 = /* @__PURE__ */ (() => fromFoldableImpl(foldableSet.foldr))();
-var fromFoldable14 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
-var fromFoldable23 = /* @__PURE__ */ (() => foldableSet.foldr(Cons)(Nil))();
-var Vertex = (x) => x;
-var eqVertex = { eq: (x) => (y) => x === y };
-var ordVertex = { compare: (x) => (y) => ordString.compare(x)(y), Eq0: () => eqVertex };
-var verticesVertex = (dictFunctor) => (dictFoldable) => ({
-  vertices: (() => {
-    const $0 = dictFoldable.foldl(union(ordVertex))(Leaf2);
-    return (x) => $0(dictFunctor.map(singleton2)(x));
-  })()
-});
-var showVertices = (\u03B1s) => "{" + joinWith(", ")(fromFoldable6(map(ordString)(unsafeCoerce)(\u03B1s))) + "}";
-var showEdgeList = (es) => joinWith("\n")([
-  "digraph G {",
-  ...arrayMap((v) => "   " + v)([
-    "rankdir = RL",
-    ...arrayMap((v) => v._1 + " -> {" + joinWith(", ")(fromFoldable6(map(ordString)(unsafeCoerce)(v._2))) + "}")(fromFoldable14(reverse2(es)))
-  ]),
-  "}"
-]);
-var toEdgeList = (dictGraph) => (g) => {
-  const $0 = (v) => {
-    if (v._1.tag === "Nil") {
-      return $Step("Done", v._2);
-    }
-    if (v._1.tag === "Cons") {
-      return $Step("Loop", $Tuple(v._1._2, $List("Cons", $Tuple(v._1._1, dictGraph.outN(g)(v._1._1)), v._2)));
-    }
-    fail();
-  };
-  const go = (go$a0$copy) => {
-    let go$a0 = go$a0$copy, go$c = true, go$r;
-    while (go$c) {
-      const v = go$a0;
-      if (v.tag === "Loop") {
-        go$a0 = $0(v._1);
-        continue;
-      }
-      if (v.tag === "Done") {
-        go$c = false;
-        go$r = v._1;
-        continue;
-      }
-      fail();
-    }
-    return go$r;
-  };
-  return go($0($Tuple(dictGraph.topologicalSort(g), Nil)));
-};
-var showGraph = (dictGraph) => (x) => showEdgeList(toEdgeList(dictGraph)(x));
-var inEdges$p = (dictGraph) => (g) => (\u03B1) => fromFoldable23(map(ordTuple(ordVertex)(ordVertex))((v) => $Tuple(v, \u03B1))(dictGraph.inN(g)(\u03B1)));
-var inEdges = (dictGraph) => (g) => (\u03B1s) => {
-  const $0 = (v) => {
-    if (v._1.tag === "Nil") {
-      return $Step("Done", v._2);
-    }
-    if (v._1.tag === "Cons") {
-      return $Step(
-        "Loop",
-        $Tuple(v._1._2, foldableList.foldr(Cons)(v._2)(inEdges$p(dictGraph)(g)(v._1._1)))
-      );
-    }
-    fail();
-  };
-  const go = (go$a0$copy) => {
-    let go$a0 = go$a0$copy, go$c = true, go$r;
-    while (go$c) {
-      const v = go$a0;
-      if (v.tag === "Loop") {
-        go$a0 = $0(v._1);
-        continue;
-      }
-      if (v.tag === "Done") {
-        go$c = false;
-        go$r = v._1;
-        continue;
-      }
-      fail();
-    }
-    return go$r;
-  };
-  return go($0($Tuple(fromFoldable23(\u03B1s), Nil)));
-};
-
-// output-es/Data.CatQueue/index.js
-var $CatQueue = (_1, _2) => ({ tag: "CatQueue", _1, _2 });
-var uncons3 = (uncons$a0$copy) => {
-  let uncons$a0 = uncons$a0$copy, uncons$c = true, uncons$r;
-  while (uncons$c) {
-    const v = uncons$a0;
-    if (v._1.tag === "Nil") {
-      if (v._2.tag === "Nil") {
-        uncons$c = false;
-        uncons$r = Nothing;
-        continue;
-      }
-      uncons$a0 = $CatQueue(reverse2(v._2), Nil);
-      continue;
-    }
-    if (v._1.tag === "Cons") {
-      uncons$c = false;
-      uncons$r = $Maybe("Just", $Tuple(v._1._1, $CatQueue(v._1._2, v._2)));
-      continue;
-    }
-    fail();
-  }
-  return uncons$r;
-};
-
-// output-es/Data.CatList/index.js
-var $CatList = (tag, _1, _2) => ({ tag, _1, _2 });
-var CatNil = /* @__PURE__ */ $CatList("CatNil");
-var link = (v) => (v1) => {
-  if (v.tag === "CatNil") {
-    return v1;
-  }
-  if (v1.tag === "CatNil") {
-    return v;
-  }
-  if (v.tag === "CatCons") {
-    return $CatList("CatCons", v._1, $CatQueue(v._2._1, $List("Cons", v1, v._2._2)));
-  }
-  fail();
-};
-var foldr = (k) => (b) => (q) => {
-  const foldl = (foldl$a0$copy) => (foldl$a1$copy) => (foldl$a2$copy) => {
-    let foldl$a0 = foldl$a0$copy, foldl$a1 = foldl$a1$copy, foldl$a2 = foldl$a2$copy, foldl$c = true, foldl$r;
-    while (foldl$c) {
-      const v = foldl$a0, v1 = foldl$a1, v2 = foldl$a2;
-      if (v2.tag === "Nil") {
-        foldl$c = false;
-        foldl$r = v1;
-        continue;
-      }
-      if (v2.tag === "Cons") {
-        foldl$a0 = v;
-        foldl$a1 = v(v1)(v2._1);
-        foldl$a2 = v2._2;
-        continue;
-      }
-      fail();
-    }
-    return foldl$r;
-  };
-  const go = (go$a0$copy) => (go$a1$copy) => {
-    let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-    while (go$c) {
-      const xs = go$a0, ys = go$a1;
-      const v = uncons3(xs);
-      if (v.tag === "Nothing") {
-        go$c = false;
-        go$r = foldl((x) => (i) => i(x))(b)(ys);
-        continue;
-      }
-      if (v.tag === "Just") {
-        go$a0 = v._1._2;
-        go$a1 = $List("Cons", k(v._1._1), ys);
-        continue;
-      }
-      fail();
-    }
-    return go$r;
-  };
-  return go(q)(Nil);
-};
-var uncons4 = (v) => {
-  if (v.tag === "CatNil") {
-    return Nothing;
-  }
-  if (v.tag === "CatCons") {
-    return $Maybe("Just", $Tuple(v._1, v._2._1.tag === "Nil" && v._2._2.tag === "Nil" ? CatNil : foldr(link)(CatNil)(v._2)));
-  }
-  fail();
-};
-var singleton5 = (a) => $CatList("CatCons", a, $CatQueue(Nil, Nil));
-var semigroupCatList = { append: link };
-var monoidCatList = { mempty: CatNil, Semigroup0: () => semigroupCatList };
-var snoc2 = (cat) => (a) => {
-  if (cat.tag === "CatNil") {
-    return $CatList("CatCons", a, $CatQueue(Nil, Nil));
-  }
-  if (cat.tag === "CatCons") {
-    return $CatList(
-      "CatCons",
-      cat._1,
-      $CatQueue(
-        cat._2._1,
-        $List("Cons", $CatList("CatCons", a, $CatQueue(Nil, Nil)), cat._2._2)
-      )
-    );
-  }
-  fail();
-};
-
-// output-es/Data.Graph/index.js
-var $SortStep = (tag, _1) => ({ tag, _1 });
-var fromFoldable7 = /* @__PURE__ */ (() => {
-  const foldMap1 = foldableList.foldMap(monoidCatList);
-  return (f) => foldMap1(singleton5)(f);
-})();
-var fromFoldable15 = /* @__PURE__ */ (() => {
-  const foldMap1 = foldableArray.foldMap(monoidCatList);
-  return (f) => foldMap1(singleton5)(f);
-})();
-var Visit = (value0) => $SortStep("Visit", value0);
-var topologicalSort = (dictOrd) => (v) => {
-  const visit = (visit$a0$copy) => (visit$a1$copy) => {
-    let visit$a0 = visit$a0$copy, visit$a1 = visit$a1$copy, visit$c = true, visit$r;
-    while (visit$c) {
-      const state = visit$a0, stack = visit$a1;
-      const v1 = uncons4(stack);
-      if (v1.tag === "Nothing") {
-        visit$c = false;
-        visit$r = state;
-        continue;
-      }
-      if (v1.tag === "Just") {
-        if (v1._1._1.tag === "Emit") {
-          visit$a0 = { result: $List("Cons", v1._1._1._1, state.result), unvisited: state.unvisited };
-          visit$a1 = v1._1._2;
-          continue;
-        }
-        if (v1._1._1.tag === "Visit") {
-          if ((() => {
-            const $0 = lookup(dictOrd)(v1._1._1._1)(state.unvisited);
-            if ($0.tag === "Nothing") {
-              return false;
-            }
-            if ($0.tag === "Just") {
-              return true;
-            }
-            fail();
-          })()) {
-            visit$a0 = { result: state.result, unvisited: $$delete(dictOrd)(v1._1._1._1)(state.unvisited) };
-            visit$a1 = (() => {
-              const $0 = fromFoldable7(listMap(Visit)((() => {
-                const $02 = lookup(dictOrd)(v1._1._1._1)(v);
-                if ($02.tag === "Nothing") {
-                  return Nil;
-                }
-                if ($02.tag === "Just") {
-                  return $02._1._2;
-                }
-                fail();
-              })()));
-              const $1 = v1._1._2.tag === "CatNil" ? $CatList("CatCons", $SortStep("Emit", v1._1._1._1), $CatQueue(Nil, Nil)) : $CatList(
-                "CatCons",
-                $SortStep("Emit", v1._1._1._1),
-                $CatQueue(Nil, $List("Cons", v1._1._2, Nil))
-              );
-              if ($0.tag === "CatNil") {
-                return $1;
-              }
-              if ($1.tag === "CatNil") {
-                return $0;
-              }
-              if ($0.tag === "CatCons") {
-                return $CatList("CatCons", $0._1, $CatQueue($0._2._1, $List("Cons", $1, $0._2._2)));
-              }
-              fail();
-            })();
-            continue;
-          }
-          visit$a0 = state;
-          visit$a1 = v1._1._2;
-          continue;
-        }
-      }
-      fail();
-    }
-    return visit$r;
-  };
-  const go = (go$a0$copy) => {
-    let go$a0 = go$a0$copy, go$c = true, go$r;
-    while (go$c) {
-      const v1 = go$a0;
-      const v2 = findMin(v1.unvisited);
-      if (v2.tag === "Just") {
-        go$a0 = visit(v1)(fromFoldable15([$SortStep("Visit", v2._1.key)]));
-        continue;
-      }
-      if (v2.tag === "Nothing") {
-        go$c = false;
-        go$r = v1.result;
-        continue;
-      }
-      fail();
-    }
-    return go$r;
-  };
-  return go({ unvisited: v, result: Nil });
-};
-
-// output-es/Foreign.Object.ST/foreign.js
-function peekImpl2(just) {
-  return function(nothing) {
-    return function(k) {
-      return function(m) {
-        return function() {
-          return {}.hasOwnProperty.call(m, k) ? just(m[k]) : nothing;
-        };
-      };
-    };
-  };
-}
-
-// output-es/Foreign.Object.ST/index.js
-var peek = /* @__PURE__ */ peekImpl2(Just)(Nothing);
-
-// output-es/Graph.GraphImpl/index.js
-var $GraphImpl = (_1) => ({ tag: "GraphImpl", _1 });
-var eqSet2 = { eq: (v) => (v1) => eqMap(eqVertex)(eqUnit).eq(v)(v1) };
-var eq = /* @__PURE__ */ (() => eqObject(eqSet2).eq)();
-var fromFoldable8 = /* @__PURE__ */ foldlArray((m) => (a) => insert(ordVertex)(a)()(m))(Leaf2);
-var toUnfoldable7 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
-var fromFoldable16 = /* @__PURE__ */ (() => foldableSet.foldr(Cons)(Nil))();
-var fromFoldable24 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert(ordVertex)(a)()(m))(Leaf2))();
-var toUnfoldable12 = /* @__PURE__ */ toAscUnfoldable(unfoldableArray);
-var fromFoldable32 = /* @__PURE__ */ fromFoldable(ordVertex)(foldableArray);
-var verticesGraphImpl = { vertices: (v) => v._1.vertices };
-var eqGraphImpl = { eq: (v) => (v1) => eq(v._1.out)(v1._1.out) };
-var sinks$p = (m) => fromFoldable8(arrayMap((x) => x._1)(filter((x) => x._2.tag === "Leaf")(toArrayWithKey(Tuple)(m))));
-var init4 = (\u03B1s) => () => {
-  const obj = {};
-  return monadRecST.tailRecM((v) => {
-    if (v._1.tag === "Nil") {
-      return () => $Step("Done", v._2);
-    }
-    if (v._1.tag === "Cons") {
-      const $0 = v._1._1;
-      const $1 = v._1._2;
-      const $2 = v._2;
-      return () => {
-        $2[$0] = Leaf2;
-        return $Step("Loop", $Tuple($1, $2));
-      };
-    }
-    fail();
-  })($Tuple(\u03B1s, obj))();
-};
-var assertPresent = (v) => (v1) => {
-  if (v1.tag === "Nil") {
-    return () => $Step("Done", void 0);
-  }
-  if (v1.tag === "Cons") {
-    const $0 = v1._1;
-    const $1 = v1._2;
-    const $2 = peek($0)(v);
-    return () => {
-      const $3 = $2();
-      const present = (() => {
-        if ($3.tag === "Nothing") {
-          return false;
-        }
-        if ($3.tag === "Just") {
-          return true;
-        }
-        fail();
-      })();
-      return assertWhen(true)($0 + " is an existing vertex")((v2) => present)(() => $Step("Loop", $1))();
-    };
-  }
-  fail();
-};
-var addIfMissing = (acc) => (v) => {
-  const $0 = peek(v)(acc);
-  return () => {
-    const v1 = $0();
-    if (v1.tag === "Nothing") {
-      acc[v] = Leaf2;
-      return acc;
-    }
-    if (v1.tag === "Just") {
-      return acc;
-    }
-    fail();
-  };
-};
-var addIfMissing$p = (\u03B1s) => (acc) => monadRecST.tailRecM((v) => {
-  if (v._1.tag === "Nil") {
-    return () => $Step("Done", v._2);
-  }
-  if (v._1.tag === "Cons") {
-    const $0 = v._1._2;
-    const $1 = addIfMissing(v._2)(v._1._1);
-    return () => {
-      const acc$p$p = $1();
-      return $Step("Loop", $Tuple($0, acc$p$p));
-    };
-  }
-  fail();
-})($Tuple(\u03B1s, acc));
-var outMap = (\u03B1s) => (es) => {
-  const $0 = init4(\u03B1s);
-  return () => {
-    const out = $0();
-    return monadRecST.tailRecM((v) => {
-      if (v._1.tag === "Nil") {
-        return () => $Step("Done", v._2);
-      }
-      if (v._1.tag === "Cons") {
-        const $1 = v._2;
-        const $2 = v._1._2;
-        const $3 = v._1._1._1;
-        const $4 = v._1._1._2;
-        const $5 = peek($3)($1);
-        return () => {
-          const $6 = $5();
-          if ((() => {
-            if ($6.tag === "Nothing") {
-              return true;
-            }
-            if ($6.tag === "Just") {
-              return eqMap(eqVertex)(eqUnit).eq($6._1)(Leaf2);
-            }
-            fail();
-          })()) {
-            const \u03B2s$p = toUnfoldable7($4);
-            monadRecST.tailRecM(assertPresent($1))(\u03B2s$p)();
-            $1[$3] = $4;
-            const acc$p = addIfMissing$p(\u03B2s$p)($1)();
-            return $Step("Loop", $Tuple($2, acc$p));
-          }
-          return throwException(error("Duplicate edge list entry for " + showStringImpl($3)))()();
-        };
-      }
-      fail();
-    })($Tuple(es, out))();
-  };
-};
-var inMap = (\u03B1s) => (es) => {
-  const $0 = init4(\u03B1s);
-  return () => {
-    const in_ = $0();
-    return monadRecST.tailRecM((v) => {
-      if (v._1.tag === "Nil") {
-        return () => $Step("Done", v._2);
-      }
-      if (v._1.tag === "Cons") {
-        const $1 = v._1._2;
-        const $2 = v._1._1._1;
-        const $3 = monadRecST.tailRecM((v1) => {
-          if (v1._1.tag === "Nil") {
-            return () => $Step("Done", v1._2);
-          }
-          if (v1._1.tag === "Cons") {
-            const $32 = v1._2;
-            const $4 = v1._1._1;
-            const $5 = v1._1._2;
-            const $6 = peek($4)($32);
-            return () => {
-              const v1$1 = $6();
-              const acc$p = (() => {
-                if (v1$1.tag === "Nothing") {
-                  $32[$4] = $$$Map("Two", Leaf2, $2, void 0, Leaf2);
-                  return $32;
-                }
-                if (v1$1.tag === "Just") {
-                  $32[$4] = insert(ordVertex)($2)()(v1$1._1);
-                  return $32;
-                }
-                fail();
-              })();
-              return $Step("Loop", $Tuple($5, acc$p));
-            };
-          }
-          fail();
-        })($Tuple(toUnfoldable7(v._1._1._2), v._2));
-        return () => {
-          const a = $3();
-          const acc$p = addIfMissing(a)($2)();
-          return $Step("Loop", $Tuple($1, acc$p));
-        };
-      }
-      fail();
-    })($Tuple(es, in_))();
-  };
-};
-var graphGraphImpl = {
-  outN: (v) => (\u03B1) => definitely("in graph")(_lookup(Nothing, Just, \u03B1, v._1.out)),
-  inN: (g) => graphGraphImpl.outN(graphGraphImpl.op(g)),
-  elem: (\u03B1) => (v) => {
-    const $0 = _lookup(Nothing, Just, \u03B1, v._1.out);
-    if ($0.tag === "Nothing") {
-      return false;
-    }
-    if ($0.tag === "Just") {
-      return true;
-    }
-    fail();
-  },
-  size: (v) => size3(v._1.out),
-  sinks: (v) => v._1.sinks,
-  sources: (v) => v._1.sources,
-  op: (v) => $GraphImpl({ out: v._1.in_, in_: v._1.out, sinks: v._1.sources, sources: v._1.sinks, vertices: v._1.vertices }),
-  empty: /* @__PURE__ */ $GraphImpl({
-    out: empty,
-    in_: empty,
-    sinks: Leaf2,
-    sources: Leaf2,
-    vertices: Leaf2
-  }),
-  fromEdgeList: (\u03B1s) => (es) => {
-    const \u03B1s$p = fromFoldable16(\u03B1s);
-    const es$p = reverse2(es);
-    const in_ = inMap(\u03B1s$p)(es$p)();
-    const out = outMap(\u03B1s$p)(es$p)();
-    return $GraphImpl({
-      out,
-      in_,
-      sinks: sinks$p(out),
-      sources: sinks$p(in_),
-      vertices: fromFoldable24(map(ordVertex)(Vertex)(mapObjectString.keys(out)))
-    });
-  },
-  topologicalSort: (v) => reverse2(topologicalSort(ordVertex)(fromFoldable32(arrayMap((x) => $Tuple(
-    x._1,
-    $Tuple(void 0, x._2)
-  ))(toUnfoldable12(_fmapObject(v._1.out, toUnfoldable7)))))),
-  Eq0: () => eqGraphImpl,
-  Vertices1: () => verticesGraphImpl
-};
-
-// output-es/Graph.WithGraph/index.js
-var fromFoldable9 = /* @__PURE__ */ (() => {
-  const go = (go$a0$copy) => (go$a1$copy) => {
-    let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-    while (go$c) {
-      const b = go$a0, v = go$a1;
-      if (v.tag === "Nil") {
-        go$c = false;
-        go$r = b;
-        continue;
-      }
-      if (v.tag === "Cons") {
-        go$a0 = insert(ordVertex)(v._1)()(b);
-        go$a1 = v._2;
-        continue;
-      }
-      fail();
-    }
-    return go$r;
-  };
-  return go(Leaf2);
-})();
-var monadWithGraphWithGraphT = (dictMonad) => {
-  const $0 = dictMonad.Bind1().Apply0().Functor0();
-  const $1 = monadStateStateT(dictMonad);
-  const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-  return {
-    extend: (\u03B1) => (\u03B1s) => {
-      const $2 = Cons($Tuple(\u03B1, \u03B1s));
-      const $3 = $1.state((s) => $Tuple(void 0, $2(s)));
-      return (s) => $0.map((v1) => $Tuple(void 0, v1._2))($3(s));
-    },
-    Monad0: () => monadStateT2
-  };
-};
-var monadAllocAllocT = (dictMonad) => {
-  const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-  return {
-    fresh: bindStateT(dictMonad).bind(monadStateStateT(dictMonad).state((s) => {
-      const s$p = 1 + s | 0;
-      return $Tuple(s$p, s$p);
-    }))((n) => applicativeStateT(dictMonad).pure(showIntImpl(n))),
-    Monad0: () => monadStateT2
-  };
-};
-var runAllocT = (dictMonad) => (m) => (n) => dictMonad.Bind1().bind(m(n))((v) => dictMonad.Applicative0().pure($Tuple(
-  v._2,
-  $Tuple(
-    fromFoldable9(listMap((x) => showIntImpl(x))((() => {
-      const $0 = n + 1 | 0;
-      if (v._2 < $0) {
-        return Nil;
-      }
-      return range3($0)(v._2);
-    })())),
-    v._1
-  )
-)));
-var monadAllocWithGraphAllocT = (dictMonad) => {
-  const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-  const monadStateT1 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
-  return {
-    fresh: (() => {
-      const $0 = monadAllocAllocT(dictMonad).fresh;
-      return (s) => monadStateT2.Bind1().bind($0)((x) => monadStateT2.Applicative0().pure($Tuple(x, s)));
-    })(),
-    Monad0: () => monadStateT1
-  };
-};
-var freezeGraph = (dictMonad) => {
-  const $0 = dictMonad.Bind1().Apply0().Functor0();
-  return (dictGraph) => (m) => (\u03B1s) => {
-    const $1 = dictGraph.fromEdgeList(\u03B1s);
-    return $0.map((v) => $Tuple($1(spyWhen(false)("runWithGraphT edge list")(showEdgeList)(v._1)), v._2))($0.map(swap)(m(Nil)));
-  };
-};
-var runWithGraphT = (dictMonad) => {
-  const freezeGraph1 = freezeGraph(dictMonad);
-  return (dictGraph) => {
-    const freezeGraph2 = freezeGraph1(dictGraph);
-    return (m) => (\u03B1s) => dictMonad.Bind1().bind(freezeGraph2(m)(\u03B1s))((v) => {
-      const $0 = v._1;
-      return assertWhen(true)("edgeListGC")((v1) => dictGraph.Eq0().eq($0)(dictGraph.fromEdgeList(Leaf2)(toEdgeList(dictGraph)($0))))(dictMonad.Applicative0().pure($Tuple(
-        $0,
-        v._2
-      )));
-    });
-  };
-};
-var runWithGraphT_spy = (dictMonad) => {
-  const runWithGraphT2 = runWithGraphT(dictMonad);
-  const spyFunWhenM2 = spyFunWhenM(dictMonad.Bind1().Apply0().Functor0());
-  return (dictGraph) => {
-    const $0 = runWithGraphT2(dictGraph);
-    const $1 = spyFunWhenM2(false)("runWithGraphT")(showVertices)((x) => showEdgeList(toEdgeList(dictGraph)(x._1)));
-    return (x) => $1($0(x));
-  };
-};
-var runWithGraphT_spy1 = /* @__PURE__ */ runWithGraphT_spy(monadIdentity);
-var monadWithGraphAllocWithGr = (dictMonadError) => {
-  const Monad0 = dictMonadError.MonadThrow0().Monad0();
-  const monadStateT2 = { Applicative0: () => applicativeStateT(Monad0), Bind1: () => bindStateT(Monad0) };
-  const bindStateT2 = bindStateT(monadStateT2);
-  const monadAllocWithGraphAllocT1 = monadAllocWithGraphAllocT(Monad0);
-  const fresh1 = monadAllocWithGraphAllocT1.fresh;
-  const monadWithGraphWithGraphT1 = monadWithGraphWithGraphT(monadStateT2);
-  const monadErrorStateT2 = monadErrorStateT(monadErrorStateT(dictMonadError));
-  return {
-    new: (\u03B1s) => bindStateT2.bind(fresh1)((\u03B1) => bindStateT2.bind(monadWithGraphWithGraphT1.extend(\u03B1)(\u03B1s))(() => applicativeStateT(monadStateT2).pure(\u03B1))),
-    MonadAlloc0: () => monadAllocWithGraphAllocT1,
-    MonadError1: () => monadErrorStateT2,
-    MonadWithGraph2: () => monadWithGraphWithGraphT1
-  };
-};
-
-// output-es/Graph.Slice/index.js
-var pure = /* @__PURE__ */ (() => applicativeStateT(monadIdentity).pure)();
-var extend = /* @__PURE__ */ (() => monadWithGraphWithGraphT(monadIdentity).extend)();
-var tailRecM = /* @__PURE__ */ (() => monadRecStateT(monadRecIdentity).tailRecM)();
-var member3 = /* @__PURE__ */ (() => setSet(ordVertex).member)();
-var fromFoldable10 = /* @__PURE__ */ (() => foldableSet.foldr(Cons)(Nil))();
-var intersection2 = /* @__PURE__ */ intersection(ordVertex);
-var fwdSlice = (dictGraph) => {
-  const runWithGraph_spy = runWithGraphT_spy1(dictGraph);
-  return (v) => {
-    const $0 = v._2;
-    const $1 = v._1;
-    return runWithGraph_spy(tailRecM((v1) => {
-      if (v1.es.tag === "Nil") {
-        return pure($Step("Done", void 0));
-      }
-      if (v1.es.tag === "Cons") {
-        const $2 = lookup(ordVertex)(v1.es._1._1)(v1.pending);
-        const \u03B2s = (() => {
-          if ($2.tag === "Nothing") {
-            return $$$Map("Two", Leaf2, v1.es._1._2, void 0, Leaf2);
-          }
-          if ($2.tag === "Just") {
-            return insert(ordVertex)(v1.es._1._2)()($2._1);
-          }
-          fail();
-        })();
-        if (eqMap(eqVertex)(eqUnit).eq(\u03B2s)(dictGraph.outN($0)(v1.es._1._1))) {
-          return bindStateT(monadIdentity).bind(extend(v1.es._1._1)(\u03B2s))(() => pure($Step(
-            "Loop",
-            {
-              pending: $$delete(ordVertex)(v1.es._1._1)(v1.pending),
-              es: foldableList.foldr(Cons)(v1.es._2)(inEdges$p(dictGraph)($0)(v1.es._1._1))
-            }
-          )));
-        }
-        return pure($Step("Loop", { pending: insert(ordVertex)(v1.es._1._1)(\u03B2s)(v1.pending), es: v1.es._2 }));
-      }
-      fail();
-    })({ pending: Leaf2, es: inEdges(dictGraph)($0)($1) }))(assertWhen(true)("inputs are sinks")((v$1) => difference2(ordVertex)($1)(dictGraph.sinks($0)).tag === "Leaf")($1))._1;
-  };
-};
-var bwdSlice = (dictGraph) => {
-  const runWithGraph_spy = runWithGraphT_spy1(dictGraph);
-  return (v) => {
-    const $0 = v._2;
-    const $1 = v._1;
-    return runWithGraph_spy(tailRecM((v1) => {
-      if (v1["\u03B1s"].tag === "Nil") {
-        if (v1.pending.tag === "Nil") {
-          return pure($Step("Done", void 0));
-        }
-        if (v1.pending.tag === "Cons") {
-          if (member3(v1.pending._1._1)(v1.visited)) {
-            return pure($Step("Loop", { visited: v1.visited, "\u03B1s": Nil, pending: v1.pending._2 }));
-          }
-          return bindStateT(monadIdentity).bind(extend(v1.pending._1._1)(v1.pending._1._2))(() => pure($Step(
-            "Loop",
-            { visited: insert(ordVertex)(v1.pending._1._1)()(v1.visited), "\u03B1s": Nil, pending: v1.pending._2 }
-          )));
-        }
-        fail();
-      }
-      if (v1["\u03B1s"].tag === "Cons") {
-        const \u03B2s = dictGraph.outN($0)(v1["\u03B1s"]._1);
-        return pure($Step(
-          "Loop",
-          {
-            visited: v1.visited,
-            "\u03B1s": foldableList.foldr(Cons)(v1["\u03B1s"]._2)(fromFoldable10(\u03B2s)),
-            pending: $List("Cons", $Tuple(v1["\u03B1s"]._1, \u03B2s), v1.pending)
-          }
-        ));
-      }
-      fail();
-    })({
-      visited: Leaf2,
-      "\u03B1s": fromFoldable10(intersection2(assertWhen(true)("inputs are sinks")((v$1) => difference2(ordVertex)($1)(dictGraph.Vertices1().vertices($0)).tag === "Leaf")($1))(dictGraph.sources($0))),
-      pending: Nil
-    }))(Leaf2)._1;
-  };
-};
-
-// output-es/Data.Profunctor.Choice/index.js
-var identity20 = (x) => x;
-var fanin = (dictCategory) => {
-  const identity1 = dictCategory.identity;
-  const $0 = dictCategory.Semigroupoid0();
-  const $1 = dictCategory.Semigroupoid0();
-  return (dictChoice) => (l) => (r) => $0.compose(dictChoice.Profunctor0().dimap((v2) => {
-    if (v2.tag === "Left") {
-      return v2._1;
-    }
-    if (v2.tag === "Right") {
-      return v2._1;
-    }
-    fail();
-  })(identity20)(identity1))($1.compose(dictChoice.right(r))(dictChoice.left(l)));
-};
-var choiceFn = /* @__PURE__ */ (() => ({
-  left: (v) => (v1) => {
-    if (v1.tag === "Left") {
-      return $Either("Left", v(v1._1));
-    }
-    if (v1.tag === "Right") {
-      return $Either("Right", v1._1);
-    }
-    fail();
-  },
-  right: functorEither.map,
-  Profunctor0: () => profunctorFn
-}))();
-
-// output-es/Data.Semiring/foreign.js
-var intAdd = function(x) {
-  return function(y) {
-    return x + y | 0;
-  };
-};
-var intMul = function(x) {
-  return function(y) {
-    return x * y | 0;
-  };
-};
-var numAdd = function(n1) {
-  return function(n2) {
-    return n1 + n2;
-  };
-};
-var numMul = function(n1) {
-  return function(n2) {
-    return n1 * n2;
-  };
-};
-
-// output-es/Data.Ring/foreign.js
-var intSub = function(x) {
-  return function(y) {
-    return x - y | 0;
-  };
-};
-var numSub = function(n1) {
-  return function(n2) {
-    return n1 - n2;
-  };
-};
-
-// output-es/Data.EuclideanRing/foreign.js
-var intDiv2 = function(x) {
-  return function(y) {
-    if (y === 0)
-      return 0;
-    return y > 0 ? Math.floor(x / y) : -Math.floor(x / -y);
-  };
-};
-var intMod = function(x) {
-  return function(y) {
-    if (y === 0)
-      return 0;
-    var yy = Math.abs(y);
-    return (x % yy + yy) % yy;
-  };
-};
-var numDiv = function(n1) {
-  return function(n2) {
-    return n1 / n2;
-  };
-};
-
-// output-es/Data.String.CodePoints/foreign.js
-var hasArrayFrom = typeof Array.from === "function";
-var hasStringIterator = typeof Symbol !== "undefined" && Symbol != null && typeof Symbol.iterator !== "undefined" && typeof String.prototype[Symbol.iterator] === "function";
-var hasFromCodePoint = typeof String.prototype.fromCodePoint === "function";
-var hasCodePointAt = typeof String.prototype.codePointAt === "function";
-var _unsafeCodePointAt0 = function(fallback) {
-  return hasCodePointAt ? function(str) {
-    return str.codePointAt(0);
-  } : fallback;
-};
-var _codePointAt = function(fallback) {
-  return function(Just2) {
-    return function(Nothing2) {
-      return function(unsafeCodePointAt02) {
-        return function(index3) {
-          return function(str) {
-            var length5 = str.length;
-            if (index3 < 0 || index3 >= length5)
-              return Nothing2;
-            if (hasStringIterator) {
-              var iter = str[Symbol.iterator]();
-              for (var i = index3; ; --i) {
-                var o = iter.next();
-                if (o.done)
-                  return Nothing2;
-                if (i === 0)
-                  return Just2(unsafeCodePointAt02(o.value));
-              }
-            }
-            return fallback(index3)(str);
-          };
-        };
-      };
-    };
-  };
-};
-var _fromCodePointArray = function(singleton7) {
-  return hasFromCodePoint ? function(cps) {
-    if (cps.length < 1e4) {
-      return String.fromCodePoint.apply(String, cps);
-    }
-    return cps.map(singleton7).join("");
-  } : function(cps) {
-    return cps.map(singleton7).join("");
-  };
-};
-var _singleton = function(fallback) {
-  return hasFromCodePoint ? String.fromCodePoint : fallback;
-};
-var _take = function(fallback) {
-  return function(n) {
-    if (hasStringIterator) {
-      return function(str) {
-        var accum = "";
-        var iter = str[Symbol.iterator]();
-        for (var i = 0; i < n; ++i) {
-          var o = iter.next();
-          if (o.done)
-            return accum;
-          accum += o.value;
-        }
-        return accum;
-      };
-    }
-    return fallback(n);
-  };
-};
-var _toCodePointArray = function(fallback) {
-  return function(unsafeCodePointAt02) {
-    if (hasArrayFrom) {
-      return function(str) {
-        return Array.from(str, unsafeCodePointAt02);
-      };
-    }
-    return fallback;
-  };
-};
-
-// output-es/Data.String.CodePoints/index.js
-var uncons5 = (s) => {
-  const v = length2(s);
-  if (v === 0) {
-    return Nothing;
-  }
-  if (v === 1) {
-    return $Maybe("Just", { head: toCharCode(charAt(0)(s)), tail: "" });
-  }
-  const cu1 = toCharCode(charAt(1)(s));
-  const cu0 = toCharCode(charAt(0)(s));
-  if (55296 <= cu0 && cu0 <= 56319 && 56320 <= cu1 && cu1 <= 57343) {
-    return $Maybe("Just", { head: (((cu0 - 55296 | 0) * 1024 | 0) + (cu1 - 56320 | 0) | 0) + 65536 | 0, tail: drop2(2)(s) });
-  }
-  return $Maybe("Just", { head: cu0, tail: drop2(1)(s) });
-};
-var unconsButWithTuple = (s) => {
-  const $0 = uncons5(s);
-  if ($0.tag === "Just") {
-    return $Maybe("Just", $Tuple($0._1.head, $0._1.tail));
-  }
-  return Nothing;
-};
-var toCodePointArrayFallback = (s) => unfoldableArray.unfoldr(unconsButWithTuple)(s);
-var unsafeCodePointAt0Fallback = (s) => {
-  const cu0 = toCharCode(charAt(0)(s));
-  if (55296 <= cu0 && cu0 <= 56319 && length2(s) > 1) {
-    const cu1 = toCharCode(charAt(1)(s));
-    if (56320 <= cu1 && cu1 <= 57343) {
-      return (((cu0 - 55296 | 0) * 1024 | 0) + (cu1 - 56320 | 0) | 0) + 65536 | 0;
-    }
-  }
-  return cu0;
-};
-var unsafeCodePointAt0 = /* @__PURE__ */ _unsafeCodePointAt0(unsafeCodePointAt0Fallback);
-var toCodePointArray = /* @__PURE__ */ _toCodePointArray(toCodePointArrayFallback)(unsafeCodePointAt0);
-var indexOf2 = (p) => (s) => {
-  const $0 = indexOf(p)(s);
-  if ($0.tag === "Just") {
-    return $Maybe("Just", toCodePointArray(take($0._1)(s)).length);
-  }
-  return Nothing;
-};
-var fromCharCode2 = (x) => singleton((() => {
-  if (x >= -2147483648 && x <= 2147483647) {
-    return fromCharCode(x);
-  }
-  if (x < 0) {
-    return "\0";
-  }
-  return "\uFFFF";
-})());
-var singletonFallback = (v) => {
-  if (v <= 65535) {
-    return fromCharCode2(v);
-  }
-  return fromCharCode2(intDiv(v - 65536 | 0, 1024) + 55296 | 0) + fromCharCode2(intMod(v - 65536 | 0)(1024) + 56320 | 0);
-};
-var fromCodePointArray = /* @__PURE__ */ _fromCodePointArray(singletonFallback);
-var singleton6 = /* @__PURE__ */ _singleton(singletonFallback);
-var takeFallback = (v) => (v1) => {
-  if (v < 1) {
-    return "";
-  }
-  const v2 = uncons5(v1);
-  if (v2.tag === "Just") {
-    return singleton6(v2._1.head) + takeFallback(v - 1 | 0)(v2._1.tail);
-  }
-  return v1;
-};
-var take3 = /* @__PURE__ */ _take(takeFallback);
-var codePointAtFallback = (codePointAtFallback$a0$copy) => (codePointAtFallback$a1$copy) => {
-  let codePointAtFallback$a0 = codePointAtFallback$a0$copy, codePointAtFallback$a1 = codePointAtFallback$a1$copy, codePointAtFallback$c = true, codePointAtFallback$r;
-  while (codePointAtFallback$c) {
-    const n = codePointAtFallback$a0, s = codePointAtFallback$a1;
-    const v = uncons5(s);
-    if (v.tag === "Just") {
-      if (n === 0) {
-        codePointAtFallback$c = false;
-        codePointAtFallback$r = $Maybe("Just", v._1.head);
-        continue;
-      }
-      codePointAtFallback$a0 = n - 1 | 0;
-      codePointAtFallback$a1 = v._1.tail;
-      continue;
-    }
-    codePointAtFallback$c = false;
-    codePointAtFallback$r = Nothing;
-  }
-  return codePointAtFallback$r;
-};
-var codePointAt = (v) => (v1) => {
-  if (v < 0) {
-    return Nothing;
-  }
-  if (v === 0) {
-    if (v1 === "") {
-      return Nothing;
-    }
-    return $Maybe("Just", unsafeCodePointAt0(v1));
-  }
-  return _codePointAt(codePointAtFallback)(Just)(Nothing)(unsafeCodePointAt0)(v)(v1);
-};
-
-// output-es/Parsing/index.js
-var $ParseError = (_1, _2) => ({ tag: "ParseError", _1, _2 });
-var $ParseState = (_1, _2, _3) => ({ tag: "ParseState", _1, _2, _3 });
-var $RunParser = (tag, _1, _2) => ({ tag, _1, _2 });
-var More = (value0) => $RunParser("More", value0);
-var Lift = (value0) => $RunParser("Lift", value0);
-var lazyParserT = {
-  defer: (f) => {
-    const m = defer(f);
-    return (state1, more, lift12, $$throw2, done) => force(m)(state1, more, lift12, $$throw2, done);
-  }
-};
-var genericShow = /* @__PURE__ */ (() => {
-  const $0 = genericShowConstructor({
-    genericShowArgs: (v) => [
-      (() => {
-        const v$1 = cons(intercalate(": ")(["column", showIntImpl(v.column)]))(cons(intercalate(": ")([
-          "index",
-          showIntImpl(v.index)
-        ]))(cons(intercalate(": ")(["line", showIntImpl(v.line)]))([])));
-        if (v$1.length === 0) {
-          return "{}";
-        }
-        return intercalate(" ")(["{", intercalate(", ")(v$1), "}"]);
-      })()
-    ]
-  })({ reflectSymbol: () => "Position" });
-  return (x) => $0["genericShow'"](x);
-})();
-var functorParserT = { map: (f) => (v) => (state1, more, lift12, $$throw2, done) => more((v1) => v(state1, more, lift12, $$throw2, (state2, a) => more((v2) => done(state2, f(a))))) };
-var applyParserT = {
-  apply: (v) => (v1) => (state1, more, lift12, $$throw2, done) => more((v2) => v(
-    state1,
-    more,
-    lift12,
-    $$throw2,
-    (state2, f) => more((v3) => v1(state2, more, lift12, $$throw2, (state3, a) => more((v4) => done(state3, f(a)))))
-  )),
-  Functor0: () => functorParserT
-};
-var bindParserT = {
-  bind: (v) => (next) => (state1, more, lift12, $$throw2, done) => more((v1) => v(state1, more, lift12, $$throw2, (state2, a) => more((v2) => next(a)(state2, more, lift12, $$throw2, done)))),
-  Apply0: () => applyParserT
-};
-var applicativeParserT = { pure: (a) => (state1, v, v1, v2, done) => done(state1, a), Apply0: () => applyParserT };
-var monadParserT = { Applicative0: () => applicativeParserT, Bind1: () => bindParserT };
-var monadRecParserT = {
-  tailRecM: (next) => (initArg) => (state1, more, lift12, $$throw2, done) => {
-    const loop = (state2, arg, gas) => next(arg)(
-      state2,
-      more,
-      lift12,
-      $$throw2,
-      (state3, step) => {
-        if (step.tag === "Loop") {
-          if (gas === 0) {
-            return more((v1) => loop(state3, step._1, 30));
-          }
-          return loop(state3, step._1, gas - 1 | 0);
-        }
-        if (step.tag === "Done") {
-          return done(state3, step._1);
-        }
-        fail();
-      }
-    );
-    return loop(state1, initArg, 30);
-  },
-  Monad0: () => monadParserT
-};
-var altParserT = {
-  alt: (v) => (v1) => (v2, $0, $1, $2, $3) => {
-    const $4 = v2._1;
-    const $5 = v2._2;
-    return $0((v3) => v(
-      $ParseState($4, $5, false),
-      $0,
-      $1,
-      (v4, $6) => {
-        const $7 = v4._3;
-        return $0((v5) => {
-          if ($7) {
-            return $2(v4, $6);
-          }
-          return v1(v2, $0, $1, $2, $3);
-        });
-      },
-      $3
-    ));
-  },
-  Functor0: () => functorParserT
-};
-var showParseError = { show: (v) => "(ParseError " + showStringImpl(v._1) + " " + genericShow(v._2) + ")" };
-var runParserT$p = (dictMonadRec) => {
-  const Monad0 = dictMonadRec.Monad0();
-  return (state1) => (v) => {
-    const go = (go$a0$copy) => {
-      let go$a0 = go$a0$copy, go$c = true, go$r;
-      while (go$c) {
-        const step = go$a0;
-        const v1 = step();
-        if (v1.tag === "More") {
-          go$a0 = v1._1;
-          continue;
-        }
-        if (v1.tag === "Lift") {
-          go$c = false;
-          go$r = Monad0.Bind1().Apply0().Functor0().map(Loop)(v1._1);
-          continue;
-        }
-        if (v1.tag === "Stop") {
-          go$c = false;
-          go$r = Monad0.Applicative0().pure($Step("Done", $Tuple(v1._2, v1._1)));
-          continue;
-        }
-        fail();
-      }
-      return go$r;
-    };
-    return dictMonadRec.tailRecM(go)((v1) => v(
-      state1,
-      More,
-      Lift,
-      (state2, err) => $RunParser("Stop", state2, $Either("Left", err)),
-      (state2, res) => $RunParser("Stop", state2, $Either("Right", res))
-    ));
-  };
-};
-var position = (state1, v, v1, v2, done) => done(state1, state1._2);
-var initialPos = { index: 0, line: 1, column: 1 };
-var runParserT = (dictMonadRec) => {
-  const runParserT$p1 = runParserT$p(dictMonadRec);
-  return (s) => (p) => dictMonadRec.Monad0().Bind1().Apply0().Functor0().map(fst)(runParserT$p1($ParseState(s, initialPos, false))(p));
-};
-var runParserT1 = /* @__PURE__ */ runParserT(monadRecIdentity);
-var fail2 = (message2) => (state1, more, lift12, $$throw2, done) => more((v1) => position(
-  state1,
-  more,
-  lift12,
-  $$throw2,
-  (state2, a) => more((v2) => $$throw2(state2, $ParseError(message2, a)))
-));
-var plusParserT = { empty: /* @__PURE__ */ fail2("No alternative"), Alt0: () => altParserT };
-var alternativeParserT = { Applicative0: () => applicativeParserT, Plus1: () => plusParserT };
-
-// output-es/Parsing.Combinators/index.js
-var manyRec2 = /* @__PURE__ */ manyRec(monadRecParserT)(alternativeParserT);
-var withLazyErrorMessage = (p) => (msg) => {
-  const $0 = lazyParserT.defer((v) => fail2("Expected " + msg()));
-  return (v2, $1, $2, $3, $4) => {
-    const $5 = v2._1;
-    const $6 = v2._2;
-    return $1((v3) => p(
-      $ParseState($5, $6, false),
-      $1,
-      $2,
-      (v4, $7) => {
-        const $8 = v4._3;
-        return $1((v5) => {
-          if ($8) {
-            return $3(v4, $7);
-          }
-          return $0(v2, $1, $2, $3, $4);
-        });
-      },
-      $4
-    ));
-  };
-};
-var withErrorMessage = (p) => (msg) => {
-  const $0 = fail2("Expected " + msg);
-  return (v2, $1, $2, $3, $4) => {
-    const $5 = v2._1;
-    const $6 = v2._2;
-    return $1((v3) => p(
-      $ParseState($5, $6, false),
-      $1,
-      $2,
-      (v4, $7) => {
-        const $8 = v4._3;
-        return $1((v5) => {
-          if ($8) {
-            return $3(v4, $7);
-          }
-          return $0(v2, $1, $2, $3, $4);
-        });
-      },
-      $4
-    ));
-  };
-};
-var skipMany1 = (p) => (state1, more, lift12, $$throw2, done) => more((v2) => more((v1) => p(
-  state1,
-  more,
-  lift12,
-  $$throw2,
-  (state2, a) => more((v2$1) => more((v3) => {
-    const loop = (state2$1, arg, gas) => {
-      const $0 = (state3, step) => {
-        if (step.tag === "Loop") {
-          if (gas === 0) {
-            return more((v1$1) => loop(state3, step._1, 30));
-          }
-          return loop(state3, step._1, gas - 1 | 0);
-        }
-        if (step.tag === "Done") {
-          const $02 = step._1;
-          return more((v4) => done(state3, $02));
-        }
-        fail();
-      };
-      const $1 = state2$1._1;
-      const $2 = state2$1._2;
-      return more((v3$1) => more((v1$1) => p(
-        $ParseState($1, $2, false),
-        more,
-        lift12,
-        (v4, $3) => {
-          const $4 = v4._3;
-          return more((v5) => {
-            if ($4) {
-              return $$throw2(v4, $3);
-            }
-            return $0(state2$1, $Step("Done", void 0));
-          });
-        },
-        (state2$2, a$1) => more((v2$2) => $0(state2$2, $Step("Loop", void 0)))
-      )));
-    };
-    return loop(state2, void 0, 30);
-  }))
-)));
-var skipMany = (p) => (v2, $0, $1, $2, $3) => {
-  const $4 = v2._1;
-  const $5 = v2._2;
-  return $0((v3) => skipMany1(p)(
-    $ParseState($4, $5, false),
-    $0,
-    $1,
-    (v4, $6) => {
-      const $7 = v4._3;
-      return $0((v5) => {
-        if ($7) {
-          return $2(v4, $6);
-        }
-        return $3(v2, void 0);
-      });
-    },
-    $3
-  ));
-};
-var sepBy1 = (p) => (sep) => (state1, more, lift12, $$throw2, done) => more((v1) => p(
-  state1,
-  more,
-  lift12,
-  $$throw2,
-  (state2, a) => more((v2) => {
-    const $0 = manyRec2((state1$1, more$1, lift1$1, throw$1, done$1) => more$1((v2$1) => more$1((v1$1) => sep(
-      state1$1,
-      more$1,
-      lift1$1,
-      throw$1,
-      (state2$1, a$1) => more$1((v2$2) => more$1((v3) => p(state2$1, more$1, lift1$1, throw$1, (state3, a$2) => more$1((v4) => done$1(state3, a$2)))))
-    ))));
-    return more((v1$1) => $0(state2, more, lift12, $$throw2, (state2$1, a$1) => more((v2$1) => done(state2$1, $NonEmpty(a, a$1)))));
-  })
-));
-var sepBy = (p) => (sep) => (v2, $0, $1, $2, $3) => {
-  const $4 = v2._1;
-  const $5 = v2._2;
-  return $0((v3) => $0((v1) => sepBy1(p)(sep)(
-    $ParseState($4, $5, false),
-    $0,
-    $1,
-    (v4, $6) => {
-      const $7 = v4._3;
-      return $0((v5) => {
-        if ($7) {
-          return $2(v4, $6);
-        }
-        return $3(v2, Nil);
-      });
-    },
-    (state2, a) => $0((v2$1) => $3(state2, $List("Cons", a._1, a._2)))
-  )));
-};
-var notFollowedBy = (p) => (v1, $0, $1, $2, $3) => {
-  const $4 = v1._3;
-  const $5 = v1._1;
-  const $6 = v1._2;
-  return $0((v3) => {
-    const $7 = (v4, $72) => {
-      const $8 = v4._3;
-      return $0((v5) => {
-        if ($8) {
-          return $2($ParseState(v4._1, v4._2, $4), $72);
-        }
-        return $3(v1, void 0);
-      });
-    };
-    return $0((v2) => $0((v1$1) => p(
-      $ParseState($5, $6, false),
-      $0,
-      $1,
-      (v2$1, $8) => $7($ParseState(v2$1._1, v2$1._2, false), $8),
-      (state2, a) => $0((v2$1) => $0((v3$1) => fail2("Negated parser succeeded")(state2, $0, $1, $7, (state3, a$1) => $0((v4) => $3(state3, a$1)))))
-    )));
-  });
-};
-var choice = (dictFoldable) => {
-  const $0 = dictFoldable.foldr((p1) => (v) => {
-    if (v.tag === "Nothing") {
-      return $Maybe("Just", p1);
-    }
-    if (v.tag === "Just") {
-      return $Maybe(
-        "Just",
-        (v2, $02, $1, $2, $3) => {
-          const $4 = v2._1;
-          const $5 = v2._2;
-          return $02((v3) => p1(
-            $ParseState($4, $5, false),
-            $02,
-            $1,
-            (v4, $6) => {
-              const $7 = v4._3;
-              return $02((v5) => {
-                if ($7) {
-                  return $2(v4, $6);
-                }
-                return v._1(v2, $02, $1, $2, $3);
-              });
-            },
-            $3
-          ));
-        }
-      );
-    }
-    fail();
-  })(Nothing);
-  return (x) => {
-    const $1 = $0(x);
-    if ($1.tag === "Nothing") {
-      return fail2("No alternative");
-    }
-    if ($1.tag === "Just") {
-      return $1._1;
-    }
-    fail();
-  };
-};
-var between = (open2) => (close2) => (p) => (state1, more, lift12, $$throw2, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => open2(
-  state1,
-  more,
-  lift12,
-  $$throw2,
-  (state2, a) => more((v2$2) => more((v3) => p(
-    state2,
-    more,
-    lift12,
-    $$throw2,
-    (state3, a$1) => more((v4) => more((v2$3) => more((v3$1) => close2(state3, more, lift12, $$throw2, (state3$1, a$2) => more((v4$1) => done(state3$1, a$1))))))
-  )))
-)))));
-
-// output-es/Parsing.Expr/index.js
-var $Assoc = (tag) => tag;
-var $Operator = (tag, _1, _2) => ({ tag, _1, _2 });
-var choice2 = /* @__PURE__ */ choice(foldableList);
-var identity21 = (x) => x;
-var AssocNone = /* @__PURE__ */ $Assoc("AssocNone");
-var AssocLeft = /* @__PURE__ */ $Assoc("AssocLeft");
-var AssocRight = /* @__PURE__ */ $Assoc("AssocRight");
-var splitOp = (v) => (v1) => {
-  if (v.tag === "Infix") {
-    if (v._2 === "AssocNone") {
-      return { rassoc: v1.rassoc, lassoc: v1.lassoc, nassoc: $List("Cons", v._1, v1.nassoc), prefix: v1.prefix, postfix: v1.postfix };
-    }
-    if (v._2 === "AssocLeft") {
-      return { rassoc: v1.rassoc, lassoc: $List("Cons", v._1, v1.lassoc), nassoc: v1.nassoc, prefix: v1.prefix, postfix: v1.postfix };
-    }
-    if (v._2 === "AssocRight") {
-      return { rassoc: $List("Cons", v._1, v1.rassoc), lassoc: v1.lassoc, nassoc: v1.nassoc, prefix: v1.prefix, postfix: v1.postfix };
-    }
-    fail();
-  }
-  if (v.tag === "Prefix") {
-    return { rassoc: v1.rassoc, lassoc: v1.lassoc, nassoc: v1.nassoc, prefix: $List("Cons", v._1, v1.prefix), postfix: v1.postfix };
-  }
-  if (v.tag === "Postfix") {
-    return { rassoc: v1.rassoc, lassoc: v1.lassoc, nassoc: v1.nassoc, prefix: v1.prefix, postfix: $List("Cons", v._1, v1.postfix) };
-  }
-  fail();
-};
-var rassocP1 = (x) => (rassocOp) => (prefixP) => (term) => (postfixP) => {
-  const $0 = rassocP(x)(rassocOp)(prefixP)(term)(postfixP);
-  return (v2, $1, $2, $3, $4) => {
-    const $5 = v2._1;
-    const $6 = v2._2;
-    return $1((v3) => $0(
-      $ParseState($5, $6, false),
-      $1,
-      $2,
-      (v4, $7) => {
-        const $8 = v4._3;
-        return $1((v5) => {
-          if ($8) {
-            return $3(v4, $7);
-          }
-          return $4(v2, x);
-        });
-      },
-      $4
-    ));
-  };
-};
-var rassocP = (x) => (rassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift12, $$throw2, done) => more((v1) => rassocOp(
-  state1,
-  more,
-  lift12,
-  $$throw2,
-  (state2, a) => more((v2) => more((v1$1) => more((v1$2) => more((v1$3) => prefixP(
-    state2,
-    more,
-    lift12,
-    $$throw2,
-    (state2$1, a$1) => more((v2$1) => more((v1$4) => term(
-      state2$1,
-      more,
-      lift12,
-      $$throw2,
-      (state2$2, a$2) => more((v2$2) => more((v1$5) => postfixP(
-        state2$2,
-        more,
-        lift12,
-        $$throw2,
-        (state2$3, a$3) => more((v2$3) => {
-          const $0 = a$3(a$1(a$2));
-          return more((v2$4) => rassocP1($0)(rassocOp)(prefixP)(term)(postfixP)(state2$3, more, lift12, $$throw2, (state2$4, a$4) => more((v2$5) => done(state2$4, a(x)(a$4)))));
-        })
-      )))
-    )))
-  )))))
-));
-var nassocP = (x) => (nassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift12, $$throw2, done) => more((v1) => nassocOp(
-  state1,
-  more,
-  lift12,
-  $$throw2,
-  (state2, a) => more((v2) => more((v1$1) => more((v1$2) => prefixP(
-    state2,
-    more,
-    lift12,
-    $$throw2,
-    (state2$1, a$1) => more((v2$1) => more((v1$3) => term(
-      state2$1,
-      more,
-      lift12,
-      $$throw2,
-      (state2$2, a$2) => more((v2$2) => more((v1$4) => postfixP(
-        state2$2,
-        more,
-        lift12,
-        $$throw2,
-        (state2$3, a$3) => more((v2$3) => {
-          const $0 = a$3(a$1(a$2));
-          return more((v2$4) => done(state2$3, a(x)($0)));
-        })
-      )))
-    )))
-  ))))
-));
-var lassocP1 = (x) => (lassocOp) => (prefixP) => (term) => (postfixP) => {
-  const $0 = lassocP(x)(lassocOp)(prefixP)(term)(postfixP);
-  return (v2, $1, $2, $3, $4) => {
-    const $5 = v2._1;
-    const $6 = v2._2;
-    return $1((v3) => $0(
-      $ParseState($5, $6, false),
-      $1,
-      $2,
-      (v4, $7) => {
-        const $8 = v4._3;
-        return $1((v5) => {
-          if ($8) {
-            return $3(v4, $7);
-          }
-          return $4(v2, x);
-        });
-      },
-      $4
-    ));
-  };
-};
-var lassocP = (x) => (lassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift12, $$throw2, done) => more((v1) => lassocOp(
-  state1,
-  more,
-  lift12,
-  $$throw2,
-  (state2, a) => more((v2) => more((v1$1) => more((v1$2) => prefixP(
-    state2,
-    more,
-    lift12,
-    $$throw2,
-    (state2$1, a$1) => more((v2$1) => more((v1$3) => term(
-      state2$1,
-      more,
-      lift12,
-      $$throw2,
-      (state2$2, a$2) => more((v2$2) => more((v1$4) => postfixP(
-        state2$2,
-        more,
-        lift12,
-        $$throw2,
-        (state2$3, a$3) => more((v2$3) => {
-          const $0 = a$3(a$1(a$2));
-          return more((v2$4) => lassocP1(a(x)($0))(lassocOp)(prefixP)(term)(postfixP)(state2$3, more, lift12, $$throw2, done));
-        })
-      )))
-    )))
-  ))))
-));
-var makeParser = (term) => (ops) => {
-  const accum = foldrArray(splitOp)({
-    rassoc: Nil,
-    lassoc: Nil,
-    nassoc: Nil,
-    prefix: Nil,
-    postfix: Nil
-  })(ops);
-  const lassocOp = choice2(accum.lassoc);
-  const nassocOp = choice2(accum.nassoc);
-  const postfixOp = withErrorMessage(choice2(accum.postfix))("");
-  const prefixOp = withErrorMessage(choice2(accum.prefix))("");
-  const rassocOp = choice2(accum.rassoc);
-  return (state1, more, lift12, $$throw2, done) => more((v1) => {
-    const $0 = (state2, a) => more((v2) => {
-      const $02 = rassocP(a)(rassocOp)((v2$1, $03, $12, $22, $32) => {
-        const $42 = v2$1._1;
-        const $52 = v2$1._2;
-        return $03((v3) => prefixOp(
-          $ParseState($42, $52, false),
-          $03,
-          $12,
-          (v4, $6) => {
-            const $7 = v4._3;
-            return $03((v5) => {
-              if ($7) {
-                return $22(v4, $6);
-              }
-              return $32(v2$1, identity21);
-            });
-          },
-          $32
-        ));
-      })(term)((v2$1, $03, $12, $22, $32) => {
-        const $42 = v2$1._1;
-        const $52 = v2$1._2;
-        return $03((v3) => postfixOp(
-          $ParseState($42, $52, false),
-          $03,
-          $12,
-          (v4, $6) => {
-            const $7 = v4._3;
-            return $03((v5) => {
-              if ($7) {
-                return $22(v4, $6);
-              }
-              return $32(v2$1, identity21);
-            });
-          },
-          $32
-        ));
-      });
-      const $1 = lassocP(a)(lassocOp)((v2$1, $12, $22, $32, $42) => {
-        const $52 = v2$1._1;
-        const $6 = v2$1._2;
-        return $12((v3) => prefixOp(
-          $ParseState($52, $6, false),
-          $12,
-          $22,
-          (v4, $7) => {
-            const $8 = v4._3;
-            return $12((v5) => {
-              if ($8) {
-                return $32(v4, $7);
-              }
-              return $42(v2$1, identity21);
-            });
-          },
-          $42
-        ));
-      })(term)((v2$1, $12, $22, $32, $42) => {
-        const $52 = v2$1._1;
-        const $6 = v2$1._2;
-        return $12((v3) => postfixOp(
-          $ParseState($52, $6, false),
-          $12,
-          $22,
-          (v4, $7) => {
-            const $8 = v4._3;
-            return $12((v5) => {
-              if ($8) {
-                return $32(v4, $7);
-              }
-              return $42(v2$1, identity21);
-            });
-          },
-          $42
-        ));
-      });
-      const $2 = nassocP(a)(nassocOp)((v2$1, $22, $32, $42, $52) => {
-        const $6 = v2$1._1;
-        const $7 = v2$1._2;
-        return $22((v3) => prefixOp(
-          $ParseState($6, $7, false),
-          $22,
-          $32,
-          (v4, $8) => {
-            const $9 = v4._3;
-            return $22((v5) => {
-              if ($9) {
-                return $42(v4, $8);
-              }
-              return $52(v2$1, identity21);
-            });
-          },
-          $52
-        ));
-      })(term)((v2$1, $22, $32, $42, $52) => {
-        const $6 = v2$1._1;
-        const $7 = v2$1._2;
-        return $22((v3) => postfixOp(
-          $ParseState($6, $7, false),
-          $22,
-          $32,
-          (v4, $8) => {
-            const $9 = v4._3;
-            return $22((v5) => {
-              if ($9) {
-                return $42(v4, $8);
-              }
-              return $52(v2$1, identity21);
-            });
-          },
-          $52
-        ));
-      });
-      const $3 = withErrorMessage((state1$1, v, v1$1, v2$1, done$1) => done$1(state1$1, a))("operator");
-      const $4 = state2._1;
-      const $5 = state2._2;
-      return more((v3) => $02(
-        $ParseState($4, $5, false),
-        more,
-        lift12,
-        (v4, $6) => {
-          const $7 = v4._3;
-          return more((v5) => {
-            if ($7) {
-              return $$throw2(v4, $6);
-            }
-            const $8 = state2._1;
-            const $9 = state2._2;
-            return more((v3$1) => $1(
-              $ParseState($8, $9, false),
-              more,
-              lift12,
-              (v4$1, $10) => {
-                const $11 = v4$1._3;
-                return more((v5$1) => {
-                  if ($11) {
-                    return $$throw2(v4$1, $10);
-                  }
-                  const $12 = state2._1;
-                  const $13 = state2._2;
-                  return more((v3$2) => $2(
-                    $ParseState($12, $13, false),
-                    more,
-                    lift12,
-                    (v4$2, $14) => {
-                      const $15 = v4$2._3;
-                      return more((v5$2) => {
-                        if ($15) {
-                          return $$throw2(v4$2, $14);
-                        }
-                        return $3(state2, more, lift12, $$throw2, done);
-                      });
-                    },
-                    done
-                  ));
-                });
-              },
-              done
-            ));
-          });
-        },
-        done
-      ));
-    });
-    return more((v1$1) => {
-      const $1 = (state2, a) => more((v2) => more((v1$2) => term(
-        state2,
-        more,
-        lift12,
-        $$throw2,
-        (state2$1, a$1) => more((v2$1) => more((v1$3) => {
-          const $12 = state2$1._1;
-          const $22 = state2$1._2;
-          return more((v3) => postfixOp(
-            $ParseState($12, $22, false),
-            more,
-            lift12,
-            (v4, $32) => {
-              const $4 = v4._3;
-              return more((v5) => {
-                if ($4) {
-                  return $$throw2(v4, $32);
-                }
-                return more((v2$2) => $0(state2$1, a(a$1)));
-              });
-            },
-            (state2$2, a$2) => more((v2$2) => $0(state2$2, a$2(a(a$1))))
-          ));
-        }))
-      )));
-      const $2 = state1._1;
-      const $3 = state1._2;
-      return more((v3) => prefixOp(
-        $ParseState($2, $3, false),
-        more,
-        lift12,
-        (v4, $4) => {
-          const $5 = v4._3;
-          return more((v5) => {
-            if ($5) {
-              return $$throw2(v4, $4);
-            }
-            return $1(state1, identity21);
-          });
-        },
-        $1
-      ));
-    });
-  });
-};
-var buildExprParser = (operators2) => (simpleExpr) => foldlArray(makeParser)(simpleExpr)(operators2);
-
-// output-es/Primitive.Parse/index.js
-var opDefs = /* @__PURE__ */ fromFoldable(ordString)(foldableArray)([
-  /* @__PURE__ */ $Tuple(".", { op: ".", prec: 8, assoc: AssocLeft }),
-  /* @__PURE__ */ $Tuple("!", { op: "!", prec: 8, assoc: AssocLeft }),
-  /* @__PURE__ */ $Tuple("**", { op: "**", prec: 8, assoc: AssocRight }),
-  /* @__PURE__ */ $Tuple("*", { op: "*", prec: 7, assoc: AssocLeft }),
-  /* @__PURE__ */ $Tuple("/", { op: "/", prec: 7, assoc: AssocLeft }),
-  /* @__PURE__ */ $Tuple("+", { op: "+", prec: 6, assoc: AssocLeft }),
-  /* @__PURE__ */ $Tuple("-", { op: "-", prec: 6, assoc: AssocLeft }),
-  /* @__PURE__ */ $Tuple(":", { op: ":", prec: 6, assoc: AssocRight }),
-  /* @__PURE__ */ $Tuple("++", { op: "++", prec: 5, assoc: AssocRight }),
-  /* @__PURE__ */ $Tuple("==", { op: "==", prec: 4, assoc: AssocNone }),
-  /* @__PURE__ */ $Tuple("/=", { op: "/=", prec: 4, assoc: AssocNone }),
-  /* @__PURE__ */ $Tuple("<", { op: "<", prec: 4, assoc: AssocLeft }),
-  /* @__PURE__ */ $Tuple(">", { op: ">", prec: 4, assoc: AssocLeft }),
-  /* @__PURE__ */ $Tuple("<=", { op: "<=", prec: 4, assoc: AssocLeft }),
-  /* @__PURE__ */ $Tuple(">=", { op: ">=", prec: 4, assoc: AssocLeft })
-]);
-
 // output-es/Util.Pretty/index.js
 var intercalate4 = (sep) => (xs) => foldlArray((v) => (v1) => {
   if (v.init) {
@@ -16374,7 +16345,7 @@ var toUnfoldable13 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
 var Simple = /* @__PURE__ */ $ExprType("Simple");
 var Expression = /* @__PURE__ */ $ExprType("Expression");
 var vert = (dictFoldable) => {
-  const fromFoldable29 = dictFoldable.foldr(Cons)(Nil);
+  const fromFoldable30 = dictFoldable.foldr(Cons)(Nil);
   return (delim) => {
     const vert$p = (v) => {
       if (v.tag === "Nil") {
@@ -16390,7 +16361,7 @@ var vert = (dictFoldable) => {
       }
       fail();
     };
-    return (x) => vert$p(fromFoldable29(x));
+    return (x) => vert$p(fromFoldable30(x));
   };
 };
 var vert1 = /* @__PURE__ */ vert(foldableArray);
@@ -18435,7 +18406,7 @@ var $$eval = (dictMonadWithGraphAlloc) => {
           $5
         )) + ")"))(() => Bind1.bind(sequence1(arrayBind(range(1)($4))((i) => [
           sequence1(arrayBind(range(1)($5))((j) => [
-            $$eval(dictMonadWithGraphAlloc)(unionWith2((v$1) => identity13)(v)(disjointUnion2((() => {
+            $$eval(dictMonadWithGraphAlloc)(unionWith2((v$1) => identity14)(v)(disjointUnion2((() => {
               const $8 = {};
               $8[$1] = $Val($6, $BaseVal("Int", i));
               return $8;
@@ -18506,12 +18477,12 @@ var $$eval = (dictMonadWithGraphAlloc) => {
     if (v1.tag === "Let") {
       const $0 = v1._2;
       const $1 = v1._1._1;
-      return Bind1.bind($$eval(dictMonadWithGraphAlloc)(v)(v1._1._2)(v2))((v3) => Bind1.bind(match1(v3)($1))((v4) => $$eval(dictMonadWithGraphAlloc)(unionWith2((v$1) => identity13)(v)(v4._1))($0)(v4._2._2)));
+      return Bind1.bind($$eval(dictMonadWithGraphAlloc)(v)(v1._1._2)(v2))((v3) => Bind1.bind(match1(v3)($1))((v4) => $$eval(dictMonadWithGraphAlloc)(unionWith2((v$1) => identity14)(v)(v4._1))($0)(v4._2._2)));
     }
     if (v1.tag === "LetRec") {
       const $0 = v1._2;
       const $1 = v1._1._1;
-      return Bind1.bind(closeDefs1(v)(v1._1._2)(insert(ordVertex)($1)()(v2)))((\u03B3$p) => $$eval(dictMonadWithGraphAlloc)(unionWith2((v$1) => identity13)(v)(\u03B3$p))($0)(insert(ordVertex)($1)()(v2)));
+      return Bind1.bind(closeDefs1(v)(v1._1._2)(insert(ordVertex)($1)()(v2)))((\u03B3$p) => $$eval(dictMonadWithGraphAlloc)(unionWith2((v$1) => identity14)(v)(\u03B3$p))($0)(insert(ordVertex)($1)()(v2)));
     }
     fail();
   };
@@ -18530,7 +18501,7 @@ var apply2 = (dictMonadWithGraphAlloc) => {
         const $1 = v._1;
         const $2 = v._2._1._1;
         const $3 = v._2._1._3;
-        return Bind1.bind(closeDefs1($2)(v._2._1._2)($$$Map("Two", Leaf2, $1, void 0, Leaf2)))((\u03B32) => Bind1.bind(match1(v1)($3))((v3) => $$eval(dictMonadWithGraphAlloc)(unionWith2((v$1) => identity13)(unionWith2((v$1) => identity13)($2)(\u03B32))(v3._1))(v3._2._1.tag === "ContExpr" ? v3._2._1._1 : throwException(error("Expression expected"))())(insert(ordVertex)($1)()(v3._2._2))));
+        return Bind1.bind(closeDefs1($2)(v._2._1._2)($$$Map("Two", Leaf2, $1, void 0, Leaf2)))((\u03B32) => Bind1.bind(match1(v1)($3))((v3) => $$eval(dictMonadWithGraphAlloc)(unionWith2((v$1) => identity14)(unionWith2((v$1) => identity14)($2)(\u03B32))(v3._1))(v3._2._1.tag === "ContExpr" ? v3._2._1._1 : throwException(error("Expression expected"))())(insert(ordVertex)($1)()(v3._2._2))));
       }
       if (v._2._1.tag === "Foreign") {
         const $1 = v._2._1._1._1;
@@ -18655,11 +18626,11 @@ var eval_module = (dictMonadWithGraphAlloc) => {
         if (v1._1.tag === "Left") {
           const $1 = v1._2;
           const $2 = v1._1._1._1;
-          return $0.bind(eval1(unionWith2((v$1) => identity13)(\u03B3)(v))(v1._1._1._2)(v2))((v3) => $0.bind(match1(v3)($2))((v4) => go(unionWith2((v$1) => identity13)(v)(v4._1))($1)(v4._2._2)));
+          return $0.bind(eval1(unionWith2((v$1) => identity14)(\u03B3)(v))(v1._1._1._2)(v2))((v3) => $0.bind(match1(v3)($2))((v4) => go(unionWith2((v$1) => identity14)(v)(v4._1))($1)(v4._2._2)));
         }
         if (v1._1.tag === "Right") {
           const $1 = v1._2;
-          return $0.bind(closeDefs1(unionWith2((v$1) => identity13)(\u03B3)(v))(v1._1._1._2)(insert(ordVertex)(v1._1._1._1)()(v2)))((\u03B3$p$p) => go(unionWith2((v$1) => identity13)(v)(\u03B3$p$p))($1)(v2));
+          return $0.bind(closeDefs1(unionWith2((v$1) => identity14)(\u03B3)(v))(v1._1._1._2)(insert(ordVertex)(v1._1._1._1)()(v2)))((\u03B3$p$p) => go(unionWith2((v$1) => identity14)(v)(\u03B3$p$p))($1)(v2));
         }
       }
       fail();
@@ -18676,12 +18647,12 @@ var eval_progCxt = (dictMonadWithGraphAlloc) => {
   const concatM1 = concatM(Monad0);
   return (v) => concatM1(foldableList.foldr(Cons)(listMap((v1) => (\u03B3) => {
     const $2 = v1._1;
-    return $0.bind(eval1(\u03B3)(v1._2)(setSet4.empty))((v2) => $1.pure(unionWith2((v$1) => identity13)(\u03B3)((() => {
+    return $0.bind(eval1(\u03B3)(v1._2)(setSet4.empty))((v2) => $1.pure(unionWith2((v$1) => identity14)(\u03B3)((() => {
       const $3 = {};
       $3[$2] = v2;
       return $3;
     })())));
-  })(reverse2(v.datasets)))(listMap((mod) => (\u03B3) => $0.bind(eval_module1(\u03B3)(mod)(setSet4.empty))((\u03B3$p) => $1.pure(unionWith2((v$1) => identity13)(\u03B3)(\u03B3$p))))(reverse2(v.mods))))(v.primitives);
+  })(reverse2(v.datasets)))(listMap((mod) => (\u03B3) => $0.bind(eval_module1(\u03B3)(mod)(setSet4.empty))((\u03B3$p) => $1.pure(unionWith2((v$1) => identity14)(\u03B3)(\u03B3$p))))(reverse2(v.mods))))(v.primitives);
 };
 var graphEval = (dictMonadError) => {
   const MonadThrow0 = dictMonadError.MonadThrow0();
@@ -19551,112 +19522,6 @@ var monoidArray = { mempty: [], Semigroup0: () => semigroupArray };
 var monoidRecord = () => (dictMonoidRecord) => {
   const semigroupRecord1 = { append: dictMonoidRecord.SemigroupRecord0().appendRecord($$Proxy) };
   return { mempty: dictMonoidRecord.memptyRecord($$Proxy), Semigroup0: () => semigroupRecord1 };
-};
-
-// output-es/Node.Encoding/index.js
-var $Encoding = (tag) => tag;
-var ASCII = /* @__PURE__ */ $Encoding("ASCII");
-var UTF8 = /* @__PURE__ */ $Encoding("UTF8");
-
-// output-es/Data.Nullable/foreign.js
-function nullable(a, r, f) {
-  return a == null ? r : f(a);
-}
-
-// output-es/Node.FS.Constants/foreign.js
-import { constants } from "node:fs";
-var f_OK = constants.F_OK;
-var r_OK = constants.R_OK;
-var w_OK = constants.W_OK;
-var x_OK = constants.X_OK;
-var copyFile_EXCL = constants.COPYFILE_EXCL;
-var copyFile_FICLONE = constants.COPYFILE_FICLONE;
-var copyFile_FICLONE_FORCE = constants.COPYFILE_FICLONE_FORCE;
-
-// output-es/Node.FS.Async/foreign.js
-import {
-  access,
-  copyFile,
-  mkdtemp,
-  rename,
-  truncate,
-  chown,
-  chmod,
-  stat,
-  lstat,
-  link as link2,
-  symlink,
-  readlink,
-  realpath,
-  unlink,
-  rmdir,
-  rm,
-  mkdir,
-  readdir,
-  utimes,
-  readFile,
-  writeFile,
-  appendFile,
-  open,
-  read as read3,
-  write as write2,
-  close
-} from "node:fs";
-
-// output-es/Node.FS.Async/index.js
-var handleCallback = (cb) => (err, a) => {
-  const v = nullable(err, Nothing, Just);
-  if (v.tag === "Nothing") {
-    return cb($Either("Right", a))();
-  }
-  if (v.tag === "Just") {
-    return cb($Either("Left", v._1))();
-  }
-  fail();
-};
-var readTextFile = (encoding) => (file) => (cb) => {
-  const $0 = {
-    encoding: (() => {
-      if (encoding === "ASCII") {
-        return "ASCII";
-      }
-      if (encoding === "UTF8") {
-        return "UTF8";
-      }
-      if (encoding === "UTF16LE") {
-        return "UTF16LE";
-      }
-      if (encoding === "UCS2") {
-        return "UCS2";
-      }
-      if (encoding === "Base64") {
-        return "Base64";
-      }
-      if (encoding === "Latin1") {
-        return "Latin1";
-      }
-      if (encoding === "Binary") {
-        return "Binary";
-      }
-      if (encoding === "Hex") {
-        return "Hex";
-      }
-      fail();
-    })()
-  };
-  return () => readFile(file, $0, handleCallback(cb));
-};
-
-// output-es/Node.FS.Aff/index.js
-var toAff2 = (f) => (a) => (b) => {
-  const $0 = f(a)(b);
-  return makeAff((k) => {
-    const $1 = $0(k);
-    return () => {
-      $1();
-      return nonCanceler;
-    };
-  });
 };
 
 // output-es/Data.String.Regex/foreign.js
@@ -22760,7 +22625,7 @@ var expr_$lazy = /* @__PURE__ */ binding(() => {
                 $18,
                 $23,
                 (state2, a) => $17((v2$1) => {
-                  const $24 = bindList.bind($List("Cons", a._1, a._2))(identity6);
+                  const $24 = bindList.bind($List("Cons", a._1, a._2))(identity7);
                   return $17((v2$2) => {
                     const $25 = foldableList.foldr((def) => fanin3(Let2)(LetRec2)(def));
                     const $26 = keyword("in");
@@ -22920,7 +22785,7 @@ var module_ = /* @__PURE__ */ (() => {
     more,
     lift12,
     $$throw2,
-    (state2, a) => more((v2) => done(state2, $Module(bindList.bind(a)(identity6))))
+    (state2, a) => more((v2) => done(state2, $Module(bindList.bind(a)(identity7))))
   ));
 })();
 
@@ -23254,7 +23119,7 @@ var $$eval2 = (dictMonadError) => {
             sequence1(bindList.bind(range3(1)($8))((j) => $List(
               "Cons",
               $$eval2(dictMonadError)(dictAnn)($EnvExpr(
-                unionWith2((v$1) => identity13)($5)(disjointUnion3((() => {
+                unionWith2((v$1) => identity14)($5)(disjointUnion3((() => {
                   const $11 = {};
                   $11[$2] = $Val($9, $BaseVal("Int", i));
                   return $11;
@@ -23355,7 +23220,7 @@ var $$eval2 = (dictMonadError) => {
           const $4 = v2._1;
           return Bind1.bind(match22(v2._2)($3))((v4) => {
             const $5 = v4._2._2._2;
-            return Bind1.bind($$eval2(dictMonadError)(dictAnn)($EnvExpr(unionWith2((v$1) => identity13)($2)(v4._1), $1))(v4._2._2._1))((v5) => Applicative0.pure($Tuple(
+            return Bind1.bind($$eval2(dictMonadError)(dictAnn)($EnvExpr(unionWith2((v$1) => identity14)($2)(v4._1), $1))(v4._2._2._1))((v5) => Applicative0.pure($Tuple(
               $Trace("Let", $VarDef3($5, $4), v5._1),
               v5._2
             )));
@@ -23365,7 +23230,7 @@ var $$eval2 = (dictMonadError) => {
       if (v._2.tag === "LetRec") {
         const $1 = v._2._1._2;
         return Bind1.bind($$eval2(dictMonadError)(dictAnn)($EnvExpr(
-          unionWith2((v$1) => identity13)(v._1)(closeDefs2(v._1)($1)($0.meet(v._2._1._1)(v1))),
+          unionWith2((v$1) => identity14)(v._1)(closeDefs2(v._1)($1)($0.meet(v._2._1._1)(v1))),
           v._2._2
         ))($0.meet(v._2._1._1)(v1)))((v2) => Applicative0.pure($Tuple(
           $Trace("LetRec", $RecDefs(void 0, _fmapObject($1, erase1)), v2._1),
@@ -23396,7 +23261,7 @@ var apply3 = (dictMonadError) => {
           return Bind1.bind(match22(v._2)(v._1._2._1._3))((v2) => {
             const $5 = v2._2._2._2;
             return Bind1.bind($$eval2(dictMonadError)(dictAnn)($EnvExpr(
-              unionWith2((v$1) => identity13)(unionWith2((v$1) => identity13)($3)(\u03B32))(v2._1),
+              unionWith2((v$1) => identity14)(unionWith2((v$1) => identity14)($3)(\u03B32))(v2._1),
               v2._2._1.tag === "ContExpr" ? v2._2._1._1 : throwException(error("Expression expected"))()
             ))(dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet($2)(v2._2._2._1)))((v3) => $0.pure($Tuple(
               $AppTrace("AppClosure", fromFoldable20(mapObjectString.keys($4)), $5, v3._1),
@@ -23879,7 +23744,7 @@ var evalBwd$p = (dictAnn) => {
             void 0,
             Leaf2
           ))($$$Map("Two", Leaf2, $11, void 0, Leaf2)))(v42._1);
-          const \u03B30 = unionWith2((v$1) => identity13)(disjointUnion4((() => {
+          const \u03B30 = unionWith2((v$1) => identity14)(disjointUnion4((() => {
             const $133 = {};
             $133[$10] = $Val(bot1, $BaseVal("Int", $6));
             return $133;
@@ -24180,10 +24045,10 @@ var matrixLookup = /* @__PURE__ */ $Tuple(
 );
 var log3 = (v2) => {
   if (v2.tag === "Left") {
-    return log(toNumber(v2._1));
+    return log2(toNumber(v2._1));
   }
   if (v2.tag === "Right") {
-    return log(v2._1);
+    return log2(v2._1);
   }
   fail();
 };
@@ -24437,7 +24302,7 @@ var dict_intersectionWith = /* @__PURE__ */ $Tuple(
             const $1 = v._1;
             const $2 = v._2._1._1;
             const $3 = v._2._2._1._1;
-            return Bind1.bind(traversableDict.traverse(Applicative0)(identity14)(intersectionWith_Object((v2) => {
+            return Bind1.bind(traversableDict.traverse(Applicative0)(identity15)(intersectionWith_Object((v2) => {
               const $4 = v2._2;
               const $5 = v2._1;
               return (v3) => {
@@ -24902,7 +24767,7 @@ var traversableProgCxt = {
   Foldable1: () => foldableProgCxt
 };
 
-// output-es/Module.Node/index.js
+// output-es/Module/index.js
 var boundedLattice2 = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeUni, BoundedMeetSemilattice1: () => boundedMeetSemilatticeUni };
 var verticesVertex2 = /* @__PURE__ */ verticesVertex(functorProgCxt)(foldableProgCxt);
 var concatM2 = (dictMonad) => foldrArray((() => {
@@ -24926,19 +24791,19 @@ var parse = (dictMonadError) => {
     };
   };
 };
-var loadFile = (v) => (v1) => (dictMonadAff) => {
-  const Monad0 = dictMonadAff.MonadEffect0().Monad0();
-  return (dictMonadError) => Monad0.Bind1().bind(dictMonadAff.liftAff(toAff2(readTextFile)(ASCII)(v + "/" + v1 + ".fld")))((buffer) => Monad0.Applicative0().pure(buffer));
-};
+var parseProgram = (loadFile2) => (folder) => (file) => (dictMonadAff) => (dictMonadError) => dictMonadAff.MonadEffect0().Monad0().Bind1().bind(loadFile2(folder)(file)(dictMonadAff)(dictMonadError))((() => {
+  const $0 = parse(dictMonadError);
+  return (a) => $0(a)(topLevel(expr_));
+})());
 var module_2 = (dictMonadAff) => {
   const Monad0 = dictMonadAff.MonadEffect0().Monad0();
   const $0 = Monad0.Bind1();
   return (dictMonadError) => {
     const parse1 = parse(dictMonadError);
     const desugarModuleFwd = moduleFwd(dictMonadError)(boundedLattice2);
-    return (file) => (v) => {
+    return (loadFile2) => (file) => (v) => {
       const $1 = v.mods;
-      return $0.bind(loadFile("../fluid/fluid/")(file)(dictMonadAff)(dictMonadError))((src) => $0.bind($0.bind(parse1(src)(module_))(desugarModuleFwd))((mod) => Monad0.Applicative0().pure({
+      return $0.bind(loadFile2("fluid")(file)(dictMonadAff)(dictMonadError))((src) => $0.bind($0.bind(parse1(src)(module_))(desugarModuleFwd))((mod) => Monad0.Applicative0().pure({
         primitives: v.primitives,
         mods: $List("Cons", mod, $1),
         datasets: v.datasets
@@ -24946,10 +24811,6 @@ var module_2 = (dictMonadAff) => {
     };
   };
 };
-var parseProgram = (folder) => (file) => (dictMonadAff) => (dictMonadError) => dictMonadAff.MonadEffect0().Monad0().Bind1().bind(loadFile(folder)(file)(dictMonadAff)(dictMonadError))((() => {
-  const $0 = parse(dictMonadError);
-  return (a) => $0(a)(topLevel(expr_));
-})());
 var initialConfig = (dictMonadError) => {
   const Monad0 = dictMonadError.MonadThrow0().Monad0();
   const Bind1 = Monad0.Bind1();
@@ -24974,15 +24835,28 @@ var initialConfig = (dictMonadError) => {
     })()
   )))))(0))((v) => Applicative0.pure({ n: v._1, progCxt: v._2._2._1, "\u03B3": v._2._2._2 })));
 };
+var prepConfig = (dictMonadAff) => {
+  const Monad0 = dictMonadAff.MonadEffect0().Monad0();
+  const $0 = Monad0.Bind1();
+  return (dictMonadError) => {
+    const desug1 = exprFwd(boundedLattice2)(dictMonadError)(joinSemilatticeUnit);
+    const initialConfig1 = initialConfig(dictMonadError)(fVExpr);
+    return (loadFile2) => (file) => (progCxt) => $0.bind(parseProgram(loadFile2)("fluid/example")(file)(dictMonadAff)(dictMonadError))((s) => $0.bind(desug1(s))((e) => $0.bind(initialConfig1(e)(progCxt))((gconfig) => Monad0.Applicative0().pure({
+      s,
+      e,
+      gconfig
+    }))));
+  };
+};
 var datasetAs = (dictMonadAff) => {
   const Monad0 = dictMonadAff.MonadEffect0().Monad0();
   const $0 = Monad0.Bind1();
   return (dictMonadError) => {
-    const desug12 = exprFwd(boundedLattice2)(dictMonadError)(joinSemilatticeUnit);
-    return (v) => (v1) => {
+    const desug1 = exprFwd(boundedLattice2)(dictMonadError)(joinSemilatticeUnit);
+    return (loadFile2) => (v) => (v1) => {
       const $1 = v1.datasets;
       const $2 = v._1;
-      return $0.bind($0.bind(parseProgram("../fluid/fluid/dataset")(v._2)(dictMonadAff)(dictMonadError))(desug12))((e\u03B1) => Monad0.Applicative0().pure({
+      return $0.bind($0.bind(parseProgram(loadFile2)("fluid")(v._2)(dictMonadAff)(dictMonadError))(desug1))((e\u03B1) => Monad0.Applicative0().pure({
         primitives: v1.primitives,
         mods: v1.mods,
         datasets: $List("Cons", $Tuple($2, e\u03B1), $1)
@@ -24999,11 +24873,127 @@ var loadProgCxt = (dictMonadAff) => {
   return (dictMonadError) => {
     const module_22 = module_1(dictMonadError);
     const datasetAs2 = datasetAs1(dictMonadError);
-    return (mods) => (datasets) => $0.bind($0.bind(Monad0.Applicative0().pure({ primitives, mods: Nil, datasets: Nil }))(concatM1(arrayMap((x) => module_22(x))([
-      "lib/prelude",
-      ...mods
-    ]))))(concatM1(arrayMap((x) => datasetAs2($Tuple(x._1, x._2)))(datasets)));
+    return (loadFile2) => (mods) => (datasets) => $0.bind($0.bind(Monad0.Applicative0().pure({
+      primitives,
+      mods: Nil,
+      datasets: Nil
+    }))(concatM1(arrayMap(module_22(loadFile2))(["lib/prelude", ...mods]))))(concatM1(arrayMap((() => {
+      const $1 = datasetAs2(loadFile2);
+      return (x) => $1($Tuple(x._1, x._2));
+    })())(datasets)));
   };
+};
+
+// output-es/Node.Encoding/index.js
+var $Encoding = (tag) => tag;
+var ASCII = /* @__PURE__ */ $Encoding("ASCII");
+var UTF8 = /* @__PURE__ */ $Encoding("UTF8");
+
+// output-es/Data.Nullable/foreign.js
+function nullable(a, r, f) {
+  return a == null ? r : f(a);
+}
+
+// output-es/Node.FS.Constants/foreign.js
+import { constants } from "node:fs";
+var f_OK = constants.F_OK;
+var r_OK = constants.R_OK;
+var w_OK = constants.W_OK;
+var x_OK = constants.X_OK;
+var copyFile_EXCL = constants.COPYFILE_EXCL;
+var copyFile_FICLONE = constants.COPYFILE_FICLONE;
+var copyFile_FICLONE_FORCE = constants.COPYFILE_FICLONE_FORCE;
+
+// output-es/Node.FS.Async/foreign.js
+import {
+  access,
+  copyFile,
+  mkdtemp,
+  rename,
+  truncate,
+  chown,
+  chmod,
+  stat,
+  lstat,
+  link as link2,
+  symlink,
+  readlink,
+  realpath,
+  unlink,
+  rmdir,
+  rm,
+  mkdir,
+  readdir,
+  utimes,
+  readFile,
+  writeFile,
+  appendFile,
+  open,
+  read as read3,
+  write as write2,
+  close
+} from "node:fs";
+
+// output-es/Node.FS.Async/index.js
+var handleCallback = (cb) => (err, a) => {
+  const v = nullable(err, Nothing, Just);
+  if (v.tag === "Nothing") {
+    return cb($Either("Right", a))();
+  }
+  if (v.tag === "Just") {
+    return cb($Either("Left", v._1))();
+  }
+  fail();
+};
+var readTextFile = (encoding) => (file) => (cb) => {
+  const $0 = {
+    encoding: (() => {
+      if (encoding === "ASCII") {
+        return "ASCII";
+      }
+      if (encoding === "UTF8") {
+        return "UTF8";
+      }
+      if (encoding === "UTF16LE") {
+        return "UTF16LE";
+      }
+      if (encoding === "UCS2") {
+        return "UCS2";
+      }
+      if (encoding === "Base64") {
+        return "Base64";
+      }
+      if (encoding === "Latin1") {
+        return "Latin1";
+      }
+      if (encoding === "Binary") {
+        return "Binary";
+      }
+      if (encoding === "Hex") {
+        return "Hex";
+      }
+      fail();
+    })()
+  };
+  return () => readFile(file, $0, handleCallback(cb));
+};
+
+// output-es/Node.FS.Aff/index.js
+var toAff2 = (f) => (a) => (b) => {
+  const $0 = f(a)(b);
+  return makeAff((k) => {
+    const $1 = $0(k);
+    return () => {
+      $1();
+      return nonCanceler;
+    };
+  });
+};
+
+// output-es/Module.Node/index.js
+var loadFile = (v) => (v1) => (dictMonadAff) => {
+  const Monad0 = dictMonadAff.MonadEffect0().Monad0();
+  return (dictMonadError) => Monad0.Bind1().bind(dictMonadAff.liftAff(toAff2(readTextFile)(ASCII)(v + "/" + v1 + ".fld")))((buffer) => Monad0.Applicative0().pure(buffer));
 };
 
 // output-es/Options.Applicative.Internal.Utils/index.js
@@ -28149,50 +28139,41 @@ var execParserPure = (pprefs) => (pinfo) => (args) => {
 
 // output-es/Fluid/index.js
 var $Program = (_1) => ({ tag: "Program", _1 });
-var desugGC2 = /* @__PURE__ */ desugGC(monadErrorAff)(eqUnit)({
-  BoundedJoinSemilattice0: () => boundedJoinSemilatticeUni,
-  BoundedMeetSemilattice1: () => boundedMeetSemilatticeUni
-});
-var loadProgCxt2 = /* @__PURE__ */ loadProgCxt(monadAffAff)(monadErrorAff);
-var initialConfig2 = /* @__PURE__ */ initialConfig(monadErrorAff)(fVExpr);
+var loadProgCxt2 = /* @__PURE__ */ loadProgCxt(monadAffAff)(monadErrorAff)(loadFile);
+var prepConfig2 = /* @__PURE__ */ prepConfig(monadAffAff)(monadErrorAff)(loadFile);
 var graphEval2 = /* @__PURE__ */ graphEval(monadErrorAff);
-var traverse = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither))();
-var parseRoot = /* @__PURE__ */ $Parser(
-  "AltP",
-  /* @__PURE__ */ option(readerAsk)(/* @__PURE__ */ (() => {
-    const $0 = help("The root director");
+var fromFoldable29 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
+var parseImports = /* @__PURE__ */ $Parser(
+  "BindP",
+  /* @__PURE__ */ manyM(/* @__PURE__ */ option(readerAsk)(/* @__PURE__ */ (() => {
+    const $0 = help("A comma separated list of import file locations");
     const $1 = $0._2._1.tag === "Nothing" ? Nothing : $0._2._1;
     const $2 = $0._2._2.tag === "Nothing" ? Nothing : $0._2._2;
     return $Mod(
       (x) => $0._1({
-        optNames: [$OptName("OptShort", "r"), $OptName("OptLong", "root"), ...x.optNames],
+        optNames: [$OptName("OptShort", "i"), $OptName("OptLong", "imports"), ...x.optNames],
         optCompleter: x.optCompleter,
         optNoArgError: x.optNoArgError
       }),
       $DefaultProp($1.tag === "Nothing" ? Nothing : $1, $2.tag === "Nothing" ? Nothing : $2),
       (x) => $0._3(x)
     );
-  })()),
-  /* @__PURE__ */ $Parser("NilP", "../fluid/fluid")
+  })()))
 );
 var output = (v) => {
-  const $0 = v._1.datasets;
-  const $1 = v._1.imports;
-  return _bind(parseProgram(v._1.root)(v._1.fileName)(monadAffAff)(monadErrorAff))((s) => _bind(desugGC2(s))((v1) => {
-    const $2 = v1.e;
-    return _bind(loadProgCxt2($1)($0))((progCxt) => _bind(initialConfig2($2)(progCxt))((gconfig) => _bind(graphEval2(gconfig)($2))((v2) => _pure($Val(
-      void 0,
-      functorBaseVal.map((v$1) => {
-      })(v2["out\u03B1"]._2)
-    )))));
-  }));
+  const $0 = v._1.fileName;
+  return _bind(loadProgCxt2(v._1.imports)(v._1.datasets))((progCxt) => _bind(prepConfig2($0)(progCxt))((v1) => _bind(graphEval2(v1.gconfig)(v1.e))((v2) => _pure($Val(
+    void 0,
+    functorBaseVal.map((v$1) => {
+    })(v2["out\u03B1"]._2)
+  )))));
 };
 var callback = (v) => {
   if (v.tag === "Left") {
-    return log2(showErrorImpl(v._1));
+    return log(showErrorImpl(v._1));
   }
   if (v.tag === "Right") {
-    return log2(intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(v._1)).lines));
+    return log(intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(v._1)).lines));
   }
   fail();
 };
@@ -28215,28 +28196,6 @@ var between3 = (p1) => (p2) => (f) => (s) => {
   }
   fail();
 };
-var parseImports$p = (open2) => (close2) => between3(open2)(close2)((s) => $Either(
-  "Right",
-  arrayMap(trim)(filter((x) => x !== "")(split(",")(s)))
-));
-var parseImports = /* @__PURE__ */ $Parser(
-  "AltP",
-  /* @__PURE__ */ option(/* @__PURE__ */ eitherReader(/* @__PURE__ */ parseImports$p("[")("]")))(/* @__PURE__ */ (() => {
-    const $0 = help("A comma separated list of import file locations");
-    const $1 = $0._2._1.tag === "Nothing" ? Nothing : $0._2._1;
-    const $2 = $0._2._2.tag === "Nothing" ? Nothing : $0._2._2;
-    return $Mod(
-      (x) => $0._1({
-        optNames: [$OptName("OptShort", "i"), $OptName("OptLong", "imports"), ...x.optNames],
-        optCompleter: x.optCompleter,
-        optNoArgError: x.optNoArgError
-      }),
-      $DefaultProp($1.tag === "Nothing" ? Nothing : $1, $2.tag === "Nothing" ? Nothing : $2),
-      (x) => $0._3(x)
-    );
-  })()),
-  /* @__PURE__ */ $Parser("NilP", [])
-);
 var parsePair = /* @__PURE__ */ between3("(")(")")((s) => {
   const v = split(",")(s);
   if (v.length === 2) {
@@ -28244,8 +28203,8 @@ var parsePair = /* @__PURE__ */ between3("(")(")")((s) => {
   }
   return $Either("Left", "Expected a pair but got " + s);
 });
-var parseDatasets$p = (s) => {
-  const $0 = traverse(parsePair)(arrayMap(trim)(split(" ")(s)));
+var parseDataset$p = (s) => {
+  const $0 = parsePair(s);
   return (() => {
     if ($0.tag === "Left") {
       const $1 = $0._1;
@@ -28256,11 +28215,11 @@ var parseDatasets$p = (s) => {
       return (f) => f($1);
     }
     fail();
-  })()((datasets) => $Either("Right", datasets));
+  })()((dataset) => $Either("Right", dataset));
 };
 var parseDatasets = /* @__PURE__ */ $Parser(
-  "AltP",
-  /* @__PURE__ */ option(/* @__PURE__ */ eitherReader(parseDatasets$p))(/* @__PURE__ */ (() => {
+  "BindP",
+  /* @__PURE__ */ manyM(/* @__PURE__ */ option(/* @__PURE__ */ eitherReader(parseDataset$p))(/* @__PURE__ */ (() => {
     const $0 = help("A comma separated list of datasets");
     const $1 = $0._2._1.tag === "Nothing" ? Nothing : $0._2._1;
     const $2 = $0._2._2.tag === "Nothing" ? Nothing : $0._2._2;
@@ -28273,8 +28232,7 @@ var parseDatasets = /* @__PURE__ */ $Parser(
       $DefaultProp($1.tag === "Nothing" ? Nothing : $1, $2.tag === "Nothing" ? Nothing : $2),
       (x) => $0._3(x)
     );
-  })()),
-  /* @__PURE__ */ $Parser("NilP", [])
+  })()))
 );
 var program = /* @__PURE__ */ (() => $Parser(
   "MultP",
@@ -28282,14 +28240,8 @@ var program = /* @__PURE__ */ (() => $Parser(
     $Parser(
       "MultP",
       $MultPE(
-        $Parser(
-          "MultP",
-          $MultPE(
-            parserFunctor.map((v) => (v1) => (v2) => (v3) => $Program({ imports: v, datasets: v1, root: v2, fileName: v3 }))(parseImports),
-            parseDatasets
-          )
-        ),
-        parseRoot
+        parserFunctor.map((v) => (v1) => (v2) => $Program({ imports: v, datasets: v1, fileName: v2 }))(parserFunctor.map(fromFoldable29)(parseImports)),
+        parserFunctor.map(fromFoldable29)(parseDatasets)
       )
     ),
     option(readerAsk)((() => {

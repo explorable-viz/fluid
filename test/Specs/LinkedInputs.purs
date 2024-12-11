@@ -5,7 +5,7 @@ import Prelude
 import App.Util.Selector (dictVal, envVal, listElement)
 import Bind ((↦))
 import Lattice (neg)
-import Module.Files (File(..))
+import Module.Web (File(..))
 import Website.Misc.EnergyScatter as EnergyScatter
 import Test.Util.Suite (TestLinkedInputsSpec)
 
