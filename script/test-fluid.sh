@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -xe
 
-node fluid.js
+node output-es/Test.Fluid/fluid.js

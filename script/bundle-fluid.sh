@@ -2,3 +2,4 @@
 set -xe
 
 yarn purs-backend-es bundle-app --main Fluid --to output-es/Fluid/fluid.js --platform=node
+yarn purs-backend-es bundle-app --main Test.Fluid --to output-es/Test.Fluid/fluid.js --platform=node
