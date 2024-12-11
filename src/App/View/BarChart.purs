@@ -27,12 +27,12 @@ import Web.Event.EventTarget (EventListener)
 
 newtype BarChart = BarChart
    { caption :: Selectable String
-   , stackedBars :: Array StackedBar
+   , stackedBars :: (Array StackedBar)
    }
 
 newtype StackedBar = StackedBar
-   { x :: Selectable String
-   , bars :: Array Bar
+   { x :: Selectable String -- True × "Consumer"
+   , bars :: (Array Bar)
    }
 
 newtype Bar = Bar

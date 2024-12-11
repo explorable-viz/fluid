@@ -6,7 +6,7 @@ import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Module (File(..), Folder(..), loadFile')
+import Module.Web (loadFile', File(..), Folder(..))
 import Test.Specs.LinkedOutputs (movingAverages_spec)
 import Util ((×))
 

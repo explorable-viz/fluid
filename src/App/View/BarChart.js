@@ -100,21 +100,22 @@ function drawBarChart_ (
             .call(d3.axisBottom(x))
             .selectAll('text')
                .style('text-anchor', 'middle')
+               .attr('class', 'xaxis')
 
          function barHeight (bars) {
             return bars.reduce((acc, bar) => { return val(bar.z) + acc }, 0)
          }
 
          // y-axis
-         const nearest = 100,
+         const nearest = 10,
                y_max = Math.ceil(Math.max(...stackedBars.map(d => barHeight(d.bars))) / nearest) * nearest
          const y = d3.scaleLinear()
-            .domain([0, y_max])
+            .domain([-y_max, y_max])
             .range([height, 0])
+            .nice()
          const tickEvery_n = tickEvery(y_max),
                ticks = Array.from(Array(Math.ceil(y_max / tickEvery_n + 1)).keys()).map(n => n * tickEvery_n)
          const yAxis = d3.axisLeft(y)
-            .tickValues(ticks)
 
          rootElement.append('g')
             .call(yAxis)
@@ -144,9 +145,9 @@ function drawBarChart_ (
             .append('rect')
                .attr('class', 'bar')
                .attr('x', bar => { return x(bar.x) })
-               .attr('y', bar => { return y(bar.y + bar.height) })
+               .attr('y', bar => { return y(Math.max(bar.y + bar.height, 0)) })
                .attr('width', x.bandwidth())
-               .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
+               .attr('height', bar => { return Math.abs(height - y(bar.height) - strokeWidth - y(0)) }) // stop bars overplotting
                .attr('stroke-width', _ => strokeWidth)
 
          const legendLineHeight = 15,

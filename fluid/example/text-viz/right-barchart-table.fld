@@ -1,5 +1,6 @@
 [
-    { x: "Total", y: "emissions", z: 120 },
-    { x: "Consumer", y: "emissions", z: 40 },
-    { x: "Industry", y: "emissions", z: 80 }
+    { type: "Total", emissions: 2.7 },
+    { type: "CO2", emissions: 2.1 },
+    { type: "Non-CO2", emissions: 0.6 },
+    { type: "Aerosols & Land", emissions: -0.21}
 ]

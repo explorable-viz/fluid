@@ -1,6 +1,6 @@
 {
   "name": "@explorable-viz/fluid",
-  "version": "0.0.23",
+  "version": "0.7.4",
   "description": "Fluid is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.",
   "main": "index.js",
   "repository": {
@@ -18,12 +18,13 @@
   },
   "homepage": "https://f.luid.org",
   "files": [
-    "dist/article/"
+    "dist/fluid/"
   ],
   "scripts": {
     "tidy": "./script/tidy.sh",
     "build": "./script/build.sh",
     "build-test": "./script/build-test.sh",
+    "bundle-fluid": "./script/bundle-fluid.sh",
     "bundle-page": "./script/bundle-page.sh",
     "bundle-website": "./script/bundle-website.sh",
     "bundle-website-all": "./script/bundle-website-all.sh",
@@ -34,7 +35,8 @@
     "test-website": "./script/test-website.sh",
     "test-website-all": "./script/test-website-all.sh",
     "test-all": "./script/test-all.sh",
-    "npm-publish": "./script/npm-publish.sh"
+    "npm-publish": "./script/npm-publish.sh",
+    "fluid": "./script/fluid.sh"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
@@ -50,7 +52,9 @@
     "http-shutdown": "^1.2.2",
     "node": "^22.11.0",
     "node-process": "^1.0.1",
-    "purescript": "^0.15.10"
+    "os": "^0.1.2",
+    "purescript": "^0.15.10",
+    "util": "^0.12.5"
   },
   "devDependencies": {
     "esbuild": "0.15.1",
@@ -69,7 +73,8 @@
     "typescript": "^5.5.3"
   },
   "bin": {
-    "fluid": "./fluid.js"
+    "fluid": "./fluid.js",
+    "interpreter": "./commandline.js"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
