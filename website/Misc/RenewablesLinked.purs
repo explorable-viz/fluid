@@ -8,8 +8,7 @@ import App.View.Util (FigSpec)
 import Bind ((↦))
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Module.Files (File(..), Folder(..))
-import Module.Web (loadFile')
+import Module.Web (loadFile', File(..), Folder(..))
 import Util ((×))
 
 fig :: FigSpec

@@ -9,15 +9,13 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split, stripPrefix, stripSuffix, trim)
 import Data.String as String
-import Desugarable (desug)
 import Effect (Effect)
 import Effect.Aff (Aff, Error, runAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
 import Lattice (erase)
-import Module.Files (File(..))
-import Module.Node (initialConfig, loadProgCxt, open)
+import Module.Node (File(..), loadProgCxt, prepConfig)
 import Options.Applicative (Parser, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
@@ -88,9 +86,7 @@ callback = case _ of
 output :: Program -> Aff (Val Unit)
 output (Program { imports, datasets, fileName }) = do
    progCxt <- loadProgCxt imports datasets
-   s <- open (File fileName)
-   e <- desug s
-   gconfig <- initialConfig e progCxt
+   { e, gconfig } <- prepConfig (File fileName) progCxt
    { outα } <- graphEval gconfig e
    pure (erase outα)
 

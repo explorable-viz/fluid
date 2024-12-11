@@ -1,13 +1,14 @@
 module Module.Web
    ( loadFile
    , loadFile'
-   , parse
    , parseProgram
    , open
    , module_
    , datasetAs
    , loadProgCxt
-   , initialConfig
+   , module F
+   , module Module
+   , prepConfig
    ) where
 
 import Prelude
@@ -23,18 +24,16 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import EvalGraph (GraphConfig)
-import Expr (class FV)
 import Lattice (Raw)
-import Module.Files (FileLoader, Folder(..), File(..))
-import Module (datasetAs, loadProgCxt, module_, parse, parseProgram, initialConfig) as M
+import Module (Config, initialConfig, parse)
+import Module (FileLoader, Folder(..), File(..)) as F
+import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
 import Util (type (×), AffError, (×))
-import Util.Parse (SParser)
 
-loadFile :: FileLoader
-loadFile (Folder folder) (File file) = do
+loadFile :: F.FileLoader
+loadFile (F.Folder folder) (F.File file) = do
    let url = "/" <> folder <> "/" <> file <> ".fld"
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
@@ -44,26 +43,23 @@ loadFile (Folder folder) (File file) = do
       Right response ->
          pure response.body
 
-loadFile' :: forall m. Folder -> File -> AffError m (File × String)
+loadFile' :: forall m. F.Folder -> F.File -> AffError m (F.File × String)
 loadFile' folder file = (file × _) <$> loadFile folder file
 
-parse :: forall a m. MonadError Error m => String -> SParser a -> m a
-parse = M.parse
-
-parseProgram :: forall m. Folder -> File -> AffError m (Raw S.Expr)
+parseProgram :: forall m. F.Folder -> F.File -> AffError m (Raw S.Expr)
 parseProgram = M.parseProgram loadFile
 
-open :: forall m. File -> AffError m (Raw S.Expr)
-open = parseProgram (Folder "fluid/example")
+open :: forall m. F.File -> AffError m (Raw S.Expr)
+open = parseProgram (F.Folder "fluid/example")
 
-module_ :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ = M.module_ loadFile (Folder "fluid")
+module_ :: forall m. MonadAff m => MonadError Error m => F.File -> Raw ProgCxt -> m (Raw ProgCxt)
+module_ = M.module_ loadFile
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
-datasetAs = M.datasetAs loadFile (Folder "fluid")
+datasetAs :: forall m. MonadAff m => MonadError Error m => Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs = M.datasetAs loadFile
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt = M.loadProgCxt loadFile (Folder "fluid")
+loadProgCxt = M.loadProgCxt loadFile
 
-initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
-initialConfig = M.initialConfig
+prepConfig :: forall m. MonadAff m => MonadError Error m => F.File -> ProgCxt Unit -> m Config
+prepConfig = M.prepConfig loadFile

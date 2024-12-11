@@ -6,15 +6,16 @@ import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
 import Data.Bifunctor (lmap)
-import Graph (vertices)
 import Data.List (List(..), (:))
+import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
-import Expr (class FV, fv)
+import Expr (class FV, Expr, fv)
+import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
@@ -28,7 +29,6 @@ import Test.Util.Debug (checking)
 import Util (AffError, concatM, type (×), (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
-import Module.Files (File(..), Folder, FileLoader)
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
@@ -37,22 +37,22 @@ parseProgram :: forall m. FileLoader -> Folder -> File -> AffError m (Raw S.Expr
 parseProgram loadFile folder file =
    loadFile folder file >>= flip parse P.program
 
-module_ :: forall m. MonadAff m => MonadError Error m => FileLoader -> Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ loadFile folder file (ProgCxt r@{ mods }) = do
-   src <- loadFile folder file
+module_ :: forall m. MonadAff m => MonadError Error m => FileLoader -> File -> Raw ProgCxt -> m (Raw ProgCxt)
+module_ loadFile file (ProgCxt r@{ mods }) = do
+   src <- loadFile (Folder "fluid") file
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => FileLoader -> Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
-datasetAs loadFile folder (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- parseProgram loadFile folder file >>= desug
+datasetAs :: forall m. MonadAff m => MonadError Error m => FileLoader -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs loadFile (x ↦ file) (ProgCxt r@{ datasets }) = do
+   eα <- parseProgram loadFile (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => FileLoader -> Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt loadFile folder mods datasets =
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => FileLoader -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt loadFile mods datasets =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= concatM (File >>> (module_ loadFile folder) <$> [ "lib/prelude" ] <> mods)
-      >>= concatM (second File >>> (datasetAs loadFile folder) <$> datasets)
+      >>= concatM (File >>> (module_ loadFile) <$> [ "lib/prelude" ] <> mods)
+      >>= concatM (second File >>> (datasetAs loadFile) <$> datasets)
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
@@ -65,3 +65,22 @@ initialConfig e progCxt = do
       -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
       pure (progCxt' × restrict (fv e) γ)
    pure { n, progCxt: progCxt', γ }
+
+type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
+
+prepConfig :: forall m. MonadAff m => MonadError Error m => FileLoader -> File -> Raw ProgCxt -> m Config
+prepConfig loadFile file progCxt = do
+   s <- parseProgram loadFile (Folder "fluid/example") file
+   e <- desug s
+   gconfig <- initialConfig e progCxt
+   pure { s, e, gconfig }
+
+type FileLoader = forall m. Folder -> File -> AffError m String
+
+newtype File = File String
+newtype Folder = Folder String
+
+derive instance Newtype File _
+derive newtype instance Show File
+derive newtype instance Semigroup File
+derive newtype instance Monoid File

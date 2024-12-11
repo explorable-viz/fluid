@@ -8,7 +8,7 @@ import App.View.Util (FigSpec)
 import Bind ((↦))
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Module.Files (File(..))
+import Module.Web (File(..))
 import Util ((×))
 
 -- Delete this test case once we can enable/disable outputs via the UI
