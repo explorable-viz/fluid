@@ -18,7 +18,8 @@ jobs:
   deploy-npm:
     runs-on: ubuntu-22.04
     needs: build
-    if: github.ref == 'refs/heads/develop'
+    if: false # disable for now
+    # if: github.ref == 'refs/heads/develop'
     permissions:
       contents: read
       id-token: write
