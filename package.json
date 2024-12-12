@@ -7,6 +7,9 @@
     "type": "git",
     "url": "git+https://github.com/explorable-viz/fluid.git#release"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "keywords": [
     "PureScript",
     "JavaScript"
