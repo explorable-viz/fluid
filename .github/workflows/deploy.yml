@@ -18,7 +18,8 @@ jobs:
   deploy-npm:
     runs-on: ubuntu-22.04
     needs: build
-    if: github.ref == 'refs/heads/develop'
+    if: false # disable for now
+    # if: github.ref == 'refs/heads/develop'
     permissions:
       contents: read
       id-token: write
@@ -30,14 +31,14 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - run: |
         yarn install
+        yarn build
         yarn npm-publish
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   deploy-gh-pages:
     runs-on: ubuntu-22.04
     needs: build
-#    needs: deploy-npm
     if: github.ref == 'refs/heads/release'
     steps:
     - uses: actions/checkout@v4

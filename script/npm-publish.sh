@@ -2,6 +2,5 @@
 # run from project root
 set -xe
 
-yarn build
-yarn config set registry "https://registry.npmjs.org/" #yarn command sets registry to https://registry.yarnpkg.com; re-set to npm
-npm publish --access public
+npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+yarn publish --access public
