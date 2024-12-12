@@ -3,4 +3,4 @@
 set -xe
 
 yarn build
-npm publish --access public
+yarn publish --access public

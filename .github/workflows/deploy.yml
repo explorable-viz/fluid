@@ -32,12 +32,11 @@ jobs:
         yarn install
         yarn npm-publish
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   deploy-gh-pages:
     runs-on: ubuntu-22.04
     needs: build
-#    needs: deploy-npm
     if: github.ref == 'refs/heads/release'
     steps:
     - uses: actions/checkout@v4
