@@ -78,7 +78,7 @@ program = ado
    in Program { imports, datasets, fileName }
 
 publish :: Parser Command
-publish = Publish <$> program <*> (Folder <$> strOption (long "root" <> short 'r' <> help "root directory under dist/" <> value "Misc"))
+publish = Publish <$> program <*> (Folder <$> strOption (long "website" <> short 'w' <> help "root directory of website under dist/" <> value "Misc"))
 
 commandParser :: Parser Command
 commandParser = subparser
@@ -89,8 +89,8 @@ commandParser = subparser
 dispatchCommand ∷ Command → Aff (Val Unit)
 dispatchCommand = case _ of
    Evaluate p -> output p
-   Publish p (Folder f) -> do
-      _ <- liftEffect $ copyFiles f
+   Publish p (Folder website) -> do
+      _ <- liftEffect $ copyFiles website
       log "Published"
       output p
 
@@ -99,7 +99,8 @@ copyOptions = { cwd: Nothing, env: Nothing, timeout: Nothing, killSignal: Nothin
 
 copyFiles ∷ String -> Effect ChildProcess
 copyFiles website = do
-   exec ("yarn bundle-website " <> website) copyOptions \{ error, stdout } -> do
+   let root = "node_modules/@explorable-viz/fluid"
+   exec ("./" <> root <> "script/bundle-website.sh -w" <> website <> " -r " <> root) copyOptions \{ error, stdout } -> do
       case error of
          (Just err) -> logShow err
          Nothing -> do

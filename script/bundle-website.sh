@@ -2,8 +2,17 @@
 # run from project root
 set -xe
 
-WEBSITE=$1
-. script/bundle-page.sh $WEBSITE
+ROOT_DIR=""
+WEBSITE="Misc"
+
+while getopts "r:w:" opt; do
+   case $opt in
+      r) ROOT_DIR="$OPTARG";;
+      w) WEBSITE="$OPTARG";;
+   esac
+done
+
+. $ROOT_DIR script/bundle-page.sh $WEBSITE
 
 # Only support one level of nesting for now
 shopt -s nullglob
