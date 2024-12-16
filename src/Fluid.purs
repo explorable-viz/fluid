@@ -16,8 +16,10 @@ import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
 import Lattice (erase)
 import Module.Node (File(..), Folder(..), loadProgCxt, prepConfig)
-import Node.FS.Aff (mkdir, rm')
-import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, (<**>))
+import Node.Buffer (toString)
+import Node.ChildProcess (ChildProcess, ExecOptions, exec)
+import Node.Encoding (Encoding(..))
+import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, value, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
 import Util (Endo)
@@ -29,7 +31,7 @@ data Program = Program
    , fileName :: String
    }
 
-data Command = Evaluate Program | Publish Program Folder File
+data Command = Evaluate Program | Publish Program Folder
 
 between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
 between p1 p2 = \f s -> do
@@ -76,8 +78,7 @@ program = ado
    in Program { imports, datasets, fileName }
 
 publish :: Parser Command
-publish = Publish <$> program <*> (Folder <$> strOption (long "root" <> short 'r' <> help "root directory under dist/")) 
-                              <*> (File <$> strOption (long "template" <> short 't' <> help "Template for web-page"))
+publish = Publish <$> program <*> (Folder <$> strOption (long "root" <> short 'r' <> help "root directory under dist/" <> value "Misc"))
 
 commandParser :: Parser Command
 commandParser = subparser
@@ -85,14 +86,25 @@ commandParser = subparser
         <> command "publish" (info publish (progDesc "Publish a file"))
    )
 
-dispatchCommand :: Command -> Aff (Val Unit)
+dispatchCommand ∷ Command → Aff (Val Unit)
 dispatchCommand = case _ of
    Evaluate p -> output p
-   Publish p (Folder f) (File t) -> do
-      liftEffect $ log ("Publishing to " <> t)
-      rm' ("dist/" <> f) { force: true, recursive: true, retryDelay: 100, maxRetries: 0 }
-      mkdir ("dist/" <> f)
+   Publish p (Folder f) -> do
+      _ <- liftEffect $ copyFiles f
+      log "Published"
       output p
+
+copyOptions :: ExecOptions
+copyOptions = { cwd: Nothing, env: Nothing, timeout: Nothing, killSignal: Nothing, maxBuffer: Nothing, uid: Nothing, gid: Nothing, encoding: Nothing, shell: Nothing }
+
+copyFiles ∷ String -> Effect ChildProcess
+copyFiles website = do
+   exec ("yarn bundle-website " <> website) copyOptions \{ error, stdout } -> do
+      case error of
+         (Just err) -> logShow err
+         Nothing -> do
+            out <- toString ASCII stdout
+            log out
 
 main :: Effect Unit
 main = runAff_ callback do
