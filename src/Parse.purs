@@ -24,7 +24,7 @@ import Parse.Constants (str)
 import Parsing.Combinators (between, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
-import Parsing.String (char, eof, match)
+import Parsing.String (char, eof)
 import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
@@ -313,7 +313,7 @@ expr_ =
                <|> string
                <|> try (token.parens expr')
                <|> try parensOp
-               <|> try explained
+               -- <|> try explained
                <|> pair
 
             where
@@ -356,8 +356,8 @@ expr_ =
                     -- <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
                      <|> ListCompGuard <$> expr'
 
-            explained :: SParser (Raw Expr)
-            explained = Constr unit "Explained" <$> ((\(x × y) -> (Str unit x : y : empty)) <$> match expr') # between (token.symbol str.backquote) (token.symbol str.backquote)
+            -- explained :: SParser (Raw Expr)
+            -- explained = Constr unit "Explained" <$> ((\(x × y) -> (Str unit x : y : empty)) <$> match expr') # between (token.symbol str.backquote) (token.symbol str.backquote)
 
             listEnum :: SParser (Raw Expr)
             listEnum = token.brackets $

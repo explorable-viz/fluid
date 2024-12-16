@@ -100,21 +100,22 @@ function drawBarChart_ (
             .call(d3.axisBottom(x))
             .selectAll('text')
                .style('text-anchor', 'middle')
+               .attr('class', 'xaxis')
 
          function barHeight (bars) {
             return bars.reduce((acc, bar) => { return val(bar.z) + acc }, 0)
          }
 
          // y-axis
-         const nearest = 100,
+         const nearest = 10,
                y_max = Math.ceil(Math.max(...stackedBars.map(d => barHeight(d.bars))) / nearest) * nearest
          const y = d3.scaleLinear()
             .domain([0, y_max])
             .range([height, 0])
+            .nice()
          const tickEvery_n = tickEvery(y_max),
                ticks = Array.from(Array(Math.ceil(y_max / tickEvery_n + 1)).keys()).map(n => n * tickEvery_n)
          const yAxis = d3.axisLeft(y)
-            .tickValues(ticks)
 
          rootElement.append('g')
             .call(yAxis)

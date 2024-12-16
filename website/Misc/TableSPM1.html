@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <link rel="icon" href="/favicon.ico" type="image/x-icon">
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Fluid: Data-Linked Visualisations</title>
+   <link href="/css/styles.css" rel="stylesheet" type="text/css">
+   <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
+   <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
+   <script src="/shared/util.js"></script>
+   <script> 
+      loadHeader()
+      loadSubHeader()
+   </script>
+   <style>
+      .data-pane {
+         max-width: 400px;
+      }
+   </style>
+</head>
+<div id="grid" class="grid-container data-pane-hidden">
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
+      <h3>Table SPM.1</h3>
+      <p>Recreation of the IPCC AR6 table SPM.1</p>
+   </div>
+
+   <div class="flex-right-align data-pane">
+      <div id="fig-input"></div>
+      <p></p>
+   </div>
+   <div onclick="toggleDataPane('grid')">
+      <i class="data-pane-button toggle-button fa-solid fa-eye-slash" aria-hidden="true"></i>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig">
+         <div class="fig-loading">loading figure(s)</div>
+      </div>
+   </div>
+</div>
+
+<script src="fluid.js"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-module Website.Misc.ExplainableBarChart where
+module Website.Misc.FigureSPM4b where
 
 import Prelude
 
@@ -7,7 +7,7 @@ import App.Util (runAffs_)
 import App.View.Util (FigSpec)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Module (File(..))
+import Module.Web (File(..))
 import Util ((×))
 import Bind ((↦))
 
@@ -20,7 +20,7 @@ fig =
         ]
    , imports: [ "lib/text-viz" ]
    , file: File "text-viz/figure-spm-4"
-   , inputs: [ "likelihoods", "ssp119Source", "ssp245Source" ]
+   , inputs: [ "ssp119Source", "ssp245Source" ]
    }
 
 main :: Effect Unit

@@ -6,7 +6,7 @@ import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoi
 import Bind ((↦))
 import DataType (f_plots, f_y)
 import Lattice (neg)
-import Module (File(..))
+import Module.Web (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
 import Website.Misc.RenewablesLinked as RenewablesLinked
 

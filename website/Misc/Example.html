@@ -10,7 +10,7 @@
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
-   <script> 
+   <script>
       loadHeader()
       loadSubHeader()
    </script>
@@ -20,25 +20,23 @@
       }
    </style>
 </head>
+<body>
 <div id="grid" class="grid-container data-pane-hidden">
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <h3>Table SPM.1</h3>
-      <p>Recreation of the IPCC AR6 table SPM.1</p>
+      <h3>Example program</h3>
+      <p>Example:</p>
    </div>
 
    <div class="flex-right-align data-pane">
       <div id="fig-input"></div>
-      <p>Testing testing 1... 2... 3...</p>
    </div>
    <div onclick="toggleDataPane('grid')">
-      <i class="data-pane-button toggle-button fa-solid fa-eye-slash" aria-hidden="true"></i>
+      <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
    </div>
-   <div class="flex-left-align">
-      <div id="fig">
-         <div class="fig-loading">loading figure(s)</div>
-      </div>
+   <div id="fig">
+      <div class="fig-loading">loading figure(s)</div>
    </div>
 </div>
 
