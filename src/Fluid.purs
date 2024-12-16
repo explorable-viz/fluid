@@ -16,7 +16,7 @@ import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
 import Lattice (erase)
 import Module.Node (File(..), loadProgCxt, prepConfig)
-import Options.Applicative (Parser, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, (<**>))
+import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
 import Util (Endo)
@@ -27,6 +27,8 @@ data Program = Program
    , datasets :: Array (Bind String)
    , fileName :: String
    }
+
+data Command = Evaluate Program | Publish Program
 
 between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
 between p1 p2 = \f s -> do
@@ -72,11 +74,22 @@ program = ado
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
    in Program { imports, datasets, fileName }
 
+commandParser :: Parser Command
+commandParser = subparser
+   ( command "evaluate" (info (Evaluate <$> program) (progDesc "Evaluate a file"))
+        <> command "publish" (info (Publish <$> program) (progDesc "Publish a file"))
+   )
+
+dispatchCommand :: Command -> Aff (Val Unit)
+dispatchCommand = case _ of
+   Evaluate p -> output p
+   Publish p -> output p
+
 main :: Effect Unit
 main = runAff_ callback do
-   output =<< (liftEffect $ execParser opts)
+   dispatchCommand =<< (liftEffect $ execParser opts)
    where
-   opts = info (program <**> helper) (fullDesc <> progDesc "Parse a file" <> header "parse - a simple parser")
+   opts = info (commandParser <**> helper) (fullDesc <> progDesc "Parse a file" <> header "parse - a simple parser")
 
 callback :: Either Error (Val Unit) -> Effect Unit
 callback = case _ of
