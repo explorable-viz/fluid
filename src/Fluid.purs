@@ -76,7 +76,8 @@ program = ado
    in Program { imports, datasets, fileName }
 
 publish :: Parser Command
-publish = Publish <$> program <*> (Folder <$> strOption (long "root" <> short 'r' <> help "root directory under dist/")) <*> (File <$> strOption (long "template" <> short 't' <> help "Template for web-page"))
+publish = Publish <$> program <*> (Folder <$> strOption (long "root" <> short 'r' <> help "root directory under dist/")) 
+                              <*> (File <$> strOption (long "template" <> short 't' <> help "Template for web-page"))
 
 commandParser :: Parser Command
 commandParser = subparser
