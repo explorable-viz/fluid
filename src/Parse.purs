@@ -344,17 +344,15 @@ expr_ =
 
                where
                qualifier :: SParser (Raw Qualifier)
-               qualifier =
-                  ListCompGen <$> pattern <* lArrow <*> expr'
-                     <|> Declaration <$> (VarDef <$> (keyword str.let_ *> pattern <* token.reserved str.colon <* typeP <* equals) <*> expr')
-                     -- (do
-                     --    p <- keyword str.let_
-                     --    token.reserved str.colon
-                     --    t <- typeP
-                     --    exp <- expr'
-                     --    VarDef <$> (keywork str.let_ *>p <* t <* equals) <*> exp)
-                    -- <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
-                     <|> ListCompGuard <$> expr'
+               qualifier = do
+                  p <- pattern
+                  token.reserved str.colon *> token.reserved str.colon
+                  t <- typeP
+                  equals
+                  exp <- expr'
+                  pure (ListCompDecl (VarDef p t exp))
+                  <|> ListCompGen <$> pattern <* lArrow <*> expr'
+                  <|> ListCompGuard <$> expr'
 
             -- explained :: SParser (Raw Expr)
             -- explained = Constr unit "Explained" <$> ((\(x × y) -> (Str unit x : y : empty)) <$> match expr') # between (token.symbol str.backquote) (token.symbol str.backquote)

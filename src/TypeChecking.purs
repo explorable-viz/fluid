@@ -192,26 +192,26 @@ check g (ListEnum e1 e2) (TList ty) = case synth g e1 of
             Nothing -> false
             Just e2Synth -> e1Synth == e2Synth && e1Synth == ty
 
--- check g (ListComp u expr qualifiers) (TList ty) = 
---       if (check g expr ty) then 
---             case qualifiers of
---                   (q : qs) -> case q of
---                         Guard guardExpr -> check g guardExpr ty && check g (ListComp u expr qs) (TList ty) 
---                         Generator pattern genExpr -> 
---                               let newContext = (checkPattern' g pattern ty) in
---                               case newContext of
---                                     Nothing -> false
---                                     Just context -> check context genExpr ty && check context (ListComp u expr qs) (TList ty)
---                         Declaration varDef -> case varDef of
---                               (VarDef pattern ty' val) ->
---                                     let newContext = (checkPattern' g pattern ty') in
---                                     case newContext of
---                                           Nothing -> false
---                                           Just context -> check context val ty' && check context (ListComp u expr qs) (TList ty)
---                         _ -> false
---                   Nil -> true
---       else 
---             false
+check g (ListComp u expr qualifiers) (TList ty) = 
+      if (check g expr ty) then 
+            case qualifiers of
+                  (q : qs) -> case q of
+                        ListCompGuard guardExpr -> check g guardExpr ty && check g (ListComp u expr qs) (TList ty) 
+                        ListCompGen pattern genExpr -> 
+                              let newContext = (checkPattern' g pattern ty) in
+                              case newContext of
+                                    Nothing -> false
+                                    Just context -> check context genExpr ty && check context (ListComp u expr qs) (TList ty)
+                        ListCompDecl varDef -> case varDef of
+                              (VarDef pattern ty' val) ->
+                                    let newContext = (checkPattern' g pattern ty') in
+                                    case newContext of
+                                          Nothing -> false
+                                          Just context -> check context val ty' && check context (ListComp u expr qs) (TList ty)
+                        _ -> false
+                  Nil -> true
+      else 
+            false
 check g expr ty = (synth g expr) == Just ty
 
 extractFieldNames :: forall a. List (Bind (Expr a)) -> List Var
@@ -415,37 +415,37 @@ synth g (ListEnum e1 e2) = case synth g e1 of
       Just e1Synth -> case synth g e2 of
             Nothing -> Nothing
             Just e2Synth -> if e1Synth == e2Synth then Just (TList e2Synth) else Nothing
--- synth g (ListComp u expr qualifiers) = 
---       case synth g expr of
---             Nothing -> Nothing
---             Just ty -> case qualifiers of
---                   (q : qs) -> case q of
---                         Guard guardExpr -> do
---                               ty' <- synth g guardExpr
---                               if ty == ty' then 
---                                     synth g (ListComp u expr qs)
---                               else 
---                                     Nothing
---                         Generator pattern genExpr ->
---                               let newContext = checkPattern' g pattern ty in 
---                               case newContext of
---                                     Nothing -> Nothing
---                                     Just context ->
---                                           if check context genExpr ty then 
---                                                 synth context (ListComp u expr qs)
---                                           else
---                                                 Nothing
---                         Declaration varDef -> case varDef of
---                               (VarDef pattern ty' val) ->
---                                     let newContext = checkPattern' g pattern ty' in
---                                     case newContext of
---                                           Nothing -> Nothing
---                                           Just context -> 
---                                                 if check context val ty' then 
---                                                       synth context (ListComp u expr qs)
---                                                 else
---                                                       Nothing
---                   _ -> Just (TList ty)
+synth g (ListComp u expr qualifiers) = 
+      case synth g expr of
+            Nothing -> Nothing
+            Just ty -> case qualifiers of
+                  (q : qs) -> case q of
+                        ListCompGuard guardExpr -> do
+                              ty' <- synth g guardExpr
+                              if ty == ty' then 
+                                    synth g (ListComp u expr qs)
+                              else 
+                                    Nothing
+                        ListCompGen pattern genExpr ->
+                              let newContext = checkPattern' g pattern ty in 
+                              case newContext of
+                                    Nothing -> Nothing
+                                    Just context ->
+                                          if check context genExpr ty then 
+                                                synth context (ListComp u expr qs)
+                                          else
+                                                Nothing
+                        ListCompDecl varDef -> case varDef of
+                              (VarDef pattern ty' val) ->
+                                    let newContext = checkPattern' g pattern ty' in
+                                    case newContext of
+                                          Nothing -> Nothing
+                                          Just context -> 
+                                                if check context val ty' then 
+                                                      synth context (ListComp u expr qs)
+                                                else
+                                                      Nothing
+                  _ -> Just (TList ty)
 -- synth g (App exp1 exp2) =
 --   -- Make sure both expressions are valid
 --   case synth g exp1 of

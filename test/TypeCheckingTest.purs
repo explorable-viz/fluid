@@ -86,14 +86,14 @@ testCheck = do
     let listEnumInvalid = check Nil (ListEnum (Int unit 1) (Str unit "hello")) (TList (TCons "Str"))
     logTestResult "Check ListEnum Invalid" (not listEnumInvalid)
     -- ListComp
-    -- let listCompGuard = check Nil (ListComp unit (Int unit 1) ((Guard (Int unit 2)):(Guard (Int unit 3)):Nil)) (TList (TCons "Int"))
-    -- logTestResult "Check ListComp Guard valid" listCompGuard
-    -- let listCompGenerator = check Nil (ListComp unit (Int unit 1) ((Guard (Int unit 2)) : (Generator (PVar "x") (Int unit 3)) : Nil)) (TList (TCons "Int"))
-    -- logTestResult "Check ListComp Generator valid" listCompGenerator
-    -- let listCompDeclaration = check Nil (ListComp unit (Int unit 1) ((Guard (Int unit 2)) : (Declaration (VarDef (PVar "x") (TCons "Int") (Int unit 20))) : Nil)) (TList (TCons "Int"))
-    -- logTestResult "Check ListComp Declaration valid" listCompDeclaration
-    -- let listCompInvalid = check Nil (ListComp unit (Int unit 1) ((Guard (Int unit 2)) : (Declaration (VarDef (PVar "x") (TCons "Int") (Str unit "20"))) : Nil)) (TList (TCons "Int"))
-    -- logTestResult "Check ListComp invalid" (not listCompInvalid)
+    let listCompGuard = check Nil (ListComp unit (Int unit 1) ((ListCompGuard (Int unit 2)):(ListCompGuard (Int unit 3)):Nil)) (TList (TCons "Int"))
+    logTestResult "Check ListComp Guard valid" listCompGuard
+    let listCompGenerator = check Nil (ListComp unit (Int unit 1) ((ListCompGuard (Int unit 2)) : (ListCompGen (PVar "x") (Int unit 3)) : Nil)) (TList (TCons "Int"))
+    logTestResult "Check ListComp Generator valid" listCompGenerator
+    let listCompDeclaration = check Nil (ListComp unit (Int unit 1) ((ListCompGuard (Int unit 2)) : (ListCompDecl (VarDef (PVar "x") (TCons "Int") (Int unit 20))) : Nil)) (TList (TCons "Int"))
+    logTestResult "Check ListComp Declaration valid" listCompDeclaration
+    let listCompInvalid = check Nil (ListComp unit (Int unit 1) ((ListCompGuard (Int unit 2)) : (ListCompDecl (VarDef (PVar "x") (TCons "Int") (Str unit "20"))) : Nil)) (TList (TCons "Int"))
+    logTestResult "Check ListComp invalid" (not listCompInvalid)
 
 -- Unit tests for the synth function
 testSynth :: Effect Unit
@@ -155,14 +155,14 @@ testSynth = do
     let listEnumInvalid = synth Nil (ListEnum (Int unit 1) (Str unit "hello"))
     logTestResult "Synth ListEnum invalid" (listEnumInvalid == Nothing)
     -- ListComp
-    -- let listCompGuard = synth Nil (ListComp unit (Int unit 1) ((Guard (Int unit 2)):(Guard (Int unit 3)):Nil))
-    -- logTestResult "Synth ListComp Guard valid" (listCompGuard == (Just (TList (TCons "Int"))))
-    -- let listCompGenerator = synth Nil (ListComp unit (Int unit 1) ((Guard (Int unit 2)) : (Generator (PVar "x") (Int unit 3)) : Nil))
-    -- logTestResult "Synth ListComp Generator valid" (listCompGenerator == (Just (TList (TCons "Int"))))
-    -- let listCompDeclaration = synth Nil (ListComp unit (Int unit 1) ((Guard (Int unit 2)) : (Declaration (VarDef (PVar "x") (TCons "Int") (Int unit 20))) : Nil))
-    -- logTestResult "Synth ListComp Declaration valid" (listCompDeclaration == (Just (TList (TCons "Int"))))
-    -- let listCompInvalid = synth Nil (ListComp unit (Int unit 1) ((Guard (Int unit 2)) : (Declaration (VarDef (PVar "x") (TCons "Int") (Str unit "20"))) : Nil))
-    -- logTestResult "Synth ListComp invalid" (listCompInvalid == Nothing)
+    let listCompGuard = synth Nil (ListComp unit (Int unit 1) ((ListCompGuard (Int unit 2)):(ListCompGuard (Int unit 3)):Nil))
+    logTestResult "Synth ListComp Guard valid" (listCompGuard == (Just (TList (TCons "Int"))))
+    let listCompGenerator = synth Nil (ListComp unit (Int unit 1) ((ListCompGuard (Int unit 2)) : (ListCompGen (PVar "x") (Int unit 3)) : Nil))
+    logTestResult "Synth ListComp Generator valid" (listCompGenerator == (Just (TList (TCons "Int"))))
+    let listCompDeclaration = synth Nil (ListComp unit (Int unit 1) ((ListCompGuard (Int unit 2)) : (ListCompDecl (VarDef (PVar "x") (TCons "Int") (Int unit 20))) : Nil))
+    logTestResult "Synth ListComp Declaration valid" (listCompDeclaration == (Just (TList (TCons "Int"))))
+    let listCompInvalid = synth Nil (ListComp unit (Int unit 1) ((ListCompGuard (Int unit 2)) : (ListCompDecl (VarDef (PVar "x") (TCons "Int") (Str unit "20"))) : Nil))
+    logTestResult "Synth ListComp invalid" (listCompInvalid == Nothing)
 
 
 -- Test function to check that the context is updated
