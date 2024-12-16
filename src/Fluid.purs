@@ -15,7 +15,8 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
 import Lattice (erase)
-import Module.Node (File(..), loadProgCxt, prepConfig)
+import Module.Node (File(..), Folder(..), loadProgCxt, prepConfig)
+import Node.FS.Aff (mkdir, rm')
 import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
@@ -28,7 +29,7 @@ data Program = Program
    , fileName :: String
    }
 
-data Command = Evaluate Program | Publish Program
+data Command = Evaluate Program | Publish Program Folder File
 
 between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
 between p1 p2 = \f s -> do
@@ -74,16 +75,23 @@ program = ado
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
    in Program { imports, datasets, fileName }
 
+publish :: Parser Command
+publish = Publish <$> program <*> (Folder <$> strOption (long "root" <> short 'r' <> help "root directory under dist/")) <*> (File <$> strOption (long "template" <> short 't' <> help "Template for web-page"))
+
 commandParser :: Parser Command
 commandParser = subparser
    ( command "evaluate" (info (Evaluate <$> program) (progDesc "Evaluate a file"))
-        <> command "publish" (info (Publish <$> program) (progDesc "Publish a file"))
+        <> command "publish" (info publish (progDesc "Publish a file"))
    )
 
 dispatchCommand :: Command -> Aff (Val Unit)
 dispatchCommand = case _ of
    Evaluate p -> output p
-   Publish p -> output p
+   Publish p (Folder f) (File t) -> do
+      liftEffect $ log ("Publishing to " <> t)
+      rm' ("dist/" <> f) { force: true, recursive: true, retryDelay: 100, maxRetries: 0 }
+      mkdir ("dist/" <> f)
+      output p
 
 main :: Effect Unit
 main = runAff_ callback do
