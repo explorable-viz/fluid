@@ -1,31 +1,26 @@
 #!/usr/bin/env bash
 set -xe
 
-yarn purs-backend-es bundle-app --main Fluid --to dist/fluid/fluid.mjs --platform=node
+
+FLUID_EXECUTABLE="dist/fluid/fluid.mjs"
+
+yarn purs-backend-es bundle-app --main Fluid --to $FLUID_EXECUTABLE --platform=node
 yarn purs-backend-es bundle-app --main Test.Fluid --to dist/test/fluid/fluid.mjs --platform=node
 
-FILE="./dist/fluid/fluid.mjs"
 
-# Shebang line to add
+
 SHEBANG="#!/usr/bin/env node"
 
 # Check if the file exists
-if [[ ! -f "$FILE" ]]; then
-  echo "Error: File $FILE not found."
+if [[ ! -f "$FLUID_EXECUTABLE" ]]; then
+  echo "Error: File $FLUID_EXECUTABLE not found."
   exit 1
 fi
 
-# Check if the shebang is already present
-if [[ $(head -n 1 "$FILE") != "$SHEBANG" ]]; then
-  # Prepend the shebang
-  echo "Adding shebang to $FILE"
-  { echo "$SHEBANG"; cat "$FILE"; } > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
-else
-  echo "Shebang already present in $FILE"
+if [[ $(head -n 1 "$FLUID_EXECUTABLE") != "$SHEBANG" ]]; then
+  { echo "$SHEBANG"; cat "$FLUID_EXECUTABLE"; } > "$FLUID_EXECUTABLE.tmp" && mv "$FLUID_EXECUTABLE.tmp" "$FLUID_EXECUTABLE"
 fi
 
-# Ensure the file is executable
-chmod +x "$FILE"
-echo "File $FILE is now executable."
+chmod +x "$FLUID_EXECUTABLE"
 
 cp -r fluid dist/fluid
