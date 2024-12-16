@@ -205,10 +205,10 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
 
 varDefsBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw VarDefs × Raw Expr -> VarDefs a × Expr a
-varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
-   NonEmptyList (VarDef π (desugBwd e1 s1) :| Nil) × desugBwd e2 s2
-varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) =
-   NonEmptyList (VarDef π (desugBwd e1 s1) :| d' : ds') × s2'
+varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π t s1 :| Nil) × s2) =
+   NonEmptyList (VarDef π t (desugBwd e1 s1) :| Nil) × desugBwd e2 s2
+varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π t s1 :| d : ds) × s2) =
+   NonEmptyList (VarDef π t (desugBwd e1 s1) :| d' : ds') × s2'
    where
    NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2)
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
@@ -331,11 +331,11 @@ listCompBwd (E.App (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) × 
    listCompBwd (asExpr (get cTrue m)) (qs × s0') × asExpr (get cFalse m)
       # unsafePartial case _ of
            (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
-listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0') =
+listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p t s0) : qs) × s0') =
    clausesStateBwd (ContElim σ) (((Left p : Nil) × Nil × ListComp unit s0' qs) : Nil)
       # unsafePartial case _ of
            ((Left _ : Nil) × Nil × ListComp α s' qs') : Nil ->
-              (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
+              (α ∨ α') × (ListCompDecl (VarDef p t (desugBwd e s0)) : qs') × s'
 listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
    orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s')
       # unsafePartial case _ of
