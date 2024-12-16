@@ -141,22 +141,22 @@ check g (IfElse e1 e2 e3) ty =
       else
             false
 -- FORCES ORDERING (change needed)
-check g (Record u exprs) (TRecord fieldTypes) = 
-      -- Just the names (the "a" and "b")
-      if isUnique (extractFieldNames exprs) then
-            -- Get the expressions
-            checkRecordFieldTypes g (extractRecordExprs exprs) fieldTypes
-      else
-            false
-      where 
-      checkRecordFieldTypes :: forall a. Context -> List (Expr a) -> List (Tuple String Types) -> Boolean
-      checkRecordFieldTypes g Nil Nil = true
-      checkRecordFieldTypes g (expr : exprs) (t : ts) = do
-            if check g expr (snd t) then 
-                  checkRecordFieldTypes g exprs ts
-            else
-                  false
-      checkRecordFieldTypes _ _ _ = false
+-- check g (Record u exprs) (TRecord fieldTypes) = 
+--       -- Just the names (the "a" and "b")
+--       if isUnique (extractFieldNames exprs) then
+--             -- Get the expressions
+--             checkRecordFieldTypes g (extractRecordExprs exprs) fieldTypes
+--       else
+--             false
+--       where 
+--       checkRecordFieldTypes :: forall a. Context -> List (Expr a) -> List (Tuple String Types) -> Boolean
+--       checkRecordFieldTypes g Nil Nil = true
+--       checkRecordFieldTypes g (expr : exprs) (t : ts) = do
+--             if check g expr (snd t) then 
+--                   checkRecordFieldTypes g exprs ts
+--             else
+--                   false
+--       checkRecordFieldTypes _ _ _ = false
 
 check g (Constr u ctr exprs) (TCons ctrName) = 
       if ctr == ctrName then
@@ -176,42 +176,42 @@ check g (Constr u ctr exprs) (TCons ctrName) =
                   _ -> true
       else
             false
-check g (Dictionary _ exprs) (TCons "Dictionary") = 
-      case traverse (\(Pair key val) -> do
-            case (synth g key) of
-                  Just _ -> case (synth g val) of
-                        Just ty -> Just ty
-                        _ -> Nothing
-                  _ -> Nothing
-      ) exprs of
-            Just _ -> true
-            Nothing -> false
+-- check g (Dictionary _ exprs) (TCons "Dictionary") = 
+--       case traverse (\(Pair key val) -> do
+--             case (synth g key) of
+--                   Just _ -> case (synth g val) of
+--                         Just ty -> Just ty
+--                         _ -> Nothing
+--                   _ -> Nothing
+--       ) exprs of
+--             Just _ -> true
+--             Nothing -> false
 check g (ListEnum e1 e2) (TList ty) = case synth g e1 of
       Nothing -> false
       Just e1Synth -> case synth g e2 of
             Nothing -> false
             Just e2Synth -> e1Synth == e2Synth && e1Synth == ty
 
-check g (ListComp u expr qualifiers) (TList ty) = 
-      if (check g expr ty) then 
-            case qualifiers of
-                  (q : qs) -> case q of
-                        Guard guardExpr -> check g guardExpr ty && check g (ListComp u expr qs) (TList ty) 
-                        Generator pattern genExpr -> 
-                              let newContext = (checkPattern' g pattern ty) in
-                              case newContext of
-                                    Nothing -> false
-                                    Just context -> check context genExpr ty && check context (ListComp u expr qs) (TList ty)
-                        Declaration varDef -> case varDef of
-                              (VarDef pattern ty' val) ->
-                                    let newContext = (checkPattern' g pattern ty') in
-                                    case newContext of
-                                          Nothing -> false
-                                          Just context -> check context val ty' && check context (ListComp u expr qs) (TList ty)
-                        _ -> false
-                  Nil -> true
-      else 
-            false
+-- check g (ListComp u expr qualifiers) (TList ty) = 
+--       if (check g expr ty) then 
+--             case qualifiers of
+--                   (q : qs) -> case q of
+--                         Guard guardExpr -> check g guardExpr ty && check g (ListComp u expr qs) (TList ty) 
+--                         Generator pattern genExpr -> 
+--                               let newContext = (checkPattern' g pattern ty) in
+--                               case newContext of
+--                                     Nothing -> false
+--                                     Just context -> check context genExpr ty && check context (ListComp u expr qs) (TList ty)
+--                         Declaration varDef -> case varDef of
+--                               (VarDef pattern ty' val) ->
+--                                     let newContext = (checkPattern' g pattern ty') in
+--                                     case newContext of
+--                                           Nothing -> false
+--                                           Just context -> check context val ty' && check context (ListComp u expr qs) (TList ty)
+--                         _ -> false
+--                   Nil -> true
+--       else 
+--             false
 check g expr ty = (synth g expr) == Just ty
 
 extractFieldNames :: forall a. List (Bind (Expr a)) -> List Var
@@ -283,13 +283,14 @@ checkRecordFields g (b : bs) ty =
 checkRecordFields _ _ _ = Nothing
 
 checkListPattern :: Context -> ListRestPattern -> Types -> Maybe Context
-checkListPattern g (PEnd) _ = Just g
-checkListPattern g (PNext next rest) ty = do
+checkListPattern g (PListEnd) _ = Just g
+checkListPattern g (PListNext next rest) ty = do
       case ty of
             TList ty' -> do
               g' <- checkPattern' g next ty'
               checkListPattern g' rest ty
             _ -> Nothing
+checkListPattern g (PListVar var) ty = Just g
 
 
 -- Function: 
@@ -378,73 +379,73 @@ synth g (IfElse e1 e2 e3) =
       else
             Nothing
 
-synth g (Record _ exprs) = let
-      synthFields = getSynthRecord g (extractFieldNames exprs) (extractRecordExprs exprs) in
-      if synthFields == Nil then 
-            Nothing
-      else 
-            Just (TRecord synthFields)
-      where 
-            getSynthRecord :: forall a. Context -> List Var -> List (Expr a) -> List (Tuple String Types)
-            getSynthRecord _ Nil Nil = Nil
-            getSynthRecord g (n : ns) (expr : exprs) = 
-                  case synth g expr of
-                        Nothing -> Nil
-                        Just ty -> (Tuple n ty) : getSynthRecord g ns exprs
-            getSynthRecord _ _ _ = Nil
+-- synth g (Record _ exprs) = let
+--       synthFields = getSynthRecord g (extractFieldNames exprs) (extractRecordExprs exprs) in
+--       if synthFields == Nil then 
+--             Nothing
+--       else 
+--             Just (TRecord synthFields)
+--       where 
+--             getSynthRecord :: forall a. Context -> List Var -> List (Expr a) -> List (Tuple String Types)
+--             getSynthRecord _ Nil Nil = Nil
+--             getSynthRecord g (n : ns) (expr : exprs) = 
+--                   case synth g expr of
+--                         Nothing -> Nil
+--                         Just ty -> (Tuple n ty) : getSynthRecord g ns exprs
+--             getSynthRecord _ _ _ = Nil
 
 
 synth g (Constr _ ctr exprs) = case traverse (synth g) exprs of
       Just _ -> Just (TCons ctr)
       _ -> Nothing
 -- might not be needed - check new commits
-synth g (Dictionary _ exprs) = 
-      case traverse (\(Pair key val) -> do
-            case (synth g key) of
-                  Just _ -> case (synth g val) of
-                        Just ty -> Just ty
-                        _ -> Nothing
-                  _ -> Nothing
-      ) exprs of
-            Just _ -> Just (TCons "Dictionary")
-            Nothing -> Nothing
+-- synth g (Dictionary _ exprs) = 
+--       case traverse (\(Pair key val) -> do
+--             case (synth g key) of
+--                   Just _ -> case (synth g val) of
+--                         Just ty -> Just ty
+--                         _ -> Nothing
+--                   _ -> Nothing
+--       ) exprs of
+--             Just _ -> Just (TCons "Dictionary")
+--             Nothing -> Nothing
 -- can synth one and check the other
 synth g (ListEnum e1 e2) = case synth g e1 of
       Nothing -> Nothing
       Just e1Synth -> case synth g e2 of
             Nothing -> Nothing
             Just e2Synth -> if e1Synth == e2Synth then Just (TList e2Synth) else Nothing
-synth g (ListComp u expr qualifiers) = 
-      case synth g expr of
-            Nothing -> Nothing
-            Just ty -> case qualifiers of
-                  (q : qs) -> case q of
-                        Guard guardExpr -> do
-                              ty' <- synth g guardExpr
-                              if ty == ty' then 
-                                    synth g (ListComp u expr qs)
-                              else 
-                                    Nothing
-                        Generator pattern genExpr ->
-                              let newContext = checkPattern' g pattern ty in 
-                              case newContext of
-                                    Nothing -> Nothing
-                                    Just context ->
-                                          if check context genExpr ty then 
-                                                synth context (ListComp u expr qs)
-                                          else
-                                                Nothing
-                        Declaration varDef -> case varDef of
-                              (VarDef pattern ty' val) ->
-                                    let newContext = checkPattern' g pattern ty' in
-                                    case newContext of
-                                          Nothing -> Nothing
-                                          Just context -> 
-                                                if check context val ty' then 
-                                                      synth context (ListComp u expr qs)
-                                                else
-                                                      Nothing
-                  _ -> Just (TList ty)
+-- synth g (ListComp u expr qualifiers) = 
+--       case synth g expr of
+--             Nothing -> Nothing
+--             Just ty -> case qualifiers of
+--                   (q : qs) -> case q of
+--                         Guard guardExpr -> do
+--                               ty' <- synth g guardExpr
+--                               if ty == ty' then 
+--                                     synth g (ListComp u expr qs)
+--                               else 
+--                                     Nothing
+--                         Generator pattern genExpr ->
+--                               let newContext = checkPattern' g pattern ty in 
+--                               case newContext of
+--                                     Nothing -> Nothing
+--                                     Just context ->
+--                                           if check context genExpr ty then 
+--                                                 synth context (ListComp u expr qs)
+--                                           else
+--                                                 Nothing
+--                         Declaration varDef -> case varDef of
+--                               (VarDef pattern ty' val) ->
+--                                     let newContext = checkPattern' g pattern ty' in
+--                                     case newContext of
+--                                           Nothing -> Nothing
+--                                           Just context -> 
+--                                                 if check context val ty' then 
+--                                                       synth context (ListComp u expr qs)
+--                                                 else
+--                                                       Nothing
+--                   _ -> Just (TList ty)
 -- synth g (App exp1 exp2) =
 --   -- Make sure both expressions are valid
 --   case synth g exp1 of
