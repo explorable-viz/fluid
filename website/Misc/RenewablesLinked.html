@@ -41,7 +41,9 @@
 </div>
 
 <script type="module">
-   import { loadFigure } from "/shared/load-fig.js";
+   import { loadFigure, drawCode } from "/shared/load-fig.js"
+   drawCode("fluid/example/slicing/linked-outputs")("bar-chart-line-chart")();
+   drawCode("fluid/dataset")("renewables")();
    loadFigure("spec.json")();
 </script>
 </body>

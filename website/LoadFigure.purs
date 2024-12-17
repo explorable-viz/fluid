@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import Affjax.ResponseFormat (json)
 import Affjax.Web (get, printError)
-import App.Fig (drawFig, loadFig)
+import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
 import App.View.Util (FigSpec)
 import Bind (Bind)
@@ -13,7 +13,7 @@ import Data.Argonaut.Decode (decodeJson)
 import Data.Either (Either(..))
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Module.Web (File(..))
+import Module.Web (File(..), Folder(..), loadFile')
 import Util (error, (×))
 
 type JsonSpec = { datasets :: Array (Bind String), imports :: Array String, file :: String, inputs :: Array String }
@@ -42,3 +42,7 @@ loadFigure fileName = runAffs_ (uncurry drawFig)
                     ("fig" × _) <$> loadFig (specToCxt spec)
    ]
 
+drawCode :: String -> String -> Effect Unit
+drawCode folder file = runAffs_ drawFile
+   [ loadFile' (Folder folder) (File file)
+   ]

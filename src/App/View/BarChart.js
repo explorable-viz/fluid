@@ -13,7 +13,7 @@ d3.selection.prototype.attrs = function(m) {
 // SVG patterns don't support per-usage styling so generate one per colour
 // Masks eliminate dependency on specific colours but seem to clip the stroke a bit
 function addHatchPattern (rootElement, j, col_j) {
-   pattern = rootElement.append('pattern')
+   let pattern = rootElement.append('pattern')
       .attr('id', 'diagonalHatch-' + j)
       .attr('patternUnits', 'userSpaceOnUse')
       .attr('width', 2)
@@ -152,7 +152,7 @@ function drawBarChart_ (
 
          const legendLineHeight = 15,
                legendStart = width + margin.left / 2
-               names = stackedBars[0].bars.map(bar => val(bar.y))
+         let   names = stackedBars[0].bars.map(bar => val(bar.y))
          rootElement.append('rect')
             .attr('class', 'legend-box')
             .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
