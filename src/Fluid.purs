@@ -100,7 +100,7 @@ copyOptions = { cwd: Nothing, env: Nothing, timeout: Nothing, killSignal: Nothin
 copyFiles ∷ String -> Effect ChildProcess
 copyFiles website = do
    let root = "node_modules/@explorable-viz/fluid"
-   exec ("./" <> root <> "script/bundle-website.sh -w" <> website <> " -r " <> root) copyOptions \{ error, stdout } -> do
+   exec ("./" <> root <> "script/bundle-website.sh -w" <> website <> " -r true") copyOptions \{ error, stdout } -> do
       case error of
          (Just err) -> logShow err
          Nothing -> do
