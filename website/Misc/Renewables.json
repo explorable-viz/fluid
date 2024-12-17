@@ -1,0 +1,6 @@
+{
+    "datasets": [["renewables", "dataset/renewables"]],
+    "imports": [],
+    "file": "linked-outputs/line-chart",
+    "inputs": [ "renewables" ]
+}

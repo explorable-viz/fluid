@@ -1,35 +1,62 @@
 #!/usr/bin/env bash
-# run from project root
 set -xe
 
-ROOT_DIR=""
 WEBSITE="Misc"
+SCRIPT_ROOT=false
 
-while getopts "r:w:" opt; do
+
+while getopts "w:r:" opt; do
    case $opt in
-      r) ROOT_DIR="$OPTARG";;
       w) WEBSITE="$OPTARG";;
+      r) SCRIPT_ROOT="$OPTARG";;
    esac
 done
 
-. $ROOT_DIR script/bundle-page.sh $WEBSITE
+if [[ "$SCRIPT_ROOT" = true ]]; then
+    CLEAN=./node_modules/@explorable-viz/fluid/script/util/clean.sh
+    LISP_CASE=./node_modules/@explorable-viz/fluid/script/util/lisp-case.sh
+    DIST="node_modules/@explorable-viz/fluid/dist"
+else
+    CLEAN=./script/util/clean.sh
+    LISP_CASE=./script/util/lisp-case.sh
+    DIST="dist"
+fi
 
-# Only support one level of nesting for now
+
+SRC_PATH=${WEBSITE//./\/}
+SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
+echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
+
 shopt -s nullglob
 
 set +x
-PAGES=($(for FILE in website/$WEBSITE/*.purs; do
-   basename "$FILE" | sed 's/\.[^.]*$//'
+PAGES=($(for FILE in website/$WEBSITE/*.html; do
+    basename "$FILE" | sed 's/\.[^.]*$//'
 done | sort -u))
 set -x
-
-echo "Processing ${WEBSITE} pages: ${PAGES[@]}"
-
 for PAGE in "${PAGES[@]}"; do
-   . script/bundle-page.sh $WEBSITE.$PAGE
-   done
+    MODULE=$WEBSITE.$PAGE
+    SRC_PATH=${MODULE//./\/}
+    SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
+    echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
 
-WEBSITE_LISP_CASE=$(./script/util/lisp-case.sh "$WEBSITE")
+    if [[ -e "website/$SRC_PATH.purs" ]]; then
+        . script/bundle-page.sh $WEBSITE.$PAGE
+    else
+        if [[ -e "website/$SRC_PATH.html" ]]; then
+            $CLEAN $SRC_PATH_LISP_CASE
+
+            cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
+        fi
+    fi
+    
+    if [[ -e "website/$SRC_PATH.json" ]]; then
+        cp website/$SRC_PATH.json dist/$SRC_PATH_LISP_CASE/spec.json
+    fi
+done
+
+
+WEBSITE_LISP_CASE=$($LISP_CASE "$WEBSITE")
 
 set +x
 TO_COPY=()
@@ -41,11 +68,19 @@ for CHILD in website/$WEBSITE/*; do
 done
 set -x
 
+echo "Processing shared files:"
+cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE/shared
+cp $DIST/fluid/load-fig.js dist/$WEBSITE_LISP_CASE/shared/load-fig.js
+
+cp -r $DIST/fluid/font dist/$WEBSITE_LISP_CASE/font
+cp -r $DIST/fluid/css dist/$WEBSITE_LISP_CASE/css
+cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE/favicon.ico
+
 echo "Processing static files:"
 
 for CHILD in "${TO_COPY[@]}"; do
    BASENAME="$(basename "$CHILD")"
-   cp -rL "$CHILD" "dist/$WEBSITE_LISP_CASE/$BASENAME"
+   cp -r "$CHILD" "dist/$WEBSITE_LISP_CASE/$BASENAME"
    done
 
 shopt -u nullglob
