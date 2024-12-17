@@ -8,6 +8,8 @@ You can edit this file as you like.
   , "aff-promise"
   , "affjax"
   , "affjax-web"
+  , "argonaut"
+  , "argonaut-codecs"
   , "arrays"
   , "bifunctors"
   , "console"

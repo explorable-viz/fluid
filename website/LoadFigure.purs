@@ -1,4 +1,4 @@
-module Website.Misc.TableSPM1 where
+module Website.LoadFigure where
 
 import Prelude hiding (absurd)
 
@@ -7,7 +7,7 @@ import Affjax.Web (get, printError)
 import App.Fig (drawFig, loadFig)
 import App.Util (runAffs_)
 import App.View.Util (FigSpec)
-import Bind (Bind, (↦))
+import Bind (Bind)
 import Data.Argonaut (Json, JsonDecodeError)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Either (Either(..))
@@ -16,24 +16,10 @@ import Effect (Effect)
 import Module.Web (File(..))
 import Util (error, (×))
 
-fig :: FigSpec
-fig =
-   { datasets:
-        [ "tableData" ↦ "example/text-viz/explainable-table"
-        , "likelihoods" ↦ "example/text-viz/likelihoods"
-        ]
-   , imports: [ "lib/text-viz" ]
-   , file: File "text-viz/table-spm-1"
-   , inputs: [ "tableData", "likelihoods" ]
-   }
-
 type JsonSpec = { datasets :: Array (Bind String), imports :: Array String, file :: String, inputs :: Array String }
 
 jsonToSpec :: Json -> Either JsonDecodeError JsonSpec
 jsonToSpec = decodeJson
-
--- main :: Effect Unit
--- main = runAffs_ (uncurry drawFig) [ ("fig" × _) <$> loadFig fig ]
 
 specToCxt :: JsonSpec -> FigSpec
 specToCxt spec =
@@ -43,14 +29,16 @@ specToCxt spec =
    , inputs: spec.inputs
    }
 
-main :: Effect Unit
-main = runAffs_ (uncurry drawFig)
+loadFigure :: String -> Effect Unit
+loadFigure fileName = runAffs_ (uncurry drawFig)
    [ do
-        result <- get json "table-spm1.json"
+        result <- get json fileName
         case result of
            Left err -> error ("Json fetching failed with " <> printError err)
            Right response ->
               case jsonToSpec response.body of
                  Left err -> error ("JSON decoding failed with " <> show err)
-                 Right spec -> ("fig" × _) <$> loadFig (specToCxt spec)
+                 Right spec -> do
+                    ("fig" × _) <$> loadFig (specToCxt spec)
    ]
+
