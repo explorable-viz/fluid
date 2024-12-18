@@ -80,6 +80,7 @@ cp $DIST/fluid/load-fig.js dist/$WEBSITE_LISP_CASE/shared/load-fig.js
 cp -r $DIST/fluid/font dist/$WEBSITE_LISP_CASE/font
 cp -r $DIST/fluid/css dist/$WEBSITE_LISP_CASE/css
 cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE/favicon.ico
+cp -r $DIST/fluid/image dist/$WEBSITE_LISP_CASE/image
 
 echo "Processing static files:"
 
