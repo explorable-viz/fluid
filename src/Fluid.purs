@@ -3,7 +3,7 @@ module Fluid where
 import Prelude hiding (between)
 
 import Bind (Bind, (↦))
-import Data.Array (filter, fromFoldable)
+import Data.Array (filter, fold, fromFoldable)
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.Maybe (Maybe(..))
@@ -19,9 +19,8 @@ import Module.Node (File(..), Folder(..), loadProgCxt, prepConfig)
 import Node.Buffer (toString)
 import Node.ChildProcess (ChildProcess, ExecOptions, exec)
 import Node.Encoding (Encoding(..))
-import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, value, (<**>))
+import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, switch, value, (<**>))
 import Options.Applicative.Builder (info)
-import Pretty (prettyP)
 import Util (Endo)
 import Val (Val)
 
@@ -31,7 +30,7 @@ data Program = Program
    , fileName :: String
    }
 
-data Command = Evaluate Program | Publish Program Folder
+data Command = Evaluate Program | Publish Folder Boolean
 
 between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
 between p1 p2 = \f s -> do
@@ -78,7 +77,8 @@ program = ado
    in Program { imports, datasets, fileName }
 
 publish :: Parser Command
-publish = Publish <$> program <*> (Folder <$> strOption (long "website" <> short 'w' <> help "root directory of website under dist/" <> value "Misc"))
+publish = Publish <$> (Folder <$> strOption (long "website" <> short 'w' <> help "root directory of website under dist/" <> value "Misc"))
+   <*> (switch $ fold [ long "local", short 'l', help "Are you publishing from source (false), or an npm package (true)?" ])
 
 commandParser :: Parser Command
 commandParser = subparser
@@ -86,21 +86,20 @@ commandParser = subparser
         <> command "publish" (info publish (progDesc "Publish a file"))
    )
 
-dispatchCommand ∷ Command → Aff (Val Unit)
+dispatchCommand ∷ Command → Aff Unit
 dispatchCommand = case _ of
-   Evaluate p -> output p
-   Publish p (Folder website) -> do
-      _ <- liftEffect $ copyFiles website
+   Evaluate p -> void $ output p
+   Publish (Folder website) b -> do
+      _ <- liftEffect $ copyFiles website b
       log "Published"
-      output p
 
 copyOptions :: ExecOptions
 copyOptions = { cwd: Nothing, env: Nothing, timeout: Nothing, killSignal: Nothing, maxBuffer: Nothing, uid: Nothing, gid: Nothing, encoding: Nothing, shell: Nothing }
 
-copyFiles ∷ String -> Effect ChildProcess
-copyFiles website = do
-   let root = "node_modules/@explorable-viz/fluid/"
-   exec ("./" <> root <> "script/bundle-website.sh -w " <> website <> " -r true") copyOptions \{ error, stdout } -> do
+copyFiles ∷ String -> Boolean -> Effect ChildProcess
+copyFiles website b = do
+   let cmd = if b then "./node_modules/@explorable-viz/fluid/script/bundle-website.sh -w " <> website <> " -r true" else "./script/bundle-website.sh -w " <> website
+   exec cmd copyOptions \{ error, stdout } -> do
       case error of
          (Just err) -> logShow err
          Nothing -> do
@@ -113,10 +112,10 @@ main = runAff_ callback do
    where
    opts = info (commandParser <**> helper) (fullDesc <> progDesc "Parse a file" <> header "parse - a simple parser")
 
-callback :: Either Error (Val Unit) -> Effect Unit
+callback :: Either Error Unit -> Effect Unit
 callback = case _ of
    Left err -> logShow err
-   Right v -> log (prettyP v)
+   Right _ -> log "Success"
 
 output :: Program -> Aff (Val Unit)
 output (Program { imports, datasets, fileName }) = do
