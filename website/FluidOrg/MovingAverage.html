@@ -75,6 +75,10 @@
    </div>
 </div>
 
-<script src="fluid.js"></script>
+<script type="module">
+   import { loadFigure, drawCode } from "/shared/load-fig.js"
+   drawCode("fluid/example/linked-outputs")("moving-average")();
+   loadFigure("spec.json")();   
+</script>
 </body>
 </html>

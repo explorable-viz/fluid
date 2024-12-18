@@ -27,6 +27,11 @@ SRC_PATH=${WEBSITE//./\/}
 SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
 echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
 
+if [[ -e "website/$SRC_PATH.html" ]]; then
+   $CLEAN $SRC_PATH_LISP_CASE
+   cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
+fi
+
 shopt -s nullglob
 
 set +x

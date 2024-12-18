@@ -42,6 +42,9 @@
    </div>
 </div>
 
-<script src="fluid.js"></script>
+<script type="module">
+   import { loadFigure } from "/shared/load-fig.js"
+   loadFigure("spec.json")();
+</script>
 </body>
 </html>
