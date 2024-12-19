@@ -7,7 +7,7 @@ import TypeChecking (check, synth, pushVarDef, liftTypes, Context)
 import Data.List.NonEmpty (NonEmptyList(..), cons)
 import Data.NonEmpty (NonEmpty(..), (:|))
 import Data.Tuple (Tuple(..))
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..), VarDef )
+import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..), VarDef, DictEntry(..) )
 import Bind (Bind, Var, varAnon, (↦), keys)
 import Data.List (List(..), sortBy, zip, zipWith, (:), (\\), singleton)
 import Data.Maybe (Maybe(..))
@@ -56,7 +56,7 @@ testCheck = do
     logTestResult "Check Let with PListNonEmpty" testPListNonEmpty
     let testPListEmpty = check (singleton (Tuple "x" (TList (TCons "Int")))) (Let (NonEmptyList (NonEmpty (VarDef PListEmpty (TList (TCons "Int")) (ListEmpty unit)) Nil)) (Var "x")) (TList (TCons "Int"))
     logTestResult "Check Let with PListEmpty" testPListEmpty
-    let testPRecord = check ((Tuple "x" (TCons "Int")):(Tuple "y" (TCons "Str")):(Tuple "z" ((TRecord ((Tuple "x" (TCons "Int")) : (Tuple "y" (TCons "Str")) : Nil)))):Nil) (Let (NonEmptyList (NonEmpty (VarDef (PRecord (("x" ↦ PVar "x"):("y" ↦ PVar "y"):Nil)) (TRecord ((Tuple "x" (TCons "Int")) : (Tuple "y" (TCons "Str")) : Nil)) (Var "z")) Nil)) (Var "z")) (TRecord ((Tuple "x" (TCons "Int")) : (Tuple "y" (TCons "Str")) : Nil))
+    let testPRecord = check ((Tuple "x" (TCons "Int")) : (Tuple "y" (TCons "Str")) : (Tuple "z" (TDict (TCons "Int") (TCons "Str"))) : Nil) (Let (NonEmptyList (NonEmpty (VarDef (PRecord (("x" ↦ PVar "x"):("y" ↦ PVar "y"):Nil)) (TDict (TCons "Int") (TCons "Str")) (Var "z")) Nil)) (Var "z")) (TDict (TCons "Int") (TCons "Str"))
     logTestResult "Check Let with PRecord" testPRecord
     let letInvalid = check (singleton (Tuple "x" (TCons "Int"))) (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (TCons "Int") (Str unit "20")) Nil)) (Var "x")) (TCons "Int")
     logTestResult "Check Let invalid" (not letInvalid)
@@ -75,11 +75,13 @@ testCheck = do
     logTestResult "Check IfElse valid" ifElseValid
     let ifElseInvalid = check Nil (IfElse (BinaryApp (Int unit 1) ">" (Int unit 2)) (Int unit 1) (Str unit "hello")) (TCons "Int")
     logTestResult "Check IfElse invalid" (not ifElseInvalid)
-    -- Record
-    -- let recordValid = check Nil (Record unit ((Tuple "a" (Int unit 1)) : (Tuple "b" (Int unit 2)) : Nil)) (TRecord ((Tuple "a" (TCons "Int")) : (Tuple "b" (TCons "Int")) : Nil))
-    -- logTestResult "Check Record valid" recordValid
-    -- let recordInvalid = check Nil (Record unit ((Tuple "a" (Int unit 1)) : (Tuple "b" (Int unit 2)) : Nil)) (TRecord ((Tuple "a" (TCons "Str")) : (Tuple "b" (TCons "Int")) : Nil))
-    -- logTestResult "Check Record invalid" (not recordInvalid)
+    -- Dictionary
+    let testDictExpr = check Nil (Dictionary unit ((Tuple (ExprKey (Str unit "a")) (Int unit 1)) : (Tuple (ExprKey (Str unit "b")) (Int unit 2)) : Nil)) (TDict (TCons "Str") (TCons "Int"))
+    logTestResult "Check Dictionary with ExprKey valid" (testDictExpr)
+    let testDictVar = check ((Tuple "a" (TCons "Str")) : (Tuple "b" (TCons "Str")) : Nil) (Dictionary unit ((Tuple (VarKey unit "a") (Int unit 1)) : (Tuple (VarKey unit "b") (Int unit 2)) : Nil)) (TDict (TCons "Str") (TCons "Int"))
+    logTestResult "Check Dictionary with VarKey valid" (testDictVar)
+    let testDictInvalid = check ((Tuple "a" (TCons "Str")) : (Tuple "b" (TCons "Str")) : Nil) (Dictionary unit ((Tuple (VarKey unit "a") (Int unit 1)) : (Tuple (ExprKey (BinaryApp (Str unit "2") ">" (Int unit 5))) (Int unit 2)) : Nil)) (TDict (TCons "Str") (TCons "Int"))
+    logTestResult "Check Dictionary invalid" (not testDictInvalid)
     -- ListEnum
     let listEnumValid = check ((Tuple "x" (TCons "Str")):(Tuple "y" (TCons "Str")):Nil) (ListEnum (Var "x") (Var "y")) (TList (TCons "Str"))
     logTestResult "Check ListEnum valid" listEnumValid
@@ -127,8 +129,8 @@ testSynth = do
     logTestResult "Synth Let with PListNonEmpty" (testPListNonEmpty == (Just (TList (TCons "Int"))))
     let testPListEmpty = synth (singleton (Tuple "x" (TList (TCons "Int")))) (Let (NonEmptyList (NonEmpty (VarDef PListEmpty (TList (TCons "Int")) (ListEmpty unit)) Nil)) (Var "x"))
     logTestResult "Synth Let with PListEmpty" (testPListEmpty == (Just (TList (TCons "Int"))))
-    let testPRecord = synth ((Tuple "x" (TCons "Int")):(Tuple "y" (TCons "Str")):(Tuple "z" ((TRecord ((Tuple "x" (TCons "Int")) : (Tuple "y" (TCons "Str")) : Nil)))):Nil) (Let (NonEmptyList (NonEmpty (VarDef (PRecord (("x" ↦ PVar "x"):("y" ↦ PVar "y"):Nil)) (TRecord ((Tuple "x" (TCons "Int")) : (Tuple "y" (TCons "Str")) : Nil)) (Var "z")) Nil)) (Var "z"))
-    logTestResult "Synth Let with PRecord" (testPRecord == (Just (TRecord ((Tuple "x" (TCons "Int")) : (Tuple "y" (TCons "Str")) : Nil))))
+    let testPRecord = synth ((Tuple "x" (TCons "Int")) : (Tuple "y" (TCons "Str")) : (Tuple "z" (TDict (TCons "Int") (TCons "Str"))) : Nil) (Let (NonEmptyList (NonEmpty (VarDef (PRecord (("x" ↦ PVar "x"):("y" ↦ PVar "y"):Nil)) (TDict (TCons "Int") (TCons "Str")) (Var "z")) Nil)) (Var "z"))
+    logTestResult "Synth Let with PRecord" (testPRecord == (Just (TDict (TCons "Int") (TCons "Str"))))
     let letInvalid = synth (singleton (Tuple "x" (TCons "Int"))) (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (TCons "Int") (Str unit "20")) Nil)) (Var "x"))
     logTestResult "Synth Let invalid" (letInvalid == Nothing)
     -- ListEmpty
@@ -144,11 +146,11 @@ testSynth = do
     logTestResult "Synth IfElse valid" (ifElseValid == (Just (TCons "Int")))
     let ifElseInvalid = synth Nil (IfElse (BinaryApp (Int unit 1) ">" (Int unit 2)) (Int unit 1) (Str unit "hello"))
     logTestResult "Synth IfElse invalid" (ifElseInvalid == Nothing)
-    -- Record
-    -- let recordValid = synth Nil (Record unit ((Tuple "a" (Int unit 1)) : (Tuple "b" (Int unit 2)) : Nil))
-    -- logTestResult "Synth Record valid" (recordValid == (Just (TRecord ((Tuple "a" (TCons "Int")) : (Tuple "b" (TCons "Int")) : Nil))))
-    -- let recordInvalid = synth Nil (Record unit Nil)
-    -- logTestResult "Synth Record invalid" (recordInvalid == Nothing)
+    -- Dictionary
+    let dictExpr = synth Nil (Dictionary unit ((Tuple (ExprKey (Str unit "a")) (Int unit 1)) : (Tuple (ExprKey (Str unit "b")) (Int unit 2)) : Nil))
+    logTestResult "Synth Dictionary valid" (dictExpr == (Just (TDict (TCons "Str") (TCons "Int"))))
+    let dictInvalid = synth ((Tuple "a" (TCons "Str")) : (Tuple "b" (TCons "Str")) : Nil) (Dictionary unit ((Tuple (VarKey unit "a") (Int unit 1)) : (Tuple (VarKey unit "b") (Float unit 3.0)) : Nil))
+    logTestResult "Synth Dictionary invalid" (dictInvalid == Nothing)
     -- ListEnum
     let listEnum = synth Nil (ListEnum (Int unit 1) (Int unit 2))
     logTestResult "Synth ListEnum valid" (listEnum == (Just (TList (TCons "Int"))))

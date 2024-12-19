@@ -32,7 +32,6 @@ import Primitive.Parse (OpDef, opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..) )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
-
 import Debug
 
 languageDef :: LanguageDef
@@ -449,7 +448,7 @@ typeP = fix $ \typeP' ->
    try (token.parens (FunTy <$> typeP' <* token.reservedOp str.rArrow <*> typeP'))
     <|> try (typeAtom typeP')
     <|> try (TList <$> (token.symbol str.lBracket *> typeP' <* token.symbol str.rBracket))
-    <|> try (TRecord <$> (token.symbol str.curlylBrace *> (fieldP typeP' `sepBy` token.symbol str.comma) <* token.symbol str.curlyrBrace))
+    <|> try (TDict <$> (token.symbol str.curlylBrace *> typeP' <* token.symbol str.comma) <*> (typeP' <* token.symbol str.curlyrBrace))
 
 typeAtom :: SParser Types -> SParser Types
 typeAtom typeP' = (TCons <$> ctr)  <|> try (token.parens typeP')

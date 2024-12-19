@@ -5,8 +5,8 @@ import Prelude
 import Data.Array (fromFoldable, foldl, elem, findMap, concat, head)
 import Data.List.NonEmpty (NonEmptyList(..), cons)
 import Data.NonEmpty (NonEmpty(..), (:|))
-import Data.Tuple (Tuple(..), snd)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..), VarDef )
+import Data.Tuple (Tuple(..), snd, fst)
+import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Types(..), VarDef, DictEntry(..) )
 import Data.Maybe (Maybe(..))
 import Control.Alt ((<|>))
 import Bind (Bind, Var, varAnon, (↦), keys)
@@ -16,6 +16,9 @@ import Data.Foldable (all)
 import Data.Traversable (traverse)
 import Util.Pair (Pair(..))
 import Data.Semigroup
+import Data.Either (Either(..))
+import Parsing (runParser)
+import Parse (program)
 
 {-
 G ::= G, x : A | .
@@ -62,7 +65,7 @@ isValidType :: Types -> Boolean
 isValidType (TCons ty) = elem ty acceptedTypes
 isValidType (TList ty) = isValidType ty
 isValidType (FunTy t1 t2) = isValidType t1 && isValidType t2
-isValidType (TRecord fields) = all (\(Tuple _ ty) -> isValidType ty) fields
+isValidType (TDict ty1 ty2) = isValidType ty1 && isValidType ty2
 
 -- LOOKUP TABLE FOR OPERATOR TYPES
 type OperatorType = {opTy :: Types, argTy :: Array Types}
@@ -88,13 +91,6 @@ allEqual t1 arr = foldl (\acc x -> acc && (x == t1)) true arr
 type Identifier = String
 type Context = List (Tuple Identifier Types)
 
--- data Expr a
---    | Matrix a (Expr a) (Var × Var) (Expr a)
---    | Lambda (Clauses a)
---    | Project (Expr a) Var
---    | App (Expr a) (Expr a)
---    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
---    | LetRec (RecDefs a) (Expr a)
 check :: forall a. Context -> Expr a -> Types -> Boolean
 check g (Int u n) (TCons "Int") = true
 check g (Str u s) (TCons "Str") = true
@@ -140,23 +136,21 @@ check g (IfElse e1 e2 e3) ty =
             (synth g e2) == (synth g e3)
       else
             false
--- FORCES ORDERING (change needed)
--- check g (Record u exprs) (TRecord fieldTypes) = 
---       -- Just the names (the "a" and "b")
---       if isUnique (extractFieldNames exprs) then
---             -- Get the expressions
---             checkRecordFieldTypes g (extractRecordExprs exprs) fieldTypes
---       else
---             false
---       where 
---       checkRecordFieldTypes :: forall a. Context -> List (Expr a) -> List (Tuple String Types) -> Boolean
---       checkRecordFieldTypes g Nil Nil = true
---       checkRecordFieldTypes g (expr : exprs) (t : ts) = do
---             if check g expr (snd t) then 
---                   checkRecordFieldTypes g exprs ts
---             else
---                   false
---       checkRecordFieldTypes _ _ _ = false
+
+check g (Dictionary u entries) (TDict keyTy valTy) = case entries of 
+      (x : xs) -> case x of 
+            Tuple (ExprKey expr1) expr2 -> case synth g expr1 of
+                  Nothing -> false
+                  Just ty1 -> case synth g expr2 of
+                        Nothing -> false
+                        Just ty2 -> (ty1 == keyTy) && (ty2 == valTy) && (check g (Dictionary u xs) (TDict keyTy valTy))
+            Tuple (VarKey _ var) expr -> case lookup g var of
+                  Nothing -> false
+                  Just ty1 -> case synth g expr of
+                        Nothing -> false
+                        Just ty2 -> (ty1 == keyTy) && (ty2 == valTy) && (check g (Dictionary u xs) (TDict keyTy valTy))
+      _ -> true
+
 
 check g (Constr u ctr exprs) (TCons ctrName) = 
       if ctr == ctrName then
@@ -176,16 +170,6 @@ check g (Constr u ctr exprs) (TCons ctrName) =
                   _ -> true
       else
             false
--- check g (Dictionary _ exprs) (TCons "Dictionary") = 
---       case traverse (\(Pair key val) -> do
---             case (synth g key) of
---                   Just _ -> case (synth g val) of
---                         Just ty -> Just ty
---                         _ -> Nothing
---                   _ -> Nothing
---       ) exprs of
---             Just _ -> true
---             Nothing -> false
 check g (ListEnum e1 e2) (TList ty) = case synth g e1 of
       Nothing -> false
       Just e1Synth -> case synth g e2 of
@@ -214,19 +198,6 @@ check g (ListComp u expr qualifiers) (TList ty) =
             false
 check g expr ty = (synth g expr) == Just ty
 
-extractFieldNames :: forall a. List (Bind (Expr a)) -> List Var
-extractFieldNames Nil = Nil
-extractFieldNames (x : xs) = case x of
-      (varName ↦ _) -> varName : extractFieldNames xs
-
-extractRecordExprs :: forall a. List (Bind (Expr a)) -> List (Expr a)
-extractRecordExprs Nil = Nil
-extractRecordExprs (x : xs) = case x of
-      (_ ↦ varExpr) -> varExpr : extractRecordExprs xs
-
-
-isUnique :: List Var -> Boolean
-isUnique vars = length vars == length (nub vars)
 
 lookup :: Context -> String -> Maybe Types
 lookup g x = case find (\(Tuple n t) -> n == x) g of
@@ -265,7 +236,7 @@ checkPattern' g (PListNonEmpty head tail) ty = case ty of
             checkListPattern g' tail (TList ty')
       _ -> Nothing
 checkPattern' g (PRecord bindings) ty = case ty of
-      TRecord fieldTypes -> checkRecordFields g bindings fieldTypes
+      TDict keyTy valTy -> checkRecordFields' g bindings (TDict keyTy valTy)
       _ -> Nothing
 checkPattern' _ _ _ = Nothing
 
@@ -281,6 +252,13 @@ checkRecordFields g (b : bs) ty =
                   checkRecordFields g' bs ts
             Nil -> Nothing
 checkRecordFields _ _ _ = Nothing
+
+checkRecordFields' :: Context -> List (Bind Pattern) -> Types -> Maybe Context
+checkRecordFields' g Nil _ = Just g
+checkRecordFields' g (b : bs) (TDict keyTy valTy) = do
+      g' <- checkBind' g b valTy
+      checkRecordFields' g' bs (TDict keyTy valTy)
+checkRecordFields' _ _ _ = Nothing
 
 checkListPattern :: Context -> ListRestPattern -> Types -> Maybe Context
 checkListPattern g (PListEnd) _ = Just g
@@ -306,11 +284,8 @@ liftTypes (TCons ty) = (Tuple Nil (TCons ty))
 liftTypes (TList ty) = (Tuple Nil (TList ty))
 liftTypes (FunTy ty1 ty2) = case liftTypes ty2 of
       Tuple args ret -> (Tuple (ty1:args) ret)
-liftTypes (TRecord fields) = case fields of
-      Nil -> Tuple Nil (TRecord Nil)
-      (f : fs) -> case liftTypes (snd f) of
-            Tuple args ret -> case liftTypes (TRecord fs) of
-                  Tuple args' ret' -> Tuple (args <> args') (TRecord (f : fs))
+liftTypes (TDict ty1 ty2) = case liftTypes ty2 of
+      Tuple args ret -> Tuple (ty1 : args) ret
 
 checkNonEmptyList :: forall a. ListRest a -> Types -> Boolean
 checkNonEmptyList (End _) ty = true
@@ -379,37 +354,10 @@ synth g (IfElse e1 e2 e3) =
       else
             Nothing
 
--- synth g (Record _ exprs) = let
---       synthFields = getSynthRecord g (extractFieldNames exprs) (extractRecordExprs exprs) in
---       if synthFields == Nil then 
---             Nothing
---       else 
---             Just (TRecord synthFields)
---       where 
---             getSynthRecord :: forall a. Context -> List Var -> List (Expr a) -> List (Tuple String Types)
---             getSynthRecord _ Nil Nil = Nil
---             getSynthRecord g (n : ns) (expr : exprs) = 
---                   case synth g expr of
---                         Nothing -> Nil
---                         Just ty -> (Tuple n ty) : getSynthRecord g ns exprs
---             getSynthRecord _ _ _ = Nil
-
-
 synth g (Constr _ ctr exprs) = case traverse (synth g) exprs of
       Just _ -> Just (TCons ctr)
       _ -> Nothing
--- might not be needed - check new commits
--- synth g (Dictionary _ exprs) = 
---       case traverse (\(Pair key val) -> do
---             case (synth g key) of
---                   Just _ -> case (synth g val) of
---                         Just ty -> Just ty
---                         _ -> Nothing
---                   _ -> Nothing
---       ) exprs of
---             Just _ -> Just (TCons "Dictionary")
---             Nothing -> Nothing
--- can synth one and check the other
+
 synth g (ListEnum e1 e2) = case synth g e1 of
       Nothing -> Nothing
       Just e1Synth -> case synth g e2 of
@@ -446,6 +394,29 @@ synth g (ListComp u expr qualifiers) =
                                                 else
                                                       Nothing
                   _ -> Just (TList ty)
+
+synth g (Dictionary u entries) = case entries of 
+      (x : xs) -> case x of 
+            Tuple (ExprKey expr1) expr2 -> case synth g expr1 of
+                  Nothing -> Nothing
+                  Just keyTy -> case synth g expr2 of
+                        Nothing -> Nothing
+                        Just valTy -> 
+                              if (check g (Dictionary u xs) (TDict keyTy valTy)) then
+                                    Just (TDict keyTy valTy)
+                              else
+                                    Nothing
+            Tuple (VarKey _ var) expr -> case lookup g var of
+                  Nothing -> Nothing
+                  Just keyTy -> case synth g expr of
+                        Nothing -> Nothing
+                        Just valTy -> 
+                              if (check g (Dictionary u xs) (TDict keyTy valTy)) then
+                                    Just (TDict keyTy valTy)
+                              else
+                                    Nothing
+      Nil -> Nothing
+
 -- synth g (App exp1 exp2) =
 --   -- Make sure both expressions are valid
 --   case synth g exp1 of

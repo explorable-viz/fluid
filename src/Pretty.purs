@@ -213,14 +213,7 @@ instance Pretty Pattern where
 instance Pretty Types where
    pretty (TCons x) = text x
    pretty (TList ty) = brackets (pretty ty)
-   pretty (TRecord fields) = text "{" .<>. L.foldl prettyFields (text "") fields .<>. text "}"
-      where
-         prettyFields :: Doc -> Tuple String Types -> Doc
-         prettyFields acc (Tuple fieldName ty) = 
-            if acc == text "" then 
-               text fieldName .<>. text ": " .<>. (pretty ty)
-            else
-               acc .<>. text ", " .<>. text fieldName .<>. text ": " .<>. (pretty ty)
+   pretty (TDict keyTy valTy) = text "{" .<>. (pretty keyTy) .<>. text ": " .<>. (pretty valTy) .<>. text "}"
    pretty (FunTy ty1 ty2) = (pretty ty1) .<>. text str.rArrow .<>. (pretty ty2)
 
 instance Pretty (List (Bind Pattern)) where

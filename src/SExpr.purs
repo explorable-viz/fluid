@@ -65,7 +65,7 @@ data Types =
    -- List of accepted types
    TCons String
    | TList Types
-   | TRecord (List (Tuple String Types))
+   | TDict Types Types
    | FunTy Types Types
 
 data ListRest a
