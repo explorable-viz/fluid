@@ -12,13 +12,15 @@ while getopts "w:r:" opt; do
 done
 
 if [[ "$SCRIPT_ROOT" = true ]]; then
-    CLEAN=./node_modules/@explorable-viz/fluid/script/util/clean.sh
-    LISP_CASE=./node_modules/@explorable-viz/fluid/script/util/lisp-case.sh
-    DIST="node_modules/@explorable-viz/fluid/dist"
+   PREFIX=node_modules/@explorable-viz/fluid
+   CLEAN=./$PREFIX/script/util/clean.sh
+   LISP_CASE=./$PREFIX/script/util/lisp-case.sh
+   DIST="${PREFIX}dist"
 else
-    CLEAN=./script/util/clean.sh
-    LISP_CASE=./script/util/lisp-case.sh
-    DIST="dist"
+   PREFIX=""
+   CLEAN=./$PREFIX/script/util/clean.sh
+   LISP_CASE=./$PREFIX/script/util/lisp-case.sh
+   DIST="${PREFIX}dist"
 fi
 
 SRC_PATH=${WEBSITE//./\/}
