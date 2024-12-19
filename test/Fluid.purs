@@ -6,7 +6,7 @@ import Control.Promise (fromAff)
 import Data.Foldable (sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Fluid (Program(..), output)
+import Fluid (Program(..), evaluate)
 import Lattice (erase)
 import Pretty (prettyP)
 import Test.Util (testCondition)
@@ -17,7 +17,7 @@ main = do
 
 testFluid :: Aff Unit
 testFluid = do
-   outα <- output $ Program
+   outα <- evaluate $ Program
       { imports: []
       , datasets: []
       , fileName: "length"
