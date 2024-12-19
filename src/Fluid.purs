@@ -89,13 +89,16 @@ commandParser = subparser
 dispatchCommand ∷ Command → Aff Unit
 dispatchCommand = case _ of
    Evaluate p -> void $ output p
-   Publish (Folder website) b -> do
+   Publish (Folder website) b -> do -- Publish -> BundleWebsite?
       _ <- liftEffect $ copyFiles website b
       log "Published"
 
 copyOptions :: ExecOptions
-copyOptions = { cwd: Nothing, env: Nothing, timeout: Nothing, killSignal: Nothing, maxBuffer: Nothing, uid: Nothing, gid: Nothing, encoding: Nothing, shell: Nothing }
+copyOptions =
+   { cwd: Nothing,
+     env: Nothing, timeout: Nothing, killSignal: Nothing, maxBuffer: Nothing, uid: Nothing, gid: Nothing, encoding: Nothing, shell: Nothing }
 
+-- Rename to bundleWebsite?
 copyFiles ∷ String -> Boolean -> Effect ChildProcess
 copyFiles website b = do
    let cmd = if b then "./node_modules/@explorable-viz/fluid/script/bundle-website.sh -w " <> website <> " -r true" else "./script/bundle-website.sh -w " <> website
@@ -117,10 +120,10 @@ callback = case _ of
    Left err -> logShow err
    Right _ -> log "Success"
 
+-- Rename to Evaluate?
 output :: Program -> Aff (Val Unit)
 output (Program { imports, datasets, fileName }) = do
    progCxt <- loadProgCxt imports datasets
    { e, gconfig } <- prepConfig (File fileName) progCxt
    { outα } <- graphEval gconfig e
    pure (erase outα)
-

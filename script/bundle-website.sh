@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-set -xe
+set -xeu
 
-WEBSITE="Misc"
 PREFIX=""
 
 while getopts "w:r:" opt; do
