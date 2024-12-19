@@ -10,16 +10,15 @@ while getopts "w:r:" opt; do
    esac
 done
 
-CLEAN=./$PREFIX/script/util/clean.sh
 LISP_CASE=./$PREFIX/script/util/lisp-case.sh
 DIST="${PREFIX}dist"
 
 SRC_PATH=${WEBSITE//./\/}
 SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
 echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
+./$PREFIX/script/util/clean.sh $SRC_PATH_LISP_CASE
 
 if [[ -e "website/$SRC_PATH.html" ]]; then
-   $CLEAN $SRC_PATH_LISP_CASE
    cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
 fi
 
@@ -32,23 +31,23 @@ done | sort -u))
 set -x
 
 for PAGE in "${PAGES[@]}"; do
-    MODULE=$WEBSITE.$PAGE
-    SRC_PATH=${MODULE//./\/}
-    SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
-    echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
+   MODULE=$WEBSITE.$PAGE
+   SRC_PATH=${MODULE//./\/}
+   SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
+   echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
+   mkdir dist/$SRC_PATH_LISP_CASE
 
-    if [[ -e "website/$SRC_PATH.purs" ]]; then
-        . script/bundle-page.sh $WEBSITE.$PAGE
-    else
-        if [[ -e "website/$SRC_PATH.html" ]]; then
-            $CLEAN $SRC_PATH_LISP_CASE
-            cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
-        fi
-    fi
+   if [[ -e "website/$SRC_PATH.purs" ]]; then
+      . script/bundle-page.sh $WEBSITE.$PAGE
+   else
+      if [[ -e "website/$SRC_PATH.html" ]]; then
+         cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
+      fi
+   fi
 
-    if [[ -e "website/$SRC_PATH.json" ]]; then
-        cp website/$SRC_PATH.json dist/$SRC_PATH_LISP_CASE/spec.json
-    fi
+   if [[ -e "website/$SRC_PATH.json" ]]; then
+      cp website/$SRC_PATH.json dist/$SRC_PATH_LISP_CASE/spec.json
+   fi
 done
 
 WEBSITE_LISP_CASE=$($LISP_CASE "$WEBSITE")
