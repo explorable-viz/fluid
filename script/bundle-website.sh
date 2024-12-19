@@ -4,7 +4,6 @@ set -xe
 WEBSITE="Misc"
 SCRIPT_ROOT=false
 
-
 while getopts "w:r:" opt; do
    case $opt in
       w) WEBSITE="$OPTARG";;
@@ -22,7 +21,6 @@ else
     DIST="dist"
 fi
 
-
 SRC_PATH=${WEBSITE//./\/}
 SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
 echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
@@ -38,6 +36,7 @@ set +x
 PAGES=($(for FILE in website/$WEBSITE/*.html; do
     basename "$FILE" | sed 's/\.[^.]*$//'
 done | sort -u))
+
 set -x
 for PAGE in "${PAGES[@]}"; do
     MODULE=$WEBSITE.$PAGE
@@ -50,16 +49,14 @@ for PAGE in "${PAGES[@]}"; do
     else
         if [[ -e "website/$SRC_PATH.html" ]]; then
             $CLEAN $SRC_PATH_LISP_CASE
-
             cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
         fi
     fi
-    
+
     if [[ -e "website/$SRC_PATH.json" ]]; then
         cp website/$SRC_PATH.json dist/$SRC_PATH_LISP_CASE/spec.json
     fi
 done
-
 
 WEBSITE_LISP_CASE=$($LISP_CASE "$WEBSITE")
 
@@ -74,16 +71,14 @@ done
 set -x
 
 echo "Processing shared files:"
-cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE/shared
-cp $DIST/fluid/load-fig.js dist/$WEBSITE_LISP_CASE/shared/load-fig.js
+cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE
+cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared # or just build load-figure.js in $DIST/fluid/shared instead?
+cp -r $DIST/fluid/font dist/$WEBSITE_LISP_CASE
+cp -r $DIST/fluid/css dist/$WEBSITE_LISP_CASE
+cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE
+cp -r $DIST/fluid/image dist/$WEBSITE_LISP_CASE
 
-cp -r $DIST/fluid/font dist/$WEBSITE_LISP_CASE/font
-cp -r $DIST/fluid/css dist/$WEBSITE_LISP_CASE/css
-cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE/favicon.ico
-cp -r $DIST/fluid/image dist/$WEBSITE_LISP_CASE/image
-
-echo "Processing static files:"
-
+echo "Processing other static files:"
 for CHILD in "${TO_COPY[@]}"; do
    BASENAME="$(basename "$CHILD")"
    cp -r "$CHILD" "dist/$WEBSITE_LISP_CASE/$BASENAME"
