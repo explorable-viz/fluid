@@ -111,6 +111,10 @@
    </div>
 </div>
 
-<script src="fluid.js"></script>
+<script type="module">
+   import { drawCode, loadFigure } from "/shared/load-figure.js"
+   drawCode("fluid/example/plot")("non-renewables")();
+   loadFigure("spec.json")();
+</script>
 </body>
 </html>

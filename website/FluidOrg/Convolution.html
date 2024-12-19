@@ -107,6 +107,11 @@
    </div>
 </div>
 
-<script src="fluid.js"></script>
+<script type="module">
+   import { loadFigure, drawCode } from "/shared/load-figure.js"
+   drawCode("fluid/lib")("convolution")();
+   drawCode("fluid/example/slicing/convolution")("emboss")();
+   loadFigure("spec.json")();
+</script>
 </body>
 </html>

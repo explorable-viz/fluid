@@ -36,6 +36,9 @@
    </div>
 </div>
 
-<script src="fluid.js"></script>
+<script type="module">
+   import { loadFigure } from "/shared/load-figure.js";
+   console.log(loadFigure("spec.json")());
+</script>
 </body>
 </html>

@@ -10,7 +10,7 @@
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
-   <script> 
+   <script>
       loadHeader()
       loadSubHeader()
    </script>
@@ -42,6 +42,11 @@
    </div>
 </div>
 
-<script src="fluid.js"></script>
+
+<script type="module">
+   import { loadFigure } from "/shared/load-figure.js";
+   loadFigure("spec.json")();
+</script>
 </body>
 </html>
+
