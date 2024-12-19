@@ -53,6 +53,7 @@ done
 WEBSITE_LISP_CASE=$($LISP_CASE "$WEBSITE")
 
 set +x
+set +u # try and remove this
 TO_COPY=()
 for CHILD in website/$WEBSITE/*; do
    BASENAME="$(basename "$CHILD")"
