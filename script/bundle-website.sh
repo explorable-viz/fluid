@@ -2,26 +2,18 @@
 set -xe
 
 WEBSITE="Misc"
-SCRIPT_ROOT=false
+PREFIX=""
 
 while getopts "w:r:" opt; do
    case $opt in
       w) WEBSITE="$OPTARG";;
-      r) SCRIPT_ROOT="$OPTARG";;
+      r) PREFIX=node_modules/@explorable-viz/fluid;;
    esac
 done
 
-if [[ "$SCRIPT_ROOT" = true ]]; then
-   PREFIX=node_modules/@explorable-viz/fluid
-   CLEAN=./$PREFIX/script/util/clean.sh
-   LISP_CASE=./$PREFIX/script/util/lisp-case.sh
-   DIST="${PREFIX}dist"
-else
-   PREFIX=""
-   CLEAN=./$PREFIX/script/util/clean.sh
-   LISP_CASE=./$PREFIX/script/util/lisp-case.sh
-   DIST="${PREFIX}dist"
-fi
+CLEAN=./$PREFIX/script/util/clean.sh
+LISP_CASE=./$PREFIX/script/util/lisp-case.sh
+DIST="${PREFIX}dist"
 
 SRC_PATH=${WEBSITE//./\/}
 SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
@@ -38,8 +30,8 @@ set +x
 PAGES=($(for FILE in website/$WEBSITE/*.html; do
     basename "$FILE" | sed 's/\.[^.]*$//'
 done | sort -u))
-
 set -x
+
 for PAGE in "${PAGES[@]}"; do
     MODULE=$WEBSITE.$PAGE
     SRC_PATH=${MODULE//./\/}
@@ -74,7 +66,8 @@ set -x
 
 echo "Processing shared files:"
 cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE
-cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared # or just build load-figure.js in $DIST/fluid/shared instead?
+# or just bundle load-figure.js to $DIST/fluid/shared instead?
+cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
 cp -r $DIST/fluid/font dist/$WEBSITE_LISP_CASE
 cp -r $DIST/fluid/css dist/$WEBSITE_LISP_CASE
 cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE
