@@ -90,8 +90,9 @@ commandParser = subparser
    )
 
 dispatchCommand ∷ Command → Aff Unit
-dispatchCommand (Evaluate p) =
-   void $ evaluate p
+dispatchCommand (Evaluate p) = do
+   v <- (evaluate p)
+   logShow v
 dispatchCommand (Publish (Folder website) b) = do -- Publish -> BundleWebsite?
    void $ liftEffect $ publish website b
    log "Published"
