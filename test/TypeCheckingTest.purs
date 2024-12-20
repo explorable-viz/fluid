@@ -2,8 +2,7 @@ module TypeCheckingTest where
 
 import Prelude
 
-import TypeChecking (check, synth, pushVarDef, liftTypes, Context)
--- import Data.Array (fromFoldable, foldl, find, elem, findMap, length)
+import TypeChecking (check, synth, check', synth', pushVarDef, liftTypes, Context)
 import Data.List.NonEmpty (NonEmptyList(..), cons)
 import Data.NonEmpty (NonEmpty(..), (:|))
 import Data.Tuple (Tuple(..))
@@ -13,6 +12,10 @@ import Data.List (List(..), sortBy, zip, zipWith, (:), (\\), singleton)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Console (log)
+import Parsing (runParser)
+import Parse (program, expr_)
+import TypeCheckError (TypeErr(..))
+import Data.Either (Either(..))
 
 logTestResult :: String -> Boolean -> Effect Unit
 logTestResult message result = do
@@ -178,3 +181,45 @@ updateContextTest = do
     log ("Context after adding y: " <> show updatedContext2) 
     let updatedContext3 = pushVarDef updatedContext2 "z" (TCons "Bool")
     log ("Context after adding z: " <> show updatedContext3) 
+
+
+testCheck' :: Effect Unit
+testCheck' = do 
+    let intTest = check' Nil (runParser "1" program) (TCons "Int")
+    logTestResult "check' Integer" (intTest == Right true)
+    let strTest = check' Nil (runParser "\"a\"" program) (TCons "Str")
+    logTestResult "check' String" (strTest == Right true)
+    let floatTest = check' Nil (runParser "2.0" program) (TCons "Float")
+    logTestResult "check' Float" (floatTest == Right true)
+    let binaryAppTest = check' ((Tuple "x" (TCons "Int")):Nil) (runParser "1 + x" program) (TCons "Int")
+    logTestResult "check' binaryApp" (binaryAppTest == Right true)
+    let varTestValid = check' ((Tuple "x" (TCons "Str")):Nil) (runParser "x" program) (TCons "Str")
+    logTestResult "check' var valid" (varTestValid == Right true)
+    let varTestInvalid = check' Nil (runParser "x" program) (TCons "Int")
+    logTestResult "check' var invalid" (varTestInvalid == (Left (LookupNil "Unbound variable found: x")))
+    -- Let
+    let varDefTest = check' Nil (runParser "let x :: Int = 20 in x;" expr_) (TCons "Int")
+    logTestResult "check' let var" (varDefTest == Right true)
+    let varDefEmptyList = check' Nil (runParser "let [] :: [Int] = [] in [];" expr_) (TList (TCons "Int"))
+    logTestResult "check' let emptyList" (varDefEmptyList == Right true)
+    let varDefConstr = check' ((Tuple "C" (TList (TCons "Int"))):(Tuple "x" (TCons "Int")):Nil) (runParser "let C :: [Int] = [1, 2, 3] in C;" expr_) (TList (TCons "Int"))
+    logTestResult "check' let constr" (varDefConstr == Right true)
+    let varDefList = check' ((Tuple "a" (TCons "Str")):(Tuple "b" (TCons "Str")):Nil) (runParser "let [a, b] :: [Str] = [\"a\", \"b\"] in [a, b];" expr_) (TList (TCons "Str"))
+    logTestResult "check' let nonEmptyList" (varDefList == Right true)
+    let varDefDict = check' Nil (runParser "let {} :: {Str, Int} = {} in {};" expr_) (TDict (TCons "Str") (TCons "Int"))
+    logTestResult "check' let dict" (varDefDict == Right true)
+    -- Empty List
+    let emptyList = check' Nil (runParser "[]" program) (TList (TCons "Str"))
+    logTestResult "check' empty list" (emptyList == Right true)
+    let emptyListInvalid = check' Nil (runParser "[]" program) (TList (TCons "IDK"))
+    logTestResult "check' empty list" (emptyListInvalid == Left (InvalidType "Type [IDK] is not accepted"))
+    -- NonEmpty List
+    let nonEmptyList = check' Nil (runParser "[1, 2, 3]" program) (TList (TCons "Int"))
+    logTestResult "check' nonEmpty list" (nonEmptyList == Right true)
+    -- If Else
+    let ifElseValid = check' ((Tuple "x" (TCons "Int")):Nil) (runParser "if x > 2 then 20 else 40" program) (TCons "Int")
+    logTestResult "check' if-else valid" (ifElseValid == Right true)
+    let ifElseInvalid = check' ((Tuple "x" (TCons "Int")):Nil) (runParser "if x then 20 else 40" program) (TCons "Int") 
+    logTestResult "check' if-else invalid" (ifElseInvalid == (Left (InvalidType "Condition must be of type Bool")))
+    let ifElseMismatch = check' Nil (runParser "if 1 > 2 then 20 else \"a\"" expr_) (TCons "Int")
+    logTestResult "check' if-else type mismatch" (ifElseMismatch == (Left (TypeMismatch "Cannot match Int with Str")))

@@ -33,6 +33,9 @@ import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 import Debug
+import TypeChecking (synth', synth)
+import Data.Maybe (Maybe(..))
+import Parsing (runParser)
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef)
@@ -204,8 +207,10 @@ varDefs expr' = keyword str.let_ *> sepBy1_try branch token.semi
    where
       branch :: SParser (Raw VarDef)
       branch = do
-         p <- trace "before pattern" $ \_ -> pattern
-         _ <- trace "got pattern" $ \_ -> token.reserved str.colon *> token.reserved str.colon
+         -- p <- trace "before pattern" $ \_ -> pattern
+         p <- pattern
+         _ <- token.reserved str.colon *> token.reserved str.colon
+         -- _ <- trace "got pattern" $ \_ -> token.reserved str.colon *> token.reserved str.colon
          t <- typeP
          equals
          exp <- expr'
@@ -440,6 +445,7 @@ topLevel p = token.whiteSpace *> p <* eof
 program ∷ SParser (Raw Expr)
 program = topLevel expr_
 
+
 module_ :: SParser (Raw Module)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
 
@@ -455,3 +461,6 @@ typeAtom typeP' = (TCons <$> ctr)  <|> try (token.parens typeP')
 
 fieldP :: SParser Types -> SParser (Tuple String Types)
 fieldP typeP' = Tuple <$> (token.identifier) <*> (token.reservedOp str.colon *> typeP')
+
+-- Try adding something to plug parsing and type checking together
+parseProgram input context = synth' context (runParser input program)
