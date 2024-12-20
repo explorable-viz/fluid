@@ -1,0 +1,57 @@
+let split [] = ([], []);
+    split (x : xs) =
+      let (ys, zs) = split xs in (x : zs, ys);
+
+let merge xs ys =
+       match (xs, ys) as {
+          ([], _) -> ys;
+          (x : xs', []) -> xs;
+          (x : xs', y : ys') ->
+             if x < y
+             then x : merge xs' ys
+             else y : merge xs ys'
+       };
+
+let mergesort xs =
+       if length xs < 2
+       then xs
+       else
+          let (ys, zs) = split xs in
+          merge (mergesort ys) (mergesort zs);
+
+-- assume data is sorted
+let findQuantile q p data = 
+    let rank = (p / q) * (length data - 1)
+    in if rank == floor rank
+    then nth rank data
+    else let x1 = floor rank;
+             x2 = ceiling rank;
+             left = nth x1 data;
+             right = nth x2 data
+        in left + (rank - x1) * (right - left);
+
+let findPercentile = findQuantile 100;
+
+let accumBins data Nil = [];
+    accumBins data [l] = [];
+    accumBins data (l : r : es) =  
+        let (ge, le) = splitOn (fun x -> x <= r) data
+        in (le , r - l) : accumBins ge (r : es);
+
+let cut data nbins = 
+    let low = minimum data;
+        binwidth = (maximum data - low) / nbins;
+        edges = [ low + (x * binwidth) | x <- enumFromTo 0 nbins ]
+    in accumBins data edges;
+
+let qcut data qs = 
+        let low = minimum data;
+            high = maximum data;
+            edges = append (low : [ findPercentile x data | x <- qs], [high])
+        in accumBins data edges;
+
+let likelihoodLE data target = 
+    length (filter (fun x -> x <= target) data) / length data;
+
+let likelihoodGE data target = 
+    length (filter (fun x -> x >= target) data) / length data;
