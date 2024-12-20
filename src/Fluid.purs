@@ -21,6 +21,7 @@ import Node.ChildProcess (ChildProcess, ExecOptions, exec)
 import Node.Encoding (Encoding(..))
 import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, switch, value, (<**>))
 import Options.Applicative.Builder (info)
+import Pretty (prettyP)
 import Util (Endo)
 import Val (Val)
 
@@ -88,7 +89,9 @@ commandParser = subparser
 
 dispatchCommand ∷ Command → Aff Unit
 dispatchCommand = case _ of
-   Evaluate p -> void $ output p
+   Evaluate p -> do
+      out <- output p
+      log $ prettyP out
    Publish (Folder website) b -> do
       _ <- liftEffect $ copyFiles website b
       log "Published"
