@@ -223,3 +223,25 @@ testCheck' = do
     logTestResult "check' if-else invalid" (ifElseInvalid == (Left (InvalidType "Condition must be of type Bool")))
     let ifElseMismatch = check' Nil (runParser "if 1 > 2 then 20 else \"a\"" expr_) (TCons "Int")
     logTestResult "check' if-else type mismatch" (ifElseMismatch == (Left (TypeMismatch "Cannot match Int with Str")))
+    -- Dictionary
+    let dictTestVar = check' ((Tuple "a" (TCons "Str")):(Tuple "b" (TCons "Str")):Nil) (runParser "{a:1, b:2}" program) (TDict (TCons "Str") (TCons "Int"))
+    logTestResult "check' dictionary varKey" (dictTestVar == Right true)
+    let dictTestExpr = check' Nil (runParser "{ [\"a\"]: 5, [\"b\"] : 6 }" program) (TDict (TCons "Str")(TCons "Int"))
+    logTestResult "check' dictionary exprKey" (dictTestExpr == Right true)
+    let dictTestInvalid = check' Nil (runParser "{ [\"a\"]: 5, [\"b\"] : 6 }" program) (TDict (TCons "Str") (TCons "Str"))
+    logTestResult "check' dictionary invalid" (dictTestInvalid == (Left (TypeMismatch "Cannot match {Str, Int} with {Str, Str}")))
+    -- Constructor
+    let constrTest = check' ((Tuple "C" (TCons "C")):Nil) (runParser "C = 1" expr_) (TCons "C")
+    logTestResult "check' constr" (constrTest == Right true)
+    let constrTestInvalid = check' Nil (runParser "C" program) (TCons "A")
+    logTestResult "check' constr invalid" (constrTestInvalid == (Left (TypeMismatch "Cannot match C with A")))
+    -- ListEnum
+    let enumTest = check' Nil (runParser "[1 .. 2]" expr_) (TList (TCons "Int"))
+    logTestResult "check' listEnum" (enumTest == Right true)
+    let enumTestInvalid = check' Nil (runParser "[1 .. 3]" expr_) (TList (TCons "Str"))
+    logTestResult "check' listEnum invalid" (enumTestInvalid == (Left (TypeMismatch "Cannot match [Int] with [Str]")))
+    -- ListComp 
+    let listCompTest = check' ((Tuple "x" (TList (TCons "Int"))):Nil) (runParser "[x | 1, 2, 3]" expr_) (TList (TCons "Int"))
+    logTestResult "check' listComp" (listCompTest == Right true)
+    let listCompTestInvalid = check' ((Tuple "x" (TList (TCons "Int"))):Nil) (runParser "[x | 1, 2, 3]" expr_) (TList (TCons "Str"))
+    logTestResult "check' listComp invalid" (listCompTestInvalid == (Left (TypeMismatch "Cannot match [Int] with [Str]")))
