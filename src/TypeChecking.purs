@@ -10,7 +10,7 @@ import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestP
 import Data.Maybe (Maybe(..))
 import Control.Alt ((<|>))
 import Bind (Bind, Var, varAnon, (↦), keys)
-import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\), nub, find, singleton)
+import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\), nub, find, singleton, foldM, index)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Data.Foldable (all)
 import Data.Traversable (traverse)
@@ -242,6 +242,40 @@ checkPattern' _ _ _ = Nothing
 
 checkBind' :: Context -> Bind Pattern -> Types -> Maybe Context
 checkBind' g (x ↦ pattern) ty = checkPattern' g pattern ty
+
+synthPatterns' :: Context -> List Pattern -> Maybe Context
+synthPatterns' g Nil = Just g
+synthPatterns' g ((PVar var) : Nil) = Just g
+synthPatterns' g (p : ps) = do
+      g' <- synthPattern' g p
+      g'' <- synthPatterns' g ps
+      Just (append g' g'')
+synthPatterns' _ _ = Nothing
+
+synthPattern' :: Context -> Pattern -> Maybe Context
+synthPattern' g (PVar x) = case lookup g x of
+      Just ty -> Just (singleton (Tuple x ty))
+      Nothing -> Nothing
+synthPattern' g (PConstr ctr patterns) = case (lookup g ctr) of
+      Just ty' -> case liftTypes ty' of
+            Tuple argTy retTy -> do
+                  checkPatterns' g argTy patterns
+      _ -> Nothing
+synthPattern' g (PListEmpty) = Just g
+synthPattern' g (PListNonEmpty head tail) = do
+      g' <- synthPattern' g head
+      synthListPattern g' tail
+synthPattern' _ _ = Nothing
+      
+
+synthListPattern :: Context -> ListRestPattern -> Maybe Context
+synthListPattern g (PListEnd) = Just g
+synthListPattern g (PListNext next rest) = do 
+      g' <- synthPattern' g next
+      synthListPattern g' rest
+synthListPattern g (PListVar var) = case lookup g var of
+      Just _ -> Just g
+      _ -> Nothing
 
 checkRecordFields :: Context -> List (Bind Pattern) -> List (Tuple String Types) -> Maybe Context
 checkRecordFields g Nil _ = Just g
@@ -537,6 +571,17 @@ synth' g (Right (Dictionary u entries)) = case entries of
                               Right true -> Right (TDict keyTy valTy)
                               _ -> Left (TypeMismatch ("Cannot match expression with type " <> (prettyTypes (TDict keyTy valTy))))
       Nil -> Left (InvalidSyntax "Null dictionary found")
+
+synth' g (Right (Lambda clauses)) = case clauses of
+      (Clauses (NonEmptyList (NonEmpty (Clause (Tuple (NonEmptyList (NonEmpty pattern Nil)) expr)) Nil))) -> case synthPattern' g pattern of
+            Just updatedG -> case synth' updatedG (Right expr) of
+                  Right ty -> case index updatedG 0 of
+                        Just elem -> Right (FunTy (snd elem) ty)
+                        Nothing -> Left (TypeMismatch "Cannot match types")
+                  Left err -> Left err
+            Nothing -> Left (InvalidSyntax "Pattern structure is invalid") 
+      _ -> Left (InvalidSyntax "Clauses structure is invalid")
+
 synth' _ _ = Left (InvalidSyntax "Not supported yet")
 
 
@@ -695,6 +740,14 @@ check' g (Right (ListComp u expr qualifiers)) (TList ty) = case check' g (Right 
                                     Right true -> check' context (Right (ListComp u expr qs)) (TList ty)
                   _ -> Left (InvalidSyntax "Invalid syntax")
             Nil -> Right true
+
+check' g (Right (Lambda clauses)) (FunTy argTy retTy) = case clauses of
+      (Clauses (NonEmptyList (NonEmpty (Clause (Tuple (NonEmptyList (NonEmpty pattern Nil)) expr)) Nil))) -> case checkPattern' g pattern argTy of
+            Just context -> check' context (Right expr) retTy
+            Nothing -> Left (InvalidSyntax "Pattern structure is invalid")
+      _ -> Left (InvalidSyntax "Clauses structure is invalid")
+
+
 check' g (Right expr) ty = case synth' g (Right expr) of
       Left err -> Left err
       Right ty' -> 
@@ -709,3 +762,12 @@ prettyTypes (TCons ty) = ty
 prettyTypes (TList ty) = "[" <> prettyTypes ty <> "]"
 prettyTypes (TDict ty1 ty2) = "{" <> prettyTypes ty1 <> ", " <> prettyTypes ty2 <> "}"
 prettyTypes (FunTy ty1 ty2) = prettyTypes ty1 <> " -> " <> prettyTypes ty2 
+
+-- data Expr a
+--    | Matrix a (Expr a) (Var × Var) (Expr a)
+--    | Lambda (Clauses a)
+--    | Project (Expr a) Var
+--    | DProject (Expr a) (Expr a)
+--    | App (Expr a) (Expr a)
+--    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
+--    | LetRec (RecDefs a) (Expr a)

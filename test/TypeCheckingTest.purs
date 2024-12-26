@@ -245,3 +245,16 @@ testCheck' = do
     logTestResult "check' listComp" (listCompTest == Right true)
     let listCompTestInvalid = check' ((Tuple "x" (TList (TCons "Int"))):Nil) (runParser "[x | 1, 2, 3]" expr_) (TList (TCons "Str"))
     logTestResult "check' listComp invalid" (listCompTestInvalid == (Left (TypeMismatch "Cannot match [Int] with [Str]")))
+    -- Lambda
+    let lambdaTest = check' Nil (runParser "fun x -> x + 1" program) (FunTy (TCons "Int") (TCons "Int"))
+    logTestResult "check' lambda" (lambdaTest == Right true)
+    let lambdaBool = check' Nil (runParser "fun x -> x > 1" program) (FunTy (TCons "Int") (TCons "Bool"))
+    logTestResult "check' lambda bool" (lambdaBool == Right true)
+    let lambdaTestInvalid = check' Nil (runParser "fun x -> x + 1" program) (FunTy (TCons "Int") (TCons "Str"))
+    logTestResult "check' lambda invalid" (lambdaTestInvalid == (Left (TypeMismatch "Cannot match Str with Int")))
+    let lambdaBoolInvalid = check' Nil (runParser "fun x -> x > 1" program) (FunTy (TCons "Int") (TCons "Int"))
+    logTestResult "check' lambda bool invalid" (lambdaBoolInvalid == (Left (TypeMismatch "Cannot match Int with Bool")))
+
+
+-- > synth' ((Tuple "x" (TCons "Int")):Nil) (runParser "fun x -> x > 1" program)
+-- (Right (FunTy (TCons "Int") (TCons "Bool")))
