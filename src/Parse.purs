@@ -33,7 +33,7 @@ import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 import Debug
-import TypeChecking (synth', synth)
+import TypeChecking (synth)
 import Data.Maybe (Maybe(..))
 import Parsing (runParser)
 
@@ -463,4 +463,4 @@ fieldP :: SParser Types -> SParser (Tuple String Types)
 fieldP typeP' = Tuple <$> (token.identifier) <*> (token.reservedOp str.colon *> typeP')
 
 -- Try adding something to plug parsing and type checking together
-parseProgram input context = synth' context (runParser input program)
+parseProgram input context = synth context (runParser input program)
