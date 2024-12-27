@@ -52,17 +52,6 @@ done
 
 WEBSITE_LISP_CASE=$($LISP_CASE "$WEBSITE")
 
-set +x
-set +u # try and remove this
-TO_COPY=()
-for CHILD in website/$WEBSITE/*; do
-   BASENAME="$(basename "$CHILD")"
-   if [[ "$BASENAME" =~ ^[a-z] ]]; then
-      TO_COPY+=("$CHILD")
-   fi
-done
-set -x
-
 echo "Processing shared files:"
 cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE
 # or just bundle load-figure.js to $DIST/fluid/shared instead?
@@ -73,6 +62,17 @@ cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE
 cp -r $DIST/fluid/image dist/$WEBSITE_LISP_CASE
 
 echo "Processing other static files:"
+set +x
+set +u # try and remove this
+TO_COPY=()
+for CHILD in website/$WEBSITE/*; do
+   BASENAME="$(basename "$CHILD")"
+   if [[ "$BASENAME" =~ ^[a-z.] ]]; then
+      TO_COPY+=("$CHILD")
+   fi
+done
+set -x
+
 for CHILD in "${TO_COPY[@]}"; do
    BASENAME="$(basename "$CHILD")"
    cp -r "$CHILD" "dist/$WEBSITE_LISP_CASE/$BASENAME"
