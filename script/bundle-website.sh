@@ -26,7 +26,7 @@ set +x
 TO_COPY=()
 for CHILD in website/$WEBSITE/*; do
    BASENAME="$(basename "$CHILD")"
-   if [[ "$BASENAME" =~ ^[a-z] ]]; then
+   if [[ "$BASENAME" =~ ^[a-z.] ]]; then
       TO_COPY+=("$CHILD")
    fi
 done
