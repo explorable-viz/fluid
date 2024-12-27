@@ -74,8 +74,8 @@ done
 set -x
 
 for CHILD in "${TO_COPY[@]}"; do
-   BASENAME="$(basename "$CHILD")"
-   cp -r "$CHILD" "dist/$WEBSITE_LISP_CASE/$BASENAME"
+#   BASENAME="$(basename "$CHILD")"
+   cp -r "$CHILD" "dist/$WEBSITE_LISP_CASE" # /$BASENAME"
    done
 
 shopt -u nullglob
