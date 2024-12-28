@@ -2,7 +2,7 @@ module TypeChecking where
 
 import Prelude
 
-import Data.Array (fromFoldable, foldl, elem, findMap, concat, head)
+import Data.Array (fromFoldable, foldl, elem, findMap, head)
 import Data.List.NonEmpty (NonEmptyList(..), cons)
 import Data.NonEmpty (NonEmpty(..), (:|))
 import Data.Tuple (Tuple(..), snd, fst)
@@ -10,8 +10,8 @@ import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestP
 import Data.Maybe (Maybe(..))
 import Control.Alt ((<|>))
 import Bind (Bind, Var, varAnon, (↦), keys)
-import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\), nub, find, singleton, foldM, index)
-import Data.List.Lazy (replicate)
+import Data.List (List(..), length, sortBy, zip, zipWith, (:), (\\), nub, find, singleton, foldM, index, foldr, concat)
+import Data.List.Lazy.NonEmpty (toList)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Data.Foldable (all)
 import Data.Traversable (traverse)
@@ -20,6 +20,7 @@ import Data.Semigroup
 import Data.Either (Either(..))
 import TypeCheckError (TypeErr(..))
 import Parsing (ParseError)
+import Debug
 
 {-
 G ::= G, x : A | .
@@ -159,7 +160,59 @@ synthPattern' g (PListNonEmpty head tail) = do
       g' <- synthPattern' g head
       synthListPattern g' tail
 synthPattern' _ _ = Nothing
-      
+
+------------------------------
+synthPattern :: Context -> Pattern -> Either TypeErr Context
+synthPattern g (PVar var) = case lookup g var of
+      Just ty -> Right (singleton (Tuple var ty))
+      Nothing -> Left (LookupNil ("Unbound variable: " <> var))
+synthPattern g (PConstr ctr patterns) = case lookup g ctr of
+      Just ctrTy -> case liftTypes ctrTy of
+            Tuple argTys retTy -> case processPatterns g argTys patterns of 
+                  Left err -> Left err
+                  Right (Tuple listTy ty) -> Right (combineContext (listTy))
+            _ -> Left (TypeMismatch ("Return type mismatch in constructor " <> show ctr))
+      _ -> Left (LookupNil ("Constructor not found: " <> show ctr))
+synthPattern g (PListEmpty) = Right g
+synthPattern g (PListNonEmpty head tail) = case synthPattern g head of
+      Left err -> Left err
+      Right g' -> synthPatternList g tail
+synthPattern _ _ = Left (InvalidSyntax "Unsupported")  
+
+synthPatternList :: Context -> ListRestPattern -> Either TypeErr Context
+synthPatternList g (PListEnd) = Right g
+synthPatternList g (PListNext next rest) = case synthPattern g next of
+      Left err -> Left err
+      Right g' -> synthPatternList g' rest
+synthPatternList g (PListVar var) = case lookup g var of 
+      Just _ -> Right g
+      Nothing -> Left (LookupNil ("Unbound variable " <> var))
+
+processPatterns :: Context -> List Types -> List Pattern -> Either TypeErr (Tuple (List (Tuple Var Types)) Types)
+processPatterns _ Nil Nil = Right (Tuple Nil (TCons ""))
+processPatterns g (argTy : argTys) (p : ps) = case argTy of
+    FunTy ty1 ty2 -> case checkPattern' g p ty1 of
+        Just updatedG -> do
+            result <- processPatterns updatedG (ty2 : argTys) ps
+            let Tuple restCtx restTy = result
+            Right (Tuple ((Tuple (extractVar p) ty1) : restCtx) restTy)
+        Nothing -> Left (TypeMismatch ("Cannot match pattern with type " <> (prettyTypes ty1)))
+    _ -> case checkPattern' g p argTy of
+        Just updatedG -> do
+            result <- processPatterns updatedG argTys ps
+            let Tuple restCtx restTy = result
+            Right (Tuple ((Tuple (extractVar p) argTy) : restCtx) restTy)
+        Nothing -> Left (TypeMismatch ("Cannot match pattern with type " <> (prettyTypes argTy)))
+processPatterns _ _ _ = Left (TypeMismatch "Mismatch in number of arguments")
+
+extractVar :: Pattern -> Var
+extractVar (PVar var) = var
+extractVar _ = ""
+
+combineContext :: List (Tuple Var Types) -> Context
+combineContext = foldr (\(Tuple var ty) acc -> acc <> singleton (Tuple var ty)) Nil
+
+------------------------------
 
 synthListPattern :: Context -> ListRestPattern -> Maybe Context
 synthListPattern g (PListEnd) = Just g
@@ -363,6 +416,22 @@ synth g (Right (Lambda clauses)) = case clauses of
                   Left err -> Left err
             Nothing -> Left (InvalidSyntax "Pattern structure is invalid") 
       _ -> Left (InvalidSyntax "Clauses structure is invalid")
+
+-- App
+synth g (Right (App exp1 exp2)) = case synth g (Right exp1) of
+      Left err -> Left err
+      Right ty1 -> case synth g (Right exp2) of 
+            Left err -> Left err
+            Right ty2 -> Right (FunTy ty1 ty2)
+
+-- MatchAs
+synth g (Right (MatchAs expr patterns)) = case synth g (Right expr) of
+      Left err -> Left err
+      Right exprTy -> case patterns of 
+            NonEmptyList list -> case matchAsList g list of 
+                  Left err -> Left err
+                  Right _ -> Right exprTy
+            _ -> Left (InvalidSyntax "Syntax invalid for patterns, must be NonEmptyList")
 -- Other
 synth _ _ = Left (InvalidSyntax "Not supported yet")
 
@@ -549,21 +618,17 @@ check g (Right (App exp1 exp2)) (FunTy ty1 ty2) = case check g (Right exp1) ty2 
             _ -> Left (InvalidType ("Cannot match expression with " <> (prettyTypes ty1)))
       _ -> Left (InvalidType ("Cannot match expression with " <> (prettyTypes ty2)))
 -- MatchAs
--- check g (Right (MatchAs expr patterns)) ty = case synth g (Right expr) of
---       Left err -> Left err
---       Right exprTy -> case (Tuple exprTy ty) of
---             Tuple (TList elemTy) (TList expectedElemTy) -> 
---                   if elemTy == expectedElemTy then
---                         case checkPatterns' g (replicate (length patterns) exprTy) patterns of
---                               Just updatedG -> Right true
---                               Nothing -> Left (TypeMismatch "Patterns do not match the expression")
---                   else
---                         Left (TypeMismatch ("Expression type mismatch, expected " <> prettyTypes ty <> " but got " <> prettyTypes exprTy))
--- check g (Right (MatchAs expr patterns)) ty = case synth g (Right expr) of 
---       Left err -> Left err
---       Right exprTy -> case patterns of 
---            (NonEmptyList (NonEmpty patternsExprTuple)) ->  Right true
---            _ -> Right false
+check g (Right (MatchAs expr patterns)) ty = case synth g (Right expr) of
+      Left err -> Left err
+      Right exprTy -> 
+            if ty == exprTy then 
+                  case patterns of
+                        NonEmptyList list -> case matchAsList g list of
+                              Left err -> Left err
+                              Right _ -> Right true
+                        _ -> Left (InvalidSyntax "Syntax invalid for patterns, must be NonEmptyList")
+            else
+                  Left (TypeMismatch ("Cannot match " <> (prettyTypes ty) <> " with " <> (prettyTypes exprTy)))
 
 -- Others
 check g (Right expr) ty = case synth g (Right expr) of
@@ -581,9 +646,30 @@ prettyTypes (TDict ty1 ty2) = "{" <> prettyTypes ty1 <> ", " <> prettyTypes ty2 
 prettyTypes (FunTy ty1 ty2) = prettyTypes ty1 <> " -> " <> prettyTypes ty2 
 
 -- data Expr a
---    | Matrix a (Expr a) (Var × Var) (Expr a)                    Can't really figure out the syntax yet
+--    | Matrix a (Expr a) (Var × Var) (Expr a)                    
 --    | Project (Expr a) Var                                      
 --    | DProject (Expr a) (Expr a)
---    | App (Expr a) (Expr a)                                     Done in check? Maybe ask Dominic for help on this one
---    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
+--    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))        Done in check, Not sure if this is correct though
 --    | LetRec (RecDefs a) (Expr a)
+
+matchAsTuple :: forall a. Context -> Tuple Pattern (Expr a) -> Either TypeErr Boolean
+matchAsTuple g (Tuple pattern expr) = case synthPattern g pattern of
+      Left err -> Left err
+      Right g' -> case synth g' (Right expr) of 
+            Left err -> Left err
+            Right ty' -> Right true
+matchAsTuple _ _ = Left (InvalidSyntax "Unsupported")
+
+matchAsTail :: forall a. Context -> List (Tuple Pattern (Expr a)) -> Either TypeErr Boolean
+matchAsTail g Nil = Right true
+matchAsTail g (x : Nil) = matchAsTuple g x
+matchAsTail g (x : xs) = case matchAsTuple g x of
+      Left err -> Left err
+      Right _ -> matchAsTail g xs
+
+matchAsList :: forall a. Context -> NonEmpty List (Tuple Pattern (Expr a)) -> Either TypeErr Boolean
+matchAsList g (NonEmpty head tail) = case matchAsTuple g head of
+      Left err -> Left err
+      Right _ -> case matchAsTail g tail of
+            Left err -> Left err 
+            Right _ -> Right true

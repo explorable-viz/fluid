@@ -112,6 +112,18 @@ testCheck = do
     logTestResult "check lambda invalid" (lambdaTestInvalid == (Left (TypeMismatch "Cannot match Str with Int")))
     let lambdaBoolInvalid = check Nil (runParser "fun x -> x > 1" program) (FunTy (TCons "Int") (TCons "Int"))
     logTestResult "check lambda bool invalid" (lambdaBoolInvalid == (Left (TypeMismatch "Cannot match Int with Bool")))
+    -- App
+    let appTest = check Nil (runParser "fun x -> x + 1" program) (FunTy (TCons "Int") (TCons "Int"))
+    logTestResult "check App" (appTest == Right true)
+    let appTestInvalid = check Nil (runParser "fun x -> x + 1" program) (FunTy (TCons "Int") (TCons "Bool"))
+    logTestResult "check App invalid" (appTestInvalid == (Left (TypeMismatch "Cannot match Bool with Int")))
+    -- MatchAs
+    let matchAsTest = check ((Tuple ":" (TList (TCons "Int"))):(Tuple "x" (TList (TCons "Int"))):Nil) (runParser "match x as { [] -> []; x -> x };" expr_) (TList (TCons "Int"))
+    logTestResult "check MatchAs" (matchAsTest == Right true)
+    let matchAsCons =  check ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil) (runParser "match xs as { [] -> []; x : xs -> xs };" expr_) (TList (TCons "a"))
+    logTestResult "check MatchAs with Cons" (matchAsCons == Right true)
+    let matchAsInvalid = check ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil) (runParser "match xs as { [] -> []; x : xs -> xs };" expr_) (TList (TCons "Str"))
+    logTestResult "check MatchAs invalid" (matchAsInvalid == (Left (TypeMismatch "Cannot match [Str] with [a]")))
 
 testSynth :: Effect Unit
 testSynth = do 
@@ -180,3 +192,14 @@ testSynth = do
     logTestResult "synth lambda bool" (lambdaBool == Right (FunTy (TCons "Int") (TCons "Bool")))
     let lambdaInvalid = synth Nil (runParser "fun x -> x" program)
     logTestResult "synth lambda invalid" (lambdaInvalid == (Left (InvalidSyntax "Pattern structure is invalid")))
+    -- App
+    let appBool = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "fun x -> x > 1" program)
+    logTestResult "synth App" (appBool == (Right (FunTy (TCons "Int") (TCons "Bool"))))
+    let appInt = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "fun x -> x + 1" program) 
+    logTestResult "synth App" (appInt == (Right (FunTy (TCons "Int") (TCons "Int"))))
+    -- MatchAs
+    let matchAsTest = synth ((Tuple ":" (TList (TCons "Int"))):(Tuple "x" (TList (TCons "Int"))):Nil) (runParser "match x as { [] -> []; x -> x };" expr_)
+    logTestResult "synth MatchAs" (matchAsTest == Right (TList (TCons "Int")))
+    let matchAsCons = synth ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil) (runParser "match xs as { [] -> []; x : xs -> xs };" expr_)
+    logTestResult "synth MatchAs Cons" (matchAsCons == (Right (TList (TCons "a"))))
+    
