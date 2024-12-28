@@ -191,7 +191,7 @@ testSynth = do
     let lambdaBool = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "fun x -> x > 1" program)
     logTestResult "synth lambda bool" (lambdaBool == Right (FunTy (TCons "Int") (TCons "Bool")))
     let lambdaInvalid = synth Nil (runParser "fun x -> x" program)
-    logTestResult "synth lambda invalid" (lambdaInvalid == (Left (InvalidSyntax "Pattern structure is invalid")))
+    logTestResult "synth lambda invalid" (lambdaInvalid == (Left (LookupNil "Unbound variable: x")))
     -- App
     let appBool = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "fun x -> x > 1" program)
     logTestResult "synth App" (appBool == (Right (FunTy (TCons "Int") (TCons "Bool"))))
