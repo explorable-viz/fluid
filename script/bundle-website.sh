@@ -55,9 +55,9 @@ WEBSITE_LISP_CASE=$($LISP_CASE "$WEBSITE")
 set +x
 set +u # try and remove this
 TO_COPY=()
-for CHILD in website/$WEBSITE/*; do
+for CHILD in website/$WEBSITE/.*; do
    BASENAME="$(basename "$CHILD")"
-   if [[ "$BASENAME" =~ ^[a-z] ]]; then
+   if [[ "$BASENAME" =~ ^[a-z.] ]]; then
       TO_COPY+=("$CHILD")
    fi
 done
