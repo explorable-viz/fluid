@@ -16,6 +16,6 @@ else
    if [[ -e "website/$SRC_PATH.html" ]]; then
       cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
    else
-      cp website/FluidOrg/template.html dist/$SRC_PATH_LISP_CASE/index.html
+      cp website/template.html dist/$SRC_PATH_LISP_CASE/index.html
    fi
 fi
