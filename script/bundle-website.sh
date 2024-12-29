@@ -34,12 +34,6 @@ for PAGE in "${PAGES[@]}"; do
    if [[ -e "website/$WEBSITE/$PAGE.purs" ]]; then
       . script/bundle-page.sh $WEBSITE.$PAGE
    fi
-#   else
-#      if [[ -e "website/$SRC_PATH.html" ]]; then
-#         cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
-#      fi
-#   fi
-#
    if [[ -e "website/$WEBSITE/$PAGE.json" ]]; then
       PAGE_LISP_CASE=$($LISP_CASE "$WEBSITE/$PAGE")
       mkdir -p dist/$PAGE_LISP_CASE
