@@ -31,15 +31,7 @@ done | sort -u))
 set -x
 
 for PAGE in "${PAGES[@]}"; do
-   if [[ -e "website/$WEBSITE/$PAGE.purs" ]]; then
-      . script/bundle-page.sh $WEBSITE.$PAGE
-   fi
-   if [[ -e "website/$WEBSITE/$PAGE.json" ]]; then
-      PAGE_LISP_CASE=$($LISP_CASE "$WEBSITE/$PAGE")
-      mkdir -p dist/$PAGE_LISP_CASE
-      cp website/$WEBSITE/$PAGE.html dist/$PAGE_LISP_CASE/index.html
-      cp website/$WEBSITE/$PAGE.json dist/$PAGE_LISP_CASE/spec.json
-   fi
+   . script/bundle-page.sh $WEBSITE.$PAGE
 done
 
 echo "Processing shared files:"
