@@ -30,15 +30,10 @@ for PAGE in "${PAGES[@]}"; do
    . script/bundle-page.sh $WEBSITE.$PAGE
 done
 
-echo "Processing shared files:"
-# cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE
+echo "Processing load-figure.js:"
 mkdir -p dist/$WEBSITE_LISP_CASE/shared
 cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
 # or just bundle load-figure.js to $DIST/fluid/shared instead?
-# cp -r $DIST/fluid/font dist/$WEBSITE_LISP_CASE
-# cp -r $DIST/fluid/css dist/$WEBSITE_LISP_CASE
-# cp -r $DIST/fluid/image dist/$WEBSITE_LISP_CASE
-# cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE
 
 echo "Processing other static files:"
 set +x
