@@ -4,7 +4,7 @@ set -e
 
 WEBSITE=$1
 
-if [[ -e "website/$WEBSITE.purs" || -e "website/$WEBSITE.html" ]]; then
+# if [[ -e "website/$WEBSITE.purs" || -e "website/$WEBSITE.html" ]]; then
    echo "Testing website: ${WEBSITE}"
 
    if [[ -e "website/Test/$WEBSITE.purs" ]]; then
@@ -24,7 +24,7 @@ if [[ -e "website/$WEBSITE.purs" || -e "website/$WEBSITE.html" ]]; then
    for PAGE in "${PAGES[@]}"; do
       . script/test-page.sh $WEBSITE $WEBSITE.$PAGE
       done
-else
-   echo "No website found corresponding to Test/$WEBSITE"
-   exit 1
-fi
+# else
+#    echo "No website found corresponding to Test/$WEBSITE"
+#    exit 1
+# fi

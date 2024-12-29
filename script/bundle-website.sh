@@ -13,13 +13,16 @@ done
 LISP_CASE=./$PREFIX/script/util/lisp-case.sh
 DIST="${PREFIX}dist"
 WEBSITE_LISP_CASE=$($LISP_CASE "$WEBSITE")
-
 echo "$WEBSITE -> $WEBSITE_LISP_CASE"
 mkdir -p "dist/$WEBSITE_LISP_CASE"
 
-if [[ -e "website/$WEBSITE.html" ]]; then
-   cp website/$WEBSITE.html dist/$WEBSITE_LISP_CASE/index.html
-fi
+###
+# if [[ -e "website/$WEBSITE.html" ]]; then
+#    cp website/$WEBSITE.html dist/$WEBSITE_LISP_CASE/index.html
+# fi
+### REPLACE BY
+. script/bundle-page.sh $WEBSITE
+###
 
 shopt -s nullglob
 
