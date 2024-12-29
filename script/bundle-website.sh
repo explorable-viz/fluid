@@ -31,13 +31,14 @@ for PAGE in "${PAGES[@]}"; do
 done
 
 echo "Processing shared files:"
-cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE
-# or just bundle load-figure.js to $DIST/fluid/shared instead?
+# cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE
+mkdir -p dist/$WEBSITE_LISP_CASE/shared
 cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
-cp -r $DIST/fluid/font dist/$WEBSITE_LISP_CASE
-cp -r $DIST/fluid/css dist/$WEBSITE_LISP_CASE
-cp -r $DIST/fluid/image dist/$WEBSITE_LISP_CASE
-cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE
+# or just bundle load-figure.js to $DIST/fluid/shared instead?
+# cp -r $DIST/fluid/font dist/$WEBSITE_LISP_CASE
+# cp -r $DIST/fluid/css dist/$WEBSITE_LISP_CASE
+# cp -r $DIST/fluid/image dist/$WEBSITE_LISP_CASE
+# cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE
 
 echo "Processing other static files:"
 set +x
@@ -54,7 +55,7 @@ shopt -u extglob
 set -x
 
 for CHILD in "${TO_COPY[@]}"; do
-   cp -r "$CHILD" "dist/$WEBSITE_LISP_CASE"
+   cp -r "$CHILD" dist/$WEBSITE_LISP_CASE
 done
 
 shopt -u nullglob
