@@ -16,7 +16,8 @@ DIST="${PREFIX}dist"
 SRC_PATH=${WEBSITE//./\/}
 SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
 echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
-./$PREFIX/script/util/clean.sh $SRC_PATH_LISP_CASE
+mkdir -p "dist/$SRC_PATH_LISP_CASE"
+# ./$PREFIX/script/util/clean.sh $SRC_PATH_LISP_CASE
 
 if [[ -e "website/$SRC_PATH.html" ]]; then
    cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
@@ -24,6 +25,7 @@ fi
 
 shopt -s nullglob
 
+# Only support one level of nesting for now
 set +x
 PAGES=($(for FILE in website/$WEBSITE/*.html; do
    basename "$FILE" | sed 's/\.[^.]*$//'
@@ -31,22 +33,20 @@ done | sort -u))
 set -x
 
 for PAGE in "${PAGES[@]}"; do
-   MODULE=$WEBSITE.$PAGE
-   SRC_PATH=${MODULE//./\/}
-   SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
-   echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
-   mkdir dist/$SRC_PATH_LISP_CASE
-
-   if [[ -e "website/$SRC_PATH.purs" ]]; then
+   if [[ -e "website/$WEBSITE/$PAGE.purs" ]]; then
       . script/bundle-page.sh $WEBSITE.$PAGE
-   else
-      if [[ -e "website/$SRC_PATH.html" ]]; then
-         cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
-      fi
    fi
-
-   if [[ -e "website/$SRC_PATH.json" ]]; then
-      cp website/$SRC_PATH.json dist/$SRC_PATH_LISP_CASE/spec.json
+#   else
+#      if [[ -e "website/$SRC_PATH.html" ]]; then
+#         cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
+#      fi
+#   fi
+#
+   if [[ -e "website/$WEBSITE/$PAGE.json" ]]; then
+      PAGE_LISP_CASE=$($LISP_CASE "$WEBSITE/$PAGE")
+      mkdir -p dist/$PAGE_LISP_CASE
+      cp website/$WEBSITE/$PAGE.html dist/$PAGE_LISP_CASE/index.html
+      cp website/$WEBSITE/$PAGE.json dist/$PAGE_LISP_CASE/spec.json
    fi
 done
 
@@ -58,8 +58,8 @@ cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE
 cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
 cp -r $DIST/fluid/font dist/$WEBSITE_LISP_CASE
 cp -r $DIST/fluid/css dist/$WEBSITE_LISP_CASE
-cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE
 cp -r $DIST/fluid/image dist/$WEBSITE_LISP_CASE
+cp $DIST/fluid/favicon.ico dist/$WEBSITE_LISP_CASE
 
 echo "Processing other static files:"
 set +x
@@ -76,9 +76,8 @@ shopt -u extglob
 set -x
 
 for CHILD in "${TO_COPY[@]}"; do
-#   BASENAME="$(basename "$CHILD")"
-   cp -r "$CHILD" "dist/$WEBSITE_LISP_CASE" # /$BASENAME"
-   done
+   cp -r "$CHILD" "dist/$WEBSITE_LISP_CASE"
+done
 
 shopt -u nullglob
 cp -r fluid dist/$WEBSITE_LISP_CASE
