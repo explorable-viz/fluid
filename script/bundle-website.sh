@@ -12,15 +12,13 @@ done
 
 LISP_CASE=./$PREFIX/script/util/lisp-case.sh
 DIST="${PREFIX}dist"
+WEBSITE_LISP_CASE=$($LISP_CASE "$WEBSITE")
 
-SRC_PATH=${WEBSITE//./\/}
-SRC_PATH_LISP_CASE=$($LISP_CASE "$SRC_PATH")
-echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
-mkdir -p "dist/$SRC_PATH_LISP_CASE"
-# ./$PREFIX/script/util/clean.sh $SRC_PATH_LISP_CASE
+echo "$WEBSITE -> $WEBSITE_LISP_CASE"
+mkdir -p "dist/$WEBSITE_LISP_CASE"
 
-if [[ -e "website/$SRC_PATH.html" ]]; then
-   cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
+if [[ -e "website/$WEBSITE.html" ]]; then
+   cp website/$WEBSITE.html dist/$WEBSITE_LISP_CASE/index.html
 fi
 
 shopt -s nullglob
@@ -49,8 +47,6 @@ for PAGE in "${PAGES[@]}"; do
       cp website/$WEBSITE/$PAGE.json dist/$PAGE_LISP_CASE/spec.json
    fi
 done
-
-WEBSITE_LISP_CASE=$($LISP_CASE "$WEBSITE")
 
 echo "Processing shared files:"
 cp -r $DIST/fluid/shared dist/$WEBSITE_LISP_CASE
