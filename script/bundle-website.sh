@@ -47,10 +47,7 @@ for CHILD in "${TO_COPY[@]}"; do
 done
 
 echo "Processing load-figure.js:"
-ls -ld dist/$WEBSITE_LISP_CASE/shared
-mkdir -p dist/$WEBSITE_LISP_CASE/shared
 cp ${PREFIX}dist/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
-# or just bundle load-figure.js to $DIST/fluid/shared instead?
 
 cp -r fluid dist/$WEBSITE_LISP_CASE
 echo "Bundled website $WEBSITE"
