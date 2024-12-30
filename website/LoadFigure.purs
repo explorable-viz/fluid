@@ -1,3 +1,4 @@
+-- Should this be src/Αpp rather than website/Website.LoadFigure?
 module Website.LoadFigure where
 
 import Prelude hiding (absurd)
