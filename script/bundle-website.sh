@@ -10,7 +10,6 @@ while getopts "w:r:" opt; do
    esac
 done
 
-DIST="${PREFIX}dist"
 WEBSITE_LISP_CASE=$(./$PREFIX/script/util/lisp-case.sh "$WEBSITE")
 echo "$WEBSITE -> $WEBSITE_LISP_CASE"
 mkdir -p "dist/$WEBSITE_LISP_CASE"
@@ -44,13 +43,13 @@ shopt -u extglob
 set -xu
 
 for CHILD in "${TO_COPY[@]}"; do
-   cp -r "$CHILD" dist/$WEBSITE_LISP_CASE
+   cp -rL "$CHILD" dist/$WEBSITE_LISP_CASE
 done
 
 echo "Processing load-figure.js:"
 ls -ld dist/$WEBSITE_LISP_CASE/shared
 mkdir -p dist/$WEBSITE_LISP_CASE/shared
-cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
+cp ${PREFIX}dist/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
 # or just bundle load-figure.js to $DIST/fluid/shared instead?
 
 cp -r fluid dist/$WEBSITE_LISP_CASE
