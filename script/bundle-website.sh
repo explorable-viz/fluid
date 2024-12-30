@@ -31,8 +31,7 @@ for PAGE in "${PAGES[@]}"; do
 done
 
 echo "Processing other static files:"
-set +x
-set +u # try to remove this
+set +xu  # try to remove +u
 TO_COPY=()
 shopt -s extglob
 for CHILD in website/$WEBSITE/!(.|..); do
@@ -42,16 +41,16 @@ for CHILD in website/$WEBSITE/!(.|..); do
    fi
 done
 shopt -u extglob
-set -x
+set -xu
+
+for CHILD in "${TO_COPY[@]}"; do
+   cp -r "$CHILD" dist/$WEBSITE_LISP_CASE
+done
 
 echo "Processing load-figure.js:"
 mkdir -p dist/$WEBSITE_LISP_CASE/shared
 cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
 # or just bundle load-figure.js to $DIST/fluid/shared instead?
-
-for CHILD in "${TO_COPY[@]}"; do
-   cp -r "$CHILD" dist/$WEBSITE_LISP_CASE
-done
 
 cp -r fluid dist/$WEBSITE_LISP_CASE
 echo "Bundled website $WEBSITE"
