@@ -30,11 +30,6 @@ for PAGE in "${PAGES[@]}"; do
    . script/bundle-page.sh $WEBSITE.$PAGE
 done
 
-echo "Processing load-figure.js:"
-mkdir -p dist/$WEBSITE_LISP_CASE/shared
-cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
-# or just bundle load-figure.js to $DIST/fluid/shared instead?
-
 echo "Processing other static files:"
 set +x
 set +u # try to remove this
@@ -49,10 +44,14 @@ done
 shopt -u extglob
 set -x
 
+echo "Processing load-figure.js:"
+mkdir -p dist/$WEBSITE_LISP_CASE/shared
+cp $DIST/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
+# or just bundle load-figure.js to $DIST/fluid/shared instead?
+
 for CHILD in "${TO_COPY[@]}"; do
    cp -r "$CHILD" dist/$WEBSITE_LISP_CASE
 done
 
-shopt -u nullglob
 cp -r fluid dist/$WEBSITE_LISP_CASE
 echo "Bundled website $WEBSITE"
