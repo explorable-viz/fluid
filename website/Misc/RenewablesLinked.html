@@ -40,6 +40,11 @@
    </div>
 </div>
 
-<script src="fluid.js"></script>
+<script type="module">
+   import { loadFigure, drawCode } from "/shared/load-figure.js"
+   drawCode("fluid/example/slicing/linked-outputs")("bar-chart-line-chart")()
+   drawCode("fluid/dataset")("renewables")()
+   loadFigure("spec.json")()
+</script>
 </body>
 </html>

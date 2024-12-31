@@ -1,0 +1,6 @@
+{
+    "file": "linked-outputs/moving-average",
+    "imports": [],
+    "inputs": ["methane"],
+    "datasets": [["methane", "dataset/methane-emissions"]]
+}

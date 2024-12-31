@@ -10,28 +10,17 @@
    <link href="/css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
-   <script>
-      loadHeader()
-      loadSubHeader()
-   </script>
-   <style>
-      .data-pane {
-         max-width: 400px;
-      }
-   </style>
 </head>
-<body>
-<div id="grid" class="grid-container data-pane-hidden">
+<body class="standalone">
+<div id="grid" class="grid-container data-pane-hidden double-size">
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <h3>Example program</h3>
-      <p>Example:</p>
+      <h3>Methane</h3>
+      <p>Methane emissions example</p>
    </div>
 
-   <div class="flex-right-align data-pane">
-      <div id="fig-input"></div>
-   </div>
+   <div id="fig-input" class="flex-right-align data-pane"></div>
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
    </div>
@@ -40,6 +29,9 @@
    </div>
 </div>
 
-<script src="fluid.js"></script>
+<script type="module">
+    import { loadFigure } from "/shared/load-figure.js"
+    loadFigure("spec.json")()
+</script>
 </body>
 </html>
