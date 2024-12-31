@@ -48,7 +48,7 @@ testCheck = do
     let opTest = check Nil (runParser "(>)" program) (FunTy (FunTy (TCons "Int") (TCons "Int")) (TCons "Bool"))
     logTestResult "check operator" (opTest == Right true)
     let opTestInvalid = check Nil (runParser "(>)" program) (FunTy (FunTy (TCons "Int") (TCons "Float")) (TCons "Bool"))
-    logTestResult "check operator invalid" (opTestInvalid == (Left (InvalidType "Cannot match operator > with type Int -> Float -> Bool")))
+    logTestResult "check operator invalid" (opTestInvalid == (Left (InvalidType "Cannot match operator '>' with type Int -> Float -> Bool")))
     let binaryAppTest = check ((Tuple "x" (TCons "Int")):Nil) (runParser "1 + x" program) (TCons "Int")
     logTestResult "check binaryApp" (binaryAppTest == Right true)
     let varTestValid = check ((Tuple "x" (TCons "Str")):Nil) (runParser "x" program) (TCons "Str")
@@ -70,7 +70,7 @@ testCheck = do
     let emptyList = check Nil (runParser "[]" program) (TList (TCons "Str"))
     logTestResult "check empty list" (emptyList == Right true)
     let emptyListInvalid = check Nil (runParser "[]" program) (TList (TCons "IDK"))
-    logTestResult "check empty list" (emptyListInvalid == Left (InvalidType "Type [IDK] is not accepted"))
+    logTestResult "check empty list invalid" (emptyListInvalid == (Left (InvalidType "Type '[IDK]' is not accepted")))
     -- NonEmpty List
     let nonEmptyList = check Nil (runParser "[1, 2, 3]" program) (TList (TCons "Int"))
     logTestResult "check nonEmpty list" (nonEmptyList == Right true)
@@ -78,52 +78,55 @@ testCheck = do
     let ifElseValid = check ((Tuple "x" (TCons "Int")):Nil) (runParser "if x > 2 then 20 else 40" program) (TCons "Int")
     logTestResult "check if-else valid" (ifElseValid == Right true)
     let ifElseInvalid = check ((Tuple "x" (TCons "Int")):Nil) (runParser "if x then 20 else 40" program) (TCons "Int") 
-    logTestResult "check if-else invalid" (ifElseInvalid == (Left (InvalidType "Condition must be of type Bool")))
+    logTestResult "check if-else invalid" (ifElseInvalid == (Left (InvalidType "Condition 'x' must be of type Bool")))
     let ifElseMismatch = check Nil (runParser "if 1 > 2 then 20 else \"a\"" expr_) (TCons "Int")
-    logTestResult "check if-else type mismatch" (ifElseMismatch == (Left (TypeMismatch "Cannot match Int with Str")))
+    logTestResult "check if-else type mismatch" (ifElseMismatch == (Left (TypeMismatch "Cannot match 'Int' with 'Str'")))
     -- Dictionary
     let dictTestVar = check ((Tuple "a" (TCons "Str")):(Tuple "b" (TCons "Str")):Nil) (runParser "{a:1, b:2}" program) (TDict (TCons "Str") (TCons "Int"))
     logTestResult "check dictionary varKey" (dictTestVar == Right true)
     let dictTestExpr = check Nil (runParser "{ [\"a\"]: 5, [\"b\"] : 6 }" program) (TDict (TCons "Str")(TCons "Int"))
     logTestResult "check dictionary exprKey" (dictTestExpr == Right true)
     let dictTestInvalid = check Nil (runParser "{ [\"a\"]: 5, [\"b\"] : 6 }" program) (TDict (TCons "Str") (TCons "Str"))
-    logTestResult "check dictionary invalid" (dictTestInvalid == (Left (TypeMismatch "Cannot match {Str, Int} with {Str, Str}")))
+    logTestResult "check dictionary invalid" (dictTestInvalid == (Left (TypeMismatch "Cannot match '{Str, Int}' with '{Str, Str}'")))
     -- Constructor
     let constrTest = check ((Tuple "C" (TCons "C")):Nil) (runParser "C = 1" expr_) (TCons "C")
     logTestResult "check constr" (constrTest == Right true)
     let constrTestInvalid = check Nil (runParser "C" program) (TCons "A")
-    logTestResult "check constr invalid" (constrTestInvalid == (Left (TypeMismatch "Cannot match C with A")))
+    logTestResult "check constr invalid" (constrTestInvalid == (Left (TypeMismatch "Cannot match 'C' with 'A'")))
     -- ListEnum
     let enumTest = check Nil (runParser "[1 .. 2]" expr_) (TList (TCons "Int"))
     logTestResult "check listEnum" (enumTest == Right true)
     let enumTestInvalid = check Nil (runParser "[1 .. 3]" expr_) (TList (TCons "Str"))
-    logTestResult "check listEnum invalid" (enumTestInvalid == (Left (TypeMismatch "Cannot match [Int] with [Str]")))
+    logTestResult "check listEnum invalid" (enumTestInvalid == (Left (TypeMismatch "Cannot match '[Int]' with '[Str]'")))
     -- ListComp 
     let listCompTest = check ((Tuple "x" (TList (TCons "Int"))):Nil) (runParser "[x | 1, 2, 3]" expr_) (TList (TCons "Int"))
     logTestResult "check listComp" (listCompTest == Right true)
     let listCompTestInvalid = check ((Tuple "x" (TList (TCons "Int"))):Nil) (runParser "[x | 1, 2, 3]" expr_) (TList (TCons "Str"))
-    logTestResult "check listComp invalid" (listCompTestInvalid == (Left (TypeMismatch "Cannot match [Int] with [Str]")))
+    logTestResult "check listComp invalid" (listCompTestInvalid == (Left (TypeMismatch "Cannot match '[Int]' with '[Str]'")))
     -- Lambda
     let lambdaTest = check Nil (runParser "fun x -> x + 1" program) (FunTy (TCons "Int") (TCons "Int"))
     logTestResult "check lambda" (lambdaTest == Right true)
     let lambdaBool = check Nil (runParser "fun x -> x > 1" program) (FunTy (TCons "Int") (TCons "Bool"))
     logTestResult "check lambda bool" (lambdaBool == Right true)
     let lambdaTestInvalid = check Nil (runParser "fun x -> x + 1" program) (FunTy (TCons "Int") (TCons "Str"))
-    logTestResult "check lambda invalid" (lambdaTestInvalid == (Left (TypeMismatch "Cannot match Str with Int")))
+    logTestResult "check lambda invalid" (lambdaTestInvalid == (Left (TypeMismatch "Cannot match 'Str' with 'Int'")))
     let lambdaBoolInvalid = check Nil (runParser "fun x -> x > 1" program) (FunTy (TCons "Int") (TCons "Int"))
-    logTestResult "check lambda bool invalid" (lambdaBoolInvalid == (Left (TypeMismatch "Cannot match Int with Bool")))
+    logTestResult "check lambda bool invalid" (lambdaBoolInvalid == (Left (TypeMismatch "Cannot match 'Int' with 'Bool'")))
     -- App
     let appTest = check Nil (runParser "fun x -> x + 1" program) (FunTy (TCons "Int") (TCons "Int"))
     logTestResult "check App" (appTest == Right true)
     let appTestInvalid = check Nil (runParser "fun x -> x + 1" program) (FunTy (TCons "Int") (TCons "Bool"))
-    logTestResult "check App invalid" (appTestInvalid == (Left (TypeMismatch "Cannot match Bool with Int")))
+    logTestResult "check App invalid" (appTestInvalid == (Left (TypeMismatch "Cannot match 'Bool' with 'Int'")))
     -- MatchAs
     let matchAsTest = check ((Tuple ":" (TList (TCons "Int"))):(Tuple "x" (TList (TCons "Int"))):Nil) (runParser "match x as { [] -> []; x -> x };" expr_) (TList (TCons "Int"))
     logTestResult "check MatchAs" (matchAsTest == Right true)
     let matchAsCons =  check ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil) (runParser "match xs as { [] -> []; x : xs -> xs };" expr_) (TList (TCons "a"))
     logTestResult "check MatchAs with Cons" (matchAsCons == Right true)
     let matchAsInvalid = check ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil) (runParser "match xs as { [] -> []; x : xs -> xs };" expr_) (TList (TCons "Str"))
-    logTestResult "check MatchAs invalid" (matchAsInvalid == (Left (TypeMismatch "Cannot match [Str] with [a]")))
+    logTestResult "check MatchAs invalid" (matchAsInvalid == (Left (TypeMismatch "Cannot match '[Str]' with '[a]'")))
+    -- Matrix
+    let matrixTest = check ((Tuple "Pair" (TList (TCons "Int"))):(Tuple "i" (TCons "Int")):(Tuple "j" (TCons "Int")):(Tuple "image" (TList(TList(TCons "Int")))):Nil) (runParser "[| image | (i, j) in (5,5) |]" expr_) (TList (TList (TCons "Int")))
+    logTestResult "check matrix" (matrixTest == Right true)
 
 testSynth :: Effect Unit
 testSynth = do 
@@ -162,16 +165,16 @@ testSynth = do
     let ifElseValid = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "if x > 2 then 20 else 40" program)
     logTestResult "synth if-else valid" (ifElseValid == Right (TCons "Int"))
     let ifElseInvalid = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "if x then 20 else 40" program)
-    logTestResult "synth if-else invalid" (ifElseInvalid == (Left (InvalidType "Conditional type must be Bool")))
+    logTestResult "synth if-else invalid" (ifElseInvalid == (Left (InvalidType "Type of conditional 'x' must be Bool")))
     let ifElseMismatch = synth Nil (runParser "if 1 > 2 then 20 else \"a\"" expr_)
-    logTestResult "synth if-else type mismatch" (ifElseMismatch == (Left (TypeMismatch "Cannot match Int with Str")))
+    logTestResult "synth if-else type mismatch" (ifElseMismatch == (Left (TypeMismatch "Cannot match 'Int' with 'Str'")))
     -- Dictionary
     let dictTestVar = synth ((Tuple "a" (TCons "Str")):(Tuple "b" (TCons "Str")):Nil) (runParser "{a:1, b:2}" program)
     logTestResult "synth dictionary varKey" (dictTestVar == Right (TDict (TCons "Str") (TCons "Int")))
     let dictTestExpr = synth Nil (runParser "{ [\"a\"]: 5, [\"b\"] : 6 }" program) 
     logTestResult "synth dictionary exprKey" (dictTestExpr == Right (TDict (TCons "Str")(TCons "Int")))
     let dictTestInvalid = synth Nil (runParser "{ [\"a\"]: 5, [20] : 6 }" program)
-    logTestResult "synth dictionary invalid" (dictTestInvalid == (Left (TypeMismatch "Cannot match expression with type {Str, Int}")))
+    logTestResult "synth dictionary invalid" (dictTestInvalid == (Left (TypeMismatch "Cannot match expression '{20: 6}' with type {Str, Int}")))
     -- Constructor
     let constrTest = synth ((Tuple "C" (TCons "C")):Nil) (runParser "C = 1" expr_)
     logTestResult "synth constr" (constrTest == Right (TCons "C"))
@@ -179,12 +182,12 @@ testSynth = do
     let enumTest = synth Nil (runParser "[1 .. 2]" expr_)
     logTestResult "synth listEnum" (enumTest == Right (TList (TCons "Int")))
     let enumTestInvalid = synth Nil (runParser "[1 .. \"3\"]" expr_)
-    logTestResult "synth listEnum invalid" (enumTestInvalid == (Left (TypeMismatch "Cannot match Int with Str")))
+    logTestResult "synth listEnum invalid" (enumTestInvalid == (Left (TypeMismatch "Cannot match 'Int' with 'Str'")))
     -- ListComp 
     let listCompTest = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "[x | 1, 2, 3]" expr_)
     logTestResult "synth listComp" (listCompTest == Right (TList (TCons "Int")))
     let listCompTestInvalid = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "[x | 1, \"2\", 3]" expr_)
-    logTestResult "synth listComp invalid" (listCompTestInvalid == (Left (TypeMismatch "Cannot match Int with Str")))
+    logTestResult "synth listComp invalid" (listCompTestInvalid == (Left (TypeMismatch "Cannot match 'Int' with 'Str'")))
     -- Lambda
     let lambdaTest = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "fun x -> x + 1" program)
     logTestResult "synth lambda" (lambdaTest == Right (FunTy (TCons "Int") (TCons "Int")))
@@ -203,3 +206,16 @@ testSynth = do
     let matchAsCons = synth ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil) (runParser "match xs as { [] -> []; x : xs -> xs };" expr_)
     logTestResult "synth MatchAs Cons" (matchAsCons == (Right (TList (TCons "a"))))
     
+
+-- testListComp = ListComp unit (Var "x") Nil
+-- testListCompWithQual = ListComp unit (Var "x") ((ListCompGuard (Var "y")):(ListCompGen (PVar "z") (Int unit 1)):Nil)
+
+-- context = ((Tuple "image" (TCons "Int")):(Tuple "i" (TCons "Int")):(Tuple "j" (TCons "Int")):(Tuple "Pair" (TList (TCons "Int"))):Nil)
+-- constr = (Right (Constr unit "Pair" ((Int unit 5) : (Int unit 5) : Nil)))
+
+-- context' = ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil)
+-- consTest = (Right (Constr unit ":" ((Var "x"):(Var "xs"):Nil)))
+g = ((Tuple "Pair" (TList (TCons "Int"))):(Tuple "i" (TCons "Int")):(Tuple "j" (TCons "Int")):(Tuple "image" (TList(TList(TCons "Int")))):Nil)
+e1 = (Var "image")
+v = (Tuple "i" "j")
+e2 = (Constr unit "Pair" ((Int unit 5) : (Int unit 5) : Nil))

@@ -18,7 +18,7 @@ import Data.Traversable (traverse)
 import Util.Pair (Pair(..))
 import Data.Semigroup
 import Data.Either (Either(..))
-import TypeCheckError (TypeErr(..))
+import TypeCheckError (TypeErr(..), prettyExpr, prettyPattern, prettyTypes)
 import Parsing (ParseError)
 import Debug
 
@@ -259,12 +259,12 @@ synth g (Right (Float _ _)) = Right (TCons "Float")
 synth g (Right (Op operator)) = case operatorTypes operator of
       Just typesArr -> case head typesArr of
             Just { argTy, opTy } -> Right (FunTy (FunTy (TCons "a") (TCons "a")) (opTy))    --Right opTy
-            _ -> Left (InvalidSyntax ("Cannot synthesize operator " <> operator))
-      _ -> Left (InvalidSyntax ("Unknown operator " <> operator))
+            _ -> Left (InvalidSyntax ("Cannot synthesize operator: " <> operator))
+      _ -> Left (InvalidSyntax ("Unknown operator: " <> operator))
 synth g (Right (BinaryApp e1 op e2)) = case synth g (Right e1) of
-      Left _ -> Left (InvalidSyntax "Cannot synthetize expression")
+      Left _ -> Left (InvalidSyntax ("Cannot synthetize expression '" <> (prettyExpr e1) <> "'"))
       Right t1 -> case synth g (Right e2) of
-            Left _ -> Left (InvalidSyntax "Cannot synthetize expression")
+            Left _ -> Left (InvalidSyntax ("Cannot synthetize expression '" <> (prettyExpr e2) <> "'"))
             Right t2 -> case operatorTypes op of
                   Just operatorTypesArray -> 
                         let 
@@ -272,9 +272,9 @@ synth g (Right (BinaryApp e1 op e2)) = case synth g (Right e1) of
                               checkOperatorType { opTy, argTy } = if t1 == t2 && allEqual t1 argTy then Just opTy else Nothing
                         in
                               case findMap checkOperatorType operatorTypesArray of
-                                    Nothing -> Left (InvalidType ("Operator not supported for " <> (prettyTypes t1)))
+                                    Nothing -> Left (InvalidType ("Operator not supported for: " <> (prettyTypes t1)))
                                     Just opTy -> Right opTy
-                  Nothing -> Left (InvalidSyntax (op <> " not supoprted"))
+                  Nothing -> Left (InvalidSyntax ("'" <> op <> "' not supoprted"))
 synth g (Right (Var varName)) = case lookup g varName of
       Nothing -> Left (LookupNil ("Unbound variable found: " <> varName))
       Just t -> Right t
@@ -292,8 +292,8 @@ synth g (Right (Let varDefs expr)) = case varDefs of
                         PVar varName -> 
                               let updatedG' = pushVarDef g varName ty'
                               in synth updatedG' (Right expr)
-                        _ -> Left (InvalidType "Cannot match type of pattern")
-            _ -> Left (InvalidType "Cannot match type of pattern")
+                        _ -> Left (InvalidType ("Cannot match type of pattern: " <> (prettyPattern pattern)))
+            _ -> Left (InvalidType ("Cannot match type of pattern: " <> (prettyPattern pattern)))
       _ -> Left (InvalidSyntax "Cannot match varDef definition")
 -- Empty List
 synth g (Right (ListEmpty _)) = Right (TList (TCons ""))
@@ -311,25 +311,27 @@ synth g (Right (IfElse e1 e2 e3)) =
                   if (e2' == e3') then 
                         Right e2'
                   else
-                        Left (TypeMismatch ("Cannot match " <> (prettyTypes e2') <> " with " <> (prettyTypes e3')))
+                        Left (TypeMismatch ("Cannot match '" <> (prettyTypes e2') <> "' with '" <> (prettyTypes e3') <> "'"))
       else
-            Left (InvalidType ("Conditional type must be Bool"))
+            Left (InvalidType ("Type of conditional '" <> (prettyExpr e1) <> "' must be Bool"))
 -- Constructor
 synth g (Right (Constr u ctr exprs)) = case exprs of 
       (e : es) -> case synth g (Right e) of
-            Left _ -> Left (InvalidSyntax "Expression cannot be synthesized")
+            Left _ -> Left (InvalidSyntax ("Expression '" <> (prettyExpr e) <> "' cannot be synthesized"))
             Right ty -> synth g (Right (Constr u ctr es))
-      Nil -> Right (TCons ctr)
+      Nil -> case lookup g ctr of
+            Just ty -> Right ty
+            _ -> Right (TCons ctr)
 -- List Enum
 synth g (Right (ListEnum e1 e2)) = case synth g (Right e1) of
-      Left _ -> Left (InvalidSyntax "Expression cannot be synthesized")
+      Left _ -> Left (InvalidSyntax ("Expression '" <> (prettyExpr e1) <> "' cannot be synthesized"))
       Right e1Synth -> case synth g (Right e2) of
-            Left _ -> Left (InvalidSyntax "Expression cannot be synthesized")
-            Right e2Synth -> if e1Synth == e2Synth then Right (TList e2Synth) else Left (TypeMismatch ("Cannot match " <> (prettyTypes e1Synth) <> " with " <> (prettyTypes e2Synth)))
+            Left _ -> Left (InvalidSyntax ("Expression '" <> (prettyExpr e2) <> "' cannot be synthesized"))
+            Right e2Synth -> if e1Synth == e2Synth then Right (TList e2Synth) else Left (TypeMismatch ("Cannot match '" <> (prettyTypes e1Synth) <> "' with '" <> (prettyTypes e2Synth) <> "'"))
 -- List Comp
 synth g (Right (ListComp u expr qualifiers)) = 
       case synth g (Right expr) of
-            Left _ -> Left (InvalidSyntax "Expression cannot be synthesized")
+            Left _ -> Left (InvalidSyntax ("Expression '" <> (prettyExpr expr) <> "' cannot be synthesized"))
             Right ty -> case qualifiers of
                   (q : qs) -> case q of
                         ListCompGuard guardExpr -> do
@@ -337,40 +339,40 @@ synth g (Right (ListComp u expr qualifiers)) =
                               if ty == ty' then 
                                     synth g (Right (ListComp u expr qs))
                               else 
-                                    Left (TypeMismatch ("Cannot match " <> (prettyTypes ty) <> " with " <> (prettyTypes ty')))
+                                    Left (TypeMismatch ("Cannot match '" <> (prettyTypes ty) <> "' with '" <> (prettyTypes ty') <> "'"))
                         ListCompGen pattern genExpr ->
                               let newContext = checkPattern' g pattern ty in 
                               case newContext of
-                                    Nothing -> Left (InvalidSyntax "Pattern is invalid")
+                                    Nothing -> Left (InvalidSyntax ("Pattern '" <> (prettyPattern pattern) <> "' is invalid"))
                                     Just context -> case check context (Right genExpr) ty of
                                           Right true -> synth context (Right (ListComp u expr qs))
-                                          _ -> Left (TypeMismatch ("Cannot match expression with type " <> (prettyTypes ty)))
+                                          _ -> Left (TypeMismatch ("Cannot match expression '" <> (prettyExpr expr) <> "' with type " <> (prettyTypes ty)))
                         ListCompDecl varDef -> case varDef of
                               (VarDef pattern ty' val) ->
                                     let newContext = checkPattern' g pattern ty' in
                                     case newContext of
-                                          Nothing -> Left (InvalidSyntax "Pattern is invalid")
+                                          Nothing -> Left (InvalidSyntax ("Pattern '" <> (prettyPattern pattern) <> "' is invalid"))
                                           Just context -> case check context (Right val) ty' of
                                                 Right true -> synth context (Right (ListComp u expr qs))
-                                                _ -> Left (TypeMismatch ("Cannot match expression with type " <> (prettyTypes ty')))
+                                                _ -> Left (TypeMismatch ("Cannot match expression '" <> (prettyExpr expr) <> "' with type " <> (prettyTypes ty')))
                   _ -> Right (TList ty)
 -- Dictionary
 synth g (Right (Dictionary u entries)) = case entries of 
       (x : xs) -> case x of 
             Tuple (ExprKey expr1) expr2 -> case synth g (Right expr1) of
-                  Left _ -> Left (InvalidSyntax "Cannot synthesize expression")
+                  Left _ -> Left (InvalidSyntax ("Cannot synthesize expression '" <> (prettyExpr expr1) <> "'"))
                   Right keyTy -> case synth g (Right expr2) of
-                        Left _ -> Left (InvalidSyntax "Cannot synthesize expression")
+                        Left _ -> Left (InvalidSyntax ("Cannot synthesize expression '" <> (prettyExpr expr2) <> "'"))
                         Right valTy -> case check g (Right (Dictionary u xs)) (TDict keyTy valTy) of
                               Right true -> Right (TDict keyTy valTy)
-                              _ -> Left (TypeMismatch ("Cannot match expression with type " <> (prettyTypes (TDict keyTy valTy))))
+                              _ -> Left (TypeMismatch ("Cannot match expression '" <> (prettyExpr (Dictionary u xs)) <> "' with type " <> (prettyTypes (TDict keyTy valTy))))
             Tuple (VarKey _ var) expr -> case lookup g var of
                   Nothing -> Left (LookupNil ("Unbound variable found: " <> var))
                   Just keyTy -> case synth g (Right expr) of
-                        Left _ -> Left (InvalidSyntax "Cannot synthesize expression")
+                        Left _ -> Left (InvalidSyntax ("Cannot synthesize expression '" <> (prettyExpr expr) <> "'"))
                         Right valTy -> case check g (Right (Dictionary u xs)) (TDict keyTy valTy) of
                               Right true -> Right (TDict keyTy valTy)
-                              _ -> Left (TypeMismatch ("Cannot match expression with type " <> (prettyTypes (TDict keyTy valTy))))
+                              _ -> Left (TypeMismatch ("Cannot match expression '" <> (prettyExpr (Dictionary u xs)) <> "' with type " <> (prettyTypes (TDict keyTy valTy))))
       Nil -> Left (InvalidSyntax "Null dictionary found")
 -- Lambda
 synth g (Right (Lambda clauses)) = case clauses of 
@@ -380,7 +382,7 @@ synth g (Right (Lambda clauses)) = case clauses of
                   Left err -> Left err
                   Right ty' -> case index updatedG 0 of 
                         Just elem -> Right (FunTy (snd elem) ty')
-                        _ -> Left (TypeMismatch "Cannot match types")
+                        _ -> Left (TypeMismatch ("Expression '" <> (prettyExpr expr) <> "' does not match type " <> (prettyTypes ty')))
       _ -> Left (InvalidSyntax "Clauses structure is invalid")
 
 -- App
@@ -397,7 +399,7 @@ synth g (Right (MatchAs expr patterns)) = case synth g (Right expr) of
             NonEmptyList list -> case matchAsList g list of 
                   Left err -> Left err
                   Right _ -> Right exprTy
-            _ -> Left (InvalidSyntax "Syntax invalid for patterns, must be NonEmptyList")
+            _ -> Left (InvalidSyntax ("Syntax invalid for patterns, must be NonEmptyList"))
 -- Other
 synth _ _ = Left (InvalidSyntax "Not supported yet")
 
@@ -408,7 +410,7 @@ synthRest' g (Next _ exp rest) expectedType = do
   nextType <- synth g (Right exp)
   if nextType == expectedType
     then synthRest' g rest expectedType
-    else Left (TypeMismatch ("Cannot match " <> (prettyTypes nextType) <> " with " <> (prettyTypes expectedType)))
+    else Left (TypeMismatch ("Cannot match '" <> (prettyTypes nextType) <> "' with '" <> (prettyTypes expectedType) <> "'"))
 
 
 check :: forall a b. Context -> Either a (Expr b) -> Types -> Either TypeErr Boolean
@@ -425,8 +427,8 @@ check g (Right (Op operator)) (FunTy (FunTy argTy1 argTy2) ty) = case operatorTy
             in 
                   case findMap checkOperatorTy typesArr of
                         Just opTy -> Right true
-                        _ -> Left (InvalidType ("Cannot match operator " <> operator <> " with type " <> (prettyTypes (FunTy (FunTy argTy1 argTy2) ty)))) 
-      _ -> Left (InvalidType ("Cannot match operator " <> operator <> " with type " <> (prettyTypes (FunTy (FunTy argTy1 argTy2) ty)))) 
+                        _ -> Left (InvalidType ("Cannot match operator '" <> operator <> "' with type " <> (prettyTypes (FunTy (FunTy argTy1 argTy2) ty)))) 
+      _ -> Left (InvalidType ("Cannot match operator '" <> operator <> "' with type " <> (prettyTypes (FunTy (FunTy argTy1 argTy2) ty)))) 
 
 check g (Right (BinaryApp e1 op e2)) ty = case synth g (Right (BinaryApp e1 op e2)) of
       Left err -> Left err
@@ -434,7 +436,7 @@ check g (Right (BinaryApp e1 op e2)) ty = case synth g (Right (BinaryApp e1 op e
             if ty' == ty then 
                   Right true
             else 
-                  Left (TypeMismatch ("Cannot match " <> (prettyTypes ty) <> " with " <> (prettyTypes ty')))
+                  Left (TypeMismatch ("Cannot match '" <> (prettyTypes ty) <> "' with '" <> (prettyTypes ty') <> "'"))
 check g (Right (Var varName)) ty = case lookup g varName of
       Just t -> if isValidType t then Right (show t == show ty) else Right false
       Nothing -> Left (LookupNil ("Unbound variable found: " <> varName))
@@ -455,30 +457,30 @@ check g (Right (Let varDefs expr)) ty = case varDefs of
                                     _ -> Right false
                   else 
                         Left (InvalidType (prettyTypes ty <> " is not a valid type"))
-            Right _ -> Left (InvalidSyntax "Invalid syntax")
-            Left _ -> Left (ParseErr "Parse error")
-      _ -> Left (InvalidSyntax "Invalid syntax")
+            Right _ -> Left (InvalidType ("Cannot match expression '" <> (prettyExpr val) <> "' with type " <> (prettyTypes ty')))
+            Left err -> Left err
+      _ -> Left (InvalidSyntax "Invalid syntax, varDef must be a NonEmptyList")
 -- -- The empty list
 check g (Right (ListEmpty u)) (TList (TCons ty)) = 
       if elem ty acceptedTypes then 
             Right true
       else
-            Left (InvalidType ("Type " <> (prettyTypes (TList (TCons ty))) <> " is not accepted"))
+            Left (InvalidType ("Type '" <> (prettyTypes (TList (TCons ty))) <> "' is not accepted"))
 -- -- NonEmpty List
 check g (Right (ListNonEmpty u expr rest)) (TList ty) = case check g (Right expr) ty of
       Right true -> Right (checkNonEmptyList rest ty)
       Right false -> case synth g (Right expr) of
             Left err -> Left err
-            Right ty' -> Left (TypeMismatch ("Can't match " <> (prettyTypes ty') <> " with " <> (prettyTypes (TList ty))))
-      _ -> Left (ParseErr "Parse error")
+            Right ty' -> Left (TypeMismatch ("Can't match '" <> (prettyTypes ty') <> "' with '" <> (prettyTypes (TList ty)) <> "'"))
+      Left err -> Left err
 -- -- If else
 check g (Right (IfElse e1 e2 e3)) ty = case (check g (Right e1) (TCons "Bool")) of
       Right true -> do 
             e2Synth <- synth g (Right e2)
             e3Synth <- synth g (Right e3)
-            if e2Synth == e3Synth then Right true else Left (TypeMismatch ("Cannot match " <> (prettyTypes e2Synth) <> " with " <> (prettyTypes e3Synth)))
-      Right false -> Left (InvalidType "Condition must be of type Bool")
-      Left _ -> Left (ParseErr "Parse error")
+            if e2Synth == e3Synth then Right true else Left (TypeMismatch ("Cannot match '" <> (prettyTypes e2Synth) <> "' with '" <> (prettyTypes e3Synth) <> "'"))
+      Right false -> Left (InvalidType ("Condition '" <> (prettyExpr e1) <> "' must be of type Bool"))
+      Left err -> Left err
 -- Dictionary
 check g (Right (Dictionary u entries)) (TDict keyTy valTy) = case entries of 
       (x : xs) -> case x of 
@@ -489,12 +491,12 @@ check g (Right (Dictionary u entries)) (TDict keyTy valTy) = case entries of
                         Right ty2 -> case check g (Right (Dictionary u xs)) (TDict keyTy valTy) of
                               Left _ -> case synth g (Right (Dictionary u xs)) of
                                     Left err -> Left err
-                                    Right ty -> Left (TypeMismatch ("Cannot match " <> (prettyTypes ty) <> " with " <> (prettyTypes (TDict keyTy valTy))))
+                                    Right ty -> Left (TypeMismatch ("Cannot match '" <> (prettyTypes ty) <> "' with '" <> (prettyTypes (TDict keyTy valTy)) <> "'"))
                               Right false -> case (synth g (Right (Dictionary u xs))) of
                                     Left err'' -> Left err''
-                                    Right ty' -> Left (TypeMismatch ("Can't match " <> (prettyTypes ty') <> " with " <> (prettyTypes (TDict keyTy valTy))))
+                                    Right ty' -> Left (TypeMismatch ("Can't match '" <> (prettyTypes ty') <> "' with '" <> (prettyTypes (TDict keyTy valTy)) <> "'"))
                               Right true -> case ((ty1 == keyTy) && (ty2 == valTy)) of
-                                    false -> Left (TypeMismatch ("Cannot match types, comparing " <> ((prettyTypes ty1) <> " with " <> (prettyTypes keyTy)) <> " and " <> ((prettyTypes ty1) <> " with " <> (prettyTypes valTy))))
+                                    false -> Left (TypeMismatch ("Cannot match types, comparing '" <> ((prettyTypes ty1) <> "' with '" <> (prettyTypes keyTy)) <> "' and '" <> ((prettyTypes ty1) <> "' with '" <> (prettyTypes valTy) <> "'")))
                                     true -> Right true
             Tuple (VarKey _ var) expr -> case lookup g var of
                   Nothing -> Left (LookupNil ("Unbound variable found: " <> var))
@@ -503,12 +505,12 @@ check g (Right (Dictionary u entries)) (TDict keyTy valTy) = case entries of
                         Right ty1' -> case check g (Right (Dictionary u xs)) (TDict keyTy valTy) of
                               Left _ -> case synth g (Right (Dictionary u xs)) of
                                     Left err -> Left err
-                                    Right ty -> Left (TypeMismatch ("Cannot match " <> (prettyTypes ty) <> " with " <> (prettyTypes (TDict keyTy valTy))))
+                                    Right ty -> Left (TypeMismatch ("Cannot match '" <> (prettyTypes ty) <> "' with '" <> (prettyTypes (TDict keyTy valTy)) <> "'"))
                               Right false ->  case synth g (Right (Dictionary u xs)) of
                                     Left err' -> Left err'
-                                    Right ty -> Left (TypeMismatch ("Can't match " <> (prettyTypes ty) <> " with " <> (prettyTypes (TDict keyTy valTy))))  
+                                    Right ty -> Left (TypeMismatch ("Can't match '" <> (prettyTypes ty) <> "' with '" <> (prettyTypes (TDict keyTy valTy)) <> "'"))  
                               Right true -> case ((ty1 == keyTy) && (ty1' == valTy)) of
-                                    false -> Left (TypeMismatch ("Cannot match types, comparing " <> ((prettyTypes ty1) <> " with " <> (prettyTypes keyTy)) <> " and " <> ((prettyTypes ty1') <> " with " <> (prettyTypes valTy))))
+                                    false -> Left (TypeMismatch ("Cannot match types, comparing '" <> ((prettyTypes ty1) <> "' with '" <> (prettyTypes keyTy)) <> "' and '" <> ((prettyTypes ty1') <> "' with '" <> (prettyTypes valTy) <> "'")))
                                     true -> Right true
       _ -> Right true
 -- Constructor
@@ -528,7 +530,7 @@ check g (Right (Constr u ctr exprs)) (TCons ctrName) =
                                     ) xs)
                   _ -> Right true
       else
-            Left (TypeMismatch ("Cannot match " <> ctr <> " with " <> (prettyTypes (TCons ctrName))))
+            Left (TypeMismatch ("Cannot match '" <> ctr <> "' with '" <> (prettyTypes (TCons ctrName)) <> "'"))
 -- List Enum
 check g (Right (ListEnum e1 e2)) (TList ty) = case synth g (Right e1) of
       Left err -> Left err
@@ -536,37 +538,37 @@ check g (Right (ListEnum e1 e2)) (TList ty) = case synth g (Right e1) of
             Left err' -> Left err'
             Right e2Synth -> case (e1Synth == e2Synth && e1Synth == ty) of
                   true -> Right true
-                  _ -> Left (TypeMismatch ("Cannot match " <> (prettyTypes (TList e2Synth)) <> " with " <> (prettyTypes (TList ty))))
+                  _ -> Left (TypeMismatch ("Cannot match '" <> (prettyTypes (TList e2Synth)) <> "' with '" <> (prettyTypes (TList ty)) <> "'"))
 -- List Comp
 check g (Right (ListComp u expr qualifiers)) (TList ty) = case check g (Right expr) (TList ty) of
       Left err -> Left err
       Right false -> case synth g (Right expr) of
             Left err' -> Left err'
-            Right ty' -> Left (TypeMismatch ("Cannot match " <> (prettyTypes ty') <> " with " <> (prettyTypes (TList ty))))
+            Right ty' -> Left (TypeMismatch ("Cannot match '" <> (prettyTypes ty') <> "' with '" <> (prettyTypes (TList ty)) <> "'"))
       Right true -> case qualifiers of
             (q : qs) -> case q of
                   ListCompGuard guardExpr -> case check g (Right guardExpr) ty of
                         Left err' -> Left err'
                         Right false -> case synth g (Right guardExpr) of
                               Left synthErr -> Left synthErr
-                              Right ty' -> Left (TypeMismatch ("Cannot match " <> (prettyTypes ty') <> " with " <> (prettyTypes (TList ty))))
+                              Right ty' -> Left (TypeMismatch ("Cannot match '" <> (prettyTypes ty') <> "' with '" <> (prettyTypes (TList ty)) <> "'"))
                         Right true -> check g (Right (ListComp u expr qs)) (TList ty)
                   ListCompGen pattern genExpr -> case checkPattern' g pattern ty of
-                        Nothing -> Left (TypeMismatch ("Cannot match pattern with " <> (prettyTypes ty)))
+                        Nothing -> Left (TypeMismatch ("Cannot match pattern '" <> (prettyPattern pattern) <> "' with '" <> (prettyTypes ty) <> "'"))
                         Just context -> case check context (Right genExpr) ty of
                               Left err -> Left err
                               Right false -> case synth context (Right genExpr) of
                                     Left err' -> Left err'
-                                    Right synthTy -> Left (TypeMismatch ("Cannot match " <> (prettyTypes synthTy) <> " with " <> (prettyTypes ty)))
+                                    Right synthTy -> Left (TypeMismatch ("Cannot match '" <> (prettyTypes synthTy) <> "' with '" <> (prettyTypes ty) <> "'"))
                               Right true -> check context (Right (ListComp u expr qs)) (TList ty)
                   ListCompDecl varDef -> case varDef of
                         (VarDef pattern ty' val) -> case checkPattern' g pattern ty' of
-                              Nothing -> Left (TypeMismatch ("Cannot match pattern with " <> (prettyTypes ty')))
+                              Nothing -> Left (TypeMismatch ("Cannot match pattern '" <> (prettyPattern pattern) <> "' with '" <> (prettyTypes ty') <> "'"))
                               Just context -> case check context (Right val) ty' of
                                     Left err -> Left err
                                     Right false -> case synth context (Right val) of
                                           Left err' -> Left err'
-                                          Right synthTy -> Left (TypeMismatch ("Cannot match " <> (prettyTypes synthTy) <> " with " <> (prettyTypes ty')))
+                                          Right synthTy -> Left (TypeMismatch ("Cannot match '" <> (prettyTypes synthTy) <> "' with '" <> (prettyTypes ty') <> "'"))
                                     Right true -> check context (Right (ListComp u expr qs)) (TList ty)
                   _ -> Left (InvalidSyntax "Invalid syntax")
             Nil -> Right true
@@ -581,8 +583,8 @@ check g (Right (Lambda clauses)) (FunTy argTy retTy) = case clauses of
 check g (Right (App exp1 exp2)) (FunTy ty1 ty2) = case check g (Right exp1) ty2 of
       Right true -> case check g (Right exp2) ty1 of
             Right true -> Right true
-            _ -> Left (InvalidType ("Cannot match expression with " <> (prettyTypes ty1)))
-      _ -> Left (InvalidType ("Cannot match expression with " <> (prettyTypes ty2)))
+            _ -> Left (InvalidType ("Cannot match expression '" <> (prettyExpr exp2) <> "' with '" <> (prettyTypes ty1) <> "'"))
+      _ -> Left (InvalidType ("Cannot match expression '" <> (prettyExpr exp1) <> "' with '" <> (prettyTypes ty2) <> "'"))
 -- MatchAs
 check g (Right (MatchAs expr patterns)) ty = case synth g (Right expr) of
       Left err -> Left err
@@ -594,8 +596,13 @@ check g (Right (MatchAs expr patterns)) ty = case synth g (Right expr) of
                               Right _ -> Right true
                         _ -> Left (InvalidSyntax "Syntax invalid for patterns, must be NonEmptyList")
             else
-                  Left (TypeMismatch ("Cannot match " <> (prettyTypes ty) <> " with " <> (prettyTypes exprTy)))
-
+                  Left (TypeMismatch ("Cannot match '" <> (prettyTypes ty) <> "' with '" <> (prettyTypes exprTy) <> "'"))
+-- Matrix
+check g (Right (Matrix u expr1 varPair expr2)) (TList ty) = case check g (Right expr1) ty of
+      Left err -> Left err 
+      _ -> case check g (Right expr2) ty of 
+            Left err -> Left err
+            _ -> Right true
 -- Others
 check g (Right expr) ty = case synth g (Right expr) of
       Left err -> Left err
@@ -603,13 +610,7 @@ check g (Right expr) ty = case synth g (Right expr) of
             if ty == ty' then 
                   Right true
             else
-                  Left (TypeMismatch ("Cannot match " <> (prettyTypes ty) <> " with " <> (prettyTypes ty')))
-
-prettyTypes :: Types -> String
-prettyTypes (TCons ty) = ty
-prettyTypes (TList ty) = "[" <> prettyTypes ty <> "]"
-prettyTypes (TDict ty1 ty2) = "{" <> prettyTypes ty1 <> ", " <> prettyTypes ty2 <> "}"
-prettyTypes (FunTy ty1 ty2) = prettyTypes ty1 <> " -> " <> prettyTypes ty2 
+                  Left (TypeMismatch ("Cannot match '" <> (prettyTypes ty) <> "' with '" <> (prettyTypes ty') <> "'"))
 
 -- data Expr a
 --    | Matrix a (Expr a) (Var × Var) (Expr a)                    
