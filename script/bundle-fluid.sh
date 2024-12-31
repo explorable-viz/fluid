@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
 set -xe
 
-
 FLUID_EXECUTABLE="dist/fluid/fluid.mjs"
 
 yarn purs-backend-es bundle-app --main Fluid --to $FLUID_EXECUTABLE --platform=node
 yarn purs-backend-es bundle-app --main Test.Fluid --to dist/test/fluid/fluid.mjs --platform=node
 
-
-
 SHEBANG="#!/usr/bin/env node"
 
-# Check if the file exists
 if [[ ! -f "$FLUID_EXECUTABLE" ]]; then
   echo "Error: File $FLUID_EXECUTABLE not found."
   exit 1
@@ -22,5 +18,4 @@ if [[ $(head -n 1 "$FLUID_EXECUTABLE") != "$SHEBANG" ]]; then
 fi
 
 chmod +x "$FLUID_EXECUTABLE"
-
 cp -r fluid dist/fluid

@@ -1,0 +1,49 @@
+-- Should this be src/Αpp rather than website/Website.LoadFigure?
+module Website.LoadFigure where
+
+import Prelude hiding (absurd)
+
+import Affjax.ResponseFormat (json)
+import Affjax.Web (get, printError)
+import App.Fig (drawFig, drawFile, loadFig)
+import App.Util (runAffs_)
+import App.View.Util (FigSpec)
+import Bind (Bind)
+import Data.Argonaut (Json, JsonDecodeError)
+import Data.Argonaut.Decode (decodeJson)
+import Data.Either (Either(..))
+import Data.Tuple (uncurry)
+import Effect (Effect)
+import Module.Web (File(..), Folder(..), loadFile')
+import Util (error, (×))
+
+type JsonSpec = { datasets :: Array (Bind String), imports :: Array String, file :: String, inputs :: Array String }
+
+jsonToSpec :: Json -> Either JsonDecodeError JsonSpec
+jsonToSpec = decodeJson
+
+figSpecFromJson :: JsonSpec -> FigSpec
+figSpecFromJson spec =
+   { datasets: spec.datasets
+   , imports: spec.imports
+   , file: File spec.file
+   , inputs: spec.inputs
+   }
+
+loadFigure :: String -> Effect Unit
+loadFigure fileName = runAffs_ (uncurry drawFig)
+   [ do
+        result <- get json fileName
+        case result of
+           Left err -> error ("Json fetching failed with " <> printError err)
+           Right response ->
+              case jsonToSpec response.body of
+                 Left err -> error ("JSON decoding failed with " <> show err)
+                 Right spec -> do
+                    ("fig" × _) <$> loadFig (figSpecFromJson spec)
+   ]
+
+drawCode :: String -> String -> Effect Unit
+drawCode folder file = runAffs_ drawFile
+   [ loadFile' (Folder folder) (File file)
+   ]
