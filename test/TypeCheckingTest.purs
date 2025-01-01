@@ -124,9 +124,14 @@ testCheck = do
     logTestResult "check MatchAs with Cons" (matchAsCons == Right true)
     let matchAsInvalid = check ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil) (runParser "match xs as { [] -> []; x : xs -> xs };" expr_) (TList (TCons "Str"))
     logTestResult "check MatchAs invalid" (matchAsInvalid == (Left (TypeMismatch "Cannot match '[Str]' with '[a]'")))
-    -- Matrix
-    let matrixTest = check ((Tuple "Pair" (TList (TCons "Int"))):(Tuple "i" (TCons "Int")):(Tuple "j" (TCons "Int")):(Tuple "image" (TList(TList(TCons "Int")))):Nil) (runParser "[| image | (i, j) in (5,5) |]" expr_) (TList (TList (TCons "Int")))
-    logTestResult "check matrix" (matrixTest == Right true)
+    -- DProject
+    let dProject = check ((Tuple "x" (TCons "Bool")):Nil) (runParser "x . [1 > 2]" expr_) (TCons "Bool")
+    logTestResult "check dProject" (dProject == (Right true))
+    let dProjectInvalid = check ((Tuple "x" (TCons "Bool")):Nil) (runParser "x . [1 > 2]" expr_) (TCons "Int")
+    logTestResult "check dProject invalid" (dProjectInvalid == (Left (TypeMismatch "Cannot match 'Bool' with 'Int'")))
+    let dProjectContextInvalid = check ((Tuple "x" (TCons "Str")):Nil) (runParser "x . [1 > 2]" expr_) (TCons "Bool")
+    logTestResult "check dProject with invalid context" (dProjectContextInvalid == (Left (TypeMismatch "Cannot match 'Str' with 'Bool'")))
+
 
 testSynth :: Effect Unit
 testSynth = do 
@@ -205,17 +210,10 @@ testSynth = do
     logTestResult "synth MatchAs" (matchAsTest == Right (TList (TCons "Int")))
     let matchAsCons = synth ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil) (runParser "match xs as { [] -> []; x : xs -> xs };" expr_)
     logTestResult "synth MatchAs Cons" (matchAsCons == (Right (TList (TCons "a"))))
-    
-
--- testListComp = ListComp unit (Var "x") Nil
--- testListCompWithQual = ListComp unit (Var "x") ((ListCompGuard (Var "y")):(ListCompGen (PVar "z") (Int unit 1)):Nil)
-
--- context = ((Tuple "image" (TCons "Int")):(Tuple "i" (TCons "Int")):(Tuple "j" (TCons "Int")):(Tuple "Pair" (TList (TCons "Int"))):Nil)
--- constr = (Right (Constr unit "Pair" ((Int unit 5) : (Int unit 5) : Nil)))
-
--- context' = ((Tuple ":" (FunTy (FunTy (TCons "a") (TList (TCons "a"))) (TList (TCons "a")))):(Tuple "x" (TCons "a")):(Tuple "xs" (TList (TCons "a"))):Nil)
--- consTest = (Right (Constr unit ":" ((Var "x"):(Var "xs"):Nil)))
-g = ((Tuple "Pair" (TList (TCons "Int"))):(Tuple "i" (TCons "Int")):(Tuple "j" (TCons "Int")):(Tuple "image" (TList(TList(TCons "Int")))):Nil)
-e1 = (Var "image")
-v = (Tuple "i" "j")
-e2 = (Constr unit "Pair" ((Int unit 5) : (Int unit 5) : Nil))
+    -- DProject
+    let dProjectTest = synth ((Tuple "x" (TCons "Bool")):Nil) (runParser "x . [1 > 2]" expr_)
+    logTestResult "synth dProject" (dProjectTest == (Right (TCons "Bool")))
+    let dProjectInvalid = synth ((Tuple "x" (TCons "Int")):Nil) (runParser "x . [1 > 2]" expr_)
+    logTestResult "synth dProject invalid" (dProjectInvalid == (Left (TypeMismatch "Cannot match 'Int' with 'Bool'")))
+    let dProjectNoVar = synth Nil (runParser "x . [1 > 2]" expr_)
+    logTestResult "synth dProject invalid variable exp" (dProjectNoVar == (Left (LookupNil "Unbound variable found: x")))
