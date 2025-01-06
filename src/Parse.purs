@@ -304,6 +304,7 @@ expr_ =
                <|> string
                <|> try (token.parens expr')
                <|> try parensOp
+               -- <|> try explained
                <|> pair
 
             where
@@ -339,6 +340,9 @@ expr_ =
                      <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
                      <|> ListCompGuard <$> expr'
 
+            -- explained :: SParser (Raw Expr)
+            -- explained = Constr unit "Explained" <$> ((\(x × y) -> (Str unit x : y : empty)) <$> match expr') # between (token.symbol str.backquote) (token.symbol str.backquote)
+
             listEnum :: SParser (Raw Expr)
             listEnum = token.brackets $
                pure ListEnum <*> expr' <* ellipsis <*> expr'
@@ -351,6 +355,12 @@ expr_ =
                where
                kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
                kvPair = (((ExprKey <$> expr') # token.brackets) <* token.colon) `lift2 (×)` expr' <|> ((VarKey unit <$> ident) <* token.colon) `lift2 (×)` expr'
+
+            -- record :: SParser (Raw Expr)
+            -- record = sepBy kvPair token.comma <#> Dictionary unit # token.braces
+            --    where
+            --    kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
+            --    kvPair = ((VarKey <$> ident) <* token.colon) `lift2 (×)` expr'
 
             variable :: SParser (Raw Expr)
             variable = ident <#> Var

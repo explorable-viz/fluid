@@ -31,6 +31,6 @@ function serverDown() {
     if (err) {
       return console.log('shutdown failed', err.message);
     }
-    console.log('Everything is cleanly shut down.');
+    console.log('Everything is cleanly shutdown.');
   });
 }

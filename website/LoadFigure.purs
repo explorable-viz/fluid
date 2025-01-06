@@ -1,4 +1,3 @@
--- Should this be src/Αpp rather than website/Website.LoadFigure?
 module Website.LoadFigure where
 
 import Prelude hiding (absurd)
@@ -22,8 +21,8 @@ type JsonSpec = { datasets :: Array (Bind String), imports :: Array String, file
 jsonToSpec :: Json -> Either JsonDecodeError JsonSpec
 jsonToSpec = decodeJson
 
-figSpecFromJson :: JsonSpec -> FigSpec
-figSpecFromJson spec =
+specToCxt :: JsonSpec -> FigSpec
+specToCxt spec =
    { datasets: spec.datasets
    , imports: spec.imports
    , file: File spec.file
@@ -40,7 +39,7 @@ loadFigure fileName = runAffs_ (uncurry drawFig)
               case jsonToSpec response.body of
                  Left err -> error ("JSON decoding failed with " <> show err)
                  Right spec -> do
-                    ("fig" × _) <$> loadFig (figSpecFromJson spec)
+                    ("fig" × _) <$> loadFig (specToCxt spec)
    ]
 
 drawCode :: String -> String -> Effect Unit

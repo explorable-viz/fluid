@@ -111,13 +111,15 @@ copyOptions =
    , shell: Nothing
    }
 
--- TODO: rename to bundleWebsite?
+-- Rename to bundleWebsite?
 publish ∷ String -> Boolean -> Effect ChildProcess
 publish website package =
    exec cmd copyOptions \{ error, stdout } ->
       case error of
-         Just err -> logShow err
-         Nothing -> log =<< toString ASCII stdout
+         (Just err) -> logShow err
+         Nothing -> do
+            out <- toString ASCII stdout
+            log out
    where
    cmd =
       if package then "./node_modules/@explorable-viz/fluid/script/bundle-website.sh -w " <> website <> " -r true"
