@@ -11,7 +11,7 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Desug (desugGC)
 import Effect.Aff (Aff)
-import Effect.Class (class MonadEffect)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
@@ -20,7 +20,7 @@ import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
 import Module.Web (File, parse, prepConfig)
 import Parse (program)
-import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
+import Pretty (class Pretty, PrettyShow(..), compare, compare', prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
@@ -114,7 +114,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    checkEq "Graph bwd" "Trace bwd" ((\(EnvExpr _ e') -> e') in0) in_e
    out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd in0)
-   checkEq ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
+   checkEq' ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
 
    -- Already testing extensional equivalence above, but specifically test this too.
    let out_top' = evalG.fwd in_top
@@ -144,6 +144,25 @@ checkEq
    -> m Unit
 checkEq op1 op2 x y = do
    let left × right = compare op1 op2 x y
+   check (left == "") left
+   check (right == "") right
+
+checkEq'
+   :: forall m a
+    . BotOf a a
+   => Neg a
+   => MeetSemilattice a
+   => Eq a
+   => Pretty a
+   => MonadError Error m
+   => MonadEffect m
+   => String
+   -> String
+   -> a
+   -> a
+   -> m Unit
+checkEq' op1 op2 x y = do
+   let left × right = compare' op1 op2 x y
    check (left == "") left
    check (right == "") right
 
