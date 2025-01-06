@@ -26,7 +26,7 @@ shopt -s nullglob
 
 set +x
 PAGES=($(for FILE in website/$WEBSITE/*.html; do
-    basename "$FILE" | sed 's/\.[^.]*$//'
+   basename "$FILE" | sed 's/\.[^.]*$//'
 done | sort -u))
 set -x
 
@@ -63,14 +63,16 @@ cp -r $DIST/fluid/image dist/$WEBSITE_LISP_CASE
 
 echo "Processing other static files:"
 set +x
-set +u # try and remove this
+set +u # try to remove this
 TO_COPY=()
-for CHILD in website/$WEBSITE/.*; do
+shopt -s extglob
+for CHILD in website/$WEBSITE/!(.|..); do
    BASENAME="$(basename "$CHILD")"
    if [[ "$BASENAME" =~ ^[a-z.] ]]; then
       TO_COPY+=("$CHILD")
    fi
 done
+shopt -u extglob
 set -x
 
 for CHILD in "${TO_COPY[@]}"; do
