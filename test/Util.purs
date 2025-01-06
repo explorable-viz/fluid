@@ -11,7 +11,7 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Desug (desugGC)
 import Effect.Aff (Aff)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
@@ -114,7 +114,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    checkEq "Graph bwd" "Trace bwd" ((\(EnvExpr _ e') -> e') in0) in_e
    out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd in0)
-   checkEq' ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
+   checkEq ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
 
    -- Already testing extensional equivalence above, but specifically test this too.
    let out_top' = evalG.fwd in_top
