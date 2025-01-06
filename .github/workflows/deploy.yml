@@ -36,7 +36,7 @@ jobs:
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  deploy-gh-pages:
+  deploy-fluid-org:
     runs-on: ubuntu-22.04
     needs: build
     if: github.ref == 'refs/heads/release'
@@ -53,7 +53,7 @@ jobs:
         publish_dir: dist/fluid-org
         keep_files: false
 
-  deploy-ESOP-artifact:
+  deploy-esop2025-artifact:
     runs-on: ubuntu-22.04
     needs: build
     if: github.ref == 'refs/heads/develop' && github.repository == 'rolyp/esop25-web-artifact'
