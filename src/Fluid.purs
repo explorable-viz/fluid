@@ -120,12 +120,7 @@ publish website package =
          Nothing -> log =<< toString ASCII stdout
    where
    cmd =
-<<<<<<< HEAD
       if package then "./node_modules/@explorable-viz/fluid/script/bundle-website.sh -w " <> website <> " -r true"
-=======
-      -- TODO: rename b flag to reflect what it means
-      if b then "./node_modules/@explorable-viz/fluid/script/bundle-website.sh -w " <> website <> " -r true"
->>>>>>> develop
       else "./script/bundle-website.sh -w " <> website
 
 main :: Effect Unit
