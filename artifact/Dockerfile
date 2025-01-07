@@ -23,3 +23,12 @@ RUN yarn install
 COPY . ./
 
 EXPOSE 8080
+
+RUN useradd -ms /bin/bash puppeteer && \
+    echo "puppeteer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER puppeteer
+
+RUN sudo yarn build
+RUN sudo yarn bundle-website -w Esop2025Artifact
+RUN sudo yarn bundle-website -w Misc
