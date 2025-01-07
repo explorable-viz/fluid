@@ -8,21 +8,19 @@ Fluid is an experimental programming language which integrates a bidirectional d
 ## Installation
 
 ### Software required
-- Windows users: Ubuntu (WSL)
 - git
 - Node.js >=14.0.0
-- yarn
+- yarn >= 1.22
 
 ### For Windows Users
-- Clone the repository under Ubuntu WSL
 
-### Notes
-- Run `./script/setup/dev-setup.sh` after cloning repository
-- Avoid having PureScript installed globally
-- `Add Npm Path` is selected in PureScript IDE extension settings
-- VSCode for Windows users:
-	- Launch VSCode through Ubuntu (WSL) terminal
-	- Install WSL extension in VSCode
+- [Ubuntu WSL](https://ubuntu.com/desktop/wsl)
+
+### Building
+
+- Clone the repository (for Windows users, do this under the Ubuntu WSL)
+- Run `./script/setup/dev-setup.sh` from the top-level directory
+- Run `yarn build` 
 
 #### Running tests on command line
 - `yarn build` and then `yarn test-all`
