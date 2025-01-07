@@ -43,3 +43,15 @@ a browser window.
 Rebuild with `puppeteerTests.headless` set to `false` to run in browser. Then:
 - `yarn bundle-website X`
 - `./script/test-page.sh X X.Y`
+
+## Development via VS Code
+
+The following are some notes on developing Fluid using VS Code.
+
+- Avoid having PureScript installed globally
+- Install the PureScript IDE extension
+- In the PureScript IDE extension settings, select `Add Npm Path`
+
+- For Windows users:
+	- Launch VSCode through Ubuntu (WSL) terminal
+	- Install WSL extension in VSCode
