@@ -12,7 +12,7 @@ Fluid is an experimental programming language which integrates a bidirectional d
 - Node.js >=14.0.0
 - yarn >= 1.22
 
-### For Windows Users
+Additionally, for Windows users only:
 
 - [Ubuntu WSL](https://ubuntu.com/desktop/wsl)
 
