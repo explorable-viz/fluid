@@ -1,0 +1,25 @@
+FROM node:20-slim
+
+WORKDIR /usr/src/app
+
+RUN apt-get update
+RUN apt-get install -y wget gnupg
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+RUN echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list
+RUN apt-get update
+RUN apt-get install -y google-chrome-stable xvfb
+
+RUN apt-get update 
+RUN apt-get install -y ca-certificates git zip unzip
+
+RUN apt-get update && apt-get -y install sudo
+RUN sudo apt-get install libtinfo5
+
+COPY package.json ./
+COPY yarn.lock ./
+
+RUN yarn install
+
+COPY . ./
+
+EXPOSE 8080
