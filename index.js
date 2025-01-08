@@ -1020,14 +1020,14 @@ var Aff = function() {
       isDraining: function() {
         return draining;
       },
-      enqueue: function(cb) {
+      enqueue: function(cb2) {
         var i, tmp;
         if (size4 === limit) {
           tmp = draining;
           drain();
           draining = tmp;
         }
-        queue[(ix + size4) % limit] = cb;
+        queue[(ix + size4) % limit] = cb2;
         size4++;
         if (!draining) {
           drain();
@@ -1057,10 +1057,10 @@ var Aff = function() {
       isEmpty: function() {
         return count === 0;
       },
-      killAll: function(killError, cb) {
+      killAll: function(killError, cb2) {
         return function() {
           if (count === 0) {
-            return cb();
+            return cb2();
           }
           var killCount = 0;
           var kills = {};
@@ -1075,7 +1075,7 @@ var Aff = function() {
                   }, 0);
                 }
                 if (killCount === 0) {
-                  cb();
+                  cb2();
                 }
               };
             })();
@@ -1359,17 +1359,17 @@ var Aff = function() {
         };
       };
     }
-    function kill(error3, cb) {
+    function kill(error3, cb2) {
       return function() {
         if (status === COMPLETED) {
-          cb(util2.right(void 0))();
+          cb2(util2.right(void 0))();
           return function() {
           };
         }
         var canceler = onComplete({
           rethrow: false,
           handler: function() {
-            return cb(util2.right(void 0));
+            return cb2(util2.right(void 0));
           }
         })();
         switch (status) {
@@ -1406,11 +1406,11 @@ var Aff = function() {
         return canceler;
       };
     }
-    function join(cb) {
+    function join(cb2) {
       return function() {
         var canceler = onComplete({
           rethrow: false,
-          handler: cb
+          handler: cb2
         })();
         if (status === SUSPENDED) {
           run2(runTick);
@@ -1438,7 +1438,7 @@ var Aff = function() {
       }
     };
   }
-  function runPar(util2, supervisor, par, cb) {
+  function runPar(util2, supervisor, par, cb2) {
     var fiberId = 0;
     var fibers = {};
     var killId = 0;
@@ -1446,7 +1446,7 @@ var Aff = function() {
     var early = new Error("[ParAff] Early exit");
     var interrupt = null;
     var root2 = EMPTY;
-    function kill(error3, par2, cb2) {
+    function kill(error3, par2, cb3) {
       var step = par2;
       var head = null;
       var tail4 = null;
@@ -1464,7 +1464,7 @@ var Aff = function() {
                   return function() {
                     count--;
                     if (count === 0) {
-                      cb2(result)();
+                      cb3(result)();
                     }
                   };
                 });
@@ -1494,7 +1494,7 @@ var Aff = function() {
           }
         }
       if (count === 0) {
-        cb2(util2.right(void 0))();
+        cb3(util2.right(void 0))();
       } else {
         kid = 0;
         tmp = count;
@@ -1523,7 +1523,7 @@ var Aff = function() {
             return;
           }
           if (head === null) {
-            cb(fail3 || step)();
+            cb2(fail3 || step)();
             return;
           }
           if (head._3 !== EMPTY) {
@@ -1694,7 +1694,7 @@ var Aff = function() {
         fibers[fid].run();
       }
     }
-    function cancel(error3, cb2) {
+    function cancel(error3, cb3) {
       interrupt = util2.left(error3);
       var innerKills;
       for (var kid in kills) {
@@ -1708,7 +1708,7 @@ var Aff = function() {
         }
       }
       kills = null;
-      var newKills = kill(error3, root2, cb2);
+      var newKills = kill(error3, root2, cb3);
       return function(killError) {
         return new Aff2(ASYNC, function(killCb) {
           return function() {
@@ -1732,9 +1732,9 @@ var Aff = function() {
     };
   }
   function sequential(util2, supervisor, par) {
-    return new Aff2(ASYNC, function(cb) {
+    return new Aff2(ASYNC, function(cb2) {
       return function() {
-        return runPar(util2, supervisor, par, cb);
+        return runPar(util2, supervisor, par, cb2);
       };
     });
   }
@@ -1803,9 +1803,9 @@ var _delay = function() {
     }
   }
   return function(right, ms) {
-    return Aff.Async(function(cb) {
+    return Aff.Async(function(cb2) {
       return function() {
-        var timer2 = setDelay(ms, cb(right()));
+        var timer2 = setDelay(ms, cb2(right()));
         return function() {
           return Aff.Sync(function() {
             return right(clearDelay(ms, timer2));
@@ -1857,6 +1857,15 @@ var applicativeAff = { pure: _pure, Apply0: () => applyAff };
 var monadEffectAff = { liftEffect: _liftEffect, Monad0: () => monadAff };
 var monadThrowAff = { throwError: _throwError, Monad0: () => monadAff };
 var monadErrorAff = { catchError: _catchError, MonadThrow0: () => monadThrowAff };
+var $$try2 = /* @__PURE__ */ $$try(monadErrorAff);
+var runAff = (k) => (aff) => {
+  const $0 = _makeFiber(ffiUtil, _bind($$try2(aff))((x) => _liftEffect(k(x))));
+  return () => {
+    const fiber = $0();
+    fiber.run();
+    return fiber;
+  };
+};
 var nonCanceler = /* @__PURE__ */ (() => {
   const $0 = _pure();
   return (v) => $0;
@@ -19460,6 +19469,14 @@ var bwd_cases = [
     "\u03B4v": /* @__PURE__ */ multiViewEntry("stackedBarChart")(/* @__PURE__ */ constrArg("BarChart")(0)((x) => barSegment(4)(3)(neg)(barSegment(4)(1)(neg)(barSegment(3)(2)(neg)(x))))),
     fwd_expect: 'MultiView {["scatterPlot"] : ScatterPlot {["caption"] : "Clean energy efficiency vs proportion of renewable energy capacity", ["points"] : ({["x"] : 0.8723185510332055, ["y"] : 0.4180741155728385} : ({["x"] : 0.383891020964826, ["y"] : 0.3306374135311273} : ({["x"] : 0.5685559399722339, ["y"] : 0.2651713517303818} : ({["x"] : 0.39179907463864283, ["y"] : 0.5311676111397315} : ({["x"] : 0.0886691179578209, ["y"] : 0.4125357483317445} : ({["x"] : 0.3167847396421975, ["y"] : 0.2767379556904734} : ({["x"] : 0.3129857171819161, ["y"] : 0.20426921772653447} : ({["x"] : 0.29687029792356306, ["y"] : 0.3462200657379872} : ({["x"] : 0.16239390265026848, ["y"] : 0.4128} : ({["x"] : 0.2115752867627615, ["y"] : 0.5086651868096602} : [])))))))))), ["xlabel"] : "Renewables/TotalEnergyCap", ["ylabel"] : "Clean Capacity Factor"}, ["stackedBarChart"] : BarChart {["caption"] : "Non-renewables by country", ["size"] : {["height"] : 185, ["width"] : 275}, ["stackedBars"] : ({["bars"] : ({["y"] : "BRA", ["z"] : 151.05} : ({["y"] : "EGY", ["z"] : 159.93} : ({["y"] : "IND", ["z"] : 1060.1799999999998} : ({["y"] : "JPN", ["z"] : 928.82} : [])))), ["x"] : "2014"} : ({["bars"] : ({["y"] : "BRA", ["z"] : 142.76} : ({["y"] : "EGY", ["z"] : 170.68} : ({["y"] : "IND", ["z"] : 1118.8899999999999} : ({["y"] : "JPN", ["z"] : 876.0999999999999} : [])))), ["x"] : "2015"} : ({["bars"] : ({["y"] : "BRA", ["z"] : 108.03} : ({["y"] : "EGY", ["z"] : 174.07999999999998} : ({["y"] : "IND", ["z"] : 1193.53} : ({["y"] : "JPN", ["z"] : 883.3299999999999} : [])))), ["x"] : "2016"} : ({["bars"] : ({["y"] : "BRA", ["z"] : 116.76} : ({["y"] : "EGY", ["z"] : 181.31} : ({["y"] : "IND", ["z"] : \u2E281236.43\u2E29} : ({["y"] : "JPN", ["z"] : 875.32} : [])))), ["x"] : "2017"} : ({["bars"] : ({["y"] : "BRA", ["z"] : 101.48} : ({["y"] : "EGY", ["z"] : \u2E28182.31\u2E29} : ({["y"] : "IND", ["z"] : 1315.57} : ({["y"] : "JPN", ["z"] : \u2E28873.39\u2E29} : [])))), ["x"] : "2018"} : [])))))}}',
     datasets: [/* @__PURE__ */ $Tuple("renewables", "dataset/renewables-new"), /* @__PURE__ */ $Tuple("nonRenewables", "dataset/non-renewables")]
+  },
+  {
+    file: "qcut",
+    imports: ["lib/stats"],
+    bwd_expect_file: "qcut.expect",
+    "\u03B4v": (x) => x,
+    fwd_expect: "(((1.01 : (1.05 : [])), 0.051000000000000156) : (((1.07 : (1.09 : (1.22 : (1.23 : (1.24 : (1.24 : (1.25 : (1.32 : (1.32 : (1.35 : (1.3900000000000001 : (1.47 : (1.57 : (1.72 : [])))))))))))))), 0.6639999999999999) : (((1.73 : (1.75 : (1.76 : (1.83 : (1.8699999999999999 : (1.94 : (2.04 : (2.14 : (2.18 : (2.36 : (2.37 : (2.38 : (2.52 : (2.54 : [])))))))))))))), 0.8464999999999998) : (((2.61 : (2.67 : [])), 0.09850000000000003) : []))))",
+    datasets: [/* @__PURE__ */ $Tuple("ssp126", "dataset/ssp126-2081-2100")]
   }
 ];
 
@@ -41383,7 +41400,7 @@ var any2 = /* @__PURE__ */ (() => foldableArray.foldMap((() => {
   const semigroupDisj1 = { append: (v) => (v1) => v || v1 };
   return { mempty: false, Semigroup0: () => semigroupDisj1 };
 })()))();
-var $$try2 = /* @__PURE__ */ $$try(monadErrorAff);
+var $$try3 = /* @__PURE__ */ $$try(monadErrorAff);
 var TimeoutError = /* @__PURE__ */ $$$Error("TimeoutError");
 var RequestFailedError = /* @__PURE__ */ $$$Error("RequestFailedError");
 var request = (driver2) => (req2) => {
@@ -41452,7 +41469,7 @@ var request = (driver2) => (req2) => {
       );
     }
     fail();
-  })($$try2(fromEffectFnAff(_ajax(
+  })($$try3(fromEffectFnAff(_ajax(
     driver2,
     "AffjaxTimeoutErrorMessageIdent",
     "AffjaxRequestFailedMessageIdent",
@@ -42133,17 +42150,25 @@ var benchmarks = [
   /* @__PURE__ */ bwdSuite(bwd_cases),
   /* @__PURE__ */ withDatasetSuite(graphics_cases)
 ];
+
+// output-es/Benchmark/index.js
+var cb = (v) => {
+  if (v.tag === "Left") {
+    return throwException(error(showErrorImpl(v._1)))();
+  }
+  if (v.tag === "Right") {
+    return log(showBenchAcc.show(v._1));
+  }
+  fail();
+};
 var main = /* @__PURE__ */ (() => {
-  const $0 = _makeFiber(
-    ffiUtil,
-    _bind(traversableArray.traverse(applicativeAff)(identity4)(arrayMap((v) => {
-      const $02 = v._1;
-      return _map((v1) => $Tuple($02, v1))(v._2);
-    })(concat(arrayMap((f) => f($Tuple(10, true)))(benchmarks)))))((outs) => _liftEffect(log(showBenchAcc.show(definitely("More than one benchmark")(outs.length > 0 ? $Maybe("Just", outs) : Nothing)))))
-  );
+  const $0 = runAff(cb)(_bind(traversableArray.traverse(applicativeAff)(identity4)(arrayMap((v) => {
+    const $02 = v._2;
+    const $1 = v._1;
+    return _bind(_liftEffect(log("Benching: " + $1)))(() => _map((v1) => $Tuple($1, v1))($02));
+  })(concat(arrayMap((f) => f($Tuple(10, true)))(benchmarks)))))((outs) => _pure(definitely("More than one benchmark")(outs.length > 0 ? $Maybe("Just", outs) : Nothing))));
   return () => {
-    const fiber = $0();
-    fiber.run();
+    $0();
   };
 })();
 
