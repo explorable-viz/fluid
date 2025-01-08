@@ -264,3 +264,13 @@ let nub xs =
 -- Int -> Int -> [a] -> [a]
 let slice begin end xs =
    take (end - begin) (drop begin xs);
+
+
+-- (a -> Boolean) -> List a -> (List a, List a)
+let splitOn p data = 
+    let go fls trs [] = (reverse fls, reverse trs);
+        go fls trs (x : xs) = 
+            if p x
+            then go fls (x : trs) xs
+            else go (x : fls) trs xs
+    in go [] [] data;
