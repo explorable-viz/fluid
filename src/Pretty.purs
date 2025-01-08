@@ -1,4 +1,10 @@
-module Pretty (class Pretty, PrettyShow(..), compare, pretty, prettyP) where
+module Pretty
+   ( PrettyShow(..)
+   , class Pretty
+   , compare
+   , pretty
+   , prettyP
+   ) where
 
 import Prelude hiding (absurd, between)
 
