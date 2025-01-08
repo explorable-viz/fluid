@@ -2,7 +2,6 @@ module Pretty
    ( PrettyShow(..)
    , class Pretty
    , compare
-   , compare'
    , pretty
    , prettyP
    ) where
@@ -460,13 +459,3 @@ compare op1 op2 x y =
       right = if y_minus_x == botOf x then "" else op2 <> " but not " <> op1 <> ":\n" <> prettyP y_minus_x
    in
       left × right
-
-compare' :: forall a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => String -> String -> a -> a -> String × String
-compare' op1 op2 x y =
-   let
-      x_minus_y × y_minus_x = symmetricDiff x y
-      left = if x_minus_y == botOf x then "" else op1 <> " but not " <> op2 <> ":\n" <> op1 <> ":\n" <> prettyP x_minus_y <> "\n" <> op2 <> ":\n" <> prettyP y_minus_x
-      right = if y_minus_x == botOf x then "" else op2 <> " but not " <> op1 <> ":\n" <> op2 <> ":\n" <> prettyP y_minus_x <> "\n" <> op1 <> ":\n" <> prettyP x_minus_y
-   in
-      left × right
-

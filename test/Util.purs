@@ -20,7 +20,7 @@ import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
 import Module.Web (File, parse, prepConfig)
 import Parse (program)
-import Pretty (class Pretty, PrettyShow(..), compare, compare', prettyP)
+import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
@@ -144,25 +144,6 @@ checkEq
    -> m Unit
 checkEq op1 op2 x y = do
    let left × right = compare op1 op2 x y
-   check (left == "") left
-   check (right == "") right
-
-checkEq'
-   :: forall m a
-    . BotOf a a
-   => Neg a
-   => MeetSemilattice a
-   => Eq a
-   => Pretty a
-   => MonadError Error m
-   => MonadEffect m
-   => String
-   -> String
-   -> a
-   -> a
-   -> m Unit
-checkEq' op1 op2 x y = do
-   let left × right = compare' op1 op2 x y
    check (left == "") left
    check (right == "") right
 
