@@ -10,11 +10,12 @@ RUN apt-get update
 RUN apt-get install -y google-chrome-stable xvfb
 
 RUN apt-get update 
-RUN apt-get install -y ca-certificates git zip unzip python3 python3-venv python3-pip 
+RUN apt-get install -y ca-certificates git zip unzip python3 python3-venv python3-pip texlive-latex-base texlive-latex-extra
 RUN python3 -m venv /usr/src/python/
-RUN /usr/src/python/bin/pip3 install numpy pandas matplotlib
+RUN /usr/src/python/bin/pip3 install numpy pandas matplotlib jinja2
 RUN apt-get update && apt-get -y install sudo
 RUN sudo apt-get install libtinfo5
+RUN sudo apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY package.json ./
 COPY yarn.lock ./

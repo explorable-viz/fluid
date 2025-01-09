@@ -1,12 +1,17 @@
 ### Generic instructions:
-    - Download the tarball 
-    - Extract the tarball
+    - Download the tarball
+    - Extract the tarball with gzip: `gunzip esop-artifact.tar.gz`
+    - Load the image into docker: `docker load -i esop-artifact.tar`
     - Run the image with `docker run -p 8080:8080 -it esop-artifact bash`
 ### Run Tests:
-    - inside the image, run `yarn test` or `yarn test-all`, which also runs the website related tests
+    - Inside the image, run `yarn test` or `yarn test-all`, which also runs the website related tests
+### Run Benchmarks:
+    - Inside the image, run `yarn benchmark` in order to run all test programs 10 times, 
+      collects the results to `benchmark/benchmarks_artifact.csv`
+    - run `./artifact/script/rebuild_benchmarks.sh` from the default directory of the image
 
 ### Test webpages:
-    - to serve a webpage, run `yarn serve $1`, where `$1` is one of `misc`, `fluid-org`, `esop2025-artifact`
+    - Inside the image, run `yarn serve $1`, where `$1` is one of `misc`, `fluid-org`, `esop2025-artifact`
       then navigate to one of the subordinate webpages at `https://localhost:8080/$2`, where `$2` is 
       taken from one of the choices below.
 

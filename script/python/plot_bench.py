@@ -5,7 +5,7 @@ import argparse
 import re
 
 test_sets = {
-  'expensive': ['slicing/convolution/edgeDetect', 'slicing/convolution/emboss', 'slicing/convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart', 'slicing/linked-outputs/bar-chart-line-chart', 'slicing/linked-outputs/stacked-bar-scatter-plot'],
+  'paper': ['slicing/convolution/edgeDetect', 'slicing/convolution/emboss', 'slicing/convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart', 'slicing/linked-outputs/bar-chart-line-chart', 'slicing/linked-outputs/stacked-bar-scatter-plot'],
   'graphics': ['graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart'],
   'convolution': ['slicing/convolution/edgeDetect', 'slicing/convolution/emboss', 'slicing/convolution/gaussian'],
 }
@@ -21,17 +21,18 @@ def splitListEntry(entry):
   if match: 
     mean = float(match.group(1))
     std_dev = float(match.group(2))
-    return f"{mean:.1f} (±{std_dev:.1f})"
+    return f"{mean:.1f} ($\\pm${std_dev:.1f})"
   return entry
 
 def splitFormattedEntry(entry):
-  match = re.match(r"([\d.eE+-]+)\s*\(±[\d.eE+-]+\)", entry.strip())
+  match = re.match(r"([\d.eE+-]+)\s*\(\$\\pm\$\s*[\d.eE+-]+\)", entry.strip())
   return float(match.group(1))
 
 def parse(test_names, column_order, cap, lab):
-  benchmarks = pd.read_csv('benchmarksOut.csv', skipinitialspace=True, delimiter=',', index_col='Test-Name')
+  benchmarks = pd.read_csv('benchmark/benchmarks_artifact.csv', skipinitialspace=True, delimiter=',', index_col='Test-Name')
   df = pd.DataFrame(benchmarks.loc[test_names, bench_sets[column_order]]).round(1).map(splitListEntry)
-
+  df.index = df.index.map(lambda x: x.split(sep='/')[-1])
+  print(df)
   if column_order == 'table-one':
     t_eval = df['T-Eval'].apply(splitFormattedEntry)
     g_eval = df['G-Eval'].apply(splitFormattedEntry)
@@ -54,7 +55,7 @@ def parse(test_names, column_order, cap, lab):
     df['S\''] = df['S\''].round(2)
     print(df)
   with open('benchmark/tex/' + column_order + '.tex', 'w') as tex_file:
-    tex = df.to_latex(float_format ="%.2f", caption = "cap", label=lab)
+    tex = df.to_latex(float_format ="%.2f", caption = cap, label=lab)
     tex_file.write(tex)
     tex_file.close()
 

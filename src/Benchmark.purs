@@ -32,7 +32,7 @@ main = runAff_ cb do
 
 cb :: Error + BenchAcc -> Effect Unit
 cb (Left err) = error $ show err
-cb (Right bacc) = writeTextFile ASCII "benchmarksOut.csv" $ show bacc
+cb (Right bacc) = writeTextFile ASCII "benchmark/benchmarks_artifact.csv" $ show bacc
 
 benchmarks :: Array BenchSuite
 benchmarks =

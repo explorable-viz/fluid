@@ -10,3 +10,4 @@ output-es/
 .DS_Store
 .psc-ide-port
 .vscode/
+artifact/*.tar.gz
