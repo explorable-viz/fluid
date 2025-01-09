@@ -39,7 +39,8 @@
     "test-website-all": "./script/test-website-all.sh",
     "test-all": "./script/test-all.sh",
     "npm-publish": "./script/npm-publish.sh",
-    "fluid": "./script/fluid.sh"
+    "fluid": "./script/fluid.sh",
+    "benchmark": "./script/benchmark.sh"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",

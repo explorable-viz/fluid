@@ -2,54 +2,62 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
-
+import re
 
 test_sets = {
-  'expensive': ['slicing/convolution/edgeDetect', 'slicing/convolution/emboss', 'slicing/convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart', 'slicing/dtw/compute-dtw'],
+  'expensive': ['slicing/convolution/edgeDetect', 'slicing/convolution/emboss', 'slicing/convolution/gaussian', 'graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart', 'slicing/linked-outputs/bar-chart-line-chart', 'slicing/linked-outputs/stacked-bar-scatter-plot'],
   'graphics': ['graphics/grouped-bar-chart', 'graphics/line-chart', 'graphics/stacked-bar-chart'],
   'convolution': ['slicing/convolution/edgeDetect', 'slicing/convolution/emboss', 'slicing/convolution/gaussian'],
 }
 
 bench_sets = {
-  'all': ['G-Demands','G-Eval','G-Suffices','G-DemandedBy-Suff','G-Nodes','T-Demands','T-Eval','T-Suffices'],
-  'bwd': ['T-Eval','T-Demands','G-Eval', 'G-Demands'],
-  'fwd': ['T-Eval', 'T-Suffices', 'G-Eval', 'G-Suffices'],
-  'standard': ['T-Eval','T-Demands', 'T-Suffices', 'G-Eval', 'G-Demands', 'G-Suffices'],
+  'table-one': ['T-Eval','G-Eval' ],
+  'table-two': ['T-Demands', 'G-Demands'],
+  'table-three': ['T-DemBy', 'G-DemBy-Dir', 'G-DemBy-Suff'],
 }
 
-def parse(test_names, column_order, cap, lab, dest='recent.png'):
-  # Read benchmark csv
-  benchmarks = pd.read_csv('Benchmarks/benchmarks.csv', skipinitialspace=True, delimiter=',', index_col='Test-Name')
+def splitListEntry(entry):
+  match = re.match(r"\(([\d.eE+-]+)\s*:\s*([\d.eE+-]+)\s*:\s*Nil\)", entry.strip())
+  if match: 
+    mean = float(match.group(1))
+    std_dev = float(match.group(2))
+    return f"{mean:.1f} (±{std_dev:.1f})"
+  return entry
 
-  # Extract test names of interest
-  df = pd.DataFrame(benchmarks.loc[test_names]).round(1)
-  
-  tex_all = benchmarks.round(2).to_latex(float_format="%.2f", caption = "All test-cases and all benchmarks, TODO: needs formatting somehow", label="table:all-benches")
-  tex_all_f = open('fig/performance/all-benches.tex', 'w')
-  tex_all_f.write(tex_all)
-  tex_all_f.close()
+def splitFormattedEntry(entry):
+  match = re.match(r"([\d.eE+-]+)\s*\(±[\d.eE+-]+\)", entry.strip())
+  return float(match.group(1))
 
-  tex = df[column_order].to_latex(float_format="%.2f", caption = cap, label = lab)
-  print(df[column_order])
-  print(tex)
-  # Reorder benchmark columns
-  # column_colors = ['#0d6b12', '#93dbb5', '#3e3875', '#b8bef5', '#910303', '#e84d4d', '#e8bceb', '#5073a1']
-  # Plot as bar chart
-  df[column_order].plot(  kind="bar"
-                        # , color=column_colors
-                        , ylabel="Milliseconds", rot=0
-                        , figsize=(16,6))
-  
-  # Inserting a coloured horizontal line just to make clearer which columns have zero values
-  plt.ylim(bottom=-10)
-  plt.gca().axhline(0, lw=0.3, color='blue', label="Zero accuracy")
-  dest_png = dest + '.png'
-  dest_tex = dest + '.tex'
-  tex_f = open(dest_tex, "w")
-  tex_f.write(tex)
-  tex_f.close()
-  plt.savefig(dest_png)
-  # plt.show()
+def parse(test_names, column_order, cap, lab):
+  benchmarks = pd.read_csv('benchmarksOut.csv', skipinitialspace=True, delimiter=',', index_col='Test-Name')
+  df = pd.DataFrame(benchmarks.loc[test_names, bench_sets[column_order]]).round(1).map(splitListEntry)
+
+  if column_order == 'table-one':
+    t_eval = df['T-Eval'].apply(splitFormattedEntry)
+    g_eval = df['G-Eval'].apply(splitFormattedEntry)
+    df['EvalSlowdown'] = g_eval / t_eval
+    df['EvalSlowdown'] = df['EvalSlowdown'].round(2)
+    print(df)
+  elif column_order == 'table-two':
+    t_demands = df['T-Demands'].apply(splitFormattedEntry)
+    g_demands = df['G-Demands'].apply(splitFormattedEntry)
+    df['Bwd-Speedup'] = t_demands / g_demands
+    df['Bwd-Speedup'] = df['Bwd-Speedup'].round(2)
+    print(df)
+  elif column_order == 'table-three':
+    t_demby = df['T-DemBy'].apply(splitFormattedEntry)
+    g_demby = df['G-DemBy-Dir'].apply(splitFormattedEntry)
+    g_demby_suff = df['G-DemBy-Suff'].apply(splitFormattedEntry)
+    df['S'] = t_demby / g_demby
+    df['S'] = df['S'].round(2)
+    df['S\''] = t_demby / g_demby_suff
+    df['S\''] = df['S\''].round(2)
+    print(df)
+  with open('benchmark/tex/' + column_order + '.tex', 'w') as tex_file:
+    tex = df.to_latex(float_format ="%.2f", caption = "cap", label=lab)
+    tex_file.write(tex)
+    tex_file.close()
+
 
 def decompose_list(input_str):
   inner = input_str.split(", ")
@@ -70,15 +78,10 @@ def bench_names(bench_str):
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--Tests", help = "Specify list of tests")
 parser.add_argument("-b", "--Benches", help = "Specify list of benchmarks to show")
-parser.add_argument("-d", "--Dest", help = "Specify where to save plot")
 args = parser.parse_args()
 
 if args.Tests and args.Benches:
   tests = test_names(args.Tests)
-  benches = bench_names(args.Benches)
   capt = "Tests: " + args.Tests + ", Benches: " + args.Benches
   lab = args.Tests + '-' + args.Benches
-  if args.Dest:    
-    parse(tests, benches, capt, lab, dest=args.Dest)
-  else:
-    parse(tests, benches, capt, lab)
+  parse(tests, args.Benches, capt, lab)
