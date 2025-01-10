@@ -11,3 +11,6 @@ jobs:
         node-version: 22
     - run: |
         wget "https://zenodo.org/records/14623396/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
+        gunzip esop-artifact.tar.gz
+        docker load -i esop-artifact.tar
+        docker run -p 8080:8080 -it esop-artifact bash
