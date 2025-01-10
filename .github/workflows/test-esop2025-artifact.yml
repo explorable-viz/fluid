@@ -9,14 +9,19 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 22
+    - name: Download and unzip Docker image
     - run: |
         set +x
         wget "https://zenodo.org/records/14623396/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
         gunzip esop-artifact.tar.gz
+    - name: Load and connect to Docker container
+    - run: |
         docker load -i esop-artifact.tar
         docker run -d \
           --name esop-container \
           -p 8080:8080 \
           esop-artifact \
           tail -f /dev/null
+    - name: Run tests
+    - run: |
         docker exec esop-container bash -c "yarn test-all"
