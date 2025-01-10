@@ -1,6 +1,6 @@
 ## Getting Started
 
-The prebuilt Docker image only supports x86_64 architectures.
+The prebuilt Docker image natively supports x86_64 architectures and ARM64 architectures in emulation mode.
 
 ### Downloading and connecting to Docker image:
 
@@ -47,13 +47,13 @@ dist/esop2025-artifact
 |── fig4
 ```
 
-## Running additional experiments
+## Creating your own experiments and figures
 
-To create your own experiments and figures, start by verifying that you can build and serve the `misc` website as follows.
+To create your own experiments and figures, you will need to clone the repository and then modify, build and serve the `misc` website as follows.
 
-1. Run and connect to image as above
-2. Run `yarn serve misc`, then navigate to one of the subordinate webpages at
-`https://localhost:8080/$1`, where `$1` is taken from one of the choices below:
+1. Close the repository https://github.com/explorable-viz/fluid and switch to the tag `ESOP2025-artifact`
+2. Follow the README instructions at the root of the repository to set up your development environment
+3. From the root directory, verify that you can build the website with `yarn bundle-website -w Misc`. This should generate the following structure in `dist`:
 
 ```
 dist/misc
@@ -65,14 +65,9 @@ dist/misc
 |── table-spm1
 ```
 
-### Creating Your Own Web-page Experiment
-1. Download the ESOP-artifact release from https://github.com/explorable-viz/fluid
-2. Follow the README instructions at the root of the repository to set up your development environment.
-3. Navigate to `website/Misc`
-4. create a new html file, and json file with the same name (`Experiment.html`, `Experiment.json`)
-5. choose one of the other websites (for example `Renewables`) and copy the contents into your own (`Renewables.html -> Experiment.html`, `Renewables.json -> Experiment.json`)
-6. Navigate to the root directory and build the website with `yarn bundle-website -w Misc`
-7. Launch the web-server with `yarn serve misc`
-8. In your browser, navigate to `https://localhost:8080/experiment`
-9. If you wish to modify the source code for your experiment, it will be found in the `fluid/` directory.
-   Modifying the code of an experiment or its JSON file is beyond the scope of this README.
+4. Navigate to `website/Misc`
+5. Pick an existing example in that folder (e.g. `Renewables`) and copy the corresponding HTML and JSON files for your new example (e.g. `Renewables.html -> Experiment.html`, `Renewables.json -> Experiment.json`)
+6. From the root directory, rebuild the website with `yarn bundle-website -w Misc`
+7. Run `yarn serve misc`
+8. In your browser, navigate to `https://localhost:8080/$1`, where `$1` is one of the existing  example folders or your new one (`experiment`)
+9. If you wish to modify the Fluid source code for your web page, it will be found in the `fluid/` directory
