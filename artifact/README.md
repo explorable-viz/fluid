@@ -28,7 +28,10 @@ collect timing results in `benchmark/benchmarks_artifact.csv`. This step can tak
 2. Run `./artifact/script/rebuild_benchmarks.sh` from working directory of image
 3. In `./benchmark` you should find:
   - `benchmarks_artifact.csv`
-  - a folder `tex` containing LaTeX files for tables 1, 2 and 3, plus a top-level LaTex file `benchmarks.tex` which collates the three tables for convenience
+  - a folder `tex` containing:
+    - LaTeX files for tables 1, 2 and 3
+    - a top-level LaTeX file `benchmarks.tex` collating the three tables into one document for convenience
+    - `benchmarks.pdf` which will have been built from from `benchmarks.tex`
 
 ### Reproducing figures in Section 2
 
