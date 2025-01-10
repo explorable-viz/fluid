@@ -1,0 +1,13 @@
+name: test-esop2025-artifact
+
+on: [workflow_call]
+
+jobs:
+  download-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - run: |
+        wget "https://zenodo.org/records/14623396/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
