@@ -24,7 +24,7 @@ main :: Effect Unit
 main = runAff_ cb do
    outs <- sequence $
       ( \(str × row) -> do
-           log $ "Benching: " <> str
+           log $ "Benchmarking: " <> str
            (str × _) <$> row
       )
          <$> (concat (benchmarks <@> (10 × true)))

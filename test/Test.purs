@@ -16,9 +16,9 @@ import Util ((×))
 import Website.Benchmark (benchmarks)
 
 main :: Effect Unit
--- main = run tests
+main = run tests
 
-main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite loadFile

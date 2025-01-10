@@ -55,5 +55,14 @@ dist/fluid-org
 |── moving-average
 |── student-projects
 ```
-### Creating Your Own Experiments
-    1. TODO
+### Creating Your Own Web-page Experiment
+    1. Download the ESOP-artifact release from https://github.com/explorable-viz/fluid
+    2. Follow the README instructions at the root of the repository to set up your development environment.
+    3. Navigate to `website/Misc`
+    4. create a new html file, and json file with the same name (`Experiment.html`, `Experiment.json`)
+    5. choose one of the other websites (for example `Renewables`) and copy the contents into your own (`Renewables.html -> Experiment.html`, `Renewables.json -> Experiment.json`)
+    6. Navigate to the root directory and build the website with `yarn bundle-website -w Misc`
+    7. Launch the web-server with `yarn serve misc`
+    8. In your browser, navigate to `https://localhost:8080/experiment`
+    9. If you wish to modify the source code for your experiment, it will be found in the `fluid/` directory.
+       Modifying the code of an experiment or its JSON file is beyond the scope of this README.

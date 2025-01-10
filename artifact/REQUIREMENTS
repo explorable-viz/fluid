@@ -1,5 +1,9 @@
-Tested on:
+Instructions have been tested with the following specs:
+DOCKER IMAGE:
+  SOFTWARE: Docker version 27.4.1 build b9d17ea, git, gunzip
+BUILD FROM SOURCE:
+  SOFTWARE: git, Node.JS >= 14.0.0, yarn >= 1.22
 ARCHITECTURE: x86_64
 PROCESSOR: Intel Core i7-10850H CPU @ 2.70GHz
 MEMORY: 16.4GB
-SOFTWARE: Docker version 27.4.1 build b9d17ea, git, gunzip
+  
