@@ -1,22 +1,28 @@
 ## Getting Started
-Docker image instructions only supported on x86_64 Linux builds
-### Download Docker image from Zenodo:
-    1. Download the (compressed) tarball
-    2. Extract the tarball with gzip: `gunzip esop-artifact.tar.gz`
-    3. Load the image into docker: `docker load -i esop-artifact.tar`
-    4. Run and connect to the image with `docker run -p 8080:8080 -it esop-artifact bash`
-#### Rebuilding Docker image from scratch:
-    1. Clone the repository to a location of your choice
-    2. From the root directory of the repository, build the docker image: `docker build -f artifact/Dockerfile -t esop-artifact .`
-    3. Run and connect to the image with `docker run -p 8080:8080 -it esop-artifact bash`
-    
-### Testing the installation:
-    - Inside the image, run `yarn test` or `yarn test-all`, which also runs the website related tests
+
+The prebuilt Docker image only supports x86_64 architectures.
+
+### Downloading and connecting to Docker image:
+
+1. Download compressed tarball from Zenodo
+2. Extract tarball with gzip: `gunzip esop-artifact.tar.gz`
+3. Load image into docker: `docker load -i esop-artifact.tar`
+4. Run and connect to the image with `docker run -p 8080:8080 -it esop-artifact bash`
+
+Alternatively, to rebuild Docker image from scratch:
+
+1. Clone repository to local folder
+2. From root directory of repository, run `docker build -f artifact/Dockerfile -t esop-artifact .`
+3. Run and connect to the image as above
+
+### Testing the installation
+
+Inside the image, run `yarn test` to run the core test, or `yarn test-all`, which also runs the website-related tests.
 
 ## Step-by-Step Instructions for reproducibility:
 From here, there are 2 options:
 ### Reproducing tables in Section 5:
-    1. Inside the image, run `yarn benchmark` in order to run all test programs 10 times, 
+    1. Inside the image, run `yarn benchmark` in order to run all test programs 10 times,
       collects the results to `benchmark/benchmarks_artifact.csv`
     2. run `./artifact/script/rebuild_benchmarks.sh` from the default directory of the image
 
@@ -35,7 +41,7 @@ dist/esop2025-artifact
 ## Running additional experiments:
     1. If you want to experiment with additional experimental webpages,
       run and connect to the image with `docker run -p 8080:8080 -it esop-artifact bash`
-    2. Run `yarn serve misc`, then navigate to one of the subordinate webpages at 
+    2. Run `yarn serve misc`, then navigate to one of the subordinate webpages at
     `https://localhost:8080/$1`, where `$1` is taken from one of the choices below.
 ```
 dist/misc
