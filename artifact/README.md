@@ -49,7 +49,9 @@ dist/esop2025-artifact
 
 ## Creating your own experiments and figures
 
-To create your own experiments and figures, you will need to clone the repository. and then modify, build and serve the `misc` website as follows.
+To create your own experiments and figures, follow the following two steps.
+
+### Set up and verify development environment
 
 1. Close the repository https://github.com/explorable-viz/fluid and switch to the tag `esop2025-artifact`
 2. Follow the `README.md` instructions at the root of the repository to set up your development environment
@@ -66,7 +68,10 @@ dist/misc
 ```
 
 3. Run `yarn serve misc` and verify that you can navigate to `https://localhost:8080/$1`, where `$1` is one of the web pages above
-4. To create your own web page, navigate to `website/Misc`, pick an existing example in that folder (e.g. `Renewables`) and copy the corresponding HTML and JSON files to new files for your example (e.g. `Renewables.html -> Experiment.html`, `Renewables.json -> Experiment.json`)
-6. From the root directory, rebuild the website with `yarn bundle-website -w Misc`
-8. Again run `yarn serve misc` and your example should be available at `https://localhost:8080/$1`
-9. If you wish to modify the Fluid source code for your web page, it will be found in the `fluid/` directory
+
+### Create your own example web page
+
+1. Navigate to `website/Misc`, pick an existing example in that folder (e.g. `Renewables`) and copy the corresponding HTML and JSON files to new files for your example (e.g. `Renewables.html -> Experiment.html`, `Renewables.json -> Experiment.json`)
+2. From the root directory, rebuild the website with `yarn bundle-website -w Misc`
+3. Again run `yarn serve misc` and your example should be available at `https://localhost:8080/$1`
+4. If you wish to modify the Fluid source code for your web page, it will be found in the `fluid/` directory
