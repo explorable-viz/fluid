@@ -73,7 +73,7 @@ dist/misc
 
 1. Navigate to `website/Misc`, pick an existing example in that folder (e.g. `Renewables`) and copy the corresponding HTML and JSON files to new files for your example (e.g. `Renewables.html -> Experiment.html`, `Renewables.json -> Experiment.json`)
 2. From the root directory, rebuild the website with `yarn bundle-website -w Misc`
-3. Again run `yarn serve misc` and your example should be available at `https://localhost:8080/$1`
+3. Again run `yarn serve misc`; your example should be available at `https://localhost:8080/experiment`
 4. Modify Fluid source code for example, which is found in the `fluid/P` directory, where `P` is the path specified as the `"file"` in `Experiment.json`
 5. After each modification, rebuild the website with `yarn bundle-website -w Misc` and run `yarn serve misc` to see the updated web page
 
