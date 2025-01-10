@@ -1,6 +1,6 @@
 name: test-esop2025-artifact
 
-on: [workflow_call]
+on: [workflow_dispatch]
 
 jobs:
   download-and-test:
