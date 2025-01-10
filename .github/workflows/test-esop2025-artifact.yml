@@ -19,4 +19,4 @@ jobs:
           -p 8080:8080 \
           esop-artifact \
           tail -f /dev/null
-        docker exec esop-container bash -c "yarn test all"
+        docker exec esop-container bash -c "yarn test-all"
