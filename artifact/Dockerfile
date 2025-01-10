@@ -2,6 +2,7 @@ FROM node:20-slim
 
 WORKDIR /usr/src/app
 
+
 RUN apt-get update
 RUN apt-get install -y wget gnupg
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
@@ -24,12 +25,14 @@ RUN yarn install
 
 COPY . ./
 
+RUN chmod -R +w /usr/src/app/benchmark
+
 EXPOSE 8080
 
-RUN useradd -ms /bin/bash puppeteer && \
-    echo "puppeteer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN useradd -ms /bin/bash evaluator && \
+    echo "evaluator ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-USER puppeteer
+USER evaluator
 
 RUN sudo yarn build
 RUN sudo yarn bundle-website -w Esop2025Artifact
