@@ -1,2 +1,7 @@
-AVAILABLE: 
-REUSABLE
+AVAILABLE: available at DOI: 10.5281/zenodo.14626987
+REUSABLE: We believe we have met the requirements for
+both Functional and Reusable. We provide instructions to install
+and test the installation, as well as reproducing figures and tables
+from the paper the artifact is supporting. We provide instructions
+for an interested user to rebuild from source, and information
+on how to construct additional experimental webpages. 
