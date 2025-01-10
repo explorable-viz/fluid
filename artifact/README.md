@@ -19,14 +19,19 @@ Alternatively, to rebuild Docker image from scratch:
 
 Inside the image, run `yarn test` to run the core test, or `yarn test-all`, which also runs the website-related tests.
 
-## Step-by-Step Instructions for reproducibility
+## Step-by-Step Instructions for Reproducing Paper Content
 
 ### Reproducing tables in Section 5
+
 1. Inside the image, run `yarn benchmark`to run all test programs 10 times and
-collect timing results in `benchmark/benchmarks_artifact.csv`
-2. run `./artifact/script/rebuild_benchmarks.sh` from working directory of image
+collect timing results in `benchmark/benchmarks_artifact.csv`. This step can take several minutes but should provide feedback after each benchmark.
+2. Run `./artifact/script/rebuild_benchmarks.sh` from working directory of image
+3. In `./benchmark` you should find:
+  - `benchmarks_artifact.csv`
+  - a folder `tex` containing LaTeX files for tables 1, 2 and 3, plus a top-level LaTex file `benchmarks.tex` which collates the three tables for convenience
 
 ### Reproducing figures in Section 2
+
 1. Inside the image, run `yarn serve esop2025-artifact`
 2. Navigate in your browser to `https://localhost:8080/` and select the links to `fig2` and `fig4`
 
