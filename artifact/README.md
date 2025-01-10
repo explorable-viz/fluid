@@ -20,18 +20,19 @@ Alternatively, to rebuild Docker image from scratch:
 Inside the image, run `yarn test` to run the core test, or `yarn test-all`, which also runs the website-related tests.
 
 ## Step-by-Step Instructions for reproducibility:
-From here, there are 2 options:
-### Reproducing tables in Section 5:
-    1. Inside the image, run `yarn benchmark` in order to run all test programs 10 times,
-      collects the results to `benchmark/benchmarks_artifact.csv`
-    2. run `./artifact/script/rebuild_benchmarks.sh` from the default directory of the image
 
-### Reproducing figures in Section 2:
-    1. Inside the image, run `yarn serve esop2025-artifact`
-      then navigate to one of the subordinate webpages by navigating in your browser to
-      `https://localhost:8080/`, then selecting either of the links to `fig2` or `fig4`
-    2. Note that the figures in the paper feature additional curved arrows which were manually added
-      for illustrative purposes and do not appear on the web versions.
+### Reproducing tables in Section 5
+1. Inside the image, run `yarn benchmark` in order to run all test programs 10 times,
+collects the results to `benchmark/benchmarks_artifact.csv`
+2. run `./artifact/script/rebuild_benchmarks.sh` from the default directory of the image
+
+### Reproducing figures in Section 2
+1. Inside the image, run `yarn serve esop2025-artifact`
+then navigate to one of the subordinate webpages by navigating in your browser to
+`https://localhost:8080/`, then selecting either of the links to `fig2` or `fig4`
+2. Note that the figures in the paper feature additional curved arrows which were manually added
+for illustrative purposes and do not appear on the web versions.
+
 ```
 dist/esop2025-artifact
 |── fig2
