@@ -36,7 +36,7 @@ collect timing results in `benchmark/benchmarks_artifact.csv`. This step can tak
 ### Reproducing figures in Section 2
 
 1. Inside the image, run `yarn serve esop2025-artifact`
-2. Navigate in your browser to `https://localhost:8080/` and select the links to `fig2` and `fig4`
+2. Open a browser at `https://localhost:8080/` and select links to `fig2` and `fig4`
 
 Note that the figures in the paper feature additional curved arrows; these were added manually
 for illustrative purposes and do not appear on the web versions.
@@ -49,7 +49,7 @@ dist/esop2025-artifact
 
 ## Running additional experiments
 
-To create your own experiments and figures, start by verifying that you can build and serve the
+To create your own experiments and figures, start by verifying that you can build and serve the `misc` website as follows.
 
 1. Run and connect to image as above
 2. Run `yarn serve misc`, then navigate to one of the subordinate webpages at
