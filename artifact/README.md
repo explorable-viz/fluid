@@ -1,6 +1,6 @@
 ## Getting Started
 
-The prebuilt Docker image only supports x86_64 architectures.
+The prebuilt Docker image natively supports x86_64 architectures and ARM64 architectures in emulation mode.
 
 ### Downloading and connecting to Docker image:
 
@@ -47,11 +47,10 @@ dist/esop2025-artifact
 |── fig4
 ```
 
-## Running additional experiments
+## Creating your own experiments and figures
 
-To create your own experiments and figures, start by verifying that you can build and serve the `misc` website as follows.
+To create your own experiments and figures, you will need to clone the repository and then verify that you can build and serve the `misc` website as follows.
 
-1. Run and connect to image as above
 2. Run `yarn serve misc`, then navigate to one of the subordinate webpages at
 `https://localhost:8080/$1`, where `$1` is taken from one of the choices below:
 
@@ -65,7 +64,6 @@ dist/misc
 |── table-spm1
 ```
 
-### Creating Your Own Web-page Experiment
 1. Download the ESOP-artifact release from https://github.com/explorable-viz/fluid
 2. Follow the README instructions at the root of the repository to set up your development environment.
 3. Navigate to `website/Misc`
