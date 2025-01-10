@@ -29,7 +29,7 @@ import Util (AffError)
 loadFile :: F.FileLoader
 loadFile (F.Folder folder) (F.File file) = do
    let url = folder <> "/" <> file <> ".fld"
-   buffer <- liftAff $ readTextFile ASCII url
+   buffer <- liftAff $ readTextFile UTF8 url
    pure buffer
 
 parseProgram ∷ ∀ m. F.Folder -> F.File → AffError m (Raw S.Expr)

@@ -6,6 +6,7 @@ import Bind ((↦))
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
+import Module.Web (loadFile)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Util (TestSuite)
@@ -15,12 +16,12 @@ import Util ((×))
 import Website.Benchmark (benchmarks)
 
 main :: Effect Unit
--- main = run tests
+main = run tests
 
-main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ bwdSuite
+scratchpad = asTestSuite $ bwdSuite loadFile
    [ { file: "qcut"
      , imports:
           [ "lib/stats"

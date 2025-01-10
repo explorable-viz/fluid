@@ -9,6 +9,7 @@ import Data.Tuple (Tuple)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class.Console (log, logShow)
+import Module.Web (loadFile)
 import Test.Benchmark.Util (BenchAcc(..), BenchRow)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Desugar (desugar_cases)
@@ -32,8 +33,8 @@ reportBench (str × row) = do
 
 benchmarks :: Array BenchSuite
 benchmarks =
-   [ suite desugar_cases
-   , suite misc_cases
-   , bwdSuite bwd_cases
-   , withDatasetSuite graphics_cases
+   [ suite loadFile desugar_cases
+   , suite loadFile misc_cases
+   , bwdSuite loadFile bwd_cases
+   , withDatasetSuite loadFile graphics_cases
    ]
