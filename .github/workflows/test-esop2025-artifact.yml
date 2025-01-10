@@ -10,7 +10,13 @@ jobs:
       with:
         node-version: 22
     - run: |
+        set +x
         wget "https://zenodo.org/records/14623396/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
         gunzip esop-artifact.tar.gz
         docker load -i esop-artifact.tar
-        docker run -p 8080:8080 -it esop-artifact bash
+        docker run -d \
+          --name esop-container \
+          -p 8080:8080 \
+          esop-artifact \
+          tail -f /dev/null
+        docker exec esop-container bash -c "yarn test all"
