@@ -9,7 +9,7 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 22
-    - name: Download and unzip Docker image
+    - name: Downloading and connecting to Docker image
       run: |
         set +x
         wget "https://zenodo.org/records/14623396/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
@@ -22,7 +22,11 @@ jobs:
           -p 8080:8080 \
           esop-artifact \
           tail -f /dev/null
-    - name: Run tests
-      # can't get much further than this without fixing "No usable sandbox!" problem
+    - name: Testing the installation
+      # can't run test-all without fixing "No usable sandbox!" problem
       run: |
         docker exec esop-container bash -c "yarn test"
+    - name: Reproducing tables in Section 5
+      run: |
+        docker exec esop-container bash -c "yarn benchmark"
+      # TODO: Reproducing figures in Section 2
