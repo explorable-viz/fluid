@@ -13,7 +13,7 @@ jobs:
     - name: Downloading and connecting to Docker image
       run: |
         set +x
-        wget "https://zenodo.org/records/14623396/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
+        wget "https://zenodo.org/records/14626987/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
         gunzip esop-artifact.tar.gz
         docker load -i esop-artifact.tar
         docker run -d \
