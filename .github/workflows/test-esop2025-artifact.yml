@@ -3,7 +3,8 @@ name: test-esop2025-artifact
 on: [workflow_dispatch]
 
 jobs:
-  download-and-test:
+  # test an approximation of the instructions submitted to the ESOP 2025 AE process
+  verify-artifact-evaluation-instructions:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-node@v4
@@ -14,8 +15,6 @@ jobs:
         set +x
         wget "https://zenodo.org/records/14623396/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
         gunzip esop-artifact.tar.gz
-    - name: Load and connect to Docker container
-      run: |
         docker load -i esop-artifact.tar
         docker run -d \
           --name esop-container \
