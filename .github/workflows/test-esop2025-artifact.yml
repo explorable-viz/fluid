@@ -13,7 +13,7 @@ jobs:
     - name: Downloading and connecting to Docker image
       run: |
         set +x
-        wget "https://zenodo.org/records/14626987/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
+        wget "https://zenodo.org/records/14637654/files/esop-artifact.tar.gz?download=1" -O esop-artifact.tar.gz
         gunzip esop-artifact.tar.gz
         docker load -i esop-artifact.tar
         docker run -d \
@@ -21,11 +21,12 @@ jobs:
           -p 8080:8080 \
           esop-artifact \
           tail -f /dev/null
-    - name: Testing the installation
-      # can't run test-all without fixing "No usable sandbox!" problem
+    - name: Testing the installation [`yarn test` -- `yarn test-all` errors with "No usable sandbox!" in GitHub Actions]
       run: |
         docker exec esop-container bash -c "yarn test"
+    - name: Reproducing figures in Section 2 [not automated -- follow manual steps in artifact README.md]
+      run: |
+        #
     - name: Reproducing tables in Section 5
       run: |
         docker exec esop-container bash -c "yarn benchmark"
-      # TODO: Reproducing figures in Section 2
