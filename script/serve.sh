@@ -6,4 +6,4 @@ if [ -z "$1" ]; then
    exit 1
 fi
 
-npx http-serve dist/$1 -a 127.0.0.1 -d -c-1
+npx http-serve dist/$1 -a 0.0.0.0 -d -c-1
