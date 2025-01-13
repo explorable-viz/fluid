@@ -15,7 +15,7 @@ const server = app.listen(8080, function() {
   try {
     const module = process.argv[2]
     console.log('Loading Puppeteer test module:', module);
-    import('./output-es/' + module + '/index.js').then(({ main }) => {
+    import(module).then(({ main }) => {
       main().then(serverDown);
     }).catch(err => {
       console.error("Failed to load PureScript output:", err);

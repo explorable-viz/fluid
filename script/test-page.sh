@@ -16,4 +16,4 @@ fi
 # don't need to have "deployed" this to dist/
 # instead the following just picks up from output-es/
 WEBSITE_LISP_CASE=$(./script/util/lisp-case.sh "$WEBSITE")
-node puppeteer.js Website.Test.$MODULE $WEBSITE_LISP_CASE
+node puppeteer.js ./output-es/Website.Test.$MODULE/index.js $WEBSITE_LISP_CASE
