@@ -27,7 +27,7 @@ main = runAff_ cb do
            log $ "Benchmarking: " <> str
            (str × _) <$> row
       )
-         <$> (concat (benchmarks <@> (10 × true)))
+         <$> (concat (benchmarks <@> (1 × true)))
    pure $ BenchAcc $ definitely "More than one benchmark" $ fromArray outs
 
 cb :: Error + BenchAcc -> Effect Unit
