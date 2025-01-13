@@ -8,35 +8,50 @@ Fluid is an experimental programming language which integrates a bidirectional d
 ## Installation
 
 ### Software required
-- Windows users: Ubuntu (WSL)
 - git
 - Node.js >=14.0.0
-- yarn
+- yarn >= 1.22
 
-### For Windows Users
-- Clone the repository under Ubuntu WSL
+Additionally, for Windows users only:
 
-### Notes
-- Run `./script/setup/dev-setup.sh` after cloning repository
-- Avoid having PureScript installed globally
-- `Add Npm Path` is selected in PureScript IDE extension settings
-- VSCode for Windows users:
-	- Launch VSCode through Ubuntu (WSL) terminal
-	- Install WSL extension in VSCode
+- [Ubuntu WSL](https://ubuntu.com/desktop/wsl)
+
+### Building
+
+- Clone the repository (for Windows users, do this under the Ubuntu WSL)
+- Run `./script/setup/dev-setup.sh` from the top-level directory
+- Run `yarn build`
 
 #### Running tests on command line
-- `yarn build` and then `yarn test-all`
+
+After building, tests can be run from the command line via `yarn test-all`
 
 #### Running tests in browser
-- As per command-line tests above, but run `yarn test-browser`
-- Hit Debug in the browser window that opens, and then open Developer Tools or equivalent
+- As per command-line tests above, but run `yarn test-browser`, which opens
+a browser window.
+- To observe the status of tests, click `Debug` in the browser window, and then open the JavaScript Console for your browser (e.g., via the Developer Tools).
 
 #### Running the fluid.org website locally
-- `yarn build`
-- `yarn serve fluid-org`
+
+(Assumes you have already run `yarn build`)
+
+- `yarn serve fluid-org` (you may be prompted to proceed: type `y`).
 - Open a browser at the served URL (usually `127.0.0.1:8080`)
 
 #### Run Puppeteer tests for page Y of website X
+
 Rebuild with `puppeteerTests.headless` set to `false` to run in browser. Then:
 - `yarn bundle-website X`
 - `./script/test-page.sh X X.Y`
+
+## Development via VS Code
+
+The following are some notes on developing Fluid using VS Code.
+
+- Avoid having PureScript installed globally
+- Install the PureScript IDE extension
+- In the PureScript IDE extension settings, select `Add Npm Path`
+
+- For Windows users:
+	- Launch VSCode through Ubuntu (WSL) terminal
+	- Install WSL extension in VSCode

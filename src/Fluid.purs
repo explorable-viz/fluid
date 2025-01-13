@@ -21,6 +21,7 @@ import Node.ChildProcess (ChildProcess, ExecOptions, exec)
 import Node.Encoding (Encoding(..))
 import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, switch, value, (<**>))
 import Options.Applicative.Builder (info)
+import Pretty (prettyP)
 import Util (Endo)
 import Val (Val)
 
@@ -90,8 +91,9 @@ commandParser = subparser
    )
 
 dispatchCommand ∷ Command → Aff Unit
-dispatchCommand (Evaluate p) =
-   void $ evaluate p
+dispatchCommand (Evaluate p) = do
+   v <- (evaluate p)
+   log (prettyP v)
 dispatchCommand (Publish (Folder website) b) = do -- Publish -> BundleWebsite?
    void $ liftEffect $ publish website b
    log "Published"
@@ -111,15 +113,14 @@ copyOptions =
 
 -- TODO: rename to bundleWebsite?
 publish ∷ String -> Boolean -> Effect ChildProcess
-publish website b =
+publish website package =
    exec cmd copyOptions \{ error, stdout } ->
       case error of
          Just err -> logShow err
          Nothing -> log =<< toString ASCII stdout
    where
    cmd =
-      -- TODO: rename b flag to reflect what it means
-      if b then "./node_modules/@explorable-viz/fluid/script/bundle-website.sh -w " <> website <> " -r true"
+      if package then "./node_modules/@explorable-viz/fluid/script/bundle-website.sh -w " <> website <> " -r true"
       else "./script/bundle-website.sh -w " <> website
 
 main :: Effect Unit
