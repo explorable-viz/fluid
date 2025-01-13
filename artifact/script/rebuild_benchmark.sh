@@ -1,4 +1,4 @@
-#!/bin bash
+#!/bin/bash
 set -xe
 
 sudo /usr/src/python/bin/python3 script/python/plot_bench.py -t paper -b table-one
