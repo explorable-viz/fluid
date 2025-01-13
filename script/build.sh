@@ -6,5 +6,5 @@ rm -rf dist/
 ./script/bundle.sh test Test.Test
 ./script/bundle-benchmark.sh
 ./script/bundle-fluid.sh
-./script/bundle-load-figure.sh
+./script/bundle-libraries.sh
 ./script/bundle-fluid-org.sh
