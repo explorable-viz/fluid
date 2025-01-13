@@ -27,12 +27,14 @@ main = runAff_ cb do
            log $ "Benchmarking: " <> str
            (str × _) <$> row
       )
-         <$> (concat (benchmarks <@> (1 × true)))
+         <$> (concat (benchmarks <@> (10 × true)))
    pure $ BenchAcc $ definitely "More than one benchmark" $ fromArray outs
 
 cb :: Error + BenchAcc -> Effect Unit
 cb (Left err) = error $ show err
-cb (Right bacc) = writeTextFile ASCII "benchmark/benchmarks_artifact.csv" $ show bacc
+cb (Right bacc) = do 
+   writeTextFile ASCII "benchmark/benchmarks_artifact.csv" $ show bacc
+   log "Benchmarking data written to benchmark/benchmarks_artifact.csv"
 
 benchmarks :: Array BenchSuite
 benchmarks =
