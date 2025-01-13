@@ -1,7 +1,7 @@
 cff-version: 1.0.0
 message: "If you use fluid in your own research, please cite it as below."
 authors:
-  - family-names: "Perera" 
+  - family-names: "Perera"
     given-names: "Roly"
     orcid: https://orcid.org/0000-0001-9249-9862
   - family-names: "Bond"
