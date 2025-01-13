@@ -24,7 +24,7 @@ Inside the image, run `yarn test` to run the core test, or `yarn test-all`, whic
 ### Reproducing tables in Section 5
 
 1. Inside the image, run `yarn benchmark`to run all test programs 10 times and collect timing results in `benchmark/benchmarks_artifact.csv`. This step can take several minutes but should provide feedback after each benchmark.
-2. Run `./artifact/script/rebuild_benchmarks.sh $1` from working directory of image, where $1 is either `benchmark/benchmarks_artifact.csv` or `benchmark/benchmarks_paper.csv`, if you want to exactly recreate the tables from the paper
+2. Run `./artifact/script/rebuild_benchmarks.sh` from working directory of image, 
 3. In `./benchmark` you should find:
   - `benchmarks_artifact.csv`
   - a folder `tex` containing:
