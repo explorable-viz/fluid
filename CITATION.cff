@@ -1,0 +1,23 @@
+cff-version: 1.0.0
+message: "If you use fluid in your own research, please cite it as below."
+authors:
+  - family-names: "Perera" 
+    given-names: "Roly"
+    orcid: https://orcid.org/0000-0001-9249-9862
+  - family-names: "Bond"
+    given-names: "Joseph"
+    orcid: "https://orcid.org/0009-0008-5995-6994"
+  - family-names: "David"
+    given-names: "Cristina"
+    orcid: "https://orcid.org/0000-0002-9106-934X"
+  - family-names: "Nguyen"
+    given-names: "Minh"
+    orcid: "https://orcid.org/0000-0003-3845-9928"
+  - family-names: "Orchard"
+    given-names: "Dominic"
+    orcid: "https://orcid.org/0000-0002-7058-7842"
+title: "fluid programming language"
+version: 0.7.30
+doi: 10.5281/zenodo.14637654
+date-released: 2025-01-13
+url: "https://github.com/explorable-viz/fluid"
