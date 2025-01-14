@@ -1,6 +1,6 @@
 {
   "name": "@explorable-viz/fluid",
-  "version": "0.7.41",
+  "version": "0.7.42",
   "description": "Fluid is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.",
   "main": "index.js",
   "repository": {
@@ -20,6 +20,7 @@
   "files": [
     "dist/fluid/",
     "script/bundle-website.sh",
+    "script/bundle-page.sh",
     "script/util/clean.sh",
     "script/util/lisp-case.sh"
   ],
