@@ -8,11 +8,15 @@ import DataType (f_plots, f_y)
 import Lattice (neg)
 import Module.Web (File(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
-import Website.Misc.RenewablesLinked as RenewablesLinked
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
-   { spec: RenewablesLinked.fig
+   { spec:
+        { datasets: [ "renewables" ↦ "dataset/renewables" ]
+        , imports: []
+        , file: File "slicing/linked-outputs/bar-chart-line-chart"
+        , inputs: [ "renewables" ]
+        }
    , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
    , out_expect:
         multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
