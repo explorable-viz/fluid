@@ -13,7 +13,11 @@ const server = app.listen(8080, function() {
 
 (async () => {
   try {
-    const module = process.argv[2]
+    if (process.argv.length == 5 && process.argv[4] == "-l") {
+      module = "../../../../../".concat(process.argv[2])
+    } else {
+      module = process.argv[2]
+    }
     console.log('Loading Puppeteer test module:', module);
     import( module ).then(({ main }) => {
       main().then(serverDown);
