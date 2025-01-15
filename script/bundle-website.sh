@@ -46,8 +46,8 @@ for CHILD in "${TO_COPY[@]}"; do
    cp -rL "$CHILD" dist/$WEBSITE_LISP_CASE
 done
 
-echo "Processing load-figure.js:"
+echo "Processing shared js files:"
 cp "${PREFIX:+$PREFIX/}dist/fluid/load-figure.js" dist/$WEBSITE_LISP_CASE/shared
-
+cp "${PREFIX:+$PREFIX/}dist/fluid/webtest-lib.js" dist/$WEBSITE_LISP_CASE/shared
 cp -r fluid dist/$WEBSITE_LISP_CASE
 echo "Bundled website $WEBSITE"
