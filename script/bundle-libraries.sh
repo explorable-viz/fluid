@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -xe
 
-yarn purs-backend-es bundle-module -m App.LoadFigure --to dist/fluid/load-figure.js
-yarn purs-backend-es bundle-module -m Test.Util.Puppeteer --to dist/fluid/puppeteer-lib.js --platform=node
+./script/util/bundle-module.sh load-figure.js App.LoadFigure
+./script/util/bundle-module.sh puppeteer-lib.js Test.Util.Puppeteer --platform=node
 
 
 WEBTEST_EXECUTABLE="dist/fluid/website-test.js"
