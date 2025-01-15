@@ -4,7 +4,7 @@ require('http-shutdown').extend();
 
 const app = express();
 
-const root = __dirname + '/dist/' + process.argv[3];
+const root = process.cwd() + '/dist/' + process.argv[2];
 app.use(serve(root));
 
 const server = app.listen(8080, function() {
@@ -13,10 +13,10 @@ const server = app.listen(8080, function() {
 
 (async () => {
   try {
-    if (process.argv.length == 5 && process.argv[4] == "-l") {
-      module = "../../../../../".concat(process.argv[2])
+    if (process.argv.length == 4) {
+      module = process.cwd() + process.argv[3];
     } else {
-      module = process.argv[2]
+      module = root + '/test.mjs';
     }
     console.log('Loading Puppeteer test module:', module);
     import( module ).then(({ main }) => {

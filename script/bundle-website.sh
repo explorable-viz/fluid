@@ -14,7 +14,7 @@ WEBSITE_LISP_CASE=$(./$PREFIX/script/util/lisp-case.sh "$WEBSITE")
 echo "$WEBSITE -> $WEBSITE_LISP_CASE"
 mkdir -p "dist/$WEBSITE_LISP_CASE"
 
-. script/bundle-page.sh $WEBSITE
+. "${PREFIX:+$PREFIX/}script/bundle-page.sh" $WEBSITE
 
 shopt -s nullglob
 
@@ -26,7 +26,7 @@ done | sort -u))
 set -x
 
 for PAGE in "${PAGES[@]}"; do
-   . script/bundle-page.sh $WEBSITE.$PAGE
+   . "${PREFIX:+$PREFIX/}script/bundle-page.sh" $WEBSITE.$PAGE
 done
 
 echo "Processing other static files:"
