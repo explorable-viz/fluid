@@ -2,13 +2,19 @@
 # run from project root
 set -xe
 
+PREFIX=""
+
+if [ -n "${2:-}" ]; then
+   PREFIX=$2
+fi
+
 MODULE=$1
 SRC_PATH=${MODULE//./\/}
-SRC_PATH_LISP_CASE=$(./script/util/lisp-case.sh "$SRC_PATH")
+SRC_PATH_LISP_CASE=$(./$PREFIX/script/util/lisp-case.sh "$SRC_PATH")
 echo "$SRC_PATH -> $SRC_PATH_LISP_CASE"
 
 if [[ -e "website/$SRC_PATH.purs" ]]; then
-   ./script/util/bundle.sh $SRC_PATH_LISP_CASE Website.$MODULE
+   . "${PREFIX:+$PREFIX}/script/util/bundle.sh" $SRC_PATH_LISP_CASE Website.$MODULE
 
    if [[ -e "website/$SRC_PATH.html" ]]; then
       cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
