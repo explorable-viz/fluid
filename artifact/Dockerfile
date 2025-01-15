@@ -25,12 +25,12 @@ RUN yarn install
 
 COPY . ./
 
-RUN chmod -R +w /usr/src/app/benchmark
-
 EXPOSE 8080
 
 RUN useradd -ms /bin/bash evaluator && \
     echo "evaluator ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+RUN chown -R evaluator /usr/src/app/benchmark
 
 USER evaluator
 

@@ -28,8 +28,8 @@ def splitFormattedEntry(entry):
   match = re.match(r"([\d.eE+-]+)\s*\(\$\\pm\$\s*[\d.eE+-]+\)", entry.strip())
   return float(match.group(1))
 
-def parse(test_names, column_order, cap, lab):
-  benchmarks = pd.read_csv('benchmark/benchmarks_artifact.csv', skipinitialspace=True, delimiter=',', index_col='Test-Name')
+def parse(test_names, column_order, spreadsheet, cap, lab):
+  benchmarks = pd.read_csv(spreadsheet, skipinitialspace=True, delimiter=',', index_col='Test-Name')
   df = pd.DataFrame(benchmarks.loc[test_names, bench_sets[column_order]]).round(1).map(splitListEntry)
   df.index = df.index.map(lambda x: x.split(sep='/')[-1])
   print(df)
@@ -79,10 +79,11 @@ def bench_names(bench_str):
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--Tests", help = "Specify list of tests")
 parser.add_argument("-b", "--Benches", help = "Specify list of benchmarks to show")
+parser.add_argument("-s", "--Spreadsheet", help = "Specify csv from which to collect benchmark data")
 args = parser.parse_args()
 
-if args.Tests and args.Benches:
+if args.Tests and args.Benches and args.Spreadsheet:
   tests = test_names(args.Tests)
   capt = "Tests: " + args.Tests + ", Benches: " + args.Benches
   lab = args.Tests + '-' + args.Benches
-  parse(tests, args.Benches, capt, lab)
+  parse(tests, args.Benches, args.Spreadsheet, capt, lab)
