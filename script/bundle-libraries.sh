@@ -2,7 +2,7 @@
 set -xe
 
 ./script/util/bundle-module.sh load-figure.js App.LoadFigure
-./script/util/bundle-module.sh webtest-lib.mjs Test.Util.Puppeteer --platform=node
+esbuild ./output-es/Test.Util.Puppeteer/index.js --bundle --platform=node > dist/fluid/webtest-lib.js
 
 
 WEBTEST_EXECUTABLE="dist/fluid/website-test.js"
