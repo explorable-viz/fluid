@@ -14,7 +14,7 @@ WEBSITE_LISP_CASE=$(./$PREFIX/script/util/lisp-case.sh "$WEBSITE")
 echo "$WEBSITE -> $WEBSITE_LISP_CASE"
 mkdir -p "dist/$WEBSITE_LISP_CASE"
 
-. script/bundle-page.sh $WEBSITE
+. "${PREFIX:+$PREFIX/}script/bundle-page.sh" $WEBSITE ${PREFIX:+$PREFIX}
 
 shopt -s nullglob
 
@@ -26,7 +26,7 @@ done | sort -u))
 set -x
 
 for PAGE in "${PAGES[@]}"; do
-   . script/bundle-page.sh $WEBSITE.$PAGE
+   . "${PREFIX:+$PREFIX/}script/bundle-page.sh" $WEBSITE.$PAGE ${PREFIX:+$PREFIX}
 done
 
 echo "Processing other static files:"
@@ -46,8 +46,8 @@ for CHILD in "${TO_COPY[@]}"; do
    cp -rL "$CHILD" dist/$WEBSITE_LISP_CASE
 done
 
-echo "Processing load-figure.js:"
-cp ${PREFIX}dist/fluid/load-figure.js dist/$WEBSITE_LISP_CASE/shared
-
+echo "Processing shared js files:"
+cp "${PREFIX:+$PREFIX/}dist/fluid/load-figure.js" dist/$WEBSITE_LISP_CASE/shared
+cp "${PREFIX:+$PREFIX/}dist/fluid/webtest-lib.mjs" dist/$WEBSITE_LISP_CASE/shared
 cp -r fluid dist/$WEBSITE_LISP_CASE
 echo "Bundled website $WEBSITE"
