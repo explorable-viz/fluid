@@ -5,10 +5,10 @@ set -xe
 esbuild ./output-es/Test.Util.Puppeteer/index.js --bundle --platform=node > dist/fluid/shared/webtest-lib.js
 
 
-WEBTEST_EXECUTABLE="dist/fluid/website-test.js"
+WEBTEST_EXECUTABLE="dist/fluid/shared/website-test.js"
 SHEBANG="#!/usr/bin/env node"
 
-cp website-test.js dist/fluid/website-test.js
+cp website-test.js dist/fluid/shared/website-test.js
 
 if [[ ! -f "$WEBTEST_EXECUTABLE" ]]; then
     echo "Error: File $WEBTEST_EXECUTABLE not found."
