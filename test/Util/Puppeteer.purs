@@ -2,8 +2,8 @@ module Test.Util.Puppeteer where
 
 import Prelude
 
-import Control.Promise (Promise)
-import Data.Foldable (for_)
+import Control.Promise (Promise, fromAff)
+import Data.Foldable (for_, sequence_)
 import Data.Function.Uncurried as FU
 import Data.String (Pattern(..), contains)
 import Effect (Effect)
@@ -56,6 +56,9 @@ defaultViewport =
    , isMobile: false
    , width: 1200.0
    }
+
+runTests :: Array (Aff Unit) -> Effect (Promise Unit)
+runTests arr = fromAff $ sequence_ $ arr
 
 testURL :: String -> Array (T.Page -> Aff Unit) -> Array (Aff Unit)
 testURL suffix tests =

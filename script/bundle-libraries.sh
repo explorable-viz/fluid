@@ -2,13 +2,16 @@
 set -xe
 
 ./script/util/bundle-module.sh load-figure.js App.LoadFigure
-./script/util/bundle-module.sh webtest-lib.mjs Test.Util.Puppeteer --platform=node
+# Comes from https://discourse.purescript.org/t/purescript-0-15-spago-affjax/3045/3
+# Using bundle-module.sh results in mixed module, which does not work well, therefore force puppeteer
+# to bundle to CommonJS module
+esbuild ./output-es/Test.Util.Puppeteer/index.js --bundle --platform=node > dist/fluid/shared/webtest-lib.js
 
 
-WEBTEST_EXECUTABLE="dist/fluid/website-test.js"
+WEBTEST_EXECUTABLE="dist/fluid/shared/website-test.js"
 SHEBANG="#!/usr/bin/env node"
 
-cp website-test.js dist/fluid/website-test.js
+cp website-test.js dist/fluid/shared/website-test.js
 
 if [[ ! -f "$WEBTEST_EXECUTABLE" ]]; then
     echo "Error: File $WEBTEST_EXECUTABLE not found."
