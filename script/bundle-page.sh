@@ -28,3 +28,7 @@ if [[ -e "website/$SRC_PATH.json" ]]; then
    cp website/$SRC_PATH.html dist/$SRC_PATH_LISP_CASE/index.html
    cp website/$SRC_PATH.json dist/$SRC_PATH_LISP_CASE/spec.json
 fi
+
+if [[ -e "website/$SRC_PATH/test.mjs"]]; then
+   cp website/$SRC_PATH/test.mjs dist/SRC_PATH_LISP_CASE/test.mjs
+fi
