@@ -50,7 +50,6 @@ echo "Processing shared js files:"
 cp -r "${PREFIX:+$PREFIX/}dist/fluid/shared" dist/$WEBSITE_LISP_CASE
 cp -r fluid dist/$WEBSITE_LISP_CASE
 
-
 if [[ -e "website/$SRC_PATH/test.mjs" ]]; then
    cp website/$SRC_PATH/test.mjs dist/SRC_PATH_LISP_CASE/test.mjs
 fi
