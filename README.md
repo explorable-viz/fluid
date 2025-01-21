@@ -33,12 +33,12 @@ Fluid examples in the `dist/fluid/fluid/examples` can be evaluated from the comm
 
 ```
 cd dist/fluid
-node shared/fluid.mjs evaluate -f <filename>
+npx fluid evaluate -f <filename>
 ```
 Note that the filename should not include the `.fld` extension, e.g. for the `range.fld` example:
 ```
 % cd dist/fluid
-% node shared/fluid.mjs evaluate -f range 
+% npx fluid evaluate -f range
 ((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))
 Success
 ```
