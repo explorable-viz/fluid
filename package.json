@@ -25,23 +25,22 @@
     "script/util/lisp-case.sh"
   ],
   "scripts": {
-    "tidy": "./script/tidy.sh",
+    "benchmark": "./script/benchmark.sh",
     "build": "./script/build.sh",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "bundle-page": "./script/bundle-page.sh",
     "bundle-website": "./script/bundle-website.sh",
     "bundle-website-all": "./script/bundle-website-all.sh",
+    "npm-publish": "./script/npm-publish.sh",
     "serve": "./script/serve.sh",
     "test": "./script/test.sh",
+    "test-all": "./script/test-all.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
     "test-page": "./script/test-page.sh",
     "test-website": "./script/test-website.sh",
     "test-website-all": "./script/test-website-all.sh",
-    "test-all": "./script/test-all.sh",
-    "npm-publish": "./script/npm-publish.sh",
-    "fluid": "./script/fluid.sh",
-    "benchmark": "./script/benchmark.sh"
+    "tidy": "./script/tidy.sh"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
