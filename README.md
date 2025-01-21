@@ -22,23 +22,42 @@ Additionally, for Windows users only:
 - Run `./script/setup/dev-setup.sh` from the top-level directory
 - Run `yarn build`
 
-#### Running tests on command line
+## Use
 
-After building, tests can be run from the command line via `yarn test-all`
+The following assumes you have already succesfully run `yarn build` (see above).
 
-#### Running tests in browser
-- As per command-line tests above, but run `yarn test-browser`, which opens
-a browser window.
-- To observe the status of tests, click `Debug` in the browser window, and then open the JavaScript Console for your browser (e.g., via the Developer Tools).
+### Running programs from the command line
 
-#### Running the fluid.org website locally
+Fluid examples in the `dist/fluid/fluid/examples` can be evaluated from the command line as follows
+(from the top-level directory):
 
-(Assumes you have already run `yarn build`)
+```
+npx fluid evaluate -f <filename>
+```
+Note that the filename should not include the `.fld` extension, e.g. for the `range.fld` example:
+```
+% npx fluid evaluate -f range
+((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))
+Success
+```
+
+### Running the fluid.org website locally
 
 - `yarn serve fluid-org` (you may be prompted to proceed: type `y`).
 - Open a browser at the served URL (usually `127.0.0.1:8080`)
 
-#### Run Puppeteer tests for page Y of website X
+## Testing
+
+### Running the tests from the command line
+
+After building, tests can be run from the command line via `yarn test-all`
+
+### Running tests in browser
+- As per command-line tests above, but run `yarn test-browser`, which opens
+a browser window.
+- To observe the status of tests, click `Debug` in the browser window, and then open the JavaScript Console for your browser (e.g., via the Developer Tools).
+
+### Run Puppeteer tests for page Y of website X
 
 Rebuild with `puppeteerTests.headless` set to `false` to run in browser. Then:
 - `yarn bundle-website X`
