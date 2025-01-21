@@ -32,12 +32,10 @@ Fluid examples in the `dist/fluid/fluid/examples` can be evaluated from the comm
 (from the top-level directory):
 
 ```
-cd dist/fluid
 npx fluid evaluate -f <filename>
 ```
 Note that the filename should not include the `.fld` extension, e.g. for the `range.fld` example:
 ```
-% cd dist/fluid
 % npx fluid evaluate -f range
 ((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))
 Success
