@@ -58,8 +58,8 @@ module_ = M.module_ loadFile
 datasetAs :: forall m. MonadAff m => MonadError Error m => Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs = M.datasetAs loadFile
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt = M.loadProgCxt loadFile
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt _ = M.loadProgCxt loadFile
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => F.File -> ProgCxt Unit -> m Config
 prepConfig = M.prepConfig loadFile

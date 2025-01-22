@@ -110,8 +110,8 @@ lift selState_f selState_g (GC gc) = GC { bwd, fwd }
    bwd v = selState_f <*> gc.bwd (v <#> getPersistent) <*> gc.bwd (v <#> getTransient)
 
 loadFig :: forall m. FigSpec -> AffError m Fig
-loadFig spec@{ inputs, imports, file, datasets } = do
-   progCxt <- loadProgCxt imports datasets
+loadFig spec@{ fluidSrcPath, inputs, imports, file, datasets } = do
+   progCxt <- loadProgCxt fluidSrcPath imports datasets
    { s, e, gconfig } <- prepConfig file progCxt
    eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
    let

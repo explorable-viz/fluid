@@ -5,13 +5,13 @@ import Prelude
 import App.Util.Selector (dictVal, envVal, listElement)
 import Bind ((↦))
 import Lattice (neg)
-import Module.Web (File(..))
+import Module.Web (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedInputsSpec)
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
    { spec:
-        { fluidSrcPath: "fluid"
+        { fluidSrcPath: Folder "fluid"
         , imports: []
         , datasets:
              [ "renewables" ↦ "dataset/renewables-new"
@@ -34,7 +34,7 @@ linkedInputs_spec3 =
 linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
    { spec:
-        { fluidSrcPath: "fluid"
+        { fluidSrcPath: Folder "fluid"
         , imports: []
         , datasets:
              [ "renewables" ↦ "dataset/renewables-new"
@@ -65,7 +65,7 @@ linkedInputs_spec4 =
 linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
-        { fluidSrcPath: "fluid"
+        { fluidSrcPath: Folder "fluid"
         , file: File "linked-inputs/mini-energyscatter"
         , imports: []
         , datasets:

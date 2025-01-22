@@ -77,6 +77,11 @@ prepConfig loadFile file progCxt = do
 
 type FileLoader = forall m. Folder -> File -> AffError m String
 
+type FileContext =
+   { fileLoader :: FileLoader
+   , fluidSrcPath :: String
+   }
+
 newtype File = File String
 newtype Folder = Folder String
 

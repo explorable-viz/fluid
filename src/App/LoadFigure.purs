@@ -26,7 +26,7 @@ type JsonSpec =
 
 figSpecFromJson :: JsonSpec -> FigSpec
 figSpecFromJson spec =
-   { fluidSrcPath: spec.fluidSrcPath
+   { fluidSrcPath: Folder spec.fluidSrcPath
    , datasets: spec.datasets
    , imports: spec.imports
    , file: File spec.file
