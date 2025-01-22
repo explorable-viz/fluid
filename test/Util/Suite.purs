@@ -11,9 +11,9 @@ import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, snd, uncurry)
 import Effect.Aff (Aff)
 import Lattice (botOf)
-import Module (File(..), Folder(..), FileLoader, loadProgCxt)
+import Module ((</>), File(..), Folder(..), FileLoader, loadProgCxt)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
-import Test.Util (checkEq, test)
+import Test.Util (checkEq, fluidSrcPath, test)
 import Test.Util.Debug (timing)
 import Util (type (×), (×))
 import Val (Val, Env)
@@ -54,36 +54,40 @@ type TestLinkedInputsSpec =
    , in_expect :: Selector Env
    }
 
-suite :: FileLoader -> Array TestSpec -> BenchSuite
+testFolder :: Folder
+testFolder = Folder "example"
+
+suite :: FileLoader Aff -> Array TestSpec -> BenchSuite
 suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
    asTest { imports, file, fwd_expect } = do
-      gconfig <- loadProgCxt loadFile imports []
-      test loadFile (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
+      gconfig <- loadProgCxt { loadFile, fluidSrcPath } imports []
+      test loadFile (Folder "example" </> File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
-bwdSuite :: FileLoader -> Array TestBwdSpec -> BenchSuite
-bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> (unwrap folder <> _)) &&& asTest)
+bwdSuite :: FileLoader Aff -> Array TestBwdSpec -> BenchSuite
+bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
    where
-   folder = File "slicing/"
+   folder = Folder "slicing"
 
    asTest :: TestBwdSpec -> Aff BenchRow
    asTest { imports, file, bwd_expect_file, δv, fwd_expect, datasets } = do
-      gconfig <- loadProgCxt loadFile imports datasets
-      bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
-      test loadFile (folder <> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
+      gconfig <- loadProgCxt { loadFile, fluidSrcPath } imports datasets
+      bwd_expect <- loadFile (Folder "fluid" <> testFolder) (folder </> File bwd_expect_file)
+      let filePath = (testFolder <> Folder "slicing") </> File file
+      test loadFile filePath gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetSuite :: FileLoader -> Array TestWithDatasetSpec -> BenchSuite
+withDatasetSuite :: FileLoader Aff -> Array TestWithDatasetSpec -> BenchSuite
 withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
-      gconfig <- loadProgCxt loadFile imports [ x ↦ dataset ]
-      test loadFile (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
+      gconfig <- loadProgCxt { loadFile, fluidSrcPath } imports [ x ↦ dataset ]
+      test loadFile (testFolder </> File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
-   fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
+   fig <- loadFig (spec { file = testFolder </> spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (fst (selectionResult fig))
    checkEq "selected" "expected" (selState <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (out_expect (botOf <$> v))
@@ -96,7 +100,7 @@ linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
-   fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
+   fig <- loadFig (spec { file = testFolder </> spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (snd (selectionResult fig))
    checkEq "selected" "expected" (selState <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (in_expect (botOf <$> γ))

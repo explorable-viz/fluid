@@ -2,7 +2,6 @@ module Module.Web
    ( loadFile
    , loadFile'
    , parseProgram
-   , open
    , module_
    , datasetAs
    , loadProgCxt
@@ -30,17 +29,18 @@ import Module (FileLoader, Folder(..), File(..)) as F
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
-import Util (type (×), AffError, (×))
+import Util (type (×), AffError, debug, (×))
 
-loadFile :: F.FileLoader
+loadFile :: forall m. F.FileLoader m
 loadFile (F.Folder folder) (F.File file) = do
-   let url = "/" <> folder <> "/" <> file <> ".fld"
+   let url = folder <> "/" <> file <> ".fld"
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
       Left err -> do
          log ("Failed with " <> printError err)
          throwError $ E.error $ printError err
-      Right response ->
+      Right response -> do
+         when debug.logging $ log ("loadFile: resolved " <> url)
          pure response.body
 
 loadFile' :: forall m. F.Folder -> F.File -> AffError m (F.File × String)
@@ -49,17 +49,14 @@ loadFile' folder file = (file × _) <$> loadFile folder file
 parseProgram :: forall m. F.Folder -> F.File -> AffError m (Raw S.Expr)
 parseProgram = M.parseProgram loadFile
 
-open :: forall m. F.File -> AffError m (Raw S.Expr)
-open = parseProgram (F.Folder "fluid/example")
-
-module_ :: forall m. MonadAff m => MonadError Error m => F.File -> Raw ProgCxt -> m (Raw ProgCxt)
+module_ :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ = M.module_ loadFile
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs :: forall m. MonadAff m => MonadError Error m => F.Folder -> Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs = M.datasetAs loadFile
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt = M.loadProgCxt loadFile
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt fluidSrcPath = M.loadProgCxt { loadFile, fluidSrcPath }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => F.File -> ProgCxt Unit -> m Config
-prepConfig = M.prepConfig loadFile
+prepConfig :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> ProgCxt Unit -> m Config
+prepConfig fluidSrcPath = M.prepConfig { loadFile, fluidSrcPath }
