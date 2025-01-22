@@ -16,7 +16,12 @@ import Effect (Effect)
 import Module.Web (File(..), Folder(..), loadFile')
 import Util (error, (×))
 
-type JsonSpec = { datasets :: Array (Bind String), imports :: Array String, file :: String, inputs :: Array String }
+type JsonSpec =
+   { datasets :: Array (Bind String)
+   , imports :: Array String
+   , file :: String
+   , inputs :: Array String
+   }
 
 figSpecFromJson :: JsonSpec -> FigSpec
 figSpecFromJson spec =
