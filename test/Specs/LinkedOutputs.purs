@@ -12,7 +12,8 @@ import Test.Util.Suite (TestLinkedOutputsSpec)
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
-        { datasets: [ "renewables" ↦ "dataset/renewables" ]
+        { fluidSrcPath: "fluid"
+        , datasets: [ "renewables" ↦ "dataset/renewables" ]
         , imports: []
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
@@ -36,7 +37,8 @@ linkedOutputs_spec1 =
 linkedOutputs_spec2 :: TestLinkedOutputsSpec
 linkedOutputs_spec2 =
    { spec:
-        { datasets:
+        { fluidSrcPath: "fluid"
+        , datasets:
              [ "renewables" ↦ "dataset/renewables-new"
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
@@ -58,7 +60,8 @@ linkedOutputs_spec2 =
 movingAverages_spec :: TestLinkedOutputsSpec
 movingAverages_spec =
    { spec:
-        { datasets: [ "methane" ↦ "dataset/methane-emissions" ]
+        { fluidSrcPath: "fluid"
+        , datasets: [ "methane" ↦ "dataset/methane-emissions" ]
         , imports: []
         , file: File "linked-outputs/moving-average"
         , inputs: [ "methane" ]
@@ -70,7 +73,8 @@ movingAverages_spec =
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
-          { datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
+          { fluidSrcPath: "fluid"
+          , datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
@@ -79,7 +83,8 @@ linkedOutputs_cases =
      , out_expect: neg
      }
    , { spec:
-          { datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
+          { fluidSrcPath: "fluid"
+          , datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
           , imports: [ "lib/convolution" ]
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]

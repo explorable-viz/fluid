@@ -1,4 +1,5 @@
 {
+    "fluidSrcPath": "fluid",
     "file": "slicing/convolution/emboss",
     "imports": [ "lib/convolution", "example/slicing/convolution/test-image", "example/slicing/convolution/filter/emboss" ],
     "datasets": [],

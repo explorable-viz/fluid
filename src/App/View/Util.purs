@@ -92,7 +92,8 @@ uiHelpers =
    }
 
 type FigSpec =
-   { imports :: Array String
+   { fluidSrcPath :: String
+   , imports :: Array String
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
