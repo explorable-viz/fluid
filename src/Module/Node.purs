@@ -34,7 +34,7 @@ loadFile (F.Folder folder) (F.File file) = do
 parseProgram ∷ ∀ m. F.Folder -> F.File → AffError m (Raw S.Expr)
 parseProgram = M.parseProgram loadFile
 
-module_ :: forall m. MonadAff m => MonadError Error m => F.File -> Raw ProgCxt -> m (Raw ProgCxt)
+module_ :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ = M.module_ loadFile
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
