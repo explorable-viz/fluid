@@ -70,7 +70,7 @@ type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => FileContext m -> File -> Raw ProgCxt -> m Config
 prepConfig { fluidSrcPath, loadFile } file progCxt = do
-   s <- parseProgram loadFile (fluidSrcPath <> Folder "example") file
+   s <- parseProgram loadFile fluidSrcPath file
    e <- desug s
    gconfig <- initialConfig e progCxt
    pure { s, e, gconfig }
@@ -89,6 +89,13 @@ derive instance Newtype File _
 derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
+derive instance Newtype Folder _
+derive newtype instance Show Folder
 
 instance Semigroup Folder where
    append (Folder folder1) (Folder folder2) = Folder (folder1 <> "/" <> folder2)
+
+prependFolder :: Folder -> File -> File
+prependFolder (Folder folder) (File file) = File (folder <> "/" <> file)
+
+infixr 5 prependFolder as </>

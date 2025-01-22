@@ -11,7 +11,7 @@ import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, snd, uncurry)
 import Effect.Aff (Aff)
 import Lattice (botOf)
-import Module (File(..), Folder(..), FileLoader, loadProgCxt)
+import Module ((</>), File(..), Folder(..), FileLoader, loadProgCxt)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
 import Test.Util (checkEq, fluidSrcPath, test)
 import Test.Util.Debug (timing)
@@ -71,7 +71,8 @@ bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> (unwrap folder 
    asTest { imports, file, bwd_expect_file, δv, fwd_expect, datasets } = do
       gconfig <- loadProgCxt { loadFile, fluidSrcPath } imports datasets
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
-      test loadFile (folder <> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
+      let filePath = (Folder "example" <> Folder "slicing") </> File file
+      test loadFile filePath gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetSuite :: FileLoader Aff -> Array TestWithDatasetSpec -> BenchSuite
 withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)

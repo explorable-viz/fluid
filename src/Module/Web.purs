@@ -2,7 +2,6 @@ module Module.Web
    ( loadFile
    , loadFile'
    , parseProgram
-   , open
    , module_
    , datasetAs
    , loadProgCxt
@@ -48,9 +47,6 @@ loadFile' folder file = (file × _) <$> loadFile folder file
 
 parseProgram :: forall m. F.Folder -> F.File -> AffError m (Raw S.Expr)
 parseProgram = M.parseProgram loadFile
-
-open :: forall m. F.File -> AffError m (Raw S.Expr)
-open = parseProgram (F.Folder "fluid/example")
 
 module_ :: forall m. MonadAff m => MonadError Error m => F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ = M.module_ loadFile

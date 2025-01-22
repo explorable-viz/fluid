@@ -8,18 +8,18 @@ graphics_cases :: Array TestWithDatasetSpec
 graphics_cases =
    [ { imports: [ "lib/graphics" ]
      , dataset: "data" ↦ "dataset/renewables-restricted"
-     , file: "graphics/background"
+     , file: "example/graphics/background"
      }
    , { imports: [ "lib/graphics" ]
      , dataset: "data" ↦ "dataset/renewables-restricted"
-     , file: "graphics/grouped-bar-chart"
+     , file: "example/graphics/grouped-bar-chart"
      }
    , { imports: [ "lib/graphics" ]
      , dataset: "data" ↦ "dataset/renewables-restricted"
-     , file: "graphics/line-chart"
+     , file: "example/graphics/line-chart"
      }
    , { imports: [ "lib/graphics" ]
      , dataset: "data" ↦ "dataset/renewables-restricted"
-     , file: "graphics/stacked-bar-chart"
+     , file: "example/graphics/stacked-bar-chart"
      }
    ]
