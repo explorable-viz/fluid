@@ -34,7 +34,7 @@ import Util (type (×), AffError, (×))
 
 loadFile :: F.FileLoader
 loadFile (F.Folder folder) (F.File file) = do
-   let url = "/" <> folder <> "/" <> file <> ".fld"
+   let url = folder <> "/" <> file <> ".fld"
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
       Left err -> do
