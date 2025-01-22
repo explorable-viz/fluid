@@ -36,7 +36,7 @@ type SelectionSpec =
    , bwd_expect :: String
    }
 
-test ∷ forall m. FileLoader -> File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test ∷ forall m. FileLoader m -> File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test loadFile file progCxt spec (n × _) = do
    { s, gconfig } <- prepConfig loadFile file progCxt
    when debug.logging $ log ("**** initialConfig")

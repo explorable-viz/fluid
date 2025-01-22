@@ -135,7 +135,7 @@ callback = case _ of
 
 evaluate :: Program -> Aff (Val Unit)
 evaluate (Program { imports, datasets, fileName }) = do
-   progCxt <- loadProgCxt imports datasets
+   progCxt <- loadProgCxt (Folder "fluid") imports datasets
    { e, gconfig } <- prepConfig (File fileName) progCxt
    { outα } <- graphEval gconfig e
    pure (erase outα)

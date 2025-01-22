@@ -32,7 +32,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
 import Util (type (×), AffError, (×))
 
-loadFile :: F.FileLoader
+loadFile :: forall m. F.FileLoader m
 loadFile (F.Folder folder) (F.File file) = do
    let url = folder <> "/" <> file <> ".fld"
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
@@ -59,7 +59,7 @@ datasetAs :: forall m. MonadAff m => MonadError Error m => Bind F.File -> Raw Pr
 datasetAs = M.datasetAs loadFile
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt _ = M.loadProgCxt loadFile
+loadProgCxt fluidSrcPath = M.loadProgCxt { loadFile, fluidSrcPath }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => F.File -> ProgCxt Unit -> m Config
-prepConfig = M.prepConfig loadFile
+prepConfig :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> ProgCxt Unit -> m Config
+prepConfig _ = M.prepConfig loadFile

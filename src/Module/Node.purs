@@ -26,7 +26,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
 import Util (AffError)
 
-loadFile :: F.FileLoader
+loadFile :: forall m. F.FileLoader m
 loadFile (F.Folder folder) (F.File file) = do
    let url = folder <> "/" <> file <> ".fld"
    buffer <- liftAff $ readTextFile UTF8 url
@@ -44,8 +44,8 @@ module_ = M.module_ loadFile
 datasetAs :: forall m. MonadAff m => MonadError Error m => Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs = M.datasetAs loadFile
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt = M.loadProgCxt loadFile
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt fluidSrcPath = M.loadProgCxt { loadFile, fluidSrcPath }
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => F.File -> ProgCxt Unit -> m Config
 prepConfig = M.prepConfig loadFile

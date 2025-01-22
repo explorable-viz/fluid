@@ -54,31 +54,34 @@ type TestLinkedInputsSpec =
    , in_expect :: Selector Env
    }
 
-suite :: FileLoader -> Array TestSpec -> BenchSuite
+fluidSrcPath :: Folder
+fluidSrcPath = Folder "fluid"
+
+suite :: FileLoader Aff -> Array TestSpec -> BenchSuite
 suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
    asTest { imports, file, fwd_expect } = do
-      gconfig <- loadProgCxt loadFile imports []
+      gconfig <- loadProgCxt { loadFile, fluidSrcPath } imports []
       test loadFile (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
-bwdSuite :: FileLoader -> Array TestBwdSpec -> BenchSuite
+bwdSuite :: FileLoader Aff -> Array TestBwdSpec -> BenchSuite
 bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> (unwrap folder <> _)) &&& asTest)
    where
    folder = File "slicing/"
 
    asTest :: TestBwdSpec -> Aff BenchRow
    asTest { imports, file, bwd_expect_file, δv, fwd_expect, datasets } = do
-      gconfig <- loadProgCxt loadFile imports datasets
+      gconfig <- loadProgCxt { loadFile, fluidSrcPath } imports datasets
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File bwd_expect_file)
       test loadFile (folder <> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetSuite :: FileLoader -> Array TestWithDatasetSpec -> BenchSuite
+withDatasetSuite :: FileLoader Aff -> Array TestWithDatasetSpec -> BenchSuite
 withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
-      gconfig <- loadProgCxt loadFile imports [ x ↦ dataset ]
+      gconfig <- loadProgCxt { loadFile, fluidSrcPath: Folder "fluid" } imports [ x ↦ dataset ]
       test loadFile (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig

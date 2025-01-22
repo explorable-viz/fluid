@@ -33,23 +33,23 @@ import Util.Parse (SParser)
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. FileLoader -> Folder -> File -> AffError m (Raw S.Expr)
+parseProgram :: forall m. FileLoader m -> Folder -> File -> AffError m (Raw S.Expr)
 parseProgram loadFile folder file =
    loadFile folder file >>= flip parse P.program
 
-module_ :: forall m. MonadAff m => MonadError Error m => FileLoader -> File -> Raw ProgCxt -> m (Raw ProgCxt)
+module_ :: forall m. MonadAff m => MonadError Error m => FileLoader m -> File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ loadFile file (ProgCxt r@{ mods }) = do
    src <- loadFile (Folder "fluid") file
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => FileLoader -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs :: forall m. MonadAff m => MonadError Error m => FileLoader m -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs loadFile (x ↦ file) (ProgCxt r@{ datasets }) = do
    eα <- parseProgram loadFile (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => FileLoader -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt loadFile mods datasets =
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => FileContext m -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt { loadFile } mods datasets =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
       >>= concatM (File >>> (module_ loadFile) <$> [ "lib/prelude" ] <> mods)
       >>= concatM (second File >>> (datasetAs loadFile) <$> datasets)
@@ -68,18 +68,18 @@ initialConfig e progCxt = do
 
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => FileLoader -> File -> Raw ProgCxt -> m Config
+prepConfig :: forall m. MonadAff m => MonadError Error m => FileLoader m -> File -> Raw ProgCxt -> m Config
 prepConfig loadFile file progCxt = do
    s <- parseProgram loadFile (Folder "fluid/example") file
    e <- desug s
    gconfig <- initialConfig e progCxt
    pure { s, e, gconfig }
 
-type FileLoader = forall m. Folder -> File -> AffError m String
+type FileLoader m = Folder -> File -> AffError m String
 
-type FileContext =
-   { fileLoader :: FileLoader
-   , fluidSrcPath :: String
+type FileContext m =
+   { loadFile :: FileLoader m
+   , fluidSrcPath :: Folder
    }
 
 newtype File = File String
