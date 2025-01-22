@@ -52,7 +52,7 @@ parseProgram = M.parseProgram loadFile
 module_ :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ = M.module_ loadFile
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs :: forall m. MonadAff m => MonadError Error m => F.Folder -> Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs = M.datasetAs loadFile
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)

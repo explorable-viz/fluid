@@ -1,5 +1,5 @@
 {
-    "fluidSrcPath": "fluid",
+    "fluidSrcPath": "../fluid",
     "file": "plot/non-renewables",
     "imports": [],
     "inputs": ["nonRenewables"],

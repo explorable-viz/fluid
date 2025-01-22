@@ -1,5 +1,5 @@
 {
-    "fluidSrcPath": "fluid",
+    "fluidSrcPath": "../fluid",
     "file": "linked-outputs/moving-average",
     "imports": [],
     "inputs": ["methane"],
