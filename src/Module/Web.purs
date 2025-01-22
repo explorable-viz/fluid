@@ -62,4 +62,4 @@ loadProgCxt :: forall m. MonadAff m => MonadError Error m => F.Folder -> Array S
 loadProgCxt fluidSrcPath = M.loadProgCxt { loadFile, fluidSrcPath }
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> ProgCxt Unit -> m Config
-prepConfig _ = M.prepConfig loadFile
+prepConfig fluidSrcPath = M.prepConfig { loadFile, fluidSrcPath }

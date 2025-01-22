@@ -18,7 +18,7 @@ import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
-import Module (FileLoader, File, parse, prepConfig)
+import Module (File, FileLoader, Folder(..), parse, prepConfig)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import ProgCxt (ProgCxt)
@@ -36,9 +36,12 @@ type SelectionSpec =
    , bwd_expect :: String
    }
 
+fluidSrcPath :: Folder
+fluidSrcPath = Folder "fluid"
+
 test ∷ forall m. FileLoader m -> File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test loadFile file progCxt spec (n × _) = do
-   { s, gconfig } <- prepConfig loadFile file progCxt
+   { s, gconfig } <- prepConfig { loadFile, fluidSrcPath } file progCxt
    when debug.logging $ log ("**** initialConfig")
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))

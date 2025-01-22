@@ -68,8 +68,8 @@ initialConfig e progCxt = do
 
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => FileLoader m -> File -> Raw ProgCxt -> m Config
-prepConfig loadFile file progCxt = do
+prepConfig :: forall m. MonadAff m => MonadError Error m => FileContext m -> File -> Raw ProgCxt -> m Config
+prepConfig { loadFile } file progCxt = do
    s <- parseProgram loadFile (Folder "fluid/example") file
    e <- desug s
    gconfig <- initialConfig e progCxt

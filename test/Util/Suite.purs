@@ -13,7 +13,7 @@ import Effect.Aff (Aff)
 import Lattice (botOf)
 import Module (File(..), Folder(..), FileLoader, loadProgCxt)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
-import Test.Util (checkEq, test)
+import Test.Util (checkEq, fluidSrcPath, test)
 import Test.Util.Debug (timing)
 import Util (type (×), (×))
 import Val (Val, Env)
@@ -53,9 +53,6 @@ type TestLinkedInputsSpec =
    , δ_in :: Bind (Selector Val)
    , in_expect :: Selector Env
    }
-
-fluidSrcPath :: Folder
-fluidSrcPath = Folder "fluid"
 
 suite :: FileLoader Aff -> Array TestSpec -> BenchSuite
 suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)

@@ -47,5 +47,5 @@ datasetAs = M.datasetAs loadFile
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
 loadProgCxt fluidSrcPath = M.loadProgCxt { loadFile, fluidSrcPath }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => F.File -> ProgCxt Unit -> m Config
-prepConfig = M.prepConfig loadFile
+prepConfig :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> ProgCxt Unit -> m Config
+prepConfig fluidSrcPath = M.prepConfig { loadFile, fluidSrcPath }

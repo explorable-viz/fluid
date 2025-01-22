@@ -114,9 +114,8 @@ publish website package =
          Just err -> logShow err
          Nothing -> log =<< toString ASCII stdout
    where
-   cmd =
-      if package then "./node_modules/@explorable-viz/fluid/script/bundle-website.sh -w " <> website <> " -r true"
-      else "./script/bundle-website.sh -w " <> website
+   cmd = if package then "./node_modules/@explorable-viz/fluid" <> cmd' <> " -r true" else "." <> cmd'
+   cmd' = "/script/bundle-website.sh -w " <> website
 
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
@@ -130,7 +129,8 @@ callback = case _ of
 
 evaluate :: Program -> Aff (Val Unit)
 evaluate (Program { imports, datasets, fileName }) = do
-   progCxt <- loadProgCxt (Folder "fluid") imports datasets
-   { e, gconfig } <- prepConfig (File fileName) progCxt
+   let fluidSrcPath = Folder "fluid"
+   progCxt <- loadProgCxt fluidSrcPath imports datasets
+   { e, gconfig } <- prepConfig fluidSrcPath (File fileName) progCxt
    { outα } <- graphEval gconfig e
    pure (erase outα)
