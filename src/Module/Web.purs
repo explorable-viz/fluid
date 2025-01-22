@@ -29,7 +29,7 @@ import Module (FileLoader, Folder(..), File(..)) as F
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
-import Util (type (×), AffError, (×))
+import Util (type (×), AffError, debug, (×))
 
 loadFile :: forall m. F.FileLoader m
 loadFile (F.Folder folder) (F.File file) = do
@@ -39,7 +39,8 @@ loadFile (F.Folder folder) (F.File file) = do
       Left err -> do
          log ("Failed with " <> printError err)
          throwError $ E.error $ printError err
-      Right response ->
+      Right response -> do
+         when debug.logging $ log ("loadFile: resolved " <> url)
          pure response.body
 
 loadFile' :: forall m. F.Folder -> F.File -> AffError m (F.File × String)

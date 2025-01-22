@@ -1,6 +1,6 @@
 {
     "fluidSrcPath": "../fluid",
-    "file": "slicing/convolution/emboss-wrap",
+    "file": "example/slicing/convolution/emboss-wrap",
     "imports": [ "lib/convolution", "example/slicing/convolution/test-image", "example/slicing/convolution/filter/emboss" ],
     "datasets": [],
     "inputs": [ "inputImage", "filter" ]

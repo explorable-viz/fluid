@@ -11,6 +11,7 @@ import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
@@ -26,7 +27,7 @@ import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
-import Util (AffError, concatM, type (×), (×))
+import Util (type (×), AffError, concatM, debug, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 
@@ -39,6 +40,7 @@ parseProgram loadFile folder file =
 
 module_ :: forall m. MonadAff m => MonadError Error m => FileLoader m -> Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ loadFile folder file (ProgCxt r@{ mods }) = do
+   when debug.logging $ log ("module_: " <> show (folder </> file))
    src <- loadFile folder file
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
