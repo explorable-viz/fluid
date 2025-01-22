@@ -17,7 +17,7 @@ linkedInputs_spec3 =
              [ "renewables" ↦ "dataset/renewables-new"
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
-        , file: File "example/linked-inputs/energyscatter"
+        , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
         }
    , δ_in: "nonRenewables" ↦ listElement 51 (dictVal "coalCap" neg)
@@ -40,7 +40,7 @@ linkedInputs_spec4 =
              [ "renewables" ↦ "dataset/renewables-new"
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
-        , file: File "example/linked-inputs/energyscatter"
+        , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
         }
    , δ_in: "renewables" ↦ listElement 204 (dictVal "capacity" neg)
@@ -66,7 +66,7 @@ linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { fluidSrcPath: Folder "fluid"
-        , file: File "example/linked-inputs/mini-energyscatter"
+        , file: File "linked-inputs/mini-energyscatter"
         , imports: []
         , datasets:
              [ "nonRenewables" ↦ "dataset/mini-non-renewables"

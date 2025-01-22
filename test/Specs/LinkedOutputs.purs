@@ -15,7 +15,7 @@ linkedOutputs_spec1 =
         { fluidSrcPath: Folder "fluid"
         , datasets: [ "renewables" ↦ "dataset/renewables" ]
         , imports: []
-        , file: File "example/slicing/linked-outputs/bar-chart-line-chart"
+        , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         }
    , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
@@ -43,7 +43,7 @@ linkedOutputs_spec2 =
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
         , imports: []
-        , file: File "example/slicing/linked-outputs/stacked-bar-scatter-plot"
+        , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
         }
    , δ_out: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
@@ -63,7 +63,7 @@ movingAverages_spec =
         { fluidSrcPath: Folder "fluid"
         , datasets: [ "methane" ↦ "dataset/methane-emissions" ]
         , imports: []
-        , file: File "example/linked-outputs/moving-average"
+        , file: File "linked-outputs/moving-average"
         , inputs: [ "methane" ]
         }
    , δ_out: identity -- TODO: make this a non-trivial test
@@ -76,7 +76,7 @@ linkedOutputs_cases =
           { fluidSrcPath: Folder "fluid"
           , datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
           , imports: []
-          , file: File "example/linked-outputs/pairs"
+          , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           }
      , δ_out: snd neg
@@ -86,7 +86,7 @@ linkedOutputs_cases =
           { fluidSrcPath: Folder "fluid"
           , datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
           , imports: [ "lib/convolution" ]
-          , file: File "example/linked-outputs/convolution"
+          , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
           }
      , δ_out: fst (matrixElement 2 2 neg)
