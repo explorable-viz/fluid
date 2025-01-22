@@ -1,5 +1,5 @@
 {
-    "fluidSrcPath": "fluid",
+    "fluidSrcPath": "../fluid",
     "datasets": [["renewables", "dataset/renewables"]],
     "imports": [],
     "file": "slicing/linked-outputs/bar-chart-line-chart",
