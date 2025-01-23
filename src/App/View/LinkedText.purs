@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, classes, from, isPersistent, isPrimary, isSecondary, isTransient)
 import App.Util.Selector (linkedText, listElement, ViewSelSetter)
-import App.View.Util (class Drawable, class Drawable2, Renderer, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -20,23 +20,7 @@ import Util ((!))
 import Val (Val)
 import Web.Event.EventTarget (EventListener)
 
-foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText
-
-type LinkedTextHelpers =
-   { contents :: Selectable String -> String
-   , accessAnn :: Selectable String -> SelState 𝕊
-   }
-
 newtype LinkedText = LinkedText (Array (Selectable String))
-
-drawLinkedText' :: Renderer LinkedText
-drawLinkedText' = drawLinkedText linkedTextHelpers
-
-linkedTextHelpers :: LinkedTextHelpers
-linkedTextHelpers =
-   { contents
-   , accessAnn
-   }
 
 contents :: Selectable String -> String
 contents = fst
