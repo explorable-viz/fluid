@@ -28,15 +28,15 @@ The following assumes you have already succesfully run `yarn build` (see above).
 
 ### Running programs from the command line
 
-Fluid examples in the `dist/fluid/fluid/examples` can be evaluated from the command line as follows
+Fluid examples in the `dist/fluid/fluid` can be evaluated from the command line as follows
 (from the top-level directory):
 
 ```
-npx fluid evaluate -f <filename>
+npx fluid evaluate -f <path>
 ```
-Note that the filename should not include the `.fld` extension, e.g. for the `range.fld` example:
+Note that the path is relative and should not include the `.fld` extension, e.g. for the `range.fld` example:
 ```
-% npx fluid evaluate -f range
+% npx fluid evaluate -f example/range
 ((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))
 Success
 ```

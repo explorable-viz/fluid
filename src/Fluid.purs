@@ -40,15 +40,10 @@ between p1 p2 f s =
       Nothing -> Left ("Expected " <> show p1 <> "..." <> show p2 <> " but got ...")
 
 parsePair :: String -> Either String (Bind String)
-parsePair = between (Pattern "(") (Pattern ")") $ \s -> do
+parsePair = between (Pattern "(") (Pattern ")") $ \s ->
    case split (Pattern ",") s of
       [ k, v ] -> Right (trim k ↦ trim v)
       _ -> Left $ "Expected a pair but got " <> s
-
-parseDataset' :: String -> Either String (Bind String)
-parseDataset' = \s -> do
-   dataset <- parsePair s
-   Right (dataset :: (Bind String))
 
 parseImports' :: Pattern -> Pattern -> (String -> Either String (Array String))
 parseImports' open close = between open close $ \s -> do
@@ -56,10 +51,10 @@ parseImports' open close = between open close $ \s -> do
 
 parseDatasets :: Parser (List (Bind String))
 parseDatasets =
-   many $ option (eitherReader $ parseDataset')
+   many $ option (eitherReader parsePair)
       ( long "datasets"
            <> short 'd'
-           <> help "A comma separated list of datasets"
+           <> help "Comma-separated list of datasets"
       )
 
 parseImports :: Parser (List String)
@@ -67,7 +62,7 @@ parseImports =
    many $ strOption
       ( long "imports"
            <> short 'i'
-           <> help "A comma separated list of import file locations"
+           <> help "Comma-separated list of files to import"
       )
 
 program :: Parser Program
@@ -119,9 +114,8 @@ publish website package =
          Just err -> logShow err
          Nothing -> log =<< toString ASCII stdout
    where
-   cmd =
-      if package then "./node_modules/@explorable-viz/fluid/script/bundle-website.sh -w " <> website <> " -r true"
-      else "./script/bundle-website.sh -w " <> website
+   cmd = if package then "./node_modules/@explorable-viz/fluid" <> cmd' <> " -r true" else "." <> cmd'
+   cmd' = "/script/bundle-website.sh -w " <> website
 
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
@@ -135,7 +129,8 @@ callback = case _ of
 
 evaluate :: Program -> Aff (Val Unit)
 evaluate (Program { imports, datasets, fileName }) = do
-   progCxt <- loadProgCxt imports datasets
-   { e, gconfig } <- prepConfig (File fileName) progCxt
+   let fluidSrcPath = Folder "fluid"
+   progCxt <- loadProgCxt fluidSrcPath imports datasets
+   { e, gconfig } <- prepConfig fluidSrcPath (File fileName) progCxt
    { outα } <- graphEval gconfig e
    pure (erase outα)
