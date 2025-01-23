@@ -2,7 +2,7 @@ module App.View.LinkedText where
 
 import Prelude
 
-import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, classes, from, isTransient)
+import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, classes, from, isPersistent, isPrimary, isSecondary, isTransient)
 import App.Util.Selector (linkedText, listElement, ViewSelSetter)
 import App.View.Util (class Drawable, class Drawable2, Renderer, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
@@ -65,14 +65,29 @@ setSelState (LinkedText elems) redraw rootElement = do
    where
    textAttrs :: LinkedTextElem -> Attrs
    textAttrs { i } =
-      [ "border-right" ↦ border (hasBorder i)
+      [ "border" ↦ border
+      , "background" ↦ background
+      , "color" ↦ color
       ]
+      where
+      sel = accessAnn (elems ! i)
 
-   border :: Boolean -> String
-   border b = if b then "1px solid blue" else "none"
+      border :: String
+      border
+         | isTransient sel = "1px solid blue"
+         | otherwise = "none"
 
-   hasBorder :: Int -> Boolean
-   hasBorder i = isTransient $ accessAnn (elems ! i)
+      background :: String
+      background
+         | isPrimary sel && isPersistent sel = "#93E9BE"
+         | isSecondary sel && isPersistent sel = "rgb(226, 226, 226)"
+         | otherwise = "white"
+
+      color :: String
+      color
+         | isPrimary sel && isTransient sel = "blue"
+         | isSecondary sel && isTransient sel = "royalblue"
+         | otherwise = "black"
 
 createRootElement :: LinkedText -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (LinkedText elems) div childId = do
@@ -90,3 +105,7 @@ instance Reflect (Val (SelState 𝕊)) LinkedText where
    from r = LinkedText (unpack string <$> ((from r)))
 
 type LinkedTextElem = { i :: Int }
+
+solidBorder :: String
+solidBorder = "1px solid blue"
+
