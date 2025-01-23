@@ -4,12 +4,13 @@ import Prelude
 
 import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, classes, from, isTransient)
 import App.Util.Selector (linkedText, listElement, ViewSelSetter)
-import App.View.Util (class Drawable, class Drawable2, Renderer, registerMouseListeners, selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setStyles, setText)
+import App.View.Util (class Drawable, class Drawable2, Renderer, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (length)
 import Data.Foldable (for_)
+import Data.FoldableWithIndex (forWithIndex_)
 import Data.Tuple (fst, snd)
 import Effect (Effect)
 import Effect.Class.Console (logShow)
@@ -36,14 +37,16 @@ linkedTextHelpers =
    { contents
    , accessAnn
    }
+
 contents :: Selectable String -> String
 contents = fst
+
 accessAnn :: Selectable String -> SelState 𝕊
 accessAnn = snd
 
 instance Drawable LinkedText where
    draw rSpec figVal _ redraw =
-      drawLinkedText linkedTextHelpers uiHelpers rSpec =<< selListener figVal redraw linkedTextSelector
+      draw' uiHelpers rSpec =<< selListener figVal redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelSetter LinkedTextElem
       linkedTextSelector { i } = linkedText <<< listElement i
@@ -53,7 +56,7 @@ setSelState (LinkedText elems) redraw rootElement = do
    elems' <- rootElement # selectAll ".linked-text"
    logShow (length elems')
    for_ elems' \elem -> do
-      elem' <- datum elem
+      elem' :: LinkedTextElem <- datum elem
       log "About to set attrs"
       log $ "Elem': " <> (show elem')
       elem # setStyles (textAttrs elem') >>= registerMouseListeners redraw
@@ -74,9 +77,9 @@ setSelState (LinkedText elems) redraw rootElement = do
 createRootElement :: LinkedText -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (LinkedText elems) div childId = do
    rootElement <- div # create Text [ classes [ "linked-text-parent" ], "id" ↦ childId ]
-   for_ elems \elem -> do
+   forWithIndex_ elems \i elem -> do
       elem' <- rootElement # create Text [ classes [ "linked-text" ], "id" ↦ childId ]
-      elem' # setText (contents elem)
+      elem' # setText (contents elem) >>= setDatum { i }
    pure rootElement
 
 instance Drawable2 LinkedText where
