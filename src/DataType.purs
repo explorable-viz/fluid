@@ -196,7 +196,4 @@ dataTypes = L.fromFoldable
    , dataType "Marker"
         [ "Arrowhead" × 0
         ]
-   , dataType "Explanation"
-        [ "Explained" × 2
-        ]
    ]
