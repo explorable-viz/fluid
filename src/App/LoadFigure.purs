@@ -9,7 +9,6 @@ import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
 import App.View.Util (FigSpec)
 import Bind (Bind)
-import Data.Argonaut (Json, JsonDecodeError)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Either (Either(..))
 import Data.Tuple (uncurry)
@@ -17,14 +16,18 @@ import Effect (Effect)
 import Module.Web (File(..), Folder(..), loadFile')
 import Util (error, (×))
 
-type JsonSpec = { datasets :: Array (Bind String), imports :: Array String, file :: String, inputs :: Array String }
-
-jsonToSpec :: Json -> Either JsonDecodeError JsonSpec
-jsonToSpec = decodeJson
+type JsonSpec =
+   { fluidSrcPath :: String
+   , datasets :: Array (Bind String)
+   , imports :: Array String
+   , file :: String
+   , inputs :: Array String
+   }
 
 figSpecFromJson :: JsonSpec -> FigSpec
 figSpecFromJson spec =
-   { datasets: spec.datasets
+   { fluidSrcPath: Folder spec.fluidSrcPath
+   , datasets: spec.datasets
    , imports: spec.imports
    , file: File spec.file
    , inputs: spec.inputs
@@ -33,11 +36,12 @@ figSpecFromJson spec =
 loadFigure :: String -> Effect Unit
 loadFigure fileName = runAffs_ (uncurry drawFig)
    [ do
+        -- TODO: simplify
         result <- get json fileName
         case result of
            Left err -> error ("Json fetching failed with " <> printError err)
            Right response ->
-              case jsonToSpec response.body of
+              case decodeJson response.body of
                  Left err -> error ("JSON decoding failed with " <> show err)
                  Right spec -> do
                     ("fig" × _) <$> loadFig (figSpecFromJson spec)

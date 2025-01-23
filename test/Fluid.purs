@@ -20,6 +20,6 @@ testFluid = do
    outα <- evaluate $ Program
       { imports: []
       , datasets: []
-      , fileName: "length"
+      , fileName: "example/length"
       }
    testCondition "length" ((prettyP $ erase outα) == "2") (prettyP outα)

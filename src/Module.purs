@@ -11,6 +11,7 @@ import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
@@ -26,33 +27,34 @@ import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
-import Util (AffError, concatM, type (×), (×))
+import Util (type (×), AffError, concatM, debug, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. FileLoader -> Folder -> File -> AffError m (Raw S.Expr)
+parseProgram :: forall m. FileLoader m -> Folder -> File -> AffError m (Raw S.Expr)
 parseProgram loadFile folder file =
    loadFile folder file >>= flip parse P.program
 
-module_ :: forall m. MonadAff m => MonadError Error m => FileLoader -> File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ loadFile file (ProgCxt r@{ mods }) = do
-   src <- loadFile (Folder "fluid") file
+module_ :: forall m. MonadAff m => MonadError Error m => FileLoader m -> Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
+module_ loadFile folder file (ProgCxt r@{ mods }) = do
+   when debug.logging $ log ("module_: " <> show (folder </> file))
+   src <- loadFile folder file
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => FileLoader -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
-datasetAs loadFile (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- parseProgram loadFile (Folder "fluid") file >>= desug
+datasetAs :: forall m. MonadAff m => MonadError Error m => FileLoader m -> Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs loadFile folder (x ↦ file) (ProgCxt r@{ datasets }) = do
+   eα <- parseProgram loadFile folder file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => FileLoader -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt loadFile mods datasets =
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => FileContext m -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt { loadFile, fluidSrcPath } mods datasets =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= concatM (File >>> (module_ loadFile) <$> [ "lib/prelude" ] <> mods)
-      >>= concatM (second File >>> (datasetAs loadFile) <$> datasets)
+      >>= concatM (File >>> (module_ loadFile fluidSrcPath) <$> [ "lib/prelude" ] <> mods)
+      >>= concatM (second File >>> (datasetAs loadFile fluidSrcPath) <$> datasets)
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
@@ -68,14 +70,19 @@ initialConfig e progCxt = do
 
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => FileLoader -> File -> Raw ProgCxt -> m Config
-prepConfig loadFile file progCxt = do
-   s <- parseProgram loadFile (Folder "fluid/example") file
+prepConfig :: forall m. MonadAff m => MonadError Error m => FileContext m -> File -> Raw ProgCxt -> m Config
+prepConfig { loadFile, fluidSrcPath } file progCxt = do
+   s <- parseProgram loadFile fluidSrcPath file
    e <- desug s
    gconfig <- initialConfig e progCxt
    pure { s, e, gconfig }
 
-type FileLoader = forall m. Folder -> File -> AffError m String
+type FileLoader m = Folder -> File -> AffError m String
+
+type FileContext m =
+   { loadFile :: FileLoader m
+   , fluidSrcPath :: Folder
+   }
 
 newtype File = File String
 newtype Folder = Folder String
@@ -84,3 +91,13 @@ derive instance Newtype File _
 derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
+derive instance Newtype Folder _
+derive newtype instance Show Folder
+
+instance Semigroup Folder where
+   append (Folder folder1) (Folder folder2) = Folder (folder1 <> "/" <> folder2)
+
+prependFolder :: Folder -> File -> File
+prependFolder (Folder folder) (File file) = File (folder <> "/" <> file)
+
+infixr 5 prependFolder as </>
