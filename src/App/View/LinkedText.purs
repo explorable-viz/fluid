@@ -75,6 +75,3 @@ instance Reflect (Val (SelState 𝕊)) LinkedText where
 
 type LinkedTextElem = { i :: Int }
 
-solidBorder :: String
-solidBorder = "1px solid blue"
-
