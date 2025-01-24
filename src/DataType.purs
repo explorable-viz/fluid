@@ -185,7 +185,7 @@ dataTypes = L.fromFoldable
         , "Polymarkers" × 2 -- List Point (points), List GraphicsElement (markers)
         , "Rect" × 5 -- Float (x), Float (y), Float (width), Float (height), Str (fill)
         -- SVG text-anchor and alignment-baseline properties
-        , "Text" × 5 -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
+        , "String" × 5 -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
         -- margin is in *parent* reference frame; scaling applies to translated coordinates
         , "Viewport" × 9 -- Float (x), Float (y), Float (width), Float (height), Str (fill),
         -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
