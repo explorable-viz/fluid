@@ -49,7 +49,7 @@ setSelState (LinkedText elems) redraw rootElement = do
    where
    textAttrs :: LinkedTextElem -> Attrs
    textAttrs { i } =
-      [ "border" ↦ border
+      [ "border-bottom" ↦ border
       , "background" ↦ background
       , "color" ↦ color
       ]
