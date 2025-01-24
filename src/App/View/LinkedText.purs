@@ -18,8 +18,6 @@ import Web.Event.EventTarget (EventListener)
 
 newtype LinkedText = LinkedText (Array (Selectable String))
 
-
-
 instance Drawable LinkedText where
    draw rSpec figVal _ redraw =
       draw' uiHelpers rSpec =<< selListener figVal redraw linkedTextSelector
