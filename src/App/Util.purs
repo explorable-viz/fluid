@@ -18,7 +18,7 @@ import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (snd)
+import Data.Tuple (fst, snd)
 import DataType (cCons, cNil)
 import Dict (Dict)
 import Effect (Effect)
@@ -55,6 +55,12 @@ data SelState a
 selState :: forall a. 𝔹 -> a -> a -> SelState a
 selState true _ _ = Inert
 selState false b1 b2 = Reactive { persistent: b1, transient: b2 }
+
+contents :: forall a. Selectable a -> a
+contents = fst
+
+sel :: forall a. Selectable a -> SelState 𝕊
+sel = snd
 
 persist :: forall a. Setter (SelState a) a
 persist δα = case _ of
@@ -162,10 +168,10 @@ selector (EventType ev) v =
    where
    setSel :: Endo (SelState 𝔹)
    setSel Inert = Inert
-   setSel (Reactive sel)
-      | ev == "mousedown" = Reactive (sel { persistent = neg sel.persistent })
-      | ev == "mouseenter" = Reactive (sel { transient = true })
-      | ev == "mouseleave" = Reactive (sel { transient = false })
+   setSel (Reactive sel')
+      | ev == "mousedown" = Reactive (sel' { persistent = neg sel'.persistent })
+      | ev == "mouseenter" = Reactive (sel' { transient = true })
+      | ev == "mouseleave" = Reactive (sel' { transient = false })
       | otherwise = error "Unsupported event type"
 
    reportSelState = spyWhen tracing.mouseEvent "to " show

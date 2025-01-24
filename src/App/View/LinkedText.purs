@@ -2,19 +2,15 @@ module App.View.LinkedText where
 
 import Prelude
 
-import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, classes, from, isPersistent, isPrimary, isSecondary, isTransient)
+import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, contents, classes, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (linkedText, listElement, ViewSelSetter)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (length)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.Tuple (fst, snd)
 import Effect (Effect)
-import Effect.Class.Console (logShow)
-import Effect.Console (log)
 import Primitive (string, unpack)
 import Util ((!))
 import Val (Val)
@@ -22,11 +18,7 @@ import Web.Event.EventTarget (EventListener)
 
 newtype LinkedText = LinkedText (Array (Selectable String))
 
-contents :: Selectable String -> String
-contents = fst
 
-accessAnn :: Selectable String -> SelState 𝕊
-accessAnn = snd
 
 instance Drawable LinkedText where
    draw rSpec figVal _ redraw =
@@ -38,14 +30,9 @@ instance Drawable LinkedText where
 setSelState :: LinkedText -> EventListener -> D3.Selection -> Effect Unit
 setSelState (LinkedText elems) redraw rootElement = do
    elems' <- rootElement # selectAll ".linked-text"
-   logShow (length elems')
    for_ elems' \elem -> do
       elem' :: LinkedTextElem <- datum elem
-      log "About to set attrs"
-      log $ "Elem': " <> (show elem')
       elem # setStyles (textAttrs elem') >>= registerMouseListeners redraw
-      log "set attrs"
-   log "ok"
    where
    textAttrs :: LinkedTextElem -> Attrs
    textAttrs { i } =
@@ -54,23 +41,23 @@ setSelState (LinkedText elems) redraw rootElement = do
       , "color" ↦ color
       ]
       where
-      sel = accessAnn (elems ! i)
+      sel' = sel (elems ! i)
 
       border :: String
       border
-         | isTransient sel = "1px solid blue"
+         | isTransient sel' = "1px solid blue"
          | otherwise = "none"
 
       background :: String
       background
-         | isPrimary sel && isPersistent sel = "#93E9BE"
-         | isSecondary sel && isPersistent sel = "rgb(226, 226, 226)"
+         | isPrimary sel' && isPersistent sel' = "#93E9BE"
+         | isSecondary sel' && isPersistent sel' = "rgb(226, 226, 226)"
          | otherwise = "white"
 
       color :: String
       color
-         | isPrimary sel && isTransient sel = "blue"
-         | isSecondary sel && isTransient sel = "royalblue"
+         | isPrimary sel' && isTransient sel' = "blue"
+         | isSecondary sel' && isTransient sel' = "royalblue"
          | otherwise = "black"
 
 createRootElement :: LinkedText -> D3.Selection -> String -> Effect D3.Selection
