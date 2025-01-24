@@ -2,63 +2,76 @@ module App.View.LinkedText where
 
 import Prelude
 
-import App.Util (class Reflect, SelState, Selectable, 𝕊, from)
+import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, contents, classes, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (linkedText, listElement, ViewSelSetter)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
-import Data.Either (Either(..))
-import Data.Tuple (Tuple, fst)
-import Primitive (Explanation(..), linkedTextEntry, string, unpack)
-import Util (type (+), (×))
+import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
+import App.View.Util.D3 as D3
+import Bind ((↦))
+import Data.Foldable (for_)
+import Data.FoldableWithIndex (forWithIndex_)
+import Effect (Effect)
+import Primitive (string, unpack)
+import Util ((!))
 import Val (Val)
+import Web.Event.EventTarget (EventListener)
 
-foreign import drawLinkedText :: LinkedTextHelpers -> Renderer LinkedText
-
-type LinkedTextHelpers =
-   { explanation :: Selectable String + Selectable (Explanation (SelState 𝕊)) -> String
-   , contents :: Selectable String + Selectable (Explanation (SelState 𝕊)) -> String
-   , accessAnn :: Selectable String + Selectable (Explanation (SelState 𝕊)) -> SelState 𝕊
-   }
-
-newtype LinkedText = LinkedText (Array (Selectable String + Selectable (Explanation (SelState 𝕊))))
-
-drawLinkedText' :: Renderer LinkedText
-drawLinkedText' = drawLinkedText linkedTextHelpers
-
-linkedTextHelpers :: LinkedTextHelpers
-linkedTextHelpers =
-   { explanation
-   , contents
-   , accessAnn
-   }
-   where
-   explanation :: Selectable String + Selectable (Explanation (SelState 𝕊)) -> String
-   explanation = case _ of
-      Left s -> fst s
-      Right (Explanation _ expl _ × _) -> expl
-
-   contents :: Selectable String + Selectable (Explanation (SelState 𝕊)) -> String
-   contents = case _ of
-      Left s -> fst s
-      Right (Explanation _ _ v × _) -> fst (unpack string v)
-
-   accessAnn :: Selectable String + Selectable (Explanation (SelState 𝕊)) -> SelState 𝕊
-   accessAnn = case _ of
-      Left (_ × α) -> α
-      Right (Explanation α _ _ × _) -> α
+newtype LinkedText = LinkedText (Array (Selectable String))
 
 instance Drawable LinkedText where
    draw rSpec figVal _ redraw =
-      drawLinkedText linkedTextHelpers uiHelpers rSpec =<< selListener figVal redraw linkedTextSelector
+      draw' uiHelpers rSpec =<< selListener figVal redraw linkedTextSelector
       where
       linkedTextSelector :: ViewSelSetter LinkedTextElem
       linkedTextSelector { i } = linkedText <<< listElement i
 
-exch :: forall a. Tuple (Either String (Explanation a)) a -> Either (Tuple String a) (Tuple (Explanation a) a)
-exch (e × a) = case e of
-   Left s -> Left (s × a)
-   Right ex -> Right (ex × a)
+setSelState :: LinkedText -> EventListener -> D3.Selection -> Effect Unit
+setSelState (LinkedText elems) redraw rootElement = do
+   elems' <- rootElement # selectAll ".linked-text"
+   for_ elems' \elem -> do
+      elem' :: LinkedTextElem <- datum elem
+      elem # setStyles (textAttrs elem') >>= registerMouseListeners redraw
+   where
+   textAttrs :: LinkedTextElem -> Attrs
+   textAttrs { i } =
+      [ "border-bottom" ↦ border
+      , "background" ↦ background
+      , "color" ↦ color
+      ]
+      where
+      sel' = sel (elems ! i)
+
+      border :: String
+      border
+         | isTransient sel' = "1px solid blue"
+         | otherwise = "none"
+
+      background :: String
+      background
+         | isPrimary sel' && isPersistent sel' = "#93E9BE"
+         | isSecondary sel' && isPersistent sel' = "rgb(226, 226, 226)"
+         | otherwise = "white"
+
+      color :: String
+      color
+         | isPrimary sel' && isTransient sel' = "blue"
+         | isSecondary sel' && isTransient sel' = "royalblue"
+         | otherwise = "black"
+
+createRootElement :: LinkedText -> D3.Selection -> String -> Effect D3.Selection
+createRootElement (LinkedText elems) div childId = do
+   rootElement <- div # create Text [ classes [ "linked-text-parent" ], "id" ↦ childId ]
+   forWithIndex_ elems \i elem -> do
+      elem' <- rootElement # create Text [ classes [ "linked-text" ], "id" ↦ childId ]
+      elem' # setText (contents elem) >>= setDatum { i }
+   pure rootElement
+
+instance Drawable2 LinkedText where
+   createRootElement = createRootElement
+   setSelState = setSelState
 
 instance Reflect (Val (SelState 𝕊)) LinkedText where
-   from r = LinkedText (exch <$> unpack linkedTextEntry <$> ((from r)))
+   from r = LinkedText (unpack string <$> ((from r)))
 
 type LinkedTextElem = { i :: Int }
+
