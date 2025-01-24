@@ -102,6 +102,7 @@ cCons = ":" :: Ctr
 cPair = "Pair" :: Ctr -- Pair
 cNone = "None" :: Ctr -- Option
 cSome = "Some" :: Ctr
+cText = "Text" :: Ctr
 
 -- Field names used internally by rendering layer.
 f_bars = "bars" :: FieldName
@@ -195,5 +196,8 @@ dataTypes = L.fromFoldable
         ]
    , dataType "Marker"
         [ "Arrowhead" × 0
+        ]
+   , dataType "TextFragment"
+        [ cText × 1 -- Str (str)
         ]
    ]

@@ -2,7 +2,7 @@ module App.View.Paragraph where
 
 import Prelude
 
-import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, contents, classes, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, classes, contents, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (paragraph, listElement, ViewSelSetter)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
@@ -10,10 +10,13 @@ import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
+import Data.List ((:), List(..))
+import Data.Tuple (fst)
+import DataType (cText)
 import Effect (Effect)
-import Primitive (string, unpack)
-import Util ((!))
-import Val (Val)
+import Primitive (ToFrom, typeError, unpack)
+import Util ((!), (×))
+import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
 newtype Paragraph = Paragraph (Array TextFragment)
@@ -74,6 +77,15 @@ instance Drawable2 Paragraph where
    setSelState = setSelState
 
 instance Reflect (Val (SelState 𝕊)) Paragraph where
-   from r = Paragraph (TextFragment <$> (unpack string) <$> (from r))
+   from r = Paragraph (fst <$> unpack textFragment <$> (from r))
 
 type ParagraphElem = { i :: Int }
+
+textFragment :: ToFrom TextFragment (SelState 𝕊)
+textFragment =
+   { pack: case _ of
+        TextFragment (s × α) -> Constr cText ((Val α (Str s)) : Nil)
+   , unpack: case _ of
+        Constr c (Val α (Str s) : Nil) | c == cText -> TextFragment (s × α)
+        v -> typeError v "TextFragment"
+   }
