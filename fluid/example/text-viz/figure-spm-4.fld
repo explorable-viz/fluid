@@ -37,6 +37,6 @@ in MultiView {
     leftBarChart: ssp119,
     rightBarChart: ssp245,
     explanation:
-        LinkedText [ "Within each scenario bar plot, the bars represent: total warming ", explainBars total "Total",
+        Paragraph [ "Within each scenario bar plot, the bars represent: total warming ", explainBars total "Total",
                      ", warming contributions from CO2 ", explainBars co2 "CO2", " and from non-CO2 GHG's ", explainBars nonco2 "Non-CO2"]
 }

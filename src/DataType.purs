@@ -94,7 +94,7 @@ cLineChart = "LineChart" :: Ctr
 cLinePlot = "LinePlot" :: Ctr
 cMultiView = "MultiView" :: Ctr
 cScatterPlot = "ScatterPlot" :: Ctr
-cLinkedText = "LinkedText" :: Ctr
+cParagraph = "Paragraph" :: Ctr
 cFalse = "False" :: Ctr -- Bool
 cTrue = "True" :: Ctr
 cNil = "Nil" :: Ctr -- List
@@ -162,7 +162,7 @@ dataTypes = L.fromFoldable
    , dataType "View"
         [ cBarChart × 1
         , cLineChart × 1
-        , cLinkedText × 1
+        , cParagraph × 1
         , cMultiView × 1
         , cScatterPlot × 1
         ]

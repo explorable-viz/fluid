@@ -1,9 +1,9 @@
-module App.View.LinkedText where
+module App.View.Paragraph where
 
 import Prelude
 
 import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, contents, classes, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
-import App.Util.Selector (linkedText, listElement, ViewSelSetter)
+import App.Util.Selector (paragraph, listElement, ViewSelSetter)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
@@ -16,30 +16,33 @@ import Util ((!))
 import Val (Val)
 import Web.Event.EventTarget (EventListener)
 
-newtype LinkedText = LinkedText (Array (Selectable String))
+newtype Paragraph = Paragraph (Array TextFragment)
 
-instance Drawable LinkedText where
+data TextFragment = TextFragment (Selectable String)
+
+instance Drawable Paragraph where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw linkedTextSelector
+      draw' uiHelpers rSpec =<< selListener figVal redraw paragraphSelector
       where
-      linkedTextSelector :: ViewSelSetter LinkedTextElem
-      linkedTextSelector { i } = linkedText <<< listElement i
+      paragraphSelector :: ViewSelSetter ParagraphElem
+      paragraphSelector { i } = paragraph <<< listElement i
 
-setSelState :: LinkedText -> EventListener -> D3.Selection -> Effect Unit
-setSelState (LinkedText elems) redraw rootElement = do
-   elems' <- rootElement # selectAll ".linked-text"
+setSelState :: Paragraph -> EventListener -> D3.Selection -> Effect Unit
+setSelState (Paragraph elems) redraw rootElement = do
+   elems' <- rootElement # selectAll ".text-fragment"
    for_ elems' \elem -> do
-      elem' :: LinkedTextElem <- datum elem
+      elem' :: ParagraphElem <- datum elem
       elem # setStyles (textAttrs elem') >>= registerMouseListeners redraw
    where
-   textAttrs :: LinkedTextElem -> Attrs
+   textAttrs :: ParagraphElem -> Attrs
    textAttrs { i } =
       [ "border-bottom" ↦ border
       , "background" ↦ background
       , "color" ↦ color
       ]
       where
-      sel' = sel (elems ! i)
+      (TextFragment tf) = elems ! i
+      sel' = sel tf
 
       border :: String
       border
@@ -58,20 +61,19 @@ setSelState (LinkedText elems) redraw rootElement = do
          | isSecondary sel' && isTransient sel' = "royalblue"
          | otherwise = "black"
 
-createRootElement :: LinkedText -> D3.Selection -> String -> Effect D3.Selection
-createRootElement (LinkedText elems) div childId = do
-   rootElement <- div # create Text [ classes [ "linked-text-parent" ], "id" ↦ childId ]
-   forWithIndex_ elems \i elem -> do
-      elem' <- rootElement # create Text [ classes [ "linked-text" ], "id" ↦ childId ]
+createRootElement :: Paragraph -> D3.Selection -> String -> Effect D3.Selection
+createRootElement (Paragraph elems) div childId = do
+   rootElement <- div # create Text [ classes [ "paragraph" ], "id" ↦ childId ]
+   forWithIndex_ elems \i (TextFragment elem) -> do
+      elem' <- rootElement # create Text [ classes [ "text-fragment" ], "id" ↦ childId ]
       elem' # setText (contents elem) >>= setDatum { i }
    pure rootElement
 
-instance Drawable2 LinkedText where
+instance Drawable2 Paragraph where
    createRootElement = createRootElement
    setSelState = setSelState
 
-instance Reflect (Val (SelState 𝕊)) LinkedText where
-   from r = LinkedText (unpack string <$> ((from r)))
+instance Reflect (Val (SelState 𝕊)) Paragraph where
+   from r = Paragraph (TextFragment <$> (unpack string) <$> (from r))
 
-type LinkedTextElem = { i :: Int }
-
+type ParagraphElem = { i :: Int }

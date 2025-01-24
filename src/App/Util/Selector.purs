@@ -6,7 +6,7 @@ import App.Util (SelState, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cLinkedText, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_points, f_stackedBars, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cParagraph, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_points, f_stackedBars, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Util (Setter, absurd, assert, definitely, error)
@@ -52,8 +52,8 @@ barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
    dictVal f_z >>> listElement j >>> dictVal f_bars >>> listElement i >>> dictVal f_stackedBars
 
-linkedText :: SelSetter Val Val
-linkedText = constrArg cLinkedText 0
+paragraph :: SelSetter Val Val
+paragraph = constrArg cParagraph 0
 
 matrixElement :: Int -> Int -> SelSetter Val Val
 matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv r
