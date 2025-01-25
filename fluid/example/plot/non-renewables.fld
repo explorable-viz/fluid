@@ -16,7 +16,6 @@ in MultiView {
          x: sum [ row.nuclearOut | row <- yearData year ],
          y: sum [ row.nuclearCap | row <- yearData year ]
       } | year <- [2014..2018] ],
-      xlabel: "Nuclear capacity",
-      ylabel: "Nuclear output"
+      labels: { x: "Nuclear capacity", y: "Nuclear output" }
    }
 }

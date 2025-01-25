@@ -33,7 +33,6 @@ MultiView {
       in ScatterPlot {
          caption: "Clean energy efficiency vs proportion of renewable energy capacity",
          points: plot 2018 [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ],
-         xlabel: "Renewables/TotalEnergyCap",
-         ylabel: "Clean Capacity Factor"
+         labels: { x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" }
       }
 }

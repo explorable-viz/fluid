@@ -25,6 +25,5 @@ in ScatterPlot {
                 x: country.nonRenewables / country.totalCap,
                 y: country.renCapFactor
             }| country <- energy 2018 ["USA"]],
-    xlabel: "Renewables/TotalEnergyCap",
-    ylabel: "Clean Capacity Factor"
+    labels: { x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" }
 }
