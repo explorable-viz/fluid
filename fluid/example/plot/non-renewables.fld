@@ -20,5 +20,3 @@ in MultiView {
       ylabel: "Nuclear output"
    }
 }
-
-
