@@ -114,8 +114,7 @@ f_size = "size" :: FieldName
 f_stackedBars = "stackedBars" :: FieldName
 f_tickLabels = "tickLabels" :: FieldName
 f_x = "x" :: FieldName
-f_xlabel = "xlabel" :: FieldName
-f_ylabel = "ylabel" :: FieldName
+f_labels = "labels" :: FieldName
 f_y = "y" :: FieldName
 f_z = "z" :: FieldName
 

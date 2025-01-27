@@ -37,8 +37,7 @@ function drawScatterPlot_ (
       view: {
          caption,
          points,
-         xlabel,
-         ylabel
+         labels,
       }
    },
    listener
@@ -94,14 +93,14 @@ function drawScatterPlot_ (
             .attr("y", height + 25)
             .style("text-anchor", "end")
             .style("font-size", "10px")
-            .text(val(xlabel))
+            .text(val(labels.x))
          rootElement.append("text")
             .attr("transform", "rotate(-90)")
             .attr("x", -margin.top)
             .attr("y", -margin.left + 20)
             .style("text-anchor", "end")
             .style("font-size", "10px")
-            .text(val(ylabel))
+            .text(val(labels.y))
 
          rootElement.append('g')
             .selectAll('circle')
