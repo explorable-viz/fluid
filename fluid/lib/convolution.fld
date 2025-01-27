@@ -14,4 +14,3 @@ let convolve image kernel boundary =
              x >= 1, x <= m, y >= 1, y <= n
          ] in weightedSum `quot` area
          | (m', n') in (m, n) |];
-
