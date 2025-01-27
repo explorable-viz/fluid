@@ -10,9 +10,7 @@ import App.Util (runAffs_)
 import App.View.Util (FigSpec)
 import Bind (Bind)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (head)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module.Web (File(..), Folder(..), loadFile')
@@ -28,9 +26,7 @@ type JsonSpec =
 
 figSpecFromJson :: JsonSpec -> FigSpec
 figSpecFromJson spec =
-   { fluidSrcPath: Folder $ case head spec.fluidSrcPath of
-        Nothing -> "fluid"
-        Just path -> path
+   { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , datasets: spec.datasets
    , imports: spec.imports
    , file: File spec.file

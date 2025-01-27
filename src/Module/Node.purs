@@ -40,8 +40,8 @@ module_ = M.module_ loadFile
 datasetAs :: forall m. MonadAff m => MonadError Error m => F.Folder -> Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs = M.datasetAs loadFile
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt fluidSrcPath = M.loadProgCxt { loadFile, fluidSrcPath }
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt fluidSrcPaths = M.loadProgCxt { loadFile, fluidSrcPaths }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> ProgCxt Unit -> m Config
-prepConfig fluidSrcPath = M.prepConfig { loadFile, fluidSrcPath }
+prepConfig :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> F.File -> ProgCxt Unit -> m Config
+prepConfig fluidSrcPaths = M.prepConfig { loadFile, fluidSrcPaths }

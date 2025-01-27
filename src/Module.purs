@@ -27,7 +27,7 @@ import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
-import Util (type (×), AffError, concatM, debug, (×))
+import Util (type (×), AffError, concatM, debug, (×), error)
 import Util.Map (restrict)
 import Util.Parse (SParser)
 
@@ -51,10 +51,14 @@ datasetAs loadFile folder (x ↦ file) (ProgCxt r@{ datasets }) = do
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => FileContext m -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt { loadFile, fluidSrcPath } mods datasets =
+loadProgCxt { loadFile, fluidSrcPaths } mods datasets =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
       >>= concatM (File >>> (module_ loadFile fluidSrcPath) <$> [ "lib/prelude" ] <> mods)
       >>= concatM (second File >>> (datasetAs loadFile fluidSrcPath) <$> datasets)
+   where
+   fluidSrcPath = case fluidSrcPaths of
+      [ path ] -> path
+      _ -> error "expected exactly one fluidSrcPath"
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
@@ -71,17 +75,21 @@ initialConfig e progCxt = do
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => FileContext m -> File -> Raw ProgCxt -> m Config
-prepConfig { loadFile, fluidSrcPath } file progCxt = do
+prepConfig { loadFile, fluidSrcPaths } file progCxt = do
    s <- parseProgram loadFile fluidSrcPath file
    e <- desug s
    gconfig <- initialConfig e progCxt
    pure { s, e, gconfig }
+   where
+   fluidSrcPath = case fluidSrcPaths of
+      [ path ] -> path
+      _ -> error "expected exactly one fluidSrcPath"
 
 type FileLoader m = Folder -> File -> AffError m String
 
 type FileContext m =
    { loadFile :: FileLoader m
-   , fluidSrcPath :: Folder
+   , fluidSrcPaths :: Array Folder
    }
 
 newtype File = File String

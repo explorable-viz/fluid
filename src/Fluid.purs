@@ -129,8 +129,8 @@ callback = case _ of
 
 evaluate :: Program -> Aff (Val Unit)
 evaluate (Program { imports, datasets, fileName }) = do
-   let fluidSrcPath = Folder "fluid"
-   progCxt <- loadProgCxt fluidSrcPath imports datasets
-   { e, gconfig } <- prepConfig fluidSrcPath (File fileName) progCxt
+   let fluidSrcPaths = [ Folder "fluid" ]
+   progCxt <- loadProgCxt fluidSrcPaths imports datasets
+   { e, gconfig } <- prepConfig fluidSrcPaths (File fileName) progCxt
    { outα } <- graphEval gconfig e
    pure (erase outα)
