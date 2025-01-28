@@ -17,14 +17,14 @@ import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
 import Bind (Bind)
 import Control.Monad.Error.Class (throwError)
-import Control.Monad.Except (class MonadError)
+import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
 import Data.HTTP.Method (Method(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console (log)
-import Effect.Exception (error) as E
 import Effect.Exception (Error)
+import Effect.Exception (error) as E
 import Lattice (Raw)
 import Module (Config, initialConfig, parse, prependFolder')
 import Module (FileLoader, Folder(..), File(..)) as F
@@ -35,20 +35,18 @@ import Util (type (×), AffError, debug, (×))
 
 loadFile :: forall m. F.FileLoader m
 loadFile folders file = do
-   let urls = map (\folder -> prependFolder' folder file) folders
-   result <- liftAff $ findM' urls (\(F.File url) -> request (defaultRequest { url = url, method = Left HEAD, responseFormat = string }))
+   result <- runExceptT do
+      let urls = map (\folder -> prependFolder' folder file) folders
+      (_ × (F.File url)) <- ExceptT $ liftAff $ findM' urls
+         ( \(F.File url) ->
+              request (defaultRequest { url = url, method = Left HEAD, responseFormat = string })
+         )
+      when debug.logging $ liftAff $ log ("loadFile: resolved URL: " <> url)
+      contents <- ExceptT $ liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
+      pure contents.body
    case result of
-      Left err -> do
-         log ("Failed with " <> printError err)
-         throwError $ E.error $ printError err
-      Right (_ × (F.File url)) -> do
-         when debug.logging $ log ("loadFile: resolved ")
-         fileConts <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
-         case fileConts of
-            Left err -> do
-               log ("Failed with " <> printError err)
-               throwError $ E.error $ printError err
-            Right contents -> pure contents.body
+      Left err -> throwError $ E.error $ printError err
+      Right body -> pure body
 
 findM' :: forall m f a b. Foldable f => f a -> (a -> AffError m (Either A.Error b)) -> AffError m (Either A.Error (b × a))
 findM' collection func = foldr
