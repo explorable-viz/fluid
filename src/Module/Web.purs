@@ -36,22 +36,27 @@ import Util (type (×), AffError, debug, (×))
 loadFile :: forall m. F.FileLoader m
 loadFile folders file = do
    let urls = map (\folder -> prependFolder' folder file) folders
-   result <- liftAff $ findM' urls (\(F.File url) -> request (defaultRequest { url = url, method = Left GET, responseFormat = string }))
+   result <- liftAff $ findM' urls (\(F.File url) -> request (defaultRequest { url = url, method = Left HEAD, responseFormat = string }))
    case result of
       Left err -> do
          log ("Failed with " <> printError err)
          throwError $ E.error $ printError err
-      Right response -> do
+      Right (_ × (F.File url)) -> do
          when debug.logging $ log ("loadFile: resolved ")
-         pure response.body
+         fileConts <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
+         case fileConts of
+            Left err -> do
+               log ("Failed with " <> printError err)
+               throwError $ E.error $ printError err
+            Right contents -> pure contents.body
 
-findM' :: forall m f a b. Foldable f => f a -> (a -> AffError m (Either A.Error b)) -> AffError m (Either A.Error b)
+findM' :: forall m f a b. Foldable f => f a -> (a -> AffError m (Either A.Error b)) -> AffError m (Either A.Error (b × a))
 findM' collection func = foldr
    ( \a b -> do
         result <- func a
         case result of
            Left _ -> b
-           Right found -> pure (Right found)
+           Right found -> pure (Right (found × a))
    )
    (pure (Left (A.RequestFailedError)))
    collection
