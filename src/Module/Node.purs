@@ -38,9 +38,7 @@ loadFile folders (F.File file) = do
    exists :: F.File -> m (Maybe String)
    exists (F.File url) = do
       stats <- liftAff $ stat url
-      case isFile stats of
-         true -> pure $ Just url
-         false -> pure Nothing
+      pure $ if isFile stats then Just url else Nothing
 
 parseProgram ∷ ∀ m. Array F.Folder -> F.File → AffError m (Raw S.Expr)
 parseProgram = M.parseProgram loadFile
