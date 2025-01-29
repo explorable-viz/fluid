@@ -17,7 +17,7 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Lattice (Raw)
-import Module (Config, findM, initialConfig, parse, prependFolder')
+import Module (Config, findM, initialConfig, parse, prependFolder)
 import Module (File(..), Folder(..), FileLoader) as F
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import Node.Encoding (Encoding(..))
@@ -28,8 +28,8 @@ import SExpr (Expr) as S
 import Util (AffError, error)
 
 loadFile :: forall m. F.FileLoader m
-loadFile folders file = do
-   let urls = map (\folder -> prependFolder' folder file) folders
+loadFile folders (F.File file) = do
+   let urls = flip prependFolder (F.File $ file <> ".fld") <$> folders
    url <- findM urls exists
    case url of
       Nothing -> error "Folder/File combo not found!"

@@ -104,9 +104,6 @@ prependFolder (Folder folder) (File file) = File (folder <> "/" <> file)
 
 infixr 5 prependFolder as </>
 
-prependFolder' :: Folder -> File -> File
-prependFolder' (Folder folder) (File file) = File (folder <> "/" <> file <> ".fld")
-
 findM :: forall m f a b. Foldable f => f a -> (a -> AffError m (Maybe b)) -> AffError m (Maybe b)
 findM collection func = foldr
    ( \a b -> do

@@ -28,7 +28,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import Lattice (Raw)
-import Module (Config, initialConfig, parse, prependFolder')
+import Module (Config, initialConfig, parse, prependFolder)
 import Module (FileLoader, Folder(..), File(..)) as F
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import ProgCxt (ProgCxt)
@@ -36,8 +36,8 @@ import SExpr (Expr) as S
 import Util (type (×), AffError, debug, (×))
 
 loadFile :: forall m. F.FileLoader m
-loadFile folders file = do
-   let urls = map (\folder -> prependFolder' folder file) folders
+loadFile folders (F.File file)= do
+   let urls = flip prependFolder (F.File $ file <> ".fld") <$> folders
    result <- runExceptT $ do
       (_ × (F.File url')) <- ExceptT $ liftAff $ findM' urls A.RequestFailedError $ \(F.File url) ->
          request (defaultRequest { url = url, method = Left HEAD, responseFormat = string })
