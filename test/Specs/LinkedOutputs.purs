@@ -70,6 +70,31 @@ movingAverages_spec =
    , out_expect: identity
    }
 
+multipleSrcPaths_test :: TestLinkedOutputsSpec
+multipleSrcPaths_test =
+   { spec:
+        { fluidSrcPaths: [ Folder "test/lib", Folder "fluid" ]
+        , datasets: [ "renewables" ↦ "dataset/renewables" ]
+        , imports: [ "test" ]
+        , file: File "slicing/linked-outputs/bar-chart-line-chart-2"
+        , inputs: [ "renewables" ]
+        }
+   , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
+   , out_expect:
+        multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
+           >>> multiViewEntry "lineChart"
+              ( lineChart
+                   ( dictVal f_plots
+                        ( listElement 0 (linePoint 2 (dictVal f_y neg))
+                             >>> listElement 1 (linePoint 2 (dictVal f_y neg))
+                             >>> listElement 2 (linePoint 2 (dictVal f_y neg))
+                             >>> listElement 3 (linePoint 2 (dictVal f_y neg))
+
+                        )
+                   )
+              )
+   }
+
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
@@ -113,4 +138,5 @@ linkedOutputs_cases =
    , linkedOutputs_spec1
    , linkedOutputs_spec2
    , movingAverages_spec
+   , multipleSrcPaths_test
    ]

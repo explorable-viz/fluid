@@ -13,13 +13,15 @@ module Module.Web
 import Prelude
 
 import Affjax (Error(..)) as A
+import Affjax (Response)
 import Affjax.ResponseFormat (string)
+import Affjax.StatusCode (StatusCode(..))
 import Affjax.Web (defaultRequest, printError, request)
 import Bind (Bind)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT)
-import Data.Either (Either(..))
-import Data.Foldable (class Foldable, foldr)
+import Data.Either (Either(..), either)
+import Data.Foldable (class Foldable, foldM)
 import Data.HTTP.Method (Method(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console (log)
@@ -35,28 +37,26 @@ import Util (type (×), AffError, debug, (×))
 
 loadFile :: forall m. F.FileLoader m
 loadFile folders file = do
-   result <- runExceptT do
-      let urls = map (\folder -> prependFolder' folder file) folders
-      (_ × (F.File url)) <- ExceptT $ liftAff $ findM' urls
-         ( \(F.File url) ->
-              request (defaultRequest { url = url, method = Left HEAD, responseFormat = string })
-         )
-      when debug.logging $ liftAff $ log ("loadFile: resolved URL: " <> url)
-      contents <- ExceptT $ liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
+   let urls = map (\folder -> prependFolder' folder file) folders
+   result <- runExceptT $ do
+      (_ × (F.File url')) <- ExceptT $ liftAff $ findM' urls A.RequestFailedError $ \(F.File url) ->
+         request (defaultRequest { url = url, method = Left HEAD, responseFormat = string })
+      when debug.logging $ liftAff $ log ("loadFile: resolved URL: " <> url')
+      contents <- ExceptT $ liftAff $ request (defaultRequest { url = url', method = Left GET, responseFormat = string })
       pure contents.body
-   case result of
-      Left err -> throwError $ E.error $ printError err
-      Right body -> pure body
+   either (throwError <<< E.error <<< printError) pure result
 
-findM' :: forall m f a b. Foldable f => f a -> (a -> AffError m (Either A.Error b)) -> AffError m (Either A.Error (b × a))
-findM' collection func = foldr
-   ( \a b -> do
-        result <- func a
-        case result of
-           Left _ -> b
-           Right found -> pure (Right (found × a))
+findM' :: forall m f url err a. Monad m => Foldable f => f url -> err -> (url -> m (Either err (Response a))) -> m (Either err ((Response a) × url))
+findM' collection base func = foldM
+   ( \acc url -> case acc of
+        Right _ -> pure acc
+        Left _ -> do
+           result <- func url
+           pure $ result >>= \resp ->
+              if resp.status == StatusCode 200 then Right (resp × url)
+              else acc
    )
-   (pure (Left (A.RequestFailedError)))
+   (Left base)
    collection
 
 loadFile' :: forall m. Array F.Folder -> F.File -> AffError m (F.File × String)

@@ -29,11 +29,19 @@ module.exports = function (config) {
             included: false,
             served: true,
             nocache: false
+         },
+         {
+            pattern: "./test/**/*.fld",
+            watched: true,
+            included: false,
+            served: true,
+            nocache: false,
          }
       ],
       frameworks: ["mocha"],
       proxies: {
-         "/fluid/": "/base/fluid/"
+         "/fluid/": "/base/fluid/",
+         "/test/lib/": "/base/test/lib/"
       },
       reporters: ["mocha"],
       singleRun: true

@@ -1,0 +1,1 @@
+let mkSentence strng = strng ++ ".";
