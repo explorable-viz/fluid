@@ -12,7 +12,7 @@ import Test.Util.Suite (TestLinkedOutputsSpec)
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
-        { fluidSrcPaths: [ Folder "test/fluid", Folder "fluid" ]
+        { fluidSrcPaths: [ Folder "fluid" ]
         , datasets: [ "renewables" ↦ "dataset/renewables" ]
         , imports: []
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
@@ -73,7 +73,7 @@ movingAverages_spec =
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
-          { fluidSrcPaths: [ Folder "fluid" ]
+          { fluidSrcPaths: [ Folder "test/fluid", Folder "fluid" ]
           , datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
@@ -113,5 +113,4 @@ linkedOutputs_cases =
    , linkedOutputs_spec1
    , linkedOutputs_spec2
    , movingAverages_spec
-   , multipleSrcPaths_test
    ]
