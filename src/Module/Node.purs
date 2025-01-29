@@ -35,7 +35,7 @@ loadFile folders (F.File file) = do
       Nothing -> error "Folder/File combo not found!"
       Just name -> liftAff $ readTextFile ASCII name
    where
-   exists :: F.File -> AffError m (Maybe String)
+   exists :: F.File -> m (Maybe String)
    exists (F.File url) = do
       stats <- liftAff $ stat url
       case isFile stats of

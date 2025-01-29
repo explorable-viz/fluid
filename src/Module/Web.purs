@@ -36,7 +36,7 @@ import SExpr (Expr) as S
 import Util (type (×), AffError, debug, (×))
 
 loadFile :: forall m. F.FileLoader m
-loadFile folders (F.File file)= do
+loadFile folders (F.File file) = do
    let urls = flip prependFolder (F.File $ file <> ".fld") <$> folders
    result <- runExceptT $ do
       (_ × (F.File url')) <- ExceptT $ liftAff $ findM' urls A.RequestFailedError $ \(F.File url) ->
