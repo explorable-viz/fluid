@@ -105,13 +105,13 @@ prependFolder (Folder folder) (File file) = File (folder <> "/" <> file)
 infixr 5 prependFolder as </>
 
 findM :: forall m f a b. Monad m => Foldable f => f a -> (a -> m (Maybe b)) ->  m (Maybe b)
-findM collection func = foldr
+findM xs f = foldr
    ( \a b -> do
-        result <- func a
+        result <- f a
         case result of
            Nothing -> b
            found -> pure found
    )
    (pure Nothing)
-   collection
+   xs
 

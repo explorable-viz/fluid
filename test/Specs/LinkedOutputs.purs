@@ -12,7 +12,7 @@ import Test.Util.Suite (TestLinkedOutputsSpec)
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
-        { fluidSrcPaths: [ Folder "fluid" ]
+        { fluidSrcPaths: [ Folder "test/fluid", Folder "fluid" ]
         , datasets: [ "renewables" ↦ "dataset/renewables" ]
         , imports: []
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
@@ -68,31 +68,6 @@ movingAverages_spec =
         }
    , δ_out: identity -- TODO: make this a non-trivial test
    , out_expect: identity
-   }
-
-multipleSrcPaths_test :: TestLinkedOutputsSpec
-multipleSrcPaths_test =
-   { spec:
-        { fluidSrcPaths: [ Folder "test/lib", Folder "fluid" ]
-        , datasets: [ "renewables" ↦ "dataset/renewables" ]
-        , imports: [ "test" ]
-        , file: File "slicing/linked-outputs/bar-chart-line-chart-2"
-        , inputs: [ "renewables" ]
-        }
-   , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
-   , out_expect:
-        multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
-           >>> multiViewEntry "lineChart"
-              ( lineChart
-                   ( dictVal f_plots
-                        ( listElement 0 (linePoint 2 (dictVal f_y neg))
-                             >>> listElement 1 (linePoint 2 (dictVal f_y neg))
-                             >>> listElement 2 (linePoint 2 (dictVal f_y neg))
-                             >>> listElement 3 (linePoint 2 (dictVal f_y neg))
-
-                        )
-                   )
-              )
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
