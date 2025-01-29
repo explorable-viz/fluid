@@ -9,7 +9,7 @@ import App.View.Util.Point (Point(..))
 import Bind ((⟼))
 import Data.Int (toNumber)
 import Data.Tuple (snd)
-import DataType (f_caption, f_points, f_xlabel, f_ylabel)
+import DataType (f_caption, f_points, f_labels)
 import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
@@ -21,8 +21,7 @@ import Val (Val)
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
    , points :: Array (Point Number)
-   , xlabel :: Selectable String
-   , ylabel :: Selectable String
+   , labels :: Point String
    }
 
 type ScatterPlotHelpers =
@@ -56,8 +55,7 @@ instance Reflect (Dict (SelState 𝕊 × Val (SelState 𝕊))) ScatterPlot where
    from r = ScatterPlot
       { caption: unpack string (snd (get f_caption r))
       , points: dict from <$> from (snd (get f_points r))
-      , xlabel: unpack string (snd (get f_xlabel r))
-      , ylabel: unpack string (snd (get f_ylabel r))
+      , labels: dict from (snd (get f_labels r))
       }
 
 type PointIndex = { i :: Int }

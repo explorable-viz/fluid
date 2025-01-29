@@ -7,7 +7,7 @@ import Data.Newtype (class Newtype)
 import Data.Tuple (snd)
 import DataType (f_x, f_y)
 import Dict (Dict)
-import Primitive (unpack)
+import Primitive (string, unpack)
 import Util (type (×))
 import Util.Map (get)
 import Val (Val)
@@ -24,6 +24,12 @@ instance Reflect (Dict (SelState 𝕊 × Val (SelState 𝕊))) (Point Number) wh
    from r = Point
       { x: get_intOrNumber f_x r
       , y: get_intOrNumber f_y r
+      }
+
+instance Reflect (Dict (SelState 𝕊 × Val (SelState 𝕊))) (Point String) where
+   from r = Point
+      { x: unpack string (snd (get f_x r))
+      , y: unpack string (snd (get f_y r))
       }
 
 instance Reflect (Dict (SelState 𝕊 × Val (SelState 𝕊))) (Point Orientation) where

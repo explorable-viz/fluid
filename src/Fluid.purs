@@ -89,9 +89,9 @@ dispatchCommand ∷ Command → Aff Unit
 dispatchCommand (Evaluate p) = do
    v <- (evaluate p)
    log (prettyP v)
-dispatchCommand (Publish (Folder website) b) = do -- Publish -> BundleWebsite?
+dispatchCommand (Publish (Folder website) b) = -- Publish -> BundleWebsite?
+
    void $ liftEffect $ publish website b
-   log "Published"
 
 copyOptions :: ExecOptions
 copyOptions =
@@ -125,7 +125,7 @@ main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
 callback :: Either Error Unit -> Effect Unit
 callback = case _ of
    Left err -> logShow err
-   Right _ -> log "Success"
+   Right _ -> pure unit
 
 evaluate :: Program -> Aff (Val Unit)
 evaluate (Program { imports, datasets, fileName }) = do
