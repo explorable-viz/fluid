@@ -26,7 +26,7 @@ view title (Val _ (Constr c (u : Nil))) _
    | c == cBarChart = pack (dict from u :: BarChart)
    | c == cLineChart = pack (dict from u :: LineChart)
    | c == cScatterPlot = pack (dict from u :: ScatterPlot)
-   | c == cParagraph = pack (from u :: Paragraph)
+   | c == cParagraph = pack (from u :: Paragraph (SelState 𝕊))
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> ((from u :: Dict (SelState 𝕊 × Val (SelState 𝕊))) # map snd)
