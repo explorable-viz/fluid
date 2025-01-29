@@ -32,7 +32,7 @@ loadFile folders (F.File file) = do
    let urls = flip prependFolder (F.File $ file <> ".fld") <$> folders
    url <- findM urls exists
    case url of
-      Nothing -> error "Folder/File combo not found!"
+      Nothing -> error $ "File " <> file <> " not found."
       Just name -> liftAff $ readTextFile ASCII name
    where
    exists :: F.File -> m (Maybe String)
