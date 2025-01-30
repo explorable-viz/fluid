@@ -1,5 +1,5 @@
 {
-    "fluidSrcPath": "../fluid",
+    "fluidSrcPath": ["../fluid"],
     "datasets": [["renewables", "dataset/renewables"]],
     "imports": [],
     "file": "example/linked-outputs/line-chart",

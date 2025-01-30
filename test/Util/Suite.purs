@@ -13,7 +13,7 @@ import Effect.Aff (Aff)
 import Lattice (botOf)
 import Module ((</>), File(..), Folder(..), FileLoader, loadProgCxt)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
-import Test.Util (checkEq, fluidSrcPath, test)
+import Test.Util (checkEq, fluidSrcPaths, test)
 import Test.Util.Debug (timing)
 import Util (type (×), (×))
 import Val (Val, Env)
@@ -62,7 +62,7 @@ suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
    asTest { imports, file, fwd_expect } = do
-      gconfig <- loadProgCxt { loadFile, fluidSrcPath } imports []
+      gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports []
       test loadFile (Folder "example" </> File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: FileLoader Aff -> Array TestBwdSpec -> BenchSuite
@@ -72,8 +72,8 @@ bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folde
 
    asTest :: TestBwdSpec -> Aff BenchRow
    asTest { imports, file, bwd_expect_file, δv, fwd_expect, datasets } = do
-      gconfig <- loadProgCxt { loadFile, fluidSrcPath } imports datasets
-      bwd_expect <- loadFile (Folder "fluid" <> testFolder) (folder </> File bwd_expect_file)
+      gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports datasets
+      bwd_expect <- loadFile [ (Folder "fluid" <> testFolder) ] (folder </> File bwd_expect_file)
       let filePath = (testFolder <> Folder "slicing") </> File file
       test loadFile filePath gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
@@ -82,7 +82,7 @@ withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
-      gconfig <- loadProgCxt { loadFile, fluidSrcPath } imports [ x ↦ dataset ]
+      gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports [ x ↦ dataset ]
       test loadFile (testFolder </> File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig

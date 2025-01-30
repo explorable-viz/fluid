@@ -36,12 +36,12 @@ type SelectionSpec =
    , bwd_expect :: String
    }
 
-fluidSrcPath :: Folder
-fluidSrcPath = Folder "fluid"
+fluidSrcPaths :: Array Folder
+fluidSrcPaths = [ Folder "fluid" ]
 
 test ∷ forall m. FileLoader m -> File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test loadFile file progCxt spec (n × _) = do
-   { s, gconfig } <- prepConfig { loadFile, fluidSrcPath } file progCxt
+   { s, gconfig } <- prepConfig { loadFile, fluidSrcPaths } file progCxt
    when debug.logging $ log ("**** initialConfig")
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))

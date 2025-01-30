@@ -17,7 +17,7 @@ import Module.Web (File(..), Folder(..), loadFile')
 import Util (error, (×))
 
 type JsonSpec =
-   { fluidSrcPath :: String
+   { fluidSrcPath :: Array String
    , datasets :: Array (Bind String)
    , imports :: Array String
    , file :: String
@@ -26,7 +26,7 @@ type JsonSpec =
 
 figSpecFromJson :: JsonSpec -> FigSpec
 figSpecFromJson spec =
-   { fluidSrcPath: Folder spec.fluidSrcPath
+   { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , datasets: spec.datasets
    , imports: spec.imports
    , file: File spec.file
@@ -49,5 +49,5 @@ loadFigure fileName = runAffs_ (uncurry drawFig)
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
-   [ loadFile' (Folder folder) (File file)
+   [ loadFile' [ Folder folder ] (File file)
    ]

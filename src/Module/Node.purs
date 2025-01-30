@@ -13,35 +13,44 @@ import Prelude
 
 import Bind (Bind)
 import Control.Monad.Except (class MonadError)
+import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Lattice (Raw)
-import Module (Config, initialConfig, parse)
+import Module (Config, initialConfig, parse, prependFolder)
 import Module (File(..), Folder(..), FileLoader) as F
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import Node.Encoding (Encoding(..))
-import Node.FS.Aff (readTextFile)
+import Node.FS.Aff (readTextFile, stat)
+import Node.FS.Stats (isFile)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
-import Util (AffError)
+import Util (AffError, error, findM)
 
 loadFile :: forall m. F.FileLoader m
-loadFile (F.Folder folder) (F.File file) = do
-   let url = folder <> "/" <> file <> ".fld"
-   buffer <- liftAff $ readTextFile UTF8 url
-   pure buffer
+loadFile folders (F.File file) = do
+   let urls = flip prependFolder (F.File $ file <> ".fld") <$> folders
+   url <- findM urls exists Nothing
+   case url of
+      Nothing -> error $ "File " <> file <> " not found."
+      Just name -> liftAff $ readTextFile ASCII name
+   where
+   exists :: F.File -> m (Maybe String)
+   exists (F.File url) = do
+      stats <- liftAff $ stat url
+      pure $ if isFile stats then Just url else Nothing
 
-parseProgram ∷ ∀ m. F.Folder -> F.File → AffError m (Raw S.Expr)
+parseProgram ∷ ∀ m. Array F.Folder -> F.File → AffError m (Raw S.Expr)
 parseProgram = M.parseProgram loadFile
 
-module_ :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> Raw ProgCxt -> m (Raw ProgCxt)
+module_ :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ = M.module_ loadFile
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => F.Folder -> Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs = M.datasetAs loadFile
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt fluidSrcPath = M.loadProgCxt { loadFile, fluidSrcPath }
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt fluidSrcPaths = M.loadProgCxt { loadFile, fluidSrcPaths }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => F.Folder -> F.File -> ProgCxt Unit -> m Config
-prepConfig fluidSrcPath = M.prepConfig { loadFile, fluidSrcPath }
+prepConfig :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> F.File -> ProgCxt Unit -> m Config
+prepConfig fluidSrcPaths = M.prepConfig { loadFile, fluidSrcPaths }

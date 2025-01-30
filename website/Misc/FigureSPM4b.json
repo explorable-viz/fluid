@@ -1,5 +1,5 @@
 {
-    "fluidSrcPath": "../fluid",
+    "fluidSrcPath": ["../fluid"],
     "datasets": [["likelihoods", "example/text-viz/likelihoods"], ["ssp119Source", "example/text-viz/left-barchart-table"], ["ssp245Source", "example/text-viz/right-barchart-table"]],
     "imports": [ "lib/text-viz" ],
     "file": "example/text-viz/figure-spm-4",

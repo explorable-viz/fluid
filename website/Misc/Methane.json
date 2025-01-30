@@ -1,5 +1,5 @@
 {
-    "fluidSrcPath": "../fluid",
+    "fluidSrcPath": ["../fluid"],
     "datasets": [["methane", "dataset/methane-emissions"]],
     "imports": [],
     "file": "example/plot/methane",

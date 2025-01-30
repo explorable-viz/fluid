@@ -3,9 +3,10 @@ module Util where
 import Prelude hiding (absurd)
 
 import Control.Apply (lift2)
+import Control.Alt ((<|>))
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
 import Control.Monad.Except (Except, ExceptT, runExcept)
-import Control.MonadPlus (class Alternative, guard)
+import Control.MonadPlus (class Alt, class Alternative, guard)
 import Data.Array ((!!), updateAt)
 import Data.Array as A
 import Data.Array.NonEmpty (NonEmptyArray, fromArray)
@@ -266,6 +267,21 @@ infixl 8 slipl as ~~$
 -- Haven't found this yet in PureScript
 concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a
 concatM = foldr (>=>) pure
+
+findM
+   :: forall m f a b t
+    . Alt t
+   => Monad m
+   => Foldable f
+   => f a
+   -> (a -> m (t b))
+   -> t b
+   -> m (t b)
+findM xs f base =
+   foldr step (pure base) xs
+   where
+   step :: a -> m (t b) -> m (t b)
+   step x acc = acc `lift2 (<|>)` f x
 
 infixr 7 Set.intersection as ∩
 infixl 4 Set.subset as ⊆

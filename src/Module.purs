@@ -34,27 +34,27 @@ import Util.Parse (SParser)
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. FileLoader m -> Folder -> File -> AffError m (Raw S.Expr)
-parseProgram loadFile folder file =
-   loadFile folder file >>= flip parse P.program
+parseProgram :: forall m. FileLoader m -> Array Folder -> File -> AffError m (Raw S.Expr)
+parseProgram loadFile folders file =
+   loadFile folders file >>= flip parse P.program
 
-module_ :: forall m. MonadAff m => MonadError Error m => FileLoader m -> Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ loadFile folder file (ProgCxt r@{ mods }) = do
-   when debug.logging $ log ("module_: " <> show (folder </> file))
-   src <- loadFile folder file
+module_ :: forall m. MonadAff m => MonadError Error m => FileLoader m -> Array Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
+module_ loadFile folders file (ProgCxt r@{ mods }) = do
+   when debug.logging $ log ("module_: " <> show (folders × file))
+   src <- loadFile folders file
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => FileLoader m -> Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
-datasetAs loadFile folder (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- parseProgram loadFile folder file >>= desug
+datasetAs :: forall m. MonadAff m => MonadError Error m => FileLoader m -> Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
+datasetAs loadFile folders (x ↦ file) (ProgCxt r@{ datasets }) = do
+   eα <- parseProgram loadFile folders file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => FileContext m -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt { loadFile, fluidSrcPath } mods datasets =
+loadProgCxt { loadFile, fluidSrcPaths } mods datasets =
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= concatM (File >>> (module_ loadFile fluidSrcPath) <$> [ "lib/prelude" ] <> mods)
-      >>= concatM (second File >>> (datasetAs loadFile fluidSrcPath) <$> datasets)
+      >>= concatM (File >>> module_ loadFile fluidSrcPaths <$> [ "lib/prelude" ] <> mods)
+      >>= concatM (second File >>> datasetAs loadFile fluidSrcPaths <$> datasets)
 
 initialConfig :: forall m a. MonadError Error m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
@@ -71,17 +71,17 @@ initialConfig e progCxt = do
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => FileContext m -> File -> Raw ProgCxt -> m Config
-prepConfig { loadFile, fluidSrcPath } file progCxt = do
-   s <- parseProgram loadFile fluidSrcPath file
+prepConfig { loadFile, fluidSrcPaths } file progCxt = do
+   s <- parseProgram loadFile fluidSrcPaths file
    e <- desug s
    gconfig <- initialConfig e progCxt
    pure { s, e, gconfig }
 
-type FileLoader m = Folder -> File -> AffError m String
+type FileLoader m = Array Folder -> File -> AffError m String
 
 type FileContext m =
    { loadFile :: FileLoader m
-   , fluidSrcPath :: Folder
+   , fluidSrcPaths :: Array Folder
    }
 
 newtype File = File String
