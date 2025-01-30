@@ -3,12 +3,9 @@ module Module where
 import Prelude
 
 import Bind (Bind, (↦))
-import Control.Apply (lift2)
 import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
-import Control.Plus (class Alt, (<|>))
 import Data.Bifunctor (lmap)
-import Data.Foldable (class Foldable, foldr)
 import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
