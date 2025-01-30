@@ -104,18 +104,3 @@ prependFolder :: Folder -> File -> File
 prependFolder (Folder folder) (File file) = File (folder <> "/" <> file)
 
 infixr 5 prependFolder as </>
-
-findM
-   :: forall m f a b t
-    . Alt t
-   => Monad m
-   => Foldable f
-   => f a
-   -> (a -> m (t b))
-   -> t b
-   -> m (t b)
-findM xs f base =
-   foldr step (pure base) xs
-   where
-   step :: a -> m (t b) -> m (t b)
-   step x acc = acc `lift2 (<|>)` f x

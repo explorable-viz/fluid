@@ -17,7 +17,7 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Lattice (Raw)
-import Module (Config, findM, initialConfig, parse, prependFolder)
+import Module (Config, initialConfig, parse, prependFolder)
 import Module (File(..), Folder(..), FileLoader) as F
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import Node.Encoding (Encoding(..))
@@ -25,7 +25,7 @@ import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
-import Util (AffError, error)
+import Util (AffError, error, findM)
 
 loadFile :: forall m. F.FileLoader m
 loadFile folders (F.File file) = do

@@ -28,12 +28,12 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import Lattice (Raw)
-import Module (Config, findM, initialConfig, parse, prependFolder)
+import Module (Config, initialConfig, parse, prependFolder)
 import Module (FileLoader, Folder(..), File(..)) as F
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
-import Util (type (×), AffError, debug, (×))
+import Util (type (×), (×), AffError, debug, findM)
 
 loadFile :: forall m. F.FileLoader m
 loadFile folders (F.File file) = do
