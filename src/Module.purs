@@ -5,10 +5,10 @@ import Prelude
 import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
+import Control.Plus (class Alt, (<|>))
 import Data.Bifunctor (lmap)
 import Data.Foldable (class Foldable, foldr)
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
@@ -104,14 +104,21 @@ prependFolder (Folder folder) (File file) = File (folder <> "/" <> file)
 
 infixr 5 prependFolder as </>
 
-findM :: forall m f a b. Monad m => Foldable f => f a -> (a -> m (Maybe b)) -> m (Maybe b)
-findM xs f = foldr
-   ( \a b -> do
-        result <- f a
-        case result of
-           Nothing -> b
-           found -> pure found
-   )
-   (pure Nothing)
-   xs
-
+findM
+   :: forall m f a b t
+    . Alt t
+   => Monad m
+   => Foldable f
+   => f a
+   -> (a -> m (t b))
+   -> t b
+   -> m (t b)
+findM xs f base =
+   foldr step (pure base) xs
+   where
+   step :: a -> m (t b) -> m (t b)
+   step x acc = do
+      result <- f x
+      acc' <- acc
+      let new = (acc' <|> result)
+      pure new

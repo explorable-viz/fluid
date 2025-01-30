@@ -37,7 +37,7 @@ type SelectionSpec =
    }
 
 fluidSrcPaths :: Array Folder
-fluidSrcPaths = [ Folder "fluid", Folder "test/lib" ]
+fluidSrcPaths = [ Folder "fluid" ]
 
 test ∷ forall m. FileLoader m -> File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test loadFile file progCxt spec (n × _) = do

@@ -21,14 +21,14 @@ import Bind (Bind)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT)
 import Data.Either (Either(..), either)
-import Data.Foldable (class Foldable, foldM)
 import Data.HTTP.Method (Method(..))
+import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import Lattice (Raw)
-import Module (Config, initialConfig, parse, prependFolder)
+import Module (Config, findM, initialConfig, parse, prependFolder)
 import Module (FileLoader, Folder(..), File(..)) as F
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import ProgCxt (ProgCxt)
@@ -39,25 +39,19 @@ loadFile :: forall m. F.FileLoader m
 loadFile folders (F.File file) = do
    let urls = flip prependFolder (F.File $ file <> ".fld") <$> folders
    result <- runExceptT $ do
-      (_ × (F.File url')) <- ExceptT $ liftAff $ findM' urls A.RequestFailedError $ \(F.File url) ->
-         request (defaultRequest { url = url, method = Left HEAD, responseFormat = string })
+      (_ × (url')) <- ExceptT $ liftAff $ findM urls checkUrl (Left A.RequestFailedError)
       when debug.logging $ liftAff $ log ("loadFile: resolved URL: " <> url')
       contents <- ExceptT $ liftAff $ request (defaultRequest { url = url', method = Left GET, responseFormat = string })
       pure contents.body
    either (throwError <<< E.error <<< printError) pure result
-
-findM' :: forall m f url err a. Monad m => Foldable f => f url -> err -> (url -> m (Either err (Response a))) -> m (Either err ((Response a) × url))
-findM' collection base func = foldM
-   ( \acc url -> case acc of
-        Right _ -> pure acc
-        Left _ -> do
-           result <- func url
-           pure $ result >>= \resp ->
-              if resp.status == StatusCode 200 then Right (resp × url)
-              else acc
-   )
-   (Left base)
-   collection
+   where
+   checkUrl :: F.File -> Aff (Either A.Error (Response String × String))
+   checkUrl (F.File url) = do
+      resp <- request (defaultRequest { url = url, method = Left HEAD, responseFormat = string })
+      pure case resp of
+         Right resp' | resp'.status == StatusCode 200 -> Right (resp' × url)
+         Right _ -> Left A.RequestFailedError
+         Left err -> Left err
 
 loadFile' :: forall m. Array F.Folder -> F.File -> AffError m (F.File × String)
 loadFile' folders file = (file × _) <$> loadFile folders file

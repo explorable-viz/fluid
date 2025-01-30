@@ -30,7 +30,7 @@ import Util (AffError, error)
 loadFile :: forall m. F.FileLoader m
 loadFile folders (F.File file) = do
    let urls = flip prependFolder (F.File $ file <> ".fld") <$> folders
-   url <- findM urls exists
+   url <- findM urls exists Nothing
    case url of
       Nothing -> error $ "File " <> file <> " not found."
       Just name -> liftAff $ readTextFile ASCII name
