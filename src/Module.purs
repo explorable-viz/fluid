@@ -3,6 +3,7 @@ module Module where
 import Prelude
 
 import Bind (Bind, (↦))
+import Control.Apply (lift2)
 import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
 import Control.Plus (class Alt, (<|>))
@@ -117,8 +118,4 @@ findM xs f base =
    foldr step (pure base) xs
    where
    step :: a -> m (t b) -> m (t b)
-   step x acc = do
-      result <- f x
-      acc' <- acc
-      let new = (acc' <|> result)
-      pure new
+   step x acc = acc `lift2 (<|>)` f x
