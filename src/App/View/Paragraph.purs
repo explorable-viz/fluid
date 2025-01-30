@@ -21,7 +21,7 @@ import Web.Event.EventTarget (EventListener)
 
 newtype Paragraph a = Paragraph (Array (TextFragment a))
 
-data TextFragment a = TextFragment (Selectable String) | Link (Val a) (Selectable String)
+data TextFragment a = TextFragment (Selectable String) | Link (Val a) String
 
 instance Drawable (Paragraph (SelState 𝕊)) where
    draw rSpec figVal _ redraw =
@@ -30,7 +30,7 @@ instance Drawable (Paragraph (SelState 𝕊)) where
       paragraphSelector :: ViewSelSetter ParagraphElem
       paragraphSelector { i } = paragraph <<< listElement i
 
-setSelState :: forall a. Paragraph a -> EventListener -> D3.Selection -> Effect Unit
+setSelState :: Paragraph (SelState 𝕊) -> EventListener -> D3.Selection -> Effect Unit
 setSelState (Paragraph elems) redraw rootElement = do
    elems' <- rootElement # selectAll ".text-fragment"
    for_ elems' \elem -> do
@@ -64,10 +64,10 @@ setSelState (Paragraph elems) redraw rootElement = do
          | isSecondary sel' && isTransient sel' = "royalblue"
          | otherwise = "black"
 
-getText :: forall a. Array (TextFragment a) -> Int -> Selectable String
+getText :: Array (TextFragment (SelState 𝕊)) -> Int -> Selectable String
 getText elems i = case elems ! i of
    TextFragment s -> s
-   Link _ s -> s
+   Link (Val α _) s -> (s × α)
 
 createRootElement :: Paragraph (SelState 𝕊) -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (Paragraph elems) div childId = do
@@ -94,7 +94,7 @@ textFragment :: ToFrom (TextFragment (SelState 𝕊)) (SelState 𝕊)
 textFragment =
    { pack: case _ of
         TextFragment (s × α) -> Constr cText ((Val α (Str s)) : Nil)
-        Link _v (s × α) -> Constr cText ((Val α (Str s)) : Nil)
+        Link (Val α _) s -> Constr cText ((Val α (Str s)) : Nil)
    , unpack: case _ of
         Constr c (Val α (Str s) : Nil) | c == cText -> TextFragment (s × α)
         v -> typeError v "TextFragment"
