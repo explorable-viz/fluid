@@ -25,7 +25,7 @@ let mkBarChart scenName table =
         stackedBars: map (fun record -> { x: record.type, bars: [ { y: "emissions", z: record.emissions } ]}) table
     };
 
-let getHeight bar offset = (head bar.bars).z + offset;
+let getHeight offset bar = (head bar.bars).z + offset;
 
 let ssp119 = mkBarChart "SSP1-1.9" ssp119Source;
     ssp245 = mkBarChart "SSP2-4.5" ssp245Source;
@@ -37,6 +37,7 @@ in MultiView {
     leftBarChart: ssp119,
     rightBarChart: ssp245,
     explanation:
-        Paragraph [ Text "Within each scenario bar plot, the bars represent: total warming ", Text (explainBars total "Total"),
-                     Text ", warming contributions from CO2 ", Text (explainBars co2 "CO2"), Text " and from non-CO2 GHG's ", Text (explainBars nonco2 "Non-CO2")]
+        Paragraph [ Text "Within each scenario bar plot, the bars represent:", Link total " total warming (°C; total bar)",
+                     Text ", warming contributions from CO2 ", Text (explainBars co2 "CO2"), Text " and from non-CO2 GHG's ", Text (explainBars nonco2 "Non-CO2")
+                  ]
 }

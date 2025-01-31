@@ -103,7 +103,7 @@ cPair = "Pair" :: Ctr -- Pair
 cNone = "None" :: Ctr -- Option
 cSome = "Some" :: Ctr
 cText = "Text" :: Ctr
-
+cLink = "Link" :: Ctr
 -- Field names used internally by rendering layer.
 f_bars = "bars" :: FieldName
 f_caption = "caption" :: FieldName
@@ -199,5 +199,6 @@ dataTypes = L.fromFoldable
         ]
    , dataType "TextFragment"
         [ cText × 1 -- Str (str)
+        , cLink × 2 --  Val v, Str (url)
         ]
    ]
