@@ -46,7 +46,7 @@ for CHILD in "${TO_COPY[@]}"; do
 done
 
 echo "Processing shared js files:"
-cp -r fluid/ dist/$WEBSITE_LISP_CASE
+cp -r fluid dist/$WEBSITE_LISP_CASE
 
 if [[ "$PREFIX" != "" ]]; then
    cp -r "${PREFIX:+$PREFIX/}dist/fluid/fluid" dist/$WEBSITE_LISP_CASE 
