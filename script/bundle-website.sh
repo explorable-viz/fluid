@@ -51,7 +51,7 @@ if [[ "$PREFIX" != "" ]]; then
 fi
 cp -r fluid/ dist/$WEBSITE_LISP_CASE
 cp -r "${PREFIX:+$PREFIX/}dist/fluid/shared" dist/$WEBSITE_LISP_CASE
-
+ls -laR dist/$WEBSITE_LISP_CASE
 
 if [[ -e "website/$SRC_PATH/test.mjs" ]]; then
    cp website/$SRC_PATH/test.mjs dist/SRC_PATH_LISP_CASE/test.mjs
