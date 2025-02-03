@@ -19,12 +19,12 @@ let realTable = newDataTable 0;
     ssp245 = getByScenario' "SSP2-4.5"
 in MultiView {
     explanation119:
-        LinkedText [ "Under the low GHG emissions scenario (SSP1-1.9), global warming of 2°C would ",
-                      probAsText (calcLikelihood ssp119.longRange 2.0), 
-                     " be exceeded at the end of the 21st century." ],
+        Paragraph [ Text "Under the low GHG emissions scenario (SSP1-1.9), global warming of 2°C would ",
+                      Text (probAsText (calcLikelihood ssp119.longRange 2.0)), 
+                     Text " be exceeded at the end of the 21st century." ],
     explanation245:
-        LinkedText [ "Under the intermediate GHG emissions scenario (SSP2-4.5), global warming of 2°C would ",
-                     probAsText (calcLikelihood ssp245.longRange 2.0),
-                     " be exceeded by the end of the 21st century. In the mid-term period (2041-2060)",
-                     " crossing the 2°C mark is ", probAsText (calcLikelihood ssp245.midRange 2.0), "to occur" ]
+        Paragraph [ Text "Under the intermediate GHG emissions scenario (SSP2-4.5), global warming of 2°C would ",
+                     Text (probAsText (calcLikelihood ssp245.longRange 2.0)),
+                     Text " be exceeded by the end of the 21st century. In the mid-term period (2041-2060)",
+                     Text " crossing the 2°C mark is ", Text (probAsText (calcLikelihood ssp245.midRange 2.0)), Text "to occur" ]
     }

@@ -2,7 +2,6 @@ module Lattice where
 
 import Prelude hiding (absurd, (-), join, top)
 
-import Control.Apply (lift2)
 import Data.Array (zipWith) as A
 import Data.Bifunctor (bimap)
 import Data.Foldable (length)
@@ -118,8 +117,6 @@ instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) wher
    meet (a × a') (b × b') = meet a b × meet a' b'
 else instance MeetSemilattice a => MeetSemilattice (Dict a) where
    meet = unionWith (∧) -- intersectionWith? in fact shouldn't we require equal domains?
-else instance (Functor f, Apply f, MeetSemilattice a) => MeetSemilattice (f a) where
-   meet = lift2 (∧)
 
 instance (BoundedJoinSemilattice a, BoundedJoinSemilattice b) => BoundedJoinSemilattice (a × b) where
    bot = bot × bot

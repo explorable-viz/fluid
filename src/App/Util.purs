@@ -3,7 +3,6 @@ module App.Util where
 import Prelude hiding (absurd, join)
 
 import Bind (Bind, Var, (↦))
-import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
 import Data.Either (Either(..))
@@ -25,7 +24,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class.Console (log)
 import Foreign.Object (Object, empty, fromFoldable, union)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∧), (∨))
 import Pretty (prettyP)
 import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
@@ -272,7 +271,25 @@ instance Apply SelState where
 
 instance JoinSemilattice a => JoinSemilattice (SelState a)
    where
-   join = lift2 (∨)
+   join s Inert = s
+   join Inert s = s
+   join (Reactive s) (Reactive s') =
+      Reactive { persistent: s.persistent ∨ s'.persistent, transient: s.transient ∨ s'.transient }
+
+instance MeetSemilattice a => MeetSemilattice (SelState a)
+   where
+   meet _ Inert = Inert
+   meet Inert _ = Inert
+   meet (Reactive s) (Reactive s') =
+      Reactive { persistent: s.persistent ∧ s'.persistent, transient: s.transient ∧ s'.transient }
+
+instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a)
+   where
+   bot = Inert
+
+instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelState a)
+   where
+   top = Reactive { persistent: top, transient: top }
 
 derive instance Eq a => Eq (SelState a)
 
