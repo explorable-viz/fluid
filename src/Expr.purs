@@ -14,10 +14,10 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), expand)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∨), (∧))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
-import Util.Pair (Pair(..))
 import Util.Map (keys, asMaplet)
+import Util.Pair (Pair(..))
 import Util.Set ((\\), (∪))
 
 -- Deviate from POPL paper by having closures depend on originating lambda or letrec
@@ -186,6 +186,9 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
    expand _ _ = shapeMismatch unit
+
+instance MeetSemilattice a => MeetSemilattice (Expr a) where
+   meet = lift2 (∧)
 
 -- ======================
 -- boilerplate
