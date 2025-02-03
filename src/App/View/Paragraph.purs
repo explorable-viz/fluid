@@ -38,12 +38,7 @@ selTextFragment { i } = fragment >>> listElement i >>> paragraph
    fragment :: SelSetter Val Val
    fragment δv = unsafePartial $ case _ of
       Val α (Constr c (v : Nil)) | c == cText -> Val α (Constr c (δv v : Nil)) -- Text
-      Val α (Constr c (v1 : v2 : Nil)) | c == cLink ->
-         let
-            v2'@(Val α' _) = δv v2
-            v1' = map (const α') v1
-         in
-            Val α (Constr c (v1' : v2' : Nil))
+      Val α (Constr c (v1 : v2 : Nil)) | c == cLink -> Val α (Constr c (δv v1 : v2 : Nil))
 
 getText :: Array (TextFragment (SelState 𝕊)) -> Int -> Selectable String
 getText elems i = case elems ! i of

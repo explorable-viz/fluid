@@ -264,7 +264,7 @@ instance Show a => Show (SelState a) where
    show = genericShow
 
 instance Apply SelState where
-   apply Inert _ = Inert
+   apply Inert Inert = Inert
    apply (Reactive fs) (Reactive s) =
       Reactive { persistent: fs.persistent s.persistent, transient: fs.transient s.transient }
    apply _ _ = shapeMismatch unit
