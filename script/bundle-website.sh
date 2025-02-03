@@ -13,7 +13,7 @@ done
 WEBSITE_LISP_CASE=$(./$PREFIX/script/util/lisp-case.sh "$WEBSITE")
 echo "$WEBSITE -> $WEBSITE_LISP_CASE"
 echo "Cleaning dist/$WEBSITE_LISP_CASE"
-. "${PREFIX:+$PREFIX}script/util/clean.sh" $WEBSITE_LISP_CASE
+. "${PREFIX:+$PREFIX/}script/util/clean.sh" $WEBSITE_LISP_CASE
 
 . "${PREFIX:+$PREFIX/}script/bundle-page.sh" $WEBSITE ${PREFIX:+$PREFIX}
 
