@@ -1,22 +1,6 @@
-let getByX x table = fromSome (findWithKey "x" x table);
-
-let referToBar bar = "the bar representing scenario " ++ bar.x ++ " has a z value of " ++ (numToStr (head bar.bars).z);
-
 let stackedBarHeight stackedBar = sum [ bar.z | bar <- stackedBar.bars ];
 
-let getTotal (BarChart record) = fromSome (findWithKey "x" "Total" record.stackedBars);
-let getCO2 (BarChart record)= fromSome (findWithKey "x" "CO2" record.stackedBars);
-let getNonCO2 (BarChart record) = fromSome (findWithKey "x" "Non-CO2" record.stackedBars);
-
-
-let barHeight (BarChart bc) x =
-    let bar = fromSome (findWithKey "x" x bc.stackedBars)
-    in sum [ segment.z | segment <- bar.bars ];
-
-let explainBars bars x = 
-    if length bars == length (filter (fun bar -> bar.x == x) bars)
-    then "(°C; " ++ x ++ " bar)"
-    else error "absurd";
+let get x (BarChart record) = (fromSome (findWithKey "x" x record.stackedBars));
 
 let mkBarChart scenName table = 
     BarChart {
@@ -29,15 +13,15 @@ let getHeight offset bar = (head bar.bars).z + offset;
 
 let ssp119 = mkBarChart "SSP1-1.9" ssp119Source;
     ssp245 = mkBarChart "SSP2-4.5" ssp245Source;
-    total = map getTotal [ssp119, ssp245];
-    co2 = map getCO2 [ssp119, ssp245];
-    nonco2 = map getNonCO2 [ssp119, ssp245];
+    total = map (get "Total") [ssp119, ssp245];
+    co2 = map (get "CO2") [ssp119, ssp245];
+    nonco2 = map (get "Non-CO2") [ssp119, ssp245];
     meanTotal = (sum (map stackedBarHeight total)) / (length total)
 in MultiView {
     leftBarChart: ssp119,
     rightBarChart: ssp245,
     explanation:
-        Paragraph [ Text "Within each scenario bar plot, the bars represent:", Link total " total warming (°C; total bar)",
-                     Text ", warming contributions from CO2 ", Text (explainBars co2 "CO2"), Text " and from non-CO2 GHG's ", Text (explainBars nonco2 "Non-CO2")
+        Paragraph [ Text "Within each scenario bar plot, the bars represent:", Link (map stackedBarHeight total) " total warming (°C)",
+                     Text ", warming contributions from CO2 ", Link (map stackedBarHeight co2) " warming from CO2 (°C) ", Text " and from ", Link (map stackedBarHeight nonco2) " Non-CO2 GHG's (°C)."
                   ]
 }
