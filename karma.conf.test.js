@@ -39,6 +39,7 @@ module.exports = function (config) {
          }
       ],
       frameworks: ["mocha"],
+      logLevel: config.LOG_ERROR,
       proxies: {
          "/fluid/": "/base/fluid/",
          "/test/fluid/": "/base/test/fluid/"
