@@ -18,7 +18,7 @@ if [[ ! -f "$WEBTEST_EXECUTABLE" ]]; then
     exit 1
 fi
 
-if [[ $(head -n 1 "$WEBTEST-EXECUTABLE") != "$SHEBANG" ]]; then
+if [[ $(head -n 1 "$WEBTEST_EXECUTABLE") != "$SHEBANG" ]]; then
     { echo "$SHEBANG"; cat "$WEBTEST_EXECUTABLE"; }  > "$WEBTEST_EXECUTABLE.tmp" && mv "$WEBTEST_EXECUTABLE.tmp" "$WEBTEST_EXECUTABLE"
 fi
 
