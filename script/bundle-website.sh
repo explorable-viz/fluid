@@ -22,16 +22,18 @@ echo "Cleaning dist/$WEBSITE_LISP_CASE"
 shopt -s nullglob
 
 # Only support one level of nesting for now
+set +x
 PAGES=($(for FILE in website/$WEBSITE/*.html; do
    basename "$FILE" | sed 's/\.[^.]*$//'
 done | sort -u))
+set -x
 
 for PAGE in "${PAGES[@]}"; do
    . "${PREFIX_}script/bundle-page.sh" $WEBSITE.$PAGE ${PREFIX:+$PREFIX}
 done
 
 echo "Processing other static files:"
-set +u  # try to remove +u
+set +xu  # try to remove +u
 TO_COPY=()
 shopt -s extglob
 for CHILD in website/$WEBSITE/!(.|..); do
@@ -41,7 +43,7 @@ for CHILD in website/$WEBSITE/!(.|..); do
    fi
 done
 shopt -u extglob
-set -u
+set -xu
 
 for CHILD in "${TO_COPY[@]}"; do
    cp -rL "$CHILD" dist/$WEBSITE_LISP_CASE
