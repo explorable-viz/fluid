@@ -116,7 +116,7 @@ publish website package =
          Just err -> logShow err
          Nothing -> log =<< toString ASCII stdout
    where
-   cmd = "." <> if package then prefix else "" <> "/script/bundle-website.sh -w " <> website
+   cmd = "." <> if package then fluidLibraryPath else "" <> "/script/bundle-website.sh -w " <> website
 
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
@@ -128,12 +128,12 @@ callback = case _ of
    Left err -> logShow err
    Right _ -> pure unit
 
-prefix :: String
-prefix = "node_modules/@explorable-viz/fluid"
+fluidLibraryPath :: String
+fluidLibraryPath = "node_modules/@explorable-viz/fluid"
 
 evaluate :: Program -> Aff (Val Unit)
 evaluate (Program { library, imports, datasets, fileName }) = do
-   let fluidSrcPaths = [ Folder "fluid" ] <> if library then [ Folder prefix ] else []
+   let fluidSrcPaths = [ Folder "fluid" ] <> if library then [ Folder fluidLibraryPath ] else []
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
    { e, gconfig } <- prepConfig fluidSrcPaths (File fileName) progCxt
    { outα } <- graphEval gconfig e
