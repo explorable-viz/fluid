@@ -10,11 +10,14 @@ while getopts "w:r:" opt; do
    esac
 done
 
+PREFIX_=${PREFIX:+$PREFIX/}
+
 WEBSITE_LISP_CASE=$(./$PREFIX/script/util/lisp-case.sh "$WEBSITE")
 echo "$WEBSITE -> $WEBSITE_LISP_CASE"
-mkdir -p "dist/$WEBSITE_LISP_CASE"
+echo "Cleaning dist/$WEBSITE_LISP_CASE"
+. "${PREFIX_}script/util/clean.sh" $WEBSITE_LISP_CASE
 
-. "${PREFIX:+$PREFIX/}script/bundle-page.sh" $WEBSITE ${PREFIX:+$PREFIX}
+. "${PREFIX_}script/bundle-page.sh" $WEBSITE ${PREFIX:+$PREFIX}
 
 shopt -s nullglob
 
@@ -26,7 +29,7 @@ done | sort -u))
 set -x
 
 for PAGE in "${PAGES[@]}"; do
-   . "${PREFIX:+$PREFIX/}script/bundle-page.sh" $WEBSITE.$PAGE ${PREFIX:+$PREFIX}
+   . "${PREFIX_}script/bundle-page.sh" $WEBSITE.$PAGE ${PREFIX:+$PREFIX}
 done
 
 echo "Processing other static files:"
@@ -47,8 +50,12 @@ for CHILD in "${TO_COPY[@]}"; do
 done
 
 echo "Processing shared js files:"
-cp -r "${PREFIX:+$PREFIX/}dist/fluid/shared" dist/$WEBSITE_LISP_CASE
 cp -r fluid dist/$WEBSITE_LISP_CASE
+
+if [[ "$PREFIX" != "" ]]; then
+   cp -r "${PREFIX_}dist/fluid/fluid" dist/$WEBSITE_LISP_CASE
+fi
+cp -r "${PREFIX_}dist/fluid/shared" dist/$WEBSITE_LISP_CASE
 
 if [[ -e "website/$SRC_PATH/test.mjs" ]]; then
    cp website/$SRC_PATH/test.mjs dist/SRC_PATH_LISP_CASE/test.mjs
