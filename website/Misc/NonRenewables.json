@@ -2,6 +2,6 @@
     "fluidSrcPath": ["../fluid"],
     "datasets": [["renewables", "dataset/renewables-new"], ["nonRenewables", "dataset/non-renewables"]],
     "imports": [],
-    "file": "example/plot/non-renewables",
+    "file": "plot/non-renewables",
     "inputs": ["nonRenewables"]
 }
