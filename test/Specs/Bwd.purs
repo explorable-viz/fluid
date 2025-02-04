@@ -15,8 +15,8 @@ bwd_cases =
    , { file: "convolution/edgeDetect"
      , imports:
           [ "lib/convolution"
-          , "example/slicing/convolution/filter/edge-detect"
-          , "example/slicing/convolution/test-image"
+          , "slicing/convolution/filter/edge-detect"
+          , "slicing/convolution/test-image"
           ]
      , bwd_expect_file: "convolution/edgeDetect.expect"
      , δv: matrixElement 1 1 neg
@@ -31,8 +31,8 @@ bwd_cases =
    , { file: "convolution/emboss"
      , imports:
           [ "lib/convolution"
-          , "example/slicing/convolution/filter/emboss"
-          , "example/slicing/convolution/test-image"
+          , "slicing/convolution/filter/emboss"
+          , "slicing/convolution/test-image"
           ]
      , bwd_expect_file: "convolution/emboss.expect"
      , δv: matrixElement 1 1 neg
@@ -47,8 +47,8 @@ bwd_cases =
    , { file: "convolution/gaussian"
      , imports:
           [ "lib/convolution"
-          , "example/slicing/convolution/filter/gaussian"
-          , "example/slicing/convolution/test-image"
+          , "slicing/convolution/filter/gaussian"
+          , "slicing/convolution/test-image"
           ]
      , bwd_expect_file: "convolution/gaussian.expect"
      , δv: matrixElement 1 1 neg
