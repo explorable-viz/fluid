@@ -4,8 +4,7 @@ set -xe
 FLUID_EXECUTABLE="dist/fluid/shared/fluid.mjs"
 
 yarn purs-backend-es bundle-app --main Fluid --to $FLUID_EXECUTABLE --platform=node
-yarn purs-backend-es bundle-app --main Test.Fluid --to dist/test/fluid/fluid.mjs --platform=node
-
+``
 SHEBANG="#!/usr/bin/env node"
 
 if [[ ! -f "$FLUID_EXECUTABLE" ]]; then
