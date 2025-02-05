@@ -3,7 +3,7 @@ set -xeu
 
 PREFIX=""
 
-while getopts "w:r:" opt; do
+while getopts "w:r" opt; do
    case $opt in
       w) WEBSITE="$OPTARG";;
       r) PREFIX=node_modules/@explorable-viz/fluid;;
