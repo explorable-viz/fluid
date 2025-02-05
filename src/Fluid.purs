@@ -110,13 +110,13 @@ copyOptions =
 
 -- TODO: rename to bundleWebsite?
 publish ∷ String -> Boolean -> Effect ChildProcess
-publish website package =
+publish website library =
    exec cmd copyOptions \{ error, stdout } ->
       case error of
          Just err -> logShow err
          Nothing -> log =<< toString ASCII stdout
    where
-   cmd = "." <> if package then fluidLibraryPath else "" <> "/script/bundle-website.sh -w " <> website
+   cmd = "./" <> if library then fluidLibraryPath else "" <> "script/bundle-website.sh -w " <> website
 
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
