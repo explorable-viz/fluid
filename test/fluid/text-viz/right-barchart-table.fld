@@ -1,5 +1,0 @@
-[
-    { type: "Total", emissions: 2.7 },
-    { type: "CO2", emissions: 2.1 },
-    { type: "Non-CO2", emissions: 0.6 }
-]

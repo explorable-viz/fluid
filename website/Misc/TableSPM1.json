@@ -1,7 +1,0 @@
-{
-    "fluidSrcPath": ["../fluid"],
-    "datasets": [["tableData", "text-viz/explainable-table"], ["likelihoods", "text-viz/likelihoods"]],
-    "imports": [ "lib/text-viz" ],
-    "file": "text-viz/table-spm-1",
-    "inputs": ["tableData", "likelihoods"]
-}
