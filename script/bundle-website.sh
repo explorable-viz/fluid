@@ -48,11 +48,12 @@ for CHILD in "${TO_COPY[@]}"; do
    cp -rL "$CHILD" dist/$WEBSITE_LISP_CASE
 done
 
-echo "Processing shared js files:"
+echo "Processing Fluid source files:"
 cp -r fluid dist/$WEBSITE_LISP_CASE
-
-cp -r "${PREFIX_}dist/fluid/shared" dist/$WEBSITE_LISP_CASE
 [ -d "website/$WEBSITE/fluid" ] && cp -r "website/$WEBSITE/fluid" dist/$WEBSITE_LISP_CASE
+
+echo "Processing shared JavaScript files:"
+cp -r "${PREFIX_}dist/fluid/shared" dist/$WEBSITE_LISP_CASE
 
 if [[ -e "website/$SRC_PATH/test.mjs" ]]; then
    cp website/$SRC_PATH/test.mjs dist/SRC_PATH_LISP_CASE/test.mjs
