@@ -18,7 +18,8 @@ main = do
 testFluid :: Aff Unit
 testFluid = do
    outα <- evaluate $ Program
-      { imports: []
+      { library: false
+      , imports: []
       , datasets: []
       , fileName: "length"
       }

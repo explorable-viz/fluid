@@ -26,7 +26,8 @@ import Util (Endo)
 import Val (Val)
 
 data Program = Program
-   { imports :: Array String
+   { library :: Boolean
+   , imports :: Array String
    , datasets :: Array (Bind String)
    , fileName :: String
    }
@@ -67,10 +68,11 @@ parseImports =
 
 program :: Parser Program
 program = ado
+   library <- switch (long "library" <> short 'l' <> help "Are you running fluid as a library?")
    imports <- fromFoldable <$> parseImports
    datasets <- fromFoldable <$> parseDatasets
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
-   in Program { imports, datasets, fileName }
+   in Program { library, imports, datasets, fileName }
 
 commands :: { publish :: Parser Command, evaluate :: Parser Command }
 commands =
@@ -114,8 +116,7 @@ publish website package =
          Just err -> logShow err
          Nothing -> log =<< toString ASCII stdout
    where
-   cmd = if package then "./node_modules/@explorable-viz/fluid" <> cmd' <> " -r true" else "." <> cmd'
-   cmd' = "/script/bundle-website.sh -w " <> website
+   cmd = "." <> if package then fluidLibraryPath else "" <> "/script/bundle-website.sh -w " <> website
 
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
@@ -127,9 +128,12 @@ callback = case _ of
    Left err -> logShow err
    Right _ -> pure unit
 
+fluidLibraryPath :: String
+fluidLibraryPath = "node_modules/@explorable-viz/fluid"
+
 evaluate :: Program -> Aff (Val Unit)
-evaluate (Program { imports, datasets, fileName }) = do
-   let fluidSrcPaths = [ Folder "fluid" ]
+evaluate (Program { library, imports, datasets, fileName }) = do
+   let fluidSrcPaths = [ Folder "fluid" ] <> if library then [ Folder fluidLibraryPath ] else []
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
    { e, gconfig } <- prepConfig fluidSrcPaths (File fileName) progCxt
    { outα } <- graphEval gconfig e
