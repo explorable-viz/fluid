@@ -11,8 +11,6 @@ while getopts "w:r" opt; do
 done
 
 PREFIX_=${PREFIX:+$PREFIX/}
-pwd
-ls -la script/util/lisp-case.sh
 WEBSITE_LISP_CASE=$(. "${PREFIX_}script/util/lisp-case.sh" "$WEBSITE")
 echo "$WEBSITE -> $WEBSITE_LISP_CASE"
 echo "Cleaning dist/$WEBSITE_LISP_CASE"
