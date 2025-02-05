@@ -116,7 +116,11 @@ publish website library =
          Just err -> logShow err
          Nothing -> log =<< toString ASCII stdout
    where
-   cmd = "." <> (if library then "/" <> fluidLibraryPath else "") <> "/script/bundle-website.sh -w " <> website
+   cmd = "."
+      <> (if library then "/" <> fluidLibraryPath else "")
+      <> "/script/bundle-website.sh -w "
+      <> website
+      <> if library then " -r" else ""
 
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
