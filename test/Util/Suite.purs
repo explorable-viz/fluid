@@ -74,8 +74,7 @@ bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folde
    asTest { imports, file, bwd_expect_file, δv, fwd_expect, datasets } = do
       gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports datasets
       bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
-      let filePath = (Folder "slicing") </> File file
-      test loadFile filePath gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
+      test loadFile (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetSuite :: FileLoader Aff -> Array TestWithDatasetSpec -> BenchSuite
 withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
