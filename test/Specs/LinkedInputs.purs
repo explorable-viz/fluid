@@ -4,6 +4,7 @@ import Prelude
 
 import App.Util.Selector (dictVal, envVal, listElement)
 import Bind ((↦))
+import Data.Maybe (Maybe(..))
 import Lattice (neg)
 import Module.Web (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedInputsSpec)
@@ -19,6 +20,7 @@ linkedInputs_spec3 =
              ]
         , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
+        , traceTransform: Nothing
         }
    , δ_in: "nonRenewables" ↦ listElement 51 (dictVal "coalCap" neg)
    , in_expect:
@@ -42,6 +44,7 @@ linkedInputs_spec4 =
              ]
         , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
+        , traceTransform: Nothing
         }
    , δ_in: "renewables" ↦ listElement 204 (dictVal "capacity" neg)
    , in_expect:
@@ -73,6 +76,7 @@ linkedInputs_spec5 =
              , "renewables" ↦ "dataset/mini-renewables"
              ]
         , inputs: [ "nonRenewables", "renewables" ]
+        , traceTransform: Nothing
         }
    , δ_in: "nonRenewables" ↦ listElement 0 (dictVal "coalCap" neg)
    , in_expect:
