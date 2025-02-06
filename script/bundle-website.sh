@@ -3,7 +3,7 @@ set -xeu
 
 PREFIX=""
 
-while getopts "w:r:" opt; do
+while getopts "w:r" opt; do
    case $opt in
       w) WEBSITE="$OPTARG";;
       r) PREFIX=node_modules/@explorable-viz/fluid;;
@@ -11,8 +11,7 @@ while getopts "w:r:" opt; do
 done
 
 PREFIX_=${PREFIX:+$PREFIX/}
-
-WEBSITE_LISP_CASE=$(./$PREFIX/script/util/lisp-case.sh "$WEBSITE")
+WEBSITE_LISP_CASE=$(. "${PREFIX_}script/util/lisp-case.sh" "$WEBSITE")
 echo "$WEBSITE -> $WEBSITE_LISP_CASE"
 echo "Cleaning dist/$WEBSITE_LISP_CASE"
 . "${PREFIX_}script/util/clean.sh" $WEBSITE_LISP_CASE
@@ -49,12 +48,11 @@ for CHILD in "${TO_COPY[@]}"; do
    cp -rL "$CHILD" dist/$WEBSITE_LISP_CASE
 done
 
-echo "Processing shared js files:"
+echo "Processing Fluid source files:"
 cp -r fluid dist/$WEBSITE_LISP_CASE
+[ -d "website/$WEBSITE/fluid" ] && cp -r "website/$WEBSITE/fluid" dist/$WEBSITE_LISP_CASE
 
-if [[ "$PREFIX" != "" ]]; then
-   cp -r "${PREFIX_}dist/fluid/fluid" dist/$WEBSITE_LISP_CASE
-fi
+echo "Processing shared JavaScript files:"
 cp -r "${PREFIX_}dist/fluid/shared" dist/$WEBSITE_LISP_CASE
 
 if [[ -e "website/$SRC_PATH/test.mjs" ]]; then

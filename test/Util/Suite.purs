@@ -54,8 +54,8 @@ type TestLinkedInputsSpec =
    , in_expect :: Selector Env
    }
 
-testFolder :: Folder
-testFolder = Folder "example"
+-- testFolder :: Folder
+-- testFolder = Folder ""
 
 suite :: FileLoader Aff -> Array TestSpec -> BenchSuite
 suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
@@ -63,7 +63,7 @@ suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    asTest :: TestSpec -> Aff BenchRow
    asTest { imports, file, fwd_expect } = do
       gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports []
-      test loadFile (Folder "example" </> File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
+      test loadFile (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: FileLoader Aff -> Array TestBwdSpec -> BenchSuite
 bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
@@ -73,9 +73,8 @@ bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folde
    asTest :: TestBwdSpec -> Aff BenchRow
    asTest { imports, file, bwd_expect_file, δv, fwd_expect, datasets } = do
       gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports datasets
-      bwd_expect <- loadFile [ (Folder "fluid" <> testFolder) ] (folder </> File bwd_expect_file)
-      let filePath = (testFolder <> Folder "slicing") </> File file
-      test loadFile filePath gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
+      bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
+      test loadFile (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetSuite :: FileLoader Aff -> Array TestWithDatasetSpec -> BenchSuite
 withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
@@ -83,11 +82,11 @@ withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
       gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports [ x ↦ dataset ]
-      test loadFile (testFolder </> File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
+      test loadFile (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
-   fig <- loadFig (spec { file = testFolder </> spec.file }) <#> selectOutput δ_out
+   fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (fst (selectionResult fig))
    checkEq "selected" "expected" (selState <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (out_expect (botOf <$> v))
@@ -100,7 +99,7 @@ linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
-   fig <- loadFig (spec { file = testFolder </> spec.file }) <#> uncurry selectInput δ_in
+   fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (snd (selectionResult fig))
    checkEq "selected" "expected" (selState <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (in_expect (botOf <$> γ))

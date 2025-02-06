@@ -29,7 +29,7 @@ scratchpad :: TestSuite
 scratchpad = linkedOutputsSuite
    [ { spec:
           { fluidSrcPaths: [ Folder "test/fluid", Folder "fluid" ]
-          , datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
+          , datasets: [ "data" ↦ "linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]

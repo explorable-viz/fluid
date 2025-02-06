@@ -1,6 +1,6 @@
 {
     "fluidSrcPath": ["../fluid"],
-    "file": "example/linked-outputs/moving-average",
+    "file": "moving-average",
     "imports": [],
     "inputs": ["methane"],
     "datasets": [["methane", "dataset/methane-emissions"]]
