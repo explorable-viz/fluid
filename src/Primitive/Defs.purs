@@ -142,7 +142,7 @@ matrixLookup =
    fwd _ = throw "Matrix and pair of integers expected"
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int))
-   bwd ((r × (i × j)) × (v@(Val α _))) =
+   bwd ((r × (i × j)) × v@(Val α _)) =
       Val α (Matrix (matrixPut i j (const v) (botOf r)))
          : Val bot (Constr cPair (Val bot (Int i) : Val bot (Int j) : Nil))
          : Nil
