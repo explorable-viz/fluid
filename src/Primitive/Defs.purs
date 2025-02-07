@@ -136,9 +136,9 @@ matrixLookup =
    fwd :: OpFwd (Raw MatrixRep × (Int × Int))
    fwd (Val α (Matrix r) : Val _ (Constr c (Val _ (Int i) : Val _ (Int j) : Nil)) : Nil) | c == cPair =
       let
-         (Val α' v) = matrixGet i j r
+         (Val _ v) = matrixGet i j r
       in
-         pure $ (erase r × (i × j)) × (Val (α ∧ α') v)
+         pure $ (erase r × (i × j)) × (Val α v)
    fwd _ = throw "Matrix and pair of integers expected"
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int))
