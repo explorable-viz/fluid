@@ -4,7 +4,6 @@ import Prelude
 
 import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd)
 import Bind ((↦))
-import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_y)
 import Lattice (neg)
 import Module.Web (File(..), Folder(..))
@@ -18,7 +17,6 @@ linkedOutputs_spec1 =
         , imports: []
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
-        , traceTransform: Nothing
         }
    , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
    , out_expect:
@@ -47,7 +45,6 @@ linkedOutputs_spec2 =
         , imports: []
         , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
-        , traceTransform: Nothing
         }
    , δ_out: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 neg >>> barSegment 4 1 neg >>> barSegment 4 3 neg))
    , out_expect:
@@ -68,7 +65,6 @@ movingAverages_spec =
         , imports: []
         , file: File "linked-outputs/moving-average"
         , inputs: [ "methane" ]
-        , traceTransform: Nothing
         }
    , δ_out: identity -- TODO: make this a non-trivial test
    , out_expect: identity
@@ -82,7 +78,6 @@ linkedOutputs_cases =
           , imports: []
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
-          , traceTransform: Nothing
           }
      , δ_out: snd neg
      , out_expect: neg
@@ -93,7 +88,6 @@ linkedOutputs_cases =
           , imports: [ "lib/convolution" ]
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
-          , traceTransform: Nothing
           }
      , δ_out: fst (matrixElement 2 2 neg)
      , out_expect:

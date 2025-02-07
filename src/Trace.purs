@@ -36,8 +36,6 @@ data AppTrace
 data ForeignTrace' t = ForeignTrace' (ForeignOp' t) (Maybe t)
 newtype ForeignTrace = ForeignTrace (String × Exists ForeignTrace')
 
-type TraceTransformer a = Trace -> Val a
-
 data VarDef = VarDef Match Trace
 
 data Match

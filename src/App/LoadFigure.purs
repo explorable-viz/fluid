@@ -11,7 +11,6 @@ import App.View.Util (FigSpec)
 import Bind (Bind)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Module.Web (File(..), Folder(..), loadFile')
@@ -32,7 +31,6 @@ figSpecFromJson spec =
    , imports: spec.imports
    , file: File spec.file
    , inputs: spec.inputs
-   , traceTransform: Nothing
    }
 
 loadFigure :: String -> Effect Unit
