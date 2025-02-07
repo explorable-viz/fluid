@@ -9,7 +9,7 @@ import Data.Graph as G
 import Data.List (List(..), reverse, (:))
 import Data.List as L
 import Data.Map as M
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
@@ -22,9 +22,9 @@ import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
 import Test.Util.Debug (checking)
-import Util (type (×), assertWhen, definitely, isEmpty, singleton, (×))
+import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, toUnfoldable)
-import Util.Set (empty, size, (∪))
+import Util.Set (empty, size)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap = Dict (Set Vertex)
@@ -121,19 +121,14 @@ outMap αs es = do
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : es') × acc) = do
-      βs' <- OST.peek α acc
-      let
-         βs'' = case βs' of
-            Nothing -> βs
-            Just foundβs -> foundβs ∪ βs
-      -- if ok then do
-      let βs'uf = Set.toUnfoldable βs''
-      tailRecM (assertPresent acc) βs'uf
-      acc' <- OST.poke α βs'' acc >>= addIfMissing' βs'uf
-      pure $ Loop (es' × acc')
-
--- else
--- error $ "Duplicate edge list entry for " <> show α
+      ok <- OST.peek α acc <#> maybe true (_ == mempty)
+      if ok then do
+         let βs' = Set.toUnfoldable βs
+         tailRecM (assertPresent acc) βs'
+         acc' <- OST.poke α βs acc >>= addIfMissing' βs'
+         pure $ Loop (es' × acc')
+      else
+         error $ "Duplicate edge list entry for " <> show α
 
 inMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
 inMap αs es = do

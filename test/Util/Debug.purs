@@ -36,7 +36,7 @@ checking
 checking =
    { edgeListGC: true
    , edgeListSorted: true
-   , inputsAreSinks: false
+   , inputsAreSinks: true
    , outputsInGraph: true
    , allocRoundTrip: false
    }

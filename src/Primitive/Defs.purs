@@ -22,7 +22,7 @@ import Dict (fromFoldable) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
-import Graph.WithGraph (extend, new)
+import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, (∧), (∨))
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
@@ -127,23 +127,18 @@ matrixLookup =
    ForeignOp ("!" × mkExists (ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }))
    where
    op :: OpGraph
-   op (Val α' (Matrix r) : Val _ (Constr c (Val _ (Int i) : Val _ (Int j) : Nil)) : Nil) | c == cPair = do
-      let v@(Val α _) = matrixGet i j r
-      extend α (singleton α')
-      pure v
+   op (Val _ (Matrix r) : Val _ (Constr c (Val _ (Int i) : Val _ (Int j) : Nil)) : Nil) | c == cPair =
+      pure $ matrixGet i j r
    op _ = throw "Matrix and pair of integers expected"
 
    fwd :: OpFwd (Raw MatrixRep × (Int × Int))
-   fwd (Val α (Matrix r) : Val _ (Constr c (Val _ (Int i) : Val _ (Int j) : Nil)) : Nil) | c == cPair =
-      let
-         (Val _ v) = matrixGet i j r
-      in
-         pure $ (erase r × (i × j)) × (Val α v)
+   fwd (Val _ (Matrix r) : Val _ (Constr c (Val _ (Int i) : Val _ (Int j) : Nil)) : Nil) | c == cPair =
+      pure $ (erase r × (i × j)) × matrixGet i j r
    fwd _ = throw "Matrix and pair of integers expected"
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int))
-   bwd ((r × (i × j)) × v@(Val α _)) =
-      Val α (Matrix (matrixPut i j (const v) (botOf r)))
+   bwd ((r × (i × j)) × v@(Val _ _)) =
+      Val bot (Matrix (matrixPut i j (const v) (botOf r)))
          : Val bot (Constr cPair (Val bot (Int i) : Val bot (Int j) : Nil))
          : Nil
 
