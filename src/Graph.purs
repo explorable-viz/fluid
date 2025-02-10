@@ -116,6 +116,21 @@ showVertices :: Set Vertex -> String
 showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
 
 -- ======================
+-- Backpointers to values
+-- ======================
+class Constraint :: Type -> Constraint
+class Constraint a
+
+instance Constraint (Maybe a)
+newtype ValPointer = ValPointer (forall r. (forall a. Constraint a => a -> r) -> r)
+
+mkValPointer :: forall a. Constraint a => a -> ValPointer
+mkValPointer x = ValPointer (\k -> k x)
+
+unValPointer :: forall r. (forall a. Constraint a => a -> r) -> ValPointer -> r
+unValPointer f (ValPointer e) = e f
+
+-- ======================
 -- boilerplate
 -- ======================
 derive instance Eq Vertex

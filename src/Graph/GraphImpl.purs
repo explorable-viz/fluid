@@ -20,30 +20,14 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), op, outN)
+import Graph (class Graph, class Vertices, HyperEdge, ValPointer, Vertex(..), op, outN, mkValPointer)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, toUnfoldable)
 import Util.Set (empty, size)
-import Val (BaseVal)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
-class Constraint :: Type -> Constraint
-class Constraint a
-
-instance Constraint (Maybe a)
-
-type AdjMap = Dict (Set Vertex × ValPointer')
-
-type ValPointer = Maybe (BaseVal Vertex)
-
-newtype ValPointer' = ValPointer' (forall r. (forall a. Constraint a => a -> r) -> r)
-
-mkValPointer :: forall a. Constraint a => a -> ValPointer'
-mkValPointer x = ValPointer' (\k -> k x)
-
-unValPointer :: forall r. (forall a. Constraint a => a -> r) -> ValPointer' -> r
-unValPointer f (ValPointer' e) = e f
+type AdjMap = Dict (Set Vertex × ValPointer)
 
 data GraphImpl = GraphImpl
    { out :: AdjMap
@@ -95,7 +79,7 @@ sinks' m = D.toArrayWithKey (×) (unwrap m)
    # Set.fromFoldable
 
 -- In-place update of mutable object to calculate opposite adjacency map.
-type MutableAdjMap r = STObject r (Set Vertex × ValPointer')
+type MutableAdjMap r = STObject r (Set Vertex × ValPointer)
 
 assertPresent :: forall r. MutableAdjMap r -> List Vertex -> ST r (Step (List Vertex) Unit)
 assertPresent _ Nil = pure $ Done unit
