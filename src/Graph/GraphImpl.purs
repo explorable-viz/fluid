@@ -25,9 +25,12 @@ import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, toUnfoldable)
 import Util.Set (empty, size)
+import Val (BaseVal)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
-type AdjMap = Dict (Set Vertex)
+type AdjMap = Dict (Set Vertex × ValPointer)
+
+type ValPointer = Maybe (BaseVal Vertex)
 
 data GraphImpl = GraphImpl
    { out :: AdjMap
@@ -42,7 +45,7 @@ instance Eq GraphImpl where
 
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Graph GraphImpl where
-   outN (GraphImpl g) α = lookup (unwrap α) g.out # definitely "in graph"
+   outN (GraphImpl g) α = fst $ lookup (unwrap α) g.out # definitely "in graph"
    inN g = outN (op g)
    elem α (GraphImpl g) = isJust (lookup (unwrap α) g.out)
    size (GraphImpl g) = size g.out
@@ -65,7 +68,7 @@ instance Graph GraphImpl where
       reverse (G.topologicalSort (G.fromMap (M.fromFoldable (kvs <#> (Vertex *** (unit × _))))))
       where
       kvs :: Array (String × List Vertex)
-      kvs = toUnfoldable (g.out <#> Set.toUnfoldable)
+      kvs = toUnfoldable (fst <$> g.out <#> Set.toUnfoldable)
 
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices
@@ -74,12 +77,12 @@ instance Vertices GraphImpl where
 -- This is better but still slow if there are thousands of sinks.
 sinks' :: AdjMap -> Set Vertex
 sinks' m = D.toArrayWithKey (×) (unwrap m)
-   # filter (snd >>> isEmpty)
+   # filter (snd >>> fst >>> isEmpty)
    <#> (fst >>> Vertex)
    # Set.fromFoldable
 
 -- In-place update of mutable object to calculate opposite adjacency map.
-type MutableAdjMap r = STObject r (Set Vertex)
+type MutableAdjMap r = STObject r (Set Vertex × (Maybe (BaseVal Vertex)))
 
 assertPresent :: forall r. MutableAdjMap r -> List Vertex -> ST r (Step (List Vertex) Unit)
 assertPresent _ Nil = pure $ Done unit
@@ -92,7 +95,7 @@ assertPresent obj (Vertex α : αs) = do
 addIfMissing :: forall r. MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex α) =
    OST.peek α acc >>= case _ of
-      Nothing -> OST.poke α mempty acc
+      Nothing -> OST.poke α (mempty × Nothing) acc
       Just _ -> pure acc
 
 addIfMissing' :: forall r. List Vertex -> MutableAdjMap r -> ST r (MutableAdjMap r)
@@ -110,7 +113,7 @@ init αs = do
    go :: List _ × MutableAdjMap r -> ST r (Step _ _)
    go (Nil × acc) = pure $ Done acc
    go ((Vertex α : αs') × acc) = do
-      acc' <- OST.poke α mempty acc
+      acc' <- OST.poke α (mempty × Nothing) acc
       pure $ Loop (αs' × acc')
 
 outMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
@@ -121,11 +124,11 @@ outMap αs es = do
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((Vertex α × βs) : es') × acc) = do
-      ok <- OST.peek α acc <#> maybe true (_ == mempty)
+      ok <- OST.peek α acc <#> maybe true (_ == mempty × Nothing)
       if ok then do
          let βs' = Set.toUnfoldable βs
          tailRecM (assertPresent acc) βs'
-         acc' <- OST.poke α βs acc >>= addIfMissing' βs'
+         acc' <- OST.poke α (βs × Nothing) acc >>= addIfMissing' βs'
          pure $ Loop (es' × acc')
       else
          error $ "Duplicate edge list entry for " <> show α
@@ -144,8 +147,8 @@ inMap αs es = do
    addEdge :: Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
-         Nothing -> OST.poke β (singleton α) acc
-         Just αs' -> OST.poke β (insert α αs') acc
+         Nothing -> OST.poke β (singleton α × Nothing) acc
+         Just (αs' × _) -> OST.poke β (insert α αs' × Nothing) acc
 
    addEdge' :: Vertex -> List Vertex × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdge' _ (Nil × acc) = pure $ Done acc
