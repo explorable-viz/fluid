@@ -321,3 +321,13 @@ derive instance Ord a => Ord (Env a)
 derive instance Ord a => Ord (EnvExpr a)
 
 derive instance Newtype (Env a) _
+
+-- Interim
+instance Show (BaseVal a) where
+   show (Int n) = show n
+   show (Float n) = show n
+   show (Str s) = show s
+   show (Constr c _vs) = show c
+   show (Dictionary _d) = "Dictionary"
+   show (Matrix _m) = "Matrix"
+   show (Fun _f) = "Function"

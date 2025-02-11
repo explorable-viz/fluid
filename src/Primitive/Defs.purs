@@ -260,8 +260,9 @@ dict_intersectionWith =
    ForeignOp ("dict_intersectionWith" × mkExists (ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
-   op (v : Val α (Dictionary (DictRep d1)) : Val α' (Dictionary (DictRep d2)) : Nil) =
-      Val <$> new (singleton α # Set.insert α') (pack v') <*> v'
+   op (v : Val α (Dictionary (DictRep d1)) : Val α' (Dictionary (DictRep d2)) : Nil) = do
+      packable <- v'
+      Val <$> new (singleton α # Set.insert α') (pack packable) <*> v'
       where
       apply' (β × u) (β' × u') = do
          vInner@(Val _ key) <- (G.apply v u >>= flip G.apply u')

@@ -7,13 +7,13 @@ import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map, lookup)
 import Data.Map as M
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, HyperEdge, Vertex, inEdges, inEdges', outN, pack, sinks, sources, vertices)
+import Graph (class Graph, Edge, HyperEdge, Vertex, inEdges, inEdges', outN, pack, sinks, sources, unPack, vertexData, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking)
-import Util (type (×), singleton, validateWhen, (×), (⊆), (∩))
+import Util (type (×), singleton, spy, validateWhen, (×), (∩), (⊆))
 import Util.Set ((∈))
 
 type BwdConfig =
@@ -36,11 +36,13 @@ bwdSlice (αs × g) = fst $
       if α ∈ visited then
          pure $ Loop { visited, αs: Nil, pending }
       else do
-         extend α βs vd
+         extend α βs (spy ("Value found at " <> show α) (unPack show) vd)
          pure $ Loop { visited: insert α visited, αs: Nil, pending }
    go { visited, αs: α : αs', pending } = do
       let βs = outN g α
-      pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: (α × βs × pack Nothing) : pending }
+      -- βs in g so safe to call definitely:
+      let vd = vertexData g α
+      pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: (α × βs × vd) : pending }
 
 type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig =
@@ -58,7 +60,7 @@ fwdSlice (αs × g) = fst $
    go { es: Nil } = pure $ Done unit
    go { pending, es: (α × β) : es } =
       if βs == outN g α then do
-         extend α βs (pack Nothing)
+         extend α βs (pack "uninit: fwd")
          pure $ Loop { pending: M.delete α pending, es: inEdges' g α <> es }
       else
          pure $ Loop { pending: M.insert α βs pending, es }

@@ -43,6 +43,7 @@ instance Eq GraphImpl where
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Graph GraphImpl where
    outN (GraphImpl g) α = fst $ lookup (unwrap α) g.out # definitely "in graph"
+   vertexData (GraphImpl g) α = snd $ lookup (unwrap α) g.out # definitely "in graph"
    inN g = outN (op g)
    elem α (GraphImpl g) = isJust (lookup (unwrap α) g.out)
    size (GraphImpl g) = size g.out
@@ -92,7 +93,7 @@ assertPresent obj (Vertex α : αs) = do
 addIfMissing :: forall r. MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex α) =
    OST.peek α acc >>= case _ of
-      Nothing -> OST.poke α (mempty × pack Nothing) acc
+      Nothing -> OST.poke α (mempty × pack "uninit: missing") acc
       Just _ -> pure acc
 
 addIfMissing' :: forall r. List Vertex -> MutableAdjMap r -> ST r (MutableAdjMap r)
@@ -110,7 +111,7 @@ init αs = do
    go :: List _ × MutableAdjMap r -> ST r (Step _ _)
    go (Nil × acc) = pure $ Done acc
    go ((Vertex α : αs') × acc) = do
-      acc' <- OST.poke α (mempty × pack Nothing) acc
+      acc' <- OST.poke α (mempty × pack "uninit: init") acc
       pure $ Loop (αs' × acc')
 
 outMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
@@ -125,7 +126,7 @@ outMap αs es = do
       if ok then do
          let βs' = Set.toUnfoldable βs
          tailRecM (assertPresent acc) βs'
-         acc' <- OST.poke α (βs × pack vd) acc >>= addIfMissing' βs'
+         acc' <- OST.poke α (βs × vd) acc >>= addIfMissing' βs'
          pure $ Loop (es' × acc')
       else
          error $ "Duplicate edge list entry for " <> show α

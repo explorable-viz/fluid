@@ -48,6 +48,7 @@ class (Eq g, Vertices g) <= Graph g where
    fromEdgeList :: Set Vertex -> List HyperEdge -> g
 
    topologicalSort :: g -> List Vertex
+   vertexData :: g -> Vertex -> VertexData
 
 newtype Vertex = Vertex String -- so can use directly as dict key
 
@@ -90,7 +91,7 @@ toEdgeList g =
    go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
       Nothing -> Done acc
-      Just { head: α, tail: αs } -> Loop (αs × (α × outN g α × pack Nothing) : acc)
+      Just { head: α, tail: αs } -> Loop (αs × (α × outN g α × pack "") : acc)
 
 showGraph :: forall g. Graph g => g -> String
 showGraph = toEdgeList >>> showEdgeList
@@ -119,12 +120,12 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 -- Backpointers to values
 -- ======================
 
-newtype VertexData = VertexData (forall r. (forall a. a -> r) -> r)
+newtype VertexData = VertexData (forall r. (forall a. Show a => a -> r) -> r)
 
-pack :: forall a. a -> VertexData
+pack :: forall a. Show a => a -> VertexData
 pack x = VertexData (\k -> k x)
 
-unPack :: forall r. (forall a. a -> r) -> VertexData -> r
+unPack :: forall r. (forall a. Show a => a -> r) -> VertexData -> r
 unPack f (VertexData e) = e f
 
 -- ======================
