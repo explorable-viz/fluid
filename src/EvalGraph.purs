@@ -8,7 +8,6 @@ import Data.Array (range) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap, wrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
@@ -117,11 +116,14 @@ eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vert
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval _ (Int α n) αs = Val <$> new (insert α αs) (pack v) <@> v
-   where v = V.Int n
+   where
+   v = V.Int n
 eval _ (Float α n) αs = Val <$> new (insert α αs) (pack v) <@> v
-   where v = V.Float n
+   where
+   v = V.Float n
 eval _ (Str α s) αs = Val <$> new (insert α αs) (pack v) <@> v
-   where v = V.Str s
+   where
+   v = V.Str s
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
@@ -150,7 +152,8 @@ eval γ (Matrix α e (x × y) e') αs = do
    Val <$> new (insert α αs) (pack v') <@> v'
 eval γ (Lambda α σ) αs =
    Val <$> new (insert α αs) (pack v) <@> v
-   where v = V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   where
+   v = V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
