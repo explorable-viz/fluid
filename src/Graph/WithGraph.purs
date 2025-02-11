@@ -6,7 +6,6 @@ import Control.Monad.Except (class MonadError, lift)
 import Control.Monad.State (StateT, modify, modify_, runStateT)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
-import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, isEmpty)
@@ -14,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), VertexData, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), VertexData, fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -31,8 +30,7 @@ class Monad m <= MonadAlloc m where
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
 class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
-   new :: Set Vertex -> m Vertex
-   new' :: Set Vertex -> VertexData -> m Vertex
+   new :: Set Vertex -> VertexData -> m Vertex
 
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
@@ -46,11 +44,7 @@ instance Monad m => MonadAlloc (AllocT m) where
       pure (Vertex $ show n)
 
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
-   new αs = do
-      α <- fresh
-      extend α αs (pack Nothing)
-      pure α
-   new' αs vd = do
+   new αs vd = do
       α <- fresh
       extend α αs vd
       pure α

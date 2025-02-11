@@ -9,6 +9,7 @@ import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
+import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
@@ -22,6 +23,7 @@ import Dict (fromFoldable) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
+import Graph (pack)
 import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, (∧), (∨))
 import Partial.Unsafe (unsafePartial)
@@ -108,9 +110,9 @@ dims =
    where
    op :: OpGraph
    op (Val α (Matrix (MatrixRep (_ × (i × β1) × (j × β2)))) : Nil) = do
-      v1 <- Val <$> new (singleton β1) <@> Int i
-      v2 <- Val <$> new (singleton β2) <@> Int j
-      Val <$> new (singleton α) <@> Constr cPair (v1 : v2 : Nil)
+      v1 <- Val <$> new (singleton β1) (pack Nothing) <@> Int i
+      v2 <- Val <$> new (singleton β2) (pack Nothing) <@> Int j
+      Val <$> new (singleton α) (pack Nothing) <@> Constr cPair (v1 : v2 : Nil)
    op _ = throw "Matrix expected"
 
    fwd :: OpFwd (Array2 (Raw Val))
@@ -148,7 +150,7 @@ matrixUpdate =
    where
    op :: OpGraph
    op (Val α (Matrix r) : Val _ (Constr c (Val _ (Int i) : Val _ (Int j) : Nil)) : v : Nil)
-      | c == cPair = Val <$> new (singleton α) <@> Matrix (matrixPut i j (const v) r)
+      | c == cPair = Val <$> new (singleton α) (pack Nothing) <@> Matrix (matrixPut i j (const v) r)
    op _ = throw "Matrix, pair of integers and value expected"
 
    fwd :: OpFwd ((Int × Int) × Raw Val)
@@ -169,7 +171,7 @@ dict_difference =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) =
-      Val <$> new (singleton α # Set.insert β) <@> Dictionary (DictRep (d \\ d'))
+      Val <$> new (singleton α # Set.insert β) (pack Nothing) <@> Dictionary (DictRep (d \\ d'))
    op _ = throw "Dictionaries expected."
 
    fwd :: OpFwd Unit
@@ -187,7 +189,7 @@ dict_disjointUnion =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) = do
-      Val <$> new (singleton α # Set.insert β) <@> Dictionary (DictRep (disjointUnion d d'))
+      Val <$> new (singleton α # Set.insert β) (pack Nothing) <@> Dictionary (DictRep (disjointUnion d d'))
    op _ = throw "Dictionaries expected"
 
    fwd :: OpFwd (Dict Unit × Dict Unit)
@@ -253,10 +255,10 @@ dict_intersectionWith =
    where
    op :: OpGraph
    op (v : Val α (Dictionary (DictRep d1)) : Val α' (Dictionary (DictRep d2)) : Nil) =
-      Val <$> new (singleton α # Set.insert α') <*> (Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2)))
+      Val <$> new (singleton α # Set.insert α') (pack Nothing) <*> (Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2)))
       where
       apply' (β × u) (β' × u') = do
-         β'' <- new (singleton β # Set.insert β')
+         β'' <- new (singleton β # Set.insert β') (pack Nothing)
          (×) β'' <$> (G.apply v u >>= flip G.apply u')
    op _ = throw "Function and two dictionaries expected"
 
@@ -287,7 +289,7 @@ dict_map =
    op :: OpGraph
    op (v : Val α (Dictionary (DictRep d)) : Nil) = do
       d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
-      Val <$> new (singleton α) <@> Dictionary (DictRep d')
+      Val <$> new (singleton α) (pack Nothing) <@> Dictionary (DictRep d')
    op _ = throw "Function and dictionary expected"
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)

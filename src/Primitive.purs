@@ -7,10 +7,12 @@ import Data.Either (Either(..))
 import Data.Exists (Exists, mkExists)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Choice ((|||))
 import Data.Set (insert)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
+import Graph (pack) as G
 import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
@@ -158,7 +160,7 @@ unary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v : Nil) =
-      pack f.o <$> ((f.fwd (f.i.unpack v) × _) <$> new (singleton α))
+      pack f.o <$> ((f.fwd (f.i.unpack v) × _) <$> new (singleton α) (G.pack Nothing))
 
    fwd :: Partial => OpFwd (Raw BaseVal)
    fwd (Val α v : Nil) = pure $ erase v × pack f.o (f.fwd (f.i.unpack v) × α)
@@ -176,7 +178,7 @@ binary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack f.o <$> ((f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × _) <$> new (singleton α # insert β))
+      pack f.o <$> ((f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × _) <$> new (singleton α # insert β) (G.pack Nothing))
 
    fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
    fwd (Val α v1 : Val β v2 : Nil) =
@@ -196,7 +198,7 @@ binaryZero id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack f.o <$> ((f.fwd x y × _) <$> new αs)
+      pack f.o <$> ((f.fwd x y × _) <$> new αs (G.pack Nothing))
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
       αs =
