@@ -116,19 +116,24 @@ apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
-eval _ (Int α n) αs = Val <$> new (insert α αs) (pack Nothing) <@> V.Int n
-eval _ (Float α n) αs = Val <$> new (insert α αs) (pack Nothing) <@> V.Float n
-eval _ (Str α s) αs = Val <$> new (insert α αs) (pack Nothing) <@> V.Str s
+eval _ (Int α n) αs = Val <$> new (insert α αs) (pack v) <@> v
+   where v = V.Int n
+eval _ (Float α n) αs = Val <$> new (insert α αs) (pack v) <@> v
+   where v = V.Float n
+eval _ (Str α s) αs = Val <$> new (insert α αs) (pack v) <@> v
+   where v = V.Str s
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = wrap $ D.fromFoldable $ zip ss (zip βs us)
-   Val <$> new (insert α αs) (pack Nothing) <@> V.Dictionary (DictRep d)
+      v = V.Dictionary (DictRep d)
+   Val <$> new (insert α αs) (pack v) <@> v
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   Val <$> new (insert α αs) (pack Nothing) <@> V.Constr c vs
+   let v = V.Constr c vs
+   Val <$> new (insert α αs) (pack v) <@> v
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
@@ -141,9 +146,11 @@ eval γ (Matrix α e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
-   Val <$> new (insert α αs) (pack Nothing) <@> V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
+   let v' = V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
+   Val <$> new (insert α αs) (pack v') <@> v'
 eval γ (Lambda α σ) αs =
-   Val <$> new (insert α αs) (pack Nothing) <@> V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   Val <$> new (insert α αs) (pack v) <@> v
+   where v = V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
