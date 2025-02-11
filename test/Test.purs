@@ -2,13 +2,11 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Selector (snd)
-import Bind ((↦))
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Lattice (neg)
-import Module.Web (File(..), Folder(..), loadFile)
+import Module.Web (loadFile)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.Graphics (graphics_cases)
@@ -21,23 +19,12 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run tests
+-- main = run tests
 
--- main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = linkedOutputsSuite
-   [ { spec:
-          { fluidSrcPaths: [ Folder "test/fluid", Folder "fluid" ]
-          , datasets: [ "data" ↦ "linked-outputs/pairs-data" ]
-          , imports: []
-          , file: File "linked-outputs/pairs"
-          , inputs: [ "data" ]
-          }
-     , δ_out: snd neg
-     , out_expect: neg
-     }
-   ]
+scratchpad = asTestSuite $ bwdSuite loadFile [ { file: "add", imports: [], bwd_expect_file: "add.expect", δv: neg, fwd_expect: "⸨8⸩", datasets: [] } ]
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
