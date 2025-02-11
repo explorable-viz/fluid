@@ -9,7 +9,6 @@ import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
@@ -265,8 +264,9 @@ dict_intersectionWith =
       Val <$> new (singleton α # Set.insert α') (pack v') <*> v'
       where
       apply' (β × u) (β' × u') = do
-         β'' <- new (singleton β # Set.insert β') (pack Nothing) -- Unsure what to pack here, whether it's anything at all
-         (×) β'' <$> (G.apply v u >>= flip G.apply u')
+         vInner@(Val _ key) <- (G.apply v u >>= flip G.apply u')
+         β'' <- new (singleton β # Set.insert β') (pack key) -- Unsure what to pack here, whether it's anything at all
+         (×) β'' <$> pure vInner
       v' = Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2))
    op _ = throw "Function and two dictionaries expected"
 

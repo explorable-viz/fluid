@@ -120,12 +120,12 @@ outMap αs es = do
    where
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((Vertex α × βs × _) : es') × acc) = do
+   addEdges (((Vertex α × βs × vd) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (\x -> fst x == mempty)
       if ok then do
          let βs' = Set.toUnfoldable βs
          tailRecM (assertPresent acc) βs'
-         acc' <- OST.poke α (βs × pack Nothing) acc >>= addIfMissing' βs'
+         acc' <- OST.poke α (βs × pack vd) acc >>= addIfMissing' βs'
          pure $ Loop (es' × acc')
       else
          error $ "Duplicate edge list entry for " <> show α
@@ -137,18 +137,18 @@ inMap αs es = do
    where
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((α × βs × _) : es') × acc) = do
-      acc' <- tailRecM (addEdge' α) (Set.toUnfoldable βs × acc) >>= flip addIfMissing α
+   addEdges (((α × βs × vd) : es') × acc) = do
+      acc' <- tailRecM (addEdge' α vd) (Set.toUnfoldable βs × acc) >>= flip addIfMissing α
       pure $ Loop (es' × acc')
 
-   addEdge :: Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
-   addEdge α acc (Vertex β) = do
+   addEdge :: Vertex -> VertexData -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
+   addEdge α vd acc (Vertex β) = do
       OST.peek β acc >>= case _ of
-         Nothing -> OST.poke β (singleton α × pack Nothing) acc
-         Just (αs' × _) -> OST.poke β (insert α αs' × pack Nothing) acc
+         Nothing -> OST.poke β (singleton α × vd) acc
+         Just (αs' × _) -> OST.poke β (insert α αs' × vd) acc
 
-   addEdge' :: Vertex -> List Vertex × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
-   addEdge' _ (Nil × acc) = pure $ Done acc
-   addEdge' α ((β : βs) × acc) = do
-      acc' <- addEdge α acc β
+   addEdge' :: Vertex -> VertexData -> List Vertex × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
+   addEdge' _ _ (Nil × acc) = pure $ Done acc
+   addEdge' α vd ((β : βs) × acc) = do
+      acc' <- addEdge α vd acc β
       pure $ Loop (βs × acc')
