@@ -7,7 +7,6 @@ import Data.Either (Either(..))
 import Data.Exists (Exists, mkExists)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
 import Data.Profunctor.Choice ((|||))
 import Data.Set (insert)
 import DataType (cFalse, cPair, cTrue)
@@ -160,7 +159,9 @@ unary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v : Nil) =
-      pack f.o <$> ((f.fwd (f.i.unpack v) × _) <$> new (singleton α) (G.pack Nothing))
+      pack f.o <$> ((v' × _) <$> new (singleton α) (G.pack v'))
+      where
+      v' = f.fwd (f.i.unpack v)
 
    fwd :: Partial => OpFwd (Raw BaseVal)
    fwd (Val α v : Nil) = pure $ erase v × pack f.o (f.fwd (f.i.unpack v) × α)
@@ -178,7 +179,9 @@ binary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack f.o <$> ((f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × _) <$> new (singleton α # insert β) (G.pack Nothing))
+      pack f.o <$> ((v' × _) <$> new (singleton α # insert β) (G.pack v'))
+      where
+      v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
 
    fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
    fwd (Val α v1 : Val β v2 : Nil) =
@@ -198,9 +201,10 @@ binaryZero id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack f.o <$> ((f.fwd x y × _) <$> new αs (G.pack Nothing))
+      pack f.o <$> ((v' × _) <$> new αs (G.pack v'))
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
+      v' = f.fwd x y
       αs =
          if isZero x then singleton α
          else if isZero y then singleton β
