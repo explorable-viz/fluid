@@ -20,14 +20,14 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, HyperEdge, ValPointer, Vertex(..), op, outN, mkValPointer)
+import Graph (class Graph, class Vertices, HyperEdge, VertexData, Vertex(..), op, outN, pack)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, toUnfoldable)
 import Util.Set (empty, size)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
-type AdjMap = Dict (Set Vertex × ValPointer)
+type AdjMap = Dict (Set Vertex × VertexData)
 
 data GraphImpl = GraphImpl
    { out :: AdjMap
@@ -79,7 +79,7 @@ sinks' m = D.toArrayWithKey (×) (unwrap m)
    # Set.fromFoldable
 
 -- In-place update of mutable object to calculate opposite adjacency map.
-type MutableAdjMap r = STObject r (Set Vertex × ValPointer)
+type MutableAdjMap r = STObject r (Set Vertex × VertexData)
 
 assertPresent :: forall r. MutableAdjMap r -> List Vertex -> ST r (Step (List Vertex) Unit)
 assertPresent _ Nil = pure $ Done unit
@@ -92,7 +92,7 @@ assertPresent obj (Vertex α : αs) = do
 addIfMissing :: forall r. MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex α) =
    OST.peek α acc >>= case _ of
-      Nothing -> OST.poke α (mempty × mkValPointer Nothing) acc
+      Nothing -> OST.poke α (mempty × pack Nothing) acc
       Just _ -> pure acc
 
 addIfMissing' :: forall r. List Vertex -> MutableAdjMap r -> ST r (MutableAdjMap r)
@@ -110,7 +110,7 @@ init αs = do
    go :: List _ × MutableAdjMap r -> ST r (Step _ _)
    go (Nil × acc) = pure $ Done acc
    go ((Vertex α : αs') × acc) = do
-      acc' <- OST.poke α (mempty × mkValPointer Nothing) acc
+      acc' <- OST.poke α (mempty × pack Nothing) acc
       pure $ Loop (αs' × acc')
 
 outMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
@@ -120,12 +120,12 @@ outMap αs es = do
    where
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((Vertex α × βs) : es') × acc) = do
+   addEdges (((Vertex α × βs × _) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (\x -> fst x == mempty)
       if ok then do
          let βs' = Set.toUnfoldable βs
          tailRecM (assertPresent acc) βs'
-         acc' <- OST.poke α (βs × mkValPointer Nothing) acc >>= addIfMissing' βs'
+         acc' <- OST.poke α (βs × pack Nothing) acc >>= addIfMissing' βs'
          pure $ Loop (es' × acc')
       else
          error $ "Duplicate edge list entry for " <> show α
@@ -137,15 +137,15 @@ inMap αs es = do
    where
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((α × βs) : es') × acc) = do
+   addEdges (((α × βs × _) : es') × acc) = do
       acc' <- tailRecM (addEdge' α) (Set.toUnfoldable βs × acc) >>= flip addIfMissing α
       pure $ Loop (es' × acc')
 
    addEdge :: Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
-         Nothing -> OST.poke β (singleton α × mkValPointer Nothing) acc
-         Just (αs' × _) -> OST.poke β (insert α αs' × mkValPointer Nothing) acc
+         Nothing -> OST.poke β (singleton α × pack Nothing) acc
+         Just (αs' × _) -> OST.poke β (insert α αs' × pack Nothing) acc
 
    addEdge' :: Vertex -> List Vertex × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdge' _ (Nil × acc) = pure $ Done acc

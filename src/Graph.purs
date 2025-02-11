@@ -18,7 +18,7 @@ import Util (type (×), Endo, (×))
 import Util.Set ((∈))
 
 type Edge = Vertex × Vertex
-type HyperEdge = Vertex × Set Vertex -- mostly a convenience
+type HyperEdge = Vertex × Set Vertex × VertexData -- mostly a convenience
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
@@ -90,7 +90,7 @@ toEdgeList g =
    go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
       Nothing -> Done acc
-      Just { head: α, tail: αs } -> Loop (αs × (α × outN g α) : acc)
+      Just { head: α, tail: αs } -> Loop (αs × (α × outN g α × pack Nothing) : acc)
 
 showGraph :: forall g. Graph g => g -> String
 showGraph = toEdgeList >>> showEdgeList
@@ -109,7 +109,7 @@ showEdgeList es =
    indent = ("   " <> _)
 
    showEdge :: HyperEdge -> String
-   showEdge (α × αs) =
+   showEdge (α × αs × _) =
       unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `Set.map` αs) <> "}"
 
 showVertices :: Set Vertex -> String
@@ -118,17 +118,14 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 -- ======================
 -- Backpointers to values
 -- ======================
-class Constraint :: Type -> Constraint
-class Constraint a
 
-instance Constraint (Maybe a)
-newtype ValPointer = ValPointer (forall r. (forall a. Constraint a => a -> r) -> r)
+newtype VertexData = VertexData (forall r. (forall a. a -> r) -> r)
 
-mkValPointer :: forall a. Constraint a => a -> ValPointer
-mkValPointer x = ValPointer (\k -> k x)
+pack :: forall a. a -> VertexData
+pack x = VertexData (\k -> k x)
 
-unValPointer :: forall r. (forall a. Constraint a => a -> r) -> ValPointer -> r
-unValPointer f (ValPointer e) = e f
+unPack :: forall r. (forall a. a -> r) -> VertexData -> r
+unPack f (VertexData e) = e f
 
 -- ======================
 -- boilerplate

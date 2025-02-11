@@ -6,6 +6,7 @@ import Control.Monad.Except (class MonadError, lift)
 import Control.Monad.State (StateT, modify, modify_, runStateT)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, isEmpty)
@@ -13,7 +14,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), VertexData, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -21,7 +22,7 @@ import Util.Set ((\\))
 
 class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
-   extend :: Vertex -> Set Vertex -> m Unit
+   extend :: Vertex -> Set Vertex -> VertexData -> m Unit
 
 class Monad m <= MonadAlloc m where
    fresh :: m Vertex
@@ -31,6 +32,7 @@ class Monad m <= MonadAlloc m where
 class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
    new :: Set Vertex -> m Vertex
+   new' :: Set Vertex -> VertexData -> m Vertex
 
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
@@ -46,11 +48,15 @@ instance Monad m => MonadAlloc (AllocT m) where
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
    new αs = do
       α <- fresh
-      extend α αs
+      extend α αs (pack Nothing)
+      pure α
+   new' αs vd = do
+      α <- fresh
+      extend α αs vd
       pure α
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
-   extend α αs = void $ modify_ $ (:) (α × αs)
+   extend α αs vd = void $ modify_ $ (:) (α × αs × vd)
 
 alloc :: forall m f. MonadAlloc m => Traversable f => Raw f -> m (f Vertex)
 alloc = traverse (const fresh)
