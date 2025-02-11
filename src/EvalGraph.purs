@@ -80,7 +80,11 @@ matchMany (_ : vs) (ContExpr _) = throw $
 closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    Env <$> for ρ \σ ->
-      let ρ' = ρ `forDefs` σ in Val <$> new αs (pack Nothing) <@> V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
+      let
+         ρ' = ρ `forDefs` σ
+         v = V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
+      in
+         Val <$> new αs (pack v) <@> v
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α (V.Fun (V.Closure γ1 ρ σ))) v = do
@@ -95,12 +99,16 @@ apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: forall t. ForeignOp' t -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         Val <$> new (singleton α) (pack Nothing) <@> (V.Fun (V.Foreign (ForeignOp (id × φ)) vs'))
+         Val <$> new (singleton α) (pack v') <@> v'
       else φ'.op' vs'
+      where
+      v' = (V.Fun (V.Foreign (ForeignOp (id × φ)) vs'))
 apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   if length vs < n - 1 then Val <$> new (singleton α) (pack Nothing) <@> V.Fun (V.PartialConstr c (snoc vs v))
-   else Val <$> new (singleton α) (pack Nothing) <@> V.Constr c (snoc vs v)
+   if length vs < n - 1 then
+      let v' = V.Fun (V.PartialConstr c (snoc vs v)) in Val <$> new (singleton α) (pack v') <@> v'
+   else
+      let v' = V.Constr c (snoc vs v) in Val <$> new (singleton α) (pack v') <@> v'
    where
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
