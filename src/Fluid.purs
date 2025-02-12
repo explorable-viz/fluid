@@ -137,7 +137,7 @@ fluidLibraryPath = "node_modules/@explorable-viz/fluid"
 
 evaluate :: Program -> Aff (Val Unit)
 evaluate (Program { library, imports, datasets, fileName }) = do
-   let fluidSrcPaths = [ Folder "fluid" ] <> if library then [ Folder fluidLibraryPath ] else []
+   let fluidSrcPaths = [ Folder "fluid" ] <> if library then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
    { e, gconfig } <- prepConfig fluidSrcPaths (File fileName) progCxt
    { outα } <- graphEval gconfig e
