@@ -12,8 +12,8 @@ import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, HyperEdge, Vertex, inEdges, inEdges', outN, pack, sinks, sources, unPack, vertexData, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
-import Test.Util.Debug (checking)
-import Util (type (×), singleton, spy, validateWhen, (×), (∩), (⊆))
+import Test.Util.Debug (checking, tracing)
+import Util (type (×), singleton, spyWhen, validateWhen, (×), (∩), (⊆))
 import Util.Set ((∈))
 
 type BwdConfig =
@@ -36,7 +36,7 @@ bwdSlice (αs × g) = fst $
       if α ∈ visited then
          pure $ Loop { visited, αs: Nil, pending }
       else do
-         extend α βs (spy ("Value found at " <> show α) (unPack show) vd)
+         extend α βs (spyWhen tracing.graphBwdSlice ("Value found at " <> show α) (unPack show) vd)
          pure $ Loop { visited: insert α visited, αs: Nil, pending }
    go { visited, αs: α : αs', pending } = do
       let βs = outN g α
