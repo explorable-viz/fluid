@@ -119,6 +119,12 @@ showEdgeList es =
 showVertices :: Set Vertex -> String
 showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
 
+insert' :: Vertex -> Set DVertex -> Set Vertex
+insert' α αs = Set.insert α (unDVertex αs)
+
+dvertex :: forall a. Show a => Vertex -> a -> DVertex
+dvertex α v = DVertex (α × pack v)
+
 -- ======================
 -- Backpointers to values
 -- ======================

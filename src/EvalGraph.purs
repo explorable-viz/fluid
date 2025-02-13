@@ -20,7 +20,7 @@ import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, DVertex(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, unDVertex, vertices)
+import Graph (class Graph, DVertex, Vertex, dvertex, insert', op, pack, selectαs, select𝔹s, showGraph, showVertices, unDVertex, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -54,7 +54,7 @@ match (Val α v@(V.Constr c vs)) (ElimConstr m) = do
    withMsg "Pattern mismatch" $ Set.singleton c `consistentWith` keys m
    κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × αs <- matchMany vs κ
-   pure (γ × κ' × (insert (DVertex $ α × pack v) αs))
+   pure (γ × κ' × (insert (dvertex α v) αs))
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
@@ -64,7 +64,7 @@ match (Val α v@(V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    let xs' = xs # Set.toUnfoldable
    let xvs' = unwrap xvs
    γ × κ' × αs <- matchMany (map (\k -> snd (get k xvs')) xs') κ
-   pure $ γ × κ' × (insert (DVertex $ α × pack v) αs)
+   pure $ γ × κ' × (insert (dvertex α v) αs)
 match v (ElimDict xs _) = throw (patternMismatch (prettyP v) (show xs))
 
 matchMany :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set DVertex)
@@ -87,9 +87,9 @@ closeDefs γ ρ αs =
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α v'@(V.Fun (V.Closure γ1 ρ σ))) v = do
-   γ2 <- closeDefs γ1 ρ (singleton (DVertex $ α × pack v'))
+   γ2 <- closeDefs γ1 ρ (singleton (dvertex α v'))
    γ3 × κ × αs <- match v σ
-   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert (DVertex $ α × pack v') αs)
+   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert (dvertex α v') αs)
 apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    runExists apply' φ
    where
@@ -115,13 +115,13 @@ apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set DVertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
-eval _ (Int α n) αs = Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
+eval _ (Int α n) αs = Val <$> new (insert' α αs) (pack v) <@> v
    where
    v = V.Int n
-eval _ (Float α n) αs = Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
+eval _ (Float α n) αs = Val <$> new (insert' α αs) (pack v) <@> v
    where
    v = V.Float n
-eval _ (Str α s) αs = Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
+eval _ (Str α s) αs = Val <$> new (insert' α αs) (pack v) <@> v
    where
    v = V.Str s
 eval γ (Dictionary α ees) αs = do
@@ -130,12 +130,12 @@ eval γ (Dictionary α ees) αs = do
       ss × βs = (vs <#> unpack string) # unzip
       d = wrap $ D.fromFoldable $ zip ss (zip βs us)
       v = V.Dictionary (DictRep d)
-   Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
+   Val <$> new (insert' α αs) (pack v) <@> v
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
    let v = V.Constr c vs
-   Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
+   Val <$> new (insert' α αs) (pack v) <@> v
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
@@ -149,9 +149,9 @@ eval γ (Matrix α e (x × y) e') αs = do
          let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
    let v' = V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
-   Val <$> new (insert α (unDVertex αs)) (pack v') <@> v'
+   Val <$> new (insert' α αs) (pack v') <@> v'
 eval γ (Lambda α σ) αs =
-   Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
+   Val <$> new (insert' α αs) (pack v) <@> v
    where
    v = V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
@@ -180,8 +180,7 @@ eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ insertedα
    eval (γ <+> γ') e insertedα
    where
-   packedα = DVertex $ α × pack "Expr"
-   insertedα = insert packedα αs
+   insertedα = insert (dvertex α "Expr") αs
 
 eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set DVertex -> m (Env Vertex)
 eval_module γ = go empty
@@ -193,7 +192,7 @@ eval_module γ = go empty
       γ'' × _ × αs' <- match v σ
       go (y' <+> γ'') (Module ds) αs'
    go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
-      γ'' <- closeDefs (γ <+> γ') ρ (insert (DVertex $ α × pack "Expr") αs)
+      γ'' <- closeDefs (γ <+> γ') ρ (insert (dvertex α "Expr") αs)
       go (γ' <+> γ'') (Module ds) αs
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
