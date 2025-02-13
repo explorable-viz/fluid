@@ -89,7 +89,7 @@ apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val V
 apply (Val α v'@(V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton (DVertex $ α × pack v'))
    γ3 × κ × αs <- match v σ
-   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α (unDVertex αs))
+   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert (DVertex $ α × pack v') αs)
 apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    runExists apply' φ
    where
@@ -112,16 +112,16 @@ apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
+eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set DVertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
-eval _ (Int α n) αs = Val <$> new (insert α αs) (pack v) <@> v
+eval _ (Int α n) αs = Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
    where
    v = V.Int n
-eval _ (Float α n) αs = Val <$> new (insert α αs) (pack v) <@> v
+eval _ (Float α n) αs = Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
    where
    v = V.Float n
-eval _ (Str α s) αs = Val <$> new (insert α αs) (pack v) <@> v
+eval _ (Str α s) αs = Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
    where
    v = V.Str s
 eval γ (Dictionary α ees) αs = do
@@ -130,12 +130,12 @@ eval γ (Dictionary α ees) αs = do
       ss × βs = (vs <#> unpack string) # unzip
       d = wrap $ D.fromFoldable $ zip ss (zip βs us)
       v = V.Dictionary (DictRep d)
-   Val <$> new (insert α αs) (pack v) <@> v
+   Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
    let v = V.Constr c vs
-   Val <$> new (insert α αs) (pack v) <@> v
+   Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
@@ -149,9 +149,9 @@ eval γ (Matrix α e (x × y) e') αs = do
          let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
    let v' = V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
-   Val <$> new (insert α αs) (pack v') <@> v'
+   Val <$> new (insert α (unDVertex αs)) (pack v') <@> v'
 eval γ (Lambda α σ) αs =
-   Val <$> new (insert α αs) (pack v) <@> v
+   Val <$> new (insert α (unDVertex αs)) (pack v) <@> v
    where
    v = V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
@@ -175,10 +175,13 @@ eval γ (App e e') αs = do
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
-   eval (γ <+> γ') e' (unDVertex αs') -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
+   eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
 eval γ (LetRec (RecDefs α ρ) e) αs = do
-   γ' <- closeDefs γ ρ (Set.map (\x -> DVertex $ x × pack "Expr") (insert α αs))
-   eval (γ <+> γ') e (insert α αs)
+   γ' <- closeDefs γ ρ insertedα
+   eval (γ <+> γ') e insertedα
+   where
+   packedα = DVertex $ α × pack "Expr"
+   insertedα = insert packedα αs
 
 eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set DVertex -> m (Env Vertex)
 eval_module γ = go empty
@@ -186,7 +189,7 @@ eval_module γ = go empty
    go :: Env Vertex -> Module Vertex -> Set DVertex -> m (Env Vertex)
    go γ' (Module Nil) _ = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) αs = do
-      v <- eval (γ <+> y') e (unDVertex αs)
+      v <- eval (γ <+> y') e αs
       γ'' × _ × αs' <- match v σ
       go (y' <+> γ'') (Module ds) αs'
    go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
