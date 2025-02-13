@@ -12,7 +12,9 @@ module Module.Node
 import Prelude
 
 import Bind (Bind)
+import Control.Monad.Error.Class (try)
 import Control.Monad.Except (class MonadError)
+import Data.Either (either)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
@@ -37,8 +39,8 @@ loadFile folders (F.File file) = do
    where
    exists :: F.File -> m (Maybe String)
    exists (F.File url) = do
-      stats <- liftAff $ stat url
-      pure $ if isFile stats then Just url else Nothing
+      stats <- liftAff $ try (stat url)
+      pure $ if (either (const false) isFile stats) then Just url else Nothing
 
 parseProgram ∷ ∀ m. Array F.Folder -> F.File → AffError m (Raw S.Expr)
 parseProgram = M.parseProgram loadFile
