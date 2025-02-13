@@ -19,9 +19,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
--- main = run tests
+main = run tests
 
-main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite loadFile [ { file: "add", imports: [], bwd_expect_file: "add.expect", δv: neg, fwd_expect: "⸨8⸩", datasets: [] } ]

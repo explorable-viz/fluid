@@ -12,6 +12,7 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, singleton, unions)
 import Data.Set as Set
 import Data.String (joinWith)
+import Data.Tuple (fst)
 import Dict (Dict)
 import Lattice (𝔹)
 import Util (type (×), Endo, (×))
@@ -129,6 +130,9 @@ pack x = VertexData (\k -> k x)
 
 unPack :: forall r. (forall a. Show a => a -> r) -> VertexData -> r
 unPack f (VertexData e) = e f
+
+unDVertex :: Set DVertex -> Set Vertex
+unDVertex = Set.map (fst <<< unwrap)
 
 instance Eq DVertex where
    eq (DVertex (α × _)) (DVertex (α' × _)) = α == α'
