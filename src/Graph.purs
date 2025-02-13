@@ -20,6 +20,8 @@ import Util.Set ((∈))
 type Edge = Vertex × Vertex
 type HyperEdge = Vertex × Set Vertex × VertexData -- mostly a convenience
 
+newtype DVertex = DVertex (Vertex × VertexData)
+
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
 class (Eq g, Vertices g) <= Graph g where
@@ -127,6 +129,14 @@ pack x = VertexData (\k -> k x)
 
 unPack :: forall r. (forall a. Show a => a -> r) -> VertexData -> r
 unPack f (VertexData e) = e f
+
+instance Eq DVertex where
+   eq (DVertex (α × _)) (DVertex (α' × _)) = α == α'
+
+instance Ord DVertex where
+   compare (DVertex (α × _)) (DVertex (α' × _)) = compare α α'
+
+derive instance Newtype DVertex _
 
 -- ======================
 -- boilerplate

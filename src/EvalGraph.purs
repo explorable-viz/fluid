@@ -13,14 +13,14 @@ import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
-import Data.Tuple (curry, snd)
+import Data.Tuple (curry, fst, snd)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
+import Graph (class Graph, DVertex(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -180,17 +180,17 @@ eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
-eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set DVertex -> m (Env Vertex)
 eval_module γ = go empty
    where
-   go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+   go :: Env Vertex -> Module Vertex -> Set DVertex -> m (Env Vertex)
    go γ' (Module Nil) _ = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) αs = do
-      v <- eval (γ <+> y') e αs
-      γ'' × _ × α' <- match v σ
-      go (y' <+> γ'') (Module ds) α'
+      v <- eval (γ <+> y') e (Set.map (fst <<< unwrap) αs)
+      γ'' × _ × αs' <- match v σ
+      go (y' <+> γ'') (Module ds) (Set.map (\x -> DVertex $ x × pack "module") αs')
    go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
-      γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
+      γ'' <- closeDefs (γ <+> γ') ρ (insert α (Set.map (fst <<< unwrap) αs))
       go (γ' <+> γ'') (Module ds) αs
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
