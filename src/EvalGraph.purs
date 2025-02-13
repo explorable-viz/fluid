@@ -76,18 +76,18 @@ matchMany (v : vs) (ContElim σ) = do
 matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 
-closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
+closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set DVertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    Env <$> for ρ \σ ->
       let
          ρ' = ρ `forDefs` σ
          v = V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
       in
-         Val <$> new αs (pack v) <@> v
+         Val <$> new (unDVertex αs) (pack v) <@> v
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
-apply (Val α (V.Fun (V.Closure γ1 ρ σ))) v = do
-   γ2 <- closeDefs γ1 ρ (singleton α)
+apply (Val α v'@(V.Fun (V.Closure γ1 ρ σ))) v = do
+   γ2 <- closeDefs γ1 ρ (singleton (DVertex $ α × pack v'))
    γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α (unDVertex αs))
 apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
@@ -177,7 +177,7 @@ eval γ (Let (VarDef σ e) e') αs = do
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' (unDVertex αs') -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
 eval γ (LetRec (RecDefs α ρ) e) αs = do
-   γ' <- closeDefs γ ρ (insert α αs)
+   γ' <- closeDefs γ ρ (Set.map (\x -> DVertex $ x × pack "Expr") (insert α αs))
    eval (γ <+> γ') e (insert α αs)
 
 eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set DVertex -> m (Env Vertex)
@@ -190,7 +190,7 @@ eval_module γ = go empty
       γ'' × _ × αs' <- match v σ
       go (y' <+> γ'') (Module ds) αs'
    go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
-      γ'' <- closeDefs (γ <+> γ') ρ (insert α (unDVertex αs))
+      γ'' <- closeDefs (γ <+> γ') ρ (insert (DVertex $ α × pack "Expr") αs)
       go (γ' <+> γ'') (Module ds) αs
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
