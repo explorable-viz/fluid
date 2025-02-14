@@ -11,7 +11,6 @@ while getopts "w:r" opt; do
 done
 
 PREFIX_=${PREFIX:+$PREFIX/}
-PREFIX_2=${PREFIX:+$PREFIX/dist/fluid/}
 WEBSITE_LISP_CASE=$(. "${PREFIX_}script/util/lisp-case.sh" "$WEBSITE")
 echo "$WEBSITE -> $WEBSITE_LISP_CASE"
 echo "Cleaning dist/$WEBSITE_LISP_CASE"
@@ -50,7 +49,7 @@ for CHILD in "${TO_COPY[@]}"; do
 done
 
 echo "Processing Fluid source files:"
-cp -r "${PREFIX_2}fluid" dist/$WEBSITE_LISP_CASE
+cp -r "${PREFIX:+$PREFIX/dist/fluid/}fluid" dist/$WEBSITE_LISP_CASE
 [ -d "website/$WEBSITE/fluid" ] && cp -r "website/$WEBSITE/fluid" dist/$WEBSITE_LISP_CASE
 
 echo "Processing shared JavaScript files:"
