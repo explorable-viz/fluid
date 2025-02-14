@@ -180,7 +180,7 @@ eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ insertedα
    eval (γ <+> γ') e insertedα
    where
-   insertedα = insert (dvertex α "Expr") αs
+   insertedα = insert (dvertex α "RecDefs") αs
 
 eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set DVertex -> m (Env Vertex)
 eval_module γ = go empty
@@ -192,7 +192,7 @@ eval_module γ = go empty
       γ'' × _ × αs' <- match v σ
       go (y' <+> γ'') (Module ds) αs'
    go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
-      γ'' <- closeDefs (γ <+> γ') ρ (insert (dvertex α "Expr") αs)
+      γ'' <- closeDefs (γ <+> γ') ρ (insert (dvertex α "RecDefs") αs)
       go (γ' <+> γ'') (Module ds) αs
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
