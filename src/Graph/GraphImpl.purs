@@ -20,7 +20,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, op, outN, pack, unDVertex)
+import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, op, outN, pack)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, mapWithKey, toUnfoldable)
@@ -56,7 +56,7 @@ instance Graph GraphImpl where
       GraphImpl { out, in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
       es' = reverse es
-      αs' = L.fromFoldable (unDVertex αs)
+      αs' = L.fromFoldable αs
       out = wrap (runST (outMap αs' es'))
       in_ = wrap (runST (inMap αs' es'))
       vertices = Set.fromFoldable $ Set.map Vertex $ keys out
@@ -104,18 +104,18 @@ addIfMissing' αs acc = flip tailRecM (αs × acc) case _ of
       acc'' <- addIfMissing acc' α
       pure $ Loop (βs × acc'')
 
-init :: forall r. List Vertex -> ST r (MutableAdjMap r)
+init :: forall r. List DVertex -> ST r (MutableAdjMap r)
 init αs = do
    obj <- OST.new
    tailRecM go (αs × obj)
    where
    go :: List _ × MutableAdjMap r -> ST r (Step _ _)
    go (Nil × acc) = pure $ Done acc
-   go ((Vertex α : αs') × acc) = do
-      acc' <- OST.poke α (mempty × pack "uninit: init") acc
+   go ((DVertex (Vertex α × vd) : αs') × acc) = do
+      acc' <- OST.poke α (mempty × vd) acc
       pure $ Loop (αs' × acc')
 
-outMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
+outMap :: forall r. List DVertex -> List HyperEdge -> ST r (MutableAdjMap r)
 outMap αs es = do
    out <- init αs
    tailRecM addEdges (es × out)
@@ -132,7 +132,7 @@ outMap αs es = do
       else
          error $ "Duplicate edge list entry for " <> show α
 
-inMap :: forall r. List Vertex -> List HyperEdge -> ST r (MutableAdjMap r)
+inMap :: forall r. List DVertex -> List HyperEdge -> ST r (MutableAdjMap r)
 inMap αs es = do
    in_ <- init αs
    tailRecM addEdges (es × in_)

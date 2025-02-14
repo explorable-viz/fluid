@@ -36,7 +36,7 @@ bwdSlice (αs × g) = fst $
       if α ∈ visited then
          pure $ Loop { visited, αs: Nil, pending }
       else do
-         extend α βs (spyWhen tracing.graphBwdSlice ("Value found at " <> show α) (unPack show) vd)
+         extend α βs (spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (unPack show) vd)
          pure $ Loop { visited: insert α visited, αs: Nil, pending }
    go { visited, αs: α : αs', pending } = do
       let βs = outN g α

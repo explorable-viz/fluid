@@ -4,6 +4,7 @@ module Test.Util.Debug where
 tracing
    :: { runWithGraphT :: Boolean
       , graphBwdSlice :: Boolean
+      , graphBwdSlice' :: Boolean
       , graphFwdSlice :: Boolean
       , checkEq :: Boolean
       , bwdSelection :: Boolean
@@ -15,6 +16,7 @@ tracing
 tracing =
    { runWithGraphT: false
    , graphBwdSlice: false
+   , graphBwdSlice': true
    , graphFwdSlice: false
    , checkEq: false
    , bwdSelection: false
