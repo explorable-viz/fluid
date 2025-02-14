@@ -20,7 +20,7 @@ import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, DVertex, Vertex, dvertex, insert', op, pack, selectαs, select𝔹s, showGraph, showVertices, unDVertex, vertices)
+import Graph (class Graph, DVertex, Vertex, dvertex, insert', op, pack, selectαs, selectαs', select𝔹s, showGraph, showVertices, showVertices', unDVertex, vertices, vertices')
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -211,7 +211,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
 
 type GraphEval g s t =
    { g :: g
-   , graph_fwd :: Set Vertex -> Endo g
+   , graph_fwd :: Set DVertex -> Endo g
    , graph_bwd :: Set Vertex -> Endo g
    , inα :: s Vertex
    , outα :: t Vertex
@@ -223,7 +223,7 @@ withOp { g, graph_fwd, graph_bwd, inα, outα } =
 
 graphGC :: forall g s t. Graph g => Apply s => Apply t => Foldable s => Foldable t => GraphEval g s t -> GaloisConnection (s 𝔹) (t 𝔹)
 graphGC { g, graph_fwd, graph_bwd, inα, outα } = GC
-   { fwd: \in𝔹 -> select𝔹s outα (vertices (graph_fwd (selectαs in𝔹 inα) g))
+   { fwd: \in𝔹 -> select𝔹s outα (vertices (graph_fwd (selectαs' in𝔹 inα) g))
    , bwd: \out𝔹 -> select𝔹s inα (vertices (graph_bwd (selectαs out𝔹 outα) g))
    }
 
@@ -232,11 +232,12 @@ graphEval { n, γ } e = do
    _ × _ × g × inα × outα <- flip runAllocT n do
       eα <- alloc e
       let inα = EnvExpr γ eα
-      g × outα <- runWithGraphT_spy (eval γ eα mempty) (vertices inα)
+      g × outα <- runWithGraphT_spy (eval γ eα mempty) (vertices' inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × inα × outα)
    pure { g, graph_fwd, graph_bwd, inα, outα }
    where
-   graph_fwd = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
+   graph_fwd = curry (fwdSlice # spyFun'' tracing.graphFwdSlice "fwdSlice")
    graph_bwd = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
    spyFun' b msg = spyFunWhen b msg (showVertices *** showGraph) showGraph
+   spyFun'' b msg = spyFunWhen b msg (showVertices' *** showGraph) showGraph

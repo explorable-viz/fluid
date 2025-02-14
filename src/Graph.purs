@@ -63,6 +63,9 @@ class Selectαs a b | a -> b where
    selectαs :: a -> b -> Set Vertex
    select𝔹s :: b -> Set Vertex -> a
 
+selectαs' :: forall a b. Selectαs a b => a -> b -> Set DVertex
+selectαs' a b = Set.map (\α -> DVertex (α × pack "")) $ selectαs a b
+
 instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
    vertices' struct = unions ((\x -> singleton $ DVertex (x × pack "")) <$> struct)
@@ -120,6 +123,9 @@ showEdgeList es =
 
 showVertices :: Set Vertex -> String
 showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
+
+showVertices' :: Set DVertex -> String
+showVertices' = showVertices <<< unDVertex
 
 insert' :: Vertex -> Set DVertex -> Set Vertex
 insert' α αs = Set.insert α (unDVertex αs)

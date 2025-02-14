@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), DVertex(..), VertexData, fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, fromEdgeList, showEdgeList, showGraph, showVertices, showVertices', toEdgeList, unDVertex, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -65,9 +65,9 @@ runAllocT m n = do
    range' :: Int -> Int -> List Int
    range' n1 n2 = if n2 < n1 then Nil else range n1 n2
 
-runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
+runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
 runWithGraphT m αs = do
-   g × a <- freezeGraph m αs
+   g × a <- freezeGraph m (αs # unDVertex)
    -- only check one direction for now
    assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList mempty (toEdgeList g)) $
       pure (g × a)
@@ -89,11 +89,13 @@ alloc_check msg m = do
    let report = spy (show n <> " allocations, unaccounted for") showVertices
    check (report (αs \\ vertices x) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
-runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
-runWithGraphT_spy = runWithGraphT
-   >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" showVertices (fst >>> showGraph)
+runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
+runWithGraphT_spy wg αs =
+   ( runWithGraphT
+        >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" showVertices' (fst >>> showGraph)
+   ) wg αs
 
-runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Set Vertex -> g × a
+runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Set DVertex -> g × a
 runWithGraph_spy m = runWithGraphT_spy m >>> unwrap
 
 -- ======================
@@ -102,7 +104,7 @@ runWithGraph_spy m = runWithGraphT_spy m >>> unwrap
 runAlloc :: forall a. Alloc a -> Int -> Int × Set Vertex × a
 runAlloc m = runAllocT m >>> unwrap
 
-runWithGraph :: forall g a. Graph g => WithGraph a -> Set Vertex -> g × a
+runWithGraph :: forall g a. Graph g => WithGraph a -> Set DVertex -> g × a
 runWithGraph m = runWithGraphT m >>> unwrap
 
 instance Monad m => MonadAlloc (WithGraphAllocT m) where
