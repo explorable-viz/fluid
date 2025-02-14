@@ -49,7 +49,7 @@ for CHILD in "${TO_COPY[@]}"; do
 done
 
 echo "Processing Fluid source files:"
-cp -r "${PREFIX:+$PREFIX/dist/fluid/}fluid" dist/$WEBSITE_LISP_CASE
+cp -r "${PREFIX_}dist/fluid/fluid" dist/$WEBSITE_LISP_CASE
 [ -d "website/$WEBSITE/fluid" ] && cp -r "website/$WEBSITE/fluid" dist/$WEBSITE_LISP_CASE
 
 echo "Processing shared JavaScript files:"
