@@ -23,7 +23,7 @@ import Foreign.Object.ST as OST
 import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, op, outN, pack)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
-import Util.Map (keys, lookup, toUnfoldable)
+import Util.Map (keys, lookup, mapWithKey, toUnfoldable)
 import Util.Set (empty, size)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
@@ -70,6 +70,7 @@ instance Graph GraphImpl where
 
 instance Vertices GraphImpl where
    vertices (GraphImpl g) = g.vertices
+   vertices' (GraphImpl g) = Set.fromFoldable $ mapWithKey (\k (_ × vd) -> DVertex (Vertex k × vd)) g.out
 
 -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
 -- This is better but still slow if there are thousands of sinks.
