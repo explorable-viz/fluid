@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), VertexData, fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class Vertices, HyperEdge, Vertex(..), DVertex(..), VertexData, fromEdgeList, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -50,7 +50,7 @@ instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
       pure α
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
-   extend α αs vd = void $ modify_ $ (:) (α × αs × vd)
+   extend α αs vd = void $ modify_ $ (:) (DVertex (α × vd) × αs)
 
 alloc :: forall m f. MonadAlloc m => Traversable f => Raw f -> m (f Vertex)
 alloc = traverse (const fresh)

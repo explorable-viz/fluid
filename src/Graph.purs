@@ -19,7 +19,7 @@ import Util (type (×), Endo, (×))
 import Util.Set ((∈))
 
 type Edge = Vertex × Vertex
-type HyperEdge = Vertex × Set Vertex × VertexData -- mostly a convenience
+type HyperEdge = DVertex × Set Vertex -- mostly a convenience
 
 newtype DVertex = DVertex (Vertex × VertexData)
 
@@ -94,7 +94,7 @@ toEdgeList g =
    go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
       Nothing -> Done acc
-      Just { head: α, tail: αs } -> Loop (αs × (α × outN g α × pack "") : acc)
+      Just { head: α, tail: αs } -> Loop (αs × ((dvertex α "") × outN g α) : acc)
 
 showGraph :: forall g. Graph g => g -> String
 showGraph = toEdgeList >>> showEdgeList
@@ -113,7 +113,7 @@ showEdgeList es =
    indent = ("   " <> _)
 
    showEdge :: HyperEdge -> String
-   showEdge (α × αs × _) =
+   showEdge ((DVertex (α × _)) × αs) =
       unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `Set.map` αs) <> "}"
 
 showVertices :: Set Vertex -> String

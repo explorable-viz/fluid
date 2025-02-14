@@ -20,7 +20,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, HyperEdge, VertexData, Vertex(..), op, outN, pack)
+import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, op, outN, pack)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, toUnfoldable)
@@ -121,7 +121,7 @@ outMap αs es = do
    where
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((Vertex α × βs × vd) : es') × acc) = do
+   addEdges (((DVertex (Vertex α × vd) × βs) : es') × acc) = do
       ok <- OST.peek α acc <#> maybe true (\x -> fst x == mempty)
       if ok then do
          let βs' = Set.toUnfoldable βs
@@ -138,7 +138,7 @@ inMap αs es = do
    where
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges (((α × βs × vd) : es') × acc) = do
+   addEdges ((((DVertex (α × vd)) × βs) : es') × acc) = do
       acc' <- tailRecM (addEdge' α vd) (Set.toUnfoldable βs × acc) >>= flip addIfMissing α
       pure $ Loop (es' × acc')
 
