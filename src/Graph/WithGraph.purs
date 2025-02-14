@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, fromEdgeList, showEdgeList, showGraph, showVertices, showVertices', toEdgeList, unDVertex, vertices)
+import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, fromEdgeList, showEdgeList, showGraph, showVertices, showVertices', toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -67,12 +67,12 @@ runAllocT m n = do
 
 runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
 runWithGraphT m αs = do
-   g × a <- freezeGraph m (αs # unDVertex)
+   g × a <- freezeGraph m αs
    -- only check one direction for now
    assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList mempty (toEdgeList g)) $
       pure (g × a)
 
-freezeGraph :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set Vertex -> m (g × a)
+freezeGraph :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
 freezeGraph m αs = runStateT m Nil <#> swap <#> first (fromEdgeList αs <<< report "edge list" showEdgeList)
    where
    report :: forall c b. String -> (c -> b) -> Endo c

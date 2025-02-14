@@ -48,7 +48,7 @@ class (Eq g, Vertices g) <= Graph g where
    -- | right-to-left, each α is a new vertex to be added, and each β ∈ βs already exists in the graph being
    -- | constructed. Upper adjoint to toEdgeList. If "direction" is bwd, hyperedges are assumed to be in
    -- | reverse topological order.
-   fromEdgeList :: Set Vertex -> List HyperEdge -> g
+   fromEdgeList :: Set DVertex -> List HyperEdge -> g
 
    topologicalSort :: g -> List Vertex
    vertexData :: g -> Vertex -> VertexData

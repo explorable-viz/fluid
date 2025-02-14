@@ -20,7 +20,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, op, outN, pack)
+import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, op, outN, pack, unDVertex)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, mapWithKey, toUnfoldable)
@@ -56,7 +56,7 @@ instance Graph GraphImpl where
       GraphImpl { out, in_, sinks: sinks' out, sources: sinks' in_, vertices }
       where
       es' = reverse es
-      αs' = L.fromFoldable αs
+      αs' = L.fromFoldable (unDVertex αs)
       out = wrap (runST (outMap αs' es'))
       in_ = wrap (runST (inMap αs' es'))
       vertices = Set.fromFoldable $ Set.map Vertex $ keys out
