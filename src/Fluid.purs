@@ -30,6 +30,7 @@ data Program = Program
    , imports :: Array String
    , datasets :: Array (Bind String)
    , fileName :: String
+   , prefix :: Folder
    }
 
 data Command = Evaluate Program | Publish Folder Boolean
@@ -72,7 +73,8 @@ program = ado
    imports <- fromFoldable <$> parseImports
    datasets <- fromFoldable <$> parseDatasets
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
-   in Program { library, imports, datasets, fileName }
+   prefix <- Folder <$> strOption (long "prefix" <> short 'p' <> help "The prefix for the file")
+   in Program { library, imports, datasets, fileName, prefix }
 
 commands :: { publish :: Parser Command, evaluate :: Parser Command }
 commands =
@@ -136,8 +138,8 @@ fluidLibraryPath :: String
 fluidLibraryPath = "node_modules/@explorable-viz/fluid"
 
 evaluate :: Program -> Aff (Val Unit)
-evaluate (Program { library, imports, datasets, fileName }) = do
-   let fluidSrcPaths = [ Folder "fluid" ] <> if library then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
+evaluate (Program { library, imports, datasets, fileName, prefix }) = do
+   let fluidSrcPaths = [ prefix ] <> if library then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
    { e, gconfig } <- prepConfig fluidSrcPaths (File fileName) progCxt
    { outα } <- graphEval gconfig e
