@@ -5,14 +5,14 @@ import Prelude hiding (absurd, append)
 import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Array ((!!))
+import Data.Array (concat, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
 import Data.List (List(..), (:), zipWith)
-import Data.Newtype (class Newtype)
-import Data.Set (Set)
+import Data.Newtype (class Newtype, unwrap)
+import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
@@ -20,8 +20,9 @@ import Dict (Dict)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Expr, Elim, fv)
+import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex(..))
+import Graph (class Vertices', DVertex(..), Vertex(..), pack, vertices'')
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
@@ -331,3 +332,32 @@ instance Show (BaseVal a) where
    show (Dictionary _d) = "Dictionary"
    show (Matrix _m) = "Matrix"
    show (Fun _f) = "Function"
+
+instance Vertices' (Val Vertex) where
+   vertices'' (Val α v) = singleton (DVertex (α × pack v)) ∪ vertices'' v
+
+instance Vertices' (BaseVal Vertex) where
+   vertices'' (Int _) = empty
+   vertices'' (Float _) = empty
+   vertices'' (Str _) = empty
+   vertices'' (Constr _ vs) = unions (vertices'' <$> vs)
+   vertices'' (Dictionary d) = vertices'' d
+   vertices'' (Matrix m) = vertices'' m
+   vertices'' (Fun f) = vertices'' f
+
+instance Vertices' (DictRep Vertex) where
+   vertices'' (DictRep d) = foldMap (\k (α × v) -> singleton (DVertex (α × pack ("DictKey " <> k))) ∪ vertices'' v) (unwrap d)
+
+instance Vertices' (MatrixRep Vertex) where
+   vertices'' (MatrixRep (vss × (i × α) × (j × β))) =
+      unions (concat (map vertices'' <$> vss))
+         ∪ singleton (DVertex (α × pack ("MatrixRep " <> show i)))
+         ∪ singleton (DVertex (β × pack ("MatrixRep " <> show j)))
+
+instance Vertices' (Fun Vertex) where
+   vertices'' (Closure γ _ _) = vertices'' γ
+   vertices'' (Foreign _ vs) = unions (vertices'' <$> vs)
+   vertices'' (PartialConstr _ vs) = unions (vertices'' <$> vs)
+
+instance Vertices' (Env Vertex) where
+   vertices'' (Env γ) = unions (vertices'' <$> values γ)
