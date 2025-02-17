@@ -14,6 +14,7 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
+import Graph (class Vertices', DVertex(..), Vertex, pack, vertices')
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∨), (∧))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
 import Util.Map (keys, asMaplet)
@@ -189,6 +190,45 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
 
 instance MeetSemilattice a => MeetSemilattice (Expr a) where
    meet = lift2 (∧)
+
+instance Vertices' (Expr Vertex) where
+   vertices' (Var _) = empty
+   vertices' (Op _) = empty
+   vertices' (Int α i) = singleton (DVertex (α × pack ("Int " <> show i)))
+   vertices' (Float α f) = singleton (DVertex (α × pack ("Float " <> show f)))
+   vertices' (Str α s) = singleton (DVertex (α × pack ("Str " <> s)))
+   vertices' (Dictionary α ees) = singleton (DVertex (α × pack "Dictionary")) ∪ unions (go <$> ees)
+      where
+      go (Pair e e') = vertices' e ∪ vertices' e'
+   vertices' (Constr α ctr es) = singleton (DVertex (α × pack ("Constr " <> ctr))) ∪ unions (vertices' <$> es)
+   vertices' (Matrix α e1 _ e2) = singleton (DVertex (α × pack "Matrix")) ∪ vertices' e1 ∪ vertices' e2
+   vertices' (Lambda α σ) = singleton (DVertex (α × pack "Lambda")) ∪ vertices' σ
+   vertices' (Project e _) = vertices' e
+   vertices' (DProject e x) = vertices' e ∪ vertices' x
+   vertices' (App e1 e2) = vertices' e1 ∪ vertices' e2
+   vertices' (Let def e) = vertices' def ∪ vertices' e
+   vertices' (LetRec ρ e) = vertices' ρ ∪ vertices' e
+
+instance Vertices' (Elim Vertex) where
+   vertices' (ElimVar _ κ) = vertices' κ
+   vertices' (ElimConstr m) = vertices' m
+   vertices' (ElimDict _ κ) = vertices' κ
+
+instance Vertices' (VarDef Vertex) where
+   vertices' (VarDef σ e) = vertices' σ ∪ vertices' e
+
+instance Vertices' (Cont Vertex) where
+   vertices' (ContExpr e) = vertices' e
+   vertices' (ContElim σ) = vertices' σ
+
+instance Vertices' (RecDefs Vertex) where
+   vertices' (RecDefs α ρ) = singleton (DVertex (α × pack "RecDefs")) ∪ vertices' ρ
+
+instance Vertices' (Module Vertex) where
+   vertices' (Module defs) = unions (go <$> defs)
+      where
+      go (Left vardef) = vertices' vardef
+      go (Right recdefs) = vertices' recdefs
 
 -- ======================
 -- boilerplate

@@ -14,6 +14,7 @@ import Data.Set as Set
 import Data.String (joinWith)
 import Data.Tuple (fst)
 import Dict (Dict)
+import Foreign.Object (values)
 import Lattice (𝔹)
 import Util (type (×), Endo, (×))
 import Util.Set ((∈))
@@ -57,7 +58,6 @@ newtype Vertex = Vertex String -- so can use directly as dict key
 
 class Vertices a where
    vertices :: a -> Set Vertex
-   vertices' :: a -> Set DVertex
 
 class Selectαs a b | a -> b where
    selectαs :: a -> b -> Set Vertex
@@ -68,10 +68,12 @@ selectαs' a b = Set.map (\α -> DVertex (α × pack "selectαs'")) $ selectαs 
 
 instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices = (singleton <$> _) >>> unions
-   vertices' struct = unions ((\x -> singleton $ DVertex (x × pack "vertices'")) <$> struct)
 
 class Vertices' a where
-   vertices'' :: a -> Set DVertex
+   vertices' :: a -> Set DVertex
+
+instance (Vertices' a) => Vertices' (Dict a) where
+   vertices' d = unions (vertices' <$> values (unwrap d))
 
 instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f Vertex) where
    selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)

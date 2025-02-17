@@ -22,7 +22,7 @@ import Effect.Exception (Error)
 import Expr (Expr, Elim, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Vertices', DVertex(..), Vertex(..), pack, vertices'')
+import Graph (class Vertices', DVertex(..), Vertex(..), pack, vertices')
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
@@ -334,30 +334,33 @@ instance Show (BaseVal a) where
    show (Fun _f) = "Function"
 
 instance Vertices' (Val Vertex) where
-   vertices'' (Val α v) = singleton (DVertex (α × pack v)) ∪ vertices'' v
+   vertices' (Val α v) = singleton (DVertex (α × pack v)) ∪ vertices' v
 
 instance Vertices' (BaseVal Vertex) where
-   vertices'' (Int _) = empty
-   vertices'' (Float _) = empty
-   vertices'' (Str _) = empty
-   vertices'' (Constr _ vs) = unions (vertices'' <$> vs)
-   vertices'' (Dictionary d) = vertices'' d
-   vertices'' (Matrix m) = vertices'' m
-   vertices'' (Fun f) = vertices'' f
+   vertices' (Int _) = empty
+   vertices' (Float _) = empty
+   vertices' (Str _) = empty
+   vertices' (Constr _ vs) = unions (vertices' <$> vs)
+   vertices' (Dictionary d) = vertices' d
+   vertices' (Matrix m) = vertices' m
+   vertices' (Fun f) = vertices' f
 
 instance Vertices' (DictRep Vertex) where
-   vertices'' (DictRep d) = foldMap (\k (α × v) -> singleton (DVertex (α × pack ("DictKey " <> k))) ∪ vertices'' v) (unwrap d)
+   vertices' (DictRep d) = foldMap (\k (α × v) -> singleton (DVertex (α × pack ("DictKey " <> k))) ∪ vertices' v) (unwrap d)
 
 instance Vertices' (MatrixRep Vertex) where
-   vertices'' (MatrixRep (vss × (i × α) × (j × β))) =
-      unions (concat (map vertices'' <$> vss))
+   vertices' (MatrixRep (vss × (i × α) × (j × β))) =
+      unions (concat (map vertices' <$> vss))
          ∪ singleton (DVertex (α × pack ("MatrixRep " <> show i)))
          ∪ singleton (DVertex (β × pack ("MatrixRep " <> show j)))
 
 instance Vertices' (Fun Vertex) where
-   vertices'' (Closure γ _ _) = vertices'' γ
-   vertices'' (Foreign _ vs) = unions (vertices'' <$> vs)
-   vertices'' (PartialConstr _ vs) = unions (vertices'' <$> vs)
+   vertices' (Closure γ ρ σ) = vertices' γ ∪ vertices' ρ ∪ vertices' σ
+   vertices' (Foreign _ vs) = unions (vertices' <$> vs)
+   vertices' (PartialConstr _ vs) = unions (vertices' <$> vs)
 
 instance Vertices' (Env Vertex) where
-   vertices'' (Env γ) = unions (vertices'' <$> values γ)
+   vertices' (Env γ) = unions (vertices' <$> values γ)
+
+instance Vertices' (EnvExpr Vertex) where
+   vertices' (EnvExpr γ e) = vertices' γ ∪ vertices' e
