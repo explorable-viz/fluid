@@ -20,7 +20,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, class Vertices', DVertex(..), HyperEdge, Vertex(..), VertexData, op, outN, pack)
+import Graph (class Graph, class Vertices, class Vertices', DVertex(..), HyperEdge, Vertex(..), VertexData, op, outN)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, mapWithKey, toUnfoldable)
@@ -93,18 +93,11 @@ assertPresent obj (Vertex α : αs) = do
       $ pure
       $ Loop αs
 
-addIfMissing :: forall r. MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
-addIfMissing acc (Vertex α) =
+addIfMissing :: forall r. MutableAdjMap r -> DVertex -> ST r (MutableAdjMap r)
+addIfMissing acc (DVertex (Vertex α × vd)) =
    OST.peek α acc >>= case _ of
-      Nothing -> OST.poke α (mempty × pack "uninit: missing") acc
+      Nothing -> OST.poke α (mempty × vd) acc
       Just _ -> pure acc
-
-addIfMissing' :: forall r. List Vertex -> MutableAdjMap r -> ST r (MutableAdjMap r)
-addIfMissing' αs acc = flip tailRecM (αs × acc) case _ of
-   (Nil × acc') -> pure $ Done acc'
-   ((α : βs) × acc') -> do
-      acc'' <- addIfMissing acc' α
-      pure $ Loop (βs × acc'')
 
 init :: forall r. List DVertex -> ST r (MutableAdjMap r)
 init αs = do
@@ -129,7 +122,7 @@ outMap αs es = do
       if ok then do
          let βs' = Set.toUnfoldable βs
          tailRecM (assertPresent acc) βs'
-         acc' <- OST.poke α (βs × vd) acc >>= addIfMissing' βs'
+         acc' <- OST.poke α (βs × vd) acc
          pure $ Loop (es' × acc')
       else
          error $ "Duplicate edge list entry for " <> show α
@@ -141,8 +134,8 @@ inMap αs es = do
    where
    addEdges :: List HyperEdge × MutableAdjMap r -> ST r (Step _ (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
-   addEdges ((((DVertex (α × vd)) × βs) : es') × acc) = do
-      acc' <- tailRecM (addEdge' α vd) (Set.toUnfoldable βs × acc) >>= flip addIfMissing α
+   addEdges (((DVertex (α × vd) × βs) : es') × acc) = do
+      acc' <- tailRecM (addEdge' α vd) (Set.toUnfoldable βs × acc) >>= flip addIfMissing (DVertex (α × vd))
       pure $ Loop (es' × acc')
 
    addEdge :: Vertex -> VertexData -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
