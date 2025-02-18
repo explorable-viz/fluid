@@ -10,7 +10,7 @@ import Data.Map as M
 import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
-import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, dvertex, inEdges, inEdges', outN, sinks, sources, unDVertex, unPack, vertexData, vertices)
+import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources, unDVertex, unPack, vertexData, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), singleton, spyWhen, validateWhen, (×), (∩), (⊆))
@@ -44,7 +44,7 @@ bwdSlice (αs × g) = fst $
       let vd = vertexData g α
       pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: ((DVertex (α × vd)) × βs) : pending }
 
-type PendingVertices = Map Vertex (Set DVertex)
+type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig =
    { pending :: PendingVertices
    , es :: List Edge
@@ -59,13 +59,11 @@ fwdSlice (αs × g) = fst $
    go :: FwdConfig -> WithGraph (Step FwdConfig Unit)
    go { es: Nil } = pure $ Done unit
    go { pending, es: (α × β) : es } =
-      if βs' == outN g α then do
+      if βs == outN g α then do
          let vd = vertexData g α
-         extend (DVertex (α × vd)) βs'
+         extend (DVertex (α × vd)) βs
          pure $ Loop { pending: M.delete α pending, es: inEdges' g α <> es }
       else
          pure $ Loop { pending: M.insert α βs pending, es }
       where
-      β' = dvertex β "uninit: fwd"
-      βs = maybe (singleton β') (insert β') (lookup α pending)
-      βs' = unDVertex βs
+      βs = maybe (singleton β) (insert β) (lookup α pending)
