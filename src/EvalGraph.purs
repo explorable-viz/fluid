@@ -237,6 +237,6 @@ graphEval { n, γ } e = do
       pure (g × inα × outα)
    pure { g, graph_fwd, graph_bwd, inα, outα }
    where
-   graph_fwd = curry (fwdSlice # spyFun'' tracing.graphFwdSlice "fwdSlice")
-   graph_bwd = curry (bwdSlice # spyFun'' tracing.graphBwdSlice "bwdSlice")
-   spyFun'' b msg = spyFunWhen b msg (showVertices' *** showGraph) showGraph
+   graph_fwd = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
+   graph_bwd = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
+   spyFun' b msg = spyFunWhen b msg (showVertices' *** showGraph) showGraph

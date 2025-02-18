@@ -26,7 +26,7 @@ newtype DVertex = DVertex (Vertex × VertexData)
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
-class (Eq g, Vertices g) <= Graph g where
+class (Eq g, Vertices g, Vertices' g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
 
