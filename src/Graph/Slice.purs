@@ -32,7 +32,7 @@ bwdSlice (αs × g) = fst $
    where
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
    go { αs: Nil, pending: Nil } = pure $ Done unit
-   go { visited, αs: Nil, pending: ((DVertex (α × vd)) × βs) : pending } = do
+   go { visited, αs: Nil, pending: (DVertex (α × vd) × βs) : pending } = do
       if α ∈ visited then
          pure $ Loop { visited, αs: Nil, pending }
       else do
@@ -42,7 +42,7 @@ bwdSlice (αs × g) = fst $
       let βs = outN g α
       -- βs in g so safe to call definitely:
       let vd = vertexData g α
-      pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: ((DVertex (α × vd)) × βs) : pending }
+      pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: (DVertex (α × vd) × βs) : pending }
 
 type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig =

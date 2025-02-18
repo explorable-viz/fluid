@@ -123,7 +123,7 @@ showEdgeList es =
    indent = ("   " <> _)
 
    showEdge :: HyperEdge -> String
-   showEdge ((DVertex (α × _)) × αs) =
+   showEdge (DVertex (α × _) × αs) =
       unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `Set.map` αs) <> "}"
 
 showVertices :: Set Vertex -> String
