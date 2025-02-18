@@ -22,12 +22,12 @@ type BwdConfig =
    , pending :: List HyperEdge
    }
 
-bwdSlice :: forall g. Graph g => Set Vertex × g -> g
+bwdSlice :: forall g. Graph g => Set DVertex × g -> g
 bwdSlice (αs × g) = fst $
    αs
       -- No outputsAreSources analog of inputAreSinks; we do however need to restrict to sources (see #818).
-      # validateWhen checking.outputsInGraph "inputs are sinks" (_ ⊆ vertices g)
-      # (_ ∩ sources g)
+      # validateWhen checking.outputsInGraph "inputs are sinks" (\vs -> unDVertex vs ⊆ vertices g)
+      # (\vs -> unDVertex vs ∩ sources g)
       # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
    where
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
