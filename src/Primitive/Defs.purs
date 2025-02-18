@@ -109,10 +109,10 @@ dims =
    where
    op :: OpGraph
    op (Val α (Matrix (MatrixRep (_ × (i × β1) × (j × β2)))) : Nil) = do
-      v1 <- Val <$> new (singleton β1) (pack $ Int i) <@> Int i
-      v2 <- Val <$> new (singleton β2) (pack $ Int j) <@> Int j
+      v1 <- Val <$> new (pack $ Int i) (singleton β1) <@> Int i
+      v2 <- Val <$> new (pack $ Int j) (singleton β2) <@> Int j
       let v = Constr cPair (v1 : v2 : Nil)
-      Val <$> new (singleton α) (pack v) <@> v
+      Val <$> new (pack v) (singleton α) <@> v
    op _ = throw "Matrix expected"
 
    fwd :: OpFwd (Array2 (Raw Val))
@@ -150,7 +150,7 @@ matrixUpdate =
    where
    op :: OpGraph
    op (Val α (Matrix r) : Val _ (Constr c (Val _ (Int i) : Val _ (Int j) : Nil)) : v : Nil)
-      | c == cPair = Val <$> new (singleton α) (pack v') <@> v'
+      | c == cPair = Val <$> new (pack v') (singleton α) <@> v'
            where
            v' = Matrix (matrixPut i j (const v) r)
    op _ = throw "Matrix, pair of integers and value expected"
@@ -173,7 +173,7 @@ dict_difference =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) =
-      Val <$> new (singleton α # Set.insert β) (pack v) <@> v
+      Val <$> new (pack v) (singleton α # Set.insert β) <@> v
       where
       v = Dictionary (DictRep (d \\ d'))
    op _ = throw "Dictionaries expected."
@@ -193,7 +193,7 @@ dict_disjointUnion =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) = do
-      Val <$> new (singleton α # Set.insert β) (pack v) <@> v
+      Val <$> new (pack v) (singleton α # Set.insert β) <@> v
       where
       v = Dictionary (DictRep (disjointUnion d d'))
    op _ = throw "Dictionaries expected"
@@ -262,11 +262,11 @@ dict_intersectionWith =
    op :: OpGraph
    op (v : Val α (Dictionary (DictRep d1)) : Val α' (Dictionary (DictRep d2)) : Nil) = do
       packable <- v'
-      Val <$> new (singleton α # Set.insert α') (pack packable) <*> v'
+      Val <$> new (pack packable) (singleton α # Set.insert α') <*> v'
       where
       apply' (β × u) (β' × u') = do
          vInner@(Val _ key) <- (G.apply v u >>= flip G.apply u')
-         β'' <- new (singleton β # Set.insert β') (pack key) -- Unsure what to pack here, whether it's anything at all
+         β'' <- new (pack key) (singleton β # Set.insert β') -- Unsure what to pack here, whether it's anything at all
          (×) β'' <$> pure vInner
       v' = Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2))
    op _ = throw "Function and two dictionaries expected"
@@ -299,7 +299,7 @@ dict_map =
    op (v : Val α (Dictionary (DictRep d)) : Nil) = do
       d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
       let v' = Dictionary (DictRep d')
-      Val <$> new (singleton α) (pack v') <@> v'
+      Val <$> new (pack v') (singleton α) <@> v'
    op _ = throw "Function and dictionary expected"
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)

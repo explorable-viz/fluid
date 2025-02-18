@@ -159,7 +159,7 @@ unary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v : Nil) =
-      pack f.o <$> ((v' × _) <$> new (singleton α) (G.pack v'))
+      pack f.o <$> ((v' × _) <$> new (G.pack v') (singleton α))
       where
       v' = f.fwd (f.i.unpack v)
 
@@ -179,7 +179,7 @@ binary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack f.o <$> ((v' × _) <$> new (singleton α # insert β) (G.pack v'))
+      pack f.o <$> ((v' × _) <$> new (G.pack v') (singleton α # insert β))
       where
       v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
 
@@ -201,7 +201,7 @@ binaryZero id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack f.o <$> ((v' × _) <$> new αs (G.pack v'))
+      pack f.o <$> ((v' × _) <$> new (G.pack v') αs)
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
       v' = f.fwd x y

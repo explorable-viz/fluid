@@ -20,8 +20,8 @@ import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×)
 import Util.Set ((\\))
 
 class Monad m <= MonadWithGraph m where
-   -- Extend graph with existing vertex pointing to set of existing vertices.
-   extend :: Vertex -> Set Vertex -> VertexData -> m Unit
+   -- Extend graph with existing vertex and its accompanying data pointing to set of existing vertices.
+   extend :: DVertex -> Set Vertex -> m Unit
 
 class Monad m <= MonadAlloc m where
    fresh :: m Vertex
@@ -30,7 +30,7 @@ class Monad m <= MonadAlloc m where
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
 class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
-   new :: Set Vertex -> VertexData -> m Vertex
+   new :: VertexData -> Set Vertex -> m Vertex
 
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
@@ -44,13 +44,13 @@ instance Monad m => MonadAlloc (AllocT m) where
       pure (Vertex $ show n)
 
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
-   new αs vd = do
+   new vd αs = do
       α <- fresh
-      extend α αs vd
+      extend (DVertex (α × vd)) αs
       pure α
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
-   extend α αs vd = void $ modify_ $ (:) (DVertex (α × vd) × αs)
+   extend α αs = void $ modify_ $ (:) (α × αs)
 
 alloc :: forall m f. MonadAlloc m => Traversable f => Raw f -> m (f Vertex)
 alloc = traverse (const fresh)
