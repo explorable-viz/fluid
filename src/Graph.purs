@@ -16,7 +16,7 @@ import Data.Tuple (fst)
 import Dict (Dict)
 import Foreign.Object (values)
 import Lattice (𝔹)
-import Util (type (×), Endo, (×))
+import Util (type (×), Endo, (×), type (+))
 import Util.Set ((∈))
 
 type Edge = Vertex × Vertex
@@ -135,19 +135,22 @@ showVertices' = showVertices <<< unDVertex
 insert' :: Vertex -> Set DVertex -> Set Vertex
 insert' α αs = Set.insert α (unDVertex αs)
 
-dvertex :: forall a. Show a => Vertex -> a -> DVertex
+dvertex :: forall a. TypeName a => Vertex -> a -> DVertex
 dvertex α v = DVertex (α × pack v)
 
 -- ======================
--- Backpointers to values
+-- Packed data associated with Vertex
 -- ======================
 
-newtype VertexData = VertexData (forall r. (forall a. Show a => a -> r) -> r)
+class TypeName a where
+   typeName :: a -> String
 
-pack :: forall a. Show a => a -> VertexData
+newtype VertexData = VertexData (forall r. (forall a. TypeName a => a -> r) -> r)
+
+pack :: forall a. TypeName a => a -> VertexData
 pack x = VertexData (\k -> k x)
 
-unPack :: forall r. (forall a. Show a => a -> r) -> VertexData -> r
+unPack :: forall r. (forall a. TypeName a => a -> r) -> VertexData -> r
 unPack f (VertexData e) = e f
 
 unDVertex :: Set DVertex -> Set Vertex
@@ -168,3 +171,21 @@ derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
 derive newtype instance Show Vertex
+
+instance TypeName String where
+   typeName _ = "String"
+
+instance TypeName Int where
+   typeName _ = "Int"
+
+instance TypeName Number where
+   typeName _ = "Number"
+
+instance TypeName (Int + Number) where
+   typeName _ = "Either Int or Number"
+
+instance TypeName (Int + Number + String) where
+   typeName _ = "Either Int, Number, or String"
+
+instance TypeName 𝔹 where
+   typeName _ = "Boolean"

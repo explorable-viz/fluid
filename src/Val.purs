@@ -22,7 +22,7 @@ import Effect.Exception (Error)
 import Expr (Expr, Elim, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Vertices', DVertex(..), Vertex(..), pack, vertices')
+import Graph (class TypeName, class Vertices', DVertex(..), Vertex(..), pack, vertices')
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
@@ -324,14 +324,8 @@ derive instance Ord a => Ord (EnvExpr a)
 derive instance Newtype (Env a) _
 
 -- Interim
-instance Show (BaseVal a) where
-   show (Int n) = show n
-   show (Float n) = show n
-   show (Str s) = show s
-   show (Constr c _vs) = show c
-   show (Dictionary _d) = "Dictionary"
-   show (Matrix _m) = "Matrix"
-   show (Fun _f) = "Function"
+instance TypeName (BaseVal a) where
+   typeName _ = "BaseVal"
 
 instance Vertices' (Val Vertex) where
    vertices' (Val α v) = singleton (DVertex (α × pack v)) ∪ vertices' v

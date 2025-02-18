@@ -10,7 +10,7 @@ import Data.Map as M
 import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
-import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources, unDVertex, unPack, vertexData, vertices)
+import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources, typeName, unDVertex, unPack, vertexData, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), singleton, spyWhen, validateWhen, (×), (∩), (⊆))
@@ -36,7 +36,7 @@ bwdSlice (αs × g) = fst $
       if α ∈ visited then
          pure $ Loop { visited, αs: Nil, pending }
       else do
-         extend (DVertex (α × (spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (unPack show) vd))) βs
+         extend (DVertex (α × (spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (unPack typeName) vd))) βs
          pure $ Loop { visited: insert α visited, αs: Nil, pending }
    go { visited, αs: α : αs', pending } = do
       let βs = outN g α
