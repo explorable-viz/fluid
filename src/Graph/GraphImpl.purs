@@ -69,7 +69,7 @@ instance Graph GraphImpl where
       kvs = toUnfoldable (fst <$> g.out <#> Set.toUnfoldable)
 
 instance Vertices GraphImpl where
-   vertices' (GraphImpl g) = Set.fromFoldable $ mapWithKey (\k (_ × vd) -> DVertex (Vertex k × vd)) g.out
+   vertices (GraphImpl g) = Set.fromFoldable $ mapWithKey (\k (_ × vd) -> DVertex (Vertex k × vd)) g.out
 
 -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
 -- This is better but still slow if there are thousands of sinks.

@@ -10,7 +10,7 @@ import Data.Set (unions)
 import Data.Traversable (class Foldable, class Traversable)
 import Data.Tuple (snd)
 import Expr (Expr, Module)
-import Graph (class Vertices, Vertex, vertices')
+import Graph (class Vertices, Vertex, vertices)
 import Util.Set ((∪))
 import Val (Env)
 
@@ -22,10 +22,10 @@ newtype ProgCxt a = ProgCxt
    }
 
 instance Vertices (ProgCxt Vertex) where
-   vertices' (ProgCxt { primitives, mods, datasets }) =
-      vertices' primitives
-         ∪ unions (vertices' <$> mods)
-         ∪ unions ((vertices' <<< snd) <$> datasets)
+   vertices (ProgCxt { primitives, mods, datasets }) =
+      vertices primitives
+         ∪ unions (vertices <$> mods)
+         ∪ unions ((vertices <<< snd) <$> datasets)
 
 -- ======================
 -- boilerplate

@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class TypeName, class Vertices, DVertex(..), HyperEdge, Vertex(..), fromEdgeList, pack, showEdgeList, showGraph, showVertices, showVertices', toEdgeList, vertices')
+import Graph (class Graph, class TypeName, class Vertices, DVertex(..), HyperEdge, Vertex(..), fromEdgeList, pack, showEdgeList, showGraph, showVertices, showVertices', toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -90,7 +90,7 @@ alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT 
 alloc_check msg m = do
    n × αs × x <- runAllocT m 0
    let report = spy (show n <> " allocations, unaccounted for") showVertices
-   check (report (αs \\ ((fst <<< unwrap) `Set.map` vertices' x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
+   check (report (αs \\ ((fst <<< unwrap) `Set.map` vertices x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
 runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
 runWithGraphT_spy wg αs =

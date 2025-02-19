@@ -61,12 +61,12 @@ class Selectαs a b | a -> b where
    select𝔹s :: b -> Set DVertex -> a
 
 instance (Vertices a) => Vertices (Dict a) where
-   vertices' d = unions (vertices' <$> values (unwrap d))
+   vertices d = unions (vertices <$> values (unwrap d))
 else instance (Functor f, Foldable f) => Vertices (f DVertex) where
-   vertices' = (singleton <$> _) >>> unions
+   vertices = (singleton <$> _) >>> unions
 
 class Vertices a where
-   vertices' :: a -> Set DVertex
+   vertices :: a -> Set DVertex
 
 instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f DVertex) where
    selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
