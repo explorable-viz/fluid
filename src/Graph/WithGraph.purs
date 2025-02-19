@@ -55,9 +55,6 @@ instance Monad m => MonadWithGraph (WithGraphT m) where
 alloc :: forall m f. MonadAlloc m => Traversable f => Raw f -> m (f Vertex)
 alloc = traverse (const fresh)
 
-alloc' :: forall m f. MonadAlloc m => Traversable f => Raw f -> m (f DVertex)
-alloc' = traverse (const (fresh <#> DVertex <<< flip (×) (pack "alloc'")))
-
 runAllocT :: forall m a. Monad m => AllocT m a -> Int -> m (Int × Set Vertex × a)
 runAllocT m n = do
    a × n' <- runStateT m n
