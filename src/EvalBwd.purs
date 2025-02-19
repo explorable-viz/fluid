@@ -32,7 +32,7 @@ import Util.Map (append_inv, disjointUnion, disjointUnion_inv, get, insert, keys
 import Util.Pair (zip) as P
 import Util.Set (empty, (∪))
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, DictRep(..), Env, EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..))
+import Val (class Ann, DictRep(..), Env, EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × Dict (Elim a) × a
 closeDefsBwd γ =
@@ -140,7 +140,7 @@ evalBwd' (Val α (V.Constr _ vs)) (T.Constr c ts) =
       where
       γ'' × e × α'' = evalBwd' v' t'
    γ' × es × α' = foldr evalArg_bwd (empty × Nil × α) (zip vs ts)
-evalBwd' (Val α (V.Matrix (MatrixRep (vss × (_ × βi) × (_ × βj))))) (T.Matrix tss (x × y) (i' × j') t') =
+evalBwd' (Val α (V.Matrix (MatrixRep (vss × MatrixDim (_ × βi) × MatrixDim (_ × βj))))) (T.Matrix tss (x × y) (i' × j') t') =
    (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
    where
    NonEmptyList ijs = nonEmpty $ singleton =<< (range 1 i' `lift2 (×)` range 1 j')

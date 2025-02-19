@@ -34,7 +34,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixRep(..), Val(..), forDefs)
+import Val (DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs)
 
 -- Needs a better name.
 type GraphConfig =
@@ -148,7 +148,7 @@ eval γ (Matrix α e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
-   let v' = V.Matrix (MatrixRep (vss × (i' × β) × (j' × β')))
+   let v' = V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β')))
    Val <$> new (pack v') (insert' α αs) <@> v'
 eval γ (Lambda α σ) αs =
    Val <$> new (pack v) (insert' α αs) <@> v

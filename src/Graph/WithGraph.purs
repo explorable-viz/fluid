@@ -109,3 +109,5 @@ runWithGraph m = runWithGraphT m >>> unwrap
 
 instance Monad m => MonadAlloc (WithGraphAllocT m) where
    fresh = lift fresh
+
+-- new' :: forall f g m a. MonadWithGraphAlloc m => () -> f a -> m Vertex

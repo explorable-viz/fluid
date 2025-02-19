@@ -11,7 +11,6 @@ import Data.Profunctor.Choice ((|||))
 import Data.Set (insert)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Graph (class TypeName)
 import Graph (pack) as G
 import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, (∧), bot, erase)
@@ -150,7 +149,7 @@ type BinaryZero i o a =
    , fwd :: i -> i -> o
    }
 
-unary :: forall i o a'. TypeName o => BoundedJoinSemilattice a' => String -> (forall a. Unary i o a) -> Bind (Val a')
+unary :: forall i o a'. BoundedJoinSemilattice a' => String -> (forall a. Unary i o a) -> Bind (Val a')
 unary id f =
    id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
@@ -172,7 +171,7 @@ unary id f =
    bwd :: Partial => OpBwd (Raw BaseVal)
    bwd (u × Val α _) = pack f.i (f.i.unpack u × α) : Nil
 
-binary :: forall i1 i2 o a'. TypeName o => BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
+binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
 binary id f =
    id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
@@ -196,7 +195,7 @@ binary id f =
    bwd ((u1 × u2) × Val α _) = pack f.i1 (f.i1.unpack u1 × α) : pack f.i2 (f.i2.unpack u2 × α) : Nil
 
 -- If both are zero, depend only on the first.
-binaryZero :: forall i o a'. TypeName o => BoundedJoinSemilattice a' => IsZero i => String -> (forall a. BinaryZero i o a) -> Bind (Val a')
+binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => String -> (forall a. BinaryZero i o a) -> Bind (Val a')
 binaryZero id f =
    id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where

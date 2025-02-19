@@ -8,7 +8,7 @@ import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Tuple (snd)
 import Primitive (int, unpack)
 import Util ((!), (×))
-import Val (MatrixRep(..), Array2)
+import Val (Array2, MatrixDim(..), MatrixRep(..))
 
 --  (Rendered) matrices are required to have element type Int for now.
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
@@ -70,7 +70,7 @@ instance Drawable MatrixView where
       element { i, j } = matrixElement i j
 
 matrixRep :: MatrixRep (SelState 𝕊) -> IntMatrix
-matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
+matrixRep (MatrixRep (vss × MatrixDim (i × _) × MatrixDim (j × _))) =
    { cells: (unpack int <$> _) <$> vss, i, j }
 
 -- 1-based indices of selected cell; see data binding in .js

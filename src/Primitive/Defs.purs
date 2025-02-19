@@ -32,7 +32,7 @@ import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, singleton, throw, unimplemented, (×), unzip)
 import Util.Map (disjointUnion, insert, intersectionWith, lookup, maplet, (\\))
 import Util.Set (empty)
-import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
+import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
 extern (ForeignOp (id × φ)) = id × Val bot (Fun ((Foreign (ForeignOp (id × φ))) Nil))
@@ -108,7 +108,7 @@ dims =
    ForeignOp ("dims" × mkExists (ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
-   op (Val α (Matrix (MatrixRep (_ × (i × β1) × (j × β2)))) : Nil) = do
+   op (Val α (Matrix (MatrixRep (_ × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil) = do
       v1 <- Val <$> new (pack $ Int i) (singleton β1) <@> Int i
       v2 <- Val <$> new (pack $ Int j) (singleton β2) <@> Int j
       let v = Constr cPair (v1 : v2 : Nil)
@@ -116,13 +116,13 @@ dims =
    op _ = throw "Matrix expected"
 
    fwd :: OpFwd (Array2 (Raw Val))
-   fwd (Val α (Matrix (MatrixRep (vss × (i × β1) × (j × β2)))) : Nil) =
+   fwd (Val α (Matrix (MatrixRep (vss × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil) =
       pure $ (map erase <$> vss) × Val α (Constr cPair (Val β1 (Int i) : Val β2 (Int j) : Nil))
    fwd _ = throw "Matrix expected"
 
    bwd :: Partial => OpBwd (Array2 (Raw Val))
    bwd (vss × Val α (Constr c (Val β1 (Int i) : Val β2 (Int j) : Nil))) | c == cPair =
-      Val α (Matrix (MatrixRep (((<$>) botOf <$> vss) × (i × β1) × (j × β2)))) : Nil
+      Val α (Matrix (MatrixRep (((<$>) botOf <$> vss) × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil
 
 matrixLookup :: ForeignOp
 matrixLookup =
