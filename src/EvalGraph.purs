@@ -20,7 +20,7 @@ import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, DVertex(..), Vertex, dvertex, insert', op, pack, selectαs, select𝔹s, showGraph, showVertices', unDVertex, vertexData, vertices')
+import Graph (class Graph, DVertex(..), Vertex, dvertex, insert', op, pack, selectαs, select𝔹s, showGraph, showVertices', addresses, vertexData, vertices')
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -83,7 +83,7 @@ closeDefs γ ρ αs =
          ρ' = ρ `forDefs` σ
          v = V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
       in
-         Val <$> new (pack v) (unDVertex αs) <@> v
+         Val <$> new (pack v) (addresses αs) <@> v
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α v'@(V.Fun (V.Closure γ1 ρ σ))) v = do

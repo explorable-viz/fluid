@@ -10,7 +10,7 @@ import Data.Map as M
 import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Tuple (fst)
-import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources, unDVertex, vertexData, vertices')
+import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, inEdges, inEdges', outN, sinks, sources, addresses, vertexData, vertices')
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), singleton, spyWhen, validateWhen, (×), (∩), (⊆))
@@ -29,7 +29,7 @@ bwdSlice (αs × g) = fst $
    αs
       -- No outputsAreSources analog of inputAreSinks; we do however need to restrict to sources (see #818).
       # validateWhen checking.outputsInGraph "inputs are sinks" (_ ⊆ vertices' g)
-      # (\vs -> unDVertex vs ∩ sources g)
+      # (\vs -> addresses vs ∩ sources g)
       # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
    where
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
@@ -55,8 +55,8 @@ type FwdConfig =
 fwdSlice :: forall g. Graph g => Set DVertex × g -> g
 fwdSlice (αs × g) = fst $
    αs
-      # validateWhen checking.inputsAreSinks "inputs are sinks" (\v -> unDVertex v ⊆ sinks g)
-      # runWithGraph_spy (tailRecM go { pending: M.empty, es: inEdges g (unDVertex αs) })
+      # validateWhen checking.inputsAreSinks "inputs are sinks" (\v -> addresses v ⊆ sinks g)
+      # runWithGraph_spy (tailRecM go { pending: M.empty, es: inEdges g (addresses αs) })
    where
    go :: FwdConfig -> WithGraph (Step FwdConfig Unit)
    go { es: Nil } = pure $ Done unit

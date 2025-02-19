@@ -23,7 +23,7 @@ import Effect.Exception (Error)
 import Expr (Expr, Elim, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class TypeName, class Vertices, DVertex(..), Vertex(..), VertexData, pack, typeName, unPack, vertices')
+import Graph (class TypeName, class Vertices, DVertex(..), Vertex(..), VertexData, pack, typeName, unpack, vertices')
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Unsafe.Coerce (unsafeCoerce)
@@ -46,9 +46,9 @@ data BaseVal a
 asVal :: VertexData -> BaseVal Vertex + String
 asVal e =
    let
-      type' = unPack typeName e
+      type' = unpack typeName e
    in
-      if type' == "BaseVal" then Left (unPack unsafeCoerce e) else Right type'
+      if type' == "BaseVal" then Left (unpack unsafeCoerce e) else Right type'
 
 whatIs :: BaseVal Vertex + String -> String
 whatIs (Left (Int _)) = "BV: Int"

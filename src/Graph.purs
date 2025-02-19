@@ -123,10 +123,10 @@ showVertices :: Set Vertex -> String
 showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
 
 showVertices' :: Set DVertex -> String
-showVertices' = showVertices <<< unDVertex
+showVertices' = showVertices <<< addresses
 
 insert' :: Vertex -> Set DVertex -> Set Vertex
-insert' α αs = Set.insert α (unDVertex αs)
+insert' α αs = Set.insert α (addresses αs)
 
 dvertex :: forall a. TypeName a => Vertex -> a -> DVertex
 dvertex α v = DVertex (α × pack v)
@@ -143,11 +143,11 @@ newtype VertexData = VertexData (forall r. (forall a. TypeName a => a -> r) -> r
 pack :: forall a. TypeName a => a -> VertexData
 pack x = VertexData (\k -> k x)
 
-unPack :: forall r. (forall a. TypeName a => a -> r) -> VertexData -> r
-unPack f (VertexData e) = e f
+unpack :: forall r. (forall a. TypeName a => a -> r) -> VertexData -> r
+unpack f (VertexData e) = e f
 
-unDVertex :: Set DVertex -> Set Vertex
-unDVertex = Set.map (fst <<< unwrap)
+addresses :: Set DVertex -> Set Vertex
+addresses = Set.map (fst <<< unwrap)
 
 instance Eq DVertex where
    eq (DVertex (α × _)) (DVertex (α' × _)) = α == α'
