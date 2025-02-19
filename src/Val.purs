@@ -8,6 +8,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
+import Data.Either (Either(..))
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
 import Data.List (List(..), (:), zipWith)
@@ -22,10 +23,11 @@ import Effect.Exception (Error)
 import Expr (Expr, Elim, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class TypeName, class Vertices', DVertex(..), Vertex(..), pack, vertices')
+import Graph (class TypeName, class Vertices', DVertex(..), Vertex(..), VertexData, pack, typeName, unPack, vertices')
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
-import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
+import Unsafe.Coerce (unsafeCoerce)
+import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆), type (+))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
@@ -40,6 +42,23 @@ data BaseVal a
    | Dictionary (DictRep a)
    | Matrix (MatrixRep a)
    | Fun (Fun a)
+
+asVal :: VertexData -> BaseVal Vertex + String
+asVal e =
+   let
+      type' = unPack typeName e
+   in
+      if type' == "BaseVal" then Left (unPack unsafeCoerce e) else Right type'
+
+whatIs :: BaseVal Vertex + String -> String
+whatIs (Left (Int _)) = "BV: Int"
+whatIs (Left (Float _)) = "BV: Float"
+whatIs (Left (Str _)) = "BV: Str"
+whatIs (Left (Constr _ _)) = "BV: Constr"
+whatIs (Left (Dictionary _)) = "BV: Dictionary"
+whatIs (Left (Matrix _)) = "BV: Matrix"
+whatIs (Left (Fun _)) = "BV: Fun"
+whatIs (Right s) = s
 
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)

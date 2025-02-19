@@ -17,7 +17,7 @@ import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (type (+), type (×), (×), error, singleton)
+import Util (type (+), type (×), error, singleton, (×))
 import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
@@ -159,10 +159,12 @@ unary id f =
       ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
 
    op' :: Partial => OpGraph
-   op' (Val α v : Nil) =
-      pack f.o <$> ((v' × _) <$> new (G.pack v') (singleton α))
+   op' (Val α v : Nil) = do
+      Val <$> newα <@> bv
       where
       v' = f.fwd (f.i.unpack v)
+      bv = (f.o).pack v'
+      newα = new (G.pack bv) (singleton α)
 
    fwd :: Partial => OpFwd (Raw BaseVal)
    fwd (Val α v : Nil) = pure $ erase v × pack f.o (f.fwd (f.i.unpack v) × α)
@@ -180,9 +182,11 @@ binary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack f.o <$> ((v' × _) <$> new (G.pack v') (singleton α # insert β))
+      Val <$> newα <@> bv
       where
       v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
+      bv = (f.o).pack v'
+      newα = new (G.pack bv) (singleton α # insert β)
 
    fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
    fwd (Val α v1 : Val β v2 : Nil) =
@@ -202,14 +206,16 @@ binaryZero id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      pack f.o <$> ((v' × _) <$> new (G.pack v') αs)
+      Val <$> newα <@> bv
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
       v' = f.fwd x y
+      bv = (f.o).pack v'
       αs =
          if isZero x then singleton α
          else if isZero y then singleton β
          else singleton α # insert β
+      newα = new (G.pack bv) αs
 
    fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
    fwd (Val α v1 : Val β v2 : Nil) =

@@ -2,6 +2,7 @@ module Test.Test where
 
 import Prelude hiding (add)
 
+import App.Util.Selector (matrixElement)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
@@ -19,12 +20,29 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run tests
+-- main = run tests
 
--- main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ bwdSuite loadFile [ { file: "add", imports: [], bwd_expect_file: "add.expect", δv: neg, fwd_expect: "⸨8⸩", datasets: [] } ]
+scratchpad = asTestSuite $ bwdSuite loadFile
+   [ { file: "convolution/edgeDetect"
+     , imports:
+          [ "lib/convolution"
+          , "slicing/convolution/filter/edge-detect"
+          , "slicing/convolution/test-image"
+          ]
+     , bwd_expect_file: "convolution/edgeDetect.expect"
+     , δv: matrixElement 1 1 neg
+     , fwd_expect:
+          "⸨0⸩, -1, 2, 0, -1,\n\
+          \0, 3, -2, 3, -2,\n\
+          \-1, 1, -5, 0, 4,\n\
+          \1, -1, 4, 0, -4,\n\
+          \1, 0, -3, 2, 0"
+     , datasets: []
+     }
+   ]
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
