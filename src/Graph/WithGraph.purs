@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, fromEdgeList, pack, showEdgeList, showGraph, showVertices, showVertices', toEdgeList, vertices')
+import Graph (class Graph, class TypeName, class Vertices, DVertex(..), HyperEdge, Vertex(..), fromEdgeList, pack, showEdgeList, showGraph, showVertices, showVertices', toEdgeList, vertices')
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -30,7 +30,7 @@ class Monad m <= MonadAlloc m where
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
 class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
-   new :: VertexData -> Set Vertex -> m Vertex
+   new :: forall f g. TypeName (f Vertex) => (Vertex -> f Vertex -> g Vertex) -> Set Vertex -> f Vertex -> m (g Vertex)
 
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
@@ -44,10 +44,10 @@ instance Monad m => MonadAlloc (AllocT m) where
       pure (Vertex $ show n)
 
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
-   new vd αs = do
+   new constr αs baseval = do
       α <- fresh
-      extend (DVertex (α × vd)) αs
-      pure α
+      extend (DVertex (α × pack baseval)) αs
+      pure $ constr α baseval
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
    extend α αs = void $ modify_ $ (:) (α × αs)
@@ -112,5 +112,3 @@ runWithGraph m = runWithGraphT m >>> unwrap
 
 instance Monad m => MonadAlloc (WithGraphAllocT m) where
    fresh = lift fresh
-
--- new' :: forall f g m a. MonadWithGraphAlloc m => () -> f a -> m Vertex

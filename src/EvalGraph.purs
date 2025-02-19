@@ -20,7 +20,7 @@ import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, DVertex(..), Vertex, dvertex, insert', op, pack, selectαs, select𝔹s, showGraph, showVertices', addresses, vertexData, vertices')
+import Graph (class Graph, DVertex(..), Vertex, dvertex, insert', op, selectαs, select𝔹s, showGraph, showVertices', addresses, vertexData, vertices')
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -83,7 +83,7 @@ closeDefs γ ρ αs =
          ρ' = ρ `forDefs` σ
          v = V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
       in
-         Val <$> new (pack v) (addresses αs) <@> v
+         new Val (addresses αs) v
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α v'@(V.Fun (V.Closure γ1 ρ σ))) v = do
@@ -98,30 +98,32 @@ apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: forall t. ForeignOp' t -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         Val <$> new (pack v') (singleton α) <@> v'
+         new Val (singleton α) v'
       else φ'.op' vs'
       where
       v' = (V.Fun (V.Foreign (ForeignOp (id × φ)) vs'))
 apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   if length vs < n - 1 then
-      let v' = V.Fun (V.PartialConstr c (snoc vs v)) in Val <$> new (pack v') (singleton α) <@> v'
-   else
-      let v' = V.Constr c (snoc vs v) in Val <$> new (pack v') (singleton α) <@> v'
+   new Val (singleton α) v'
    where
+   v' =
+      if length vs < n - 1 then
+         V.Fun (V.PartialConstr c (snoc vs v))
+      else
+         V.Constr c (snoc vs v)
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set DVertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
-eval _ (Int α n) αs = Val <$> new (pack v) (insert' α αs) <@> v
+eval _ (Int α n) αs = new Val (insert' α αs) v
    where
    v = V.Int n
-eval _ (Float α n) αs = Val <$> new (pack v) (insert' α αs) <@> v
+eval _ (Float α n) αs = new Val (insert' α αs) v
    where
    v = V.Float n
-eval _ (Str α s) αs = Val <$> new (pack v) (insert' α αs) <@> v
+eval _ (Str α s) αs = new Val (insert' α αs) v
    where
    v = V.Str s
 eval γ (Dictionary α ees) αs = do
@@ -129,13 +131,11 @@ eval γ (Dictionary α ees) αs = do
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = wrap $ D.fromFoldable $ zip ss (zip βs us)
-      v = V.Dictionary (DictRep d)
-   Val <$> new (pack v) (insert' α αs) <@> v
+   new Val (insert' α αs) $ V.Dictionary (DictRep d)
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   let v = V.Constr c vs
-   Val <$> new (pack v) (insert' α αs) <@> v
+   new Val (insert' α αs) $ V.Constr c vs
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
@@ -149,11 +149,9 @@ eval γ (Matrix α e (x × y) e') αs = do
          let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
    let v' = V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β')))
-   Val <$> new (pack v') (insert' α αs) <@> v'
+   new Val (insert' α αs) v'
 eval γ (Lambda α σ) αs =
-   Val <$> new (pack v) (insert' α αs) <@> v
-   where
-   v = V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   new Val (insert' α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
