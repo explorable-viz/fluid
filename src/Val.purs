@@ -23,7 +23,7 @@ import Effect.Exception (Error)
 import Expr (Expr, Elim, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class TypeName, class Vertices', DVertex(..), Vertex(..), VertexData, pack, typeName, unPack, vertices')
+import Graph (class TypeName, class Vertices, DVertex(..), Vertex(..), VertexData, pack, typeName, unPack, vertices')
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Unsafe.Coerce (unsafeCoerce)
@@ -361,10 +361,10 @@ instance TypeName (MatrixDim a) where
 instance TypeName (DictKey a) where
    typeName _ = "DictKey"
 
-instance Vertices' (Val Vertex) where
+instance Vertices (Val Vertex) where
    vertices' (Val α v) = singleton (DVertex (α × pack v)) ∪ vertices' v
 
-instance Vertices' (BaseVal Vertex) where
+instance Vertices (BaseVal Vertex) where
    vertices' (Int _) = empty
    vertices' (Float _) = empty
    vertices' (Str _) = empty
@@ -373,28 +373,28 @@ instance Vertices' (BaseVal Vertex) where
    vertices' (Matrix m) = vertices' m
    vertices' (Fun f) = vertices' f
 
-instance Vertices' (DictRep Vertex) where
+instance Vertices (DictRep Vertex) where
    vertices' (DictRep d) = foldMap (\k (α × v) -> vertices' (DictKey (k × α)) ∪ vertices' v) (unwrap d)
 
-instance Vertices' (DictKey Vertex) where
+instance Vertices (DictKey Vertex) where
    vertices' dk@(DictKey (_ × α)) = singleton (DVertex (α × pack dk))
 
-instance Vertices' (MatrixRep Vertex) where
+instance Vertices (MatrixRep Vertex) where
    vertices' (MatrixRep (vss × i × j)) =
       unions (concat (map vertices' <$> vss))
          ∪ vertices' i
          ∪ vertices' j
 
-instance Vertices' (MatrixDim Vertex) where
+instance Vertices (MatrixDim Vertex) where
    vertices' md@(MatrixDim (_ × α)) = singleton (DVertex (α × pack md))
 
-instance Vertices' (Fun Vertex) where
+instance Vertices (Fun Vertex) where
    vertices' (Closure γ ρ σ) = vertices' γ ∪ vertices' ρ ∪ vertices' σ
    vertices' (Foreign _ vs) = unions (vertices' <$> vs)
    vertices' (PartialConstr _ vs) = unions (vertices' <$> vs)
 
-instance Vertices' (Env Vertex) where
+instance Vertices (Env Vertex) where
    vertices' (Env γ) = unions (vertices' <$> values γ)
 
-instance Vertices' (EnvExpr Vertex) where
+instance Vertices (EnvExpr Vertex) where
    vertices' (EnvExpr γ e) = vertices' γ ∪ vertices' e

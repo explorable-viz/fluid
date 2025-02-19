@@ -26,7 +26,7 @@ newtype DVertex = DVertex (Vertex × VertexData)
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
-class (Eq g, Vertices g, Vertices' g) <= Graph g where
+class (Eq g, Vertices g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
 
@@ -56,30 +56,23 @@ class (Eq g, Vertices g, Vertices' g) <= Graph g where
 
 newtype Vertex = Vertex String -- so can use directly as dict key
 
-class Vertices a where
-   vertices :: a -> Set Vertex
-
 class Selectαs a b | a -> b where
-   selectαs :: a -> b -> Set Vertex
-   select𝔹s :: b -> Set Vertex -> a
+   selectαs :: a -> b -> Set DVertex
+   select𝔹s :: b -> Set DVertex -> a
 
-selectαs' :: forall a b. Selectαs a b => a -> b -> Set DVertex
-selectαs' a b = Set.map (\α -> DVertex (α × pack "selectαs'")) $ selectαs a b
+instance (Vertices a) => Vertices (Dict a) where
+   vertices' d = unions (vertices' <$> values (unwrap d))
+else instance (Functor f, Foldable f) => Vertices (f DVertex) where
+   vertices' = (singleton <$> _) >>> unions
 
-instance (Functor f, Foldable f) => Vertices (f Vertex) where
-   vertices = (singleton <$> _) >>> unions
-
-class Vertices' a where
+class Vertices a where
    vertices' :: a -> Set DVertex
 
-instance (Vertices' a) => Vertices' (Dict a) where
-   vertices' d = unions (vertices' <$> values (unwrap d))
-
-instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f Vertex) where
+instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f DVertex) where
    selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
    select𝔹s vα αs = (_ ∈ αs) <$> vα
 
-instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f Vertex)) where
+instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f DVertex)) where
    selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) <*> dα)
    select𝔹s dα αs = flip select𝔹s αs <$> dα
 

@@ -14,7 +14,7 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
-import Graph (class TypeName, class Vertices', DVertex(..), Vertex, pack, vertices')
+import Graph (class TypeName, class Vertices, DVertex(..), Vertex, pack, vertices')
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∨), (∧))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
 import Util.Map (keys, asMaplet)
@@ -191,7 +191,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
 instance MeetSemilattice a => MeetSemilattice (Expr a) where
    meet = lift2 (∧)
 
-instance Vertices' (Expr Vertex) where
+instance Vertices (Expr Vertex) where
    vertices' (Var _) = empty
    vertices' (Op _) = empty
    vertices' e@(Int α _) = singleton (DVertex (α × pack e))
@@ -209,22 +209,22 @@ instance Vertices' (Expr Vertex) where
    vertices' (Let def e) = vertices' def ∪ vertices' e
    vertices' (LetRec ρ e) = vertices' ρ ∪ vertices' e
 
-instance Vertices' (Elim Vertex) where
+instance Vertices (Elim Vertex) where
    vertices' (ElimVar _ κ) = vertices' κ
    vertices' (ElimConstr m) = vertices' m
    vertices' (ElimDict _ κ) = vertices' κ
 
-instance Vertices' (VarDef Vertex) where
+instance Vertices (VarDef Vertex) where
    vertices' (VarDef σ e) = vertices' σ ∪ vertices' e
 
-instance Vertices' (Cont Vertex) where
+instance Vertices (Cont Vertex) where
    vertices' (ContExpr e) = vertices' e
    vertices' (ContElim σ) = vertices' σ
 
-instance Vertices' (RecDefs Vertex) where
+instance Vertices (RecDefs Vertex) where
    vertices' defs@(RecDefs α ρ) = singleton (DVertex (α × pack defs)) ∪ vertices' ρ
 
-instance Vertices' (Module Vertex) where
+instance Vertices (Module Vertex) where
    vertices' (Module defs) = unions (go <$> defs)
       where
       go (Left vardef) = vertices' vardef
