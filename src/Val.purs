@@ -231,8 +231,11 @@ instance Apply DictRep where
       DictRep $ intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
 
 instance Apply MatrixRep where
-   apply (MatrixRep (fvss × MatrixDim (n × fnα) × MatrixDim (m × fmα))) (MatrixRep (vss × MatrixDim (n' × nα) × MatrixDim (m' × mα))) =
-      MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × MatrixDim ((n ≜ n') × fnα nα) × MatrixDim ((m ≜ m') × fmα mα)
+   apply (MatrixRep (fvss × fn × fm)) (MatrixRep (vss × n × m)) =
+      MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × (fn <*> n) × (fm <*> m)
+
+instance Apply MatrixDim where
+   apply (MatrixDim (n × fnα)) (MatrixDim (n' × nα)) = MatrixDim ((n ≜ n') × (fnα nα))
 
 instance Apply Env where
    apply (Env fγ) (Env γ) = Env (((<*>) <$> fγ) <*> γ)
@@ -265,8 +268,11 @@ instance JoinSemilattice a => JoinSemilattice (DictRep a) where
    join (DictRep svs) (DictRep svs') = DictRep (svs ∨ svs')
 
 instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
-   join (MatrixRep (vss × MatrixDim (i × βi) × MatrixDim (j × βj))) (MatrixRep (vss' × MatrixDim (i' × βi') × MatrixDim (j' × βj'))) =
-      MatrixRep ((vss ∨ vss') × (MatrixDim ((i ≜ i') × (βi ∨ βi')) × (MatrixDim ((j ≜ j') × (βj ∨ βj')))))
+   join (MatrixRep (vss × i × j)) (MatrixRep (vss' × i' × j')) =
+      MatrixRep ((vss ∨ vss') × ((i ∨ i') × (j ∨ j')))
+
+instance JoinSemilattice a => JoinSemilattice (MatrixDim a) where
+   join (MatrixDim (i × α)) (MatrixDim (i' × α')) = MatrixDim ((i ≜ i') × (α ∨ α'))
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
    join (Val α u) (Val α' v) = Val (α ∨ α') (u ∨ v)
@@ -305,8 +311,11 @@ instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
    expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')
 
 instance BoundedJoinSemilattice a => Expandable (MatrixRep a) (Raw MatrixRep) where
-   expand (MatrixRep (vss × MatrixDim (i × βi) × MatrixDim (j × βj))) (MatrixRep (vss' × MatrixDim (i' × _) × MatrixDim (j' × _))) =
-      MatrixRep (expand vss vss' × MatrixDim ((i ≜ i') × βi) × MatrixDim ((j ≜ j') × βj))
+   expand (MatrixRep (vss × i × j)) (MatrixRep (vss' × i' × j')) =
+      MatrixRep (expand vss vss' × expand i i' × expand j j')
+
+instance BoundedJoinSemilattice a => Expandable (MatrixDim a) (Raw MatrixDim) where
+   expand (MatrixDim (i × α)) (MatrixDim (i' × _)) = MatrixDim ((i ≜ i') × α)
 
 instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
    expand (Val α u) (Val _ v) = Val α (expand u v)
