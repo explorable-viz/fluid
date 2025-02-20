@@ -16,7 +16,7 @@ import Data.Tuple (fst)
 import Dict (Dict)
 import Foreign.Object (values)
 import Lattice (𝔹)
-import Util (type (×), Endo, (×), type (+))
+import Util (type (×), Endo, (×))
 import Util.Set ((∈))
 
 type Edge = Vertex × Vertex
@@ -97,7 +97,7 @@ toEdgeList g =
    go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
       Nothing -> Done acc
-      Just { head: α, tail: αs } -> Loop (αs × ((dvertex α "") × outN g α) : acc)
+      Just { head: α, tail: αs } -> Loop (αs × ((DVertex (α × vertexData g α)) × outN g α) : acc)
 
 showGraph :: forall g. Graph g => g -> String
 showGraph = toEdgeList >>> showEdgeList
@@ -164,21 +164,3 @@ derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
 derive newtype instance Show Vertex
-
-instance TypeName String where
-   typeName _ = "String"
-
-instance TypeName Int where
-   typeName _ = "Int"
-
-instance TypeName Number where
-   typeName _ = "Number"
-
-instance TypeName (Int + Number) where
-   typeName _ = "Either Int or Number"
-
-instance TypeName (Int + Number + String) where
-   typeName _ = "Either Int, Number, or String"
-
-instance TypeName 𝔹 where
-   typeName _ = "Boolean"

@@ -158,10 +158,9 @@ unary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v : Nil) = do
-      new Val (singleton α) bv
+      new Val (singleton α) $ f.o.pack v'
       where
       v' = f.fwd (f.i.unpack v)
-      bv = (f.o).pack v'
 
    fwd :: Partial => OpFwd (Raw BaseVal)
    fwd (Val α v : Nil) = pure $ erase v × pack f.o (f.fwd (f.i.unpack v) × α)
@@ -179,10 +178,9 @@ binary id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      new Val (singleton α # insert β) bv
+      new Val (singleton α # insert β) $ f.o.pack v'
       where
       v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
-      bv = f.o.pack v'
 
    fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
    fwd (Val α v1 : Val β v2 : Nil) =
@@ -202,11 +200,10 @@ binaryZero id f =
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
-      new Val αs bv
+      new Val αs $ f.o.pack v'
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
       v' = f.fwd x y
-      bv = (f.o).pack v'
       αs =
          if isZero x then singleton α
          else if isZero y then singleton β
