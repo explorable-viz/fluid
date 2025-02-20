@@ -367,6 +367,9 @@ instance TypeName (BaseVal a) where
 instance TypeName (MatrixDim a) where
    typeName _ = "MatrixDim"
 
+instance Show a => Show (MatrixDim a) where
+   show (MatrixDim (i × α)) = show i <> " × " <> show α
+
 instance TypeName (DictKey a) where
    typeName _ = "DictKey"
 

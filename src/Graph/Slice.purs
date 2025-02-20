@@ -44,7 +44,7 @@ bwdSlice (αs × g) = fst $
       -- βs in g so safe to call definitely:
       let vd = vertexData g α
       pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: (DVertex (α × vd) × βs) : pending }
-   αsData = (\α -> DVertex (α × vertexData g α)) `map` αs
+   αsData = (\α -> DVertex (α × (spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (whatIs <<< asVal) $ vertexData g α))) `map` αs
 
 type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig =

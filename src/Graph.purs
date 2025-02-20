@@ -12,7 +12,7 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, singleton, unions)
 import Data.Set as Set
 import Data.String (joinWith)
-import Data.Tuple (fst)
+import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Foreign.Object (values)
 import Lattice (𝔹)
@@ -130,6 +130,12 @@ insert' α αs = Set.insert α (addresses αs)
 
 dvertex :: forall a. TypeName a => Vertex -> a -> DVertex
 dvertex α v = DVertex (α × pack v)
+
+-- ======================
+-- Query a graph for a value
+-- ======================
+runQuery :: forall a g. Ord a => Graph g => (VertexData -> Maybe a) -> g -> Set a
+runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` vertices g
 
 -- ======================
 -- Packed data associated with Vertex
