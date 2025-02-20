@@ -182,7 +182,7 @@ binary id f =
       new Val (singleton α # insert β) bv
       where
       v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
-      bv = (f.o).pack v'
+      bv = f.o.pack v'
 
    fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
    fwd (Val α v1 : Val β v2 : Nil) =

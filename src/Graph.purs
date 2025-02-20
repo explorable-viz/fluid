@@ -57,8 +57,8 @@ class (Eq g, Vertices g) <= Graph g where
 newtype Vertex = Vertex String -- so can use directly as dict key
 
 class Selectαs a b | a -> b where
-   selectαs :: a -> b -> Set DVertex
-   select𝔹s :: b -> Set DVertex -> a
+   selectαs :: a -> b -> Set Vertex
+   select𝔹s :: b -> Set Vertex -> a
 
 instance (Vertices a) => Vertices (Dict a) where
    vertices d = unions (vertices <$> values (unwrap d))
@@ -68,11 +68,11 @@ else instance (Functor f, Foldable f) => Vertices (f DVertex) where
 class Vertices a where
    vertices :: a -> Set DVertex
 
-instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f DVertex) where
+instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f Vertex) where
    selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
    select𝔹s vα αs = (_ ∈ αs) <$> vα
 
-instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f DVertex)) where
+instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f Vertex)) where
    selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) <*> dα)
    select𝔹s dα αs = flip select𝔹s αs <$> dα
 

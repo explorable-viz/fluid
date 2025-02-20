@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class TypeName, class Vertices, DVertex(..), HyperEdge, Vertex(..), fromEdgeList, pack, showEdgeList, showGraph, showVertices, showVertices', toEdgeList, vertices)
+import Graph (class Graph, class TypeName, class Vertices, DVertex(..), HyperEdge, Vertex(..), addresses, fromEdgeList, pack, showEdgeList, showGraph, showVertices, showVertices', toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -44,10 +44,10 @@ instance Monad m => MonadAlloc (AllocT m) where
       pure (Vertex $ show n)
 
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
-   new constr αs baseval = do
+   new constr αs vd = do
       α <- fresh
-      extend (DVertex (α × pack baseval)) αs
-      pure $ constr α baseval
+      extend (DVertex (α × pack vd)) αs
+      pure $ constr α vd
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
    extend α αs = void $ modify_ $ (:) (α × αs)
@@ -87,7 +87,7 @@ alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT 
 alloc_check msg m = do
    n × αs × x <- runAllocT m 0
    let report = spy (show n <> " allocations, unaccounted for") showVertices
-   check (report (αs \\ ((fst <<< unwrap) `Set.map` vertices x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
+   check (report (αs \\ (addresses $ vertices x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
 runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
 runWithGraphT_spy wg αs =
