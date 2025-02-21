@@ -81,6 +81,18 @@ let tail [] = error "Can't take tail of empty list";
 let elem x [] = False;
     elem x (x' : xs) = (x == x') `or` (elem x xs);
 
+-- (a -> Bool) -> List a -> Option a
+let find p [] = error "not found";
+    find p (x : xs) = if p x then Some x else find p xs;
+
+-- String -> String -> List Dict -> Option Dict
+let findWithKey fname fval table = find (fun y -> y.[fname] == fval) table;
+
+let fromSome option = match option as {
+    None -> error "Expected Some!";
+    Some x -> x
+};
+
 -- (a -> Bool) -> List a -> List a
 let filter p [] = [];
     filter p (x : xs) =
@@ -252,3 +264,13 @@ let nub xs =
 -- Int -> Int -> [a] -> [a]
 let slice begin end xs =
    take (end - begin) (drop begin xs);
+
+
+-- (a -> Boolean) -> List a -> (List a, List a)
+let splitOn p data = 
+    let go fls trs [] = (reverse fls, reverse trs);
+        go fls trs (x : xs) = 
+            if p x
+            then go fls (x : trs) xs
+            else go (x : fls) trs xs
+    in go [] [] data;
