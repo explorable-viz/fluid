@@ -63,7 +63,7 @@ class Selectαs a b | a -> b where
 instance (Vertices a) => Vertices (Dict a) where
    vertices d = unions (vertices <$> values (unwrap d))
 else instance (Functor f, Foldable f) => Vertices (f DVertex) where
-   vertices = (singleton <$> _) >>> unions
+   vertices = Set.fromFoldable
 
 class Vertices a where
    vertices :: a -> Set DVertex

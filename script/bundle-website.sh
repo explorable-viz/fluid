@@ -34,6 +34,7 @@ done
 echo "Processing other static files:"
 set +xu  # try to remove +u
 TO_COPY=()
+shopt -s dotglob
 shopt -s extglob
 for CHILD in website/$WEBSITE/!(.|..); do
    BASENAME="$(basename "$CHILD")"
@@ -42,6 +43,7 @@ for CHILD in website/$WEBSITE/!(.|..); do
    fi
 done
 shopt -u extglob
+shopt -u dotglob
 set -xu
 
 for CHILD in "${TO_COPY[@]}"; do
@@ -49,7 +51,7 @@ for CHILD in "${TO_COPY[@]}"; do
 done
 
 echo "Processing Fluid source files:"
-cp -r fluid dist/$WEBSITE_LISP_CASE
+cp -r "${PREFIX_}dist/fluid/fluid" dist/$WEBSITE_LISP_CASE
 [ -d "website/$WEBSITE/fluid" ] && cp -r "website/$WEBSITE/fluid" dist/$WEBSITE_LISP_CASE
 
 echo "Processing shared JavaScript files:"
