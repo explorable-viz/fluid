@@ -352,12 +352,6 @@ expr_ =
                kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
                kvPair = (((ExprKey <$> expr') # token.brackets) <* token.colon) `lift2 (×)` expr' <|> ((VarKey unit <$> ident) <* token.colon) `lift2 (×)` expr'
 
-            -- record :: SParser (Raw Expr)
-            -- record = sepBy kvPair token.comma <#> Dictionary unit # token.braces
-            --    where
-            --    kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
-            --    kvPair = ((VarKey <$> ident) <* token.colon) `lift2 (×)` expr'
-
             variable :: SParser (Raw Expr)
             variable = ident <#> Var
 

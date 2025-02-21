@@ -6,7 +6,7 @@
 -- GraphicsElement -> Point
 let coords (Group gs) = Point 0 0;
     coords (Rect x y _ _ _) = Point x y;
-    coords (Text x y _ _ _) = Point x y;
+    coords (String x y _ _ _) = Point x y;
     coords (Viewport x y _ _ _ _ _ _ _) = Point x y;
 
 -- GraphicsElement -> Float
@@ -19,7 +19,7 @@ let get_y g = let Point _ y = coords g in x;
 -- Float -> GraphicsElement -> GraphicsElement
 let set_x x (Group gs) = error "Group has immutable coordinates";
     set_x x (Rect _ y w h fill) = Rect x y w h fill;
-    set_x x (Text _ y str anchor baseline) = Text x y str anchor baseline;
+    set_x x (String _ y str anchor baseline) = String x y str anchor baseline;
     set_x x (Viewport _ y w h fill margin scale translate g) = Viewport x y w h fill margin scale translate g;
 
 -- (Point, Point) -> Point
@@ -33,7 +33,7 @@ let
    dimensions (Group gs) = foldl (curry dimensions2) (Point 0 0) (map (coords_op) gs);
    dimensions (Polyline ps _ _) = foldl (curry dimensions2) (Point 0 0) ps;
    dimensions (Rect _ _ w h _) = Point w h;
-   dimensions (Text _ _ _ _ _) = Point 0 0; -- treat text like markers; scale-invariant
+   dimensions (String _ _ _ _ _) = Point 0 0; -- treat text like markers; scale-invariant
    dimensions (Viewport _ _ w h _ _ _ _ _) = Point w h;
 
    coords_op g =
@@ -94,8 +94,8 @@ let tick Horiz colour len = Line (Point 0 0) (Point 0 (0 - len)) colour axisStro
     tick Vert colour len = Line (Point 0 0) (Point (0 - len) 0) colour axisStrokeWidth;
 
 -- Orient -> Float -> Float -> Str -> GraphicsElement
-let label Horiz x distance str = Text x (0 - distance - 4) str "middle" "hanging";
-    label Vert x distance str = Text (0 - distance) x str "end" "central";
+let label Horiz x distance str = String x (0 - distance - 4) str "middle" "hanging";
+    label Vert x distance str = String (0 - distance) x str "end" "central";
 
 -- Orient -> Colour -> Float -> Str -> GraphicsElement
 let labelledTick orient colour len str =
@@ -215,7 +215,7 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 -- Str -> GraphicsElement -> GraphicsElement
 let caption str (Viewport x y w h fill margin scale translate g) =
    let g' = Group [
-      Text (x + w / 2) -2 str "middle" "hanging",
+      String (x + w / 2) -2 str "middle" "hanging",
       Viewport 0 0 w h fill margin scale translate g
    ]
    in Viewport x y w h backgroundColour (defaultMargin / 2 + 4) (Scale 1 1) (Translate 0 0) g';

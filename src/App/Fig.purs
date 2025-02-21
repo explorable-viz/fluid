@@ -14,13 +14,12 @@ import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
-import Desugarable (desug)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection ((***)) as GC
 import GaloisConnection (GaloisConnection(..), dual, meet)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topOf)
-import Module (File, initialConfig, loadProgCxt, open)
+import Module.Web (File, loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
@@ -111,10 +110,9 @@ lift selState_f selState_g (GC gc) = GC { bwd, fwd }
    bwd v = selState_f <*> gc.bwd (v <#> getPersistent) <*> gc.bwd (v <#> getTransient)
 
 loadFig :: forall m. FigSpec -> AffError m Fig
-loadFig spec@{ inputs, imports, file, datasets } = do
-   s <- open file
-   e <- desug s
-   gconfig <- loadProgCxt imports datasets >>= initialConfig e
+loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
+   progCxt <- loadProgCxt fluidSrcPaths imports datasets
+   { s, e, gconfig } <- prepConfig fluidSrcPaths file progCxt
    eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
    let
       EnvExpr γ e' = erase eval.inα

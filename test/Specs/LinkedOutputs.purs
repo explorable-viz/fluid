@@ -6,13 +6,18 @@ import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoi
 import Bind ((↦))
 import DataType (f_plots, f_y)
 import Lattice (neg)
-import Module (File(..))
+import Module.Web (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
-import Website.Misc.RenewablesLinked as RenewablesLinked
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
-   { spec: RenewablesLinked.fig
+   { spec:
+        { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+        , datasets: [ "renewables" ↦ "dataset/renewables" ]
+        , imports: []
+        , file: File "slicing/linked-outputs/bar-chart-line-chart"
+        , inputs: [ "renewables" ]
+        }
    , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
    , out_expect:
         multiViewEntry "barChart" (barChart (barSegment 1 0 neg))
@@ -32,7 +37,8 @@ linkedOutputs_spec1 =
 linkedOutputs_spec2 :: TestLinkedOutputsSpec
 linkedOutputs_spec2 =
    { spec:
-        { datasets:
+        { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+        , datasets:
              [ "renewables" ↦ "dataset/renewables-new"
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
@@ -54,7 +60,8 @@ linkedOutputs_spec2 =
 movingAverages_spec :: TestLinkedOutputsSpec
 movingAverages_spec =
    { spec:
-        { datasets: [ "methane" ↦ "dataset/methane-emissions" ]
+        { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+        , datasets: [ "methane" ↦ "dataset/methane-emissions" ]
         , imports: []
         , file: File "linked-outputs/moving-average"
         , inputs: [ "methane" ]
@@ -66,7 +73,8 @@ movingAverages_spec =
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
-          { datasets: [ "data" ↦ "example/linked-outputs/pairs-data" ]
+          { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+          , datasets: [ "data" ↦ "linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
@@ -75,7 +83,8 @@ linkedOutputs_cases =
      , out_expect: neg
      }
    , { spec:
-          { datasets: [ "data" ↦ "example/linked-outputs/convolution-data" ]
+          { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+          , datasets: [ "data" ↦ "linked-outputs/convolution-data" ]
           , imports: [ "lib/convolution" ]
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]

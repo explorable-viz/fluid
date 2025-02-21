@@ -32,6 +32,7 @@ str
       , rparenth :: String
       , semiColon :: String
       , then_ :: String
+      , backquote :: String
       }
 
 str =
@@ -65,4 +66,5 @@ str =
    , rparenth: ")"
    , semiColon: ";"
    , then_: "then"
+   , backquote: "@"
    }

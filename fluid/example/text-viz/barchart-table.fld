@@ -1,8 +1,0 @@
-[
-    { x: "1", y: "emissions", z: 40 },
-    { x: "2", y: "emissions", z: 30 },
-    { x: "3", y: "emissions", z: 60 },
-    { x: "4", y: "emissions", z: 35 },
-    { x: "5", y: "emissions", z: 40 },
-    { x: "6", y: "emissions", z: 80 }
-]

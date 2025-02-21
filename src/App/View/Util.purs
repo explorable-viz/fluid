@@ -14,7 +14,7 @@ import Dict (Dict)
 import Effect (Effect)
 import GaloisConnection (GaloisConnection)
 import Lattice (𝔹, Raw, (∨))
-import Module (File)
+import Module.Web (File, Folder)
 import SExpr as S
 import Util (type (×), Endo, Setter, check)
 import Val (Env, Val)
@@ -92,7 +92,8 @@ uiHelpers =
    }
 
 type FigSpec =
-   { imports :: Array String
+   { fluidSrcPaths :: Array Folder
+   , imports :: Array String
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var

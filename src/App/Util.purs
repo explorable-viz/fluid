@@ -3,7 +3,6 @@ module App.Util where
 import Prelude hiding (absurd, join)
 
 import Bind (Bind, Var, (↦))
-import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
 import Data.Either (Either(..))
@@ -18,14 +17,14 @@ import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (snd)
+import Data.Tuple (fst, snd)
 import DataType (cCons, cNil)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Class.Console (log)
 import Foreign.Object (Object, empty, fromFoldable, union)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∧), (∨))
 import Pretty (prettyP)
 import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
@@ -55,6 +54,12 @@ data SelState a
 selState :: forall a. 𝔹 -> a -> a -> SelState a
 selState true _ _ = Inert
 selState false b1 b2 = Reactive { persistent: b1, transient: b2 }
+
+contents :: forall a. Selectable a -> a
+contents = fst
+
+sel :: forall a. Selectable a -> SelState 𝕊
+sel = snd
 
 persist :: forall a. Setter (SelState a) a
 persist δα = case _ of
@@ -162,10 +167,10 @@ selector (EventType ev) v =
    where
    setSel :: Endo (SelState 𝔹)
    setSel Inert = Inert
-   setSel (Reactive sel)
-      | ev == "mousedown" = Reactive (sel { persistent = neg sel.persistent })
-      | ev == "mouseenter" = Reactive (sel { transient = true })
-      | ev == "mouseleave" = Reactive (sel { transient = false })
+   setSel (Reactive sel')
+      | ev == "mousedown" = Reactive (sel' { persistent = neg sel'.persistent })
+      | ev == "mouseenter" = Reactive (sel' { transient = true })
+      | ev == "mouseleave" = Reactive (sel' { transient = false })
       | otherwise = error "Unsupported event type"
 
    reportSelState = spyWhen tracing.mouseEvent "to " show
@@ -266,7 +271,25 @@ instance Apply SelState where
 
 instance JoinSemilattice a => JoinSemilattice (SelState a)
    where
-   join = lift2 (∨)
+   join s Inert = s
+   join Inert s = s
+   join (Reactive s) (Reactive s') =
+      Reactive { persistent: s.persistent ∨ s'.persistent, transient: s.transient ∨ s'.transient }
+
+instance MeetSemilattice a => MeetSemilattice (SelState a)
+   where
+   meet _ Inert = Inert
+   meet Inert _ = Inert
+   meet (Reactive s) (Reactive s') =
+      Reactive { persistent: s.persistent ∧ s'.persistent, transient: s.transient ∧ s'.transient }
+
+instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a)
+   where
+   bot = Inert
+
+instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelState a)
+   where
+   top = Reactive { persistent: top, transient: top }
 
 derive instance Eq a => Eq (SelState a)
 

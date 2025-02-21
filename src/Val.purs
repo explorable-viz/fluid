@@ -3,6 +3,7 @@ module Val where
 import Prelude hiding (absurd, append)
 
 import Bind (Var)
+import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array ((!!))
 import Data.Array (zipWith) as A
@@ -22,7 +23,7 @@ import Expr (Expr, Elim, fv)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex(..))
 import Graph.WithGraph (class MonadWithGraphAlloc)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, Raw, expand, topOf, (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
@@ -266,6 +267,12 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
 
 instance JoinSemilattice a => JoinSemilattice (Env a) where
    join (Env γ) (Env γ') = Env (γ ∨ γ')
+
+instance MeetSemilattice a => MeetSemilattice (Val a) where
+   meet = lift2 (∧)
+
+instance MeetSemilattice a => MeetSemilattice (Env a) where
+   meet = lift2 (∧)
 
 instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
    expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')

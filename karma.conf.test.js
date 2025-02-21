@@ -1,9 +1,11 @@
+const { log } = require("console")
+
 module.exports = function (config) {
    config.set({
       autoWatch: true,
       basePath: "",
       browsers: ["ChromeHeadlessNoSandbox"],
-      browserDisconnectTimeout: 240000,
+      browserDisconnectTimeout: 600000,
       browserNoActivityTimeout: 2400000,
       customLaunchers: {
          ChromeHeadlessNoSandbox: {
@@ -16,7 +18,7 @@ module.exports = function (config) {
       },
       client: {
          mocha: {
-            timeout: 240000
+            timeout: 600000
          }
       },
       colors: true,
@@ -29,11 +31,20 @@ module.exports = function (config) {
             included: false,
             served: true,
             nocache: false
+         },
+         {
+            pattern: "./test/**/*.fld",
+            watched: true,
+            included: false,
+            served: true,
+            nocache: false,
          }
       ],
       frameworks: ["mocha"],
+      logLevel: config.LOG_ERROR,
       proxies: {
-         "/fluid/": "/base/fluid/"
+         "/fluid/": "/base/fluid/",
+         "/test/fluid/": "/base/test/fluid/"
       },
       reporters: ["mocha"],
       singleRun: true

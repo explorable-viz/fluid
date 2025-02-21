@@ -71,9 +71,7 @@
    </div>
    <div class="flex-left-align">
       <div id="fig">
-         <div class="fig-loading">
-         loading figure(s) &mdash; see the FAQ for why this is slow!
-         </div>
+         <div class="fig-loading">loading figure(s)</div>
       </div>
       <p>You can also interact with the output. Try the following:</p>
       <ul>
@@ -111,6 +109,10 @@
    </div>
 </div>
 
-<script src="fluid.js"></script>
+<script type="module">
+   import { drawCode, loadFigure } from "/shared/load-figure.js"
+   drawCode("fluid")("non-renewables")()
+   loadFigure("spec.json")()
+</script>
 </body>
 </html>

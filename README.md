@@ -8,35 +8,69 @@ Fluid is an experimental programming language which integrates a bidirectional d
 ## Installation
 
 ### Software required
-- Windows users: Ubuntu (WSL)
 - git
 - Node.js >=14.0.0
-- yarn
+- yarn >= 1.22
 
-### For Windows Users
-- Clone the repository under Ubuntu WSL
+Additionally, for Windows users only:
 
-### Notes
-- Run `./script/setup/dev-setup.sh` after cloning repository
-- Avoid having PureScript installed globally
-- `Add Npm Path` is selected in PureScript IDE extension settings
-- VSCode for Windows users:
-	- Launch VSCode through Ubuntu (WSL) terminal
-	- Install WSL extension in VSCode
+- [Ubuntu WSL](https://ubuntu.com/desktop/wsl)
 
-#### Running tests on command line
-- `yarn build` and then `yarn test-all`
+### Building
 
-#### Running tests in browser
-- As per command-line tests above, but run `yarn test-browser`
-- Hit Debug in the browser window that opens, and then open Developer Tools or equivalent
+- Clone the repository (for Windows users, do this under the Ubuntu WSL)
+- Run `./script/setup/dev-setup.sh` from the top-level directory
+- Run `yarn build`
 
-#### Running the fluid.org website locally
-- `yarn build`
-- `yarn serve fluid-org`
+## Use
+
+The following assumes you have already succesfully run `yarn build` (see above).
+
+### Running programs from the command line
+
+Fluid examples in the `dist/fluid/fluid` can be evaluated from the command line as follows
+(from the top-level directory):
+
+```
+npx fluid evaluate -f <path>
+```
+Note that the path is relative and should not include the `.fld` extension, e.g. for the `range.fld` example:
+```
+% npx fluid evaluate -f example/range
+((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))
+Success
+```
+
+### Running the fluid.org website locally
+
+- `yarn serve fluid-org` (you may be prompted to proceed: type `y`).
 - Open a browser at the served URL (usually `127.0.0.1:8080`)
 
-#### Run Puppeteer tests for page Y of website X
+## Testing
+
+### Running the tests from the command line
+
+After building, tests can be run from the command line via `yarn test-all`
+
+### Running tests in browser
+- As per command-line tests above, but run `yarn test-browser`, which opens
+a browser window.
+- To observe the status of tests, click `Debug` in the browser window, and then open the JavaScript Console for your browser (e.g., via the Developer Tools).
+
+### Run Puppeteer tests for page Y of website X
+
 Rebuild with `puppeteerTests.headless` set to `false` to run in browser. Then:
 - `yarn bundle-website X`
 - `./script/test-page.sh X X.Y`
+
+## Development via VS Code
+
+The following are some notes on developing Fluid using VS Code.
+
+- Avoid having PureScript installed globally
+- Install the PureScript IDE extension
+- In the PureScript IDE extension settings, select `Add Npm Path`
+
+- For Windows users:
+	- Launch VSCode through Ubuntu (WSL) terminal
+	- Install WSL extension in VSCode

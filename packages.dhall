@@ -104,7 +104,6 @@ let additions =
         , "functions"
         , "node-buffer"
         , "node-fs"
-        , "node-http"
         , "prelude"
         , "record"
         , "console"
@@ -112,9 +111,9 @@ let additions =
         , "assert"
         ]
     , repo =
-      "https://github.com/justinwoo/purescript-toppokki.git"
+      "https://github.com/JosephBond/purescript-toppokki.git"
     , version =
-         "v4.0.0"
+         "v4.0.1"
     }
 
   , js-promise-aff =

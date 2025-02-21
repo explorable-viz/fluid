@@ -118,7 +118,7 @@ export function dimensions (sel) {
       if (sel.nodes().length != 1) {
          throw "Expected singleton selection"
       }
-      [ node ] = sel.nodes()
+      const [ node ] = sel.nodes()
       let { width, height } = node.getBBox()
       return { width: Math.ceil(width), height: Math.ceil(height) }
    }
