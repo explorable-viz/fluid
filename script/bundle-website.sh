@@ -34,6 +34,7 @@ done
 echo "Processing other static files:"
 set +xu  # try to remove +u
 TO_COPY=()
+shopt -s dotglob
 shopt -s extglob
 for CHILD in website/$WEBSITE/!(.|..); do
    BASENAME="$(basename "$CHILD")"
@@ -42,6 +43,7 @@ for CHILD in website/$WEBSITE/!(.|..); do
    fi
 done
 shopt -u extglob
+shopt -u dotglob
 set -xu
 
 for CHILD in "${TO_COPY[@]}"; do
