@@ -58,7 +58,7 @@ findMatDim vd = case unpack typeName vd of
 
 findMat :: VertexData -> Maybe (BaseVal Vertex)
 findMat vd = case asVal vd of
-      Left m@(Matrix (MatrixRep (_ × MatrixDim (i × _) × MatrixDim (j × _))))
-         | i == 3 && j == 3 -> Just m
-         | otherwise -> Nothing
-      _ -> Nothing
+   Left m@(Matrix (MatrixRep (_ × MatrixDim (i × _) × MatrixDim (j × _))))
+      | i == 3 && j == 3 -> Just m
+      | otherwise -> Nothing
+   _ -> Nothing

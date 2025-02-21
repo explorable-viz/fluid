@@ -223,6 +223,7 @@ graphGC :: forall g s t. Graph g => Apply s => Apply t => Foldable s => Foldable
 graphGC { g, graph_fwd, graph_bwd, inα, outα } = GC
    { fwd: \in𝔹 -> select𝔹s outα (addresses $ vertices (graph_fwd (selectαs in𝔹 inα) g))
    , bwd: \out𝔹 -> select𝔹s inα (addresses $ vertices (graph_bwd (selectαs out𝔹 outα) g))
+   , connection: unit
    }
 
 graphEval :: forall m. MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)

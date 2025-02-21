@@ -19,6 +19,7 @@ linkedInputs_spec3 =
              ]
         , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
+        , queries: []
         }
    , δ_in: "nonRenewables" ↦ listElement 51 (dictVal "coalCap" neg)
    , in_expect:
@@ -42,6 +43,7 @@ linkedInputs_spec4 =
              ]
         , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
+        , queries: []
         }
    , δ_in: "renewables" ↦ listElement 204 (dictVal "capacity" neg)
    , in_expect:
@@ -73,6 +75,7 @@ linkedInputs_spec5 =
              , "renewables" ↦ "dataset/mini-renewables"
              ]
         , inputs: [ "nonRenewables", "renewables" ]
+        , queries: []
         }
    , δ_in: "nonRenewables" ↦ listElement 0 (dictVal "coalCap" neg)
    , in_expect:

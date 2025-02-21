@@ -13,6 +13,7 @@ import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
 import GaloisConnection (GaloisConnection)
+import Graph (VertexData)
 import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
 import SExpr as S
@@ -97,6 +98,7 @@ type FigSpec =
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
+   , queries :: Array (VertexData -> Maybe VertexData)
    }
 
 data Direction = LinkedInputs | LinkedOutputs

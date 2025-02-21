@@ -128,6 +128,7 @@ unrestrictGC γ xs =
    assertWith (show xs <> " are in environment ") (xs ⊆ keys γ) $ GC
       { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ (topOf γ \\ γ')
       , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
+      , connection: unit
       }
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
