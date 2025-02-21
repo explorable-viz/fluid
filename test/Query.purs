@@ -3,6 +3,7 @@ module Test.Query where
 import Prelude
 
 import Control.Promise (fromAff)
+import Data.Either (Either(..))
 import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, empty)
@@ -15,9 +16,8 @@ import Lattice (erase)
 import Module (File(..), Folder(..))
 import Module.Node (loadProgCxt, prepConfig)
 import Pretty (prettyP)
-import Unsafe.Coerce (unsafeCoerce)
 import Util ((×))
-import Val (BaseVal(..), MatrixDim(..), MatrixRep(..))
+import Val (BaseVal(..), MatrixDim(..), MatrixRep(..), asVal)
 
 main :: Effect Unit
 main = void $ fromAff do
@@ -32,15 +32,14 @@ main = void $ fromAff do
       log ""
    pure unit
 
-type TestQuerySpec a =
+type TestQuerySpec =
    { imports :: Array String
    , file :: String
-   , fwd_expect :: String
-   , query :: VertexData -> Maybe a
-   , intermediates :: Set a
+   , query :: VertexData -> Maybe VertexData
+   , intermediates :: Set VertexData
    }
 
-testQuery :: TestQuerySpec (MatrixDim Vertex)
+testQuery :: TestQuerySpec
 testQuery =
    { file: "slicing/convolution/edgeDetect"
    , imports:
@@ -48,21 +47,18 @@ testQuery =
         , "slicing/convolution/filter/edge-detect"
         , "slicing/convolution/test-image"
         ]
-   , fwd_expect: ""
    , query: findMatDim
    , intermediates: empty
    }
 
-findMatDim :: VertexData -> Maybe (MatrixDim Vertex)
+findMatDim :: VertexData -> Maybe VertexData
 findMatDim vd = case unpack typeName vd of
-   "MatrixDim" -> let md = unpack unsafeCoerce vd in Just md
+   "MatrixDim" -> Just vd
    _ -> Nothing
 
 findMat :: VertexData -> Maybe (BaseVal Vertex)
-findMat vd = case unpack typeName vd of
-   "BaseVal" -> case unpack unsafeCoerce vd of
-      m@(Matrix (MatrixRep (_ × MatrixDim (i × _) × MatrixDim (j × _))))
+findMat vd = case asVal vd of
+      Left m@(Matrix (MatrixRep (_ × MatrixDim (i × _) × MatrixDim (j × _))))
          | i == 3 && j == 3 -> Just m
          | otherwise -> Nothing
       _ -> Nothing
-   _ -> Nothing
