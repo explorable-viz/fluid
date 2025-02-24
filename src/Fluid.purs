@@ -96,14 +96,14 @@ commands =
 commandParser :: Parser Command
 commandParser = subparser
    ( command "evaluate" (info commands.evaluate (progDesc "Evaluate a file"))
-        <> command "publish" (info commands.bundleWebsite (progDesc "Publish a file"))
+        <> command "bundle-website" (info commands.bundleWebsite (progDesc "Bundle a website to dist"))
    )
 
 dispatchCommand ∷ Command → Aff Unit
 dispatchCommand (Evaluate p) = do
    v <- (evaluate p)
    log (prettyP v)
-dispatchCommand (BundleWebsite bas) = -- BundleArgs -> BundleWebsite?
+dispatchCommand (BundleWebsite bas) =
 
    void $ liftEffect $ bundleWebsite bas
 
@@ -120,7 +120,6 @@ copyOptions =
    , shell: Nothing
    }
 
--- TODO: rename to bundleWebsite?
 bundleWebsite ∷ BundleArgs -> Effect ChildProcess
 bundleWebsite (BundleArgs (Folder website) local) =
    exec cmd copyOptions \{ error, stdout } ->
