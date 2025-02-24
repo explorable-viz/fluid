@@ -125,12 +125,6 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 showVertices' :: Set DVertex -> String
 showVertices' = showVertices <<< addresses
 
-insert' :: Vertex -> Set DVertex -> Set Vertex
-insert' α αs = Set.insert α (addresses αs)
-
-dvertex :: forall a. TypeName a => Vertex -> a -> DVertex
-dvertex α v = DVertex (α × pack v)
-
 -- ======================
 -- Query a graph for a value
 -- ======================

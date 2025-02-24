@@ -20,7 +20,7 @@ import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, DVertex, Vertex, addresses, dvertex, insert', op, selectαs, select𝔹s, showGraph, showVertices, vertices)
+import Graph (class Graph, Vertex, addresses, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
@@ -46,28 +46,28 @@ type GraphConfig =
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall m. MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set DVertex)
+match :: forall m. MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × empty)
    | otherwise = pure (maplet x v × κ × empty)
-match (Val α v@(V.Constr c vs)) (ElimConstr m) = do
+match (Val α (V.Constr c vs)) (ElimConstr m) = do
    withMsg "Pattern mismatch" $ Set.singleton c `consistentWith` keys m
    κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × αs <- matchMany vs κ
-   pure (γ × κ' × (insert (dvertex α v) αs))
+   pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
-match (Val α v@(V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
+match (Val α (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    check (Set.subset xs (Set.fromFoldable $ keys xvs))
       $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
    let xvs' = unwrap xvs
    γ × κ' × αs <- matchMany (map (\k -> snd (get k xvs')) xs') κ
-   pure $ γ × κ' × (insert (dvertex α v) αs)
+   pure $ γ × κ' × (insert α αs)
 match v (ElimDict xs _) = throw (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set DVertex)
+matchMany :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -76,20 +76,20 @@ matchMany (v : vs) (ContElim σ) = do
 matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 
-closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set DVertex -> m (Env Vertex)
+closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    Env <$> for ρ \σ ->
       let
          ρ' = ρ `forDefs` σ
          v = V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
       in
-         new Val (addresses αs) v
+         new Val αs v
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
-apply (Val α v'@(V.Fun (V.Closure γ1 ρ σ))) v = do
-   γ2 <- closeDefs γ1 ρ (singleton (dvertex α v'))
+apply (Val α (V.Fun (V.Closure γ1 ρ σ))) v = do
+   γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
-   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert (dvertex α v') αs)
+   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
 apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    runExists apply' φ
    where
@@ -114,16 +114,16 @@ apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set DVertex -> m (Val Vertex)
+eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
-eval _ (Int α n) αs = new Val (insert' α αs) v
+eval _ (Int α n) αs = new Val (insert α αs) v
    where
    v = V.Int n
-eval _ (Float α n) αs = new Val (insert' α αs) v
+eval _ (Float α n) αs = new Val (insert α αs) v
    where
    v = V.Float n
-eval _ (Str α s) αs = new Val (insert' α αs) v
+eval _ (Str α s) αs = new Val (insert α αs) v
    where
    v = V.Str s
 eval γ (Dictionary α ees) αs = do
@@ -131,11 +131,11 @@ eval γ (Dictionary α ees) αs = do
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = wrap $ D.fromFoldable $ zip ss (zip βs us)
-   new Val (insert' α αs) $ V.Dictionary (DictRep d)
+   new Val (insert α αs) $ V.Dictionary (DictRep d)
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   new Val (insert' α αs) $ V.Constr c vs
+   new Val (insert α αs) $ V.Constr c vs
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
@@ -149,9 +149,9 @@ eval γ (Matrix α e (x × y) e') αs = do
          let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
    let v' = V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β')))
-   new Val (insert' α αs) v'
+   new Val (insert α αs) v'
 eval γ (Lambda α σ) αs =
-   new Val (insert' α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   new Val (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
@@ -174,23 +174,23 @@ eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
-eval γ (LetRec defs@(RecDefs α ρ) e) αs = do
+eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ insertedα
    eval (γ <+> γ') e insertedα
    where
-   insertedα = insert (dvertex α defs) αs
+   insertedα = insert α αs
 
-eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set DVertex -> m (Env Vertex)
+eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
    where
-   go :: Env Vertex -> Module Vertex -> Set DVertex -> m (Env Vertex)
+   go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
    go γ' (Module Nil) _ = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) αs = do
       v <- eval (γ <+> y') e αs
       γ'' × _ × αs' <- match v σ
       go (y' <+> γ'') (Module ds) αs'
-   go γ' (Module (Right defs@(RecDefs α ρ) : ds)) αs = do
-      γ'' <- closeDefs (γ <+> γ') ρ (insert (dvertex α defs) αs)
+   go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
+      γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       go (γ' <+> γ'') (Module ds) αs
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
