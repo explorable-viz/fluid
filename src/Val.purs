@@ -5,14 +5,15 @@ import Prelude hiding (absurd, append)
 import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
-import Data.Array ((!!))
+import Data.Array (concat, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
+import Data.Either (Either(..))
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
 import Data.List (List(..), (:), zipWith)
-import Data.Newtype (class Newtype)
-import Data.Set (Set)
+import Data.Newtype (class Newtype, unwrap)
+import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
@@ -20,11 +21,13 @@ import Dict (Dict)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Expr, Elim, fv)
+import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (Vertex(..))
+import Graph (class TypeName, class Vertices, DVertex(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
-import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
+import Unsafe.Coerce (unsafeCoerce)
+import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆), type (+))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
@@ -39,6 +42,11 @@ data BaseVal a
    | Dictionary (DictRep a)
    | Matrix (MatrixRep a)
    | Fun (Fun a)
+
+asVal :: VertexData -> BaseVal Vertex + String
+asVal e = if type' == "BaseVal" then Left (unpack unsafeCoerce e) else Right type'
+   where
+   type' = unpack typeName e
 
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
@@ -108,6 +116,7 @@ unrestrictGC γ xs =
    assertWith (show xs <> " are in environment ") (xs ⊆ keys γ) $ GC
       { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ (topOf γ \\ γ')
       , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
+
       }
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
@@ -128,8 +137,9 @@ forDefs ρ σ = restrict (reaches ρ (fv σ ∩ Set.fromFoldable (keys ρ))) ρ
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
-newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
-
+newtype DictKey a = DictKey (String × a)
+newtype MatrixDim a = MatrixDim (Int × a)
+newtype MatrixRep a = MatrixRep (Array2 (Val a) × MatrixDim a × MatrixDim a)
 type Array2 a = Array (Array a)
 
 matrixGet :: forall a. Int -> Int -> MatrixRep a -> Val a
@@ -163,16 +173,19 @@ instance Highlightable Vertex where
 -- ======================
 derive instance Functor DictRep
 derive instance Functor MatrixRep
+derive instance Functor MatrixDim
 derive instance Functor Val
 derive instance Functor Env
 derive instance Functor Fun
 derive instance Functor BaseVal
 derive instance Functor EnvExpr
+derive instance Traversable MatrixDim
 derive instance Traversable Val
 derive instance Traversable BaseVal
 derive instance Traversable Fun
 derive instance Traversable Env
 derive instance Traversable EnvExpr
+derive instance Foldable MatrixDim
 derive instance Foldable Val
 derive instance Foldable BaseVal
 derive instance Foldable Fun
@@ -204,8 +217,11 @@ instance Apply DictRep where
       DictRep $ intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
 
 instance Apply MatrixRep where
-   apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (n' × nα) × (m' × mα))) =
-      MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × ((n ≜ n') × fnα nα) × ((m ≜ m') × fmα mα)
+   apply (MatrixRep (fvss × fn × fm)) (MatrixRep (vss × n × m)) =
+      MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × (fn <*> n) × (fm <*> m)
+
+instance Apply MatrixDim where
+   apply (MatrixDim (n × fnα)) (MatrixDim (n' × nα)) = MatrixDim ((n ≜ n') × (fnα nα))
 
 instance Apply Env where
    apply (Env fγ) (Env γ) = Env (((<*>) <$> fγ) <*> γ)
@@ -223,7 +239,7 @@ instance Traversable DictRep where
    sequence = sequenceDefault
 
 instance Foldable MatrixRep where
-   foldl f acc (MatrixRep (vss × (_ × βi) × (_ × βj))) = foldl (foldl (foldl f)) (acc `f` βi `f` βj) vss
+   foldl f acc (MatrixRep (vss × MatrixDim (_ × βi) × MatrixDim (_ × βj))) = foldl (foldl (foldl f)) (acc `f` βi `f` βj) vss
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
@@ -238,8 +254,11 @@ instance JoinSemilattice a => JoinSemilattice (DictRep a) where
    join (DictRep svs) (DictRep svs') = DictRep (svs ∨ svs')
 
 instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
-   join (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × βi') × (j' × βj'))) =
-      MatrixRep ((vss ∨ vss') × (((i ≜ i') × (βi ∨ βi')) × (((j ≜ j') × (βj ∨ βj')))))
+   join (MatrixRep (vss × i × j)) (MatrixRep (vss' × i' × j')) =
+      MatrixRep ((vss ∨ vss') × ((i ∨ i') × (j ∨ j')))
+
+instance JoinSemilattice a => JoinSemilattice (MatrixDim a) where
+   join (MatrixDim (i × α)) (MatrixDim (i' × α')) = MatrixDim ((i ≜ i') × (α ∨ α'))
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
    join (Val α u) (Val α' v) = Val (α ∨ α') (u ∨ v)
@@ -278,8 +297,11 @@ instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
    expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')
 
 instance BoundedJoinSemilattice a => Expandable (MatrixRep a) (Raw MatrixRep) where
-   expand (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × _) × (j' × _))) =
-      MatrixRep (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
+   expand (MatrixRep (vss × i × j)) (MatrixRep (vss' × i' × j')) =
+      MatrixRep (expand vss vss' × expand i i' × expand j j')
+
+instance BoundedJoinSemilattice a => Expandable (MatrixDim a) (Raw MatrixDim) where
+   expand (MatrixDim (i × α)) (MatrixDim (i' × _)) = MatrixDim ((i ≜ i') × α)
 
 instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
    expand (Val α u) (Val _ v) = Val α (expand u v)
@@ -308,6 +330,7 @@ derive instance Eq a => Eq (Val a)
 derive instance Eq a => Eq (BaseVal a)
 derive instance Eq a => Eq (DictRep a)
 derive instance Eq a => Eq (MatrixRep a)
+derive instance Eq a => Eq (MatrixDim a)
 derive instance Eq a => Eq (Fun a)
 derive instance Eq a => Eq (Env a)
 derive instance Eq a => Eq (EnvExpr a)
@@ -316,8 +339,56 @@ derive instance Ord a => Ord (Val a)
 derive instance Ord a => Ord (BaseVal a)
 derive instance Ord a => Ord (DictRep a)
 derive instance Ord a => Ord (MatrixRep a)
+derive instance Ord a => Ord (MatrixDim a)
 derive instance Ord a => Ord (Fun a)
 derive instance Ord a => Ord (Env a)
 derive instance Ord a => Ord (EnvExpr a)
 
 derive instance Newtype (Env a) _
+
+instance TypeName (BaseVal a) where
+   typeName _ = "BaseVal"
+
+instance TypeName (MatrixDim a) where
+   typeName _ = "MatrixDim"
+
+instance TypeName (DictKey a) where
+   typeName _ = "DictKey"
+
+instance Vertices (Val Vertex) where
+   vertices (Val α v) = singleton (DVertex (α × pack v)) ∪ vertices v
+
+instance Vertices (BaseVal Vertex) where
+   vertices (Int _) = empty
+   vertices (Float _) = empty
+   vertices (Str _) = empty
+   vertices (Constr _ vs) = unions (vertices <$> vs)
+   vertices (Dictionary d) = vertices d
+   vertices (Matrix m) = vertices m
+   vertices (Fun f) = vertices f
+
+instance Vertices (DictRep Vertex) where
+   vertices (DictRep d) = foldMap (\k (α × v) -> vertices (DictKey (k × α)) ∪ vertices v) (unwrap d)
+
+instance Vertices (DictKey Vertex) where
+   vertices dk@(DictKey (_ × α)) = singleton (DVertex (α × pack dk))
+
+instance Vertices (MatrixRep Vertex) where
+   vertices (MatrixRep (vss × i × j)) =
+      unions (concat (map vertices <$> vss))
+         ∪ vertices i
+         ∪ vertices j
+
+instance Vertices (MatrixDim Vertex) where
+   vertices md@(MatrixDim (_ × α)) = singleton (DVertex (α × pack md))
+
+instance Vertices (Fun Vertex) where
+   vertices (Closure γ ρ σ) = vertices γ ∪ vertices ρ ∪ vertices σ
+   vertices (Foreign _ vs) = unions (vertices <$> vs)
+   vertices (PartialConstr _ vs) = unions (vertices <$> vs)
+
+instance Vertices (Env Vertex) where
+   vertices (Env γ) = unions (vertices <$> values γ)
+
+instance Vertices (EnvExpr Vertex) where
+   vertices (EnvExpr γ e) = vertices γ ∪ vertices e

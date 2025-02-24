@@ -31,6 +31,7 @@ figSpecFromJson spec =
    , imports: spec.imports
    , file: File spec.file
    , inputs: spec.inputs
+   , queries: []
    }
 
 loadFigure :: String -> Effect Unit

@@ -31,7 +31,7 @@ import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, singleton, throw, unimplemented, (×), unzip)
 import Util.Map (disjointUnion, insert, intersectionWith, lookup, maplet, (\\))
 import Util.Set (empty)
-import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
+import Val (Array2, BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixPut)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
 extern (ForeignOp (id × φ)) = id × Val bot (Fun ((Foreign (ForeignOp (id × φ))) Nil))
@@ -107,20 +107,21 @@ dims =
    ForeignOp ("dims" × mkExists (ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
-   op (Val α (Matrix (MatrixRep (_ × (i × β1) × (j × β2)))) : Nil) = do
-      v1 <- Val <$> new (singleton β1) <@> Int i
-      v2 <- Val <$> new (singleton β2) <@> Int j
-      Val <$> new (singleton α) <@> Constr cPair (v1 : v2 : Nil)
+   op (Val α (Matrix (MatrixRep (_ × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil) = do
+      v1 <- new Val (singleton β1) $ Int i
+      v2 <- new Val (singleton β2) $ Int j
+      let v = Constr cPair (v1 : v2 : Nil)
+      new Val (singleton α) v
    op _ = throw "Matrix expected"
 
    fwd :: OpFwd (Array2 (Raw Val))
-   fwd (Val α (Matrix (MatrixRep (vss × (i × β1) × (j × β2)))) : Nil) =
+   fwd (Val α (Matrix (MatrixRep (vss × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil) =
       pure $ (map erase <$> vss) × Val α (Constr cPair (Val β1 (Int i) : Val β2 (Int j) : Nil))
    fwd _ = throw "Matrix expected"
 
    bwd :: Partial => OpBwd (Array2 (Raw Val))
    bwd (vss × Val α (Constr c (Val β1 (Int i) : Val β2 (Int j) : Nil))) | c == cPair =
-      Val α (Matrix (MatrixRep (((<$>) botOf <$> vss) × (i × β1) × (j × β2)))) : Nil
+      Val α (Matrix (MatrixRep (((<$>) botOf <$> vss) × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil
 
 matrixLookup :: ForeignOp
 matrixLookup =
@@ -137,7 +138,7 @@ matrixLookup =
    fwd _ = throw "Matrix and pair of integers expected"
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int))
-   bwd ((r × (i × j)) × v) =
+   bwd ((r × (i × j)) × v@(Val _ _)) =
       Val bot (Matrix (matrixPut i j (const v) (botOf r)))
          : Val bot (Constr cPair (Val bot (Int i) : Val bot (Int j) : Nil))
          : Nil
@@ -148,7 +149,7 @@ matrixUpdate =
    where
    op :: OpGraph
    op (Val α (Matrix r) : Val _ (Constr c (Val _ (Int i) : Val _ (Int j) : Nil)) : v : Nil)
-      | c == cPair = Val <$> new (singleton α) <@> Matrix (matrixPut i j (const v) r)
+      | c == cPair = new Val (singleton α) (Matrix (matrixPut i j (const v) r))
    op _ = throw "Matrix, pair of integers and value expected"
 
    fwd :: OpFwd ((Int × Int) × Raw Val)
@@ -169,7 +170,7 @@ dict_difference =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) =
-      Val <$> new (singleton α # Set.insert β) <@> Dictionary (DictRep (d \\ d'))
+      new Val (singleton α # Set.insert β) (Dictionary (DictRep (d \\ d')))
    op _ = throw "Dictionaries expected."
 
    fwd :: OpFwd Unit
@@ -187,7 +188,7 @@ dict_disjointUnion =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) = do
-      Val <$> new (singleton α # Set.insert β) <@> Dictionary (DictRep (disjointUnion d d'))
+      new Val (singleton α # Set.insert β) (Dictionary (DictRep (disjointUnion d d')))
    op _ = throw "Dictionaries expected"
 
    fwd :: OpFwd (Dict Unit × Dict Unit)
@@ -252,12 +253,14 @@ dict_intersectionWith =
    ForeignOp ("dict_intersectionWith" × mkExists (ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }))
    where
    op :: OpGraph
-   op (v : Val α (Dictionary (DictRep d1)) : Val α' (Dictionary (DictRep d2)) : Nil) =
-      Val <$> new (singleton α # Set.insert α') <*> (Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2)))
+   op (v : Val α (Dictionary (DictRep d1)) : Val α' (Dictionary (DictRep d2)) : Nil) = do
+      v' <- Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2))
+      new Val (singleton α # Set.insert α') v'
       where
       apply' (β × u) (β' × u') = do
-         β'' <- new (singleton β # Set.insert β')
-         (×) β'' <$> (G.apply v u >>= flip G.apply u')
+         v''@(Val _ key) <- G.apply v u >>= flip G.apply u'
+         Val β'' _ <- new Val (singleton β # Set.insert β') key
+         pure (β'' × v'')
    op _ = throw "Function and two dictionaries expected"
 
    fwd :: OpFwd (Raw Val × Dict (AppTrace × AppTrace))
@@ -287,7 +290,7 @@ dict_map =
    op :: OpGraph
    op (v : Val α (Dictionary (DictRep d)) : Nil) = do
       d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
-      Val <$> new (singleton α) <@> Dictionary (DictRep d')
+      new Val (singleton α) (Dictionary (DictRep d'))
    op _ = throw "Function and dictionary expected"
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)

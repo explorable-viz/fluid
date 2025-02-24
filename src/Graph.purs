@@ -12,13 +12,16 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, singleton, unions)
 import Data.Set as Set
 import Data.String (joinWith)
+import Data.Tuple (fst, snd)
 import Dict (Dict)
+import Foreign.Object (values)
 import Lattice (𝔹)
 import Util (type (×), Endo, (×))
 import Util.Set ((∈))
 
 type Edge = Vertex × Vertex
-type HyperEdge = Vertex × Set Vertex -- mostly a convenience
+type HyperEdge = DVertex × Set Vertex -- mostly a convenience
+newtype DVertex = DVertex (Vertex × VertexData)
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
@@ -45,21 +48,24 @@ class (Eq g, Vertices g) <= Graph g where
    -- | right-to-left, each α is a new vertex to be added, and each β ∈ βs already exists in the graph being
    -- | constructed. Upper adjoint to toEdgeList. If "direction" is bwd, hyperedges are assumed to be in
    -- | reverse topological order.
-   fromEdgeList :: Set Vertex -> List HyperEdge -> g
+   fromEdgeList :: Set DVertex -> List HyperEdge -> g
 
    topologicalSort :: g -> List Vertex
+   vertexData :: g -> Vertex -> VertexData
 
 newtype Vertex = Vertex String -- so can use directly as dict key
-
-class Vertices a where
-   vertices :: a -> Set Vertex
 
 class Selectαs a b | a -> b where
    selectαs :: a -> b -> Set Vertex
    select𝔹s :: b -> Set Vertex -> a
 
-instance (Functor f, Foldable f) => Vertices (f Vertex) where
+instance (Vertices a) => Vertices (Dict a) where
+   vertices d = unions (vertices <$> values (unwrap d))
+else instance (Functor f, Foldable f) => Vertices (f DVertex) where
    vertices = Set.fromFoldable
+
+class Vertices a where
+   vertices :: a -> Set DVertex
 
 instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f Vertex) where
    selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
@@ -90,7 +96,7 @@ toEdgeList g =
    go :: List Vertex × List HyperEdge -> Step _ (List HyperEdge)
    go (αs' × acc) = case uncons αs' of
       Nothing -> Done acc
-      Just { head: α, tail: αs } -> Loop (αs × (α × outN g α) : acc)
+      Just { head: α, tail: αs } -> Loop (αs × ((DVertex (α × vertexData g α)) × outN g α) : acc)
 
 showGraph :: forall g. Graph g => g -> String
 showGraph = toEdgeList >>> showEdgeList
@@ -109,11 +115,46 @@ showEdgeList es =
    indent = ("   " <> _)
 
    showEdge :: HyperEdge -> String
-   showEdge (α × αs) =
+   showEdge (DVertex (α × _) × αs) =
       unwrap α <> " -> {" <> joinWith ", " (A.fromFoldable $ unwrap `Set.map` αs) <> "}"
 
 showVertices :: Set Vertex -> String
 showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
+
+-- ======================
+-- Query a graph for a value
+-- ======================
+runQuery :: forall a g. Ord a => Graph g => (VertexData -> Maybe a) -> g -> Set a
+runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` vertices g
+
+-- ======================
+-- Packed data associated with Vertex
+-- ======================
+
+class TypeName a where
+   typeName :: a -> String
+
+newtype VertexData = VertexData (forall r. (forall a. TypeName a => a -> r) -> r)
+
+instance TypeName VertexData where
+   typeName (VertexData e) = e typeName
+
+pack :: forall a. TypeName a => a -> VertexData
+pack x = VertexData (\k -> k x)
+
+unpack :: forall r. (forall a. TypeName a => a -> r) -> VertexData -> r
+unpack f (VertexData e) = e f
+
+addresses :: Set DVertex -> Set Vertex
+addresses = Set.map (fst <<< unwrap)
+
+instance Eq DVertex where
+   eq (DVertex (α × _)) (DVertex (α' × _)) = α == α'
+
+instance Ord DVertex where
+   compare (DVertex (α × _)) (DVertex (α' × _)) = compare α α'
+
+derive instance Newtype DVertex _
 
 -- ======================
 -- boilerplate
