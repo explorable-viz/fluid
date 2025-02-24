@@ -56,6 +56,7 @@ findMatDim vd = case unpack typeName vd of
    "MatrixDim" -> Just vd
    _ -> Nothing
 
+-- TODO: express this using Maybe composition, rather than explicit case analysis
 findMat :: VertexData -> Maybe (BaseVal Vertex)
 findMat vd = case asVal vd of
    Left m@(Matrix (MatrixRep (_ × MatrixDim (i × _) × MatrixDim (j × _))))
