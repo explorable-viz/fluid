@@ -100,7 +100,7 @@ apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
          new Val (singleton α) v'
       else φ'.op' vs'
       where
-      v' = (V.Fun (V.Foreign (ForeignOp (id × φ)) vs'))
+      v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    new Val (singleton α) v'
