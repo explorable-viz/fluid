@@ -81,9 +81,8 @@ closeDefs γ ρ αs =
    Env <$> for ρ \σ ->
       let
          ρ' = ρ `forDefs` σ
-         v = V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
       in
-         new Val αs v
+         new Val αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α (V.Fun (V.Closure γ1 ρ σ))) v = do
