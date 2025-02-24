@@ -48,16 +48,6 @@ asVal e = if type' == "BaseVal" then Left (unpack unsafeCoerce e) else Right typ
    where
    type' = unpack typeName e
 
-whatIs :: BaseVal Vertex + String -> String
-whatIs (Left (Int _)) = "BV: Int"
-whatIs (Left (Float _)) = "BV: Float"
-whatIs (Left (Str _)) = "BV: Str"
-whatIs (Left (Constr _ _)) = "BV: Constr"
-whatIs (Left (Dictionary _)) = "BV: Dictionary"
-whatIs (Left (Matrix _)) = "BV: Matrix"
-whatIs (Left (Fun _)) = "BV: Fun"
-whatIs (Right s) = s
-
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated

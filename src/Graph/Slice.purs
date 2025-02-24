@@ -16,7 +16,7 @@ import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), singleton, spyWhen, validateWhen, (×), (∩), (⊆))
 import Util.Set ((∈))
-import Val (asVal, whatIs)
+import Val (asVal)
 
 type BwdConfig =
    { visited :: Set Vertex
@@ -32,7 +32,7 @@ bwdSlice (αs × g) = fst $
       # (\vs -> addresses vs ∩ sources g)
       # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
    where
-   report α = spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (whatIs <<< asVal)
+   report α = spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) asVal
 
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
    go { αs: Nil, pending: Nil } = pure $ Done unit
