@@ -122,9 +122,6 @@ showEdgeList es =
 showVertices :: Set Vertex -> String
 showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
 
-showVertices' :: Set DVertex -> String
-showVertices' = showVertices <<< addresses
-
 -- ======================
 -- Query a graph for a value
 -- ======================

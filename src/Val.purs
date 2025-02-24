@@ -361,7 +361,6 @@ derive instance Ord a => Ord (EnvExpr a)
 
 derive instance Newtype (Env a) _
 
--- Interim
 instance TypeName (BaseVal a) where
    typeName _ = "BaseVal"
 
