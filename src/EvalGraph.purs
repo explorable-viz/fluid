@@ -116,15 +116,9 @@ apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
-eval _ (Int α n) αs = new Val (insert α αs) v
-   where
-   v = V.Int n
-eval _ (Float α n) αs = new Val (insert α αs) v
-   where
-   v = V.Float n
-eval _ (Str α s) αs = new Val (insert α αs) v
-   where
-   v = V.Str s
+eval _ (Int α n) αs = new Val (insert α αs) (V.Int n)
+eval _ (Float α n) αs = new Val (insert α αs) (V.Float n)
+eval _ (Str α s) αs = new Val (insert α αs) (V.Str s)
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
@@ -147,8 +141,7 @@ eval γ (Matrix α e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = maplet x (Val β (V.Int i)) `disjointUnion` (maplet y (Val β' (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
-   let v' = V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β')))
-   new Val (insert α αs) v'
+   new Val (insert α αs) (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
    new Val (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
@@ -174,10 +167,8 @@ eval γ (Let (VarDef σ e) e') αs = do
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
 eval γ (LetRec (RecDefs α ρ) e) αs = do
-   γ' <- closeDefs γ ρ insertedα
-   eval (γ <+> γ') e insertedα
-   where
-   insertedα = insert α αs
+   γ' <- closeDefs γ ρ (insert α αs)
+   eval (γ <+> γ') e (insert α αs)
 
 eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
