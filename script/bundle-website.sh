@@ -3,10 +3,10 @@ set -xeu
 
 PREFIX=""
 
-while getopts "w:r" opt; do
+while getopts "w:l" opt; do
    case $opt in
       w) WEBSITE="$OPTARG";;
-      r) PREFIX=node_modules/@explorable-viz/fluid;;
+      l) PREFIX=node_modules/@explorable-viz/fluid;;
    esac
 done
 
