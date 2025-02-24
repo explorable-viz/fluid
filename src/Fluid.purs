@@ -3,7 +3,7 @@ module Fluid where
 import Prelude hiding (between)
 
 import Bind (Bind, (↦))
-import Data.Array (filter, fold, fromFoldable)
+import Data.Array (filter, fromFoldable)
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.Maybe (Maybe(..))
@@ -25,14 +25,17 @@ import Pretty (prettyP)
 import Util (Endo)
 import Val (Val)
 
-data Program = Program
-   { library :: Boolean
+data EvalArgs = EvalArgs
+   { local :: Boolean
    , imports :: Array String
    , datasets :: Array (Bind String)
    , fileName :: String
+   , fluidSrcPath :: Folder
    }
 
-data Command = Evaluate Program | Publish Folder Boolean
+data BundleArgs = BundleArgs Folder Boolean
+
+data Command = Evaluate EvalArgs | BundleWebsite BundleArgs
 
 between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
 between p1 p2 f s =
@@ -66,34 +69,43 @@ parseImports =
            <> help "Comma-separated list of files to import"
       )
 
-program :: Parser Program
-program = ado
-   library <- switch (long "library" <> short 'l' <> help "Are you running fluid as a library?")
+parseLocal :: Parser Boolean
+parseLocal = switch (long "local" <> short 'l' <> help "Are you running fluid as a library?")
+
+parseEvaluate :: Parser EvalArgs
+parseEvaluate = ado
+   local <- parseLocal
    imports <- fromFoldable <$> parseImports
    datasets <- fromFoldable <$> parseDatasets
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
-   in Program { library, imports, datasets, fileName }
+   fluidSrcPath <- Folder <$> strOption (long "fluid-src-path" <> short 'p' <> help "The path containing the program files")
+   in EvalArgs { local, imports, datasets, fileName, fluidSrcPath }
 
-commands :: { publish :: Parser Command, evaluate :: Parser Command }
+parseBundleArgs :: Parser BundleArgs
+parseBundleArgs = ado
+   website <- Folder <$> strOption (long "website" <> short 'w' <> help "root directory of website under dist/" <> value "Misc")
+   local <- parseLocal
+   in BundleArgs website local
+
+commands :: { bundleWebsite :: Parser Command, evaluate :: Parser Command }
 commands =
-   { publish: Publish <$> (Folder <$> strOption (long "website" <> short 'w' <> help "root directory of website under dist/" <> value "Misc"))
-        <*> switch (fold [ long "local", short 'l', help "Are you publishing from source (false), or an npm package (true)?" ])
-   , evaluate: Evaluate <$> program
+   { bundleWebsite: BundleWebsite <$> parseBundleArgs
+   , evaluate: Evaluate <$> parseEvaluate
    }
 
 commandParser :: Parser Command
 commandParser = subparser
    ( command "evaluate" (info commands.evaluate (progDesc "Evaluate a file"))
-        <> command "publish" (info commands.publish (progDesc "Publish a file"))
+        <> command "bundle-website" (info commands.bundleWebsite (progDesc "Bundle a website to dist"))
    )
 
 dispatchCommand ∷ Command → Aff Unit
 dispatchCommand (Evaluate p) = do
    v <- (evaluate p)
    log (prettyP v)
-dispatchCommand (Publish (Folder website) b) = -- Publish -> BundleWebsite?
+dispatchCommand (BundleWebsite bas) =
 
-   void $ liftEffect $ publish website b
+   void $ liftEffect $ bundleWebsite bas
 
 copyOptions :: ExecOptions
 copyOptions =
@@ -108,19 +120,18 @@ copyOptions =
    , shell: Nothing
    }
 
--- TODO: rename to bundleWebsite?
-publish ∷ String -> Boolean -> Effect ChildProcess
-publish website library =
+bundleWebsite ∷ BundleArgs -> Effect ChildProcess
+bundleWebsite (BundleArgs (Folder website) local) =
    exec cmd copyOptions \{ error, stdout } ->
       case error of
          Just err -> logShow err
          Nothing -> log =<< toString ASCII stdout
    where
    cmd = "."
-      <> (if library then "/" <> fluidLibraryPath else "")
+      <> (if local then "/" <> fluidLibraryPath else "")
       <> "/script/bundle-website.sh -w "
       <> website
-      <> if library then " -r" else ""
+      <> if local then " -l" else ""
 
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
@@ -135,9 +146,9 @@ callback = case _ of
 fluidLibraryPath :: String
 fluidLibraryPath = "node_modules/@explorable-viz/fluid"
 
-evaluate :: Program -> Aff (Val Unit)
-evaluate (Program { library, imports, datasets, fileName }) = do
-   let fluidSrcPaths = [ Folder "fluid" ] <> if library then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
+evaluate :: EvalArgs -> Aff (Val Unit)
+evaluate (EvalArgs { local, imports, datasets, fileName, fluidSrcPath }) = do
+   let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
    { e, gconfig } <- prepConfig fluidSrcPaths (File fileName) progCxt
    { outα } <- graphEval gconfig e
