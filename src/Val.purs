@@ -44,11 +44,9 @@ data BaseVal a
    | Fun (Fun a)
 
 asVal :: VertexData -> BaseVal Vertex + String
-asVal e =
-   let
-      type' = unpack typeName e
-   in
-      if type' == "BaseVal" then Left (unpack unsafeCoerce e) else Right type'
+asVal e = if type' == "BaseVal" then Left (unpack unsafeCoerce e) else Right type'
+   where
+   type' = unpack typeName e
 
 whatIs :: BaseVal Vertex + String -> String
 whatIs (Left (Int _)) = "BV: Int"
@@ -366,9 +364,6 @@ instance TypeName (BaseVal a) where
 
 instance TypeName (MatrixDim a) where
    typeName _ = "MatrixDim"
-
-instance Show a => Show (MatrixDim a) where
-   show (MatrixDim (i × α)) = show i <> " × " <> show α
 
 instance TypeName (DictKey a) where
    typeName _ = "DictKey"
