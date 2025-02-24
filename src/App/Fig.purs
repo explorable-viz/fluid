@@ -91,7 +91,6 @@ unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnect
 unprojExpr (EnvExpr _ e) = GC
    { fwd: \γ -> EnvExpr γ (topOf e)
    , bwd: \(EnvExpr γ _) -> γ
-
    }
 
 lift
