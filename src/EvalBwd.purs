@@ -210,4 +210,4 @@ traceGC (EnvExpr γ e) = do
    let
       bwd v' = let γ' × e' × _ = evalBwd γ e v' t in EnvExpr γ' e'
       fwd (EnvExpr γ' e') = snd $ defined $ eval (EnvExpr γ' e') top
-   pure $ { gc: GC { fwd, bwd, connection: unit }, v }
+   pure $ { gc: GC { fwd, bwd }, v }

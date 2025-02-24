@@ -24,7 +24,7 @@ desugGC
    => BoundedLattice a
    => Raw S.Expr
    -> m (Desugaring a)
-desugGC s = pure $ { gc: GC { fwd, bwd, connection: unit }, e }
+desugGC s = pure $ { gc: GC { fwd, bwd }, e }
    where
    e = defined $ desug s
    fwd s' = defined $ desug s'

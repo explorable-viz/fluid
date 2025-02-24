@@ -91,7 +91,7 @@ unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnect
 unprojExpr (EnvExpr _ e) = GC
    { fwd: \γ -> EnvExpr γ (topOf e)
    , bwd: \(EnvExpr γ _) -> γ
-   , connection: unit
+
    }
 
 lift
@@ -102,7 +102,7 @@ lift
    -> g (𝔹 -> 𝔹 -> SelState 𝔹)
    -> GaloisConnection (f 𝔹) (g 𝔹)
    -> GaloisConnection (f (SelState 𝔹)) (g (SelState 𝔹))
-lift selState_f selState_g (GC gc) = GC { bwd, fwd, connection: unit }
+lift selState_f selState_g (GC gc) = GC { bwd, fwd }
    where
    fwd :: f (SelState 𝔹) -> g (SelState 𝔹)
    fwd γ = selState_g <*> gc.fwd (γ <#> getPersistent) <*> gc.fwd (γ <#> getTransient)
