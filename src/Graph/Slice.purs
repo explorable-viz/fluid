@@ -8,7 +8,8 @@ import Data.List as L
 import Data.Map (Map, lookup)
 import Data.Map as M
 import Data.Maybe (maybe)
-import Data.Set (Set, empty, insert, map)
+import Data.Set (Set, empty, insert)
+import Data.Set (map) as Set
 import Data.Tuple (fst)
 import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, sources, vertexData, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
@@ -25,26 +26,27 @@ type BwdConfig =
 
 bwdSlice :: forall g. Graph g => Set Vertex × g -> g
 bwdSlice (αs × g) = fst $
-   αsData
+   αds
       -- No outputsAreSources analog of inputAreSinks; we do however need to restrict to sources (see #818).
       # validateWhen checking.outputsInGraph "inputs are sinks" (_ ⊆ vertices g)
       # (\vs -> addresses vs ∩ sources g)
       # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
    where
+   report α = spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (whatIs <<< asVal)
+
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
    go { αs: Nil, pending: Nil } = pure $ Done unit
    go { visited, αs: Nil, pending: (DVertex (α × vd) × βs) : pending } = do
       if α ∈ visited then
          pure $ Loop { visited, αs: Nil, pending }
       else do
-         extend (DVertex (α × (spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (whatIs <<< asVal) vd))) βs
+         extend (DVertex (α × report α vd)) βs
          pure $ Loop { visited: insert α visited, αs: Nil, pending }
    go { visited, αs: α : αs', pending } = do
       let βs = outN g α
-      -- βs in g so safe to call definitely:
       let vd = vertexData g α
       pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: (DVertex (α × vd) × βs) : pending }
-   αsData = (\α -> DVertex (α × (spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (whatIs <<< asVal) $ vertexData g α))) `map` αs
+   αds = Set.map (\α -> DVertex (α × report α (vertexData g α))) αs
 
 type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig =
@@ -54,7 +56,7 @@ type FwdConfig =
 
 fwdSlice :: forall g. Graph g => Set Vertex × g -> g
 fwdSlice (αs × g) = fst $
-   αsData
+   αds
       # validateWhen checking.inputsAreSinks "inputs are sinks" (\v -> addresses v ⊆ sinks g)
       # runWithGraph_spy (tailRecM go { pending: M.empty, es: inEdges g αs })
    where
@@ -69,4 +71,4 @@ fwdSlice (αs × g) = fst $
          pure $ Loop { pending: M.insert α βs pending, es }
       where
       βs = maybe (singleton β) (insert β) (lookup α pending)
-   αsData = (\α -> DVertex (α × vertexData g α)) `map` αs
+   αds = Set.map (\α -> DVertex (α × vertexData g α)) αs
