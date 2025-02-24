@@ -1,2 +1,0 @@
-let out = convolve inputImage filter extend in
-convolve out filter extend

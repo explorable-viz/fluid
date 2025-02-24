@@ -11,12 +11,11 @@ import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Set (map) as Set
 import Data.Tuple (fst)
-import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, sources, vertexData, vertices)
+import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, sources, typeName, vertexData, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), singleton, spyWhen, validateWhen, (×), (∩), (⊆))
 import Util.Set ((∈))
-import Val (asVal)
 
 type BwdConfig =
    { visited :: Set Vertex
@@ -32,7 +31,7 @@ bwdSlice (αs × g) = fst $
       # (\vs -> addresses vs ∩ sources g)
       # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
    where
-   report α = spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) asVal
+   report α = spyWhen tracing.graphBwdSlice_vertexData ("Vertex data found at " <> show α) typeName
 
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
    go { αs: Nil, pending: Nil } = pure $ Done unit

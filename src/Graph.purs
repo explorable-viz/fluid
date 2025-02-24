@@ -21,7 +21,6 @@ import Util.Set ((∈))
 
 type Edge = Vertex × Vertex
 type HyperEdge = DVertex × Set Vertex -- mostly a convenience
-
 newtype DVertex = DVertex (Vertex × VertexData)
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
@@ -136,6 +135,9 @@ class TypeName a where
    typeName :: a -> String
 
 newtype VertexData = VertexData (forall r. (forall a. TypeName a => a -> r) -> r)
+
+instance TypeName VertexData where
+   typeName (VertexData e) = e typeName
 
 pack :: forall a. TypeName a => a -> VertexData
 pack x = VertexData (\k -> k x)

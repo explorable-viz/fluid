@@ -4,7 +4,7 @@ module Test.Util.Debug where
 tracing
    :: { runWithGraphT :: Boolean
       , graphBwdSlice :: Boolean
-      , graphBwdSlice' :: Boolean
+      , graphBwdSlice_vertexData :: Boolean
       , graphFwdSlice :: Boolean
       , checkEq :: Boolean
       , bwdSelection :: Boolean
@@ -16,7 +16,7 @@ tracing
 tracing =
    { runWithGraphT: false
    , graphBwdSlice: false
-   , graphBwdSlice': false
+   , graphBwdSlice_vertexData: false
    , graphFwdSlice: false
    , checkEq: false
    , bwdSelection: false
