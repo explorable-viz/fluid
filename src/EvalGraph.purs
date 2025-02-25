@@ -225,6 +225,26 @@ graphGC { g, graph_fwd, graph_bwd, inα, outα } = GC
    , bwd: \out𝔹 -> select𝔹s inα (addresses $ vertices (graph_bwd (selectαs out𝔹 outα) g))
    }
 
+graphGC'
+   :: forall g s t
+    . Graph g
+   => Apply s
+   => Apply t
+   => Foldable s
+   => Foldable t
+   => GraphEval g s t
+   -> { fwd :: s 𝔹 -> t 𝔹 × g
+      , bwd :: t 𝔹 -> s 𝔹 × g
+      }
+graphGC' { g, graph_fwd, graph_bwd, inα, outα } =
+   { fwd: \in𝔹 -> 
+      let g' = (graph_fwd (selectαs in𝔹 inα) g)
+      in select𝔹s outα (addresses $ vertices g') × g'
+   , bwd: \out𝔹 -> 
+      let g' =  (graph_bwd (selectαs out𝔹 outα) g)
+      in select𝔹s inα (addresses $ vertices g') × g'
+   }
+
 graphEval :: forall m. MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
 graphEval { n, γ } e = do
    _ × _ × g × inα × outα <- flip runAllocT n do
