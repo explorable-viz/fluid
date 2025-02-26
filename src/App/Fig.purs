@@ -11,7 +11,7 @@ import Bind (Var)
 import Control.Apply (lift2)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong ((***))
+import Data.Profunctor.Strong (first, (***))
 import Data.Set as Set
 import Data.Traversable (sequence_)
 import Data.Tuple (fst)
@@ -119,35 +119,19 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    let
       EnvExpr γ e' = erase eval.inα
       { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e'))
-      dualFocusFwd = deMorgan focusBwd
       dualFocusBwd = deMorgan focusFwd
       graphgc = graphGC' eval
       graphgc_op = graphGC' (withOp eval)
-      { fwd: gcFwd, bwd: gcBwd } =
-         { fwd: \e -> graphgc.fwd (focusFwd e)
-         , bwd: \v -> (focusBwd *** identity) (graphgc.bwd v)
-         }
+      gcBwd = \v -> (first focusBwd) (graphgc.bwd v)
 
-      -- gc_dual = graphGC (withOp eval) >>> dual focus
-      { fwd: _dualFwd, bwd: dualBwd } =
-         { fwd: \v ->
-              let
-                 (ee × g) = graphgc_op.fwd v
-              in
-                 dualFocusFwd ee × g
-         , bwd: \e ->
-              let
-                 ee = dualFocusBwd e
-              in
-                 graphgc_op.bwd ee
-         }
+      dualBwd = \env -> graphgc_op.bwd (dualFocusBwd env)
 
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
       γ0 = botOf γα
       v0 = botOf outα
       γInert = selState <$> neg (fst <<< gcBwd) (topOf outα) -- want to simplify this for ease of computation (attempts similar to v0 result in a lack of inert data)
-      vInert = selState <$> (fst <<< gcFwd) γ0
+      vInert = selState <$> (fst <<< graphgc.fwd <<< focusFwd) γ0
 
       lifted = lift γInert gcBwd
       lifted' = lift vInert dualBwd
@@ -157,7 +141,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedInputs =
          ( \env ->
               let
-                 (val × envToV) = lifted' env
+                 val × envToV = lifted' env
                  v' × v'' = meet val
                  env' × vToEnv = lifted v'
               in
@@ -167,7 +151,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs =
          ( \val ->
               let
-                 (env × vToEnv) = lifted val
+                 env × vToEnv = lifted val
                  env' × env'' = meet env
                  val' × envToV = lifted' env'
               in
