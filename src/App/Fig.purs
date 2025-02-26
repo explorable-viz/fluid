@@ -17,15 +17,13 @@ import Data.Traversable (sequence_)
 import Data.Tuple (fst)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC', withOp)
-import GaloisConnection ((***)) as GC
-import GaloisConnection (GaloisConnection(..), dual, meet)
-import Graph (class Graph, Vertex)
+import GaloisConnection (GaloisConnection(..), deMorgan)
 import Lattice (class BoundedMeetSemilattice, class Neg, Raw, 𝔹, botOf, erase, neg, topOf)
 import Module.Web (File, loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, dup, spyWhen, (×))
 import Util.Map (insert, lookup, mapWithKey)
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
 
@@ -66,12 +64,12 @@ selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊)
 selectionResult fig@{ v, dir: LinkedOutputs } =
    (lift2 as𝕊 <$> v <*> v1) × ((to𝕊 <$> _) <$> report γ1)
    where
-   v1 × γ1 = (unwrap fig.linkedOutputs).bwd v
+   v1 × γ1 × _vToEnv × _envToV = fig.linkedOutputs v
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
 selectionResult fig@{ γ, dir: LinkedInputs } =
    ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> γ <*> γ1)
    where
-   γ1 × v1 = (unwrap fig.linkedInputs).bwd γ
+   γ1 × v1 × _vToEnv × _envToV = fig.linkedInputs γ
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
 
 drawFig :: HTMLId -> Fig -> Effect Unit
@@ -96,81 +94,22 @@ unprojExpr (EnvExpr _ e) = GC
 
    }
 
-lift'
-   :: forall f g
-    . Functor f
-   => Apply f
-   => Functor g
-   => Apply g
-   => Neg (f 𝔹)
-   => Neg (g 𝔹)
-   => GaloisConnection (f 𝔹) (g 𝔹)
-   -> f Vertex
-   -> g Vertex
-   -> GaloisConnection (f (SelState 𝔹)) (g (SelState 𝔹))
-lift' gc inα out𝔹 =
-   let
-      in0 = botOf inα
-      inInert = selState <$> neg (unwrap gc).bwd (topOf out𝔹)
-      outInert = selState <$> (unwrap gc).fwd in0
-   in
-      lift inInert outInert gc
-
-graphCompose
-   :: forall g e ee v a
-    . Graph g
-   => GaloisConnection (e a) (ee a)
-   -> { fwd :: ee a -> v a × g, bwd :: v a -> ee a × g }
-   -> { fwd :: e a -> v a × g, bwd :: v a -> e a × g }
-graphCompose (GC gc) { fwd, bwd } =
-   { fwd: \e -> fwd (gc.fwd e), bwd: \v -> (gc.bwd *** identity) (bwd v) }
-
-graphComposeOp
-   :: forall g e ee v a
-    . Graph g
-   => GaloisConnection (ee a) (e a)
-   -> { fwd :: v a -> ee a × g, bwd :: ee a -> v a × g }
-   -> { fwd :: e a -> v a × g, bwd :: v a -> e a × g }
-graphComposeOp (GC gc) { fwd, bwd } =
-   { fwd: \e ->
-        let
-           ee = gc.bwd e
-        in
-           bwd ee
-   , bwd: \v ->
-        let
-           (ee × g) = fwd v
-        in
-           gc.fwd ee × g
-   }
-
-unGraph
-   :: forall a b c
-    . { fwd :: a -> b × c, bwd :: b -> a × c }
-   -> GaloisConnection a b
-unGraph { fwd, bwd } = GC { fwd: \x -> fst $ fwd x, bwd: \y -> fst $ bwd y }
-
-op
-   :: forall a b g
-    . { fwd :: a -> b × g, bwd :: b -> a × g }
-   -> { fwd :: b -> a × g, bwd :: a -> b × g }
-op { fwd, bwd } = { fwd: bwd, bwd: fwd }
-
 lift
-   :: forall f g
+   :: forall f f' g
     . Apply f
-   => Apply g
+   => Apply f'
    => f (𝔹 -> 𝔹 -> SelState 𝔹)
-   -> g (𝔹 -> 𝔹 -> SelState 𝔹)
-   -> GaloisConnection (f 𝔹) (g 𝔹)
-   -> GaloisConnection (f (SelState 𝔹)) (g (SelState 𝔹))
-lift selState_f selState_g (GC gc) = GC { bwd, fwd }
+   -> (f' 𝔹 -> f 𝔹 × g)
+   -> (f' (SelState 𝔹) -> f (SelState 𝔹) × g)
+lift selState_f bwd = bwd'
    where
-   fwd :: f (SelState 𝔹) -> g (SelState 𝔹)
-   fwd γ = selState_g <*> gc.fwd (γ <#> getPersistent) <*> gc.fwd (γ <#> getTransient)
-
-   bwd :: g (SelState 𝔹) -> f (SelState 𝔹)
-   bwd v = selState_f <*> gc.bwd (v <#> getPersistent) <*> gc.bwd (v <#> getTransient)
+   bwd' :: f' (SelState 𝔹) -> f (SelState 𝔹) × g
+   bwd' v =
+      let
+         (persistent × g) = bwd (v <#> getPersistent)
+         (transient × _) = bwd (v <#> getTransient)
+      in
+         (selState_f <*> persistent <*> transient) × g
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
@@ -179,24 +118,61 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
    let
       EnvExpr γ e' = erase eval.inα
-      focus = unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e')
-      -- gc = focus >>> graphGC eval
-
-      gc' = unGraph $ graphCompose focus (graphGC' eval)
+      { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e'))
+      dualFocusFwd = deMorgan focusBwd
+      dualFocusBwd = deMorgan focusFwd
+      graphgc = graphGC' eval
+      graphgc_op = graphGC' (withOp eval)
+      { fwd: gcFwd, bwd: gcBwd } =
+         { fwd: \e -> graphgc.fwd (focusFwd e)
+         , bwd: \v -> (focusBwd *** identity) (graphgc.bwd v)
+         }
 
       -- gc_dual = graphGC (withOp eval) >>> dual focus
-      gc_dual' = unGraph $ op $ graphComposeOp (dual focus) (graphGC' (withOp eval))
+      { fwd: _dualFwd, bwd: dualBwd } =
+         { fwd: \v ->
+              let
+                 (ee × g) = graphgc_op.fwd v
+              in
+                 dualFocusFwd ee × g
+         , bwd: \e ->
+              let
+                 ee = dualFocusBwd e
+              in
+                 graphgc_op.bwd ee
+         }
+
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
       γ0 = botOf γα
       v0 = botOf outα
-      γInert = selState <$> neg (unwrap gc').bwd (topOf outα) -- want to simplify this for ease of computation (attempts similar to v0 result in a lack of inert data)
-      vInert = selState <$> (unwrap gc').fwd γ0
-      lifted = lift γInert vInert gc'
-      lifted' = lift vInert γInert gc_dual'
-      -- lifted = liftedEval <<< liftedFocus
-      linkedInputs = (lifted `GC.(***)` identity) >>> meet >>> lifted'
-      linkedOutputs = (lifted' `GC.(***)` identity) >>> meet >>> lifted
+      γInert = selState <$> neg (fst <<< gcBwd) (topOf outα) -- want to simplify this for ease of computation (attempts similar to v0 result in a lack of inert data)
+      vInert = selState <$> (fst <<< gcFwd) γ0
+
+      lifted = lift γInert gcBwd
+      lifted' = lift vInert dualBwd
+
+      meet = deMorgan dup :: forall a. Neg a => a -> a × a
+
+      linkedInputs =
+         ( \env ->
+              let
+                 (val × envToV) = lifted' env
+                 v' × v'' = meet val
+                 env' × vToEnv = lifted v'
+              in
+                 env' × v'' × vToEnv × envToV
+         )
+
+      linkedOutputs =
+         ( \val ->
+              let
+                 (env × vToEnv) = lifted val
+                 env' × env'' = meet env
+                 val' × envToV = lifted' env'
+              in
+                 val' × env'' × vToEnv × envToV
+         )
 
    pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
 

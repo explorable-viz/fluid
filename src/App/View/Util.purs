@@ -12,8 +12,8 @@ import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
-import GaloisConnection (GaloisConnection)
 import Graph (VertexData)
+import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
 import SExpr as S
@@ -108,8 +108,8 @@ type Fig =
    , s :: Raw S.Expr
    , γ :: Env (SelState 𝔹)
    , v :: Val (SelState 𝔹)
-   , linkedOutputs :: GaloisConnection (Val (SelState 𝔹) × Env (SelState 𝔹)) (Val (SelState 𝔹))
-   , linkedInputs :: GaloisConnection (Env (SelState 𝔹) × Val (SelState 𝔹)) (Env (SelState 𝔹))
+   , linkedOutputs :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl)
+   , linkedInputs :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl)
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View
