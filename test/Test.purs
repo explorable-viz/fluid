@@ -3,6 +3,7 @@ module Test.Test where
 import Prelude hiding (add)
 
 import App.Util.Selector (matrixElement)
+import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Lattice (neg)
@@ -47,7 +48,8 @@ asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
 
 tests :: TestSuite
-tests = linkedOutputsSuite linkedOutputs_cases
+tests = concat (benchmarks <#> asTestSuite)
+   <> linkedOutputsSuite linkedOutputs_cases
    <> linkedInputsSuite linkedInputs_cases
 
 benchmarks :: Array BenchSuite
