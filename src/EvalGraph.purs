@@ -237,12 +237,16 @@ graphGC'
       , bwd :: t 𝔹 -> s 𝔹 × g
       }
 graphGC' { g, graph_fwd, graph_bwd, inα, outα } =
-   { fwd: \in𝔹 -> 
-      let g' = (graph_fwd (selectαs in𝔹 inα) g)
-      in select𝔹s outα (addresses $ vertices g') × g'
-   , bwd: \out𝔹 -> 
-      let g' =  (graph_bwd (selectαs out𝔹 outα) g)
-      in select𝔹s inα (addresses $ vertices g') × g'
+   { fwd: \in𝔹 ->
+        let
+           g' = (graph_fwd (selectαs in𝔹 inα) g)
+        in
+           select𝔹s outα (addresses $ vertices g') × g'
+   , bwd: \out𝔹 ->
+        let
+           g' = (graph_bwd (selectαs out𝔹 outα) g)
+        in
+           select𝔹s inα (addresses $ vertices g') × g'
    }
 
 graphEval :: forall m. MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
