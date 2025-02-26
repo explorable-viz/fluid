@@ -4,25 +4,25 @@ module Test.Util.Debug where
 tracing
    :: { runWithGraphT :: Boolean
       , graphBwdSlice :: Boolean
-      , graphBwdSlice' :: Boolean
       , graphFwdSlice :: Boolean
       , checkEq :: Boolean
       , bwdSelection :: Boolean
       , fwdAfterBwd :: Boolean
       , mediatingData :: Boolean
       , mouseEvent :: Boolean
+      , intermediates :: Boolean
       }
 
 tracing =
    { runWithGraphT: false
    , graphBwdSlice: false
-   , graphBwdSlice': false
    , graphFwdSlice: false
    , checkEq: false
    , bwdSelection: false
    , fwdAfterBwd: false
    , mediatingData: false
    , mouseEvent: false
+   , intermediates: true
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,

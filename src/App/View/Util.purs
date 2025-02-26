@@ -12,13 +12,13 @@ import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
-import Graph (VertexData)
+import Graph (Vertex, VertexData)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
 import SExpr as S
 import Util (type (×), Endo, Setter, check)
-import Val (Env, Val)
+import Val (BaseVal, Env, Val)
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener, eventListener)
 
@@ -98,7 +98,7 @@ type FigSpec =
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
-   , queries :: Array (VertexData -> Maybe VertexData)
+   , queries :: Array (VertexData -> Maybe (BaseVal Vertex))
    }
 
 data Direction = LinkedInputs | LinkedOutputs

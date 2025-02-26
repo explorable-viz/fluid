@@ -37,14 +37,14 @@ bwdSlice (αs × g) = fst $
       if α ∈ visited then
          pure $ Loop { visited, αs: Nil, pending }
       else do
-         extend (DVertex (α × (spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (whatIs <<< asVal) vd))) βs
+         extend (DVertex (α × (spyWhen tracing.graphBwdSlice ("Value found at " <> show α) (whatIs <<< asVal) vd))) βs
          pure $ Loop { visited: insert α visited, αs: Nil, pending }
    go { visited, αs: α : αs', pending } = do
       let βs = outN g α
       -- βs in g so safe to call definitely:
       let vd = vertexData g α
       pure $ Loop { visited, αs: L.fromFoldable βs <> αs', pending: (DVertex (α × vd) × βs) : pending }
-   αsData = (\α -> DVertex (α × (spyWhen tracing.graphBwdSlice' ("Value found at " <> show α) (whatIs <<< asVal) $ vertexData g α))) `map` αs
+   αsData = (\α -> DVertex (α × (spyWhen tracing.graphBwdSlice ("Value found at " <> show α) (whatIs <<< asVal) $ vertexData g α))) `map` αs
 
 type PendingVertices = Map Vertex (Set Vertex)
 type FwdConfig =
