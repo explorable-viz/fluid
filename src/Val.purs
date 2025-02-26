@@ -50,16 +50,6 @@ asVal e =
    in
       if type' == "BaseVal" then Just (unpack unsafeCoerce e) else Nothing
 
-whatIs :: Maybe (BaseVal Vertex) -> String
-whatIs (Just (Int _)) = "BV: Int"
-whatIs (Just (Float _)) = "BV: Float"
-whatIs (Just (Str _)) = "BV: Str"
-whatIs (Just (Constr _ _)) = "BV: Constr"
-whatIs (Just (Dictionary _)) = "BV: Dictionary"
-whatIs (Just (Matrix _)) = "BV: Matrix"
-whatIs (Just (Fun _)) = "BV: Fun"
-whatIs Nothing = "Not a baseval"
-
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated
@@ -149,11 +139,8 @@ forDefs ρ σ = restrict (reaches ρ (fv σ ∩ Set.fromFoldable (keys ρ))) ρ
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
-
 newtype DictKey a = DictKey (String × a)
-
 newtype MatrixDim a = MatrixDim (Int × a)
-
 newtype MatrixRep a = MatrixRep (Array2 (Val a) × MatrixDim a × MatrixDim a)
 type Array2 a = Array (Array a)
 
@@ -361,15 +348,11 @@ derive instance Ord a => Ord (EnvExpr a)
 
 derive instance Newtype (Env a) _
 
--- Interim
 instance TypeName (BaseVal a) where
    typeName _ = "BaseVal"
 
 instance TypeName (MatrixDim a) where
    typeName _ = "MatrixDim"
-
-instance Show a => Show (MatrixDim a) where
-   show (MatrixDim (i × α)) = show i <> " × " <> show α
 
 instance TypeName (DictKey a) where
    typeName _ = "DictKey"

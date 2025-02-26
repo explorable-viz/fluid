@@ -149,9 +149,7 @@ matrixUpdate =
    where
    op :: OpGraph
    op (Val α (Matrix r) : Val _ (Constr c (Val _ (Int i) : Val _ (Int j) : Nil)) : v : Nil)
-      | c == cPair = new Val (singleton α) v'
-           where
-           v' = Matrix (matrixPut i j (const v) r)
+      | c == cPair = new Val (singleton α) (Matrix (matrixPut i j (const v) r))
    op _ = throw "Matrix, pair of integers and value expected"
 
    fwd :: OpFwd ((Int × Int) × Raw Val)
@@ -172,9 +170,7 @@ dict_difference =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) =
-      new Val (singleton α # Set.insert β) v
-      where
-      v = Dictionary (DictRep (d \\ d'))
+      new Val (singleton α # Set.insert β) (Dictionary (DictRep (d \\ d')))
    op _ = throw "Dictionaries expected."
 
    fwd :: OpFwd Unit
@@ -192,9 +188,7 @@ dict_disjointUnion =
    where
    op :: OpGraph
    op (Val α (Dictionary (DictRep d)) : Val β (Dictionary (DictRep d')) : Nil) = do
-      new Val (singleton α # Set.insert β) v
-      where
-      v = Dictionary (DictRep (disjointUnion d d'))
+      new Val (singleton α # Set.insert β) (Dictionary (DictRep (disjointUnion d d')))
    op _ = throw "Dictionaries expected"
 
    fwd :: OpFwd (Dict Unit × Dict Unit)
@@ -264,9 +258,9 @@ dict_intersectionWith =
       new Val (singleton α # Set.insert α') v'
       where
       apply' (β × u) (β' × u') = do
-         vInner@(Val _ key) <- (G.apply v u >>= flip G.apply u')
-         Val β'' _ <- new Val (singleton β # Set.insert β') key -- Unsure what to pack here, whether it's anything at all
-         (×) β'' <$> pure vInner
+         v''@(Val _ key) <- G.apply v u >>= flip G.apply u'
+         Val β'' _ <- new Val (singleton β # Set.insert β') key
+         pure (β'' × v'')
    op _ = throw "Function and two dictionaries expected"
 
    fwd :: OpFwd (Raw Val × Dict (AppTrace × AppTrace))
@@ -296,8 +290,7 @@ dict_map =
    op :: OpGraph
    op (v : Val α (Dictionary (DictRep d)) : Nil) = do
       d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
-      let v' = Dictionary (DictRep d')
-      new Val (singleton α) v'
+      new Val (singleton α) (Dictionary (DictRep d'))
    op _ = throw "Function and dictionary expected"
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)

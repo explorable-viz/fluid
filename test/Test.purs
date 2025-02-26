@@ -2,11 +2,9 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Selector (matrixElement)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
-import Lattice (neg)
 import Module.Web (loadFile)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Desugar (desugar_cases)
@@ -25,24 +23,7 @@ main = run tests
 -- main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ bwdSuite loadFile
-   [ { file: "convolution/edgeDetect2"
-     , imports:
-          [ "lib/convolution"
-          , "slicing/convolution/filter/edge-detect"
-          , "slicing/convolution/test-image"
-          ]
-     , bwd_expect_file: "convolution/edgeDetect2.expect"
-     , δv: matrixElement 1 1 neg
-     , fwd_expect:
-          "⸨0⸩, 0, -1, 0, 0,\n\
-          \0, -1, 1, -1, 1,\n\
-          \0, 0, 2, 0, -2,\n\
-          \0, 1, -2, 0, 1,\n\
-          \0, 0, 1, -1, 0"
-     , datasets: []
-     }
-   ]
+scratchpad = []
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
