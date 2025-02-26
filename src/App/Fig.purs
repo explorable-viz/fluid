@@ -147,8 +147,8 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       γInert = selState <$> neg (fst <<< gcBwd) (topOf outα) -- want to simplify this for ease of computation (attempts similar to v0 result in a lack of inert data)
       vInert = selState <$> (fst <<< graphgc.fwd <<< focusFwd) γ0
 
-      vToγ = lift γInert gcBwd
-      γToV = lift vInert gcFwd
+      vToγ = lift γInert gcBwd -- Slice value v back to env γ
+      γToV = lift vInert gcFwd -- Slice env γ to val v
 
       linkedInputs = (\(v × g) -> ((fst $ vToγ v) × v × g)) <<< γToV
 
