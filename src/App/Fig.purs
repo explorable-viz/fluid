@@ -20,14 +20,14 @@ import Effect (Effect)
 import EvalGraph (graphEval, graphGC', withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (Vertex, runQuery)
-import Lattice (class BoundedMeetSemilattice, class Neg, Raw, 𝔹, botOf, erase, neg, topOf)
+import Graph.GraphImpl (GraphImpl)
+import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topOf)
 import Module.Web (File, loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, dup, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
 import Util.Map (insert, lookup, mapWithKey)
-import Util.Set ((∪))
 import Val (BaseVal, Env(..), EnvExpr(..), Val, unrestrictGC)
 
 str
@@ -67,18 +67,18 @@ selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (B
 selectionResult fig@{ spec, v, dir: LinkedOutputs } =
    (lift2 as𝕊 <$> v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × spf intermediates
    where
-   v1 × γ1 × vToEnv × envToV = fig.linkedOutputs v
+   v1 × γ1 × g = fig.linkedOutputs v
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    intermediates = concat $ for spec.queries \query ->
-      runQuery query envToV ∪ runQuery query vToEnv # fromFoldable
+      runQuery query g # fromFoldable
    spf = spyWhen tracing.intermediates "Intermediate values: " (map prettyP)
 selectionResult fig@{ spec, γ, dir: LinkedInputs } =
    ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> γ <*> γ1) × spf intermediates
    where
-   γ1 × v1 × vToEnv × envToV = fig.linkedInputs γ
+   γ1 × v1 × g = fig.linkedInputs γ
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    intermediates = concat $ for spec.queries \query ->
-      runQuery query envToV ∪ runQuery query vToEnv # fromFoldable
+      runQuery query g # fromFoldable
    spf = spyWhen tracing.intermediates "Intermediate values: " (map prettyP)
 
 drawFig :: HTMLId -> Fig -> Effect Unit
@@ -128,12 +128,17 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    let
       EnvExpr γ e' = erase eval.inα
       { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e'))
+
       dualFocusBwd = deMorgan focusFwd
+
       graphgc = graphGC' eval
       graphgc_op = graphGC' (withOp eval)
-      gcBwd = \v -> (first focusBwd) (graphgc.bwd v)
 
-      dualBwd = \env -> graphgc_op.bwd (dualFocusBwd env)
+      gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
+      gcBwd v = first focusBwd (graphgc.bwd v)
+
+      gcFwd :: Env 𝔹 -> Val 𝔹 × GraphImpl
+      gcFwd γ = graphgc_op.bwd (dualFocusBwd γ)
 
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
@@ -142,30 +147,12 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       γInert = selState <$> neg (fst <<< gcBwd) (topOf outα) -- want to simplify this for ease of computation (attempts similar to v0 result in a lack of inert data)
       vInert = selState <$> (fst <<< graphgc.fwd <<< focusFwd) γ0
 
-      lifted = lift γInert gcBwd
-      lifted' = lift vInert dualBwd
+      vToγ = lift γInert gcBwd
+      γToV = lift vInert gcFwd
 
-      meet = deMorgan dup :: forall a. Neg a => a -> a × a
+      linkedInputs = (\(v × g) -> ((fst $ vToγ v) × v × g)) <<< γToV
 
-      linkedInputs =
-         ( \env ->
-              let
-                 val × envToV = lifted' env
-                 v' × v'' = meet val
-                 env' × vToEnv = lifted v'
-              in
-                 env' × v'' × vToEnv × envToV
-         )
-
-      linkedOutputs =
-         ( \val ->
-              let
-                 env × vToEnv = lifted val
-                 env' × env'' = meet env
-                 val' × envToV = lifted' env'
-              in
-                 val' × env'' × vToEnv × envToV
-         )
+      linkedOutputs = (\(γ × g) -> ((fst $ γToV γ) × γ × g)) <<< vToγ
 
    pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
 
