@@ -69,8 +69,10 @@ selectionResult fig@{ spec, v, dir: LinkedOutputs } =
    where
    v1 × γ1 × g = fig.linkedOutputs v
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   intermediates = concat $ for spec.queries \query ->
-      runQuery query g # fromFoldable
+   intermediates = concat $ for spec.queries
+      ( \query ->
+           runQuery query g # fromFoldable
+      )
    spf = spyWhen tracing.intermediates "Intermediate values: " (map prettyP)
 selectionResult fig@{ spec, γ, dir: LinkedInputs } =
    ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> γ <*> γ1) × spf intermediates

@@ -8,10 +8,10 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
-import Data.Either (Either(..))
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
 import Data.List (List(..), (:), zipWith)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, unions)
 import Data.Set as Set
@@ -27,7 +27,7 @@ import Graph (class TypeName, class Vertices, DVertex(..), Vertex(..), VertexDat
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Unsafe.Coerce (unsafeCoerce)
-import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆), type (+))
+import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
@@ -43,22 +43,22 @@ data BaseVal a
    | Matrix (MatrixRep a)
    | Fun (Fun a)
 
-asVal :: VertexData -> BaseVal Vertex + String
+asVal :: VertexData -> Maybe (BaseVal Vertex)
 asVal e =
    let
       type' = unpack typeName e
    in
-      if type' == "BaseVal" then Left (unpack unsafeCoerce e) else Right type'
+      if type' == "BaseVal" then Just (unpack unsafeCoerce e) else Nothing
 
-whatIs :: BaseVal Vertex + String -> String
-whatIs (Left (Int _)) = "BV: Int"
-whatIs (Left (Float _)) = "BV: Float"
-whatIs (Left (Str _)) = "BV: Str"
-whatIs (Left (Constr _ _)) = "BV: Constr"
-whatIs (Left (Dictionary _)) = "BV: Dictionary"
-whatIs (Left (Matrix _)) = "BV: Matrix"
-whatIs (Left (Fun _)) = "BV: Fun"
-whatIs (Right s) = s
+whatIs :: Maybe (BaseVal Vertex) -> String
+whatIs (Just (Int _)) = "BV: Int"
+whatIs (Just (Float _)) = "BV: Float"
+whatIs (Just (Str _)) = "BV: Str"
+whatIs (Just (Constr _ _)) = "BV: Constr"
+whatIs (Just (Dictionary _)) = "BV: Dictionary"
+whatIs (Just (Matrix _)) = "BV: Matrix"
+whatIs (Just (Fun _)) = "BV: Fun"
+whatIs Nothing = "Not a baseval"
 
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)

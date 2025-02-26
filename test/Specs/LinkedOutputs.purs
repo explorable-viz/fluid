@@ -4,7 +4,6 @@ import Prelude
 
 import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd)
 import Bind ((↦))
-import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_y)
 import Lattice (neg)
@@ -97,10 +96,8 @@ linkedOutputs_cases =
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
           , queries:
-               [ \vd -> case asVal vd of
-                    Left m@(Matrix (MatrixRep (_ × MatrixDim (i × _) × MatrixDim (j × _))))
-                       | i == 3 && j == 3 -> Just m
-                       | otherwise -> Nothing
+               [ asVal >=> case _ of
+                    m@(Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _)))) -> Just m
                     _ -> Nothing
                ]
           }
