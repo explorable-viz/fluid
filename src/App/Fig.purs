@@ -3,33 +3,31 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), 𝕊(..), as𝕊, getPersistent, getTransient, selState, to𝕊)
+import App.Util (SelState(..), 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
 import Bind (Var)
 import Control.Apply (lift2)
 import Data.Array (concat, fromFoldable)
-import Data.Map (Map, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
-import Data.Set (Set, fromMap, toMap, unions)
+import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, sequence_)
-import Data.Tuple (fst, uncurry)
+import Data.Tuple (fst)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC', withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (Vertex, addresses, runQuery, select𝔹s, vertices)
+import Graph (Vertex, runQuery)
 import Graph.GraphImpl (GraphImpl)
-import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topOf, (∨))
-import Lattice (class JoinSemilattice, join) as L
+import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topOf)
 import Module.Web (File, loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, error, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
 import Util.Map (insert, lookup, mapWithKey)
 import Util.Set ((∪))
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
@@ -67,23 +65,41 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val (SelState 𝕊))
+combineVals :: Set (Val Vertex) -> Set (Val Vertex) -> Set (Val (SelState 𝕊))
+combineVals persistents transients =
+   ( \val ->
+        let
+           persistent = to𝕊 $ Set.member val persistents
+           transient = to𝕊 $ Set.member val transients
+        in
+           (\_ -> Reactive { persistent, transient }) <$> val
+   ) `Set.map` (persistents ∪ transients)
+
+selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val Unit)
 selectionResult fig@{ spec, dir } =
- case dir of
-   LinkedOutputs ->
-      let
-         v1 × γ1 × g × g' = fig.linkedOutputs fig.v
-         report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-      in (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × intermediates
-   LinkedInputs ->
-      let
-         γ1 × v1 × g × g' = fig.linkedInputs fig.γ
-         report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-      in ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × intermediates
+   case dir of
+      LinkedOutputs ->
+         let
+            v1 × γ1 × g × g' = fig.linkedOutputs fig.v
+            report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
+         in
+            (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × spf (erase <$> intermediates g g')
+      LinkedInputs ->
+         let
+            γ1 × v1 × g × g' = fig.linkedInputs fig.γ
+            report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
+         in
+            ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × spf (erase <$> intermediates g g')
    where
-   intermediates = concat $ for spec.queries \query ->
-      (error "todo") 
-   -- spf = spyWhen tracing.intermediates "Intermediate values: " (map prettyP)
+   intermediates g g' = concat $ for spec.queries
+      ( \query ->
+           let
+              persistents = runQuery query g
+              transients = runQuery query g'
+           in
+              combineVals persistents transients # fromFoldable
+      )
+   spf = spyWhen tracing.intermediates "Intermediate values: " (map prettyP)
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
