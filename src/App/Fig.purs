@@ -67,20 +67,20 @@ selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (B
 selectionResult fig@{ spec, v, dir: LinkedOutputs } =
    (lift2 as𝕊 <$> v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × spf intermediates
    where
-   v1 × γ1 × g = fig.linkedOutputs v
+   v1 × γ1 × g × g' = fig.linkedOutputs v
    report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    intermediates = concat $ for spec.queries
       ( \query ->
-           runQuery query g # fromFoldable
+           concat [runQuery query g # fromFoldable, runQuery query g' # fromFoldable]
       )
    spf = spyWhen tracing.intermediates "Intermediate values: " (map prettyP)
 selectionResult fig@{ spec, γ, dir: LinkedInputs } =
    ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> γ <*> γ1) × spf intermediates
    where
-   γ1 × v1 × g = fig.linkedInputs γ
+   γ1 × v1 × g × g' = fig.linkedInputs γ
    report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
    intermediates = concat $ for spec.queries \query ->
-      runQuery query g # fromFoldable
+      concat [runQuery query g # fromFoldable, runQuery query g' # fromFoldable]
    spf = spyWhen tracing.intermediates "Intermediate values: " (map prettyP)
 
 drawFig :: HTMLId -> Fig -> Effect Unit
@@ -110,16 +110,16 @@ lift
    => Apply f'
    => f (𝔹 -> 𝔹 -> SelState 𝔹)
    -> (f' 𝔹 -> f 𝔹 × g)
-   -> (f' (SelState 𝔹) -> f (SelState 𝔹) × g)
+   -> (f' (SelState 𝔹) -> f (SelState 𝔹) × g × g)
 lift selState_f bwd = bwd'
    where
-   bwd' :: f' (SelState 𝔹) -> f (SelState 𝔹) × g
+   bwd' :: f' (SelState 𝔹) -> f (SelState 𝔹) × g × g
    bwd' v =
       let
          (persistent × g) = bwd (v <#> getPersistent)
-         (transient × _) = bwd (v <#> getTransient)
+         (transient × g') = bwd (v <#> getTransient)
       in
-         (selState_f <*> persistent <*> transient) × g
+         (selState_f <*> persistent <*> transient) × g × g'
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
@@ -151,9 +151,9 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       vToγ = lift γInert gcBwd -- Slice value v back to env γ
       γToV = lift vInert gcFwd -- Slice env γ to val v
 
-      linkedInputs = (\(v × g) -> ((fst $ vToγ v) × v × g)) <<< γToV
+      linkedInputs = (\(v × g × g') -> ((fst $ vToγ v) × v × g × g')) <<< γToV
 
-      linkedOutputs = (\(γ × g) -> ((fst $ γToV γ) × γ × g)) <<< vToγ
+      linkedOutputs = (\(γ × g × g') -> ((fst $ γToV γ) × γ × g × g')) <<< vToγ
 
    pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
 
