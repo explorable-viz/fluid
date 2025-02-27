@@ -10,7 +10,7 @@ import Lattice (neg)
 import Module.Web (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
 import Util ((×))
-import Val (BaseVal(..), MatrixDim(..), MatrixRep(..), asVal)
+import Val (BaseVal(..), MatrixDim(..), MatrixRep(..), Val(..), asVal)
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
@@ -97,7 +97,7 @@ linkedOutputs_cases =
           , inputs: [ "data" ]
           , queries:
                [ asVal >=> case _ of
-                    m@(Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _)))) -> Just m
+                    v@(Val _ (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just v
                     _ -> Nothing
                ]
           }

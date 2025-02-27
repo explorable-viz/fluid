@@ -20,7 +20,7 @@ import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
 import Effect.Exception (Error)
-import Expr (Expr, Elim, fv)
+import Expr (Elim, Expr, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
@@ -43,12 +43,12 @@ data BaseVal a
    | Matrix (MatrixRep a)
    | Fun (Fun a)
 
-asVal :: VertexData -> Maybe (BaseVal Vertex)
+asVal :: VertexData -> Maybe (Val Vertex)
 asVal e =
    let
       type' = unpack typeName e
    in
-      if type' == "BaseVal" then Just (unpack unsafeCoerce e) else Nothing
+      if type' == "Val" then Just (unpack unsafeCoerce e) else Nothing
 
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
@@ -348,8 +348,17 @@ derive instance Ord a => Ord (EnvExpr a)
 
 derive instance Newtype (Env a) _
 
-instance TypeName (BaseVal a) where
-   typeName _ = "BaseVal"
+instance TypeName (Val a) where
+   typeName _ = "Val"
+
+-- instance TypeName (BaseVal a) where
+--    typeName (Int _) = "Int"
+--    typeName (Float _) = "Float"
+--    typeName (Str _) = "Str"
+--    typeName (Constr _ _) = "Constr"
+--    typeName (Dictionary _) = "Dictionary"
+--    typeName (Matrix _) = "Matrix"
+--    typeName (Fun _) = "Fun"
 
 instance TypeName (MatrixDim a) where
    typeName _ = "MatrixDim"
@@ -358,7 +367,7 @@ instance TypeName (DictKey a) where
    typeName _ = "DictKey"
 
 instance Vertices (Val Vertex) where
-   vertices (Val α v) = singleton (DVertex (α × pack v)) ∪ vertices v
+   vertices v@(Val α v') = singleton (DVertex (α × pack v)) ∪ vertices v'
 
 instance Vertices (BaseVal Vertex) where
    vertices (Int _) = empty

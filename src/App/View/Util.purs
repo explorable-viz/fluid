@@ -18,7 +18,7 @@ import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
 import SExpr as S
 import Util (type (×), Endo, Setter, check)
-import Val (BaseVal, Env, Val)
+import Val (Env, Val)
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener, eventListener)
 
@@ -98,7 +98,7 @@ type FigSpec =
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
-   , queries :: Array (VertexData -> Maybe (BaseVal Vertex))
+   , queries :: Array (VertexData -> Maybe (Val Vertex))
    }
 
 data Direction = LinkedInputs | LinkedOutputs
