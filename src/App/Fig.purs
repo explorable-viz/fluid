@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
+import App.Util (SelState, 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -72,10 +72,10 @@ combineVals persistents transients =
            persistent = to𝕊 $ Set.member val persistents
            transient = to𝕊 $ Set.member val transients
         in
-           (\_ -> Reactive { persistent, transient }) <$> val
+           (const $ selState false persistent transient) <$> val
    ) `Set.map` (persistents ∪ transients)
 
-selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val Unit)
+selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val (SelState 𝕊))
 selectionResult fig@{ spec, dir } =
    case dir of
       LinkedOutputs ->
@@ -83,23 +83,18 @@ selectionResult fig@{ spec, dir } =
             v1 × γ1 × g × g' = fig.linkedOutputs fig.v
             report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
          in
-            (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × spf (erase <$> intermediates g g')
+            (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × reportI (intermediates g g')
       LinkedInputs ->
          let
             γ1 × v1 × g × g' = fig.linkedInputs fig.γ
             report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
          in
-            ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × spf (erase <$> intermediates g g')
+            ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × reportI (intermediates g g')
    where
-   intermediates g g' = concat $ for spec.queries
-      ( \query ->
-           let
-              persistents = runQuery query g
-              transients = runQuery query g'
-           in
-              combineVals persistents transients # fromFoldable
-      )
-   spf = spyWhen tracing.intermediates "Intermediate values: " (map prettyP)
+   intermediates gPersistent gTransient = concat $ for spec.queries
+      \query -> combineVals (runQuery query gPersistent) (runQuery query gTransient) # fromFoldable
+
+   reportI = spyWhen tracing.intermediates "Intermediate values: " (map (prettyP <<< erase))
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do

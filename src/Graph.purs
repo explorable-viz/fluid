@@ -21,7 +21,8 @@ import Util.Set ((∈))
 
 type Edge = Vertex × Vertex
 type HyperEdge = DVertex × Set Vertex -- mostly a convenience
-newtype DVertex = DVertex (Vertex × VertexData)
+type DVertex = DVertex' VertexData
+newtype DVertex' a = DVertex (Vertex × a)
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
@@ -154,7 +155,7 @@ instance Eq DVertex where
 instance Ord DVertex where
    compare (DVertex (α × _)) (DVertex (α' × _)) = compare α α'
 
-derive instance Newtype DVertex _
+derive instance Newtype (DVertex' a) _
 
 -- ======================
 -- boilerplate

@@ -11,7 +11,7 @@ import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Set (map) as Set
 import Data.Tuple (fst)
-import Graph (class Graph, DVertex(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, sources, typeName, vertexData, vertices)
+import Graph (class Graph, DVertex'(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, sources, typeName, vertexData, vertices)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), singleton, spyWhen, validateWhen, (×), (∩), (⊆))

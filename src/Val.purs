@@ -23,7 +23,7 @@ import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class TypeName, class Vertices, DVertex(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
+import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Unsafe.Coerce (unsafeCoerce)
@@ -350,15 +350,6 @@ derive instance Newtype (Env a) _
 
 instance TypeName (Val a) where
    typeName _ = "Val"
-
--- instance TypeName (BaseVal a) where
---    typeName (Int _) = "Int"
---    typeName (Float _) = "Float"
---    typeName (Str _) = "Str"
---    typeName (Constr _ _) = "Constr"
---    typeName (Dictionary _) = "Dictionary"
---    typeName (Matrix _) = "Matrix"
---    typeName (Fun _) = "Fun"
 
 instance TypeName (MatrixDim a) where
    typeName _ = "MatrixDim"
