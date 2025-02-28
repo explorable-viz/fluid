@@ -12,7 +12,7 @@ import Data.Maybe (Maybe)
 import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
-import Graph (Vertex, VertexData)
+import Graph (DVertex', Vertex, VertexData)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
@@ -98,7 +98,7 @@ type FigSpec =
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
-   , queries :: Array (VertexData -> Maybe (Val Vertex))
+   , queries :: Array (VertexData -> Maybe (DVertex' (Val Vertex)))
    }
 
 data Direction = LinkedInputs | LinkedOutputs

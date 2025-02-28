@@ -16,11 +16,11 @@ import Data.Profunctor.Strong (first, (***))
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, sequence_)
-import Data.Tuple (fst)
+import Data.Tuple (fst, snd)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC', withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (Vertex, runQuery)
+import Graph (DVertex', Vertex, runQuery)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topOf)
 import Module.Web (File, loadProgCxt, prepConfig)
@@ -65,14 +65,14 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-combineVals :: Set (Val Vertex) -> Set (Val Vertex) -> Set (Val (SelState 𝕊))
+combineVals :: Set (DVertex' (Val Vertex)) -> Set (DVertex' (Val Vertex)) -> Set (Val (SelState 𝕊))
 combineVals persistents transients =
    ( \val ->
         let
            persistent = to𝕊 $ Set.member val persistents
            transient = to𝕊 $ Set.member val transients
         in
-           (const $ selState false persistent transient) <$> val
+           (const $ selState false persistent transient) <$> (snd <<< unwrap $ val)
    ) `Set.map` (persistents ∪ transients)
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val (SelState 𝕊))

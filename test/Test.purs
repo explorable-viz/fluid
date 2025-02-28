@@ -8,6 +8,7 @@ import Data.Array (concat)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
+import Graph (DVertex'(..))
 import Lattice (neg)
 import Module.Web (File(..), Folder(..), loadFile)
 import Test.Specs.Bwd (bwd_cases)
@@ -37,7 +38,7 @@ scratchpad = linkedOutputsSuite
           , inputs: [ "data" ]
           , queries:
                [ asVal >=> case _ of
-                    v@(Val _ (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just v
+                    v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
                     _ -> Nothing
                ]
           }

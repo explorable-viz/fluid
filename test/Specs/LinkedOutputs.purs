@@ -6,6 +6,7 @@ import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoi
 import Bind ((↦))
 import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_y)
+import Graph (DVertex'(..))
 import Lattice (neg)
 import Module.Web (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
@@ -97,7 +98,7 @@ linkedOutputs_cases =
           , inputs: [ "data" ]
           , queries:
                [ asVal >=> case _ of
-                    v@(Val _ (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just v
+                    v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
                     _ -> Nothing
                ]
           }
