@@ -11,10 +11,8 @@ while getopts "w:l" opt; do
 done
 
 PREFIX_=${PREFIX:+$PREFIX/}
-WEBSITE_LISP_CASE=$(. "${PREFIX_}script/util/lisp-case.sh" "$WEBSITE")
-echo "$WEBSITE -> $WEBSITE_LISP_CASE"
-echo "Cleaning dist/$WEBSITE_LISP_CASE"
-. "${PREFIX_}script/util/clean.sh" $WEBSITE_LISP_CASE
+echo "Cleaning dist/$WEBSITE"
+. "${PREFIX_}script/util/clean.sh" $WEBSITE
 
 . "${PREFIX_}script/bundle-page.sh" $WEBSITE ${PREFIX:+$PREFIX}
 
@@ -47,15 +45,15 @@ shopt -u dotglob
 set -xu
 
 for CHILD in "${TO_COPY[@]}"; do
-   cp -rL "$CHILD" dist/$WEBSITE_LISP_CASE
+   cp -rL "$CHILD" dist/$WEBSITE
 done
 
 echo "Processing Fluid source files:"
-cp -r "${PREFIX_}dist/fluid/fluid" dist/$WEBSITE_LISP_CASE
-[ -d "website/$WEBSITE/fluid" ] && cp -r "website/$WEBSITE/fluid" dist/$WEBSITE_LISP_CASE
+cp -r "${PREFIX_}dist/fluid/fluid" dist/$WEBSITE
+[ -d "website/$WEBSITE/fluid" ] && cp -r "website/$WEBSITE/fluid" dist/$WEBSITE
 
 echo "Processing shared JavaScript files:"
-cp -r "${PREFIX_}dist/fluid/shared" dist/$WEBSITE_LISP_CASE
+cp -r "${PREFIX_}dist/fluid/shared" dist/$WEBSITE
 
 if [[ -e "website/$SRC_PATH/test.mjs" ]]; then
    cp website/$SRC_PATH/test.mjs dist/SRC_PATH_LISP_CASE/test.mjs

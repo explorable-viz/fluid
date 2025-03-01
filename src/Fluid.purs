@@ -104,7 +104,6 @@ dispatchCommand (Evaluate p) = do
    v <- (evaluate p)
    log (prettyP v)
 dispatchCommand (BundleWebsite bas) =
-
    void $ liftEffect $ bundleWebsite bas
 
 copyOptions :: ExecOptions

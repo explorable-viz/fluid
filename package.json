@@ -32,7 +32,6 @@
     "bundle-fluid": "./script/bundle-fluid.sh",
     "bundle-page": "./script/bundle-page.sh",
     "bundle-website": "./script/bundle-website.sh",
-    "bundle-website-all": "./script/bundle-website-all.sh",
     "fluid": "node ./dist/fluid/shared/fluid.mjs",
     "npm-publish": "./script/npm-publish.sh",
     "serve": "./script/serve.sh",
