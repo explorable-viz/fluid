@@ -9,7 +9,7 @@ import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
 import Bind (Var)
 import Control.Apply (lift2)
-import Data.Array (concat, fromFoldable)
+import Data.Array (concat, fromFoldable, zipWith)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
@@ -20,7 +20,7 @@ import Data.Tuple (fst, snd)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC', withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (DVertex', Vertex, runQuery)
+import Graph (class Graph, DVertex', Vertex, addresses, runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topOf)
 import Module.Web (File, loadProgCxt, prepConfig)
@@ -65,15 +65,18 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-combineVals :: Set (DVertex' (Val Vertex)) -> Set (DVertex' (Val Vertex)) -> Set (Val (SelState 𝕊))
-combineVals persistents transients =
-   ( \val ->
-        let
-           persistent = to𝕊 $ Set.member val persistents
-           transient = to𝕊 $ Set.member val transients
-        in
-           (const $ selState false persistent transient) <$> (snd <<< unwrap $ val)
-   ) `Set.map` (persistents ∪ transients)
+combineVals :: forall g. Graph g => Set (DVertex' (Val Vertex)) -> Set (DVertex' (Val Vertex)) -> g -> g -> Array (Val (SelState 𝕊))
+combineVals persistents transients gPersistent gTransient =
+   vals𝕊
+   where
+   vals = (snd <<< unwrap) `Set.map` (persistents ∪ transients) # fromFoldable
+   vsP = (\vs -> select𝔹s vs (addresses $ vertices $ gPersistent)) <$> vals :: Array (Val 𝔹)
+   vsT = (\vs -> select𝔹s vs (addresses $ vertices $ gTransient)) <$> vals :: Array (Val 𝔹)
+
+   setSels :: Val 𝔹 -> Val 𝔹 -> Val (SelState 𝕊)
+   setSels vP vT = selState false <$> (to𝕊 <$> vP) <*> (to𝕊 <$> vT)
+
+   vals𝕊 = zipWith setSels vsP vsT
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val (SelState 𝕊))
 selectionResult fig@{ spec, dir } =
@@ -92,7 +95,7 @@ selectionResult fig@{ spec, dir } =
             ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × reportI (intermediates g g')
    where
    intermediates gPersistent gTransient = concat $ for spec.queries
-      \query -> combineVals (runQuery query gPersistent) (runQuery query gTransient) # fromFoldable
+      \query -> combineVals (runQuery query gPersistent) (runQuery query gTransient) gPersistent gTransient
 
    reportI = spyWhen tracing.intermediates "Intermediate values: " (map (prettyP <<< erase))
 
