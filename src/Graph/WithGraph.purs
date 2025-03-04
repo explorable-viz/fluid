@@ -91,10 +91,9 @@ alloc_check msg m = do
    check (report (αs \\ addresses (vertices x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
 runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
-runWithGraphT_spy wg αs =
-   ( runWithGraphT
-        >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" (addresses >>> showVertices) (fst >>> showGraph)
-   ) wg αs
+runWithGraphT_spy =
+   runWithGraphT
+      >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" (addresses >>> showVertices) (fst >>> showGraph)
 
 runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Set DVertex -> g × a
 runWithGraph_spy m = runWithGraphT_spy m >>> unwrap
