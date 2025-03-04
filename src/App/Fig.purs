@@ -20,7 +20,7 @@ import Data.Tuple (fst, snd)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC', withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex', Vertex, addresses, runQuery, select𝔹s, vertices)
+import Graph (class Graph, DVertex', Vertex, DVertex, runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module.Web (File, loadProgCxt, prepConfig)
@@ -65,12 +65,12 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-combineVals :: forall g. Graph g => Set (DVertex' (Val Vertex)) -> Set (DVertex' (Val Vertex)) -> Set Vertex -> g -> g -> Array (Val (SelState 𝕊))
+combineVals :: forall g. Graph g => Set (DVertex' (Val Vertex)) -> Set (DVertex' (Val Vertex)) -> Set DVertex -> g -> g -> Array (Val (SelState 𝕊))
 combineVals persistents transients inerts gPersistent gTransient =
    vals𝕊
    where
-   vertsP = (addresses $ vertices $ gPersistent)
-   vertsT = (addresses $ vertices $ gTransient)
+   vertsP = (vertices $ gPersistent)
+   vertsT = (vertices $ gTransient)
 
    vals = (snd <<< unwrap) `Set.map` (persistents ∪ transients) # fromFoldable
 
@@ -167,18 +167,18 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       γ0 = botOf γα :: Env 𝔹
       v0 = botOf outα :: Val 𝔹
 
-      verts0 = addresses $ vertices g0
-      inertBwd = verts0 \\ (addresses $ vertices $ snd (gcBwd (topOf outα))) :: Set Vertex
-      inertFwd = (addresses $ vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0)
+      verts0 = vertices g0
+      inertBwd = verts0 \\ (vertices $ snd (gcBwd (topOf outα))) :: Set DVertex
+      inertFwd = (vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0)
       γInert = selState <$> select𝔹s γα inertBwd
       vInert = selState <$> select𝔹s outα inertFwd
 
       v' = lift γInert gcBwd -- Slice value v back to env γ
       γ' = lift vInert gcFwd -- Slice env γ to val v
 
-      linkedInputs = γ' >>> (\(v × g × g') -> ((fst $ v' v) × v × g × g' × inertFwd)) :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl × Set Vertex)
+      linkedInputs = γ' >>> (\(v × g × g') -> ((fst $ v' v) × v × g × g' × inertFwd)) :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl × Set DVertex)
 
-      linkedOutputs = v' >>> (\(γ × g × g') -> ((fst $ γ' γ) × γ × g × g' × inertBwd)) :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl × Set Vertex)
+      linkedOutputs = v' >>> (\(γ × g × g') -> ((fst $ γ' γ) × γ × g × g' × inertBwd)) :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl × Set DVertex)
 
    pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
 

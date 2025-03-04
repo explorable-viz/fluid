@@ -58,7 +58,7 @@ newtype Vertex = Vertex String -- so can use directly as dict key
 
 class Selectαs a b | a -> b where
    selectαs :: a -> b -> Set Vertex
-   select𝔹s :: b -> Set Vertex -> a
+   select𝔹s :: b -> Set DVertex -> a
 
 instance (Vertices a) => Vertices (Dict a) where
    vertices d = unions (vertices <$> values (unwrap d))
@@ -70,7 +70,7 @@ class Vertices a where
 
 instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f Vertex) where
    selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
-   select𝔹s vα αs = (_ ∈ αs) <$> vα
+   select𝔹s vα αs = (\α -> (DVertex (α × pack unit)) ∈ αs) <$> vα
 
 instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f Vertex)) where
    selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) <*> dα)
@@ -134,6 +134,9 @@ runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` vertices g
 
 class TypeName a where
    typeName :: a -> String
+
+instance TypeName Unit where
+   typeName _ = "Unit"
 
 newtype VertexData = VertexData (forall r. (forall a. TypeName a => a -> r) -> r)
 
