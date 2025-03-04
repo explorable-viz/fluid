@@ -22,14 +22,14 @@ import EvalGraph (graphEval, graphGC', withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex', Vertex, addresses, runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, neg, topOf)
+import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module.Web (File, loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
 import Util.Map (insert, lookup, mapWithKey)
-import Util.Set ((∪))
+import Util.Set ((∪), (\\))
 import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
 
 str
@@ -69,9 +69,13 @@ combineVals :: forall g. Graph g => Set (DVertex' (Val Vertex)) -> Set (DVertex'
 combineVals persistents transients gPersistent gTransient =
    vals𝕊
    where
+   vertsP = (addresses $ vertices $ gPersistent)
+   vertsT = (addresses $ vertices $ gTransient)
+
    vals = (snd <<< unwrap) `Set.map` (persistents ∪ transients) # fromFoldable
-   vsP = (\vs -> select𝔹s vs (addresses $ vertices $ gPersistent)) <$> vals :: Array (Val 𝔹)
-   vsT = (\vs -> select𝔹s vs (addresses $ vertices $ gTransient)) <$> vals :: Array (Val 𝔹)
+
+   vsP = (\v -> select𝔹s v vertsP) <$> vals :: Array (Val 𝔹)
+   vsT = (\v -> select𝔹s v vertsT) <$> vals :: Array (Val 𝔹)
 
    setSels :: Val 𝔹 -> Val 𝔹 -> Val (SelState 𝕊)
    setSels vP vT = selState false <$> (to𝕊 <$> vP) <*> (to𝕊 <$> vT)
@@ -141,7 +145,7 @@ loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
    { s, e, gconfig } <- prepConfig fluidSrcPaths file progCxt
-   eval@({ inα: EnvExpr γα _, outα }) <- graphEval gconfig e
+   eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       EnvExpr γ e' = erase eval.inα
       { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e'))
@@ -159,17 +163,21 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
 
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
-      γ0 = botOf γα
-      v0 = botOf outα
-      γInert = selState <$> neg (fst <<< gcBwd) (topOf outα) -- want to simplify this for ease of computation (attempts similar to v0 result in a lack of inert data)
-      vInert = selState <$> (fst <<< graphgc.fwd <<< focusFwd) γ0
+      γ0 = botOf γα :: Env 𝔹
+      v0 = botOf outα :: Val 𝔹
 
-      vToγ = lift γInert gcBwd -- Slice value v back to env γ
-      γToV = lift vInert gcFwd -- Slice env γ to val v
+      verts0 = addresses $ vertices g0
+      inertBwd = verts0 \\ (addresses $ vertices $ snd (gcBwd (topOf outα))) :: Set Vertex
+      inertFwd = (addresses $ vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0)
+      γInert = selState <$> select𝔹s γα inertBwd
+      vInert = selState <$> select𝔹s outα inertFwd
 
-      linkedInputs = (\(v × g × g') -> ((fst $ vToγ v) × v × g × g')) <<< γToV
+      v' = lift γInert gcBwd -- Slice value v back to env γ
+      γ' = lift vInert gcFwd -- Slice env γ to val v
 
-      linkedOutputs = (\(γ × g × g') -> ((fst $ γToV γ) × γ × g × g')) <<< vToγ
+      linkedInputs = γ' >>> (\(v × g × g') -> ((fst $ v' v) × v × g × g')) :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl)
+
+      linkedOutputs = v' >>> (\(γ × g × g') -> ((fst $ γ' γ) × γ × g × g')) :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl)
 
    pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
 
