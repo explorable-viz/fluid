@@ -9,7 +9,7 @@ import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
 import Bind (Var)
 import Control.Apply (lift2)
-import Data.Array (concat, fromFoldable, zipWith)
+import Data.Array (concat, fromFoldable, zip, zipWith)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
@@ -65,8 +65,8 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-combineVals :: forall g. Graph g => Set (DVertex' (Val Vertex)) -> Set (DVertex' (Val Vertex)) -> g -> g -> Array (Val (SelState 𝕊))
-combineVals persistents transients gPersistent gTransient =
+combineVals :: forall g. Graph g => Set (DVertex' (Val Vertex)) -> Set (DVertex' (Val Vertex)) -> Set Vertex -> g -> g -> Array (Val (SelState 𝕊))
+combineVals persistents transients inerts gPersistent gTransient =
    vals𝕊
    where
    vertsP = (addresses $ vertices $ gPersistent)
@@ -76,30 +76,31 @@ combineVals persistents transients gPersistent gTransient =
 
    vsP = (\v -> select𝔹s v vertsP) <$> vals :: Array (Val 𝔹)
    vsT = (\v -> select𝔹s v vertsT) <$> vals :: Array (Val 𝔹)
+   vsI = (\v -> select𝔹s v inerts) <$> vals :: Array (Val 𝔹)
 
-   setSels :: Val 𝔹 -> Val 𝔹 -> Val (SelState 𝕊)
-   setSels vP vT = selState false <$> (to𝕊 <$> vP) <*> (to𝕊 <$> vT)
+   setSels :: Val 𝔹 -> Val 𝔹 × Val 𝔹 -> Val (SelState 𝕊)
+   setSels vI (vP × vT) = selState <$> vI <*> (to𝕊 <$> vP) <*> (to𝕊 <$> vT)
 
-   vals𝕊 = zipWith setSels vsP vsT
+   vals𝕊 = zipWith setSels vsI (zip vsP vsT)
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val (SelState 𝕊))
 selectionResult fig@{ spec, dir } =
    case dir of
       LinkedOutputs ->
          let
-            v1 × γ1 × g × g' = fig.linkedOutputs fig.v
+            v1 × γ1 × g × g' × inertBwd = fig.linkedOutputs fig.v
             report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
          in
-            (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × reportI (intermediates g g')
+            (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × reportI (intermediates g g' inertBwd)
       LinkedInputs ->
          let
-            γ1 × v1 × g × g' = fig.linkedInputs fig.γ
+            γ1 × v1 × g × g' × inertFwd = fig.linkedInputs fig.γ
             report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
          in
-            ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × reportI (intermediates g g')
+            ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × reportI (intermediates g g' inertFwd)
    where
-   intermediates gPersistent gTransient = concat $ for spec.queries
-      \query -> combineVals (runQuery query gPersistent) (runQuery query gTransient) gPersistent gTransient
+   intermediates gPersistent gTransient inerts = concat $ for spec.queries
+      \query -> combineVals (runQuery query gPersistent) (runQuery query gTransient) inerts gPersistent gTransient
 
    reportI = spyWhen tracing.intermediates "Intermediate values: " (map (prettyP <<< erase))
 
@@ -175,9 +176,9 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       v' = lift γInert gcBwd -- Slice value v back to env γ
       γ' = lift vInert gcFwd -- Slice env γ to val v
 
-      linkedInputs = γ' >>> (\(v × g × g') -> ((fst $ v' v) × v × g × g')) :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl)
+      linkedInputs = γ' >>> (\(v × g × g') -> ((fst $ v' v) × v × g × g' × inertFwd)) :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl × Set Vertex)
 
-      linkedOutputs = v' >>> (\(γ × g × g') -> ((fst $ γ' γ) × γ × g × g')) :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl)
+      linkedOutputs = v' >>> (\(γ × g × g') -> ((fst $ γ' γ) × γ × g × g' × inertBwd)) :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl × Set Vertex)
 
    pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
 

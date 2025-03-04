@@ -9,6 +9,7 @@ import App.View.Util.D3 as D3
 import Bind (Bind, Var)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe)
+import Data.Set (Set)
 import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
@@ -108,8 +109,8 @@ type Fig =
    , s :: Raw S.Expr
    , γ :: Env (SelState 𝔹)
    , v :: Val (SelState 𝔹)
-   , linkedOutputs :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl)
-   , linkedInputs :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl)
+   , linkedOutputs :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl × Set Vertex)
+   , linkedInputs :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl × Set Vertex)
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View
