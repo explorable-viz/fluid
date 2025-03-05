@@ -11,10 +11,10 @@ import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Set (map) as Set
 import Data.Tuple (fst)
-import Graph (class Graph, DVertex'(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, sources, typeName, vertexData)
+import Graph (class Graph, DVertex'(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, sources, vertexData)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
-import Test.Util.Debug (checking, tracing)
-import Util (type (×), singleton, spyWhen, validateWhen, (×), (∩), (⊆))
+import Test.Util.Debug (checking)
+import Util (type (×), singleton, validateWhen, (×), (∩), (⊆))
 import Util.Set ((∈))
 
 type BwdConfig =
@@ -31,7 +31,6 @@ bwdSlice (αs × g) = fst $
       # (\_ -> αs ∩ sources g)
       # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
    where
-   report α = spyWhen tracing.graphBwdSlice_vertexData ("Vertex data found at " <> show α) typeName
 
    go :: BwdConfig -> WithGraph (Step BwdConfig Unit)
    go { αs: Nil, pending: Nil } = pure $ Done unit
@@ -39,7 +38,7 @@ bwdSlice (αs × g) = fst $
       if α ∈ visited then
          pure $ Loop { visited, αs: Nil, pending }
       else do
-         extend (DVertex (α × report α vd)) βs
+         extend (DVertex (α × vd)) βs
          pure $ Loop { visited: insert α visited, αs: Nil, pending }
    go { visited, αs: α : αs', pending } = do
       let βs = outN g α
