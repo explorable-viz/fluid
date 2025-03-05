@@ -44,11 +44,9 @@ data BaseVal a
    | Fun (Fun a)
 
 asVal :: VertexData -> Maybe (Val Vertex)
-asVal e =
-   let
-      type' = unpack typeName e
-   in
-      if type' == "Val" then Just (unpack unsafeCoerce e) else Nothing
+asVal e = if type' == "Val" then Just (unpack unsafeCoerce e) else Nothing
+   where
+   type' = unpack typeName e
 
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)

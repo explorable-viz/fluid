@@ -24,7 +24,7 @@ import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVe
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
-import Lattice (class Neg, Raw, 𝔹)
+import Lattice (Raw, 𝔹)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
@@ -233,20 +233,18 @@ graphGC { g, graph_fwd, graph_bwd, inα, outα } =
            select𝔹s inα (vertices g') × g'
    }
 
-project
+toGC
    :: forall g s t
     . Graph g
    => Apply s
    => Apply t
    => Foldable s
    => Foldable t
-   => Neg (s 𝔹)
-   => Neg (t 𝔹)
    => { fwd :: s 𝔹 -> t 𝔹 × g
       , bwd :: t 𝔹 -> s 𝔹 × g
       }
    -> GaloisConnection (s 𝔹) (t 𝔹)
-project { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
+toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
 graphEval :: forall m. MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
 graphEval { n, γ } e = do
