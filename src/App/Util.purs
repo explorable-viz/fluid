@@ -46,9 +46,9 @@ type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selecti
 
 data SelState a
    = Inert
-   | Reactive (SelTracker a)
+   | Reactive (Selection a)
 
-type SelTracker a = { persistent :: a, transient :: a }
+type Selection a = { persistent :: a, transient :: a }
 
 selState :: forall a. 𝔹 -> a -> a -> SelState a
 selState true _ _ = Inert

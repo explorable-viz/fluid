@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, 𝕊, SelTracker, as𝕊, getPersistent, getTransient, selState, to𝕊)
+import App.Util (SelState, 𝕊, Selection, as𝕊, getPersistent, getTransient, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
@@ -65,21 +65,21 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-combineVals :: forall g. Graph g => Set (DVertex' (Val Vertex)) -> Set (DVertex' (Val Vertex)) -> Set DVertex -> SelTracker g -> Array (Val (SelState 𝕊))
-combineVals persistents transients inerts g =
+selectIntermediates :: forall g. Graph g => Selection (Set (DVertex' (Val Vertex))) -> Set DVertex -> Selection g -> Array (Val (SelState 𝕊))
+selectIntermediates vs inerts g =
    vs𝕊
    where
    verts = { persistent: vertices g.persistent, transient: vertices g.transient }
 
-   vs = (snd <<< unwrap) `Set.map` (persistents ∪ transients) # fromFoldable :: Array (Val Vertex)
+   vs' = (snd <<< unwrap) `Set.map` (vs.persistent ∪ vs.transient) # fromFoldable :: Array (Val Vertex)
 
-   vs' = (\v -> { persistent: select𝔹s v verts.persistent, transient: select𝔹s v verts.transient }) <$> vs :: Array (SelTracker (Val 𝔹))
-   vs_inert = (\v -> select𝔹s v inerts) <$> vs :: Array (Val 𝔹)
+   vs_selected = (\v -> { persistent: select𝔹s v verts.persistent, transient: select𝔹s v verts.transient }) <$> vs' :: Array (Selection (Val 𝔹))
+   vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
-   setSels :: Val 𝔹 -> SelTracker (Val 𝔹) -> Val (SelState 𝕊)
+   setSels :: Val 𝔹 -> Selection (Val 𝔹) -> Val (SelState 𝕊)
    setSels v_inert v = selState <$> v_inert <*> (to𝕊 <$> v.persistent) <*> (to𝕊 <$> v.transient)
 
-   vs𝕊 = zipWith setSels vs_inert vs'
+   vs𝕊 = zipWith setSels vs_inert vs_selected
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val (SelState 𝕊))
 selectionResult fig@{ spec, dir } =
@@ -98,7 +98,11 @@ selectionResult fig@{ spec, dir } =
             ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × reportI (intermediates g inertFwd)
    where
    intermediates g inerts = concat $ for spec.queries
-      \query -> combineVals (runQuery query g.persistent) (runQuery query g.transient) inerts g
+      \query ->
+         let
+            vs = { persistent: runQuery query g.persistent, transient: runQuery query g.transient }
+         in
+            selectIntermediates vs inerts g
 
    reportI = spyWhen tracing.intermediates "Intermediate values: " (map (prettyP <<< erase))
 
@@ -172,10 +176,10 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       v' = lift γInert gcBwd
       γ' = lift vInert gcFwd
 
-      linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × SelTracker GraphImpl × Set DVertex
+      linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Selection GraphImpl × Set DVertex
       linkedInputs = γ' >>> \(v × g × g') -> (fst $ v' v) × v × { persistent: g, transient: g' } × inertFwd
 
-      linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × SelTracker GraphImpl × Set DVertex
+      linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × Selection GraphImpl × Set DVertex
       linkedOutputs = v' >>> \(γ × g × g') -> (fst $ γ' γ) × γ × { persistent: g, transient: g' } × inertBwd
 
    pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
