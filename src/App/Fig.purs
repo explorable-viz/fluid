@@ -18,7 +18,7 @@ import Data.Set as Set
 import Data.Traversable (for, sequence_)
 import Data.Tuple (fst, snd)
 import Effect (Effect)
-import EvalGraph (graphEval, graphGC', withOp)
+import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex', Vertex, DVertex, runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -151,8 +151,8 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       EnvExpr γ e' = erase eval.inα
       { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e'))
 
-      graphgc = graphGC' eval
-      graphgc_op = graphGC' (withOp eval)
+      graphgc = graphGC eval
+      graphgc_op = graphGC (withOp eval)
 
       gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
       gcBwd v = first focusBwd (graphgc.bwd v)
