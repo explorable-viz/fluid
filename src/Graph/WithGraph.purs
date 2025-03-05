@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class TypeName, class Vertices, DVertex, DVertex'(..), HyperEdge, Vertex(..), addresses, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class TypeName, class Vertices, DVertex, DVertex'(..), HyperEdge, Vertex(..), addresses, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -88,12 +88,12 @@ alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT 
 alloc_check msg m = do
    n × αs × x <- runAllocT m 0
    let report = spy (show n <> " allocations, unaccounted for") showVertices
-   check (report (αs \\ addresses (vertices x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
+   check (report (αs \\ addresses x) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
 runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
 runWithGraphT_spy =
    runWithGraphT
-      >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" (addresses >>> showVertices) (fst >>> showGraph)
+      >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" (Set.map (fst <<< unwrap) >>> showVertices) (fst >>> showGraph)
 
 runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Set DVertex -> g × a
 runWithGraph_spy m = runWithGraphT_spy m >>> unwrap

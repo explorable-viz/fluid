@@ -149,8 +149,8 @@ pack x = VertexData (\k -> k x)
 unpack :: forall r. (forall a. TypeName a => a -> r) -> VertexData -> r
 unpack f (VertexData e) = e f
 
-addresses :: forall a. Set (DVertex' a) -> Set Vertex
-addresses = Set.map (fst <<< unwrap)
+addresses :: forall a. Vertices a => a -> Set Vertex
+addresses = Set.map (fst <<< unwrap) <<< vertices
 
 instance Eq (DVertex' a) where
    eq (DVertex (α × _)) (DVertex (α' × _)) = α == α'

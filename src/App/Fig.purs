@@ -67,21 +67,21 @@ setInputView x δvw fig = fig
 
 combineVals :: forall g. Graph g => Set (DVertex' (Val Vertex)) -> Set (DVertex' (Val Vertex)) -> Set DVertex -> g -> g -> Array (Val (SelState 𝕊))
 combineVals persistents transients inerts gPersistent gTransient =
-   vals𝕊
+   vs𝕊
    where
-   vertsP = (vertices $ gPersistent)
-   vertsT = (vertices $ gTransient)
+   vertsP = vertices gPersistent
+   vertsT = vertices gTransient
 
-   vals = (snd <<< unwrap) `Set.map` (persistents ∪ transients) # fromFoldable
+   vs = (snd <<< unwrap) `Set.map` (persistents ∪ transients) # fromFoldable :: Array (Val Vertex)
 
-   vsP = (\v -> select𝔹s v vertsP) <$> vals :: Array (Val 𝔹)
-   vsT = (\v -> select𝔹s v vertsT) <$> vals :: Array (Val 𝔹)
-   vsI = (\v -> select𝔹s v inerts) <$> vals :: Array (Val 𝔹)
+   vsP = (\v -> select𝔹s v vertsP) <$> vs :: Array (Val 𝔹)
+   vsT = (\v -> select𝔹s v vertsT) <$> vs :: Array (Val 𝔹)
+   vsI = (\v -> select𝔹s v inerts) <$> vs :: Array (Val 𝔹)
 
    setSels :: Val 𝔹 -> Val 𝔹 × Val 𝔹 -> Val (SelState 𝕊)
    setSels vI (vP × vT) = selState <$> vI <*> (to𝕊 <$> vP) <*> (to𝕊 <$> vT)
 
-   vals𝕊 = zipWith setSels vsI (zip vsP vsT)
+   vs𝕊 = zipWith setSels vsI (zip vsP vsT)
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val (SelState 𝕊))
 selectionResult fig@{ spec, dir } =
@@ -151,8 +151,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       EnvExpr γ e' = erase eval.inα
       { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e'))
 
-      dualFocusBwd = deMorgan focusFwd
-
       graphgc = graphGC' eval
       graphgc_op = graphGC' (withOp eval)
 
@@ -160,25 +158,27 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       gcBwd v = first focusBwd (graphgc.bwd v)
 
       gcFwd :: Env 𝔹 -> Val 𝔹 × GraphImpl
-      gcFwd γ = graphgc_op.bwd (dualFocusBwd γ)
+      gcFwd γ = graphgc_op.bwd (deMorgan focusFwd γ)
 
       in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
 
       γ0 = botOf γα :: Env 𝔹
       v0 = botOf outα :: Val 𝔹
 
-      verts0 = vertices g0
-      inertBwd = verts0 \\ (vertices $ snd (gcBwd (topOf outα))) :: Set DVertex
+      inertBwd = vertices g0 \\ (vertices $ snd (gcBwd (topOf outα))) :: Set DVertex
       inertFwd = (vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0)
-      γInert = selState <$> select𝔹s γα inertBwd
-      vInert = selState <$> select𝔹s outα inertFwd
 
-      v' = lift γInert gcBwd -- Slice value v back to env γ
-      γ' = lift vInert gcFwd -- Slice env γ to val v
+      γInert = selState <$> select𝔹s γα inertBwd :: Env (𝔹 -> 𝔹 -> SelState 𝔹)
+      vInert = selState <$> select𝔹s outα inertFwd :: Val (𝔹 -> 𝔹 -> SelState 𝔹)
 
-      linkedInputs = γ' >>> (\(v × g × g') -> ((fst $ v' v) × v × g × g' × inertFwd)) :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl × Set DVertex)
+      v' = lift γInert gcBwd
+      γ' = lift vInert gcFwd
 
-      linkedOutputs = v' >>> (\(γ × g × g') -> ((fst $ γ' γ) × γ × g × g' × inertBwd)) :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl × Set DVertex)
+      linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × GraphImpl × Set DVertex
+      linkedInputs = γ' >>> \(v × g × g') -> (fst $ v' v) × v × g × g' × inertFwd
+
+      linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × GraphImpl × Set DVertex
+      linkedOutputs = v' >>> \(γ × g × g') -> (fst $ γ' γ) × γ × g × g' × inertBwd
 
    pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
 
