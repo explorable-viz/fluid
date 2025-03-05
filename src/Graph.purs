@@ -21,7 +21,8 @@ import Util.Set ((∈))
 
 type Edge = Vertex × Vertex
 type HyperEdge = DVertex × Set Vertex -- mostly a convenience
-newtype DVertex = DVertex (Vertex × VertexData)
+type DVertex = DVertex' VertexData
+newtype DVertex' a = DVertex (Vertex × a)
 
 -- | Immutable graphs, optimised for lookup and building from (key, value) pairs. Should think about how this
 -- | is different from Data.Graph.
@@ -57,7 +58,7 @@ newtype Vertex = Vertex String -- so can use directly as dict key
 
 class Selectαs a b | a -> b where
    selectαs :: a -> b -> Set Vertex
-   select𝔹s :: b -> Set Vertex -> a
+   select𝔹s :: b -> Set DVertex -> a
 
 instance (Vertices a) => Vertices (Dict a) where
    vertices d = unions (vertices <$> values (unwrap d))
@@ -69,7 +70,7 @@ class Vertices a where
 
 instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f Vertex) where
    selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
-   select𝔹s vα αs = (_ ∈ αs) <$> vα
+   select𝔹s vα αs = (\α -> (DVertex (α × pack unit)) ∈ αs) <$> vα
 
 instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f Vertex)) where
    selectαs d𝔹 dα = unions ((selectαs <$> d𝔹) <*> dα)
@@ -124,7 +125,7 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 -- ======================
 -- Query a graph for a value
 -- ======================
-runQuery :: forall a g. Ord a => Graph g => (VertexData -> Maybe a) -> g -> Set a
+runQuery :: forall a g. Ord a => Graph g => (VertexData -> Maybe (DVertex' a)) -> g -> Set (DVertex' a)
 runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` vertices g
 
 -- ======================
@@ -133,6 +134,9 @@ runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` vertices g
 
 class TypeName a where
    typeName :: a -> String
+
+instance TypeName Unit where
+   typeName _ = "Unit"
 
 newtype VertexData = VertexData (forall r. (forall a. TypeName a => a -> r) -> r)
 
@@ -145,16 +149,16 @@ pack x = VertexData (\k -> k x)
 unpack :: forall r. (forall a. TypeName a => a -> r) -> VertexData -> r
 unpack f (VertexData e) = e f
 
-addresses :: Set DVertex -> Set Vertex
-addresses = Set.map (fst <<< unwrap)
+addresses :: forall a. Vertices a => a -> Set Vertex
+addresses = Set.map (fst <<< unwrap) <<< vertices
 
-instance Eq DVertex where
+instance Eq (DVertex' a) where
    eq (DVertex (α × _)) (DVertex (α' × _)) = α == α'
 
-instance Ord DVertex where
+instance Ord (DVertex' a) where
    compare (DVertex (α × _)) (DVertex (α' × _)) = compare α α'
 
-derive instance Newtype DVertex _
+derive instance Newtype (DVertex' a) _
 
 -- ======================
 -- boilerplate

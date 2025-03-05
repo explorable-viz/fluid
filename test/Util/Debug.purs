@@ -11,6 +11,7 @@ tracing
       , fwdAfterBwd :: Boolean
       , mediatingData :: Boolean
       , mouseEvent :: Boolean
+      , intermediates :: Boolean
       }
 
 tracing =
@@ -23,6 +24,7 @@ tracing =
    , fwdAfterBwd: false
    , mediatingData: false
    , mouseEvent: false
+   , intermediates: true
    }
 
 -- Invariants that are potentially expensive to check and that we might want to disable in production,

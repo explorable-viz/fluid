@@ -4,10 +4,14 @@ import Prelude
 
 import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd)
 import Bind ((↦))
+import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_y)
+import Graph (DVertex'(..))
 import Lattice (neg)
 import Module.Web (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
+import Util ((×))
+import Val (BaseVal(..), MatrixDim(..), MatrixRep(..), Val(..), asVal)
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
@@ -92,7 +96,11 @@ linkedOutputs_cases =
           , imports: [ "lib/convolution" ]
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
-          , queries: []
+          , queries:
+               [ asVal >=> case _ of
+                    v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
+                    _ -> Nothing
+               ]
           }
      , δ_out: fst (matrixElement 2 2 neg)
      , out_expect:

@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class TypeName, class Vertices, DVertex(..), HyperEdge, Vertex(..), addresses, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
+import Graph (class Graph, class TypeName, class Vertices, DVertex, DVertex'(..), HyperEdge, Vertex(..), addresses, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -30,7 +30,7 @@ class Monad m <= MonadAlloc m where
 -- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
 class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAlloc m where
    -- Extend with a freshly allocated vertex.
-   new :: forall f g. TypeName (f Vertex) => (Vertex -> f Vertex -> g Vertex) -> Set Vertex -> f Vertex -> m (g Vertex)
+   new :: forall f g. TypeName (g Vertex) => (Vertex -> f Vertex -> g Vertex) -> Set Vertex -> f Vertex -> m (g Vertex)
 
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
@@ -46,7 +46,8 @@ instance Monad m => MonadAlloc (AllocT m) where
 instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
    new constr αs vd = do
       α <- fresh
-      extend (DVertex (α × pack vd)) αs
+      let v = constr α vd
+      extend (DVertex (α × pack v)) αs
       pure $ constr α vd
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
@@ -87,13 +88,12 @@ alloc_check :: forall m a. Vertices a => MonadError Error m => String -> AllocT 
 alloc_check msg m = do
    n × αs × x <- runAllocT m 0
    let report = spy (show n <> " allocations, unaccounted for") showVertices
-   check (report (αs \\ addresses (vertices x)) # isEmpty) $ "alloc " <> msg <> " round-trip"
+   check (report (αs \\ addresses x) # isEmpty) $ "alloc " <> msg <> " round-trip"
 
 runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
-runWithGraphT_spy wg αs =
-   ( runWithGraphT
-        >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" (addresses >>> showVertices) (fst >>> showGraph)
-   ) wg αs
+runWithGraphT_spy =
+   runWithGraphT
+      >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" (Set.map (fst <<< unwrap) >>> showVertices) (fst >>> showGraph)
 
 runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Set DVertex -> g × a
 runWithGraph_spy m = runWithGraphT_spy m >>> unwrap

@@ -15,7 +15,7 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
-import EvalGraph (GraphConfig, graphEval, graphGC, withOp)
+import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
 import Module (File, FileLoader, Folder(..), parse, prepConfig)
@@ -110,7 +110,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       checkPretty ("fwd_expect") fwd_expect (report out0')
 
    recordGraphSize g
-   let GC evalG = graphGC graphed
+   let GC evalG = graphGC graphed # toGC
 
    in0 <- graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd out0)
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
@@ -125,7 +125,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
 
    let GC evalG_dual = dual (GC evalG)
-   let GC evalG_op = withOp graphed # graphGC
+   let GC evalG_op = withOp graphed # graphGC # toGC
 
    out2 <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
    out3 <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)

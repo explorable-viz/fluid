@@ -20,7 +20,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, class Vertices, DVertex(..), HyperEdge, Vertex(..), VertexData, op, outN)
+import Graph (class Graph, class Vertices, DVertex, DVertex'(..), HyperEdge, Vertex(..), VertexData, op, outN)
 import Test.Util.Debug (checking)
 import Util (type (×), assertWhen, definitely, error, isEmpty, singleton, (×))
 import Util.Map (keys, lookup, mapWithKey, toUnfoldable)

@@ -8,10 +8,10 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
-import Data.Either (Either(..))
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
 import Data.List (List(..), (:), zipWith)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, unions)
 import Data.Set as Set
@@ -20,14 +20,14 @@ import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
 import Effect.Exception (Error)
-import Expr (Expr, Elim, fv)
+import Expr (Elim, Expr, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class TypeName, class Vertices, DVertex(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
+import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Unsafe.Coerce (unsafeCoerce)
-import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆), type (+))
+import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
@@ -43,8 +43,8 @@ data BaseVal a
    | Matrix (MatrixRep a)
    | Fun (Fun a)
 
-asVal :: VertexData -> BaseVal Vertex + String
-asVal e = if type' == "BaseVal" then Left (unpack unsafeCoerce e) else Right type'
+asVal :: VertexData -> Maybe (Val Vertex)
+asVal e = if type' == "Val" then Just (unpack unsafeCoerce e) else Nothing
    where
    type' = unpack typeName e
 
@@ -346,8 +346,8 @@ derive instance Ord a => Ord (EnvExpr a)
 
 derive instance Newtype (Env a) _
 
-instance TypeName (BaseVal a) where
-   typeName _ = "BaseVal"
+instance TypeName (Val a) where
+   typeName _ = "Val"
 
 instance TypeName (MatrixDim a) where
    typeName _ = "MatrixDim"
@@ -356,7 +356,7 @@ instance TypeName (DictKey a) where
    typeName _ = "DictKey"
 
 instance Vertices (Val Vertex) where
-   vertices (Val α v) = singleton (DVertex (α × pack v)) ∪ vertices v
+   vertices v@(Val α v') = singleton (DVertex (α × pack v)) ∪ vertices v'
 
 instance Vertices (BaseVal Vertex) where
    vertices (Int _) = empty

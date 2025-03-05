@@ -16,13 +16,13 @@ let extend m n image =
 
 let matrixSum matr =
     let (m, n) = dims matr
-    in sum [ matr!(i, j) | (i, j) <- range (1, 1) (m, n)];
+    in foldl (+) 0 [ matr!(i, j) | (i, j) <- range (1, 1) (m, n)];
 
 let convolve image kernel lookup =
     let ((m, n), (i, j)) = (dims image, dims kernel);
         (half_i, half_j) = (i `quot` 2, j `quot` 2);
         area = i * j
-    in [|let interMatrix = [|
+    in [| let interMatrix = [|
         let x = m' + i' - 1 - half_i;
             y = n' + j' - 1 - half_j
         in lookup x y image * kernel!(i', j')

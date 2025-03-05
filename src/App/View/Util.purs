@@ -2,18 +2,19 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, Selectable, 𝕊, selClasses, selClassesFor, selectionEventData)
+import App.Util (SelState, Selectable, 𝕊, Selection, selClasses, selClassesFor, selectionEventData)
 import App.Util.Selector (ViewSelSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
 import Bind (Bind, Var)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe)
+import Data.Set (Set)
 import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
-import GaloisConnection (GaloisConnection)
-import Graph (VertexData)
+import Graph (DVertex', Vertex, VertexData, DVertex)
+import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
 import SExpr as S
@@ -98,7 +99,7 @@ type FigSpec =
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
-   , queries :: Array (VertexData -> Maybe VertexData)
+   , queries :: Array (VertexData -> Maybe (DVertex' (Val Vertex)))
    }
 
 data Direction = LinkedInputs | LinkedOutputs
@@ -108,8 +109,8 @@ type Fig =
    , s :: Raw S.Expr
    , γ :: Env (SelState 𝔹)
    , v :: Val (SelState 𝔹)
-   , linkedOutputs :: GaloisConnection (Val (SelState 𝔹) × Env (SelState 𝔹)) (Val (SelState 𝔹))
-   , linkedInputs :: GaloisConnection (Env (SelState 𝔹) × Val (SelState 𝔹)) (Env (SelState 𝔹))
+   , linkedOutputs :: (Val (SelState 𝔹)) -> (Val (SelState 𝔹) × Env (SelState 𝔹) × Selection GraphImpl × Set DVertex)
+   , linkedInputs :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × Selection GraphImpl × Set DVertex)
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View

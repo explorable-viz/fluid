@@ -1,4 +1,17 @@
-module Test.Util.Suite where
+module Test.Util.Suite
+   ( BenchSuite
+   , TestBwdSpec
+   , TestLinkedInputsSpec
+   , TestLinkedOutputsSpec
+   , TestSpec
+   , TestWithDatasetSpec
+   , bwdSuite
+   , linkedInputsSuite
+   , linkedOutputsSuite
+   , linkedOutputsTest
+   , suite
+   , withDatasetSuite
+   ) where
 
 import Prelude
 
@@ -101,7 +114,7 @@ linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
-      pure (snd (selectionResult fig))
+      pure (fst $ snd (selectionResult fig))
    checkEq "selected" "expected" (selState <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (in_expect (botOf <$> γ))
    pure fig
 
