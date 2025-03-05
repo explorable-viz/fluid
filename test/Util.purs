@@ -9,15 +9,13 @@ import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
-import Data.Tuple (fst)
 import Desug (desugGC)
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
-import EvalGraph (GraphConfig, graphEval, withOp, graphGC)
-import EvalGraph (dual) as G
+import EvalGraph (GraphConfig, graphEval, graphGC, project, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
 import Module (File, FileLoader, Folder(..), parse, prepConfig)
@@ -112,25 +110,25 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       checkPretty ("fwd_expect") fwd_expect (report out0')
 
    recordGraphSize g
-   let evalG = graphGC graphed
+   let GC evalG = project $ graphGC graphed
 
-   in0 <- graphBenchmark benchNames.bwd \_ -> pure (fst $ evalG.bwd out0)
+   in0 <- graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd out0)
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
    -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
    checkEq "Graph bwd" "Trace bwd" ((\(EnvExpr _ e') -> e') in0) in_e
-   out1 <- graphBenchmark benchNames.fwd \_ -> pure (fst $ evalG.fwd in0)
+   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd in0)
    checkEq ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
 
    -- Already testing extensional equivalence above, but specifically test this too.
-   let out_top' × _ = evalG.fwd in_top
+   let out_top' = evalG.fwd in_top
    when testing.fwdPreservesTop $
       unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
 
-   let evalG_dual = G.dual evalG
-   let evalG_op = withOp graphed # graphGC
+   let GC evalG_dual = dual (GC evalG)
+   let GC evalG_op = withOp graphed # graphGC # project
 
-   out2 × _ <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
-   out3 × _ <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)
+   out2 <- graphBenchmark benchNames.demBy_G_direct \_ -> pure (evalG_op.bwd in0)
+   out3 <- graphBenchmark benchNames.demBy_G_suff_dual \_ -> pure (evalG_dual.bwd in0)
    when testing.fwdDuals $
       checkEq benchNames.demBy_G_direct benchNames.demBy_G_suff_dual out2 out3
 

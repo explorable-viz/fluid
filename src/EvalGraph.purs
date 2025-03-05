@@ -9,21 +9,22 @@ import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Newtype (unwrap, wrap)
-import Data.Profunctor.Strong (first, (***))
+import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
-import Data.Tuple (curry, snd)
+import Data.Tuple (curry, fst, snd)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
+import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
-import Lattice (class Neg, Raw, 𝔹, neg)
+import Lattice (class Neg, Raw, 𝔹)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
@@ -232,7 +233,7 @@ graphGC { g, graph_fwd, graph_bwd, inα, outα } =
            select𝔹s inα (vertices g') × g'
    }
 
-dual
+project
    :: forall g s t
     . Graph g
    => Apply s
@@ -244,14 +245,8 @@ dual
    => { fwd :: s 𝔹 -> t 𝔹 × g
       , bwd :: t 𝔹 -> s 𝔹 × g
       }
-   -> { fwd :: t 𝔹 -> s 𝔹 × g
-      , bwd :: s 𝔹 -> t 𝔹 × g
-      }
-dual { fwd, bwd } =
-   { fwd: deMorgan bwd, bwd: deMorgan fwd }
-   where
-   deMorgan :: forall f f'. Neg (f 𝔹) => Neg (f' 𝔹) => (f 𝔹 -> f' 𝔹 × g) -> (f 𝔹 -> f' 𝔹 × g)
-   deMorgan f = \x -> first neg $ f $ neg x
+   -> GaloisConnection (s 𝔹) (t 𝔹)
+project { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
 graphEval :: forall m. MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
 graphEval { n, γ } e = do
