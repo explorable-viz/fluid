@@ -292,14 +292,6 @@ instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelSta
 
 derive instance Eq a => Eq (SelState a)
 
-instance Ord a => Ord (SelState a)
-   where
-   compare Inert Inert = EQ
-   compare Inert _ = LT
-   compare _ Inert = GT
-   compare (Reactive s) (Reactive s') =
-      compare s.persistent s'.persistent <> compare s.transient s'.transient
-
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
    highlightIf Inert = highlightIf false
    highlightIf (Reactive { persistent, transient }) = highlightIf (persistent ∨ transient)
