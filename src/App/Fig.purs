@@ -10,17 +10,19 @@ import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, drawView)
 import Bind (Var)
 import Control.Apply (lift2)
 import Data.Array (concat, fromFoldable, zipWith)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, sequence_)
 import Data.Tuple (fst, snd)
+import Dict (Dict(..), empty)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
+import Foreign.Object (fromFoldable) as O
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex', Vertex, DVertex, runQuery, select𝔹s, vertices)
+import Graph (class Graph, DVertex, DVertex', Vertex(..), runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module.Web (File, loadProgCxt, prepConfig)
@@ -30,7 +32,7 @@ import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
 import Util.Map (insert, lookup, mapWithKey)
 import Util.Set ((∪), (\\))
-import Val (Env(..), EnvExpr(..), Val, unrestrictGC)
+import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view
@@ -65,7 +67,17 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-selectIntermediates :: forall g. Graph g => Selection (Set (DVertex' (Val Vertex))) -> Set DVertex -> Selection g -> Array (Val (SelState 𝕊))
+selectIntermediate :: Vertex -> Setter Fig (Val (SelState 𝔹))
+selectIntermediate (Vertex v) δv fig = fig
+   { intermediate_values = insert v (unsafePartial fromJust $ lookup v fig.intermediate_values <#> δv) fig.intermediate_values
+   }
+
+setIntermediate :: Vertex -> Setter Fig View
+setIntermediate (Vertex v) δvw fig = fig
+   { intermediate_views = insert v (lookup v fig.intermediate_views # join <#> δvw) fig.intermediate_views
+   }
+
+selectIntermediates :: forall g. Graph g => Selection (Set (DVertex' (Val Vertex))) -> Set DVertex -> Selection g -> Array (String × Val (SelState 𝕊))
 selectIntermediates vs inerts g =
    vs𝕊
    where
@@ -73,15 +85,15 @@ selectIntermediates vs inerts g =
 
    vs' = (snd <<< unwrap) `Set.map` (vs.persistent ∪ vs.transient) # fromFoldable :: Array (Val Vertex)
 
-   vs_selected = (\v -> { persistent: select𝔹s v verts.persistent, transient: select𝔹s v verts.transient }) <$> vs' :: Array (Selection (Val 𝔹))
+   vs_selected = (\v@(Val α _) -> α × { persistent: select𝔹s v verts.persistent, transient: select𝔹s v verts.transient }) <$> vs' :: Array (Vertex × Selection (Val 𝔹))
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
-   setSels :: Val 𝔹 -> Selection (Val 𝔹) -> Val (SelState 𝕊)
-   setSels v_inert v = selState <$> v_inert <*> (to𝕊 <$> v.persistent) <*> (to𝕊 <$> v.transient)
+   setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelState 𝕊)
+   setSels v_inert (Vertex α × v) = α × (selState <$> v_inert <*> (to𝕊 <$> v.persistent) <*> (to𝕊 <$> v.transient))
 
    vs𝕊 = zipWith setSels vs_inert vs_selected
 
-selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Array (Val (SelState 𝕊))
+selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Dict (Val (SelState 𝕊))
 selectionResult fig@{ spec, dir } =
    case dir of
       LinkedOutputs ->
@@ -97,7 +109,7 @@ selectionResult fig@{ spec, dir } =
          in
             ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × reportI (intermediates g inertFwd)
    where
-   intermediates g inerts = concat $ for spec.queries
+   intermediates g inerts = Dict $ O.fromFoldable $ concat $ for spec.queries
       \query ->
          let
             vs = { persistent: runQuery query g.persistent, transient: runQuery query g.transient }
@@ -111,9 +123,11 @@ drawFig divId fig = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
    sequence_ $ flip mapWithKey in_views \x view -> do
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
+   sequence_ $ flip mapWithKey intermediate_vals \α v -> do
+      drawView { divId: divId <> "-" <> "intermediate", suffix: α, view: unsafePartial view α v Nothing } (selectIntermediate (Vertex α)) (setIntermediate (Vertex α)) redraw
    where
    redraw = (_ $ fig) >>> drawFig divId
-   out_view × in_views × _ =
+   out_view × in_views × intermediate_vals =
       selectionResult fig # unsafePartial
          (flip (view str.output) fig.out_view *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) *** identity)
 
@@ -182,7 +196,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × Selection GraphImpl × Set DVertex
       linkedOutputs = v' >>> \(γ × g × g') -> (fst $ γ' γ) × γ × { persistent: g, transient: g' } × inertBwd
 
-   pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing }
+   pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing, intermediate_values: Dict empty, intermediate_views: Dict empty }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
