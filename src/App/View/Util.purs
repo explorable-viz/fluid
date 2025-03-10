@@ -114,6 +114,8 @@ type Fig =
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , out_view :: Maybe View
+   , intermediate_views :: Dict (Maybe View)
+   , intermediate_values :: Dict (Val (SelState 𝔹))
    }
 
 -- ======================
