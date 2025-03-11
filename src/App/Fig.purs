@@ -11,14 +11,14 @@ import App.View.Util.D3 (remove, rootSelect, select)
 import Bind (Var)
 import Control.Apply (lift2)
 import Data.Array (concat, fromFoldable)
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, for_, sequence_)
 import Data.Tuple (fst, snd)
-import Dict (Dict(..), empty)
+import Dict (Dict(..), empty, filterKeys)
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import Foreign.Object (fromFoldable) as O
@@ -30,9 +30,9 @@ import Module.Web (File, loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, definitely', spyWhen, (×))
 import Util.Map (insert, keys, lookup, mapWithKey)
-import Util.Set ((∪), (\\))
+import Util.Set ((∪), (\\), (∈))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
 
 str
@@ -75,7 +75,7 @@ selectIntermediate (Vertex α) δv fig = fig
    { intermediate_values = new_values
    }
    where
-   new_values = insert α (unsafePartial fromJust $ lookup α fig.intermediate_values <#> δv) fig.intermediate_values
+   new_values = insert α (definitely' $ lookup α fig.intermediate_values <#> δv) fig.intermediate_values
 
 setIntermediateView :: Vertex -> Setter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
@@ -133,11 +133,13 @@ drawIntermediates divId fig intermediates redraw = do
       child <- select ("#" <> divId <> "-" <> str.intermediate <> "-" <> α) root
       remove child
 
-   sequence_ $ flip mapWithKey intermediates \α v -> do
+   sequence_ $ flip mapWithKey intermediates' \α v -> do
       drawView { divId: divId <> "-" <> str.intermediate, suffix: α, view: unsafePartial $ view α (toSelState𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
    where
+
    unused :: Array String
-   unused = fromFoldable (keys fig.intermediate_values \\ keys intermediates)
+   unused = fromFoldable ((keys fig.intermediate_values \\ keys intermediates))
+   intermediates' = Dict $ (unwrap intermediates) # filterKeys (\α -> not $ α ∈ fig.in_roots)
 
    toSelState𝕊 :: Partial => SelState 𝔹 -> SelState 𝕊
    toSelState𝕊 = (\(Reactive { persistent, transient }) -> Reactive { persistent: to𝕊 persistent, transient: to𝕊 transient })
@@ -191,6 +193,9 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       EnvExpr γ e' = erase eval.inα
       { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e'))
 
+      inαs :: Set String
+      inαs = Set.fromFoldable $ (\x -> case definitely' $ lookup x (unwrap γα) of Val (Vertex α) _ -> α) <$> inputs
+
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
 
@@ -220,7 +225,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × Selection GraphImpl × Set DVertex
       linkedOutputs = v' >>> \(γ × g × g') -> (fst $ γ' γ) × γ × { persistent: g, transient: g' } × inertBwd
 
-   pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing, intermediate_views: Dict empty, intermediate_values: Dict empty }
+   pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing, intermediate_views: Dict empty, intermediate_values: Dict empty, in_roots: inαs }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
