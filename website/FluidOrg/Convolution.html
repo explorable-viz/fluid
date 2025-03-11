@@ -56,10 +56,11 @@
       implementation can automatically reveal how different cells in the output demand different cells in the
       input array and filter.</p>
    </div>
-   <div></div>
-   <div></div>
-
-   <div id="fig-input" class="flex-right-align data-pane"></div>
+   
+   <div class="flex-right-align data-pane">
+      <div id="fig-input"></div>
+      <div id="fig-intermediate"></div>
+   </div>
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
    </div>
@@ -82,7 +83,10 @@
             <p class="when-data-pane-visible">What happens when you mouse over a corner of the output?</p>
          </div>
       </div>
-
+   </div>
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
       <h4>Relations of cognacy</h4>
 
       <p>The idea of <span class="highlight">related inputs</span> introduced earlier can also be informative.
@@ -108,10 +112,6 @@
 
       <p class="right-justified"><a href="../convolution-wrapped/">continued..</a></p>
    </div>
-   <div onclick="toggleIntermediateDataPane('grid')">
-      <i class="intermediate-data-pane-button toggle-button fa-solid fa-eye-slash"></i>
-   </div>
-   <div id="fig-intermediate" class="flex-left-align intermediate-data-pane"></div>
 </div>
 
 <script type="module">

@@ -232,20 +232,20 @@ nav ul li.active-page a {
 
 .grid-container {
    display: grid;
-   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width) var(--toggle-button-width) auto;
+   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
    justify-content: center;
 }
 
 .grid-container.data-pane-hidden {
-   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width) var(--toggle-button-width) auto;
+   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
 }
 
 .grid-container.intermediate-data-pane-hidden {
-   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width) var(--toggle-button-width) 0;
+   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
 }
 
 .grid-container.intermediate-data-pane-hidden.data-pane-hidden {
-   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width) var(--toggle-button-width) 0;
+   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
 }
 
 .grid-container.double-size {
@@ -302,11 +302,13 @@ nav ul li.active-page a {
 }
 
 .data-pane {
+   display: grid;
+   grid-template-columns: auto auto;
    border-right: 1px dotted #CCCCCC;
+   vertical-align: top;
 }
-
-.intermediate-data-pane {
-   border-left: 1px dotted #CCCCCC;
+#fig-input {
+   border-right: 1px dotted #CCCCCC;
 }
 
 .intermediate-data-pane-hidden .intermediate-data-pane {

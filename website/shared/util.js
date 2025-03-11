@@ -62,10 +62,12 @@ function toggleDataPane(gridId) {
 
    if (hidden) {
       grid.classList.remove('data-pane-hidden')
+      grid.classList.remove('intermediate-data-pane-hidden')
       dataPaneButton.classList.remove('fa-eye-slash')
       dataPaneButton.classList.add('fa-eye')
    } else {
       grid.classList.add('data-pane-hidden')
+      grid.classList.add('intermediate-data-pane-hidden')
       dataPaneButton.classList.remove('fa-eye')
       dataPaneButton.classList.add('fa-eye-slash')
    }
