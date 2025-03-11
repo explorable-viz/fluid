@@ -3,15 +3,15 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), Selection, 𝕊, as𝕊, getPersistent, getTransient, isSecondary, selState, to𝕊)
+import App.Util (SelState(..), Selection, 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, Redraw, drawView)
 import App.View.Util.D3 (remove, rootSelect, select)
 import Bind (Var)
 import Control.Apply (lift2)
-import Data.Array (concat, fromFoldable, zipWith)
-import Data.Maybe (Maybe(..))
+import Data.Array (concat, fromFoldable)
+import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
 import Data.Set (Set)
@@ -20,7 +20,6 @@ import Data.Traversable (for, for_, sequence_)
 import Data.Tuple (fst, snd)
 import Dict (Dict(..), empty)
 import Effect (Effect)
-import Effect.Class.Console (log)
 import EvalGraph (graphEval, graphGC, withOp)
 import Foreign.Object (fromFoldable) as O
 import GaloisConnection (GaloisConnection(..), deMorgan)
@@ -71,12 +70,12 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-selectIntermediate :: Vertex -> Val (SelState 𝔹) -> Setter Fig (Val (SelState 𝔹))
-selectIntermediate (Vertex α) v _δv fig = fig
+selectIntermediate :: Vertex -> Setter Fig (Val (SelState 𝔹))
+selectIntermediate (Vertex α) δv fig = fig
    { intermediate_values = new_values
    }
    where
-   new_values = insert α v fig.intermediate_values
+   new_values = insert α (unsafePartial fromJust $ lookup α fig.intermediate_values <#> δv) fig.intermediate_values
 
 setIntermediateView :: Vertex -> Setter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
@@ -85,23 +84,24 @@ setIntermediateView (Vertex α) δvw fig = fig
    where
    new_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
 
-selectIntermediates :: forall g. Graph g => Selection (Set (DVertex' (Val Vertex))) -> Set DVertex -> Selection g -> Array (String × Val (SelState 𝕊))
-selectIntermediates vs inerts g =
-   vs𝕊
+selectIntermediates :: forall g. Graph g => Selection (Set (DVertex' (Val Vertex))) -> Set DVertex -> Selection g -> Array (String × Val (SelState 𝔹))
+selectIntermediates vs _inerts g =
+   vs𝔹
    where
    verts = { persistent: vertices g.persistent, transient: vertices g.transient }
 
    vs' = (snd <<< unwrap) `Set.map` (vs.persistent ∪ vs.transient) # fromFoldable :: Array (Val Vertex)
 
    vs_selected = (\v@(Val α _) -> α × { persistent: select𝔹s v verts.persistent, transient: select𝔹s v verts.transient }) <$> vs' :: Array (Vertex × Selection (Val 𝔹))
-   vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
-   setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelState 𝕊)
-   setSels v_inert (Vertex α × v) = α × (selState <$> v_inert <*> (to𝕊 <$> v.persistent) <*> (to𝕊 <$> v.transient))
+   -- vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
-   vs𝕊 = zipWith setSels vs_inert vs_selected
+   setSels :: Vertex × Selection (Val 𝔹) -> String × Val (SelState 𝔹)
+   setSels (Vertex α × v) = α × (map (\p t -> Reactive { persistent: p, transient: t }) v.persistent <*> v.transient)
 
-selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Dict (Val (SelState 𝕊))
+   vs𝔹 = setSels <$> vs_selected
+
+selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Dict (Val (SelState 𝔹))
 selectionResult fig@{ spec, dir } =
    case dir of
       LinkedOutputs ->
@@ -122,45 +122,38 @@ selectionResult fig@{ spec, dir } =
          let
             vs = { persistent: runQuery query g.persistent, transient: runQuery query g.transient }
          in
-            selectIntermediates vs inerts g :: Array (String × Val (SelState 𝕊))
+            selectIntermediates vs inerts g :: Array (String × Val (SelState 𝔹))
 
 -- reportI = spyWhen tracing.intermediates "Intermediate values: " (map (prettyP <<< erase <<< snd))
 
-drawIntermediates :: HTMLId -> Fig -> Dict (Val (SelState 𝕊)) -> Redraw -> Effect Unit
+drawIntermediates :: HTMLId -> Fig -> Dict (Val (SelState 𝔹)) -> Redraw -> Effect Unit
 drawIntermediates divId fig intermediates redraw = do
    root <- rootSelect ("#" <> divId <> "-" <> str.intermediate)
    for_ unused \α -> do
-      svg <- select ("#" <> divId <> "-" <> str.intermediate <> "-" <> α) root
-      remove svg
-   log $ "Intermediate keys: " <> show (keys intermediates)
+      child <- select ("#" <> divId <> "-" <> str.intermediate <> "-" <> α) root
+      remove child
 
    sequence_ $ flip mapWithKey intermediates \α v -> do
-      drawView { divId: divId <> "-" <> str.intermediate, suffix: α, view: unsafePartial $ view α v Nothing } (selectIntermediate (Vertex α) (isSecondary' <$> v)) (setIntermediateView (Vertex α)) redraw
-   log $ "Stored intermediates: " <> show (keys fig.intermediate_values)
+      drawView { divId: divId <> "-" <> str.intermediate, suffix: α, view: unsafePartial $ view α (toSelState𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
    where
    unused :: Array String
    unused = fromFoldable (keys fig.intermediate_values \\ keys intermediates)
 
-   isSecondary' :: SelState 𝕊 -> SelState 𝔹
-   isSecondary' Inert = Inert
-   isSecondary' rec = Reactive { persistent: isSecondary rec, transient: isSecondary rec }
+   toSelState𝕊 :: Partial => SelState 𝔹 -> SelState 𝕊
+   toSelState𝕊 = (\(Reactive { persistent, transient }) -> Reactive { persistent: to𝕊 persistent, transient: to𝕊 transient })
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
    sequence_ $ flip mapWithKey in_views \x view -> do
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
-   drawIntermediates divId fig intermediate_views redraw
+   drawIntermediates divId fig intermediate_values redraw
    where
-   out_view × in_views × intermediate_views =
+   out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
          (flip (view str.output) fig.out_view *** ((\(Env γ) -> (mapWithKey view γ) <*> fig.in_views)) *** identity)
 
-   isSecondary' :: SelState 𝕊 -> SelState 𝔹
-   isSecondary' Inert = Inert
-   isSecondary' rec = Reactive { persistent: isSecondary rec, transient: isSecondary rec }
-
-   redraw = (_ $ fig { intermediate_values = fig.intermediate_values ∪ (map isSecondary' <$> intermediate_views) }) >>> drawFig divId
+   redraw = (_ $ fig { intermediate_values = fig.intermediate_values ∪ intermediate_values }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =

@@ -48,7 +48,7 @@ function loadSubHeader () {
          activateCurrentLink(header)
          const divElements = header.children
          const grid = document.getElementById('grid')
-         for (let i = Math.min(3, divElements.length - 1); i >= 0; --i) {
+         for (let i = Math.min(4, divElements.length - 1); i >= 0; --i) {
             grid.insertBefore(divElements[i], grid.firstChild)
          }
       })
@@ -70,3 +70,21 @@ function toggleDataPane(gridId) {
       dataPaneButton.classList.add('fa-eye-slash')
    }
 }
+
+
+function toggleIntermediateDataPane(gridId) {
+   const grid = document.getElementById(gridId)
+   const hidden = grid.classList.contains('intermediate-data-pane-hidden')
+   const dataPaneButton = document.querySelector('.intermediate-data-pane-button')
+
+   if (hidden) {
+      grid.classList.remove('intermediate-data-pane-hidden')
+      dataPaneButton.classList.remove('fa-eye-slash')
+      dataPaneButton.classList.add('fa-eye')
+   } else {
+      grid.classList.add('intermediate-data-pane-hidden')
+      dataPaneButton.classList.remove('fa-eye')
+      dataPaneButton.classList.add('fa-eye-slash')
+   }
+}
+

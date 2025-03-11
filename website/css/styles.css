@@ -212,7 +212,7 @@ nav ul li.active-page a {
    display: grid;
    background-color: #f0f0f0;
    width: 100%;
-   grid-template-columns: 35% 1fr;
+   grid-template-columns: 30% 1fr;
    padding-top: 7px;
    padding-bottom: 7px;
 }
@@ -221,7 +221,7 @@ nav ul li.active-page a {
    display: grid;
    background-color: #f0f0f0;
    width: 100%;
-   grid-template-columns: 35% 1fr;
+   grid-template-columns: 30% 1fr;
    margin-top: 10px;
 }
 
@@ -232,12 +232,20 @@ nav ul li.active-page a {
 
 .grid-container {
    display: grid;
-   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
+   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width) var(--toggle-button-width) auto;
    justify-content: center;
 }
 
 .grid-container.data-pane-hidden {
-   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
+   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width) var(--toggle-button-width) auto;
+}
+
+.grid-container.intermediate-data-pane-hidden {
+   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width) var(--toggle-button-width) 0;
+}
+
+.grid-container.intermediate-data-pane-hidden.data-pane-hidden {
+   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width) var(--toggle-button-width) 0;
 }
 
 .grid-container.double-size {
@@ -279,6 +287,10 @@ nav ul li.active-page a {
    font-size: 10pt;
 }
 
+.intermediate-data-pane-button {
+   font-size: 10pt;
+}
+
 .toggle-button {
    color: #CCCCCC;
    user-select: none;
@@ -293,6 +305,15 @@ nav ul li.active-page a {
    border-right: 1px dotted #CCCCCC;
 }
 
+.intermediate-data-pane {
+   border-left: 1px dotted #CCCCCC;
+}
+
+.intermediate-data-pane-hidden .intermediate-data-pane {
+   visibility: hidden;
+}
+
+
 .data-pane-hidden .data-pane {
    visibility: hidden;
 }
@@ -301,7 +322,11 @@ nav ul li.active-page a {
    display: none;
 }
 
-.data-pane * {
+.intermediate-data-pane-hidden .intermediate-data-pane * {
+   display: none;
+}
+
+.data-pane .intermediate-data-pane * {
    font-size: 10pt;
 }
 
