@@ -80,8 +80,8 @@ setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
 
-selectIntermediates :: forall g. Graph g => Selection (Set (DVertex' (Val Vertex))) -> Set DVertex -> Selection g -> Array (String × Val (SelState 𝔹))
-selectIntermediates vs inerts g =
+selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Selection (Set (DVertex' (Val Vertex))) -> Array (String × Val (SelState 𝔹))
+selectIntermediates inerts g vs =
    vs𝕊
    where
    verts = { persistent: vertices g.persistent, transient: vertices g.transient }
@@ -93,7 +93,7 @@ selectIntermediates vs inerts g =
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelState 𝔹)
-   setSels inert  (Vertex α × v) = α × (selState <$> inert <*> v.persistent <*> v.transient)
+   setSels inert (Vertex α × v) = α × (selState <$> inert <*> v.persistent <*> v.transient)
 
    vs𝕊 = zipWith setSels vs_inert vs_selected
 
@@ -113,12 +113,9 @@ selectionResult fig@{ spec, dir } =
          in
             ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × intermediates g inertFwd
    where
+   intermediates :: Selection GraphImpl -> Set DVertex -> Dict (Val (SelState 𝔹))
    intermediates g inerts = Dict $ O.fromFoldable $ concat $ for spec.queries
-      \query ->
-         let
-            vs = { persistent: runQuery query g.persistent, transient: runQuery query g.transient }
-         in
-            selectIntermediates vs inerts g :: Array (String × Val (SelState 𝔹))
+      \query -> selectIntermediates inerts g { persistent: runQuery query g.persistent, transient: runQuery query g.transient }
 
 drawIntermediates :: HTMLId -> Fig -> Dict (Val (SelState 𝔹)) -> Redraw -> Effect Unit
 drawIntermediates divId fig intermediates redraw = do
