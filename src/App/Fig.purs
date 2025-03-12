@@ -105,13 +105,13 @@ selectionResult fig@{ spec, dir } =
             v1 × γ1 × g × inertBwd = fig.linkedOutputs fig.v
             report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
          in
-            (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × (intermediates g inertBwd)
+            (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × intermediates g inertBwd
       LinkedInputs ->
          let
             γ1 × v1 × g × inertFwd = fig.linkedInputs fig.γ
             report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
          in
-            ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × (intermediates g inertFwd)
+            ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × intermediates g inertFwd
    where
    intermediates g inerts = Dict $ O.fromFoldable $ concat $ for spec.queries
       \query ->
@@ -194,7 +194,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
 
       γ_restricted = restrict inputs_set γα
 
-      in_roots = Set.fromFoldable $ (\(Val (Vertex α) _) -> α) <$> (unwrap γ_restricted)
+      in_roots = Set.fromFoldable $ (\(Val (Vertex α) _) -> α) <$> unwrap γ_restricted
 
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
@@ -205,7 +205,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       gcFwd :: Env 𝔹 -> Val 𝔹 × GraphImpl
       gcFwd γ = graphgc_op.bwd (deMorgan focusFwd γ)
 
-      in_views = const Nothing <$> (unwrap γ_restricted)
+      in_views = const Nothing <$> unwrap γ_restricted
 
       γ0 = botOf γα :: Env 𝔹
       v0 = botOf outα :: Val 𝔹
