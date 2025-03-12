@@ -10,7 +10,7 @@ import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, Redraw, drawVie
 import App.View.Util.D3 (remove, rootSelect, select)
 import Bind (Var)
 import Control.Apply (lift2)
-import Data.Array (concat, fromFoldable)
+import Data.Array (concat, fromFoldable, zip)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
@@ -85,8 +85,8 @@ setIntermediateView (Vertex α) δvw fig = fig
    new_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
 
 selectIntermediates :: forall g. Graph g => Selection (Set (DVertex' (Val Vertex))) -> Set DVertex -> Selection g -> Array (String × Val (SelState 𝔹))
-selectIntermediates vs _inerts g =
-   vs𝔹
+selectIntermediates vs inerts g =
+   vs𝕊
    where
    verts = { persistent: vertices g.persistent, transient: vertices g.transient }
 
@@ -94,12 +94,12 @@ selectIntermediates vs _inerts g =
 
    vs_selected = (\v@(Val α _) -> α × { persistent: select𝔹s v verts.persistent, transient: select𝔹s v verts.transient }) <$> vs' :: Array (Vertex × Selection (Val 𝔹))
 
-   -- vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
+   vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
-   setSels :: Vertex × Selection (Val 𝔹) -> String × Val (SelState 𝔹)
-   setSels (Vertex α × v) = α × (map (\p t -> Reactive { persistent: p, transient: t }) v.persistent <*> v.transient)
+   setSels :: Val 𝔹 × Vertex × Selection (Val 𝔹) -> String × Val (SelState 𝔹)
+   setSels (inert × Vertex α × v) = α × (selState <$> inert <*> v.persistent <*> v.transient)
 
-   vs𝔹 = setSels <$> vs_selected
+   vs𝕊 = setSels <$> zip vs_inert vs_selected
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Dict (Val (SelState 𝔹))
 selectionResult fig@{ spec, dir } =
@@ -142,8 +142,9 @@ drawIntermediates divId fig intermediates redraw = do
 
    intermediates' = Dict $ (unwrap intermediates) # filterKeys (\α -> not $ α ∈ fig.in_roots)
 
-   toSelState𝕊 :: Partial => SelState 𝔹 -> SelState 𝕊
-   toSelState𝕊 = (\(Reactive { persistent, transient }) -> Reactive { persistent: to𝕊 persistent, transient: to𝕊 transient })
+   toSelState𝕊 :: SelState 𝔹 -> SelState 𝕊
+   toSelState𝕊 (Reactive { persistent, transient }) = Reactive { persistent: to𝕊 persistent, transient: to𝕊 transient }
+   toSelState𝕊 Inert = Inert
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
