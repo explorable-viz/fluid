@@ -62,31 +62,11 @@ function toggleDataPane(gridId) {
 
    if (hidden) {
       grid.classList.remove('data-pane-hidden')
-      grid.classList.remove('intermediate-data-pane-hidden')
       dataPaneButton.classList.remove('fa-eye-slash')
       dataPaneButton.classList.add('fa-eye')
    } else {
       grid.classList.add('data-pane-hidden')
-      grid.classList.add('intermediate-data-pane-hidden')
       dataPaneButton.classList.remove('fa-eye')
       dataPaneButton.classList.add('fa-eye-slash')
    }
 }
-
-
-function toggleIntermediateDataPane(gridId) {
-   const grid = document.getElementById(gridId)
-   const hidden = grid.classList.contains('intermediate-data-pane-hidden')
-   const dataPaneButton = document.querySelector('.intermediate-data-pane-button')
-
-   if (hidden) {
-      grid.classList.remove('intermediate-data-pane-hidden')
-      dataPaneButton.classList.remove('fa-eye-slash')
-      dataPaneButton.classList.add('fa-eye')
-   } else {
-      grid.classList.add('intermediate-data-pane-hidden')
-      dataPaneButton.classList.remove('fa-eye')
-      dataPaneButton.classList.add('fa-eye-slash')
-   }
-}
-

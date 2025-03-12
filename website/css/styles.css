@@ -240,14 +240,6 @@ nav ul li.active-page a {
    grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
 }
 
-.grid-container.intermediate-data-pane-hidden {
-   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
-}
-
-.grid-container.intermediate-data-pane-hidden.data-pane-hidden {
-   grid-template-columns: 0 var(--toggle-button-width) var(--text-pane-width);
-}
-
 .grid-container.double-size {
    max-width: 66.7vw; /* undo effect of transform: scale(1.5) for layout purposes */
 }
@@ -287,10 +279,6 @@ nav ul li.active-page a {
    font-size: 10pt;
 }
 
-.intermediate-data-pane-button {
-   font-size: 10pt;
-}
-
 .toggle-button {
    color: #CCCCCC;
    user-select: none;
@@ -304,17 +292,13 @@ nav ul li.active-page a {
 .data-pane {
    display: grid;
    grid-template-columns: auto auto;
-   border-right: 1px dotted #CCCCCC;
    vertical-align: top;
 }
-#fig-input {
+
+.data-pane-column {
    border-right: 1px dotted #CCCCCC;
-}
 
-.intermediate-data-pane-hidden .intermediate-data-pane {
-   visibility: hidden;
 }
-
 
 .data-pane-hidden .data-pane {
    visibility: hidden;
@@ -324,11 +308,8 @@ nav ul li.active-page a {
    display: none;
 }
 
-.intermediate-data-pane-hidden .intermediate-data-pane * {
-   display: none;
-}
 
-.data-pane .intermediate-data-pane * {
+.data-pane * {
    font-size: 10pt;
 }
 

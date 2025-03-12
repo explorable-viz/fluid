@@ -138,7 +138,8 @@ drawIntermediates divId fig intermediates redraw = do
    where
 
    unused :: Array String
-   unused = fromFoldable ((keys fig.intermediate_values \\ keys intermediates))
+   unused = fromFoldable (keys fig.intermediate_values \\ keys intermediates)
+
    intermediates' = Dict $ (unwrap intermediates) # filterKeys (\α -> not $ α ∈ fig.in_roots)
 
    toSelState𝕊 :: Partial => SelState 𝔹 -> SelState 𝕊
@@ -193,8 +194,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       EnvExpr γ e' = erase eval.inα
       { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e'))
 
-      inαs :: Set String
-      inαs = Set.fromFoldable $ (\x -> case definitely' $ lookup x (unwrap γα) of Val (Vertex α) _ -> α) <$> inputs
+      in_roots = Set.fromFoldable $ (\x -> case definitely' $ lookup x (unwrap γα) of Val (Vertex α) _ -> α) <$> inputs
 
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
@@ -211,21 +211,21 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       v0 = botOf outα :: Val 𝔹
 
       inertBwd = vertices g0 \\ (vertices $ snd (gcBwd (topOf outα))) :: Set DVertex
-      inertFwd = (vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0)
+      inertFwd = vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0
 
       γInert = selState <$> select𝔹s γα inertBwd :: Env (𝔹 -> 𝔹 -> SelState 𝔹)
       vInert = selState <$> select𝔹s outα inertFwd :: Val (𝔹 -> 𝔹 -> SelState 𝔹)
 
-      v' = lift γInert gcBwd
-      γ' = lift vInert gcFwd
+      vf = lift γInert gcBwd
+      γf = lift vInert gcFwd
 
       linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Selection GraphImpl × Set DVertex
-      linkedInputs = γ' >>> \(v × g × g') -> (fst $ v' v) × v × { persistent: g, transient: g' } × inertFwd
+      linkedInputs = γf >>> \(v × g × g') -> (fst $ vf v) × v × { persistent: g, transient: g' } × inertFwd
 
       linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × Selection GraphImpl × Set DVertex
-      linkedOutputs = v' >>> \(γ × g × g') -> (fst $ γ' γ) × γ × { persistent: g, transient: g' } × inertBwd
+      linkedOutputs = vf >>> \(γ × g × g') -> (fst $ γf γ) × γ × { persistent: g, transient: g' } × inertBwd
 
-   pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing, intermediate_views: Dict empty, intermediate_values: Dict empty, in_roots: inαs }
+   pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing, intermediate_views: Dict empty, intermediate_values: Dict empty, in_roots }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
