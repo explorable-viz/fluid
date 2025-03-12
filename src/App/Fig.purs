@@ -10,7 +10,7 @@ import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, Redraw, drawVie
 import App.View.Util.D3 (remove, rootSelect, select)
 import Bind (Var)
 import Control.Apply (lift2)
-import Data.Array (concat, fromFoldable, zip)
+import Data.Array (concat, fromFoldable, zipWith)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
@@ -72,17 +72,13 @@ setInputView x δvw fig = fig
 
 selectIntermediate :: Vertex -> Setter Fig (Val (SelState 𝔹))
 selectIntermediate (Vertex α) δv fig = fig
-   { intermediate_values = new_values
+   { intermediate_values = insert α (definitely' $ lookup α fig.intermediate_values <#> δv) fig.intermediate_values
    }
-   where
-   new_values = insert α (definitely' $ lookup α fig.intermediate_values <#> δv) fig.intermediate_values
 
 setIntermediateView :: Vertex -> Setter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
-   { intermediate_views = new_views
+   { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
-   where
-   new_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
 
 selectIntermediates :: forall g. Graph g => Selection (Set (DVertex' (Val Vertex))) -> Set DVertex -> Selection g -> Array (String × Val (SelState 𝔹))
 selectIntermediates vs inerts g =
@@ -96,10 +92,10 @@ selectIntermediates vs inerts g =
 
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
-   setSels :: Val 𝔹 × Vertex × Selection (Val 𝔹) -> String × Val (SelState 𝔹)
-   setSels (inert × Vertex α × v) = α × (selState <$> inert <*> v.persistent <*> v.transient)
+   setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelState 𝔹)
+   setSels inert  (Vertex α × v) = α × (selState <$> inert <*> v.persistent <*> v.transient)
 
-   vs𝕊 = setSels <$> zip vs_inert vs_selected
+   vs𝕊 = zipWith setSels vs_inert vs_selected
 
 selectionResult :: Fig -> Val (SelState 𝕊) × Env (SelState 𝕊) × Dict (Val (SelState 𝔹))
 selectionResult fig@{ spec, dir } =
