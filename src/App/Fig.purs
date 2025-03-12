@@ -7,7 +7,7 @@ import App.Util (SelState, Selection, 𝕊, as𝕊, getPersistent, getTransient,
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, Redraw, drawView)
-import App.View.Util.D3 (remove, rootSelect, select)
+import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Apply (lift2)
 import Data.Array (concat, fromFoldable, zipWith)
@@ -122,10 +122,7 @@ selectionResult fig@{ spec, dir } =
 
 drawIntermediates :: HTMLId -> Fig -> Dict (Val (SelState 𝔹)) -> Redraw -> Effect Unit
 drawIntermediates divId fig intermediates redraw = do
-   root <- rootSelect ("#" <> divId <> "-" <> str.intermediate)
-   for_ unused \α -> do
-      child <- select ("#" <> divId <> "-" <> str.intermediate <> "-" <> α) root
-      remove child
+   for_ unused \α -> rootSelect ("#" <> divId <> "-" <> str.intermediate <> "-" <> α) >>= remove
 
    sequence_ $ flip mapWithKey intermediates' \α v -> do
       drawView { divId: divId <> "-" <> str.intermediate, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
