@@ -31,7 +31,7 @@ import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, Setter, definitely', spyWhen, (×))
-import Util.Map (insert, keys, lookup, mapWithKey)
+import Util.Map (insert, keys, lookup, mapWithKey, restrict)
 import Util.Set ((∪), (\\), (∈))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
 
@@ -192,10 +192,13 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    { s, e, gconfig } <- prepConfig fluidSrcPaths file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
+      inputs_set = Set.fromFoldable inputs
       EnvExpr γ e' = erase eval.inα
-      { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ (Set.fromFoldable inputs) >>> unprojExpr (EnvExpr γ e'))
+      { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ inputs_set >>> unprojExpr (EnvExpr γ e'))
 
-      in_roots = Set.fromFoldable $ (\x -> case definitely' $ lookup x (unwrap γα) of Val (Vertex α) _ -> α) <$> inputs
+      γ_restricted = restrict inputs_set γα
+
+      in_roots = Set.fromFoldable $ (\(Val (Vertex α) _) -> α) <$> (unwrap γ_restricted)
 
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
@@ -206,7 +209,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       gcFwd :: Env 𝔹 -> Val 𝔹 × GraphImpl
       gcFwd γ = graphgc_op.bwd (deMorgan focusFwd γ)
 
-      in_views = mapWithKey (\_ _ -> Nothing) (unwrap γ)
+      in_views = const Nothing <$> (unwrap γ_restricted)
 
       γ0 = botOf γα :: Env 𝔹
       v0 = botOf outα :: Val 𝔹
