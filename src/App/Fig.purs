@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), Selection, 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
+import App.Util (SelState, Selection, 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, View, Redraw, drawView)
@@ -120,8 +120,6 @@ selectionResult fig@{ spec, dir } =
          in
             selectIntermediates vs inerts g :: Array (String × Val (SelState 𝔹))
 
--- reportI = spyWhen tracing.intermediates "Intermediate values: " (map (prettyP <<< erase <<< snd))
-
 drawIntermediates :: HTMLId -> Fig -> Dict (Val (SelState 𝔹)) -> Redraw -> Effect Unit
 drawIntermediates divId fig intermediates redraw = do
    root <- rootSelect ("#" <> divId <> "-" <> str.intermediate)
@@ -130,17 +128,13 @@ drawIntermediates divId fig intermediates redraw = do
       remove child
 
    sequence_ $ flip mapWithKey intermediates' \α v -> do
-      drawView { divId: divId <> "-" <> str.intermediate, suffix: α, view: unsafePartial $ view α (toSelState𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
+      drawView { divId: divId <> "-" <> str.intermediate, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
    where
 
    unused :: Array String
    unused = fromFoldable (keys fig.intermediate_values \\ keys intermediates)
 
-   intermediates' = Dict $ (unwrap intermediates) # filterKeys (\α -> not $ α ∈ fig.in_roots)
-
-   toSelState𝕊 :: SelState 𝔹 -> SelState 𝕊
-   toSelState𝕊 (Reactive { persistent, transient }) = Reactive { persistent: to𝕊 persistent, transient: to𝕊 transient }
-   toSelState𝕊 Inert = Inert
+   intermediates' = Dict $ unwrap intermediates # filterKeys (\α -> not (α ∈ fig.in_roots))
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
