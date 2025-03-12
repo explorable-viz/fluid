@@ -9,7 +9,7 @@ import Data.Bifunctor (bimap)
 import Data.Exists (mkExists, runExists)
 import Data.List (List(..), (:), length, range, zip)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap, wrap)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (fromFoldable, toUnfoldable) as Set
 import Data.Set (subset)
@@ -52,7 +52,7 @@ match (Val α (V.Dictionary (V.DictRep xvs))) (ElimDict xs κ) = do
    let xs' = xs # Set.toUnfoldable
    let xvs' = unwrap xvs
    γ × κ' × α' × ws <- matchMany (map (\k -> snd (get k xvs')) xs') κ
-   pure (γ × κ' × (α ∧ α') × MatchDict (wrap $ D.fromFoldable (zip xs' ws)))
+   pure (γ × κ' × (α ∧ α') × MatchDict (D.fromFoldable (zip xs' ws)))
 match v (ElimDict xs _) = throw $ patternMismatch (prettyP v) (show xs)
 
 matchMany :: forall a m. MonadError Error m => Ann a => List (Val a) -> Cont a -> m (Env a × Cont a × a × List Match)
@@ -119,7 +119,7 @@ eval (EnvExpr γ (Dictionary α ees)) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (\e -> eval (EnvExpr γ e) α')) ees <#> (P.unzip >>> (unzip # both))
    let
       ss × αs = vs <#> unpack string # unzip
-      d = wrap $ D.fromFoldable $ zip ss (zip αs us)
+      d = D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (V.DictRep d))
 eval (EnvExpr γ (Constr α c es)) α' = do
    checkArity c (length es)

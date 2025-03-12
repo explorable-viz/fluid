@@ -37,7 +37,7 @@ extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
 extern (ForeignOp (id × φ)) = id × Val bot (Fun ((Foreign (ForeignOp (id × φ))) Nil))
 
 primitives :: Raw Env
-primitives = wrap $ wrap $ D.fromFoldable
+primitives = wrap $ D.fromFoldable
    [ ":" × Val bot (Fun (PartialConstr cCons Nil))
    , unary "ceiling" { i: number, o: int, fwd: ceil }
    , extern debugLog

@@ -18,7 +18,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, for_, sequence_)
 import Data.Tuple (fst, snd)
-import Dict (Dict(..), empty, filterKeys)
+import Dict (Dict(..))
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import Foreign.Object (fromFoldable) as O
@@ -31,8 +31,8 @@ import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, Setter, definitely', spyWhen, (×))
-import Util.Map (insert, keys, lookup, mapWithKey, restrict)
-import Util.Set ((∪), (\\), (∈))
+import Util.Map (insert, keys, lookup, mapWithKey, restrict, filterKeys)
+import Util.Set ((∪), (\\), (∈), empty)
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
 
 str
@@ -220,8 +220,8 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , dir: LinkedOutputs
       , in_views
       , out_view: Nothing
-      , intermediate_views: Dict empty
-      , intermediate_values: Dict empty
+      , intermediate_views: empty
+      , intermediate_values: empty
       , in_roots
       }
 
