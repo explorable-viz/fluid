@@ -266,7 +266,7 @@ nav ul li.active-page a {
 .flex-right-align {
    display: flex;
    flex-direction: column;
-   align-items: flex-end;
+   align-items: flex-start;
 }
 
 .flex-bottom-align {

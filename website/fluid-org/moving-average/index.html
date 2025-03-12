@@ -34,20 +34,22 @@
    </div>
 
    <div id="fig-data-pane" class="flex-right-align data-pane">
-      <p>How are the <code>year</code> values used? (Try to avoid moving your mouse over
-      <code>Agriculture</code> &mdash; these nodes currently participate in a lot of dependency edges and so
-      the system is <span class="highlight">currently quite laggy</span> if you do this!) You'll see that
-      every year is used in both the original curve and its moving average.
-      
-      <div id="fig-input"></div>
+      <div class="data-pane-column">
+         <p>How are the <code>year</code> values used? (Try to avoid moving your mouse over
+         <code>Agriculture</code> &mdash; these nodes currently participate in a lot of dependency edges and so
+         the system is <span class="highlight">currently quite laggy</span> if you do this!) You'll see that
+         every year is used in both the original curve and its moving average.
 
-      <p>Now try <code>emissions</code>. The behaviour here is different: each emissions value contributes to
-      <span class="highlight">one</span> point in the original curve but <span class="highlight">three</span>
-      in the moving average.</p>
+         <div id="fig-input"></div>
 
-      <p>As with the other examples, you can also interact with the output. This confirms that each point in
-      the moving average consumes 3 emissions inputs and 1 year, as one might expect. Interacting with the
-      points in the original curve is a bit laggy at the moment.</p>
+         <p>Now try <code>emissions</code>. The behaviour here is different: each emissions value contributes to
+         <span class="highlight">one</span> point in the original curve but <span class="highlight">three</span>
+         in the moving average.</p>
+
+         <p>As with the other examples, you can also interact with the output. This confirms that each point in
+         the moving average consumes 3 emissions inputs and 1 year, as one might expect. Interacting with the
+         points in the original curve is a bit laggy at the moment.</p>
+      </div>
    </div>
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
