@@ -117,30 +117,28 @@ selectionResult fig@{ spec, dir } =
    intermediates g inerts = Dict $ O.fromFoldable $ concat $ for spec.queries
       \query -> selectIntermediates inerts g { persistent: runQuery query g.persistent, transient: runQuery query g.transient }
 
-drawIntermediates :: HTMLId -> Fig -> Dict (Val (SelState 𝔹)) -> Redraw -> Effect Unit
-drawIntermediates divId fig intermediates redraw = do
+drawIntermediates :: HTMLId -> Dict (Val (SelState 𝔹)) -> Array String -> Redraw -> Effect Unit
+drawIntermediates divId intermediates unused redraw = do
    for_ unused \α -> rootSelect ("#" <> divId <> "-" <> str.intermediate <> "-" <> α) >>= remove
 
    sequence_ $ flip mapWithKey intermediates \α v -> do
       drawView { divId: divId <> "-" <> str.intermediate, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
-   where
-
-   unused :: Array String
-   unused = fromFoldable (keys fig.intermediate_values \\ keys intermediates)
-
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
    sequence_ $ flip mapWithKey in_views \x view -> do
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
-   drawIntermediates divId fig intermediate_values redraw
+   drawIntermediates divId intermediate_values unused redraw
    where
    out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
-         (flip (view str.output) fig.out_view *** ((\(Env γ) -> (mapWithKey view γ) <*> fig.in_views)) *** (\d -> Dict $ unwrap d # filterKeys (\α -> not (α ∈ fig.in_roots))))
+         (flip (view str.output) fig.out_view *** ((\(Env γ) -> (mapWithKey view γ) <*> fig.in_views)) *** (\(Dict d) -> Dict (d # filterKeys (\α -> not (α ∈ fig.in_roots)))))
 
-   redraw = (_ $ fig { intermediate_values = fig.intermediate_values ∪ intermediate_values }) >>> drawFig divId
+   unused :: Array String
+   unused = fromFoldable (keys fig.intermediate_values \\ keys intermediate_values)
+
+   redraw = (_ $ fig { intermediate_values = intermediate_values }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
@@ -212,18 +210,19 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × Selection GraphImpl × Set DVertex
       linkedOutputs = vf >>> \(γ × g × g') -> (fst $ γf γ) × γ × { persistent: g, transient: g' } × inertBwd
 
-   pure { spec
-        , s
-        , γ: γInert <*> γ0 <*> γ0
-        , v: vInert <*> v0 <*> v0
-        , linkedOutputs
-        , linkedInputs
-        , dir: LinkedOutputs
-        , in_views
-        , out_view: Nothing
-        , intermediate_views: Dict empty
-        , intermediate_values: Dict empty
-        , in_roots
+   pure
+      { spec
+      , s
+      , γ: γInert <*> γ0 <*> γ0
+      , v: vInert <*> v0 <*> v0
+      , linkedOutputs
+      , linkedInputs
+      , dir: LinkedOutputs
+      , in_views
+      , out_view: Nothing
+      , intermediate_views: Dict empty
+      , intermediate_values: Dict empty
+      , in_roots
       }
 
 codeMirrorDiv :: Endo String
