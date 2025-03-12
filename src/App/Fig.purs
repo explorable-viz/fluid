@@ -213,7 +213,19 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × Selection GraphImpl × Set DVertex
       linkedOutputs = vf >>> \(γ × g × g') -> (fst $ γf γ) × γ × { persistent: g, transient: g' } × inertBwd
 
-   pure { spec, s, γ: γInert <*> γ0 <*> γ0, v: vInert <*> v0 <*> v0, linkedOutputs, linkedInputs, dir: LinkedOutputs, in_views, out_view: Nothing, intermediate_views: Dict empty, intermediate_values: Dict empty, in_roots }
+   pure { spec
+        , s
+        , γ: γInert <*> γ0 <*> γ0
+        , v: vInert <*> v0 <*> v0
+        , linkedOutputs
+        , linkedInputs
+        , dir: LinkedOutputs
+        , in_views
+        , out_view: Nothing
+        , intermediate_views: Dict empty
+        , intermediate_values: Dict empty
+        , in_roots
+      }
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
