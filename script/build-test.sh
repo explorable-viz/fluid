@@ -2,6 +2,6 @@
 set -xe
 
 yarn build # bundles FluidOrg
-yarn bundle-website -w Esop2025Artifact
-yarn bundle-website -w Misc
+yarn bundle-website -w esop2025-artifact
+yarn bundle-website -w misc
 yarn test-all
