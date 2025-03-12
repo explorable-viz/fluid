@@ -121,14 +121,13 @@ drawIntermediates :: HTMLId -> Fig -> Dict (Val (SelState 𝔹)) -> Redraw -> Ef
 drawIntermediates divId fig intermediates redraw = do
    for_ unused \α -> rootSelect ("#" <> divId <> "-" <> str.intermediate <> "-" <> α) >>= remove
 
-   sequence_ $ flip mapWithKey intermediates' \α v -> do
+   sequence_ $ flip mapWithKey intermediates \α v -> do
       drawView { divId: divId <> "-" <> str.intermediate, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
    where
 
    unused :: Array String
    unused = fromFoldable (keys fig.intermediate_values \\ keys intermediates)
 
-   intermediates' = Dict $ unwrap intermediates # filterKeys (\α -> not (α ∈ fig.in_roots))
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
@@ -139,7 +138,7 @@ drawFig divId fig = do
    where
    out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
-         (flip (view str.output) fig.out_view *** ((\(Env γ) -> (mapWithKey view γ) <*> fig.in_views)) *** identity)
+         (flip (view str.output) fig.out_view *** ((\(Env γ) -> (mapWithKey view γ) <*> fig.in_views)) *** (\d -> Dict $ unwrap d # filterKeys (\α -> not (α ∈ fig.in_roots))))
 
    redraw = (_ $ fig { intermediate_values = fig.intermediate_values ∪ intermediate_values }) >>> drawFig divId
 
