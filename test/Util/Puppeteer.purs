@@ -143,8 +143,8 @@ waitForFigure :: T.Page -> String -> Aff Unit
 waitForFigure page id =
    waitFor (T.Selector ("svg#" <> id)) page
 
-clickToggle :: T.Page -> String -> String -> Aff Unit
-clickToggle page figId id = do
-   let toggle = T.Selector ("div#" <> figId <> id <> " + div .toggle-button")
+clickToggle :: T.Page -> String -> Aff Unit
+clickToggle page figId = do
+   let toggle = T.Selector ("div#" <> figId <> "-data-pane" <> " + div .toggle-button")
    waitFor toggle page
    click toggle page
