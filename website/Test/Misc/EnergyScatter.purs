@@ -18,7 +18,6 @@ testFig :: T.Page -> Aff Unit
 testFig page = do
    waitForFigure page (fig <> "-output")
    clickToggle page fig
-   waitFor (T.Selector ("div#" <> fig <> "-data-pane")) page
    clickScatterPlotPoint
 
    where

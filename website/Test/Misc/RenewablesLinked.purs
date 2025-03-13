@@ -22,7 +22,6 @@ testFig page = do
    checkPointRadius
 
    clickToggle page fig
-   waitFor (T.Selector ("div#" <> fig <> "-data-pane")) page
    clickBarChart
    where
    fig = "fig"

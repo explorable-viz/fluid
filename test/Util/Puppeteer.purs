@@ -148,3 +148,4 @@ clickToggle page figId = do
    let toggle = T.Selector ("div#" <> figId <> "-data-pane" <> " + div .toggle-button")
    waitFor toggle page
    click toggle page
+   waitFor (T.Selector ("div#" <> figId <> "-data-pane")) page
