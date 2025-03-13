@@ -18,10 +18,10 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, for_, sequence_)
 import Data.Tuple (fst, snd)
-import Dict (Dict(..))
+import Dict (Dict)
+import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
-import Foreign.Object (fromFoldable) as O
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex, DVertex', Vertex(..), runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -114,7 +114,7 @@ selectionResult fig@{ spec, dir } =
             ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × intermediates g inertFwd
    where
    intermediates :: Selection GraphImpl -> Set DVertex -> Dict (Val (SelState 𝔹))
-   intermediates g inerts = Dict $ O.fromFoldable $ concat $ for spec.queries
+   intermediates g inerts = D.fromFoldable $ concat $ for spec.queries
       \query -> selectIntermediates inerts g { persistent: runQuery query g.persistent, transient: runQuery query g.transient }
 
 drawIntermediates :: HTMLId -> Dict (Val (SelState 𝔹)) -> Array String -> Redraw -> Effect Unit
@@ -133,7 +133,7 @@ drawFig divId fig = do
    where
    out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
-         (flip (view str.output) fig.out_view *** ((\(Env γ) -> (mapWithKey view γ) <*> fig.in_views)) *** (\(Dict d) -> Dict (d # filterKeys (\α -> not (α ∈ fig.in_roots)))))
+         (flip (view str.output) fig.out_view *** ((\(Env γ) -> (mapWithKey view γ) <*> fig.in_views)) *** (\d -> d # filterKeys \α -> not (α ∈ fig.in_roots)))
 
    unused :: Array String
    unused = fromFoldable (keys fig.intermediate_values \\ keys intermediate_values)
