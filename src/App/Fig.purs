@@ -137,7 +137,7 @@ drawFig divId fig = do
    where
    out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
-         (flip (view str.output) fig.out_view *** ((\(Env γ) -> (mapWithKey view γ) <*> fig.in_views)) *** (\d -> d # filterKeys \α -> not (α ∈ fig.in_roots)))
+         (flip (view str.output) fig.out_view *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) *** (\d -> d # filterKeys \α -> not (α ∈ fig.in_roots)))
 
    unused :: Array String
    unused = fromFoldable (keys fig.intermediate_values \\ keys intermediate_values)
