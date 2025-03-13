@@ -46,6 +46,9 @@ str =
    , intermediate: "intermediate"
    }
 
+mkFullId :: String -> String -> String -> String
+mkFullId divId mid suffix = "#" <> divId <> "-" <> mid <> "-" <> suffix
+
 selectOutput :: Setter Fig (Val (SelState 𝔹))
 selectOutput δv fig@{ dir, γ, v } = fig
    { v = δv v
@@ -119,10 +122,11 @@ selectionResult fig@{ spec, dir } =
 
 drawIntermediates :: HTMLId -> Dict (Val (SelState 𝔹)) -> Array String -> Redraw -> Effect Unit
 drawIntermediates divId intermediates unused redraw = do
-   for_ unused \α -> rootSelect ("#" <> divId <> "-" <> str.intermediate <> "-" <> α) >>= remove
+   let prefix = divId <> "-" <> str.intermediate
+   for_ unused \α -> rootSelect ("#" <> prefix <> α) >>= remove
 
    sequence_ $ flip mapWithKey intermediates \α v -> do
-      drawView { divId: divId <> "-" <> str.intermediate, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
