@@ -137,7 +137,7 @@ drawFig divId fig = do
    where
    out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
-         (flip (view str.output) fig.out_view *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) *** (\d -> d # filterKeys \α -> not (α ∈ fig.in_roots)))
+         (flip (view str.output) fig.out_view *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) *** (\d -> d # filterKeys \α -> not (Vertex α ∈ fig.in_roots)))
 
    unused :: Array String
    unused = fromFoldable (keys fig.intermediate_values \\ keys intermediate_values)
@@ -183,7 +183,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
 
       γ_restricted = restrict inputs_set γα
 
-      in_roots = Set.fromFoldable $ (\(Val (Vertex α) _) -> α) <$> unwrap γ_restricted
+      in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> unwrap γ_restricted
 
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
