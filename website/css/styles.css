@@ -212,7 +212,7 @@ nav ul li.active-page a {
    display: grid;
    background-color: #f0f0f0;
    width: 100%;
-   grid-template-columns: 35% 1fr;
+   grid-template-columns: 30% 1fr;
    padding-top: 7px;
    padding-bottom: 7px;
 }
@@ -221,7 +221,7 @@ nav ul li.active-page a {
    display: grid;
    background-color: #f0f0f0;
    width: 100%;
-   grid-template-columns: 35% 1fr;
+   grid-template-columns: 30% 1fr;
    margin-top: 10px;
 }
 
@@ -266,7 +266,7 @@ nav ul li.active-page a {
 .flex-right-align {
    display: flex;
    flex-direction: column;
-   align-items: flex-end;
+   align-items: flex-start;
 }
 
 .flex-bottom-align {
@@ -290,6 +290,12 @@ nav ul li.active-page a {
 }
 
 .data-pane {
+   display: grid;
+   grid-template-columns: auto auto;
+   vertical-align: top;
+}
+
+.data-pane-column {
    border-right: 1px dotted #CCCCCC;
 }
 
@@ -300,6 +306,7 @@ nav ul li.active-page a {
 .data-pane-hidden .data-pane * {
    display: none;
 }
+
 
 .data-pane * {
    font-size: 10pt;

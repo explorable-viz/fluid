@@ -1,7 +1,8 @@
 -- Better name and more consistent interface to Foreign.Object, plus some additional functions.
 -- Newtype wrapper so we can fix Ord instance be consistent with Eq (i.e. to use isSubmap vs. toAscArray).
 module Dict
-   ( module Foreign.Object
+   ( fromFoldable
+   , toArrayWithKey
    , Dict(..)
    ) where
 
@@ -10,9 +11,9 @@ import Prelude hiding (apply)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultL, foldlWithIndex, foldrWithIndexDefault)
 import Data.Newtype (class Newtype)
 import Data.Traversable (class Foldable, class Traversable)
-import Foreign.Object (Object) as O
-import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, isSubmap, lookup, mapWithKey, member, singleton, toArrayWithKey, union, unionWith)
-import Util (class IsEmpty)
+import Foreign.Object (Object, fromFoldable, toArrayWithKey) as O
+import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, isSubmap, lookup, mapWithKey, union, unionWith)
+import Util (class IsEmpty, type (×))
 import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, toUnfoldable, values)
 import Util.Map as Map
 import Util.Set (class Set, difference, size, (∈))
@@ -69,3 +70,9 @@ instance MapF Dict String where
    intersectionWith f (Dict d) (Dict d') = Dict (intersectionWith f d d')
    difference (Dict d) (Dict d') = Dict (Map.difference d d')
    mapWithKey f (Dict d) = Dict (mapWithKey f d)
+
+fromFoldable :: forall f a. Foldable f => f (String × a) -> Dict a
+fromFoldable = Dict <<< O.fromFoldable
+
+toArrayWithKey :: forall a b. (String -> a -> b) -> Dict a -> Array b
+toArrayWithKey f (Dict d) = O.toArrayWithKey f d

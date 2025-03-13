@@ -21,9 +21,7 @@ testFig page = do
    checkXTicks
    checkPointRadius
 
-   let toggle = fig <> "-input"
-   clickToggle page toggle
-   waitFor (T.Selector ("div#" <> toggle)) page
+   clickToggle page fig
    clickBarChart
    where
    fig = "fig"

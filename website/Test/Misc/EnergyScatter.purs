@@ -17,9 +17,7 @@ main = fromAff $ sequence_ $ testURL "energy-scatter"
 testFig :: T.Page -> Aff Unit
 testFig page = do
    waitForFigure page (fig <> "-output")
-   let toggle = fig <> "-input"
-   clickToggle page toggle
-   waitFor (T.Selector ("div#" <> toggle)) page
+   clickToggle page fig
    clickScatterPlotPoint
 
    where

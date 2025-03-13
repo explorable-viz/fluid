@@ -11,7 +11,7 @@ import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap, wrap)
+import Data.Newtype (unwrap)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable) as Set
@@ -56,7 +56,7 @@ matchBwd γ κ _ (MatchVarAnon v)
 matchBwd ρ κ α (MatchConstr c ws) = Val α (V.Constr c vs) × ElimConstr (maplet c κ')
    where
    vs × κ' = matchManyBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchDict xws) = Val α (V.Dictionary (DictRep $ wrap $ zip xs vs' # D.fromFoldable)) ×
+matchBwd ρ κ α (MatchDict xws) = Val α (V.Dictionary (DictRep $ zip xs vs' # D.fromFoldable)) ×
    ElimDict (Set.fromFoldable $ keys xws) κ'
    where
    xs × ws = xws # toUnfoldable # unzip

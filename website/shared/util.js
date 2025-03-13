@@ -48,7 +48,7 @@ function loadSubHeader () {
          activateCurrentLink(header)
          const divElements = header.children
          const grid = document.getElementById('grid')
-         for (let i = Math.min(3, divElements.length - 1); i >= 0; --i) {
+         for (let i = Math.min(4, divElements.length - 1); i >= 0; --i) {
             grid.insertBefore(divElements[i], grid.firstChild)
          }
       })

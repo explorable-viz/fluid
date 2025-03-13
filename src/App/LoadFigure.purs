@@ -11,10 +11,13 @@ import App.View.Util (FigSpec)
 import Bind (Bind)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Effect (Effect)
+import Graph (DVertex'(..))
 import Module.Web (File(..), Folder(..), loadFile')
 import Util (error, (×))
+import Val (BaseVal(..), MatrixDim(..), MatrixRep(..), Val(..), asVal)
 
 type JsonSpec =
    { fluidSrcPath :: Array String
@@ -31,7 +34,11 @@ figSpecFromJson spec =
    , imports: spec.imports
    , file: File spec.file
    , inputs: spec.inputs
-   , queries: []
+   , queries:
+        [ asVal >=> case _ of
+             v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
+             _ -> Nothing
+        ]
    }
 
 loadFigure :: String -> Effect Unit

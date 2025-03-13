@@ -42,29 +42,32 @@
       fields of other records, which are greyed out &mdash; are called
       <span class="highlight">inert</span>. By hiding inert data, we can present the reader with a view
       containing only the used data (a useful default setting).</p>
+
    </div>
 
    <div class="flex-right-align data-pane">
-      <div id="fig-input"></div>
-      <p>Tracking how data flows through a computation allows us to do more than just hide away or grey out
-      unused data. Try some of the following:</p>
+      <div class="data-pane-column">
+         <div id="fig-input"></div>
+         <p>Tracking how data flows through a computation allows us to do more than just hide away or grey out
+         unused data. Try some of the following:</p>
 
-      <ul>
-         <li>Mouse over the <code>nuclearCap</code> data. Various points in the scatter plot will be
-         highlighted in blue as you move around: these are the outputs which consume the data element under
-         your mouse.</li>
+         <ul>
+            <li>Mouse over the <code>nuclearCap</code> data. Various points in the scatter plot will be
+            highlighted in blue as you move around: these are the outputs which consume the data element under
+            your mouse.</li>
 
-         <li>As you move over <code>nuclearCap</code> values, notice that three other values are also
-         highlighted with the blue border. These are its <span class="highlight">related inputs</span>: the
-         other inputs needed to compute the scatter plot point. Each point in the scatter plot represents a
-         year; for a given year, the nuclear capacities of 4 countries were added together to compute the
-         x-coordinate, which is why in this case we see 4 mutually related values.</li>
+            <li>As you move over <code>nuclearCap</code> values, notice that three other values are also
+            highlighted with the blue border. These are its <span class="highlight">related inputs</span>: the
+            other inputs needed to compute the scatter plot point. Each point in the scatter plot represents a
+            year; for a given year, the nuclear capacities of 4 countries were added together to compute the
+            x-coordinate, which is why in this case we see 4 mutually related values.</li>
 
-         <li>Now try the same with <code>nuclearOut</code>. Now the related inputs also include the coal, gas
-         and petrol output for that country. That's because these data are also used to compute the
-         <span class="highlight">bar segments</span> in the bar chart. You'll see the various bar segments
-         being highlighted with a thin border as you move around in that column.</li>
-      </ul>
+            <li>Now try the same with <code>nuclearOut</code>. Now the related inputs also include the coal, gas
+            and petrol output for that country. That's because these data are also used to compute the
+            <span class="highlight">bar segments</span> in the bar chart. You'll see the various bar segments
+            being highlighted with a thin border as you move around in that column.</li>
+         </ul>
+      </div>
    </div>
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>

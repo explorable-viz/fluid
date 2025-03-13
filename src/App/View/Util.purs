@@ -113,7 +113,10 @@ type Fig =
    , linkedInputs :: (Env (SelState 𝔹)) -> (Env (SelState 𝔹) × Val (SelState 𝔹) × Selection GraphImpl × Set DVertex)
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
+   , in_roots :: Set Vertex
    , out_view :: Maybe View
+   , intermediate_views :: Dict (Maybe View)
+   , intermediate_values :: Dict (Val (SelState 𝔹))
    }
 
 -- ======================

@@ -14,7 +14,7 @@ import Data.Generic.Rep (class Generic)
 import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, unsnoc)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, unwrap, wrap)
+import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first, second)
 import Data.Set (toUnfoldable) as S
@@ -169,7 +169,7 @@ econs :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
 econs α e e' = E.Constr α cCons (e : e' : Nil)
 
 elimBool :: forall a. Cont a -> Cont a -> Elim a
-elimBool κ κ' = ElimConstr (wrap $ D.fromFoldable [ cTrue × κ, cFalse × κ' ])
+elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
 -- Module. Surface language supports "blocks" of variable declarations; core does not. Currently no backward.
 moduleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
@@ -209,7 +209,7 @@ varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 -- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
 recDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => RecDefs a -> m (E.RecDefs a)
-recDefsFwd xcs = E.RecDefs top <$> wrap <<< D.fromFoldable <$> traverse recDefFwd xcss
+recDefsFwd xcs = E.RecDefs top <$> D.fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = map RecDef (groupBy (eq `on` fst) xcs) :: NonEmptyList (RecDef a)
 
@@ -449,7 +449,7 @@ clausesStateFwd ks = case ks of
       ContElim <$> ElimVar x <$> (clausesStateFwd =<< popListVarFwd x ks)
    ((p : _) × _) : _ -> do
       kss <- popConstrFwd (defined (dataTypeFor (definitely ("clausesStateFwd ctrFor failed for: " <> showPattern p) (ctrFor p)))) ks
-      ContElim <$> ElimConstr <$> wrap <<< D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
+      ContElim <$> ElimConstr <$> D.fromFoldable <$> sequence (rtraverse clausesStateFwd <$> kss)
 
 -- Recovers (subset of) clauses in order consistent with their original order.
 clausesStateBwd :: forall a. BoundedJoinSemilattice a => Cont a -> Raw ClausesState' -> ClausesState' a
