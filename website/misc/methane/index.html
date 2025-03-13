@@ -15,24 +15,25 @@
 <div id="grid" class="grid-container data-pane-hidden double-size">
    <div></div>
    <div></div>
-   <div>
-      <h3>Clean energy efficiency scatter plot</h3>
+   <div class="flex-left-align">
+      <h3>Methane</h3>
+      <p>Methane emissions example</p>
    </div>
 
-   <div id="fig-input" class="flex-right-align data-pane"></div>
+   <div id="fig-data-pane" class="flex-right-align data-pane">
+      <div id="fig-input" class="data-pane-column"></div>
+   </div>
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
    </div>
-   <div class="flex-left-align">
-      <div id="fig">
-         <div class="fig-loading">loading figure(s)</div>
-      </div>
+   <div id="fig">
+      <div class="fig-loading">loading figure(s)</div>
    </div>
 </div>
 
 <script type="module">
-   import { loadFigure } from "/shared/load-figure.js"
-   loadFigure("spec.json")()
+    import { loadFigure } from "/shared/load-figure.js"
+    loadFigure("spec.json")()
 </script>
 </body>
 </html>

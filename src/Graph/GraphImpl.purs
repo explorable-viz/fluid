@@ -74,7 +74,7 @@ instance Vertices GraphImpl where
 -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
 -- This is better but still slow if there are thousands of sinks.
 sinks' :: AdjMap -> Set Vertex
-sinks' m = D.toArrayWithKey (×) (unwrap m)
+sinks' m = D.toArrayWithKey (×) m
    # filter (snd >>> fst >>> isEmpty)
    <#> (fst >>> Vertex)
    # Set.fromFoldable

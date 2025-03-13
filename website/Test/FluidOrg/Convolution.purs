@@ -18,6 +18,5 @@ testFig :: T.Page -> Aff Unit
 testFig page = do
    let figId = "fig"
    waitForFigure page (figId <> "-output")
-   let toggle = figId <> "-input"
-   clickToggle page toggle
-   waitFor (T.Selector ("div#" <> toggle)) page
+   clickToggle page figId
+   waitFor (T.Selector ("div#" <> figId <> "-data-pane")) page

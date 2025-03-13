@@ -1,7 +1,0 @@
-{
-    "fluidSrcPath": ["../fluid"],
-    "datasets": [["renewables", "dataset/renewables"]],
-    "imports": [],
-    "file": "line-chart",
-    "inputs": [ "renewables" ]
-}

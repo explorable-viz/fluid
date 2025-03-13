@@ -8,14 +8,12 @@ import Data.CodePoint.Unicode (isUpper)
 import Data.Function (on)
 import Data.List (List, concat, (:))
 import Data.List (fromFoldable) as L
-import Data.Newtype (wrap)
 import Data.Set (Set)
 import Data.Set (map, fromFoldable, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
-import Dict (Dict)
-import Dict (fromFoldable) as O
+import Dict (Dict, fromFoldable)
 import Effect.Exception (Error)
 import Partial.Unsafe (unsafePartial)
 import Util (type (×), absurd, definitely', error, orElse, withMsg, (=<<<), (×), (≞))
@@ -52,11 +50,11 @@ instance Show DataType where
    show = typeName
 
 dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType
-dataType name = map (uncurry (×)) >>> O.fromFoldable >>> wrap >>> DataType name
+dataType name = map (uncurry (×)) >>> fromFoldable >>> DataType name
 
 ctrToDataType :: Dict DataType
 ctrToDataType =
-   dataTypes <#> (\d -> ctrs d # S.toUnfoldable <#> (_ × d)) # concat # O.fromFoldable # wrap
+   dataTypes <#> (\d -> ctrs d # S.toUnfoldable <#> (_ × d)) # concat # fromFoldable
 
 class DataTypeFor a where
    dataTypeFor :: forall m. MonadThrow Error m => a -> m DataType

@@ -16,22 +16,37 @@
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <h3>Methane</h3>
-      <p>Methane emissions example</p>
+      <h3>Title</h3>
+      <p>Explain your figure here</p>
    </div>
 
-   <div id="fig-input" class="flex-right-align data-pane"></div>
+   <div id="fig-data-pane" class="flex-right-align data-pane">
+      <div id="fig-input" class="data-pane-column"></div>
+   </div>
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
    </div>
-   <div id="fig">
-      <div class="fig-loading">loading figure(s)</div>
+   <div class="flex-left-align">
+      <div id="fig">
+         <div class="fig-loading">loading figure(s)</div>
+      </div>
+      <p>Source code:</p>
+      <details>
+         <summary>bar-chart-line-chart.fld</summary>
+         <div id="codemirror-bar-chart-line-chart"></div>
+      </details>
+      <details>
+         <summary>renewables.fld</summary>
+         <div id="codemirror-renewables"></div>
+      </details>
    </div>
 </div>
 
 <script type="module">
-    import { loadFigure } from "/shared/load-figure.js"
-    loadFigure("spec.json")()
+   import { loadFigure, drawCode } from "/shared/load-figure.js"
+   drawCode("../fluid")("bar-chart-line-chart")()
+   drawCode("../fluid/dataset")("renewables")()
+   loadFigure("spec.json")()
 </script>
 </body>
 </html>

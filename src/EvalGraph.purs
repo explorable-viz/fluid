@@ -8,7 +8,7 @@ import Data.Array (range) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Newtype (unwrap, wrap)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
 import Data.Set as Set
@@ -123,7 +123,7 @@ eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
-      d = wrap $ D.fromFoldable $ zip ss (zip βs us)
+      d = D.fromFoldable $ zip ss (zip βs us)
    new Val (insert α αs) $ V.Dictionary (DictRep d)
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
