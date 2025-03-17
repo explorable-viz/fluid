@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Attrs, Dimensions(..), SelState, Selectable, 𝕊, classes, colorShade, dict, from, isPersistent, isPrimary, isSecondary, isTransient)
+import App.Util (class Reflect, Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, dict, from, isPersistent, isPrimary, isSecondary, isTransient)
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
@@ -52,7 +52,7 @@ names plots = plots <#> unwrap >>> _.name >>> fst
 point_smallRadius :: Int
 point_smallRadius = 2
 
-fill :: SelState 𝕊 -> String -> String
+fill :: SelStates 𝕊 -> String -> String
 fill sel = if isPersistent sel then flip colorShade (-30) else identity
 
 nameCol :: String -> Array String -> String
@@ -63,8 +63,8 @@ type PointCoordinate = { i :: Int, j :: Int }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 
-setSelState :: LineChart -> EventListener -> D3.Selection -> Effect Unit
-setSelState (LineChart { plots }) redraw rootElement = do
+setSelStates :: LineChart -> EventListener -> D3.Selection -> Effect Unit
+setSelStates (LineChart { plots }) redraw rootElement = do
    points <- rootElement # selectAll ".linechart-point"
    for_ points \point -> do
       point' <- datum point
@@ -95,7 +95,7 @@ setSelState (LineChart { plots }) redraw rootElement = do
       sel = selState (points ! j1) ∧ selState (points ! j2)
       fill' = fill sel (nameCol (fst name) (names plots))
 
-   selState :: Point Number -> SelState 𝕊
+   selState :: Point Number -> SelStates 𝕊
    selState (Point { x, y }) = snd x ∨ snd y
 
 createRootElement :: LineChart -> D3.Selection -> String -> Effect D3.Selection
@@ -269,7 +269,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       rightMargin = 4
 
 instance Drawable2 LineChart where
-   setSelState = setSelState
+   setSelStates = setSelStates
    createRootElement = createRootElement
 
 instance Drawable LineChart where
@@ -283,21 +283,21 @@ instance Drawable LineChart where
 -- ======================
 -- boilerplate
 -- ======================
-instance Reflect (Dict (SelState 𝕊 × Val (SelState 𝕊))) LinePlot where
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LinePlot where
    from r = LinePlot
       { name: unpack string (snd (get f_name r))
       , points: dict from <$> from (snd (get f_points r))
       }
 
-instance Reflect (Dict (SelState 𝕊 × Val (SelState 𝕊))) LineChart where
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LineChart where
    from r = LineChart
       { size: dict from (snd (get f_size r))
       , tickLabels: dict from (snd (get f_tickLabels r))
       , caption: unpack string (snd (get f_caption r))
-      , plots: from <$> (from (snd (get f_plots r)) :: Array (Val (SelState 𝕊))) :: Array LinePlot
+      , plots: from <$> (from (snd (get f_plots r)) :: Array (Val (SelStates 𝕊))) :: Array LinePlot
       }
 
-instance Reflect (Val (SelState 𝕊)) LinePlot where
+instance Reflect (Val (SelStates 𝕊)) LinePlot where
    from (Val _ (Constr c (u : Nil))) | c == cLinePlot = dict from u
 
 derive instance Newtype LinePlot _

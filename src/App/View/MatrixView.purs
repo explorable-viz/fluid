@@ -2,7 +2,7 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState, Selectable, 𝕊, isTransient)
+import App.Util (SelStates, Selectable, 𝕊, isTransient)
 import App.Util.Selector (ViewSelSetter, matrixElement)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import Data.Tuple (snd)
@@ -69,7 +69,7 @@ instance Drawable MatrixView where
       element :: ViewSelSetter MatrixCellCoordinate
       element { i, j } = matrixElement i j
 
-matrixRep :: MatrixRep (SelState 𝕊) -> IntMatrix
+matrixRep :: MatrixRep (SelStates 𝕊) -> IntMatrix
 matrixRep (MatrixRep (vss × MatrixDim (i × _) × MatrixDim (j × _))) =
    { cells: (unpack int <$> _) <$> vss, i, j }
 

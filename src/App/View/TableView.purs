@@ -2,7 +2,7 @@ module App.View.TableView where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor)
+import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor)
 import App.Util.Selector (ViewSelSetter, dictVal, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
@@ -23,7 +23,7 @@ import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
-type Record' = Array (Val (SelState 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
+type Record' = Array (Val (SelStates 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
 
 data Filter = Everything | Interactive | Relevant
 
@@ -36,7 +36,7 @@ newtype TableView = TableView
    }
 
 -- helpers to decompose array of records represented as dictionaries into colNames and rows
-headers :: Array (Dict (SelState 𝕊 × Val (SelState 𝕊))) -> Array String
+headers :: Array (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) -> Array String
 headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
 
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
@@ -48,7 +48,7 @@ defaultFilter = Interactive
 rowKey :: String
 rowKey = "__n"
 
-cell_selClassesFor :: String -> SelState 𝕊 -> String
+cell_selClassesFor :: String -> SelStates 𝕊 -> String
 cell_selClassesFor colName s
    | colName == rowKey = ""
    | otherwise = selClassesFor s
@@ -57,15 +57,15 @@ record_isVisible :: Record' -> Boolean
 record_isVisible r =
    not <<< null $ flip filter r \(Val α _) -> visible defaultFilter α
    where
-   visible :: Filter -> SelState 𝕊 -> Boolean
+   visible :: Filter -> SelStates 𝕊 -> Boolean
    visible Everything = const true
    visible Interactive = not isInert
    visible Relevant = not (isNone || isInert)
 
-   isNone :: SelState 𝕊 -> Boolean
+   isNone :: SelStates 𝕊 -> Boolean
    isNone a = getPersistent a == None && getTransient a == None
 
-prim :: Val (SelState 𝕊) -> String
+prim :: Val (SelStates 𝕊) -> String
 prim (Val _ v) = v # case _ of
    Int n -> show n
    Float n -> toStringWith (fixed 2) n
@@ -78,8 +78,8 @@ transparentBorder = "1px solid transparent"
 solidBorder :: String
 solidBorder = "1px solid blue"
 
-setSelState :: TableView -> EventListener -> D3.Selection -> Effect Unit
-setSelState (TableView { title, rows }) redraw rootElement = do
+setSelStates :: TableView -> EventListener -> D3.Selection -> Effect Unit
+setSelStates (TableView { title, rows }) redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
    for_ cells \cell -> do
       { i, j, colName } :: CellIndex <- datum cell
@@ -181,7 +181,7 @@ createRootElement (TableView { colNames, filter, rows }) div childId = do
 
 instance Drawable2 TableView where
    createRootElement = createRootElement
-   setSelState = setSelState
+   setSelStates = setSelStates
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do

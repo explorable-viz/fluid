@@ -2,7 +2,7 @@ module App.View.Paragraph where
 
 import Prelude hiding (join)
 
-import App.Util (class Reflect, Attrs, SelState, Selectable, 𝕊, classes, contents, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (class Reflect, Attrs, SelStates, Selectable, 𝕊, classes, contents, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (ViewSelSetter, SelSetter, listElement, paragraph)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
@@ -25,7 +25,7 @@ newtype Paragraph a = Paragraph (Array (TextFragment a))
 
 data TextFragment a = TextFragment (Selectable String) | Link (Val a) (Selectable String)
 
-instance Drawable (Paragraph (SelState 𝕊)) where
+instance Drawable (Paragraph (SelStates 𝕊)) where
    draw rSpec figVal _ redraw =
       draw' uiHelpers rSpec =<< selListener figVal redraw paragraphSelector
       where
@@ -40,15 +40,15 @@ selTextFragment { i } = fragment >>> listElement i >>> paragraph
       Val α (Constr c (v : Nil)) | c == cText -> Val α (Constr c (δv v : Nil)) -- Text
       Val α (Constr c (v1 : v2 : Nil)) | c == cLink -> Val α (Constr c (δv v1 : v2 : Nil))
 
-getText :: Array (TextFragment (SelState 𝕊)) -> Int -> Selectable String
+getText :: Array (TextFragment (SelStates 𝕊)) -> Int -> Selectable String
 getText elems i = case elems ! i of
    TextFragment s -> s
    Link v (s × _) -> (s × α)
       where
       α = foldr join bot v
 
-setSelState :: Paragraph (SelState 𝕊) -> EventListener -> D3.Selection -> Effect Unit
-setSelState (Paragraph elems) redraw rootElement = do
+setSelStates :: Paragraph (SelStates 𝕊) -> EventListener -> D3.Selection -> Effect Unit
+setSelStates (Paragraph elems) redraw rootElement = do
    elems' <- rootElement # selectAll ".text-fragment"
    for_ elems' \elem -> do
       elem' :: ParagraphElem <- datum elem
@@ -81,31 +81,31 @@ setSelState (Paragraph elems) redraw rootElement = do
          | isSecondary sel' && isTransient sel' = "royalblue"
          | otherwise = "black"
 
-createRootElement :: Paragraph (SelState 𝕊) -> D3.Selection -> String -> Effect D3.Selection
+createRootElement :: Paragraph (SelStates 𝕊) -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (Paragraph elems) div childId = do
    rootElement <- div # create Text [ classes [ "paragraph" ], "id" ↦ childId ]
    forWithIndex_ elems (mkElem rootElement)
    pure rootElement
    where
-   mkElem :: D3.Selection -> Int -> TextFragment (SelState 𝕊) -> Effect D3.Selection
+   mkElem :: D3.Selection -> Int -> TextFragment (SelStates 𝕊) -> Effect D3.Selection
    mkElem root i elem = do
       elem' <- root # create Text [ classes [ "text-fragment" ], "id" ↦ childId ]
       elem' # setText (linkContents elem) >>= setDatum { i }
 
-linkContents :: TextFragment (SelState 𝕊) -> String
+linkContents :: TextFragment (SelStates 𝕊) -> String
 linkContents (TextFragment s) = contents s
 linkContents (Link _ (s × _)) = s
 
-instance Drawable2 (Paragraph (SelState 𝕊)) where
+instance Drawable2 (Paragraph (SelStates 𝕊)) where
    createRootElement = createRootElement
-   setSelState = setSelState
+   setSelStates = setSelStates
 
-instance Reflect (Val (SelState 𝕊)) (Paragraph (SelState 𝕊)) where
+instance Reflect (Val (SelStates 𝕊)) (Paragraph (SelStates 𝕊)) where
    from r = Paragraph (fst <$> unpack textFragment <$> (from r))
 
 type ParagraphElem = { i :: Int }
 
-textFragment :: ToFrom (TextFragment (SelState 𝕊)) (SelState 𝕊)
+textFragment :: ToFrom (TextFragment (SelStates 𝕊)) (SelStates 𝕊)
 textFragment =
    { pack: case _ of
         TextFragment (s × α) -> Constr cText ((Val α (Str s)) : Nil)
