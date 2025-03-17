@@ -123,7 +123,7 @@ selectionResult fig@{ spec, dir } =
 drawIntermediates :: HTMLId -> Dict (Val (SelState 𝔹)) -> Array String -> Redraw -> Effect Unit
 drawIntermediates divId intermediates unused redraw = do
    let prefix = divId <> "-" <> str.intermediate
-   for_ unused \α -> rootSelect ("#" <> prefix <> α) >>= remove
+   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
 
    sequence_ $ flip mapWithKey intermediates \α v -> do
       drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
