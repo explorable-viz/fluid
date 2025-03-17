@@ -37,22 +37,23 @@ import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelState 𝔹)) -- modifies selection state
-
+type Selector' (f :: Type -> Type) = f (SelState 𝔹) -> f (SelState 𝔹) × 𝔹 -- modifies selection state
 -- Selection can occur on data that can be interacted with, reactive data rather than inert data. Within reactive data,
 -- selection has two dimensions: persistent or transient. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
 -- clicking during mouseover visibly changes the state). Types of selection are primary/secondary/none.
 -- These are visually distinct but not orthogonal; primary should (visually) subsume secondary.
 
-data SelState a
+data SelState' a
    = Inert
-   | Reactive (Selection a)
+   | Reactive a
 
+newtype SelState a = SelState (SelState' (Selection a))
 type Selection a = { persistent :: a, transient :: a }
 
 selState :: forall a. 𝔹 -> a -> a -> SelState a
-selState true _ _ = Inert
-selState false b1 b2 = Reactive { persistent: b1, transient: b2 }
+selState true _ _ = SelState Inert
+selState false b1 b2 = SelState $ Reactive { persistent: b1, transient: b2 }
 
 contents :: forall a. Selectable a -> a
 contents = fst
@@ -62,34 +63,34 @@ sel = snd
 
 persist :: forall a. Setter (SelState a) a
 persist δα = case _ of
-   Reactive s -> Reactive { persistent: δα s.persistent, transient: s.transient }
-   Inert -> Inert
+   SelState (Reactive s) -> SelState $ Reactive { persistent: δα s.persistent, transient: s.transient }
+   SelState Inert -> SelState Inert
 
 data 𝕊 = None | Secondary | Primary
 
 type Selectable a = a × SelState 𝕊
 
 isPrimary :: SelState 𝕊 -> 𝔹
-isPrimary Inert = false
-isPrimary (Reactive { persistent, transient }) =
+isPrimary (SelState Inert) = false
+isPrimary (SelState (Reactive { persistent, transient })) =
    persistent == Primary || transient == Primary
 
 isSecondary :: SelState 𝕊 -> 𝔹
-isSecondary Inert = false
-isSecondary (Reactive { persistent, transient }) =
+isSecondary (SelState Inert) = false
+isSecondary (SelState (Reactive { persistent, transient })) =
    persistent == Secondary || transient == Secondary
 
 isInert :: forall a. SelState a -> 𝔹
-isInert Inert = true
-isInert (Reactive _) = false
+isInert (SelState Inert) = true
+isInert (SelState (Reactive _)) = false
 
 getPersistent :: forall a. BoundedJoinSemilattice a => SelState a -> a
-getPersistent Inert = bot
-getPersistent (Reactive { persistent }) = persistent
+getPersistent (SelState Inert) = bot
+getPersistent (SelState (Reactive { persistent })) = persistent
 
 getTransient :: forall a. BoundedJoinSemilattice a => SelState a -> a
-getTransient Inert = bot
-getTransient (Reactive { transient }) = transient
+getTransient (SelState Inert) = bot
+getTransient (SelState (Reactive { transient })) = transient
 
 isPersistent :: SelState 𝕊 -> 𝔹
 isPersistent = getPersistent >>> (_ /= None)
@@ -133,7 +134,7 @@ to𝕊 true = Primary
 to𝕊 false = None
 
 unselected :: SelState 𝔹
-unselected = Reactive { persistent: false, transient: false }
+unselected = SelState $ Reactive { persistent: false, transient: false }
 
 get_intOrNumber :: Var -> Dict (SelState 𝕊 × Val (SelState 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (snd (get x r)))
@@ -165,11 +166,11 @@ selector (EventType ev) v =
    reportSelState <<< setSel <$> reportTarget v
    where
    setSel :: Endo (SelState 𝔹)
-   setSel Inert = Inert
-   setSel (Reactive sel')
-      | ev == "mousedown" = Reactive (sel' { persistent = neg sel'.persistent })
-      | ev == "mouseenter" = Reactive (sel' { transient = true })
-      | ev == "mouseleave" = Reactive (sel' { transient = false })
+   setSel (SelState Inert) = SelState Inert
+   setSel (SelState (Reactive sel'))
+      | ev == "mousedown" = SelState (Reactive (sel' { persistent = neg sel'.persistent }))
+      | ev == "mouseenter" = SelState (Reactive (sel' { transient = true }))
+      | ev == "mouseleave" = SelState (Reactive (sel' { transient = false }))
       | otherwise = error "Unsupported event type"
 
    reportSelState = spyWhen tracing.mouseEvent "to " show
@@ -227,7 +228,7 @@ selClasses = joinWith " " $
    ]
 
 selClassesFor :: SelState 𝕊 -> String
-selClassesFor Inert = css.inert
+selClassesFor (SelState Inert) = css.inert
 selClassesFor t =
    joinWith " " $ concat
       [ case getPersistent t of
@@ -257,44 +258,83 @@ derive instance Generic 𝕊 _
 instance Show 𝕊 where
    show = genericShow
 
+derive instance Functor SelState'
 derive instance Functor SelState
 derive instance Generic (SelState a) _
+derive instance Generic (SelState' a) _
+
+instance Show a => Show (SelState' a) where
+   show = genericShow
+
 instance Show a => Show (SelState a) where
    show = genericShow
 
-instance Apply SelState where
+instance Apply SelState' where
    apply Inert Inert = Inert
    apply (Reactive fs) (Reactive s) =
-      Reactive { persistent: fs.persistent s.persistent, transient: fs.transient s.transient }
+      Reactive (fs s)
    apply _ _ = shapeMismatch unit
 
-instance JoinSemilattice a => JoinSemilattice (SelState a)
+instance Apply SelState where
+   apply (SelState Inert) (SelState Inert) = SelState Inert
+   apply (SelState (Reactive { persistent: fs, transient: fs' })) (SelState (Reactive { persistent: s, transient: s' })) =
+      SelState (Reactive { persistent: fs s, transient: fs' s' })
+   apply _ _ = shapeMismatch unit
+
+instance JoinSemilattice a => JoinSemilattice (SelState' a)
    where
    join s Inert = s
    join Inert s = s
    join (Reactive s) (Reactive s') =
-      Reactive { persistent: s.persistent ∨ s'.persistent, transient: s.transient ∨ s'.transient }
+      Reactive (s ∨ s')
 
-instance MeetSemilattice a => MeetSemilattice (SelState a)
+instance JoinSemilattice a => JoinSemilattice (SelState a) where
+   join (SelState s) (SelState Inert) = SelState s
+   join (SelState Inert) (SelState s) = SelState s
+   join (SelState (Reactive { persistent, transient })) (SelState (Reactive { persistent: persistent', transient: transient' })) =
+      SelState (Reactive { persistent: persistent ∨ persistent', transient: transient ∨ transient' })
+
+instance MeetSemilattice a => MeetSemilattice (SelState' a)
    where
    meet _ Inert = Inert
    meet Inert _ = Inert
    meet (Reactive s) (Reactive s') =
-      Reactive { persistent: s.persistent ∧ s'.persistent, transient: s.transient ∧ s'.transient }
+      Reactive (s ∧ s')
 
-instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a)
+instance MeetSemilattice a => MeetSemilattice (SelState a)
+   where
+   meet _ (SelState Inert) = SelState Inert
+   meet (SelState Inert) _ = SelState Inert
+   meet (SelState (Reactive { persistent, transient })) (SelState (Reactive { persistent: persistent', transient: transient' })) =
+      SelState (Reactive { persistent: persistent ∧ persistent', transient: transient ∧ transient' })
+
+instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState' a)
    where
    bot = Inert
 
+instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a)
+   where
+   bot = SelState Inert
+
+instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelState' a)
+   where
+   top = Reactive top
+
 instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelState a)
    where
-   top = Reactive { persistent: top, transient: top }
+   top = SelState (Reactive { persistent: top, transient: top })
+
+derive instance Eq a => Eq (SelState' a)
 
 derive instance Eq a => Eq (SelState a)
 
-instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
+instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState' a) where
    highlightIf Inert = highlightIf false
-   highlightIf (Reactive { persistent, transient }) = highlightIf (persistent ∨ transient)
+   highlightIf (Reactive s) = highlightIf s
+
+instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) where
+   highlightIf (SelState Inert) = highlightIf false
+   highlightIf (SelState (Reactive { persistent, transient })) = highlightIf (persistent ∨ transient)
 
 derive instance Newtype (Dimensions a) _
 derive instance Functor Dimensions
