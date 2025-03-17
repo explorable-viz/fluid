@@ -48,6 +48,8 @@ data SelState a
    = Inert
    | Reactive a
 
+data SelectionType = Persistent | Transient
+
 newtype SelStates a = SelStates (SelState (Selection a))
 type Selection a = { persistent :: a, transient :: a }
 
@@ -69,6 +71,17 @@ persist δα = case _ of
 data 𝕊 = None | Secondary | Primary
 
 type Selectable a = a × SelStates 𝕊
+
+splitSelStates :: forall f a. Functor f => f (SelStates a) -> Selection (f (SelState a))
+splitSelStates fa = {
+      persistent: (splitSel Persistent) <$> fa,
+      transient: (splitSel Transient) <$> fa
+   }
+   where
+   splitSel :: SelectionType -> SelStates a -> SelState a
+   splitSel _ (SelStates Inert) = Inert
+   splitSel Persistent (SelStates (Reactive { persistent })) = Reactive persistent
+   splitSel Transient (SelStates (Reactive { transient })) = Reactive transient
 
 isPrimary :: SelStates 𝕊 -> 𝔹
 isPrimary (SelStates Inert) = false
