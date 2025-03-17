@@ -44,11 +44,11 @@ type Selector' (f :: Type -> Type) = f (SelState 𝔹) -> f (SelState 𝔹) × �
 -- clicking during mouseover visibly changes the state). Types of selection are primary/secondary/none.
 -- These are visually distinct but not orthogonal; primary should (visually) subsume secondary.
 
-data SelState' a
+data IsInert a
    = Inert
    | Reactive a
 
-newtype SelState a = SelState (SelState' (Selection a))
+newtype SelState a = SelState (IsInert (Selection a))
 type Selection a = { persistent :: a, transient :: a }
 
 selState :: forall a. 𝔹 -> a -> a -> SelState a
@@ -258,18 +258,18 @@ derive instance Generic 𝕊 _
 instance Show 𝕊 where
    show = genericShow
 
-derive instance Functor SelState'
+derive instance Functor IsInert
 derive instance Functor SelState
 derive instance Generic (SelState a) _
-derive instance Generic (SelState' a) _
+derive instance Generic (IsInert a) _
 
-instance Show a => Show (SelState' a) where
+instance Show a => Show (IsInert a) where
    show = genericShow
 
 instance Show a => Show (SelState a) where
    show = genericShow
 
-instance Apply SelState' where
+instance Apply IsInert where
    apply Inert Inert = Inert
    apply (Reactive fs) (Reactive s) =
       Reactive (fs s)
@@ -281,7 +281,7 @@ instance Apply SelState where
       SelState (Reactive { persistent: fs s, transient: fs' s' })
    apply _ _ = shapeMismatch unit
 
-instance JoinSemilattice a => JoinSemilattice (SelState' a)
+instance JoinSemilattice a => JoinSemilattice (IsInert a)
    where
    join s Inert = s
    join Inert s = s
@@ -294,7 +294,7 @@ instance JoinSemilattice a => JoinSemilattice (SelState a) where
    join (SelState (Reactive { persistent, transient })) (SelState (Reactive { persistent: persistent', transient: transient' })) =
       SelState (Reactive { persistent: persistent ∨ persistent', transient: transient ∨ transient' })
 
-instance MeetSemilattice a => MeetSemilattice (SelState' a)
+instance MeetSemilattice a => MeetSemilattice (IsInert a)
    where
    meet _ Inert = Inert
    meet Inert _ = Inert
@@ -308,7 +308,7 @@ instance MeetSemilattice a => MeetSemilattice (SelState a)
    meet (SelState (Reactive { persistent, transient })) (SelState (Reactive { persistent: persistent', transient: transient' })) =
       SelState (Reactive { persistent: persistent ∧ persistent', transient: transient ∧ transient' })
 
-instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState' a)
+instance BoundedJoinSemilattice a => BoundedJoinSemilattice (IsInert a)
    where
    bot = Inert
 
@@ -316,7 +316,7 @@ instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a)
    where
    bot = SelState Inert
 
-instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelState' a)
+instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (IsInert a)
    where
    top = Reactive top
 
@@ -324,11 +324,11 @@ instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelSta
    where
    top = SelState (Reactive { persistent: top, transient: top })
 
-derive instance Eq a => Eq (SelState' a)
+derive instance Eq a => Eq (IsInert a)
 
 derive instance Eq a => Eq (SelState a)
 
-instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState' a) where
+instance (Highlightable a, JoinSemilattice a) => Highlightable (IsInert a) where
    highlightIf Inert = highlightIf false
    highlightIf (Reactive s) = highlightIf s
 
