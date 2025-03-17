@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelStates, Selection, 𝕊, as𝕊, getPersistent, getTransient, mergeSelStates, selState, splitSelStates, to𝕊)
+import App.Util (SelState, SelStates, Selection, 𝕊, as𝕊, getPersistent, getTransient, mergeSelStates, selState, splitSelStates, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
@@ -51,7 +51,7 @@ mkFullId divId mid suffix = "#" <> divId <> "-" <> mid <> "-" <> suffix
 
 selectOutput :: Setter Fig (Val (SelStates 𝔹))
 selectOutput δv fig@{ dir, γ, v } = fig
-   { v = splitSelStates $ δv (mergeSelStates v)
+   { v = δv v
    , γ = if dir == LinkedInputs then botOf γ else γ
    , dir = LinkedOutputs
    }
@@ -64,11 +64,9 @@ setOutputView δvw fig = fig
 selectInput :: Var -> Setter Fig (Val (SelStates 𝔹))
 selectInput x δv fig@{ dir, γ, v } = fig
    { γ = envVal x δv γ
-   , v = if dir == LinkedOutputs then v' else v
+   , v = if dir == LinkedOutputs then botOf v else v
    , dir = LinkedInputs
    }
-   where
-   v' = splitSelStates $ botOf (mergeSelStates v)
 
 setInputView :: Var -> Setter Fig View
 setInputView x δvw fig = fig
@@ -102,21 +100,21 @@ selectIntermediates inerts g vs =
 
    vs𝕊 = zipWith setSels vs_inert vs_selected
 
-selectionResult :: Fig -> Val (SelStates 𝕊) × Env (SelStates 𝕊) × Dict (Val (SelStates 𝔹))
+selectionResult :: Fig -> Selection (Val (SelState 𝕊)) × Selection (Env (SelState 𝕊)) × Dict (Val (SelStates 𝔹))
 selectionResult fig@{ spec, dir } =
    case dir of
       LinkedOutputs ->
          let
-            v1 × γ1 × g × inertBwd = fig.linkedOutputs (mergeSelStates fig.v)
+            v1 × γ1 × g × inertBwd = fig.linkedOutputs fig.v
             report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
          in
-            (lift2 as𝕊 <$> (mergeSelStates fig.v) <*> v1) × ((to𝕊 <$> _) <$> report γ1) × intermediates g inertBwd
+            splitSelStates (lift2 as𝕊 <$> fig.v <*> v1) × splitSelStates ((to𝕊 <$> _) <$> report γ1) × intermediates g inertBwd
       LinkedInputs ->
          let
             γ1 × v1 × g × inertFwd = fig.linkedInputs fig.γ
             report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
          in
-            ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × intermediates g inertFwd
+            splitSelStates ((to𝕊 <$> _) <$> report v1) × splitSelStates (lift2 as𝕊 <$> fig.γ <*> γ1) × intermediates g inertFwd
    where
    intermediates :: Selection GraphImpl -> Set DVertex -> Dict (Val (SelStates 𝔹))
    intermediates g inerts = D.fromFoldable $ concat $ for spec.queries
@@ -139,7 +137,7 @@ drawFig divId fig = do
    where
    out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
-         (flip (view str.output) fig.out_view *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) *** (\d -> d # filterKeys \α -> not (Vertex α ∈ fig.in_roots)))
+         ((flip (view str.output) fig.out_view <<< mergeSelStates) *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) <<< mergeSelStates *** (\d -> d # filterKeys \α -> not (Vertex α ∈ fig.in_roots)))
 
    unused :: Array String
    unused = fromFoldable (keys fig.intermediate_values \\ keys intermediate_values)
@@ -220,7 +218,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       { spec
       , s
       , γ: γInert <*> γ0 <*> γ0
-      , v: splitSelStates $ vInert <*> v0 <*> v0
+      , v: vInert <*> v0 <*> v0
       , linkedOutputs
       , linkedInputs
       , dir: LinkedOutputs
