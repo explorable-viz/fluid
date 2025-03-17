@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelStates, Selection, 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
+import App.Util (SelStates, Selection, 𝕊, as𝕊, getPersistent, getTransient, mergeSelStates, selState, splitSelStates, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
@@ -51,7 +51,7 @@ mkFullId divId mid suffix = "#" <> divId <> "-" <> mid <> "-" <> suffix
 
 selectOutput :: Setter Fig (Val (SelStates 𝔹))
 selectOutput δv fig@{ dir, γ, v } = fig
-   { v = δv v
+   { v = splitSelStates $ δv (mergeSelStates v)
    , γ = if dir == LinkedInputs then botOf γ else γ
    , dir = LinkedOutputs
    }
@@ -64,9 +64,11 @@ setOutputView δvw fig = fig
 selectInput :: Var -> Setter Fig (Val (SelStates 𝔹))
 selectInput x δv fig@{ dir, γ, v } = fig
    { γ = envVal x δv γ
-   , v = if dir == LinkedOutputs then botOf v else v
+   , v = if dir == LinkedOutputs then v' else v
    , dir = LinkedInputs
    }
+   where
+   v' = splitSelStates $ botOf (mergeSelStates v)
 
 setInputView :: Var -> Setter Fig View
 setInputView x δvw fig = fig
@@ -105,10 +107,10 @@ selectionResult fig@{ spec, dir } =
    case dir of
       LinkedOutputs ->
          let
-            v1 × γ1 × g × inertBwd = fig.linkedOutputs fig.v
+            v1 × γ1 × g × inertBwd = fig.linkedOutputs (mergeSelStates fig.v)
             report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
          in
-            (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × intermediates g inertBwd
+            (lift2 as𝕊 <$> (mergeSelStates fig.v) <*> v1) × ((to𝕊 <$> _) <$> report γ1) × intermediates g inertBwd
       LinkedInputs ->
          let
             γ1 × v1 × g × inertFwd = fig.linkedInputs fig.γ
@@ -218,7 +220,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       { spec
       , s
       , γ: γInert <*> γ0 <*> γ0
-      , v: vInert <*> v0 <*> v0
+      , v: splitSelStates $ vInert <*> v0 <*> v0
       , linkedOutputs
       , linkedInputs
       , dir: LinkedOutputs

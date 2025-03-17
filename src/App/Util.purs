@@ -73,15 +73,23 @@ data 𝕊 = None | Secondary | Primary
 type Selectable a = a × SelStates 𝕊
 
 splitSelStates :: forall f a. Functor f => f (SelStates a) -> Selection (f (SelState a))
-splitSelStates fa = {
-      persistent: (splitSel Persistent) <$> fa,
-      transient: (splitSel Transient) <$> fa
+splitSelStates fa =
+   { persistent: (splitSel Persistent) <$> fa
+   , transient: (splitSel Transient) <$> fa
    }
    where
    splitSel :: SelectionType -> SelStates a -> SelState a
    splitSel _ (SelStates Inert) = Inert
    splitSel Persistent (SelStates (Reactive { persistent })) = Reactive persistent
    splitSel Transient (SelStates (Reactive { transient })) = Reactive transient
+
+mergeSelStates :: forall f a. Functor f => Apply f => Selection (f (SelState a)) -> f (SelStates a)
+mergeSelStates { persistent: ps, transient: ts } = mergeSel <$> ps <*> ts
+   where
+   mergeSel :: SelState a -> SelState a -> SelStates a
+   mergeSel _ Inert = SelStates Inert
+   mergeSel Inert _ = SelStates Inert
+   mergeSel (Reactive p) (Reactive t) = SelStates (Reactive { persistent: p, transient: t })
 
 isPrimary :: SelStates 𝕊 -> 𝔹
 isPrimary (SelStates Inert) = false
