@@ -57,6 +57,10 @@ selState :: forall a. 𝔹 -> a -> a -> SelStates a
 selState true _ _ = SelStates Inert
 selState false b1 b2 = SelStates $ Reactive { persistent: b1, transient: b2 }
 
+selState' :: forall a. 𝔹 -> a -> a -> Selection (SelState a)
+selState' true _ _ = { persistent: Inert, transient: Inert }
+selState' false b1 b2 = { persistent: Reactive b1, transient: Reactive b2 }
+
 contents :: forall a. Selectable a -> a
 contents = fst
 
@@ -83,6 +87,12 @@ splitSelStates fa =
    splitSel Persistent (SelStates (Reactive { persistent })) = Reactive persistent
    splitSel Transient (SelStates (Reactive { transient })) = Reactive transient
 
+splitSelStates' :: forall f a. Functor f => f (Selection (SelState a)) -> Selection (f (SelState a))
+splitSelStates' fa =
+   { persistent: _.persistent <$> fa
+   , transient: _.transient <$> fa
+   }
+
 mergeSelStates :: forall f a. Functor f => Apply f => Selection (f (SelState a)) -> f (SelStates a)
 mergeSelStates { persistent: ps, transient: ts } = mergeSel <$> ps <*> ts
    where
@@ -108,6 +118,10 @@ isInert (SelStates (Reactive _)) = false
 getPersistent :: forall a. BoundedJoinSemilattice a => SelStates a -> a
 getPersistent (SelStates Inert) = bot
 getPersistent (SelStates (Reactive { persistent })) = persistent
+
+to𝔹 :: SelState 𝔹 -> 𝔹
+to𝔹 Inert = false
+to𝔹 (Reactive b) = b
 
 getTransient :: forall a. BoundedJoinSemilattice a => SelStates a -> a
 getTransient (SelStates Inert) = bot

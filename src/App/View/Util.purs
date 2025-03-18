@@ -107,10 +107,10 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , γ :: Env (SelStates 𝔹)
+   , γ :: Selection (Env (SelState 𝔹))
    , v :: Selection (Val (SelState 𝔹))
-   , linkedOutputs :: (Val (SelStates 𝔹)) -> (Val (SelStates 𝔹) × Env (SelStates 𝔹) × Selection GraphImpl × Set DVertex)
-   , linkedInputs :: (Env (SelStates 𝔹)) -> (Env (SelStates 𝔹) × Val (SelStates 𝔹) × Selection GraphImpl × Set DVertex)
+   , linkedOutputs :: Selection (Val (SelState 𝔹)) -> (Selection (Val (SelState 𝔹)) × Selection (Env (SelState 𝔹)) × Selection GraphImpl × Set DVertex)
+   , linkedInputs :: Selection (Env (SelState 𝔹)) -> (Selection (Env (SelState 𝔹)) × Selection (Val (SelState 𝔹)) × Selection GraphImpl × Set DVertex)
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
