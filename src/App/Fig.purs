@@ -104,7 +104,7 @@ selectIntermediates inerts g vs =
 
    vs𝕊 = zipWith setSels vs_inert vs_selected
 
-selectionResult :: Fig -> (Val (SelStates 𝕊)) × (Env (SelStates 𝕊)) × Dict (Val (SelStates 𝔹))
+selectionResult :: Fig -> Selection (Val (SelState 𝕊)) × Selection (Env (SelState 𝕊)) × Dict (Val (SelStates 𝔹))
 selectionResult fig@{ spec, dir } =
    case dir of
       LinkedOutputs ->
@@ -112,13 +112,13 @@ selectionResult fig@{ spec, dir } =
             v1 × γ1 × g × inertBwd = fig.linkedOutputs fig.v
             report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
          in
-            (lift2 as𝕊 <$> mergeSelStates fig.v <*> mergeSelStates v1) × ((to𝕊 <$> _) <$> report (mergeSelStates γ1)) × intermediates g inertBwd
+            splitSelStates (lift2 as𝕊 <$> mergeSelStates fig.v <*> mergeSelStates v1) × splitSelStates ((to𝕊 <$> _) <$> report (mergeSelStates γ1)) × intermediates g inertBwd
       LinkedInputs ->
          let
             γ1 × v1 × g × inertFwd = fig.linkedInputs fig.γ
             report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
          in
-            ((to𝕊 <$> _) <$> report (mergeSelStates v1)) × (lift2 as𝕊 <$> mergeSelStates fig.γ <*> mergeSelStates γ1) × intermediates g inertFwd
+            splitSelStates ((to𝕊 <$> _) <$> report (mergeSelStates v1)) × splitSelStates (lift2 as𝕊 <$> mergeSelStates fig.γ <*> mergeSelStates γ1) × intermediates g inertFwd
    where
    intermediates :: Selection GraphImpl -> Set DVertex -> Dict (Val (SelStates 𝔹))
    intermediates g inerts = D.fromFoldable $ concat $ for spec.queries
@@ -141,8 +141,8 @@ drawFig divId fig = do
    where
    out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
-         ( (flip (view str.output) fig.out_view)
-              *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views)
+         ( (flip (view str.output) fig.out_view) <<< mergeSelStates
+              *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) <<< mergeSelStates
               *** (\d -> d # filterKeys \α -> not (Vertex α ∈ fig.in_roots))
          )
 

@@ -16,7 +16,7 @@ module Test.Util.Suite
 import Prelude
 
 import App.Fig (selectionResult, loadFig, selectInput, selectOutput)
-import App.Util (Selector, isInert, isPersistent, isTransient, selState)
+import App.Util (Selector, isInert, isPersistent, isTransient, mergeSelStates, selState)
 import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
@@ -102,7 +102,8 @@ linkedOutputsTest { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (fst (selectionResult fig))
-   checkEq "selected" "expected" (selState <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (out_expect (botOf <$> v))
+   let v' = mergeSelStates v
+   checkEq "selected" "expected" (selState <$> (isInert <$> v') <*> (isPersistent <$> v') <*> (isTransient <$> v')) (out_expect (botOf <$> v'))
    pure fig
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
@@ -115,7 +116,8 @@ linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (fst $ snd (selectionResult fig))
-   checkEq "selected" "expected" (selState <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (in_expect (botOf <$> γ))
+   let γ' = mergeSelStates γ
+   checkEq "selected" "expected" (selState <$> (isInert <$> γ') <*> (isPersistent <$> γ') <*> (isTransient <$> γ')) (in_expect (botOf <$> γ'))
    pure fig
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
