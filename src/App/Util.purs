@@ -101,8 +101,8 @@ mergeSelStates (Selection { persistent: ps, transient: ts }) = mergeSel <$> ps <
    mergeSel Inert _ = SelStates Inert
    mergeSel (Reactive p) (Reactive t) = SelStates (Reactive $ Selection { persistent: p, transient: t })
 
-swapSelStates :: forall f a. Functor f => f (Selection (SelState a)) -> Selection (f (SelState a))
-swapSelStates fa = Selection
+distributeSel :: forall f a. Functor f => f (Selection a) -> Selection (f a)
+distributeSel fa = Selection
    { persistent: fa <#> unwrap >>> _.persistent
    , transient: fa <#> unwrap >>> _.transient
    }

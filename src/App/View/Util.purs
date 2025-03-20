@@ -118,7 +118,7 @@ type Fig =
    , in_roots :: Set Vertex
    , out_view :: Maybe View
    , intermediate_views :: Dict (Maybe View)
-   , intermediate_values :: Dict (Val (SelStates 𝔹))
+   , intermediate_values :: Selection (Env (SelState 𝔹))
    }
 
 -- ======================
