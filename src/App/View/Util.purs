@@ -78,7 +78,7 @@ type Renderer a = UIHelpers -> RendererSpec a -> EventListener -> Effect Unit
 
 type UIHelpers =
    { val :: forall a. Selectable a -> a
-   , selState :: forall a. Selectable a -> SelStates 𝕊
+   , selStates :: forall a. Selectable a -> SelStates 𝕊
    , join :: SelStates 𝕊 -> SelStates 𝕊 -> SelStates 𝕊
    , selClasses :: String
    , selClassesFor :: SelStates 𝕊 -> String
@@ -87,7 +87,7 @@ type UIHelpers =
 uiHelpers :: UIHelpers
 uiHelpers =
    { val: fst
-   , selState: snd
+   , selStates: snd
    , join: (∨)
    , selClasses
    , selClassesFor
@@ -110,7 +110,9 @@ type Fig =
    , γ :: Selection (Env (SelState 𝔹))
    , v :: Selection (Val (SelState 𝔹))
    , linkedOutputs :: Selection (Val (SelState 𝔹)) -> (Selection (Val (SelState 𝔹)) × Selection (Env (SelState 𝔹)) × Selection GraphImpl × Set DVertex)
+   , linkedOutputs' :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × Set DVertex
    , linkedInputs :: Selection (Env (SelState 𝔹)) -> (Selection (Env (SelState 𝔹)) × Selection (Val (SelState 𝔹)) × Selection GraphImpl × Set DVertex)
+   , linkedInputs' :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × Set DVertex
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex

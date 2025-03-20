@@ -11,7 +11,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype, over, unwrap)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
@@ -53,13 +53,17 @@ newtype Selection a = Selection { persistent :: a, transient :: a }
 
 data SelectionType = Persistent | Transient
 
-selState :: forall a. 𝔹 -> a -> a -> SelStates a
-selState true _ _ = SelStates Inert
-selState false b1 b2 = SelStates $ Reactive $ Selection { persistent: b1, transient: b2 }
+selStates :: forall a. 𝔹 -> a -> a -> SelStates a
+selStates true _ _ = SelStates Inert
+selStates false b1 b2 = SelStates $ Reactive $ Selection { persistent: b1, transient: b2 }
 
-selState' :: forall a. 𝔹 -> a -> a -> Selection (SelState a)
-selState' true _ _ = Selection { persistent: Inert, transient: Inert }
-selState' false b1 b2 = Selection { persistent: Reactive b1, transient: Reactive b2 }
+selection :: forall a. 𝔹 -> a -> a -> Selection (SelState a)
+selection true _ _ = Selection { persistent: Inert, transient: Inert }
+selection false b1 b2 = Selection { persistent: Reactive b1, transient: Reactive b2 }
+
+selState :: forall a. 𝔹 -> a -> SelState a
+selState true _ = Inert
+selState false b = Reactive b
 
 contents :: forall a. Selectable a -> a
 contents = fst
@@ -68,9 +72,11 @@ sel :: forall a. Selectable a -> SelStates 𝕊
 sel = snd
 
 persist :: forall a. Setter (SelStates a) a
-persist δα = case _ of
-   SelStates (Reactive (Selection s)) -> SelStates $ Reactive $ Selection { persistent: δα s.persistent, transient: s.transient }
-   SelStates Inert -> SelStates Inert
+persist δα = over SelStates mapδ
+   where
+   mapδ :: SelState (Selection a) -> SelState (Selection a)
+   mapδ Inert = Inert
+   mapδ (Reactive s) = Reactive (over Selection (\s' -> s' { persistent = δα s'.persistent }) s)
 
 data 𝕊 = None | Secondary | Primary
 
@@ -84,8 +90,8 @@ splitSelStates fa = Selection
    where
    splitSel :: SelectionType -> SelStates a -> SelState a
    splitSel _ (SelStates Inert) = Inert
-   splitSel Persistent (SelStates (Reactive (Selection { persistent }))) = Reactive persistent
-   splitSel Transient (SelStates (Reactive (Selection { transient }))) = Reactive transient
+   splitSel Persistent (SelStates (Reactive (Selection s))) = Reactive s.persistent
+   splitSel Transient (SelStates (Reactive (Selection s))) = Reactive s.transient
 
 mergeSelStates :: forall f a. Functor f => Apply f => Selection (f (SelState a)) -> f (SelStates a)
 mergeSelStates (Selection { persistent: ps, transient: ts }) = mergeSel <$> ps <*> ts
@@ -209,7 +215,7 @@ selector (EventType ev) v =
       | otherwise = error "Unsupported event type"
 
    reportSelStates = spyWhen tracing.mouseEvent "to " show
-   reportTarget = spyWhen tracing.mouseEvent "Setting selState of " prettyP
+   reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyP
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
@@ -319,7 +325,7 @@ instance Apply SelState where
    apply _ _ = shapeMismatch unit
 
 instance Apply Selection where
-   apply (Selection { persistent: persistent, transient: transient }) (Selection { persistent: persistent', transient: transient' }) =
+   apply (Selection { persistent, transient }) (Selection { persistent: persistent', transient: transient' }) =
       Selection { persistent: persistent persistent', transient: transient transient' }
 
 instance Apply SelStates where

@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, SelStates, Selection(..), 𝕊, as𝕊, mergeSelStates, selState', splitSelStates, swapSelStates, to𝔹, to𝕊)
+import App.Util (SelState, SelStates, Selection(..), 𝕊, as𝕊, mergeSelStates, selection, selState, splitSelStates, swapSelStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
@@ -23,7 +23,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, DVertex', Vertex(..), runQuery, select𝔹s, vertices)
+import Graph (class Graph, DVertex', Vertex(..), DVertex, runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module.Web (File, loadProgCxt, prepConfig)
@@ -100,11 +100,43 @@ selectIntermediates inerts (Selection g) (Selection vs) =
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Selection (Val (SelState 𝔹))
-   setSels inert (Vertex α × (Selection v)) = α × swapSelStates (selState' <$> inert <*> v.persistent <*> v.transient)
+   setSels inert (Vertex α × (Selection v)) = α × swapSelStates (selection <$> inert <*> v.persistent <*> v.transient)
 
    vs𝕊 = zipWith setSels vs_inert vs_selected
 
-selectionResult :: Fig -> Selection (Val (SelState 𝕊)) × Selection (Env (SelState 𝕊)) × Dict (Selection (Val (SelState 𝔹)))
+selectIntermediates' :: forall g. Graph g => Set DVertex -> g -> Set (DVertex' (Val Vertex)) -> Array (String × Val (SelState 𝔹))
+selectIntermediates' inerts g vs =
+   vs𝕊
+   where
+   verts = vertices g
+   vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
+
+   vs_selected = (\v@(Val α _) -> α × select𝔹s v verts) <$> vs' :: Array (Vertex × Val 𝔹)
+   vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
+
+   setSel :: Val 𝔹 -> Vertex × Val 𝔹 -> String × Val (SelState 𝔹)
+   setSel inert (Vertex α × v) = α × (selState <$> inert <*> v)
+
+   vs𝕊 = zipWith setSel vs_inert vs_selected
+
+selectionResult' :: Fig -> (Val (SelState 𝔹) × Env (SelState 𝔹)) -> Val (SelState 𝕊) × Env (SelState 𝕊) × Dict (Val (SelState 𝔹))
+selectionResult' fig@{ spec, dir } (v × γ) = case dir of
+   LinkedOutputs ->
+      let
+         v1 × γ1 × g × inertBwd = fig.linkedOutputs' v
+      in
+         (lift2 as𝕊 <$> v <*> v1) × ((to𝕊 <$> _) <$> γ1) × intermediates g inertBwd
+   LinkedInputs ->
+      let
+         γ1 × v1 × g × inertFwd = fig.linkedInputs' γ
+      in
+         ((to𝕊 <$> _) <$> v1) × (lift2 as𝕊 <$> γ <*> γ1) × intermediates g inertFwd
+   where
+   intermediates :: GraphImpl -> Set DVertex -> Dict (Val (SelState 𝔹))
+   intermediates g inerts = D.fromFoldable $ concat $ for spec.queries
+      \query -> selectIntermediates' inerts g (runQuery query g)
+
+selectionResult :: Fig -> Selection (Val (SelState 𝕊)) × Selection (Env (SelState 𝕊)) × (Dict (Selection (Val (SelState 𝔹))))
 selectionResult fig@{ spec, dir } =
    case dir of
       LinkedOutputs ->
@@ -168,7 +200,7 @@ lift
    => f (𝔹 -> 𝔹 -> Selection (SelState 𝔹))
    -> (f' 𝔹 -> f 𝔹 × g)
    -> (Selection (f' (SelState 𝔹)) -> (Selection (f (SelState 𝔹)) × g × g))
-lift selState_f bwd = bwd'
+lift selStates_f bwd = bwd'
    where
    bwd' :: Selection (f' (SelState 𝔹)) -> Selection (f (SelState 𝔹)) × g × g
    bwd' v =
@@ -176,7 +208,24 @@ lift selState_f bwd = bwd'
          (persistent × g) = bwd (v # unwrap >>> _.persistent <#> to𝔹)
          (transient × g') = bwd (v # unwrap >>> _.transient <#> to𝔹)
       in
-         (selState_f <*> persistent <*> transient # swapSelStates) × g × g'
+         (selStates_f <*> persistent <*> transient # swapSelStates) × g × g'
+
+lift1
+   :: forall f f' g
+    . Apply f
+   => Apply f'
+   => f (𝔹 -> (SelState 𝔹))
+   -> (f' 𝔹 -> f 𝔹 × g)
+   -> f' (SelState 𝔹)
+   -> f (SelState 𝔹) × g
+lift1 selStates_f bwd = bwd'
+   where
+   bwd' :: f' (SelState 𝔹) -> f (SelState 𝔹) × g
+   bwd' v =
+      let
+         (selection × g) = bwd (v <#> to𝔹)
+      in
+         (selStates_f <*> selection) × g
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
@@ -209,8 +258,20 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inertBwd = vertices g0 \\ (vertices $ snd (gcBwd (topOf outα))) :: Set DVertex
       inertFwd = vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0
 
-      γInert = selState' <$> select𝔹s γα inertBwd :: Env (𝔹 -> 𝔹 -> Selection (SelState 𝔹))
-      vInert = selState' <$> select𝔹s outα inertFwd :: Val (𝔹 -> 𝔹 -> Selection (SelState 𝔹))
+      γInert = selection <$> select𝔹s γα inertBwd :: Env (𝔹 -> 𝔹 -> Selection (SelState 𝔹))
+      vInert = selection <$> select𝔹s outα inertFwd :: Val (𝔹 -> 𝔹 -> Selection (SelState 𝔹))
+
+      γInert' = selState <$> select𝔹s γα inertBwd :: Env (𝔹 -> SelState 𝔹)
+      vInert' = selState <$> select𝔹s outα inertFwd :: Val (𝔹 -> SelState 𝔹)
+
+      vf' = lift1 γInert' gcBwd :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
+      γf' = lift1 vInert' gcFwd :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
+
+      linkedInputs' :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × Set DVertex
+      linkedInputs' = γf' >>> \(v × g) -> (fst $ vf' v) × v × g × inertFwd
+
+      linkedOutputs' :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × Set DVertex
+      linkedOutputs' = vf' >>> \(γ × g) -> (fst $ γf' γ) × γ × g × inertBwd
 
       vf = lift γInert gcBwd :: Selection (Val (SelState 𝔹)) -> Selection (Env (SelState 𝔹)) × GraphImpl × GraphImpl
       γf = lift vInert gcFwd :: Selection (Env (SelState 𝔹)) -> Selection (Val (SelState 𝔹)) × GraphImpl × GraphImpl
@@ -227,7 +288,9 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , γ: swapSelStates $ γInert <*> γ0 <*> γ0
       , v: swapSelStates $ vInert <*> v0 <*> v0
       , linkedOutputs
+      , linkedOutputs'
       , linkedInputs
+      , linkedInputs'
       , dir: LinkedOutputs
       , in_views
       , out_view: Nothing
