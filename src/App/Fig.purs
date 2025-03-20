@@ -18,7 +18,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for, for_, sequence_)
 import Data.Tuple (fst, snd)
-import Dict (Dict)
+import Dict (Dict, unions)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
@@ -32,7 +32,7 @@ import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, Setter, definitely', spyWhen, (×))
 import Util.Map (insert, keys, lookup, mapWithKey, restrict, filterKeys)
-import Util.Set ((∪), (\\), (∈), empty)
+import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
 
 str
@@ -87,9 +87,9 @@ setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
 
-selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Selection (Set (DVertex' (Val Vertex))) -> Array (String × Selection (Val (SelState 𝔹)))
+selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Selection (Set (DVertex' (Val Vertex))) -> Dict (Selection (Val (SelState 𝔹)))
 selectIntermediates inerts (Selection g) (Selection vs) =
-   vs𝕊
+   D.fromFoldable vs𝕊
    where
    verts = { persistent: vertices g.persistent, transient: vertices g.transient }
 
@@ -102,7 +102,7 @@ selectIntermediates inerts (Selection g) (Selection vs) =
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Selection (Val (SelState 𝔹))
    setSels inert (Vertex α × (Selection v)) = α × swapSelStates (selection <$> inert <*> v.persistent <*> v.transient)
 
-   vs𝕊 = zipWith setSels vs_inert vs_selected
+   vs𝕊 = setSels <$> vs_inert <*> vs_selected
 
 selectIntermediates' :: forall g. Graph g => Set DVertex -> g -> Set (DVertex' (Val Vertex)) -> Array (String × Val (SelState 𝔹))
 selectIntermediates' inerts g vs =
@@ -153,8 +153,10 @@ selectionResult fig@{ spec, dir } =
             ((map to𝕊 <$> _) <$> report v1) × (lift2 (lift2 as𝕊) <$> fig.γ <*> γ1) × intermediates g inertFwd
    where
    intermediates :: Selection GraphImpl -> Set DVertex -> Dict (Selection (Val (SelState 𝔹)))
-   intermediates (Selection g) inerts = D.fromFoldable $ concat $ for spec.queries
-      \query -> selectIntermediates inerts (Selection g) (Selection { persistent: runQuery query g.persistent, transient: runQuery query g.transient })
+   intermediates (Selection g) inerts = unions $
+      ( \query ->
+           (selectIntermediates inerts (Selection g) (Selection { persistent: runQuery query g.persistent, transient: runQuery query g.transient }))
+      ) <$> spec.queries
 
 drawIntermediates :: HTMLId -> Dict (Val (SelStates 𝔹)) -> Array String -> Redraw -> Effect Unit
 drawIntermediates divId intermediates unused redraw = do

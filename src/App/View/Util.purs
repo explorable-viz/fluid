@@ -78,7 +78,7 @@ type Renderer a = UIHelpers -> RendererSpec a -> EventListener -> Effect Unit
 
 type UIHelpers =
    { val :: forall a. Selectable a -> a
-   , selStates :: forall a. Selectable a -> SelStates 𝕊
+   , selState :: forall a. Selectable a -> SelStates 𝕊
    , join :: SelStates 𝕊 -> SelStates 𝕊 -> SelStates 𝕊
    , selClasses :: String
    , selClassesFor :: SelStates 𝕊 -> String
@@ -87,7 +87,7 @@ type UIHelpers =
 uiHelpers :: UIHelpers
 uiHelpers =
    { val: fst
-   , selStates: snd
+   , selState: snd
    , join: (∨)
    , selClasses
    , selClassesFor
