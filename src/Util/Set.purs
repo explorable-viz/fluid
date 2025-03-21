@@ -39,4 +39,4 @@ instance Set (Object a) String where
    union = Object.union
 
 unions ∷ ∀ f a b. Foldable f ⇒ Set a b ⇒ f a → a
-unions = foldl union empty 
+unions = foldl union empty

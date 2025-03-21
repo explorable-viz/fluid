@@ -107,7 +107,7 @@ instance Map (Env a) String (Val a) where
    delete k (Env γ) = Env (delete k γ)
    insert k v (Env γ) = Env (insert k v γ)
    toUnfoldable (Env γ) = toUnfoldable γ
-   
+
 data EnvExpr a = EnvExpr (Env a) (Expr a)
 
 -- Goes from smaller environment to larger (injection into a biproduct).
