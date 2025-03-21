@@ -414,8 +414,7 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Se
       , height: unpack int (snd (get "height" r))
       }
 
-zipTuples :: forall a b c d. (a × b × c × d) -> (a × b × c × d) -> Selection a × Selection b × Selection c × Selection d
-zipTuples (a × b × c × d) (a' × b' × c' × d') = Selection { persistent: a, transient: a' }
+zipTuples :: forall a b c. (a × b × c) -> (a × b × c) -> Selection a × Selection b × Selection c
+zipTuples (a × b × c) (a' × b' × c') = Selection { persistent: a, transient: a' }
    × Selection { persistent: b, transient: b' }
    × Selection { persistent: c, transient: c' }
-   × Selection { persistent: d, transient: d' }

@@ -109,16 +109,16 @@ type Fig =
    , s :: Raw S.Expr
    , γ :: Selection (Env (SelState 𝔹))
    , v :: Selection (Val (SelState 𝔹))
-   , linkedOutputs :: Selection (Val (SelState 𝔹)) -> (Selection (Val (SelState 𝔹)) × Selection (Env (SelState 𝔹)) × Selection GraphImpl × Set DVertex)
-   , linkedOutputs' :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl × Set DVertex
-   , linkedInputs :: Selection (Env (SelState 𝔹)) -> (Selection (Env (SelState 𝔹)) × Selection (Val (SelState 𝔹)) × Selection GraphImpl × Set DVertex)
-   , linkedInputs' :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl × Set DVertex
+   , linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl
+   , linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
    , dir :: Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
    , out_view :: Maybe View
    , intermediate_views :: Dict (Maybe View)
    , intermediate_values :: Selection (Env (SelState 𝔹))
+   , inertFwd :: Set DVertex
+   , inertBwd :: Set DVertex
    }
 
 -- ======================
