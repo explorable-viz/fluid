@@ -11,7 +11,7 @@ import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Apply (lift2)
 import Data.Array (fromFoldable, zipWith)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, (***))
 import Data.Set (Set)
@@ -116,7 +116,7 @@ selectionResult' fig@{ spec, dir } (v × γ) = case dir of
    where
    intermediates :: GraphImpl -> Set DVertex -> Env (SelState 𝔹)
    intermediates g inerts = γUnions $
-      (\query -> selectIntermediates inerts g (runQuery query g)) <$> spec.queries
+      (\query -> selectIntermediates inerts g (runQuery query g)) <$> spec.query
 
 selectionResult :: Fig -> Selection (Val (SelState 𝕊)) × Selection (Env (SelState 𝕊)) × Selection (Env (SelState 𝔹))
 selectionResult fig@{ spec, dir } =
@@ -134,17 +134,18 @@ selectionResult fig@{ spec, dir } =
          in
             ((map to𝕊 <$> _) <$> report v1) × (lift2 (lift2 as𝕊) <$> fig.γ <*> γ1) × intermediates g inertFwd
    where
+   filterIntermediate :: Set DVertex -> GraphImpl -> Set (DVertex' (Val Vertex)) -> Env (SelState 𝔹)
+   filterIntermediate inerts g vs = filterKeys (\α -> not (Vertex α ∈ fig.in_roots)) (selectIntermediates inerts g vs)
+
    intermediates :: Selection GraphImpl -> Set DVertex -> Selection (Env (SelState 𝔹))
    intermediates (Selection g) inerts =
       ( ( \query ->
              let
                 vs = (runQuery query g.persistent) ∪ (runQuery query g.transient)
-                intermediates_p = filterKeys (\α -> not ((Vertex α) ∈ fig.in_roots)) (selectIntermediates inerts g.persistent vs)
-                intermediates_t = filterKeys (\α -> not ((Vertex α) ∈ fig.in_roots)) (selectIntermediates inerts g.transient vs)
              in
-                Selection { persistent: intermediates_p, transient: intermediates_t }
-        ) <$> spec.queries
-      ) # \arr -> Selection { persistent: γUnions $ _.persistent <<< unwrap <$> arr, transient: γUnions $ _.transient <<< unwrap <$> arr }
+                Selection { persistent: filterIntermediate inerts g.persistent vs, transient: filterIntermediate inerts g.transient vs }
+        ) <$> spec.query
+      ) # maybe (Selection { persistent: empty, transient: empty }) identity
 
 drawIntermediates :: HTMLId -> Selection (Env (SelState 𝔹)) -> Array String -> Redraw -> Effect Unit
 drawIntermediates divId intermediates unused redraw = do

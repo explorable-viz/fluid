@@ -36,11 +36,10 @@ scratchpad = linkedOutputsSuite
           , imports: [ "lib/convolution" ]
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
-          , queries:
-               [ asVal >=> case _ of
-                    v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
-                    _ -> Nothing
-               ]
+          , query:
+               Just $ asVal >=> case _ of
+                  v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
+                  _ -> Nothing
           }
      , δ_out: fst (matrixElement 2 2 neg)
      , out_expect:

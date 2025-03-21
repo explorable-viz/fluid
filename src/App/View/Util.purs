@@ -99,7 +99,7 @@ type FigSpec =
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
-   , queries :: Array (VertexData -> Maybe (DVertex' (Val Vertex)))
+   , query :: Maybe (VertexData -> Maybe (DVertex' (Val Vertex)))
    }
 
 data Direction = LinkedInputs | LinkedOutputs

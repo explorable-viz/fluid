@@ -34,11 +34,10 @@ figSpecFromJson spec =
    , imports: spec.imports
    , file: File spec.file
    , inputs: spec.inputs
-   , queries:
-        [ asVal >=> case _ of
-             v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
-             _ -> Nothing
-        ]
+   , query:
+        Just $ asVal >=> case _ of
+           v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
+           _ -> Nothing
    }
 
 loadFigure :: String -> Effect Unit
