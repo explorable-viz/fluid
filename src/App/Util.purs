@@ -30,7 +30,7 @@ import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
+import Util (type (×), (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
@@ -413,3 +413,9 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Se
       { width: unpack int (snd (get "width" r))
       , height: unpack int (snd (get "height" r))
       }
+
+zipTuples :: forall a b c d. (a × b × c × d) -> (a × b × c × d) -> Selection a × Selection b × Selection c × Selection d
+zipTuples (a × b × c × d) (a' × b' × c' × d') = Selection { persistent: a, transient: a' }
+   × Selection { persistent: b, transient: b' }
+   × Selection { persistent: c, transient: c' }
+   × Selection { persistent: d, transient: d' }

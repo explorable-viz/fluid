@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, SelStates, Selection(..), 𝕊, as𝕊, distributeSel, mergeSelStates, selState, selection, splitSelStates, to𝔹, to𝕊)
+import App.Util (SelState, SelStates, Selection(..), 𝕊, as𝕊, distributeSel, mergeSelStates, selState, selection, splitSelStates, to𝔹, to𝕊, zipTuples)
 import App.Util.Selector (envVal)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
@@ -123,27 +123,32 @@ selectionResult fig@{ spec, dir } =
    case dir of
       LinkedOutputs ->
          let
-            v1 × γ1 × g × inertBwd = fig.linkedOutputs fig.v
+            persistent = fig.linkedOutputs' (unwrap fig.v).persistent
+            transient = fig.linkedOutputs' (unwrap fig.v).transient
+            vs × γ × g × inert = zipTuples persistent transient
             report = spyWhen tracing.mediatingData "Mediating inputs" (prettyP <<< mergeSelStates)
          in
-            (lift2 (lift2 as𝕊) <$> fig.v <*> v1) × ((map to𝕊 <$> _) <$> report γ1) × intermediates g inertBwd
+            (lift2 (lift2 as𝕊) <$> fig.v <*> vs) × ((map to𝕊 <$> _) <$> report γ) × intermediates g inert
       LinkedInputs ->
          let
-            γ1 × v1 × g × inertFwd = fig.linkedInputs fig.γ
+            persistent = fig.linkedInputs' (unwrap fig.γ).persistent
+            transient = fig.linkedInputs' (unwrap fig.γ).transient
+            γ × vs × g × inert = zipTuples persistent transient
             report = spyWhen tracing.mediatingData "Mediating outputs" (prettyP <<< mergeSelStates)
          in
-            ((map to𝕊 <$> _) <$> report v1) × (lift2 (lift2 as𝕊) <$> fig.γ <*> γ1) × intermediates g inertFwd
+            ((map to𝕊 <$> _) <$> report vs) × (lift2 (lift2 as𝕊) <$> fig.γ <*> γ) × intermediates g inert
    where
    filterSelect :: Set DVertex -> GraphImpl -> Set (DVertex' (Val Vertex)) -> Env (SelState 𝔹)
    filterSelect inerts g vs = filterKeys (\α -> not (Vertex α ∈ fig.in_roots)) (selectIntermediates inerts g vs)
 
-   intermediates :: Selection GraphImpl -> Set DVertex -> Selection (Env (SelState 𝔹))
-   intermediates (Selection g) inerts =
+   intermediates :: Selection GraphImpl -> Selection (Set DVertex) -> Selection (Env (SelState 𝔹))
+   intermediates (Selection g) (Selection inerts) =
       ( ( \query ->
              let
+                inerts' = inerts.persistent ∪ inerts.transient
                 vs = (runQuery query g.persistent) ∪ (runQuery query g.transient)
              in
-                Selection { persistent: filterSelect inerts g.persistent vs, transient: filterSelect inerts g.transient vs }
+                Selection { persistent: filterSelect inerts' g.persistent vs, transient: filterSelect inerts' g.transient vs }
         ) <$> spec.query
       ) # maybe (Selection { persistent: empty, transient: empty }) identity
 
