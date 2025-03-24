@@ -2,14 +2,14 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelStates, persist)
+import App.Util (SelState, SelStates, Selection, mergeSelStates, persist, splitSelStates)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cParagraph, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_points, f_stackedBars, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
-import Util (Setter, absurd, assert, definitely, error)
+import Util (Setter, Endo, absurd, assert, definitely, error)
 import Util.Map (update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Val(..), matrixPut, Env)
@@ -99,3 +99,6 @@ listCell n δα = unsafePartial $ case _ of
    Val α (Constr c (v : v' : Nil)) | c == cCons ->
       if n == 0 then Val (persist δα α) (Constr c (v : v' : Nil))
       else Val α (Constr c (v : listCell (n - 1) δα v' : Nil))
+
+lift :: forall f. Functor f => Apply f => Endo (f (SelStates 𝔹)) -> Endo (Selection (f (SelState 𝔹)))
+lift δv = splitSelStates <<< δv <<< mergeSelStates

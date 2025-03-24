@@ -119,7 +119,9 @@ type Fig =
    , inertBwd :: Set DVertex
    }
 
-type FigStore = Selection
+type FigStore = Selection Store
+
+type Store =
    { γ :: Env (SelState 𝔹)
    , v :: Val (SelState 𝔹)
    , ι :: Env (SelState 𝔹)
