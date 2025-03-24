@@ -49,13 +49,25 @@ mkFullId :: String -> String -> String -> String
 mkFullId divId mid suffix = "#" <> divId <> "-" <> mid <> "-" <> suffix
 
 selectOutput :: Setter Fig (Val (SelStates 𝔹))
-selectOutput δv fig@{ dir, γ, v } = fig
-   { v = splitSelStates $ δv (mergeSelStates v)
-   , γ = if dir == LinkedInputs then γ' else γ
+selectOutput δv fig@{ dir, store } = fig
+   { store = newStore
    , dir = LinkedOutputs
    }
    where
-   γ' = splitSelStates $ botOf (mergeSelStates γ)
+   oldStore = unwrap store
+   Selection { persistent: v_p, transient: v_t } = splitSelStates $ δv (mergeSelStates (Selection { persistent: oldStore.persistent.v, transient: oldStore.transient.v }))
+   newStore = Selection
+      { persistent:
+           { v: v_p
+           , γ: if dir == LinkedInputs then botOf (oldStore.persistent.γ) else oldStore.persistent.γ :: Env (SelState 𝔹)
+           , ι: oldStore.persistent.ι :: Env (SelState 𝔹)
+           }
+      , transient:
+           { v: v_t
+           , γ: if dir == LinkedInputs then botOf (oldStore.transient.γ) else oldStore.transient.γ :: Env (SelState 𝔹)
+           , ι: oldStore.transient.ι :: Env (SelState 𝔹)
+           }
+      }
 
 setOutputView :: Setter Fig View
 setOutputView δvw fig = fig
@@ -63,13 +75,25 @@ setOutputView δvw fig = fig
    }
 
 selectInput :: Var -> Setter Fig (Val (SelStates 𝔹))
-selectInput x δv fig@{ dir, γ, v } = fig
-   { γ = splitSelStates $ envVal x δv (mergeSelStates γ)
-   , v = if dir == LinkedOutputs then v' else v
+selectInput x δv fig@{ dir, store } = fig
+   { store = newStore
    , dir = LinkedInputs
    }
    where
-   v' = splitSelStates $ (botOf (mergeSelStates v))
+   oldStore = unwrap store
+   Selection { persistent: γ_p, transient: γ_t } = splitSelStates $ envVal x δv (mergeSelStates (Selection { persistent: oldStore.persistent.γ, transient: oldStore.transient.γ }))
+   newStore = Selection
+      { persistent:
+           { v: if dir == LinkedOutputs then botOf (oldStore.persistent.v) else oldStore.persistent.v :: Val (SelState 𝔹)
+           , γ: γ_p
+           , ι: oldStore.persistent.ι :: Env (SelState 𝔹)
+           }
+      , transient:
+           { v: if dir == LinkedOutputs then botOf (oldStore.transient.v) else oldStore.transient.v :: Val (SelState 𝔹)
+           , γ: γ_t
+           , ι: oldStore.transient.ι :: Env (SelState 𝔹)
+           }
+      }
 
 setInputView :: Var -> Setter Fig View
 setInputView x δvw fig = fig
@@ -77,9 +101,11 @@ setInputView x δvw fig = fig
    }
 
 selectIntermediate :: Vertex -> Setter Fig (Val (SelStates 𝔹))
-selectIntermediate (Vertex α) δv fig = fig
-   { intermediate_values = splitSelStates $ envVal α δv (mergeSelStates fig.intermediate_values)
-   }
+selectIntermediate (Vertex α) δv fig@{ store } = fig
+   { store = Selection { persistent: store'.persistent { ι = ι }, transient: store'.transient { ι = ι' } } }
+   where
+   store' = unwrap store
+   Selection { persistent: ι, transient: ι' } = splitSelStates $ envVal α δv (mergeSelStates $ Selection { persistent: (unwrap fig.store).persistent.ι, transient: (unwrap fig.store).transient.ι })
 
 setIntermediateView :: Vertex -> Setter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
@@ -122,8 +148,8 @@ selectionResult fig@{ spec } =
       × Selection { persistent: γs_p, transient: γs_t }
       × ιs
    where
-   { persistent: v, transient: v' } = unwrap fig.v
-   { persistent: γ, transient: γ' } = unwrap fig.γ
+   Selection { persistent: v, transient: v' } = map (_.v) fig.store
+   Selection { persistent: γ, transient: γ' } = map (_.γ) fig.store
    vs_p × γs_p × inert × g = selectionResult' fig (v × γ)
    vs_t × γs_t × inert' × g' = selectionResult' fig (v' × γ')
 
@@ -164,10 +190,15 @@ drawFig divId fig = do
    selKeys :: forall a. Selection (Env a) -> Set String
    selKeys (Selection γ) = keys γ.persistent ∪ keys γ.transient
 
-   unused :: Array String
-   unused = fromFoldable (selKeys fig.intermediate_values \\ selKeys intermediate_values)
+   ιKeys = keys (unwrap fig.store).persistent.ι ∪ keys (unwrap fig.store).transient.ι
 
-   redraw = (_ $ fig { intermediate_values = intermediate_values }) >>> drawFig divId
+   unused :: Array String
+   unused = fromFoldable (ιKeys \\ selKeys intermediate_values)
+   newStore = Selection
+      { persistent: { v: (unwrap fig.store).persistent.v, γ: (unwrap fig.store).persistent.γ, ι: (unwrap intermediate_values).persistent }
+      , transient: { v: (unwrap fig.store).transient.v, γ: (unwrap fig.store).transient.γ, ι: (unwrap intermediate_values).transient }
+      }
+   redraw = (_ $ fig { store = newStore }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
@@ -257,19 +288,17 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
 
       linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl
       linkedOutputs = vf >>> \(γ × g) -> (fst $ γf γ) × γ × g
-
+      initStore = { γ: γ_init, v: v_init, ι: empty }
    pure
       { spec
       , s
-      , γ: Selection { persistent: γ_init, transient: γ_init }
-      , v: Selection { persistent: v_init, transient: v_init }
+      , store: Selection { persistent: initStore, transient: initStore }
       , linkedOutputs
       , linkedInputs
       , dir: LinkedOutputs
       , in_views
       , out_view: Nothing
       , intermediate_views: empty
-      , intermediate_values: Selection { persistent: empty, transient: empty }
       , in_roots
       , inertFwd
       , inertBwd

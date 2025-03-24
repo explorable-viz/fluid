@@ -107,8 +107,7 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , γ :: Selection (Env (SelState 𝔹))
-   , v :: Selection (Val (SelState 𝔹))
+   , store :: FigStore
    , linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl
    , linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
    , dir :: Direction
@@ -116,9 +115,14 @@ type Fig =
    , in_roots :: Set Vertex
    , out_view :: Maybe View
    , intermediate_views :: Dict (Maybe View)
-   , intermediate_values :: Selection (Env (SelState 𝔹))
    , inertFwd :: Set DVertex
    , inertBwd :: Set DVertex
+   }
+
+type FigStore = Selection
+   { γ :: Env (SelState 𝔹)
+   , v :: Val (SelState 𝔹)
+   , ι :: Env (SelState 𝔹)
    }
 
 -- ======================
