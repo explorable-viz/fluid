@@ -2,8 +2,8 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, 𝕊, selClasses, selClassesFor, selectionEventData)
-import App.Util.Selector (ViewSelSetter)
+import App.Util (SelState, SelStates, Selectable, Selection, 𝕊, SetSel, selClasses, selClassesFor, selectionEventData, selectionEventData')
+import App.Util.Selector (ViewSelSetter, ViewSelSetter')
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
 import Bind (Bind, Var)
@@ -26,6 +26,8 @@ import Web.Event.EventTarget (EventListener, eventListener)
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
+type Redraw' = SetSel Fig -> Effect Unit
+
 newtype View = View (forall r. (forall a. Drawable a => a -> r) -> r)
 
 pack :: forall a. Drawable a => a -> View
@@ -37,6 +39,10 @@ unpack (View vw) k = vw k
 selListener :: forall a. Setter Fig (Val (SelStates 𝔹)) -> Redraw -> ViewSelSetter a -> Effect EventListener
 selListener figVal redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
+
+selListener' :: forall a.  (SetSel (Val (SelState 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter' a -> Effect EventListener
+selListener' figVal redraw selector =
+   eventListener (selectionEventData' >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Val (SelStates 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit

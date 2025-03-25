@@ -30,14 +30,14 @@ import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
+import Util (type (×), (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelStates 𝔹)) -- modifies selection state
-type Selector' (f :: Type -> Type) = f (SelStates 𝔹) -> f (SelStates 𝔹) × SelectionType -- modifies selection state
+type SetSel a = a -> a × SelectionType -- modifies selection state
 -- Selection can occur on data that can be interacted with, reactive data rather than inert data. Within reactive data,
 -- selection has two dimensions: persistent or transient. An element can be persistently
 -- *and* transiently selected at the same time; these need to be visually distinct (so that for example
@@ -51,7 +51,7 @@ data SelState a
 newtype SelStates a = SelStates (SelState (Selection a))
 newtype Selection a = Selection { persistent :: a, transient :: a }
 
-data SelectionType = Persistent | Transient
+data SelectionType = Persistent | Transient | Unselectable
 
 selStates :: forall a. 𝔹 -> a -> a -> SelStates a
 selStates true _ _ = SelStates Inert
@@ -78,6 +78,13 @@ persist δα = over SelStates mapδ
    mapδ Inert = Inert
    mapδ (Reactive s) = Reactive (over Selection (\s' -> s' { persistent = δα s'.persistent }) s)
 
+transition :: forall a. Setter (SelStates a) a
+transition δα = over SelStates mapδ
+   where
+   mapδ :: SelState (Selection a) -> SelState (Selection a)
+   mapδ Inert = Inert
+   mapδ (Reactive s) = Reactive (over Selection (\s' -> s' { transient = δα s'.transient }) s)
+
 data 𝕊 = None | Secondary | Primary
 
 type Selectable a = a × SelStates 𝕊
@@ -90,6 +97,7 @@ splitSelStates fa = Selection
    where
    splitSel :: SelectionType -> SelStates a -> SelState a
    splitSel _ (SelStates Inert) = Inert
+   splitSel Unselectable _ = Inert
    splitSel Persistent (SelStates (Reactive (Selection s))) = Reactive s.persistent
    splitSel Transient (SelStates (Reactive (Selection s))) = Reactive s.transient
 
@@ -196,6 +204,9 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
 selectionEventData :: forall a. Event -> a × Selector Val
 selectionEventData = (eventData &&& type_ >>> selector)
 
+selectionEventData' :: forall a. Event -> a × SetSel (Val (SelState 𝔹))
+selectionEventData' = (eventData &&& type_ >>> selector')
+
 eventData :: forall a. Event -> a
 eventData = target >>> unsafeEventData
    where
@@ -216,6 +227,13 @@ selector (EventType ev) v =
 
    reportSelStates = spyWhen tracing.mouseEvent "to " show
    reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyP
+
+selector' :: EventType -> SetSel (Val (SelState 𝔹))
+selector' (EventType ev) v = case ev of
+   "mousedown" -> (neg <$> v) × Persistent
+   "mouseenter" -> (const (Reactive true) <$> v) × Transient
+   "mouseleave" -> (const (Reactive false) <$> v) × Transient
+   _ -> error "Unsupported event type"
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
@@ -298,6 +316,8 @@ newtype Dimensions a = Dimensions
 derive instance Generic 𝕊 _
 instance Show 𝕊 where
    show = genericShow
+
+derive instance Eq SelectionType
 
 derive instance Functor SelState
 derive instance Functor SelStates
