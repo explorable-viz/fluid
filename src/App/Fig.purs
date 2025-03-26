@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, SelStates, Selection(..), 𝕊, as𝕊, distributeSel, mergeSelStates, selState, to𝔹, to𝕊)
+import App.Util (SelState, SelStates, Selection(..), 𝕊, SetSel, as𝕊, distributeSel, mergeSelStates, selState, to𝔹, to𝕊)
 import App.Util.Selector (envVal)
 import App.Util.Selector (lift) as Sel
 import App.View (view)
@@ -30,7 +30,7 @@ import Module.Web (File, loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, error, spyWhen, (×))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
@@ -48,6 +48,9 @@ str =
 
 mkFullId :: String -> String -> String -> String
 mkFullId divId mid suffix = "#" <> divId <> "-" <> mid <> "-" <> suffix
+
+selectOutput' :: SetSel (Val (SelState 𝔹)) -> Endo Fig
+selectOutput' = error "todo"
 
 selectOutput :: Setter Fig (Val (SelStates 𝔹))
 selectOutput δv fig@{ dir, store: Selection store } = fig

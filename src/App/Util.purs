@@ -30,7 +30,7 @@ import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
+import Util (type (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
@@ -204,16 +204,13 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
 selectionEventData :: forall a. Event -> a × Selector Val
 selectionEventData = (eventData &&& type_ >>> selector)
 
-selectionEventData' :: forall a. Event -> a × SetSel (Val (SelState 𝔹))
-selectionEventData' = (eventData &&& type_ >>> selector')
-
 eventData :: forall a. Event -> a
 eventData = target >>> unsafeEventData
    where
    unsafeEventData :: Maybe EventTarget -> a
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
-selector :: EventType -> Selector Val
+selector :: EventType -> Endo (Val (SelStates 𝔹))
 selector (EventType ev) v =
    reportSelStates <<< setSel <$> reportTarget v
    where
@@ -227,13 +224,6 @@ selector (EventType ev) v =
 
    reportSelStates = spyWhen tracing.mouseEvent "to " show
    reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyP
-
-selector' :: EventType -> SetSel (Val (SelState 𝔹))
-selector' (EventType ev) v = case ev of
-   "mousedown" -> (neg <$> v) × Persistent
-   "mouseenter" -> (const (Reactive true) <$> v) × Transient
-   "mouseleave" -> (const (Reactive false) <$> v) × Transient
-   _ -> error "Unsupported event type"
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String

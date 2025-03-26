@@ -2,8 +2,8 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, 𝕊, SetSel, selClasses, selClassesFor, selectionEventData, selectionEventData')
-import App.Util.Selector (ViewSelSetter, ViewSelSetter')
+import App.Util (SelState, SelStates, Selectable, Selection, 𝕊, SetSel, selClasses, selClassesFor, selectionEventData)
+import App.Util.Selector (ViewSelSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
 import Bind (Bind, Var)
@@ -39,10 +39,6 @@ unpack (View vw) k = vw k
 selListener :: forall a. Setter Fig (Val (SelStates 𝔹)) -> Redraw -> ViewSelSetter a -> Effect EventListener
 selListener figVal redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
-
-selListener' :: forall a.  (SetSel (Val (SelState 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter' a -> Effect EventListener
-selListener' figVal redraw selector =
-   eventListener (selectionEventData' >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Val (SelStates 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
@@ -113,7 +109,7 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , store :: FigStore
+   , store :: Selection Store
    , linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl
    , linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
    , dir :: Direction
@@ -124,8 +120,6 @@ type Fig =
    , inertFwd :: Set DVertex
    , inertBwd :: Set DVertex
    }
-
-type FigStore = Selection Store
 
 type Store =
    { γ :: Env (SelState 𝔹)
