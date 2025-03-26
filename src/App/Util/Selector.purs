@@ -196,11 +196,10 @@ listCell n δα = unsafePartial $ case _ of
       if n == 0 then Val (persist δα α) (Constr c (v : v' : Nil))
       else Val α (Constr c (v : listCell (n - 1) δα v' : Nil))
 
--- TODO: cleanup
 listCell' :: Int -> Setter' (Val (SelState 𝔹)) 𝔹
 listCell' n δα = unsafePartial $ case _ of
    Val α (Constr c Nil) | n == 0 && c == cNil ->
-      let new_α × selType = (persist' δα α) in Val new_α (Constr c Nil) × selType
-   Val α (Constr c (v : v' : Nil)) | c == cCons ->
-      if n == 0 then let new_α × selType = persist' δα α in Val new_α (Constr c (v : v' : Nil)) × selType
-      else let new_v × selType = listCell' (n - 1) δα v' in Val α (Constr c (v : new_v : Nil)) × selType
+      first (\α' -> Val α' (Constr c Nil)) (persist' δα α)
+   Val α (Constr c (v : u : Nil)) | c == cCons ->
+      if n == 0 then first (\α' -> Val α' (Constr c (v : u : Nil))) (persist' δα α)
+      else first (\u' -> Val α (Constr c (v : u' : Nil))) (listCell' (n - 1) δα u)
