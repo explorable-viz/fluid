@@ -3,9 +3,8 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, SelStates, Selection(..), 𝕊, SetSel, as𝕊, distributeSel, mergeSelStates, selState, to𝔹, to𝕊)
+import App.Util (SelState, SelStates, Selection(..), SetSel, 𝕊, as𝕊, distributeSel, mergeSelStates, selState, splitSelStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal)
-import App.Util.Selector (lift) as Sel
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
@@ -53,25 +52,11 @@ selectOutput' :: SetSel (Val (SelState 𝔹)) -> Endo Fig
 selectOutput' = error "todo"
 
 selectOutput :: Setter Fig (Val (SelStates 𝔹))
-selectOutput δv fig@{ dir, store: Selection store } = fig
-   { store =
-        Selection
-           { persistent:
-                { v: v_p
-                , γ: if dir == LinkedInputs then botOf store.persistent.γ else store.persistent.γ :: Env (SelState 𝔹)
-                , ι: store.persistent.ι :: Env (SelState 𝔹)
-                }
-           , transient:
-                { v: v_t
-                , γ: if dir == LinkedInputs then botOf store.transient.γ else store.transient.γ :: Env (SelState 𝔹)
-                , ι: store.transient.ι :: Env (SelState 𝔹)
-                }
-           }
+selectOutput δv fig@{ dir, v, γ } = fig
+   { v = δv v
+   , γ = if dir == LinkedInputs then botOf γ else γ
    , dir = LinkedOutputs
    }
-   where
-   Selection { persistent: v_p, transient: v_t } =
-      Selection store <#> _.v # Sel.lift δv
 
 setOutputView :: Setter Fig View
 setOutputView δvw fig = fig
@@ -79,25 +64,11 @@ setOutputView δvw fig = fig
    }
 
 selectInput :: Var -> Setter Fig (Val (SelStates 𝔹))
-selectInput x δv fig@{ dir, store: Selection store } = fig
-   { store =
-        Selection
-           { persistent:
-                { v: if dir == LinkedOutputs then botOf store.persistent.v else store.persistent.v :: Val (SelState 𝔹)
-                , γ: γ_p
-                , ι: store.persistent.ι :: Env (SelState 𝔹)
-                }
-           , transient:
-                { v: if dir == LinkedOutputs then botOf store.transient.v else store.transient.v :: Val (SelState 𝔹)
-                , γ: γ_t
-                , ι: store.transient.ι :: Env (SelState 𝔹)
-                }
-           }
+selectInput x δv fig@{ dir, γ, v } = fig
+   { γ = envVal x δv γ
+   , v = if dir == LinkedOutputs then botOf v else v
    , dir = LinkedInputs
    }
-   where
-   Selection { persistent: γ_p, transient: γ_t } =
-      Selection store <#> _.γ # Sel.lift (envVal x δv)
 
 setInputView :: Var -> Setter Fig View
 setInputView x δvw fig = fig
@@ -105,11 +76,9 @@ setInputView x δvw fig = fig
    }
 
 selectIntermediate :: Vertex -> Setter Fig (Val (SelStates 𝔹))
-selectIntermediate (Vertex α) δv fig@{ store: Selection store } = fig
-   { store = Selection { persistent: store.persistent { ι = ι }, transient: store.transient { ι = ι' } } }
-   where
-   Selection { persistent: ι, transient: ι' } =
-      Selection store <#> _.ι # Sel.lift (envVal α δv)
+selectIntermediate (Vertex α) δv fig@{ ι } = fig
+   { ι = envVal α δv ι
+   }
 
 setIntermediateView :: Vertex -> Setter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
@@ -147,14 +116,15 @@ selectionResult' fig@{ dir } (v × γ) = case dir of
          ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> γ <*> γ1) × fig.inertFwd × g
 
 selectionResult :: Fig -> Selection (Val (SelState 𝕊)) × Selection (Env (SelState 𝕊)) × Selection (Env (SelState 𝔹))
-selectionResult fig@{ spec, store: Selection store } =
+selectionResult fig@{ spec, v, γ } =
    Selection { persistent: vs_p, transient: vs_t }
       × Selection { persistent: γs_p, transient: γs_t }
       × ιs
    where
-
-   vs_p × γs_p × inert × g = selectionResult' fig (store.persistent.v × store.transient.γ)
-   vs_t × γs_t × _ × g' = selectionResult' fig (store.transient.v × store.transient.γ)
+   Selection { persistent: v_p, transient: v_t } = splitSelStates v
+   Selection { persistent: γ_p, transient: γ_t } = splitSelStates γ
+   vs_p × γs_p × inert × g = selectionResult' fig (v_p × γ_p)
+   vs_t × γs_t × _ × g' = selectionResult' fig (v_t × γ_t)
 
    ιs =
       ( \query ->
@@ -179,7 +149,7 @@ drawIntermediates divId intermediates unused redraw = do
       drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
 
 drawFig :: HTMLId -> Fig -> Effect Unit
-drawFig divId fig@{ store: Selection store } = do
+drawFig divId fig@{ ι } = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
 
    sequence_ $ flip mapWithKey in_views \x view -> do
@@ -198,13 +168,9 @@ drawFig divId fig@{ store: Selection store } = do
    selKeys (Selection γ) = keys γ.persistent ∪ keys γ.transient
 
    unused :: Array String
-   unused = fromFoldable (keys store.persistent.ι ∪ keys store.transient.ι \\ selKeys (Selection intermediate_values))
+   unused = fromFoldable (keys ι \\ selKeys (Selection intermediate_values))
 
-   newStore = Selection
-      { persistent: { v: store.persistent.v, γ: store.persistent.γ, ι: intermediate_values.persistent }
-      , transient: { v: store.transient.v, γ: store.transient.γ, ι: intermediate_values.transient }
-      }
-   redraw = (_ $ fig { store = newStore }) >>> drawFig divId
+   redraw = (_ $ fig { ι = mergeSelStates (Selection intermediate_values) }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
 drawFile (file × src) =
@@ -294,11 +260,12 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
 
       linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl
       linkedOutputs = vf >>> \(γ × g) -> (fst $ γf γ) × γ × g
-      initStore = { γ: γ_init, v: v_init, ι: empty }
    pure
       { spec
       , s
-      , store: Selection { persistent: initStore, transient: initStore }
+      , γ: mergeSelStates $ Selection { persistent: γ_init, transient: γ_init }
+      , v: mergeSelStates $ Selection { persistent: v_init, transient: v_init }
+      , ι: mergeSelStates $ Selection { persistent: empty, transient: empty }
       , linkedOutputs
       , linkedInputs
       , dir: LinkedOutputs

@@ -2,7 +2,7 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, 𝕊, SetSel, selClasses, selClassesFor, selectionEventData)
+import App.Util (SelState, SelStates, Selectable, 𝕊, SetSel, selClasses, selClassesFor, selectionEventData)
 import App.Util.Selector (ViewSelSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
@@ -109,7 +109,9 @@ data Direction = LinkedInputs | LinkedOutputs
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
-   , store :: Selection Store
+   , γ :: Env (SelStates 𝔹)
+   , v :: Val (SelStates 𝔹)
+   , ι :: Env (SelStates 𝔹)
    , linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl
    , linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
    , dir :: Direction
@@ -119,12 +121,6 @@ type Fig =
    , intermediate_views :: Dict (Maybe View)
    , inertFwd :: Set DVertex
    , inertBwd :: Set DVertex
-   }
-
-type Store =
-   { γ :: Env (SelState 𝔹)
-   , v :: Val (SelState 𝔹)
-   , ι :: Env (SelState 𝔹)
    }
 
 -- ======================
