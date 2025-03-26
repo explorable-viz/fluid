@@ -3,8 +3,8 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, SelStates, Selection(..), SetSel, 𝕊, as𝕊, distributeSel, mergeSelStates, selState, splitSelStates, to𝔹, to𝕊)
-import App.Util.Selector (envVal)
+import App.Util (SelState, SelStates, Selection(..), SelectionType(..), SetSel, 𝕊, as𝕊, distributeSel, mergeSelStates, selState, splitSelStates, to𝔹, to𝕊)
+import App.Util.Selector (envVal, envVal')
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
@@ -48,14 +48,24 @@ str =
 mkFullId :: String -> String -> String -> String
 mkFullId divId mid suffix = "#" <> divId <> "-" <> mid <> "-" <> suffix
 
-selectOutput' :: SetSel (Val (SelState 𝔹)) -> Endo Fig
-selectOutput' = error "todo"
+selectOutput' :: SetSel (Val (SelStates 𝔹)) -> Endo Fig
+selectOutput' δv fig@{ v, dir: dir@(Selection { persistent, transient }), γ } = fig
+   { v = v'
+   , γ = γ'
+   , dir = dir'
+   }
+   where
+   v' × persistency = δv v
+   γ' × dir' = case persistency of
+      Persistent -> if persistent == LinkedInputs then botOf γ × Selection { persistent: LinkedOutputs, transient } else γ × dir
+      Transient -> if transient == LinkedInputs then botOf γ × Selection { persistent, transient: LinkedOutputs } else γ × dir
+      Unselectable -> error "Unselectable"
 
 selectOutput :: Setter Fig (Val (SelStates 𝔹))
 selectOutput δv fig@{ dir, v, γ } = fig
    { v = δv v
-   , γ = if dir == LinkedInputs then botOf γ else γ
-   , dir = LinkedOutputs
+   , γ = if (unwrap dir).persistent == LinkedInputs then botOf γ else γ
+   , dir = Selection { persistent: LinkedOutputs, transient: LinkedOutputs }
    }
 
 setOutputView :: Setter Fig View
@@ -63,11 +73,24 @@ setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw
    }
 
+selectInput' :: Var -> SetSel (Val (SelStates 𝔹)) -> Endo Fig
+selectInput' x δv fig@{ v, dir: dir@(Selection { persistent, transient }), γ } = fig
+   { v = v'
+   , γ = γ'
+   , dir = dir'
+   }
+   where
+   γ' × persistency = envVal' x δv γ
+   v' × dir' = case persistency of
+      Persistent -> if persistent == LinkedOutputs then botOf v × Selection { persistent: LinkedInputs, transient } else v × dir
+      Transient -> if transient == LinkedOutputs then botOf v × Selection { persistent, transient: LinkedInputs } else v × dir
+      Unselectable -> error "Unselectable"
+
 selectInput :: Var -> Setter Fig (Val (SelStates 𝔹))
 selectInput x δv fig@{ dir, γ, v } = fig
    { γ = envVal x δv γ
-   , v = if dir == LinkedOutputs then botOf v else v
-   , dir = LinkedInputs
+   , v = if (unwrap dir).persistent == LinkedOutputs then botOf v else v
+   , dir = Selection { persistent: LinkedInputs, transient: LinkedInputs }
    }
 
 setInputView :: Var -> Setter Fig View
@@ -101,7 +124,7 @@ selectIntermediates inerts g vs =
    vs𝕊 = zipWith setSel vs_inert vs_selected
 
 selectionResult' :: Fig -> (Val (SelState 𝔹) × Env (SelState 𝔹)) -> Val (SelState 𝕊) × Env (SelState 𝕊) × Set DVertex × GraphImpl
-selectionResult' fig@{ dir } (v × γ) = case dir of
+selectionResult' fig@{ dir } (v × γ) = case (unwrap dir).persistent of
    LinkedOutputs ->
       let
          v1 × γ1 × g = fig.linkedOutputs v
@@ -268,7 +291,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , ι: mergeSelStates $ Selection { persistent: empty, transient: empty }
       , linkedOutputs
       , linkedInputs
-      , dir: LinkedOutputs
+      , dir: Selection { persistent: LinkedOutputs, transient: LinkedInputs }
       , in_views
       , out_view: Nothing
       , intermediate_views: empty
