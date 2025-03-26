@@ -135,8 +135,9 @@ constrArg c n δv = unsafePartial $ case _ of
 constrArg' :: Ctr -> Int -> SelSetter' Val Val
 constrArg' c n δv = unsafePartial $ case _ of
    Val α (Constr c' us) | c == c' ->
-      first (\u' -> Val α (Constr c' $ fromJust (updateAt n u' us))) $
-         definitely "constrArg out of bounds" $ δv <$> (us !! n)
+      first (\u' -> Val α (Constr c' $ fromJust (updateAt n u' us)))
+         $ definitely "constrArg out of bounds"
+         $ δv <$> (us !! n)
 
 constr :: Ctr -> Setter (Val (SelStates 𝔹)) 𝔹
 constr c' δα = unsafePartial $ case _ of
