@@ -2,7 +2,7 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState(..), SelStates, Selection, SelectionType(..), SetSel, mergeSelStates, persist, splitSelStates)
+import App.Util (SelState(..), SelStates, SelectionType(..), SetSel, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (fromJust)
@@ -10,8 +10,8 @@ import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cParagraph, cMultiView, cNil, cPair, cScatterPlot, cSome, f_bars, f_points, f_stackedBars, f_z)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
-import Util (Endo, Setter, absurd, assert, definitely, error, (×), type (×))
-import Util.Map (insert, lookup, update)
+import Util (Setter, absurd, assert, definitely, error, (×))
+import Util.Map (get, insert, update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
 
@@ -25,6 +25,11 @@ type SelSetter' g f = Setter' (f (SelStates 𝔹)) (g (SelStates 𝔹))
 type ViewSelSetter' a = a -> SelSetter' Val Val
 
 type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
+
+-- TODO: rename
+persist' :: forall a. Setter' (SelState a) a
+persist' _ Inert = Inert × Unselectable
+persist' δα (Reactive s) = first Reactive (δα s)
 
 fst :: SelSetter Val Val
 fst = constrArg cPair 0
@@ -40,9 +45,6 @@ snd' = constrArg' cPair 1
 
 some :: Setter (Val (SelStates 𝔹)) 𝔹
 some = constr cSome
-
-some' :: Setter (Selection (Val (SelState 𝔹))) 𝔹
-some' = constr' cSome
 
 multiView :: SelSetter Val Val
 multiView = constrArg cMultiView 0
@@ -105,10 +107,8 @@ matrixElement i j δv (Val α (Matrix r)) = Val α $ Matrix $ matrixPut i j δv 
 matrixElement _ _ _ _ = error absurd
 
 matrixElement' :: Int -> Int -> SelSetter' Val Val
-matrixElement' i j δv (Val α (Matrix r)) = (Val α $ Matrix r') × selType
-   where
-   r' × selType =
-      first (\r' -> matrixPut i j (const r') r) (δv (matrixGet i j r))
+matrixElement' i j δv (Val α (Matrix r)) =
+   first (\r' -> Val α $ Matrix $ matrixPut i j (const r') r) (δv (matrixGet i j r))
 matrixElement' _ _ _ _ = error absurd
 
 listElement :: Int -> SelSetter Val Val
@@ -118,8 +118,10 @@ listElement n δv = unsafePartial $ case _ of
 
 listElement' :: Int -> SelSetter' Val Val
 listElement' n δv = unsafePartial $ case _ of
-   Val α (Constr c (v : v' : Nil)) | n == 0 && c == cCons -> let new_v × selType = δv v in Val α (Constr c (new_v : v' : Nil)) × selType
-   Val α (Constr c (v : v' : Nil)) | c == cCons -> let new_v × selType = listElement' (n - 1) δv v' in Val α (Constr c (v : new_v : Nil)) × selType
+   Val α (Constr c (v : u : Nil)) | n == 0 && c == cCons ->
+      first (\v' -> Val α (Constr c (v' : u : Nil))) (δv v)
+   Val α (Constr c (v : u : Nil)) | c == cCons ->
+      first (\u' -> Val α (Constr c (v : u' : Nil))) (listElement' (n - 1) δv u)
 
 constrArg :: Ctr -> Int -> SelSetter Val Val
 constrArg c n δv = unsafePartial $ case _ of
@@ -133,18 +135,13 @@ constrArg c n δv = unsafePartial $ case _ of
 constrArg' :: Ctr -> Int -> SelSetter' Val Val
 constrArg' c n δv = unsafePartial $ case _ of
    Val α (Constr c' us) | c == c' ->
-      Val α (Constr c us') × selType
-      where
-      us' × selType =
-         first (definitely "constrArg out of bounds") $
-            first (\u' -> updateAt n u' us) (δv (fromJust (us !! n)))
+      first (\u' -> Val α (Constr c' $ fromJust (updateAt n u' us)))
+         $ definitely "constrArg out of bounds"
+         $ δv <$> (us !! n)
 
 constr :: Ctr -> Setter (Val (SelStates 𝔹)) 𝔹
 constr c' δα = unsafePartial $ case _ of
    Val α (Constr c vs) | c == c' -> Val (persist δα α) (Constr c vs)
-
-constr' :: Ctr -> Setter (Selection (Val (SelState 𝔹))) 𝔹
-constr' c' δα = lift (constr c' δα)
 
 dict :: Setter (Val (SelStates 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of
@@ -152,7 +149,7 @@ dict δα = unsafePartial $ case _ of
 
 dict' :: Setter' (Val (SelState 𝔹)) 𝔹
 dict' δα = unsafePartial $ case _ of
-   Val α (Dictionary d) -> let α' × selType = persist' δα α in Val α' (Dictionary d) × selType
+   Val α (Dictionary d) -> first (\α' -> Val α' (Dictionary d)) (persist' δα α)
 
 dictKey :: String -> Setter (Val (SelStates 𝔹)) 𝔹
 dictKey s δα = unsafePartial $ case _ of
@@ -160,12 +157,10 @@ dictKey s δα = unsafePartial $ case _ of
 
 dictKey' :: String -> Setter' (Val (SelState 𝔹)) (SelState 𝔹)
 dictKey' s δα = unsafePartial $ case _ of
-   Val α (Dictionary (DictRep d)) -> (Val α $ Dictionary $ DictRep d') × selType
+   Val α (Dictionary (DictRep d)) ->
+      first (\β' -> Val α $ Dictionary $ DictRep $ insert s (β' × v) d) (δα β)
       where
-      d' × selType =
-         first (\α' -> insert s (α' × v) d) (δα α)
-         where
-         α × v = fromJust (lookup s d)
+      β × v = get s d
 
 dictVal :: String -> SelSetter Val Val
 dictVal s δv = unsafePartial $ case _ of
@@ -173,23 +168,18 @@ dictVal s δv = unsafePartial $ case _ of
 
 dictVal' :: String -> SelSetter' Val Val
 dictVal' s δv = unsafePartial $ case _ of
-   Val α (Dictionary (DictRep d)) -> (Val α $ Dictionary $ DictRep d') × selType
+   Val α (Dictionary (DictRep d)) ->
+      first (\v' -> Val α $ Dictionary $ DictRep $ insert s (β × v') d) (δv v)
       where
-      d' × selType =
-         first (\u' -> insert s (α × u') d) (δv u)
-         where
-         α × u = fromJust (lookup s d)
+      β × v = get s d
 
 envVal :: Var -> Setter (Env (SelStates 𝔹)) (Val (SelStates 𝔹))
 envVal x δv γ =
    assert (x ∈ γ) $ update δv x γ
 
 envVal' :: Var -> Setter' (Env (SelStates 𝔹)) (Val (SelStates 𝔹))
-envVal' x δv γ = unsafePartial
-   $ -- not really unsafe
-
-      assert (x ∈ γ)
-   $ first (\v' -> insert x v' γ) (δv (fromJust (lookup x γ)))
+envVal' x δv γ =
+   assert (x ∈ γ) $ first (flip (insert x) γ) (δv (get x γ))
 
 listCell :: Int -> Setter (Val (SelStates 𝔹)) 𝔹
 listCell n δα = unsafePartial $ case _ of
@@ -200,17 +190,8 @@ listCell n δα = unsafePartial $ case _ of
 
 listCell' :: Int -> Setter' (Val (SelState 𝔹)) 𝔹
 listCell' n δα = unsafePartial $ case _ of
-   Val α (Constr c Nil) | n == 0 && c == cNil -> let new_α × selType = (persist' δα α) in Val new_α (Constr c Nil) × selType
-   Val α (Constr c (v : v' : Nil)) | c == cCons ->
-      if n == 0 then let new_α × selType = persist' δα α in Val new_α (Constr c (v : v' : Nil)) × selType
-      else let new_v × selType = listCell' (n - 1) δα v' in Val α (Constr c (v : new_v : Nil)) × selType
-
-lift :: forall f. Functor f => Apply f => Endo (f (SelStates 𝔹)) -> Endo (Selection (f (SelState 𝔹)))
-lift δv = splitSelStates <<< δv <<< mergeSelStates
-
-persist' :: forall a. Setter' (SelState a) a
-persist' δα = mapδ
-   where
-   mapδ :: SelState a -> SelState a × SelectionType
-   mapδ Inert = Inert × Unselectable
-   mapδ (Reactive s) = let new_s × selType = δα s in Reactive new_s × selType
+   Val α (Constr c Nil) | n == 0 && c == cNil ->
+      first (\α' -> Val α' (Constr c Nil)) (persist' δα α)
+   Val α (Constr c (v : u : Nil)) | c == cCons ->
+      if n == 0 then first (\α' -> Val α' (Constr c (v : u : Nil))) (persist' δα α)
+      else first (\u' -> Val α (Constr c (v : u' : Nil))) (listCell' (n - 1) δα u)

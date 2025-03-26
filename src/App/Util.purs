@@ -72,18 +72,17 @@ sel :: forall a. Selectable a -> SelStates 𝕊
 sel = snd
 
 persist :: forall a. Setter (SelStates a) a
-persist δα = over SelStates mapδ
+persist δα = over SelStates ((<$>) mapδ)
    where
-   mapδ :: SelState (Selection a) -> SelState (Selection a)
-   mapδ Inert = Inert
-   mapδ (Reactive s) = Reactive (over Selection (\s' -> s' { persistent = δα s'.persistent }) s)
+   mapδ :: Selection a -> Selection a
+   mapδ = over Selection (\s' -> s' { persistent = δα s'.persistent })
 
+-- TODO: rename
 transition :: forall a. Setter (SelStates a) a
-transition δα = over SelStates mapδ
+transition δα = over SelStates ((<$>) mapδ)
    where
-   mapδ :: SelState (Selection a) -> SelState (Selection a)
-   mapδ Inert = Inert
-   mapδ (Reactive s) = Reactive (over Selection (\s' -> s' { transient = δα s'.transient }) s)
+   mapδ :: Selection a -> Selection a
+   mapδ s = over Selection (\s' -> s' { transient = δα s'.transient }) s
 
 data 𝕊 = None | Secondary | Primary
 
