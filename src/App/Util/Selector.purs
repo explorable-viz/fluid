@@ -11,7 +11,7 @@ import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cParagraph, cMult
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Util (Setter, absurd, assert, definitely, error, (×))
-import Util.Map (get, insert, lookup, update)
+import Util.Map (get, insert, update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
 
@@ -156,7 +156,6 @@ dictKey :: String -> Setter (Val (SelStates 𝔹)) 𝔹
 dictKey s δα = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (first $ persist δα) s d
 
--- TODO: cleanup
 dictKey' :: String -> Setter' (Val (SelState 𝔹)) (SelState 𝔹)
 dictKey' s δα = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) ->
@@ -168,7 +167,6 @@ dictVal :: String -> SelSetter Val Val
 dictVal s δv = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> Val α $ Dictionary $ DictRep $ update (second δv) s d
 
--- TODO: cleanup
 dictVal' :: String -> SelSetter' Val Val
 dictVal' s δv = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) ->
