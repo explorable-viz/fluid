@@ -160,12 +160,12 @@ dictKey s δα = unsafePartial $ case _ of
 dictKey' :: String -> Setter' (Val (SelState 𝔹)) (SelState 𝔹)
 dictKey' s δα = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) ->
-      (Val α $ Dictionary $ DictRep d') × selType
+      first ?_ (δα β)
+--      (Val α $ Dictionary $ DictRep d') × selType
       where
+      β × v = get s d
       d' × selType =
          first (\α' -> insert s (α' × v) d) (δα β)
-         where
-         β × v = get s d
 
 dictVal :: String -> SelSetter Val Val
 dictVal s δv = unsafePartial $ case _ of
@@ -176,10 +176,9 @@ dictVal' :: String -> SelSetter' Val Val
 dictVal' s δv = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) -> (Val α $ Dictionary $ DictRep d') × selType
       where
+      β × u = get s d
       d' × selType =
          first (\u' -> insert s (β × u') d) (δv u)
-         where
-         β × u = get s d
 
 envVal :: Var -> Setter (Env (SelStates 𝔹)) (Val (SelStates 𝔹))
 envVal x δv γ =
