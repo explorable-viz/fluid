@@ -198,23 +198,6 @@ unprojExpr (EnvExpr _ e) = GC
    , bwd: \(EnvExpr γ _) -> γ
    }
 
-lift1
-   :: forall f f' g
-    . Apply f
-   => Apply f'
-   => f (𝔹 -> (SelState 𝔹))
-   -> (f' 𝔹 -> f 𝔹 × g)
-   -> f' (SelState 𝔹)
-   -> f (SelState 𝔹) × g
-lift1 selStates_f bwd = bwd'
-   where
-   bwd' :: f' (SelState 𝔹) -> f (SelState 𝔹) × g
-   bwd' v =
-      let
-         selection × g = bwd (v <#> to𝔹)
-      in
-         (selStates_f <*> selection) × g
-
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
@@ -251,8 +234,11 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       vInert = selState <$> select𝔹s outα inertFwd :: Val (𝔹 -> SelState 𝔹)
       v_init = vInert <*> v0
 
-      vf = lift1 γInert gcBwd :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      γf = lift1 vInert gcFwd :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
+      vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
+      vf v = first ((<*>) γInert) (gcBwd (v <#> to𝔹))
+
+      γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
+      γf γ = first ((<*>) vInert) (gcFwd (γ <#> to𝔹))
 
       linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
       linkedInputs = γf >>> \(v × g) -> (fst $ vf v) × v × g
