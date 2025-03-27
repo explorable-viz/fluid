@@ -99,6 +99,37 @@ setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
 
+{-
+selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Selection (Set (DVertex' (Val Vertex))) -> Array (String × Val (SelStates 𝔹))
+selectIntermediates inerts g vs =
+   vs𝕊
+   where
+   verts = { persistent: vertices g.persistent, transient: vertices g.transient }
+
+   vs' = (snd <<< unwrap) `Set.map` (vs.persistent ∪ vs.transient) # fromFoldable :: Array (Val Vertex)
+
+   vs_selected = (\v@(Val α _) -> α × { persistent: select𝔹s v verts.persistent, transient: select𝔹s v verts.transient }) <$> vs' :: Array (Vertex × Selection (Val 𝔹))
+
+   vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
+
+   setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
+   setSels inert (Vertex α × v) = α × (selState <$> inert <*> v.persistent <*> v.transient)
+
+   vs𝕊 = zipWith setSels vs_inert vs_selected
+-}
+
+selectIntermediates' :: forall g. Graph g => Set DVertex -> Selection g -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹)
+selectIntermediates' inerts g vs =
+   Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected
+   where
+   vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
+
+   vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v (vertices g.persistent), transient: select𝔹s v (vertices g.persistent) }
+   vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
+
+   setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
+   setSels inert (Vertex α × v) = α × (selStates <$> inert <*> v.persistent <*> v.transient)
+
 selectIntermediates :: forall g. Graph g => Set DVertex -> g -> Set (DVertex' (Val Vertex)) -> Env (SelState 𝔹)
 selectIntermediates inerts g vs =
    Env $ D.fromFoldable vs𝕊
@@ -124,8 +155,7 @@ type SelectionResult =
 type SelectionResult' =
    { v :: Val (SelStates 𝕊)
    , γ :: Env (SelStates 𝕊)
-   , inert :: Set DVertex
-   , g :: Selection GraphImpl
+   , ιs :: Env (SelStates 𝔹)
    }
 
 selectionResult' :: Fig -> Val (SelState 𝔹) -> Env (SelState 𝔹) -> SelectionResult
@@ -142,6 +172,29 @@ selectionResult' fig@{ dir } v γ = case dir.persistent of
          report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
       in
          { v: (to𝕊 <$> _) <$> report v1, γ: lift2 as𝕊 <$> γ <*> γ1, inert: fig.inertFwd, g }
+
+selectionResult'' :: Fig -> SelectionResult'
+selectionResult'' fig@{ spec, dir, v, γ, inertFwd, inertBwd } = case dir.persistent of
+   LinkedOutputs ->
+      let
+         v1 × γ1 × g = fig.linkedOutputs' v
+         report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
+      in
+         { v: lift2 as𝕊 <$> fig.v <*> v1, γ: (to𝕊 <$> _) <$> report γ1, ιs: intermediates g inertBwd }
+   LinkedInputs ->
+      let
+         γ1 × v1 × g = fig.linkedInputs' γ
+         report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
+      in
+         { v: (to𝕊 <$> _) <$> report v1, γ: lift2 as𝕊 <$> fig.γ <*> γ1, ιs: intermediates g inertFwd }
+   where
+   intermediates :: Selection GraphImpl -> Set DVertex -> Env (SelStates 𝔹)
+   intermediates g inerts = flip (maybe empty) spec.query
+      \query ->
+         let
+            vs = runQuery query g.persistent ∪ runQuery query g.transient
+         in
+            filterKeys (\α -> not (Vertex α ∈ fig.in_roots)) (selectIntermediates' inerts g vs)
 
 selectionResult :: Fig -> Selection (Val (SelState 𝕊)) × Selection (Env (SelState 𝕊)) × Selection (Env (SelState 𝔹))
 selectionResult fig@{ spec, v, γ } =

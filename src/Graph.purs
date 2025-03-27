@@ -54,7 +54,7 @@ class (Eq g, Vertices g) <= Graph g where
    topologicalSort :: g -> List Vertex
    vertexData :: g -> Vertex -> VertexData
 
-newtype Vertex = Vertex String -- so can use directly as dict key
+newtype Vertex = Vertex String
 
 class Selectαs a b | a -> b where
    selectαs :: a -> b -> Set Vertex
