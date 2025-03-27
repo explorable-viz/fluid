@@ -6,7 +6,7 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelState, SelStates, Selection, SelectionType(..), SetSel, 𝕊, as𝕊, mergeSelStates, selState, splitSelStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal, envVal')
 import App.View (view)
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView, drawView')
+import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Apply (lift2)
@@ -121,8 +121,8 @@ type SelectionResult =
    , g :: GraphImpl
    }
 
-selectionResult' :: Fig -> (Val (SelState 𝔹) × Env (SelState 𝔹)) -> SelectionResult
-selectionResult' fig@{ dir } (v × γ) = case dir.persistent of
+selectionResult' :: Fig -> Val (SelState 𝔹) -> Env (SelState 𝔹) -> SelectionResult
+selectionResult' fig@{ dir } v γ = case dir.persistent of
    LinkedOutputs ->
       let
          v1 × γ1 × g = fig.linkedOutputs v
@@ -142,8 +142,8 @@ selectionResult fig@{ spec, v, γ } =
    where
    v' = splitSelStates v
    γ' = splitSelStates γ
-   persistent = selectionResult' fig (v'.persistent × γ'.persistent)
-   transient = selectionResult' fig (v'.transient × γ'.transient)
+   persistent = selectionResult' fig v'.persistent γ'.persistent
+   transient = selectionResult' fig v'.transient γ'.transient
 
    ιs = flip (maybe { persistent: empty, transient: empty }) spec.query
       \query ->
@@ -168,8 +168,7 @@ drawIntermediates divId intermediates unused redraw = do
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig@{ ι } = do
-   drawView' { divId, suffix: str.output, view: out_view } selectOutput' setOutputView redraw
-   --   drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
+   drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
 
    sequence_ $ flip mapWithKey in_views \x view -> do
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
