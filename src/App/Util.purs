@@ -11,7 +11,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype, over, unwrap)
+import Data.Newtype (class Newtype, over)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
@@ -49,17 +49,17 @@ data SelState a
    | Reactive a
 
 newtype SelStates a = SelStates (SelState (Selection a))
-newtype Selection a = Selection { persistent :: a, transient :: a }
+type Selection a = { persistent :: a, transient :: a }
 
 data SelectionType = Persistent | Transient | Unselectable
 
 selStates :: forall a. 𝔹 -> a -> a -> SelStates a
 selStates true _ _ = SelStates Inert
-selStates false b1 b2 = SelStates $ Reactive $ Selection { persistent: b1, transient: b2 }
+selStates false b1 b2 = SelStates $ Reactive { persistent: b1, transient: b2 }
 
 selection :: forall a. 𝔹 -> a -> a -> Selection (SelState a)
-selection true _ _ = Selection { persistent: Inert, transient: Inert }
-selection false b1 b2 = Selection { persistent: Reactive b1, transient: Reactive b2 }
+selection true _ _ = { persistent: Inert, transient: Inert }
+selection false b1 b2 = { persistent: Reactive b1, transient: Reactive b2 }
 
 selState :: forall a. 𝔹 -> a -> SelState a
 selState true _ = Inert
@@ -75,21 +75,21 @@ persist :: forall a. Setter (SelStates a) a
 persist δα = over SelStates ((<$>) mapδ)
    where
    mapδ :: Selection a -> Selection a
-   mapδ = over Selection (\s' -> s' { persistent = δα s'.persistent })
+   mapδ s = s { persistent = δα s.persistent }
 
 -- TODO: rename
 transition :: forall a. Setter (SelStates a) a
 transition δα = over SelStates ((<$>) mapδ)
    where
    mapδ :: Selection a -> Selection a
-   mapδ s = over Selection (\s' -> s' { transient = δα s'.transient }) s
+   mapδ s = s { transient = δα s.transient }
 
 data 𝕊 = None | Secondary | Primary
 
 type Selectable a = a × SelStates 𝕊
 
 splitSelStates :: forall f a. Functor f => f (SelStates a) -> Selection (f (SelState a))
-splitSelStates fa = Selection
+splitSelStates fa =
    { persistent: (splitSel Persistent) <$> fa
    , transient: (splitSel Transient) <$> fa
    }
@@ -97,31 +97,31 @@ splitSelStates fa = Selection
    splitSel :: SelectionType -> SelStates a -> SelState a
    splitSel _ (SelStates Inert) = Inert
    splitSel Unselectable _ = Inert
-   splitSel Persistent (SelStates (Reactive (Selection s))) = Reactive s.persistent
-   splitSel Transient (SelStates (Reactive (Selection s))) = Reactive s.transient
+   splitSel Persistent (SelStates (Reactive s)) = Reactive s.persistent
+   splitSel Transient (SelStates (Reactive s)) = Reactive s.transient
 
 mergeSelStates :: forall f a. Functor f => Apply f => Selection (f (SelState a)) -> f (SelStates a)
-mergeSelStates (Selection { persistent: ps, transient: ts }) = mergeSel <$> ps <*> ts
+mergeSelStates { persistent: ps, transient: ts } = mergeSel <$> ps <*> ts
    where
    mergeSel :: SelState a -> SelState a -> SelStates a
    mergeSel _ Inert = SelStates Inert
    mergeSel Inert _ = SelStates Inert
-   mergeSel (Reactive p) (Reactive t) = SelStates (Reactive $ Selection { persistent: p, transient: t })
+   mergeSel (Reactive p) (Reactive t) = SelStates (Reactive { persistent: p, transient: t })
 
 distributeSel :: forall f a. Functor f => f (Selection a) -> Selection (f a)
-distributeSel fa = Selection
-   { persistent: fa <#> unwrap >>> _.persistent
-   , transient: fa <#> unwrap >>> _.transient
+distributeSel fa =
+   { persistent: fa <#> _.persistent
+   , transient: fa <#> _.transient
    }
 
 isPrimary :: SelStates 𝕊 -> 𝔹
 isPrimary (SelStates Inert) = false
-isPrimary (SelStates (Reactive (Selection { persistent, transient }))) =
+isPrimary (SelStates (Reactive { persistent, transient })) =
    persistent == Primary || transient == Primary
 
 isSecondary :: SelStates 𝕊 -> 𝔹
 isSecondary (SelStates Inert) = false
-isSecondary (SelStates (Reactive (Selection { persistent, transient }))) =
+isSecondary (SelStates (Reactive { persistent, transient })) =
    persistent == Secondary || transient == Secondary
 
 isInert :: forall a. SelStates a -> 𝔹
@@ -130,7 +130,7 @@ isInert (SelStates (Reactive _)) = false
 
 getPersistent :: forall a. BoundedJoinSemilattice a => SelStates a -> a
 getPersistent (SelStates Inert) = bot
-getPersistent (SelStates (Reactive (Selection { persistent }))) = persistent
+getPersistent (SelStates (Reactive { persistent })) = persistent
 
 to𝔹 :: SelState 𝔹 -> 𝔹
 to𝔹 Inert = false
@@ -138,7 +138,7 @@ to𝔹 (Reactive b) = b
 
 getTransient :: forall a. BoundedJoinSemilattice a => SelStates a -> a
 getTransient (SelStates Inert) = bot
-getTransient (SelStates (Reactive (Selection { transient }))) = transient
+getTransient (SelStates (Reactive { transient })) = transient
 
 isPersistent :: SelStates 𝕊 -> 𝔹
 isPersistent = getPersistent >>> (_ /= None)
@@ -182,7 +182,7 @@ to𝕊 true = Primary
 to𝕊 false = None
 
 unselected :: SelStates 𝔹
-unselected = SelStates $ Reactive (Selection { persistent: false, transient: false })
+unselected = SelStates $ Reactive { persistent: false, transient: false }
 
 get_intOrNumber :: Var -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Selectable Number
 get_intOrNumber x r = first as (unpack intOrNumber (snd (get x r)))
@@ -218,10 +218,10 @@ selector (EventType ev) v =
    where
    setSel :: Endo (SelStates 𝔹)
    setSel (SelStates Inert) = SelStates Inert
-   setSel (SelStates (Reactive (Selection sel')))
-      | ev == "mousedown" = SelStates (Reactive (Selection (sel' { persistent = neg sel'.persistent })))
-      | ev == "mouseenter" = SelStates (Reactive (Selection (sel' { transient = true })))
-      | ev == "mouseleave" = SelStates (Reactive (Selection (sel' { transient = false })))
+   setSel (SelStates (Reactive sel'))
+      | ev == "mousedown" = SelStates (Reactive (sel' { persistent = neg sel'.persistent }))
+      | ev == "mouseenter" = SelStates (Reactive (sel' { transient = true }))
+      | ev == "mouseleave" = SelStates (Reactive (sel' { transient = false }))
       | otherwise = error "Unsupported event type"
 
    reportSelStates = spyWhen tracing.mouseEvent "to " show
@@ -233,10 +233,10 @@ selector' (EventType ev) v =
    where
    setSel :: SetSel (Val (SelStates 𝔹))
    setSel (Val (SelStates Inert) v') = Val (SelStates Inert) v' × Unselectable
-   setSel (Val (SelStates (Reactive (Selection sel'))) v')
-      | ev == "mousedown" = Val (SelStates (Reactive (Selection (sel' { persistent = neg sel'.persistent })))) v' × Persistent
-      | ev == "mouseenter" = Val (SelStates (Reactive (Selection (sel' { transient = true })))) v' × Transient
-      | ev == "mouseleave" = Val (SelStates (Reactive (Selection (sel' { transient = false })))) v' × Transient
+   setSel (Val (SelStates (Reactive sel')) v')
+      | ev == "mousedown" = Val (SelStates (Reactive (sel' { persistent = neg sel'.persistent }))) v' × Persistent
+      | ev == "mouseenter" = Val (SelStates (Reactive (sel' { transient = true }))) v' × Transient
+      | ev == "mouseleave" = Val (SelStates (Reactive (sel' { transient = false }))) v' × Transient
       | otherwise = error "Unsupported event type"
 
 -- https://stackoverflow.com/questions/5560248
@@ -325,16 +325,10 @@ derive instance Eq SelectionType
 
 derive instance Functor SelState
 derive instance Functor SelStates
-derive instance Functor Selection
 derive instance Generic (SelStates a) _
 derive instance Generic (SelState a) _
-derive instance Generic (Selection a) _
 
-derive instance Newtype (Selection a) _
 derive instance Newtype (SelStates a) _
-
-instance Show a => Show (Selection a) where
-   show = genericShow
 
 instance Show a => Show (SelState a) where
    show = genericShow
@@ -348,12 +342,11 @@ instance Apply SelState where
       Reactive (fs s)
    apply _ _ = shapeMismatch unit
 
-instance Apply Selection where
-   apply (Selection { persistent, transient }) (Selection { persistent: persistent', transient: transient' }) =
-      Selection { persistent: persistent persistent', transient: transient transient' }
-
 instance Apply SelStates where
-   apply (SelStates fs) (SelStates s) = SelStates (map (<*>) fs <*> s)
+   apply (SelStates Inert) (SelStates Inert) = SelStates Inert
+   apply (SelStates (Reactive { persistent: fs, transient: fs' })) (SelStates (Reactive { persistent: s, transient: s' })) =
+      SelStates (Reactive { persistent: fs s, transient: fs' s' })
+   apply _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (SelState a)
    where
@@ -362,12 +355,12 @@ instance JoinSemilattice a => JoinSemilattice (SelState a)
    join (Reactive s) (Reactive s') =
       Reactive (s ∨ s')
 
-instance JoinSemilattice a => JoinSemilattice (Selection a) where
-   join (Selection { persistent, transient }) (Selection { persistent: persistent', transient: transient' }) =
-      Selection { persistent: persistent ∨ persistent', transient: transient ∨ transient' }
-
+-- This SelStates boilerplate preferable to Selection-as-newtype boilerplate
 instance JoinSemilattice a => JoinSemilattice (SelStates a) where
-   join (SelStates s) (SelStates s') = SelStates (s ∨ s')
+   join (SelStates s) (SelStates Inert) = SelStates s
+   join (SelStates Inert) (SelStates s) = SelStates s
+   join (SelStates (Reactive { persistent, transient })) (SelStates (Reactive { persistent: persistent', transient: transient' })) =
+      SelStates (Reactive { persistent: persistent ∨ persistent', transient: transient ∨ transient' })
 
 instance MeetSemilattice a => MeetSemilattice (SelState a)
    where
@@ -376,24 +369,20 @@ instance MeetSemilattice a => MeetSemilattice (SelState a)
    meet (Reactive s) (Reactive s') =
       Reactive (s ∧ s')
 
-instance MeetSemilattice a => MeetSemilattice (Selection a) where
-   meet (Selection { persistent, transient }) (Selection { persistent: persistent', transient: transient' }) =
-      Selection { persistent: persistent ∧ persistent', transient: transient ∧ transient' }
-
 instance MeetSemilattice a => MeetSemilattice (SelStates a)
    where
-   meet (SelStates s) (SelStates s') = SelStates (s ∧ s')
+   meet _ (SelStates Inert) = SelStates Inert
+   meet (SelStates Inert) _ = SelStates Inert
+   meet (SelStates (Reactive { persistent, transient })) (SelStates (Reactive { persistent: persistent', transient: transient' })) =
+      SelStates (Reactive { persistent: persistent ∧ persistent', transient: transient ∧ transient' })
 
 instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelState a)
    where
    bot = Inert
 
-instance BoundedJoinSemilattice a => BoundedJoinSemilattice (Selection a) where
-   bot = Selection { persistent: bot, transient: bot }
-
 instance BoundedJoinSemilattice a => BoundedJoinSemilattice (SelStates a)
    where
-   bot = SelStates bot
+   bot = SelStates Inert
 
 instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelState a)
    where
@@ -401,9 +390,7 @@ instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelSta
 
 instance (Bounded a, BoundedMeetSemilattice a) => BoundedMeetSemilattice (SelStates a)
    where
-   top = SelStates (Reactive (Selection { persistent: top, transient: top }))
-
-derive instance Eq a => Eq (Selection a)
+   top = SelStates (Reactive { persistent: top, transient: top })
 
 derive instance Eq a => Eq (SelState a)
 
@@ -413,11 +400,9 @@ instance (Highlightable a, JoinSemilattice a) => Highlightable (SelState a) wher
    highlightIf Inert = highlightIf false
    highlightIf (Reactive s) = highlightIf s
 
-instance (Highlightable a, JoinSemilattice a) => Highlightable (Selection a) where
-   highlightIf (Selection { persistent, transient }) = highlightIf (persistent ∨ transient)
-
 instance (Highlightable a, JoinSemilattice a) => Highlightable (SelStates a) where
-   highlightIf (SelStates s) = highlightIf s
+   highlightIf (SelStates Inert) = highlightIf false
+   highlightIf (SelStates (Reactive { persistent, transient })) = highlightIf (persistent ∨ transient)
 
 derive instance Newtype (Dimensions a) _
 derive instance Functor Dimensions
