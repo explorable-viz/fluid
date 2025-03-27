@@ -204,7 +204,7 @@ selectionEventData :: forall a. Event -> a × Selector Val
 selectionEventData = (eventData &&& type_ >>> selector)
 
 selectionEventData' :: forall a. Event -> a × SetSel (Val (SelStates 𝔹))
-selectionEventData' = (eventData &&& type_ >>> selector') 
+selectionEventData' = (eventData &&& type_ >>> selector')
 
 eventData :: forall a. Event -> a
 eventData = target >>> unsafeEventData
@@ -232,7 +232,7 @@ selector' (EventType ev) v =
    setSel v
    where
    setSel :: SetSel (Val (SelStates 𝔹))
-   setSel (Val (SelStates Inert) v') = Val (SelStates Inert) v' × Unselectable 
+   setSel (Val (SelStates Inert) v') = Val (SelStates Inert) v' × Unselectable
    setSel (Val (SelStates (Reactive (Selection sel'))) v')
       | ev == "mousedown" = Val (SelStates (Reactive (Selection (sel' { persistent = neg sel'.persistent })))) v' × Persistent
       | ev == "mouseenter" = Val (SelStates (Reactive (Selection (sel' { transient = true })))) v' × Transient
