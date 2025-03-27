@@ -3,10 +3,10 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, SelStates, Selection, SelectionType(..), SetSel, 𝕊, as𝕊, distributeSel, mergeSelStates, selState, splitSelStates, to𝔹, to𝕊)
+import App.Util (SelState, SelStates, Selection, SelectionType(..), SetSel, 𝕊, as𝕊, mergeSelStates, selState, splitSelStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal, envVal')
 import App.View (view)
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
+import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView, drawView')
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Apply (lift2)
@@ -29,7 +29,7 @@ import Module.Web (File, loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, error, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
@@ -49,17 +49,13 @@ mkFullId :: String -> String -> String -> String
 mkFullId divId mid suffix = "#" <> divId <> "-" <> mid <> "-" <> suffix
 
 selectOutput' :: SetSel (Val (SelStates 𝔹)) -> Endo Fig
-selectOutput' δv fig@{ v, dir, γ } = fig
-   { v = v'
-   , γ = γ'
-   , dir = dir'
-   }
+selectOutput' δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
    v' × selType = δv v
    γ' × dir' = case selType of
-      Persistent -> if dir.persistent == LinkedInputs then botOf γ × dir {- { persistent: LinkedOutputs }-} else γ × dir
-      Transient -> if dir.transient == LinkedInputs then botOf γ × dir {- { transient: LinkedOutputs }-} else γ × dir
-      Unselectable -> error "Unselectable"
+      Persistent -> if dir.persistent == LinkedInputs then botOf γ × dir { persistent = LinkedOutputs } else γ × dir
+      Transient -> if dir.transient == LinkedInputs then botOf γ × dir { transient = LinkedOutputs } else γ × dir
+      Unselectable -> γ × dir
 
 selectOutput :: Setter Fig (Val (SelStates 𝔹))
 selectOutput δv fig@{ dir, v, γ } = fig
@@ -70,21 +66,16 @@ selectOutput δv fig@{ dir, v, γ } = fig
 
 setOutputView :: Setter Fig View
 setOutputView δvw fig = fig
-   { out_view = fig.out_view <#> δvw
-   }
+   { out_view = fig.out_view <#> δvw }
 
 selectInput' :: Var -> SetSel (Val (SelStates 𝔹)) -> Endo Fig
-selectInput' x δv fig@{ v, dir, γ } = fig
-   { v = v'
-   , γ = γ'
-   , dir = dir'
-   }
+selectInput' x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
    γ' × selType = envVal' x δv γ
    v' × dir' = case selType of
-      Persistent -> if dir.persistent == LinkedOutputs then botOf v × dir {- { persistent: LinkedInputs }-} else v × dir
-      Transient -> if dir.transient == LinkedOutputs then botOf v × dir {- { transient: LinkedInputs }-} else v × dir
-      Unselectable -> error "Unselectable"
+      Persistent -> if dir.persistent == LinkedOutputs then botOf v × dir { persistent = LinkedInputs } else v × dir
+      Transient -> if dir.transient == LinkedOutputs then botOf v × dir { transient = LinkedInputs } else v × dir
+      Unselectable -> v × dir
 
 selectInput :: Var -> Setter Fig (Val (SelStates 𝔹))
 selectInput x δv fig@{ dir, γ, v } = fig
@@ -177,7 +168,8 @@ drawIntermediates divId intermediates unused redraw = do
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig@{ ι } = do
-   drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
+   drawView' { divId, suffix: str.output, view: out_view } selectOutput' setOutputView redraw
+   --   drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
 
    sequence_ $ flip mapWithKey in_views \x view -> do
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
@@ -186,16 +178,13 @@ drawFig divId fig@{ ι } = do
    where
    out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
-         ( (flip (view str.output) fig.out_view) <<< mergeSelStates
+         ( flip (view str.output) fig.out_view <<< mergeSelStates
               *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) <<< mergeSelStates
               *** identity
          )
 
-   selKeys :: forall a. Selection (Env a) -> Set String
-   selKeys γ = keys γ.persistent ∪ keys γ.transient
-
    unused :: Array String
-   unused = fromFoldable (keys ι \\ selKeys intermediate_values)
+   unused = fromFoldable (keys ι \\ (keys intermediate_values.persistent ∪ keys intermediate_values.transient))
 
    redraw = (_ $ fig { ι = mergeSelStates intermediate_values }) >>> drawFig divId
 
@@ -208,23 +197,6 @@ unprojExpr (EnvExpr _ e) = GC
    { fwd: \γ -> EnvExpr γ (topOf e)
    , bwd: \(EnvExpr γ _) -> γ
    }
-
-lift
-   :: forall f f' g
-    . Apply f
-   => Apply f'
-   => f (𝔹 -> 𝔹 -> Selection (SelState 𝔹))
-   -> (f' 𝔹 -> f 𝔹 × g)
-   -> (Selection (f' (SelState 𝔹)) -> (Selection (f (SelState 𝔹)) × g × g))
-lift selStates_f bwd = bwd'
-   where
-   bwd' :: Selection (f' (SelState 𝔹)) -> Selection (f (SelState 𝔹)) × g × g
-   bwd' s =
-      let
-         (persistent × g) = bwd (s # _.persistent <#> to𝔹)
-         (transient × g') = bwd (s # _.transient <#> to𝔹)
-      in
-         (selStates_f <*> persistent <*> transient # distributeSel) × g × g'
 
 lift1
    :: forall f f' g
@@ -239,7 +211,7 @@ lift1 selStates_f bwd = bwd'
    bwd' :: f' (SelState 𝔹) -> f (SelState 𝔹) × g
    bwd' v =
       let
-         (selection × g) = bwd (v <#> to𝔹)
+         selection × g = bwd (v <#> to𝔹)
       in
          (selStates_f <*> selection) × g
 

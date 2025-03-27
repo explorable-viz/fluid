@@ -108,12 +108,6 @@ mergeSelStates { persistent: ps, transient: ts } = mergeSel <$> ps <*> ts
    mergeSel Inert _ = SelStates Inert
    mergeSel (Reactive p) (Reactive t) = SelStates (Reactive { persistent: p, transient: t })
 
-distributeSel :: forall f a. Functor f => f (Selection a) -> Selection (f a)
-distributeSel fa =
-   { persistent: fa <#> _.persistent
-   , transient: fa <#> _.transient
-   }
-
 isPrimary :: SelStates 𝕊 -> 𝔹
 isPrimary (SelStates Inert) = false
 isPrimary (SelStates (Reactive { persistent, transient })) =
