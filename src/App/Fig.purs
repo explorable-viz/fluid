@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, SelStates, Selection, SelectionType(..), SetSel, 𝕊, as𝕊, mergeSelStates, selState, splitSelStates, to𝔹, to𝕊)
+import App.Util (SelState, SelStates, Selection, SelectionType(..), SetSel, 𝕊, as𝕊, getPersistent, getTransient, mergeSelStates, selState, selStates, splitSelStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal, envVal')
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
@@ -121,6 +121,13 @@ type SelectionResult =
    , g :: GraphImpl
    }
 
+type SelectionResult' =
+   { v :: Val (SelStates 𝕊)
+   , γ :: Env (SelStates 𝕊)
+   , inert :: Set DVertex
+   , g :: Selection GraphImpl
+   }
+
 selectionResult' :: Fig -> Val (SelState 𝔹) -> Env (SelState 𝔹) -> SelectionResult
 selectionResult' fig@{ dir } v γ = case dir.persistent of
    LinkedOutputs ->
@@ -197,6 +204,18 @@ unprojExpr (EnvExpr _ e) = GC
    , bwd: \(EnvExpr γ _) -> γ
    }
 
+lift
+   :: forall f f' g
+    . Apply f
+   => Apply f'
+   => f (𝔹 -> 𝔹 -> SelStates 𝔹)
+   -> (f' 𝔹 -> f 𝔹 × g)
+   -> (f' (SelStates 𝔹) -> f (SelStates 𝔹) × g × g)
+lift selState_f bwd v = (selState_f <*> persistent <*> transient) × g × g'
+   where
+   persistent × g = bwd (v <#> getPersistent)
+   transient × g' = bwd (v <#> getTransient)
+
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
@@ -228,16 +247,29 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inertBwd = vertices g0 \\ (vertices $ snd (gcBwd (topOf outα))) :: Set DVertex
       inertFwd = vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0
 
+      γInert' = selStates <$> select𝔹s γα inertBwd :: Env (𝔹 -> 𝔹 -> SelStates 𝔹)
+      vInert' = selStates <$> select𝔹s outα inertFwd :: Val (𝔹 -> 𝔹 -> SelStates 𝔹)
+
       γInert = selState <$> select𝔹s γα inertBwd :: Env (𝔹 -> SelState 𝔹)
-      γ_init = γInert <*> γ0
       vInert = selState <$> select𝔹s outα inertFwd :: Val (𝔹 -> SelState 𝔹)
-      v_init = vInert <*> v0
+
+      vf' :: Val (SelStates 𝔹) -> Env (SelStates 𝔹) × GraphImpl × GraphImpl
+      vf' = lift γInert' gcBwd
+
+      γf' :: Env (SelStates 𝔹) -> Val (SelStates 𝔹) × GraphImpl × GraphImpl
+      γf' = lift vInert' gcFwd
 
       vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
       vf v = first ((<*>) γInert) (gcBwd (v <#> to𝔹))
 
       γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
       γf γ = first ((<*>) vInert) (gcFwd (γ <#> to𝔹))
+
+      linkedInputs' :: Env (SelStates 𝔹) -> Env (SelStates 𝔹) × Val (SelStates 𝔹) × Selection GraphImpl
+      linkedInputs' = γf' >>> \(v × g × g') -> (fst $ vf' v) × v × { persistent: g, transient: g' }
+
+      linkedOutputs' :: Val (SelStates 𝔹) -> Val (SelStates 𝔹) × Env (SelStates 𝔹) × Selection GraphImpl
+      linkedOutputs' = vf' >>> \(γ × g × g') -> (fst $ γf' γ) × γ × { persistent: g, transient: g' }
 
       linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
       linkedInputs = γf >>> \(v × g) -> (fst $ vf v) × v × g
@@ -247,11 +279,13 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    pure
       { spec
       , s
-      , γ: mergeSelStates $ { persistent: γ_init, transient: γ_init }
-      , v: mergeSelStates $ { persistent: v_init, transient: v_init }
-      , ι: mergeSelStates $ { persistent: empty, transient: empty }
+      , γ: γInert' <*> γ0 <*> γ0
+      , v: vInert' <*> v0 <*> v0
+      , ι: empty
       , linkedOutputs
       , linkedInputs
+      , linkedOutputs'
+      , linkedInputs'
       , dir: { persistent: LinkedOutputs, transient: LinkedInputs }
       , in_views
       , out_view: Nothing

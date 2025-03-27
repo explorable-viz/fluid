@@ -123,6 +123,8 @@ type Fig =
    , ι :: Env (SelStates 𝔹)
    , linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl
    , linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
+   , linkedOutputs' :: Val (SelStates 𝔹) -> Val (SelStates 𝔹) × Env (SelStates 𝔹) × Selection GraphImpl
+   , linkedInputs' :: Env (SelStates 𝔹) -> Env (SelStates 𝔹) × Val (SelStates 𝔹) × Selection GraphImpl
    , dir :: Selection Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
