@@ -2,8 +2,8 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, SetSel, 𝕊, selClasses, selClassesFor, selectionEventData)
-import App.Util.Selector (ViewSelSetter)
+import App.Util (SelState, SelStates, Selectable, Selection, SetSel, 𝕊, selClasses, selClassesFor, selectionEventData, selectionEventData')
+import App.Util.Selector (ViewSelSetter, ViewSelSetter')
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
 import Bind (Bind, Var)
@@ -36,17 +36,24 @@ pack x = View \k -> k x
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
+
 selListener :: forall a. Setter Fig (Val (SelStates 𝔹)) -> Redraw -> ViewSelSetter a -> Effect EventListener
 selListener figVal redraw selector =
    eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
 
+selListener' :: forall a. (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter' a -> Effect EventListener
+selListener' figVal redraw selector =
+   eventListener (selectionEventData' >>> uncurry selector >>> figVal >>> redraw)
+
 class Drawable a where
    draw :: RendererSpec a -> Setter Fig (Val (SelStates 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
+   draw'' :: RendererSpec a -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Setter Fig View -> Redraw -> Effect Unit
 
 -- Merge into Drawable once JS->PS transition complete
 class Drawable2 a where
    createRootElement :: a -> D3.Selection -> String -> Effect D3.Selection
    setSelStates :: a -> EventListener -> D3.Selection -> Effect Unit
+
 
 draw' :: forall a. Drawable2 a => Renderer a
 draw' _ { divId, suffix, view } redraw = do
@@ -59,6 +66,10 @@ draw' _ { divId, suffix, view } redraw = do
            if _ then createRootElement view div childId
            else pure maybeRootElement
       )
+
+drawView' :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Setter Fig View -> Redraw -> Effect Unit
+drawView' rSpec@{ view: vw } figVal figView redraw =
+   unpack vw (\view -> draw'' (rSpec { view = view }) figVal figView redraw) 
 
 drawView :: RendererSpec View -> Setter Fig (Val (SelStates 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal figView redraw =

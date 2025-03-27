@@ -30,7 +30,7 @@ import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
+import Util (type (×), (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
@@ -203,6 +203,9 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
 selectionEventData :: forall a. Event -> a × Selector Val
 selectionEventData = (eventData &&& type_ >>> selector)
 
+selectionEventData' :: forall a. Event -> a × SetSel (Val (SelStates 𝔹))
+selectionEventData' = (eventData &&& type_ >>> selector') 
+
 eventData :: forall a. Event -> a
 eventData = target >>> unsafeEventData
    where
@@ -223,6 +226,18 @@ selector (EventType ev) v =
 
    reportSelStates = spyWhen tracing.mouseEvent "to " show
    reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyP
+
+selector' :: EventType -> SetSel (Val (SelStates 𝔹))
+selector' (EventType ev) v =
+   setSel v
+   where
+   setSel :: SetSel (Val (SelStates 𝔹))
+   setSel (Val (SelStates Inert) v') = Val (SelStates Inert) v' × Unselectable 
+   setSel (Val (SelStates (Reactive (Selection sel'))) v')
+      | ev == "mousedown" = Val (SelStates (Reactive (Selection (sel' { persistent = neg sel'.persistent })))) v' × Persistent
+      | ev == "mouseenter" = Val (SelStates (Reactive (Selection (sel' { transient = true })))) v' × Transient
+      | ev == "mouseleave" = Val (SelStates (Reactive (Selection (sel' { transient = false })))) v' × Transient
+      | otherwise = error "Unsupported event type"
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
