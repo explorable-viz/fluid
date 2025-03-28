@@ -2,7 +2,7 @@ module App.View.Paragraph where
 
 import Prelude hiding (join)
 
-import App.Util (class Reflect, Attrs, SelStates, Selectable, 𝕊, classes, contents, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (class Reflect, Attrs, SelStates, Selectable, 𝕊, classes, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (SelSetter, ViewSelSetter, ViewSelSetter', SelSetter', listElement, listElement', paragraph, paragraph')
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, selListener', uiHelpers)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
@@ -110,7 +110,7 @@ createRootElement (Paragraph elems) div childId = do
       elem' # setText (linkContents elem) >>= setDatum { i }
 
 linkContents :: TextFragment (SelStates 𝕊) -> String
-linkContents (TextFragment s) = contents s
+linkContents (TextFragment (s × _)) = s
 linkContents (Link _ (s × _)) = s
 
 instance Drawable2 (Paragraph (SelStates 𝕊)) where

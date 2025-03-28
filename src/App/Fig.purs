@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState, SelStates, Selection, SelectionType(..), SetSel, 𝕊, as𝕊, getPersistent, getTransient, mergeSelStates, selState, selStates, splitSelStates, to𝔹, to𝕊)
+import App.Util (SelState, SelStates, Selection, SelectionType(..), SetSel, 𝕊, as𝕊, getPersistent, getTransient, selState, selStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal, envVal')
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
@@ -196,41 +196,11 @@ selectionResult'' fig@{ spec, dir, v, γ, inertFwd, inertBwd } = case dir.persis
          in
             filterKeys (\α -> not (Vertex α ∈ fig.in_roots)) (selectIntermediates' inerts g vs)
 
-selectionResult :: Fig -> Selection (Val (SelState 𝕊)) × Selection (Env (SelState 𝕊)) × Selection (Env (SelState 𝔹))
-selectionResult fig@{ spec, v, γ } =
-   { persistent: persistent.v, transient: transient.v } × { persistent: persistent.γ, transient: transient.γ } × ι
-   where
-   v' = splitSelStates v
-   γ' = splitSelStates γ
-   persistent = selectionResult' fig v'.persistent γ'.persistent
-   transient = selectionResult' fig v'.transient γ'.transient
-
-   ι = flip (maybe { persistent: empty, transient: empty }) spec.query
-      \query ->
-         let
-            vs = runQuery query persistent.g ∪ runQuery query transient.g
-            intermediates sel = filterKeys (\α -> not (Vertex α ∈ fig.in_roots)) (selectIntermediates sel.inert sel.g vs)
-         in
-            { persistent: intermediates persistent, transient: intermediates transient }
-
 drawIntermediates' :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
 drawIntermediates' divId (Env ι) unused redraw = do
    let prefix = divId <> "-" <> str.intermediate
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey ι \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing }
-         (selectIntermediate (Vertex α))
-         (setIntermediateView (Vertex α))
-         redraw
-
-drawIntermediates :: HTMLId -> Selection (Env (SelState 𝔹)) -> Array String -> Redraw -> Effect Unit
-drawIntermediates divId intermediates unused redraw = do
-   let prefix = divId <> "-" <> str.intermediate
-   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
-
-   let Env intermediates' = mergeSelStates intermediates
-
-   sequence_ $ flip mapWithKey intermediates' \α v ->
       drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing }
          (selectIntermediate (Vertex α))
          (setIntermediateView (Vertex α))
@@ -248,14 +218,6 @@ drawFig divId fig = do
    { v, γ, ι } = selectionResult'' fig
    out_view = unsafePartial $ view str.output v fig.out_view
    in_views = (\(Env γ) -> unsafePartial (mapWithKey view γ) <*> fig.in_views) γ
-   {-
-   out_view × in_views × intermediate_values =
-      selectionResult fig # unsafePartial
-         ( flip (view str.output) fig.out_view <<< mergeSelStates
-              *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) <<< mergeSelStates
-              *** identity
-         )
--}
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit

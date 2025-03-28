@@ -65,9 +65,6 @@ selState :: forall a. 𝔹 -> a -> SelState a
 selState true _ = Inert
 selState false b = Reactive b
 
-contents :: forall a. Selectable a -> a
-contents = fst
-
 sel :: forall a. Selectable a -> SelStates 𝕊
 sel = snd
 
@@ -77,36 +74,9 @@ persist δα = over SelStates ((<$>) mapδ)
    mapδ :: Selection a -> Selection a
    mapδ s = s { persistent = δα s.persistent }
 
--- TODO: rename
-transition :: forall a. Setter (SelStates a) a
-transition δα = over SelStates ((<$>) mapδ)
-   where
-   mapδ :: Selection a -> Selection a
-   mapδ s = s { transient = δα s.transient }
-
 data 𝕊 = None | Secondary | Primary
 
 type Selectable a = a × SelStates 𝕊
-
-splitSelStates :: forall f a. Functor f => f (SelStates a) -> Selection (f (SelState a))
-splitSelStates fa =
-   { persistent: (splitSel Persistent) <$> fa
-   , transient: (splitSel Transient) <$> fa
-   }
-   where
-   splitSel :: SelectionType -> SelStates a -> SelState a
-   splitSel _ (SelStates Inert) = Inert
-   splitSel Unselectable _ = Inert
-   splitSel Persistent (SelStates (Reactive s)) = Reactive s.persistent
-   splitSel Transient (SelStates (Reactive s)) = Reactive s.transient
-
-mergeSelStates :: forall f a. Functor f => Apply f => Selection (f (SelState a)) -> f (SelStates a)
-mergeSelStates { persistent: ps, transient: ts } = mergeSel <$> ps <*> ts
-   where
-   mergeSel :: SelState a -> SelState a -> SelStates a
-   mergeSel _ Inert = SelStates Inert
-   mergeSel Inert _ = SelStates Inert
-   mergeSel (Reactive p) (Reactive t) = SelStates (Reactive { persistent: p, transient: t })
 
 isPrimary :: SelStates 𝕊 -> 𝔹
 isPrimary (SelStates Inert) = false

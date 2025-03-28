@@ -15,13 +15,13 @@ module Test.Util.Suite
 
 import Prelude
 
-import App.Fig (selectionResult, loadFig, selectInput, selectOutput)
-import App.Util (Selector, isInert, isPersistent, isTransient, mergeSelStates, selStates)
+import App.Fig (loadFig, selectInput, selectOutput, selectionResult'')
+import App.Util (Selector, isInert, isPersistent, isTransient, selStates)
 import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (uncurry)
 import Effect.Aff (Aff)
 import Lattice (botOf)
 import Module ((</>), File(..), Folder(..), FileLoader, loadProgCxt)
@@ -101,9 +101,8 @@ linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
-      pure (fst (selectionResult fig))
-   let v' = mergeSelStates v
-   checkEq "selected" "expected" (selStates <$> (isInert <$> v') <*> (isPersistent <$> v') <*> (isTransient <$> v')) (out_expect (botOf <$> v'))
+      pure (selectionResult'' fig).v
+   checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (out_expect (botOf <$> v))
    pure fig
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
@@ -115,9 +114,8 @@ linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
-      pure (fst $ snd (selectionResult fig))
-   let γ' = mergeSelStates γ
-   checkEq "selected" "expected" (selStates <$> (isInert <$> γ') <*> (isPersistent <$> γ') <*> (isTransient <$> γ')) (in_expect (botOf <$> γ'))
+      pure (selectionResult'' fig).γ
+   checkEq "selected" "expected" (selStates <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (in_expect (botOf <$> γ))
    pure fig
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
