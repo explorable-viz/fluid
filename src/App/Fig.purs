@@ -105,6 +105,7 @@ selectIntermediates inerts g vs =
    where
    vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
 
+   -- Some redundancy here with analogous calculation with γInert, etc. Consolidate?
    vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v (vertices g.persistent), transient: select𝔹s v (vertices g.persistent) }
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
@@ -118,30 +119,26 @@ type SelectionResult =
    }
 
 selectionResult :: Fig -> SelectionResult
-selectionResult fig@{ spec, dir, v, γ, inertFwd, inertBwd } = case dir.persistent of
-   LinkedOutputs ->
-      let
-         v1 × γ1 × g = fig.linkedOutputs v
-         report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-      in
-         { v: lift2 as𝕊 <$> fig.v <*> v1, γ: (to𝕊 <$> _) <$> report γ1, ι: intermediates g inertBwd }
-   LinkedInputs ->
-      let
-         γ1 × v1 × g = fig.linkedInputs γ
-         report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-      in
-         { v: (to𝕊 <$> _) <$> report v1, γ: lift2 as𝕊 <$> fig.γ <*> γ1, ι: intermediates g inertFwd }
+selectionResult fig@{ dir: { persistent: LinkedOutputs }, v, inertBwd } =
+   { v: lift2 as𝕊 <$> fig.v <*> v1, γ: (to𝕊 <$> _) <$> report γ1, ι: intermediates fig g inertBwd }
    where
-   intermediates :: Selection GraphImpl -> Set DVertex -> Env (SelStates 𝔹)
-   intermediates g inerts = flip (maybe empty) spec.query
-      \query ->
-         let
-            vs = runQuery query g.persistent ∪ runQuery query g.transient
-         in
-            filterKeys (\α -> not (Vertex α ∈ fig.in_roots)) (selectIntermediates inerts g vs)
+   v1 × γ1 × g = fig.linkedOutputs v
+   report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
+selectionResult fig@{ dir: { persistent: LinkedInputs }, γ, inertFwd } =
+   { v: (to𝕊 <$> _) <$> report v1, γ: lift2 as𝕊 <$> fig.γ <*> γ1, ι: intermediates fig g inertFwd }
+   where
+   γ1 × v1 × g = fig.linkedInputs γ
+   report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
 
-drawIntermediates' :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
-drawIntermediates' divId (Env ι) unused redraw = do
+intermediates :: Fig -> Selection GraphImpl -> Set DVertex -> Env (SelStates 𝔹)
+intermediates { spec, in_roots } g inerts =
+   flip (maybe empty) spec.query
+      \query ->
+         filterKeys (\α -> not (Vertex α ∈ in_roots)) $
+            selectIntermediates inerts g (runQuery query g.persistent ∪ runQuery query g.transient)
+
+drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
+drawIntermediates divId (Env ι) unused redraw = do
    let prefix = divId <> "-" <> str.intermediate
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey ι \α v ->
@@ -157,7 +154,7 @@ drawFig divId fig = do
    sequence_ $ flip mapWithKey in_views \x view -> do
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
 
-   drawIntermediates' divId ι (keys ι \\ keys fig.ι) redraw
+   drawIntermediates divId ι (keys ι \\ keys fig.ι) redraw
    where
    { v, γ, ι } = selectionResult fig
    out_view = unsafePartial $ view str.output v fig.out_view

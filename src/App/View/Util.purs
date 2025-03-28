@@ -104,13 +104,15 @@ uiHelpers =
    , selClassesFor
    }
 
+type Query = Maybe (VertexData -> Maybe (DVertex' (Val Vertex)))
+
 type FigSpec =
    { fluidSrcPaths :: Array Folder
    , imports :: Array String
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
-   , query :: Maybe (VertexData -> Maybe (DVertex' (Val Vertex)))
+   , query :: Query
    }
 
 data Direction = LinkedInputs | LinkedOutputs
