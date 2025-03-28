@@ -45,9 +45,6 @@ str =
    , intermediate: "intermediate"
    }
 
-mkFullId :: String -> String -> String -> String
-mkFullId divId mid suffix = "#" <> divId <> "-" <> mid <> "-" <> suffix
-
 selectOutput' :: SetSel (Val (SelStates 𝔹)) -> Endo Fig
 selectOutput' δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
