@@ -50,9 +50,9 @@ selectOutput' δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
    v' × selType = δv v
    γ' × dir' = case selType of
-      Persistent -> if dir.persistent == LinkedInputs then botOf γ × dir { persistent = LinkedOutputs } else γ × dir
-      Transient -> if dir.transient == LinkedInputs then botOf γ × dir { transient = LinkedOutputs } else γ × dir
-      Unselectable -> γ × dir
+      Persistent | dir.persistent == LinkedInputs -> botOf γ × dir { persistent = LinkedOutputs }
+      Transient | dir.transient == LinkedInputs -> botOf γ × dir { transient = LinkedOutputs }
+      _ -> γ × dir
 
 selectOutput :: Setter Fig (Val (SelStates 𝔹))
 selectOutput δv fig@{ dir, v, γ } = fig
@@ -70,9 +70,9 @@ selectInput' x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
    γ' × selType = envVal' x δv γ
    v' × dir' = case selType of
-      Persistent -> if dir.persistent == LinkedOutputs then botOf v × dir { persistent = LinkedInputs } else v × dir
-      Transient -> if dir.transient == LinkedOutputs then botOf v × dir { transient = LinkedInputs } else v × dir
-      Unselectable -> v × dir
+      Persistent | dir.persistent == LinkedOutputs -> v × dir { persistent = LinkedInputs }
+      Transient | dir.transient == LinkedOutputs -> v × dir { transient = LinkedInputs }
+      _ -> v × dir
 
 selectInput :: Var -> Setter Fig (Val (SelStates 𝔹))
 selectInput x δv fig@{ dir, γ, v } = fig
@@ -102,7 +102,7 @@ selectIntermediates inerts g vs =
    where
    vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
 
-   -- Some redundancy here with analogous calculation with γInert, etc. Consolidate?
+   -- Consolidate with analogous calculation with γInert etc in loadFig?
    vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v (vertices g.persistent), transient: select𝔹s v (vertices g.persistent) }
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
