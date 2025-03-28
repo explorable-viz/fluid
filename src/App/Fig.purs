@@ -6,7 +6,7 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelStates, Selection, SelectionType(..), SetSel, 𝕊, as𝕊, getPersistent, getTransient, selStates, to𝕊)
 import App.Util.Selector (envVal, envVal')
 import App.View (view)
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
+import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView, drawView')
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Apply (lift2)
@@ -146,10 +146,10 @@ drawIntermediates divId (Env ι) unused redraw = do
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
+   drawView' { divId, suffix: str.output, view: out_view } selectOutput' setOutputView redraw
 
    sequence_ $ flip mapWithKey in_views \x view -> do
-      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
+      drawView' { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput' x) (setInputView x) redraw
 
    drawIntermediates divId ι (keys ι \\ keys fig.ι) redraw
    where
@@ -233,7 +233,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , ι: empty
       , linkedOutputs
       , linkedInputs
-      , dir: { persistent: LinkedOutputs, transient: LinkedInputs }
+      , dir: { persistent: LinkedOutputs, transient: LinkedOutputs }
       , in_views
       , out_view: Nothing
       , intermediate_views: empty

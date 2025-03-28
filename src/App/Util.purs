@@ -189,15 +189,22 @@ selector (EventType ev) v =
 
 selector' :: EventType -> SetSel (Val (SelStates 𝔹))
 selector' (EventType ev) v =
-   setSel v
+   (setSel <$> v) × selType
    where
-   setSel :: SetSel (Val (SelStates 𝔹))
-   setSel (Val (SelStates Inert) v') = Val (SelStates Inert) v' × Unselectable
-   setSel (Val (SelStates (Reactive sel')) v')
-      | ev == "mousedown" = Val (SelStates (Reactive (sel' { persistent = neg sel'.persistent }))) v' × Persistent
-      | ev == "mouseenter" = Val (SelStates (Reactive (sel' { transient = true }))) v' × Transient
-      | ev == "mouseleave" = Val (SelStates (Reactive (sel' { transient = false }))) v' × Transient
+   setSel :: Endo (SelStates 𝔹)
+   setSel (SelStates Inert) = SelStates Inert
+   setSel (SelStates (Reactive sel'))
+      | ev == "mousedown" = SelStates (Reactive (sel' { persistent = neg sel'.persistent }))
+      | ev == "mouseenter" = SelStates (Reactive (sel' { transient = true }))
+      | ev == "mouseleave" = SelStates (Reactive (sel' { transient = false }))
       | otherwise = error "Unsupported event type"
+
+   selType :: SelectionType
+   selType
+      | ev == "mousedown" = Persistent
+      | ev == "mouseenter" = Transient
+      | ev == "mouseleave" = Transient
+      | otherwise = Unselectable
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
