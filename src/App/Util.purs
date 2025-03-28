@@ -17,7 +17,7 @@ import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (fst, snd)
+import Data.Tuple (snd)
 import DataType (cCons, cNil)
 import Dict (Dict)
 import Effect (Effect)
@@ -60,10 +60,6 @@ selStates false b1 b2 = SelStates $ Reactive { persistent: b1, transient: b2 }
 selection :: forall a. 𝔹 -> a -> a -> Selection (SelState a)
 selection true _ _ = { persistent: Inert, transient: Inert }
 selection false b1 b2 = { persistent: Reactive b1, transient: Reactive b2 }
-
-selState :: forall a. 𝔹 -> a -> SelState a
-selState true _ = Inert
-selState false b = Reactive b
 
 sel :: forall a. Selectable a -> SelStates 𝕊
 sel = snd

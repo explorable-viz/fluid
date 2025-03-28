@@ -2,7 +2,7 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, SetSel, 𝕊, selClasses, selClassesFor, selectionEventData, selectionEventData')
+import App.Util (SelStates, Selectable, Selection, SetSel, 𝕊, selClasses, selClassesFor, selectionEventData, selectionEventData')
 import App.Util.Selector (ViewSelSetter, ViewSelSetter')
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
@@ -121,10 +121,8 @@ type Fig =
    , γ :: Env (SelStates 𝔹)
    , v :: Val (SelStates 𝔹)
    , ι :: Env (SelStates 𝔹)
-   , linkedOutputs :: Val (SelState 𝔹) -> Val (SelState 𝔹) × Env (SelState 𝔹) × GraphImpl
-   , linkedInputs :: Env (SelState 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
-   , linkedOutputs' :: Val (SelStates 𝔹) -> Val (SelStates 𝔹) × Env (SelStates 𝔹) × Selection GraphImpl
-   , linkedInputs' :: Env (SelStates 𝔹) -> Env (SelStates 𝔹) × Val (SelStates 𝔹) × Selection GraphImpl
+   , linkedOutputs :: Val (SelStates 𝔹) -> Val (SelStates 𝔹) × Env (SelStates 𝔹) × Selection GraphImpl
+   , linkedInputs :: Env (SelStates 𝔹) -> Env (SelStates 𝔹) × Val (SelStates 𝔹) × Selection GraphImpl
    , dir :: Selection Direction
    , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
