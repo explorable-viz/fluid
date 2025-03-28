@@ -13,7 +13,7 @@ import Control.Apply (lift2)
 import Data.Array (fromFoldable, zipWith)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (first, (***))
+import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for_, sequence_)
@@ -25,7 +25,7 @@ import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex', Vertex(..), DVertex, runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
-import Module.Web (File, loadProgCxt, prepConfig)
+import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
@@ -155,7 +155,7 @@ type SelectionResult =
 type SelectionResult' =
    { v :: Val (SelStates 𝕊)
    , γ :: Env (SelStates 𝕊)
-   , ιs :: Env (SelStates 𝔹)
+   , ι :: Env (SelStates 𝔹)
    }
 
 selectionResult' :: Fig -> Val (SelState 𝔹) -> Env (SelState 𝔹) -> SelectionResult
@@ -180,13 +180,13 @@ selectionResult'' fig@{ spec, dir, v, γ, inertFwd, inertBwd } = case dir.persis
          v1 × γ1 × g = fig.linkedOutputs' v
          report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
       in
-         { v: lift2 as𝕊 <$> fig.v <*> v1, γ: (to𝕊 <$> _) <$> report γ1, ιs: intermediates g inertBwd }
+         { v: lift2 as𝕊 <$> fig.v <*> v1, γ: (to𝕊 <$> _) <$> report γ1, ι: intermediates g inertBwd }
    LinkedInputs ->
       let
          γ1 × v1 × g = fig.linkedInputs' γ
          report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
       in
-         { v: (to𝕊 <$> _) <$> report v1, γ: lift2 as𝕊 <$> fig.γ <*> γ1, ιs: intermediates g inertFwd }
+         { v: (to𝕊 <$> _) <$> report v1, γ: lift2 as𝕊 <$> fig.γ <*> γ1, ι: intermediates g inertFwd }
    where
    intermediates :: Selection GraphImpl -> Set DVertex -> Env (SelStates 𝔹)
    intermediates g inerts = flip (maybe empty) spec.query
@@ -198,20 +198,30 @@ selectionResult'' fig@{ spec, dir, v, γ, inertFwd, inertBwd } = case dir.persis
 
 selectionResult :: Fig -> Selection (Val (SelState 𝕊)) × Selection (Env (SelState 𝕊)) × Selection (Env (SelState 𝔹))
 selectionResult fig@{ spec, v, γ } =
-   { persistent: persistent.v, transient: transient.v } × { persistent: persistent.γ, transient: transient.γ } × ιs
+   { persistent: persistent.v, transient: transient.v } × { persistent: persistent.γ, transient: transient.γ } × ι
    where
    v' = splitSelStates v
    γ' = splitSelStates γ
    persistent = selectionResult' fig v'.persistent γ'.persistent
    transient = selectionResult' fig v'.transient γ'.transient
 
-   ιs = flip (maybe { persistent: empty, transient: empty }) spec.query
+   ι = flip (maybe { persistent: empty, transient: empty }) spec.query
       \query ->
          let
             vs = runQuery query persistent.g ∪ runQuery query transient.g
             intermediates sel = filterKeys (\α -> not (Vertex α ∈ fig.in_roots)) (selectIntermediates sel.inert sel.g vs)
          in
             { persistent: intermediates persistent, transient: intermediates transient }
+
+drawIntermediates' :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
+drawIntermediates' divId (Env ι) unused redraw = do
+   let prefix = divId <> "-" <> str.intermediate
+   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
+   sequence_ $ flip mapWithKey ι \α v ->
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing }
+         (selectIntermediate (Vertex α))
+         (setIntermediateView (Vertex α))
+         redraw
 
 drawIntermediates :: HTMLId -> Selection (Env (SelState 𝔹)) -> Array String -> Redraw -> Effect Unit
 drawIntermediates divId intermediates unused redraw = do
@@ -227,29 +237,30 @@ drawIntermediates divId intermediates unused redraw = do
          redraw
 
 drawFig :: HTMLId -> Fig -> Effect Unit
-drawFig divId fig@{ ι } = do
+drawFig divId fig = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
 
    sequence_ $ flip mapWithKey in_views \x view -> do
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
 
-   drawIntermediates divId intermediate_values unused redraw
+   drawIntermediates' divId ι (keys ι \\ keys fig.ι) redraw
    where
+   { v, γ, ι } = selectionResult'' fig
+   out_view = unsafePartial $ view str.output v fig.out_view
+   in_views = (\(Env γ) -> unsafePartial (mapWithKey view γ) <*> fig.in_views) γ
+   {-
    out_view × in_views × intermediate_values =
       selectionResult fig # unsafePartial
          ( flip (view str.output) fig.out_view <<< mergeSelStates
               *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) <<< mergeSelStates
               *** identity
          )
-
-   unused :: Array String
-   unused = fromFoldable (keys ι \\ (keys intermediate_values.persistent ∪ keys intermediate_values.transient))
-
-   redraw = (_ $ fig { ι = mergeSelStates intermediate_values }) >>> drawFig divId
+-}
+   redraw = (_ $ fig { ι = ι }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
-drawFile (file × src) =
-   addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
+drawFile (File file × src) =
+   addEditorView (codeMirrorDiv file) >>= drawCode src
 
 unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnection (Env a) (EnvExpr a)
 unprojExpr (EnvExpr _ e) = GC
