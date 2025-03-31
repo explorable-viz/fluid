@@ -2,7 +2,7 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelStates, Selectable, Selection, SetSel, 𝕊, selClasses, selClassesFor, selectionEventData, selectionEventData')
+import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, selClasses, selClassesFor, selectionEventData, selectionEventData')
 import App.Util.Selector (ViewSelSetter, ViewSelSetter')
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
@@ -132,6 +132,9 @@ type Fig =
    , intermediate_views :: Dict (Maybe View)
    , inertFwd :: Set DVertex
    , inertBwd :: Set DVertex
+   , inertAll :: Set DVertex
+   , linkedInputs' :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
+   , linkedOutputs' :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
    }
 
 -- ======================

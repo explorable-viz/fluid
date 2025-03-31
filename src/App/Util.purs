@@ -51,11 +51,23 @@ data SelState a
 newtype SelStates a = SelStates (SelState (Selection a))
 type Selection a = { persistent :: a, transient :: a }
 
-data SelectionType = Persistent | Transient | Unselectable
+data SelectionType = Persistent | Transient
+
+mergeSelStates :: forall f. Apply f => f (SelState 𝔹) -> f (SelState 𝔹) -> f (SelStates 𝔹)
+mergeSelStates f_persistent f_transient = merge <$> f_persistent <*> f_transient
+   where
+   merge :: SelState 𝔹 -> SelState 𝔹 -> SelStates 𝔹
+   merge Inert _ = SelStates Inert
+   merge _ Inert = SelStates Inert
+   merge (Reactive s) (Reactive s') = SelStates $ Reactive { persistent: s, transient: s' }
 
 selStates :: forall a. 𝔹 -> a -> a -> SelStates a
 selStates true _ _ = SelStates Inert
 selStates false b1 b2 = SelStates $ Reactive { persistent: b1, transient: b2 }
+
+selState :: forall a. 𝔹 -> a -> SelState a
+selState true _ = Inert
+selState false b = Reactive b
 
 selection :: forall a. 𝔹 -> a -> a -> Selection (SelState a)
 selection true _ _ = { persistent: Inert, transient: Inert }
@@ -141,6 +153,11 @@ to𝕊 :: 𝔹 -> 𝕊
 to𝕊 true = Primary
 to𝕊 false = None
 
+toSelStates𝕊 :: SelStates 𝔹 -> SelStates 𝕊
+toSelStates𝕊 (SelStates Inert) = SelStates Inert
+toSelStates𝕊 (SelStates (Reactive { persistent, transient })) =
+   SelStates (Reactive { persistent: to𝕊 persistent, transient: to𝕊 transient })
+
 unselected :: SelStates 𝔹
 unselected = SelStates $ Reactive { persistent: false, transient: false }
 
@@ -204,7 +221,7 @@ selector' (EventType ev) v =
       | ev == "mousedown" = Persistent
       | ev == "mouseenter" = Transient
       | ev == "mouseleave" = Transient
-      | otherwise = Unselectable
+      | otherwise = error "Unsupported event type"
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String

@@ -2,7 +2,7 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState(..), SelStates, SelectionType(..), SetSel, persist)
+import App.Util (SelState(..), SelStates, SetSel, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (fromJust)
@@ -28,7 +28,7 @@ type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to vie
 
 -- TODO: rename
 persist' :: forall a. Setter' (SelState a) a
-persist' _ Inert = Inert × Unselectable
+persist' _ Inert = error "Unselectable"
 persist' δα (Reactive s) = first Reactive (δα s)
 
 fst :: SelSetter Val Val
