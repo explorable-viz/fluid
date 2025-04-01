@@ -3,14 +3,13 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, 𝕊, as𝕊, getPersistent, getTransient, selState, selStates, toSelStates𝕊, to𝔹, to𝕊)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, 𝕊, getSel, selState, selStates, toSelStates𝕊, to𝔹, to𝕊)
 import App.Util.Selector (envVal, envVal')
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView, drawView')
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
-import Control.Apply (lift2)
-import Data.Array (fromFoldable)
+import Data.Array (fromFoldable, zipWith)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
@@ -29,7 +28,7 @@ import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, shapeMismatch, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
@@ -98,7 +97,7 @@ setIntermediateView (Vertex α) δvw fig = fig
 
 selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹)
 selectIntermediates inerts g vs =
-   Env $ D.fromFoldable $ setSels <$> vs_inert <*> vs_selected
+   Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected -- using <$> and <*> is more readable, but causes errors
    where
    vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
 
@@ -115,34 +114,23 @@ type SelectionResult =
    , ι :: Env (SelStates 𝔹)
    }
 
-selectionResult' :: Fig -> SelectionResult
-selectionResult' fig@{ dir: { persistent: LinkedOutputs }, v, inertBwd } =
-   { v: lift2 as𝕊 <$> fig.v <*> v1, γ: (to𝕊 <$> _) <$> report γ1, ι: intermediates fig g inertBwd }
-   where
-   v1 × γ1 × g = fig.linkedOutputs v
-
-   report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-selectionResult' fig@{ dir: { persistent: LinkedInputs }, γ, inertFwd } =
-   { v: (to𝕊 <$> _) <$> report v1, γ: lift2 as𝕊 <$> fig.γ <*> γ1, ι: intermediates fig g inertFwd }
-   where
-   γ1 × v1 × g = fig.linkedInputs γ
-   report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-
 selectionResult :: Fig -> SelectionResult
-selectionResult fig@{ dir, v, γ, inertAll } =
-   { v: toSelStates𝕊 <$> v', γ: toSelStates𝕊 <$> γ', ι: intermediates fig { persistent: g, transient: g' } inertAll }
+selectionResult fig@{ dir, v, γ, inerts } =
+   { v: toSelStates𝕊 <$> reportOut v', γ: toSelStates𝕊 <$> reportIn γ', ι: intermediates fig { persistent: g, transient: g' } inerts }
    where
    γ1 × v1 × g =
       case dir.persistent of
-         LinkedOutputs -> fig.linkedOutputs' Persistent v
-         LinkedInputs -> fig.linkedInputs' Persistent γ
+         LinkedOutputs -> fig.linkedOutputs Persistent v
+         LinkedInputs -> fig.linkedInputs Persistent γ
    γ2 × v2 × g' =
       case dir.transient of
-         LinkedOutputs -> fig.linkedOutputs' Transient v
-         LinkedInputs -> fig.linkedInputs' Transient γ
+         LinkedOutputs -> fig.linkedOutputs Transient v
+         LinkedInputs -> fig.linkedInputs Transient γ
 
-   v' = splice2 v v1 v2
-   γ' = splice2 γ γ1 γ2
+   v' = splice v1 v2
+   γ' = splice γ1 γ2
+   reportIn = spyWhen tracing.mediatingData "Mediating inputs" prettyP
+   reportOut = spyWhen tracing.mediatingData "Mediating outputs" prettyP
 
 intermediates :: Fig -> Selection GraphImpl -> Set DVertex -> Env (SelStates 𝔹)
 intermediates { spec, in_roots } g inerts =
@@ -168,7 +156,7 @@ drawFig divId fig = do
    sequence_ $ flip mapWithKey in_views \x view -> do
       drawView' { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput' x) (setInputView x) redraw
 
-   drawIntermediates divId ι (keys ι \\ keys fig.ι) redraw
+   drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where
    { v, γ, ι } = selectionResult fig
    out_view = unsafePartial $ view str.output v fig.out_view
@@ -189,25 +177,11 @@ lift
    :: forall f f' g
     . Apply f
    => Apply f'
-   => f (𝔹 -> 𝔹 -> SelStates 𝔹)
-   -> (f' 𝔹 -> f 𝔹 × g)
-   -> (f' (SelStates 𝔹) -> f (SelStates 𝔹) × Selection g)
-lift selState_f bwd v = (selState_f <*> v_persistent <*> v_transient) × { persistent: g, transient: g' }
-   where
-   v_persistent × g = bwd (v <#> getPersistent)
-   v_transient × g' = bwd (v <#> getTransient)
-
-lift'
-   :: forall f f' g
-    . Apply f
-   => Apply f'
    => f (𝔹 -> SelState 𝔹)
    -> (f' 𝔹 -> f 𝔹 × g)
    -> f' (SelState 𝔹)
    -> f (SelState 𝔹) × g
-lift' selState_f bwd v = (selState_f <*> v_persistent) × g
-   where
-   v_persistent × g = bwd (v <#> to𝔹)
+lift selState_f bwd v = first (apply selState_f) (bwd (v <#> to𝔹))
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
@@ -240,55 +214,28 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inertBwd = vertices g0 \\ (vertices $ snd (gcBwd (topOf outα))) :: Set DVertex
       inertFwd = vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0
 
-      γInert = selStates <$> select𝔹s γα inertBwd :: Env (𝔹 -> 𝔹 -> SelStates 𝔹)
-      vInert = selStates <$> select𝔹s outα inertFwd :: Val (𝔹 -> 𝔹 -> SelStates 𝔹)
+      inertγ = select𝔹s γα inertBwd
+      inertv = select𝔹s outα inertFwd
+      γInert = selStates <$> inertγ :: Env (𝔹 -> 𝔹 -> SelStates 𝔹)
+      vInert = selStates <$> inertv :: Val (𝔹 -> 𝔹 -> SelStates 𝔹)
 
       γInert' = selState <$> select𝔹s γα inertBwd
       vInert' = selState <$> select𝔹s outα inertFwd
 
-      vf' :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      vf' v = lift' γInert' gcBwd v
+      vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
+      vf v = lift γInert' gcBwd v
 
-      γf' :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      γf' γ = lift' vInert' gcFwd γ
+      γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
+      γf γ = lift vInert' gcFwd γ
 
-      vf :: Val (SelStates 𝔹) -> Env (SelStates 𝔹) × Selection GraphImpl
-      vf = lift γInert gcBwd
+      linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
+      linkedInputs selType γ =
+         let v × g = γf (γ <#> getSel selType) in fst (vf v) × v × g
 
-      γf :: Env (SelStates 𝔹) -> Val (SelStates 𝔹) × Selection GraphImpl
-      γf = lift vInert gcFwd
+      linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
+      linkedOutputs selType v =
+         let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × g
 
-      linkedInputs :: Env (SelStates 𝔹) -> Env (SelStates 𝔹) × Val (SelStates 𝔹) × Selection GraphImpl
-      linkedInputs γ = let v × g = γf γ in (fst $ vf v) × v × g
-
-      linkedInputs' :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
-      linkedInputs' selType γ =
-         let
-            v × g = γf' (γ <#> get selType)
-            γ' × _ = vf' v
-         in
-            γ' × v × g
-         where
-         get :: SelectionType -> SelStates 𝔹 -> SelState 𝔹
-         get _ (SelStates Inert) = Inert
-         get Persistent (SelStates (Reactive { persistent })) = Reactive persistent
-         get Transient (SelStates (Reactive { transient })) = Reactive transient
-
-      linkedOutputs :: Val (SelStates 𝔹) -> Val (SelStates 𝔹) × Env (SelStates 𝔹) × Selection GraphImpl
-      linkedOutputs v = let γ × g = vf v in (fst $ γf γ) × γ × g
-
-      linkedOutputs' :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
-      linkedOutputs' selType v =
-         let
-            γ × g = vf' (v <#> get selType)
-            v' × _ = γf' γ
-         in
-            γ × v' × g
-         where
-         get :: SelectionType -> SelStates 𝔹 -> SelState 𝔹
-         get _ (SelStates Inert) = Inert
-         get Persistent (SelStates (Reactive { persistent })) = Reactive persistent
-         get Transient (SelStates (Reactive { transient })) = Reactive transient
    pure
       { spec
       , s
@@ -296,27 +243,23 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , v: vInert <*> v0 <*> v0
       , ι: empty
       , linkedOutputs
-      , linkedOutputs'
       , linkedInputs
-      , linkedInputs'
       , dir: { persistent: LinkedOutputs, transient: LinkedOutputs }
       , in_views
       , out_view: Nothing
       , intermediate_views: empty
       , in_roots
-      , inertFwd
-      , inertBwd
-      , inertAll: inertFwd ∪ inertBwd
+      , inerts: inertFwd ∪ inertBwd
       }
 
-splice :: SelectionType -> SelStates 𝔹 -> SelState 𝔹 -> SelStates 𝔹
-splice Persistent (SelStates (Reactive s)) (Reactive b) = SelStates (Reactive s { persistent = b })
-splice Transient (SelStates (Reactive s)) (Reactive b) = SelStates (Reactive s { transient = b })
-splice _ (SelStates Inert) Inert = SelStates Inert
-splice _ _ _ = shapeMismatch unit
+splice :: forall f a. Apply f => f (SelState a) -> f (SelState a) -> f (SelStates a)
+splice f1 f2 = splice' <$> f1 <*> f2
 
-splice2 :: forall f. Apply f => f (SelStates 𝔹) -> f (SelState 𝔹) -> f (SelState 𝔹) -> f (SelStates 𝔹)
-splice2 f1 f2 f3 = splice Transient <$> (splice Persistent <$> f1 <*> f2) <*> f3
+splice' :: forall a. SelState a -> SelState a -> SelStates a
+splice' Inert _ = SelStates Inert
+splice' _ Inert = SelStates Inert
+splice' (Reactive persistent) (Reactive transient) =
+   SelStates (Reactive { persistent, transient })
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)

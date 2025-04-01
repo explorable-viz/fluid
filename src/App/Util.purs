@@ -53,14 +53,6 @@ type Selection a = { persistent :: a, transient :: a }
 
 data SelectionType = Persistent | Transient
 
-mergeSelStates :: forall f. Apply f => f (SelState 𝔹) -> f (SelState 𝔹) -> f (SelStates 𝔹)
-mergeSelStates f_persistent f_transient = merge <$> f_persistent <*> f_transient
-   where
-   merge :: SelState 𝔹 -> SelState 𝔹 -> SelStates 𝔹
-   merge Inert _ = SelStates Inert
-   merge _ Inert = SelStates Inert
-   merge (Reactive s) (Reactive s') = SelStates $ Reactive { persistent: s, transient: s' }
-
 selStates :: forall a. 𝔹 -> a -> a -> SelStates a
 selStates true _ _ = SelStates Inert
 selStates false b1 b2 = SelStates $ Reactive { persistent: b1, transient: b2 }
@@ -99,6 +91,11 @@ isSecondary (SelStates (Reactive { persistent, transient })) =
 isInert :: forall a. SelStates a -> 𝔹
 isInert (SelStates Inert) = true
 isInert (SelStates (Reactive _)) = false
+
+getSel :: SelectionType -> SelStates 𝔹 -> SelState 𝔹
+getSel _ (SelStates Inert) = Inert
+getSel Persistent (SelStates (Reactive { persistent })) = Reactive persistent
+getSel Transient (SelStates (Reactive { transient })) = Reactive transient
 
 getPersistent :: forall a. BoundedJoinSemilattice a => SelStates a -> a
 getPersistent (SelStates Inert) = bot

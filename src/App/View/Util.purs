@@ -123,18 +123,14 @@ type Fig =
    , γ :: Env (SelStates 𝔹)
    , v :: Val (SelStates 𝔹)
    , ι :: Env (SelStates 𝔹)
-   , linkedOutputs :: Val (SelStates 𝔹) -> Val (SelStates 𝔹) × Env (SelStates 𝔹) × Selection GraphImpl
-   , linkedInputs :: Env (SelStates 𝔹) -> Env (SelStates 𝔹) × Val (SelStates 𝔹) × Selection GraphImpl
    , dir :: Selection Direction
+   , linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
+   , linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
    , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
    , out_view :: Maybe View
    , intermediate_views :: Dict (Maybe View)
-   , inertFwd :: Set DVertex
-   , inertBwd :: Set DVertex
-   , inertAll :: Set DVertex
-   , linkedInputs' :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
-   , linkedOutputs' :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
+   , inerts :: Set DVertex
    }
 
 -- ======================
