@@ -114,7 +114,7 @@ type FigSpec =
    , query :: Query
    }
 
-data Direction = LinkedInputs | LinkedOutputs
+data Direction = LinkedInputs | LinkedOutputs | Intermediates
 
 type Fig =
    { spec :: FigSpec
@@ -122,10 +122,11 @@ type Fig =
    , γ :: Env (SelStates 𝔹)
    , v :: Val (SelStates 𝔹)
    , ι :: Env (SelStates 𝔹)
-   , ι' :: Env Vertex
+   , ια :: Env Vertex
    , dir :: Selection Direction
    , linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+   , linkIntermediates :: SelectionType -> Env (SelStates 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
    , out_view :: Maybe View

@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, as𝕊)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, 𝕊, as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal, envVal')
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView')
@@ -22,14 +22,15 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (DVertex, DVertex', Vertex(..), runQuery, select𝔹s, vertices)
+import Graph (DVertex, DVertex', Vertex(..), op, runQuery, selectαs, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
+import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, spyWhen, (×), (∩))
+import Util (type (×), AffError, Endo, Setter, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
@@ -92,23 +93,28 @@ selectIntermediate (Vertex α) δv fig@{ ι } = fig
    }
 
 selectIntermediate' :: Vertex -> SetSel (Val (SelStates 𝔹)) -> Endo Fig
-selectIntermediate' (Vertex α) δv fig@{ ι } = fig { ι = ι' }
+selectIntermediate' (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final, γ = γ', v = v', dir = dir' }
    where
-   ι' × _ = envVal' α δv ι
+   ι' × selType = envVal' α δv ι
+   γ' × v' × dir' × ι_final = case selType of
+      Transient | dir.transient /= Intermediates -> γ × v × dir { transient = Intermediates } × ι'
+      _ -> γ × v × dir × ι
 
 setIntermediateView :: Vertex -> Setter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
 
-selectIntermediates :: Set DVertex -> Selection (Set DVertex) -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹)
-selectIntermediates inerts g vs =
-   (Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected) -- using <$> and <*> is more readable, but causes errors
+rebuildι :: Set DVertex -> Selection (Set DVertex) -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹) × Env Vertex
+rebuildι inerts αs vs =
+   (Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected) × (Env $ D.fromFoldable vsα) -- using <$> and <*> is more readable, but causes errors
    where
    vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
 
+   vsα = (\v@(Val (Vertex α) _) -> α × v) <$> vs' :: Array (String × Val Vertex) -- Want to get the value with its vertices so we can use selectαs
+
    -- Consolidate with analogous calculation with γInert etc in loadFig?
-   vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v g.persistent, transient: select𝔹s v g.transient }
+   vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient }
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
@@ -118,33 +124,39 @@ type SelectionResult =
    { v :: Val (SelStates 𝕊)
    , γ :: Env (SelStates 𝕊)
    , ι :: Env (SelStates 𝔹)
+   , ια :: Env Vertex
    }
 
 selectionResult :: Fig -> SelectionResult
-selectionResult fig@{ dir, v, γ, inerts } =
-   { v: lift2 as𝕊 <$> v <*> reportOut v', γ: lift2 as𝕊 <$> γ <*> reportIn γ', ι: intermediates fig { persistent: αs, transient: αs' } inerts }
+selectionResult fig@{ dir, v, γ, ι, ια, inerts } =
+   { v: lift2 as𝕊 <$> v <*> reportOut v', γ: lift2 as𝕊 <$> γ <*> reportIn γ', ι: ι', ια: ια' }
    where
    γ1 × v1 × αs =
       case dir.persistent of
          LinkedOutputs -> fig.linkedOutputs Persistent v
          LinkedInputs -> fig.linkedInputs Persistent γ
+         Intermediates -> error "absurd"
    γ2 × v2 × αs' =
       case dir.transient of
          LinkedOutputs -> fig.linkedOutputs Transient v
          LinkedInputs -> fig.linkedInputs Transient γ
+         Intermediates -> fig.linkIntermediates Transient ι ια
 
-   v' = splice v1 v2
+   ι' × ια' = intermediates fig { persistent: αs, transient: αs' } inerts
+
+   v' = splice v1 (report' v2)
    γ' = splice γ1 γ2
 
    reportIn = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    reportOut = spyWhen tracing.mediatingData "Mediating outputs" prettyP
+   report' = spyWhen tracing.intermediates "Found val in output" prettyP
 
-intermediates :: Fig -> Selection (Set DVertex) -> Set DVertex -> Env (SelStates 𝔹)
-intermediates { spec, in_roots } g inerts =
-   flip (maybe (empty)) spec.query
+intermediates :: Fig -> Selection (Set DVertex) -> Set DVertex -> Env (SelStates 𝔹) × Env Vertex
+intermediates { spec, in_roots } αs inerts =
+   flip (maybe (empty × empty)) spec.query
       \query ->
-         (filterKeys (\α -> not (Vertex α ∈ in_roots))) $
-            selectIntermediates inerts g (runQuery query g.persistent ∪ runQuery query g.transient)
+         first (filterKeys (\α -> not (Vertex α ∈ in_roots))) $
+            rebuildι inerts αs (runQuery query αs.persistent ∪ runQuery query αs.transient)
 
 drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
 drawIntermediates divId (Env ι) unused redraw = do
@@ -165,10 +177,10 @@ drawFig divId fig = do
 
    drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where
-   { v, γ, ι } = selectionResult fig
+   { v, γ, ι, ια } = selectionResult fig
    out_view = unsafePartial $ view str.output v fig.out_view
    in_views = (\(Env γ) -> unsafePartial (mapWithKey view γ) <*> fig.in_views) γ
-   redraw = (_ $ fig { ι = ι }) >>> drawFig divId
+   redraw = (_ $ fig { ι = ι, ια = ια }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
 drawFile (File file × src) =
@@ -203,6 +215,26 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       γ_restricted = restrict inputs_set γα
 
       in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> unwrap γ_restricted
+
+      ι_fwd' :: Env Vertex -> Env 𝔹 -> Val 𝔹 × Set DVertex
+      ι_fwd' ι_α ι_𝔹 =
+         let
+            αs = vertices $ bwdSlice (selectαs ι_𝔹 ι_α × op g0)
+         in
+            select𝔹s outα αs × αs
+
+      ι_bwd' :: Env Vertex -> Env 𝔹 -> Env 𝔹 × Set DVertex
+      ι_bwd' ι_α ι_𝔹 =
+         let
+            αs = vertices $ bwdSlice (selectαs ι_𝔹 ι_α × g0)
+         in
+            select𝔹s γα αs × αs
+
+      ι_fwd :: Env (SelState 𝔹) -> Env Vertex -> Val (SelState 𝔹) × Set DVertex
+      ι_fwd ι_𝔹 ι_α = lift vInert' (ι_fwd' ι_α) ι_𝔹
+
+      ι_bwd :: Env (SelState 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Set DVertex
+      ι_bwd ι_𝔹 ι_α = lift γInert' (ι_bwd' ι_α) ι_𝔹
 
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
@@ -243,15 +275,24 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs selType v =
          let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × (vertices g)
 
+      linkIntermediates :: SelectionType -> Env (SelStates 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+      linkIntermediates selType ι ι' =
+         let
+            v × αs = ι_fwd (ι <#> getSel selType) ι'
+            γ × αs' = ι_bwd (ι <#> getSel selType) ι'
+         in
+            γ × v × (αs ∪ αs')
+
    pure
       { spec
       , s
       , γ: γInert <*> γ0 <*> γ0
       , v: vInert <*> v0 <*> v0
       , ι: empty
-      , ι': empty
+      , ια: empty
       , linkedOutputs
       , linkedInputs
+      , linkIntermediates
       , dir: { persistent: LinkedOutputs, transient: LinkedOutputs }
       , in_views
       , out_view: Nothing
