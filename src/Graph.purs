@@ -125,8 +125,8 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 -- ======================
 -- Query a graph for a value
 -- ======================
-runQuery :: forall a g. Ord a => Graph g => (VertexData -> Maybe (DVertex' a)) -> g -> Set (DVertex' a)
-runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` vertices g
+runQuery :: forall a. Ord a => (VertexData -> Maybe (DVertex' a)) -> Set DVertex -> Set (DVertex' a)
+runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` g
 
 -- ======================
 -- Packed data associated with Vertex

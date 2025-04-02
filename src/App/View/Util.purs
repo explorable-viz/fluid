@@ -14,7 +14,6 @@ import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
 import Graph (DVertex', Vertex, VertexData, DVertex)
-import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
 import SExpr as S
@@ -125,8 +124,8 @@ type Fig =
    , ι :: Env (SelStates 𝔹)
    , ι' :: Env Vertex
    , dir :: Selection Direction
-   , linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
-   , linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
+   , linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+   , linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
    , out_view :: Maybe View

@@ -22,7 +22,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, DVertex', Vertex(..), runQuery, select𝔹s, vertices)
+import Graph (DVertex, DVertex', Vertex(..), runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module.Web (File(..), loadProgCxt, prepConfig)
@@ -101,14 +101,14 @@ setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
 
-selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹)
+selectIntermediates :: Set DVertex -> Selection (Set DVertex) -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹)
 selectIntermediates inerts g vs =
    (Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected) -- using <$> and <*> is more readable, but causes errors
    where
    vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
 
    -- Consolidate with analogous calculation with γInert etc in loadFig?
-   vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v (vertices g.persistent), transient: select𝔹s v (vertices g.transient) }
+   vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v g.persistent, transient: select𝔹s v g.transient }
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
@@ -122,13 +122,13 @@ type SelectionResult =
 
 selectionResult :: Fig -> SelectionResult
 selectionResult fig@{ dir, v, γ, inerts } =
-   { v: lift2 as𝕊 <$> v <*> reportOut v', γ: lift2 as𝕊 <$> γ <*> reportIn γ', ι: intermediates fig { persistent: g, transient: g' } inerts }
+   { v: lift2 as𝕊 <$> v <*> reportOut v', γ: lift2 as𝕊 <$> γ <*> reportIn γ', ι: intermediates fig { persistent: αs, transient: αs' } inerts }
    where
-   γ1 × v1 × g =
+   γ1 × v1 × αs =
       case dir.persistent of
          LinkedOutputs -> fig.linkedOutputs Persistent v
          LinkedInputs -> fig.linkedInputs Persistent γ
-   γ2 × v2 × g' =
+   γ2 × v2 × αs' =
       case dir.transient of
          LinkedOutputs -> fig.linkedOutputs Transient v
          LinkedInputs -> fig.linkedInputs Transient γ
@@ -139,7 +139,7 @@ selectionResult fig@{ dir, v, γ, inerts } =
    reportIn = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    reportOut = spyWhen tracing.mediatingData "Mediating outputs" prettyP
 
-intermediates :: Fig -> Selection GraphImpl -> Set DVertex -> Env (SelStates 𝔹)
+intermediates :: Fig -> Selection (Set DVertex) -> Set DVertex -> Env (SelStates 𝔹)
 intermediates { spec, in_roots } g inerts =
    flip (maybe (empty)) spec.query
       \query ->
@@ -235,13 +235,13 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
       γf γ = lift vInert' gcFwd γ
 
-      linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
+      linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ =
-         let v × g = γf (γ <#> getSel selType) in fst (vf v) × v × g
+         let v × g = γf (γ <#> getSel selType) in fst (vf v) × v × (vertices g)
 
-      linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
+      linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedOutputs selType v =
-         let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × g
+         let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × (vertices g)
 
    pure
       { spec
