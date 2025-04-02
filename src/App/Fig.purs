@@ -21,9 +21,8 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, DVertex', Vertex(..), op, runQuery, selectαs, select𝔹s, vertices)
+import Graph (class Graph, DVertex, DVertex', Vertex(..), runQuery, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
@@ -92,26 +91,20 @@ selectIntermediate (Vertex α) δv fig@{ ι } = fig
    }
 
 selectIntermediate' :: Vertex -> SetSel (Val (SelStates 𝔹)) -> Endo Fig
-selectIntermediate' (Vertex α) δv fig@{ γ, v, ι } = fig { ι = ι', γ = γ', v = v', dir = dir' }
+selectIntermediate' (Vertex α) δv fig@{ ι } = fig { ι = ι' }
    where
-   ι' × selType = envVal' α δv ι
-   γ' × v' × dir' = case selType of
-      Persistent | fig.dir.persistent /= Intermediates -> botOf γ × botOf v × fig.dir { persistent = Intermediates }
-      Transient | fig.dir.transient /= Intermediates -> γ × v × fig.dir { transient = Intermediates }
-      _ -> γ × v × fig.dir
-
+   ι' × _ = envVal' α δv ι
 setIntermediateView :: Vertex -> Setter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
 
-selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹) × Env Vertex
+selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹)
 selectIntermediates inerts g vs =
-   (Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected) × (Env $ D.fromFoldable verts) -- using <$> and <*> is more readable, but causes errors
+   (Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected)-- using <$> and <*> is more readable, but causes errors
    where
    vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
-   unselEnv v@(Val (Vertex α) _) = α × v
-   verts = unselEnv <$> vs'
+
 
    -- Consolidate with analogous calculation with γInert etc in loadFig?
    vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v (vertices g.persistent), transient: select𝔹s v (vertices g.persistent) }
@@ -124,38 +117,32 @@ type SelectionResult =
    { v :: Val (SelStates 𝕊)
    , γ :: Env (SelStates 𝕊)
    , ι :: Env (SelStates 𝔹)
-   , ι' :: Env Vertex
    }
 
 selectionResult :: Fig -> SelectionResult
-selectionResult fig@{ dir, v, γ, ι, ι', inerts } =
-   { v: toSelStates𝕊 <$> reportOut v', γ: toSelStates𝕊 <$> reportIn γ', ι: ι_ss, ι': ι_v }
+selectionResult fig@{ dir, v, γ, inerts } =
+   { v: toSelStates𝕊 <$> reportOut v', γ: toSelStates𝕊 <$> reportIn γ', ι: intermediates fig { persistent: g, transient: g' } inerts}
    where
-   reportInt = spyWhen tracing.intermediates "Intermediates" prettyP
-
    γ1 × v1 × g =
       case dir.persistent of
          LinkedOutputs -> fig.linkedOutputs Persistent v
          LinkedInputs -> fig.linkedInputs Persistent γ
-         Intermediates -> fig.linkIntermediates Persistent ι' ι
    γ2 × v2 × g' =
       case dir.transient of
          LinkedOutputs -> fig.linkedOutputs Transient v
          LinkedInputs -> fig.linkedInputs Transient γ
-         Intermediates -> reportInt $ fig.linkIntermediates Transient ι' ι
 
-   ι_ss × ι_v = intermediates fig { persistent: g, transient: g' } inerts
    v' = splice v1 v2
    γ' = splice γ1 γ2
 
    reportIn = spyWhen tracing.mediatingData "Mediating inputs" prettyP
    reportOut = spyWhen tracing.mediatingData "Mediating outputs" prettyP
 
-intermediates :: Fig -> Selection GraphImpl -> Set DVertex -> Env (SelStates 𝔹) × Env Vertex
+intermediates :: Fig -> Selection GraphImpl -> Set DVertex -> Env (SelStates 𝔹)
 intermediates { spec, in_roots } g inerts =
-   flip (maybe (empty × empty)) spec.query
+   flip (maybe (empty)) spec.query
       \query ->
-         first (filterKeys (\α -> not (Vertex α ∈ in_roots))) $
+         (filterKeys (\α -> not (Vertex α ∈ in_roots))) $
             selectIntermediates inerts g (runQuery query g.persistent ∪ runQuery query g.transient)
 
 drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
@@ -216,26 +203,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
 
       in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> unwrap γ_restricted
 
-      ι_fwd :: Env Vertex -> Env 𝔹 -> Val 𝔹 × GraphImpl
-      ι_fwd ι ι𝔹 =
-         let
-            g' = bwdSlice (selectαs ι𝔹 ι × op g0)
-         in
-            select𝔹s outα (vertices g') × g'
-
-      ι_bwd :: Env Vertex -> Env 𝔹 -> Env 𝔹 × GraphImpl
-      ι_bwd ι ι𝔹 =
-         let
-            g' = bwdSlice (selectαs ι𝔹 ι × g0)
-         in
-            select𝔹s γα (vertices g') × g'
-
-      ι_fwd' :: Env Vertex -> Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      ι_fwd' ι ι' = lift vInert' (ι_fwd ι) ι'
-
-      ι_bwd' :: Env Vertex -> Env (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      ι_bwd' ι ι' = lift γInert' (ι_bwd ι) ι'
-
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
 
@@ -275,14 +242,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs selType v =
          let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × g
 
-      linkIntermediates :: SelectionType -> Env Vertex -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × GraphImpl
-      linkIntermediates selType ι' ι =
-         let
-            ι_component = ι <#> getSel selType
-            v × _ = ι_fwd' ι' ι_component
-            γ × g = ι_bwd' ι' ι_component
-         in
-            γ × v × g
    pure
       { spec
       , s
@@ -292,14 +251,12 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , ι': empty
       , linkedOutputs
       , linkedInputs
-      , linkIntermediates
       , dir: { persistent: LinkedOutputs, transient: LinkedOutputs }
       , in_views
       , out_view: Nothing
       , intermediate_views: empty
       , in_roots
       , inerts: inertFwd ∪ inertBwd
-      , recent_graphs: { persistent: g0, transient: g0 }
       }
 
 splice :: forall f a. Apply f => f (SelState a) -> f (SelState a) -> f (SelStates a)
