@@ -108,7 +108,7 @@ selectIntermediates inerts g vs =
    vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
 
    -- Consolidate with analogous calculation with γInert etc in loadFig?
-   vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v (vertices g.persistent), transient: select𝔹s v (vertices g.persistent) }
+   vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v (vertices g.persistent), transient: select𝔹s v (vertices g.transient) }
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
