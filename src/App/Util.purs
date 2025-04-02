@@ -150,11 +150,6 @@ to𝕊 :: 𝔹 -> 𝕊
 to𝕊 true = Primary
 to𝕊 false = None
 
-toSelStates𝕊 :: SelStates 𝔹 -> SelStates 𝕊
-toSelStates𝕊 (SelStates Inert) = SelStates Inert
-toSelStates𝕊 (SelStates (Reactive { persistent, transient })) =
-   SelStates (Reactive { persistent: to𝕊 persistent, transient: to𝕊 transient })
-
 unselected :: SelStates 𝔹
 unselected = SelStates $ Reactive { persistent: false, transient: false }
 

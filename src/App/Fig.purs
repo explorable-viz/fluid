@@ -3,12 +3,13 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, 𝕊, getSel, selState, selStates, toSelStates𝕊, to𝔹, to𝕊)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, as𝕊)
 import App.Util.Selector (envVal, envVal')
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView')
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
+import Control.Apply (lift2)
 import Data.Array (fromFoldable, zipWith)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
@@ -28,7 +29,7 @@ import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, spyWhen, (×))
+import Util (type (×), AffError, Endo, Setter, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
@@ -94,6 +95,7 @@ selectIntermediate' :: Vertex -> SetSel (Val (SelStates 𝔹)) -> Endo Fig
 selectIntermediate' (Vertex α) δv fig@{ ι } = fig { ι = ι' }
    where
    ι' × _ = envVal' α δv ι
+
 setIntermediateView :: Vertex -> Setter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
@@ -101,10 +103,9 @@ setIntermediateView (Vertex α) δvw fig = fig
 
 selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹)
 selectIntermediates inerts g vs =
-   (Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected)-- using <$> and <*> is more readable, but causes errors
+   (Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected) -- using <$> and <*> is more readable, but causes errors
    where
    vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
-
 
    -- Consolidate with analogous calculation with γInert etc in loadFig?
    vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v (vertices g.persistent), transient: select𝔹s v (vertices g.persistent) }
@@ -121,7 +122,7 @@ type SelectionResult =
 
 selectionResult :: Fig -> SelectionResult
 selectionResult fig@{ dir, v, γ, inerts } =
-   { v: toSelStates𝕊 <$> reportOut v', γ: toSelStates𝕊 <$> reportIn γ', ι: intermediates fig { persistent: g, transient: g' } inerts}
+   { v: lift2 as𝕊 <$> v <*> reportOut v', γ: lift2 as𝕊 <$> γ <*> reportIn γ', ι: intermediates fig { persistent: g, transient: g' } inerts }
    where
    γ1 × v1 × g =
       case dir.persistent of
@@ -256,7 +257,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , out_view: Nothing
       , intermediate_views: empty
       , in_roots
-      , inerts: inertFwd ∪ inertBwd
+      , inerts: inertFwd ∩ inertBwd
       }
 
 splice :: forall f a. Apply f => f (SelState a) -> f (SelState a) -> f (SelStates a)
