@@ -191,6 +191,8 @@ unprojExpr (EnvExpr _ e) = GC
    , bwd: \(EnvExpr γ _) -> γ
    }
 
+type IO a = { γ :: Env a, v :: Val a }
+
 lift
    :: forall f f' g
     . Apply f
@@ -210,9 +212,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inputs' = Set.fromFoldable inputs
       EnvExpr γ e' = erase eval.inα
       GC focus = unrestrictGC γ inputs' >>> unprojExpr (EnvExpr γ e')
-
       Env γ_restricted = restrict inputs' γα
-
       in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> γ_restricted
 
       ι_fwd' :: Env Vertex -> Env 𝔹 -> Val 𝔹 × Set DVertex
@@ -230,10 +230,10 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
             select𝔹s γα αs × αs
 
       ι_fwd :: Env (SelState 𝔹) -> Env Vertex -> Val (SelState 𝔹) × Set DVertex
-      ι_fwd ι_𝔹 ι_α = lift vInert' (ι_fwd' ι_α) ι_𝔹
+      ι_fwd ι_𝔹 ι_α = lift inert''.v (ι_fwd' ι_α) ι_𝔹
 
       ι_bwd :: Env (SelState 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Set DVertex
-      ι_bwd ι_𝔹 ι_α = lift γInert' (ι_bwd' ι_α) ι_𝔹
+      ι_bwd ι_𝔹 ι_α = lift inert''.γ (ι_bwd' ι_α) ι_𝔹
 
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
@@ -245,26 +245,20 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       gcFwd γ = graphgc_op.bwd (deMorgan focus.fwd γ)
 
       in_views = const Nothing <$> γ_restricted
-
-      γ0 = botOf γα :: Env 𝔹
-      v0 = botOf outα :: Val 𝔹
+      unselected = { γ: botOf γα, v: botOf outα } :: IO 𝔹
 
       inertBwd = vertices g0 \\ (vertices $ snd $ gcBwd $ topOf outα)
-      inertFwd = vertices $ snd $ graphgc.fwd $ focus.fwd γ0
+      inertFwd = vertices $ snd $ graphgc.fwd $ focus.fwd unselected.γ
 
-      inertγ = select𝔹s γα inertBwd
-      inertv = select𝔹s outα inertFwd
-      γInert = selStates <$> inertγ :: Env (𝔹 -> 𝔹 -> SelStates 𝔹)
-      vInert = selStates <$> inertv :: Val (𝔹 -> 𝔹 -> SelStates 𝔹)
-
-      γInert' = selState <$> select𝔹s γα inertBwd
-      vInert' = selState <$> select𝔹s outα inertFwd
+      inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
+      inert' = { γ: selStates <$> inert.γ, v: selStates <$> inert.v } :: IO (𝔹 -> 𝔹 -> SelStates 𝔹)
+      inert'' = { γ: selState <$> select𝔹s γα inertBwd, v: selState <$> select𝔹s outα inertFwd } :: IO (𝔹 -> SelState 𝔹)
 
       vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      vf v = lift γInert' gcBwd v
+      vf v = lift inert''.γ gcBwd v
 
       γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      γf γ = lift vInert' gcFwd γ
+      γf γ = lift inert''.v gcFwd γ
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ =
@@ -285,8 +279,8 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    pure
       { spec
       , s
-      , γ: γInert <*> γ0 <*> γ0
-      , v: vInert <*> v0 <*> v0
+      , γ: inert'.γ <*> unselected.γ <*> unselected.γ
+      , v: inert'.v <*> unselected.v <*> unselected.v
       , ι: empty
       , ια: empty
       , linkedOutputs
