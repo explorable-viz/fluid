@@ -140,7 +140,7 @@ selectionResult fig@{ dir, v, γ, ι, ια } =
       case dir.transient of
          LinkedOutputs -> fig.linkedOutputs Transient v
          LinkedInputs -> fig.linkedInputs Transient γ
-         Intermediates -> fig.linkIntermediates Transient ι ια
+         Intermediates -> fig.linkIntermediates ι ια
 
    ι' × ια' = intermediates fig { persistent: αs, transient: αs' }
 
@@ -254,10 +254,10 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       γf = lift inert'.v gcFwd
 
       ι_fwd :: Env Vertex -> Env (SelState 𝔹) -> Val (SelState 𝔹) × Set DVertex
-      ι_fwd ι_α = lift inert'.v (ι_fwd' ι_α)
+      ι_fwd ια = lift inert'.v (ι_fwd' ια)
 
       ι_bwd :: Env Vertex -> Env (SelState 𝔹) -> Env (SelState 𝔹) × Set DVertex
-      ι_bwd ι_α = lift inert'.γ (ι_bwd' ι_α)
+      ι_bwd ια = lift inert'.γ (ι_bwd' ια)
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ =
@@ -267,11 +267,11 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs selType v =
          let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × (vertices g)
 
-      linkIntermediates :: SelectionType -> Env (SelStates 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-      linkIntermediates selType ι ι' =
+      linkIntermediates :: Env (SelStates 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+      linkIntermediates ι ια =
          let
-            v × αs = ι_fwd ι' (ι <#> getSel selType)
-            γ × αs' = ι_bwd ι' (ι <#> getSel selType)
+            v × αs = ι_fwd ια (ι <#> getSel Transient)
+            γ × αs' = ι_bwd ια (ι <#> getSel Transient)
          in
             γ × v × (αs ∪ αs')
 
