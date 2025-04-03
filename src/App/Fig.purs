@@ -251,8 +251,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inertFwd = vertices $ snd $ graphgc.fwd $ focus.fwd unselected.γ
 
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
-      inert' = { γ: selStates <$> inert.γ, v: selStates <$> inert.v } :: IO (𝔹 -> 𝔹 -> SelStates 𝔹)
-      inert'' = { γ: selState <$> select𝔹s γα inertBwd, v: selState <$> select𝔹s outα inertFwd } :: IO (𝔹 -> SelState 𝔹)
+      inert'' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
 
       vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
       vf v = lift inert''.γ gcBwd v
@@ -279,8 +278,8 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    pure
       { spec
       , s
-      , γ: inert'.γ <*> unselected.γ <*> unselected.γ
-      , v: inert'.v <*> unselected.v <*> unselected.v
+      , γ: selStates <$> inert.γ <*> unselected.γ <*> unselected.γ
+      , v: selStates <$> inert.v <*> unselected.v <*> unselected.v
       , ι: empty
       , ια: empty
       , linkedOutputs
