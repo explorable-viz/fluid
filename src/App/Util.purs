@@ -11,7 +11,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype, over)
+import Data.Newtype (class Newtype, over, unwrap)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
@@ -93,9 +93,9 @@ isInert (SelStates Inert) = true
 isInert (SelStates (Reactive _)) = false
 
 getSel :: SelectionType -> SelStates 𝔹 -> SelState 𝔹
-getSel _ (SelStates Inert) = Inert
-getSel Persistent (SelStates (Reactive { persistent })) = Reactive persistent
-getSel Transient (SelStates (Reactive { transient })) = Reactive transient
+getSel selType s = unwrap s <#> case selType of
+   Persistent -> _.persistent
+   Transient -> _.transient
 
 getPersistent :: forall a. BoundedJoinSemilattice a => SelStates a -> a
 getPersistent (SelStates Inert) = bot
