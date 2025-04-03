@@ -100,13 +100,13 @@ setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
 
-rebuildι :: Set DVertex -> Selection (Set DVertex) -> Dict (Val Vertex) -> Env (SelStates 𝔹) × Env Vertex
-rebuildι inerts αs vs =
-   (Env $ D.fromFoldable $ setSels <$> vs_inert <*> vs_selected) × Env vs
+rebuildι :: Set DVertex -> Selection (Set DVertex) -> Dict (Val Vertex) -> Env (SelStates 𝔹)
+rebuildι inerts αs ι =
+   (Env $ D.fromFoldable $ setSels <$> vs_inert <*> vs_selected)
    where
    -- Consolidate with analogous calculation with γInert etc in loadFig?
-   vs_inert = vs <#> \v -> select𝔹s v inerts
-   vs_selected = vs <#> \v@(Val α _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient }
+   vs_inert = ι <#> \v -> select𝔹s v inerts
+   vs_selected = ι <#> \v@(Val α _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient }
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
    setSels inert (Vertex α × v) = α × (selStates <$> inert <*> v.persistent <*> v.transient)
@@ -145,8 +145,9 @@ intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹) × Env V
 intermediates { spec, in_roots, inerts } αs =
    flip (maybe (empty × empty)) spec.query
       \query ->
-         first (filterKeys (\α -> not (Vertex α ∈ in_roots))) $
-            rebuildι inerts αs (runQuery query $ αs.persistent ∪ αs.transient)
+         let ι = filterKeys (\α -> not (Vertex α ∈ in_roots)) $
+               runQuery query $ αs.persistent ∪ αs.transient in
+         rebuildι inerts αs ι × Env ι
 
 drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
 drawIntermediates divId (Env ι) unused redraw = do
