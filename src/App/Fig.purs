@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel, 𝕊, as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), 𝕊, Selector', as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal, envVal')
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView')
@@ -46,7 +46,7 @@ str =
    , intermediate: "intermediate"
    }
 
-selectOutput' :: SetSel (Val (SelStates 𝔹)) -> Endo Fig
+selectOutput' :: Selector' Val -> Endo Fig
 selectOutput' δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
    v' × selType = δv v
@@ -66,7 +66,7 @@ setOutputView :: Setter Fig View
 setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw }
 
-selectInput' :: Var -> SetSel (Val (SelStates 𝔹)) -> Endo Fig
+selectInput' :: Var -> Selector' Val -> Endo Fig
 selectInput' x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
    γ' × selType = envVal' x δv γ
@@ -87,7 +87,7 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-selectIntermediate :: Vertex -> SetSel (Val (SelStates 𝔹)) -> Endo Fig
+selectIntermediate :: Vertex -> Selector' Val -> Endo Fig
 selectIntermediate (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final, γ = γ', v = v', dir = dir' }
    where
    ι' × selType = envVal' α δv ι

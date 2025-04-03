@@ -67,9 +67,6 @@ type TestLinkedInputsSpec =
    , in_expect :: Selector Env
    }
 
--- testFolder :: Folder
--- testFolder = Folder ""
-
 suite :: FileLoader Aff -> Array TestSpec -> BenchSuite
 suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where

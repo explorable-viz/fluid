@@ -36,8 +36,9 @@ import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
-type Selector (f :: Type -> Type) = Endo (f (SelStates 𝔹)) -- modifies selection state
-type SetSel a = a -> a × SelectionType -- modifies selection state
+type Selector f = Endo (f (SelStates 𝔹)) -- modifies selection state
+type Selector' f = SetSel (f (SelStates 𝔹)) -- modifies selection state
+type SetSel a = a -> a × SelectionType
 
 -- Selection can occur on data that can be interacted with, reactive data rather than inert data. Within
 -- reactive data, selection has two dimensions: persistent or transient. An element can be persistently *and*
