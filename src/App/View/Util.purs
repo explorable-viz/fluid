@@ -13,7 +13,7 @@ import Data.Set (Set)
 import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
-import Graph (DVertex', Vertex, VertexData, DVertex)
+import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
 import SExpr as S
@@ -103,15 +103,13 @@ uiHelpers =
    , selClassesFor
    }
 
-type Query = Maybe (VertexData -> Maybe (DVertex' (Val Vertex)))
-
 type FigSpec =
    { fluidSrcPaths :: Array Folder
    , imports :: Array String
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
-   , query :: Query
+   , query :: Maybe (Query (Val Vertex))
    }
 
 data Direction = LinkedInputs | LinkedOutputs | Intermediates

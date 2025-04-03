@@ -122,10 +122,9 @@ showEdgeList es =
 showVertices :: Set Vertex -> String
 showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
 
--- ======================
--- Query a graph for a value
--- ======================
-runQuery :: forall a. Ord a => (VertexData -> Maybe (DVertex' a)) -> Set DVertex -> Set (DVertex' a)
+type Query a = VertexData -> Maybe (DVertex' a)
+
+runQuery :: forall a. Ord a => Query a -> Set DVertex -> Set (DVertex' a)
 runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` g
 
 -- ======================

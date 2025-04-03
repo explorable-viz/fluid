@@ -30,7 +30,7 @@ import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, error, spyWhen, (×), (∩))
+import Util (type (×), AffError, Endo, Setter, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
@@ -128,31 +128,30 @@ type SelectionResult =
    }
 
 selectionResult :: Fig -> SelectionResult
-selectionResult fig@{ dir, v, γ, ι, ια, inerts } =
+selectionResult fig@{ dir, v, γ, ι, ια } =
    { v: lift2 as𝕊 <$> v <*> reportOut v', γ: lift2 as𝕊 <$> γ <*> reportIn γ', ι: ι', ια: ια' }
    where
    γ1 × v1 × αs =
       case dir.persistent of
          LinkedOutputs -> fig.linkedOutputs Persistent v
          LinkedInputs -> fig.linkedInputs Persistent γ
-         Intermediates -> error "absurd"
+         Intermediates -> error absurd
    γ2 × v2 × αs' =
       case dir.transient of
          LinkedOutputs -> fig.linkedOutputs Transient v
          LinkedInputs -> fig.linkedInputs Transient γ
          Intermediates -> fig.linkIntermediates Transient ι ια
 
-   ι' × ια' = intermediates fig { persistent: αs, transient: αs' } inerts
+   ι' × ια' = intermediates fig { persistent: αs, transient: αs' }
 
-   v' = splice v1 (report' v2)
+   v' = splice v1 v2
    γ' = splice γ1 γ2
 
-   reportIn = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-   reportOut = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-   report' = spyWhen tracing.intermediates "Found val in output" prettyP
+   reportIn = spyWhen tracing.mediatingData ("Mediating inputs") prettyP
+   reportOut = spyWhen tracing.mediatingData ("Mediating outputs") prettyP
 
-intermediates :: Fig -> Selection (Set DVertex) -> Set DVertex -> Env (SelStates 𝔹) × Env Vertex
-intermediates { spec, in_roots } αs inerts =
+intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹) × Env Vertex
+intermediates { spec, in_roots, inerts } αs =
    flip (maybe (empty × empty)) spec.query
       \query ->
          first (filterKeys (\α -> not (Vertex α ∈ in_roots))) $
