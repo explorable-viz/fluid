@@ -22,7 +22,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (DVertex, DVertex', Vertex(..), op, runQuery, selectαs, select𝔹s, vertices)
+import Graph (DVertex, DVertex', Vertex(..), runQuery, selectαs, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -98,6 +98,7 @@ selectIntermediate' (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final
    ι' × selType = envVal' α δv ι
    γ' × v' × dir' × ι_final = case selType of
       Transient | dir.transient /= Intermediates -> γ × v × dir { transient = Intermediates } × ι'
+      Transient -> γ × v × dir × ι'
       _ -> γ × v × dir × ι
 
 setIntermediateView :: Vertex -> Setter Fig View
@@ -114,8 +115,8 @@ rebuildι inerts αs vs =
    vsα = (\v@(Val (Vertex α) _) -> α × v) <$> vs' :: Array (String × Val Vertex) -- Want to get the value with its vertices so we can use selectαs
 
    -- Consolidate with analogous calculation with γInert etc in loadFig?
-   vs_selected = vs' <#> \v@(Val α _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient }
    vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
+   vs_selected = vs' <#> (\v@(Val α _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient })
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
    setSels inert (Vertex α × v) = α × (selStates <$> inert <*> v.persistent <*> v.transient)
@@ -155,7 +156,7 @@ intermediates { spec, in_roots, inerts } αs =
    flip (maybe (empty × empty)) spec.query
       \query ->
          first (filterKeys (\α -> not (Vertex α ∈ in_roots))) $
-            rebuildι inerts αs (runQuery query αs.persistent ∪ runQuery query αs.transient)
+            rebuildι inerts αs (runQuery query $ αs.persistent ∪ αs.transient)
 
 drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
 drawIntermediates divId (Env ι) unused redraw = do
@@ -209,6 +210,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    { s, e, gconfig } <- prepConfig fluidSrcPaths file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
+      opEval = withOp eval
       inputs' = Set.fromFoldable inputs
       EnvExpr γ e' = erase eval.inα
       GC focus = unrestrictGC γ inputs' >>> unprojExpr (EnvExpr γ e')
@@ -218,19 +220,19 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       ι_fwd' :: Env Vertex -> Env 𝔹 -> Val 𝔹 × Set DVertex
       ι_fwd' ι_α ι_𝔹 =
          let
-            αs = vertices $ bwdSlice (selectαs ι_𝔹 ι_α × op g0)
+            αs = vertices $ bwdSlice (selectαs ι_𝔹 ι_α × opEval.g)
          in
             select𝔹s outα αs × αs
 
       ι_bwd' :: Env Vertex -> Env 𝔹 -> Env 𝔹 × Set DVertex
       ι_bwd' ι_α ι_𝔹 =
          let
-            αs = vertices $ bwdSlice (selectαs ι_𝔹 ι_α × g0)
+            αs = vertices $ bwdSlice (selectαs ι_𝔹 ι_α × eval.g)
          in
             select𝔹s γα αs × αs
 
       graphgc = graphGC eval
-      graphgc_op = graphGC (withOp eval)
+      graphgc_op = graphGC opEval
 
       gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
       gcBwd v = first focus.bwd (graphgc.bwd v)
