@@ -229,12 +229,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
          in
             select𝔹s γα αs × αs
 
-      ι_fwd :: Env (SelState 𝔹) -> Env Vertex -> Val (SelState 𝔹) × Set DVertex
-      ι_fwd ι_𝔹 ι_α = lift inert'.v (ι_fwd' ι_α) ι_𝔹
-
-      ι_bwd :: Env (SelState 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Set DVertex
-      ι_bwd ι_𝔹 ι_α = lift inert'.γ (ι_bwd' ι_α) ι_𝔹
-
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
 
@@ -254,10 +248,16 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
 
       vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      vf v = lift inert'.γ gcBwd v
+      vf = lift inert'.γ gcBwd
 
       γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      γf γ = lift inert'.v gcFwd γ
+      γf = lift inert'.v gcFwd
+
+      ι_fwd :: Env Vertex -> Env (SelState 𝔹) -> Val (SelState 𝔹) × Set DVertex
+      ι_fwd ι_α = lift inert'.v (ι_fwd' ι_α)
+
+      ι_bwd :: Env Vertex -> Env (SelState 𝔹) -> Env (SelState 𝔹) × Set DVertex
+      ι_bwd ι_α = lift inert'.γ (ι_bwd' ι_α)
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ =
@@ -270,8 +270,8 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkIntermediates :: SelectionType -> Env (SelStates 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkIntermediates selType ι ι' =
          let
-            v × αs = ι_fwd (ι <#> getSel selType) ι'
-            γ × αs' = ι_bwd (ι <#> getSel selType) ι'
+            v × αs = ι_fwd ι' (ι <#> getSel selType)
+            γ × αs' = ι_bwd ι' (ι <#> getSel selType)
          in
             γ × v × (αs ∪ αs')
 
