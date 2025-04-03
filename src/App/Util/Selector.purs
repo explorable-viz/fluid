@@ -2,13 +2,13 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState(..), SelStates, SetSel, persist)
+import App.Util (SelState(..), SelStates, SelectionType(..), SetSel, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (fromJust)
 import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cSome, f_bars, f_points, f_stackedBars, f_z)
-import Lattice (𝔹)
+import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Setter, absurd, assert, definitely, error, (×))
 import Util.Map (get, insert, update)
@@ -20,6 +20,10 @@ type SelSetter' f g = Setter' (f (SelStates 𝔹)) (g (SelStates 𝔹))
 type Setter' b a = SetSel a -> SetSel b
 type ViewSelSetter' a = a -> SelSetter' Val Val
 type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
+
+-- Perhaps better as const (and renamed to 'select')
+neg' :: forall a. Neg a => SetSel a
+neg' b = neg b × Persistent
 
 -- TODO: rename
 persist' :: forall a. Setter' (SelState a) a
