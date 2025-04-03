@@ -10,19 +10,18 @@ import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawVie
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Apply (lift2)
-import Data.Array (fromFoldable, zipWith)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for_, sequence_)
 import Data.Tuple (fst, snd)
+import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (DVertex, DVertex', Vertex(..), runQuery, selectαs, select𝔹s, vertices)
+import Graph (DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -101,17 +100,13 @@ setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
 
-rebuildι :: Set DVertex -> Selection (Set DVertex) -> Set (DVertex' (Val Vertex)) -> Env (SelStates 𝔹) × Env Vertex
+rebuildι :: Set DVertex -> Selection (Set DVertex) -> Dict (Val Vertex) -> Env (SelStates 𝔹) × Env Vertex
 rebuildι inerts αs vs =
-   (Env $ D.fromFoldable $ zipWith setSels vs_inert vs_selected) × (Env $ D.fromFoldable vsα) -- using <$> and <*> is more readable, but causes errors
+   (Env $ D.fromFoldable $ setSels <$> vs_inert <*> vs_selected) × Env vs
    where
-   vs' = (snd <<< unwrap) `Set.map` vs # fromFoldable :: Array (Val Vertex)
-
-   vsα = (\v@(Val (Vertex α) _) -> α × v) <$> vs' :: Array (String × Val Vertex) -- Want to get the value with its vertices so we can use selectαs
-
    -- Consolidate with analogous calculation with γInert etc in loadFig?
-   vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
-   vs_selected = vs' <#> (\v@(Val α _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient })
+   vs_inert = vs <#> \v -> select𝔹s v inerts
+   vs_selected = vs <#> \v@(Val α _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient }
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
    setSels inert (Vertex α × v) = α × (selStates <$> inert <*> v.persistent <*> v.transient)

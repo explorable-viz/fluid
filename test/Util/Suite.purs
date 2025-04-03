@@ -15,8 +15,8 @@ module Test.Util.Suite
 
 import Prelude
 
-import App.Fig (loadFig, selectInput', selectOutput, selectionResult)
-import App.Util (Selector, Selector', isInert, isPersistent, isTransient, selStates)
+import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
+import App.Util (Selector, isInert, isPersistent, isTransient, selStates)
 import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
@@ -63,7 +63,7 @@ type TestLinkedOutputsSpec =
 
 type TestLinkedInputsSpec =
    { spec :: FigSpec
-   , δ_in :: Bind (Selector' Val)
+   , δ_in :: Bind (Selector Val)
    , in_expect :: Selector Env
    }
 
@@ -109,7 +109,7 @@ linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
-   fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput' δ_in
+   fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (selectionResult fig).γ
    checkEq "selected" "expected" (selStates <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (in_expect (botOf <$> γ))

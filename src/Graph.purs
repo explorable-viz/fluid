@@ -14,6 +14,7 @@ import Data.Set as Set
 import Data.String (joinWith)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
+import Dict as D
 import Foreign.Object (values)
 import Lattice (𝔹)
 import Util (type (×), Endo, (×))
@@ -124,8 +125,8 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 
 type Query a = VertexData -> Maybe (DVertex' a)
 
-runQuery :: forall a. Ord a => Query a -> Set DVertex -> Set (DVertex' a)
-runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` g
+runQuery :: forall a. Ord a => Query a -> Set DVertex -> Dict a
+runQuery query αs = D.fromFoldable (((\vd -> (\(DVertex (Vertex α × q)) -> α × q) <$> query vd) <<< snd <<< unwrap) `Set.mapMaybe` αs)
 
 -- ======================
 -- Packed data associated with Vertex
