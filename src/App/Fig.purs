@@ -207,13 +207,13 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    { s, e, gconfig } <- prepConfig fluidSrcPaths file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
-      inputs_set = Set.fromFoldable inputs
+      inputs' = Set.fromFoldable inputs
       EnvExpr γ e' = erase eval.inα
-      { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ inputs_set >>> unprojExpr (EnvExpr γ e'))
+      GC focus = unrestrictGC γ inputs' >>> unprojExpr (EnvExpr γ e')
 
-      γ_restricted = restrict inputs_set γα
+      Env γ_restricted = restrict inputs' γα
 
-      in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> unwrap γ_restricted
+      in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> γ_restricted
 
       ι_fwd' :: Env Vertex -> Env 𝔹 -> Val 𝔹 × Set DVertex
       ι_fwd' ι_α ι_𝔹 =
@@ -239,18 +239,18 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       graphgc_op = graphGC (withOp eval)
 
       gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
-      gcBwd v = first focusBwd (graphgc.bwd v)
+      gcBwd v = first focus.bwd (graphgc.bwd v)
 
       gcFwd :: Env 𝔹 -> Val 𝔹 × GraphImpl
-      gcFwd γ = graphgc_op.bwd (deMorgan focusFwd γ)
+      gcFwd γ = graphgc_op.bwd (deMorgan focus.fwd γ)
 
-      in_views = const Nothing <$> unwrap γ_restricted
+      in_views = const Nothing <$> γ_restricted
 
       γ0 = botOf γα :: Env 𝔹
       v0 = botOf outα :: Val 𝔹
 
-      inertBwd = vertices g0 \\ (vertices $ snd (gcBwd (topOf outα))) :: Set DVertex
-      inertFwd = vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0
+      inertBwd = vertices g0 \\ (vertices $ snd $ gcBwd $ topOf outα)
+      inertFwd = vertices $ snd $ graphgc.fwd $ focus.fwd γ0
 
       inertγ = select𝔹s γα inertBwd
       inertv = select𝔹s outα inertFwd
