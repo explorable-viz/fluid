@@ -38,11 +38,12 @@ import Web.Event.EventTarget (EventTarget)
 
 type Selector (f :: Type -> Type) = Endo (f (SelStates 𝔹)) -- modifies selection state
 type SetSel a = a -> a × SelectionType -- modifies selection state
--- Selection can occur on data that can be interacted with, reactive data rather than inert data. Within reactive data,
--- selection has two dimensions: persistent or transient. An element can be persistently
--- *and* transiently selected at the same time; these need to be visually distinct (so that for example
--- clicking during mouseover visibly changes the state). Types of selection are primary/secondary/none.
--- These are visually distinct but not orthogonal; primary should (visually) subsume secondary.
+
+-- Selection can occur on data that can be interacted with, reactive data rather than inert data. Within
+-- reactive data, selection has two dimensions: persistent or transient. An element can be persistently *and*
+-- transiently selected at the same time; these need to be visually distinct (so that for example clicking
+-- during mouseover visibly changes the state). Types of selection are primary/secondary/none. These are
+-- visually distinct but not orthogonal; primary should (visually) subsume secondary.
 
 data SelState a
    = Inert

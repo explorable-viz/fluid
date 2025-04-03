@@ -15,15 +15,10 @@ import Util.Map (get, insert, update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
 
--- Selection setters.
-type SelSetter (f :: Type -> Type) (g :: Type -> Type) = Setter (f (SelStates 𝔹)) (g (SelStates 𝔹))
-
+type SelSetter f g = Setter (f (SelStates 𝔹)) (g (SelStates 𝔹))
+type SelSetter' f g = Setter' (f (SelStates 𝔹)) (g (SelStates 𝔹))
 type Setter' b a = SetSel a -> SetSel b
-
-type SelSetter' g f = Setter' (f (SelStates 𝔹)) (g (SelStates 𝔹))
-
 type ViewSelSetter' a = a -> SelSetter' Val Val
-
 type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
 
 -- TODO: rename

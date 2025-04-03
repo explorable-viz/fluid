@@ -87,13 +87,8 @@ setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-selectIntermediate :: Vertex -> Setter Fig (Val (SelStates 𝔹))
-selectIntermediate (Vertex α) δv fig@{ ι } = fig
-   { ι = envVal α δv ι
-   }
-
-selectIntermediate' :: Vertex -> SetSel (Val (SelStates 𝔹)) -> Endo Fig
-selectIntermediate' (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final, γ = γ', v = v', dir = dir' }
+selectIntermediate :: Vertex -> SetSel (Val (SelStates 𝔹)) -> Endo Fig
+selectIntermediate (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final, γ = γ', v = v', dir = dir' }
    where
    ι' × selType = envVal' α δv ι
    γ' × v' × dir' × ι_final = case selType of
@@ -164,7 +159,7 @@ drawIntermediates divId (Env ι) unused redraw = do
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey ι \α v ->
       drawView' { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing }
-         (selectIntermediate' (Vertex α))
+         (selectIntermediate (Vertex α))
          (setIntermediateView (Vertex α))
          redraw
 
