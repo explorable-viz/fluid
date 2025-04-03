@@ -201,7 +201,7 @@ lift
    -> (f' 𝔹 -> f 𝔹 × g)
    -> f' (SelState 𝔹)
    -> f (SelState 𝔹) × g
-lift selState_f bwd v = first (apply selState_f) (bwd (v <#> to𝔹))
+lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
@@ -230,10 +230,10 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
             select𝔹s γα αs × αs
 
       ι_fwd :: Env (SelState 𝔹) -> Env Vertex -> Val (SelState 𝔹) × Set DVertex
-      ι_fwd ι_𝔹 ι_α = lift inert''.v (ι_fwd' ι_α) ι_𝔹
+      ι_fwd ι_𝔹 ι_α = lift inert'.v (ι_fwd' ι_α) ι_𝔹
 
       ι_bwd :: Env (SelState 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Set DVertex
-      ι_bwd ι_𝔹 ι_α = lift inert''.γ (ι_bwd' ι_α) ι_𝔹
+      ι_bwd ι_𝔹 ι_α = lift inert'.γ (ι_bwd' ι_α) ι_𝔹
 
       graphgc = graphGC eval
       graphgc_op = graphGC (withOp eval)
@@ -251,13 +251,13 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inertFwd = vertices $ snd $ graphgc.fwd $ focus.fwd unselected.γ
 
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
-      inert'' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
+      inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
 
       vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      vf v = lift inert''.γ gcBwd v
+      vf v = lift inert'.γ gcBwd v
 
       γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      γf γ = lift inert''.v gcFwd γ
+      γf γ = lift inert'.v gcFwd γ
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ =

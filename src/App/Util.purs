@@ -58,8 +58,8 @@ selStates true _ _ = SelStates Inert
 selStates false b1 b2 = SelStates $ Reactive { persistent: b1, transient: b2 }
 
 selState :: forall a. 𝔹 -> a -> SelState a
-selState true _ = Inert
-selState false b = Reactive b
+selState true = const Inert
+selState false = Reactive
 
 selection :: forall a. 𝔹 -> a -> a -> Selection (SelState a)
 selection true _ _ = { persistent: Inert, transient: Inert }
