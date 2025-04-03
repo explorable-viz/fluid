@@ -145,9 +145,12 @@ intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹) × Env V
 intermediates { spec, in_roots, inerts } αs =
    flip (maybe (empty × empty)) spec.query
       \query ->
-         let ι = filterKeys (\α -> not (Vertex α ∈ in_roots)) $
-               runQuery query $ αs.persistent ∪ αs.transient in
-         rebuildι inerts αs ι × Env ι
+         let
+            ι = filterKeys (\α -> not (Vertex α ∈ in_roots))
+               $ runQuery query
+               $ αs.persistent ∪ αs.transient
+         in
+            rebuildι inerts αs ι × Env ι
 
 drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
 drawIntermediates divId (Env ι) unused redraw = do
