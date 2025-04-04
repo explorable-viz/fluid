@@ -24,15 +24,15 @@ type ViewSetter f g = Endo g -> Endo f -- Only used in unexercised view setters
 type ViewSelSetter a = a -> SelSetter Val Val
 
 -- Perhaps better as const (and renamed to 'select')
-neg' :: forall f a. Neg a => Functor f => SetSel (f (SelStates a))
-neg' b = (setSel <$> b) × Persistent
+select :: forall f a. Neg a => Functor f => SetSel (f (SelStates a))
+select b = (setSel <$> b) × Persistent
    where
    setSel :: Endo (SelStates a)
    setSel (SelStates Inert) = SelStates Inert
    setSel (SelStates (Reactive sel')) = SelStates (Reactive (sel' { persistent = neg sel'.persistent }))
 
-neg'' :: forall a. Neg a => SetSel a
-neg'' x = neg x × Persistent
+select' :: forall a. Neg a => SetSel a
+select' x = neg x × Persistent
 
 persist :: forall a. Setter (SelStates a) a
 persist δα = \v -> (over SelStates ((<$>) mapδ) v) × Persistent
@@ -104,8 +104,8 @@ dict :: Setter (Val (SelStates 𝔹)) 𝔹
 dict δα = unsafePartial $ case _ of
    Val α (Dictionary d) -> first (\α' -> Val α' (Dictionary d)) (persist δα α)
 
-dictKey' :: String -> Setter (Val (SelStates 𝔹)) 𝔹
-dictKey' s δα = unsafePartial $ case _ of
+dictKey :: String -> Setter (Val (SelStates 𝔹)) 𝔹
+dictKey s δα = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) ->
       first (\β' -> Val α $ Dictionary $ DictRep $ insert s (β' × v) d) (persist δα β)
       where

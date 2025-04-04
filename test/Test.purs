@@ -2,7 +2,7 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Selector (dictVal, envVal, listElement, neg', (>.>))
+import App.Util.Selector (dictVal, envVal, listElement, select, (>.>))
 import Bind ((↦))
 import Data.Array (concat)
 import Data.Maybe (Maybe(..))
@@ -38,21 +38,21 @@ scratchpad = linkedInputsSuite
           , inputs: [ "nonRenewables", "renewables" ]
           , query: Nothing
           }
-     , δ_in: "nonRenewables" ↦ listElement 0 (dictVal "coalCap" neg')
+     , δ_in: "nonRenewables" ↦ listElement 0 (dictVal "coalCap" select)
      , in_expect:
           envVal "nonRenewables"
              ( listElement 0
-                  ( dictVal "coalCap" neg'
-                       >.> dictVal "gasCap" neg'
-                       >.> dictVal "nuclearCap" neg'
-                       >.> dictVal "petrolCap" neg'
+                  ( dictVal "coalCap" select
+                       >.> dictVal "gasCap" select
+                       >.> dictVal "nuclearCap" select
+                       >.> dictVal "petrolCap" select
                   )
              )
              >.> envVal "renewables"
-                ( listElement 0 (dictVal "capacity" neg')
-                     >.> listElement 1 (dictVal "capacity" neg')
-                     >.> listElement 2 (dictVal "capacity" neg')
-                     >.> listElement 3 (dictVal "capacity" neg')
+                ( listElement 0 (dictVal "capacity" select)
+                     >.> listElement 1 (dictVal "capacity" select)
+                     >.> listElement 2 (dictVal "capacity" select)
+                     >.> listElement 3 (dictVal "capacity" select)
                 )
      }
    ]
