@@ -44,7 +44,6 @@ selListener' figVal redraw selector =
    eventListener (selectionEventData' >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where
-   draw :: RendererSpec a -> Setter Fig (Val (SelStates 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
    draw'' :: RendererSpec a -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Setter Fig View -> Redraw -> Effect Unit
 
 -- Merge into Drawable once JS->PS transition complete
@@ -67,10 +66,6 @@ draw' _ { divId, suffix, view } redraw = do
 drawView' :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Setter Fig View -> Redraw -> Effect Unit
 drawView' rSpec@{ view: vw } figVal figView redraw =
    unpack vw (\view -> draw'' (rSpec { view = view }) figVal figView redraw)
-
-drawView :: RendererSpec View -> Setter Fig (Val (SelStates 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
-drawView rSpec@{ view: vw } figVal figView redraw =
-   unpack vw (\view -> draw (rSpec { view = view }) figVal figView redraw)
 
 registerMouseListeners :: EventListener -> D3.Selection -> Effect Unit
 registerMouseListeners redraw element = do

@@ -4,7 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), 𝕊, Selector', as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
-import App.Util.Selector (envVal, envVal')
+import App.Util.Selector (envVal')
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView')
 import App.View.Util.D3 (remove, rootSelect)
@@ -45,8 +45,8 @@ str =
    , intermediate: "intermediate"
    }
 
-selectOutput' :: Selector' Val -> Endo Fig
-selectOutput' δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
+selectOutput :: Selector' Val -> Endo Fig
+selectOutput δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
    v' × selType = δv v
    γ' × dir' = case selType of
@@ -54,32 +54,18 @@ selectOutput' δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
       Transient | dir.transient /= LinkedOutputs -> γ × dir { transient = LinkedOutputs }
       _ -> γ × dir
 
-selectOutput :: Setter Fig (Val (SelStates 𝔹))
-selectOutput δv fig@{ dir, v, γ } = fig
-   { v = δv v
-   , γ = if dir.persistent == LinkedInputs then botOf γ else γ
-   , dir = { persistent: LinkedOutputs, transient: LinkedOutputs }
-   }
-
 setOutputView :: Setter Fig View
 setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw }
 
-selectInput' :: Var -> Selector' Val -> Endo Fig
-selectInput' x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
+selectInput :: Var -> Selector' Val -> Endo Fig
+selectInput x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
    γ' × selType = envVal' x δv γ
    v' × dir' = case selType of
       Persistent | dir.persistent /= LinkedInputs -> botOf v × dir { persistent = LinkedInputs }
       Transient | dir.transient /= LinkedInputs -> v × dir { transient = LinkedInputs }
       _ -> v × dir
-
-selectInput :: Var -> Setter Fig (Val (SelStates 𝔹))
-selectInput x δv fig@{ dir, γ, v } = fig
-   { γ = envVal x δv γ
-   , v = if dir.persistent == LinkedOutputs then botOf v else v
-   , dir = { persistent: LinkedInputs, transient: LinkedInputs }
-   }
 
 setInputView :: Var -> Setter Fig View
 setInputView x δvw fig = fig
@@ -164,10 +150,10 @@ drawIntermediates divId (Env ι) unused redraw = do
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView' { divId, suffix: str.output, view: out_view } selectOutput' setOutputView redraw
+   drawView' { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
 
    sequence_ $ flip mapWithKey in_views \x view -> do
-      drawView' { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput' x) (setInputView x) redraw
+      drawView' { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
 
    drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where

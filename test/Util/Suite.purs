@@ -16,7 +16,7 @@ module Test.Util.Suite
 import Prelude
 
 import App.Fig (loadFig, selectInput', selectOutput', selectionResult)
-import App.Util (Selector, Selector', isInert, isPersistent, isTransient, selStates)
+import App.Util (SelectionType(..), Selector', isInert, isPersistent, isTransient, selStates)
 import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
@@ -44,7 +44,7 @@ type TestBwdSpec =
    { imports :: Array String
    , file :: String
    , bwd_expect_file :: String
-   , δv :: Selector Val -- relative to bot
+   , δv :: Selector' Val -- relative to bot
    , fwd_expect :: String
    , datasets :: Array (Bind String)
    }
@@ -73,7 +73,7 @@ suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    asTest :: TestSpec -> Aff BenchRow
    asTest { imports, file, fwd_expect } = do
       gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports []
-      test loadFile (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
+      test loadFile (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: FileLoader Aff -> Array TestBwdSpec -> BenchSuite
 bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
@@ -92,7 +92,7 @@ withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
       gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports [ x ↦ dataset ]
-      test loadFile (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
+      test loadFile (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do

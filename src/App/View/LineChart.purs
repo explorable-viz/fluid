@@ -3,8 +3,8 @@ module App.View.LineChart where
 import Prelude hiding (absurd)
 
 import App.Util (class Reflect, Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, dict, from, isPersistent, isPrimary, isSecondary, isTransient)
-import App.Util.Selector (ViewSelSetter, ViewSelSetter', dictVal, dictVal', lineChart, lineChart', linePoint, linePoint', listElement, listElement')
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, selListener', uiHelpers)
+import App.Util.Selector (ViewSelSetter', dictVal', lineChart', linePoint', listElement')
+import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener', uiHelpers)
 import App.View.Util.Axes (Orientation(..))
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
@@ -273,12 +273,6 @@ instance Drawable2 LineChart where
    createRootElement = createRootElement
 
 instance Drawable LineChart where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw point
-      where
-      point :: ViewSelSetter PointCoordinate
-      point { i, j } =
-         linePoint j >>> listElement i >>> dictVal f_plots >>> lineChart
    draw'' rSpec figVal _ redraw =
       draw' uiHelpers rSpec =<< selListener' figVal redraw point
       where

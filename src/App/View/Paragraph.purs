@@ -3,8 +3,8 @@ module App.View.Paragraph where
 import Prelude hiding (join)
 
 import App.Util (class Reflect, Attrs, SelStates, Selectable, 𝕊, classes, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
-import App.Util.Selector (SelSetter, ViewSelSetter, ViewSelSetter', SelSetter', listElement, listElement', paragraph, paragraph')
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, selListener', uiHelpers)
+import App.Util.Selector (ViewSelSetter', SelSetter', listElement', paragraph')
+import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener', uiHelpers)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -27,25 +27,11 @@ newtype Paragraph a = Paragraph (Array (TextFragment a))
 data TextFragment a = TextFragment (Selectable String) | Link (Val a) (Selectable String)
 
 instance Drawable (Paragraph (SelStates 𝕊)) where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw paragraphSelector
-      where
-      paragraphSelector :: ViewSelSetter ParagraphElem
-      paragraphSelector { i } = selTextFragment { i }
-
    draw'' rSpec figVal _ redraw =
       draw' uiHelpers rSpec =<< selListener' figVal redraw paragraphSelector
       where
       paragraphSelector :: ViewSelSetter' ParagraphElem
       paragraphSelector { i } = selTextFragment' { i }
-
-selTextFragment :: ViewSelSetter ParagraphElem
-selTextFragment { i } = fragment >>> listElement i >>> paragraph
-   where
-   fragment :: SelSetter Val Val
-   fragment δv = unsafePartial $ case _ of
-      Val α (Constr c (v : Nil)) | c == cText -> Val α (Constr c (δv v : Nil)) -- Text
-      Val α (Constr c (v1 : v2 : Nil)) | c == cLink -> Val α (Constr c (δv v1 : v2 : Nil))
 
 selTextFragment' :: ViewSelSetter' ParagraphElem
 selTextFragment' { i } = fragment >>> listElement' i >>> paragraph'

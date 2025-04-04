@@ -3,8 +3,8 @@ module App.View.TableView where
 import Prelude hiding (absurd)
 
 import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor)
-import App.Util.Selector (ViewSelSetter, ViewSelSetter', dictVal, dictVal', listElement, listElement')
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, selListener', uiHelpers)
+import App.Util.Selector (ViewSelSetter', dictVal', listElement')
+import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener', uiHelpers)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -184,12 +184,6 @@ instance Drawable2 TableView where
    setSelStates = setSelStates
 
 instance Drawable TableView where
-   draw rSpec figVal _ redraw = do
-      draw' uiHelpers rSpec =<< selListener figVal redraw tableViewSelSetter
-      where
-      tableViewSelSetter :: ViewSelSetter CellIndex
-      tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
-
    draw'' rSpec figVal _ redraw = do
       draw' uiHelpers rSpec =<< selListener' figVal redraw tableViewSelSetter
       where
