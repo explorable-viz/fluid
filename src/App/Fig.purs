@@ -3,8 +3,8 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), 𝕊, Selector', as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
-import App.Util.Selector (envVal')
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), 𝕊, Selector, as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
+import App.Util.Selector (envVal, ViewSetter)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView')
 import App.View.Util.D3 (remove, rootSelect)
@@ -29,7 +29,7 @@ import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, absurd, error, spyWhen, (×), (∩))
+import Util (type (×), AffError, Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
@@ -45,7 +45,7 @@ str =
    , intermediate: "intermediate"
    }
 
-selectOutput :: Selector' Val -> Endo Fig
+selectOutput :: Selector Val -> Endo Fig
 selectOutput δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
    v' × selType = δv v
@@ -54,34 +54,34 @@ selectOutput δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
       Transient | dir.transient /= LinkedOutputs -> γ × dir { transient = LinkedOutputs }
       _ -> γ × dir
 
-setOutputView :: Setter Fig View
+setOutputView :: ViewSetter Fig View
 setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw }
 
-selectInput :: Var -> Selector' Val -> Endo Fig
+selectInput :: Var -> Selector Val -> Endo Fig
 selectInput x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
    where
-   γ' × selType = envVal' x δv γ
+   γ' × selType = envVal x δv γ
    v' × dir' = case selType of
       Persistent | dir.persistent /= LinkedInputs -> botOf v × dir { persistent = LinkedInputs }
       Transient | dir.transient /= LinkedInputs -> v × dir { transient = LinkedInputs }
       _ -> v × dir
 
-setInputView :: Var -> Setter Fig View
+setInputView :: Var -> ViewSetter Fig View
 setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-selectIntermediate :: Vertex -> Selector' Val -> Endo Fig
+selectIntermediate :: Vertex -> Selector Val -> Endo Fig
 selectIntermediate (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final, γ = γ', v = v', dir = dir' }
    where
-   ι' × selType = envVal' α δv ι
+   ι' × selType = envVal α δv ι
    γ' × v' × dir' × ι_final = case selType of
       Transient | dir.transient /= Intermediates -> γ × v × dir { transient = Intermediates } × ι'
       Transient -> γ × v × dir × ι'
       _ -> γ × v × dir × ι
 
-setIntermediateView :: Vertex -> Setter Fig View
+setIntermediateView :: Vertex -> ViewSetter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }

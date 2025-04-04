@@ -15,8 +15,8 @@ module Test.Util.Suite
 
 import Prelude
 
-import App.Fig (loadFig, selectInput', selectOutput', selectionResult)
-import App.Util (SelectionType(..), Selector', isInert, isPersistent, isTransient, selStates)
+import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
+import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
 import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
@@ -44,7 +44,7 @@ type TestBwdSpec =
    { imports :: Array String
    , file :: String
    , bwd_expect_file :: String
-   , δv :: Selector' Val -- relative to bot
+   , δv :: Selector Val -- relative to bot
    , fwd_expect :: String
    , datasets :: Array (Bind String)
    }
@@ -57,14 +57,14 @@ type TestWithDatasetSpec =
 
 type TestLinkedOutputsSpec =
    { spec :: FigSpec
-   , δ_out :: Selector' Val
-   , out_expect :: Selector' Val
+   , δ_out :: Selector Val
+   , out_expect :: Selector Val
    }
 
 type TestLinkedInputsSpec =
    { spec :: FigSpec
-   , δ_in :: Bind (Selector' Val)
-   , in_expect :: Selector' Env
+   , δ_in :: Bind (Selector Val)
+   , in_expect :: Selector Env
    }
 
 suite :: FileLoader Aff -> Array TestSpec -> BenchSuite
@@ -96,7 +96,7 @@ withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
-   fig <- loadFig (spec { file = spec.file }) <#> selectOutput' δ_out
+   fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (selectionResult fig).v
    checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect (botOf <$> v))
@@ -109,7 +109,7 @@ linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
 
 linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
-   fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput' δ_in
+   fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (selectionResult fig).γ
    checkEq "selected" "expected" (selStates <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (fst $ in_expect (botOf <$> γ))

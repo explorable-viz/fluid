@@ -3,7 +3,7 @@ module App.View.ScatterPlot where
 import Prelude
 
 import App.Util (class Reflect, SelStates, Selectable, 𝕊, dict, from, isPrimary, isSecondary)
-import App.Util.Selector (ViewSelSetter', scatterPlot', scatterPoint')
+import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
 import App.View.Util (class Drawable, Renderer, selListener', uiHelpers)
 import App.View.Util.Point (Point(..))
 import Bind ((⟼))
@@ -48,8 +48,8 @@ instance Drawable ScatterPlot where
    draw'' rSpec figVal _ redraw =
       drawScatterPlot scatterPlotHelpers uiHelpers rSpec =<< selListener' figVal redraw point
       where
-      point :: ViewSelSetter' PointIndex
-      point { i } = scatterPoint' i >>> scatterPlot'
+      point :: ViewSelSetter PointIndex
+      point { i } = scatterPoint i >>> scatterPlot
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot where
    from r = ScatterPlot

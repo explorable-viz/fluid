@@ -2,7 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
-import App.Util (Selector', getPersistent, unselected)
+import App.Util (Selector, getPersistent, unselected)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
@@ -32,7 +32,7 @@ import Val (class Ann, EnvExpr(..), Val)
 type TestSuite = Array (String × Aff Unit)
 
 type SelectionSpec =
-   { δv :: Selector' Val
+   { δv :: Selector Val
    , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
    , bwd_expect :: String
    }

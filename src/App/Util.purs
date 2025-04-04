@@ -11,7 +11,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype, over, unwrap)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
@@ -30,14 +30,13 @@ import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen, (×))
+import Util (type (×), Endo, definitely', error, shapeMismatch, spyWhen, (×))
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
-type Selector f = Endo (f (SelStates 𝔹)) -- modifies selection state
-type Selector' f = SetSel (f (SelStates 𝔹)) -- modifies selection state
+type Selector f = SetSel (f (SelStates 𝔹)) -- modifies selection state
 type SetSel a = a -> a × SelectionType
 
 -- Selection can occur on data that can be interacted with, reactive data rather than inert data. Within
@@ -69,12 +68,6 @@ selection false b1 b2 = { persistent: Reactive b1, transient: Reactive b2 }
 
 sel :: forall a. Selectable a -> SelStates 𝕊
 sel = snd
-
-persist :: forall a. Setter (SelStates a) a
-persist δα = over SelStates ((<$>) mapδ)
-   where
-   mapδ :: Selection a -> Selection a
-   mapδ s = s { persistent = δα s.persistent }
 
 data 𝕊 = None | Secondary | Primary
 
@@ -169,10 +162,6 @@ runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
 runAffs_ f as = flip runAff_ (sequence as) case _ of
    Left err -> log $ show err
    Right as' -> as' <#> f # sequence_
-
--- Unpack d3.js data and event type associated with mouse event target.
-selectionEventData :: forall a. Event -> a × Selector Val
-selectionEventData = (eventData &&& type_ >>> selector)
 
 selectionEventData' :: forall a. Event -> a × SetSel (Val (SelStates 𝔹))
 selectionEventData' = (eventData &&& type_ >>> selector')
