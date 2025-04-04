@@ -2,15 +2,15 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState(..), SelStates, SelectionType(..), SetSel, persist)
+import App.Util (SelState(..), SelStates(..), SelectionType(..), SetSel, persist)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (fromJust)
 import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cSome, f_bars, f_points, f_stackedBars, f_z)
-import Lattice (class Neg, 𝔹, neg)
+import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
-import Util (Setter, absurd, assert, definitely, error, (×))
+import Util (Setter, Endo, absurd, assert, definitely, error, (×))
 import Util.Map (get, insert, update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
@@ -22,8 +22,12 @@ type ViewSelSetter' a = a -> SelSetter' Val Val
 type ViewSelSetter a = a -> SelSetter Val Val -- convert mouse event data to view selector
 
 -- Perhaps better as const (and renamed to 'select')
-neg' :: forall a. Neg a => SetSel a
-neg' b = neg b × Persistent
+neg' :: SetSel (Val (SelStates 𝔹))
+neg' b = (setSel <$> b) × Persistent
+   where
+   setSel :: Endo (SelStates 𝔹)
+   setSel (SelStates Inert) = SelStates Inert
+   setSel (SelStates (Reactive sel')) = SelStates (Reactive (sel' { persistent = neg sel'.persistent }))
 
 -- TODO: rename
 persist' :: forall a. Setter' (SelState a) a
@@ -168,9 +172,9 @@ dictVal s δv = unsafePartial $ case _ of
 dictVal' :: String -> SelSetter' Val Val
 dictVal' s δv = unsafePartial $ case _ of
    Val α (Dictionary (DictRep d)) ->
-      first (\v' -> Val α $ Dictionary $ DictRep $ insert s (β × v') d) (δv v)
+      first (\v' -> Val α $ Dictionary $ DictRep $ update (second (const v')) s d) (δv v)
       where
-      β × v = get s d
+      _ × v = get s d
 
 envVal :: Var -> Setter (Env (SelStates 𝔹)) (Val (SelStates 𝔹))
 envVal x δv γ =
@@ -178,7 +182,7 @@ envVal x δv γ =
 
 envVal' :: Var -> Setter' (Env (SelStates 𝔹)) (Val (SelStates 𝔹))
 envVal' x δv γ =
-   assert (x ∈ γ) $ first (flip (insert x) γ) (δv (get x γ))
+   assert (x ∈ γ) $ first (\v' -> update (const v') x γ) (δv (get x γ))
 
 listCell :: Int -> Setter (Val (SelStates 𝔹)) 𝔹
 listCell n δα = unsafePartial $ case _ of
@@ -194,3 +198,8 @@ listCell' n δα = unsafePartial $ case _ of
    Val α (Constr c (v : u : Nil)) | c == cCons ->
       if n == 0 then first (\α' -> Val α' (Constr c (v : u : Nil))) (persist' δα α)
       else first (\u' -> Val α (Constr c (v : u' : Nil))) (listCell' (n - 1) δα u)
+
+composeSetSel :: forall a. SetSel a -> SetSel a -> SetSel a
+composeSetSel f g = \x -> let x' × _ = f x in g x'
+
+infixr 9 composeSetSel as >.>

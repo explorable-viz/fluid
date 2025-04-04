@@ -30,7 +30,7 @@ import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
+import Util (type (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen, (×))
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
