@@ -3,5 +3,6 @@
     "file": "convolution/emboss",
     "imports": [ "lib/convolution", "convolution/test-image", "convolution/filter/emboss" ],
     "datasets": [],
-    "inputs": [ "inputImage", "filter" ]
+    "inputs": [ "inputImage", "filter" ],
+    "query": true
 }
