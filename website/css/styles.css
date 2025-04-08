@@ -232,7 +232,7 @@ nav ul li.active-page a {
 
 .grid-container {
    display: grid;
-   grid-template-columns: 20% var(--toggle-button-width) var(--text-pane-width);
+   grid-template-columns: auto var(--toggle-button-width) var(--text-pane-width);
    justify-content: center;
 }
 
