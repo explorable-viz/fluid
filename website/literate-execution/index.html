@@ -50,7 +50,7 @@
          fill: rgb(214, 240, 214)
       }
 
-      .matrix-cell.selected-secondary-persistent {
+      .matrix-cell.selected-secondary-persistent:not(#fig-input-filter *, #fig-input-inputImage *) {
          fill: White;
       }
 
@@ -58,30 +58,12 @@
          color: green
       }
 
-      .matrix-cell-text.selected-secondary-persistent:not(.matrix-cell-text.selected-primary-transient) {
+      .matrix-cell-text.selected-secondary-persistent:not(.matrix-cell-text.selected-primary-transient):not(#fig-input-filter *, #fig-input-inputImage *) {
          color: rgb(205, 205, 205)
       }
 
-      .matrix-cell-text.selected-secondary-transient:not(.matrix-cell-text.selected-primary-persistent):not(.matrix-cell-text.selected-primary-transient) {
+      .matrix-cell-text.selected-secondary-transient:not(.matrix-cell-text.selected-primary-persistent):not(.matrix-cell-text.selected-primary-transient):not(#fig-input-filter *, #fig-input-inputImage *) {
          color: rgb(205, 205, 205)
-      }
-
-      #fig-input-filter .matrix-cell.selected-secondary-persistent {
-         fill: rgb(214, 240, 214)
-      }
-
-      #fig-input-filter .matrix-cell-text.selected-secondary-persistent {
-         font-weight: 400;
-         color: darkgreen
-      }
-
-      #fig-input-inputImage .matrix-cell.selected-secondary-persistent {
-         fill: rgb(214, 240, 214)
-      }
-
-      #fig-input-inputImage .matrix-cell-text.selected-secondary-persistent {
-         font-weight: 400;
-         color: darkgreen
       }
    </style>
 </head>
