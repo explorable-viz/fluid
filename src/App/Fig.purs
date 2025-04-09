@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), 𝕊, Selector, as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal, ViewSetter)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView')
@@ -106,26 +106,38 @@ type SelectionResult =
 
 selectionResult :: Fig -> SelectionResult
 selectionResult fig@{ dir, v, γ, ι, ια } =
-   { v: lift2 as𝕊 <$> v <*> reportOut v', γ: lift2 as𝕊 <$> γ <*> reportIn γ', ι: ι', ια: ια' }
+   { v: reportOut v', γ: reportIn γ', ι: ι', ια: ια' }
    where
+   as𝕊v :: forall a b. SelectionType -> a × Val (SelState 𝔹) × b -> a × Val (SelState 𝕊) × b
+   as𝕊v selType (γ1 × v1 × αs) = γ1 × (lift2 as𝕊 <$> (getSel selType <$> v) <*> v1) × αs
+
+   to𝕊v :: forall a b. a × Val (SelState 𝔹) × b -> a × Val (SelState 𝕊) × b
+   to𝕊v (γ1 × v1 × αs) = γ1 × ((to𝕊 <$> _) <$> v1) × αs
+
+   as𝕊γ :: forall a b. SelectionType -> Env (SelState 𝔹) × a × b -> Env (SelState 𝕊) × a × b
+   as𝕊γ selType (γ1 × v1 × αs) = (lift2 as𝕊 <$> (getSel selType <$> γ) <*> γ1) × v1 × αs
+
+   to𝕊γ :: forall a b. Env (SelState 𝔹) × a × b -> Env (SelState 𝕊) × a × b
+   to𝕊γ (γ1 × v1 × αs) = ((to𝕊 <$> _) <$> γ1) × v1 × αs
+
    γ1 × v1 × αs =
       case dir.persistent of
-         LinkedOutputs -> fig.linkedOutputs Persistent v
-         LinkedInputs -> fig.linkedInputs Persistent γ
+         LinkedOutputs -> to𝕊γ <<< as𝕊v Persistent $ fig.linkedOutputs Persistent v
+         LinkedInputs -> to𝕊v <<< as𝕊γ Persistent $ fig.linkedInputs Persistent γ
          Intermediates -> error absurd
    γ2 × v2 × αs' =
       case dir.transient of
-         LinkedOutputs -> fig.linkedOutputs Transient v
-         LinkedInputs -> fig.linkedInputs Transient γ
-         Intermediates -> fig.linkIntermediates ι ια
+         LinkedOutputs -> to𝕊γ <<< as𝕊v Transient $ fig.linkedOutputs Transient v
+         LinkedInputs -> to𝕊v <<< as𝕊γ Transient $ fig.linkedInputs Transient γ
+         Intermediates -> to𝕊γ <<< to𝕊v $ fig.linkIntermediates ι ια
 
    ι' × ια' = intermediates fig { persistent: αs, transient: αs' }
 
    v' = splice v1 v2
    γ' = splice γ1 γ2
 
-   reportIn = spyWhen tracing.mediatingData ("Mediating inputs") prettyP
-   reportOut = spyWhen tracing.mediatingData ("Mediating outputs") prettyP
+   reportIn = spyWhen tracing.mediatingData ("Mediating inputs") (prettyP <<< erase)
+   reportOut = spyWhen tracing.mediatingData ("Mediating outputs") (prettyP <<< erase)
 
 intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹) × Env Vertex
 intermediates { spec, in_roots, inerts } αs =
