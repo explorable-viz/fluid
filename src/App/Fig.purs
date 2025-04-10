@@ -21,7 +21,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertices)
+import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -32,7 +32,7 @@ import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
-import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
+import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view
@@ -81,6 +81,7 @@ selectIntermediate (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final,
       Transient -> γ × v × dir × ι'
       _ -> γ × v × dir × ι
 
+
 setIntermediateView :: Vertex -> ViewSetter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
@@ -88,7 +89,7 @@ setIntermediateView (Vertex α) δvw fig = fig
 
 rebuildι :: Set DVertex -> Selection (Set DVertex) -> Dict (Val Vertex) -> Env (SelStates 𝔹)
 rebuildι inerts αs ι =
-   (Env $ D.fromFoldable $ setSels <$> vs_inert <*> vs_selected)
+   Env $ D.fromFoldable $ setSels <$> vs_inert <*> vs_selected
    where
    -- Consolidate with analogous calculation with γInert etc in loadFig?
    vs_inert = ι <#> \v -> select𝔹s v inerts
@@ -101,12 +102,11 @@ type SelectionResult =
    { v :: Val (SelStates 𝕊)
    , γ :: Env (SelStates 𝕊)
    , ι :: Env (SelStates 𝔹)
-   , ια :: Env Vertex
    }
 
 selectionResult :: Fig -> SelectionResult
-selectionResult fig@{ dir, v, γ, ι, ια } =
-   { v: reportOut v', γ: reportIn γ', ι: ι', ια: ια' }
+selectionResult fig@{ dir, v, γ, ι } =
+   { v: reportOut v', γ: reportIn γ', ι: ι' }
    where
    as𝕊v :: forall a b. SelectionType -> a × Val (SelState 𝔹) × b -> a × Val (SelState 𝕊) × b
    as𝕊v selType (γ1 × v1 × αs) = γ1 × (lift2 as𝕊 <$> (getSel selType <$> v) <*> v1) × αs
@@ -129,9 +129,9 @@ selectionResult fig@{ dir, v, γ, ι, ια } =
       case dir.transient of
          LinkedOutputs -> to𝕊γ <<< as𝕊v Transient $ fig.linkedOutputs Transient v
          LinkedInputs -> to𝕊v <<< as𝕊γ Transient $ fig.linkedInputs Transient γ
-         Intermediates -> to𝕊γ <<< to𝕊v $ fig.linkIntermediates ι ια
+         Intermediates -> to𝕊γ <<< to𝕊v $ fig.linkIntermediates ι
 
-   ι' × ια' = intermediates fig { persistent: αs, transient: αs' }
+   ι' = intermediates fig { persistent: αs, transient: αs' }
 
    v' = splice v1 v2
    γ' = splice γ1 γ2
@@ -139,16 +139,16 @@ selectionResult fig@{ dir, v, γ, ι, ια } =
    reportIn = spyWhen tracing.mediatingData ("Mediating inputs") (prettyP <<< erase)
    reportOut = spyWhen tracing.mediatingData ("Mediating outputs") (prettyP <<< erase)
 
-intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹) × Env Vertex
+intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹)
 intermediates { spec, in_roots, inerts } αs =
-   flip (maybe (empty × empty)) spec.query
+   flip (maybe empty) spec.query
       \query ->
          let
-            ι = filterKeys (\α -> not (Vertex α ∈ in_roots))
+            ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
                $ runQuery query
                $ αs.persistent ∪ αs.transient
          in
-            rebuildι inerts αs ι × Env ι
+            rebuildι inerts αs ια
 
 drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
 drawIntermediates divId (Env ι) unused redraw = do
@@ -169,10 +169,10 @@ drawFig divId fig = do
 
    drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where
-   { v, γ, ι, ια } = selectionResult fig
+   { v, γ, ι } = selectionResult fig
    out_view = unsafePartial $ view str.output v fig.out_view
    in_views = (\(Env γ) -> unsafePartial (mapWithKey view γ) <*> fig.in_views) γ
-   redraw = (_ $ fig { ι = ι, ια = ια }) >>> drawFig divId
+   redraw = (_ $ fig { ι = ι }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
 drawFile (File file × src) =
@@ -261,13 +261,14 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs selType v =
          let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × (vertices g)
 
-      linkIntermediates :: Env (SelStates 𝔹) -> Env Vertex -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-      linkIntermediates ι ια =
+      linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+      linkIntermediates ι =
          let
+            ια = Env $ ιfromαs g0 (keys ι) :: Env Vertex
             v × αs = ι_fwd ια (ι <#> getSel Transient)
             γ × αs' = ι_bwd ια (ι <#> getSel Transient)
          in
-            γ × v × (αs ∪ αs')
+            γ × v × (αs ∩ αs')
 
    pure
       { spec
@@ -275,7 +276,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , γ: selStates <$> inert.γ <*> unselected.γ <*> unselected.γ
       , v: selStates <$> inert.v <*> unselected.v <*> unselected.v
       , ι: empty
-      , ια: empty
       , linkedOutputs
       , linkedInputs
       , linkIntermediates
@@ -286,6 +286,9 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , in_roots
       , inerts: inertFwd ∩ inertBwd
       }
+
+ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)
+ιfromαs g αs = D.fromFoldable $ (\v@(Val (Vertex α) _) -> α × v) `Set.map` ((\α -> (asVal $ vertexData g (Vertex α))) `Set.mapMaybe` αs)
 
 splice :: forall f a. Apply f => f (SelState a) -> f (SelState a) -> f (SelStates a)
 splice f1 f2 = splice' <$> f1 <*> f2
@@ -307,3 +310,4 @@ drawFigWithCode { fig, divId } = do
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
+

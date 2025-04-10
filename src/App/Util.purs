@@ -87,7 +87,7 @@ isInert :: forall a. SelStates a -> 𝔹
 isInert (SelStates Inert) = true
 isInert (SelStates (Reactive _)) = false
 
-getSel :: SelectionType -> SelStates 𝔹 -> SelState 𝔹
+getSel :: forall a. SelectionType -> SelStates a -> SelState a
 getSel selType s = unwrap s <#> case selType of
    Persistent -> _.persistent
    Transient -> _.transient
