@@ -81,7 +81,6 @@ selectIntermediate (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final,
       Transient -> γ × v × dir × ι'
       _ -> γ × v × dir × ι
 
-
 setIntermediateView :: Vertex -> ViewSetter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
