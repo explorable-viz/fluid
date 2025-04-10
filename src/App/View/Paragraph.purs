@@ -5,7 +5,7 @@ import Prelude hiding (join)
 import App.Util (class Reflect, Attrs, SelStates, Selectable, 𝕊, classes, contents, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (ViewSelSetter, SelSetter, listElement, paragraph)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum, setStyles, setText)
+import App.View.Util.D3 (create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Foldable (foldr, for_)
@@ -23,7 +23,7 @@ import Web.Event.EventTarget (EventListener)
 
 newtype Paragraph a = Paragraph (Array (TextFragment a))
 
-data TextFragment a = TextFragment (Selectable String) | Link (Val a) (Selectable String)
+data TextFragment a = Text (Selectable String) | Link (Val a) (Selectable String)
 
 instance Drawable (Paragraph (SelStates 𝕊)) where
    draw rSpec figVal _ redraw =
@@ -42,7 +42,7 @@ selTextFragment { i } = fragment >>> listElement i >>> paragraph
 
 getText :: Array (TextFragment (SelStates 𝕊)) -> Int -> Selectable String
 getText elems i = case elems ! i of
-   TextFragment s -> s
+   Text s -> s
    Link v (s × _) -> (s × α)
       where
       α = foldr join bot v
@@ -83,17 +83,17 @@ setSelStates (Paragraph elems) redraw rootElement = do
 
 createRootElement :: Paragraph (SelStates 𝕊) -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (Paragraph elems) div childId = do
-   rootElement <- div # create Text [ classes [ "paragraph" ], "id" ↦ childId ]
+   rootElement <- div # create D3.Text [ classes [ "paragraph" ], "id" ↦ childId ]
    forWithIndex_ elems (mkElem rootElement)
    pure rootElement
    where
    mkElem :: D3.Selection -> Int -> TextFragment (SelStates 𝕊) -> Effect D3.Selection
    mkElem root i elem = do
-      elem' <- root # create Text [ classes [ "text-fragment" ], "id" ↦ childId ]
+      elem' <- root # create D3.Text [ classes [ "text-fragment" ], "id" ↦ childId ]
       elem' # setText (linkContents elem) >>= setDatum { i }
 
 linkContents :: TextFragment (SelStates 𝕊) -> String
-linkContents (TextFragment s) = contents s
+linkContents (Text s) = contents s
 linkContents (Link _ (s × _)) = s
 
 instance Drawable2 (Paragraph (SelStates 𝕊)) where
@@ -108,10 +108,10 @@ type ParagraphElem = { i :: Int }
 textFragment :: ToFrom (TextFragment (SelStates 𝕊)) (SelStates 𝕊)
 textFragment =
    { pack: case _ of
-        TextFragment (s × α) -> Constr cText ((Val α (Str s)) : Nil)
+        Text (s × α) -> Constr cText ((Val α (Str s)) : Nil)
         Link v (s × α') -> Constr cLink (v : Val α' (Str s) : Nil)
    , unpack: case _ of
-        Constr c (Val α (Str s) : Nil) | c == cText -> TextFragment (s × α)
+        Constr c (Val α (Str s) : Nil) | c == cText -> Text (s × α)
         Constr c (Val α v : (Val α' (Str s) : Nil)) | c == cLink -> Link (Val α v) (s × α')
         v -> typeError v "TextFragment"
    }
