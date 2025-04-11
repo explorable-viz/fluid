@@ -45,6 +45,25 @@
       .grid-container.data-pane-hidden .when-data-pane-visible {
          display: none;
       }
+
+
+
+      .matrix-cell.selected-secondary-persistent:not(#fig-input-filter *, #fig-input-inputImage *) {
+         fill: White;
+      }
+
+      .matrix-cell-text.selected-primary-persistent:not(.matrix-cell-text.selected-primary-transient) {
+         color: green
+      }
+
+      .matrix-cell-text.selected-secondary-persistent:not(.matrix-cell-text.selected-primary-transient):not(#fig-input-filter *, #fig-input-inputImage *) {
+         color: rgb(205, 205, 205)
+      }
+      
+      .matrix-cell-text.selected-secondary-transient:not(.matrix-cell-text.selected-primary-persistent):not(.matrix-cell-text.selected-primary-transient):not(#fig-input-filter *, #fig-input-inputImage *) {
+         color: rgb(205, 205, 205)
+      }
+
    </style>
 </head>
 <body>
