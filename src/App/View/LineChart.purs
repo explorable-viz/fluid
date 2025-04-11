@@ -273,7 +273,7 @@ instance Drawable2 LineChart where
    createRootElement = createRootElement
 
 instance Drawable LineChart where
-   draw'' rSpec figVal _ redraw =
+   draw rSpec figVal _ redraw =
       draw' uiHelpers rSpec =<< selListener' figVal redraw point
       where
       point :: ViewSelSetter PointCoordinate
