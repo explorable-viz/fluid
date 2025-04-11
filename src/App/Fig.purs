@@ -215,20 +215,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       Env γ_restricted = restrict inputs' γα
       in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> γ_restricted
 
-      ι_fwd' :: Set Vertex -> Val 𝔹
-      ι_fwd' selected =
-         let
-            αs = vertices $ bwdSlice (selected × opEval.g)
-         in
-            select𝔹s outα αs
-
-      ι_bwd' :: Set Vertex -> Env 𝔹
-      ι_bwd' selected =
-         let
-            αs = vertices $ bwdSlice (selected × eval.g)
-         in
-            select𝔹s γα αs
-
       graphgc = graphGC eval
       graphgc_op = graphGC opEval
 
@@ -253,12 +239,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
       γf = lift inert'.v gcFwd
 
-      ι_fwd :: Set Vertex -> Val (SelState 𝔹)
-      ι_fwd ια = inert'.v <*> (ι_fwd' ια)
-
-      ι_bwd :: Set Vertex -> Env (SelState 𝔹)
-      ι_bwd ια = inert'.γ <*> (ι_bwd' ια)
-
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ =
          let v × g = γf (γ <#> getSel selType) in fst (vf v) × v × (vertices g)
@@ -273,8 +253,8 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
             ια = Env $ ιfromαs g0 (keys ι) :: Env Vertex
             ι' = ι <#> getSel Transient >>> to𝔹
             αs = selectαs ι' ια
-            v = ι_fwd αs
-            γ = ι_bwd αs
+            v = inert'.v <*> select𝔹s outα (vertices $ bwdSlice (αs × opEval.g))
+            γ = inert'.γ <*> select𝔹s γα (vertices $ bwdSlice (αs × eval.g))
          in
             γ × v × (dvertices g0 αs)
 
