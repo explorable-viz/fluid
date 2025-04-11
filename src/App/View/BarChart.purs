@@ -99,7 +99,7 @@ instance Drawable2 BarChart where
    setSelStates = setSelStates2
 
 instance Drawable BarChart where
-   draw'' rSpec figVal _ redraw =
+   draw rSpec figVal _ redraw =
       drawBarChart barChartHelpers uiHelpers rSpec =<< selListener' figVal redraw barSegment'
       where
       barSegment' :: ViewSelSetter BarSegmentCoordinate

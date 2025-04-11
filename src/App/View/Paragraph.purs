@@ -27,7 +27,7 @@ newtype Paragraph a = Paragraph (Array (TextFragment a))
 data TextFragment a = TextFragment (Selectable String) | Link (Val a) (Selectable String)
 
 instance Drawable (Paragraph (SelStates 𝕊)) where
-   draw'' rSpec figVal _ redraw =
+   draw rSpec figVal _ redraw =
       draw' uiHelpers rSpec =<< selListener' figVal redraw paragraphSelector
       where
       paragraphSelector :: ViewSelSetter ParagraphElem

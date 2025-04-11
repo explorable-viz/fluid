@@ -184,7 +184,7 @@ instance Drawable2 TableView where
    setSelStates = setSelStates
 
 instance Drawable TableView where
-   draw'' rSpec figVal _ redraw = do
+   draw rSpec figVal _ redraw = do
       draw' uiHelpers rSpec =<< selListener' figVal redraw tableViewSelSetter
       where
       tableViewSelSetter :: ViewSelSetter CellIndex

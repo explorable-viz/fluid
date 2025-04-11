@@ -45,7 +45,7 @@ scatterPlotHelpers =
       point_smallRadius = 2
 
 instance Drawable ScatterPlot where
-   draw'' rSpec figVal _ redraw =
+   draw rSpec figVal _ redraw =
       drawScatterPlot scatterPlotHelpers uiHelpers rSpec =<< selListener' figVal redraw point
       where
       point :: ViewSelSetter PointIndex
