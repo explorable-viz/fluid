@@ -303,7 +303,12 @@ dvertices g αs =
    (\α -> DVertex (α × (vertexData g α))) `Set.map` αs
 
 ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)
-ιfromαs g αs = D.fromFoldable $ (\v@(Val (Vertex α) _) -> α × v) `Set.map` ((\α -> (asVal $ vertexData g (Vertex α))) `Set.mapMaybe` αs)
+ιfromαs g αs = D.fromFoldable $ Set.mapMaybe
+   ( \α -> do
+        v <- asVal $ vertexData g (Vertex α)
+        pure (α × v)
+   )
+   αs
 
 splice :: forall f a. Apply f => f (SelState a) -> f (SelState a) -> f (SelStates a)
 splice f1 f2 = splice' <$> f1 <*> f2
