@@ -57,6 +57,10 @@ class (Eq g, Vertices g) <= Graph g where
 
 newtype Vertex = Vertex String
 
+dvertices :: forall g. Graph g => g -> Set Vertex -> Set DVertex
+dvertices g αs =
+   (\α -> DVertex (α × (vertexData g α))) `Set.map` αs
+
 class Selectαs a b | a -> b where
    selectαs :: a -> b -> Set Vertex
    select𝔹s :: b -> Set DVertex -> a

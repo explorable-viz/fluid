@@ -21,7 +21,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, DVertex'(..), Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices)
+import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices, dvertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -287,10 +287,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , in_roots
       , inerts: inertFwd ∩ inertBwd
       }
-
-dvertices :: forall g. Graph g => g -> Set Vertex -> Set DVertex
-dvertices g αs =
-   (\α -> DVertex (α × (vertexData g α))) `Set.map` αs
 
 ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)
 ιfromαs g αs = D.fromFoldable $ Set.mapMaybe
