@@ -11,6 +11,7 @@ import Bind ((↦))
 import Data.Foldable (foldr, for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.List ((:), List(..))
+import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
 import DataType (cLink, cText)
 import Effect (Effect)
@@ -37,8 +38,10 @@ selTextFragment { i } = fragment >>> listElement i >>> paragraph
    where
    fragment :: SelSetter Val Val
    fragment δv = unsafePartial $ case _ of
-      Val α (Constr c (v : Nil)) | c == cText -> Val α (Constr c (δv v : Nil)) -- Text
-      Val α (Constr c (v1 : v2 : Nil)) | c == cLink -> Val α (Constr c (δv v1 : v2 : Nil))
+      Val α (Constr c (v : Nil)) | c == cText ->
+         first (\v' -> Val α (Constr c (v' : Nil))) (δv v)
+      Val α (Constr c (v1 : v2 : Nil)) | c == cLink ->
+         first (\v1' -> Val α (Constr c (v1' : v2 : Nil))) (δv v1)
 
 getText :: Array (TextFragment (SelStates 𝕊)) -> Int -> Selectable String
 getText elems i = case elems ! i of

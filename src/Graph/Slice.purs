@@ -11,10 +11,10 @@ import Data.Maybe (maybe)
 import Data.Set (Set, empty, insert)
 import Data.Set (map) as Set
 import Data.Tuple (fst)
-import Graph (class Graph, DVertex'(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, sources, vertexData)
+import Graph (class Graph, DVertex'(..), Edge, HyperEdge, Vertex, addresses, inEdges, inEdges', outN, sinks, vertexData)
 import Graph.WithGraph (WithGraph, extend, runWithGraph_spy)
 import Test.Util.Debug (checking)
-import Util (type (×), singleton, validateWhen, (×), (∩), (⊆))
+import Util (type (×), singleton, validateWhen, (×), (⊆))
 import Util.Set ((∈))
 
 type BwdConfig =
@@ -28,7 +28,7 @@ bwdSlice (αs × g) = fst $
    αs
       -- No outputsAreSources analog of inputAreSinks; we do however need to restrict to sources (see #818).
       # validateWhen checking.outputsInGraph "inputs are sinks" (_ ⊆ addresses g)
-      # (\_ -> αs ∩ sources g)
+      -- # (\_ -> αs ∩ sources g) 
       # \αs' -> runWithGraph_spy (tailRecM go { visited: empty, αs: L.fromFoldable αs', pending: Nil }) empty
    where
 

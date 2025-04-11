@@ -2,7 +2,7 @@ module Util.Set where
 
 import Prelude hiding (append)
 
-import Data.Foldable (foldl)
+import Data.Foldable (class Foldable, foldl)
 import Data.Set (Set)
 import Data.Set as Set
 import Foreign.Object (Object)
@@ -37,3 +37,6 @@ instance Set (Object a) String where
    difference x y = foldl (flip Object.delete) x (Object.keys y)
    member = Object.member
    union = Object.union
+
+unions ∷ ∀ f a b. Foldable f ⇒ Set a b ⇒ f a → a
+unions = foldl union empty

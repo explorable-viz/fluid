@@ -2,13 +2,14 @@ module Test.Util where
 
 import Prelude hiding (absurd, compare)
 
-import App.Util (Selector, unselected, getPersistent)
+import App.Util (Selector, getPersistent, unselected)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
+import Data.Tuple (fst)
 import Desug (desugGC)
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect)
@@ -79,7 +80,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       traceGC (EnvExpr γ e)
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
-   let out0 = (δv (const unselected <$> v)) <#> getPersistent
+   let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))

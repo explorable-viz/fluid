@@ -3,5 +3,6 @@
     "file": "moving-average",
     "imports": [],
     "datasets": [["methane", "dataset/methane-emissions"]],
-    "inputs": ["methane"]
+    "inputs": ["methane"],
+    "query": false
 }

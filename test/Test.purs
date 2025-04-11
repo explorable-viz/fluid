@@ -2,14 +2,12 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Selector (fst, matrixElement, snd)
+import App.Util.Selector (dictVal, envVal, listElement, select, (>.>))
 import Bind ((↦))
 import Data.Array (concat)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
-import Graph (DVertex'(..))
-import Lattice (neg)
 import Module.Web (File(..), Folder(..), loadFile)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Desugar (desugar_cases)
@@ -21,7 +19,6 @@ import Test.Util (TestSuite)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
 import Util ((×))
-import Val (BaseVal(..), MatrixDim(..), MatrixRep(..), Val(..), asVal)
 
 main :: Effect Unit
 main = run tests
@@ -29,38 +26,33 @@ main = run tests
 -- main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = linkedOutputsSuite
+scratchpad = linkedInputsSuite
    [ { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-          , datasets: [ "data" ↦ "linked-outputs/convolution-data" ]
-          , imports: [ "lib/convolution" ]
-          , file: File "linked-outputs/convolution"
-          , inputs: [ "data" ]
-          , queries:
-               [ asVal >=> case _ of
-                    v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
-                    _ -> Nothing
+          , file: File "linked-inputs/mini-energyscatter"
+          , imports: []
+          , datasets:
+               [ "nonRenewables" ↦ "dataset/mini-non-renewables"
+               , "renewables" ↦ "dataset/mini-renewables"
                ]
+          , inputs: [ "nonRenewables", "renewables" ]
+          , query: Nothing
           }
-     , δ_out: fst (matrixElement 2 2 neg)
-     , out_expect:
-          fst
-             ( matrixElement 2 1 neg
-                  >>> matrixElement 2 2 neg
-                  >>> matrixElement 2 3 neg
-                  >>> matrixElement 2 4 neg
-                  >>> matrixElement 2 5 neg
+     , δ_in: "nonRenewables" ↦ listElement 0 (dictVal "coalCap" select)
+     , in_expect:
+          envVal "nonRenewables"
+             ( listElement 0
+                  ( dictVal "coalCap" select
+                       >.> dictVal "gasCap" select
+                       >.> dictVal "nuclearCap" select
+                       >.> dictVal "petrolCap" select
+                  )
              )
-             >>> snd
-                ( matrixElement 1 1 neg
-                     >>> matrixElement 1 2 neg
-                     >>> matrixElement 1 3 neg
-                     >>> matrixElement 2 1 neg
-                     >>> matrixElement 2 2 neg
-                     >>> matrixElement 2 3 neg
-                     >>> matrixElement 3 1 neg
-                     >>> matrixElement 3 2 neg
-                     >>> matrixElement 3 3 neg
+             >.> envVal "renewables"
+                ( listElement 0 (dictVal "capacity" select)
+                     >.> listElement 1 (dictVal "capacity" select)
+                     >.> listElement 2 (dictVal "capacity" select)
+                     >.> listElement 3 (dictVal "capacity" select)
                 )
      }
    ]

@@ -3,6 +3,7 @@
 module Dict
    ( fromFoldable
    , toArrayWithKey
+   , unions
    , Dict(..)
    ) where
 
@@ -10,13 +11,13 @@ import Prelude hiding (apply)
 
 import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultL, foldlWithIndex, foldrWithIndexDefault)
 import Data.Newtype (class Newtype)
-import Data.Traversable (class Foldable, class Traversable)
-import Foreign.Object (Object, fromFoldable, toArrayWithKey) as O
-import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, isSubmap, lookup, mapWithKey, union, unionWith)
+import Data.Traversable (class Foldable, class Traversable, foldl)
+import Foreign.Object (Object, fromFoldable, toArrayWithKey, union) as O
+import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, isSubmap, lookup, mapWithKey, unionWith)
 import Util (class IsEmpty, type (×))
 import Util.Map (class Map, class MapF, intersectionWith, keys, maplet, toUnfoldable, values)
 import Util.Map as Map
-import Util.Set (class Set, difference, size, (∈))
+import Util.Set (class Set, difference, size, union, (∈))
 
 -- Think we can generalise to keys of any type coercible to String.
 newtype Dict a = Dict (O.Object a)
@@ -53,7 +54,7 @@ instance Set (Dict a) String where
    size (Dict d) = size d
    member x (Dict d) = x ∈ d
    difference (Dict d) (Dict d') = Dict (difference d d')
-   union (Dict d) (Dict d') = Dict (union d d')
+   union (Dict d) (Dict d') = Dict (O.union d d')
 
 instance Map (Dict a) String a where
    maplet k v = Dict (maplet k v)
@@ -76,3 +77,6 @@ fromFoldable = Dict <<< O.fromFoldable
 
 toArrayWithKey :: forall a b. (String -> a -> b) -> Dict a -> Array b
 toArrayWithKey f (Dict d) = O.toArrayWithKey f d
+
+unions :: forall f a. Foldable f => f (Dict a) -> Dict a
+unions = foldl union (Dict empty)

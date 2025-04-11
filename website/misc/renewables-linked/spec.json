@@ -3,5 +3,6 @@
     "datasets": [["renewables", "dataset/renewables"]],
     "imports": [],
     "file": "bar-chart-line-chart",
-    "inputs": ["renewables"]
+    "inputs": ["renewables"],
+    "query": false
 }

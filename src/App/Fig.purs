@@ -3,37 +3,35 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelStates, Selection, 𝕊, as𝕊, getPersistent, getTransient, selState, to𝕊)
-import App.Util.Selector (envVal)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
+import App.Util.Selector (envVal, ViewSetter)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
-import Control.Apply (lift2)
-import Data.Array (concat, fromFoldable, zipWith)
-import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (first, (***))
+import Data.Maybe (Maybe(..), maybe)
+import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Traversable (for, for_, sequence_)
+import Data.Traversable (for_, sequence_)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, DVertex', Vertex(..), runQuery, select𝔹s, vertices)
+import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices, dvertices)
 import Graph.GraphImpl (GraphImpl)
+import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
-import Module.Web (File, loadProgCxt, prepConfig)
+import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, Setter, definitely', spyWhen, (×))
-import Util.Map (insert, keys, lookup, mapWithKey, restrict, filterKeys)
-import Util.Set ((∪), (\\), (∈), empty)
-import Val (Env(..), EnvExpr(..), Val(..), unrestrictGC)
+import Util (type (×), AffError, Endo, absurd, error, spyWhen, (×), (∩))
+import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
+import Util.Set (empty, (\\), (∈), (∪))
+import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view
@@ -46,107 +44,143 @@ str =
    , intermediate: "intermediate"
    }
 
-mkFullId :: String -> String -> String -> String
-mkFullId divId mid suffix = "#" <> divId <> "-" <> mid <> "-" <> suffix
+selectOutput :: Selector Val -> Endo Fig
+selectOutput δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
+   where
+   v' × selType = δv v
+   γ' × dir' = case selType of
+      Persistent | dir.persistent /= LinkedOutputs -> botOf γ × dir { persistent = LinkedOutputs }
+      Transient | dir.transient /= LinkedOutputs -> γ × dir { transient = LinkedOutputs }
+      _ -> γ × dir
 
-selectOutput :: Setter Fig (Val (SelStates 𝔹))
-selectOutput δv fig@{ dir, γ, v } = fig
-   { v = δv v
-   , γ = if dir == LinkedInputs then botOf γ else γ
-   , dir = LinkedOutputs
-   }
-
-setOutputView :: Setter Fig View
+setOutputView :: ViewSetter Fig View
 setOutputView δvw fig = fig
-   { out_view = fig.out_view <#> δvw
-   }
+   { out_view = fig.out_view <#> δvw }
 
-selectInput :: Var -> Setter Fig (Val (SelStates 𝔹))
-selectInput x δv fig@{ dir, γ, v } = fig
-   { γ = envVal x δv γ
-   , v = if dir == LinkedOutputs then botOf v else v
-   , dir = LinkedInputs
-   }
+selectInput :: Var -> Selector Val -> Endo Fig
+selectInput x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
+   where
+   γ' × selType = envVal x δv γ
+   v' × dir' = case selType of
+      Persistent | dir.persistent /= LinkedInputs -> botOf v × dir { persistent = LinkedInputs }
+      Transient | dir.transient /= LinkedInputs -> v × dir { transient = LinkedInputs }
+      _ -> v × dir
 
-setInputView :: Var -> Setter Fig View
+setInputView :: Var -> ViewSetter Fig View
 setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
 
-selectIntermediate :: Vertex -> Setter Fig (Val (SelStates 𝔹))
-selectIntermediate (Vertex α) δv fig = fig
-   { intermediate_values = insert α (definitely' $ lookup α fig.intermediate_values <#> δv) fig.intermediate_values
-   }
+selectIntermediate :: Vertex -> Selector Val -> Endo Fig
+selectIntermediate (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final, γ = γ', v = v', dir = dir' }
+   where
+   ι' × selType = envVal α δv ι
+   γ' × v' × dir' × ι_final = case selType of
+      Transient | dir.transient /= Intermediates -> γ × v × dir { transient = Intermediates } × ι'
+      Transient -> γ × v × dir × ι'
+      _ -> γ × v × dir × ι
 
-setIntermediateView :: Vertex -> Setter Fig View
+setIntermediateView :: Vertex -> ViewSetter Fig View
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
 
-selectIntermediates :: forall g. Graph g => Set DVertex -> Selection g -> Selection (Set (DVertex' (Val Vertex))) -> Array (String × Val (SelStates 𝔹))
-selectIntermediates inerts g vs =
-   vs𝕊
+rebuildι :: Set DVertex -> Selection (Set DVertex) -> Dict (Val Vertex) -> Env (SelStates 𝔹)
+rebuildι inerts αs ι =
+   Env $ D.fromFoldable $ setSels <$> vs_inert <*> vs_selected
    where
-   verts = { persistent: vertices g.persistent, transient: vertices g.transient }
-
-   vs' = (snd <<< unwrap) `Set.map` (vs.persistent ∪ vs.transient) # fromFoldable :: Array (Val Vertex)
-
-   vs_selected = (\v@(Val α _) -> α × { persistent: select𝔹s v verts.persistent, transient: select𝔹s v verts.transient }) <$> vs' :: Array (Vertex × Selection (Val 𝔹))
-
-   vs_inert = (\v -> select𝔹s v inerts) <$> vs' :: Array (Val 𝔹)
+   -- Consolidate with analogous calculation with γInert etc in loadFig?
+   vs_inert = ι <#> \v -> select𝔹s v inerts
+   vs_selected = ι <#> \v@(Val α _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient }
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
-   setSels inert (Vertex α × v) = α × (selState <$> inert <*> v.persistent <*> v.transient)
+   setSels inert (Vertex α × v) = α × (selStates <$> inert <*> v.persistent <*> v.transient)
 
-   vs𝕊 = zipWith setSels vs_inert vs_selected
+type SelectionResult =
+   { v :: Val (SelStates 𝕊)
+   , γ :: Env (SelStates 𝕊)
+   , ι :: Env (SelStates 𝔹)
+   }
 
-selectionResult :: Fig -> Val (SelStates 𝕊) × Env (SelStates 𝕊) × Dict (Val (SelStates 𝔹))
-selectionResult fig@{ spec, dir } =
-   case dir of
-      LinkedOutputs ->
-         let
-            v1 × γ1 × g × inertBwd = fig.linkedOutputs fig.v
-            report = spyWhen tracing.mediatingData "Mediating inputs" prettyP
-         in
-            (lift2 as𝕊 <$> fig.v <*> v1) × ((to𝕊 <$> _) <$> report γ1) × intermediates g inertBwd
-      LinkedInputs ->
-         let
-            γ1 × v1 × g × inertFwd = fig.linkedInputs fig.γ
-            report = spyWhen tracing.mediatingData "Mediating outputs" prettyP
-         in
-            ((to𝕊 <$> _) <$> report v1) × (lift2 as𝕊 <$> fig.γ <*> γ1) × intermediates g inertFwd
+selectionResult :: Fig -> SelectionResult
+selectionResult fig@{ dir, v, γ, ι } =
+   { v: reportOut v', γ: reportIn γ', ι: ι' }
    where
-   intermediates :: Selection GraphImpl -> Set DVertex -> Dict (Val (SelStates 𝔹))
-   intermediates g inerts = D.fromFoldable $ concat $ for spec.queries
-      \query -> selectIntermediates inerts g { persistent: runQuery query g.persistent, transient: runQuery query g.transient }
+   as𝕊v :: forall a b. SelectionType -> a × Val (SelState 𝔹) × b -> a × Val (SelState 𝕊) × b
+   as𝕊v selType = (second <<< first) $ primaryOrSecondary selType v
 
-drawIntermediates :: HTMLId -> Dict (Val (SelStates 𝔹)) -> Array String -> Redraw -> Effect Unit
-drawIntermediates divId intermediates unused redraw = do
+   to𝕊v :: forall a b. a × Val (SelState 𝔹) × b -> a × (Val (SelState 𝕊)) × b
+   to𝕊v = second (first primary)
+
+   as𝕊γ :: forall a. SelectionType -> Env (SelState 𝔹) × a -> Env (SelState 𝕊) × a
+   as𝕊γ selType = first $ primaryOrSecondary selType γ
+
+   to𝕊γ :: forall a. Env (SelState 𝔹) × a -> Env (SelState 𝕊) × a
+   to𝕊γ = first primary
+
+   γ1 × v1 × αs =
+      case dir.persistent of
+         LinkedOutputs -> to𝕊γ $ as𝕊v Persistent $ fig.linkedOutputs Persistent v
+         LinkedInputs -> to𝕊v $ as𝕊γ Persistent $ fig.linkedInputs Persistent γ
+         Intermediates -> error absurd
+   γ2 × v2 × αs' =
+      case dir.transient of
+         LinkedOutputs -> to𝕊γ $ as𝕊v Transient $ fig.linkedOutputs Transient v
+         LinkedInputs -> to𝕊v $ as𝕊γ Transient $ fig.linkedInputs Transient γ
+         Intermediates -> to𝕊γ $ to𝕊v $ fig.linkIntermediates ι
+
+   ι' = intermediates fig { persistent: αs, transient: αs' }
+
+   splice :: forall a. SelState a -> SelState a -> SelStates a
+   splice Inert _ = SelStates Inert
+   splice _ Inert = SelStates Inert
+   splice (Reactive persistent) (Reactive transient) =
+      SelStates (Reactive { persistent, transient })
+
+   v' = splice <$> v1 <*> v2
+   γ' = splice <$> γ1 <*> γ2
+
+   reportIn = spyWhen tracing.mediatingData ("Mediating inputs") (prettyP <<< erase)
+   reportOut = spyWhen tracing.mediatingData ("Mediating outputs") (prettyP <<< erase)
+
+intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹)
+intermediates { spec, in_roots, inerts } αs =
+   flip (maybe empty) spec.query
+      \query ->
+         let
+            ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
+               $ runQuery query
+               $ αs.persistent ∪ αs.transient
+         in
+            rebuildι inerts αs ια
+
+drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
+drawIntermediates divId (Env ι) unused redraw = do
    let prefix = divId <> "-" <> str.intermediate
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
-
-   sequence_ $ flip mapWithKey intermediates \α v -> do
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing } (selectIntermediate (Vertex α)) (setIntermediateView (Vertex α)) redraw
+   sequence_ $ flip mapWithKey ι \α v ->
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing }
+         (selectIntermediate (Vertex α))
+         (setIntermediateView (Vertex α))
+         redraw
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
+
    sequence_ $ flip mapWithKey in_views \x view -> do
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
-   drawIntermediates divId intermediate_values unused redraw
+
+   drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where
-   out_view × in_views × intermediate_values =
-      selectionResult fig # unsafePartial
-         (flip (view str.output) fig.out_view *** (\(Env γ) -> mapWithKey view γ <*> fig.in_views) *** (\d -> d # filterKeys \α -> not (Vertex α ∈ fig.in_roots)))
-
-   unused :: Array String
-   unused = fromFoldable (keys fig.intermediate_values \\ keys intermediate_values)
-
-   redraw = (_ $ fig { intermediate_values = intermediate_values }) >>> drawFig divId
+   { v, γ, ι } = selectionResult fig
+   out_view = unsafePartial $ view str.output v fig.out_view
+   in_views = (\(Env γ) -> unsafePartial (mapWithKey view γ) <*> fig.in_views) γ
+   redraw = (_ $ fig { ι = ι }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
-drawFile (file × src) =
-   addEditorView (codeMirrorDiv $ unwrap file) >>= drawCode src
+drawFile (File file × src) =
+   addEditorView (codeMirrorDiv file) >>= drawCode src
 
 unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnection (Env a) (EnvExpr a)
 unprojExpr (EnvExpr _ e) = GC
@@ -154,22 +188,17 @@ unprojExpr (EnvExpr _ e) = GC
    , bwd: \(EnvExpr γ _) -> γ
    }
 
+type IO a = { γ :: Env a, v :: Val a }
+
 lift
    :: forall f f' g
     . Apply f
    => Apply f'
-   => f (𝔹 -> 𝔹 -> SelStates 𝔹)
+   => f (𝔹 -> SelState 𝔹)
    -> (f' 𝔹 -> f 𝔹 × g)
-   -> (f' (SelStates 𝔹) -> f (SelStates 𝔹) × g × g)
-lift selState_f bwd = bwd'
-   where
-   bwd' :: f' (SelStates 𝔹) -> f (SelStates 𝔹) × g × g
-   bwd' v =
-      let
-         (persistent × g) = bwd (v <#> getPersistent)
-         (transient × g') = bwd (v <#> getTransient)
-      in
-         (selState_f <*> persistent <*> transient) × g × g'
+   -> f' (SelState 𝔹)
+   -> f (SelState 𝔹) × g
+lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
@@ -177,57 +206,76 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    { s, e, gconfig } <- prepConfig fluidSrcPaths file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
-      inputs_set = Set.fromFoldable inputs
+      opEval = withOp eval
+      inputs' = Set.fromFoldable inputs
       EnvExpr γ e' = erase eval.inα
-      { fwd: focusFwd, bwd: focusBwd } = unwrap (unrestrictGC γ inputs_set >>> unprojExpr (EnvExpr γ e'))
-
-      γ_restricted = restrict inputs_set γα
-
-      in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> unwrap γ_restricted
+      GC focus = unrestrictGC γ inputs' >>> unprojExpr (EnvExpr γ e')
+      Env γ_restricted = restrict inputs' γα
+      in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> γ_restricted
 
       graphgc = graphGC eval
-      graphgc_op = graphGC (withOp eval)
+      graphgc_op = graphGC opEval
 
       gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
-      gcBwd v = first focusBwd (graphgc.bwd v)
+      gcBwd v = first focus.bwd (graphgc.bwd v)
 
       gcFwd :: Env 𝔹 -> Val 𝔹 × GraphImpl
-      gcFwd γ = graphgc_op.bwd (deMorgan focusFwd γ)
+      gcFwd γ = graphgc_op.bwd (deMorgan focus.fwd γ)
 
-      in_views = const Nothing <$> unwrap γ_restricted
+      in_views = const Nothing <$> γ_restricted
+      unselected = { γ: botOf γα, v: botOf outα } :: IO 𝔹
 
-      γ0 = botOf γα :: Env 𝔹
-      v0 = botOf outα :: Val 𝔹
+      inertBwd = vertices g0 \\ (vertices $ snd $ gcBwd $ topOf outα)
+      inertFwd = vertices $ snd $ graphgc.fwd $ focus.fwd unselected.γ
 
-      inertBwd = vertices g0 \\ (vertices $ snd (gcBwd (topOf outα))) :: Set DVertex
-      inertFwd = vertices $ snd $ (graphgc.fwd <<< focusFwd) γ0
+      inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
+      inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
 
-      γInert = selState <$> select𝔹s γα inertBwd :: Env (𝔹 -> 𝔹 -> SelStates 𝔹)
-      vInert = selState <$> select𝔹s outα inertFwd :: Val (𝔹 -> 𝔹 -> SelStates 𝔹)
+      vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
+      vf = lift inert'.γ gcBwd
 
-      vf = lift γInert gcBwd
-      γf = lift vInert gcFwd
+      γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
+      γf = lift inert'.v gcFwd
 
-      linkedInputs :: Env (SelStates 𝔹) -> Env (SelStates 𝔹) × Val (SelStates 𝔹) × Selection GraphImpl × Set DVertex
-      linkedInputs = γf >>> \(v × g × g') -> (fst $ vf v) × v × { persistent: g, transient: g' } × inertFwd
+      linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+      linkedInputs selType γ =
+         let v × g = γf (γ <#> getSel selType) in fst (vf v) × v × (vertices g)
 
-      linkedOutputs :: Val (SelStates 𝔹) -> Val (SelStates 𝔹) × Env (SelStates 𝔹) × Selection GraphImpl × Set DVertex
-      linkedOutputs = vf >>> \(γ × g × g') -> (fst $ γf γ) × γ × { persistent: g, transient: g' } × inertBwd
+      linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+      linkedOutputs selType v =
+         let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × (vertices g)
+
+      linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+      linkIntermediates ι =
+         let
+            ια = Env $ ιfromαs g0 (keys ι) :: Env Vertex
+            ι' = ι <#> getSel Transient >>> to𝔹
+            αs = selectαs ι' ια
+            v = inert'.v <*> select𝔹s outα (vertices $ bwdSlice (αs × opEval.g))
+            γ = inert'.γ <*> select𝔹s γα (vertices $ bwdSlice (αs × eval.g))
+         in
+            γ × v × (dvertices g0 αs)
 
    pure
       { spec
       , s
-      , γ: γInert <*> γ0 <*> γ0
-      , v: vInert <*> v0 <*> v0
+      , γ: selStates <$> inert.γ <*> unselected.γ <*> unselected.γ
+      , v: selStates <$> inert.v <*> unselected.v <*> unselected.v
+      , ι: empty
       , linkedOutputs
       , linkedInputs
-      , dir: LinkedOutputs
+      , linkIntermediates
+      , dir: { persistent: LinkedOutputs, transient: LinkedOutputs }
       , in_views
       , out_view: Nothing
       , intermediate_views: empty
-      , intermediate_values: empty
       , in_roots
+      , inerts: inertFwd ∩ inertBwd
       }
+
+ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)
+ιfromαs g = D.fromFoldable <<< Set.mapMaybe
+   (\α -> (α × _) <$> (asVal $ vertexData g (Vertex α)))
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)

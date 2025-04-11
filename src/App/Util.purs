@@ -3,6 +3,7 @@ module App.Util where
 import Prelude hiding (absurd, join)
 
 import Bind (Bind, Var, (↦))
+import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
 import Data.Either (Either(..))
@@ -11,7 +12,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Show.Generic (genericShow)
 import Data.String (joinWith)
@@ -30,19 +31,20 @@ import Primitive (as, int, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (×), Endo, Setter, definitely', error, shapeMismatch, spyWhen)
+import Util (type (×), Endo, definitely', error, shapeMismatch, spyWhen, (×))
 import Util.Map (get)
 import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
-type Selector (f :: Type -> Type) = Endo (f (SelStates 𝔹)) -- modifies selection state
-type Selector' (f :: Type -> Type) = f (SelStates 𝔹) -> f (SelStates 𝔹) × 𝔹 -- modifies selection state
--- Selection can occur on data that can be interacted with, reactive data rather than inert data. Within reactive data,
--- selection has two dimensions: persistent or transient. An element can be persistently
--- *and* transiently selected at the same time; these need to be visually distinct (so that for example
--- clicking during mouseover visibly changes the state). Types of selection are primary/secondary/none.
--- These are visually distinct but not orthogonal; primary should (visually) subsume secondary.
+type Selector f = SetSel (f (SelStates 𝔹)) -- modifies selection state
+type SetSel a = a -> a × SelectionType
+
+-- Selection can occur on data that can be interacted with, reactive data rather than inert data. Within
+-- reactive data, selection has two dimensions: persistent or transient. An element can be persistently *and*
+-- transiently selected at the same time; these need to be visually distinct (so that for example clicking
+-- during mouseover visibly changes the state). Types of selection are primary/secondary/none. These are
+-- visually distinct but not orthogonal; primary should (visually) subsume secondary.
 
 data SelState a
    = Inert
@@ -51,20 +53,25 @@ data SelState a
 newtype SelStates a = SelStates (SelState (Selection a))
 type Selection a = { persistent :: a, transient :: a }
 
-selState :: forall a. 𝔹 -> a -> a -> SelStates a
-selState true _ _ = SelStates Inert
-selState false b1 b2 = SelStates $ Reactive { persistent: b1, transient: b2 }
+data SelectionType = Persistent | Transient
+
+selStates :: forall a. 𝔹 -> a -> a -> SelStates a
+selStates true _ _ = SelStates Inert
+selStates false b1 b2 = SelStates $ Reactive { persistent: b1, transient: b2 }
+
+selState :: forall a. 𝔹 -> a -> SelState a
+selState true = const Inert
+selState false = Reactive
+
+selection :: forall a. 𝔹 -> a -> a -> Selection (SelState a)
+selection true _ _ = { persistent: Inert, transient: Inert }
+selection false b1 b2 = { persistent: Reactive b1, transient: Reactive b2 }
 
 contents :: forall a. Selectable a -> a
 contents = fst
 
 sel :: forall a. Selectable a -> SelStates 𝕊
 sel = snd
-
-persist :: forall a. Setter (SelStates a) a
-persist δα = case _ of
-   SelStates (Reactive s) -> SelStates $ Reactive { persistent: δα s.persistent, transient: s.transient }
-   SelStates Inert -> SelStates Inert
 
 data 𝕊 = None | Secondary | Primary
 
@@ -84,9 +91,18 @@ isInert :: forall a. SelStates a -> 𝔹
 isInert (SelStates Inert) = true
 isInert (SelStates (Reactive _)) = false
 
+getSel :: forall a. SelectionType -> SelStates a -> SelState a
+getSel selType s = unwrap s <#> case selType of
+   Persistent -> _.persistent
+   Transient -> _.transient
+
 getPersistent :: forall a. BoundedJoinSemilattice a => SelStates a -> a
 getPersistent (SelStates Inert) = bot
 getPersistent (SelStates (Reactive { persistent })) = persistent
+
+to𝔹 :: SelState 𝔹 -> 𝔹
+to𝔹 Inert = false
+to𝔹 (Reactive b) = b
 
 getTransient :: forall a. BoundedJoinSemilattice a => SelStates a -> a
 getTransient (SelStates Inert) = bot
@@ -133,6 +149,12 @@ to𝕊 :: 𝔹 -> 𝕊
 to𝕊 true = Primary
 to𝕊 false = None
 
+primary :: forall f. Apply f => f (SelState 𝔹) -> f (SelState 𝕊)
+primary f = (to𝕊 <$> _) <$> f
+
+primaryOrSecondary :: forall f. Apply f => SelectionType -> f (SelStates 𝔹) -> f (SelState 𝔹) -> f (SelState 𝕊)
+primaryOrSecondary selType f f1 = lift2 as𝕊 <$> (getSel selType <$> f) <*> f1
+
 unselected :: SelStates 𝔹
 unselected = SelStates $ Reactive { persistent: false, transient: false }
 
@@ -151,9 +173,8 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
    Left err -> log $ show err
    Right as' -> as' <#> f # sequence_
 
--- Unpack d3.js data and event type associated with mouse event target.
-selectionEventData :: forall a. Event -> a × Selector Val
-selectionEventData = (eventData &&& type_ >>> selector)
+selectionEventData' :: forall a. Event -> a × SetSel (Val (SelStates 𝔹))
+selectionEventData' = (eventData &&& type_ >>> selector')
 
 eventData :: forall a. Event -> a
 eventData = target >>> unsafeEventData
@@ -161,7 +182,7 @@ eventData = target >>> unsafeEventData
    unsafeEventData :: Maybe EventTarget -> a
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
-selector :: EventType -> Selector Val
+selector :: EventType -> Endo (Val (SelStates 𝔹))
 selector (EventType ev) v =
    reportSelStates <<< setSel <$> reportTarget v
    where
@@ -174,7 +195,26 @@ selector (EventType ev) v =
       | otherwise = error "Unsupported event type"
 
    reportSelStates = spyWhen tracing.mouseEvent "to " show
-   reportTarget = spyWhen tracing.mouseEvent "Setting selState of " prettyP
+   reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyP
+
+selector' :: EventType -> SetSel (Val (SelStates 𝔹))
+selector' (EventType ev) v =
+   (setSel <$> v) × selType
+   where
+   setSel :: Endo (SelStates 𝔹)
+   setSel (SelStates Inert) = SelStates Inert
+   setSel (SelStates (Reactive sel'))
+      | ev == "mousedown" = SelStates (Reactive (sel' { persistent = neg sel'.persistent }))
+      | ev == "mouseenter" = SelStates (Reactive (sel' { transient = true }))
+      | ev == "mouseleave" = SelStates (Reactive (sel' { transient = false }))
+      | otherwise = error "Unsupported event type"
+
+   selType :: SelectionType
+   selType
+      | ev == "mousedown" = Persistent
+      | ev == "mouseenter" = Transient
+      | ev == "mouseleave" = Transient
+      | otherwise = error "Unsupported event type"
 
 -- https://stackoverflow.com/questions/5560248
 colorShade :: String -> Int -> String
@@ -258,10 +298,14 @@ derive instance Generic 𝕊 _
 instance Show 𝕊 where
    show = genericShow
 
+derive instance Eq SelectionType
+
 derive instance Functor SelState
 derive instance Functor SelStates
 derive instance Generic (SelStates a) _
 derive instance Generic (SelState a) _
+
+derive instance Newtype (SelStates a) _
 
 instance Show a => Show (SelState a) where
    show = genericShow
@@ -288,6 +332,7 @@ instance JoinSemilattice a => JoinSemilattice (SelState a)
    join (Reactive s) (Reactive s') =
       Reactive (s ∨ s')
 
+-- This SelStates boilerplate preferable to Selection-as-newtype boilerplate
 instance JoinSemilattice a => JoinSemilattice (SelStates a) where
    join (SelStates s) (SelStates Inert) = SelStates s
    join (SelStates Inert) (SelStates s) = SelStates s

@@ -15,13 +15,13 @@ module Test.Util.Suite
 
 import Prelude
 
-import App.Fig (selectionResult, loadFig, selectInput, selectOutput)
-import App.Util (Selector, isInert, isPersistent, isTransient, selState)
+import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
+import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
 import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (fst, uncurry)
 import Effect.Aff (Aff)
 import Lattice (botOf)
 import Module ((</>), File(..), Folder(..), FileLoader, loadProgCxt)
@@ -67,16 +67,13 @@ type TestLinkedInputsSpec =
    , in_expect :: Selector Env
    }
 
--- testFolder :: Folder
--- testFolder = Folder ""
-
 suite :: FileLoader Aff -> Array TestSpec -> BenchSuite
 suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> Aff BenchRow
    asTest { imports, file, fwd_expect } = do
       gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports []
-      test loadFile (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty } (n × is_bench)
+      test loadFile (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: FileLoader Aff -> Array TestBwdSpec -> BenchSuite
 bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
@@ -95,14 +92,14 @@ withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
       gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports [ x ↦ dataset ]
-      test loadFile (File file) gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
+      test loadFile (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
-      pure (fst (selectionResult fig))
-   checkEq "selected" "expected" (selState <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (out_expect (botOf <$> v))
+      pure (selectionResult fig).v
+   checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect (botOf <$> v))
    pure fig
 
 linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
@@ -114,8 +111,8 @@ linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
-      pure (fst $ snd (selectionResult fig))
-   checkEq "selected" "expected" (selState <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (in_expect (botOf <$> γ))
+      pure (selectionResult fig).γ
+   checkEq "selected" "expected" (selStates <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (fst $ in_expect (botOf <$> γ))
    pure fig
 
 linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)

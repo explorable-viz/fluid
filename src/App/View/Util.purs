@@ -2,8 +2,8 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelStates, Selectable, 𝕊, Selection, selClasses, selClassesFor, selectionEventData)
-import App.Util.Selector (ViewSelSetter)
+import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, selClasses, selClassesFor, selectionEventData')
+import App.Util.Selector (ViewSelSetter, ViewSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
 import Bind (Bind, Var)
@@ -13,12 +13,11 @@ import Data.Set (Set)
 import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
-import Graph (DVertex', Vertex, VertexData, DVertex)
-import Graph.GraphImpl (GraphImpl)
+import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
 import SExpr as S
-import Util (type (×), Endo, Setter, check)
+import Util (type (×), Endo, check)
 import Val (Env, Val)
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener, eventListener)
@@ -34,12 +33,12 @@ pack x = View \k -> k x
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
-selListener :: forall a. Setter Fig (Val (SelStates 𝔹)) -> Redraw -> ViewSelSetter a -> Effect EventListener
+selListener :: forall a. (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter a -> Effect EventListener
 selListener figVal redraw selector =
-   eventListener (selectionEventData >>> uncurry selector >>> figVal >>> redraw)
+   eventListener (selectionEventData' >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where
-   draw :: RendererSpec a -> Setter Fig (Val (SelStates 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
+   draw :: RendererSpec a -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
 
 -- Merge into Drawable once JS->PS transition complete
 class Drawable2 a where
@@ -58,7 +57,7 @@ draw' _ { divId, suffix, view } redraw = do
            else pure maybeRootElement
       )
 
-drawView :: RendererSpec View -> Setter Fig (Val (SelStates 𝔹)) -> Setter Fig View -> Redraw -> Effect Unit
+drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal figView redraw =
    unpack vw (\view -> draw (rSpec { view = view }) figVal figView redraw)
 
@@ -99,24 +98,26 @@ type FigSpec =
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
-   , queries :: Array (VertexData -> Maybe (DVertex' (Val Vertex)))
+   , query :: Maybe (Query (Val Vertex))
    }
 
-data Direction = LinkedInputs | LinkedOutputs
+data Direction = LinkedInputs | LinkedOutputs | Intermediates
 
 type Fig =
    { spec :: FigSpec
    , s :: Raw S.Expr
    , γ :: Env (SelStates 𝔹)
    , v :: Val (SelStates 𝔹)
-   , linkedOutputs :: (Val (SelStates 𝔹)) -> (Val (SelStates 𝔹) × Env (SelStates 𝔹) × Selection GraphImpl × Set DVertex)
-   , linkedInputs :: (Env (SelStates 𝔹)) -> (Env (SelStates 𝔹) × Val (SelStates 𝔹) × Selection GraphImpl × Set DVertex)
-   , dir :: Direction
+   , ι :: Env (SelStates 𝔹)
+   , dir :: Selection Direction
+   , linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+   , linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+   , linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
    , out_view :: Maybe View
    , intermediate_views :: Dict (Maybe View)
-   , intermediate_values :: Dict (Val (SelStates 𝔹))
+   , inerts :: Set DVertex
    }
 
 -- ======================

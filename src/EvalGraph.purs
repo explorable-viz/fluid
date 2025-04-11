@@ -223,12 +223,12 @@ graphGC
 graphGC { g, graph_fwd, graph_bwd, inα, outα } =
    { fwd: \in𝔹 ->
         let
-           g' = (graph_fwd (selectαs in𝔹 inα) g)
+           g' = graph_fwd (selectαs in𝔹 inα) g
         in
            select𝔹s outα (vertices g') × g'
    , bwd: \out𝔹 ->
         let
-           g' = (graph_bwd (selectαs out𝔹 outα) g)
+           g' = graph_bwd (selectαs out𝔹 outα) g
         in
            select𝔹s inα (vertices g') × g'
    }

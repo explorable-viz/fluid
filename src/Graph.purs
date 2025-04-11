@@ -12,8 +12,9 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, singleton, unions)
 import Data.Set as Set
 import Data.String (joinWith)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst)
 import Dict (Dict)
+import Dict as D
 import Foreign.Object (values)
 import Lattice (𝔹)
 import Util (type (×), Endo, (×))
@@ -54,7 +55,11 @@ class (Eq g, Vertices g) <= Graph g where
    topologicalSort :: g -> List Vertex
    vertexData :: g -> Vertex -> VertexData
 
-newtype Vertex = Vertex String -- so can use directly as dict key
+newtype Vertex = Vertex String
+
+dvertices :: forall g. Graph g => g -> Set Vertex -> Set DVertex
+dvertices g αs =
+   (\α -> DVertex (α × (vertexData g α))) `Set.map` αs
 
 class Selectαs a b | a -> b where
    selectαs :: a -> b -> Set Vertex
@@ -122,11 +127,16 @@ showEdgeList es =
 showVertices :: Set Vertex -> String
 showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) <> "}"
 
--- ======================
--- Query a graph for a value
--- ======================
-runQuery :: forall a g. Ord a => Graph g => (VertexData -> Maybe (DVertex' a)) -> g -> Set (DVertex' a)
-runQuery query g = (query <<< snd <<< unwrap) `Set.mapMaybe` vertices g
+type Query a = VertexData -> Maybe (DVertex' a)
+
+runQuery :: forall a. Ord a => Query a -> Set DVertex -> Dict a
+runQuery query αs =
+   D.fromFoldable $ Set.mapMaybe
+      ( \(DVertex (Vertex α × vd)) -> do
+           DVertex (Vertex _ × result) <- query vd
+           pure (α × result)
+      )
+      αs
 
 -- ======================
 -- Packed data associated with Vertex

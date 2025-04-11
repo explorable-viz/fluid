@@ -3,5 +3,6 @@
     "datasets": [["renewables", "dataset/renewables-new"], ["nonRenewables", "dataset/non-renewables"]],
     "imports": [],
     "file": "energyscatter",
-    "inputs": [ "renewables", "nonRenewables" ]
+    "inputs": [ "renewables", "nonRenewables" ],
+    "query": false
 }
