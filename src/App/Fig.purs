@@ -21,7 +21,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices)
+import Graph (class Graph, DVertex, DVertex'(..), Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -195,6 +195,16 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
+lift'
+   :: forall f f'
+    . Apply f
+   => Apply f'
+   => f (𝔹 -> SelState 𝔹)
+   -> (f' 𝔹 -> f 𝔹)
+   -> f' 𝔹
+   -> f (SelState 𝔹)
+lift' selState_f f v = selState_f <*> (f v)
+
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
@@ -208,19 +218,19 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       Env γ_restricted = restrict inputs' γα
       in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> γ_restricted
 
-      ι_fwd' :: Env Vertex -> Env 𝔹 -> Val 𝔹 × Set DVertex
-      ι_fwd' ι_α ι_𝔹 =
+      ι_fwd' :: Set Vertex -> Env 𝔹 -> Val 𝔹
+      ι_fwd' selected _ =
          let
-            αs = vertices $ bwdSlice (selectαs ι_𝔹 ι_α × opEval.g)
+            αs = vertices $ bwdSlice (selected × opEval.g)
          in
-            select𝔹s outα αs × αs
+            select𝔹s outα αs
 
-      ι_bwd' :: Env Vertex -> Env 𝔹 -> Env 𝔹 × Set DVertex
-      ι_bwd' ι_α ι_𝔹 =
+      ι_bwd' :: Set Vertex -> Env 𝔹 -> Env 𝔹
+      ι_bwd' selected _ =
          let
-            αs = vertices $ bwdSlice (selectαs ι_𝔹 ι_α × eval.g)
+            αs = vertices $ bwdSlice (selected × eval.g)
          in
-            select𝔹s γα αs × αs
+            select𝔹s γα αs
 
       graphgc = graphGC eval
       graphgc_op = graphGC opEval
@@ -246,11 +256,11 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
       γf = lift inert'.v gcFwd
 
-      ι_fwd :: Env Vertex -> Env (SelState 𝔹) -> Val (SelState 𝔹) × Set DVertex
-      ι_fwd ια = lift inert'.v (ι_fwd' ια)
+      ι_fwd :: Set Vertex -> Env 𝔹 -> Val (SelState 𝔹)
+      ι_fwd ια = lift' inert'.v (ι_fwd' ια)
 
-      ι_bwd :: Env Vertex -> Env (SelState 𝔹) -> Env (SelState 𝔹) × Set DVertex
-      ι_bwd ια = lift inert'.γ (ι_bwd' ια)
+      ι_bwd :: Set Vertex -> Env 𝔹 -> Env (SelState 𝔹)
+      ι_bwd ια = lift' inert'.γ (ι_bwd' ια)
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ =
@@ -264,10 +274,12 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkIntermediates ι =
          let
             ια = Env $ ιfromαs g0 (keys ι) :: Env Vertex
-            v × αs = ι_fwd ια (ι <#> getSel Transient)
-            γ × αs' = ι_bwd ια (ι <#> getSel Transient)
+            ι' = ι <#> getSel Transient >>> to𝔹
+            αs = selectαs ι' ια
+            v = ι_fwd αs ι'
+            γ = ι_bwd αs ι'
          in
-            γ × v × (αs ∩ αs')
+            γ × v × (dvertices g0 αs)
 
    pure
       { spec
@@ -285,6 +297,10 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       , in_roots
       , inerts: inertFwd ∩ inertBwd
       }
+
+dvertices :: forall g. Graph g => g -> Set Vertex -> Set DVertex
+dvertices g αs =
+   (\α -> DVertex (α × (vertexData g α))) `Set.map` αs
 
 ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)
 ιfromαs g αs = D.fromFoldable $ (\v@(Val (Vertex α) _) -> α × v) `Set.map` ((\α -> (asVal $ vertexData g (Vertex α))) `Set.mapMaybe` αs)
@@ -309,4 +325,3 @@ drawFigWithCode { fig, divId } = do
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
-
