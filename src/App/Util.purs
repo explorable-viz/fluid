@@ -3,6 +3,7 @@ module App.Util where
 import Prelude hiding (absurd, join)
 
 import Bind (Bind, Var, (↦))
+import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (concat)
 import Data.Either (Either(..))
@@ -144,6 +145,12 @@ as𝕊 true true = Primary
 to𝕊 :: 𝔹 -> 𝕊
 to𝕊 true = Primary
 to𝕊 false = None
+
+primary :: forall f. Apply f => f (SelState 𝔹) -> f (SelState 𝕊)
+primary f = (to𝕊 <$> _) <$> f
+
+primaryOrSecondary :: forall f. Apply f => SelectionType -> f (SelStates 𝔹) -> f (SelState 𝔹) -> f (SelState 𝕊)
+primaryOrSecondary selType f f1 = lift2 as𝕊 <$> (getSel selType <$> f) <*> f1
 
 unselected :: SelStates 𝔹
 unselected = SelStates $ Reactive { persistent: false, transient: false }

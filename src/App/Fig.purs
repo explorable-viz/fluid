@@ -3,15 +3,14 @@ module App.Fig where
 import Prelude hiding (absurd, compare)
 
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
-import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, ViewSetter)
 import App.View (view)
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
-import Control.Apply (lift2)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Profunctor.Strong (first)
+import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (for_, sequence_)
@@ -108,27 +107,27 @@ selectionResult fig@{ dir, v, γ, ι } =
    { v: reportOut v', γ: reportIn γ', ι: ι' }
    where
    as𝕊v :: forall a b. SelectionType -> a × Val (SelState 𝔹) × b -> a × Val (SelState 𝕊) × b
-   as𝕊v selType (γ1 × v1 × αs) = γ1 × (lift2 as𝕊 <$> (getSel selType <$> v) <*> v1) × αs
+   as𝕊v selType = (second <<< first) $ primaryOrSecondary selType v
 
-   to𝕊v :: forall a b. a × Val (SelState 𝔹) × b -> a × Val (SelState 𝕊) × b
-   to𝕊v (γ1 × v1 × αs) = γ1 × ((to𝕊 <$> _) <$> v1) × αs
+   to𝕊v :: forall a b. a × Val (SelState 𝔹) × b -> a × (Val (SelState 𝕊)) × b
+   to𝕊v = second (first primary)
 
-   as𝕊γ :: forall a b. SelectionType -> Env (SelState 𝔹) × a × b -> Env (SelState 𝕊) × a × b
-   as𝕊γ selType (γ1 × v1 × αs) = (lift2 as𝕊 <$> (getSel selType <$> γ) <*> γ1) × v1 × αs
+   as𝕊γ :: forall a. SelectionType -> Env (SelState 𝔹) × a -> Env (SelState 𝕊) × a
+   as𝕊γ selType = first $ primaryOrSecondary selType γ
 
-   to𝕊γ :: forall a b. Env (SelState 𝔹) × a × b -> Env (SelState 𝕊) × a × b
-   to𝕊γ (γ1 × v1 × αs) = ((to𝕊 <$> _) <$> γ1) × v1 × αs
+   to𝕊γ :: forall a. Env (SelState 𝔹) × a -> Env (SelState 𝕊) × a
+   to𝕊γ = first primary
 
    γ1 × v1 × αs =
       case dir.persistent of
-         LinkedOutputs -> to𝕊γ <<< as𝕊v Persistent $ fig.linkedOutputs Persistent v
-         LinkedInputs -> to𝕊v <<< as𝕊γ Persistent $ fig.linkedInputs Persistent γ
+         LinkedOutputs -> to𝕊γ $ as𝕊v Persistent $ fig.linkedOutputs Persistent v
+         LinkedInputs -> to𝕊v $ as𝕊γ Persistent $ fig.linkedInputs Persistent γ
          Intermediates -> error absurd
    γ2 × v2 × αs' =
       case dir.transient of
-         LinkedOutputs -> to𝕊γ <<< as𝕊v Transient $ fig.linkedOutputs Transient v
-         LinkedInputs -> to𝕊v <<< as𝕊γ Transient $ fig.linkedInputs Transient γ
-         Intermediates -> to𝕊γ <<< to𝕊v $ fig.linkIntermediates ι
+         LinkedOutputs -> to𝕊γ $ as𝕊v Transient $ fig.linkedOutputs Transient v
+         LinkedInputs -> to𝕊v $ as𝕊γ Transient $ fig.linkedInputs Transient γ
+         Intermediates -> to𝕊γ $ to𝕊v $ fig.linkIntermediates ι
 
    ι' = intermediates fig { persistent: αs, transient: αs' }
 

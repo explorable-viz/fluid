@@ -2,7 +2,7 @@ module App.Util.Selector where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelState(..), SelStates(..), SelectionType(..), SetSel, Selection)
+import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel)
 import Bind (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (fromJust)
