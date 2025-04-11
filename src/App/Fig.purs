@@ -6,7 +6,7 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, as𝕊, getSel, selState, selStates, to𝔹, to𝕊)
 import App.Util.Selector (envVal, ViewSetter)
 import App.View (view)
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView')
+import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Apply (lift2)
@@ -154,17 +154,17 @@ drawIntermediates divId (Env ι) unused redraw = do
    let prefix = divId <> "-" <> str.intermediate
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey ι \α v ->
-      drawView' { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing }
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing }
          (selectIntermediate (Vertex α))
          (setIntermediateView (Vertex α))
          redraw
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView' { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
+   drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
 
    sequence_ $ flip mapWithKey in_views \x view -> do
-      drawView' { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
+      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
 
    drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where
