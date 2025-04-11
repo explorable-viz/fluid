@@ -12,7 +12,7 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, singleton, unions)
 import Data.Set as Set
 import Data.String (joinWith)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst)
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (values)
@@ -126,7 +126,13 @@ showVertices αs = "{" <> joinWith ", " (A.fromFoldable (unwrap `Set.map` αs)) 
 type Query a = VertexData -> Maybe (DVertex' a)
 
 runQuery :: forall a. Ord a => Query a -> Set DVertex -> Dict a
-runQuery query αs = D.fromFoldable (((\vd -> (\(DVertex (Vertex α × q)) -> α × q) <$> query vd) <<< snd <<< unwrap) `Set.mapMaybe` αs)
+runQuery query αs =
+   D.fromFoldable $ Set.mapMaybe
+      ( \(DVertex (Vertex α × vd)) -> do
+           DVertex (Vertex _ × result) <- query vd
+           pure (α × result)
+      )
+      αs
 
 -- ======================
 -- Packed data associated with Vertex
