@@ -3,7 +3,7 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, listCell, listElement, matrixElement, multiViewEntry, select, neg', snd, some', (>.>))
+import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, listCell, listElement, matrixElement, multiViewEntry, select, neg', snd, some, (>.>))
 import Bind ((↦))
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
@@ -159,7 +159,7 @@ bwd_cases =
    , { file: "lookup"
      , imports: []
      , bwd_expect_file: "lookup.expect"
-     , δv: some' neg'
+     , δv: some neg'
      , fwd_expect: "⸨Some \"Germany\"⸩"
      , datasets: []
      }

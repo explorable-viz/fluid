@@ -46,8 +46,8 @@ fst = constrArg cPair 0
 snd :: SelSetter Val Val
 snd = constrArg cPair 1
 
-some' :: Setter (Val (SelStates 𝔹)) 𝔹
-some' = constr cSome
+some :: Setter (Val (SelStates 𝔹)) 𝔹
+some = constr cSome
 
 multiView :: SelSetter Val Val
 multiView = constrArg cMultiView 0
