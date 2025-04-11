@@ -138,7 +138,6 @@ selectionResult fig@{ dir, v, γ, ι } =
    splice (Reactive persistent) (Reactive transient) =
       SelStates (Reactive { persistent, transient })
 
-
    v' = splice <$> v1 <*> v2
    γ' = splice <$> γ1 <*> γ2
 
@@ -276,12 +275,8 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       }
 
 ιfromαs :: forall g. Graph g => g -> Set String -> Dict (Val Vertex)
-ιfromαs g αs = D.fromFoldable $ Set.mapMaybe
-   ( \α -> do
-        v <- asVal $ vertexData g (Vertex α)
-        pure (α × v)
-   )
-   αs
+ιfromαs g = D.fromFoldable <<< Set.mapMaybe
+   (\α -> (α × _) <$> (asVal $ vertexData g (Vertex α)))
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
