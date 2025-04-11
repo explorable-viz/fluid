@@ -35,8 +35,8 @@ pack x = View \k -> k x
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
-selListener' :: forall a. (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter a -> Effect EventListener
-selListener' figVal redraw selector =
+selListener :: forall a. (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter a -> Effect EventListener
+selListener figVal redraw selector =
    eventListener (selectionEventData' >>> uncurry selector >>> figVal >>> redraw)
 
 class Drawable a where

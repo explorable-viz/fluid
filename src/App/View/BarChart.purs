@@ -8,7 +8,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelStates, Selectable, 𝕊(..), colorShade, dict, from, getPersistent, getTransient, get_intOrNumber)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
-import App.View.Util (class Drawable, class Drawable2, Renderer, selListener', uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Renderer, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), create)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -100,7 +100,7 @@ instance Drawable2 BarChart where
 
 instance Drawable BarChart where
    draw rSpec figVal _ redraw =
-      drawBarChart barChartHelpers uiHelpers rSpec =<< selListener' figVal redraw barSegment'
+      drawBarChart barChartHelpers uiHelpers rSpec =<< selListener figVal redraw barSegment'
       where
       barSegment' :: ViewSelSetter BarSegmentCoordinate
       barSegment' { i, j } = barSegment i j >>> barChart
