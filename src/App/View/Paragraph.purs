@@ -31,10 +31,10 @@ instance Drawable (Paragraph (SelStates 𝕊)) where
       draw' uiHelpers rSpec =<< selListener figVal redraw paragraphSelector
       where
       paragraphSelector :: ViewSelSetter ParagraphElem
-      paragraphSelector { i } = selTextFragment' { i }
+      paragraphSelector { i } = selTextFragment { i }
 
-selTextFragment' :: ViewSelSetter ParagraphElem
-selTextFragment' { i } = fragment >>> listElement i >>> paragraph
+selTextFragment :: ViewSelSetter ParagraphElem
+selTextFragment { i } = fragment >>> listElement i >>> paragraph
    where
    fragment :: SelSetter Val Val
    fragment δv = unsafePartial $ case _ of
