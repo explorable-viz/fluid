@@ -132,8 +132,15 @@ selectionResult fig@{ dir, v, γ, ι } =
 
    ι' = intermediates fig { persistent: αs, transient: αs' }
 
-   v' = splice v1 v2
-   γ' = splice γ1 γ2
+   splice :: forall a. SelState a -> SelState a -> SelStates a
+   splice Inert _ = SelStates Inert
+   splice _ Inert = SelStates Inert
+   splice (Reactive persistent) (Reactive transient) =
+      SelStates (Reactive { persistent, transient })
+
+
+   v' = splice <$> v1 <*> v2
+   γ' = splice <$> γ1 <*> γ2
 
    reportIn = spyWhen tracing.mediatingData ("Mediating inputs") (prettyP <<< erase)
    reportOut = spyWhen tracing.mediatingData ("Mediating outputs") (prettyP <<< erase)
@@ -295,15 +302,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
         pure (α × v)
    )
    αs
-
-splice :: forall f a. Apply f => f (SelState a) -> f (SelState a) -> f (SelStates a)
-splice f1 f2 = splice' <$> f1 <*> f2
-
-splice' :: forall a. SelState a -> SelState a -> SelStates a
-splice' Inert _ = SelStates Inert
-splice' _ Inert = SelStates Inert
-splice' (Reactive persistent) (Reactive transient) =
-   SelStates (Reactive { persistent, transient })
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
