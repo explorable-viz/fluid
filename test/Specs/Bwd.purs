@@ -3,7 +3,7 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, listCell, listElement, matrixElement, multiViewEntry, select, neg', snd, some, (>.>))
+import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
 import Bind ((↦))
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
@@ -64,21 +64,21 @@ bwd_cases =
    , { file: "dict/create"
      , imports: []
      , bwd_expect_file: "dict/create.expect"
-     , δv: dictKey "ab" neg'
+     , δv: dictKey "ab" select'
      , fwd_expect: "{[\"a\"] : 5, [⸨\"ab\"⸩] : 6}"
      , datasets: []
      }
    , { file: "dict/difference"
      , imports: []
      , bwd_expect_file: "dict/difference.expect"
-     , δv: dict neg'
+     , δv: dict select'
      , fwd_expect: "⸨{[\"a\"] : 5}⸩"
      , datasets: []
      }
    , { file: "dict/disjointUnion"
      , imports: []
      , bwd_expect_file: "dict/disjointUnion.expect"
-     , δv: dictKey "a" neg' >.> dictVal "c" select
+     , δv: dictKey "a" select' >.> dictVal "c" select
      , fwd_expect: "{[⸨\"a\"⸩] : 5, [\"b\"] : 6, [\"c\"] : ⸨7⸩}"
      , datasets: []
      }
@@ -123,21 +123,21 @@ bwd_cases =
    , { file: "filter"
      , imports: []
      , bwd_expect_file: "filter.expect"
-     , δv: listCell 0 neg'
+     , δv: listCell 0 select'
      , fwd_expect: "⸨(⸨8⸩ : (7 : []))⸩"
      , datasets: []
      }
    , { file: "intersperse"
      , imports: []
      , bwd_expect_file: "intersperse-1.expect"
-     , δv: listCell 1 neg'
+     , δv: listCell 1 select'
      , fwd_expect: "(1 : ⸨(0 : (2 : (0 : (3 : []))))⸩)"
      , datasets: []
      }
    , { file: "intersperse"
      , imports: []
      , bwd_expect_file: "intersperse-2.expect"
-     , δv: listCell 2 neg'
+     , δv: listCell 2 select'
      , fwd_expect: "⸨(1 : (0 : ⸨(2 : (0 : (3 : [])))⸩))⸩"
      , datasets: []
      }
@@ -145,28 +145,28 @@ bwd_cases =
    , { file: "list-comp"
      , imports: []
      , bwd_expect_file: "list-comp-1.expect"
-     , δv: listCell 1 neg'
+     , δv: listCell 1 select'
      , fwd_expect: "(6.2 : ⸨(260 : (19.9 : (91 : [])))⸩)"
      , datasets: []
      }
    , { file: "list-comp"
      , imports: []
      , bwd_expect_file: "list-comp-2.expect"
-     , δv: listCell 2 neg'
+     , δv: listCell 2 select'
      , fwd_expect: "(6.2 : (260 : ⸨(19.9 : (91 : []))⸩))"
      , datasets: []
      }
    , { file: "lookup"
      , imports: []
      , bwd_expect_file: "lookup.expect"
-     , δv: some neg'
+     , δv: some select'
      , fwd_expect: "⸨Some \"Germany\"⸩"
      , datasets: []
      }
    , { file: "map"
      , imports: []
      , bwd_expect_file: "map.expect"
-     , δv: listCell 0 neg' >.> listCell 1 neg'
+     , δv: listCell 0 select' >.> listCell 1 select'
      , fwd_expect: "⸨(5 : ⸨(6 : [])⸩)⸩"
      , datasets: []
      }
@@ -194,7 +194,7 @@ bwd_cases =
    , { file: "section-5-example"
      , imports: []
      , bwd_expect_file: "section-5-example-1.expect"
-     , δv: listCell 0 neg'
+     , δv: listCell 0 select'
      , fwd_expect: "⸨(88 : (6 : (4 : [])))⸩"
      , datasets: []
      }
@@ -208,28 +208,28 @@ bwd_cases =
    , { file: "section-5-example"
      , imports: []
      , bwd_expect_file: "section-5-example-3.expect"
-     , δv: listCell 2 neg'
+     , δv: listCell 2 select'
      , fwd_expect: "(88 : (6 : ⸨(4 : [])⸩))"
      , datasets: []
      }
    , { file: "zeros"
      , imports: []
      , bwd_expect_file: "zeros-1.expect"
-     , δv: listCell 0 neg' >.> listCell 2 neg'
+     , δv: listCell 0 select' >.> listCell 2 select'
      , fwd_expect: "⸨(0 : (0 : ⸨[]⸩))⸩"
      , datasets: []
      }
    , { file: "zeros"
      , imports: []
      , bwd_expect_file: "zeros-2.expect"
-     , δv: listCell 2 neg'
+     , δv: listCell 2 select'
      , fwd_expect: "(0 : (0 : ⸨[]⸩))"
      , datasets: []
      }
    , { file: "zipWith"
      , imports: []
      , bwd_expect_file: "zipWith-1.expect"
-     , δv: listElement 1 neg'
+     , δv: listElement 1 select'
      , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
      , datasets: []
      }

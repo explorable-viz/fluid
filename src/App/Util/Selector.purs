@@ -23,7 +23,7 @@ type Setter b a = SetSel a -> SetSel b
 type ViewSetter f g = Endo g -> Endo f -- Only used in unexercised view setters
 type ViewSelSetter a = a -> SelSetter Val Val
 
--- Perhaps better as const (and renamed to 'neg')
+-- Both of these functions could be reimplemented with const instead of neg
 select :: forall f a. Neg a => Functor f => SetSel (f (SelStates a))
 select b = (setSel <$> b) × Persistent
    where
@@ -31,8 +31,8 @@ select b = (setSel <$> b) × Persistent
    setSel (SelStates Inert) = SelStates Inert
    setSel (SelStates (Reactive sel')) = SelStates (Reactive (sel' { persistent = neg sel'.persistent }))
 
-neg' :: forall a. Neg a => SetSel a
-neg' x = neg x × Persistent
+select' :: forall a. Neg a => SetSel a
+select' x = neg x × Persistent
 
 persist :: forall a. Setter (SelStates a) a
 persist δα = \v -> (over SelStates ((<$>) mapδ) v) × Persistent
