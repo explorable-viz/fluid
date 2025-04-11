@@ -195,16 +195,6 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-lift'
-   :: forall f f'
-    . Apply f
-   => Apply f'
-   => f (𝔹 -> SelState 𝔹)
-   -> (f' 𝔹 -> f 𝔹)
-   -> f' 𝔹
-   -> f (SelState 𝔹)
-lift' selState_f f v = selState_f <*> (f v)
-
 loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
