@@ -20,10 +20,10 @@ import Data.Profunctor.Choice ((|||))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, sepBy, sepBy1, try)
+import Parsing.Combinators (between, notFollowedBy, optional, sepBy, sepBy1, skipMany, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
-import Parsing.String (char, eof)
+import Parsing.String (anyChar, char, eof, string)
 import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
@@ -100,6 +100,18 @@ rBracket = void $ token.symbol str.rBracket
 
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
+
+skipManyTill :: forall a b. SParser a -> SParser b -> SParser Unit
+skipManyTill p end = fix \go -> (end $> unit) <|> (p *> go)
+
+docCommentDelim :: SParser Unit
+docCommentDelim = void $ string "'''"
+
+docComment :: SParser Unit
+docComment =
+   ( between docCommentDelim docCommentDelim $
+        skipMany (notFollowedBy docCommentDelim *> anyChar)
+   ) *> token.whiteSpace
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -344,7 +356,7 @@ expr_ =
                pure ListEnum <*> expr' <* ellipsis <*> expr'
 
             constr :: SParser (Raw Expr)
-            constr = Constr unit <$> ctr <@> empty
+            constr = optional (try docComment) *> (Constr unit <$> ctr <@> empty)
 
             dict :: SParser (Raw Expr)
             dict = sepBy kvPair token.comma <#> Dictionary unit # token.braces
@@ -360,12 +372,12 @@ expr_ =
 
             -- built-in integer/float parsers don't seem to allow leading signs.
             int :: SParser (Raw Expr)
-            int = do
+            int = optional (try docComment) *> do
                sign <- signOpt
                (sign >>> Int unit) <$> token.natural
 
             float :: SParser (Raw Expr)
-            float = do
+            float = optional (try docComment) *> do
                sign <- signOpt
                (sign >>> Float unit) <$> token.float
 
@@ -413,6 +425,9 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
 
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
+
+whiteSpace' :: SParser Unit
+whiteSpace' = token.whiteSpace *> skipMany (try docComment *> token.whiteSpace)
 
 program ∷ SParser (Raw Expr)
 program = topLevel expr_

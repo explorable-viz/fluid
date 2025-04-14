@@ -2,13 +2,10 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Selector (dictVal, envVal, listElement, select, (>.>))
-import Bind ((↦))
 import Data.Array (concat)
-import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
-import Module.Web (File(..), Folder(..), loadFile)
+import Module.Web (loadFile)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.Graphics (graphics_cases)
@@ -26,35 +23,8 @@ main = run tests
 -- main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = linkedInputsSuite
-   [ { spec:
-          { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-          , file: File "linked-inputs/mini-energyscatter"
-          , imports: []
-          , datasets:
-               [ "nonRenewables" ↦ "dataset/mini-non-renewables"
-               , "renewables" ↦ "dataset/mini-renewables"
-               ]
-          , inputs: [ "nonRenewables", "renewables" ]
-          , query: Nothing
-          }
-     , δ_in: "nonRenewables" ↦ listElement 0 (dictVal "coalCap" select)
-     , in_expect:
-          envVal "nonRenewables"
-             ( listElement 0
-                  ( dictVal "coalCap" select
-                       >.> dictVal "gasCap" select
-                       >.> dictVal "nuclearCap" select
-                       >.> dictVal "petrolCap" select
-                  )
-             )
-             >.> envVal "renewables"
-                ( listElement 0 (dictVal "capacity" select)
-                     >.> listElement 1 (dictVal "capacity" select)
-                     >.> listElement 2 (dictVal "capacity" select)
-                     >.> listElement 3 (dictVal "capacity" select)
-                )
-     }
+scratchpad = asTestSuite $ suite loadFile
+   [ { file: "comments", imports: [], fwd_expect: "False" }
    ]
 
 asTestSuite :: BenchSuite -> TestSuite
