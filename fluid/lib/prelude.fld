@@ -267,9 +267,9 @@ let slice begin end xs =
 
 
 -- (a -> Boolean) -> List a -> (List a, List a)
-let splitOn p data = 
+let splitOn p data =
     let go fls trs [] = (reverse fls, reverse trs);
-        go fls trs (x : xs) = 
+        go fls trs (x : xs) =
             if p x
             then go fls (x : trs) xs
             else go (x : fls) trs xs
