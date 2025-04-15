@@ -8,23 +8,28 @@ import Control.Apply (lift2)
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (cons, elem, fromFoldable)
+import Data.Array as Array
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy)
+import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
+import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, notFollowedBy, optional, sepBy, sepBy1, skipMany, try)
+import Parsing.Combinators (between, notFollowedBy, optional, sepBy, sepBy1, skipMany, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
-import Parsing.String (anyChar, char, eof, string)
+import Parsing.String (anyChar, char, eof, satisfy, string)
 import Parsing.String.Basic (oneOf)
+import Parsing.String.Basic as Basic
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
@@ -101,17 +106,43 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
-skipManyTill :: forall a b. SParser a -> SParser b -> SParser Unit
-skipManyTill p end = fix \go -> (end $> unit) <|> (p *> go)
-
 docCommentDelim :: SParser Unit
-docCommentDelim = void $ string "'''"
+docCommentDelim = void $ string str.triplequote
 
-docComment :: SParser Unit
-docComment =
-   ( between docCommentDelim docCommentDelim $
-        skipMany (notFollowedBy docCommentDelim *> anyChar)
-   ) *> token.whiteSpace
+docCommentContent :: SParser Unit
+docCommentContent = skipMany (notFollowedBy docCommentDelim *> anyChar)
+
+docComment :: SParser String
+docComment = token.lexeme (go <?> "literal string")
+   where
+   go :: SParser String
+   go = do
+      maybeChars <- between docCommentDelim (docCommentDelim <?> "end of string") (List.many docCommentChar)
+      pure $ SCU.fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
+
+   folder :: Maybe Char -> List Char -> List Char
+   folder Nothing chars = chars
+   folder (Just c) chars = Cons c chars
+
+docCommentChar :: SParser (Maybe Char)
+docCommentChar =
+   (Just <$> docCommentLetter)
+      <|> docCommentEscape
+         <?> "string character"
+
+docCommentLetter :: SParser Char
+docCommentLetter = satisfy (\c -> (c /= ''') && (c /= '\\') && (c > '\x1A'))
+
+docCommentEscape :: SParser (Maybe Char)
+docCommentEscape = do
+   _ <- char '\\'
+   (escapeGap $> Nothing) <|> (escapeEmpty $> Nothing)
+
+escapeEmpty :: SParser Char
+escapeEmpty = char '&'
+
+escapeGap :: SParser Char
+escapeGap = Array.some Basic.space *> char '\\' <?> "end of string gap"
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit

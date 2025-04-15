@@ -33,6 +33,7 @@ str
       , semiColon :: String
       , then_ :: String
       , backquote :: String
+      , triplequote :: String
       }
 
 str =
@@ -67,4 +68,5 @@ str =
    , semiColon: ";"
    , then_: "then"
    , backquote: "@"
+   , triplequote: "'''"
    }
