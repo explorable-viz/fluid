@@ -23,6 +23,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Lattice (Raw)
+import Options.Applicative.Internal.Utils (words)
 import Parse.Constants (str)
 import Parsing.Combinators (between, optional, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -112,14 +113,14 @@ docCommentDelim = void $ string str.triplequote
 docComment :: SParser Unit
 docComment = optional (try docComment')
 
-docComment' :: SParser String
+docComment' :: SParser (List String)
 docComment' = token.lexeme (go <?> "literal string")
    where
-   go :: SParser String
+   go :: SParser (List String)
    go = do
       maybeChars <- between docCommentDelim (docCommentDelim <?> "end of string") (List.many docCommentChar)
-      pure $ SCU.fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
-
+      let content = SCU.fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
+      pure  $ List.fromFoldable $ words content
    folder :: Maybe Char -> List Char -> List Char
    folder Nothing chars = chars
    folder (Just c) chars = Cons c chars
@@ -371,8 +372,8 @@ expr_ =
                      token.comma *> (Next unit <$> expr' <*> listRest')
 
             listComp :: SParser (Raw Expr)
-            listComp = docComment *> (token.brackets $
-               pure (ListComp unit) <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma))
+            listComp = token.brackets $
+               pure (ListComp unit) <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
                where
                qualifier :: SParser (Raw Qualifier)
                qualifier =
@@ -381,7 +382,7 @@ expr_ =
                      <|> ListCompGuard <$> expr'
 
             listEnum :: SParser (Raw Expr)
-            listEnum = docComment *> (token.brackets $ pure ListEnum <*> expr' <* ellipsis <*> expr')
+            listEnum = token.brackets $ pure ListEnum <*> expr' <* ellipsis <*> expr'
             constr :: SParser (Raw Expr)
             constr = docComment *>  (Constr unit <$> ctr <@> empty)
 
