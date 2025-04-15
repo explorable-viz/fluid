@@ -92,7 +92,7 @@ createRootElement (Paragraph elems) div childId = do
    where
    mkElem :: D3.Selection -> Int -> TextFragment (SelStates 𝕊) -> Effect D3.Selection
    mkElem root i elem = do
-      elem' <- root # create D3.Text [ classes [ "text-fragment" ], "id" ↦ childId ]
+      elem' <- root # create D3.Text [ classes [ "text-fragment" ] ]
       elem' # setText (linkContents elem) >>= setDatum { i }
 
 linkContents :: TextFragment (SelStates 𝕊) -> String

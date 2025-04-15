@@ -20,11 +20,12 @@ Additionally, for Windows users only:
 
 - Clone the repository (for Windows users, do this under the Ubuntu WSL)
 - Run `./script/setup/dev-setup.sh` from the top-level directory
-- Run `yarn build`
+- `yarn install` to install Node dependencies
+- `yarn build`
 
 ## Use
 
-The following assumes you have already succesfully run `yarn build` (see above).
+The following assumes you have already successfully run `yarn build` (see above).
 
 ### Running programs from the command line
 
