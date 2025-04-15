@@ -22,6 +22,7 @@ import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
+import Debug as Debug
 import Lattice (Raw)
 import Options.Applicative.Internal.Utils (words)
 import Parse.Constants (str)
@@ -35,7 +36,7 @@ import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, le
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (Endo, type (×), (×), type (+), error, onlyIf)
+import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
 languageDef :: LanguageDef
@@ -114,16 +115,19 @@ docComment :: SParser Unit
 docComment = optional (try docComment')
 
 docComment' :: SParser (List String)
-docComment' = token.lexeme (go <?> "literal string")
+docComment' = token.lexeme (go <?> "docComment")
    where
    go :: SParser (List String)
    go = do
-      maybeChars <- between docCommentDelim (docCommentDelim <?> "end of string") (List.many docCommentChar)
+      maybeChars <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many docCommentChar)
       let content = SCU.fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
-      pure  $ List.fromFoldable $ words content
+      let wordsList = List.fromFoldable $ words content
+      Debug.trace (show wordsList) (\_ -> pure wordsList)
+
    folder :: Maybe Char -> List Char -> List Char
    folder Nothing chars = chars
    folder (Just c) chars = Cons c chars
+
 
 docCommentChar :: SParser (Maybe Char)
 docCommentChar =
