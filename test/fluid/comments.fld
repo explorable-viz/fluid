@@ -1,1 +1,4 @@
-'''This is a doc-comment!''' False
+'''
+This is a doc-comment!
+'''
+False

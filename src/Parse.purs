@@ -24,10 +24,10 @@ import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, notFollowedBy, optional, sepBy, sepBy1, skipMany, try, (<?>))
+import Parsing.Combinators (between, optional, sepBy, sepBy1, skipMany, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
-import Parsing.String (anyChar, char, eof, satisfy, string)
+import Parsing.String (char, eof, satisfy, string)
 import Parsing.String.Basic (oneOf)
 import Parsing.String.Basic as Basic
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
@@ -109,9 +109,6 @@ rArrow = token.reservedOp str.rArrow
 docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
-docCommentContent :: SParser Unit
-docCommentContent = skipMany (notFollowedBy docCommentDelim *> anyChar)
-
 docComment :: SParser String
 docComment = token.lexeme (go <?> "literal string")
    where
@@ -131,7 +128,7 @@ docCommentChar =
          <?> "string character"
 
 docCommentLetter :: SParser Char
-docCommentLetter = satisfy (\c -> (c /= ''') && (c /= '\\') && (c > '\x1A'))
+docCommentLetter = satisfy (\c -> (c /= ''') && (c /= '\\'))
 
 docCommentEscape :: SParser (Maybe Char)
 docCommentEscape = do
