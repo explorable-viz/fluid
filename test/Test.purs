@@ -7,6 +7,7 @@ import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Module.Web (loadFile)
 import Test.Specs.Bwd (bwd_cases)
+import Test.Specs.Comments (comments_cases)
 import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.Graphics (graphics_cases)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
@@ -23,9 +24,7 @@ main :: Effect Unit
 main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite loadFile
-   [ { file: "comments", imports: [], fwd_expect: "False" }
-   ]
+scratchpad = asTestSuite $ suite loadFile comments_cases
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
