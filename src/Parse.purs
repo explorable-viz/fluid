@@ -107,33 +107,43 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
-data Comment = Literal String
+data Comment = Literal String | Expr (Raw Expr)
 
 instance Show Comment where
    show (Literal str) = "Literal " <> str
+   show (Expr e) = "Expr " <> prettyP e
 
 docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
-docComment :: SParser Unit
-docComment = optional (try docComment')
+docComment :: SParser (Raw Expr) -> SParser Unit
+docComment expr' = optional (try $ docComment' expr')
 
-docComment' :: SParser (List Comment)
-docComment' = token.lexeme (go <?> "docComment")
+docComment' :: SParser (Raw Expr) -> SParser (List Comment)
+docComment' expr' = token.lexeme (go <?> "docComment")
    where
    go :: SParser (List Comment)
    go = do
-      words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many docCommentToken)
+      words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
       Debug.trace (show words) (\_ -> pure words)
 
-docCommentToken :: SParser Comment
-docCommentToken =
+docCommentToken :: SParser (Raw Expr) -> SParser Comment
+docCommentToken expr' =
    token.whiteSpace
-      *> (Literal <$> (SCU.fromCharArray <$> (Array.some docCommentLetter)))
+      *> (try commentLiteral <|> commentExpr expr')
       <* token.whiteSpace
 
+commentLiteral :: SParser Comment
+commentLiteral = (Literal <$> (SCU.fromCharArray <$> (Array.some docCommentLetter)))
+
+commentExpr :: SParser (Raw Expr) -> SParser Comment
+commentExpr expr' = do
+   _ <- char '$'
+   content <- expr' # between (string str.curlylBrace) (string str.curlyrBrace)
+   pure $ Expr content
+
 docCommentLetter :: SParser Char
-docCommentLetter = satisfy $ \c -> (c /= '"' && not (isSpace (codePointFromChar c))) -- && (c /= '\\'))   
+docCommentLetter = satisfy $ \c -> (c /= '}' && c /= '"' && c /= '$' && not (isSpace (codePointFromChar c))) -- && (c /= '\\'))   
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -325,7 +335,7 @@ expr_ =
          simpleExpr :: SParser (Raw Expr)
          simpleExpr =
             -- matrix before list
-            ( docComment *>
+            ( docComment expr' *>
                  try
                     ( matrix
                          <|> try nil
