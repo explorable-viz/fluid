@@ -9,6 +9,7 @@ import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (cons, elem, fromFoldable)
 import Data.Array as Array
+import Data.CodePoint.Unicode (isSpace)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -16,22 +17,20 @@ import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
-import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
+import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Debug as Debug
 import Lattice (Raw)
-import Options.Applicative.Internal.Utils (words)
 import Parse.Constants (str)
 import Parsing.Combinators (between, optional, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
 import Parsing.String.Basic (oneOf)
-import Parsing.String.Basic as Basic
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
@@ -119,35 +118,16 @@ docComment' = token.lexeme (go <?> "docComment")
    where
    go :: SParser (List String)
    go = do
-      maybeChars <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many docCommentChar)
-      let content = SCU.fromCharArray $ List.toUnfoldable $ foldr folder Nil maybeChars
-      let wordsList = List.fromFoldable $ words content
-      Debug.trace (show wordsList) (\_ -> pure wordsList)
+      words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many docCommentToken)
+      Debug.trace (show words) (\_ -> pure words)
 
-   folder :: Maybe Char -> List Char -> List Char
-   folder Nothing chars = chars
-   folder (Just c) chars = Cons c chars
-
-
-docCommentChar :: SParser (Maybe Char)
-docCommentChar =
-   (Just <$> docCommentLetter)
-      <|> docCommentEscape
-         <?> "string character"
+docCommentToken :: SParser String
+docCommentToken =
+   token.whiteSpace *>
+      (SCU.fromCharArray <$> (Array.some docCommentLetter)) <* token.whiteSpace
 
 docCommentLetter :: SParser Char
-docCommentLetter = satisfy (\c -> (c /= ''') && (c /= '\\'))
-
-docCommentEscape :: SParser (Maybe Char)
-docCommentEscape = do
-   _ <- char '\\'
-   (escapeGap $> Nothing) <|> (escapeEmpty $> Nothing)
-
-escapeEmpty :: SParser Char
-escapeEmpty = char '&'
-
-escapeGap :: SParser Char
-escapeGap = Array.some Basic.space *> char '\\' <?> "end of string gap"
+docCommentLetter = satisfy $ \c -> (c /= ''' && not (isSpace (codePointFromChar c))) -- && (c /= '\\'))   
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
