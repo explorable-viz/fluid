@@ -68,5 +68,5 @@ str =
    , semiColon: ";"
    , then_: "then"
    , backquote: "@"
-   , triplequote: "'''"
+   , triplequote: "\"\"\""
    }

@@ -107,27 +107,33 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
+data Comment = Literal String
+
+instance Show Comment where
+   show (Literal str) = "Literal " <> str
+
 docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
 docComment :: SParser Unit
 docComment = optional (try docComment')
 
-docComment' :: SParser (List String)
+docComment' :: SParser (List Comment)
 docComment' = token.lexeme (go <?> "docComment")
    where
-   go :: SParser (List String)
+   go :: SParser (List Comment)
    go = do
       words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many docCommentToken)
       Debug.trace (show words) (\_ -> pure words)
 
-docCommentToken :: SParser String
+docCommentToken :: SParser Comment
 docCommentToken =
-   token.whiteSpace *>
-      (SCU.fromCharArray <$> (Array.some docCommentLetter)) <* token.whiteSpace
+   token.whiteSpace
+      *> (Literal <$> (SCU.fromCharArray <$> (Array.some docCommentLetter)))
+      <* token.whiteSpace
 
 docCommentLetter :: SParser Char
-docCommentLetter = satisfy $ \c -> (c /= ''' && not (isSpace (codePointFromChar c))) -- && (c /= '\\'))   
+docCommentLetter = satisfy $ \c -> (c /= '"' && not (isSpace (codePointFromChar c))) -- && (c /= '\\'))   
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -319,36 +325,37 @@ expr_ =
          simpleExpr :: SParser (Raw Expr)
          simpleExpr =
             -- matrix before list
-            try matrix
-               <|> try nil
-               <|> try listNonEmpty
-               <|> try listComp
-               <|> try listEnum
-               <|> try constr
-               <|> try dict
-               <|> variable
-               <|> try float
-               <|> try int -- int may start with +/-
-               <|> try string
+            ( docComment *>
+                 try
+                    ( matrix
+                         <|> try nil
+                         <|> listNonEmpty
+                         <|> try constr
+                         <|> dict
+                         <|> try float
+                         <|> try int -- int may start with +/-
+                         <|> string
+                         <|> pair
+                    )
+            ) <|> try variable
                <|> try (token.parens expr')
+               <|> listComp
+               <|> listEnum
                <|> try parensOp
-               <|> try pair
 
             where
             matrix :: SParser (Raw Expr)
-            matrix = docComment *>
-               (between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
-                  Matrix unit
-                     <$> (expr' <* bar)
-                     <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
-                     <*> (keyword str.in_ *> expr'))
+            matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
+               Matrix unit
+                  <$> (expr' <* bar)
+                  <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
+                  <*> (keyword str.in_ *> expr')
 
             nil :: SParser (Raw Expr)
-            nil = docComment *> (token.brackets $ pure (ListEmpty unit))
+            nil = token.brackets $ pure (ListEmpty unit)
 
             listNonEmpty :: SParser (Raw Expr)
-            listNonEmpty = docComment *>
-               (lBracket *> (ListNonEmpty unit <$> expr' <*> fix listRest))
+            listNonEmpty = lBracket *> (ListNonEmpty unit <$> expr' <*> fix listRest)
                where
                listRest :: Endo (SParser (Raw ListRest))
                listRest listRest' =
@@ -367,11 +374,12 @@ expr_ =
 
             listEnum :: SParser (Raw Expr)
             listEnum = token.brackets $ pure ListEnum <*> expr' <* ellipsis <*> expr'
+
             constr :: SParser (Raw Expr)
-            constr = docComment *>  (Constr unit <$> ctr <@> empty)
+            constr = Constr unit <$> ctr <@> empty
 
             dict :: SParser (Raw Expr)
-            dict = docComment *> (sepBy kvPair token.comma <#> Dictionary unit # token.braces)
+            dict = sepBy kvPair token.comma <#> Dictionary unit # token.braces
                where
                kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
                kvPair = (((ExprKey <$> expr') # token.brackets) <* token.colon) `lift2 (×)` expr' <|> ((VarKey unit <$> ident) <* token.colon) `lift2 (×)` expr'
@@ -384,25 +392,25 @@ expr_ =
 
             -- built-in integer/float parsers don't seem to allow leading signs.
             int :: SParser (Raw Expr)
-            int = docComment *> do
+            int = do
                sign <- signOpt
                (sign >>> Int unit) <$> token.natural
 
             float :: SParser (Raw Expr)
-            float = docComment *> do
+            float = do
                sign <- signOpt
                (sign >>> Float unit) <$> token.float
 
             string :: SParser (Raw Expr)
-            string = docComment *> (Str unit <$> token.stringLiteral)
+            string = Str unit <$> token.stringLiteral
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)
             parensOp = Op <$> token.parens token.operator
 
             pair :: SParser (Raw Expr)
-            pair = docComment *> (token.parens $
-               (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr')
+            pair = token.parens $
+               (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a

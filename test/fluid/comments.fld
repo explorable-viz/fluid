@@ -1,6 +1,1 @@
-'''
-This
-is
-a
-docComment!
-''' False
+""" This is a docComment!""" False
