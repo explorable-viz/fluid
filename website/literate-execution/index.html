@@ -25,14 +25,9 @@
 
       .data-pane {
          display: grid;
-         grid-template-columns: min-content auto;
+         grid-template-columns: min-content min-content;
          vertical-align: top;
          justify-content: end;
-      }
-
-      .intermediates {
-         min-width: min-content;
-         max-width: 0.6fr;
       }
 
       .intermediates:has(> *) {
@@ -67,7 +62,7 @@
 
    <div id="fig-data-pane" class="data-pane">
       <div id="fig-input" class="flex-right-align data-pane-column"></div>
-      <div id="fig-intermediate" class="flex-top-align intermediates"></div>
+      <div id="fig-intermediate" class="flex-right-align intermediates"></div>
    </div>
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
