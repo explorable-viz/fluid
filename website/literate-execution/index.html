@@ -11,48 +11,37 @@
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
    <style>
-      .when-data-pane-visible {
-         font-size: 10pt;
-      }
-
-      #fig-data-pane {
-         display: flex;
-         flex-direction: row;
-         align-items: stretch;
-         width: 100%;
-      }
-
-      #fig-input {
-         flex: 0 0 auto;
-      }
-
-      #fig-intermediate {
-         flex: 1 1 auto;
-         overflow: visible;
-         display: flex;
-         flex-direction: row;
-         flex-wrap: wrap;
-         justify-content: flex-start;
-         align-items: flex-start;
-      }
-
-      .data-pane {
-         align-items: flex-start;
-      }
-
       .grid-container {
          display: grid;
          grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
          justify-content: center;
       }
 
-      .grid-container.data-pane-hidden .when-data-pane-visible {
+      .when-data-pane-visible {
+         font-size: 10pt;
+      }
+
+      .grid-container.data-pane-hidden.when-data-pane-visible {
          display: none;
+      }
+
+      .grid-container.data-pane-hidden {
+         display: grid;
+         grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
+         justify-content: center;
+      }
+
+      .data-pane {
+         justify-content: end;
+      }
+
+      #fig-intermediate:has(> *) {
+         border-right: 1px dotted #CCCCCC;
       }
 
       .matrix-cell.selected-primary-persistent {
          fill: rgb(214, 240, 214)
-}
+      }
 
       .matrix-cell.selected-secondary-persistent {
          fill: White;
@@ -69,7 +58,6 @@
       .matrix-cell-text.selected-secondary-transient:not(.matrix-cell-text.selected-primary-persistent):not(.matrix-cell-text.selected-primary-transient) {
          color: rgb(205, 205, 205)
       }
-
    </style>
 </head>
 <body>
@@ -80,9 +68,9 @@
       <h4>Matrix convolution</h4>
    </div>
 
-   <div id="fig-data-pane" class="flex-right-align data-pane">
-      <div id="fig-input" class="data-pane-column"></div>
-      <div id="fig-intermediate" class="data-pane-column"></div>
+   <div id="fig-data-pane" class="data-pane">
+      <div id="fig-input" class="flex-right-align data-pane-column"></div>
+      <div id="fig-intermediate" class="flex-right-align"></div>
    </div>
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
