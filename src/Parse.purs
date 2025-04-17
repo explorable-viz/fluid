@@ -134,16 +134,13 @@ docCommentToken expr' =
       <* token.whiteSpace
 
 commentLiteral :: SParser Comment
-commentLiteral = (Literal <$> (SCU.fromCharArray <$> (Array.some docCommentLetter)))
+commentLiteral = Literal <$> (SCU.fromCharArray <$> (Array.some docCommentLetter))
 
 commentExpr :: SParser (Raw Expr) -> SParser Comment
-commentExpr expr' = do
-   _ <- char '$'
-   content <- expr' # between (string str.curlylBrace) (string str.curlyrBrace)
-   pure $ Expr content
+commentExpr expr' = string str.exprStart *> (Expr <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
 docCommentLetter :: SParser Char
-docCommentLetter = satisfy $ \c -> (c /= '}' && c /= '"' && c /= '$' && not (isSpace (codePointFromChar c))) -- && (c /= '\\'))   
+docCommentLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -336,17 +333,16 @@ expr_ =
          simpleExpr =
             -- matrix before list
             ( docComment expr' *>
-                 try
-                    ( matrix
-                         <|> try nil
-                         <|> listNonEmpty
-                         <|> try constr
-                         <|> dict
-                         <|> try float
-                         <|> try int -- int may start with +/-
-                         <|> string
-                         <|> pair
-                    )
+                 ( matrix
+                      <|> try nil
+                      <|> listNonEmpty
+                      <|> try constr
+                      <|> dict
+                      <|> try float
+                      <|> try int -- int may start with +/-
+                      <|> string
+                      <|> try pair
+                 )
             ) <|> try variable
                <|> try (token.parens expr')
                <|> listComp
