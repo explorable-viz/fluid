@@ -97,6 +97,10 @@ p + p {
    margin-top: 0;
 }
 
+svg {
+   overflow: visible;
+}
+
 .faq-question {
    font-family: 'GraphikMedium';
    color: darkslategrey;
