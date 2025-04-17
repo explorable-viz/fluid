@@ -78,13 +78,13 @@ type Sep = Doc -> Doc -> Doc
 exprType :: forall a. Expr a -> ExprType
 exprType (Var _) = Simple
 exprType (Op _) = Simple
-exprType (Int _ _) = Simple
-exprType (Float _ _) = Simple
-exprType (Str _ _) = Simple
-exprType (Constr _ _ Nil) = Simple
-exprType (Constr _ _ _) = Expression
-exprType (Dictionary _ _) = Simple
-exprType (Matrix _ _ _ _) = Simple
+exprType (Int _ _ _) = Simple
+exprType (Float _ _ _) = Simple
+exprType (Str _ _ _) = Simple
+exprType (Constr _ _ _ Nil) = Simple
+exprType (Constr _ _ _ _) = Expression
+exprType (Dictionary _ _ _) = Simple
+exprType (Matrix _ _ _ _ _) = Simple
 exprType (Lambda _) = Simple
 exprType (Project _ _) = Simple
 exprType (DProject _ _) = Simple
@@ -92,8 +92,8 @@ exprType (App _ _) = Expression
 exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
 exprType (IfElse _ _ _) = Simple
-exprType (ListEmpty _) = Simple
-exprType (ListNonEmpty _ _ _) = Simple
+exprType (ListEmpty _ _) = Simple
+exprType (ListNonEmpty _ _ _ _) = Simple
 exprType (ListEnum _ _) = Simple
 exprType (ListComp _ _ _) = Simple
 exprType (Let _ _) = Expression
@@ -142,16 +142,16 @@ removeDocWS (Doc d) = Doc
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op op) = parentheses (text op)
-   pretty (Int α n) = highlightIf α $ text (show n)
-   pretty (Float α n) = highlightIf α $ text (show n)
-   pretty (Str α str) = highlightIf α $ text ("\"" <> str <> "\"")
-   pretty (Constr α c x)
+   pretty (Int α n _) = highlightIf α $ text (show n)
+   pretty (Float α n _) = highlightIf α $ text (show n)
+   pretty (Str α _ str) = highlightIf α $ text ("\"" <> str <> "\"")
+   pretty (Constr α _ c x)
       | c == "Explained" = case (head x) of
-           (Just (Str _ x')) -> highlightIf α $ text "@" .<>. text x' .<>. text "@"
+           (Just (Str _ _ x')) -> highlightIf α $ text "@" .<>. text x' .<>. text "@"
            _ -> error "malformed explanation"
       | otherwise = highlightIf α $ prettyConstr c x
-   pretty (Dictionary α sss) = highlightIf α $ curlyBraces (prettyDictEntries (.-.) sss)
-   pretty (Matrix α e (x × y) e') =
+   pretty (Dictionary α _ sss) = highlightIf α $ curlyBraces (prettyDictEntries (.-.) sss)
+   pretty (Matrix α _ e (x × y) e') =
       highlightIf α $ arrayBrackets
          ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
               .<>. text str.in_
@@ -164,10 +164,10 @@ instance Ann a => Pretty (Expr a) where
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = text str.if_ .<>. pretty s1 .<>. text str.then_ .<>. pretty s2 .<>. text str.else_ .<>. pretty s3
-   pretty (ListEmpty α) = (highlightIf α $ brackets empty)
-   pretty (ListNonEmpty α (Dictionary _ xss) l) =
+   pretty (ListEmpty α _) = (highlightIf α $ brackets empty)
+   pretty (ListNonEmpty α _ (Dictionary _ _ xss) l) =
       (highlightIf α (text str.lBracket) .<>. highlightIf α (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
-   pretty (ListNonEmpty α e l) = highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
+   pretty (ListNonEmpty α _ e l) = highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
    pretty (ListComp ann s qs) = highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
    pretty (Let ds s) = (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
@@ -188,7 +188,7 @@ instance Ann a => Pretty (DictEntry a) where
    pretty (VarKey α k) = highlightIf α $ pretty k
 
 instance Ann a => Pretty (ListRest a) where
-   pretty (Next ann (Dictionary _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
+   pretty (Next ann (Dictionary _ _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
    pretty (Next ann s l) = highlightIf ann (text str.comma) .<>. pretty s .<>. pretty l
    pretty (End ann) = highlightIf ann (text str.rBracket)
 

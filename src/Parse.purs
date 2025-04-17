@@ -17,6 +17,7 @@ import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
@@ -26,7 +27,7 @@ import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Debug as Debug
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, optional, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators (between, optionMaybe, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -34,7 +35,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), CommentElem(..), Comment, DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -107,37 +108,31 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
-data Comment = Literal String | Expr (Raw Expr)
-
-instance Show Comment where
-   show (Literal str) = "Literal " <> str
-   show (Expr e) = "Expr " <> prettyP e
-
 docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
-docComment :: SParser (Raw Expr) -> SParser Unit
-docComment expr' = optional (try $ docComment' expr')
+docComment :: SParser (Raw Expr) -> SParser (Maybe Comment)
+docComment expr' = optionMaybe (try $ docComment' expr')
 
-docComment' :: SParser (Raw Expr) -> SParser (List Comment)
+docComment' :: SParser (Raw Expr) -> SParser Comment
 docComment' expr' = token.lexeme (go <?> "docComment")
    where
-   go :: SParser (List Comment)
+   go :: SParser Comment
    go = do
       words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
       Debug.trace (show words) (\_ -> pure words)
 
-docCommentToken :: SParser (Raw Expr) -> SParser Comment
+docCommentToken :: SParser (Raw Expr) -> SParser CommentElem
 docCommentToken expr' =
    token.whiteSpace
       *> (try commentLiteral <|> commentExpr expr')
       <* token.whiteSpace
 
-commentLiteral :: SParser Comment
+commentLiteral :: SParser CommentElem
 commentLiteral = Literal <$> (SCU.fromCharArray <$> (Array.some docCommentLetter))
 
-commentExpr :: SParser (Raw Expr) -> SParser Comment
-commentExpr expr' = string str.exprStart *> (Expr <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
+commentExpr :: SParser (Raw Expr) -> SParser CommentElem
+commentExpr expr' = string str.exprStart *> (CExpr <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
 docCommentLetter :: SParser Char
 docCommentLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
@@ -278,7 +273,7 @@ expr_ =
          if op == str.dot then \e e' -> case e' of
             Var x -> Project e x
             _ -> error $ "Field names are not first class; got \"" <> prettyP e' <> "\"."
-         else if isCtrOp op' then \e e' -> Constr unit op' (e : e' : empty)
+         else if isCtrOp op' then \e e' -> Constr unit Nothing op' (e : e' : empty)
          else \e e' -> BinaryApp e op e'
 
    opTreeLeaf :: Endo (SParser (Raw Expr))
@@ -309,10 +304,10 @@ expr_ =
       appChain = simpleExprOrProjection >>= rest
          where
          rest :: Raw Expr -> SParser (Raw Expr)
-         rest e@(Constr α c es) = ctrArgs <|> pure e
+         rest e@(Constr α cmnt c es) = ctrArgs <|> pure e
             where
             ctrArgs :: SParser (Raw Expr)
-            ctrArgs = simpleExprOrProjection >>= \e' -> rest (Constr α c (es <> (e' : empty)))
+            ctrArgs = simpleExprOrProjection >>= \e' -> rest (Constr α cmnt c (es <> (e' : empty)))
          rest e = ((App e <$> simpleExprOrProjection) >>= rest) <|> pure e
 
          simpleExprOrProjection :: SParser (Raw Expr)
@@ -332,16 +327,16 @@ expr_ =
          simpleExpr :: SParser (Raw Expr)
          simpleExpr =
             -- matrix before list
-            ( docComment expr' *>
-                 ( matrix
-                      <|> try nil
-                      <|> listNonEmpty
-                      <|> try constr
-                      <|> dict
-                      <|> try float
-                      <|> try int -- int may start with +/-
-                      <|> string
-                      <|> try pair
+            ( docComment expr' >>=
+                \cmnt -> ( matrix cmnt
+                      <|> try (nil cmnt)
+                      <|> listNonEmpty cmnt
+                      <|> try (constr cmnt)
+                      <|> dict cmnt
+                      <|> try (float cmnt)
+                      <|> try (int cmnt) -- int may start with +/-
+                      <|> string cmnt
+                      <|> try (pair cmnt)
                  )
             ) <|> try variable
                <|> try (token.parens expr')
@@ -350,18 +345,18 @@ expr_ =
                <|> try parensOp
 
             where
-            matrix :: SParser (Raw Expr)
-            matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
-               Matrix unit
+            matrix :: Maybe Comment -> SParser (Raw Expr)
+            matrix c = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
+               Matrix unit c
                   <$> (expr' <* bar)
                   <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
                   <*> (keyword str.in_ *> expr')
 
-            nil :: SParser (Raw Expr)
-            nil = token.brackets $ pure (ListEmpty unit)
+            nil :: Maybe (Comment) -> SParser (Raw Expr)
+            nil c = token.brackets $ pure (ListEmpty unit c)
 
-            listNonEmpty :: SParser (Raw Expr)
-            listNonEmpty = lBracket *> (ListNonEmpty unit <$> expr' <*> fix listRest)
+            listNonEmpty :: Maybe Comment -> SParser (Raw Expr)
+            listNonEmpty c = lBracket *> (ListNonEmpty unit c <$> expr' <*> fix listRest)
                where
                listRest :: Endo (SParser (Raw ListRest))
                listRest listRest' =
@@ -381,11 +376,11 @@ expr_ =
             listEnum :: SParser (Raw Expr)
             listEnum = token.brackets $ pure ListEnum <*> expr' <* ellipsis <*> expr'
 
-            constr :: SParser (Raw Expr)
-            constr = Constr unit <$> ctr <@> empty
+            constr :: Maybe Comment -> SParser (Raw Expr)
+            constr c = Constr unit c <$> ctr <@> empty
 
-            dict :: SParser (Raw Expr)
-            dict = sepBy kvPair token.comma <#> Dictionary unit # token.braces
+            dict :: Maybe Comment -> SParser (Raw Expr)
+            dict c = sepBy kvPair token.comma <#> Dictionary unit c # token.braces
                where
                kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
                kvPair = (((ExprKey <$> expr') # token.brackets) <* token.colon) `lift2 (×)` expr' <|> ((VarKey unit <$> ident) <* token.colon) `lift2 (×)` expr'
@@ -397,26 +392,26 @@ expr_ =
             signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
 
             -- built-in integer/float parsers don't seem to allow leading signs.
-            int :: SParser (Raw Expr)
-            int = do
+            int :: Maybe Comment -> SParser (Raw Expr)
+            int c = do
                sign <- signOpt
-               (sign >>> Int unit) <$> token.natural
+               (sign >>> Int unit c) <$> token.natural
 
-            float :: SParser (Raw Expr)
-            float = do
+            float :: Maybe Comment -> SParser (Raw Expr)
+            float c = do
                sign <- signOpt
-               (sign >>> Float unit) <$> token.float
+               (sign >>> Float unit c) <$> token.float
 
-            string :: SParser (Raw Expr)
-            string = Str unit <$> token.stringLiteral
+            string :: Maybe Comment -> SParser (Raw Expr)
+            string c = Str unit c <$> token.stringLiteral
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)
             parensOp = Op <$> token.parens token.operator
 
-            pair :: SParser (Raw Expr)
-            pair = token.parens $
-               (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
+            pair :: Maybe Comment -> SParser (Raw Expr)
+            pair c = token.parens $
+               (pure $ \e e' -> Constr unit c cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a

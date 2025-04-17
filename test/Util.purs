@@ -44,7 +44,7 @@ test ∷ forall m. FileLoader m -> File -> Raw ProgCxt -> SelectionSpec -> Int �
 test loadFile file progCxt spec (n × _) = do
    { s, gconfig } <- prepConfig { loadFile, fluidSrcPaths } file progCxt
    when debug.logging $ log ("**** initialConfig")
-   testPretty s
+   -- testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n
 
