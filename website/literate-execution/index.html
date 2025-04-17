@@ -12,9 +12,7 @@
    <script src="/shared/util.js"></script>
    <style>
       .grid-container, .grid-container.data-pane-hidden {
-         display: grid;
          grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
-         justify-content: center;
       }
 
       .when-data-pane-visible {
@@ -27,12 +25,17 @@
 
       .data-pane {
          display: grid;
-         grid-template-columns: min-content min-content;
+         grid-template-columns: min-content auto;
          vertical-align: top;
          justify-content: end;
       }
 
-      #fig-intermediate:has(> *) {
+      .intermediates {
+         min-width: min-content;
+         max-width: 0.6fr;
+      }
+
+      .intermediates:has(> *) {
          border-right: 1px dotted #CCCCCC;
       }
 
@@ -64,7 +67,7 @@
 
    <div id="fig-data-pane" class="data-pane">
       <div id="fig-input" class="flex-right-align data-pane-column"></div>
-      <div id="fig-intermediate" class="flex-right-align"></div>
+      <div id="fig-intermediate" class="flex-top-align intermediates"></div>
    </div>
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>

@@ -269,6 +269,12 @@ nav ul li.active-page a {
    align-items: flex-end;
 }
 
+.flex-top-align {
+   display: flex;
+   flex-direction: row;
+   align-items: flex-start;
+}
+
 .flex-bottom-align {
    display: flex;
    flex-direction: row;
