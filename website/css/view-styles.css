@@ -71,6 +71,13 @@ td.table-cell {
    visibility: collapse;
 }
 
+/* hack to match Safari-only */
+@supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) {
+   .table-row.hidden {
+      display: none; /* suboptimal for table rows but Safari doesn't support visibility: collapse */
+   }
+}
+
 .linked-text {
    border-radius: 0px;
    background-color: White;
