@@ -11,7 +11,7 @@
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
    <script src="/shared/util.js"></script>
    <style>
-      .grid-container {
+      .grid-container, .grid-container.data-pane-hidden {
          display: grid;
          grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
          justify-content: center;
@@ -25,13 +25,10 @@
          display: none;
       }
 
-      .grid-container.data-pane-hidden {
-         display: grid;
-         grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
-         justify-content: center;
-      }
-
       .data-pane {
+         display: grid;
+         grid-template-columns: min-content min-content;
+         vertical-align: top;
          justify-content: end;
       }
 
@@ -51,10 +48,7 @@
          color: green
       }
 
-      .matrix-cell-text.selected-secondary-persistent:not(.matrix-cell-text.selected-primary-transient) {
-         color: rgb(205, 205, 205)
-      }
-
+      .matrix-cell-text.selected-secondary-persistent:not(.matrix-cell-text.selected-primary-transient),
       .matrix-cell-text.selected-secondary-transient:not(.matrix-cell-text.selected-primary-persistent):not(.matrix-cell-text.selected-primary-transient) {
          color: rgb(205, 205, 205)
       }
@@ -82,10 +76,6 @@
          </div>
          <div></div>
       </div>
-   </div>
-   <div></div>
-   <div></div>
-   <div class="flex-left-align">
       <details>
          <summary>convolution.fld</summary>
          <div id="codemirror-convolution"></div>

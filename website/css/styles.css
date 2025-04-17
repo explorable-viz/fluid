@@ -289,12 +289,6 @@ nav ul li.active-page a {
    cursor: pointer;
 }
 
-.data-pane {
-   display: grid;
-   grid-template-columns: auto auto;
-   vertical-align: top;
-}
-
 .data-pane-column {
    border-right: 1px dotted #CCCCCC;
 }
