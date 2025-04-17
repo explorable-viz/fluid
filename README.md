@@ -42,12 +42,15 @@ Note that the path is relative and should not include the `.fld` extension, e.g.
 Success
 ```
 
-### Running websites locally
-As an example, to build and run a website. For the website `literate-execution`
-- `yarn build` to ensure up-to-date fluid language available on a website (can be skipped on subsequent runs)
+### Running websites locally (as part of Fluid development)
+As an example, to build and run the website `literate-execution`:
+- `yarn build` to ensure Fluid source code has been compiled (can be skipped on subsequent runs)
 - `yarn bundle-website -w literate-execution` (can be skipped if the website being run is `fluid-org`)
-- `yarn serve literate-execution` (you may be prompted to proceed: type `y`).
+- `yarn serve literate-execution` (you may be prompted to proceed; press `y`)
 - Open a browser to the served URL (defaults to `127.0.0.1:8080`)
+
+Note: `yarn bundle-serve literate-execution` is a convenient shorthand for `bundle-website -w` followed by `serve`.
+
 ## Testing
 
 ### Running the tests from the command line
