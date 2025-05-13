@@ -328,16 +328,17 @@ expr_ =
          simpleExpr =
             -- matrix before list
             ( docComment expr' >>=
-                \cmnt -> ( matrix cmnt
-                      <|> try (nil cmnt)
-                      <|> listNonEmpty cmnt
-                      <|> try (constr cmnt)
-                      <|> dict cmnt
-                      <|> try (float cmnt)
-                      <|> try (int cmnt) -- int may start with +/-
-                      <|> string cmnt
-                      <|> try (pair cmnt)
-                 )
+                 \cmnt ->
+                    ( matrix cmnt
+                         <|> try (nil cmnt)
+                         <|> listNonEmpty cmnt
+                         <|> try (constr cmnt)
+                         <|> dict cmnt
+                         <|> try (float cmnt)
+                         <|> try (int cmnt) -- int may start with +/-
+                         <|> string cmnt
+                         <|> try (pair cmnt)
+                    )
             ) <|> try variable
                <|> try (token.parens expr')
                <|> listComp

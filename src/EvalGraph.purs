@@ -116,20 +116,20 @@ apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
-eval _ (Int α n) αs = new Val (insert α αs) (V.Int n)
-eval _ (Float α n) αs = new Val (insert α αs) (V.Float n)
-eval _ (Str α s) αs = new Val (insert α αs) (V.Str s)
-eval γ (Dictionary α ees) αs = do
+eval _ (Int α _ n) αs = new Val (insert α αs) (V.Int n)
+eval _ (Float α _ n) αs = new Val (insert α αs) (V.Float n)
+eval _ (Str α _ s) αs = new Val (insert α αs) (V.Str s)
+eval γ (Dictionary α _ ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    new Val (insert α αs) $ V.Dictionary (DictRep d)
-eval γ (Constr α c es) αs = do
+eval γ (Constr α _ c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
    new Val (insert α αs) $ V.Constr c vs
-eval γ (Matrix α e (x × y) e') αs = do
+eval γ (Matrix α _ e (x × y) e') αs = do
    Val _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
    check

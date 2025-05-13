@@ -24,7 +24,7 @@ import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Expr (Cont(..), Elim(..))
-import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
+import Expr (Expr(..), RecDefs(..), VarDef(..), Comment, CommentElem(..)) as E
 import Graph (showGraph)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
@@ -369,12 +369,12 @@ prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
-   pretty (E.Int α n) = highlightIf α (text (show n))
-   pretty (E.Float α n) = highlightIf α (text (show n))
-   pretty (E.Str α str) = highlightIf α (text (show str))
-   pretty (E.Dictionary α ees) = highlightIf α $ prettyDict pretty (ees <#> toTuple)
-   pretty (E.Constr α c es) = highlightIf α $ prettyConstr c es
-   pretty (E.Matrix α e1 (i × j) e2) = (highlightIf α (prettyMatrix e1 i j e2))
+   pretty (E.Int α c n) = pretty c .<>. highlightIf α (text (show n))
+   pretty (E.Float α c n) = pretty c .<>. highlightIf α (text (show n))
+   pretty (E.Str α c str) = pretty c .<>. highlightIf α (text (show str))
+   pretty (E.Dictionary α c ees) = pretty c .<>. highlightIf α (prettyDict pretty (ees <#> toTuple))
+   pretty (E.Constr α cmnt c es) = pretty cmnt .<>. highlightIf α (prettyConstr c es)
+   pretty (E.Matrix α c e1 (i × j) e2) = pretty c .<>. highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda α σ) = hcat [ highlightIf α (text str.fun), pretty σ ]
    pretty (E.Op op) = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
@@ -383,6 +383,19 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.DProject e x) = pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
+
+instance Pretty (Maybe E.Comment) where
+   pretty (Just x) = text "\"\"\"" .<>. pretty x
+   pretty Nothing = empty
+
+instance Pretty (E.Comment) where
+   pretty (Cons c Nil) = pretty c .<>. text "\"\"\""
+   pretty (Cons c xs) = pretty c .<>. pretty xs
+   pretty Nil = empty
+
+instance Pretty E.CommentElem where
+   pretty (E.Literal str) = text str
+   pretty (E.CExpr e) = text "$" .<>. curlyBraces (pretty e)
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty ρ = go (toUnfoldable ρ)

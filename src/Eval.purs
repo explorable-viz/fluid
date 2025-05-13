@@ -112,20 +112,20 @@ apply2 (u1 × v1 × v2) = do
 eval :: forall a m. MonadError Error m => Ann a => EnvExpr a -> a -> m (Trace × Val a)
 eval (EnvExpr γ (Var x)) _ = (T.Var x × _) <$> lookup' x γ
 eval (EnvExpr γ (Op op)) _ = (T.Op op × _) <$> lookup' op γ
-eval (EnvExpr _ (Int α n)) α' = pure (T.Const × Val (α ∧ α') (V.Int n))
-eval (EnvExpr _ (Float α n)) α' = pure (T.Const × Val (α ∧ α') (V.Float n))
-eval (EnvExpr _ (Str α str)) α' = pure (T.Const × Val (α ∧ α') (V.Str str))
-eval (EnvExpr γ (Dictionary α ees)) α' = do
+eval (EnvExpr _ (Int α _ n)) α' = pure (T.Const × Val (α ∧ α') (V.Int n))
+eval (EnvExpr _ (Float α _ n)) α' = pure (T.Const × Val (α ∧ α') (V.Float n))
+eval (EnvExpr _ (Str α _ str)) α' = pure (T.Const × Val (α ∧ α') (V.Str str))
+eval (EnvExpr γ (Dictionary α _ ees)) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (\e -> eval (EnvExpr γ e) α')) ees <#> (P.unzip >>> (unzip # both))
    let
       ss × αs = vs <#> unpack string # unzip
       d = D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × Val (α ∧ α') (V.Dictionary (V.DictRep d))
-eval (EnvExpr γ (Constr α c es)) α' = do
+eval (EnvExpr γ (Constr α _ c es)) α' = do
    checkArity c (length es)
    ts × vs <- traverse (\e -> eval (EnvExpr γ e) α') es <#> unzip
    pure (T.Constr c ts × Val (α ∧ α') (V.Constr c vs))
-eval (EnvExpr γ (Matrix α e (x × y) e')) α' = do
+eval (EnvExpr γ (Matrix α _ e (x × y) e')) α' = do
    t × Val _ v <- eval (EnvExpr γ e') α'
    let (i' × β) × (j' × β') = intPair.unpack v
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")

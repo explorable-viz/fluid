@@ -6,6 +6,7 @@ import Data.Array (zipWith) as A
 import Data.Bifunctor (bimap)
 import Data.Foldable (length)
 import Data.List (List, zipWith)
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
 import Dict (Dict)
@@ -148,6 +149,11 @@ instance JoinSemilattice a => JoinSemilattice (Array a) where
       | length xs == (length ys :: Int) = A.zipWith (∨) xs ys
       | otherwise = shapeMismatch unit
 
+instance JoinSemilattice a => JoinSemilattice (Maybe a) where
+   join Nothing Nothing = Nothing
+   join (Just x) (Just y) = Just (x ∨ y)
+   join _ _ = shapeMismatch unit
+
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
 
 -- Expandable (t :: Type -> Type) requires functor composition.
@@ -170,3 +176,8 @@ instance Expandable t u => Expandable (List t) (List u) where
 
 instance Expandable t u => Expandable (Array t) (Array u) where
    expand xs = A.zipWith expand xs
+
+instance Expandable t u => Expandable (Maybe t) (Maybe u) where
+   expand Nothing Nothing = Nothing
+   expand (Just x) (Just y) = Just (expand x y)
+   expand _ _ = shapeMismatch unit

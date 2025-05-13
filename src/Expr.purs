@@ -7,6 +7,7 @@ import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, empty, unions)
 import Data.Set (fromFoldable) as S
@@ -15,7 +16,7 @@ import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∨), (∧))
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
 import Util.Map (keys, asMaplet)
 import Util.Pair (Pair(..))
@@ -25,12 +26,12 @@ import Util.Set ((\\), (∪))
 data Expr a
    = Var Var
    | Op Var
-   | Int a Int
-   | Float a Number
-   | Str a String
-   | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
-   | Constr a Ctr (List (Expr a))
-   | Matrix a (Expr a) (Var × Var) (Expr a)
+   | Int a (Maybe Comment) Int
+   | Float a (Maybe Comment) Number
+   | Str a (Maybe Comment) String
+   | Dictionary a (Maybe Comment) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
+   | Constr a (Maybe Comment) Ctr (List (Expr a))
+   | Matrix a (Maybe Comment) (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
@@ -52,6 +53,10 @@ data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
 
+type Comment = List CommentElem
+
+data CommentElem = Literal String | CExpr (Raw Expr)
+
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
 asElim _ = error "Eliminator expected"
@@ -68,12 +73,12 @@ class FV a where
 instance FV (Expr a) where
    fv (Var x) = singleton x
    fv (Op op) = singleton op
-   fv (Int _ _) = empty
-   fv (Float _ _) = empty
-   fv (Str _ _) = empty
-   fv (Dictionary _ ees) = unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
-   fv (Constr _ _ es) = unions (fv <$> es)
-   fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
+   fv (Int _ _ _) = empty
+   fv (Float _ _ _) = empty
+   fv (Str _ _ _) = empty
+   fv (Dictionary _ c ees) = fv c ∪ unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
+   fv (Constr _ c _ es) = fv c ∪ unions (fv <$> es)
+   fv (Matrix _ c e1 _ e2) = fv c ∪ fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
    fv (Project e _) = fv e
    fv (DProject e x) = fv e ∪ fv x
@@ -101,6 +106,17 @@ instance FV a => FV (Dict a) where
 
 instance (FV a, FV b) => FV (a × b) where
    fv (x × y) = fv x ∪ fv y
+
+instance FV a => FV (Maybe a) where
+   fv Nothing = empty
+   fv (Just x) = fv x
+
+instance (FV a) => FV (List a) where
+   fv xs = unions (fv <$> xs)
+
+instance FV CommentElem where
+   fv (Literal _) = empty
+   fv (CExpr e) = fv e
 
 class BV a where
    bv :: a -> Set Var
@@ -155,13 +171,13 @@ instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Var x) (Var x') = Var (x ≜ x')
    join (Op op) (Op op') = Op (op ≜ op')
-   join (Int α n) (Int α' n') = Int (α ∨ α') (n ≜ n')
-   join (Str α str) (Str α' str') = Str (α ∨ α') (str ≜ str')
-   join (Float α n) (Float α' n') = Float (α ∨ α') (n ≜ n')
-   join (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') (ees ∨ ees')
-   join (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') (c ≜ c') (es ∨ es') -- TODO: assert consistentWith
-   join (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
-      Matrix (α ∨ α') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
+   join (Int α c n) (Int α' c' n') = Int (α ∨ α') (c ∨ c') (n ≜ n')
+   join (Str α c str) (Str α' c' str') = Str (α ∨ α') (c ∨ c') (str ≜ str')
+   join (Float α c n) (Float α' c' n') = Float (α ∨ α') (c ∨ c') (n ≜ n')
+   join (Dictionary α c ees) (Dictionary α' _ ees') = Dictionary (α ∨ α') c (ees ∨ ees')
+   join (Constr α cmt c es) (Constr α' cmt' c' es') = Constr (α ∨ α') (cmt ∨ cmt') (c ≜ c') (es ∨ es') -- TODO: assert consistentWith
+   join (Matrix α c e1 (x × y) e2) (Matrix α' c' e1' (x' × y') e2') =
+      Matrix (α ∨ α') (c ∨ c') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
    join (Project e x) (Project e' x') = Project (e ∨ e') (x ≜ x')
    join (DProject e x) (DProject e' x') = DProject (e ∨ e') (x ∨ x')
@@ -170,16 +186,21 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
    join _ _ = shapeMismatch unit
 
+instance JoinSemilattice CommentElem where
+   join (Literal str) (Literal str') = Literal (str ≜ str')
+   join (CExpr e) (CExpr e') = CExpr (e ∨ e')
+   join _ _ = shapeMismatch unit
+
 instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Var x) (Var x') = Var (x ≜ x')
    expand (Op op) (Op op') = Op (op ≜ op')
-   expand (Int α n) (Int _ n') = Int α (n ≜ n')
-   expand (Str α str) (Str _ str') = Str α (str ≜ str')
-   expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
-   expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
-   expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
-      Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
+   expand (Int α c n) (Int _ _ n') = Int α c (n ≜ n')
+   expand (Str α c str) (Str _ _ str') = Str α c (str ≜ str')
+   expand (Float α c n) (Float _ _ n') = Float α c (n ≜ n')
+   expand (Dictionary α c ees) (Dictionary _ _ ees') = Dictionary α c (expand ees ees')
+   expand (Constr α cmnt c es) (Constr _ _ c' es') = Constr α cmnt (c ≜ c') (expand es es')
+   expand (Matrix α c e1 (x × y) e2) (Matrix _ _ e1' (x' × y') e2') =
+      Matrix α c (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
    expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
    expand (DProject e x) (DProject e' x') = DProject (expand e e') (expand x x')
@@ -194,14 +215,14 @@ instance MeetSemilattice a => MeetSemilattice (Expr a) where
 instance Vertices (Expr Vertex) where
    vertices (Var _) = empty
    vertices (Op _) = empty
-   vertices e@(Int α _) = singleton (DVertex (α × pack e))
-   vertices e@(Float α _) = singleton (DVertex (α × pack e))
-   vertices e@(Str α _) = singleton (DVertex (α × pack e))
-   vertices d@(Dictionary α ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees)
+   vertices e@(Int α _ _) = singleton (DVertex (α × pack e))
+   vertices e@(Float α _ _) = singleton (DVertex (α × pack e))
+   vertices e@(Str α _ _) = singleton (DVertex (α × pack e))
+   vertices d@(Dictionary α _ ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees)
       where
       go (Pair e e') = vertices e ∪ vertices e'
-   vertices e@(Constr α _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es)
-   vertices e@(Matrix α e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2
+   vertices e@(Constr α _ _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es)
+   vertices e@(Matrix α _ e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
    vertices (Project e _) = vertices e
    vertices (DProject e x) = vertices e ∪ vertices x
@@ -255,13 +276,13 @@ derive instance Functor Module
 instance Apply Expr where
    apply (Var x) (Var x') = Var (x ≜ x')
    apply (Op op) (Op _) = Op op
-   apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
-   apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
-   apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Dictionary fα fxes) (Dictionary α xes) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxes xes)
-   apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
-   apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
-      Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
+   apply (Int fα c n) (Int α _ n') = Int (fα α) c (n ≜ n')
+   apply (Float fα c n) (Float α _ n') = Float (fα α) c (n ≜ n')
+   apply (Str fα c s) (Str α _ s') = Str (fα α) c (s ≜ s')
+   apply (Dictionary fα c fxes) (Dictionary α _ xes) = Dictionary (fα α) c (zipWith (lift2 (<*>)) fxes xes)
+   apply (Constr fα cmnt c fes) (Constr α _ c' es) = Constr (fα α) cmnt (c ≜ c') (zipWith (<*>) fes es)
+   apply (Matrix fα c fe1 (x × y) fe2) (Matrix α _ e1 (x' × y') e2) =
+      Matrix (fα α) c (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
@@ -325,12 +346,14 @@ derive instance Eq a => Eq (Elim a)
 derive instance Eq a => Eq (Cont a)
 derive instance Eq a => Eq (VarDef a)
 derive instance Eq a => Eq (RecDefs a)
+derive instance Eq CommentElem
 
 derive instance Ord a => Ord (Expr a)
 derive instance Ord a => Ord (Elim a)
 derive instance Ord a => Ord (Cont a)
 derive instance Ord a => Ord (VarDef a)
 derive instance Ord a => Ord (RecDefs a)
+derive instance Ord CommentElem
 
 instance TypeName (RecDefs a) where
    typeName _ = "RecDefs"

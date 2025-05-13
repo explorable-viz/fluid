@@ -120,20 +120,20 @@ evalBwd γ e v t =
 evalBwd' :: forall a. Ann a => Val a -> Trace -> Env a × Expr a × a
 evalBwd' v (T.Var x) = maplet x v × Var x × bot
 evalBwd' v (T.Op op) = maplet op v × Op op × bot
-evalBwd' (Val α (V.Str str)) T.Const = empty × Str α str × α
-evalBwd' (Val α (V.Int n)) T.Const = empty × Int α n × α
-evalBwd' (Val α (V.Float n)) T.Const = empty × Float α n × α
+evalBwd' (Val α (V.Str str)) T.Const = empty × Str α Nothing str × α
+evalBwd' (Val α (V.Int n)) T.Const = empty × Int α Nothing n × α
+evalBwd' (Val α (V.Float n)) T.Const = empty × Float α Nothing n × α
 evalBwd' (Val α (V.Fun (V.Closure γ _ σ))) T.Const = γ × Lambda α σ × α
 evalBwd' (Val α (V.Dictionary (DictRep sαvs))) (T.Dictionary stts sus) =
    foldr (∨) empty ((γeαs <#> fst) <> (γeαs' <#> fst))
-      × Dictionary α ((γeαs <#> (fst <<< snd)) `P.zip` (γeαs' <#> (fst <<< snd)))
+      × Dictionary α Nothing ((γeαs <#> (fst <<< snd)) `P.zip` (γeαs' <#> (fst <<< snd)))
       × foldr (∨) α ((γeαs <#> (snd <<< snd)) <> (γeαs' <#> (snd <<< snd)))
    where
    sαvs' = expand sαvs (sus <#> (bot × _))
    γeαs = stts <#> \(s × t × _) -> evalBwd' (Val (fst (get s sαvs')) (V.Str s)) t
    γeαs' = stts <#> \(s × _ × t) -> evalBwd' (snd (get s sαvs')) t
 evalBwd' (Val α (V.Constr _ vs)) (T.Constr c ts) =
-   γ' × Constr α c es × α'
+   γ' × Constr α Nothing c es × α'
    where
    evalArg_bwd :: Val a × Trace -> Endo (Env a × List (Expr a) × a)
    evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
@@ -141,7 +141,7 @@ evalBwd' (Val α (V.Constr _ vs)) (T.Constr c ts) =
       γ'' × e × α'' = evalBwd' v' t'
    γ' × es × α' = foldr evalArg_bwd (empty × Nil × α) (zip vs ts)
 evalBwd' (Val α (V.Matrix (MatrixRep (vss × MatrixDim (_ × βi) × MatrixDim (_ × βj))))) (T.Matrix tss (x × y) (i' × j') t') =
-   (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
+   (γ ∨ γ') × Matrix α Nothing e (x × y) e' × (α ∨ α' ∨ α'')
    where
    NonEmptyList ijs = nonEmpty $ singleton =<< (range 1 i' `lift2 (×)` range 1 j')
 
@@ -189,7 +189,7 @@ evalBwd' v (T.Let (T.VarDef w t1) t2) =
    where
    γ1γ2 × e2 × α2 = evalBwd' v t2
    γ1 × γ2 = append_inv (bv w) γ1γ2
-   v' × σ = matchBwd γ2 (ContExpr (Dictionary bot Nil)) α2 w
+   v' × σ = matchBwd γ2 (ContExpr (Dictionary bot Nothing Nil)) α2 w
    γ1' × e1 × α1 = evalBwd' v' t1
 evalBwd' v (T.LetRec (RecDefs _ ρ) t) =
    (γ1 ∨ γ1') × LetRec (RecDefs (α ∨ α') ρ') e × (α ∨ α')
