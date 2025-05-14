@@ -19,9 +19,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
--- main = run tests
+main = run tests
 
-main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite loadFile comments_cases

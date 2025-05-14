@@ -30,7 +30,7 @@ import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), Comment, CommentElem(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, error, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -142,20 +142,22 @@ removeDocWS (Doc d) = Doc
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op op) = parentheses (text op)
-   pretty (Int α n _) = highlightIf α $ text (show n)
-   pretty (Float α n _) = highlightIf α $ text (show n)
-   pretty (Str α _ str) = highlightIf α $ text ("\"" <> str <> "\"")
-   pretty (Constr α _ c x)
+   pretty (Int α c n) = pretty c .<>. highlightIf α (text (show n))
+   pretty (Float α c n) = pretty c .<>. highlightIf α (text (show n))
+   pretty (Str α c str) = pretty c .<>. highlightIf α (text ("\"" <> str <> "\""))
+   pretty (Constr α cmt c x)
       | c == "Explained" = case (head x) of
            (Just (Str _ _ x')) -> highlightIf α $ text "@" .<>. text x' .<>. text "@"
            _ -> error "malformed explanation"
-      | otherwise = highlightIf α $ prettyConstr c x
-   pretty (Dictionary α _ sss) = highlightIf α $ curlyBraces (prettyDictEntries (.-.) sss)
-   pretty (Matrix α _ e (x × y) e') =
-      highlightIf α $ arrayBrackets
-         ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
-              .<>. text str.in_
-              .<>. pretty e'
+      | otherwise = pretty cmt .<>. highlightIf α (prettyConstr c x)
+   pretty (Dictionary α c sss) = pretty c .<>. highlightIf α (curlyBraces (prettyDictEntries (.-.) sss))
+   pretty (Matrix α c e (x × y) e') =
+      pretty c .<>. highlightIf α
+         ( arrayBrackets
+              ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
+                   .<>. text str.in_
+                   .<>. pretty e'
+              )
          )
    pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
    pretty (Project s x) = prettySimple s .<>. text str.dot .<>. text x
@@ -164,10 +166,11 @@ instance Ann a => Pretty (Expr a) where
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = text str.if_ .<>. pretty s1 .<>. text str.then_ .<>. pretty s2 .<>. text str.else_ .<>. pretty s3
-   pretty (ListEmpty α _) = (highlightIf α $ brackets empty)
-   pretty (ListNonEmpty α _ (Dictionary _ _ xss) l) =
-      (highlightIf α (text str.lBracket) .<>. highlightIf α (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
-   pretty (ListNonEmpty α _ e l) = highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
+   pretty (ListEmpty α c) = pretty c .<>. (highlightIf α $ brackets empty)
+   pretty (ListNonEmpty α c (Dictionary _ _ xss) l) = pretty c
+      .<>. (highlightIf α (text str.lBracket) .<>. highlightIf α (curlyBraces (prettyDictEntries (.<>.) xss)))
+      .-. pretty l
+   pretty (ListNonEmpty α c e l) = pretty c .<>. highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
    pretty (ListComp ann s qs) = highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
    pretty (Let ds s) = (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
@@ -199,6 +202,19 @@ instance Ann a => Pretty (List (Pair (Expr a))) where
 
 prettyPairs :: forall a. Ann a => (Pair (Expr a)) -> Doc
 prettyPairs (Pair e e') = pretty e .<>. text str.colonEq .<>. pretty e'
+
+instance Pretty (Maybe Comment) where
+   pretty (Just x) = text "\"\"\"" .<>. pretty x
+   pretty Nothing = empty
+
+instance Pretty (Comment) where
+   pretty (Cons c Nil) = pretty c .<>. text "\"\"\""
+   pretty (Cons c xs) = pretty c .<>. pretty xs
+   pretty Nil = empty
+
+instance Pretty CommentElem where
+   pretty (Literal str) = text str
+   pretty (CExpr e) = text "$" .<>. curlyBraces (pretty e)
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
