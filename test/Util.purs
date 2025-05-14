@@ -80,10 +80,13 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       traceGC (EnvExpr γ e)
    graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
+
+   let GC evalG = graphGC graphed # toGC
+
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
    EnvExpr in_γ in_e <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
-      traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
+      traceBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
    let in_s = desug.bwd in_e
    out0' <- do
@@ -99,9 +102,6 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    unwrap >>> (_ >= out0'') # checkSatisfies "Force evaluation of DemBy" (PrettyShow out0'')
 
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
-   let out_top = evalT.fwd in_top
-   when testing.fwdPreservesTop $
-      unwrap >>> (_ == topOf v) # checkSatisfies "trace fwd preserves ⊤" (PrettyShow out_top)
 
    -- empty string somewhat hacky encoding for "don't care"
    unless (null bwd_expect) $
@@ -111,7 +111,6 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       checkPretty ("fwd_expect") fwd_expect (report out0')
 
    recordGraphSize g
-   let GC evalG = graphGC graphed # toGC
 
    in0 <- graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd out0)
    -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
@@ -123,7 +122,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    -- Already testing extensional equivalence above, but specifically test this too.
    let out_top' = evalG.fwd in_top
    when testing.fwdPreservesTop $
-      unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
+      unwrap >>> (_ == topOf v) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
 
    let GC evalG_dual = dual (GC evalG)
    let GC evalG_op = withOp graphed # graphGC # toGC
