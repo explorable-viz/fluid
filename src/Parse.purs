@@ -200,7 +200,6 @@ patternDelim :: SParser Unit
 patternDelim = rArrow <|> equals
 
 -- "curried" controls whether nested functions are permitted in this context
--- initial: branch, new: clause
 clause :: Boolean -> SParser (Raw Expr) -> SParser Unit -> SParser (Raw Clause)
 clause curried expr' delim = do
    πs <-
@@ -209,17 +208,14 @@ clause curried expr' delim = do
    e <- delim *> expr'
    pure $ Clause (πs × e)
 
--- initial: branch_curried, new: clause_curried
 clause_curried :: SParser (Raw Expr) -> SParser Unit -> SParser (Raw Clause)
 clause_curried expr' delim =
    Clause <$> some (simplePattern pattern) `lift2 (×)` (delim *> expr')
 
--- initial: branch_uncurried, new: clause_uncurried
 clause_uncurried :: SParser (Raw Expr) -> SParser Unit -> SParser (Pattern × Raw Expr)
 clause_uncurried expr' delim =
    pattern `lift2 (×)` (delim *> expr')
 
--- initial: branchMany, new: clauseMany
 branchMany
    :: forall b
     . SParser (Raw Expr)
@@ -227,19 +223,16 @@ branchMany
    -> SParser (NonEmptyList b)
 branchMany expr' branch_ = token.braces $ sepBy1 (branch_ expr' rArrow) token.semi
 
--- initial: branches, new: clauses
 branches :: forall b. SParser (Raw Expr) -> (SParser (Raw Expr) -> SParser Unit -> SParser b) -> SParser (NonEmptyList b)
 branches expr' branch_ =
    (pure <$> branch_ expr' patternDelim) <|> branchMany expr' branch_
 
--- changed clause to branch function
 varDefs :: SParser (Raw Expr) -> SParser (Raw VarDefs)
 varDefs expr' = keyword str.let_ *> sepBy1_try branch token.semi
    where
    branch :: SParser (Raw VarDef)
    branch = VarDef <$> (pattern <* equals) <*> expr'
 
--- changed clause function to branch function
 recDefs :: SParser (Raw Expr) -> SParser (Raw RecDefs)
 recDefs expr' = do
    keyword str.let_ *> sepBy1_try branch token.semi

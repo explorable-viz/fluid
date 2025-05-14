@@ -97,6 +97,10 @@ p + p {
    margin-top: 0;
 }
 
+svg {
+   overflow: visible;
+}
+
 .faq-question {
    font-family: 'GraphikMedium';
    color: darkslategrey;
@@ -269,6 +273,12 @@ nav ul li.active-page a {
    align-items: flex-end;
 }
 
+.flex-top-align {
+   display: flex;
+   flex-direction: row;
+   align-items: flex-start;
+}
+
 .flex-bottom-align {
    display: flex;
    flex-direction: row;
@@ -287,12 +297,6 @@ nav ul li.active-page a {
 .toggle-button:hover {
    color: #999999;
    cursor: pointer;
-}
-
-.data-pane {
-   display: grid;
-   grid-template-columns: auto auto;
-   vertical-align: top;
 }
 
 .data-pane-column {
