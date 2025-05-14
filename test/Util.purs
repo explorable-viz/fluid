@@ -74,22 +74,21 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
-
-   -- seems inefficient but unsure how to do better
-   let v = map (const top) outα :: Val 𝔹
    let GC evalG = graphGC graphed # toGC
 
+   let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
+
    in0@(EnvExpr in_γ in_e) <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
    let in_s = desug.bwd in_e
-   out0' <- do
+   out1 <- do
       let in_e' = desug.fwd in_s
       unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
       graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e'))
-   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out0')
+   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out1)
 
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
 
@@ -98,7 +97,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
       checkPretty ("bwd_expect") bwd_expect in_s
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
-      checkPretty ("fwd_expect") fwd_expect (report out0')
+      checkPretty ("fwd_expect") fwd_expect (report out1)
 
    recordGraphSize g
 
