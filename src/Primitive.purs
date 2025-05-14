@@ -4,7 +4,6 @@ import Prelude hiding (absurd, apply, div, top)
 
 import Bind (Bind)
 import Data.Either (Either(..))
-import Data.Exists (Exists, mkExists)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
@@ -12,11 +11,11 @@ import Data.Set (insert)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
 import Graph.WithGraph (new)
-import Lattice (class BoundedJoinSemilattice, Raw, (∧), bot, erase)
+import Lattice (class BoundedJoinSemilattice, bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), error, singleton, (×))
-import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
+import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpGraph, Val(..))
 
 -- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
 -- work with required higher-rank polymorphism.
@@ -152,9 +151,8 @@ unary :: forall i o a'. BoundedJoinSemilattice a' => String -> (forall a. Unary 
 unary id f =
    id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
-   op :: Exists ForeignOp'
-   op = mkExists $
-      ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   op :: ForeignOp'
+   op = ForeignOp' { arity: 1, op: unsafePartial op' }
 
    op' :: Partial => OpGraph
    op' (Val α v : Nil) = do
@@ -162,19 +160,12 @@ unary id f =
       where
       v' = f.fwd (f.i.unpack v)
 
-   fwd :: Partial => OpFwd (Raw BaseVal)
-   fwd (Val α v : Nil) = pure $ erase v × pack f.o (f.fwd (f.i.unpack v) × α)
-
-   bwd :: Partial => OpBwd (Raw BaseVal)
-   bwd (u × Val α _) = pack f.i (f.i.unpack u × α) : Nil
-
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
 binary id f =
    id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
-   op :: Exists ForeignOp'
-   op = mkExists $
-      ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   op :: ForeignOp'
+   op = ForeignOp' { arity: 2, op: unsafePartial op' }
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
@@ -182,21 +173,13 @@ binary id f =
       where
       v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
 
-   fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
-   fwd (Val α v1 : Val β v2 : Nil) =
-      pure $ (erase v1 × erase v2) × pack f.o (f.fwd (f.i1.unpack v1) (f.i2.unpack v2) × (α ∧ β))
-
-   bwd :: Partial => OpBwd (Raw BaseVal × Raw BaseVal)
-   bwd ((u1 × u2) × Val α _) = pack f.i1 (f.i1.unpack u1 × α) : pack f.i2 (f.i2.unpack u2 × α) : Nil
-
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => String -> (forall a. BinaryZero i o a) -> Bind (Val a')
 binaryZero id f =
    id × Val bot (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
-   op :: Exists ForeignOp'
-   op = mkExists $
-      ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   op :: ForeignOp'
+   op = ForeignOp' { arity: 2, op: unsafePartial op' }
 
    op' :: Partial => OpGraph
    op' (Val α v1 : Val β v2 : Nil) =
@@ -208,22 +191,6 @@ binaryZero id f =
          if isZero x then singleton α
          else if isZero y then singleton β
          else singleton α # insert β
-
-   fwd :: Partial => OpFwd (Raw BaseVal × Raw BaseVal)
-   fwd (Val α v1 : Val β v2 : Nil) =
-      pure $ (erase v1 × erase v2) ×
-         pack f.o (f.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
-      where
-      x × y = f.i.unpack v1 × f.i.unpack v2
-
-   bwd :: Partial => OpBwd (Raw BaseVal × Raw BaseVal)
-   bwd ((u1 × u2) × Val α _) = pack f.i (x × β1) : pack f.i (y × β2) : Nil
-      where
-      x × y = f.i.unpack u1 × f.i.unpack u2
-      β1 × β2 =
-         if isZero x then α × bot
-         else if isZero y then bot × α
-         else α × α
 
 class As a b where
    as :: a -> b

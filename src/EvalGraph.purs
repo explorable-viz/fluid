@@ -6,7 +6,6 @@ import Bind (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range) as A
 import Data.Either (Either(..))
-import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
@@ -90,15 +89,15 @@ apply (Val α (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
 apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
-   runExists apply' φ
+   apply' φ
    where
    vs' = snoc vs v
 
-   apply' :: forall t. ForeignOp' t -> m (Val Vertex)
+   apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
          new Val (singleton α) v'
-      else φ'.op' vs'
+      else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
