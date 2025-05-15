@@ -76,9 +76,9 @@ instance FV (Expr a) where
    fv (Int _ _ _) = empty
    fv (Float _ _ _) = empty
    fv (Str _ _ _) = empty
-   fv (Dictionary _ c ees) = fv c ∪ unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
-   fv (Constr _ c _ es) = fv c ∪ unions (fv <$> es)
-   fv (Matrix _ c e1 _ e2) = fv c ∪ fv e1 ∪ fv e2
+   fv (Dictionary _ cmt ees) = fv cmt ∪ unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
+   fv (Constr _ cmt _ es) = fv cmt ∪ unions (fv <$> es)
+   fv (Matrix _ cmt e1 _ e2) = fv cmt ∪ fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
    fv (Project e _) = fv e
    fv (DProject e x) = fv e ∪ fv x
@@ -171,13 +171,13 @@ instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Var x) (Var x') = Var (x ≜ x')
    join (Op op) (Op op') = Op (op ≜ op')
-   join (Int α c n) (Int α' c' n') = Int (α ∨ α') (c ∨ c') (n ≜ n')
-   join (Str α c str) (Str α' c' str') = Str (α ∨ α') (c ∨ c') (str ≜ str')
-   join (Float α c n) (Float α' c' n') = Float (α ∨ α') (c ∨ c') (n ≜ n')
-   join (Dictionary α c ees) (Dictionary α' _ ees') = Dictionary (α ∨ α') c (ees ∨ ees')
+   join (Int α cmt n) (Int α' cmt' n') = Int (α ∨ α') (cmt ∨ cmt') (n ≜ n')
+   join (Str α cmt str) (Str α' cmt' str') = Str (α ∨ α') (cmt ∨ cmt') (str ≜ str')
+   join (Float α cmt n) (Float α' cmt' n') = Float (α ∨ α') (cmt ∨ cmt') (n ≜ n')
+   join (Dictionary α cmt ees) (Dictionary α' cmt' ees') = Dictionary (α ∨ α') (cmt ∨ cmt') (ees ∨ ees')
    join (Constr α cmt c es) (Constr α' cmt' c' es') = Constr (α ∨ α') (cmt ∨ cmt') (c ≜ c') (es ∨ es') -- TODO: assert consistentWith
-   join (Matrix α c e1 (x × y) e2) (Matrix α' c' e1' (x' × y') e2') =
-      Matrix (α ∨ α') (c ∨ c') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
+   join (Matrix α cmt e1 (x × y) e2) (Matrix α' cmt' e1' (x' × y') e2') =
+      Matrix (α ∨ α') (cmt ∨ cmt') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
    join (Project e x) (Project e' x') = Project (e ∨ e') (x ≜ x')
    join (DProject e x) (DProject e' x') = DProject (e ∨ e') (x ∨ x')
@@ -194,13 +194,13 @@ instance JoinSemilattice DocCommentElem where
 instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Var x) (Var x') = Var (x ≜ x')
    expand (Op op) (Op op') = Op (op ≜ op')
-   expand (Int α c n) (Int _ _ n') = Int α c (n ≜ n')
-   expand (Str α c str) (Str _ _ str') = Str α c (str ≜ str')
-   expand (Float α c n) (Float _ _ n') = Float α c (n ≜ n')
-   expand (Dictionary α c ees) (Dictionary _ _ ees') = Dictionary α c (expand ees ees')
-   expand (Constr α cmnt c es) (Constr _ _ c' es') = Constr α cmnt (c ≜ c') (expand es es')
-   expand (Matrix α c e1 (x × y) e2) (Matrix _ _ e1' (x' × y') e2') =
-      Matrix α c (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
+   expand (Int α cmt n) (Int _ _ n') = Int α cmt (n ≜ n')
+   expand (Str α cmt str) (Str _ _ str') = Str α cmt (str ≜ str')
+   expand (Float α cmt n) (Float _ _ n') = Float α cmt (n ≜ n')
+   expand (Dictionary α cmt ees) (Dictionary _ _ ees') = Dictionary α cmt (expand ees ees')
+   expand (Constr α cmt c es) (Constr _ _ c' es') = Constr α cmt (c ≜ c') (expand es es')
+   expand (Matrix α cmt e1 (x × y) e2) (Matrix _ _ e1' (x' × y') e2') =
+      Matrix α cmt (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
    expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
    expand (DProject e x) (DProject e' x') = DProject (expand e e') (expand x x')
@@ -276,13 +276,13 @@ derive instance Functor Module
 instance Apply Expr where
    apply (Var x) (Var x') = Var (x ≜ x')
    apply (Op op) (Op _) = Op op
-   apply (Int fα c n) (Int α _ n') = Int (fα α) c (n ≜ n')
-   apply (Float fα c n) (Float α _ n') = Float (fα α) c (n ≜ n')
-   apply (Str fα c s) (Str α _ s') = Str (fα α) c (s ≜ s')
-   apply (Dictionary fα c fxes) (Dictionary α _ xes) = Dictionary (fα α) c (zipWith (lift2 (<*>)) fxes xes)
-   apply (Constr fα cmnt c fes) (Constr α _ c' es) = Constr (fα α) cmnt (c ≜ c') (zipWith (<*>) fes es)
-   apply (Matrix fα c fe1 (x × y) fe2) (Matrix α _ e1 (x' × y') e2) =
-      Matrix (fα α) c (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
+   apply (Int fα cmt n) (Int α _ n') = Int (fα α) cmt (n ≜ n')
+   apply (Float fα cmt n) (Float α _ n') = Float (fα α) cmt (n ≜ n')
+   apply (Str fα cmt s) (Str α _ s') = Str (fα α) cmt (s ≜ s')
+   apply (Dictionary fα cmt fxes) (Dictionary α _ xes) = Dictionary (fα α) cmt (zipWith (lift2 (<*>)) fxes xes)
+   apply (Constr fα cmt c fes) (Constr α _ c' es) = Constr (fα α) cmt (c ≜ c') (zipWith (<*>) fes es)
+   apply (Matrix fα cmt fe1 (x × y) fe2) (Matrix α _ e1 (x' × y') e2) =
+      Matrix (fα α) cmt (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
