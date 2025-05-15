@@ -8,7 +8,6 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
-import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
 import Data.List (List(..), (:), zipWith)
 import Data.Maybe (Maybe(..))
@@ -64,18 +63,14 @@ instance Highlightable a => Highlightable (a × b) where
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 -- similar to an isomorphism lens with complement t
-type OpFwd t = forall a m. Ann a => MonadError Error m => List (Val a) -> m (t × Val a)
-type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
 type OpGraph = forall m. MonadWithGraphAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
 
-data ForeignOp' t = ForeignOp'
+data ForeignOp' = ForeignOp'
    { arity :: Int
-   , op :: OpFwd t
-   , op' :: OpGraph
-   , op_bwd :: OpBwd t
+   , op :: OpGraph
    }
 
-newtype ForeignOp = ForeignOp (String × Exists ForeignOp') -- string is unique identifier for Eq
+newtype ForeignOp = ForeignOp (String × ForeignOp') -- string is unique identifier for Eq
 
 instance Eq ForeignOp where
    eq (ForeignOp (s × _)) (ForeignOp (s' × _)) = s == s'

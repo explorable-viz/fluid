@@ -6,7 +6,6 @@ import Bind (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range) as A
 import Data.Either (Either(..))
-import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
@@ -90,15 +89,15 @@ apply (Val α (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
 apply (Val α (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
-   runExists apply' φ
+   apply' φ
    where
    vs' = snoc vs v
 
-   apply' :: forall t. ForeignOp' t -> m (Val Vertex)
+   apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
          new Val (singleton α) v'
-      else φ'.op' vs'
+      else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α (V.Fun (V.PartialConstr c vs))) v = do
@@ -116,20 +115,20 @@ apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
-eval _ (Int α n) αs = new Val (insert α αs) (V.Int n)
-eval _ (Float α n) αs = new Val (insert α αs) (V.Float n)
-eval _ (Str α s) αs = new Val (insert α αs) (V.Str s)
-eval γ (Dictionary α ees) αs = do
+eval _ (Int α _ n) αs = new Val (insert α αs) (V.Int n)
+eval _ (Float α _ n) αs = new Val (insert α αs) (V.Float n)
+eval _ (Str α _ s) αs = new Val (insert α αs) (V.Str s)
+eval γ (Dictionary α _ ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    new Val (insert α αs) $ V.Dictionary (DictRep d)
-eval γ (Constr α c es) αs = do
+eval γ (Constr α _ c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
    new Val (insert α αs) $ V.Constr c vs
-eval γ (Matrix α e (x × y) e') αs = do
+eval γ (Matrix α _ e (x × y) e') αs = do
    Val _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
    check

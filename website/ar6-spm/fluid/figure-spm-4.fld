@@ -1,0 +1,26 @@
+let stackedBarHeight stackedBar = sum [ bar.z | bar <- stackedBar.bars ];
+
+let get x (BarChart record) = fromSome (findWithKey "x" x record.stackedBars);
+
+let mkBarChart scenName table = 
+    BarChart {
+        caption: "Example bar chart for scenario " ++ scenName,
+        size: { width: 275, height: 185 },
+        stackedBars: map (fun record -> { x: record.type, bars: [ { y: "emissions", z: record.emissions } ]}) table
+    };
+
+let getHeight offset bar = (head bar.bars).z + offset;
+
+let ssp119 = mkBarChart "SSP1-1.9" ssp119Source;
+    ssp245 = mkBarChart "SSP2-4.5" ssp245Source;
+    totals = map stackedBarHeight (map (get "Total") [ssp119, ssp245]);
+    co2s = map stackedBarHeight (map (get "CO2") [ssp119, ssp245]);
+    nonco2 = map (get "Non-CO2") [ssp119, ssp245]
+in MultiView {
+    leftBarChart: ssp119,
+    rightBarChart: ssp245,
+    explanation:    
+        Paragraph [ Text "Within each scenario bar plot, the bars represent:", Link totals " total warming (°C),",
+                    Link co2s " warming from CO2 (°C) ", Text " and from ", Link (map stackedBarHeight nonco2) " Non-CO2 GHG's (°C)."
+                  ]
+}

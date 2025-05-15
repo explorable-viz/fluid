@@ -15,10 +15,9 @@ import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
-import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (File, FileLoader, Folder(..), parse, prepConfig)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
@@ -48,9 +47,6 @@ test loadFile file progCxt spec (n × _) = do
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n
 
-traceBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
-traceBenchmark name = benchmark ("T" <> "-" <> name)
-
 graphBenchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
 graphBenchmark name = benchmark ("G" <> "-" <> name)
 
@@ -74,56 +70,40 @@ benchNames =
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
-   let γ = erase gconfig.γ
    { gc: GC desug, e } <- desugGC s
-   traced@{ gc: GC evalT, v } <- traceBenchmark benchNames.eval \_ ->
-      traceGC (EnvExpr γ e)
-   graphed@{ g } <- graphBenchmark benchNames.eval \_ ->
+
+   graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
       graphEval gconfig e
+   let GC evalG = graphGC graphed # toGC
+
+   let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
-   EnvExpr in_γ in_e <- do
+
+   in0@(EnvExpr in_γ in_e) <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
-      traceBenchmark benchNames.bwd \_ -> pure (evalT.bwd (report out0))
+      graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
    let in_s = desug.bwd in_e
-   out0' <- do
+   out1 <- do
       let in_e' = desug.fwd in_s
       unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
-      traceBenchmark benchNames.fwd \_ -> pure (evalT.fwd (EnvExpr in_γ in_e'))
-   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out0')
-
-   let GC dualed = dual traced.gc
-   out0'' <- do
-      let in0'' = desug.fwd in_s
-      traceBenchmark benchNames.demBy \_ -> pure (dualed.bwd (EnvExpr in_γ in0''))
-   unwrap >>> (_ >= out0'') # checkSatisfies "Force evaluation of DemBy" (PrettyShow out0'')
+      graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e'))
+   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out1)
 
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
-   let out_top = evalT.fwd in_top
-   when testing.fwdPreservesTop $
-      unwrap >>> (_ == topOf v) # checkSatisfies "trace fwd preserves ⊤" (PrettyShow out_top)
 
    -- empty string somewhat hacky encoding for "don't care"
    unless (null bwd_expect) $
       checkPretty ("bwd_expect") bwd_expect in_s
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
-      checkPretty ("fwd_expect") fwd_expect (report out0')
+      checkPretty ("fwd_expect") fwd_expect (report out1)
 
    recordGraphSize g
-   let GC evalG = graphGC graphed # toGC
 
-   in0 <- graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd out0)
-   -- Graph-bwd over-approximates environment slice compared to trace-bwd, because of sharing; see #896.
-   -- I think don't think this affects round-tripping behaviour unless computation outputs a closure.
-   checkEq "Graph bwd" "Trace bwd" ((\(EnvExpr _ e') -> e') in0) in_e
-   out1 <- graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd in0)
-   checkEq ("G-" <> benchNames.fwd) ("T-" <> benchNames.fwd) out1 out0'
-
-   -- Already testing extensional equivalence above, but specifically test this too.
-   let out_top' = evalG.fwd in_top
+   let out_top = evalG.fwd in_top
    when testing.fwdPreservesTop $
-      unwrap >>> (_ == out_top) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top')
+      unwrap >>> (_ == topOf v) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top)
 
    let GC evalG_dual = dual (GC evalG)
    let GC evalG_op = withOp graphed # graphGC # toGC

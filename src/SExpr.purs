@@ -27,7 +27,7 @@ import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
+import Expr (DocCommentElem(..), DocOpt, Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -39,12 +39,12 @@ import Util.Set ((∈))
 data Expr a
    = Var Var
    | Op Var
-   | Int a Int
-   | Float a Number
-   | Str a String
-   | Constr a Ctr (List (Expr a))
-   | Dictionary a (List (DictEntry a × Expr a))
-   | Matrix a (Expr a) (Var × Var) (Expr a)
+   | Int a DocOpt Int
+   | Float a DocOpt Number
+   | Str a DocOpt String
+   | Constr a DocOpt Ctr (List (Expr a))
+   | Dictionary a DocOpt (List (DictEntry a × Expr a))
+   | Matrix a DocOpt (Expr a) (Var × Var) (Expr a)
    | Lambda (Clauses a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
@@ -52,8 +52,8 @@ data Expr a
    | BinaryApp (Expr a) Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
    | IfElse (Expr a) (Expr a) (Expr a)
-   | ListEmpty a -- called [] in the paper
-   | ListNonEmpty a (Expr a) (ListRest a)
+   | ListEmpty a DocOpt -- called [] in the paper
+   | ListNonEmpty a DocOpt (Expr a) (ListRest a)
    | ListEnum (Expr a) (Expr a)
    | ListComp a (Expr a) (List (Qualifier a))
    | Let (VarDefs a) (Expr a)
@@ -76,6 +76,15 @@ data ListRestPattern
    = PListVar Var -- currently unsupported in parser; only arise during desugaring
    | PListEnd
    | PListNext Pattern ListRestPattern
+
+type DocOpt = Maybe DocComment
+type DocComment = List DocCommentElem
+data DocCommentElem = Token String | CExpr (Raw Expr)
+
+derive instance Generic DocCommentElem _
+
+instance Show DocCommentElem where
+   show = genericShow
 
 pVarAnon :: Pattern
 pVarAnon = PVar varAnon
@@ -128,12 +137,12 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 
 instance Desugarable DictEntry E.Expr where
    desug (ExprKey e) = desug e
-   desug (VarKey α v) = pure (E.Str α v)
+   desug (VarKey α v) = pure (E.Str α Nothing v)
    desugBwd e (ExprKey e') = ExprKey $ desugBwd e e'
    desugBwd e v = varKeyBwd e v
 
 varKeyBwd :: forall a. E.Expr a -> Raw DictEntry -> DictEntry a
-varKeyBwd (E.Str α _) (VarKey _ v') = VarKey α v'
+varKeyBwd (E.Str α _ _) (VarKey _ v') = VarKey α v'
 varKeyBwd _ _ = error absurd
 
 instance Desugarable Expr E.Expr where
@@ -142,12 +151,12 @@ instance Desugarable Expr E.Expr where
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
-   desug (End α) = pure (enil α)
-   desug (Next α s l) = econs α <$> desug s <*> desug l
+   desug (End α) = pure (enil α Nothing)
+   desug (Next α s l) = econs α Nothing <$> desug s <*> desug l
 
    desugBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
-   desugBwd (E.Constr α _ _) (End _) = End α
-   desugBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
+   desugBwd (E.Constr α _ _ _) (End _) = End α
+   desugBwd (E.Constr α _ _ (e1 : e2 : Nil)) (Next _ s l) =
       Next α (desugBwd e1 s) (desugBwd e2 l)
    desugBwd _ _ = error absurd
 
@@ -162,11 +171,11 @@ desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module
 desugarModuleFwd = moduleFwd
 
 -- helpers
-enil :: forall a. a -> E.Expr a
-enil α = E.Constr α cNil Nil
+enil :: forall a. a -> E.DocOpt -> E.Expr a
+enil α doc = E.Constr α doc cNil Nil
 
-econs :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
-econs α e e' = E.Constr α cCons (e : e' : Nil)
+econs :: forall a. a -> E.DocOpt -> E.Expr a -> E.Expr a -> E.Expr a
+econs α doc e e' = E.Constr α doc cCons (e : e' : Nil)
 
 elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
@@ -188,7 +197,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Dictionary top Nil)))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Dictionary top Nothing Nil)))) <*> desug s
 
 -- VarDefs
 varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
@@ -236,16 +245,27 @@ recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (desugBwd σ (Cla
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
 exprFwd (Var x) = pure (E.Var x)
 exprFwd (Op op) = pure (E.Op op)
-exprFwd (Int α n) = pure (E.Int α n)
-exprFwd (Float α n) = pure (E.Float α n)
-exprFwd (Str α s) = pure (E.Str α s)
-exprFwd (Constr α c ss) = E.Constr α c <$> traverse desug ss
-exprFwd (Dictionary α sss) = do
+exprFwd (Int α doc n) = do
+   edoc <- desugComment doc
+   pure $ E.Int α edoc n
+exprFwd (Float α doc n) = do
+   edoc <- desugComment doc
+   pure (E.Float α edoc n)
+exprFwd (Str α doc s) = do
+   edoc <- desugComment doc
+   pure (E.Str α edoc s)
+exprFwd (Constr α doc c ss) = do
+   edoc <- desugComment doc
+   E.Constr α edoc c <$> traverse desug ss
+exprFwd (Dictionary α doc sss) = do
    let ks × ss = unzip sss
    ks' <- traverse desug ks
    es <- traverse desug ss
-   E.Dictionary α <$> pure (zipWith (\k v -> Pair k v) ks' es)
-exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desug s <@> x × y <*> desug s'
+   edoc <- desugComment doc
+   E.Dictionary α edoc <$> pure (zipWith (\k v -> Pair k v) ks' es)
+exprFwd (Matrix α doc s (x × y) s') = do
+   edoc <- desugComment doc
+   E.Matrix α edoc <$> desug s <@> x × y <*> desug s'
 exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project s x) = E.Project <$> desug s <@> x
 exprFwd (DProject s x) = E.DProject <$> desug s <*> desug x
@@ -255,8 +275,12 @@ exprFwd (MatchAs s μ) =
    E.App <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
 exprFwd (IfElse s1 s2 s3) =
    E.App <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3))) <*> desug s1
-exprFwd (ListEmpty α) = pure (enil α)
-exprFwd (ListNonEmpty α s l) = econs α <$> desug s <*> desug l
+exprFwd (ListEmpty α doc) = do
+   edoc <- desugComment doc
+   pure (enil α edoc)
+exprFwd (ListNonEmpty α doc s l) = do
+   edoc <- desugComment doc
+   econs α edoc <$> desug s <*> desug l
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desug s1) <*> desug s2
 exprFwd (ListComp α s qs) = listCompFwd (α × qs × s)
 exprFwd (Let ds s) = varDefsFwd (ds × s)
@@ -265,14 +289,14 @@ exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desug s
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
 exprBwd (E.Op _) (Op op) = Op op
-exprBwd (E.Int α _) (Int _ n) = Int α n
-exprBwd (E.Float α _) (Float _ n) = Float α n
-exprBwd (E.Str α _) (Str _ str) = Str α str
-exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry desugBwd <$> zip es ss)
-exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
-   Dictionary α (zipWith (\(Pair e e') (s × s') -> (desugBwd e s) × (desugBwd e' s')) ees sss)
-exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
-   Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
+exprBwd (E.Int α edoc _) (Int _ doc n) = Int α (desugCommentBwd edoc doc) n
+exprBwd (E.Float α edoc _) (Float _ doc n) = Float α (desugCommentBwd edoc doc) n
+exprBwd (E.Str α edoc _) (Str _ doc str) = Str α (desugCommentBwd edoc doc) str
+exprBwd (E.Constr α edoc _ es) (Constr _ doc ctr ss) = Constr α (desugCommentBwd edoc doc) ctr (uncurry desugBwd <$> zip es ss)
+exprBwd (E.Dictionary α edoc ees) (Dictionary _ doc sss) =
+   Dictionary α (desugCommentBwd edoc doc) (zipWith (\(Pair e e') (s × s') -> (desugBwd e s) × (desugBwd e' s')) ees sss)
+exprBwd (E.Matrix α edoc e1 _ e2) (Matrix _ doc s1 (x × y) s2) =
+   Matrix α (desugCommentBwd edoc doc) (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (desugBwd σ μ)
 exprBwd (E.Project e x) (Project s _) = Project (desugBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (desugBwd e1 s1) (desugBwd e2 s2)
@@ -285,9 +309,9 @@ exprBwd (E.App (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (desugBwd e1 s1)
       (if cTrue ∈ m then desugBwd (asExpr (get cTrue m)) s2 else botOf s2)
       (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
-exprBwd (E.Constr α _ Nil) (ListEmpty _) = ListEmpty α
-exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
-   ListNonEmpty α (desugBwd e1 s) (desugBwd e2 l)
+exprBwd (E.Constr α edoc _ Nil) (ListEmpty _ doc) = ListEmpty α (desugCommentBwd edoc doc)
+exprBwd (E.Constr α edoc _ (e1 : e2 : Nil)) (ListNonEmpty _ doc s l) =
+   ListNonEmpty α (desugCommentBwd edoc doc) (desugBwd e1 s) (desugBwd e2 l)
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd e (ListComp _ s qs) =
@@ -300,10 +324,10 @@ exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
 listCompFwd (α × Nil × s) =
-   econs α <$> desug s <@> enil α
+   econs α Nothing <$> desug s <@> enil α Nothing
 listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
-   E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
+   E.App (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α Nothing)))) <$> desug s
 listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
    σ <- clausesStateFwd (((Left p : Nil) × Nil × ListComp α s' qs) : Nil)
    E.App (E.Lambda α (asElim σ)) <$> desug s
@@ -318,12 +342,12 @@ listCompBwd
    => E.Expr a
    -> List (Raw Qualifier) × Raw Expr
    -> a × List (Qualifier a) × Expr a
-listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (Nil × s) | c == cCons && c' == cNil =
+listCompBwd (E.Constr α2 _ c (e : E.Constr α1 _ c' Nil : Nil)) (Nil × s) | c == cCons && c' == cNil =
    (α1 ∨ α2) × Nil × desugBwd e s
 listCompBwd (E.App (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) × s0') =
    listCompBwd (asExpr (get cTrue m)) (qs × s0') × asExpr (get cFalse m)
       # unsafePartial case _ of
-           (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
+           (α × qs' × s') × E.Constr β _ c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
 listCompBwd (E.App (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0') =
    clausesStateBwd (ContElim σ) (((Left p : Nil) × Nil × ListComp unit s0' qs) : Nil)
       # unsafePartial case _ of
@@ -472,6 +496,33 @@ clausesStateBwd κ0 ks = case κ0 × ks of
       kss = defined (popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks)
    ContElim _ × _ -> error (shapeMismatch unit)
 
+desugComment :: ∀ m. MonadError Error m => DocOpt -> m E.DocOpt
+desugComment Nothing = pure Nothing
+desugComment (Just c) = Just <$> commentFwd c
+
+desugCommentBwd :: E.DocOpt -> DocOpt -> DocOpt
+desugCommentBwd Nothing Nothing = Nothing
+desugCommentBwd (Just ec) (Just c) = Just (commentBwd ec c)
+desugCommentBwd _ _ = error "desugCommentBwd mismatch"
+
+commentFwd :: ∀ m. MonadError Error m => List DocCommentElem -> m (List E.DocCommentElem)
+commentFwd (Cons s l) = Cons <$> commentElemFwd s <*> commentFwd l
+commentFwd Nil = pure Nil
+
+commentElemFwd :: ∀ m. MonadError Error m => DocCommentElem -> m E.DocCommentElem
+commentElemFwd (Token s) = pure $ E.Token s
+commentElemFwd (CExpr e) = E.CExpr <$> exprFwd e
+
+commentBwd :: List E.DocCommentElem -> List DocCommentElem -> List DocCommentElem
+commentBwd (Cons c l) (Cons c' l') = Cons (commentElemBwd c c') (commentBwd l l')
+commentBwd Nil Nil = Nil
+commentBwd _ _ = error "commentBwd mismatch"
+
+commentElemBwd :: E.DocCommentElem -> DocCommentElem -> DocCommentElem
+commentElemBwd (E.Token _) (Token s') = Token s'
+commentElemBwd (E.CExpr e) (CExpr e') = CExpr (exprBwd e e')
+commentElemBwd _ _ = error "commentElemBwd mismatch"
+
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.
 type ClauseState a = List (Pattern + ListRestPattern) × Expr a
@@ -494,7 +545,7 @@ orElseFwd α = case _ of
    (p : π) × s ->
       (orElseFwd α ((π' <> π) × s) <#> popPatts (length π') <#> pushPattFor p)
          `appendList`
-            (unless p <#> \p' -> ((π <#> anon) × ListEmpty α) # pushPatt p')
+            (unless p <#> \p' -> ((π <#> anon) × ListEmpty α Nothing) # pushPatt p')
       where
       π' = subpatts p
    where
@@ -541,7 +592,7 @@ orElseBwd (π0 × s) ks = case π0 of
       popIfPresent Nil ks' = bot × ks'
       popIfPresent ps ks' =
          if (p' : (π <#> anon)) /= π' then popIfPresent ps' ks'
-         else popIfPresent ps' (nonEmpty ks'') # first (_ ∨ (s # unsafePartial \(ListEmpty α) -> α))
+         else popIfPresent ps' (nonEmpty ks'') # first (_ ∨ (s # unsafePartial \(ListEmpty α _) -> α))
          where
          { init: ks'', last: π' × s } = unsnoc ks'
          { init: ps', last: p' } = unsnoc (nonEmpty ps)
@@ -570,6 +621,7 @@ instance Functor Module where
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ = error unimplemented
 
+derive instance Eq DocCommentElem
 derive instance Eq a => Eq (DictEntry a)
 derive instance Generic (DictEntry a) _
 instance Show a => Show (DictEntry a) where
