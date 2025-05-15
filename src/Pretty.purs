@@ -24,13 +24,13 @@ import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Expr (Cont(..), Elim(..))
-import Expr (DocCommentElem(..), DocOpt, Expr(..), RecDefs(..), VarDef(..)) as E
+import Expr (DocComment, DocCommentElem(..), DocOpt, Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DocOpt, DocCommentElem(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DocOpt, DocComment, DocCommentElem(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, error, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -142,17 +142,17 @@ removeDocWS (Doc d) = Doc
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op op) = parentheses (text op)
-   pretty (Int α c n) = pretty c .<>. highlightIf α (text (show n))
-   pretty (Float α c n) = pretty c .<>. highlightIf α (text (show n))
-   pretty (Str α c str) = pretty c .<>. highlightIf α (text ("\"" <> str <> "\""))
-   pretty (Constr α cmt c x)
+   pretty (Int α doc n) = pretty doc .<>. highlightIf α (text (show n))
+   pretty (Float α doc n) = pretty doc .<>. highlightIf α (text (show n))
+   pretty (Str α doc str) = pretty doc .<>. highlightIf α (text ("\"" <> str <> "\""))
+   pretty (Constr α doc c x)
       | c == "Explained" = case (head x) of
            (Just (Str _ _ x')) -> highlightIf α $ text "@" .<>. text x' .<>. text "@"
            _ -> error "malformed explanation"
-      | otherwise = pretty cmt .<>. highlightIf α (prettyConstr c x)
-   pretty (Dictionary α c sss) = pretty c .<>. highlightIf α (curlyBraces (prettyDictEntries (.-.) sss))
-   pretty (Matrix α c e (x × y) e') =
-      pretty c .<>. highlightIf α
+      | otherwise = pretty doc .<>. highlightIf α (prettyConstr c x)
+   pretty (Dictionary α doc sss) = pretty doc .<>. highlightIf α (curlyBraces (prettyDictEntries (.-.) sss))
+   pretty (Matrix α doc e (x × y) e') =
+      pretty doc .<>. highlightIf α
          ( arrayBrackets
               ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
                    .<>. text str.in_
@@ -166,11 +166,11 @@ instance Ann a => Pretty (Expr a) where
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = text str.if_ .<>. pretty s1 .<>. text str.then_ .<>. pretty s2 .<>. text str.else_ .<>. pretty s3
-   pretty (ListEmpty α c) = pretty c .<>. (highlightIf α $ brackets empty)
-   pretty (ListNonEmpty α c (Dictionary _ _ xss) l) = pretty c
+   pretty (ListEmpty α doc) = pretty doc .<>. (highlightIf α $ brackets empty)
+   pretty (ListNonEmpty α doc (Dictionary _ _ xss) l) = pretty doc
       .<>. (highlightIf α (text str.lBracket) .<>. highlightIf α (curlyBraces (prettyDictEntries (.<>.) xss)))
       .-. pretty l
-   pretty (ListNonEmpty α c e l) = pretty c .<>. highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
+   pretty (ListNonEmpty α doc e l) = pretty doc .<>. highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
    pretty (ListComp ann s qs) = highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
    pretty (Let ds s) = (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
@@ -207,9 +207,9 @@ instance Pretty DocOpt where
    pretty (Just x) = text "\"\"\"" .<>. pretty x
    pretty Nothing = empty
 
-instance Pretty (List DocCommentElem) where
-   pretty (Cons c Nil) = pretty c .<>. text "\"\"\""
-   pretty (Cons c xs) = pretty c .<>. pretty xs
+instance Pretty DocComment where
+   pretty (Cons word Nil) = pretty word .<>. text "\"\"\""
+   pretty (Cons word xs) = pretty word .<>. pretty xs
    pretty Nil = empty
 
 instance Pretty DocCommentElem where
@@ -385,12 +385,12 @@ prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
-   pretty (E.Int α c n) = pretty c .<>. highlightIf α (text (show n))
-   pretty (E.Float α c n) = pretty c .<>. highlightIf α (text (show n))
-   pretty (E.Str α c str) = pretty c .<>. highlightIf α (text (show str))
-   pretty (E.Dictionary α c ees) = pretty c .<>. highlightIf α (prettyDict pretty (ees <#> toTuple))
-   pretty (E.Constr α cmnt c es) = pretty cmnt .<>. highlightIf α (prettyConstr c es)
-   pretty (E.Matrix α c e1 (i × j) e2) = pretty c .<>. highlightIf α (prettyMatrix e1 i j e2)
+   pretty (E.Int α doc n) = pretty doc .<>. highlightIf α (text (show n))
+   pretty (E.Float α doc n) = pretty doc .<>. highlightIf α (text (show n))
+   pretty (E.Str α doc str) = pretty doc .<>. highlightIf α (text (show str))
+   pretty (E.Dictionary α doc ees) = pretty doc .<>. highlightIf α (prettyDict pretty (ees <#> toTuple))
+   pretty (E.Constr α doc c es) = pretty doc .<>. highlightIf α (prettyConstr c es)
+   pretty (E.Matrix α doc e1 (i × j) e2) = pretty doc .<>. highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda α σ) = hcat [ highlightIf α (text str.fun), pretty σ ]
    pretty (E.Op op) = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
@@ -404,9 +404,9 @@ instance Pretty E.DocOpt where
    pretty (Just x) = text "\"\"\"" .<>. pretty x
    pretty Nothing = empty
 
-instance Pretty (List E.DocCommentElem) where
-   pretty (Cons c Nil) = pretty c .<>. text "\"\"\""
-   pretty (Cons c xs) = pretty c .<>. pretty xs
+instance Pretty E.DocComment where
+   pretty (Cons word Nil) = pretty word .<>. text "\"\"\""
+   pretty (Cons word xs) = pretty word .<>. pretty xs
    pretty Nil = empty
 
 instance Pretty E.DocCommentElem where
