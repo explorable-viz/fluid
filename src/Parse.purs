@@ -125,11 +125,11 @@ docComment' expr' = token.lexeme (go <?> "docComment")
 docCommentToken :: SParser (Raw Expr) -> SParser DocCommentElem
 docCommentToken expr' =
    token.whiteSpace
-      *> (try commentLiteral <|> commentExpr expr')
+      *> (try commentToken <|> commentExpr expr')
       <* token.whiteSpace
 
-commentLiteral :: SParser DocCommentElem
-commentLiteral = Literal <$> (SCU.fromCharArray <$> (Array.some docCommentLetter))
+commentToken :: SParser DocCommentElem
+commentToken = Token <$> (SCU.fromCharArray <$> (Array.some docCommentLetter))
 
 commentExpr :: SParser (Raw Expr) -> SParser DocCommentElem
 commentExpr expr' = string str.exprStart *> (CExpr <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))

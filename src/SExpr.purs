@@ -79,7 +79,7 @@ data ListRestPattern
 
 type DocOpt = Maybe DocComment
 type DocComment = List DocCommentElem
-data DocCommentElem = Literal String | CExpr (Raw Expr)
+data DocCommentElem = Token String | CExpr (Raw Expr)
 
 derive instance Generic DocCommentElem _
 
@@ -510,7 +510,7 @@ commentFwd (Cons s l) = Cons <$> commentElemFwd s <*> commentFwd l
 commentFwd Nil = pure Nil
 
 commentElemFwd :: ∀ m. MonadError Error m => DocCommentElem -> m E.DocCommentElem
-commentElemFwd (Literal s) = pure $ E.Literal s
+commentElemFwd (Token s) = pure $ E.Token s
 commentElemFwd (CExpr e) = E.CExpr <$> exprFwd e
 
 commentBwd :: List E.DocCommentElem -> List DocCommentElem -> List DocCommentElem
@@ -519,7 +519,7 @@ commentBwd Nil Nil = Nil
 commentBwd _ _ = error "commentBwd mismatch"
 
 commentElemBwd :: E.DocCommentElem -> DocCommentElem -> DocCommentElem
-commentElemBwd (E.Literal _) (Literal s') = Literal s'
+commentElemBwd (E.Token _) (Token s') = Token s'
 commentElemBwd (E.CExpr e) (CExpr e') = CExpr (exprBwd e e')
 commentElemBwd _ _ = error "commentElemBwd mismatch"
 

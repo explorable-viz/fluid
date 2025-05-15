@@ -213,7 +213,7 @@ instance Pretty DocComment where
    pretty Nil = empty
 
 instance Pretty DocCommentElem where
-   pretty (Literal str) = text str
+   pretty (Token str) = text str
    pretty (CExpr e) = text "$" .<>. curlyBraces (pretty e)
 
 instance Pretty Pattern where
@@ -410,7 +410,7 @@ instance Pretty E.DocComment where
    pretty Nil = empty
 
 instance Pretty E.DocCommentElem where
-   pretty (E.Literal str) = text str
+   pretty (E.Token str) = text str
    pretty (E.CExpr e) = text "$" .<>. curlyBraces (pretty e)
 
 instance Highlightable a => Pretty (Dict (Elim a)) where

@@ -55,7 +55,7 @@ data Cont a
 
 type DocOpt = Maybe DocComment
 type DocComment = List DocCommentElem
-data DocCommentElem = Literal String | CExpr (Raw Expr)
+data DocCommentElem = Token String | CExpr (Raw Expr)
 
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
@@ -115,7 +115,7 @@ instance (FV a) => FV (List a) where
    fv xs = unions (fv <$> xs)
 
 instance FV DocCommentElem where
-   fv (Literal _) = empty
+   fv (Token _) = empty
    fv (CExpr e) = fv e
 
 class BV a where
@@ -187,7 +187,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ _ = shapeMismatch unit
 
 instance JoinSemilattice DocCommentElem where
-   join (Literal str) (Literal str') = Literal (str ≜ str')
+   join (Token str) (Token str') = Token (str ≜ str')
    join (CExpr e) (CExpr e') = CExpr (e ∨ e')
    join _ _ = shapeMismatch unit
 
