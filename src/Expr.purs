@@ -26,12 +26,12 @@ import Util.Set ((\\), (∪))
 data Expr a
    = Var Var
    | Op Var
-   | Int a (Maybe Comment) Int
-   | Float a (Maybe Comment) Number
-   | Str a (Maybe Comment) String
-   | Dictionary a (Maybe Comment) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
-   | Constr a (Maybe Comment) Ctr (List (Expr a))
-   | Matrix a (Maybe Comment) (Expr a) (Var × Var) (Expr a)
+   | Int a DocOpt Int
+   | Float a DocOpt Number
+   | Str a DocOpt String
+   | Dictionary a DocOpt (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
+   | Constr a DocOpt Ctr (List (Expr a))
+   | Matrix a DocOpt (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
@@ -53,9 +53,9 @@ data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
 
-type Comment = List CommentElem
+type DocOpt = Maybe (List DocCommentElem)
 
-data CommentElem = Literal String | CExpr (Raw Expr)
+data DocCommentElem = Literal String | CExpr (Raw Expr)
 
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
@@ -114,7 +114,7 @@ instance FV a => FV (Maybe a) where
 instance (FV a) => FV (List a) where
    fv xs = unions (fv <$> xs)
 
-instance FV CommentElem where
+instance FV DocCommentElem where
    fv (Literal _) = empty
    fv (CExpr e) = fv e
 
@@ -186,7 +186,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
    join _ _ = shapeMismatch unit
 
-instance JoinSemilattice CommentElem where
+instance JoinSemilattice DocCommentElem where
    join (Literal str) (Literal str') = Literal (str ≜ str')
    join (CExpr e) (CExpr e') = CExpr (e ∨ e')
    join _ _ = shapeMismatch unit
@@ -346,14 +346,14 @@ derive instance Eq a => Eq (Elim a)
 derive instance Eq a => Eq (Cont a)
 derive instance Eq a => Eq (VarDef a)
 derive instance Eq a => Eq (RecDefs a)
-derive instance Eq CommentElem
+derive instance Eq DocCommentElem
 
 derive instance Ord a => Ord (Expr a)
 derive instance Ord a => Ord (Elim a)
 derive instance Ord a => Ord (Cont a)
 derive instance Ord a => Ord (VarDef a)
 derive instance Ord a => Ord (RecDefs a)
-derive instance Ord CommentElem
+derive instance Ord DocCommentElem
 
 instance TypeName (RecDefs a) where
    typeName _ = "RecDefs"

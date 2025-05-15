@@ -26,8 +26,8 @@ import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTyp
 import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
 import Effect.Exception (Error)
-import Expr (Comment, CommentElem(..), Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Expr (Cont(..), Elim(..), asElim, asExpr)
+import Expr (DocCommentElem(..), DocOpt, Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -39,12 +39,12 @@ import Util.Set ((∈))
 data Expr a
    = Var Var
    | Op Var
-   | Int a (Maybe Comment) Int
-   | Float a (Maybe Comment) Number
-   | Str a (Maybe Comment) String
-   | Constr a (Maybe Comment) Ctr (List (Expr a))
-   | Dictionary a (Maybe Comment) (List (DictEntry a × Expr a))
-   | Matrix a (Maybe Comment) (Expr a) (Var × Var) (Expr a)
+   | Int a DocOpt Int
+   | Float a DocOpt Number
+   | Str a DocOpt String
+   | Constr a DocOpt Ctr (List (Expr a))
+   | Dictionary a DocOpt (List (DictEntry a × Expr a))
+   | Matrix a DocOpt (Expr a) (Var × Var) (Expr a)
    | Lambda (Clauses a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
@@ -52,8 +52,8 @@ data Expr a
    | BinaryApp (Expr a) Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
    | IfElse (Expr a) (Expr a) (Expr a)
-   | ListEmpty a (Maybe Comment) -- called [] in the paper
-   | ListNonEmpty a (Maybe Comment) (Expr a) (ListRest a)
+   | ListEmpty a DocOpt -- called [] in the paper
+   | ListNonEmpty a DocOpt (Expr a) (ListRest a)
    | ListEnum (Expr a) (Expr a)
    | ListComp a (Expr a) (List (Qualifier a))
    | Let (VarDefs a) (Expr a)
@@ -77,13 +77,13 @@ data ListRestPattern
    | PListEnd
    | PListNext Pattern ListRestPattern
 
-type Comment = List CommentElem
+type DocOpt = Maybe (List DocCommentElem)
 
-data CommentElem = Literal String | CExpr (Raw Expr)
+data DocCommentElem = Literal String | CExpr (Raw Expr)
 
-derive instance Generic CommentElem _
+derive instance Generic DocCommentElem _
 
-instance Show CommentElem where
+instance Show DocCommentElem where
    show = genericShow
 
 pVarAnon :: Pattern
@@ -171,10 +171,10 @@ desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module
 desugarModuleFwd = moduleFwd
 
 -- helpers
-enil :: forall a. a -> Maybe E.Comment -> E.Expr a
+enil :: forall a. a -> E.DocOpt -> E.Expr a
 enil α c = E.Constr α c cNil Nil
 
-econs :: forall a. a -> Maybe E.Comment -> E.Expr a -> E.Expr a -> E.Expr a
+econs :: forall a. a -> E.DocOpt -> E.Expr a -> E.Expr a -> E.Expr a
 econs α c e e' = E.Constr α c cCons (e : e' : Nil)
 
 elimBool :: forall a. Cont a -> Cont a -> Elim a
@@ -496,29 +496,29 @@ clausesStateBwd κ0 ks = case κ0 × ks of
       kss = defined (popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks)
    ContElim _ × _ -> error (shapeMismatch unit)
 
-desugComment :: ∀ m. MonadError Error m => Maybe Comment -> m (Maybe E.Comment)
+desugComment :: ∀ m. MonadError Error m => DocOpt -> m E.DocOpt
 desugComment Nothing = pure Nothing
 desugComment (Just c) = Just <$> commentFwd c
 
-desugCommentBwd :: Maybe E.Comment -> Maybe Comment -> Maybe Comment
+desugCommentBwd :: E.DocOpt -> DocOpt -> DocOpt
 desugCommentBwd Nothing Nothing = Nothing
 desugCommentBwd (Just ec) (Just c) = Just (commentBwd ec c)
 desugCommentBwd _ _ = error "desugCommentBwd mismatch"
 
-commentFwd :: ∀ m. MonadError Error m => Comment -> m E.Comment
+commentFwd :: ∀ m. MonadError Error m => List DocCommentElem -> m (List E.DocCommentElem)
 commentFwd (Cons s l) = Cons <$> commentElemFwd s <*> commentFwd l
 commentFwd Nil = pure Nil
 
-commentElemFwd :: ∀ m. MonadError Error m => CommentElem -> m E.CommentElem
+commentElemFwd :: ∀ m. MonadError Error m => DocCommentElem -> m E.DocCommentElem
 commentElemFwd (Literal s) = pure $ E.Literal s
 commentElemFwd (CExpr e) = E.CExpr <$> exprFwd e
 
-commentBwd :: E.Comment -> Comment -> Comment
+commentBwd :: List E.DocCommentElem -> List DocCommentElem -> List DocCommentElem
 commentBwd (Cons c l) (Cons c' l') = Cons (commentElemBwd c c') (commentBwd l l')
 commentBwd Nil Nil = Nil
 commentBwd _ _ = error "commentBwd mismatch"
 
-commentElemBwd :: E.CommentElem -> CommentElem -> CommentElem
+commentElemBwd :: E.DocCommentElem -> DocCommentElem -> DocCommentElem
 commentElemBwd (E.Literal _) (Literal s') = Literal s'
 commentElemBwd (E.CExpr e) (CExpr e') = CExpr (exprBwd e e')
 commentElemBwd _ _ = error "commentElemBwd mismatch"
@@ -621,7 +621,7 @@ instance Functor Module where
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join _ = error unimplemented
 
-derive instance Eq CommentElem
+derive instance Eq DocCommentElem
 derive instance Eq a => Eq (DictEntry a)
 derive instance Generic (DictEntry a) _
 instance Show a => Show (DictEntry a) where

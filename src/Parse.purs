@@ -35,7 +35,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), CommentElem(..), Comment, DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), DocCommentElem(..), DocOpt, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -111,27 +111,27 @@ rArrow = token.reservedOp str.rArrow
 docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
-docComment :: SParser (Raw Expr) -> SParser (Maybe Comment)
+docComment :: SParser (Raw Expr) -> SParser DocOpt
 docComment expr' = optionMaybe (try $ docComment' expr')
 
-docComment' :: SParser (Raw Expr) -> SParser Comment
+docComment' :: SParser (Raw Expr) -> SParser (List DocCommentElem)
 docComment' expr' = token.lexeme (go <?> "docComment")
    where
-   go :: SParser Comment
+   go :: SParser (List DocCommentElem)
    go = do
       words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
       Debug.trace (show words) (\_ -> pure words)
 
-docCommentToken :: SParser (Raw Expr) -> SParser CommentElem
+docCommentToken :: SParser (Raw Expr) -> SParser DocCommentElem
 docCommentToken expr' =
    token.whiteSpace
       *> (try commentLiteral <|> commentExpr expr')
       <* token.whiteSpace
 
-commentLiteral :: SParser CommentElem
+commentLiteral :: SParser DocCommentElem
 commentLiteral = Literal <$> (SCU.fromCharArray <$> (Array.some docCommentLetter))
 
-commentExpr :: SParser (Raw Expr) -> SParser CommentElem
+commentExpr :: SParser (Raw Expr) -> SParser DocCommentElem
 commentExpr expr' = string str.exprStart *> (CExpr <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
 docCommentLetter :: SParser Char
@@ -339,17 +339,17 @@ expr_ =
                <|> try parensOp
 
             where
-            matrix :: Maybe Comment -> SParser (Raw Expr)
+            matrix :: DocOpt -> SParser (Raw Expr)
             matrix c = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
                Matrix unit c
                   <$> (expr' <* bar)
                   <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
                   <*> (keyword str.in_ *> expr')
 
-            nil :: Maybe (Comment) -> SParser (Raw Expr)
+            nil :: DocOpt -> SParser (Raw Expr)
             nil c = token.brackets $ pure (ListEmpty unit c)
 
-            listNonEmpty :: Maybe Comment -> SParser (Raw Expr)
+            listNonEmpty :: DocOpt -> SParser (Raw Expr)
             listNonEmpty c = lBracket *> (ListNonEmpty unit c <$> expr' <*> fix listRest)
                where
                listRest :: Endo (SParser (Raw ListRest))
@@ -370,10 +370,10 @@ expr_ =
             listEnum :: SParser (Raw Expr)
             listEnum = token.brackets $ pure ListEnum <*> expr' <* ellipsis <*> expr'
 
-            constr :: Maybe Comment -> SParser (Raw Expr)
+            constr :: DocOpt -> SParser (Raw Expr)
             constr c = Constr unit c <$> ctr <@> empty
 
-            dict :: Maybe Comment -> SParser (Raw Expr)
+            dict :: DocOpt -> SParser (Raw Expr)
             dict c = sepBy kvPair token.comma <#> Dictionary unit c # token.braces
                where
                kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
@@ -386,24 +386,24 @@ expr_ =
             signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
 
             -- built-in integer/float parsers don't seem to allow leading signs.
-            int :: Maybe Comment -> SParser (Raw Expr)
+            int :: DocOpt -> SParser (Raw Expr)
             int c = do
                sign <- signOpt
                (sign >>> Int unit c) <$> token.natural
 
-            float :: Maybe Comment -> SParser (Raw Expr)
+            float :: DocOpt -> SParser (Raw Expr)
             float c = do
                sign <- signOpt
                (sign >>> Float unit c) <$> token.float
 
-            string :: Maybe Comment -> SParser (Raw Expr)
+            string :: DocOpt -> SParser (Raw Expr)
             string c = Str unit c <$> token.stringLiteral
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)
             parensOp = Op <$> token.parens token.operator
 
-            pair :: Maybe Comment -> SParser (Raw Expr)
+            pair :: DocOpt -> SParser (Raw Expr)
             pair c = token.parens $
                (pure $ \e e' -> Constr unit c cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 

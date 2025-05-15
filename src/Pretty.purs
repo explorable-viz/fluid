@@ -24,13 +24,13 @@ import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Expr (Cont(..), Elim(..))
-import Expr (Expr(..), RecDefs(..), VarDef(..), Comment, CommentElem(..)) as E
+import Expr (DocCommentElem(..), DocOpt, Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), Comment, CommentElem(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DocOpt, DocCommentElem(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, error, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -203,16 +203,16 @@ instance Ann a => Pretty (List (Pair (Expr a))) where
 prettyPairs :: forall a. Ann a => (Pair (Expr a)) -> Doc
 prettyPairs (Pair e e') = pretty e .<>. text str.colonEq .<>. pretty e'
 
-instance Pretty (Maybe Comment) where
+instance Pretty DocOpt where
    pretty (Just x) = text "\"\"\"" .<>. pretty x
    pretty Nothing = empty
 
-instance Pretty (Comment) where
+instance Pretty (List DocCommentElem) where
    pretty (Cons c Nil) = pretty c .<>. text "\"\"\""
    pretty (Cons c xs) = pretty c .<>. pretty xs
    pretty Nil = empty
 
-instance Pretty CommentElem where
+instance Pretty DocCommentElem where
    pretty (Literal str) = text str
    pretty (CExpr e) = text "$" .<>. curlyBraces (pretty e)
 
@@ -400,16 +400,16 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.DProject e x) = pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
 
-instance Pretty (Maybe E.Comment) where
+instance Pretty E.DocOpt where
    pretty (Just x) = text "\"\"\"" .<>. pretty x
    pretty Nothing = empty
 
-instance Pretty (E.Comment) where
+instance Pretty (List E.DocCommentElem) where
    pretty (Cons c Nil) = pretty c .<>. text "\"\"\""
    pretty (Cons c xs) = pretty c .<>. pretty xs
    pretty Nil = empty
 
-instance Pretty E.CommentElem where
+instance Pretty E.DocCommentElem where
    pretty (E.Literal str) = text str
    pretty (E.CExpr e) = text "$" .<>. curlyBraces (pretty e)
 
