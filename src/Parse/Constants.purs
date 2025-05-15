@@ -34,7 +34,7 @@ str
       , then_ :: String
       , backquote :: String
       , triplequote :: String
-      , exprStart :: String
+      , dollar :: String
       }
 
 str =
@@ -70,5 +70,5 @@ str =
    , then_: "then"
    , backquote: "@"
    , triplequote: "\"\"\""
-   , exprStart: "$"
+   , dollar: "$"
    }

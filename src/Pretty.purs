@@ -11,7 +11,7 @@ import Prelude hiding (absurd, between)
 import Bind (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), fromFoldable, head, null, uncons, (:))
+import Data.List (List(..), fromFoldable, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
@@ -31,7 +31,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DocOpt, DocComment, DocCommentElem(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), Endo, assert, error, intersperse, (×))
+import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
@@ -145,11 +145,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Int α doc n) = pretty doc .<>. highlightIf α (text (show n))
    pretty (Float α doc n) = pretty doc .<>. highlightIf α (text (show n))
    pretty (Str α doc str) = pretty doc .<>. highlightIf α (text ("\"" <> str <> "\""))
-   pretty (Constr α doc c x)
-      | c == "Explained" = case (head x) of
-           (Just (Str _ _ x')) -> highlightIf α $ text "@" .<>. text x' .<>. text "@"
-           _ -> error "malformed explanation"
-      | otherwise = pretty doc .<>. highlightIf α (prettyConstr c x)
+   pretty (Constr α doc c x) = pretty doc .<>. highlightIf α (prettyConstr c x)
    pretty (Dictionary α doc sss) = pretty doc .<>. highlightIf α (curlyBraces (prettyDictEntries (.-.) sss))
    pretty (Matrix α doc e (x × y) e') =
       pretty doc .<>. highlightIf α
@@ -204,17 +200,17 @@ prettyPairs :: forall a. Ann a => (Pair (Expr a)) -> Doc
 prettyPairs (Pair e e') = pretty e .<>. text str.colonEq .<>. pretty e'
 
 instance Pretty DocOpt where
-   pretty (Just x) = text "\"\"\"" .<>. pretty x
+   pretty (Just x) = text str.triplequote .<>. pretty x
    pretty Nothing = empty
 
 instance Pretty DocComment where
-   pretty (Cons word Nil) = pretty word .<>. text "\"\"\""
+   pretty (Cons word Nil) = pretty word .<>. text str.triplequote
    pretty (Cons word xs) = pretty word .<>. pretty xs
    pretty Nil = empty
 
 instance Pretty DocCommentElem where
    pretty (Token str) = text str
-   pretty (CExpr e) = text "$" .<>. curlyBraces (pretty e)
+   pretty (CExpr e) = text str.dollar .<>. curlyBraces (pretty e)
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
@@ -401,17 +397,17 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
 
 instance Pretty E.DocOpt where
-   pretty (Just x) = text "\"\"\"" .<>. pretty x
+   pretty (Just x) = text str.triplequote .<>. pretty x
    pretty Nothing = empty
 
 instance Pretty E.DocComment where
-   pretty (Cons word Nil) = pretty word .<>. text "\"\"\""
+   pretty (Cons word Nil) = pretty word .<>. text str.triplequote
    pretty (Cons word xs) = pretty word .<>. pretty xs
    pretty Nil = empty
 
 instance Pretty E.DocCommentElem where
    pretty (E.Token str) = text str
-   pretty (E.CExpr e) = text "$" .<>. curlyBraces (pretty e)
+   pretty (E.CExpr e) = text str.dollar .<>. curlyBraces (pretty e)
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty ρ = go (toUnfoldable ρ)

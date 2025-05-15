@@ -129,10 +129,10 @@ docCommentToken expr' =
       <* token.whiteSpace
 
 commentToken :: SParser DocCommentElem
-commentToken = Token <$> (SCU.fromCharArray <$> (Array.some docCommentLetter))
+commentToken = Token <$> (SCU.fromCharArray <$> Array.some docCommentLetter)
 
 commentExpr :: SParser (Raw Expr) -> SParser DocCommentElem
-commentExpr expr' = string str.exprStart *> (CExpr <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
+commentExpr expr' = string str.dollar *> (CExpr <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
 docCommentLetter :: SParser Char
 docCommentLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
