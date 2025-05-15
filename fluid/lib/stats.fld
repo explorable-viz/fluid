@@ -50,6 +50,14 @@ let qcut data qs =
             edges = append (low : [ findPercentile x data | x <- qs], [high])
         in accumBins data edges;
 
+let mkHistogram data dataName nbins = 
+    let binWidth = (maximum data - minimum data) / nbins
+    in BarChart {
+        caption: "Histogram of distribution of " ++ dataName,
+        size: { width: 275, height: 185},
+        stackedBars: map (fun (data, edge) -> { x: data, bars: [{ y: "density", z: (length data) / binWidth }] }) (cut data nbins)
+    };
+
 let likelihoodLE data target = 
     length (filter (fun x -> x <= target) data) / length data;
 
