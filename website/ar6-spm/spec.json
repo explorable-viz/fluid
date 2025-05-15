@@ -1,0 +1,8 @@
+{
+    "fluidSrcPath": ["../fluid"],
+    "datasets": [["likelihoods", "likelihoods"], ["ssp119Source", "ssp119"], ["ssp245Source", "ssp245"]],
+    "imports": [ "lib/stats" ],
+    "file": "figure-spm-4",
+    "inputs": [ "ssp119Source", "ssp245Source" ],
+    "query": false
+}
