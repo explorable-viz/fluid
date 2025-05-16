@@ -11,7 +11,7 @@ let mkBarChart scenName table =
 
 let getHeight offset bar = (head bar.bars).z + offset;
 
-let ssp126table = { type: "Total", emissions: (findPercentile 50 (map (fun r -> r.changed) ssp126preds)) } : ssp126Source;
+let ssp126table = """ We compute the ${this.type} emissions by taking the median of predicted values """ { type: "Total", emissions: (findPercentile 50 (map (fun r -> r.changed) ssp126preds)) } : ssp126Source;
     ssp126 = mkBarChart "SSP1-2.6" ssp126table;
     ssp245 = mkBarChart "SSP2-4.5" ssp245Source;
     totals = map stackedBarHeight (map (get "Total") [ssp126, ssp245]);
