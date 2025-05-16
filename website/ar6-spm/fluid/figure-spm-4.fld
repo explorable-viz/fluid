@@ -11,13 +11,14 @@ let mkBarChart scenName table =
 
 let getHeight offset bar = (head bar.bars).z + offset;
 
-let ssp119 = mkBarChart "SSP1-1.9" ssp119Source;
+let ssp126table = { type: "Total", emissions: (findPercentile 50 (map (fun r -> r.changed) ssp126preds)) } : ssp126Source;
+    ssp126 = mkBarChart "SSP1-2.6" ssp126table;
     ssp245 = mkBarChart "SSP2-4.5" ssp245Source;
-    totals = map stackedBarHeight (map (get "Total") [ssp119, ssp245]);
-    co2s = map stackedBarHeight (map (get "CO2") [ssp119, ssp245]);
-    nonco2 = map (get "Non-CO2") [ssp119, ssp245]
+    totals = map stackedBarHeight (map (get "Total") [ssp126, ssp245]);
+    co2s = map stackedBarHeight (map (get "CO2") [ssp126, ssp245]);
+    nonco2 = map (get "Non-CO2") [ssp126, ssp245]
 in MultiView {
-    leftBarChart: ssp119,
+    leftBarChart: ssp126,
     rightBarChart: ssp245,
     explanation:    
         Paragraph [ Text "Within each scenario bar plot, the bars represent:", Link totals " total warming (°C),",
