@@ -157,7 +157,7 @@ eval γ (DProject e x) α = do
             Val _ (V.Str s) -> withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
-eval γ (App e e') αs = do
+eval γ (App _ e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
    apply v v'

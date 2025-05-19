@@ -331,10 +331,11 @@ expr_ =
                          <|> try (int doc) -- int may start with +/-
                          <|> string doc
                          <|> try (pair doc)
+                         <|> listComp doc
+
                     )
             ) <|> try variable
                <|> try (token.parens expr')
-               <|> listComp
                <|> listEnum
                <|> try parensOp
 
@@ -357,13 +358,13 @@ expr_ =
                   rBracket *> pure (End unit) <|>
                      token.comma *> (Next unit <$> expr' <*> listRest')
 
-            listComp :: SParser (Raw Expr)
-            listComp = token.brackets $
-               pure (ListComp unit) <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
+            listComp :: DocOpt -> SParser (Raw Expr)
+            listComp doc = token.brackets $
+               pure (ListComp unit doc) <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
                where
                qualifier :: SParser (Raw Qualifier)
                qualifier =
-                  ListCompGen <$> pattern <* lArrow <*> expr'
+                  ListCompGen Nothing <$> pattern <* lArrow <*> expr'
                      <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
                      <|> ListCompGuard <$> expr'
 

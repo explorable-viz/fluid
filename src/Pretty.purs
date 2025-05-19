@@ -95,7 +95,7 @@ exprType (IfElse _ _ _) = Simple
 exprType (ListEmpty _ _) = Simple
 exprType (ListNonEmpty _ _ _ _) = Simple
 exprType (ListEnum _ _) = Simple
-exprType (ListComp _ _ _) = Simple
+exprType (ListComp _ _ _ _) = Simple
 exprType (Let _ _) = Expression
 exprType (LetRec _ _) = Expression
 
@@ -168,7 +168,7 @@ instance Ann a => Pretty (Expr a) where
       .-. pretty l
    pretty (ListNonEmpty α doc e l) = pretty doc .<>. highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
-   pretty (ListComp ann s qs) = highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
+   pretty (ListComp ann doc s qs) = pretty doc .<>. highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
    pretty (Let ds s) = (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
    pretty (LetRec h s) = (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
 
@@ -274,7 +274,7 @@ instance Ann a => Pretty (List (Expr a)) where
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (ListCompGuard s) Nil) = pretty s
    pretty (Cons (ListCompDecl d) Nil) = text str.let_ .<>. pretty d
-   pretty (Cons (ListCompGen p s) Nil) = pretty p .<>. text str.lArrow .<>. pretty s
+   pretty (Cons (ListCompGen doc p s) Nil) = pretty doc .<>. pretty p .<>. text str.lArrow .<>. pretty s
    pretty (Cons q qs) = pretty (toList (singleton q)) .<>. text str.comma .<>. pretty qs
    pretty Nil = empty
 
@@ -394,7 +394,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.LetRec (E.RecDefs _ ρ) e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.DProject e x) = pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
-   pretty (E.App e e') = hcat [ pretty e, pretty e' ]
+   pretty (E.App doc e e') = pretty doc .<>. hcat [ pretty e, pretty e' ]
 
 instance Pretty E.DocOpt where
    pretty (Just x) = text str.triplequote .<>. pretty x
