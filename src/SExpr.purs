@@ -48,7 +48,7 @@ data Expr a
    | Lambda (Clauses a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
-   | App (Expr a) (Expr a)
+   | App DocOpt (Expr a) (Expr a)
    | BinaryApp (Expr a) Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
    | IfElse (Expr a) (Expr a) (Expr a)
@@ -269,7 +269,9 @@ exprFwd (Matrix α doc s (x × y) s') = do
 exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project s x) = E.Project <$> desug s <@> x
 exprFwd (DProject s x) = E.DProject <$> desug s <*> desug x
-exprFwd (App s1 s2) = E.App Nothing <$> desug s1 <*> desug s2
+exprFwd (App doc s1 s2) = do
+   edoc <- desugComment doc
+   E.App edoc <$> desug s1 <*> desug s2
 exprFwd (BinaryApp s1 op s2) = E.App Nothing <$> (E.App Nothing (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (MatchAs s μ) =
    E.App Nothing <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
@@ -300,7 +302,7 @@ exprBwd (E.Matrix α edoc e1 _ e2) (Matrix _ doc s1 (x × y) s2) =
    Matrix α (desugCommentBwd edoc doc) (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (desugBwd σ μ)
 exprBwd (E.Project e x) (Project s _) = Project (desugBwd e s) x
-exprBwd (E.App _ e1 e2) (App s1 s2) = App (desugBwd e1 s1) (desugBwd e2 s2)
+exprBwd (E.App doc e1 e2) (App doc' s1 s2) = App (desugCommentBwd doc doc') (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App _ (E.App _ (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
 exprBwd (E.App _ (E.Lambda _ σ) e) (MatchAs s μ) =

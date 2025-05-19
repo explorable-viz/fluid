@@ -294,17 +294,17 @@ expr_ =
 
       -- Left-associative tree of applications of one or more simple terms.
       appChain :: SParser (Raw Expr)
-      appChain = simpleExprOrProjection >>= rest
+      appChain = docComment expr' >>= \doc -> simpleExprOrProjection doc >>= rest doc
          where
-         rest :: Raw Expr -> SParser (Raw Expr)
-         rest e@(Constr α doc c es) = ctrArgs <|> pure e
+         rest :: DocOpt -> Raw Expr -> SParser (Raw Expr)
+         rest doc e@(Constr α doc' c es) = ctrArgs <|> pure e
             where
             ctrArgs :: SParser (Raw Expr)
-            ctrArgs = simpleExprOrProjection >>= \e' -> rest (Constr α doc c (es <> (e' : empty)))
-         rest e = ((App e <$> simpleExprOrProjection) >>= rest) <|> pure e
+            ctrArgs = simpleExprOrProjection doc >>= \e' -> rest doc (Constr α doc' c (es <> (e' : empty)))
+         rest doc e = ((App doc e <$> simpleExprOrProjection doc) >>= rest doc) <|> pure e
 
-         simpleExprOrProjection :: SParser (Raw Expr)
-         simpleExprOrProjection =
+         simpleExprOrProjection :: DocOpt -> SParser (Raw Expr)
+         simpleExprOrProjection _ =
             simpleExpr >>= projection
             where
             projection :: Raw Expr -> SParser (Raw Expr)
