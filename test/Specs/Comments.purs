@@ -15,4 +15,8 @@ comments_cases =
      }
    , { file: "comments/map", imports: [], fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))" }
    , { file: "comments/list-comp", imports: [], fwd_expect: "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))" }
+   , { file: "comments/app"
+     , imports: []
+     , fwd_expect: "2"
+     }
    ]

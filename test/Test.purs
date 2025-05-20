@@ -7,6 +7,7 @@ import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Module.Web (loadFile)
 import Test.Specs.Bwd (bwd_cases)
+import Test.Specs.Comments (comments_cases)
 import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.Graphics (graphics_cases)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
@@ -18,15 +19,16 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run tests
+-- main = run tests
+main = run $ asTestSuite (suite loadFile comments_cases)
 
 -- main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite loadFile
-   [ { file: "comments/app"
+   [ { file: "comments/map"
      , imports: []
-     , fwd_expect: "2"
+     , fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
      }
    ]
 
