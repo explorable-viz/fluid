@@ -23,14 +23,15 @@ import Data.String (Pattern(..), Replacement(..), contains) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
+import Doc (DocComment, DocCommentElem(..), DocOpt)
 import Expr (Cont(..), Elim(..))
-import Expr (DocComment, DocCommentElem(..), DocOpt, Expr(..), RecDefs(..), VarDef(..)) as E
+import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DocOpt, DocComment, DocCommentElem(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -198,19 +199,6 @@ instance Ann a => Pretty (List (Pair (Expr a))) where
 
 prettyPairs :: forall a. Ann a => (Pair (Expr a)) -> Doc
 prettyPairs (Pair e e') = pretty e .<>. text str.colonEq .<>. pretty e'
-
-instance Pretty DocOpt where
-   pretty (Just x) = text str.triplequote .<>. pretty x
-   pretty Nothing = empty
-
-instance Pretty DocComment where
-   pretty (Cons word Nil) = pretty word .<>. text str.triplequote
-   pretty (Cons word xs) = pretty word .<>. pretty xs
-   pretty Nil = empty
-
-instance Pretty DocCommentElem where
-   pretty (Token str) = text str
-   pretty (CExpr e) = text (str.dollar <> "{") .<>. pretty e .<>. text "}"
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
@@ -396,18 +384,18 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.DProject e x) = pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App doc e e') = pretty doc .<>. hcat [ pretty e, pretty e' ]
 
-instance Pretty E.DocOpt where
+instance Pretty (e a) => Pretty (DocOpt e a) where
    pretty (Just x) = text str.triplequote .<>. pretty x
    pretty Nothing = empty
 
-instance Pretty E.DocComment where
+instance Pretty (e a) => Pretty (DocComment e a) where
    pretty (Cons word Nil) = pretty word .<>. text str.triplequote
    pretty (Cons word xs) = pretty word .<>. pretty xs
    pretty Nil = empty
 
-instance Pretty E.DocCommentElem where
-   pretty (E.Token str) = text str
-   pretty (E.CExpr e) = text str.dollar .<>. curlyBraces (pretty e)
+instance Pretty (e a) => Pretty (DocCommentElem e a) where
+   pretty (Token str) = text str
+   pretty (CExpr e) = text "${" .<>. pretty e .<>. text "}"
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty ρ = go (toUnfoldable ρ)

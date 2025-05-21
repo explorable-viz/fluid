@@ -19,8 +19,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
--- main = run tests
-main = run $ asTestSuite (suite loadFile comments_cases)
+main = run tests
+
+-- main = run $ asTestSuite (suite loadFile comments_cases)
 
 -- main = run scratchpad
 
@@ -44,6 +45,7 @@ benchmarks :: Array BenchSuite
 benchmarks =
    [ suite loadFile desugar_cases
    , suite loadFile misc_cases
+   , suite loadFile comments_cases
    , bwdSuite loadFile bwd_cases
    , withDatasetSuite loadFile graphics_cases
    ]
