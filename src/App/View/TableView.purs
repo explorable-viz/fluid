@@ -55,7 +55,7 @@ cell_selClassesFor colName s
 
 record_isVisible :: Record' -> Boolean
 record_isVisible r =
-   not <<< null $ flip filter r \(Val α _) -> visible defaultFilter α
+   not <<< null $ flip filter r \(Val α _ _) -> visible defaultFilter α
    where
    visible :: Filter -> SelStates 𝕊 -> Boolean
    visible Everything = const true
@@ -66,7 +66,7 @@ record_isVisible r =
    isNone a = getPersistent a == None && getTransient a == None
 
 prim :: Val (SelStates 𝕊) -> String
-prim (Val _ v) = v # case _ of
+prim (Val _ _ v) = v # case _ of
    Int n -> show n
    Float n -> toStringWith (fixed 2) n
    Str s -> s
@@ -85,7 +85,7 @@ setSelStates (TableView { title, rows }) redraw rootElement = do
       { i, j, colName } :: CellIndex <- datum cell
       if i == -1 || j == -1 then pure unit
       else cell # classed selClasses false
-         >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _) -> α)) true
+         >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
          >>= registerMouseListeners redraw
       cell # setStyles
          [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
@@ -144,7 +144,7 @@ setSelStates (TableView { title, rows }) redraw rootElement = do
    isCellTransient :: Int -> Int -> Boolean
    isCellTransient i j
       | i == -1 || j == -1 = false
-      | otherwise = isTransient <<< (\(Val α _) -> α) $ rows ! i ! j
+      | otherwise = isTransient <<< (\(Val α _ _) -> α) $ rows ! i ! j
 
 createRootElement :: TableView -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) div childId = do

@@ -435,7 +435,7 @@ instance Highlightable a => Pretty (Elim a) where
    pretty (ElimDict xs κ) = hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance Highlightable a => Pretty (Val a) where
-   pretty (Val α v) = highlightIf α $ pretty v
+   pretty (Val α _ v) = highlightIf α $ pretty v
 
 instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Int n) = text (show n)

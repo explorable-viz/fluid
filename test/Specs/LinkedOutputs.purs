@@ -98,7 +98,7 @@ linkedOutputs_cases =
           , inputs: [ "data" ]
           , query:
                Just $ asVal >=> case _ of
-                  v@(Val α (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
+                  v@(Val α _ (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
                   _ -> Nothing
 
           }

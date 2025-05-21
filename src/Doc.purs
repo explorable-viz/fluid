@@ -2,7 +2,8 @@ module Doc where
 
 import Prelude
 
-import Data.List (List)
+import Control.Apply (lift2)
+import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
@@ -61,3 +62,6 @@ instance (BoundedJoinSemilattice a, (Expandable (e a) (Raw e))) => Expandable (D
 instance (Show (e a)) => Show (DocCommentElem e a) where
    show (Token s) = "Token " <> show s
    show (CExpr e) = "CExpr " <> show e
+
+dap :: forall e a b. Apply e => Maybe (List (e (a -> b))) -> Maybe (List (e a)) -> Maybe (List (e b))
+dap = lift2 (zipWith (<*>))

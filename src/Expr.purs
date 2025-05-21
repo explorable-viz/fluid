@@ -15,7 +15,7 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
-import Doc (DocCommentElem(..), DocOpt, docVertices)
+import Doc (DocCommentElem(..), DocOpt, dap, docVertices)
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
@@ -270,23 +270,20 @@ derive instance Functor Module
 instance Apply Expr where
    apply (Var x) (Var x') = Var (x ≜ x')
    apply (Op op) (Op _) = Op op
-   apply (Int fα fdoc n) (Int α doc n') = Int (fα α) (fdoc `lap` doc) (n ≜ n')
-   apply (Float fα fdoc n) (Float α doc n') = Float (fα α) (fdoc `lap` doc) (n ≜ n')
-   apply (Str fα fdoc s) (Str α doc s') = Str (fα α) (fdoc `lap` doc) (s ≜ s')
-   apply (Dictionary fα fdoc fxes) (Dictionary α doc xes) = Dictionary (fα α) (fdoc `lap` doc) (zipWith (lift2 (<*>)) fxes xes)
-   apply (Constr fα fdoc c fes) (Constr α doc c' es) = Constr (fα α) (fdoc `lap` doc) (c ≜ c') (zipWith (<*>) fes es)
+   apply (Int fα fdoc n) (Int α doc n') = Int (fα α) (fdoc `dap` doc) (n ≜ n')
+   apply (Float fα fdoc n) (Float α doc n') = Float (fα α) (fdoc `dap` doc) (n ≜ n')
+   apply (Str fα fdoc s) (Str α doc s') = Str (fα α) (fdoc `dap` doc) (s ≜ s')
+   apply (Dictionary fα fdoc fxes) (Dictionary α doc xes) = Dictionary (fα α) (fdoc `dap` doc) (zipWith (lift2 (<*>)) fxes xes)
+   apply (Constr fα fdoc c fes) (Constr α doc c' es) = Constr (fα α) (fdoc `dap` doc) (c ≜ c') (zipWith (<*>) fes es)
    apply (Matrix fα fdoc fe1 (x × y) fe2) (Matrix α doc e1 (x' × y') e2) =
-      Matrix (fα α) (fdoc `lap` doc) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
+      Matrix (fα α) (fdoc `dap` doc) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
-   apply (App fdoc fe1 fe2) (App doc e1 e2) = App (fdoc `lap` doc) (fe1 <*> e1) (fe2 <*> e2)
+   apply (App fdoc fe1 fe2) (App doc e1 e2) = App (fdoc `dap` doc) (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
    apply (DProject fd fk) (DProject d k) = DProject (fd <*> d) (fk <*> k)
    apply _ _ = shapeMismatch unit
-
-lap :: forall e a b. Apply e => Maybe (List (e (a -> b))) -> Maybe (List (e a)) -> Maybe (List (e b))
-lap = lift2 (zipWith (<*>))
 
 instance Apply Elim where
    apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)

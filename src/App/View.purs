@@ -22,7 +22,7 @@ import Val (BaseVal(..), Val(..))
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- Ignore view state for now..
 view :: Partial => String -> Val (SelStates 𝕊) -> Maybe View -> View
-view title (Val _ (Constr c (u : Nil))) _
+view title (Val _ _ (Constr c (u : Nil))) _
    | c == cBarChart = pack (dict from u :: BarChart)
    | c == cLineChart = pack (dict from u :: LineChart)
    | c == cScatterPlot = pack (dict from u :: ScatterPlot)
@@ -30,11 +30,11 @@ view title (Val _ (Constr c (u : Nil))) _
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
-view title u@(Val _ (Constr c _)) _
+view title u@(Val _ _ (Constr c _)) _
    | c == cNil || c == cCons = pack (TableView { title, filter: defaultFilter, colNames, rows })
         where
         records = dict identity <$> from u
         colNames = headers records
         rows = arrayDictToArray2 colNames records <#> map snd
-view title (Val _ (Matrix r)) _ =
+view title (Val _ _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })

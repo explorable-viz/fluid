@@ -163,7 +163,7 @@ get_intOrNumber x r = first as (unpack intOrNumber (snd (get x r)))
 
 -- Assumes fields are all of primitive type.
 dict :: forall a. (Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> a) -> Val (SelStates 𝕊) -> a
-dict toDict (Val _ v) = toDict (P.dict.unpack v)
+dict toDict (Val _ _ v) = toDict (P.dict.unpack v)
 
 class Reflect a b where
    from :: Partial => a -> b
@@ -388,11 +388,11 @@ instance Show a => Show (Dimensions a) where
    show = genericShow
 
 instance Reflect (Val (SelStates 𝕊)) (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) where
-   from (Val _ (Dictionary (DictRep d))) = d
+   from (Val _ _ (Dictionary (DictRep d))) = d
 
 instance Reflect (Val (SelStates 𝕊)) (Array (Val (SelStates 𝕊))) where
-   from (Val _ (Constr c Nil)) | c == cNil = []
-   from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
+   from (Val _ _ (Constr c Nil)) | c == cNil = []
+   from (Val _ _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Selectable Int)) where
    from r = Dimensions

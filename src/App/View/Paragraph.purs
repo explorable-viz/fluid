@@ -11,6 +11,7 @@ import Bind ((↦))
 import Data.Foldable (foldr, for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.List ((:), List(..))
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
 import DataType (cLink, cText)
@@ -38,10 +39,10 @@ selTextFragment { i } = fragment >>> listElement i >>> paragraph
    where
    fragment :: SelSetter Val Val
    fragment δv = unsafePartial $ case _ of
-      Val α (Constr c (v : Nil)) | c == cText ->
-         first (\v' -> Val α (Constr c (v' : Nil))) (δv v)
-      Val α (Constr c (v1 : v2 : Nil)) | c == cLink ->
-         first (\v1' -> Val α (Constr c (v1' : v2 : Nil))) (δv v1)
+      Val α doc (Constr c (v : Nil)) | c == cText ->
+         first (\v' -> Val α doc (Constr c (v' : Nil))) (δv v)
+      Val α doc (Constr c (v1 : v2 : Nil)) | c == cLink ->
+         first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
 
 getText :: Array (TextFragment (SelStates 𝕊)) -> Int -> Selectable String
 getText elems i = case elems ! i of
@@ -111,11 +112,11 @@ type ParagraphElem = { i :: Int }
 textFragment :: ToFrom (TextFragment (SelStates 𝕊)) (SelStates 𝕊)
 textFragment =
    { pack: case _ of
-        Text (s × α) -> Constr cText ((Val α (Str s)) : Nil)
-        Link v (s × α') -> Constr cLink (v : Val α' (Str s) : Nil)
+        Text (s × α) -> Constr cText ((Val α Nothing (Str s)) : Nil)
+        Link v (s × α') -> Constr cLink (v : Val α' Nothing (Str s) : Nil)
    , unpack: case _ of
-        Constr c (Val α (Str s) : Nil) | c == cText -> Text (s × α)
-        Constr c (Val α v : (Val α' (Str s) : Nil)) | c == cLink -> Link (Val α v) (s × α')
+        Constr c (Val α _ (Str s) : Nil) | c == cText -> Text (s × α)
+        Constr c (Val α doc v : (Val α' _ (Str s) : Nil)) | c == cLink -> Link (Val α doc v) (s × α')
         v -> typeError v "TextFragment"
    }
 

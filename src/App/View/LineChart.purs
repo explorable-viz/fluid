@@ -298,6 +298,6 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LineChart where
       }
 
 instance Reflect (Val (SelStates 𝕊)) LinePlot where
-   from (Val _ (Constr c (u : Nil))) | c == cLinePlot = dict from u
+   from (Val _ _ (Constr c (u : Nil))) | c == cLinePlot = dict from u
 
 derive instance Newtype LinePlot _
