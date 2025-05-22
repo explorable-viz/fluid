@@ -120,7 +120,7 @@ docComment' expr' = token.lexeme (go <?> "docComment")
    go :: SParser (DocComment Expr Unit)
    go = do
       words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
-      pure $ spyWhen debug.tracing "Parsed comment: " show words
+      pure $ spyWhen debug.logging "Parsed comment: " show words
 
 docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
 docCommentToken expr' =
@@ -300,10 +300,10 @@ expr_ =
          rest' e = docComment expr' >>= \doc -> rest doc e
 
          rest :: DocOpt Expr Unit -> Raw Expr -> SParser (Raw Expr)
-         rest doc e@(Constr α doc' c es) = ctrArgs <|> pure e
+         rest _ e@(Constr α doc' c es) = ctrArgs <|> pure e
             where
             ctrArgs :: SParser (Raw Expr)
-            ctrArgs = simpleExprOrProjection >>= \e' -> rest doc (Constr α doc' c (es <> (e' : empty)))
+            ctrArgs = simpleExprOrProjection >>= \e' -> rest' (Constr α doc' c (es <> (e' : empty)))
          rest doc e = ((App doc e <$> simpleExprOrProjection) >>= rest Nothing) <|> pure e
 
          -- An expression that may need wrapping in parentheses to disambiguate.
@@ -324,9 +324,9 @@ expr_ =
          simpleExpr :: SParser (Raw Expr)
          simpleExpr =
             -- matrix before list
-            ( docComment expr' >>=
-                 \doc ->
-                    ( matrix doc
+            docComment expr' >>=
+               \doc ->
+                  ( ( matrix doc
                          <|> try (nil doc)
                          <|> listNonEmpty doc
                          <|> try (constr doc)
@@ -335,12 +335,13 @@ expr_ =
                          <|> try (int doc) -- int may start with +/-
                          <|> string doc
                          <|> try (pair doc)
-                         <|> try (listComp doc)
+                         <|> listComp doc
+
                     )
-            ) <|> try variable
-               <|> try (token.parens expr')
-               <|> listEnum
-               <|> try parensOp
+                  ) <|> try variable
+                     <|> try (token.parens expr')
+                     <|> listEnum
+                     <|> try parensOp
 
             where
             matrix :: DocOpt Expr Unit -> SParser (Raw Expr)
