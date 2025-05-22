@@ -15,7 +15,8 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
-import Doc (DocCommentElem(..), DocOpt(..), docVertices)
+import Doc (DocOpt(..), DocCommentElem(..), DocComment) as Doc
+import Doc (docVertices)
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
@@ -27,16 +28,16 @@ import Util.Set ((\\), (∪))
 data Expr a
    = Var Var
    | Op Var
-   | Int a (EDocOpt a) Int
-   | Float a (EDocOpt a) Number
-   | Str a (EDocOpt a) String
-   | Dictionary a (EDocOpt a) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
-   | Constr a (EDocOpt a) Ctr (List (Expr a))
-   | Matrix a (EDocOpt a) (Expr a) (Var × Var) (Expr a)
+   | Int a (DocOpt a) Int
+   | Float a (DocOpt a) Number
+   | Str a (DocOpt a) String
+   | Dictionary a (DocOpt a) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
+   | Constr a (DocOpt a) Ctr (List (Expr a))
+   | Matrix a (DocOpt a) (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
-   | App (EDocOpt a) (Expr a) (Expr a)
+   | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
@@ -54,7 +55,9 @@ data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
 
-type EDocOpt a = DocOpt Expr a
+type DocOpt a = Doc.DocOpt Expr a
+type DocComment a = Doc.DocComment Expr a
+type DocCommentElem a = Doc.DocCommentElem Expr a
 
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
@@ -69,9 +72,9 @@ newtype Module a = Module (List (VarDef a + RecDefs a))
 class FV a where
    fv :: a -> Set Var
 
-instance FV (DocOpt Expr a) where
-   fv None = empty
-   fv (Doc doc) = unions (fv <$> doc)
+instance FV (Doc.DocOpt Expr a) where
+   fv Doc.None = empty
+   fv (Doc.Doc doc) = unions (fv <$> doc)
 
 instance FV (Expr a) where
    fv (Var x) = singleton x
@@ -117,9 +120,9 @@ instance FV a => FV (Maybe a) where
 instance (FV a) => FV (List a) where
    fv xs = unions (fv <$> xs)
 
-instance FV (DocCommentElem Expr a) where
-   fv (Token _) = empty
-   fv (CExpr e) = fv e
+instance FV (DocCommentElem a) where
+   fv (Doc.Token _) = empty
+   fv (Doc.CExpr e) = fv e
 
 class BV a where
    bv :: a -> Set Var
