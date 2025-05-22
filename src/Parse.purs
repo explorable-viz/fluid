@@ -17,17 +17,16 @@ import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
-import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
-import Doc (DocComment, DocOpt, DocCommentElem(..))
+import Doc (DocComment, DocCommentElem(..), DocOpt(..))
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, optionMaybe, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators (between, option, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -112,7 +111,9 @@ docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
-docComment expr' = optionMaybe (try $ docComment' expr')
+docComment expr' = optionDoc (try $ docComment' expr')
+   where
+   optionDoc p = option None (Doc <$> p)
 
 docComment' :: SParser (Raw Expr) -> SParser (DocComment Expr Unit)
 docComment' expr' = token.lexeme (go <?> "docComment")
@@ -266,7 +267,7 @@ expr_ =
          if op == str.dot then \e e' -> case e' of
             Var x -> Project e x
             _ -> error $ "Field names are not first class; got \"" <> prettyP e' <> "\"."
-         else if isCtrOp op' then \e e' -> Constr unit Nothing op' (e : e' : empty)
+         else if isCtrOp op' then \e e' -> Constr unit None op' (e : e' : empty)
          else \e e' -> BinaryApp e op e'
 
    opTreeLeaf :: Endo (SParser (Raw Expr))
@@ -364,7 +365,7 @@ expr_ =
                where
                qualifier :: SParser (Raw Qualifier)
                qualifier =
-                  ListCompGen Nothing <$> pattern <* lArrow <*> expr'
+                  ListCompGen None <$> pattern <* lArrow <*> expr'
                      <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
                      <|> ListCompGuard <$> expr'
 

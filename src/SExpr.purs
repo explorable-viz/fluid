@@ -25,7 +25,7 @@ import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
-import Doc (DocComment, DocCommentElem(..), DocOpt)
+import Doc (DocComment, DocCommentElem(..), DocOpt(..))
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
@@ -136,7 +136,7 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 
 instance Desugarable DictEntry E.Expr where
    desug (ExprKey e) = desug e
-   desug (VarKey α v) = pure (E.Str α Nothing v)
+   desug (VarKey α v) = pure (E.Str α None v)
    desugBwd e (ExprKey e') = ExprKey $ desugBwd e e'
    desugBwd e v = varKeyBwd e v
 
@@ -150,8 +150,8 @@ instance Desugarable Expr E.Expr where
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
-   desug (End α) = pure (enil α Nothing)
-   desug (Next α s l) = econs α Nothing <$> desug s <*> desug l
+   desug (End α) = pure (enil α None)
+   desug (Next α s l) = econs α None <$> desug s <*> desug l
 
    desugBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
    desugBwd (E.Constr α _ _ _) (End _) = End α
@@ -196,7 +196,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
 -- in evaluation.
 varDefFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDef a -> m (E.VarDef a)
 varDefFwd (VarDef p s) =
-   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Dictionary top Nothing Nil)))) <*> desug s
+   E.VarDef <$> desug (Clauses (singleton (Clause (singleton p × Dictionary top None Nil)))) <*> desug s
 
 -- VarDefs
 varDefsFwd :: forall a m. MonadError Error m => BoundedLattice a => VarDefs a × Expr a -> m (E.Expr a)
@@ -271,18 +271,18 @@ exprFwd (DProject s x) = E.DProject <$> desug s <*> desug x
 exprFwd (App doc s1 s2) = do
    edoc <- desugComment doc
    E.App edoc <$> desug s1 <*> desug s2
-exprFwd (BinaryApp s1 op s2) = E.App Nothing <$> (E.App Nothing (E.Op op) <$> desug s1) <*> desug s2
+exprFwd (BinaryApp s1 op s2) = E.App None <$> (E.App None (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (MatchAs s μ) =
-   E.App Nothing <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
+   E.App None <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
 exprFwd (IfElse s1 s2 s3) =
-   E.App Nothing <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3))) <*> desug s1
+   E.App None <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3))) <*> desug s1
 exprFwd (ListEmpty α doc) = do
    edoc <- desugComment doc
    pure (enil α edoc)
 exprFwd (ListNonEmpty α doc s l) = do
    edoc <- desugComment doc
    econs α edoc <$> desug s <*> desug l
-exprFwd (ListEnum s1 s2) = E.App Nothing <$> ((E.App Nothing (E.Var "enumFromTo")) <$> desug s1) <*> desug s2
+exprFwd (ListEnum s1 s2) = E.App None <$> ((E.App None (E.Var "enumFromTo")) <$> desug s1) <*> desug s2
 exprFwd (ListComp α doc s ((ListCompGen _ p s') : qs)) = listCompFwd (α × ((ListCompGen doc p s') : qs) × s)
 exprFwd (ListComp α _ s qs) = listCompFwd (α × qs × s)
 exprFwd (Let ds s) = varDefsFwd (ds × s)
@@ -322,7 +322,7 @@ exprBwd e@(E.App doc (E.App _ _ _) _) (ListComp _ doc' s (q@(ListCompGen _ _ _) 
    in
       ListComp α (desugCommentBwd doc doc') s' qs'
 exprBwd e (ListComp _ _ s qs) =
-   let α × qs' × s' = listCompBwd e (qs × s) in ListComp α Nothing s' qs'
+   let α × qs' × s' = listCompBwd e (qs × s) in ListComp α None s' qs'
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 exprBwd (E.LetRec xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBwd e s)
 exprBwd (E.DProject ed ek) (DProject sd sk) = DProject (exprBwd ed sd) (exprBwd ek sk)
@@ -331,18 +331,18 @@ exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
 listCompFwd (α × Nil × s) =
-   econs α Nothing <$> desug s <@> enil α Nothing
+   econs α None <$> desug s <@> enil α None
 listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
-   E.App Nothing (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α Nothing)))) <$> desug s
+   E.App None (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α None)))) <$> desug s
 listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
-   σ <- clausesStateFwd (((Left p : Nil) × Nil × ListComp α Nothing s' qs) : Nil)
-   E.App Nothing (E.Lambda α (asElim σ)) <$> desug s
+   σ <- clausesStateFwd (((Left p : Nil) × Nil × ListComp α None s' qs) : Nil)
+   E.App None (E.Lambda α (asElim σ)) <$> desug s
 listCompFwd (α × (ListCompGen doc p s : qs) × s') = do
-   let ks = orElseFwd α ((Left p : Nil) × ListComp α Nothing s' qs)
+   let ks = orElseFwd α ((Left p : Nil) × ListComp α None s' qs)
    edoc <- desugComment doc
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
-   E.App edoc (E.App Nothing (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
+   E.App edoc (E.App None (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
 
 listCompBwd
    :: forall a
@@ -357,16 +357,16 @@ listCompBwd (E.App _ (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) �
       # unsafePartial case _ of
            (α × qs' × s') × E.Constr β _ c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
 listCompBwd (E.App _ (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0') =
-   clausesStateBwd (ContElim σ) (((Left p : Nil) × Nil × ListComp unit Nothing s0' qs) : Nil)
+   clausesStateBwd (ContElim σ) (((Left p : Nil) × Nil × ListComp unit None s0' qs) : Nil)
       # unsafePartial case _ of
-           ((Left _ : Nil) × Nil × ListComp α Nothing s' qs') : Nil ->
+           ((Left _ : Nil) × Nil × ListComp α None s' qs') : Nil ->
               (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
 listCompBwd (E.App _ (E.App _ (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen _ p s0 : qs) × s0') =
    orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s')
       # unsafePartial case _ of
-           β × ListComp α _ s' qs' -> (α ∨ α' ∨ β) × (ListCompGen Nothing p (desugBwd e s0) : qs') × s'
+           β × ListComp α _ s' qs' -> (α ∨ α' ∨ β) × (ListCompGen None p (desugBwd e s0) : qs') × s'
    where
-   k = (Left p : Nil) × ListComp unit Nothing s0' qs
+   k = (Left p : Nil) × ListComp unit None s0' qs
    ks = clausesStateBwd (ContElim σ) (toList (orElseFwd unit k <#> second (Nil × _)))
 listCompBwd _ _ = error absurd
 
@@ -505,14 +505,14 @@ clausesStateBwd κ0 ks = case κ0 × ks of
    ContElim _ × _ -> error (shapeMismatch unit)
 
 desugComment :: ∀ m a. BoundedLattice a => MonadError Error m => (SEDocOpt a) -> m (EDocOpt a)
-desugComment Nothing = pure Nothing
-desugComment (Just c) = Just <$> commentFwd c
+desugComment None = pure None
+desugComment (Doc c) = Doc <$> commentFwd c
 
 desugCommentBwd :: ∀ a. BoundedJoinSemilattice a => EDocOpt a -> Raw SEDocOpt -> SEDocOpt a
-desugCommentBwd Nothing Nothing = Nothing
-desugCommentBwd (Just ec) (Just c) = Just (commentBwd ec c)
-desugCommentBwd Nothing (Just _) = error "E Nothing S Just"
-desugCommentBwd (Just _) Nothing = error "E Just S Nothing"
+desugCommentBwd None None = None
+desugCommentBwd (Doc ec) (Doc c) = Doc (commentBwd ec c)
+desugCommentBwd None (Doc _) = error "E None S Doc"
+desugCommentBwd (Doc _) None = error "E Doc S None"
 
 commentFwd :: ∀ m a. BoundedLattice a => MonadError Error m => List (SEDocCommentElem a) -> m (List (EDocCommentElem a))
 commentFwd (Cons s l) = Cons <$> commentElemFwd s <*> commentFwd l
@@ -554,7 +554,7 @@ orElseFwd α = case _ of
    (p : π) × s ->
       (orElseFwd α ((π' <> π) × s) <#> popPatts (length π') <#> pushPattFor p)
          `appendList`
-            (unless p <#> \p' -> ((π <#> anon) × ListEmpty α Nothing) # pushPatt p')
+            (unless p <#> \p' -> ((π <#> anon) × ListEmpty α None) # pushPatt p')
       where
       π' = subpatts p
    where
