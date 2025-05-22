@@ -17,6 +17,7 @@ import Data.Tuple (curry, fst, snd)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
+import Doc (DocCommentElem(..), DocOpt)
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
@@ -29,7 +30,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, orElse, singleton, spyFunWhen, defined, throw, withMsg, (×), (⊆))
+import Util (type (×), Endo, check, concatM, defined, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -116,7 +117,11 @@ apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
-eval _ (Int α _ n) αs = new (val' Nothing) (insert α αs) (V.Int n)
+eval γ (Int α doc n) αs = do
+   let v = Val α Nothing (V.Int n)
+   let γ' = maplet "this" v
+   vdoc <- evalCmt (γ <+> γ') doc
+   new (val' vdoc) (insert α αs) (V.Int n)
 eval _ (Float α _ n) αs = new (val' Nothing) (insert α αs) (V.Float n)
 eval _ (Str α _ s) αs = new (val' Nothing) (insert α αs) (V.Str s)
 eval γ (Dictionary α _ ees) αs = do
@@ -196,6 +201,14 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    addDataset (x ↦ e) γ = do
       v <- eval γ e empty
       pure $ γ <+> maplet x v
+
+evalCmt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
+evalCmt _ Nothing = pure Nothing
+evalCmt γ (Just tokens) = Just <$> sequence (map evalToken tokens)
+   where
+   evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
+   evalToken (Token s) = pure $ Token s
+   evalToken (CExpr e) = CExpr <$> (eval γ e empty)
 
 type GraphEval g s t =
    { g :: g

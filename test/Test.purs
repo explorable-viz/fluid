@@ -19,17 +19,17 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run tests
+-- main = run tests
 
 -- main = run $ asTestSuite (suite loadFile comments_cases)
 
--- main = run scratchpad
+main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite loadFile
-   [ { file: "comments/map"
+   [ { file: "comments/int"
      , imports: []
-     , fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
+     , fwd_expect: "\"\"\" Comment on ${1} \"\"\" 1"
      }
    ]
 

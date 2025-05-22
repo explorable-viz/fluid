@@ -25,7 +25,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, debug, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, debug, spy, spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite = Array (String × Aff Unit)
@@ -70,10 +70,10 @@ benchNames =
 
 testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
-   { gc: GC desug, e } <- desugGC s
+   { gc: GC desug, e } <- desugGC (spy "Original expr" prettyP s)
 
    graphed@{ g, outα } <- graphBenchmark benchNames.eval \_ ->
-      graphEval gconfig e
+      graphEval gconfig (spy "Desugared expr" prettyP e)
    let GC evalG = graphGC graphed # toGC
 
    let v = map (const top) outα :: Val 𝔹
@@ -133,8 +133,8 @@ checkEq op1 op2 x y = do
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
-   s' <- parse (prettyP s) program
-   unless (eq (erase s) (erase s')) $
+   s' <- parse (prettyP (spy "TestPretty Original:" prettyP s)) program
+   unless (eq (erase s) (erase (spy "TestPretty Parsed: " prettyP s'))) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> show (erase s) <> "\nNew\n" <> show (erase s'))
 
 checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
