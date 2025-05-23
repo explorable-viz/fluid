@@ -23,7 +23,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
-import Doc (DocComment, DocCommentElem(..), DocOpt(..))
+import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (Raw)
 import Parse.Constants (str)
 import Parsing.Combinators (between, option, sepBy, sepBy1, try, (<?>))
@@ -115,10 +115,10 @@ docComment expr' = optionDoc (try $ docComment' expr')
    where
    optionDoc p = option None (Doc <$> p)
 
-docComment' :: SParser (Raw Expr) -> SParser (DocComment Expr Unit)
+docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit))
 docComment' expr' = token.lexeme (go <?> "docComment")
    where
-   go :: SParser (DocComment Expr Unit)
+   go :: SParser (List (DocCommentElem Expr Unit))
    go = do
       words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
       pure $ spyWhen debug.tracing "Parsed comment: " show words

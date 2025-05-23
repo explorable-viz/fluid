@@ -15,8 +15,7 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
-import Doc (DocOpt(..), DocCommentElem(..), DocComment) as Doc
-import Doc (docVertices)
+import Doc (DocOpt(..), DocCommentElem(..)) as Doc
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
@@ -56,7 +55,6 @@ data Cont a
    | ContElim (Elim a)
 
 type DocOpt a = Doc.DocOpt Expr a
-type DocComment a = Doc.DocComment Expr a
 type DocCommentElem a = Doc.DocCommentElem Expr a
 
 asElim :: forall a. Cont a -> Elim a
@@ -216,18 +214,18 @@ instance MeetSemilattice a => MeetSemilattice (Expr a) where
 instance Vertices (Expr Vertex) where
    vertices (Var _) = empty
    vertices (Op _) = empty
-   vertices e@(Int α doc _) = singleton (DVertex (α × pack e)) ∪ docVertices doc
-   vertices e@(Float α doc _) = singleton (DVertex (α × pack e)) ∪ docVertices doc
-   vertices e@(Str α doc _) = singleton (DVertex (α × pack e)) ∪ docVertices doc
-   vertices d@(Dictionary α doc ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees) ∪ docVertices doc
+   vertices e@(Int α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices e@(Float α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices e@(Str α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices d@(Dictionary α doc ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees) ∪ vertices doc
       where
       go (Pair e e') = vertices e ∪ vertices e'
-   vertices e@(Constr α doc _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es) ∪ docVertices doc
-   vertices e@(Matrix α doc e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2 ∪ docVertices doc
+   vertices e@(Constr α doc _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es) ∪ vertices doc
+   vertices e@(Matrix α doc e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
    vertices (Project e _) = vertices e
    vertices (DProject e x) = vertices e ∪ vertices x
-   vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ docVertices doc
+   vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
 
