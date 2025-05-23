@@ -85,12 +85,12 @@ closeDefs γ ρ αs =
       in
          new (val' Nothing) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
-apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
-apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
+apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> DocOpt Expr Vertex -> m (Val Vertex)
+apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v _doc = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
-apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
+apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v _doc =
    apply' φ
    where
    vs' = snoc vs v
@@ -102,7 +102,7 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
-apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
+apply (Val α _ (V.Fun (V.PartialConstr c vs))) v _doc = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    new (val' Nothing) (singleton α) v'
    where
@@ -112,26 +112,26 @@ apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
       else
          V.Constr c (snoc vs v)
    n = defined (arity c)
-apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
+apply _ v _doc = throw $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval γ (Int α doc n) αs = do
-   new' γ Val (insert α αs) (V.Int n) doc
-eval _ (Float α _ n) αs = new (val' Nothing) (insert α αs) (V.Float n)
-eval _ (Str α _ s) αs = new (val' Nothing) (insert α αs) (V.Str s)
-eval γ (Dictionary α _ ees) αs = do
+   new' γ Val (insert α αs) doc (V.Int n)
+eval γ (Float α doc n) αs = new' γ Val (insert α αs) doc (V.Float n)
+eval γ (Str α doc s) αs = new' γ Val (insert α αs) doc (V.Str s)
+eval γ (Dictionary α doc ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   new (val' Nothing) (insert α αs) $ V.Dictionary (DictRep d)
-eval γ (Constr α _ c es) αs = do
+   new' γ Val (insert α αs) doc $ V.Dictionary (DictRep d)
+eval γ (Constr α doc c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   new (val' Nothing) (insert α αs) $ V.Constr c vs
-eval γ (Matrix α _ e (x × y) e') αs = do
+   new' γ Val (insert α αs) doc $ V.Constr c vs
+eval γ (Matrix α doc e (x × y) e') αs = do
    Val _ _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
    check
@@ -143,7 +143,7 @@ eval γ (Matrix α _ e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = maplet x (Val β Nothing (V.Int i)) `disjointUnion` (maplet y (Val β' Nothing (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
-   new (val' Nothing) (insert α αs) (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
+   new' γ Val (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
    new (val' Nothing) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
@@ -160,10 +160,10 @@ eval γ (DProject e x) α = do
             Val _ _ (V.Str s) -> withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
-eval γ (App _ e e') αs = do
+eval γ (App doc e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
-   apply v v'
+   apply v v' (doc)
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
@@ -213,10 +213,11 @@ new'
    => Env Vertex
    -> (Vertex -> DocOpt Val Vertex -> BaseVal Vertex -> Val Vertex)
    -> Set Vertex
-   -> BaseVal Vertex
    -> DocOpt Expr Vertex
+   -> BaseVal Vertex
    -> m (Val Vertex)
-new' γ constr αs bv doc = do
+new' _ constr αs Nothing bv = new (\αs' -> \bv' -> constr αs' Nothing bv') αs bv
+new' γ constr αs doc bv = do
    α <- fresh
    let v = constr α Nothing bv
    let γ' = maplet "this" v
