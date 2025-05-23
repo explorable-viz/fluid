@@ -23,14 +23,16 @@ import Data.String (Pattern(..), Replacement(..), contains) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
+import Doc (DocCommentElem(..))
+import Doc (DocOpt(..)) as Doc
 import Expr (Cont(..), Elim(..))
-import Expr (DocComment, DocCommentElem(..), DocOpt, Expr(..), RecDefs(..), VarDef(..)) as E
+import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DocOpt, DocComment, DocCommentElem(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -88,14 +90,14 @@ exprType (Matrix _ _ _ _ _) = Simple
 exprType (Lambda _) = Simple
 exprType (Project _ _) = Simple
 exprType (DProject _ _) = Simple
-exprType (App _ _) = Expression
+exprType (App _ _ _) = Expression
 exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
 exprType (IfElse _ _ _) = Simple
 exprType (ListEmpty _ _) = Simple
 exprType (ListNonEmpty _ _ _ _) = Simple
 exprType (ListEnum _ _) = Simple
-exprType (ListComp _ _ _) = Simple
+exprType (ListComp _ _ _ _) = Simple
 exprType (Let _ _) = Expression
 exprType (LetRec _ _) = Expression
 
@@ -105,7 +107,7 @@ prettySimple s = case exprType s of
    Expression -> parentheses (pretty s)
 
 prettyAppChain :: forall a. Ann a => Expr a -> Doc
-prettyAppChain (App s s') = prettyAppChain s .<>. prettySimple s'
+prettyAppChain (App _ s s') = prettyAppChain s .<>. prettySimple s'
 prettyAppChain s = prettySimple s
 
 prettyBinApp :: forall a. Ann a => Int -> Expr a -> Doc
@@ -158,7 +160,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
    pretty (Project s x) = prettySimple s .<>. text str.dot .<>. text x
    pretty (DProject s x) = prettySimple s .<>. text str.dot .<>. text str.lBracket .<>. prettySimple x .<>. text str.rBracket
-   pretty (App s s') = prettyAppChain (App s s')
+   pretty (App doc s s') = pretty doc .<>. prettyAppChain (App doc s s')
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = text str.if_ .<>. pretty s1 .<>. text str.then_ .<>. pretty s2 .<>. text str.else_ .<>. pretty s3
@@ -168,7 +170,7 @@ instance Ann a => Pretty (Expr a) where
       .-. pretty l
    pretty (ListNonEmpty α doc e l) = pretty doc .<>. highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
-   pretty (ListComp ann s qs) = highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
+   pretty (ListComp ann doc s qs) = pretty doc .<>. highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
    pretty (Let ds s) = (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
    pretty (LetRec h s) = (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
 
@@ -198,19 +200,6 @@ instance Ann a => Pretty (List (Pair (Expr a))) where
 
 prettyPairs :: forall a. Ann a => (Pair (Expr a)) -> Doc
 prettyPairs (Pair e e') = pretty e .<>. text str.colonEq .<>. pretty e'
-
-instance Pretty DocOpt where
-   pretty (Just x) = text str.triplequote .<>. pretty x
-   pretty Nothing = empty
-
-instance Pretty DocComment where
-   pretty (Cons word Nil) = pretty word .<>. text str.triplequote
-   pretty (Cons word xs) = pretty word .<>. pretty xs
-   pretty Nil = empty
-
-instance Pretty DocCommentElem where
-   pretty (Token str) = text str
-   pretty (CExpr e) = text str.dollar .<>. curlyBraces (pretty e)
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
@@ -274,7 +263,7 @@ instance Ann a => Pretty (List (Expr a)) where
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (ListCompGuard s) Nil) = pretty s
    pretty (Cons (ListCompDecl d) Nil) = text str.let_ .<>. pretty d
-   pretty (Cons (ListCompGen p s) Nil) = pretty p .<>. text str.lArrow .<>. pretty s
+   pretty (Cons (ListCompGen doc p s) Nil) = pretty doc .<>. pretty p .<>. text str.lArrow .<>. pretty s
    pretty (Cons q qs) = pretty (toList (singleton q)) .<>. text str.comma .<>. pretty qs
    pretty Nil = empty
 
@@ -394,20 +383,20 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.LetRec (E.RecDefs _ ρ) e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.DProject e x) = pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
-   pretty (E.App e e') = hcat [ pretty e, pretty e' ]
+   pretty (E.App doc e e') = pretty doc .<>. hcat [ pretty e, pretty e' ]
 
-instance Pretty E.DocOpt where
-   pretty (Just x) = text str.triplequote .<>. pretty x
-   pretty Nothing = empty
+instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
+   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
+   pretty Doc.None = empty
 
-instance Pretty E.DocComment where
+instance Pretty (e a) => Pretty (List (DocCommentElem e a)) where
    pretty (Cons word Nil) = pretty word .<>. text str.triplequote
    pretty (Cons word xs) = pretty word .<>. pretty xs
    pretty Nil = empty
 
-instance Pretty E.DocCommentElem where
-   pretty (E.Token str) = text str
-   pretty (E.CExpr e) = text str.dollar .<>. curlyBraces (pretty e)
+instance Pretty (e a) => Pretty (DocCommentElem e a) where
+   pretty (Token str) = text str
+   pretty (Unquote e) = text "${" .<>. pretty e .<>. text "}"
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty ρ = go (toUnfoldable ρ)

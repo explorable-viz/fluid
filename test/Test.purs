@@ -21,10 +21,17 @@ import Util ((×))
 main :: Effect Unit
 main = run tests
 
+-- main = run $ asTestSuite (suite loadFile comments_cases)
+
 -- main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite loadFile comments_cases
+scratchpad = asTestSuite $ suite loadFile
+   [ { file: "comments/map"
+     , imports: []
+     , fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
+     }
+   ]
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
@@ -38,6 +45,7 @@ benchmarks :: Array BenchSuite
 benchmarks =
    [ suite loadFile desugar_cases
    , suite loadFile misc_cases
+   , suite loadFile comments_cases
    , bwdSuite loadFile bwd_cases
    , withDatasetSuite loadFile graphics_cases
    ]
