@@ -13,21 +13,21 @@ data DocOpt :: (Type -> Type) -> Type -> Type
 data DocOpt e a = None | Doc (List (DocCommentElem e a))
 
 data DocCommentElem :: (Type -> Type) -> Type -> Type
-data DocCommentElem e a = Token String | CExpr (e a)
+data DocCommentElem e a = Token String | Unquote (e a)
 
 -- Purescript Typeclass instances
 derive instance Eq (e a) => Eq (DocOpt e a)
 instance Eq (e a) => Eq (DocCommentElem e a) where
    eq (Token s) (Token s') = s == s'
-   eq (CExpr e) (CExpr e') = e == e'
+   eq (Unquote e) (Unquote e') = e == e'
    eq _ _ = false
 
 derive instance Ord (e a) => Ord (DocOpt e a)
 instance Ord (e a) => Ord (DocCommentElem e a) where
    compare (Token s) (Token s') = compare s s'
-   compare (CExpr e) (CExpr e') = compare e e'
-   compare (Token _) (CExpr _) = LT
-   compare (CExpr _) (Token _) = GT
+   compare (Unquote e) (Unquote e') = compare e e'
+   compare (Token _) (Unquote _) = LT
+   compare (Unquote _) (Token _) = GT
 
 derive instance Functor e => Functor (DocCommentElem e)
 derive instance Foldable e => Foldable (DocCommentElem e)
@@ -42,7 +42,7 @@ instance (Show (e a)) => Show (DocOpt e a) where
 
 instance (Show (e a)) => Show (DocCommentElem e a) where
    show (Token s) = "Token " <> show s
-   show (CExpr e) = "CExpr " <> show e
+   show (Unquote e) = "Unquote " <> show e
 
 instance Apply e => Apply (DocOpt e) where
    apply None _ = None
@@ -51,7 +51,7 @@ instance Apply e => Apply (DocOpt e) where
 
 instance Apply e => Apply (DocCommentElem e) where
    apply (Token s) (Token s') = Token (s ≜ s')
-   apply (CExpr e) (CExpr e') = CExpr (e <*> e')
+   apply (Unquote e) (Unquote e') = Unquote (e <*> e')
    apply _ _ = error $ shapeMismatch unit
 
 -- Fluid specific instances
@@ -62,7 +62,7 @@ instance JoinSemilattice (e a) => JoinSemilattice (DocOpt e a) where
 
 instance JoinSemilattice (e a) => JoinSemilattice (DocCommentElem e a) where
    join (Token s) (Token s') = Token (s ≜ s')
-   join (CExpr e) (CExpr e') = CExpr (e ∨ e')
+   join (Unquote e) (Unquote e') = Unquote (e ∨ e')
    join _ _ = error $ shapeMismatch unit
 
 instance (BoundedJoinSemilattice a, Expandable (e a) (Raw e)) => Expandable (DocOpt e a) (DocOpt e Unit) where
@@ -72,12 +72,12 @@ instance (BoundedJoinSemilattice a, Expandable (e a) (Raw e)) => Expandable (Doc
 
 instance (BoundedJoinSemilattice a, (Expandable (e a) (Raw e))) => Expandable (DocCommentElem e a) (DocCommentElem e Unit) where
    expand (Token s) (Token s') = Token (s ≜ s')
-   expand (CExpr e) (CExpr e') = CExpr (expand e e')
+   expand (Unquote e) (Unquote e') = Unquote (expand e e')
    expand _ _ = error $ shapeMismatch unit
 
 instance Vertices (e Vertex) => Vertices (DocCommentElem e Vertex) where
    vertices (Token _) = Set.empty
-   vertices (CExpr e) = vertices e
+   vertices (Unquote e) = vertices e
 
 instance Vertices (e Vertex) => Vertices (DocOpt e Vertex) where
    vertices None = Set.empty

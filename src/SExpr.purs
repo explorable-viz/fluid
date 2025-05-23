@@ -516,7 +516,7 @@ commentFwd Nil = pure Nil
 
 commentElemFwd :: ∀ m a. BoundedLattice a => MonadError Error m => DocCommentElem a -> m (E.DocCommentElem a)
 commentElemFwd (Doc.Token s) = pure $ Doc.Token s
-commentElemFwd (Doc.CExpr e) = Doc.CExpr <$> exprFwd e
+commentElemFwd (Doc.Unquote e) = Doc.Unquote <$> exprFwd e
 
 commentBwd :: ∀ a. BoundedJoinSemilattice a => List (E.DocCommentElem a) -> List (Raw DocCommentElem) -> List (DocCommentElem a)
 commentBwd (Cons c l) (Cons c' l') = Cons (commentElemBwd c c') (commentBwd l l')
@@ -525,7 +525,7 @@ commentBwd _ _ = error "commentBwd mismatch"
 
 commentElemBwd :: ∀ a. BoundedJoinSemilattice a => E.DocCommentElem a -> Raw DocCommentElem -> DocCommentElem a
 commentElemBwd (Doc.Token _) (Doc.Token s') = Doc.Token s'
-commentElemBwd (Doc.CExpr e) (Doc.CExpr e') = Doc.CExpr (exprBwd e e')
+commentElemBwd (Doc.Unquote e) (Doc.Unquote e') = Doc.Unquote (exprBwd e e')
 commentElemBwd _ _ = error "commentElemBwd mismatch"
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,

@@ -396,7 +396,7 @@ instance Pretty (e a) => Pretty (List (DocCommentElem e a)) where
 
 instance Pretty (e a) => Pretty (DocCommentElem e a) where
    pretty (Token str) = text str
-   pretty (CExpr e) = text "${" .<>. pretty e .<>. text "}"
+   pretty (Unquote e) = text "${" .<>. pretty e .<>. text "}"
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty ρ = go (toUnfoldable ρ)

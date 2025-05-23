@@ -120,7 +120,7 @@ instance (FV a) => FV (List a) where
 
 instance FV (DocCommentElem a) where
    fv (Doc.Token _) = empty
-   fv (Doc.CExpr e) = fv e
+   fv (Doc.Unquote e) = fv e
 
 class BV a where
    bv :: a -> Set Var
