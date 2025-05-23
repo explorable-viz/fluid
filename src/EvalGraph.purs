@@ -58,7 +58,7 @@ match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    throw $ patternMismatch (prettyP v) (show d)
 match (Val α (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
-   check (Set.subset xs (Set.fromFoldable $ keys xvs))
+   check (Set.subset xs (keys xvs))
       $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # Set.toUnfoldable
    let xvs' = unwrap xvs
