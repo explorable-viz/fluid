@@ -14,17 +14,17 @@ import Data.Set (Set, insert)
 import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, fst, snd)
-import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
+import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Doc (DocCommentElem(..), DocOpt)
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, Vertex, op, selectαs, select𝔹s, showGraph, showVertices, vertices)
+import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
-import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
+import Graph.WithGraph (class MonadWithGraphAlloc, alloc, extend, fresh, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
@@ -35,7 +35,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs, val')
+import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs, val')
 
 -- Needs a better name.
 type GraphConfig =
@@ -118,10 +118,7 @@ eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vert
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval γ (Int α doc n) αs = do
-   let v = Val α Nothing (V.Int n)
-   let γ' = maplet "this" v
-   vdoc <- evalCmt (γ <+> γ') doc
-   new (val' vdoc) (insert α αs) (V.Int n)
+   new' γ Val (insert α αs) (V.Int n) doc
 eval _ (Float α _ n) αs = new (val' Nothing) (insert α αs) (V.Float n)
 eval _ (Str α _ s) αs = new (val' Nothing) (insert α αs) (V.Str s)
 eval γ (Dictionary α _ ees) αs = do
@@ -209,6 +206,24 @@ evalCmt γ (Just tokens) = Just <$> sequence (map evalToken tokens)
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
    evalToken (CExpr e) = CExpr <$> (eval γ e empty)
+
+new'
+   :: forall m
+    . MonadWithGraphAlloc m
+   => Env Vertex
+   -> (Vertex -> DocOpt Val Vertex -> BaseVal Vertex -> Val Vertex)
+   -> Set Vertex
+   -> BaseVal Vertex
+   -> DocOpt Expr Vertex
+   -> m (Val Vertex)
+new' γ constr αs bv doc = do
+   α <- fresh
+   let v = constr α Nothing bv
+   let γ' = maplet "this" v
+   vdoc <- evalCmt (γ <+> γ') doc
+   let v' = constr α vdoc bv
+   extend (DVertex (α × pack v')) αs
+   pure v'
 
 type GraphEval g s t =
    { g :: g
