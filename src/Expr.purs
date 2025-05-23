@@ -290,9 +290,6 @@ instance Apply Expr where
    apply (DProject fd fk) (DProject d k) = DProject (fd <*> d) (fk <*> k)
    apply _ _ = shapeMismatch unit
 
-lap :: forall e a b. Apply e => Maybe (List (e (a -> b))) -> Maybe (List (e a)) -> Maybe (List (e b))
-lap = lift2 (zipWith (<*>))
-
 instance Apply Elim where
    apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
    apply (ElimConstr fk) (ElimConstr k) = ElimConstr (((<*>) <$> fk) <*> k)
