@@ -117,7 +117,7 @@ unrestrictGC γ xs =
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (Set.toUnfoldable xs) empty
    where
-   dom_ρ = Set.fromFoldable $ keys ρ
+   dom_ρ = keys ρ
 
    go :: List Var -> Endo (Set Var)
    go Nil acc = acc
