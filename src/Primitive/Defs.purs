@@ -134,7 +134,7 @@ dict_foldl =
    where
    op :: OpGraph
    op (v : u : Val _ _ (Dictionary (DictRep d)) : Nil) =
-      foldM (\u1 (_ × u2) -> G.apply v u1 Nothing >>= \x -> flip G.apply u2 x Nothing) u d
+      foldM (\u1 (_ × u2) -> G.apply v u1 >>= flip G.apply u2) u d
    op _ = throw "Function, value and dictionary expected"
 
 dict_get :: ForeignOp
@@ -156,7 +156,7 @@ dict_intersectionWith =
       new (val' Nothing) (singleton α # Set.insert α') v'
       where
       apply' (β × u) (β' × u') = do
-         v''@(Val _ _ key) <- G.apply v u Nothing >>= \x -> flip G.apply u' x Nothing
+         v''@(Val _ _ key) <- G.apply v u >>= flip G.apply u'
          Val β'' _ _ <- new (val' Nothing) (singleton β # Set.insert β') key
          pure (β'' × v'')
    op _ = throw "Function and two dictionaries expected"
@@ -167,7 +167,7 @@ dict_map =
    where
    op :: OpGraph
    op (v : Val α _ (Dictionary (DictRep d)) : Nil) = do
-      d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u Nothing) d
+      d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
       new (val' Nothing) (singleton α) (Dictionary (DictRep d'))
    op _ = throw "Function and dictionary expected"
 

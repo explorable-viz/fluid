@@ -85,12 +85,12 @@ closeDefs γ ρ αs =
       in
          new (val' Nothing) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
-apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> DocOpt Expr Vertex -> m (Val Vertex)
-apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v _doc = do
+apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
+apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
-apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v _doc =
+apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
    where
    vs' = snoc vs v
@@ -102,7 +102,7 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v _doc =
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
-apply (Val α _ (V.Fun (V.PartialConstr c vs))) v _doc = do
+apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    new (val' Nothing) (singleton α) v'
    where
@@ -112,7 +112,7 @@ apply (Val α _ (V.Fun (V.PartialConstr c vs))) v _doc = do
       else
          V.Constr c (snoc vs v)
    n = defined (arity c)
-apply _ v _doc = throw $ "Found " <> prettyP v <> ", expected function"
+apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
@@ -163,7 +163,8 @@ eval γ (DProject e x) α = do
 eval γ (App doc e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
-   apply v v' (doc)
+   (Val α _ v'') <- apply v v'
+   new' γ Val (singleton α) doc v''
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
