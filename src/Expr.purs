@@ -15,7 +15,7 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
-import Doc (DocCommentElem(..), DocOpt, dap, docVertices)
+import Doc (DocOpt(..), DocCommentElem(..)) as Doc
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
@@ -27,16 +27,16 @@ import Util.Set ((\\), (∪))
 data Expr a
    = Var Var
    | Op Var
-   | Int a (EDocOpt a) Int
-   | Float a (EDocOpt a) Number
-   | Str a (EDocOpt a) String
-   | Dictionary a (EDocOpt a) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
-   | Constr a (EDocOpt a) Ctr (List (Expr a))
-   | Matrix a (EDocOpt a) (Expr a) (Var × Var) (Expr a)
+   | Int a (DocOpt a) Int
+   | Float a (DocOpt a) Number
+   | Str a (DocOpt a) String
+   | Dictionary a (DocOpt a) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
+   | Constr a (DocOpt a) Ctr (List (Expr a))
+   | Matrix a (DocOpt a) (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
-   | App (EDocOpt a) (Expr a) (Expr a)
+   | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
@@ -54,7 +54,8 @@ data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
 
-type EDocOpt a = DocOpt Expr a
+type DocOpt a = Doc.DocOpt Expr a
+type DocCommentElem a = Doc.DocCommentElem Expr a
 
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
@@ -68,6 +69,10 @@ newtype Module a = Module (List (VarDef a + RecDefs a))
 
 class FV a where
    fv :: a -> Set Var
+
+instance FV (Doc.DocOpt Expr a) where
+   fv Doc.None = empty
+   fv (Doc.Doc doc) = unions (fv <$> doc)
 
 instance FV (Expr a) where
    fv (Var x) = singleton x
@@ -113,9 +118,9 @@ instance FV a => FV (Maybe a) where
 instance (FV a) => FV (List a) where
    fv xs = unions (fv <$> xs)
 
-instance FV (DocCommentElem Expr a) where
-   fv (Token _) = empty
-   fv (CExpr e) = fv e
+instance FV (DocCommentElem a) where
+   fv (Doc.Token _) = empty
+   fv (Doc.Unquote e) = fv e
 
 class BV a where
    bv :: a -> Set Var
@@ -209,18 +214,18 @@ instance MeetSemilattice a => MeetSemilattice (Expr a) where
 instance Vertices (Expr Vertex) where
    vertices (Var _) = empty
    vertices (Op _) = empty
-   vertices e@(Int α doc _) = singleton (DVertex (α × pack e)) ∪ docVertices doc
-   vertices e@(Float α doc _) = singleton (DVertex (α × pack e)) ∪ docVertices doc
-   vertices e@(Str α doc _) = singleton (DVertex (α × pack e)) ∪ docVertices doc
-   vertices d@(Dictionary α doc ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees) ∪ docVertices doc
+   vertices e@(Int α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices e@(Float α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices e@(Str α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices d@(Dictionary α doc ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees) ∪ vertices doc
       where
       go (Pair e e') = vertices e ∪ vertices e'
-   vertices e@(Constr α doc _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es) ∪ docVertices doc
-   vertices e@(Matrix α doc e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2 ∪ docVertices doc
+   vertices e@(Constr α doc _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es) ∪ vertices doc
+   vertices e@(Matrix α doc e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
    vertices (Project e _) = vertices e
    vertices (DProject e x) = vertices e ∪ vertices x
-   vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ docVertices doc
+   vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
 
@@ -270,16 +275,16 @@ derive instance Functor Module
 instance Apply Expr where
    apply (Var x) (Var x') = Var (x ≜ x')
    apply (Op op) (Op _) = Op op
-   apply (Int fα fdoc n) (Int α doc n') = Int (fα α) (fdoc `dap` doc) (n ≜ n')
-   apply (Float fα fdoc n) (Float α doc n') = Float (fα α) (fdoc `dap` doc) (n ≜ n')
-   apply (Str fα fdoc s) (Str α doc s') = Str (fα α) (fdoc `dap` doc) (s ≜ s')
-   apply (Dictionary fα fdoc fxes) (Dictionary α doc xes) = Dictionary (fα α) (fdoc `dap` doc) (zipWith (lift2 (<*>)) fxes xes)
-   apply (Constr fα fdoc c fes) (Constr α doc c' es) = Constr (fα α) (fdoc `dap` doc) (c ≜ c') (zipWith (<*>) fes es)
+   apply (Int fα fdoc n) (Int α doc n') = Int (fα α) (fdoc <*> doc) (n ≜ n')
+   apply (Float fα fdoc n) (Float α doc n') = Float (fα α) (fdoc <*> doc) (n ≜ n')
+   apply (Str fα fdoc s) (Str α doc s') = Str (fα α) (fdoc <*> doc) (s ≜ s')
+   apply (Dictionary fα fdoc fxes) (Dictionary α doc xes) = Dictionary (fα α) (fdoc <*> doc) (zipWith (lift2 (<*>)) fxes xes)
+   apply (Constr fα fdoc c fes) (Constr α doc c' es) = Constr (fα α) (fdoc <*> doc) (c ≜ c') (zipWith (<*>) fes es)
    apply (Matrix fα fdoc fe1 (x × y) fe2) (Matrix α doc e1 (x' × y') e2) =
-      Matrix (fα α) (fdoc `dap` doc) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
+      Matrix (fα α) (fdoc <*> doc) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
-   apply (App fdoc fe1 fe2) (App doc e1 e2) = App (fdoc `dap` doc) (fe1 <*> e1) (fe2 <*> e2)
+   apply (App fdoc fe1 fe2) (App doc e1 e2) = App (fdoc <*> doc) (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
    apply (DProject fd fk) (DProject d k) = DProject (fd <*> d) (fk <*> k)

@@ -18,7 +18,7 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
-import Doc (DocOpt, dap)
+import Doc (DocOpt)
 import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
 import Foreign.Object (foldMap)
@@ -122,7 +122,7 @@ unrestrictGC γ xs =
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (Set.toUnfoldable xs) empty
    where
-   dom_ρ = Set.fromFoldable $ keys ρ
+   dom_ρ = keys ρ
 
    go :: List Var -> Endo (Set Var)
    go Nil acc = acc
@@ -193,7 +193,7 @@ derive instance Foldable Env
 derive instance Foldable EnvExpr
 
 instance Apply Val where
-   apply (Val fα fdoc fv) (Val α doc v) = Val (fα α) (fdoc `dap` doc) (fv <*> v)
+   apply (Val fα fdoc fv) (Val α doc v) = Val (fα α) (fdoc <*> doc) (fv <*> v)
 
 instance Apply BaseVal where
    apply (Int n) (Int n') = Int (n ≜ n')

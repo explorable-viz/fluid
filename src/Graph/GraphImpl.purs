@@ -59,7 +59,7 @@ instance Graph GraphImpl where
       αs' = L.fromFoldable αs
       out = wrap (runST (outMap αs' es'))
       in_ = wrap (runST (inMap αs' es'))
-      vertices = Set.fromFoldable $ Set.map Vertex $ keys out
+      vertices = Set.map Vertex $ keys out
 
    -- PureScript also provides a graph implementation. Delegate to that for now.
    topologicalSort (GraphImpl g) =

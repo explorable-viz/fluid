@@ -7,7 +7,6 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range) as A
 import Data.Either (Either(..))
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
@@ -17,7 +16,7 @@ import Data.Tuple (curry, fst, snd)
 import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
-import Doc (DocCommentElem(..), DocOpt)
+import Doc (DocCommentElem(..), DocOpt(..))
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
@@ -83,7 +82,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `forDefs` σ
       in
-         new (val' Nothing) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
+         new (val' None) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
@@ -98,13 +97,13 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         new (val' Nothing) (singleton α) v'
+         new (val' None) (singleton α) v'
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   new (val' Nothing) (singleton α) v'
+   new (val' None) (singleton α) v'
    where
    v' =
       if length vs < n - 1 then
@@ -141,11 +140,11 @@ eval γ (Matrix α doc e (x × y) e') αs = do
       i <- A.range 1 i'
       singleton $ sequence do
          j <- A.range 1 j'
-         let γ' = maplet x (Val β Nothing (V.Int i)) `disjointUnion` (maplet y (Val β' Nothing (V.Int j)))
+         let γ' = maplet x (Val β None (V.Int i)) `disjointUnion` (maplet y (Val β' None (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
    new' γ Val (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
-   new (val' Nothing) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   new (val' None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
@@ -201,12 +200,12 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       pure $ γ <+> maplet x v
 
 evalCmt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
-evalCmt _ Nothing = pure Nothing
-evalCmt γ (Just tokens) = Just <$> sequence (map evalToken tokens)
+evalCmt _ None = pure None
+evalCmt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
    where
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
-   evalToken (CExpr e) = CExpr <$> (eval γ e empty)
+   evalToken (Unquote e) = Unquote <$> (eval γ e empty)
 
 new'
    :: forall m
@@ -217,10 +216,10 @@ new'
    -> DocOpt Expr Vertex
    -> BaseVal Vertex
    -> m (Val Vertex)
-new' _ constr αs Nothing bv = new (\αs' -> \bv' -> constr αs' Nothing bv') αs bv
+new' _ constr αs None bv = new (\αs' -> \bv' -> constr αs' None bv') αs bv
 new' γ constr αs doc bv = do
    α <- fresh
-   let v = constr α Nothing bv
+   let v = constr α None bv
    let γ' = maplet "this" v
    vdoc <- evalCmt (γ <+> γ') doc
    let v' = constr α vdoc bv
