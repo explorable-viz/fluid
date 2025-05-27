@@ -135,7 +135,7 @@ testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
    s' <- parse (prettyP s) program
    unless (eq (erase s) (erase s')) $
-      throw ("parse/prettyP round trip:\nOriginal\n" <> show (erase s) <> "\nNew\n" <> show (erase s'))
+      throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
 
 checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
 checkPretty msg expect x =
