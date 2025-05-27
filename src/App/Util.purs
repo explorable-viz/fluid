@@ -51,6 +51,10 @@ data SelState a
    | Reactive a
 
 newtype SelStates a = SelStates (SelState (Selection a))
+
+inert :: forall a. SelStates a
+inert = SelStates Inert
+
 type Selection a = { persistent :: a, transient :: a }
 
 data SelectionType = Persistent | Transient

@@ -4,7 +4,7 @@ import Prelude hiding (join)
 
 import App.Util (class Reflect, Attrs, SelStates, Selectable, 𝕊, classes, contents, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (ViewSelSetter, SelSetter, listElement, paragraph)
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, View, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -19,13 +19,13 @@ import Effect (Effect)
 import Lattice (bot, join)
 import Partial.Unsafe (unsafePartial)
 import Primitive (ToFrom, typeError, unpack)
-import Util ((!), (×))
+import Util (error, (!), (×))
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
 newtype Paragraph a = Paragraph (Array (TextFragment a))
 
-data TextFragment a = Text (Selectable String) | Link (Val a) (Selectable String)
+data TextFragment a = Text (Selectable String) | Link (Val a) (Selectable String) | Viewable View
 
 instance Drawable (Paragraph (SelStates 𝕊)) where
    draw rSpec figVal _ redraw =
@@ -50,6 +50,7 @@ getText elems i = case elems ! i of
    Link v (s × _) -> (s × α)
       where
       α = foldr join bot v
+   Viewable _ -> error "Unimplemented"
 
 setSelStates :: Paragraph (SelStates 𝕊) -> EventListener -> D3.Selection -> Effect Unit
 setSelStates (Paragraph elems) redraw rootElement = do
@@ -99,6 +100,7 @@ createRootElement (Paragraph elems) div childId = do
 linkContents :: TextFragment (SelStates 𝕊) -> String
 linkContents (Text s) = contents s
 linkContents (Link _ (s × _)) = s
+linkContents (Viewable _) = error "unimplemented"
 
 instance Drawable2 (Paragraph (SelStates 𝕊)) where
    createRootElement = createRootElement
@@ -114,6 +116,7 @@ textFragment =
    { pack: case _ of
         Text (s × α) -> Constr cText ((Val α None (Str s)) : Nil)
         Link v (s × α') -> Constr cLink (v : Val α' None (Str s) : Nil)
+        Viewable _ -> error "unimplemented"
    , unpack: case _ of
         Constr c (Val α _ (Str s) : Nil) | c == cText -> Text (s × α)
         Constr c (Val α doc v : (Val α' _ (Str s) : Nil)) | c == cLink -> Link (Val α doc v) (s × α')

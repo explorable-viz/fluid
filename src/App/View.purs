@@ -2,21 +2,23 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelStates, 𝕊, dict, from)
+import App.Util (SelStates, 𝕊, dict, from, inert)
 import App.View.BarChart (BarChart)
 import App.View.LineChart (LineChart)
-import App.View.Paragraph (Paragraph)
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
+import App.View.Paragraph (Paragraph(..), TextFragment(..))
 import App.View.ScatterPlot (ScatterPlot)
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
 import App.View.Util (View, pack)
+import Data.Array (fromFoldable)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
 import DataType (cBarChart, cCons, cLineChart, cMultiView, cNil, cParagraph, cScatterPlot)
 import Dict (Dict)
-import Util (type (×))
+import Doc (DocCommentElem(..), DocOpt(..))
+import Util ((×), type (×))
 import Val (BaseVal(..), Val(..))
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
@@ -38,3 +40,11 @@ view title u@(Val _ _ (Constr c _)) _
         rows = arrayDictToArray2 colNames records <#> map snd
 view title (Val _ _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
+
+viewDocComment :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe (Paragraph Unit)
+viewDocComment None = Nothing
+viewDocComment (Doc doc) = Just $ Paragraph $ fromFoldable $ map viewDocElem doc
+   where
+   viewDocElem :: Partial => DocCommentElem Val (SelStates 𝕊) -> TextFragment Unit
+   viewDocElem (Token str) = Text (str × inert)
+   viewDocElem (Unquote val) = Viewable $ view "" val Nothing
