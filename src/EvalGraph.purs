@@ -162,8 +162,10 @@ eval γ (DProject e x) α = do
 eval γ (App doc e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
-   (Val α _ v'') <- apply v v'
-   new' γ Val (singleton α) doc v''
+   v''@(Val α' _ bv) <- apply v v'
+   let γ' = maplet "this" v''
+   vdoc <- evalCmt (γ <+> γ') doc
+   pure $ Val α' vdoc bv
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
