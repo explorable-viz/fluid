@@ -29,7 +29,7 @@ let changed126 = map (fun r -> r.changed) ssp126preds;
     totals = map stackedBarHeight (map (get "Total") [ssp126, ssp245]);
     co2s = map stackedBarHeight (map (get "CO2") [ssp126, ssp245]);
     nonco2 = map (get "Non-CO2") [ssp126, ssp245]
-in MultiView {
+in """Within each scenario bar plot, the bars reprsent total warming (°C), warming from CO2 (°C) and from Non-CO2 GHG's (°C).""" MultiView {
     leftBarChart: ssp126,
     rightBarChart: ssp245,
     explanation:    
