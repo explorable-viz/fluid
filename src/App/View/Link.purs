@@ -2,10 +2,10 @@ module Link where
 
 import Prelude hiding (join)
 
-import App.Util (Attrs, SelStates, Selectable, 𝕊, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (Attrs, SelStates, Selectable, 𝕊, classes, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (ViewSelSetter, SelSetter)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
-import App.View.Util.D3 (setStyles)
+import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Foldable (foldr)
@@ -16,7 +16,7 @@ import Effect (Effect)
 import Lattice (bot, join)
 import Partial.Unsafe (unsafePartial)
 import Primitive (typeError)
-import Util (error, (×))
+import Util ((×))
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
@@ -45,7 +45,14 @@ selLink _ = fragment
          first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
 
 createRootElement :: Link (SelStates 𝕊) -> D3.Selection -> String -> Effect D3.Selection
-createRootElement (Link _ _) = error "todo"
+createRootElement link div childId = do
+   rootElement <- div # create D3.Text [ classes [ "paragraph" ], "id" ↦ childId ]
+   mkElem rootElement link
+   where
+   mkElem :: D3.Selection -> Link (SelStates 𝕊) -> Effect D3.Selection
+   mkElem root link' = do
+      elem <- root # create D3.Text [ classes [ "link" ] ]
+      elem # setText (linkContents link') >>= setDatum link'
 
 setSelState :: Link (SelStates 𝕊) -> EventListener -> D3.Selection -> Effect Unit
 setSelState link redraw rootElement = do
