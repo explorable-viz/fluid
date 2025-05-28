@@ -3,17 +3,20 @@ module Link where
 import Prelude hiding (join)
 
 import App.Util (Attrs, SelStates, Selectable, 𝕊, isPersistent, isPrimary, isSecondary, isTransient, sel)
-import App.View.Util (registerMouseListeners)
+import App.Util.Selector (ViewSelSetter, SelSetter)
+import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (setStyles)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Foldable (foldr)
 import Data.List (List(..), (:))
+import Data.Profunctor.Strong (first)
 import DataType (cLink)
 import Effect (Effect)
 import Lattice (bot, join)
+import Partial.Unsafe (unsafePartial)
 import Primitive (typeError)
-import Util ((×))
+import Util (error, (×))
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
@@ -24,6 +27,25 @@ getText (Link v (s × _)) = s × (foldr join bot v)
 
 linkContents :: ∀ a. Link a -> String
 linkContents (Link _ (s × _)) = s
+
+instance Drawable (Link (SelStates 𝕊)) where
+   draw rSpec figVal _ redraw =
+      draw' uiHelpers rSpec =<< selListener figVal redraw selLink
+
+instance Drawable2 (Link (SelStates 𝕊)) where
+   createRootElement = createRootElement
+   setSelStates = setSelState
+
+selLink :: ViewSelSetter (Link (SelStates 𝕊))
+selLink _ = fragment
+   where
+   fragment :: SelSetter Val Val
+   fragment δv = unsafePartial $ case _ of
+      (Val α doc (Constr c (v1 : v2 : Nil))) | c == cLink ->
+         first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
+
+createRootElement :: Link (SelStates 𝕊) -> D3.Selection -> String -> Effect D3.Selection
+createRootElement (Link _ _) = error "todo"
 
 setSelState :: Link (SelStates 𝕊) -> EventListener -> D3.Selection -> Effect Unit
 setSelState link redraw rootElement = do

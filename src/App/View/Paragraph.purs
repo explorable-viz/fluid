@@ -18,13 +18,11 @@ import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.List ((:), List(..))
 import Data.Profunctor.Strong (first)
-import Data.Tuple (fst, snd)
+import Data.Tuple (snd)
 import DataType (cBarChart, cCons, cLineChart, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText)
 import Dict (Dict)
-import Doc (DocOpt(..))
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
-import Primitive (ToFrom, typeError, unpack)
 import Util (type (×), error, (!), (×))
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
@@ -109,18 +107,18 @@ instance Drawable2 Paragraph where
    setSelStates = setSelStates
 
 instance Reflect (Val (SelStates 𝕊)) Paragraph where
-   from r = Paragraph (fst <$> unpack textFragment <$> (from r))
+   from r = Paragraph (from <$> (from r :: Array (Val (SelStates 𝕊))))
 
 instance Reflect (Val (SelStates 𝕊)) ParaFragment where
    from r = case r of
       Val _ _ (Constr c (Val α _ (Str s) : Nil)) | c == cText -> Text (s × α)
       Val _ _ (Constr c (_ : Nil))
          | c == cBarChart || c == cLineChart || c == cScatterPlot || c == cParagraph || c == cMultiView ->
-              Viewable (view r)
-      Val _ _ (Matrix r') -> Viewable (pack $ MatrixView { title: "", matrix: matrixRep r' })
+              Viewable $ view r
+      Val _ _ (Matrix _) -> Viewable $ view r
 
 view :: Partial => Val (SelStates 𝕊) -> View
-view r = case r of
+view v = case v of
    Val _ _ (Constr c (u : Nil))
       | c == cBarChart -> pack $ (dict from u :: BarChart)
       | c == cLineChart -> pack $ (dict from u :: LineChart)
@@ -133,16 +131,6 @@ view r = case r of
            records = dict identity <$> from u
            colNames = headers records
            rows = arrayDictToArray2 colNames records <#> map snd
+   Val _ _ (Matrix r) -> pack $ MatrixView { title: "", matrix: matrixRep r }
 
 type ParagraphElem = { i :: Int }
-
-textFragment :: ToFrom ParaFragment (SelStates 𝕊)
-textFragment =
-   { pack: case _ of
-        Text (s × α) -> Constr cText ((Val α None (Str s)) : Nil)
-        Viewable _ -> error "unimplemented"
-   , unpack: case _ of
-        Constr c (Val α _ (Str s) : Nil) | c == cText -> Text (s × α)
-        v -> typeError v "ParaFragment"
-   }
-
