@@ -95,12 +95,12 @@ createRootElement (Paragraph elems) div childId = do
    mkElem :: D3.Selection -> Int -> TextFragment (SelStates 𝕊) -> Effect D3.Selection
    mkElem root i elem = do
       elem' <- root # create D3.Text [ classes [ "text-fragment" ] ]
-      elem' # setText (linkContents elem) >>= setDatum { i }
+      elem' # setText (textContents elem) >>= setDatum { i }
 
-linkContents :: TextFragment (SelStates 𝕊) -> String
-linkContents (Text s) = contents s
-linkContents (Link _ (s × _)) = s
-linkContents (Viewable _) = error "unimplemented"
+textContents :: TextFragment (SelStates 𝕊) -> String
+textContents (Text s) = contents s
+textContents (Link _ (s × _)) = s
+textContents (Viewable _) = error "unimplemented"
 
 instance Drawable2 (Paragraph (SelStates 𝕊)) where
    createRootElement = createRootElement

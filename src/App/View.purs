@@ -17,9 +17,22 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
 import DataType (cBarChart, cCons, cLineChart, cMultiView, cNil, cParagraph, cScatterPlot)
 import Dict (Dict)
+import Dict as Dict
 import Doc (DocCommentElem(..), DocOpt(..))
-import Util ((×), type (×))
+import Util (type (×), (×))
 import Val (BaseVal(..), Val(..))
+
+view' :: Partial => String -> Val (SelStates 𝕊) -> Maybe View -> View
+view' title v@(Val _ doc _) _ =
+   if doc == None then realView
+   else
+      let
+         docView = viewDocComment doc
+         vws = Dict.fromFoldable [ title × realView, title × docView ] :: Dict View
+      in
+         pack $ MultiView vws
+   where
+   realView = view title v Nothing
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- Ignore view state for now..
@@ -41,10 +54,9 @@ view title u@(Val _ _ (Constr c _)) _
 view title (Val _ _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
 
-viewDocComment :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe (Paragraph Unit)
-viewDocComment None = Nothing
-viewDocComment (Doc doc) = Just $ Paragraph $ fromFoldable $ map viewDocElem doc
+viewDocComment :: Partial => DocOpt Val (SelStates 𝕊) -> View
+viewDocComment (Doc doc) = pack $ Paragraph $ fromFoldable $ map viewDocElem doc
    where
-   viewDocElem :: Partial => DocCommentElem Val (SelStates 𝕊) -> TextFragment Unit
+   viewDocElem :: Partial => DocCommentElem Val (SelStates 𝕊) -> TextFragment (SelStates 𝕊)
    viewDocElem (Token str) = Text (str × inert)
    viewDocElem (Unquote val) = Viewable $ view "" val Nothing
