@@ -33,7 +33,7 @@ in """Within each scenario bar plot, the bars represent total warming (°C), war
     leftBarChart: ssp126,
     rightBarChart: ssp245,
     explanation:    
-        Paragraph [ Text "Within each scenario bar plot, the bars represent:", Link totals " total warming (°C),",
-                    Link co2s " warming from CO2 (°C) ", Text " and from ", Link (map stackedBarHeight nonco2) " Non-CO2 GHG's (°C)."
+        Paragraph [ Text "Within each scenario bar plot, the bars represent:", Text " total warming (°C),",
+                    Text " warming from CO2 (°C) ", Text " and from ", Text " Non-CO2 GHG's (°C)."
                   ]
 }

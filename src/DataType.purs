@@ -194,7 +194,7 @@ dataTypes = L.fromFoldable
    , dataType "Marker"
         [ "Arrowhead" × 0
         ]
-   , dataType "TextFragment"
+   , dataType "ParaFragment"
         [ cText × 1 -- Str (str)
         , cLink × 2 --  Val v, Str (url)
         ]
