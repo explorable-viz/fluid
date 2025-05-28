@@ -44,7 +44,7 @@ view title (Val _ _ (Constr c (u : Nil))) _
    | c == cParagraph = pack (from u :: Paragraph)
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
-        vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
+        vws = view title <$> (((from) u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
 view title u@(Val _ _ (Constr c _)) _
    | c == cNil || c == cCons = pack (TableView { title, filter: defaultFilter, colNames, rows })
         where

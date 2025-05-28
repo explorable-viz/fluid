@@ -2,9 +2,15 @@ module App.View.Paragraph where
 
 import Prelude hiding (join)
 
-import App.Util (class Reflect, Attrs, SelStates, Selectable, 𝕊, classes, contents, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (class Reflect, Attrs, SelStates, Selectable, 𝕊, classes, contents, dict, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (ViewSelSetter, SelSetter, listElement, paragraph)
-import App.View.Util (class Drawable, class Drawable2, View, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.BarChart (BarChart)
+import App.View.LineChart (LineChart)
+import App.View.MatrixView (MatrixView(..), matrixRep)
+import App.View.MultiView (MultiView(..))
+import App.View.ScatterPlot (ScatterPlot)
+import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
+import App.View.Util (class Drawable, class Drawable2, View, draw', pack, registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -12,13 +18,14 @@ import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.List ((:), List(..))
 import Data.Profunctor.Strong (first)
-import Data.Tuple (fst)
-import DataType (cLink, cText)
+import Data.Tuple (fst, snd)
+import DataType (cBarChart, cCons, cLineChart, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText)
+import Dict (Dict)
 import Doc (DocOpt(..))
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
 import Primitive (ToFrom, typeError, unpack)
-import Util (error, (!), (×))
+import Util (type (×), error, (!), (×))
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
@@ -103,6 +110,29 @@ instance Drawable2 Paragraph where
 
 instance Reflect (Val (SelStates 𝕊)) Paragraph where
    from r = Paragraph (fst <$> unpack textFragment <$> (from r))
+
+instance Reflect (Val (SelStates 𝕊)) ParaFragment where
+   from r = case r of
+      Val _ _ (Constr c (Val α _ (Str s) : Nil)) | c == cText -> Text (s × α)
+      Val _ _ (Constr c (_ : Nil))
+         | c == cBarChart || c == cLineChart || c == cScatterPlot || c == cParagraph || c == cMultiView ->
+              Viewable (view r)
+      Val _ _ (Matrix r') -> Viewable (pack $ MatrixView { title: "", matrix: matrixRep r' })
+
+view :: Partial => Val (SelStates 𝕊) -> View
+view r = case r of
+   Val _ _ (Constr c (u : Nil))
+      | c == cBarChart -> pack $ (dict from u :: BarChart)
+      | c == cLineChart -> pack $ (dict from u :: LineChart)
+      | c == cScatterPlot -> pack $ (dict from u :: ScatterPlot)
+      | c == cParagraph -> pack $ (from u :: Paragraph)
+      | c == cMultiView -> pack $ MultiView $ view <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
+      | c == cNil || c == cCons ->
+           (pack $ TableView { title: "", filter: defaultFilter, colNames, rows })
+           where
+           records = dict identity <$> from u
+           colNames = headers records
+           rows = arrayDictToArray2 colNames records <#> map snd
 
 type ParagraphElem = { i :: Int }
 
