@@ -6,7 +6,7 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, SelStates, Selectable, 𝕊(..), colorShade, dict, from, getPersistent, getTransient, get_intOrNumber)
+import App.Util (Selectable, 𝕊(..), colorShade, getPersistent, getTransient)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, class Drawable2, Renderer, selListener, uiHelpers)
 import App.View.Util.D3 (ElementType(..), create)
@@ -15,14 +15,9 @@ import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
 import Data.Tuple (snd)
-import DataType (f_bars, f_caption, f_stackedBars, f_x, f_y, f_z)
-import Dict (Dict)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
-import Primitive (string, unpack)
-import Util (type (×), (!))
-import Util.Map (get)
-import Val (Val)
+import Util ((!))
 import Web.Event.EventTarget (EventListener)
 
 newtype BarChart = BarChart
@@ -104,24 +99,6 @@ instance Drawable BarChart where
       where
       barSegment' :: ViewSelSetter BarSegmentCoordinate
       barSegment' { i, j } = barSegment i j >>> barChart
-
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
-   from r = BarChart
-      { caption: unpack string (snd (get f_caption r))
-      , stackedBars: dict from <$> from (snd (get f_stackedBars r))
-      }
-
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
-   from r = StackedBar
-      { x: unpack string (snd (get f_x r))
-      , bars: dict from <$> from (snd (get f_bars r))
-      }
-
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) Bar where
-   from r = Bar
-      { y: unpack string (snd (get f_y r))
-      , z: get_intOrNumber f_z r
-      }
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }

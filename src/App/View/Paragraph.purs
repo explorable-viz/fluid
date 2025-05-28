@@ -2,15 +2,9 @@ module App.View.Paragraph where
 
 import Prelude hiding (join)
 
-import App.Util (class Reflect, Attrs, SelStates, Selectable, 𝕊, classes, contents, dict, from, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (Attrs, Selectable, classes, contents, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (ViewSelSetter, SelSetter, listElement, paragraph)
-import App.View.BarChart (BarChart)
-import App.View.LineChart (LineChart)
-import App.View.MatrixView (MatrixView(..), matrixRep)
-import App.View.MultiView (MultiView(..))
-import App.View.ScatterPlot (ScatterPlot)
-import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
-import App.View.Util (class Drawable, class Drawable2, View, draw', pack, registerMouseListeners, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, View, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -18,12 +12,10 @@ import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.List ((:), List(..))
 import Data.Profunctor.Strong (first)
-import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText)
-import Dict (Dict)
+import DataType (cText)
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
-import Util (type (×), error, (!), (×))
+import Util (error, (!))
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
@@ -45,8 +37,6 @@ selParaFragment { i } = fragment >>> listElement i >>> paragraph
    fragment δv = unsafePartial $ case _ of
       Val α doc (Constr c (v : Nil)) | c == cText ->
          first (\v' -> Val α doc (Constr c (v' : Nil))) (δv v)
-      Val α doc (Constr c (v1 : v2 : Nil)) | c == cLink ->
-         first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
 
 getText :: Array ParaFragment -> Int -> Selectable String
 getText elems i = case elems ! i of
@@ -105,32 +95,5 @@ textContents (Viewable _) = error "unimplemented"
 instance Drawable2 Paragraph where
    createRootElement = createRootElement
    setSelStates = setSelStates
-
-instance Reflect (Val (SelStates 𝕊)) Paragraph where
-   from r = Paragraph (from <$> (from r :: Array (Val (SelStates 𝕊))))
-
-instance Reflect (Val (SelStates 𝕊)) ParaFragment where
-   from r = case r of
-      Val _ _ (Constr c (Val α _ (Str s) : Nil)) | c == cText -> Text (s × α)
-      Val _ _ (Constr c (_ : Nil))
-         | c == cBarChart || c == cLineChart || c == cScatterPlot || c == cParagraph || c == cMultiView ->
-              Viewable $ view r
-      Val _ _ (Matrix _) -> Viewable $ view r
-
-view :: Partial => Val (SelStates 𝕊) -> View
-view v = case v of
-   Val _ _ (Constr c (u : Nil))
-      | c == cBarChart -> pack $ (dict from u :: BarChart)
-      | c == cLineChart -> pack $ (dict from u :: LineChart)
-      | c == cScatterPlot -> pack $ (dict from u :: ScatterPlot)
-      | c == cParagraph -> pack $ (from u :: Paragraph)
-      | c == cMultiView -> pack $ MultiView $ view <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
-      | c == cNil || c == cCons ->
-           (pack $ TableView { title: "", filter: defaultFilter, colNames, rows })
-           where
-           records = dict identity <$> from u
-           colNames = headers records
-           rows = arrayDictToArray2 colNames records <#> map snd
-   Val _ _ (Matrix r) -> pack $ MatrixView { title: "", matrix: matrixRep r }
 
 type ParagraphElem = { i :: Int }

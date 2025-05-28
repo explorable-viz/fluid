@@ -2,21 +2,16 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (class Reflect, SelStates, Selectable, 𝕊, dict, from, isPrimary, isSecondary)
+import App.Util (Selectable, isPrimary, isSecondary)
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
 import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
 import App.View.Util.Point (Point(..))
 import Bind ((⟼))
 import Data.Int (toNumber)
 import Data.Tuple (snd)
-import DataType (f_caption, f_points, f_labels)
-import Dict (Dict)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
-import Primitive (string, unpack)
-import Util (type (×), (!))
-import Util.Map (get)
-import Val (Val)
+import Util ((!))
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -50,12 +45,5 @@ instance Drawable ScatterPlot where
       where
       point :: ViewSelSetter PointIndex
       point { i } = scatterPoint i >>> scatterPlot
-
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot where
-   from r = ScatterPlot
-      { caption: unpack string (snd (get f_caption r))
-      , points: dict from <$> from (snd (get f_points r))
-      , labels: dict from (snd (get f_labels r))
-      }
 
 type PointIndex = { i :: Int }

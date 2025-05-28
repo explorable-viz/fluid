@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, dict, from, isPersistent, isPrimary, isSecondary, isTransient)
+import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient)
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.Axes (Orientation(..))
@@ -14,19 +14,14 @@ import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
 import Data.Foldable (for_, length)
 import Data.Int (toNumber)
-import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd)
-import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels)
-import Dict (Dict)
+import DataType (f_plots)
 import Effect (Effect)
 import Lattice ((∨), (∧))
-import Primitive (string, unpack)
 import Util (type (×), Endo, init, nonEmpty, tail, zipWith, (!), (×))
-import Util.Map (get)
-import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
 newtype LineChart = LineChart
@@ -283,21 +278,5 @@ instance Drawable LineChart where
 -- ======================
 -- boilerplate
 -- ======================
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LinePlot where
-   from r = LinePlot
-      { name: unpack string (snd (get f_name r))
-      , points: dict from <$> from (snd (get f_points r))
-      }
-
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LineChart where
-   from r = LineChart
-      { size: dict from (snd (get f_size r))
-      , tickLabels: dict from (snd (get f_tickLabels r))
-      , caption: unpack string (snd (get f_caption r))
-      , plots: from <$> (from (snd (get f_plots r)) :: Array (Val (SelStates 𝕊))) :: Array LinePlot
-      }
-
-instance Reflect (Val (SelStates 𝕊)) LinePlot where
-   from (Val _ _ (Constr c (u : Nil))) | c == cLinePlot = dict from u
 
 derive instance Newtype LinePlot _

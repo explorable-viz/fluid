@@ -2,25 +2,30 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelStates, 𝕊, dict, from, inert)
-import App.View.BarChart (BarChart)
-import App.View.LineChart (LineChart)
+import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, get_intOrNumber, inert)
+import App.View.BarChart (Bar(..), BarChart(..), StackedBar(..))
+import App.View.LineChart (LineChart(..), LinePlot(..))
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
 import App.View.Paragraph (Paragraph(..), ParaFragment(..))
-import App.View.ScatterPlot (ScatterPlot)
+import App.View.ScatterPlot (ScatterPlot(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
 import App.View.Util (View, pack)
+import App.View.Util.Axes (Orientation, orientation)
+import App.View.Util.Point (Point(..))
+import Data.Array ((:)) as A
 import Data.Array (fromFoldable)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cMultiView, cNil, cParagraph, cScatterPlot)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
 import Dict as Dict
 import Doc (DocCommentElem(..), DocOpt(..))
+import Primitive (int, string, unpack)
 import Util (type (×), (×))
-import Val (BaseVal(..), Val(..))
+import Util.Map (get)
+import Val (BaseVal(..), DictRep(..), Val(..))
 
 view' :: Partial => String -> Val (SelStates 𝕊) -> Maybe View -> View
 view' title v@(Val _ doc _) _ =
@@ -60,3 +65,94 @@ viewDocComment (Doc doc) = pack $ Paragraph $ fromFoldable $ map viewDocElem doc
    viewDocElem :: Partial => DocCommentElem Val (SelStates 𝕊) -> ParaFragment
    viewDocElem (Token str) = Text (str × inert)
    viewDocElem (Unquote val) = Viewable $ view "" val Nothing
+
+-- ======================
+-- boilerplate
+-- ======================
+
+class Reflect a b where
+   from :: Partial => a -> b
+
+instance Reflect (Val (SelStates 𝕊)) (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) where
+   from (Val _ _ (Dictionary (DictRep d))) = d
+
+instance Reflect (Val (SelStates 𝕊)) (Array (Val (SelStates 𝕊))) where
+   from (Val _ _ (Constr c Nil)) | c == cNil = []
+   from (Val _ _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Selectable Int)) where
+   from r = Dimensions
+      { width: unpack int (snd (get "width" r))
+      , height: unpack int (snd (get "height" r))
+      }
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
+   from r = BarChart
+      { caption: unpack string (snd (get f_caption r))
+      , stackedBars: dict from <$> from (snd (get f_stackedBars r))
+      }
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
+   from r = StackedBar
+      { x: unpack string (snd (get f_x r))
+      , bars: dict from <$> from (snd (get f_bars r))
+      }
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) Bar where
+   from r = Bar
+      { y: unpack string (snd (get f_y r))
+      , z: get_intOrNumber f_z r
+      }
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LinePlot where
+   from r = LinePlot
+      { name: unpack string (snd (get f_name r))
+      , points: dict from <$> from (snd (get f_points r))
+      }
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LineChart where
+   from r = LineChart
+      { size: dict from (snd (get f_size r))
+      , tickLabels: dict from (snd (get f_tickLabels r))
+      , caption: unpack string (snd (get f_caption r))
+      , plots: from <$> (from (snd (get f_plots r)) :: Array (Val (SelStates 𝕊))) :: Array LinePlot
+      }
+
+instance Reflect (Val (SelStates 𝕊)) LinePlot where
+   from (Val _ _ (Constr c (u : Nil))) | c == cLinePlot = dict from u
+
+instance Reflect (Val (SelStates 𝕊)) Paragraph where
+   from r = Paragraph (from <$> (from r :: Array (Val (SelStates 𝕊))))
+
+instance Reflect (Val (SelStates 𝕊)) ParaFragment where
+   from r = case r of
+      Val _ _ (Constr c (Val α _ (Str s) : Nil)) | c == cText -> Text (s × α)
+      Val _ _ (Constr c (_ : Nil))
+         | c == cBarChart || c == cLineChart || c == cScatterPlot || c == cParagraph || c == cMultiView ->
+              Viewable $ view "dummy" r Nothing
+      Val _ _ (Matrix _) -> Viewable $ view "dummy" r Nothing
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Number) where
+   from r = Point
+      { x: get_intOrNumber f_x r
+      , y: get_intOrNumber f_y r
+      }
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point String) where
+   from r = Point
+      { x: unpack string (snd (get f_x r))
+      , y: unpack string (snd (get f_y r))
+      }
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Orientation) where
+   from r = Point
+      { x: unpack orientation (snd (get f_x r))
+      , y: unpack orientation (snd (get f_y r))
+      }
+
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot where
+   from r = ScatterPlot
+      { caption: unpack string (snd (get f_caption r))
+      , points: dict from <$> from (snd (get f_points r))
+      , labels: dict from (snd (get f_labels r))
+      }
