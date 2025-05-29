@@ -7,7 +7,7 @@ import App.View.BarChart (Bar(..), BarChart(..), StackedBar(..))
 import App.View.LineChart (LineChart(..), LinePlot(..))
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
-import App.View.Paragraph (Paragraph(..), ParaFragment(..))
+import App.View.Paragraph (ParaFragment(..), Paragraph(..), format)
 import App.View.ScatterPlot (ScatterPlot(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
 import App.View.Util (View, pack)
@@ -22,6 +22,7 @@ import DataType (cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPar
 import Dict (Dict)
 import Dict as Dict
 import Doc (DocCommentElem(..), DocOpt(..))
+import Partial.Unsafe (unsafePartial)
 import Primitive (int, string, unpack)
 import Util (type (×), (×))
 import Util.Map (get)
@@ -60,11 +61,14 @@ view title (Val _ _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
 
 viewDocComment :: Partial => DocOpt Val (SelStates 𝕊) -> View
-viewDocComment (Doc doc) = pack $ Paragraph $ fromFoldable $ map viewDocElem doc
+viewDocComment (Doc doc) = pack $ unsafePartial $ format $ Paragraph $ fromFoldable $ map viewDocElem doc
    where
    viewDocElem :: Partial => DocCommentElem Val (SelStates 𝕊) -> ParaFragment
    viewDocElem (Token str) = Text (str × inert)
-   viewDocElem (Unquote val) = Viewable $ view "" val Nothing
+   viewDocElem (Unquote val) =
+      case val of
+         Val _ _ ((Int i)) -> Text (show i × inert)
+         _ -> Viewable $ view "" val Nothing
 
 -- ======================
 -- boilerplate

@@ -8,6 +8,8 @@ import App.View.Util (class Drawable, class Drawable2, View, draw', registerMous
 import App.View.Util.D3 (create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
+import Data.Array (foldl, singleton)
+import Data.Array.Partial (head, init, last, tail)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.List ((:), List(..))
@@ -15,7 +17,7 @@ import Data.Profunctor.Strong (first)
 import DataType (cText)
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
-import Util (error, (!))
+import Util (error, (!), (×))
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
@@ -97,3 +99,18 @@ instance Drawable2 Paragraph where
    setSelStates = setSelStates
 
 type ParagraphElem = { i :: Int }
+
+format :: Partial => Paragraph -> Paragraph
+format (Paragraph elems) =
+   case elems of
+      [] -> Paragraph []
+      [ elem ] -> Paragraph (singleton elem)
+      _ -> Paragraph (foldl formatFragment (singleton (head elems)) (tail elems))
+   where
+   formatFragment :: Array ParaFragment -> ParaFragment -> Array ParaFragment
+   formatFragment acc next =
+      case last acc of
+         Text (s1 × _) -> case next of
+            Text (s2 × α) -> init acc <> singleton (Text ((s1 <> " " <> s2) × α))
+            Viewable _ -> acc <> singleton next
+         Viewable _ -> acc <> singleton next

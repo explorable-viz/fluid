@@ -22,7 +22,7 @@ let convolve image kernel lookup =
     let ((m, n), (i, j)) = (dims image, dims kernel);
         (half_i, half_j) = (i `quot` 2, j `quot` 2);
         area = i * j
-    in [| let interMatrix = """Intermediate ${i}x${j} matrix for element (${m'}, ${n'})""" [|
+    in [| let interMatrix = """Intermediate matrix for element (${m'}, ${n'})""" [|
         let x = m' + i' - 1 - half_i;
             y = n' + j' - 1 - half_j in
         """Multiply these two elements"""

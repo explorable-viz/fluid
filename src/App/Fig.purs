@@ -158,6 +158,8 @@ drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> E
 drawIntermediates divId (Env ι) unused redraw = do
    let prefix = divId <> "-" <> str.intermediate
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
+   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α <> "-doc") >>= remove
+
    sequence_ $ flip mapWithKey ι \α v ->
       drawView { divId: prefix, suffix: α, view: unsafePartial $ view' α (map to𝕊 <$> v) Nothing }
          (selectIntermediate (Vertex α))
