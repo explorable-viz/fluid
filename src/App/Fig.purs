@@ -5,7 +5,7 @@ import Prelude hiding (absurd, compare)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, ViewSetter)
-import App.View (view)
+import App.View (view')
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
@@ -159,7 +159,7 @@ drawIntermediates divId (Env ι) unused redraw = do
    let prefix = divId <> "-" <> str.intermediate
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
    sequence_ $ flip mapWithKey ι \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing }
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' α (map to𝕊 <$> v) Nothing }
          (selectIntermediate (Vertex α))
          (setIntermediateView (Vertex α))
          redraw
@@ -174,8 +174,8 @@ drawFig divId fig = do
    drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where
    { v, γ, ι } = selectionResult fig
-   out_view = unsafePartial $ view str.output v fig.out_view
-   in_views = (\(Env γ) -> unsafePartial (mapWithKey view γ) <*> fig.in_views) γ
+   out_view = unsafePartial $ view' str.output v fig.out_view
+   in_views = (\(Env γ) -> unsafePartial (mapWithKey view' γ) <*> fig.in_views) γ
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit

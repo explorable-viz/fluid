@@ -33,7 +33,7 @@ view' title v@(Val _ doc _) _ =
    else
       let
          docView = viewDocComment doc
-         vws = Dict.fromFoldable [ title × realView, title × docView ] :: Dict View
+         vws = Dict.fromFoldable [ title × realView, (title <> "-doc") × docView ] :: Dict View
       in
          pack $ MultiView vws
    where

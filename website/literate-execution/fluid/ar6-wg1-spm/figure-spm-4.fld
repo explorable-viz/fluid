@@ -31,9 +31,5 @@ let changed126 = map (fun r -> r.changed) ssp126preds;
     nonco2 = map (get "Non-CO2") [ssp126, ssp245]
 in """Within each scenario bar plot, the bars represent total warming (°C), warming from CO2 (°C) and from Non-CO2 GHG's (°C).""" MultiView {
     leftBarChart: ssp126,
-    rightBarChart: ssp245,
-    explanation:    
-        Paragraph [ Text "Within each scenario bar plot, the bars represent:", Text " total warming (°C),",
-                    Text " warming from CO2 (°C) ", Text " and from ", Text " Non-CO2 GHG's (°C)."
-                  ]
+    rightBarChart: ssp245
 }
