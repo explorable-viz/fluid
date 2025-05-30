@@ -4,25 +4,24 @@ import Prelude hiding (absurd)
 
 import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, get_intOrNumber, inert)
 import App.View.BarChart (Bar(..), BarChart(..), StackedBar(..))
+import App.View.DocView (DocView(..))
 import App.View.LineChart (LineChart(..), LinePlot(..))
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
-import App.View.Paragraph (ParaFragment(..), Paragraph(..), format)
+import App.View.Paragraph (ParaFragment(..), Paragraph(..))
 import App.View.ScatterPlot (ScatterPlot(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
 import App.View.Util (View, pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array ((:)) as A
-import Data.Array (fromFoldable)
-import Data.List (List(..), (:))
+import Data.Array (fromFoldable, snoc, unsnoc)
+import Data.List (List(..), foldl, (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
 import DataType (cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
-import Dict as Dict
 import Doc (DocCommentElem(..), DocOpt(..))
-import Partial.Unsafe (unsafePartial)
 import Primitive (int, string, unpack)
 import Util (type (×), (×))
 import Util.Map (get)
@@ -34,9 +33,8 @@ view' title v@(Val _ doc _) _ =
    else
       let
          docView = viewDocComment doc
-         vws = Dict.fromFoldable [ title × realView, (title <> "-doc") × docView ] :: Dict View
       in
-         pack $ MultiView vws
+         pack $ DocView { title, doc: docView, view: realView }
    where
    realView = view title v Nothing
 
@@ -60,15 +58,16 @@ view title u@(Val _ _ (Constr c _)) _
 view title (Val _ _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
 
-viewDocComment :: Partial => DocOpt Val (SelStates 𝕊) -> View
-viewDocComment (Doc doc) = pack $ unsafePartial $ format $ Paragraph $ fromFoldable $ map viewDocElem doc
+viewDocComment :: Partial => DocOpt Val (SelStates 𝕊) -> Paragraph
+viewDocComment (Doc doc) = Paragraph $ foldl buildPara [] (fromFoldable doc)
    where
-   viewDocElem :: Partial => DocCommentElem Val (SelStates 𝕊) -> ParaFragment
-   viewDocElem (Token str) = Text (str × inert)
-   viewDocElem (Unquote val) =
-      case val of
-         Val _ _ ((Int i)) -> Text (show i × inert)
-         _ -> Viewable $ view "" val Nothing
+   buildPara :: Array ParaFragment -> DocCommentElem Val (SelStates 𝕊) -> Array ParaFragment
+   buildPara acc (Token str) =
+      case unsnoc acc of
+         Just { init, last: Text str' } -> snoc init $ Text (snoc str' (str × inert))
+         _ -> snoc acc (Text [ str × inert ])
+   buildPara acc (Unquote (Val _ _ (Int i))) = snoc acc $ Text [ (show i × inert) ]
+   buildPara acc (Unquote val) = snoc acc $ Viewable $ view "" val Nothing
 
 -- ======================
 -- boilerplate
@@ -130,7 +129,7 @@ instance Reflect (Val (SelStates 𝕊)) Paragraph where
 
 instance Reflect (Val (SelStates 𝕊)) ParaFragment where
    from r = case r of
-      Val _ _ (Constr c (Val α _ (Str s) : Nil)) | c == cText -> Text (s × α)
+      Val _ _ (Constr c (Val α _ (Str s) : Nil)) | c == cText -> Text [ s × α ]
       Val _ _ (Constr c (_ : Nil))
          | c == cBarChart || c == cLineChart || c == cScatterPlot || c == cParagraph || c == cMultiView ->
               Viewable $ view "dummy" r Nothing

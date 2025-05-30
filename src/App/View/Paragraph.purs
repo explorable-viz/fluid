@@ -2,18 +2,19 @@ module App.View.Paragraph where
 
 import Prelude hiding (join)
 
-import App.Util (Attrs, Selectable, classes, contents, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (Attrs, Selectable, classes, inert, isPersistent, isPrimary, isSecondary, isTransient, sel)
 import App.Util.Selector (ViewSelSetter, SelSetter, listElement, paragraph)
 import App.View.Util (class Drawable, class Drawable2, View, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (foldl, singleton)
-import Data.Array.Partial (head, init, last, tail)
+import Data.Array (foldl)
+import Data.Array.Partial (head, tail)
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.List ((:), List(..))
 import Data.Profunctor.Strong (first)
+import Data.Tuple (fst)
 import DataType (cText)
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
@@ -23,7 +24,7 @@ import Web.Event.EventTarget (EventListener)
 
 newtype Paragraph = Paragraph (Array ParaFragment)
 
-data ParaFragment = Text (Selectable String) | Viewable View
+data ParaFragment = Text (Array (Selectable String)) | Viewable View
 
 instance Drawable Paragraph where
    draw rSpec figVal _ redraw =
@@ -42,7 +43,7 @@ selParaFragment { i } = fragment >>> listElement i >>> paragraph
 
 getText :: Array ParaFragment -> Int -> Selectable String
 getText elems i = case elems ! i of
-   Text s -> s
+   Text s -> formatFragments s × inert
    Viewable _ -> error "Unimplemented"
 
 setSelStates :: Paragraph -> EventListener -> D3.Selection -> Effect Unit
@@ -91,7 +92,7 @@ createRootElement (Paragraph elems) div childId = do
       elem' # setText (textContents elem) >>= setDatum { i }
 
 textContents :: ParaFragment -> String
-textContents (Text s) = contents s
+textContents (Text s) = formatFragments s
 textContents (Viewable _) = error "unimplemented"
 
 instance Drawable2 Paragraph where
@@ -100,17 +101,10 @@ instance Drawable2 Paragraph where
 
 type ParagraphElem = { i :: Int }
 
-format :: Partial => Paragraph -> Paragraph
-format (Paragraph elems) =
-   case elems of
-      [] -> Paragraph []
-      [ elem ] -> Paragraph (singleton elem)
-      _ -> Paragraph (foldl formatFragment (singleton (head elems)) (tail elems))
-   where
-   formatFragment :: Array ParaFragment -> ParaFragment -> Array ParaFragment
-   formatFragment acc next =
-      case last acc of
-         Text (s1 × _) -> case next of
-            Text (s2 × α) -> init acc <> singleton (Text ((s1 <> " " <> s2) × α))
-            Viewable _ -> acc <> singleton next
-         Viewable _ -> acc <> singleton next
+formatFragments :: Array (Selectable String) -> String
+formatFragments fragments =
+   case fragments of
+      [] -> ""
+      [ s × _ ] -> s
+      _ -> unsafePartial $ foldl (\acc s -> acc <> " " <> s) (fst $ head fragments) (map fst $ tail fragments)
+
