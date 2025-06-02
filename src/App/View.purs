@@ -66,8 +66,10 @@ viewDocComment (Doc doc) = Paragraph $ foldl buildPara [] (fromFoldable doc)
       case unsnoc acc of
          Just { init, last: Text str' } -> snoc init $ Text (snoc str' (str × inert))
          _ -> snoc acc (Text [ str × inert ])
+
    buildPara acc (Unquote (Val _ _ (Int i))) = snoc acc $ Text [ (show i × inert) ]
-   buildPara acc (Unquote val) = snoc acc $ Viewable $ view "" val Nothing
+
+   buildPara acc (Unquote val) = snoc acc $ Graphical $ view "" val Nothing
 
 -- ======================
 -- boilerplate
@@ -132,8 +134,8 @@ instance Reflect (Val (SelStates 𝕊)) ParaFragment where
       Val _ _ (Constr c (Val α _ (Str s) : Nil)) | c == cText -> Text [ s × α ]
       Val _ _ (Constr c (_ : Nil))
          | c == cBarChart || c == cLineChart || c == cScatterPlot || c == cParagraph || c == cMultiView ->
-              Viewable $ view "dummy" r Nothing
-      Val _ _ (Matrix _) -> Viewable $ view "dummy" r Nothing
+              Graphical $ view "dummy" r Nothing
+      Val _ _ (Matrix _) -> Graphical $ view "dummy" r Nothing
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Number) where
    from r = Point

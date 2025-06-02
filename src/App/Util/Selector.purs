@@ -132,12 +132,12 @@ listCell n δα = unsafePartial $ case _ of
       else first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listCell (n - 1) δα u)
 
 docSel :: Int -> SelSetter Val Val
-docSel i δv (Val α doc v) = 
+docSel i δv (Val α doc v) =
    first (\doc' -> Val α doc' v) (docδv doc)
    where
    δv' (Unquote val) = first Unquote (δv val)
    δv' tok = tok × Persistent
-   
+
    docδv d = unsafePartial $ fromJust $ case d of
       None -> Just (None × Persistent)
       (Doc doc') -> do

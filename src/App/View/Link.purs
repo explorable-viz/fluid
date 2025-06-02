@@ -2,11 +2,12 @@ module Link where
 
 import Prelude hiding (join)
 
-import App.Util (Attrs, SelStates, Selectable, 𝕊, classes, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (SelStates, Selectable, 𝕊, classes)
 import App.Util.Selector (ViewSelSetter, SelSetter)
 import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
+import App.View.Util.Text (class Textual, textAttrs)
 import Bind ((↦))
 import Data.Foldable (foldr)
 import Data.List (List(..), (:))
@@ -21,9 +22,6 @@ import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
 
 data Link a = Link (Val a) (Selectable String)
-
-getText :: Link (SelStates 𝕊) -> Selectable String
-getText (Link v (s × _)) = s × (foldr join bot v)
 
 linkContents :: ∀ a. Link a -> String
 linkContents (Link _ (s × _)) = s
@@ -54,37 +52,13 @@ createRootElement link div childId = do
       elem <- root # create D3.Text [ classes [ "link" ] ]
       elem # setText (linkContents link') >>= setDatum link'
 
+-- Textual styling can be factored out into shared functionality
 setSelState :: Link (SelStates 𝕊) -> EventListener -> D3.Selection -> Effect Unit
 setSelState link redraw rootElement = do
-   elem <- rootElement # D3.select ".link"
-   elem # setStyles textAttrs >>= registerMouseListeners redraw
-   where
-   textAttrs :: Attrs
-   textAttrs =
-      [ "border-bottom" ↦ border
-      , "background" ↦ background
-      , "color" ↦ color
-      ]
-      where
-      text = getText link
-      sel' = sel text
+   rootElement # setStyles (textAttrs link) >>= registerMouseListeners redraw
 
-      border :: String
-      border
-         | isTransient sel' = "1px solid blue"
-         | otherwise = "none"
-
-      background :: String
-      background
-         | isPrimary sel' && isPersistent sel' = "#93E9BE"
-         | isSecondary sel' && isPersistent sel' = "rgb(226, 226, 226)"
-         | otherwise = "white"
-
-      color :: String
-      color
-         | isPrimary sel' && isTransient sel' = "blue"
-         | isSecondary sel' && isTransient sel' = "royalblue"
-         | otherwise = "black"
+instance Textual (Link (SelStates 𝕊)) where
+   getText (Link v (s × _)) = s × (foldr join bot v)
 
 unpackLink :: BaseVal (SelStates 𝕊) -> Link (SelStates 𝕊)
 unpackLink (Constr c (Val α doc v : (Val α' _ (Str s) : Nil))) | c == cLink = Link (Val α doc v) (s × α')

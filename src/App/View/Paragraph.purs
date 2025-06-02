@@ -2,11 +2,12 @@ module App.View.Paragraph where
 
 import Prelude hiding (join)
 
-import App.Util (Attrs, Selectable, classes, inert, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (Selectable, classes, inert)
 import App.Util.Selector (ViewSelSetter, SelSetter, listElement, paragraph)
 import App.View.Util (class Drawable, class Drawable2, View, draw', registerMouseListeners, selListener, uiHelpers)
 import App.View.Util.D3 (create, datum, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
+import App.View.Util.Text (class Textual, textAttrs)
 import Bind ((↦))
 import Data.Array (foldl)
 import Data.Array.Partial (head, tail)
@@ -24,7 +25,7 @@ import Web.Event.EventTarget (EventListener)
 
 newtype Paragraph = Paragraph (Array ParaFragment)
 
-data ParaFragment = Text (Array (Selectable String)) | Viewable View
+data ParaFragment = Text (Array (Selectable String)) | Graphical View
 
 instance Drawable Paragraph where
    draw rSpec figVal _ redraw =
@@ -44,41 +45,14 @@ selParaFragment { i } = fragment >>> listElement i >>> paragraph
 getText :: Array ParaFragment -> Int -> Selectable String
 getText elems i = case elems ! i of
    Text s -> formatFragments s × inert
-   Viewable _ -> error "Unimplemented"
+   Graphical _ -> error "Unimplemented"
 
 setSelStates :: Paragraph -> EventListener -> D3.Selection -> Effect Unit
 setSelStates (Paragraph elems) redraw rootElement = do
    elems' <- rootElement # selectAll ".text-fragment"
    for_ elems' \elem -> do
-      elem' :: ParagraphElem <- datum elem
-      elem # setStyles (textAttrs elem') >>= registerMouseListeners redraw
-   where
-   textAttrs :: ParagraphElem -> Attrs
-   textAttrs { i } =
-      [ "border-bottom" ↦ border
-      , "background" ↦ background
-      , "color" ↦ color
-      ]
-      where
-      tf = getText elems i
-      sel' = sel tf
-
-      border :: String
-      border
-         | isTransient sel' = "1px solid blue"
-         | otherwise = "none"
-
-      background :: String
-      background
-         | isPrimary sel' && isPersistent sel' = "#93E9BE"
-         | isSecondary sel' && isPersistent sel' = "rgb(226, 226, 226)"
-         | otherwise = "white"
-
-      color :: String
-      color
-         | isPrimary sel' && isTransient sel' = "blue"
-         | isSecondary sel' && isTransient sel' = "royalblue"
-         | otherwise = "black"
+      { i } :: ParagraphElem <- datum elem
+      elem # setStyles (textAttrs (elems ! i)) >>= registerMouseListeners redraw
 
 createRootElement :: Paragraph -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (Paragraph elems) div childId = do
@@ -91,9 +65,13 @@ createRootElement (Paragraph elems) div childId = do
       elem' <- root # create D3.Text [ classes [ "text-fragment" ] ]
       elem' # setText (textContents elem) >>= setDatum { i }
 
+instance Textual ParaFragment where
+   getText (Text s) = formatFragments s × inert
+   getText (Graphical _) = error "unimplemented"
+
 textContents :: ParaFragment -> String
 textContents (Text s) = formatFragments s
-textContents (Viewable _) = error "unimplemented"
+textContents (Graphical _) = error "unimplemented"
 
 instance Drawable2 Paragraph where
    createRootElement = createRootElement
