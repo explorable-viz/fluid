@@ -16,7 +16,6 @@ import DataType (cLink)
 import Effect (Effect)
 import Lattice (bot, join)
 import Partial.Unsafe (unsafePartial)
-import Primitive (typeError)
 import Util ((×))
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (EventListener)
@@ -60,6 +59,3 @@ setSelState link redraw rootElement = do
 instance Textual (Link (SelStates 𝕊)) where
    getText (Link v (s × _)) = s × (foldr join bot v)
 
-unpackLink :: BaseVal (SelStates 𝕊) -> Link (SelStates 𝕊)
-unpackLink (Constr c (Val α doc v : (Val α' _ (Str s) : Nil))) | c == cLink = Link (Val α doc v) (s × α')
-unpackLink v = typeError v "Link"

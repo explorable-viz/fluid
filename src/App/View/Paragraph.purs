@@ -63,15 +63,15 @@ createRootElement (Paragraph elems) div childId = do
    mkElem :: D3.Selection -> Int -> ParaFragment -> Effect D3.Selection
    mkElem root i elem = do
       elem' <- root # create D3.Text [ classes [ "text-fragment" ] ]
-      elem' # setText (textContents elem) >>= setDatum { i }
+      elem' # setText (contents elem) >>= setDatum { i }
+
+contents :: ParaFragment -> String
+contents (Text s) = formatFragments s
+contents (Graphical _) = error "unimplemented"
 
 instance Textual ParaFragment where
    getText (Text s) = formatFragments s × inert
    getText (Graphical _) = error "unimplemented"
-
-textContents :: ParaFragment -> String
-textContents (Text s) = formatFragments s
-textContents (Graphical _) = error "unimplemented"
 
 instance Drawable2 Paragraph where
    createRootElement = createRootElement

@@ -19,10 +19,11 @@ import Data.Array (fromFoldable, snoc, unsnoc)
 import Data.List (List(..), foldl, (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
 import Doc (DocCommentElem(..), DocOpt(..))
-import Primitive (int, string, unpack)
+import Link (Link(..))
+import Primitive (int, string, typeError, unpack)
 import Util (type (×), (×))
 import Util.Map (get)
 import Val (BaseVal(..), DictRep(..), Val(..))
@@ -49,6 +50,8 @@ view title (Val _ _ (Constr c (u : Nil))) _
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
+view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
+   | c == cLink = pack (from v :: Link (SelStates 𝕊))
 view title u@(Val _ _ (Constr c _)) _
    | c == cNil || c == cCons = pack (TableView { title, filter: defaultFilter, colNames, rows })
         where
@@ -161,3 +164,11 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot whe
       , points: dict from <$> from (snd (get f_points r))
       , labels: dict from (snd (get f_labels r))
       }
+
+unpackLink :: BaseVal (SelStates 𝕊) -> Link (SelStates 𝕊)
+unpackLink = case _ of
+   (Constr c (Val α doc v : (Val α' _ (Str s) : Nil))) | c == cLink -> Link (Val α doc v) (s × α')
+   v -> typeError v "Link"
+
+instance Reflect (Val (SelStates 𝕊)) (Link (SelStates 𝕊)) where
+   from (Val _ _ r) = unpackLink r
