@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelStates, Selectable, 𝕊, isTransient)
 import App.Util.Selector (ViewSelSetter, matrixElement)
-import App.View.Util (class Drawable, class Drawable2, Renderer, UIHelpers, draw', selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, UIHelpers, draw', selListener, uiHelpers)
 import App.View.Util.D3 as D3
 import Data.Tuple (snd)
 import Effect (Effect)
@@ -18,7 +18,6 @@ type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import drawMatrix :: MatrixViewHelpers -> Renderer MatrixView
 foreign import setSelStates2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> EventListener -> D3.Selection -> Effect Unit
 foreign import createRootElement2 :: UIHelpers -> MatrixView -> D3.Selection -> String -> Effect D3.Selection
 

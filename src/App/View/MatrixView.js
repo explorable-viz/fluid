@@ -179,33 +179,5 @@ function createRootElement2_ (
    }
 }
 
-function drawMatrix_ (
-   matrixViewHelpers,
-   uiHelpers,
-   {
-      divId,
-      suffix,
-      view
-   },
-   listener
-) {
-   return () => {
-      const div = d3.select('#' + divId)
-      if (div.empty()) {
-         console.error('Unable to insert figure: no div found with id ' + divId)
-         return
-      }
-
-      const childId = divId + '-' + suffix
-      let rootElement = div.selectAll('#' + childId)
-
-      if (rootElement.empty()) {
-         rootElement = createRootElement2_(uiHelpers, view, div, childId)()
-      }
-      setSelStates2_(matrixViewHelpers, uiHelpers, view, listener, rootElement)()
-   }
-}
-
-export var drawMatrix = x1 => x2 => x3 => x4 => drawMatrix_(x1, x2, x3, x4)
 export var setSelStates2 = x1 => x2 => x3 => x4 => x5 => setSelStates2_(x1, x2, x3, x4, x5)
 export var createRootElement2 = x1 => x2 => x3 => x4 => createRootElement2_(x1, x2, x3, x4)
