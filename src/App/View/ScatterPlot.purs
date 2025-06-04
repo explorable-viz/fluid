@@ -4,19 +4,22 @@ import Prelude
 
 import App.Util (class Reflect, SelStates, Selectable, 𝕊, dict, from, isPrimary, isSecondary)
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Renderer, UIHelpers, selListener, uiHelpers)
+import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((⟼))
 import Data.Int (toNumber)
 import Data.Tuple (snd)
 import DataType (f_caption, f_points, f_labels)
 import Dict (Dict)
+import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (string, unpack)
-import Util (type (×), (!))
+import Util (type (×), error, (!))
 import Util.Map (get)
 import Val (Val)
+import Web.Event.EventTarget (EventListener)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -29,6 +32,7 @@ type ScatterPlotHelpers =
    }
 
 foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot
+foreign import setSelStates2 :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> EventListener -> D3.Selection -> Effect Unit
 
 scatterPlotHelpers :: ScatterPlotHelpers
 scatterPlotHelpers =
@@ -50,6 +54,10 @@ instance Drawable ScatterPlot where
       where
       point :: ViewSelSetter PointIndex
       point { i } = scatterPoint i >>> scatterPlot
+
+instance Drawable2 ScatterPlot where
+   createRootElement = error "todo"
+   setSelStates = setSelStates2 scatterPlotHelpers uiHelpers
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot where
    from r = ScatterPlot

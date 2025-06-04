@@ -3,7 +3,7 @@
 import * as d3 from "d3"
 
 
-function setSelState (
+function setSelStates2_ (
    { point_attrs },
    {
       selState,
@@ -11,21 +11,23 @@ function setSelState (
       selClassesFor,
       join
    },
-   rootElement,
-   chart,
-   listener
+   view,
+   listener,
+   rootElement
 ) {
-   const { points } = chart
-   rootElement.selectAll('.scatterplot-point').each(function (point) {
-      const sel = join(selState(points[point.i].x))(selState(points[point.i].y))
-      d3.select(this) // won't work inside arrow function :/
-         .classed(selClasses, false)
-         .classed(selClassesFor(sel), true)
-         .attrs(point_attrs(chart)(point))
-         .on('mousedown', e => { listener(e) })
-         .on('mouseenter', e => { listener(e) })
-         .on('mouseleave', e => { listener(e) })
-   })
+   return () => {
+      const { points } = view
+      rootElement.selectAll('.scatterplot-point').each(function (point) {
+         const sel = join(selState(points[point.i].x))(selState(points[point.i].y))
+         d3.select(this) // won't work inside arrow function :/
+            .classed(selClasses, false)
+            .classed(selClassesFor(sel), true)
+            .attrs(point_attrs(view)(point))
+            .on('mousedown', e => { listener(e) })
+            .on('mouseenter', e => { listener(e) })
+            .on('mouseleave', e => { listener(e) })
+      })
+   }
 }
 
 function drawScatterPlot_ (
@@ -34,16 +36,13 @@ function drawScatterPlot_ (
    {
       divId,
       suffix,
-      view: {
-         caption,
-         points,
-         labels,
-      }
+      view
    },
    listener
 ) {
    return () => {
       const { val } = uiHelpers
+      const { caption, points, labels } = view
       const childId = divId + '-' + suffix
       var max_width = 280
       var max_height = 200
@@ -121,8 +120,9 @@ function drawScatterPlot_ (
             .attr('text-anchor', 'middle')
       }
 
-      setSelState(scatterPlotHelpers, uiHelpers, rootElement, { points }, listener)
+      setSelStates2_(scatterPlotHelpers, uiHelpers, view, listener, rootElement)()
    }
 }
 
 export var drawScatterPlot = x1 => x2 => x3 => x4 => drawScatterPlot_(x1, x2, x3, x4)
+export var setSelStates2 = x1 => x2 => x3 => x4 => x5 => setSelStates2_(x1, x2, x3, x4, x5)
