@@ -9,7 +9,7 @@ import App.View.Util.D3 as D3
 import Data.Tuple (snd)
 import Effect (Effect)
 import Primitive (int, unpack)
-import Util (error, (!), (×))
+import Util ((!), (×))
 import Val (Array2, MatrixDim(..), MatrixRep(..))
 import Web.Event.EventTarget (EventListener)
 
@@ -20,6 +20,7 @@ newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import drawMatrix :: MatrixViewHelpers -> Renderer MatrixView
 foreign import setSelStates2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> EventListener -> D3.Selection -> Effect Unit
+foreign import createRootElement2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> D3.Selection -> String -> Effect D3.Selection
 
 type MatrixViewHelpers =
    { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
@@ -74,7 +75,7 @@ instance Drawable MatrixView where
       element { i, j } = matrixElement i j
 
 instance Drawable2 MatrixView where
-   createRootElement = error "todo"
+   createRootElement = createRootElement2 matrixViewHelpers uiHelpers
    setSelStates = setSelStates2 matrixViewHelpers uiHelpers
 
 matrixRep :: MatrixRep (SelStates 𝕊) -> IntMatrix
