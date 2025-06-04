@@ -8,9 +8,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelStates, Selectable, 𝕊(..), colorShade, dict, from, getPersistent, getTransient, get_intOrNumber)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
-import App.View.LineChart (createRootElement)
 import App.View.Util (class Drawable, class Drawable2, Renderer, UIHelpers, selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)

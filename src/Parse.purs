@@ -35,7 +35,7 @@ import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, le
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), Endo, debug, error, onlyIf, spyWhen, (×))
+import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
 languageDef :: LanguageDef
@@ -121,7 +121,7 @@ docComment' expr' = token.lexeme (go <?> "docComment")
    go :: SParser (List (DocCommentElem Expr Unit))
    go = do
       words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
-      pure $ spyWhen debug.tracing "Parsed comment: " show words
+      pure {-$ spyWhen debug.tracing "Parsed comment: " show-} words
 
 docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
 docCommentToken expr' =

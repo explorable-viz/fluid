@@ -36,16 +36,15 @@ function addHatchPattern (rootElement, j, col_j) {
 
 const color = d3.scaleOrdinal(d3.schemeAccent)
 
-function setSelState (
+function setSelStates (
    { bar_attrs },
-   indexCol,
-   rootElement,
-   chart,
-   listener
+   view,
+   listener,
+   rootElement
 ) {
    rootElement.selectAll('.bar').each(function (bar) {
       d3.select(this) // won't work inside arrow function :/
-         .attrs(bar_attrs(indexCol)(chart)(bar))
+         .attrs(bar_attrs(color)(view)(bar))
          .on('mousedown', e => { listener(e) })
          .on('mouseenter', e => { listener(e) })
          .on('mouseleave', e => { listener(e) })
@@ -202,10 +201,10 @@ function drawBarChart_ (
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
-         rootElement = createRootElement_(barChartHelpers, uiHelpers, view, div, childId)
+         rootElement = createRootElement3_(barChartHelpers, uiHelpers, view, div, childId)
       }
 
-      setSelState(barChartHelpers, color, rootElement, view, listener)
+      setSelStates(barChartHelpers, view, listener, rootElement)
    }
 }
 
