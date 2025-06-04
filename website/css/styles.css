@@ -87,7 +87,9 @@ body {
    color: #404040;
    margin-bottom: 10em;
 }
-
+.para-text {
+   white-space: nowrap;
+}
 p {
    margin-top: 1em;
    margin-bottom: 1em;

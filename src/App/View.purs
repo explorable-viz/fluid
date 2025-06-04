@@ -8,18 +8,20 @@ import App.View.DocView (DocView(..))
 import App.View.LineChart (LineChart(..), LinePlot(..))
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
-import App.View.Paragraph (ParaFragment(..), Paragraph(..))
+import App.View.Paragraph as P
 import App.View.ScatterPlot (ScatterPlot(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
 import App.View.Util (View, pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
+import App.View.Util.Text as T
 import Data.Array ((:)) as A
 import Data.Array (fromFoldable, snoc, unsnoc)
+import Data.Either (Either(..))
 import Data.List (List(..), foldl, (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cScatterPlot, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Link (Link(..))
@@ -33,7 +35,7 @@ view' title v@(Val _ doc _) _ =
    if doc == None then realView
    else
       let
-         docView = viewDocComment doc
+         docView = viewPara doc
       in
          pack $ DocView { title, doc: docView, view: realView }
    where
@@ -46,7 +48,6 @@ view title (Val _ _ (Constr c (u : Nil))) _
    | c == cBarChart = pack (dict from u :: BarChart)
    | c == cLineChart = pack (dict from u :: LineChart)
    | c == cScatterPlot = pack (dict from u :: ScatterPlot)
-   | c == cParagraph = pack (from u :: Paragraph)
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
@@ -61,18 +62,27 @@ view title u@(Val _ _ (Constr c _)) _
 view title (Val _ _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
 
-viewDocComment :: Partial => DocOpt Val (SelStates 𝕊) -> Paragraph
-viewDocComment (Doc doc) = Paragraph $ foldl buildPara [] (fromFoldable doc)
+viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> P.Paragraph
+viewPara (Doc doc) = viewPara' <<< formatPara $ fromFoldable doc
    where
-   buildPara :: Array ParaFragment -> DocCommentElem Val (SelStates 𝕊) -> Array ParaFragment
-   buildPara acc (Token str) =
-      case unsnoc acc of
-         Just { init, last: Text str' } -> snoc init $ Text (snoc str' (str × inert))
-         _ -> snoc acc (Text [ str × inert ])
+   formatPara :: Array (DocCommentElem Val (SelStates 𝕊)) -> Array (Either (Val (SelStates 𝕊)) (T.Text))
+   formatPara elems = foldl go [] elems
+      where
+      go :: Array (Either (Val (SelStates 𝕊)) (T.Text)) -> DocCommentElem Val (SelStates 𝕊) -> Array (Either (Val (SelStates 𝕊)) (T.Text))
+      go acc (Token str) =
+         case unsnoc acc of
+            Just { init, last: Right (T.Text (str' × α)) } -> snoc init $ Right (T.Text $ snoc str' str × α)
+            _ -> snoc acc (Right (T.Text $ [ str ] × inert))
+      go acc (Unquote val) = snoc acc $ (Left val)
 
-   buildPara acc (Unquote (Val _ _ (Int i))) = snoc acc $ Text [ (show i × inert) ]
-
-   buildPara acc (Unquote val) = snoc acc $ Graphical $ view "" val Nothing
+   viewPara' :: Array (Either (Val (SelStates 𝕊)) (T.Text)) -> P.Paragraph
+   viewPara' elems = P.Paragraph $ foldl go [] elems
+      where
+      go :: Array View -> Either (Val (SelStates 𝕊)) (T.Text) -> Array View
+      go acc (Right (T.Text str)) = snoc acc $ pack (T.Text str)
+      go acc (Left val) = case val of
+         Val α _ (Int i) -> snoc acc $ pack (T.Text ([ show i ] × α))
+         _ -> snoc acc $ view "" val Nothing
 
 -- ======================
 -- boilerplate
@@ -128,17 +138,6 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LineChart where
 
 instance Reflect (Val (SelStates 𝕊)) LinePlot where
    from (Val _ _ (Constr c (u : Nil))) | c == cLinePlot = dict from u
-
-instance Reflect (Val (SelStates 𝕊)) Paragraph where
-   from r = Paragraph (from <$> (from r :: Array (Val (SelStates 𝕊))))
-
-instance Reflect (Val (SelStates 𝕊)) ParaFragment where
-   from r = case r of
-      Val _ _ (Constr c (Val α _ (Str s) : Nil)) | c == cText -> Text [ s × α ]
-      Val _ _ (Constr c (_ : Nil))
-         | c == cBarChart || c == cLineChart || c == cScatterPlot || c == cParagraph || c == cMultiView ->
-              Graphical $ view "dummy" r Nothing
-      Val _ _ (Matrix _) -> Graphical $ view "dummy" r Nothing
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Point Number) where
    from r = Point
