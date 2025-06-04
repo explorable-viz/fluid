@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelStates, Selectable, 𝕊, isTransient)
 import App.Util.Selector (ViewSelSetter, matrixElement)
-import App.View.Util (class Drawable, class Drawable2, Renderer, UIHelpers, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Renderer, UIHelpers, draw', selListener, uiHelpers)
 import App.View.Util.D3 as D3
 import Data.Tuple (snd)
 import Effect (Effect)
@@ -20,7 +20,7 @@ newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import drawMatrix :: MatrixViewHelpers -> Renderer MatrixView
 foreign import setSelStates2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> EventListener -> D3.Selection -> Effect Unit
-foreign import createRootElement2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> D3.Selection -> String -> Effect D3.Selection
+foreign import createRootElement2 :: UIHelpers -> MatrixView -> D3.Selection -> String -> Effect D3.Selection
 
 type MatrixViewHelpers =
    { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
@@ -69,13 +69,13 @@ matrixViewHelpers =
 
 instance Drawable MatrixView where
    draw rSpec figVal _ redraw =
-      drawMatrix matrixViewHelpers uiHelpers rSpec =<< selListener figVal redraw element
+      draw' uiHelpers rSpec =<< selListener figVal redraw element
       where
       element :: ViewSelSetter MatrixCellCoordinate
       element { i, j } = matrixElement i j
 
 instance Drawable2 MatrixView where
-   createRootElement = createRootElement2 matrixViewHelpers uiHelpers
+   createRootElement = createRootElement2 uiHelpers
    setSelStates = setSelStates2 matrixViewHelpers uiHelpers
 
 matrixRep :: MatrixRep (SelStates 𝕊) -> IntMatrix

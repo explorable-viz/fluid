@@ -202,7 +202,7 @@ function drawMatrix_ (
       if (rootElement.empty()) {
          rootElement = createRootElement2_(uiHelpers, view, div, childId)()
       }
-      setSelState2_(matrixViewHelpers, uiHelpers, view, listener, rootElement)()
+      setSelStates2_(matrixViewHelpers, uiHelpers, view, listener, rootElement)()
    }
 }
 
