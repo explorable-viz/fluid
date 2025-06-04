@@ -13,9 +13,9 @@ function setSelStates2_ (
       selClasses,
       selClassesFor
    },
-   rootElement,
    { matrix },
-   listener
+   listener,
+   rootElement
 ) {
    return () => {
       rootElement.selectAll('.matrix-cell').each(function (cellRect) {
@@ -192,7 +192,7 @@ function drawMatrix_ (
                .attr('class', 'matrix-cell-vBorder')
          });
       }
-      setSelState2_(matrixViewHelpers, uiHelpers, rootElement, view, listener)()
+      setSelState2_(matrixViewHelpers, uiHelpers, view, listener, rootElement)()
    }
 }
 
