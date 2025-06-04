@@ -4,19 +4,22 @@ import Prelude
 
 import App.Util (class Reflect, SelStates, Selectable, 𝕊, dict, from, isPrimary, isSecondary)
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.Util (class Drawable, Renderer, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, UIHelpers, draw', selListener, uiHelpers)
+import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((⟼))
 import Data.Int (toNumber)
 import Data.Tuple (snd)
 import DataType (f_caption, f_points, f_labels)
 import Dict (Dict)
+import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (string, unpack)
 import Util (type (×), (!))
 import Util.Map (get)
 import Val (Val)
+import Web.Event.EventTarget (EventListener)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -28,7 +31,8 @@ type ScatterPlotHelpers =
    { point_attrs :: ScatterPlot -> PointIndex -> Object String
    }
 
-foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot
+foreign import createRootElement2 :: UIHelpers -> ScatterPlot -> D3.Selection -> String -> Effect D3.Selection
+foreign import setSelStates2 :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> EventListener -> D3.Selection -> Effect Unit
 
 scatterPlotHelpers :: ScatterPlotHelpers
 scatterPlotHelpers =
@@ -46,10 +50,14 @@ scatterPlotHelpers =
 
 instance Drawable ScatterPlot where
    draw rSpec figVal _ redraw =
-      drawScatterPlot scatterPlotHelpers uiHelpers rSpec =<< selListener figVal redraw point
+      draw' uiHelpers rSpec =<< selListener figVal redraw scatterPlotPoint
       where
-      point :: ViewSelSetter PointIndex
-      point { i } = scatterPoint i >>> scatterPlot
+      scatterPlotPoint :: ViewSelSetter PointIndex
+      scatterPlotPoint { i } = scatterPoint i >>> scatterPlot
+
+instance Drawable2 ScatterPlot where
+   createRootElement = createRootElement2 uiHelpers
+   setSelStates = setSelStates2 scatterPlotHelpers uiHelpers
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot where
    from r = ScatterPlot
