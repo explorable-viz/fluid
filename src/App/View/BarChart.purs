@@ -8,8 +8,7 @@ import Prelude hiding (absurd)
 
 import App.Util (Selectable, 𝕊(..), colorShade, getPersistent, getTransient)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
-import App.View.Util (class Drawable, class Drawable2, Renderer, selListener, uiHelpers)
-import App.View.Util.D3 (ElementType(..), create)
+import App.View.Util (class Drawable, class Drawable2, UIHelpers, draw', selListener, uiHelpers)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
@@ -40,7 +39,8 @@ type BarChartHelpers =
    , tickEvery :: Int -> Int
    }
 
-foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart
+foreign import createRootElement2 :: BarChartHelpers -> UIHelpers -> BarChart -> D3.Selection -> String -> Effect D3.Selection
+foreign import setSelStates2 :: BarChartHelpers -> BarChart -> EventListener -> D3.Selection -> Effect Unit
 
 barChartHelpers :: BarChartHelpers
 barChartHelpers =
@@ -80,25 +80,16 @@ barChartHelpers =
       where
       m = floor (log (toNumber n) / log 10.0)
 
-setSelStates2 :: BarChart -> EventListener -> D3.Selection -> Effect Unit
-setSelStates2 _ _ _ =
-   pure unit
-
-createRootElement2 :: BarChart -> D3.Selection -> String -> Effect D3.Selection
-createRootElement2 _ div _ = do
-   rootElement <- div # create SVG []
-   pure rootElement
-
 instance Drawable2 BarChart where
-   createRootElement = createRootElement2
-   setSelStates = setSelStates2
+   createRootElement = createRootElement2 barChartHelpers uiHelpers
+   setSelStates = setSelStates2 barChartHelpers
 
 instance Drawable BarChart where
    draw rSpec figVal _ redraw =
-      drawBarChart barChartHelpers uiHelpers rSpec =<< selListener figVal redraw barSegment'
+      draw' uiHelpers rSpec =<< selListener figVal redraw barChartSegment
       where
-      barSegment' :: ViewSelSetter BarSegmentCoordinate
-      barSegment' { i, j } = barSegment i j >>> barChart
+      barChartSegment :: ViewSelSetter BarSegmentCoordinate
+      barChartSegment { i, j } = barSegment i j >>> barChart
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
