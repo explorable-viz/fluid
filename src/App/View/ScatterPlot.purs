@@ -16,7 +16,7 @@ import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Primitive (string, unpack)
-import Util (type (×), error, (!))
+import Util (type (×), (!))
 import Util.Map (get)
 import Val (Val)
 import Web.Event.EventTarget (EventListener)
@@ -32,6 +32,7 @@ type ScatterPlotHelpers =
    }
 
 foreign import drawScatterPlot :: ScatterPlotHelpers -> Renderer ScatterPlot
+foreign import createRootElement2 :: UIHelpers -> ScatterPlot -> D3.Selection -> String -> Effect D3.Selection
 foreign import setSelStates2 :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> EventListener -> D3.Selection -> Effect Unit
 
 scatterPlotHelpers :: ScatterPlotHelpers
@@ -56,7 +57,7 @@ instance Drawable ScatterPlot where
       point { i } = scatterPoint i >>> scatterPlot
 
 instance Drawable2 ScatterPlot where
-   createRootElement = error "todo"
+   createRootElement = createRootElement2 uiHelpers
    setSelStates = setSelStates2 scatterPlotHelpers uiHelpers
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot where
