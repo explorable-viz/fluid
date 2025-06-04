@@ -41,28 +41,28 @@ function drawScatterPlot_ (
    listener
 ) {
    return () => {
-      const { val } = uiHelpers
-      const { caption, points, labels } = view
-      const childId = divId + '-' + suffix
-      var max_width = 280
-      var max_height = 200
-      const x_max = Math.ceil(Math.max(...points.map(point => val(point.x))))
-      const x_min = Math.ceil(Math.min(...points.map(point => val(point.x))))
-      const y_max = Math.ceil(Math.max(...points.map(point => val(point.y))))
-      const y_min = Math.ceil(Math.min(...points.map(point => val(point.y))))
-      const margin = {top: 20, right: 20, bottom: 40, left: 50}
-      const width = max_width - margin.left - margin.right,
-            height = max_height - margin.top - margin.bottom
-
       const div = d3.select('#' + divId)
       if (div.empty()) {
          console.error('Unable to insert figure: no div found with id ' + divId)
          return
       }
 
+      const childId = divId + '-' + suffix
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
+         const { val } = uiHelpers
+         const { caption, points, labels } = view
+         var max_width = 280
+         var max_height = 200
+         const x_max = Math.ceil(Math.max(...points.map(point => val(point.x))))
+         const x_min = Math.ceil(Math.min(...points.map(point => val(point.x))))
+         const y_max = Math.ceil(Math.max(...points.map(point => val(point.y))))
+         const y_min = Math.ceil(Math.min(...points.map(point => val(point.y))))
+         const margin = {top: 20, right: 20, bottom: 40, left: 50}
+         const width = max_width - margin.left - margin.right,
+               height = max_height - margin.top - margin.bottom
+
          rootElement = div
             .append('svg')
                .classed('center', true)
