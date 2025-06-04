@@ -25,12 +25,12 @@ import Web.Event.EventTarget (EventListener, eventListener)
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
-data View = View (forall r. (forall a. Drawable a => a -> r) -> r)
+newtype View = View (forall r. (forall a. Drawable a => Drawable2 a => a -> r) -> r)
 
-pack :: forall a. Drawable a => a -> View
+pack :: forall a. Drawable a => Drawable2 a => a -> View
 pack x = View \k -> k x
 
-unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
+unpack :: forall r. View -> (forall a. Drawable a => Drawable2 a => a -> r) -> r
 unpack (View vw) k = vw k
 
 selListener :: forall a. (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter a -> Effect EventListener
