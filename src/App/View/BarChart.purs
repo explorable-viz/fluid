@@ -8,7 +8,7 @@ import Prelude hiding (absurd)
 
 import App.Util (class Reflect, SelStates, Selectable, 𝕊(..), colorShade, dict, from, getPersistent, getTransient, get_intOrNumber)
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
-import App.View.Util (class Drawable, class Drawable2, Renderer, UIHelpers, draw', selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, UIHelpers, draw', selListener, uiHelpers)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
@@ -46,7 +46,6 @@ type BarChartHelpers =
 
 foreign import createRootElement2 :: BarChartHelpers -> UIHelpers -> BarChart -> D3.Selection -> String -> Effect D3.Selection
 foreign import setSelStates2 :: BarChartHelpers -> BarChart -> EventListener -> D3.Selection -> Effect Unit
-foreign import drawBarChart :: BarChartHelpers -> Renderer BarChart
 
 barChartHelpers :: BarChartHelpers
 barChartHelpers =
@@ -92,11 +91,10 @@ instance Drawable2 BarChart where
 
 instance Drawable BarChart where
    draw rSpec figVal _ redraw =
-      -- drawBarChart barChartHelpers uiHelpers rSpec =<< selListener figVal redraw barSegment'
-      draw' uiHelpers rSpec =<< selListener figVal redraw barSegment'
+      draw' uiHelpers rSpec =<< selListener figVal redraw barChartSegment
       where
-      barSegment' :: ViewSelSetter BarSegmentCoordinate
-      barSegment' { i, j } = barSegment i j >>> barChart
+      barChartSegment :: ViewSelSetter BarSegmentCoordinate
+      barChartSegment { i, j } = barSegment i j >>> barChart
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
    from r = BarChart

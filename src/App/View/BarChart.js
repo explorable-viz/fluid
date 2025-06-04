@@ -185,33 +185,5 @@ function createRootElement2_ (
    }
 }
 
-function drawBarChart_ (
-   barChartHelpers,
-   uiHelpers,
-   {
-      divId,
-      suffix,
-      view
-   },
-   listener
-) {
-   return () => {
-      const div = d3.select('#' + divId)
-      if (div.empty()) {
-         console.error('Unable to insert figure: no div found with id ' + divId)
-         return
-      }
-      const childId = divId + '-' + suffix
-      let rootElement = div.selectAll('#' + childId)
-
-      if (rootElement.empty()) {
-         rootElement = createRootElement2_(barChartHelpers, uiHelpers, view, div, childId)()
-      }
-
-      setSelStates2_(barChartHelpers, view, listener, rootElement)()
-   }
-}
-
-export var drawBarChart = x1 => x2 => x3 => x4 => drawBarChart_(x1, x2, x3, x4)
 export var createRootElement2 = x1 => x2 => x3 => x4 => x5 => createRootElement2_(x1, x2, x3, x4, x5)
 export var setSelStates2 = x1 => x2 => x3 => x4 => setSelStates2_(x1, x2, x3, x4)
