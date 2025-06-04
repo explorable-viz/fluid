@@ -3,7 +3,7 @@
 import * as d3 from "d3"
 
 
-function setSelState (
+function setSelStates2_ (
    {
       hBorderStyles,
       vBorderStyles
@@ -17,32 +17,34 @@ function setSelState (
    { matrix },
    listener
 ) {
-   rootElement.selectAll('.matrix-cell').each(function (cellRect) {
-      const sel = selState(matrix.cells[cellRect.i - 1][cellRect.j - 1])
-      d3.select(this) // won't work inside arrow function :/
-         .classed(selClasses, false)
-         .classed(selClassesFor(sel), true)
-         .on('mousedown', e => { listener(e) })
-         .on('mouseenter', e => { listener(e) })
-         .on('mouseleave', e => { listener(e) })
-   })
+   return () => {
+      rootElement.selectAll('.matrix-cell').each(function (cellRect) {
+         const sel = selState(matrix.cells[cellRect.i - 1][cellRect.j - 1])
+         d3.select(this) // won't work inside arrow function :/
+            .classed(selClasses, false)
+            .classed(selClassesFor(sel), true)
+            .on('mousedown', e => { listener(e) })
+            .on('mouseenter', e => { listener(e) })
+            .on('mouseleave', e => { listener(e) })
+      })
 
-   rootElement.selectAll('.matrix-cell-text').each(function (cellText) {
-      const sel = selState(matrix.cells[cellText.i - 1][cellText.j - 1])
-      d3.select(this) // won't work inside arrow function :/
-         .classed(selClasses, false)
-         .classed(selClassesFor(sel), true)
-   })
+      rootElement.selectAll('.matrix-cell-text').each(function (cellText) {
+         const sel = selState(matrix.cells[cellText.i - 1][cellText.j - 1])
+         d3.select(this) // won't work inside arrow function :/
+            .classed(selClasses, false)
+            .classed(selClassesFor(sel), true)
+      })
 
-   rootElement.selectAll('.matrix-cell-hBorder').each(function (hBorder) {
-      d3.select(this)
-         .attr('style', hBorderStyles(matrix)(hBorder))
-   })
+      rootElement.selectAll('.matrix-cell-hBorder').each(function (hBorder) {
+         d3.select(this)
+            .attr('style', hBorderStyles(matrix)(hBorder))
+      })
 
-   rootElement.selectAll('.matrix-cell-vBorder').each(function (vBorder) {
-      d3.select(this)
-         .attr('style', vBorderStyles(matrix)(vBorder))
-   })
+      rootElement.selectAll('.matrix-cell-vBorder').each(function (vBorder) {
+         d3.select(this)
+            .attr('style', vBorderStyles(matrix)(vBorder))
+      })
+   }
 }
 
 function drawMatrix_ (
@@ -51,34 +53,32 @@ function drawMatrix_ (
    {
       divId,
       suffix,
-      view: {
-         title,    // String
-         matrix    // IntMatrix
-      }
+      view
    },
    listener
 ) {
    return () => {
-      const { val } = uiHelpers
-      const childId = divId + '-' + suffix
-      const strokeWidth = 0.5
-      const highlightStrokeWidth = 0.5
-      const highlightStrokeColor = 'blue'
-      const w = 30, h = 30
-
       const div = d3.select('#' + divId)
       if (div.empty()) {
          console.error('Unable to insert figure: no div found with id ' + divId)
          return
       }
 
-      const [width, height] = [w * matrix.j + highlightStrokeWidth, h * matrix.i + highlightStrokeWidth]
-      const hMargin = w / 2
-      const vMargin = h / 2
-
+      const childId = divId + '-' + suffix
       let rootElement = div.selectAll('#' + childId)
 
       if (rootElement.empty()) {
+         const { title, matrix } = view
+         const { val } = uiHelpers
+         const strokeWidth = 0.5
+         const highlightStrokeWidth = 0.5
+         const highlightStrokeColor = 'blue'
+         const w = 30, h = 30
+
+         const [width, height] = [w * matrix.j + highlightStrokeWidth, h * matrix.i + highlightStrokeWidth]
+         const hMargin = w / 2
+         const vMargin = h / 2
+
          rootElement = div
             .append('svg')
             .attr('id', childId)
@@ -86,7 +86,7 @@ function drawMatrix_ (
          rootElement
             .attr('width', width + hMargin)
             .attr('height', height + vMargin)
-         
+
          if (!childId.includes("intermediate")) {
             rootElement
                .append('text')
@@ -192,8 +192,9 @@ function drawMatrix_ (
                .attr('class', 'matrix-cell-vBorder')
          });
       }
-      setSelState(matrixViewHelpers, uiHelpers, rootElement, { matrix }, listener)
+      setSelState2_(matrixViewHelpers, uiHelpers, rootElement, view, listener)()
    }
 }
 
 export var drawMatrix = x1 => x2 => x3 => x4 => drawMatrix_(x1, x2, x3, x4)
+export var setSelStates2 = x1 => x2 => x3 => x4 => x5 => setSelStates2_(x1, x2, x3, x4, x5)
