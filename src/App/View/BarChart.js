@@ -52,7 +52,7 @@ function setSelState (
    })
 }
 
-function createRootElement_ (
+function createRootElement3_ (
    barChartHelpers,
    uiHelpers,
    {
@@ -210,3 +210,4 @@ function drawBarChart_ (
 }
 
 export var drawBarChart = x1 => x2 => x3 => x4 => drawBarChart_(x1, x2, x3, x4)
+export var createRootElement3 = x1 => x2 => x3 => x4 => x5 => createRootElement3_(x1, x2, x3, x4, x5)
