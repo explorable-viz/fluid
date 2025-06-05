@@ -68,7 +68,7 @@ matrixViewHelpers =
 
 instance Drawable MatrixView where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw element
+      draw' uiHelpers rSpec (selListener figVal redraw element)
       where
       element :: ViewSelSetter MatrixCellCoordinate
       element { i, j } = matrixElement i j

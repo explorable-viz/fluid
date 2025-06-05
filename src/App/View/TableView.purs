@@ -185,7 +185,7 @@ instance Drawable2 TableView where
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
-      draw' uiHelpers rSpec =<< selListener figVal redraw tableViewSelSetter
+      draw' uiHelpers rSpec (selListener figVal redraw tableViewSelSetter)
       where
       tableViewSelSetter :: ViewSelSetter CellIndex
       tableViewSelSetter { i, colName } = listElement i <<< dictVal colName

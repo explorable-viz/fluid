@@ -23,7 +23,7 @@ newtype Text = Text (Selectable (Array String))
 
 instance Drawable Text where
    draw rSpec figVal _ redraw = do
-      draw' uiHelpers rSpec =<< selListener figVal redraw textSelector
+      draw' uiHelpers rSpec (selListener figVal redraw textSelector)
       where
       textSelector :: ViewSelSetter Text
       textSelector _ = identity

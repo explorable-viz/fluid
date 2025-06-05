@@ -27,7 +27,7 @@ linkContents (Link _ (s × _)) = s
 
 instance Drawable (Link (SelStates 𝕊)) where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw selLink
+      draw' uiHelpers rSpec (selListener figVal redraw selLink)
 
 instance Drawable2 (Link (SelStates 𝕊)) where
    createRootElement = createRootElement

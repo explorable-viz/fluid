@@ -45,7 +45,7 @@ scatterPlotHelpers =
 
 instance Drawable ScatterPlot where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw scatterPlotPoint
+      draw' uiHelpers rSpec (selListener figVal redraw scatterPlotPoint)
       where
       scatterPlotPoint :: ViewSelSetter PointIndex
       scatterPlotPoint { i } = scatterPoint i >>> scatterPlot

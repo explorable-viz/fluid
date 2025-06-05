@@ -269,7 +269,7 @@ instance Drawable2 LineChart where
 
 instance Drawable LineChart where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw point
+      draw' uiHelpers rSpec (selListener figVal redraw point)
       where
       point :: ViewSelSetter PointCoordinate
       point { i, j } =

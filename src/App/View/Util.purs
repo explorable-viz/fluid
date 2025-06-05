@@ -19,7 +19,7 @@ import Module.Web (File, Folder)
 import SExpr as S
 import Util (type (×), Endo, check)
 import Val (Env, Val)
-import Web.Event.Event (EventType(..))
+import Web.Event.Event (Event, EventType(..))
 import Web.Event.EventTarget (EventListener, eventListener)
 
 type HTMLId = String
@@ -33,9 +33,9 @@ pack x = View \k -> k x
 unpack :: forall r. View -> (forall a. Drawable a => Drawable2 a => a -> r) -> r
 unpack (View vw) k = vw k
 
-selListener :: forall a. (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter a -> Effect EventListener
+selListener :: forall a. (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter a -> Event -> Effect Unit
 selListener figVal redraw selector =
-   eventListener (selectionEventData' >>> uncurry selector >>> figVal >>> redraw)
+   selectionEventData' >>> uncurry selector >>> (figVal >>> redraw)
 
 class Drawable a where
    draw :: RendererSpec a -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
@@ -51,7 +51,8 @@ draw' _ { divId, suffix, view } redraw = do
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
    maybeRootElement <- div # select ("#" <> childId)
-   setSelStates view redraw =<<
+   listener <- eventListener redraw
+   setSelStates view listener =<<
       ( isEmpty maybeRootElement >>=
            if _ then createRootElement view div childId
            else pure maybeRootElement
@@ -73,7 +74,7 @@ type RendererSpec a =
    , view :: a
    }
 
-type Renderer a = UIHelpers -> RendererSpec a -> EventListener -> Effect Unit
+type Renderer a = UIHelpers -> RendererSpec a -> (Event -> Effect Unit) -> Effect Unit
 
 type UIHelpers =
    { val :: forall a. Selectable a -> a
