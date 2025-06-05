@@ -3,13 +3,12 @@ module App.View.DocView where
 import Prelude
 
 import App.View.Paragraph (Paragraph)
-import App.View.Util (class Drawable, class Drawable2, View, createRootElement, drawView, pack, setSelStates, unpack)
+import App.View.Util (class Drawable, class Drawable2, View, Select, createRootElement, drawView, pack, setSelStates, unpack)
 import App.View.Util.D3 (create, ElementType(..))
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Effect (Effect)
 import Util (spy)
-import Web.Event.Internal.Types (Event)
 
 newtype DocView = DocView
    { title :: String
@@ -35,7 +34,7 @@ createRootElement' (DocView { title, doc, view }) div childId = do
 
 -- Endo 
 
-setSelStates' :: DocView -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
+setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (DocView { doc, view }) redraw rootElement = do
    _ <- unpack view \v -> setSelStates v redraw rootElement
    _ <- setSelStates doc redraw rootElement

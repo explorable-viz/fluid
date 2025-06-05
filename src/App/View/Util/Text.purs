@@ -2,20 +2,20 @@ module App.View.Util.Text where
 
 import Prelude
 
-import App.Util (Attrs, Selectable, inert, isPersistent, isPrimary, isSecondary, isTransient, sel)
+import App.Util (Attrs, Selectable, inert, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
 import App.View.Util.D3 (create, datum, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (foldl)
 import Data.Array.Partial (head, tail)
 import Data.Foldable (for_)
+import Data.Tuple (uncurry)
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
 import Util ((!), (×))
 import Web.Event.EventTarget (eventListener)
-import Web.Event.Internal.Types (Event)
 
 class Textual a where
    getText :: a -> Selectable String
@@ -24,23 +24,24 @@ newtype Text = Text (Selectable (Array String))
 
 instance Drawable Text where
    draw rSpec figVal _ redraw = do
-      draw' uiHelpers rSpec (selListener figVal redraw textSelector)
-      where
-      textSelector :: ViewSelSetter Text
-      textSelector _ = identity
+      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 createRootElement :: Text -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (Text (elems × _)) div childId = do
    rootElement <- div # create D3.Text [ "class" ↦ "para-text", "id" ↦ childId ]
    rootElement # setText (formatText elems) >>= setDatum { childId }
 
-setSelStates :: Text -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
+setSelStates :: Text -> Select -> D3.Selection -> Effect Unit
 setSelStates (Text (elems × _)) redraw rootElement = do
    elems' <- rootElement # D3.selectAll ".para-text"
-   listener <- eventListener redraw
+   listener <- eventListener (redraw <<< uncurry textSelector <<< selectionEventData')
    for_ elems' \elem -> do
       { i } :: TextElem <- datum elem
       elem # setStyles (textAttrs (elems ! i)) >>= registerMouseListeners listener
+
+   where
+   textSelector :: ViewSelSetter Text
+   textSelector _ = identity
 
 instance Drawable2 Text where
    createRootElement = createRootElement

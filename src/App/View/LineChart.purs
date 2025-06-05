@@ -2,9 +2,9 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient)
+import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
 import App.View.Util.Axes (Orientation(..))
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
@@ -17,13 +17,12 @@ import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 import DataType (f_plots)
 import Effect (Effect)
 import Lattice ((∨), (∧))
 import Util (type (×), Endo, init, nonEmpty, tail, zipWith, (!), (×))
 import Web.Event.EventTarget (eventListener)
-import Web.Event.Internal.Types (Event)
 
 newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
@@ -59,10 +58,11 @@ type PointCoordinate = { i :: Int, j :: Int }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 
-setSelStates :: LineChart -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
+setSelStates :: LineChart -> Select -> D3.Selection -> Effect Unit
 setSelStates (LineChart { plots }) redraw rootElement = do
    points <- rootElement # selectAll ".linechart-point"
-   listener <- eventListener redraw
+   listener <- eventListener (redraw <<< uncurry pointSel <<< selectionEventData')
+
    for_ points \point -> do
       point' <- datum point
       point # setAttrs (pointAttrs point') >>= registerMouseListeners listener
@@ -70,6 +70,7 @@ setSelStates (LineChart { plots }) redraw rootElement = do
    for_ segments \segment -> do
       segment' <- datum segment
       segment # setAttrs (segmentAttrs segment')
+
    where
    pointAttrs :: PointCoordinate -> Attrs
    pointAttrs { i, j } =
@@ -94,6 +95,10 @@ setSelStates (LineChart { plots }) redraw rootElement = do
 
    selState :: Point Number -> SelStates 𝕊
    selState (Point { x, y }) = snd x ∨ snd y
+
+   pointSel :: ViewSelSetter PointCoordinate
+   pointSel { i, j } =
+      linePoint j >>> listElement i >>> dictVal f_plots >>> lineChart
 
 createRootElement :: LineChart -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
@@ -271,11 +276,7 @@ instance Drawable2 LineChart where
 
 instance Drawable LineChart where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener figVal redraw point)
-      where
-      point :: ViewSelSetter PointCoordinate
-      point { i, j } =
-         linePoint j >>> listElement i >>> dictVal f_plots >>> lineChart
+      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 -- ======================
 -- boilerplate

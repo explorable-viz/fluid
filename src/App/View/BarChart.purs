@@ -6,14 +6,14 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (Selectable, 𝕊(..), colorShade, getPersistent, getTransient)
+import App.Util (Selectable, 𝕊(..), colorShade, getPersistent, getTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
-import App.View.Util (class Drawable, class Drawable2, UIHelpers, draw', selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, UIHelpers, Select, draw', selListener', uiHelpers)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
-import Data.Tuple (snd)
+import Data.Tuple (snd, uncurry)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util ((!))
@@ -39,16 +39,18 @@ type BarChartHelpers =
    { bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
    , tickEvery :: Int -> Int
    , eventListener :: (Event -> Effect Unit) -> Effect EventListener
+   , withBarChartSegment :: Select -> (Event -> Effect Unit)
    }
 
 foreign import createRootElement2 :: BarChartHelpers -> UIHelpers -> BarChart -> D3.Selection -> String -> Effect D3.Selection
-foreign import setSelStates2 :: BarChartHelpers -> BarChart -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
+foreign import setSelStates2 :: BarChartHelpers -> BarChart -> Select -> D3.Selection -> Effect Unit
 
 barChartHelpers :: BarChartHelpers
 barChartHelpers =
    { bar_attrs
    , tickEvery
    , eventListener
+   , withBarChartSegment
    }
    where
    bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
@@ -83,16 +85,19 @@ barChartHelpers =
       where
       m = floor (log (toNumber n) / log 10.0)
 
+   barChartSegment :: ViewSelSetter BarSegmentCoordinate
+   barChartSegment { i, j } = barSegment i j >>> barChart
+
+   withBarChartSegment :: Select -> (Event -> Effect Unit)
+   withBarChartSegment sel = sel <<< uncurry barChartSegment <<< selectionEventData'
+
 instance Drawable2 BarChart where
    createRootElement = createRootElement2 barChartHelpers uiHelpers
    setSelStates = setSelStates2 barChartHelpers
 
 instance Drawable BarChart where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener figVal redraw barChartSegment)
-      where
-      barChartSegment :: ViewSelSetter BarSegmentCoordinate
-      barChartSegment { i, j } = barSegment i j >>> barChart
+      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }

@@ -37,13 +37,18 @@ selListener :: forall a. (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -
 selListener figVal redraw selector =
    selectionEventData' >>> uncurry selector >>> (figVal >>> redraw)
 
+selListener' :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit)
+selListener' figVal redraw = redraw <<< figVal
+
 class Drawable a where
    draw :: RendererSpec a -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
 
 -- Merge into Drawable once JS->PS transition complete
 class Drawable2 a where
    createRootElement :: a -> D3.Selection -> String -> Effect D3.Selection
-   setSelStates :: a -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
+   setSelStates :: a -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> D3.Selection -> Effect Unit
+
+type Select = (SetSel (Val (SelStates 𝔹)) -> Effect Unit)
 
 draw' :: forall a. Drawable2 a => Renderer a
 draw' _ { divId, suffix, view } redraw = do
@@ -73,7 +78,7 @@ type RendererSpec a =
    , view :: a
    }
 
-type Renderer a = UIHelpers -> RendererSpec a -> (Event -> Effect Unit) -> Effect Unit
+type Renderer a = UIHelpers -> RendererSpec a -> ((SetSel (Val (SelStates 𝔹)) -> Effect Unit)) -> Effect Unit
 
 type UIHelpers =
    { val :: forall a. Selectable a -> a

@@ -4,7 +4,7 @@ import * as d3 from "d3"
 
 
 function setSelStates2_ (
-   { point_attrs, eventListener },
+   { point_attrs, eventListener, withScatterPlotPoint },
    {
       selState,
       selClasses,
@@ -12,11 +12,11 @@ function setSelStates2_ (
       join
    },
    view,
-   listener,
+   select,
    rootElement
 ) {
    return () => {
-      var newListener = (e) => eventListener(listener(e))
+      var newListener = eventListener(withScatterPlotPoint(select))()
       const { points } = view
       rootElement.selectAll('.scatterplot-point').each(function (point) {
          const sel = join(selState(points[point.i].x))(selState(points[point.i].y))

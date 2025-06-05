@@ -2,14 +2,14 @@ module App.View.ScatterPlot where
 
 import Prelude
 
-import App.Util (Selectable, isPrimary, isSecondary)
+import App.Util (Selectable, isPrimary, isSecondary, selectionEventData')
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.Util (class Drawable, class Drawable2, UIHelpers, draw', selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, UIHelpers, Select, draw', selListener', uiHelpers)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((⟼))
 import Data.Int (toNumber)
-import Data.Tuple (snd)
+import Data.Tuple (snd, uncurry)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
@@ -26,15 +26,17 @@ newtype ScatterPlot = ScatterPlot
 type ScatterPlotHelpers =
    { point_attrs :: ScatterPlot -> PointIndex -> Object String
    , eventListener :: (Event -> Effect Unit) -> Effect EventListener
+   , withScatterPlotPoint :: Select -> (Event -> Effect Unit)
    }
 
 foreign import createRootElement2 :: UIHelpers -> ScatterPlot -> D3.Selection -> String -> Effect D3.Selection
-foreign import setSelStates2 :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
+foreign import setSelStates2 :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> Select -> D3.Selection -> Effect Unit
 
 scatterPlotHelpers :: ScatterPlotHelpers
 scatterPlotHelpers =
    { point_attrs
    , eventListener
+   , withScatterPlotPoint
    }
    where
    point_attrs :: ScatterPlot -> PointIndex -> Object String
@@ -46,12 +48,13 @@ scatterPlotHelpers =
       sel = snd x ∨ snd y
       point_smallRadius = 2
 
+   scatterPlotPoint :: ViewSelSetter PointIndex
+   scatterPlotPoint { i } = scatterPoint i >>> scatterPlot
+   withScatterPlotPoint sel = sel <<< uncurry scatterPlotPoint <<< selectionEventData'
+
 instance Drawable ScatterPlot where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener figVal redraw scatterPlotPoint)
-      where
-      scatterPlotPoint :: ViewSelSetter PointIndex
-      scatterPlotPoint { i } = scatterPoint i >>> scatterPlot
+      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 instance Drawable2 ScatterPlot where
    createRootElement = createRootElement2 uiHelpers

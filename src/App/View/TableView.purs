@@ -2,9 +2,9 @@ module App.View.TableView where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor)
+import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, listElement)
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -15,14 +15,13 @@ import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Data.Traversable (for)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
 import Util (Endo, type (×), (×), absurd, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (eventListener)
-import Web.Event.Internal.Types (Event)
 
 type Record' = Array (Val (SelStates 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
 
@@ -79,10 +78,10 @@ transparentBorder = "1px solid transparent"
 solidBorder :: String
 solidBorder = "1px solid blue"
 
-setSelStates :: TableView -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
+setSelStates :: TableView -> Select -> D3.Selection -> Effect Unit
 setSelStates (TableView { title, rows }) redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
-   listener <- eventListener redraw
+   listener <- eventListener (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
    for_ cells \cell -> do
       { i, j, colName } :: CellIndex <- datum cell
       if i == -1 || j == -1 then pure unit
@@ -148,6 +147,9 @@ setSelStates (TableView { title, rows }) redraw rootElement = do
       | i == -1 || j == -1 = false
       | otherwise = isTransient <<< (\(Val α _ _) -> α) $ rows ! i ! j
 
+   tableViewSelSetter :: ViewSelSetter CellIndex
+   tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
+
 createRootElement :: TableView -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (TableView { colNames, filter, rows }) div childId = do
    rootElement <- div # create Table [ classes [ "table-view" ], "id" ↦ childId ]
@@ -187,10 +189,7 @@ instance Drawable2 TableView where
 
 instance Drawable TableView where
    draw rSpec figVal _ redraw = do
-      draw' uiHelpers rSpec (selListener figVal redraw tableViewSelSetter)
-      where
-      tableViewSelSetter :: ViewSelSetter CellIndex
-      tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
+      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 --      toggleListener <- filterToggleListener filterToggler
 --

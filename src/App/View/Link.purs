@@ -2,9 +2,9 @@ module Link where
 
 import Prelude hiding (join)
 
-import App.Util (SelStates, Selectable, 𝕊, classes)
+import App.Util (SelStates, Selectable, 𝕊, classes, selectionEventData')
 import App.Util.Selector (ViewSelSetter, SelSetter)
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import App.View.Util.Text (class Textual, textAttrs)
@@ -12,6 +12,7 @@ import Bind ((↦))
 import Data.Foldable (foldr)
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)
+import Data.Tuple (uncurry)
 import DataType (cLink)
 import Effect (Effect)
 import Lattice (bot, join)
@@ -19,7 +20,6 @@ import Partial.Unsafe (unsafePartial)
 import Util ((×))
 import Val (BaseVal(..), Val(..))
 import Web.Event.EventTarget (eventListener)
-import Web.Event.Internal.Types (Event)
 
 data Link a = Link (Val a) (Selectable String)
 
@@ -28,7 +28,7 @@ linkContents (Link _ (s × _)) = s
 
 instance Drawable (Link (SelStates 𝕊)) where
    draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener figVal redraw selLink)
+      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 instance Drawable2 (Link (SelStates 𝕊)) where
    createRootElement = createRootElement
@@ -53,9 +53,9 @@ createRootElement link div childId = do
       elem # setText (linkContents link') >>= setDatum link'
 
 -- Textual styling can be factored out into shared functionality
-setSelState :: Link (SelStates 𝕊) -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
+setSelState :: Link (SelStates 𝕊) -> Select -> D3.Selection -> Effect Unit
 setSelState link redraw rootElement = do
-   listener <- eventListener redraw
+   listener <- eventListener (redraw <<< uncurry selLink <<< selectionEventData')
    rootElement # setStyles (textAttrs link) >>= registerMouseListeners listener
 
 instance Textual (Link (SelStates 𝕊)) where
