@@ -11,19 +11,21 @@ import Effect (Effect)
 import Primitive (int, unpack)
 import Util ((!), (×))
 import Val (Array2, MatrixDim(..), MatrixRep(..))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (EventListener, eventListener)
+import Web.Event.Internal.Types (Event)
 
 --  (Rendered) matrices are required to have element type Int for now.
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import setSelStates2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> EventListener -> D3.Selection -> Effect Unit
+foreign import setSelStates2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 foreign import createRootElement2 :: UIHelpers -> MatrixView -> D3.Selection -> String -> Effect D3.Selection
 
 type MatrixViewHelpers =
    { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
    , vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
+   , eventListener :: (Event -> Effect Unit) -> Effect EventListener
    }
 
 data ShadowDirection = North | South | East | West | None
@@ -32,6 +34,7 @@ matrixViewHelpers :: MatrixViewHelpers
 matrixViewHelpers =
    { hBorderStyles
    , vBorderStyles
+   , eventListener
    }
    where
    hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String

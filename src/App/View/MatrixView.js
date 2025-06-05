@@ -5,7 +5,8 @@ import * as d3 from "d3"
 function setSelStates2_ (
    {
       hBorderStyles,
-      vBorderStyles
+      vBorderStyles,
+      eventListener
    },
    {
       selState,
@@ -17,14 +18,15 @@ function setSelStates2_ (
    rootElement
 ) {
    return () => {
+      var newListener = (e) => eventListener(listener(e))
       rootElement.selectAll('.matrix-cell').each(function (cellRect) {
          const sel = selState(matrix.cells[cellRect.i - 1][cellRect.j - 1])
          d3.select(this) // won't work inside arrow function :/
             .classed(selClasses, false)
             .classed(selClassesFor(sel), true)
-            .on('mousedown', e => { listener(e) })
-            .on('mouseenter', e => { listener(e) })
-            .on('mouseleave', e => { listener(e) })
+            .on('mousedown', e => { newListener(e) })
+            .on('mouseenter', e => { newListener(e) })
+            .on('mouseleave', e => { newListener(e) })
       })
 
       rootElement.selectAll('.matrix-cell-text').each(function (cellText) {

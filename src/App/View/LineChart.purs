@@ -22,7 +22,8 @@ import DataType (f_plots)
 import Effect (Effect)
 import Lattice ((∨), (∧))
 import Util (type (×), Endo, init, nonEmpty, tail, zipWith, (!), (×))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (eventListener)
+import Web.Event.Internal.Types (Event)
 
 newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
@@ -58,12 +59,13 @@ type PointCoordinate = { i :: Int, j :: Int }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 
-setSelStates :: LineChart -> EventListener -> D3.Selection -> Effect Unit
+setSelStates :: LineChart -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 setSelStates (LineChart { plots }) redraw rootElement = do
    points <- rootElement # selectAll ".linechart-point"
+   listener <- eventListener redraw
    for_ points \point -> do
       point' <- datum point
-      point # setAttrs (pointAttrs point') >>= registerMouseListeners redraw
+      point # setAttrs (pointAttrs point') >>= registerMouseListeners listener
    segments <- rootElement # selectAll ".linechart-segment"
    for_ segments \segment -> do
       segment' <- datum segment

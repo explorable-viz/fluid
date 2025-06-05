@@ -20,7 +20,7 @@ import SExpr as S
 import Util (type (×), Endo, check)
 import Val (Env, Val)
 import Web.Event.Event (Event, EventType(..))
-import Web.Event.EventTarget (EventListener, eventListener)
+import Web.Event.EventTarget (EventListener)
 
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
@@ -43,7 +43,7 @@ class Drawable a where
 -- Merge into Drawable once JS->PS transition complete
 class Drawable2 a where
    createRootElement :: a -> D3.Selection -> String -> Effect D3.Selection
-   setSelStates :: a -> EventListener -> D3.Selection -> Effect Unit
+   setSelStates :: a -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 
 draw' :: forall a. Drawable2 a => Renderer a
 draw' _ { divId, suffix, view } redraw = do
@@ -51,8 +51,7 @@ draw' _ { divId, suffix, view } redraw = do
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
    maybeRootElement <- div # select ("#" <> childId)
-   listener <- eventListener redraw
-   setSelStates view listener =<<
+   setSelStates view redraw =<<
       ( isEmpty maybeRootElement >>=
            if _ then createRootElement view div childId
            else pure maybeRootElement

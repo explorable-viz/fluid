@@ -17,7 +17,8 @@ import Data.Tuple (snd)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util ((!))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (EventListener, eventListener)
+import Web.Event.Internal.Types (Event)
 
 newtype BarChart = BarChart
    { caption :: Selectable String
@@ -37,15 +38,17 @@ newtype Bar = Bar
 type BarChartHelpers =
    { bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
    , tickEvery :: Int -> Int
+   , eventListener :: (Event -> Effect Unit) -> Effect EventListener
    }
 
 foreign import createRootElement2 :: BarChartHelpers -> UIHelpers -> BarChart -> D3.Selection -> String -> Effect D3.Selection
-foreign import setSelStates2 :: BarChartHelpers -> BarChart -> EventListener -> D3.Selection -> Effect Unit
+foreign import setSelStates2 :: BarChartHelpers -> BarChart -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 
 barChartHelpers :: BarChartHelpers
 barChartHelpers =
    { bar_attrs
    , tickEvery
+   , eventListener
    }
    where
    bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String

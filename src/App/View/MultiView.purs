@@ -12,7 +12,7 @@ import Data.Newtype (class Newtype)
 import Dict (Dict)
 import Effect (Effect)
 import Util.Map (mapWithKey)
-import Web.Event.EventTarget (EventListener)
+import Web.Event.Internal.Types (Event)
 
 newtype MultiView = MultiView (Dict View)
 
@@ -31,7 +31,7 @@ createRootElement' (MultiView views) div childId = do
       unpack view \v -> createRootElement v rootElement (childId <> "-" <> x)
    pure rootElement
 
-setSelStates' :: MultiView -> EventListener -> D3.Selection -> Effect Unit
+setSelStates' :: MultiView -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 setSelStates' (MultiView views) redraw rootElement = do
    sequence_ $ flip mapWithKey views \_x view -> do
       unpack view \v -> setSelStates v redraw rootElement

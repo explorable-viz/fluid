@@ -9,7 +9,7 @@ import App.View.Util.D3 as D3
 import Bind ((↦))
 import Effect (Effect)
 import Util (spy)
-import Web.Event.EventTarget (EventListener)
+import Web.Event.Internal.Types (Event)
 
 newtype DocView = DocView
    { title :: String
@@ -35,7 +35,7 @@ createRootElement' (DocView { title, doc, view }) div childId = do
 
 -- Endo 
 
-setSelStates' :: DocView -> EventListener -> D3.Selection -> Effect Unit
+setSelStates' :: DocView -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 setSelStates' (DocView { doc, view }) redraw rootElement = do
    _ <- unpack view \v -> setSelStates v redraw rootElement
    _ <- setSelStates doc redraw rootElement

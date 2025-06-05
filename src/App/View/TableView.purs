@@ -21,7 +21,8 @@ import Effect (Effect)
 import Util (Endo, type (×), (×), absurd, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (eventListener)
+import Web.Event.Internal.Types (Event)
 
 type Record' = Array (Val (SelStates 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
 
@@ -78,15 +79,16 @@ transparentBorder = "1px solid transparent"
 solidBorder :: String
 solidBorder = "1px solid blue"
 
-setSelStates :: TableView -> EventListener -> D3.Selection -> Effect Unit
+setSelStates :: TableView -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 setSelStates (TableView { title, rows }) redraw rootElement = do
    cells <- rootElement # selectAll ".table-cell"
+   listener <- eventListener redraw
    for_ cells \cell -> do
       { i, j, colName } :: CellIndex <- datum cell
       if i == -1 || j == -1 then pure unit
       else cell # classed selClasses false
          >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
-         >>= registerMouseListeners redraw
+         >>= registerMouseListeners listener
       cell # setStyles
          [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
          , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)

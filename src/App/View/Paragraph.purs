@@ -11,7 +11,7 @@ import Data.Array (mapWithIndex)
 import Data.Foldable (sequence_)
 import Data.Newtype (class Newtype)
 import Effect (Effect)
-import Web.Event.EventTarget (EventListener)
+import Web.Event.Internal.Types (Event)
 
 newtype Paragraph = Paragraph (Array View)
 
@@ -30,7 +30,7 @@ createRootElement' (Paragraph views) div childId = do
       unpack view \v -> createRootElement v rootElement (childId <> "-" <> show i)
    pure rootElement
 
-setSelStates' :: Paragraph -> EventListener -> D3.Selection -> Effect Unit
+setSelStates' :: Paragraph -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 setSelStates' (Paragraph views) redraw rootElement = do
    sequence_ $ flip map views \view -> do
       unpack view \v -> setSelStates v redraw rootElement

@@ -14,7 +14,8 @@ import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Lattice ((∨))
 import Util ((!))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (EventListener, eventListener)
+import Web.Event.Internal.Types (Event)
 
 newtype ScatterPlot = ScatterPlot
    { caption :: Selectable String
@@ -24,14 +25,16 @@ newtype ScatterPlot = ScatterPlot
 
 type ScatterPlotHelpers =
    { point_attrs :: ScatterPlot -> PointIndex -> Object String
+   , eventListener :: (Event -> Effect Unit) -> Effect EventListener
    }
 
 foreign import createRootElement2 :: UIHelpers -> ScatterPlot -> D3.Selection -> String -> Effect D3.Selection
-foreign import setSelStates2 :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> EventListener -> D3.Selection -> Effect Unit
+foreign import setSelStates2 :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 
 scatterPlotHelpers :: ScatterPlotHelpers
 scatterPlotHelpers =
    { point_attrs
+   , eventListener
    }
    where
    point_attrs :: ScatterPlot -> PointIndex -> Object String

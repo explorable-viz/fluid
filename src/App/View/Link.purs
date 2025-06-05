@@ -18,7 +18,8 @@ import Lattice (bot, join)
 import Partial.Unsafe (unsafePartial)
 import Util ((×))
 import Val (BaseVal(..), Val(..))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (eventListener)
+import Web.Event.Internal.Types (Event)
 
 data Link a = Link (Val a) (Selectable String)
 
@@ -52,9 +53,10 @@ createRootElement link div childId = do
       elem # setText (linkContents link') >>= setDatum link'
 
 -- Textual styling can be factored out into shared functionality
-setSelState :: Link (SelStates 𝕊) -> EventListener -> D3.Selection -> Effect Unit
+setSelState :: Link (SelStates 𝕊) -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 setSelState link redraw rootElement = do
-   rootElement # setStyles (textAttrs link) >>= registerMouseListeners redraw
+   listener <- eventListener redraw
+   rootElement # setStyles (textAttrs link) >>= registerMouseListeners listener
 
 instance Textual (Link (SelStates 𝕊)) where
    getText (Link v (s × _)) = s × (foldr join bot v)

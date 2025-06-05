@@ -4,7 +4,7 @@ import * as d3 from "d3"
 
 
 function setSelStates2_ (
-   { point_attrs },
+   { point_attrs, eventListener },
    {
       selState,
       selClasses,
@@ -16,6 +16,7 @@ function setSelStates2_ (
    rootElement
 ) {
    return () => {
+      var newListener = (e) => eventListener(listener(e))
       const { points } = view
       rootElement.selectAll('.scatterplot-point').each(function (point) {
          const sel = join(selState(points[point.i].x))(selState(points[point.i].y))
@@ -23,9 +24,9 @@ function setSelStates2_ (
             .classed(selClasses, false)
             .classed(selClassesFor(sel), true)
             .attrs(point_attrs(view)(point))
-            .on('mousedown', e => { listener(e) })
-            .on('mouseenter', e => { listener(e) })
-            .on('mouseleave', e => { listener(e) })
+            .on('mousedown', e => { newListener(e) })
+            .on('mouseenter', e => { newListener(e) })
+            .on('mouseleave', e => { newListener(e) })
       })
    }
 }

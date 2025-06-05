@@ -14,7 +14,8 @@ import Data.Foldable (for_)
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
 import Util ((!), (×))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (eventListener)
+import Web.Event.Internal.Types (Event)
 
 class Textual a where
    getText :: a -> Selectable String
@@ -33,12 +34,13 @@ createRootElement (Text (elems × _)) div childId = do
    rootElement <- div # create D3.Text [ "class" ↦ "para-text", "id" ↦ childId ]
    rootElement # setText (formatText elems) >>= setDatum { childId }
 
-setSelStates :: Text -> EventListener -> D3.Selection -> Effect Unit
+setSelStates :: Text -> (Event -> Effect Unit) -> D3.Selection -> Effect Unit
 setSelStates (Text (elems × _)) redraw rootElement = do
    elems' <- rootElement # D3.selectAll ".para-text"
+   listener <- eventListener redraw
    for_ elems' \elem -> do
       { i } :: TextElem <- datum elem
-      elem # setStyles (textAttrs (elems ! i)) >>= registerMouseListeners redraw
+      elem # setStyles (textAttrs (elems ! i)) >>= registerMouseListeners listener
 
 instance Drawable2 Text where
    createRootElement = createRootElement
