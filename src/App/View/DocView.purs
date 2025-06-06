@@ -3,12 +3,11 @@ module App.View.DocView where
 import Prelude
 
 import App.View.Paragraph (Paragraph)
-import App.View.Util (class Drawable, class Drawable2, View, Select, createRootElement, drawView, pack, setSelStates, unpack)
+import App.View.Util (class Drawable, class Drawable2, Select, View, createRootElement, draw', selListener', setSelStates, uiHelpers, unpack)
 import App.View.Util.D3 (create, ElementType(..))
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Effect (Effect)
-import Util (spy)
 
 newtype DocView = DocView
    { title :: String
@@ -17,9 +16,8 @@ newtype DocView = DocView
    }
 
 instance Drawable DocView where
-   draw { divId, view: DocView { title, doc, view } } figVal figView redraw = do
-      drawView { divId, suffix: title, view } figVal figView redraw
-      drawView { divId, suffix: spy "" identity "doc", view: pack doc } figVal figView redraw
+   draw rSpec figVal _ redraw = do
+      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 instance Drawable2 DocView where
    createRootElement = createRootElement'
@@ -31,8 +29,6 @@ createRootElement' (DocView { title, doc, view }) div childId = do
    _ <- unpack view \v -> createRootElement v rootElement title -- view
    _ <- createRootElement doc rootElement (childId <> "-doc") -- doc
    pure rootElement
-
--- Endo 
 
 setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (DocView { doc, view }) redraw rootElement = do

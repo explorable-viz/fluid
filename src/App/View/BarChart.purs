@@ -18,7 +18,6 @@ import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util ((!))
 import Web.Event.EventTarget (EventListener, eventListener)
-import Web.Event.Internal.Types (Event)
 
 newtype BarChart = BarChart
    { caption :: Selectable String
@@ -38,8 +37,7 @@ newtype Bar = Bar
 type BarChartHelpers =
    { bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
    , tickEvery :: Int -> Int
-   , eventListener :: (Event -> Effect Unit) -> Effect EventListener
-   , withBarChartSegment :: Select -> (Event -> Effect Unit)
+   , withBarChartSegment :: Select -> Effect EventListener
    }
 
 foreign import createRootElement2 :: BarChartHelpers -> UIHelpers -> BarChart -> D3.Selection -> String -> Effect D3.Selection
@@ -49,7 +47,6 @@ barChartHelpers :: BarChartHelpers
 barChartHelpers =
    { bar_attrs
    , tickEvery
-   , eventListener
    , withBarChartSegment
    }
    where
@@ -88,8 +85,8 @@ barChartHelpers =
    barChartSegment :: ViewSelSetter BarSegmentCoordinate
    barChartSegment { i, j } = barSegment i j >>> barChart
 
-   withBarChartSegment :: Select -> (Event -> Effect Unit)
-   withBarChartSegment sel = sel <<< uncurry barChartSegment <<< selectionEventData'
+   withBarChartSegment :: Select -> Effect EventListener
+   withBarChartSegment sel = eventListener $ sel <<< uncurry barChartSegment <<< selectionEventData'
 
 instance Drawable2 BarChart where
    createRootElement = createRootElement2 barChartHelpers uiHelpers
