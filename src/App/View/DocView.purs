@@ -4,14 +4,14 @@ import Prelude
 
 import App.View.Paragraph (Paragraph)
 import App.View.Util (class Drawable, class Drawable2, Select, View, createRootElement, draw', selListener', setSelStates, uiHelpers, unpack)
-import App.View.Util.D3 (create, ElementType(..))
+-- import App.View.Util.D3 (create, ElementType(..))
 import App.View.Util.D3 as D3
-import Bind ((↦))
+-- import Bind ((↦))
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 
 newtype DocView = DocView
-   { title :: String
-   , doc :: Paragraph
+   { doc :: Maybe Paragraph
    , view :: View
    }
 
@@ -24,14 +24,17 @@ instance Drawable2 DocView where
    setSelStates = setSelStates'
 
 createRootElement' :: DocView -> D3.Selection -> String -> Effect D3.Selection
-createRootElement' (DocView { title, doc, view }) div childId = do
-   rootElement <- div # create G [ "id" ↦ childId ]
-   _ <- unpack view \v -> createRootElement v rootElement title -- view
-   _ <- createRootElement doc rootElement (childId <> "-doc") -- doc
-   pure rootElement
+createRootElement' (DocView { doc: Just doc, view }) div childId = do
+   _ <- unpack view \v -> createRootElement v div childId -- view
+   _ <- createRootElement doc div (childId <> "-doc") -- doc
+   pure div
+createRootElement' (DocView { doc: Nothing, view }) div childId = do
+   unpack view \v -> createRootElement v div childId -- view
 
 setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
-setSelStates' (DocView { doc, view }) redraw rootElement = do
-   _ <- unpack view \v -> setSelStates v redraw rootElement
-   _ <- setSelStates doc redraw rootElement
+setSelStates' (DocView { doc: Just doc, view }) select rootElement = do
+   _ <- unpack view \v -> setSelStates v select rootElement
+   _ <- setSelStates doc select rootElement
    pure unit
+setSelStates' (DocView { doc: Nothing, view }) select rootElement = do
+   unpack view \v -> setSelStates v select rootElement

@@ -32,12 +32,12 @@ import Val (BaseVal(..), DictRep(..), Val(..))
 
 view' :: Partial => String -> Val (SelStates 𝕊) -> Maybe View -> View
 view' title v@(Val _ doc _) _ =
-   if doc == None then realView
+   if doc == None then pack $ DocView { doc: Nothing, view: realView }
    else
       let
          docView = viewPara doc
       in
-         pack $ DocView { title, doc: docView, view: realView }
+         pack $ DocView { doc: Just docView, view: realView }
    where
    realView = view title v Nothing
 
@@ -48,7 +48,7 @@ view title (Val _ _ (Constr c (u : Nil))) _
    | c == cBarChart = pack (dict from u :: BarChart)
    | c == cLineChart = pack (dict from u :: LineChart)
    | c == cScatterPlot = pack (dict from u :: ScatterPlot)
-   | c == cMultiView = pack (MultiView title (vws <*> (const Nothing <$> vws)))
+   | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
 view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
