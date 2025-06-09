@@ -67,7 +67,6 @@ function createRootElement2_ (
 
       const rootElement = div
          .append('svg')
-         .attr('id', childId)
 
       rootElement
          .attr('width', width + hMargin)

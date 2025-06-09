@@ -25,22 +25,22 @@ testFig page = do
    clickBarChart
    where
    fig = "fig"
-   barChart = "barChart"
-   lineChart = "lineChart"
+   barChart = ":nth-child(1)"
+   lineChart = ":nth-child(2)"
 
    clickBarChart :: Aff Unit
    clickBarChart = do
-      let bar = T.Selector ("svg#" <> barChart <> " rect.bar")
+      let bar = T.Selector ("svg" <> barChart <> " rect.bar")
       waitFor bar page
       click bar page
       checkAttribute page bar "fill" "#57a157"
 
    checkXTicks :: Aff Unit
    checkXTicks =
-      waitFor (T.Selector ("svg#" <> lineChart <> " g.x-axis")) page
+      waitFor (T.Selector ("svg" <> lineChart <> " g.x-axis")) page
 
    checkPointRadius :: Aff Unit
    checkPointRadius = do
-      let point = T.Selector ("svg#" <> lineChart <> " circle.linechart-point")
+      let point = T.Selector ("svg" <> lineChart <> " circle.linechart-point")
       waitFor point page
       checkAttribute page point "r" "2.0"

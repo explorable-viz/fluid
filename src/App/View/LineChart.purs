@@ -101,8 +101,8 @@ setSelStates (LineChart { plots }) redraw rootElement = do
       linePoint j >>> listElement i >>> dictVal f_plots >>> lineChart
 
 createRootElement :: LineChart -> D3.Selection -> String -> Effect D3.Selection
-createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
-   svg <- div # create SVG [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
+createRootElement (LineChart { size, tickLabels, caption, plots }) div _ = do
+   svg <- div # create SVG [ "width" ⟼ width, "height" ⟼ height ]
    { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
 
    let

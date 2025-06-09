@@ -28,7 +28,7 @@ instance Drawable Text where
 
 createRootElement :: Text -> D3.Selection -> String -> Effect D3.Selection
 createRootElement (Text (elems × _)) div childId = do
-   rootElement <- div # create D3.Text [ "class" ↦ "para-text", "id" ↦ childId ]
+   rootElement <- div # create D3.Text [ "class" ↦ "para-text" ]
    rootElement # setText (formatText elems) >>= setDatum { childId }
 
 setSelStates :: Text -> Select -> D3.Selection -> Effect Unit

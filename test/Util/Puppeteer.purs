@@ -140,8 +140,8 @@ textContentValue page selector = do
    pure (unsafeFromForeign captionText)
 
 waitForFigure :: T.Page -> String -> Aff Unit
-waitForFigure page id =
-   waitFor (T.Selector ("svg#" <> id)) page
+waitForFigure page selector =
+   waitFor (T.Selector ("svg" <> selector)) page
 
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page figId = do

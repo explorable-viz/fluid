@@ -8,7 +8,6 @@ import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMo
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import App.View.Util.Text (class Textual, textAttrs)
-import Bind ((↦))
 import Data.Foldable (foldr)
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)
@@ -43,8 +42,8 @@ selLink _ = fragment
          first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
 
 createRootElement :: Link (SelStates 𝕊) -> D3.Selection -> String -> Effect D3.Selection
-createRootElement link div childId = do
-   rootElement <- div # create D3.Text [ classes [ "paragraph" ], "id" ↦ childId ]
+createRootElement link div _ = do
+   rootElement <- div # create D3.Text [ classes [ "paragraph" ] ]
    mkElem rootElement link
    where
    mkElem :: D3.Selection -> Link (SelStates 𝕊) -> Effect D3.Selection

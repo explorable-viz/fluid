@@ -16,7 +16,7 @@ main = fromAff $ sequence_ $ testURL "energy-scatter"
 
 testFig :: T.Page -> Aff Unit
 testFig page = do
-   waitForFigure page (fig <> "-output")
+   waitForFigure page ""
    clickToggle page fig
    clickScatterPlotPoint
 
