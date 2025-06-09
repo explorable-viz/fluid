@@ -185,5 +185,5 @@ function createRootElement2_ (
    }
 }
 
-export var createRootElement2 = x1 => x2 => x3 => x4 => x5 => createRootElement2_(x1, x2, x3, x4, x5)
+export var createRootElement2 = x1 => x2 => x3 => x5 => createRootElement2_(x1, x2, x3, x5)
 export var setSelStates2 = x1 => x2 => x3 => x4 => setSelStates2_(x1, x2, x3, x4)

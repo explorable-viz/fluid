@@ -23,11 +23,11 @@ instance Drawable2 MultiView where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 
-createRootElement' :: MultiView -> D3.Selection -> String -> Effect D3.Selection
-createRootElement' (MultiView views) div _ = do
+createRootElement' :: MultiView -> D3.Selection -> Effect D3.Selection
+createRootElement' (MultiView views) div = do
    rootElement <- div # create D3.G []
-   sequence_ $ flip mapWithKey views \x view -> do
-      unpack view \v -> createRootElement v rootElement x
+   sequence_ $ flip mapWithKey views \_x view -> do
+      unpack view \v -> createRootElement v rootElement
    pure rootElement
 
 setSelStates' :: MultiView -> Select -> D3.Selection -> Effect Unit

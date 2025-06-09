@@ -45,7 +45,7 @@ class Drawable a where
 
 -- Merge into Drawable once JS->PS transition complete
 class Drawable2 a where
-   createRootElement :: a -> D3.Selection -> String -> Effect D3.Selection
+   createRootElement :: a -> D3.Selection -> Effect D3.Selection
    setSelStates :: a -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> D3.Selection -> Effect Unit
 
 type Select = (SetSel (Val (SelStates 𝔹)) -> Effect Unit)
@@ -59,7 +59,7 @@ draw' _ { divId, suffix, view } redraw = do
    setSelStates view redraw =<<
       ( isEmpty maybeRootElement >>=
            if _ then do
-              rootElement <- createRootElement view div childId <#> D3.setAttrs [ "id" ↦ childId ]
+              rootElement <- createRootElement view div <#> D3.setAttrs [ "id" ↦ childId ]
               rootElement
            else pure maybeRootElement
       )

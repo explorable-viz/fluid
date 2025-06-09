@@ -40,7 +40,7 @@ type BarChartHelpers =
    , withBarChartSegment :: Select -> Effect EventListener
    }
 
-foreign import createRootElement2 :: BarChartHelpers -> UIHelpers -> BarChart -> D3.Selection -> String -> Effect D3.Selection
+foreign import createRootElement2 :: BarChartHelpers -> UIHelpers -> BarChart -> D3.Selection -> Effect D3.Selection
 foreign import setSelStates2 :: BarChartHelpers -> BarChart -> Select -> D3.Selection -> Effect Unit
 
 barChartHelpers :: BarChartHelpers

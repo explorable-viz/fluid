@@ -52,8 +52,7 @@ function setSelStates2_ (
 function createRootElement2_ (
    { val },
    { title, matrix },
-   div,
-   childId
+   div
 ) {
    return () => {
       const strokeWidth = 0.5
@@ -71,17 +70,6 @@ function createRootElement2_ (
       rootElement
          .attr('width', width + hMargin)
          .attr('height', height + vMargin)
-
-      if (!childId.includes("intermediate")) {
-         rootElement
-            .append('text')
-            .text(title)
-            .attr('x', hMargin / 2)
-            .attr('y', vMargin / 2)
-            .attr('class', 'title-text')
-            .attr('dominant-baseline', 'middle')
-            .attr('text-anchor', 'left')
-      }
 
       // group for the whole matrix (rects and texts)
       const matrixGrp = rootElement
@@ -182,4 +170,4 @@ function createRootElement2_ (
 }
 
 export var setSelStates2 = x1 => x2 => x3 => x4 => x5 => setSelStates2_(x1, x2, x3, x4, x5)
-export var createRootElement2 = x1 => x2 => x3 => x4 => createRootElement2_(x1, x2, x3, x4)
+export var createRootElement2 = x1 => x2 => x3 => createRootElement2_(x1, x2, x3)

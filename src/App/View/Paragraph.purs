@@ -21,11 +21,11 @@ instance Drawable2 Paragraph where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 
-createRootElement' :: Paragraph -> D3.Selection -> String -> Effect D3.Selection
-createRootElement' (Paragraph views) div childId = do
+createRootElement' :: Paragraph -> D3.Selection -> Effect D3.Selection
+createRootElement' (Paragraph views) div = do
    rootElement <- div # create G []
-   sequence_ $ flip mapWithIndex views \i view -> do
-      unpack view \v -> createRootElement v rootElement (childId <> "-" <> show i)
+   sequence_ $ flip mapWithIndex views \_ view -> do
+      unpack view \v -> createRootElement v rootElement
    pure rootElement
 
 setSelStates' :: Paragraph -> Select -> D3.Selection -> Effect Unit

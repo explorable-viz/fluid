@@ -5,7 +5,7 @@ import Prelude
 import App.Util (Attrs, Selectable, inert, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
 import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
-import App.View.Util.D3 (create, datum, setDatum, setStyles, setText)
+import App.View.Util.D3 (create, datum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (foldl)
@@ -26,10 +26,10 @@ instance Drawable Text where
    draw rSpec figVal _ redraw = do
       draw' uiHelpers rSpec (selListener' figVal redraw)
 
-createRootElement :: Text -> D3.Selection -> String -> Effect D3.Selection
-createRootElement (Text (elems × _)) div childId = do
+createRootElement :: Text -> D3.Selection -> Effect D3.Selection
+createRootElement (Text (elems × _)) div = do
    rootElement <- div # create D3.Text [ "class" ↦ "para-text" ]
-   rootElement # setText (formatText elems) >>= setDatum { childId }
+   rootElement # setText (formatText elems)
 
 setSelStates :: Text -> Select -> D3.Selection -> Effect Unit
 setSelStates (Text (elems × _)) redraw rootElement = do

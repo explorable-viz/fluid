@@ -29,7 +29,7 @@ type ScatterPlotHelpers =
    , withScatterPlotPoint :: Select -> (Event -> Effect Unit)
    }
 
-foreign import createRootElement2 :: UIHelpers -> ScatterPlot -> D3.Selection -> String -> Effect D3.Selection
+foreign import createRootElement2 :: UIHelpers -> ScatterPlot -> D3.Selection -> Effect D3.Selection
 foreign import setSelStates2 :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> Select -> D3.Selection -> Effect Unit
 
 scatterPlotHelpers :: ScatterPlotHelpers

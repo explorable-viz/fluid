@@ -20,7 +20,7 @@ type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import setSelStates2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> Select -> D3.Selection -> Effect Unit
-foreign import createRootElement2 :: UIHelpers -> MatrixView -> D3.Selection -> String -> Effect D3.Selection
+foreign import createRootElement2 :: UIHelpers -> MatrixView -> D3.Selection -> Effect D3.Selection
 
 type MatrixViewHelpers =
    { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String

@@ -23,18 +23,21 @@ instance Drawable2 DocView where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 
-createRootElement' :: DocView -> D3.Selection -> String -> Effect D3.Selection
-createRootElement' (DocView { doc: Just doc, view }) div childId = do
-   rootElement <- unpack view \v -> createRootElement v div childId -- view
-   _ <- createRootElement doc div (childId <> "-doc") -- doc
+createRootElement' :: DocView -> D3.Selection -> Effect D3.Selection
+createRootElement' (DocView { doc: Just doc, view }) div = do
+   rootElement <- div # D3.create D3.G []
+   _ <- unpack view \v -> createRootElement v rootElement
+   _ <- createRootElement doc rootElement
    pure rootElement
-createRootElement' (DocView { doc: Nothing, view }) div childId = do
-   unpack view \v -> createRootElement v div childId -- view
+createRootElement' (DocView { doc: Nothing, view }) div = do
+   unpack view \v -> createRootElement v div
 
 setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (DocView { doc: Just doc, view }) select rootElement = do
-   _ <- unpack view \v -> setSelStates v select rootElement
-   _ <- setSelStates doc select rootElement
+   viewElem <- rootElement # D3.select ":nth-child(1)"
+   _ <- unpack view \v -> setSelStates v select viewElem
+   docElem <- rootElement # D3.select ":nth-child(2)"
+   _ <- setSelStates doc select docElem
    pure unit
 setSelStates' (DocView { doc: Nothing, view }) select rootElement = do
    unpack view \v -> setSelStates v select rootElement
