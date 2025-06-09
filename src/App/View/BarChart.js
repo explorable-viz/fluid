@@ -42,14 +42,14 @@ function setSelStates2_ (
    select,
    rootElement
 ) {
+   var newListener = withBarChartSegment(select)()
    return () => {
       rootElement.selectAll('.bar').each(function (bar) {
-         var newListener = withBarChartSegment(select)
          d3.select(this) // won't work inside arrow function :/
             .attrs(bar_attrs(color)(view)(bar))
-            .on('mousedown', e => { newListener()(e) } )
-            .on('mouseenter', e => { newListener()(e) })
-            .on('mouseleave', e => { newListener()(e) })
+            .on('mousedown', e => { newListener(e) } )
+            .on('mouseenter', e => { newListener(e) })
+            .on('mouseleave', e => { newListener(e) })
       })
    }
 }

@@ -4,12 +4,12 @@ import Prelude
 
 import App.Util.Selector (multiViewEntry)
 import App.View.Util (class Drawable, class Drawable2, Select, View, createRootElement, draw', selListener', setSelStates, uiHelpers, unpack)
+import App.View.Util.D3 (create)
 import App.View.Util.D3 as D3
-import Data.Array (zip)
+import Bind ((↦))
 import Data.Foldable (sequence_)
-import Dict (Dict, toArrayWithKey)
+import Dict (Dict)
 import Effect (Effect)
-import Util ((×))
 import Util.Map (mapWithKey)
 
 data MultiView = MultiView (Dict View)
@@ -24,14 +24,15 @@ instance Drawable2 MultiView where
 
 createRootElement' :: MultiView -> D3.Selection -> String -> Effect D3.Selection
 createRootElement' (MultiView views) div childId = do
+   rootElement <- div # create D3.G [ "id" ↦ childId ]
    sequence_ $ flip mapWithKey views \x view -> do
-      unpack view \v -> createRootElement v div (childId <> "-" <> x)
-   pure div
+      unpack view \v -> createRootElement v rootElement (childId <> "-" <> x)
+   pure rootElement
 
 setSelStates' :: MultiView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (MultiView views) select rootElement = do
-   children <- rootElement # D3.selectAll "svg"
-   let xs = toArrayWithKey (×) views
-   sequence_ $ flip map (zip children xs) \(elem × x × view) -> do
-      unpack view \v -> setSelStates v (multiViewEntry x >>> select) elem
-
+   sequence_ $
+      ( flip mapWithKey views \x view -> do
+           elem <- rootElement # D3.select ("#fig-output-" <> x)
+           void $ unpack view \v -> setSelStates v (multiViewEntry x >>> select) elem
+      )
