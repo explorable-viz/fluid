@@ -25,9 +25,9 @@ instance Drawable2 DocView where
 
 createRootElement' :: DocView -> D3.Selection -> String -> Effect D3.Selection
 createRootElement' (DocView { doc: Just doc, view }) div childId = do
-   _ <- unpack view \v -> createRootElement v div childId -- view
+   rootElement <- unpack view \v -> createRootElement v div childId -- view
    _ <- createRootElement doc div (childId <> "-doc") -- doc
-   pure div
+   pure rootElement
 createRootElement' (DocView { doc: Nothing, view }) div childId = do
    unpack view \v -> createRootElement v div childId -- view
 

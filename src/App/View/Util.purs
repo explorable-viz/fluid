@@ -6,7 +6,7 @@ import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetS
 import App.Util.Selector (ViewSelSetter, ViewSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
-import Bind (Bind, Var)
+import Bind (Bind, Var, (↦))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe)
 import Data.Set (Set)
@@ -58,7 +58,9 @@ draw' _ { divId, suffix, view } redraw = do
    maybeRootElement <- div # select ("#" <> childId)
    setSelStates view redraw =<<
       ( isEmpty maybeRootElement >>=
-           if _ then createRootElement view div childId
+           if _ then do
+              rootElement <- createRootElement view div childId <#> D3.setAttrs [ "id" ↦ childId ]
+              rootElement
            else pure maybeRootElement
       )
 
