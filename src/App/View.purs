@@ -32,16 +32,11 @@ import Val (BaseVal(..), DictRep(..), Val(..))
 
 view' :: Partial => String -> Val (SelStates 𝕊) -> Maybe View -> View
 view' title v@(Val _ doc _) _ =
-   if doc == None then pack $ DocView { doc: Nothing, view: realView }
-   else
-      let
-         docView = viewPara doc
-      in
-         pack $ DocView { doc: Just docView, view: realView }
-   where
-   realView = view title v Nothing
+   if doc == None
+   then pack $ DocView { doc: Nothing, view: view title v Nothing }
+   else pack $ DocView { doc: Just $ viewPara doc, view: view title v Nothing }
 
--- Convert annotated value to appropriate view, discarding top-level annotations for now.
+-- Convert annotated vue to appropriate view, discarding top-level annotations for now.
 -- Ignore view state for now..
 view :: Partial => String -> Val (SelStates 𝕊) -> Maybe View -> View
 view title (Val _ _ (Constr c (u : Nil))) _
@@ -71,14 +66,14 @@ viewPara (Doc doc) = P.Paragraph true $ fromFoldable $ map pack' <<< formatPara 
    formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List (Val (SelStates 𝕊) + Selectable String)
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
    formatPara (Token str : xs) = Right (str × inert) : formatPara xs
-   formatPara (Unquote val : xs) = Left val : formatPara xs
+   formatPara (Unquote v : xs) = Left v : formatPara xs
    formatPara Nil = Nil
 
    pack' :: Val (SelStates 𝕊) + (Selectable String) -> View
    pack' (Right str) = pack (T.Text str)
-   pack' (Left val) = case val of
-      Val α _ (Int i) -> pack (T.Text (show i × α))
-      _ -> view "" val Nothing
+   pack' (Left v) = case v of
+      Val α _ (Int n) -> pack (T.Text (show n × α))
+      _ -> view "" v Nothing   
 
 -- ======================
 -- boilerplate
