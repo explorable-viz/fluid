@@ -117,19 +117,19 @@ eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vert
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval γ (Int α doc n) αs = do
-   new' γ Val (insert α αs) doc (V.Int n)
-eval γ (Float α doc n) αs = new' γ Val (insert α αs) doc (V.Float n)
-eval γ (Str α doc s) αs = new' γ Val (insert α αs) doc (V.Str s)
+   new' γ (insert α αs) doc (V.Int n)
+eval γ (Float α doc n) αs = new' γ (insert α αs) doc (V.Float n)
+eval γ (Str α doc s) αs = new' γ (insert α αs) doc (V.Str s)
 eval γ (Dictionary α doc ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   new' γ Val (insert α αs) doc $ V.Dictionary (DictRep d)
+   new' γ (insert α αs) doc $ V.Dictionary (DictRep d)
 eval γ (Constr α doc c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   new' γ Val (insert α αs) doc $ V.Constr c vs
+   new' γ (insert α αs) doc $ V.Constr c vs
 eval γ (Matrix α doc e (x × y) e') αs = do
    Val _ _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
@@ -142,7 +142,7 @@ eval γ (Matrix α doc e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = maplet x (Val β None (V.Int i)) `disjointUnion` (maplet y (Val β' None (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
-   new' γ Val (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
+   new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
    new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
@@ -164,7 +164,7 @@ eval γ (App doc e e') αs = do
    v' <- eval γ e' αs
    v''@(Val α' _ bv) <- apply v v'
    let γ' = maplet "this" v''
-   vdoc <- evalCmt (γ <+> γ') doc
+   vdoc <- evalDocOpt (γ <+> γ') doc
    pure $ Val α' vdoc bv
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
@@ -201,9 +201,9 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       v <- eval γ e empty
       pure $ γ <+> maplet x v
 
-evalCmt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
-evalCmt _ None = pure None
-evalCmt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
+evalDocOpt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
+evalDocOpt _ None = pure None
+evalDocOpt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
    where
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
@@ -213,18 +213,15 @@ new'
    :: forall m
     . MonadWithGraphAlloc m
    => Env Vertex
-   -> (Vertex -> DocOpt Val Vertex -> BaseVal Vertex -> Val Vertex)
    -> Set Vertex
    -> DocOpt Expr Vertex
    -> BaseVal Vertex
    -> m (Val Vertex)
-new' _ constr αs None bv = new (\αs' -> \bv' -> constr αs' None bv') αs bv
-new' γ constr αs doc bv = do
+new' _ αs None u = new (\αs' -> \u' -> Val αs' None u') αs u
+new' γ αs doc u = do
    α <- fresh
-   let v = constr α None bv
-   let γ' = maplet "this" v
-   vdoc <- evalCmt (γ <+> γ') doc
-   let v' = constr α vdoc bv
+   vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None u)) doc
+   let v' = Val α vdoc u
    extend (DVertex (α × pack v')) αs
    pure v'
 
