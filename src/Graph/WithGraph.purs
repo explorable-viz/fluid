@@ -32,8 +32,6 @@ class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAllo
    -- Extend with a freshly allocated vertex.
    new :: forall f g. TypeName (g Vertex) => (Vertex -> f Vertex -> g Vertex) -> Set Vertex -> f Vertex -> m (g Vertex)
 
--- newCommented :: forall f g. TypeName (g Vertex) => (Vertex -> f Vertex -> g Vertex) -> Set Vertex -> f Vertex -> m (g Vertex)
-
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
 type WithGraphAllocT m = WithGraphT (AllocT m)
