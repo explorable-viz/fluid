@@ -304,10 +304,7 @@ expr_ =
             ctrArgs :: SParser (Raw Expr)
             ctrArgs = docComment expr' >>= \doc -> simpleExprOrProjection doc >>= \e' -> rest doc (Constr α doc' c (es <> (e' : empty)))
          rest doc e =
-            ( do
-                 doc' <- docComment expr'
-                 arg <- simpleExprOrProjection doc'
-                 rest doc (App doc e arg)
+            ( docComment expr' >>= simpleExprOrProjection >>= \arg -> rest doc (App doc e arg)
             ) <|> pure e
 
          -- An expression that may need wrapping in parentheses to disambiguate.
@@ -329,17 +326,17 @@ expr_ =
          simpleExpr doc =
             -- matrix before list
             ( matrix doc
-                   <|> try (nil doc)
-                   <|> listNonEmpty doc
-                   <|> try (constr doc)
-                   <|> dict doc
-                   <|> try (float doc)
-                   <|> try (int doc) -- int may start with +/-
-                   <|> string doc
-                   <|> try (pair doc)
-                   <|> listComp doc
-              )
-              <|> try variable
+                 <|> try (nil doc)
+                 <|> listNonEmpty doc
+                 <|> try (constr doc)
+                 <|> dict doc
+                 <|> try (float doc)
+                 <|> try (int doc) -- int may start with +/-
+                 <|> string doc
+                 <|> try (pair doc)
+                 <|> listComp doc
+            )
+               <|> try variable
                <|> try (token.parens expr')
                <|> listEnum
                <|> try parensOp
