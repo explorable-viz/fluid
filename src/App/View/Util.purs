@@ -73,6 +73,9 @@ registerMouseListeners redraw element = do
    for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
       element # on (EventType ev) redraw
 
+nthChild :: Int -> String
+nthChild i = ":nth-child(" <> show i <> ")"
+
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =
    { divId :: HTMLId

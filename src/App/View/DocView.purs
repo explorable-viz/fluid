@@ -3,10 +3,8 @@ module App.View.DocView where
 import Prelude
 
 import App.View.Paragraph (Paragraph)
-import App.View.Util (class Drawable, class Drawable2, Select, View, createRootElement, draw', selListener', setSelStates, uiHelpers, unpack)
--- import App.View.Util.D3 (create, ElementType(..))
+import App.View.Util (class Drawable, class Drawable2, Select, View, createRootElement, draw', nthChild, selListener', setSelStates, uiHelpers, unpack)
 import App.View.Util.D3 as D3
--- import Bind ((↦))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 
@@ -34,9 +32,9 @@ createRootElement' (DocView { doc: Nothing, view }) div = do
 
 setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (DocView { doc: Just doc, view }) select rootElement = do
-   viewElem <- rootElement # D3.select ":nth-child(1)"
+   viewElem <- rootElement # D3.select (nthChild 1)
    _ <- unpack view \v -> setSelStates v select viewElem
-   docElem <- rootElement # D3.select ":nth-child(2)"
+   docElem <- rootElement # D3.select (nthChild 2)
    _ <- setSelStates doc select docElem
    pure unit
 setSelStates' (DocView { doc: Nothing, view }) select rootElement = do

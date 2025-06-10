@@ -2,6 +2,7 @@ module Website.Test.Misc.RenewablesLinked where
 
 import Prelude
 
+import App.View.Util (nthChild)
 import Control.Promise (Promise, fromAff)
 import Data.Foldable (sequence_)
 import Effect (Effect)
@@ -25,8 +26,8 @@ testFig page = do
    clickBarChart
    where
    fig = "fig"
-   barChart = ":nth-child(1)"
-   lineChart = ":nth-child(2)"
+   barChart = nthChild 1
+   lineChart = nthChild 2
 
    clickBarChart :: Aff Unit
    clickBarChart = do
