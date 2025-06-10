@@ -33,14 +33,14 @@ pack x = View \k -> k x
 unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
-selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit)
+selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
 selListener figVal redraw = redraw <<< figVal
 
 class Drawable a where
    createRootElement :: a -> D3.Selection -> Effect D3.Selection
-   setSelStates :: a -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> D3.Selection -> Effect Unit
+   setSelStates :: a -> Select -> D3.Selection -> Effect Unit
 
-type Select = (SetSel (Val (SelStates 𝔹)) -> Effect Unit)
+type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
 draw :: forall a. Drawable a => Renderer a
 draw _ { divId, suffix, view } redraw = do

@@ -207,7 +207,7 @@ evalCmt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
    where
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
-   evalToken (Unquote e) = Unquote <$> (eval γ e empty)
+   evalToken (Unquote e) = Unquote <$> eval γ e empty
 
 new'
    :: forall m

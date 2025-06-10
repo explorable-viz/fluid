@@ -196,6 +196,6 @@ dataTypes = L.fromFoldable
         ]
    , dataType "ParaFragment"
         [ cText × 1 -- Str (str)
-        , cLink × 2 --  Val v, Str (url)
+        , cLink × 2 --  Val v, Str (str) 
         ]
    ]

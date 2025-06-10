@@ -328,7 +328,7 @@ expr_ =
          simpleExpr :: DocOpt Expr Unit -> SParser (Raw Expr)
          simpleExpr doc =
             -- matrix before list
-            ( ( matrix doc
+            ( matrix doc
                    <|> try (nil doc)
                    <|> listNonEmpty doc
                    <|> try (constr doc)
@@ -338,9 +338,8 @@ expr_ =
                    <|> string doc
                    <|> try (pair doc)
                    <|> listComp doc
-
               )
-            ) <|> try variable
+              <|> try variable
                <|> try (token.parens expr')
                <|> listEnum
                <|> try parensOp
