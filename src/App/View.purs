@@ -154,10 +154,7 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot whe
       , labels: dict from (snd (get f_labels r))
       }
 
-unpackLink :: BaseVal (SelStates 𝕊) -> Link (SelStates 𝕊)
-unpackLink = case _ of
-   (Constr c (Val α doc v : (Val α' _ (Str s) : Nil))) | c == cLink -> Link (Val α doc v) (s × α')
-   v -> typeError v "Link"
-
 instance Reflect (Val (SelStates 𝕊)) (Link (SelStates 𝕊)) where
-   from (Val _ _ r) = unpackLink r
+   from (Val _ _ r) = case r of
+      (Constr c (Val α doc v : (Val α' _ (Str s) : Nil))) | c == cLink -> Link (Val α doc v) (s × α')
+      v -> typeError v "Link"
