@@ -26,7 +26,7 @@ import Dict (Dict)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Link (Link(..))
 import Primitive (int, string, typeError, unpack)
-import Util (type (×), (×))
+import Util (type (×), (×), type (+))
 import Util.Map (get)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
@@ -68,13 +68,13 @@ view title (Val _ _ (Matrix r)) _ =
 viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> P.Paragraph
 viewPara (Doc doc) = P.Paragraph true $ fromFoldable $ map pack' <<< formatPara $ doc
    where
-   formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List (Either (Val (SelStates 𝕊)) (Selectable String))
+   formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List (Val (SelStates 𝕊) + Selectable String)
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
    formatPara (Token str : xs) = Right (str × inert) : formatPara xs
    formatPara (Unquote val : xs) = Left val : formatPara xs
    formatPara Nil = Nil
 
-   pack' :: Either (Val (SelStates 𝕊)) (Selectable String) -> View
+   pack' :: Val (SelStates 𝕊) + (Selectable String) -> View
    pack' (Right str) = pack (T.Text str)
    pack' (Left val) = case val of
       Val α _ (Int i) -> pack (T.Text (show i × α))
