@@ -3,7 +3,7 @@ module Link where
 import Prelude hiding (join)
 
 import App.Util (SelStates, Selectable, 𝕊, classes, selectionEventData')
-import App.Util.Selector (ViewSelSetter, SelSetter)
+import App.Util.Selector (ViewSelSetter)
 import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
@@ -30,22 +30,15 @@ instance Drawable (Link (SelStates 𝕊)) where
    setSelStates = setSelState
 
 selLink :: ViewSelSetter (Link (SelStates 𝕊))
-selLink _ = fragment
-   where
-   fragment :: SelSetter Val Val
-   fragment δv = unsafePartial $ case _ of
+selLink _ δv = unsafePartial $ case _ of
       (Val α doc (Constr c (v1 : v2 : Nil))) | c == cLink ->
          first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
 
 createRootElement :: Link (SelStates 𝕊) -> D3.Selection -> Effect D3.Selection
 createRootElement link div = do
    rootElement <- div # create D3.Text [ classes [ "paragraph" ] ]
-   mkElem rootElement link
-   where
-   mkElem :: D3.Selection -> Link (SelStates 𝕊) -> Effect D3.Selection
-   mkElem root link' = do
-      elem <- root # create D3.Text [ classes [ "link" ] ]
-      elem # setText (linkContents link') >>= setDatum link'
+   elem <- rootElement # create D3.Text [ classes [ "link" ] ]
+   elem # setText (linkContents link) >>= setDatum link
 
 -- Textual styling can be factored out into shared functionality
 setSelState :: Link (SelStates 𝕊) -> Select -> D3.Selection -> Effect Unit
