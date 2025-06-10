@@ -46,7 +46,7 @@ view title (Val _ _ (Constr c (u : Nil))) _
         vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
    | c == cParagraph = pack (P.Paragraph false (vws <*> (const Nothing <$> vws)))
         where
-        vws = view title <$> ((from u))
+        vws = view title <$> from u
 view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
    | c == cLink = pack (from v :: Link (SelStates 𝕊))
 view title u@(Val _ _ (Constr c _)) _
