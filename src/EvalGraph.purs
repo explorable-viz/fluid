@@ -34,7 +34,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs, val')
+import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs)
 
 -- Needs a better name.
 type GraphConfig =
@@ -82,7 +82,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `forDefs` σ
       in
-         new (val' None) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
+         new (flip Val None) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
@@ -97,13 +97,13 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         new (val' None) (singleton α) v'
+         new (flip Val None) (singleton α) v'
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   new (val' None) (singleton α) v'
+   new (flip Val None) (singleton α) v'
    where
    v' =
       if length vs < n - 1 then
@@ -144,7 +144,7 @@ eval γ (Matrix α doc e (x × y) e') αs = do
          singleton (eval (γ <+> γ') e αs)
    new' γ Val (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
-   new (val' None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of

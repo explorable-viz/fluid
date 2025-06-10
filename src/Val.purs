@@ -48,10 +48,6 @@ asVal e = if type' == "Val" then Just (unpack unsafeCoerce e) else Nothing
    where
    type' = unpack typeName e
 
--- smart constructor for Vals for use in new
-val' :: DocOpt Val Vertex -> (Vertex -> BaseVal Vertex -> Val Vertex)
-val' doc = \α -> \f -> Val α doc f
-
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated

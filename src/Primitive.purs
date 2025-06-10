@@ -16,7 +16,7 @@ import Lattice (class BoundedJoinSemilattice, bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), error, singleton, (×))
-import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpGraph, Val(..), val')
+import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpGraph, Val(..))
 
 -- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
 -- work with required higher-rank polymorphism.
@@ -157,7 +157,7 @@ unary id f =
 
    op' :: Partial => OpGraph
    op' (Val α doc v : Nil) = do
-      new (val' doc) (singleton α) $ f.o.pack v'
+      new (flip Val doc) (singleton α) $ f.o.pack v'
       where
       v' = f.fwd (f.i.unpack v)
 
@@ -170,7 +170,7 @@ binary id f =
 
    op' :: Partial => OpGraph
    op' (Val α _ v1 : Val β _ v2 : Nil) =
-      new (val' None) (singleton α # insert β) $ f.o.pack v'
+      new (flip Val None) (singleton α # insert β) $ f.o.pack v'
       where
       v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
 
@@ -184,7 +184,7 @@ binaryZero id f =
 
    op' :: Partial => OpGraph
    op' (Val α _ v1 : Val β _ v2 : Nil) =
-      new (val' None) αs $ f.o.pack v'
+      new (flip Val None) αs $ f.o.pack v'
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
       v' = f.fwd x y
