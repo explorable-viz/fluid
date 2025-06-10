@@ -51,8 +51,7 @@ draw _ { divId, suffix, view } redraw = do
    setSelStates view redraw =<<
       ( isEmpty maybeRootElement >>=
            if _ then do
-              rootElement <- createRootElement view div <#> D3.setAttrs [ "id" ↦ childId ]
-              rootElement
+              createRootElement view div <#> D3.setAttrs [ "id" ↦ childId ] # join
            else pure maybeRootElement
       )
 
