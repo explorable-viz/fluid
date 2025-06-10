@@ -8,7 +8,7 @@ import Prelude hiding (absurd)
 
 import App.Util (Selectable, 𝕊(..), colorShade, getPersistent, getTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
-import App.View.Util (class Drawable, class Drawable2, UIHelpers, Select, draw', selListener', uiHelpers)
+import App.View.Util (class Drawable, UIHelpers, Select, uiHelpers)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Int (floor, pow, toNumber)
@@ -88,13 +88,9 @@ barChartHelpers =
    withBarChartSegment :: Select -> Effect EventListener
    withBarChartSegment sel = eventListener $ sel <<< uncurry barChartSegment <<< selectionEventData'
 
-instance Drawable2 BarChart where
+instance Drawable BarChart where
    createRootElement = createRootElement2 barChartHelpers uiHelpers
    setSelStates = setSelStates2 barChartHelpers
-
-instance Drawable BarChart where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }

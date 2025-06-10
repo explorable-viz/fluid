@@ -3,7 +3,7 @@ module App.View.DocView where
 import Prelude
 
 import App.View.Paragraph (Paragraph)
-import App.View.Util (class Drawable, class Drawable2, Select, View, createRootElement, draw', nthChild, selListener', setSelStates, uiHelpers, unpack)
+import App.View.Util (class Drawable, Select, View, createRootElement, nthChild, setSelStates, unpack)
 import App.View.Util.D3 as D3
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -14,10 +14,6 @@ newtype DocView = DocView
    }
 
 instance Drawable DocView where
-   draw rSpec figVal _ redraw = do
-      draw' uiHelpers rSpec (selListener' figVal redraw)
-
-instance Drawable2 DocView where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 

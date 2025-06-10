@@ -2,15 +2,15 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, selClasses, selClassesFor, selectionEventData')
-import App.Util.Selector (ViewSelSetter, ViewSetter)
+import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, selClasses, selClassesFor)
+import App.Util.Selector (ViewSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
 import Bind (Bind, Var, (↦))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe)
 import Data.Set (Set)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Effect (Effect)
 import Graph (DVertex, Vertex, Query)
@@ -19,39 +19,31 @@ import Module.Web (File, Folder)
 import SExpr as S
 import Util (type (×), Endo, check)
 import Val (Env, Val)
-import Web.Event.Event (Event, EventType(..))
+import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener)
 
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
-newtype View = View (forall r. (forall a. Drawable a => Drawable2 a => a -> r) -> r)
+newtype View = View (forall r. (forall a. Drawable a => a -> r) -> r)
 
-pack :: forall a. Drawable a => Drawable2 a => a -> View
+pack :: forall a. Drawable a => a -> View
 pack x = View \k -> k x
 
-unpack :: forall r. View -> (forall a. Drawable a => Drawable2 a => a -> r) -> r
+unpack :: forall r. View -> (forall a. Drawable a => a -> r) -> r
 unpack (View vw) k = vw k
 
-selListener :: forall a. (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> ViewSelSetter a -> Event -> Effect Unit
-selListener figVal redraw selector =
-   selectionEventData' >>> uncurry selector >>> (figVal >>> redraw)
-
-selListener' :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit)
-selListener' figVal redraw = redraw <<< figVal
+selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit)
+selListener figVal redraw = redraw <<< figVal
 
 class Drawable a where
-   draw :: RendererSpec a -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
-
--- Merge into Drawable once JS->PS transition complete
-class Drawable2 a where
    createRootElement :: a -> D3.Selection -> Effect D3.Selection
    setSelStates :: a -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> D3.Selection -> Effect Unit
 
 type Select = (SetSel (Val (SelStates 𝔹)) -> Effect Unit)
 
-draw' :: forall a. Drawable2 a => Renderer a
-draw' _ { divId, suffix, view } redraw = do
+draw :: forall a. Drawable a => Renderer a
+draw _ { divId, suffix, view } redraw = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
@@ -65,8 +57,8 @@ draw' _ { divId, suffix, view } redraw = do
       )
 
 drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
-drawView rSpec@{ view: vw } figVal figView redraw =
-   unpack vw (\view -> draw (rSpec { view = view }) figVal figView redraw)
+drawView rSpec@{ view: vw } figVal _ redraw =
+   unpack vw (\view -> draw uiHelpers (rSpec { view = view }) (selListener figVal redraw))
 
 registerMouseListeners :: EventListener -> D3.Selection -> Effect Unit
 registerMouseListeners redraw element = do

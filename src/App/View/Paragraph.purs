@@ -3,7 +3,7 @@ module App.View.Paragraph where
 import Prelude
 
 import App.Util.Selector (SelSetter, constrArg, docElement, listElement)
-import App.View.Util (class Drawable, class Drawable2, View, Select, createRootElement, draw', selListener', setSelStates, uiHelpers, unpack)
+import App.View.Util (class Drawable, View, Select, createRootElement, setSelStates, unpack)
 import App.View.Util.D3 (create, ElementType(..))
 import App.View.Util.D3 as D3
 import Data.Array (mapWithIndex)
@@ -15,10 +15,6 @@ import Val (Val)
 data Paragraph = Paragraph Boolean (Array View)
 
 instance Drawable Paragraph where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener' figVal redraw)
-
-instance Drawable2 Paragraph where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 

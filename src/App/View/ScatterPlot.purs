@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (Selectable, isPrimary, isSecondary, selectionEventData')
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.Util (class Drawable, class Drawable2, UIHelpers, Select, draw', selListener', uiHelpers)
+import App.View.Util (class Drawable, UIHelpers, Select, uiHelpers)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((⟼))
@@ -53,10 +53,6 @@ scatterPlotHelpers =
    withScatterPlotPoint sel = sel <<< uncurry scatterPlotPoint <<< selectionEventData'
 
 instance Drawable ScatterPlot where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener' figVal redraw)
-
-instance Drawable2 ScatterPlot where
    createRootElement = createRootElement2 uiHelpers
    setSelStates = setSelStates2 scatterPlotHelpers uiHelpers
 

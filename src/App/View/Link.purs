@@ -4,7 +4,7 @@ import Prelude hiding (join)
 
 import App.Util (SelStates, Selectable, 𝕊, classes, selectionEventData')
 import App.Util.Selector (ViewSelSetter, SelSetter)
-import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
+import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import App.View.Util.Text (class Textual, textAttrs)
@@ -26,10 +26,6 @@ linkContents :: ∀ a. Link a -> String
 linkContents (Link _ (s × _)) = s
 
 instance Drawable (Link (SelStates 𝕊)) where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener' figVal redraw)
-
-instance Drawable2 (Link (SelStates 𝕊)) where
    createRootElement = createRootElement
    setSelStates = setSelState
 

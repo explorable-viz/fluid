@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, listElement)
-import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
+import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -183,13 +183,9 @@ createRootElement (TableView { colNames, filter, rows }) div = do
       | colName == rowKey = [ "filter-toggle", "toggle-button" ]
       | otherwise = []
 
-instance Drawable2 TableView where
+instance Drawable TableView where
    createRootElement = createRootElement
    setSelStates = setSelStates
-
-instance Drawable TableView where
-   draw rSpec figVal _ redraw = do
-      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 --      toggleListener <- filterToggleListener filterToggler
 --

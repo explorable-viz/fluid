@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
+import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation(..))
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
@@ -270,13 +270,9 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div = do
       rightMargin :: Int
       rightMargin = 4
 
-instance Drawable2 LineChart where
+instance Drawable LineChart where
    setSelStates = setSelStates
    createRootElement = createRootElement
-
-instance Drawable LineChart where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 -- ======================
 -- boilerplate

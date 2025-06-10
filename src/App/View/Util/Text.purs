@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (Attrs, Selectable, inert, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
-import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
+import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -17,10 +17,6 @@ class Textual a where
    getText :: a -> Selectable String
 
 newtype Text = Text (Selectable String)
-
-instance Drawable Text where
-   draw rSpec figVal _ redraw = do
-      draw' uiHelpers rSpec (selListener' figVal redraw)
 
 createRootElement :: Text -> D3.Selection -> Effect D3.Selection
 createRootElement (Text (text × _)) div = do
@@ -36,7 +32,7 @@ setSelStates (Text (text × _)) redraw rootElement = do
    textSelector :: ViewSelSetter Text
    textSelector _ = identity
 
-instance Drawable2 Text where
+instance Drawable Text where
    createRootElement = createRootElement
    setSelStates = setSelStates
 

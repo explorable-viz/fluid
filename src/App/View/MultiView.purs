@@ -3,7 +3,7 @@ module App.View.MultiView where
 import Prelude
 
 import App.Util.Selector (multiViewEntry)
-import App.View.Util (class Drawable, class Drawable2, Select, View, createRootElement, draw', nthChild, selListener', setSelStates, uiHelpers, unpack)
+import App.View.Util (class Drawable, Select, View, createRootElement, nthChild, setSelStates, unpack)
 import App.View.Util.D3 (create)
 import App.View.Util.D3 as D3
 import Data.Array (mapWithIndex)
@@ -16,10 +16,6 @@ import Util.Map (mapWithKey, toUnfoldable)
 data MultiView = MultiView (Dict View)
 
 instance Drawable MultiView where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec (selListener' figVal redraw)
-
-instance Drawable2 MultiView where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 
