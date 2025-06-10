@@ -13,7 +13,7 @@ import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil,
 import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
-import Util (Endo, absurd, assert, definitely, error, (×))
+import Util (type (×), Endo, absurd, assert, definitely, definitely', error, (×))
 import Util.Map (get, insert, update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
@@ -131,20 +131,20 @@ listCell n δα = unsafePartial $ case _ of
       if n == 0 then first (\α' -> Val α' doc (Constr c (v : u : Nil))) (persist δα α)
       else first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listCell (n - 1) δα u)
 
-docSel :: Int -> SelSetter Val Val
-docSel i δv (Val α doc v) =
-   first (\doc' -> Val α doc' v) (docδv doc)
+docElement :: Int -> SelSetter Val Val
+docElement i δv (Val α doc v) =
+   first (\doc' -> Val α doc' v) (definitely' $ docδv doc)
    where
+   δv' :: SetSel (DocCommentElem Val (SelStates 𝔹))
    δv' (Unquote val) = first Unquote (δv val)
-   δv' tok = tok × Persistent
+   δv' _ = error absurd
 
-   docδv d = unsafePartial $ fromJust $ case d of
-      None -> Just (None × Persistent)
-      (Doc doc') -> do
-         elem <- index doc' i
-         let elem' × selType = δv' elem
-         doc'' <- updateAt i elem' doc'
-         pure (Doc doc'' × selType)
+   docδv :: (DocOpt Val (SelStates 𝔹)) -> Maybe (DocOpt Val (SelStates 𝔹) × SelectionType)
+   docδv (Doc doc') = do
+      elem × selType <- δv' <$> index doc' i
+      doc'' <- updateAt i elem doc'
+      pure (Doc doc'' × selType)
+   docδv None = Nothing
 
 composeSetSel :: forall a. SetSel a -> SetSel a -> SetSel a
 composeSetSel f g = \x -> let x' × _ = f x in g x'

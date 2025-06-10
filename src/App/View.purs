@@ -21,7 +21,7 @@ import Data.Either (Either(..))
 import Data.List (List(..), foldl, (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cScatterPlot, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Link (Link(..))
@@ -51,6 +51,9 @@ view title (Val _ _ (Constr c (u : Nil))) _
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
+   | c == cParagraph = pack (P.Paragraph false (vws <*> (const Nothing <$> vws)))
+        where
+        vws = view title <$> ((from u))
 view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
    | c == cLink = pack (from v :: Link (SelStates 𝕊))
 view title u@(Val _ _ (Constr c _)) _
@@ -76,7 +79,7 @@ viewPara (Doc doc) = viewPara' <<< formatPara $ fromFoldable doc
       go acc (Unquote val) = snoc acc $ (Left val)
 
    viewPara' :: Array (Either (Val (SelStates 𝕊)) (T.Text)) -> P.Paragraph
-   viewPara' elems = P.Paragraph $ foldl go [] elems
+   viewPara' elems = P.Paragraph true $ foldl go [] elems
       where
       go :: Array View -> Either (Val (SelStates 𝕊)) (T.Text) -> Array View
       go acc (Right (T.Text str)) = snoc acc $ pack (T.Text str)

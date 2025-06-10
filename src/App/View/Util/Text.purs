@@ -5,15 +5,13 @@ import Prelude
 import App.Util (Attrs, Selectable, inert, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
 import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMouseListeners, selListener', uiHelpers)
-import App.View.Util.D3 (create, datum, setStyles, setText)
+import App.View.Util.D3 (create, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (foldl)
-import Data.Array.Partial (head, tail)
-import Data.Foldable (for_)
+import Data.Array (intercalate)
+import Data.FoldableWithIndex (forWithIndex_)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Partial.Unsafe (unsafePartial)
 import Util ((!), (×))
 import Web.Event.EventTarget (eventListener)
 
@@ -29,16 +27,14 @@ instance Drawable Text where
 createRootElement :: Text -> D3.Selection -> Effect D3.Selection
 createRootElement (Text (elems × _)) div = do
    rootElement <- div # create D3.Text [ "class" ↦ "para-text" ]
-   rootElement # setText (formatText elems)
+   rootElement # setText (intercalate " " elems)
 
 setSelStates :: Text -> Select -> D3.Selection -> Effect Unit
 setSelStates (Text (elems × _)) redraw rootElement = do
    elems' <- rootElement # D3.selectAll ".para-text"
    listener <- eventListener (redraw <<< uncurry textSelector <<< selectionEventData')
-   for_ elems' \elem -> do
-      { i } :: TextElem <- datum elem
+   forWithIndex_ elems' \i elem -> do
       elem # setStyles (textAttrs (elems ! i)) >>= registerMouseListeners listener
-
    where
    textSelector :: ViewSelSetter Text
    textSelector _ = identity
@@ -78,13 +74,3 @@ textAttrs x =
       | otherwise = "black"
 
 type TextElem = { i :: Int }
-
-formatText :: Array String -> String
-formatText text =
-   case text of
-      [] -> ""
-      [ s ] -> s
-      _ -> unsafePartial $ foldl (\acc s -> acc <> " " <> s) (head text) (tail text)
-
--- Intermediate matrix for element (${m'}, ${n'})
--- Text [ "Intermediate", "matrix", "for", "element", "("], Text [ "3" ], Text [","] 
