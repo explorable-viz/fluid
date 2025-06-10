@@ -2,7 +2,7 @@ module Website.Test.Misc.RenewablesLinked where
 
 import Prelude
 
-import App.View.Util (nthChild)
+import App.View.Util.D3 (nthChild)
 import Control.Promise (Promise, fromAff)
 import Data.Foldable (sequence_)
 import Effect (Effect)

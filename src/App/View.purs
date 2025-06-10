@@ -32,9 +32,7 @@ import Val (BaseVal(..), DictRep(..), Val(..))
 
 view' :: Partial => String -> Val (SelStates 𝕊) -> Maybe View -> View
 view' title v@(Val _ doc _) _ =
-   if doc == None
-   then pack $ DocView { doc: Nothing, view: view title v Nothing }
-   else pack $ DocView { doc: Just $ viewPara doc, view: view title v Nothing }
+   pack $ DocView { doc: viewPara doc, view: view title v Nothing }
 
 -- Convert annotated vue to appropriate view, discarding top-level annotations for now.
 -- Ignore view state for now..
@@ -60,8 +58,9 @@ view title u@(Val _ _ (Constr c _)) _
 view title (Val _ _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
 
-viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> P.Paragraph
-viewPara (Doc doc) = P.Paragraph true $ fromFoldable $ map pack' <<< formatPara $ doc
+viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe P.Paragraph
+viewPara None = Nothing
+viewPara (Doc doc) = Just $ P.Paragraph true $ fromFoldable $ map pack' <<< formatPara $ doc
    where
    formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List (Val (SelStates 𝕊) + Selectable String)
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
@@ -73,7 +72,7 @@ viewPara (Doc doc) = P.Paragraph true $ fromFoldable $ map pack' <<< formatPara 
    pack' (Right str) = pack (T.Text str)
    pack' (Left v) = case v of
       Val α _ (Int n) -> pack (T.Text (show n × α))
-      _ -> view "" v Nothing   
+      _ -> view "" v Nothing
 
 -- ======================
 -- boilerplate
