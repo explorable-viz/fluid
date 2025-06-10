@@ -20,8 +20,8 @@ instance Drawable DocView where
 createRootElement' :: DocView -> D3.Selection -> Effect D3.Selection
 createRootElement' (DocView { doc: Just doc, view }) div = do
    rootElement <- div # D3.create D3.G []
-   _ <- unpack view \v -> createRootElement v rootElement
-   _ <- createRootElement doc rootElement
+   void $ unpack view \v -> createRootElement v rootElement
+   void $ createRootElement doc rootElement
    pure rootElement
 createRootElement' (DocView { doc: Nothing, view }) div = do
    unpack view \v -> createRootElement v div
@@ -29,9 +29,8 @@ createRootElement' (DocView { doc: Nothing, view }) div = do
 setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (DocView { doc: Just doc, view }) select rootElement = do
    viewElem <- rootElement # D3.select (nthChild 1)
-   _ <- unpack view \v -> setSelStates v select viewElem
+   void $ unpack view \v -> setSelStates v select viewElem
    docElem <- rootElement # D3.select (nthChild 2)
-   _ <- setSelStates doc select docElem
-   pure unit
+   void $ setSelStates doc select docElem
 setSelStates' (DocView { doc: Nothing, view }) select rootElement = do
    unpack view \v -> setSelStates v select rootElement
