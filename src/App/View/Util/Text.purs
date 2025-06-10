@@ -8,33 +8,30 @@ import App.View.Util (class Drawable, class Drawable2, Select, draw', registerMo
 import App.View.Util.D3 (create, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (intercalate)
-import Data.FoldableWithIndex (forWithIndex_)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Util ((!), (×))
+import Util ((×))
 import Web.Event.EventTarget (eventListener)
 
 class Textual a where
    getText :: a -> Selectable String
 
-newtype Text = Text (Selectable (Array String))
+newtype Text = Text (Selectable String)
 
 instance Drawable Text where
    draw rSpec figVal _ redraw = do
       draw' uiHelpers rSpec (selListener' figVal redraw)
 
 createRootElement :: Text -> D3.Selection -> Effect D3.Selection
-createRootElement (Text (elems × _)) div = do
+createRootElement (Text (text × _)) div = do
    rootElement <- div # create D3.Text [ "class" ↦ "para-text" ]
-   rootElement # setText (intercalate " " elems)
+   rootElement # setText text
 
 setSelStates :: Text -> Select -> D3.Selection -> Effect Unit
-setSelStates (Text (elems × _)) redraw rootElement = do
-   elems' <- rootElement # D3.selectAll ".para-text"
+setSelStates (Text (text × _)) redraw rootElement = do
+   elem <- rootElement # D3.select ".para-text"
    listener <- eventListener (redraw <<< uncurry textSelector <<< selectionEventData')
-   forWithIndex_ elems' \i elem -> do
-      elem # setStyles (textAttrs (elems ! i)) >>= registerMouseListeners listener
+   elem # setStyles (textAttrs text) >>= registerMouseListeners listener
    where
    textSelector :: ViewSelSetter Text
    textSelector _ = identity

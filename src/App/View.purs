@@ -16,9 +16,9 @@ import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import App.View.Util.Text as T
 import Data.Array ((:)) as A
-import Data.Array (fromFoldable, snoc, unsnoc)
+import Data.Array (fromFoldable)
 import Data.Either (Either(..))
-import Data.List (List(..), foldl, (:))
+import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
 import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
@@ -66,26 +66,19 @@ view title (Val _ _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
 
 viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> P.Paragraph
-viewPara (Doc doc) = viewPara' <<< formatPara $ fromFoldable doc
+viewPara (Doc doc) = P.Paragraph true $ fromFoldable $ map pack' <<< formatPara $ doc
    where
-   formatPara :: Array (DocCommentElem Val (SelStates 𝕊)) -> Array (Either (Val (SelStates 𝕊)) (T.Text))
-   formatPara elems = foldl go [] elems
-      where
-      go :: Array (Either (Val (SelStates 𝕊)) (T.Text)) -> DocCommentElem Val (SelStates 𝕊) -> Array (Either (Val (SelStates 𝕊)) (T.Text))
-      go acc (Token str) =
-         case unsnoc acc of
-            Just { init, last: Right (T.Text (str' × α)) } -> snoc init $ Right (T.Text $ snoc str' str × α)
-            _ -> snoc acc (Right (T.Text $ [ str ] × inert))
-      go acc (Unquote val) = snoc acc $ (Left val)
+   formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List (Either (Val (SelStates 𝕊)) (Selectable String))
+   formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
+   formatPara (Token str : xs) = Right (str × inert) : formatPara xs
+   formatPara (Unquote val : xs) = Left val : formatPara xs
+   formatPara Nil = Nil
 
-   viewPara' :: Array (Either (Val (SelStates 𝕊)) (T.Text)) -> P.Paragraph
-   viewPara' elems = P.Paragraph true $ foldl go [] elems
-      where
-      go :: Array View -> Either (Val (SelStates 𝕊)) (T.Text) -> Array View
-      go acc (Right (T.Text str)) = snoc acc $ pack (T.Text str)
-      go acc (Left val) = case val of
-         Val α _ (Int i) -> snoc acc $ pack (T.Text ([ show i ] × α))
-         _ -> snoc acc $ view "" val Nothing
+   pack' :: Either (Val (SelStates 𝕊)) (Selectable String) -> View
+   pack' (Right str) = pack (T.Text str)
+   pack' (Left val) = case val of
+      Val α _ (Int i) -> pack (T.Text (show i × α))
+      _ -> view "" val Nothing
 
 -- ======================
 -- boilerplate
