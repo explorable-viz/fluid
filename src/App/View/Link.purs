@@ -31,8 +31,8 @@ instance Drawable (Link (SelStates 𝕊)) where
 
 selLink :: ViewSelSetter (Link (SelStates 𝕊))
 selLink _ δv = unsafePartial $ case _ of
-      (Val α doc (Constr c (v1 : v2 : Nil))) | c == cLink ->
-         first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
+   (Val α doc (Constr c (v1 : v2 : Nil))) | c == cLink ->
+      first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
 
 createRootElement :: Link (SelStates 𝕊) -> D3.Selection -> Effect D3.Selection
 createRootElement link parent = do
