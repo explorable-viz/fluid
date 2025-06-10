@@ -34,7 +34,7 @@ function setSelStates2_ (
 function createRootElement2_ (
    { val },
    { caption, points, labels },
-   div
+   parent
 ) {
    return () => {
       var max_width = 280
@@ -47,7 +47,7 @@ function createRootElement2_ (
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
 
-      const rootElement = div
+      const rootElement = parent
          .append('svg')
             .classed('center', true)
             .attr('width', max_width + margin.left + margin.right)

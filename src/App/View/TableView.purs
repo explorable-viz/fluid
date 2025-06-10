@@ -151,8 +151,8 @@ setSelStates (TableView { title, rows }) redraw rootElement = do
    tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
 
 createRootElement :: TableView -> D3.Selection -> Effect D3.Selection
-createRootElement (TableView { colNames, filter, rows }) div = do
-   rootElement <- div # create Table [ classes [ "table-view" ] ]
+createRootElement (TableView { colNames, filter, rows }) parent = do
+   rootElement <- parent # create Table [ classes [ "table-view" ] ]
    void $ rootElement # create Caption
       [ classes [ "title-text", "table-caption" ]
       , "dominant-baseline" ↦ "middle"

@@ -19,8 +19,8 @@ instance Drawable Paragraph where
    setSelStates = setSelStates'
 
 createRootElement' :: Paragraph -> D3.Selection -> Effect D3.Selection
-createRootElement' (Paragraph _ views) div = do
-   rootElement <- div # create G []
+createRootElement' (Paragraph _ views) parent = do
+   rootElement <- parent # create G []
    sequence_ $ flip map views \view -> do
       unpack view \v -> createRootElement v rootElement
    pure rootElement

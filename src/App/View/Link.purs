@@ -35,10 +35,9 @@ selLink _ δv = unsafePartial $ case _ of
          first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
 
 createRootElement :: Link (SelStates 𝕊) -> D3.Selection -> Effect D3.Selection
-createRootElement link div = do
-   rootElement <- div # create D3.Text [ classes [ "paragraph" ] ]
-   elem <- rootElement # create D3.Text [ classes [ "link" ] ]
-   elem # setText (linkContents link) >>= setDatum link
+createRootElement link parent = do
+   rootElement <- parent # create D3.Text [ classes [ "link" ] ]
+   rootElement # setText (linkContents link) >>= setDatum link
 
 -- Textual styling can be factored out into shared functionality
 setSelState :: Link (SelStates 𝕊) -> Select -> D3.Selection -> Effect Unit

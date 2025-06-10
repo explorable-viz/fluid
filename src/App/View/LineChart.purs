@@ -101,8 +101,8 @@ setSelStates (LineChart { plots }) redraw rootElement = do
       linePoint j >>> listElement i >>> dictVal f_plots >>> lineChart
 
 createRootElement :: LineChart -> D3.Selection -> Effect D3.Selection
-createRootElement (LineChart { size, tickLabels, caption, plots }) div = do
-   svg <- div # create SVG [ "width" ⟼ width, "height" ⟼ height ]
+createRootElement (LineChart { size, tickLabels, caption, plots }) parent = do
+   svg <- parent # create SVG [ "width" ⟼ width, "height" ⟼ height ]
    { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
 
    let
@@ -142,8 +142,8 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div = do
    Dimensions { height, width } = size <#> fst
 
    axisWidth :: D3.Selection -> Effect (Coord Int)
-   axisWidth parent = do
-      { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent
+   axisWidth parent' = do
+      { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent'
       x <- dimensions xAxis <#> unwrap >>> _.height
       y <- dimensions yAxis <#> unwrap >>> _.width
       remove xAxis
@@ -151,15 +151,15 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div = do
       pure { x, y }
 
    createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
-   createAxes range parent = do
+   createAxes range parent' = do
       let Point { x: xLabels, y: yLabels } = tickLabels
       x <- xAxis (to range) (nub points.x) =<<
-         (parent # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
+         (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
       when (fst xLabels == Rotated) do
          labels <- x # selectAll "text"
          for_ labels $
             setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
-      y <- yAxis (to range) 3.0 =<< (parent # create G [ classes [ "y-axis" ] ])
+      y <- yAxis (to range) 3.0 =<< (parent' # create G [ classes [ "y-axis" ] ])
       when (fst yLabels == Rotated) do
          labels <- y # selectAll "text"
          for_ labels $
@@ -167,10 +167,10 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div = do
       pure { x, y }
 
    createLines :: Dimensions Int -> D3.Selection -> Effect Unit
-   createLines range parent =
+   createLines range parent' =
       for_ (concat $ mapWithIndex segments plots)
          \({ start, end } × segmentCoords) ->
-            parent #
+            parent' #
                ( create Path [ classes [ "linechart-segment" ], "d" ↦ line (to range) [ start, end ] ]
                     >=> setDatum segmentCoords
                )
@@ -187,9 +187,9 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div = do
       coord (Point { x, y }) = { x: fst x, y: fst y }
 
    createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
-   createPoints range parent =
+   createPoints range parent' =
       for_ entries \(Point { x, y } × { i, j }) ->
-         parent #
+         parent' #
             ( create Circle
                  [ classes [ "linechart-point" ]
                  , "stroke-width" ⟼ 1
@@ -204,9 +204,9 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div = do
          flip mapWithIndex ps \j p -> p × { i, j }
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
-   createLegend (Dimensions interior) parent = do
+   createLegend (Dimensions interior) parent' = do
       let Dimensions { height, width } = legend_dims
-      legend' <- parent # create G
+      legend' <- parent' # create G
          [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]

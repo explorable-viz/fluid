@@ -11,7 +11,7 @@ import Data.Foldable (sequence_)
 import Dict (Dict)
 import Effect (Effect)
 import Util (type (×), (×))
-import Util.Map (mapWithKey, toUnfoldable)
+import Util.Map (toUnfoldable)
 
 data MultiView = MultiView (Dict View)
 
@@ -20,9 +20,9 @@ instance Drawable MultiView where
    setSelStates = setSelStates'
 
 createRootElement' :: MultiView -> D3.Selection -> Effect D3.Selection
-createRootElement' (MultiView views) div = do
-   rootElement <- div # create D3.G []
-   sequence_ $ flip mapWithKey views \_x view -> do
+createRootElement' (MultiView views) parent = do
+   rootElement <- parent # create D3.G []
+   sequence_ $ flip map views \view -> do
       unpack view \v -> createRootElement v rootElement
    pure rootElement
 

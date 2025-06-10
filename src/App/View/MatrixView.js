@@ -52,7 +52,7 @@ function setSelStates2_ (
 function createRootElement2_ (
    { val },
    { title, matrix },
-   div
+   parent
 ) {
    return () => {
       const strokeWidth = 0.5
@@ -64,7 +64,7 @@ function createRootElement2_ (
       const hMargin = w / 2
       const vMargin = h / 2
 
-      const rootElement = div
+      const rootElement = parent
          .append('svg')
 
       rootElement

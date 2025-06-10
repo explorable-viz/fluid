@@ -18,13 +18,13 @@ instance Drawable DocView where
    setSelStates = setSelStates'
 
 createRootElement' :: DocView -> D3.Selection -> Effect D3.Selection
-createRootElement' (DocView { doc: Just doc, view }) div = do
-   rootElement <- div # D3.create D3.G []
+createRootElement' (DocView { doc: Just doc, view }) parent = do
+   rootElement <- parent # D3.create D3.G []
    void $ unpack view \v -> createRootElement v rootElement
    void $ createRootElement doc rootElement
    pure rootElement
-createRootElement' (DocView { doc: Nothing, view }) div = do
-   unpack view \v -> createRootElement v div
+createRootElement' (DocView { doc: Nothing, view }) parent = do
+   unpack view \v -> createRootElement v parent
 
 setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (DocView { doc: Just doc, view }) select rootElement = do

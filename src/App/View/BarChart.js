@@ -61,8 +61,7 @@ function createRootElement2_ (
       caption,
       stackedBars
    },
-   div,
-   childId
+   parent
 ) {
    return () => {
       const { val } = uiHelpers
@@ -70,7 +69,7 @@ function createRootElement2_ (
       const margin = {top: 3, right: 75, bottom: 20, left: 40},
             width = 275 - margin.left - margin.right,
             height = 150 - margin.top - margin.bottom
-      const rootElement = div
+      const rootElement = parent
          .append('svg')
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom + margin.bottom) // hackery from hell
@@ -185,5 +184,5 @@ function createRootElement2_ (
    }
 }
 
-export var createRootElement2 = x1 => x2 => x3 => x5 => createRootElement2_(x1, x2, x3, x5)
+export var createRootElement2 = x1 => x2 => x3 => x4 => createRootElement2_(x1, x2, x3, x4)
 export var setSelStates2 = x1 => x2 => x3 => x4 => setSelStates2_(x1, x2, x3, x4)

@@ -19,8 +19,8 @@ class Textual a where
 newtype Text = Text (Selectable String)
 
 createRootElement :: Text -> D3.Selection -> Effect D3.Selection
-createRootElement (Text (text × _)) div = do
-   rootElement <- div # create D3.Text [ "class" ↦ "para-text" ]
+createRootElement (Text (text × _)) parent = do
+   rootElement <- parent # create D3.Text [ "class" ↦ "para-text" ]
    rootElement # setText text
 
 setSelStates :: Text -> Select -> D3.Selection -> Effect Unit
