@@ -54,6 +54,50 @@ function setSelStates2_ (
    }
 }
 
+function barAttrs (bar, strokeWidth, x, y, height) {
+   bar
+      .attr('class', 'bar')
+      .attr('x', d => x(d.x))
+      .attr('y', d => y(d.y + d.height))
+      .attr('width', x.bandwidth())
+      .attr('height', d => height - y(d.height) - strokeWidth)
+      .attr('stroke-width', strokeWidth)
+}
+
+function barData(val, x) {
+   return ([i, { x: xv, bars }]) =>
+      bars.slice(1).reduce((acc, bar) => {
+         const prev = acc[acc.length - 1]
+         const y = prev.y + prev.height
+         acc.push({ i, j: prev.j + 1, x: val(xv), y, height: val(bar.z) })
+         return acc
+      },
+      [
+         { i
+         , j: 0
+         , x: val(xv)
+         , y: 0
+         , height: val(bars[0].z) 
+         }
+      ]
+   )
+}
+
+function createStacks (stackedBars, rootElement, strokeWidth, val, x, y, height) {
+   const stacks = rootElement.selectAll('.stack')
+      .data([...stackedBars.entries()])
+      .enter()
+      .append('g')
+   
+   stacks.selectAll('.bar')
+      .data(barData(val, x))
+      .enter()
+      .append('rect')
+      .call(bar => barAttrs(bar, strokeWidth, x, y, height))
+
+   return stacks
+}
+
 function createRootElement2_ (
    barChartHelpers,
    uiHelpers,
@@ -107,35 +151,17 @@ function createRootElement2_ (
       rootElement.append('g')
          .call(yAxis)
 
-      // bars
-      const stacks = rootElement.selectAll('.stack')
-         .data([...stackedBars.entries()])
-         .enter()
-         .append('g')
-
+         
       const strokeWidth = 1
+      // bars
+      const stacks = createStacks(stackedBars, rootElement, strokeWidth, val, x, y, height) 
       // TODO: enforce that all stacked bars have same set of segments
       const j_max = Math.max(...stackedBars.map(bar => bar.bars.length))
 
       for (let j = 0; j < j_max; ++j) {
          addHatchPattern(rootElement, j, color(j))
       }
-
-      stacks.selectAll('.bar')
-         .data(([i, {x, bars}]) => bars.slice(1).reduce((acc, bar) => {
-            const prev = acc[acc.length - 1]
-            const y = prev.y + prev.height
-            acc.push({i, j: prev.j + 1, x: val(x), y, height: val(bar.z)})
-            return acc
-         }, [{i, j: 0, x: val(x), y: 0, height: val(bars[0].z)}]))
-         .enter()
-         .append('rect')
-            .attr('class', 'bar')
-            .attr('x', bar => { return x(bar.x) })
-            .attr('y', bar => { return y(bar.y + bar.height) })
-            .attr('width', x.bandwidth())
-            .attr('height', bar => { return height - y(bar.height) - strokeWidth }) // stop bars overplotting
-            .attr('stroke-width', _ => strokeWidth)
+         
 
       const legendLineHeight = 15,
             legendStart = width + margin.left / 2
