@@ -36,11 +36,11 @@ derive instance Functor e => Functor (DocOpt e)
 derive instance Foldable e => Foldable (DocOpt e)
 derive instance Traversable e => Traversable (DocOpt e)
 
-instance (Show (e a)) => Show (DocOpt e a) where
+instance Show (e a) => Show (DocOpt e a) where
    show None = "None"
    show (Doc doc) = "Doc " <> show doc
 
-instance (Show (e a)) => Show (DocCommentElem e a) where
+instance Show (e a) => Show (DocCommentElem e a) where
    show (Token s) = "Token " <> show s
    show (Unquote e) = "Unquote " <> show e
 
