@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel)
 import Bind (Var)
 import Data.List (List(..), index, updateAt, (!!), (:))
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
@@ -135,10 +135,9 @@ docElement :: Int -> SelSetter Val Val
 docElement _ _ (Val _ None _) = error absurd
 docElement i δv (Val α (Doc doc) v) =
    first (\doc' -> Val α doc' v) $
-      definitely' (
-         δv' <$> index doc i >>= \(elem × selType) 
-            -> (\doc'' -> (Doc doc'') × selType) <$> updateAt i elem doc
-      )
+      definitely'
+         ( δv' <$> index doc i >>= \(elem × selType) -> (\doc'' -> (Doc doc'') × selType) <$> updateAt i elem doc
+         )
    where
    δv' (Unquote val) = first Unquote (δv val)
    δv' _ = error absurd
