@@ -197,15 +197,6 @@ function createRootElement2_ (
          .attr('x', legendLineHeight / 2 - legendSquareSize / 2)
          .attr('y', legendLineHeight / 2 - legendSquareSize)
 
-      rootElement.append('text')
-         .text(val(caption))
-         .style('user-select', 'none') // avoid mysterious spurious text selection
-         .attr('x', width / 2)
-         .attr('y', height + 35)
-         .attr('class', 'title-text')
-         .attr('dominant-baseline', 'bottom')
-         .attr('text-anchor', 'middle')
-
       return rootElement
    }
 }

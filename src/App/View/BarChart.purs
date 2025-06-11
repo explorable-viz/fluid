@@ -6,14 +6,15 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (Selectable, 𝕊(..), colorShade, getPersistent, getTransient, selectionEventData')
+import App.Util (Selectable, 𝕊(..), classes, colorShade, getPersistent, getTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.Util (class Drawable, UIHelpers, Select, uiHelpers)
+import App.View.Util.D3 (ElementType(..), create, setText)
 import App.View.Util.D3 as D3
-import Bind ((↦))
+import Bind ((↦), (⟼))
 import Data.Int (floor, pow, toNumber)
 import Data.Number (log)
-import Data.Tuple (snd, uncurry)
+import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
 import Util ((!))
@@ -89,7 +90,21 @@ barChartHelpers =
    withBarChartSegment sel = eventListener $ sel <<< uncurry barChartSegment <<< selectionEventData'
 
 instance Drawable BarChart where
-   createRootElement = createRootElement2 barChartHelpers uiHelpers
+   createRootElement barchart@(BarChart { caption }) parent = do
+      rootElement <- createRootElement2 barChartHelpers uiHelpers barchart parent
+      rootElement
+         # create Text
+              [ "x" ⟼ width / 2
+              , "y" ⟼ height + 35
+              , classes [ caption_class ]
+              , "dominant-baseline" ↦ "central"
+              , "text-anchor" ↦ "middle"
+              ]
+         >>= setText (fst caption)
+      where
+      caption_class = "title-text"
+      width = 160
+      height = 127
    setSelStates = setSelStates2 barChartHelpers
 
 -- see data binding in .js
