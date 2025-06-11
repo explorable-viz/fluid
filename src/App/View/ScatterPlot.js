@@ -4,7 +4,7 @@ import * as d3 from "d3"
 
 
 function setSelStates2_ (
-   { point_attrs },
+   { point_attrs, eventListener, withScatterPlotPoint },
    {
       selState,
       selClasses,
@@ -12,10 +12,11 @@ function setSelStates2_ (
       join
    },
    view,
-   listener,
+   select,
    rootElement
 ) {
    return () => {
+      var newListener = eventListener(withScatterPlotPoint(select))()
       const { points } = view
       rootElement.selectAll('.scatterplot-point').each(function (point) {
          const sel = join(selState(points[point.i].x))(selState(points[point.i].y))
@@ -23,9 +24,9 @@ function setSelStates2_ (
             .classed(selClasses, false)
             .classed(selClassesFor(sel), true)
             .attrs(point_attrs(view)(point))
-            .on('mousedown', e => { listener(e) })
-            .on('mouseenter', e => { listener(e) })
-            .on('mouseleave', e => { listener(e) })
+            .on('mousedown', e => { newListener(e) })
+            .on('mouseenter', e => { newListener(e) })
+            .on('mouseleave', e => { newListener(e) })
       })
    }
 }
@@ -33,8 +34,7 @@ function setSelStates2_ (
 function createRootElement2_ (
    { val },
    { caption, points, labels },
-   div,
-   childId
+   parent
 ) {
    return () => {
       var max_width = 280
@@ -47,12 +47,11 @@ function createRootElement2_ (
       const width = max_width - margin.left - margin.right,
             height = max_height - margin.top - margin.bottom
 
-      const rootElement = div
+      const rootElement = parent
          .append('svg')
             .classed('center', true)
             .attr('width', max_width + margin.left + margin.right)
             .attr('height', max_height + margin.top)
-         .attr('id', childId)
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
@@ -107,5 +106,5 @@ function createRootElement2_ (
    }
 }
 
-export var createRootElement2 = x1 => x2 => x3 => x4 => createRootElement2_(x1, x2, x3, x4)
+export var createRootElement2 = x1 => x2 => x3 => createRootElement2_(x1, x2, x3)
 export var setSelStates2 = x1 => x2 => x3 => x4 => x5 => setSelStates2_(x1, x2, x3, x4, x5)

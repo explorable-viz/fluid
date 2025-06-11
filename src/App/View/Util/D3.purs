@@ -1,8 +1,8 @@
 module App.View.Util.D3
    ( Coord
-   , Selection
-   , Margin
    , ElementType(..)
+   , Margin
+   , Selection
    , attrs
    , classed
    , colorScale
@@ -11,6 +11,7 @@ module App.View.Util.D3
    , dimensions
    , isEmpty
    , line
+   , nthChild
    , on
    , remove
    , rootSelect
@@ -122,6 +123,9 @@ foreign import classed :: String -> Boolean -> Selection -> Effect Selection
 foreign import setDatum :: forall a. a -> Selection -> Effect Selection
 foreign import datum :: forall a. Selection -> Effect a
 foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
+
+nthChild :: Int -> String
+nthChild i = ":nth-child(" <> show i <> ")"
 
 instance Show ElementType
    where

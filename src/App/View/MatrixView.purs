@@ -2,28 +2,31 @@ module App.View.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (SelStates, Selectable, 𝕊, isTransient)
+import App.Util (SelStates, Selectable, 𝕊, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, matrixElement)
-import App.View.Util (class Drawable, class Drawable2, UIHelpers, draw', selListener, uiHelpers)
+import App.View.Util (class Drawable, UIHelpers, Select, uiHelpers)
 import App.View.Util.D3 as D3
-import Data.Tuple (snd)
+import Data.Tuple (snd, uncurry)
 import Effect (Effect)
 import Primitive (int, unpack)
 import Util ((!), (×))
 import Val (Array2, MatrixDim(..), MatrixRep(..))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (EventListener, eventListener)
+import Web.Event.Internal.Types (Event)
 
 --  (Rendered) matrices are required to have element type Int for now.
 type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import setSelStates2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> EventListener -> D3.Selection -> Effect Unit
-foreign import createRootElement2 :: UIHelpers -> MatrixView -> D3.Selection -> String -> Effect D3.Selection
+foreign import setSelStates2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> Select -> D3.Selection -> Effect Unit
+foreign import createRootElement2 :: UIHelpers -> MatrixView -> D3.Selection -> Effect D3.Selection
 
 type MatrixViewHelpers =
    { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
    , vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
+   , eventListener :: (Event -> Effect Unit) -> Effect EventListener
+   , withElement :: Select -> (Event -> Effect Unit)
    }
 
 data ShadowDirection = North | South | East | West | None
@@ -32,6 +35,8 @@ matrixViewHelpers :: MatrixViewHelpers
 matrixViewHelpers =
    { hBorderStyles
    , vBorderStyles
+   , eventListener
+   , withElement
    }
    where
    hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
@@ -66,14 +71,12 @@ matrixViewHelpers =
    borderStyles West = "filter: drop-shadow(-1px 0px 1px blue);"
    borderStyles None = "visibility: hidden;"
 
-instance Drawable MatrixView where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw element
-      where
-      element :: ViewSelSetter MatrixCellCoordinate
-      element { i, j } = matrixElement i j
+   element :: ViewSelSetter MatrixCellCoordinate
+   element { i, j } = matrixElement i j
 
-instance Drawable2 MatrixView where
+   withElement sel = sel <<< uncurry element <<< selectionEventData'
+
+instance Drawable MatrixView where
    createRootElement = createRootElement2 uiHelpers
    setSelStates = setSelStates2 matrixViewHelpers uiHelpers
 

@@ -37,18 +37,19 @@ function addHatchPattern (rootElement, j, col_j) {
 const color = d3.scaleOrdinal(d3.schemeAccent)
 
 function setSelStates2_ (
-   { bar_attrs },
+   { bar_attrs, withBarChartSegment },
    view,
-   listener,
+   select,
    rootElement
 ) {
+   var newListener = withBarChartSegment(select)()
    return () => {
       rootElement.selectAll('.bar').each(function (bar) {
          d3.select(this) // won't work inside arrow function :/
             .attrs(bar_attrs(color)(view)(bar))
-            .on('mousedown', e => { listener(e) })
-            .on('mouseenter', e => { listener(e) })
-            .on('mouseleave', e => { listener(e) })
+            .on('mousedown', e => { newListener(e) } )
+            .on('mouseenter', e => { newListener(e) })
+            .on('mouseleave', e => { newListener(e) })
       })
    }
 }
@@ -60,8 +61,7 @@ function createRootElement2_ (
       caption,
       stackedBars
    },
-   div,
-   childId
+   parent
 ) {
    return () => {
       const { val } = uiHelpers
@@ -69,11 +69,10 @@ function createRootElement2_ (
       const margin = {top: 3, right: 75, bottom: 20, left: 40},
             width = 275 - margin.left - margin.right,
             height = 150 - margin.top - margin.bottom
-      const rootElement = div
+      const rootElement = parent
          .append('svg')
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom + margin.bottom) // hackery from hell
-            .attr('id', childId)
             .append('g')
                .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
@@ -185,5 +184,5 @@ function createRootElement2_ (
    }
 }
 
-export var createRootElement2 = x1 => x2 => x3 => x4 => x5 => createRootElement2_(x1, x2, x3, x4, x5)
+export var createRootElement2 = x1 => x2 => x3 => x4 => createRootElement2_(x1, x2, x3, x4)
 export var setSelStates2 = x1 => x2 => x3 => x4 => setSelStates2_(x1, x2, x3, x4)

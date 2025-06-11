@@ -4,13 +4,11 @@ import Prelude hiding (absurd, join)
 
 import Bind (Bind, Var, (↦))
 import Control.Apply (lift2)
-import Data.Array ((:)) as A
 import Data.Array (concat)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Generic.Rep (class Generic)
 import Data.Int (fromStringAs, hexadecimal, toStringAs)
-import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong ((&&&), first)
@@ -19,7 +17,6 @@ import Data.String (joinWith)
 import Data.String.CodeUnits (drop, take)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, snd)
-import DataType (cCons, cNil)
 import Dict (Dict)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
@@ -27,13 +24,13 @@ import Effect.Class.Console (log)
 import Foreign.Object (Object, empty, fromFoldable, union)
 import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∧), (∨))
 import Pretty (prettyP)
-import Primitive (as, int, intOrNumber, unpack)
+import Primitive (as, intOrNumber, unpack)
 import Primitive as P
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), Endo, definitely', error, shapeMismatch, spyWhen, (×))
 import Util.Map (get)
-import Val (class Highlightable, BaseVal(..), DictRep(..), Val(..), highlightIf)
+import Val (class Highlightable, Val(..), highlightIf)
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
@@ -51,6 +48,10 @@ data SelState a
    | Reactive a
 
 newtype SelStates a = SelStates (SelState (Selection a))
+
+inert :: forall a. SelStates a
+inert = SelStates Inert
+
 type Selection a = { persistent :: a, transient :: a }
 
 data SelectionType = Persistent | Transient
@@ -163,10 +164,7 @@ get_intOrNumber x r = first as (unpack intOrNumber (snd (get x r)))
 
 -- Assumes fields are all of primitive type.
 dict :: forall a. (Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> a) -> Val (SelStates 𝕊) -> a
-dict toDict (Val _ v) = toDict (P.dict.unpack v)
-
-class Reflect a b where
-   from :: Partial => a -> b
+dict toDict (Val _ _ v) = toDict (P.dict.unpack v)
 
 runAffs_ :: forall a. (a -> Effect Unit) -> Array (Aff a) -> Effect Unit
 runAffs_ f as = flip runAff_ (sequence as) case _ of
@@ -386,16 +384,3 @@ derive instance Functor Dimensions
 derive instance Generic (Dimensions a) _
 instance Show a => Show (Dimensions a) where
    show = genericShow
-
-instance Reflect (Val (SelStates 𝕊)) (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) where
-   from (Val _ (Dictionary (DictRep d))) = d
-
-instance Reflect (Val (SelStates 𝕊)) (Array (Val (SelStates 𝕊))) where
-   from (Val _ (Constr c Nil)) | c == cNil = []
-   from (Val _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
-
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Selectable Int)) where
-   from r = Dimensions
-      { width: unpack int (snd (get "width" r))
-      , height: unpack int (snd (get "height" r))
-      }

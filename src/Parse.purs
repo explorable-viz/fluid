@@ -297,16 +297,20 @@ expr_ =
       appChain :: SParser (Raw Expr)
       appChain = docComment expr' >>= \doc -> simpleExprOrProjection doc >>= rest doc
          where
+
          rest :: DocOpt Expr Unit -> Raw Expr -> SParser (Raw Expr)
-         rest doc e@(Constr α doc' c es) = ctrArgs <|> pure e
+         rest _ e@(Constr α doc' c es) = ctrArgs <|> pure e
             where
             ctrArgs :: SParser (Raw Expr)
-            ctrArgs = simpleExprOrProjection doc >>= \e' -> rest doc (Constr α doc' c (es <> (e' : empty)))
-         rest doc e = ((App doc e <$> simpleExprOrProjection doc) >>= rest doc) <|> pure e
+            ctrArgs = docComment expr' >>= \doc -> simpleExprOrProjection doc >>= \e' -> rest doc (Constr α doc' c (es <> (e' : empty)))
+         rest doc e =
+            ( docComment expr' >>= simpleExprOrProjection >>= \arg -> rest doc (App doc e arg)
+            ) <|> pure e
 
+         -- An expression that may need wrapping in parentheses to disambiguate.
          simpleExprOrProjection :: DocOpt Expr Unit -> SParser (Raw Expr)
-         simpleExprOrProjection _ =
-            simpleExpr >>= projection
+         simpleExprOrProjection doc =
+            simpleExpr doc >>= projection
             where
             projection :: Raw Expr -> SParser (Raw Expr)
             projection e = dprojection e <|> rprojection e
@@ -318,41 +322,38 @@ expr_ =
             dprojection e = (DProject e <$> (token.reservedOp str.dot *> token.brackets expr_))
 
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
-         simpleExpr :: SParser (Raw Expr)
-         simpleExpr =
+         simpleExpr :: DocOpt Expr Unit -> SParser (Raw Expr)
+         simpleExpr doc =
             -- matrix before list
-            ( docComment expr' >>=
-                 \doc ->
-                    ( matrix doc
-                         <|> try (nil doc)
-                         <|> listNonEmpty doc
-                         <|> try (constr doc)
-                         <|> dict doc
-                         <|> try (float doc)
-                         <|> try (int doc) -- int may start with +/-
-                         <|> string doc
-                         <|> try (pair doc)
-                         <|> listComp doc
-
-                    )
-            ) <|> try variable
+            ( matrix doc
+                 <|> try (nil doc)
+                 <|> listNonEmpty doc
+                 <|> try (constr doc)
+                 <|> dict doc
+                 <|> try (float doc)
+                 <|> try (int doc) -- int may start with +/-
+                 <|> string doc
+                 <|> try (pair doc)
+                 <|> listComp doc
+            )
+               <|> try variable
                <|> try (token.parens expr')
                <|> listEnum
                <|> try parensOp
 
             where
             matrix :: DocOpt Expr Unit -> SParser (Raw Expr)
-            matrix doc = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
-               Matrix unit doc
+            matrix doc' = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
+               Matrix unit doc'
                   <$> (expr' <* bar)
                   <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
                   <*> (keyword str.in_ *> expr')
 
             nil :: DocOpt Expr Unit -> SParser (Raw Expr)
-            nil doc = token.brackets $ pure (ListEmpty unit doc)
+            nil doc' = token.brackets $ pure (ListEmpty unit doc')
 
             listNonEmpty :: DocOpt Expr Unit -> SParser (Raw Expr)
-            listNonEmpty doc = lBracket *> (ListNonEmpty unit doc <$> expr' <*> fix listRest)
+            listNonEmpty doc' = lBracket *> (ListNonEmpty unit doc' <$> expr' <*> fix listRest)
                where
                listRest :: Endo (SParser (Raw ListRest))
                listRest listRest' =
@@ -360,8 +361,8 @@ expr_ =
                      token.comma *> (Next unit <$> expr' <*> listRest')
 
             listComp :: DocOpt Expr Unit -> SParser (Raw Expr)
-            listComp doc = token.brackets $
-               pure (ListComp unit doc) <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
+            listComp doc' = token.brackets $
+               pure (ListComp unit doc') <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
                where
                qualifier :: SParser (Raw Qualifier)
                qualifier =
@@ -373,10 +374,10 @@ expr_ =
             listEnum = token.brackets $ pure ListEnum <*> expr' <* ellipsis <*> expr'
 
             constr :: DocOpt Expr Unit -> SParser (Raw Expr)
-            constr doc = Constr unit doc <$> ctr <@> empty
+            constr doc' = Constr unit doc' <$> ctr <@> empty
 
             dict :: DocOpt Expr Unit -> SParser (Raw Expr)
-            dict doc = sepBy kvPair token.comma <#> Dictionary unit doc # token.braces
+            dict doc' = sepBy kvPair token.comma <#> Dictionary unit doc' # token.braces
                where
                kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
                kvPair = (((ExprKey <$> expr') # token.brackets) <* token.colon) `lift2 (×)` expr' <|> ((VarKey unit <$> ident) <* token.colon) `lift2 (×)` expr'
@@ -389,25 +390,25 @@ expr_ =
 
             -- built-in integer/float parsers don't seem to allow leading signs.
             int :: DocOpt Expr Unit -> SParser (Raw Expr)
-            int doc = do
+            int doc' = do
                sign <- signOpt
-               (sign >>> Int unit doc) <$> token.natural
+               (sign >>> Int unit doc') <$> token.natural
 
             float :: DocOpt Expr Unit -> SParser (Raw Expr)
-            float doc = do
+            float doc' = do
                sign <- signOpt
-               (sign >>> Float unit doc) <$> token.float
+               (sign >>> Float unit doc') <$> token.float
 
             string :: DocOpt Expr Unit -> SParser (Raw Expr)
-            string doc = Str unit doc <$> token.stringLiteral
+            string doc' = Str unit doc' <$> token.stringLiteral
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)
             parensOp = Op <$> token.parens token.operator
 
             pair :: DocOpt Expr Unit -> SParser (Raw Expr)
-            pair doc = token.parens $
-               (pure $ \e e' -> Constr unit doc cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
+            pair doc' = token.parens $
+               (pure $ \e e' -> Constr unit doc' cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a

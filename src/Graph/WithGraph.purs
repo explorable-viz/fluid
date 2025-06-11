@@ -48,7 +48,7 @@ instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
       α <- fresh
       let v = constr α vd
       extend (DVertex (α × pack v)) αs
-      pure $ constr α vd
+      pure v
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
    extend α αs = void $ modify_ $ (:) (α × αs)

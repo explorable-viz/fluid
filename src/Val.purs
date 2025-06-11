@@ -18,6 +18,7 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
+import Doc (DocOpt)
 import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
 import Foreign.Object (foldMap)
@@ -31,7 +32,7 @@ import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, k
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
 
-data Val a = Val a (BaseVal a)
+data Val a = Val a (DocOpt Val a) (BaseVal a)
 
 data BaseVal a
    = Int Int
@@ -188,7 +189,7 @@ derive instance Foldable Env
 derive instance Foldable EnvExpr
 
 instance Apply Val where
-   apply (Val fα fv) (Val α v) = Val (fα α) (fv <*> v)
+   apply (Val fα fdoc fv) (Val α doc v) = Val (fα α) (fdoc <*> doc) (fv <*> v)
 
 instance Apply BaseVal where
    apply (Int n) (Int n') = Int (n ≜ n')
@@ -256,7 +257,7 @@ instance JoinSemilattice a => JoinSemilattice (MatrixDim a) where
    join (MatrixDim (i × α)) (MatrixDim (i' × α')) = MatrixDim ((i ≜ i') × (α ∨ α'))
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
-   join (Val α u) (Val α' v) = Val (α ∨ α') (u ∨ v)
+   join (Val α doc u) (Val α' doc' v) = Val (α ∨ α') (doc ∨ doc') (u ∨ v)
 
 -- Not equivalent to sequence (join <$> x <*> y) because Dict.join only requires compatibility
 -- whereas Dict.apply requires domains to be equal.
@@ -299,7 +300,7 @@ instance BoundedJoinSemilattice a => Expandable (MatrixDim a) (Raw MatrixDim) wh
    expand (MatrixDim (i × α)) (MatrixDim (i' × _)) = MatrixDim ((i ≜ i') × α)
 
 instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
-   expand (Val α u) (Val _ v) = Val α (expand u v)
+   expand (Val α doc u) (Val _ doc' v) = Val α (expand doc doc') (expand u v)
 
 instance BoundedJoinSemilattice a => Expandable (BaseVal a) (Raw BaseVal) where
    expand (Int n) (Int n') = Int (n ≜ n')
@@ -351,7 +352,7 @@ instance TypeName (DictKey a) where
    typeName _ = "DictKey"
 
 instance Vertices (Val Vertex) where
-   vertices v@(Val α v') = singleton (DVertex (α × pack v)) ∪ vertices v'
+   vertices v@(Val α _ v') = singleton (DVertex (α × pack v)) ∪ vertices v'
 
 instance Vertices (BaseVal Vertex) where
    vertices (Int _) = empty

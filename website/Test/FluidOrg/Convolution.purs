@@ -17,5 +17,5 @@ main = fromAff $ sequence_ $ testURL "convolution"
 testFig :: T.Page -> Aff Unit
 testFig page = do
    let figId = "fig"
-   waitForFigure page (figId <> "-output")
+   waitForFigure page ("#" <> figId <> "-output")
    clickToggle page figId

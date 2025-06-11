@@ -2,9 +2,9 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (class Reflect, Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, dict, from, isPersistent, isPrimary, isSecondary, isTransient)
+import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, class Drawable2, draw', registerMouseListeners, selListener, uiHelpers)
+import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation(..))
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
@@ -14,20 +14,15 @@ import Data.Array (concat, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
 import Data.Foldable (for_, length)
 import Data.Int (toNumber)
-import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
-import Data.Tuple (fst, snd)
-import DataType (cLinePlot, f_caption, f_name, f_plots, f_points, f_size, f_tickLabels)
-import Dict (Dict)
+import Data.Tuple (fst, snd, uncurry)
+import DataType (f_plots)
 import Effect (Effect)
 import Lattice ((∨), (∧))
-import Primitive (string, unpack)
 import Util (type (×), Endo, init, nonEmpty, tail, zipWith, (!), (×))
-import Util.Map (get)
-import Val (BaseVal(..), Val(..))
-import Web.Event.EventTarget (EventListener)
+import Web.Event.EventTarget (eventListener)
 
 newtype LineChart = LineChart
    { size :: Dimensions (Selectable Int)
@@ -63,16 +58,19 @@ type PointCoordinate = { i :: Int, j :: Int }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 
-setSelStates :: LineChart -> EventListener -> D3.Selection -> Effect Unit
+setSelStates :: LineChart -> Select -> D3.Selection -> Effect Unit
 setSelStates (LineChart { plots }) redraw rootElement = do
    points <- rootElement # selectAll ".linechart-point"
+   listener <- eventListener (redraw <<< uncurry pointSel <<< selectionEventData')
+
    for_ points \point -> do
       point' <- datum point
-      point # setAttrs (pointAttrs point') >>= registerMouseListeners redraw
+      point # setAttrs (pointAttrs point') >>= registerMouseListeners listener
    segments <- rootElement # selectAll ".linechart-segment"
    for_ segments \segment -> do
       segment' <- datum segment
       segment # setAttrs (segmentAttrs segment')
+
    where
    pointAttrs :: PointCoordinate -> Attrs
    pointAttrs { i, j } =
@@ -98,9 +96,13 @@ setSelStates (LineChart { plots }) redraw rootElement = do
    selState :: Point Number -> SelStates 𝕊
    selState (Point { x, y }) = snd x ∨ snd y
 
-createRootElement :: LineChart -> D3.Selection -> String -> Effect D3.Selection
-createRootElement (LineChart { size, tickLabels, caption, plots }) div childId = do
-   svg <- div # create SVG [ "width" ⟼ width, "height" ⟼ height, "id" ↦ childId ]
+   pointSel :: ViewSelSetter PointCoordinate
+   pointSel { i, j } =
+      linePoint j >>> listElement i >>> dictVal f_plots >>> lineChart
+
+createRootElement :: LineChart -> D3.Selection -> Effect D3.Selection
+createRootElement (LineChart { size, tickLabels, caption, plots }) parent = do
+   svg <- parent # create SVG [ "width" ⟼ width, "height" ⟼ height ]
    { x: xAxisHeight, y: yAxisWidth } <- axisWidth svg
 
    let
@@ -140,8 +142,8 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
    Dimensions { height, width } = size <#> fst
 
    axisWidth :: D3.Selection -> Effect (Coord Int)
-   axisWidth parent = do
-      { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent
+   axisWidth parent' = do
+      { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent'
       x <- dimensions xAxis <#> unwrap >>> _.height
       y <- dimensions yAxis <#> unwrap >>> _.width
       remove xAxis
@@ -149,15 +151,15 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       pure { x, y }
 
    createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
-   createAxes range parent = do
+   createAxes range parent' = do
       let Point { x: xLabels, y: yLabels } = tickLabels
       x <- xAxis (to range) (nub points.x) =<<
-         (parent # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
+         (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
       when (fst xLabels == Rotated) do
          labels <- x # selectAll "text"
          for_ labels $
             setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
-      y <- yAxis (to range) 3.0 =<< (parent # create G [ classes [ "y-axis" ] ])
+      y <- yAxis (to range) 3.0 =<< (parent' # create G [ classes [ "y-axis" ] ])
       when (fst yLabels == Rotated) do
          labels <- y # selectAll "text"
          for_ labels $
@@ -165,10 +167,10 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       pure { x, y }
 
    createLines :: Dimensions Int -> D3.Selection -> Effect Unit
-   createLines range parent =
+   createLines range parent' =
       for_ (concat $ mapWithIndex segments plots)
          \({ start, end } × segmentCoords) ->
-            parent #
+            parent' #
                ( create Path [ classes [ "linechart-segment" ], "d" ↦ line (to range) [ start, end ] ]
                     >=> setDatum segmentCoords
                )
@@ -185,9 +187,9 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       coord (Point { x, y }) = { x: fst x, y: fst y }
 
    createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
-   createPoints range parent =
+   createPoints range parent' =
       for_ entries \(Point { x, y } × { i, j }) ->
-         parent #
+         parent' #
             ( create Circle
                  [ classes [ "linechart-point" ]
                  , "stroke-width" ⟼ 1
@@ -202,9 +204,9 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
          flip mapWithIndex ps \j p -> p × { i, j }
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
-   createLegend (Dimensions interior) parent = do
+   createLegend (Dimensions interior) parent' = do
       let Dimensions { height, width } = legend_dims
-      legend' <- parent # create G
+      legend' <- parent' # create G
          [ translate { x: interior.width + legend_sep, y: max 0 ((interior.height - height) / 2) } ]
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
@@ -268,36 +270,12 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) div childId =
       rightMargin :: Int
       rightMargin = 4
 
-instance Drawable2 LineChart where
+instance Drawable LineChart where
    setSelStates = setSelStates
    createRootElement = createRootElement
-
-instance Drawable LineChart where
-   draw rSpec figVal _ redraw =
-      draw' uiHelpers rSpec =<< selListener figVal redraw point
-      where
-      point :: ViewSelSetter PointCoordinate
-      point { i, j } =
-         linePoint j >>> listElement i >>> dictVal f_plots >>> lineChart
 
 -- ======================
 -- boilerplate
 -- ======================
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LinePlot where
-   from r = LinePlot
-      { name: unpack string (snd (get f_name r))
-      , points: dict from <$> from (snd (get f_points r))
-      }
-
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LineChart where
-   from r = LineChart
-      { size: dict from (snd (get f_size r))
-      , tickLabels: dict from (snd (get f_tickLabels r))
-      , caption: unpack string (snd (get f_caption r))
-      , plots: from <$> (from (snd (get f_plots r)) :: Array (Val (SelStates 𝕊))) :: Array LinePlot
-      }
-
-instance Reflect (Val (SelStates 𝕊)) LinePlot where
-   from (Val _ (Constr c (u : Nil))) | c == cLinePlot = dict from u
 
 derive instance Newtype LinePlot _

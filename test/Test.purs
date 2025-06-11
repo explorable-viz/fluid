@@ -27,10 +27,7 @@ main = run tests
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite loadFile
-   [ { file: "comments/map"
-     , imports: []
-     , fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
-     }
+   [ { file: "comments/app", imports: [], fwd_expect: "2" }
    ]
 
 asTestSuite :: BenchSuite -> TestSuite

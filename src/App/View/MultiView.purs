@@ -3,37 +3,32 @@ module App.View.MultiView where
 import Prelude
 
 import App.Util.Selector (multiViewEntry)
-import App.View.Util (class Drawable, class Drawable2, View, drawView)
-import App.View.Util.D3 (ElementType(..), create)
+import App.View.Util (class Drawable, Select, View, createRootElement, setSelStates, unpack)
+import App.View.Util.D3 (create)
 import App.View.Util.D3 as D3
-import Bind ((↦))
+import Data.Array (mapWithIndex)
 import Data.Foldable (sequence_)
-import Data.Newtype (class Newtype)
 import Dict (Dict)
 import Effect (Effect)
-import Util (error)
-import Util.Map (mapWithKey)
-import Web.Event.EventTarget (EventListener)
+import Util (type (×), (×))
+import Util.Map (toUnfoldable)
 
-newtype MultiView = MultiView (Dict View)
+data MultiView = MultiView (Dict View)
 
 instance Drawable MultiView where
-   draw { divId, view: MultiView views } figVal figView redraw =
-      sequence_ $ flip mapWithKey views \x view ->
-         drawView { divId, suffix: x, view } (multiViewEntry x >>> figVal) figView redraw
-
-instance Drawable2 MultiView where
    createRootElement = createRootElement'
-   setSelStates = setSelStates
+   setSelStates = setSelStates'
 
-createRootElement' :: MultiView -> D3.Selection -> String -> Effect D3.Selection
-createRootElement' (MultiView views) div childId = do
-   _ <- div # create G [ "id" ↦ childId ]
-   sequence_ $ flip mapWithKey views \_ _ -> do
-      error "todo"
-   error "todo"
+createRootElement' :: MultiView -> D3.Selection -> Effect D3.Selection
+createRootElement' (MultiView views) parent = do
+   rootElement <- parent # create D3.G []
+   sequence_ $ flip map views \view -> do
+      unpack view \v -> createRootElement v rootElement
+   pure rootElement
 
-setSelStates :: MultiView -> EventListener -> D3.Selection -> Effect Unit
-setSelStates _ = error "todo"
-
-derive instance Newtype MultiView _
+setSelStates' :: MultiView -> Select -> D3.Selection -> Effect Unit
+setSelStates' (MultiView views) select rootElement = do
+   sequence_ $
+      flip mapWithIndex (toUnfoldable views :: Array (String × View)) \i (x × view) -> do
+         elem <- rootElement # D3.select ("svg" <> D3.nthChild (i + 1))
+         void $ unpack view \v -> setSelStates v (multiViewEntry x >>> select) elem

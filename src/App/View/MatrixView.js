@@ -5,7 +5,9 @@ import * as d3 from "d3"
 function setSelStates2_ (
    {
       hBorderStyles,
-      vBorderStyles
+      vBorderStyles,
+      eventListener,
+      withElement
    },
    {
       selState,
@@ -13,10 +15,11 @@ function setSelStates2_ (
       selClassesFor
    },
    { matrix },
-   listener,
+   select,
    rootElement
 ) {
    return () => {
+      var listener = eventListener(withElement(select))()
       rootElement.selectAll('.matrix-cell').each(function (cellRect) {
          const sel = selState(matrix.cells[cellRect.i - 1][cellRect.j - 1])
          d3.select(this) // won't work inside arrow function :/
@@ -49,8 +52,7 @@ function setSelStates2_ (
 function createRootElement2_ (
    { val },
    { title, matrix },
-   div,
-   childId
+   parent
 ) {
    return () => {
       const strokeWidth = 0.5
@@ -62,24 +64,12 @@ function createRootElement2_ (
       const hMargin = w / 2
       const vMargin = h / 2
 
-      const rootElement = div
+      const rootElement = parent
          .append('svg')
-         .attr('id', childId)
 
       rootElement
          .attr('width', width + hMargin)
          .attr('height', height + vMargin)
-
-      if (!childId.includes("intermediate")) {
-         rootElement
-            .append('text')
-            .text(title)
-            .attr('x', hMargin / 2)
-            .attr('y', vMargin / 2)
-            .attr('class', 'title-text')
-            .attr('dominant-baseline', 'middle')
-            .attr('text-anchor', 'left')
-      }
 
       // group for the whole matrix (rects and texts)
       const matrixGrp = rootElement
@@ -180,4 +170,4 @@ function createRootElement2_ (
 }
 
 export var setSelStates2 = x1 => x2 => x3 => x4 => x5 => setSelStates2_(x1, x2, x3, x4, x5)
-export var createRootElement2 = x1 => x2 => x3 => x4 => createRootElement2_(x1, x2, x3, x4)
+export var createRootElement2 = x1 => x2 => x3 => createRootElement2_(x1, x2, x3)

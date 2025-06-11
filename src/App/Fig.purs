@@ -5,7 +5,7 @@ import Prelude hiding (absurd, compare)
 import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, ViewSetter)
-import App.View (view)
+import App.View (view')
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
@@ -91,7 +91,7 @@ rebuildι inerts αs ι =
    where
    -- Consolidate with analogous calculation with γInert etc in loadFig?
    vs_inert = ι <#> \v -> select𝔹s v inerts
-   vs_selected = ι <#> \v@(Val α _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient }
+   vs_selected = ι <#> \v@(Val α _ _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient }
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
    setSels inert (Vertex α × v) = α × (selStates <$> inert <*> v.persistent <*> v.transient)
@@ -158,8 +158,10 @@ drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> E
 drawIntermediates divId (Env ι) unused redraw = do
    let prefix = divId <> "-" <> str.intermediate
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
+   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α <> "-doc") >>= remove
+
    sequence_ $ flip mapWithKey ι \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view α (map to𝕊 <$> v) Nothing }
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' α (map to𝕊 <$> v) Nothing }
          (selectIntermediate (Vertex α))
          (setIntermediateView (Vertex α))
          redraw
@@ -174,8 +176,8 @@ drawFig divId fig = do
    drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where
    { v, γ, ι } = selectionResult fig
-   out_view = unsafePartial $ view str.output v fig.out_view
-   in_views = (\(Env γ) -> unsafePartial (mapWithKey view γ) <*> fig.in_views) γ
+   out_view = unsafePartial $ view' str.output v fig.out_view
+   in_views = (\(Env γ) -> unsafePartial (mapWithKey view' γ) <*> fig.in_views) γ
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
@@ -211,7 +213,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       EnvExpr γ e' = erase eval.inα
       GC focus = unrestrictGC γ inputs' >>> unprojExpr (EnvExpr γ e')
       Env γ_restricted = restrict inputs' γα
-      in_roots = Set.fromFoldable $ (\(Val α _) -> α) <$> γ_restricted
+      in_roots = Set.fromFoldable $ (\(Val α _ _) -> α) <$> γ_restricted
 
       graphgc = graphGC eval
       graphgc_op = graphGC opEval
