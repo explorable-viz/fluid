@@ -17,7 +17,6 @@ import App.View.Util.Point (Point(..))
 import App.View.Util.Text as T
 import Data.Array ((:)) as A
 import Data.Array (fromFoldable)
-import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
@@ -26,7 +25,7 @@ import Dict (Dict)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Link (Link(..))
 import Primitive (int, string, typeError, unpack)
-import Util (type (×), (×), type (+))
+import Util (type (×), (×))
 import Util.Map (get)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
@@ -60,19 +59,14 @@ view title (Val _ _ (Matrix r)) _ =
 
 viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe P.Paragraph
 viewPara None = Nothing
-viewPara (Doc doc) = Just $ P.Paragraph true $ fromFoldable $ map pack' <<< formatPara $ doc
+viewPara (Doc doc) = Just $ P.Paragraph true $ fromFoldable $ formatPara $ doc
    where
-   formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List (Val (SelStates 𝕊) + Selectable String)
+   formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List View
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
-   formatPara (Token str : xs) = Right (str × inert) : formatPara xs
-   formatPara (Unquote v : xs) = Left v : formatPara xs
+   formatPara (Token str : xs) = pack (T.Text (str × inert)) : formatPara xs
+   formatPara (Unquote (Val α _ (Int n)) : xs) = pack (T.Text (show n × α)) : formatPara xs
+   formatPara (Unquote v : xs) = view "" v Nothing : formatPara xs
    formatPara Nil = Nil
-
-   pack' :: Val (SelStates 𝕊) + (Selectable String) -> View
-   pack' (Right str) = pack (T.Text str)
-   pack' (Left v) = case v of
-      Val α _ (Int n) -> pack (T.Text (show n × α))
-      _ -> view "" v Nothing
 
 -- ======================
 -- boilerplate
