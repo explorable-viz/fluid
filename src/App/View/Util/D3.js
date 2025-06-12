@@ -202,6 +202,16 @@ export function scaleLinear (x1) {
    }
 }
 
+export function scaleBand (width) {
+   return val => {
+      return stackedBars => {
+         return d3.scaleBand()
+            .range([0, width])
+            .domain(stackedBars.map(bar => val(bar.x)))
+      }
+   }
+}
+
 export function datum (sel) {
    return () => {
       return sel.datum()

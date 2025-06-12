@@ -161,41 +161,6 @@ function createRootElement2_ (
       for (let j = 0; j < j_max; ++j) {
          addHatchPattern(rootElement, j, color(j))
       }
-         
-
-      const legendLineHeight = 15,
-            legendStart = width + margin.left / 2
-      let names = stackedBars[0].bars.map(bar => val(bar.y))
-      rootElement.append('rect')
-         .attr('class', 'legend-box')
-         .attr('transform', `translate(${legendStart}, ${height / 2 - margin.top - 2})`)
-         .attr('x', 0)
-         .attr('y', 0)
-         .attr('height', legendLineHeight * names.length)
-         .attr('width', margin.right - 22)
-
-      const legend = rootElement.selectAll('legend')
-         .data(names)
-         .enter()
-         .append('g')
-            .attr('transform', (d, i) =>
-               `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
-            )
-
-      legend.append('text')
-         .text(d => d)
-         .attr('font-size', 11)
-         .attr('transform', 'translate(15, 9)') // align text with boxes
-         .style('user-select', 'none') // avoid mysterious spurious text selection
-
-      const legendSquareSize = 4
-
-      legend.append('rect')
-         .attr('fill', d => color(names.indexOf(d)))
-         .attr('width', legendSquareSize)
-         .attr('height', legendSquareSize)
-         .attr('x', legendLineHeight / 2 - legendSquareSize / 2)
-         .attr('y', legendLineHeight / 2 - legendSquareSize)
 
       return rootElement
    }

@@ -10,18 +10,20 @@ import App.Util (Dimensions(..), Selectable, 𝕊(..), classes, colorShade, getP
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.LineChart (LegendEntry)
 import App.View.Util (class Drawable, UIHelpers, Select, uiHelpers)
-import App.View.Util.D3 (ElementType(..), Margin, create, setText, translate)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, dimensions, remove, scaleBand, scaleLinear, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
-import Data.Array (mapWithIndex, uncons)
+import Data.Array (length, mapWithIndex, uncons)
 import Data.Foldable (for_)
 import Data.Int (floor, pow, toNumber)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype, unwrap)
 import Data.Number (log)
+import Data.Semigroup.Foldable (maximum)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Foreign.Object (Object, fromFoldable)
-import Util (absurd, error, (!))
+import Util (Endo, absurd, error, nonEmpty, (!))
 import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype BarChart = BarChart
@@ -46,24 +48,28 @@ type BarChartHelpers =
    , withBarChartSegment :: Select -> Effect EventListener
    }
 
+nameCol :: String -> Array String -> String
+nameCol = colorScale "schemeAccent"
+
 foreign import createRootElement2 :: BarChartHelpers -> UIHelpers -> BarChart -> D3.Selection -> Effect D3.Selection
 foreign import setSelStates2 :: BarChartHelpers -> BarChart -> Select -> D3.Selection -> Effect Unit
 
 createRootElement' :: BarChart -> D3.Selection -> Effect D3.Selection
 createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = do
    rootElement <- createRootElement2 barChartHelpers uiHelpers barchart parent
+   { x: _xAxisHeight, y: _yAxisHeight } <- axisWidth rootElement
    let
       interior :: Dimensions Int
       interior = Dimensions
-         { width: width - margin.left - margin.right
-         , height: height - margin.top - margin.bottom
+         { width: width - margin.left - margin.right - (unwrap legend_dims).width - 15
+         , height: height - margin.top - margin.bottom - caption_height
          }
    createLegend interior rootElement
 
    rootElement
       # create Text
            [ "x" ⟼ width / 2
-           , "y" ⟼ height + 35
+           , "y" ⟼ height - caption_height / 2
            , classes [ caption_class ]
            , "dominant-baseline" ↦ "central"
            , "text-anchor" ↦ "middle"
@@ -85,12 +91,14 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
    Dimensions { width, height } = size <#> fst
    legendLineHeight = 15
    caption_class = "title-text"
-   legendStart = width + margin.left / 2
+   legendSquareSize = 4
+   caption_height = textHeight caption_class (fst caption) * 2
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior) parent' = do
-      let { height, width } = interior
-      legend' <- parent' # create G [ translate { x: legendStart, y: height / 2 - margin.top - 2 } ]
+      let Dimensions { height, width } = legend_dims
+      legend' <- parent' # create G
+         [ translate { x: interior.width + 30, y: max 0 ((interior.height - height) / 2) } ]
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       for_ entries \{ i, name } -> do
@@ -99,11 +107,51 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
             ( create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ]
                  >=> setText name
             )
+         g # create Rect
+            [ "fill" ↦ nameCol name names
+            , "width" ⟼ legendSquareSize
+            , "height" ⟼ legendSquareSize
+            , "x" ⟼ legendLineHeight / 2 - legendSquareSize / 2
+            , "y" ⟼ legendLineHeight / 2 - legendSquareSize
+            ]
       where
       entries :: Array LegendEntry
       entries = flip mapWithIndex names \i name -> { i, name }
       entry_y i = i * legendLineHeight + 2
    legend_entry_x = 15
+
+   legend_dims :: Dimensions Int
+   legend_dims = Dimensions
+      { width: legend_entry_x + maxTextWidth + rightMargin
+      , height: legendLineHeight * length names
+      }
+      where
+      maxTextWidth = maximum $ (names <#> textWidth "legend-text" # nonEmpty)
+      rightMargin = 4
+
+   axisWidth :: D3.Selection -> Effect (Coord Int)
+   axisWidth parent' = do
+      { x: xAxis, y: yAxis } <- createAxes (size <#> fst) parent'
+      x <- dimensions xAxis <#> unwrap >>> _.height
+      y <- dimensions yAxis <#> unwrap >>> _.width
+      remove xAxis
+      remove yAxis
+      pure { x, y }
+
+   createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
+   createAxes range parent' = do
+      -- let Point { x: _xLabels, y: _yLabels } = error "todo"
+      x <- xAxis (to range) (nonEmpty names) =<<
+         (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
+      y <- yAxis (to range) 3.0 =<<
+         (parent' # create G [ classes [ "y-axis" ] ])
+      pure { x, y }
+
+   to :: Dimensions Int -> { x :: String -> Number, y :: Endo Number }
+   to (Dimensions { width, height }) =
+      { x: scaleBand width fst (map ((\(StackedBar r) -> { x: fst $ r.x })) stackedBars)
+      , y: scaleLinear { min: 0.0, max: toNumber height } { min: 0.0, max: toNumber height }
+      }
 
 barChartHelpers :: BarChartHelpers
 barChartHelpers =
@@ -156,3 +204,5 @@ instance Drawable BarChart where
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
+
+derive instance Newtype StackedBar _

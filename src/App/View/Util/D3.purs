@@ -17,6 +17,7 @@ module App.View.Util.D3
    , rootSelect
    , rotate
    , rotate'
+   , scaleBand
    , scaleLinear
    , select
    , selectAll
@@ -33,7 +34,7 @@ module App.View.Util.D3
 
 import Prelude
 
-import App.Util (Dimensions, Attrs)
+import App.Util (Attrs, Dimensions, Selectable)
 import Bind (Bind, (↦))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Generic.Rep (class Generic)
@@ -106,9 +107,10 @@ foreign import createChild :: Selection -> String -> Object String -> Effect Sel
 foreign import remove :: Selection -> Effect Unit
 foreign import colorScale :: String -> String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
+foreign import scaleBand :: forall r. Int -> (Selectable String -> String) -> Array ({ x :: String | r }) -> String -> Number
 -- Currently two different protocols for x and y axis; will subsume into something more general
-foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> Selection -> Effect Selection
-foreign import yAxis :: Coord (Endo Number) -> Number -> Selection -> Effect Selection
+foreign import xAxis :: forall a r. { x :: a -> Number | r } -> NonEmptyArray a -> Selection -> Effect Selection
+foreign import yAxis :: forall a r. { y :: a -> Number | r } -> Number -> Selection -> Effect Selection
 foreign import isEmpty :: Selection -> Effect Boolean
 foreign import dimensions :: Selection -> Effect (Dimensions Int)
 foreign import textDimensions :: String -> String -> Dimensions Int
