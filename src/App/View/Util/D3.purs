@@ -107,7 +107,7 @@ foreign import createChild :: Selection -> String -> Object String -> Effect Sel
 foreign import remove :: Selection -> Effect Unit
 foreign import colorScale :: String -> String -> Array String -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
-foreign import scaleBand :: forall r. Int -> (Selectable String -> String) -> Array ({ x :: String | r }) -> String -> Number
+foreign import scaleBand :: forall r. Int -> (Selectable String -> String) -> Array ({ x :: Selectable String | r }) -> String -> Number
 -- Currently two different protocols for x and y axis; will subsume into something more general
 foreign import xAxis :: forall a r. { x :: a -> Number | r } -> NonEmptyArray a -> Selection -> Effect Selection
 foreign import yAxis :: forall a r. { y :: a -> Number | r } -> Number -> Selection -> Effect Selection

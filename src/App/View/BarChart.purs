@@ -14,11 +14,11 @@ import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, dim
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
 import Data.Array (length, mapWithIndex, uncons)
-import Data.Foldable (for_)
-import Data.Int (floor, pow, toNumber)
+import Data.Foldable (for_, sum)
+import Data.Int (floor, pow, toNumber, trunc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
-import Data.Number (log)
+import Data.Number (ceil, log)
 import Data.Semigroup.Foldable (maximum)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
@@ -61,11 +61,11 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
    let
       interior :: Dimensions Int
       interior = Dimensions
-         { width: width - margin.left - margin.right - (unwrap legend_dims).width - 15
+         { width: width - margin.left - margin.right
          , height: height - margin.top - margin.bottom - caption_height
          }
    createLegend interior rootElement
-
+   void $ createAxes interior rootElement
    rootElement
       # create Text
            [ "x" ⟼ width / 2
@@ -75,11 +75,11 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
            , "text-anchor" ↦ "middle"
            ]
       >>= setText (fst caption)
-
    where
    names = case (uncons stackedBars) of
       Nothing -> error absurd
       Just { head: StackedBar bar, tail: _ } -> (\(Bar bar') -> fst bar'.y) <$> bar.bars
+   xs = (\(StackedBar bar) -> fst $ bar.x) <$> stackedBars
 
    margin :: Margin
    margin =
@@ -93,6 +93,9 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
    caption_class = "title-text"
    legendSquareSize = 4
    caption_height = textHeight caption_class (fst caption) * 2
+   nearest = 10.0 :: Number
+   y_max = ceil ((maximum $ (map (\(StackedBar bar) -> (sum $ map (\(Bar b) -> fst b.z) bar.bars)) (nonEmpty stackedBars))) / nearest) * nearest
+   _y_ticks = barChartHelpers.tickEvery (y_max # trunc)
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior) parent' = do
@@ -140,8 +143,8 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
 
    createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
    createAxes range parent' = do
-      -- let Point { x: _xLabels, y: _yLabels } = error "todo"
-      x <- xAxis (to range) (nonEmpty names) =<<
+      -- let { x: _xLabels, y: _yLabels } = { x: names, y:  }
+      x <- xAxis (to range) (nonEmpty xs) =<<
          (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
       y <- yAxis (to range) 3.0 =<<
          (parent' # create G [ classes [ "y-axis" ] ])
@@ -149,8 +152,8 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
 
    to :: Dimensions Int -> { x :: String -> Number, y :: Endo Number }
    to (Dimensions { width, height }) =
-      { x: scaleBand width fst (map ((\(StackedBar r) -> { x: fst $ r.x })) stackedBars)
-      , y: scaleLinear { min: 0.0, max: toNumber height } { min: 0.0, max: toNumber height }
+      { x: (scaleBand width fst (map ((\(StackedBar r) -> { x: r.x })) stackedBars))
+      , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
       }
 
 barChartHelpers :: BarChartHelpers

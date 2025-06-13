@@ -126,12 +126,12 @@ function createRootElement2_ (
          .domain(stackedBars.map(bar => val(bar.x)))
          .padding(0.2)
 
-      rootElement.append('g')
-         .attr('transform', "translate(0," + height + ")")
-         .call(d3.axisBottom(x))
-         .selectAll('text')
-            .style('text-anchor', 'middle')
-            .attr('class', 'xaxis')
+      // rootElement.append('g')
+      //    .attr('transform', "translate(0," + height + ")")
+      //    .call(d3.axisBottom(x))
+      //    .selectAll('text')
+      //       .style('text-anchor', 'middle')
+      //       .attr('class', 'xaxis')
 
       function barHeight (bars) {
          return bars.reduce((acc, bar) => { return val(bar.z) + acc }, 0)
@@ -146,10 +146,10 @@ function createRootElement2_ (
          .nice()
       const tickEvery_n = tickEvery(y_max),
             ticks = Array.from(Array(Math.ceil(y_max / tickEvery_n + 1)).keys()).map(n => n * tickEvery_n)
-      const yAxis = d3.axisLeft(y)
+      // const yAxis = d3.axisLeft(y)
 
-      rootElement.append('g')
-         .call(yAxis)
+      // rootElement.append('g')
+      //    .call(yAxis)
 
          
       const strokeWidth = 1

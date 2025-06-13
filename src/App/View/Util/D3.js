@@ -74,7 +74,7 @@ export function xAxis (to) {
    return ticks => {
       return parent => {
          return () => {
-            return parent.call(d3.axisBottom(to.x).tickValues(ticks).tickFormat(d3.format('d')))
+            return parent.call(d3.axisBottom(to.x))
          }
       }
    }
@@ -205,9 +205,12 @@ export function scaleLinear (x1) {
 export function scaleBand (width) {
    return val => {
       return stackedBars => {
+         var categories = stackedBars.map(bar => val(bar.x))
+         console.log(categories)
          return d3.scaleBand()
             .range([0, width])
-            .domain(stackedBars.map(bar => val(bar.x)))
+            .domain(categories)
+            .padding(0.2)
       }
    }
 }
