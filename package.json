@@ -28,6 +28,7 @@
   "scripts": {
     "benchmark": "./script/benchmark.sh",
     "build": "./script/build.sh",
+    "build-prod": "BUILD_ENV=prod ./script/build.sh",
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "bundle-serve": "sh -c './script/bundle-website.sh -w \"$@\" && ./script/serve.sh \"$1\"' _",
