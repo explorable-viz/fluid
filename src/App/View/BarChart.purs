@@ -76,7 +76,11 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    names = case (uncons stackedBars) of
       Nothing -> error absurd
       Just { head: StackedBar bar, tail: _ } -> (\(Bar bar') -> fst bar'.y) <$> bar.bars
+<<<<<<< HEAD
    xs = stackedBars <#> \(StackedBar bar) -> fst bar.x
+=======
+   xs = (\(StackedBar bar) -> fst $ bar.x) <$> stackedBars
+>>>>>>> 41495d58cda469f441182e7f22855997a2515032
    js = range 0 j_max
       where
       j_max = maximum (map (\(StackedBar bar) -> length bar.bars - 1) (nonEmpty stackedBars))
