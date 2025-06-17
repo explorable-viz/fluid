@@ -13,20 +13,19 @@ import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, colorScale, colorScale2, create, datum, scaleBand, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
-import Data.Array (length, mapWithIndex, range, uncons)
+import Data.Array (length, mapWithIndex, range)
 import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Array.NonEmpty (last, singleton, snoc, uncons) as A
+import Data.Array.NonEmpty (head, last, singleton, snoc, uncons) as A
 import Data.Foldable (for_, sum)
 import Data.FoldableWithIndex (foldlWithIndex, forWithIndex_)
 import Data.Int (toNumber)
-import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Foreign.Object (Object)
-import Util (Endo, absurd, error, nonEmpty, (!))
+import Util (Endo, nonEmpty, (!))
 import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype BarChart = BarChart
@@ -73,17 +72,15 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    createLegend interior g
    pure g
    where
-   names = case (uncons stackedBars) of
-      Nothing -> error absurd
-      Just { head: StackedBar bar, tail: _ } -> (\(Bar bar') -> fst bar'.y) <$> bar.bars
-<<<<<<< HEAD
+   stackedBars' = nonEmpty stackedBars
+   names = bar.bars <#> \(Bar bar') -> fst bar'.y
+      where
+      StackedBar bar = A.head stackedBars'
+
    xs = stackedBars <#> \(StackedBar bar) -> fst bar.x
-=======
-   xs = (\(StackedBar bar) -> fst $ bar.x) <$> stackedBars
->>>>>>> 41495d58cda469f441182e7f22855997a2515032
    js = range 0 j_max
       where
-      j_max = maximum (map (\(StackedBar bar) -> length bar.bars - 1) (nonEmpty stackedBars))
+      j_max = maximum (map (\(StackedBar bar) -> length bar.bars - 1) stackedBars')
 
    margin :: Margin
    margin =
@@ -98,7 +95,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    legendSquareSize = 4
    caption_height = textHeight caption_class (fst caption) * 2
    nearest = 10.0 :: Number
-   y_max = ceil ((maximum $ (map (\(StackedBar bar) -> (sum $ map (\(Bar b) -> fst b.z) bar.bars)) (nonEmpty stackedBars))) / nearest) * nearest
+   y_max = ceil $ ((maximum $ map (\(StackedBar bar) -> (sum $ map (\(Bar b) -> fst b.z) bar.bars)) stackedBars') / nearest) * nearest
 
    createStacks :: D3.Selection -> Int -> Effect Unit
    createStacks parent' strokeWidth = do
