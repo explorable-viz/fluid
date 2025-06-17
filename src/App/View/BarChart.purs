@@ -185,7 +185,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       , height: height - margin.top - margin.bottom - caption_height
       }
 
-   scales = (to interior)
+   scales = to interior
 
    addHatchPattern :: D3.Selection -> Int -> String -> Effect Unit
    addHatchPattern parent' j col_j = do
