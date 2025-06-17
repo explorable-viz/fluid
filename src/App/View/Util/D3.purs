@@ -4,8 +4,10 @@ module App.View.Util.D3
    , Margin
    , Selection
    , attrs
+   , bandWidth
    , classed
    , colorScale
+   , colorScale2
    , create
    , datum
    , dimensions
@@ -107,8 +109,10 @@ foreign import data Selection :: Type
 foreign import createChild :: Selection -> String -> Object String -> Effect Selection
 foreign import remove :: Selection -> Effect Unit
 foreign import colorScale :: forall a. String -> a -> Array a -> String
+foreign import colorScale2 :: forall a. String -> a -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 foreign import scaleBand :: forall r. Int -> (Selectable String -> String) -> Array ({ x :: Selectable String | r }) -> String -> Number
+foreign import bandWidth :: (String -> Number) -> Number
 -- Currently two different protocols for x and y axis; will subsume into something more general
 foreign import xAxis :: forall a r. { x :: a -> Number | r } -> NonEmptyArray a -> Selection -> Effect Selection
 foreign import yAxis :: forall a r. { y :: a -> Number | r } -> Number -> Selection -> Effect Selection

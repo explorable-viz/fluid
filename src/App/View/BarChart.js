@@ -154,7 +154,7 @@ function createRootElement2_ (
          
       const strokeWidth = 1
       // bars
-      const stacks = createStacks(stackedBars, rootElement, strokeWidth, val, x, y, height) 
+      // const stacks = createStacks(stackedBars, rootElement, strokeWidth, val, x, y, height) 
       // TODO: enforce that all stacked bars have same set of segments
       // const j_max = Math.max(...stackedBars.map(bar => bar.bars.length))
 

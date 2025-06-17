@@ -113,6 +113,12 @@ export function colorScale (scheme) {
    }
 }
 
+export function colorScale2 (scheme) {
+   return key => {
+      return colorScale_[scheme](key)
+   }
+}
+
 export function dimensions (sel) {
    return () => {
       if (sel.nodes().length != 1) {
@@ -210,6 +216,12 @@ export function scaleBand (width) {
             .domain(stackedBars.map(bar => val(bar.x)))
             .padding(0.2)
       }
+   }
+}
+
+export function bandWidth (x) {
+   return () => {
+      return x.bandWidth()
    }
 }
 
