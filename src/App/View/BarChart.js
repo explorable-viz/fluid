@@ -156,11 +156,11 @@ function createRootElement2_ (
       // bars
       const stacks = createStacks(stackedBars, rootElement, strokeWidth, val, x, y, height) 
       // TODO: enforce that all stacked bars have same set of segments
-      const j_max = Math.max(...stackedBars.map(bar => bar.bars.length))
+      // const j_max = Math.max(...stackedBars.map(bar => bar.bars.length))
 
-      for (let j = 0; j < j_max; ++j) {
-         addHatchPattern(rootElement, j, color(j))
-      }
+      // for (let j = 0; j < j_max; ++j) {
+      //    addHatchPattern(rootElement, j, color(j))
+      // }
 
       return rootElement
    }

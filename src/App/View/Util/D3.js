@@ -205,11 +205,9 @@ export function scaleLinear (x1) {
 export function scaleBand (width) {
    return val => {
       return stackedBars => {
-         var categories = stackedBars.map(bar => val(bar.x))
-         console.log(categories)
          return d3.scaleBand()
             .range([0, width])
-            .domain(categories)
+            .domain(stackedBars.map(bar => val(bar.x)))
             .padding(0.2)
       }
    }

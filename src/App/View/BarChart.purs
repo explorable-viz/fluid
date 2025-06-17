@@ -13,6 +13,7 @@ import App.View.Util (class Drawable, UIHelpers, Select, uiHelpers)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, dimensions, remove, scaleBand, scaleLinear, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
+import Data.Array (range) as A
 import Data.Array (length, mapWithIndex, uncons)
 import Data.Foldable (for_, sum)
 import Data.Int (floor, pow, toNumber, trunc)
@@ -65,6 +66,8 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
          , height: height - margin.top - margin.bottom - caption_height
          }
    createLegend interior rootElement
+   for_ js \j -> do
+      addHatchPattern rootElement j (indexCol j js)
    void $ createAxes interior rootElement
    rootElement
       # create Text
@@ -80,6 +83,7 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
       Nothing -> error absurd
       Just { head: StackedBar bar, tail: _ } -> (\(Bar bar') -> fst bar'.y) <$> bar.bars
    xs = (\(StackedBar bar) -> fst $ bar.x) <$> stackedBars
+   js = (A.range 0 (maximum (map (\(StackedBar bar) -> length bar.bars - 1) (nonEmpty stackedBars))))
 
    margin :: Margin
    margin =
@@ -156,6 +160,26 @@ createRootElement' barchart@(BarChart { caption, size, stackedBars }) parent = d
       , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
       }
 
+   addHatchPattern :: D3.Selection -> Int -> String -> Effect Unit
+   addHatchPattern parent' j col_j = do
+      pattern <- parent' # create Pattern
+         [ "id" ↦ "diagonalHatch-" <> show j
+         , "patternUnits" ↦ "userSpaceOnUse"
+         , "width" ⟼ 2
+         , "height" ⟼ 2
+         , "patternTransform" ↦ "rotate(45)"
+         ]
+      void $ pattern # create Rect
+         [ "width" ⟼ 3.5, "height" ⟼ 3.5, "fill" ↦ col_j ]
+      void $ pattern # create Path
+         [ "x1" ⟼ 0
+         , "y" ⟼ 0
+         , "x2" ⟼ 0
+         , "y2" ⟼ 3.5
+         , "stroke" ↦ "rgb(255, 255, 255, 1)"
+         , "stroke-width" ↦ "1"
+         ]
+
 barChartHelpers :: BarChartHelpers
 barChartHelpers =
    { bar_attrs
@@ -164,7 +188,7 @@ barChartHelpers =
    }
    where
    bar_attrs :: (Int -> String) -> BarChart -> BarSegmentCoordinate -> Object String
-   bar_attrs indexCol (BarChart { stackedBars }) { i, j } =
+   bar_attrs indexCol' (BarChart { stackedBars }) { i, j } =
       fromFoldable
          [ "fill" ↦ case persistent of
               None -> col
@@ -186,7 +210,7 @@ barChartHelpers =
       t = snd z
       persistent = getPersistent t
       transient = getTransient t
-      col = indexCol j
+      col = indexCol' j
 
    tickEvery :: Int -> Int
    tickEvery n =
@@ -200,6 +224,9 @@ barChartHelpers =
 
    withBarChartSegment :: Select -> Effect EventListener
    withBarChartSegment sel = eventListener $ sel <<< uncurry barChartSegment <<< selectionEventData'
+
+indexCol :: Int -> Array Int -> String
+indexCol = colorScale "schemeAccent"
 
 instance Drawable BarChart where
    createRootElement = createRootElement'

@@ -89,6 +89,7 @@ data ElementType
    | TH
    | THead
    | TR
+   | Pattern
 
 create :: ElementType -> Attrs -> Selection -> Effect Selection
 create elementType as parent =
@@ -105,7 +106,7 @@ foreign import data Selection :: Type
 
 foreign import createChild :: Selection -> String -> Object String -> Effect Selection
 foreign import remove :: Selection -> Effect Unit
-foreign import colorScale :: String -> String -> Array String -> String
+foreign import colorScale :: forall a. String -> a -> Array a -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 foreign import scaleBand :: forall r. Int -> (Selectable String -> String) -> Array ({ x :: Selectable String | r }) -> String -> Number
 -- Currently two different protocols for x and y axis; will subsume into something more general
