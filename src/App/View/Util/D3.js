@@ -219,10 +219,8 @@ export function scaleBand (width) {
    }
 }
 
-export function bandWidth (x) {
-   return () => {
-      return x.bandWidth()
-   }
+export function bandwidth (x) {
+   return x.bandwidth()
 }
 
 export function datum (sel) {
