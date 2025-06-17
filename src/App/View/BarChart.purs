@@ -6,11 +6,11 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (Dimensions(..), Selectable, 𝕊(..), classes, colorShade, getPersistent, getTransient, selectionEventData')
+import App.Util (Dimensions(..), Selectable, 𝕊(..), Attrs, classes, colorShade, getPersistent, getTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.LineChart (LegendEntry)
-import App.View.Util (class Drawable, Select, UIHelpers)
-import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, dimensions, remove, scaleBand, scaleLinear, setDatum, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util (class Drawable, Select, UIHelpers, registerMouseListeners)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, colorScale2, create, datum, dimensions, remove, scaleBand, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
 import Data.Array (last, range, snoc, uncons) as A
@@ -227,6 +227,44 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          , "stroke-width" ↦ "1"
          ]
 
+setSelStates' :: BarChart -> Select -> D3.Selection -> Effect Unit
+setSelStates' (BarChart { stackedBars }) redraw parent = do
+   segments <- parent # selectAll ".bar"
+   listener <- eventListener (redraw <<< uncurry barChartSegment <<< selectionEventData')
+
+   for_ segments \segment -> do
+      segment' <- datum segment
+      segment # setAttrs (barAttrs segment') >>= registerMouseListeners listener
+   where
+   barAttrs :: BarSegmentCoordinate -> Attrs
+   barAttrs { i, j } =
+      [ "fill" ↦
+           ( case persistent of
+                None -> col
+                Secondary -> "url(#diagonalHatch-" <> show j <> ")"
+                Primary -> colorShade col (-40)
+           )
+      , "stroke-width" ↦ "1"
+      , "stroke-dasharray" ↦ case transient of
+           None -> "none"
+           Secondary -> "0.5 1" -- "1 2"
+           Primary -> "0.5 1" -- "2 2"
+      , "stroke-linecap" ↦ "round"
+      , "stroke" ↦
+           if persistent /= None || transient /= None then colorShade col (-70)
+           else col
+      ]
+      where
+      StackedBar { bars } = stackedBars ! i
+      Bar { z } = bars ! j
+      t = snd z
+      persistent = getPersistent t
+      transient = getTransient t
+      col = indexCol2 j
+
+   barChartSegment :: ViewSelSetter BarSegmentCoordinate
+   barChartSegment { i, j } = barSegment i j >>> barChart
+
 barChartHelpers :: BarChartHelpers
 barChartHelpers =
    { bar_attrs
@@ -275,9 +313,12 @@ barChartHelpers =
 indexCol :: Int -> Array Int -> String
 indexCol = colorScale "schemeAccent"
 
+indexCol2 :: Int -> String
+indexCol2 = colorScale2 "schemeAccent"
+
 instance Drawable BarChart where
    createRootElement = createRootElement'
-   setSelStates = setSelStates2 barChartHelpers
+   setSelStates = setSelStates'
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }
