@@ -35,7 +35,7 @@ loadFile folders (F.File file) = do
    url <- findM urls exists Nothing
    case url of
       Nothing -> error $ "File " <> file <> " not found."
-      Just name -> liftAff $ readTextFile ASCII name
+      Just name -> liftAff $ readTextFile UTF8 name
    where
    exists :: F.File -> m (Maybe String)
    exists (F.File url) = do
