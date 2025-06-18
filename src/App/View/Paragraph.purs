@@ -22,7 +22,7 @@ createRootElement' :: Paragraph -> D3.Selection -> Effect D3.Selection
 createRootElement' (Paragraph _ views) parent = do
    rootElement <- parent # create G []
    sequence_ $ flip map views \view -> do
-      unpack view \v -> createRootElement [] v rootElement
+      unpack view \v -> createRootElement (const []) v rootElement
    pure rootElement
 
 setSelStates' :: Paragraph -> Select -> D3.Selection -> Effect Unit

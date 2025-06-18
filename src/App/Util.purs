@@ -281,6 +281,8 @@ selClassesFor t =
 
 type Attrs = Array (Bind String)
 
+type PartialAttrs a = a -> Attrs
+
 attrs :: Array Attrs -> Object String
 attrs = foldl (\kvs -> (kvs `union` _) <<< fromFoldable) empty
 

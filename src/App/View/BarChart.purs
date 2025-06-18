@@ -6,18 +6,17 @@ module App.View.BarChart
 
 import Prelude hiding (absurd)
 
-import App.Util (Dimensions(..), Selectable, 𝕊(..), Attrs, classes, colorShade, getPersistent, getTransient, selectionEventData')
+import App.Util (Attrs, Dimensions(..), Selectable, 𝕊(..), PartialAttrs, classes, colorShade, getPersistent, getTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, barChart, barSegment)
 import App.View.LineChart (LegendEntry)
 import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, colorScale, create, datum, scaleBand, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
-import Data.Array (elemIndex, length, mapWithIndex, range)
+import Data.Array (elemIndex, foldl, length, mapWithIndex, range)
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty (head, last, singleton, snoc, uncons) as A
 import Data.Foldable (for_, sum)
-import Data.FoldableWithIndex (foldlWithIndex)
 import Data.Int (toNumber)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Number (ceil)
@@ -130,7 +129,15 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    createStacks :: D3.Selection -> Int -> Effect Unit
    createStacks parent' strokeWidth = do
       for_ stackedBars \stackedBar -> do
-         createStack [ "width" ⟼ bandwidth scales.x ] interior scales parent' stackedBar strokeWidth
+         createStack attrFun parent' stackedBar
+      where
+      attrFun bar =
+         [ "x" ⟼ scales.x bar.x
+         , "y" ⟼ scales.y (bar.y + bar.height)
+         , "stroke-width" ⟼ strokeWidth
+         , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y bar.height
+         , "width" ⟼ bandwidth scales.x
+         ]
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior') parent' = do
@@ -186,36 +193,36 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          , "stroke-width" ↦ "1"
          ]
 
-createStack :: Attrs -> Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> StackedBar -> Int -> Effect Unit
-createStack attrs interior scales parent' stackedBar@(StackedBar { i }) strokeWidth = do
+createStack :: PartialAttrs { x :: String, y :: Number, height :: Number } -> D3.Selection -> StackedBar -> Effect Unit
+createStack attrs parent' stackedBar@(StackedBar { i }) = do
    stack <- parent' # create G []
    let bars = barData stackedBar
    for_ bars \bar -> do
-      void $ createBar attrs interior scales stack bar strokeWidth
+      void $ createBar
+         ( const $ attrs { x: bar.x, y: bar.y, height: bar.height }
+         )
+         stack
+         bar
    where
    barData :: StackedBar -> NonEmptyArray { i :: Int, j :: Int, x :: String, y :: Number, height :: Number }
    barData (StackedBar { x, bars }) =
-      foldlWithIndex go first tail
+      foldl go first tail
       where
-      { head: Bar { z }, tail } = A.uncons (nonEmpty bars)
-      first = A.singleton { i, j: 0, x: xv, y: 0.0, height: fst z }
+      { head: Bar { z, j }, tail } = A.uncons (nonEmpty bars)
+      first = A.singleton { i, j, x: xv, y: 0.0, height: fst z }
       xv = fst x
 
-      go j acc (Bar { z }) =
+      go acc (Bar { z, j }) =
          A.snoc acc { i, j, x: xv, y: prev.y + prev.height, height: fst z }
          where
          prev = A.last acc
 
-createBar :: Attrs -> Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> { i :: Int, j :: Int, x :: String, y :: Number, height :: Number } -> Int -> Effect D3.Selection
-createBar attrs interior scales parent' bar strokeWidth = do
+createBar :: PartialAttrs Unit -> D3.Selection -> { i :: Int, j :: Int, x :: String, y :: Number, height :: Number } -> Effect D3.Selection
+createBar attrs parent' bar = do
    parent'
       # create Rect
-           ( attrs <>
+           ( attrs unit <>
                 [ classes [ "bar" ]
-                , "x" ⟼ scales.x bar.x
-                , "y" ⟼ scales.y (bar.y + bar.height)
-                , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y bar.height
-                , "stroke-width" ⟼ strokeWidth
                 ]
            )
       >>= setDatum { i: bar.i, j: bar.j }
