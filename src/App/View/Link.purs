@@ -26,7 +26,7 @@ linkContents :: ∀ a. Link a -> String
 linkContents (Link _ (s × _)) = s
 
 instance Drawable (Link (SelStates 𝕊)) where
-   createRootElement = createRootElement
+   createRootElement _ = createRootElement
    setSelStates = setSelState
 
 selLink :: ViewSelSetter (Link (SelStates 𝕊))

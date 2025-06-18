@@ -184,7 +184,7 @@ createRootElement (TableView { colNames, filter, rows }) parent = do
       | otherwise = []
 
 instance Drawable TableView where
-   createRootElement = createRootElement
+   createRootElement _ = createRootElement
    setSelStates = setSelStates
 
 --      toggleListener <- filterToggleListener filterToggler

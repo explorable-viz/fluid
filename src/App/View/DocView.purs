@@ -2,6 +2,7 @@ module App.View.DocView where
 
 import Prelude
 
+import App.Util (Attrs)
 import App.View.Paragraph (Paragraph)
 import App.View.Util (class Drawable, Select, View, createRootElement, setSelStates, unpack)
 import App.View.Util.D3 as D3
@@ -17,14 +18,14 @@ instance Drawable DocView where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 
-createRootElement' :: DocView -> D3.Selection -> Effect D3.Selection
-createRootElement' (DocView { doc: Just doc, view }) parent = do
+createRootElement' :: Attrs -> DocView -> D3.Selection -> Effect D3.Selection
+createRootElement' _ (DocView { doc: Just doc, view }) parent = do
    rootElement <- parent # D3.create D3.G []
-   void $ unpack view \v -> createRootElement v rootElement
-   void $ createRootElement doc rootElement
+   void $ unpack view \v -> createRootElement [] v rootElement
+   void $ createRootElement [] doc rootElement
    pure rootElement
-createRootElement' (DocView { doc: Nothing, view }) parent = do
-   unpack view \v -> createRootElement v parent
+createRootElement' _ (DocView { doc: Nothing, view }) parent = do
+   unpack view \v -> createRootElement [] v parent
 
 setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (DocView { doc: Just doc, view }) select rootElement = do

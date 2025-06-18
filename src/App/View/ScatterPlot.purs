@@ -53,7 +53,7 @@ scatterPlotHelpers =
    withScatterPlotPoint sel = sel <<< uncurry scatterPlotPoint <<< selectionEventData'
 
 instance Drawable ScatterPlot where
-   createRootElement = createRootElement2 uiHelpers
+   createRootElement _ = createRootElement2 uiHelpers
    setSelStates = setSelStates2 scatterPlotHelpers uiHelpers
 
 type PointIndex = { i :: Int }

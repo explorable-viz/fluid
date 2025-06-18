@@ -33,7 +33,7 @@ setSelStates (Text (text × _)) redraw rootElement = do
    textSelector _ = identity
 
 instance Drawable Text where
-   createRootElement = createRootElement
+   createRootElement _ = createRootElement
    setSelStates = setSelStates
 
 instance Textual String where

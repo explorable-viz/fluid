@@ -2,7 +2,7 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, selClasses, selClassesFor)
+import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, Attrs, selClasses, selClassesFor)
 import App.Util.Selector (ViewSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
@@ -37,7 +37,7 @@ selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
 selListener figVal redraw = redraw <<< figVal
 
 class Drawable a where
-   createRootElement :: a -> D3.Selection -> Effect D3.Selection
+   createRootElement :: Attrs -> a -> D3.Selection -> Effect D3.Selection
    setSelStates :: a -> Select -> D3.Selection -> Effect Unit
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
@@ -51,7 +51,7 @@ draw _ { divId, suffix, view } redraw = do
    setSelStates view redraw =<<
       ( isEmpty maybeRootElement >>=
            if _ then do
-              createRootElement view div <#> D3.setAttrs [ "id" ↦ childId ] # join
+              createRootElement [] view div <#> D3.setAttrs [ "id" ↦ childId ] # join
            else pure maybeRootElement
       )
 

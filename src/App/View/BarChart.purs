@@ -130,7 +130,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    createStacks :: D3.Selection -> Int -> Effect Unit
    createStacks parent' strokeWidth = do
       for_ stackedBars \stackedBar -> do
-         createStack interior scales parent' stackedBar strokeWidth
+         createStack [ "width" ⟼ bandwidth scales.x ] interior scales parent' stackedBar strokeWidth
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior') parent' = do
@@ -186,12 +186,12 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          , "stroke-width" ↦ "1"
          ]
 
-createStack :: Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> StackedBar -> Int -> Effect Unit
-createStack interior scales parent' stackedBar@(StackedBar { i }) strokeWidth = do
+createStack :: Attrs -> Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> StackedBar -> Int -> Effect Unit
+createStack attrs interior scales parent' stackedBar@(StackedBar { i }) strokeWidth = do
    stack <- parent' # create G []
    let bars = barData stackedBar
    for_ bars \bar -> do
-      void $ createBar interior scales stack bar strokeWidth
+      void $ createBar attrs interior scales stack bar strokeWidth
    where
    barData :: StackedBar -> NonEmptyArray { i :: Int, j :: Int, x :: String, y :: Number, height :: Number }
    barData (StackedBar { x, bars }) =
@@ -206,17 +206,18 @@ createStack interior scales parent' stackedBar@(StackedBar { i }) strokeWidth = 
          where
          prev = A.last acc
 
-createBar :: Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> { i :: Int, j :: Int, x :: String, y :: Number, height :: Number } -> Int -> Effect D3.Selection
-createBar interior scales parent' bar strokeWidth = do
+createBar :: Attrs -> Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> { i :: Int, j :: Int, x :: String, y :: Number, height :: Number } -> Int -> Effect D3.Selection
+createBar attrs interior scales parent' bar strokeWidth = do
    parent'
       # create Rect
-           [ classes [ "bar" ]
-           , "x" ⟼ scales.x bar.x
-           , "y" ⟼ scales.y (bar.y + bar.height)
-           , "width" ⟼ bandwidth scales.x
-           , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y bar.height
-           , "stroke-width" ⟼ strokeWidth
-           ]
+           ( attrs <>
+                [ classes [ "bar" ]
+                , "x" ⟼ scales.x bar.x
+                , "y" ⟼ scales.y (bar.y + bar.height)
+                , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y bar.height
+                , "stroke-width" ⟼ strokeWidth
+                ]
+           )
       >>= setDatum { i: bar.i, j: bar.j }
 
 setSelStates' :: BarChart -> Select -> D3.Selection -> Effect Unit
@@ -261,7 +262,7 @@ indexCol :: Int -> String
 indexCol = colorScale "schemeAccent"
 
 instance Drawable BarChart where
-   createRootElement = createRootElement'
+   createRootElement _ = createRootElement'
    setSelStates = setSelStates'
 
 -- see data binding in .js

@@ -2,7 +2,7 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
+import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, Attrs, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
 import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation(..))
@@ -272,7 +272,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) parent = do
 
 instance Drawable LineChart where
    setSelStates = setSelStates
-   createRootElement = createRootElement
+   createRootElement _ = createRootElement
 
 -- ======================
 -- boilerplate
