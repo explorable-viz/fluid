@@ -107,14 +107,6 @@ const colorScale_ = {
 // TODO: better name
 export function colorScale (scheme) {
    return key => {
-      return keys => {
-         return colorScale_[scheme](keys.indexOf(key))
-      }
-   }
-}
-
-export function colorScale2 (scheme) {
-   return key => {
       return colorScale_[scheme](key)
    }
 }

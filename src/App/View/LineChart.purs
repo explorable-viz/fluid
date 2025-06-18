@@ -10,7 +10,7 @@ import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, dat
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
-import Data.Array (concat, mapWithIndex)
+import Data.Array (concat, elemIndex, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
 import Data.Foldable (for_, length)
 import Data.Int (toNumber)
@@ -21,7 +21,7 @@ import Data.Tuple (fst, snd, uncurry)
 import DataType (f_plots)
 import Effect (Effect)
 import Lattice ((∨), (∧))
-import Util (type (×), Endo, init, nonEmpty, tail, zipWith, (!), (×))
+import Util (type (×), Endo, definitely', init, nonEmpty, tail, zipWith, (!), (×))
 import Web.Event.EventTarget (eventListener)
 
 newtype LineChart = LineChart
@@ -50,7 +50,7 @@ point_smallRadius = 2
 fill :: SelStates 𝕊 -> String -> String
 fill sel = if isPersistent sel then flip colorShade (-30) else identity
 
-nameCol :: String -> Array String -> String
+nameCol :: Int -> String
 nameCol = colorScale "schemePastel1"
 
 -- 0-based indices of line plot and point within line plot; see data binding in .js
@@ -81,7 +81,7 @@ setSelStates (LineChart { plots }) redraw rootElement = do
       where
       LinePlot { name, points } = plots ! i
       sel = selState (points ! j)
-      fill' = fill sel (nameCol (fst name) (names plots))
+      fill' = fill sel (nameCol $ definitely' $ elemIndex (fst name) (names plots))
 
    segmentAttrs :: SegmentCoordinates -> Attrs
    segmentAttrs { i, j1, j2 } =
@@ -91,7 +91,7 @@ setSelStates (LineChart { plots }) redraw rootElement = do
       where
       LinePlot { name, points } = plots ! i
       sel = selState (points ! j1) ∧ selState (points ! j2)
-      fill' = fill sel (nameCol (fst name) (names plots))
+      fill' = fill sel (nameCol $ definitely' $ elemIndex (fst name) (names plots))
 
    selState :: Point Number -> SelStates 𝕊
    selState (Point { x, y }) = snd x ∨ snd y
@@ -219,7 +219,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) parent = do
                  >=> setText name
             )
          g # create Circle
-            [ "fill" ↦ nameCol name (names plots)
+            [ "fill" ↦ nameCol (definitely' $ elemIndex name (names plots))
             , "r" ⟼ point_smallRadius
             , "cx" ⟼ circle_centre
             , "cy" ⟼ circle_centre

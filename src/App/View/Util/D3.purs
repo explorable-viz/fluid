@@ -7,7 +7,6 @@ module App.View.Util.D3
    , bandwidth
    , classed
    , colorScale
-   , colorScale2
    , create
    , datum
    , dimensions
@@ -108,8 +107,7 @@ foreign import data Selection :: Type
 
 foreign import createChild :: Selection -> String -> Object String -> Effect Selection
 foreign import remove :: Selection -> Effect Unit
-foreign import colorScale :: forall a. String -> a -> Array a -> String
-foreign import colorScale2 :: forall a. String -> a -> String
+foreign import colorScale :: forall a. String -> a -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
 foreign import scaleBand :: forall r. Int -> (Selectable String -> String) -> Array ({ x :: Selectable String | r }) -> String -> Number
 foreign import bandwidth :: (String -> Number) -> Number
