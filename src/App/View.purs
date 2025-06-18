@@ -17,6 +17,7 @@ import App.View.Util.Point (Point(..))
 import App.View.Util.Text as T
 import Data.Array ((:)) as A
 import Data.Array (fromFoldable)
+import Data.FunctorWithIndex (mapWithIndex)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
@@ -91,21 +92,24 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Se
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
    from r = BarChart
       { caption: unpack string (snd (get f_caption r))
-      , stackedBars: dict from <$> from (snd (get f_stackedBars r))
+      , stackedBars: mapWithIndex (\i r' -> dict (fromStacked i) r') $ from (snd (get f_stackedBars r))
       , size: dict from (snd (get f_size r))
       }
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
-   from r = StackedBar
-      { x: unpack string (snd (get f_x r))
-      , bars: dict from <$> from (snd (get f_bars r))
-      }
+-- awful hack to get around lack of extra fields in from
+fromStacked :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> StackedBar
+fromStacked i r = StackedBar
+   { x: unpack string (snd (get f_x r))
+   , bars: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_bars r))
+   , i
+   }
 
-instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) Bar where
-   from r = Bar
-      { y: unpack string (snd (get f_y r))
-      , z: get_intOrNumber f_z r
-      }
+fromBar :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Bar
+fromBar j r = Bar
+   { y: unpack string (snd (get f_y r))
+   , z: get_intOrNumber f_z r
+   , j
+   }
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LinePlot where
    from r = LinePlot

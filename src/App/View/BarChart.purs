@@ -17,7 +17,7 @@ import Data.Array (elemIndex, length, mapWithIndex, range)
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty (head, last, singleton, snoc, uncons) as A
 import Data.Foldable (for_, sum)
-import Data.FoldableWithIndex (foldlWithIndex, forWithIndex_)
+import Data.FoldableWithIndex (foldlWithIndex)
 import Data.Int (toNumber)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Number (ceil)
@@ -37,11 +37,13 @@ newtype BarChart = BarChart
 newtype StackedBar = StackedBar
    { x :: Selectable String -- True × "Consumer"
    , bars :: (Array Bar)
+   , i :: Int
    }
 
 newtype Bar = Bar
    { y :: Selectable String
    , z :: Selectable Number
+   , j :: Int
    }
 
 type BarChartHelpers =
@@ -121,14 +123,14 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
 
    to :: Dimensions Int -> { x :: String -> Number, y :: Endo Number }
    to (Dimensions { width, height }) =
-      { x: scaleBand width fst $ map ((\(StackedBar r) -> { x: r.x })) stackedBars
+      { x: scaleBand width fst $ map (\(StackedBar r) -> { x: r.x }) stackedBars
       , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
       }
 
    createStacks :: D3.Selection -> Int -> Effect Unit
    createStacks parent' strokeWidth = do
-      forWithIndex_ stackedBars \i stackedBar -> do
-         createStack interior scales parent' i stackedBar strokeWidth
+      for_ stackedBars \stackedBar -> do
+         createStack interior scales parent' stackedBar strokeWidth
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior') parent' = do
@@ -184,21 +186,12 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          , "stroke-width" ↦ "1"
          ]
 
-createStack :: Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> Int -> StackedBar -> Int -> Effect Unit
-createStack interior scales parent' i stackedBar strokeWidth = do
+createStack :: Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> StackedBar -> Int -> Effect Unit
+createStack interior scales parent' stackedBar@(StackedBar { i }) strokeWidth = do
    stack <- parent' # create G []
    let bars = barData stackedBar
-   forWithIndex_ bars \j bar -> do
-      void $ stack #
-         ( create Rect
-              [ classes [ "bar" ]
-              , "x" ⟼ scales.x bar.x
-              , "y" ⟼ scales.y (bar.y + bar.height)
-              , "width" ⟼ bandwidth scales.x
-              , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y bar.height
-              , "stroke-width" ⟼ strokeWidth
-              ] >=> setDatum { i, j }
-         )
+   for_ bars \bar -> do
+      void $ createBar interior scales stack bar strokeWidth
    where
    barData :: StackedBar -> NonEmptyArray { i :: Int, j :: Int, x :: String, y :: Number, height :: Number }
    barData (StackedBar { x, bars }) =
@@ -212,6 +205,19 @@ createStack interior scales parent' i stackedBar strokeWidth = do
          A.snoc acc { i, j, x: xv, y: prev.y + prev.height, height: fst z }
          where
          prev = A.last acc
+
+createBar :: Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> { i :: Int, j :: Int, x :: String, y :: Number, height :: Number } -> Int -> Effect D3.Selection
+createBar interior scales parent' bar strokeWidth = do
+   parent'
+      # create Rect
+           [ classes [ "bar" ]
+           , "x" ⟼ scales.x bar.x
+           , "y" ⟼ scales.y (bar.y + bar.height)
+           , "width" ⟼ bandwidth scales.x
+           , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y bar.height
+           , "stroke-width" ⟼ strokeWidth
+           ]
+      >>= setDatum { i: bar.i, j: bar.j }
 
 setSelStates' :: BarChart -> Select -> D3.Selection -> Effect Unit
 setSelStates' (BarChart { stackedBars }) redraw parent = do
