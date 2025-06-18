@@ -17,6 +17,7 @@ import Data.Array (elemIndex, foldl, length, mapWithIndex, range)
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty (head, last, singleton, snoc, uncons) as A
 import Data.Foldable (for_, sum)
+import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Number (ceil)
@@ -24,7 +25,7 @@ import Data.Semigroup.Foldable (maximum)
 import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Foreign.Object (Object)
-import Util (Endo, definitely', nonEmpty, (!))
+import Util (Endo, definitely', nonEmpty, (!), type (×))
 import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype BarChart = BarChart
@@ -42,7 +43,7 @@ newtype StackedBar = StackedBar
 newtype Bar = Bar
    { y :: Selectable String
    , z :: Selectable Number
-   , j :: Int
+   , ij :: Int × Int
    }
 
 type BarChartHelpers =
@@ -129,7 +130,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    createStacks :: D3.Selection -> Int -> Effect Unit
    createStacks parent' strokeWidth = do
       for_ stackedBars \stackedBar -> do
-         createStack attrFun parent' stackedBar
+         createRootElementStack attrFun stackedBar parent'
       where
       attrFun bar =
          [ "x" ⟼ scales.x bar.x
@@ -193,51 +194,67 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          , "stroke-width" ↦ "1"
          ]
 
-createStack :: PartialAttrs { x :: String, y :: Number, height :: Number } -> D3.Selection -> StackedBar -> Effect Unit
-createStack attrs parent' stackedBar@(StackedBar { i }) = do
-   stack <- parent' # create G []
-   let bars = barData stackedBar
-   for_ bars \bar -> do
-      void $ createBar
-         ( const $ attrs { x: bar.x, y: bar.y, height: bar.height }
+createRootElementStack :: PartialAttrs { x :: String, y :: Number, height :: Number } -> StackedBar -> D3.Selection -> Effect D3.Selection
+createRootElementStack attrs stackedBar@(StackedBar { i, bars }) parent' = do
+   stack <- parent' # create G [ classes [ "stack" ] ] >>= setDatum { i }
+   let barSegments = barData stackedBar
+   forWithIndex_ barSegments \j bar' -> do
+      void $ createRootElementBar
+         ( const $ attrs { x: bar'.x, y: bar'.y, height: bar'.height }
          )
+         (bars ! j)
          stack
-         bar
+   pure stack
    where
    barData :: StackedBar -> NonEmptyArray { i :: Int, j :: Int, x :: String, y :: Number, height :: Number }
-   barData (StackedBar { x, bars }) =
+   barData (StackedBar { x }) =
       foldl go first tail
       where
-      { head: Bar { z, j }, tail } = A.uncons (nonEmpty bars)
-      first = A.singleton { i, j, x: xv, y: 0.0, height: fst z }
+      { head: Bar { z, ij }, tail } = A.uncons (nonEmpty bars)
+      first = A.singleton { i, j: fst ij, x: xv, y: 0.0, height: fst z }
       xv = fst x
 
-      go acc (Bar { z, j }) =
-         A.snoc acc { i, j, x: xv, y: prev.y + prev.height, height: fst z }
+      go acc (Bar { z, ij }) =
+         A.snoc acc { i, j: fst ij, x: xv, y: prev.y + prev.height, height: fst z }
          where
          prev = A.last acc
 
-createBar :: PartialAttrs Unit -> D3.Selection -> { i :: Int, j :: Int, x :: String, y :: Number, height :: Number } -> Effect D3.Selection
-createBar attrs parent' bar = do
+createRootElementBar :: PartialAttrs Unit -> Bar -> D3.Selection -> Effect D3.Selection
+createRootElementBar attrs (Bar bar) parent' = do
    parent'
       # create Rect
            ( attrs unit <>
                 [ classes [ "bar" ]
                 ]
            )
-      >>= setDatum { i: bar.i, j: bar.j }
+      >>= setDatum { i: fst bar.ij, j: snd bar.ij }
 
-setSelStates' :: BarChart -> Select -> D3.Selection -> Effect Unit
-setSelStates' (BarChart { stackedBars }) redraw parent = do
-   segments <- parent # selectAll ".bar"
-   listener <- eventListener (redraw <<< uncurry barChartSegment <<< selectionEventData')
+setSelStatesBarChart :: BarChart -> Select -> D3.Selection -> Effect Unit
+setSelStatesBarChart (BarChart { stackedBars }) select parent = do
+   stacks <- parent # selectAll ".stack"
+   for_ stacks \stack -> do
+      stack' <- datum stack
+      setSelStatesStack (stackedBars ! stack'.i) select stack
+
+barChartSegment :: ViewSelSetter BarSegmentCoordinate
+barChartSegment { i, j } = barSegment i j >>> barChart
+
+setSelStatesStack :: StackedBar -> Select -> D3.Selection -> Effect Unit
+setSelStatesStack (StackedBar { bars }) select parent' = do
+   segments <- parent' # selectAll ".bar"
 
    for_ segments \segment -> do
-      segment' <- datum segment
-      segment # setAttrs (barAttrs segment') >>= registerMouseListeners listener
+      { j } <- datum segment
+      setSelStatesSegment (bars ! j) select segment
+
+setSelStatesSegment :: Bar -> Select -> D3.Selection -> Effect Unit
+setSelStatesSegment (Bar { z }) select segment = do
+   listener <- eventListener (select <<< uncurry barChartSegment <<< selectionEventData')
+   segment' <- datum segment
+   segment # setAttrs (barAttrs segment') >>= registerMouseListeners listener
    where
    barAttrs :: BarSegmentCoordinate -> Attrs
-   barAttrs { i, j } =
+   barAttrs { i: _, j } =
       [ "fill" ↦
            ( case persistent of
                 None -> col'
@@ -255,22 +272,25 @@ setSelStates' (BarChart { stackedBars }) redraw parent = do
            else col'
       ]
       where
-      StackedBar { bars } = stackedBars ! i
-      Bar { z } = bars ! j
       t = snd z
       persistent = getPersistent t
       transient = getTransient t
       col' = indexCol j
 
-   barChartSegment :: ViewSelSetter BarSegmentCoordinate
-   barChartSegment { i, j } = barSegment i j >>> barChart
-
 indexCol :: Int -> String
 indexCol = colorScale "schemeAccent"
 
-instance Drawable BarChart where
+instance Drawable BarChart Unit where
    createRootElement _ = createRootElement'
-   setSelStates = setSelStates'
+   setSelStates = setSelStatesBarChart
+
+instance Drawable StackedBar { x :: String, y :: Number, height :: Number } where
+   createRootElement = createRootElementStack
+   setSelStates = setSelStatesStack
+
+instance Drawable Bar Unit where
+   createRootElement = createRootElementBar
+   setSelStates = setSelStatesSegment
 
 -- see data binding in .js
 type BarSegmentCoordinate = { i :: Int, j :: Int }

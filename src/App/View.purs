@@ -100,15 +100,15 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
 fromStacked :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> StackedBar
 fromStacked i r = StackedBar
    { x: unpack string (snd (get f_x r))
-   , bars: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_bars r))
+   , bars: mapWithIndex (\j r' -> dict (fromBar (i × j)) r') $ from (snd (get f_bars r))
    , i
    }
 
-fromBar :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Bar
-fromBar j r = Bar
+fromBar :: Partial => (Int × Int) -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Bar
+fromBar ij r = Bar
    { y: unpack string (snd (get f_y r))
    , z: get_intOrNumber f_z r
-   , j
+   , ij
    }
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LinePlot where

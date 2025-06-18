@@ -15,7 +15,7 @@ import Util.Map (toUnfoldable)
 
 data MultiView = MultiView (Dict View)
 
-instance Drawable MultiView where
+instance Drawable MultiView Unit where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
 

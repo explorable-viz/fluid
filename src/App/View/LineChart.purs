@@ -270,7 +270,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) parent = do
       rightMargin :: Int
       rightMargin = 4
 
-instance Drawable LineChart where
+instance Drawable LineChart Unit where
    setSelStates = setSelStates
    createRootElement _ = createRootElement
 

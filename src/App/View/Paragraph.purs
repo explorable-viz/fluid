@@ -14,7 +14,7 @@ import Val (Val)
 
 data Paragraph = Paragraph Boolean (Array View)
 
-instance Drawable Paragraph where
+instance Drawable Paragraph Unit where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
 

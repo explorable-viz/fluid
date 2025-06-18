@@ -183,7 +183,7 @@ createRootElement (TableView { colNames, filter, rows }) parent = do
       | colName == rowKey = [ "filter-toggle", "toggle-button" ]
       | otherwise = []
 
-instance Drawable TableView where
+instance Drawable TableView Unit where
    createRootElement _ = createRootElement
    setSelStates = setSelStates
 

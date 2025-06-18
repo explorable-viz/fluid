@@ -13,7 +13,7 @@ newtype DocView = DocView
    , view :: View
    }
 
-instance Drawable DocView where
+instance Drawable DocView Unit where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
 

@@ -25,7 +25,7 @@ data Link a = Link (Val a) (Selectable String)
 linkContents :: ∀ a. Link a -> String
 linkContents (Link _ (s × _)) = s
 
-instance Drawable (Link (SelStates 𝕊)) where
+instance Drawable (Link (SelStates 𝕊)) Unit where
    createRootElement _ = createRootElement
    setSelStates = setSelState
 
