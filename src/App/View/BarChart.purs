@@ -84,6 +84,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    js = range 0 $ length ys - 1
 
    Dimensions { width, height } = size <#> fst
+
    margin :: Margin
    margin =
       { top: 3
@@ -91,19 +92,20 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       , bottom: 20
       , left: 30
       }
+
    interior :: Dimensions Int
    interior = Dimensions
       { width: width - margin.left - margin.right
       , height: height - margin.top - margin.bottom - caption_height
       }
-   
+
    caption_class = "title-text"
    caption_height = textHeight caption_class (fst caption) * 2
-
 
    legend_entry_x = 15
    legendSquareSize = 4
    legendLineHeight = 15
+
    legend_dims :: Dimensions Int
    legend_dims = Dimensions
       { width: legend_entry_x + maxTextWidth + rightMargin
@@ -116,41 +118,17 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    scales = to interior
    nearest = 10.0
    y_max = ceil $ ((maximum $ map (\(StackedBar bar) -> (sum $ map (\(Bar b) -> fst b.z) bar.bars)) stackedBars') / nearest) * nearest
+
    to :: Dimensions Int -> { x :: String -> Number, y :: Endo Number }
    to (Dimensions { width, height }) =
       { x: scaleBand width fst $ map ((\(StackedBar r) -> { x: r.x })) stackedBars
       , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
       }
-   
+
    createStacks :: D3.Selection -> Int -> Effect Unit
    createStacks parent' strokeWidth = do
       forWithIndex_ stackedBars \i stackedBar -> do
-         stack <- parent' # create G []
-         let bars = barData i stackedBar
-         forWithIndex_ bars \j bar -> do
-            void $ stack #
-               ( create Rect
-                    [ classes [ "bar" ]
-                    , "x" ⟼ scales.x bar.x
-                    , "y" ⟼ scales.y (bar.y + bar.height)
-                    , "width" ⟼ bandwidth scales.x
-                    , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y bar.height
-                    , "stroke-width" ⟼ strokeWidth
-                    ] >=> setDatum { i, j }
-               )
-      where
-      barData :: Int -> StackedBar -> NonEmptyArray { i :: Int, j :: Int, x :: String, y :: Number, height :: Number }
-      barData i (StackedBar { x, bars }) =
-         foldlWithIndex go first tail
-         where
-         { head: Bar { z }, tail } = A.uncons (nonEmpty bars)
-         first = A.singleton { i, j: 0, x: xv, y: 0.0, height: fst z }
-         xv = fst x
-
-         go j acc (Bar { z }) =
-            A.snoc acc { i, j, x: xv, y: prev.y + prev.height, height: fst z }
-            where
-            prev = A.last acc
+         createStack interior scales parent' i stackedBar strokeWidth
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior') parent' = do
@@ -186,7 +164,6 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          (parent' # create G [ classes [ "y-axis" ] ])
       pure { x, y }
 
-
    addHatchPattern :: D3.Selection -> Int -> String -> Effect Unit
    addHatchPattern parent' j col_j = do
       pattern <- parent' # create Pattern
@@ -206,6 +183,35 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          , "stroke" ↦ "rgb(255, 255, 255, 1)"
          , "stroke-width" ↦ "1"
          ]
+
+createStack :: Dimensions Int -> { x :: String -> Number, y :: Endo Number } -> D3.Selection -> Int -> StackedBar -> Int -> Effect Unit
+createStack interior scales parent' i stackedBar strokeWidth = do
+   stack <- parent' # create G []
+   let bars = barData stackedBar
+   forWithIndex_ bars \j bar -> do
+      void $ stack #
+         ( create Rect
+              [ classes [ "bar" ]
+              , "x" ⟼ scales.x bar.x
+              , "y" ⟼ scales.y (bar.y + bar.height)
+              , "width" ⟼ bandwidth scales.x
+              , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y bar.height
+              , "stroke-width" ⟼ strokeWidth
+              ] >=> setDatum { i, j }
+         )
+   where
+   barData :: StackedBar -> NonEmptyArray { i :: Int, j :: Int, x :: String, y :: Number, height :: Number }
+   barData (StackedBar { x, bars }) =
+      foldlWithIndex go first tail
+      where
+      { head: Bar { z }, tail } = A.uncons (nonEmpty bars)
+      first = A.singleton { i, j: 0, x: xv, y: 0.0, height: fst z }
+      xv = fst x
+
+      go j acc (Bar { z }) =
+         A.snoc acc { i, j, x: xv, y: prev.y + prev.height, height: fst z }
+         where
+         prev = A.last acc
 
 setSelStates' :: BarChart -> Select -> D3.Selection -> Effect Unit
 setSelStates' (BarChart { stackedBars }) redraw parent = do
