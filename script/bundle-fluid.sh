@@ -4,7 +4,7 @@ set -xe
 FLUID_EXECUTABLE="dist/fluid/shared/fluid.mjs"
 SHEBANG="#!/usr/bin/env node"
 
-yarn purs-backend-es bundle-app --main Fluid --to $FLUID_EXECUTABLE --platform=node
+yarn purs-backend-es bundle-app --no-build --main Fluid --to $FLUID_EXECUTABLE --platform=node
 
 if [[ ! -f "$FLUID_EXECUTABLE" ]]; then
   echo "Error: File $FLUID_EXECUTABLE not found."
