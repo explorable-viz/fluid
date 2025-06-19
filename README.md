@@ -9,7 +9,7 @@ Fluid is an experimental programming language which integrates a bidirectional d
 
 ### Software required
 - git
-- Node.js >=14.0.0
+- Node.js >=18.0.0
 - yarn >= 1.22
 
 Additionally, for Windows users only:
