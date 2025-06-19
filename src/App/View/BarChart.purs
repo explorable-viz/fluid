@@ -7,7 +7,7 @@ module App.View.BarChart
 import Prelude hiding (absurd)
 
 import App.Util (Attrs, Dimensions(..), Selectable, 𝕊(..), PartialAttrs, classes, colorShade, getPersistent, getTransient, selectionEventData')
-import App.Util.Selector (ViewSelSetter, barChart, barSegment)
+import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.LineChart (LegendEntry)
 import App.View.Util (class Drawable, Select, registerMouseListeners)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, colorScale, create, datum, scaleBand, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate, xAxis, yAxis)
@@ -23,9 +23,10 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
 import Data.Tuple (fst, snd, uncurry)
+import DataType (f_bars, f_stackedBars, f_z)
 import Effect (Effect)
 import Foreign.Object (Object)
-import Util (Endo, definitely', nonEmpty, (!), type (×))
+import Util (Endo, definitely', nonEmpty, (!))
 import Web.Event.EventTarget (EventListener, eventListener)
 
 newtype BarChart = BarChart
@@ -43,7 +44,7 @@ newtype StackedBar = StackedBar
 newtype Bar = Bar
    { y :: Selectable String
    , z :: Selectable Number
-   , ij :: Int × Int
+   , j :: Int
    }
 
 type BarChartHelpers =
@@ -210,46 +211,43 @@ createRootElementStack attrs stackedBar@(StackedBar { i, bars }) parent' = do
    barData (StackedBar { x }) =
       foldl go first tail
       where
-      { head: Bar { z, ij }, tail } = A.uncons (nonEmpty bars)
-      first = A.singleton { i, j: fst ij, x: xv, y: 0.0, height: fst z }
+      { head: Bar { z, j }, tail } = A.uncons (nonEmpty bars)
+      first = A.singleton { i, j, x: xv, y: 0.0, height: fst z }
       xv = fst x
 
-      go acc (Bar { z, ij }) =
-         A.snoc acc { i, j: fst ij, x: xv, y: prev.y + prev.height, height: fst z }
+      go acc (Bar { z, j }) =
+         A.snoc acc { i, j, x: xv, y: prev.y + prev.height, height: fst z }
          where
          prev = A.last acc
 
 createRootElementBar :: PartialAttrs Unit -> Bar -> D3.Selection -> Effect D3.Selection
-createRootElementBar attrs (Bar bar) parent' = do
+createRootElementBar attrs (Bar { j }) parent' = do
    parent'
       # create Rect
            ( attrs unit <>
                 [ classes [ "bar" ]
                 ]
            )
-      >>= setDatum { i: fst bar.ij, j: snd bar.ij }
+      >>= setDatum { j }
 
 setSelStatesBarChart :: BarChart -> Select -> D3.Selection -> Effect Unit
 setSelStatesBarChart (BarChart { stackedBars }) select parent = do
    stacks <- parent # selectAll ".stack"
    for_ stacks \stack -> do
       stack' <- datum stack
-      setSelStatesStack (stackedBars ! stack'.i) select stack
-
-barChartSegment :: ViewSelSetter BarSegmentCoordinate
-barChartSegment { i, j } = barSegment i j >>> barChart
+      setSelStatesStack (stackedBars ! stack'.i) (select <<< barChart <<< dictVal f_stackedBars) stack
 
 setSelStatesStack :: StackedBar -> Select -> D3.Selection -> Effect Unit
-setSelStatesStack (StackedBar { bars }) select parent' = do
+setSelStatesStack (StackedBar { bars, i }) select parent' = do
    segments <- parent' # selectAll ".bar"
 
    for_ segments \segment -> do
       { j } <- datum segment
-      setSelStatesSegment (bars ! j) select segment
+      setSelStatesSegment (bars ! j) (select <<< listElement i <<< dictVal f_bars) segment
 
 setSelStatesSegment :: Bar -> Select -> D3.Selection -> Effect Unit
 setSelStatesSegment (Bar { z }) select segment = do
-   listener <- eventListener (select <<< uncurry barChartSegment <<< selectionEventData')
+   listener <- eventListener (select <<< uncurry (\{ j } -> listElement j <<< dictVal f_z) <<< selectionEventData')
    segment' <- datum segment
    segment # setAttrs (barAttrs segment') >>= registerMouseListeners listener
    where
