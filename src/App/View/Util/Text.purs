@@ -32,7 +32,7 @@ setSelStates (Text (text × _)) redraw rootElement = do
    textSelector :: ViewSelSetter Text
    textSelector _ = identity
 
-instance Drawable Text Unit where
+instance Drawable Text Unit Unit where
    createRootElement _ = createRootElement
    setSelStates = setSelStates
 

@@ -15,7 +15,7 @@ import Util.Map (toUnfoldable)
 
 data MultiView = MultiView (Dict View)
 
-instance Drawable MultiView Unit where
+instance Drawable MultiView Unit Unit where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
 
@@ -23,7 +23,7 @@ createRootElement' :: MultiView -> D3.Selection -> Effect D3.Selection
 createRootElement' (MultiView views) parent = do
    rootElement <- parent # create D3.G []
    sequence_ $ flip map views \view -> do
-      unpack view \v -> createRootElement (const []) v rootElement
+      unpack view \v -> createRootElement (\_ _ c -> const [] c) v rootElement
    pure rootElement
 
 setSelStates' :: MultiView -> Select -> D3.Selection -> Effect Unit

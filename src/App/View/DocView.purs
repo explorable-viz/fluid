@@ -13,18 +13,18 @@ newtype DocView = DocView
    , view :: View
    }
 
-instance Drawable DocView Unit where
+instance Drawable DocView Unit Unit where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
 
 createRootElement' :: DocView -> D3.Selection -> Effect D3.Selection
 createRootElement' (DocView { doc: Just doc, view }) parent = do
    rootElement <- parent # D3.create D3.G []
-   void $ unpack view \v -> createRootElement (const []) v rootElement
-   void $ createRootElement (const []) doc rootElement
+   void $ unpack view \v -> createRootElement (\_ _ c -> const [] c) v rootElement
+   void $ createRootElement (\_ _ c -> const [] c) doc rootElement
    pure rootElement
 createRootElement' (DocView { doc: Nothing, view }) parent = do
-   unpack view \v -> createRootElement (const []) v parent
+   unpack view \v -> createRootElement (\_ _ c -> const [] c) v parent
 
 setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (DocView { doc: Just doc, view }) select rootElement = do

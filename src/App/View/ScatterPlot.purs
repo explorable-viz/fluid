@@ -52,7 +52,7 @@ scatterPlotHelpers =
    scatterPlotPoint { i } = scatterPoint i >>> scatterPlot
    withScatterPlotPoint sel = sel <<< uncurry scatterPlotPoint <<< selectionEventData'
 
-instance Drawable ScatterPlot Unit where
+instance Drawable ScatterPlot Unit Unit where
    createRootElement _ = createRootElement2 uiHelpers
    setSelStates = setSelStates2 scatterPlotHelpers uiHelpers
 

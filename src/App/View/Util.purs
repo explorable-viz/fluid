@@ -25,24 +25,24 @@ import Web.Event.EventTarget (EventListener)
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
-newtype View = View (forall r. (forall a b. Drawable a b => a -> r) -> r)
+newtype View = View (forall r. (forall a b c. Drawable a b c => a -> r) -> r)
 
-pack :: forall a b. Drawable a b => a -> View
+pack :: forall a b c. Drawable a b c => a -> View
 pack x = View \k -> k x
 
-unpack :: forall r. View -> (forall a b. Drawable a b => a -> r) -> r
+unpack :: forall r. View -> (forall a b c. Drawable a b c => a -> r) -> r
 unpack (View vw) k = vw k
 
 selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
 selListener figVal redraw = redraw <<< figVal
 
-class Drawable a b | a -> b where
-   createRootElement :: PartialAttrs b -> a -> D3.Selection -> Effect D3.Selection
+class Drawable a b c | a -> b, a -> c where
+   createRootElement :: PartialAttrs b c -> a -> D3.Selection -> Effect D3.Selection
    setSelStates :: a -> Select -> D3.Selection -> Effect Unit
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
-draw :: forall a b. Drawable a b => Renderer a
+draw :: forall a b c. Drawable a b c => Renderer a
 draw _ { divId, suffix, view } redraw = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
@@ -51,7 +51,7 @@ draw _ { divId, suffix, view } redraw = do
    setSelStates view redraw =<<
       ( isEmpty maybeRootElement >>=
            if _ then do
-              createRootElement (const []) view div <#> D3.setAttrs [ "id" ↦ childId ] # join
+              createRootElement (\_ _ c -> (const []) $ c) view div <#> D3.setAttrs [ "id" ↦ childId ] # join
            else pure maybeRootElement
       )
 

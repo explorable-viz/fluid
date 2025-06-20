@@ -76,7 +76,7 @@ matrixViewHelpers =
 
    withElement sel = sel <<< uncurry element <<< selectionEventData'
 
-instance Drawable MatrixView Unit where
+instance Drawable MatrixView Unit Unit where
    createRootElement _ = createRootElement2 uiHelpers
    setSelStates = setSelStates2 matrixViewHelpers uiHelpers
 
