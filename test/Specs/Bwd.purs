@@ -3,7 +3,7 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
+import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, fst, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
 import Bind ((↦))
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
@@ -59,6 +59,17 @@ bwd_cases =
           \37, 41, 54, 34, 20,\n\
           \21, 35, 31, 31, 42,\n\
           \13, 32, 35, 19, 26"
+     , datasets: []
+     }
+   , { file: "matrix/matmul"
+     , imports:
+          [ "lib/convolution"
+          , "slicing/matrix/left-matrix"
+          , "slicing/matrix/right-matrix"
+          ]
+     , bwd_expect_file: "matrix/matmul.expect"
+     , δv: fst $ matrixElement 1 1 select
+     , fwd_expect: "(⸨22⸩, 28,\n  49, 64, 9, 12, 15,\n            19, 26, 33,\n            29, 40, 51)"
      , datasets: []
      }
    , { file: "dict/create"
