@@ -2,14 +2,16 @@ module App.View where
 
 import Prelude hiding (absurd)
 
+import App.Segment (Segment(..))
 import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, get_intOrNumber, inert)
-import App.View.BarChart (Bar(..), BarChart(..), StackedBar(..))
+import App.View.BarChart (BarChart(..))
 import App.View.DocView (DocView(..))
 import App.View.LineChart (LineChart(..), LinePlot(..))
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
 import App.View.Paragraph as P
 import App.View.ScatterPlot (ScatterPlot(..))
+import App.View.StackedBar (StackedBar(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
 import App.View.Util (View, pack)
 import App.View.Util.Axes (Orientation, orientation)
@@ -104,8 +106,8 @@ fromStacked i r = StackedBar
    , i
    }
 
-fromBar :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Bar
-fromBar j r = Bar
+fromBar :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Segment
+fromBar j r = Segment
    { y: unpack string (snd (get f_y r))
    , z: get_intOrNumber f_z r
    , j
