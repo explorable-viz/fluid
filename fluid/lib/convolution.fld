@@ -36,4 +36,4 @@ let matMul a b =
     let ((m, n), (i, j)) = (dims a, dims b) in 
     if not (n == i)
     then error "Dimensions don't line up"
-    else [| foldl (+) 0 [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n] | (i', j') in (m, j) |];
+    else """Intermediate matrix""" [| foldl (+) 0 [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n] | (i', j') in (m, j) |];
