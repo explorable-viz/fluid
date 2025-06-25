@@ -10,9 +10,9 @@ import App.Util.Selector (dictVal)
 import App.View.Util (class Drawable, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum)
 import App.View.Util.D3 as D3
-import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array (scanl)
 import Data.Array.NonEmpty as A
-import Data.Foldable (foldl, for_)
+import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Newtype (class Newtype)
 import DataType (f_bars)
@@ -38,18 +38,14 @@ createRootElementStack attrFun stackedBar@(StackedBar { i, segments }) parent' =
 
    pure stack
    where
-   barData :: StackedBar -> NonEmptyArray { x :: String, y :: Number, height :: Number }
+   barData :: StackedBar -> Array { x :: String, y :: Number, height :: Number }
    barData (StackedBar { x }) =
-      foldl go first tail
+      [ first ] <> scanl go first tail
       where
       { head: Segment { z }, tail } = A.uncons (nonEmpty segments)
-      first = A.singleton { x: xv, y: 0.0, height: contents z }
-      xv = contents x
-
-      go acc (Segment { z }) =
-         A.snoc acc { x: xv, y: y + height, height: contents z }
-         where
-         { y, height } = A.last acc
+      first = { x: contents x, y: 0.0, height: contents z }
+      go { height, y } (Segment { z }) =
+         { x: contents x, y: y + height, height: contents z }
 
 setSelStatesStack :: StackedBar -> Select -> D3.Selection -> Effect Unit
 setSelStatesStack (StackedBar { segments }) select parent' = do
