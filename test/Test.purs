@@ -30,7 +30,7 @@ scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite loadFile
    [ { file: "matrix/matmul"
      , imports:
-          [ "lib/convolution"
+          [ "lib/matrix"
           , "slicing/matrix/left-matrix"
           , "slicing/matrix/right-matrix"
           ]

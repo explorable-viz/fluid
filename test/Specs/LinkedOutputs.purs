@@ -93,7 +93,7 @@ linkedOutputs_cases =
    , { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
           , datasets: [ "data" ↦ "linked-outputs/convolution-data" ]
-          , imports: [ "lib/convolution" ]
+          , imports: [ "lib/matrix" ]
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
           , query:

@@ -15,7 +15,7 @@ bwd_cases =
    , { file: "array/dims", imports: [], bwd_expect_file: "array/dims.expect", δv: select, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩", datasets: [] }
    , { file: "convolution/edgeDetect"
      , imports:
-          [ "lib/convolution"
+          [ "lib/matrix"
           , "slicing/convolution/filter/edge-detect"
           , "slicing/convolution/test-image"
           ]
@@ -31,7 +31,7 @@ bwd_cases =
      }
    , { file: "convolution/emboss"
      , imports:
-          [ "lib/convolution"
+          [ "lib/matrix"
           , "slicing/convolution/filter/emboss"
           , "slicing/convolution/test-image"
           ]
@@ -47,7 +47,7 @@ bwd_cases =
      }
    , { file: "convolution/gaussian"
      , imports:
-          [ "lib/convolution"
+          [ "lib/matrix"
           , "slicing/convolution/filter/gaussian"
           , "slicing/convolution/test-image"
           ]
@@ -63,7 +63,7 @@ bwd_cases =
      }
    , { file: "matrix/matmul"
      , imports:
-          [ "lib/convolution"
+          [ "lib/matrix"
           , "slicing/matrix/left-matrix"
           , "slicing/matrix/right-matrix"
           ]

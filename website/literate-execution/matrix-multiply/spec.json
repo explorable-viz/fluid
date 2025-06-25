@@ -1,7 +1,7 @@
 {
     "fluidSrcPath": ["../fluid"],
     "file": "matrix-multiply/matmul",
-    "imports": [ "lib/convolution", "matrix-multiply/a-matrix", "matrix-multiply/b-matrix", "matrix-multiply/c-matrix" ],
+    "imports": [ "lib/matrix", "matrix-multiply/a-matrix", "matrix-multiply/b-matrix", "matrix-multiply/c-matrix" ],
     "datasets": [],
     "inputs": [ "aMatrix", "bMatrix", "cMatrix" ],
     "query": true
