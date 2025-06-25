@@ -19,19 +19,17 @@ import Web.Event.EventTarget (eventListener)
 newtype Segment = Segment
    { y :: Selectable String
    , z :: Selectable Number
-   , j :: Int
+   , j :: Int -- TODO: remove me
    }
 
-createRootElementSegment :: PartialAttrs { y :: String, z :: Number } Unit -> Segment -> D3.Selection -> Effect D3.Selection
-createRootElementSegment attrFun (Segment { y, z, j }) parent' = do
-   parent'
-      # create Rect
-           ( attrFun { y: contents y, z: contents z } [ classes [ "bar" ] ] unit
-           )
+createRootElement' :: PartialAttrs { y :: String, z :: Number } Unit -> Segment -> D3.Selection -> Effect D3.Selection
+createRootElement' attrFun (Segment { y, z, j }) parent =
+   parent
+      # create Rect (attrFun { y: contents y, z: contents z } [ classes [ "bar" ] ] unit)
       >>= setDatum { j }
 
-setSelStatesSegment :: Segment -> Select -> D3.Selection -> Effect Unit
-setSelStatesSegment (Segment { z }) select segment = do
+setSelStates' :: Segment -> Select -> D3.Selection -> Effect Unit
+setSelStates' (Segment { z }) select segment = do
    listener <- eventListener (select <<< uncurry jthSegment <<< selectionEventData')
    { j } <- datum segment
    segment # setAttrs (barAttrs j) >>= registerMouseListeners listener
@@ -39,11 +37,10 @@ setSelStatesSegment (Segment { z }) select segment = do
    barAttrs :: Int -> Attrs
    barAttrs j =
       [ "fill" ↦
-           ( case persistent of
-                None -> col'
-                Secondary -> "url(#diagonalHatch-" <> show j <> ")"
-                Primary -> colorShade col' (-40)
-           )
+           case persistent of
+              None -> col'
+              Secondary -> "url(#diagonalHatch-" <> show j <> ")"
+              Primary -> colorShade col' (-40)
       , "stroke-width" ↦ "1"
       , "stroke-dasharray" ↦ case transient of
            None -> "none"
@@ -62,8 +59,8 @@ setSelStatesSegment (Segment { z }) select segment = do
    jthSegment { j } = listElement j <<< dictVal f_z
 
 instance Drawable Segment { y :: String, z :: Number } Unit where
-   createRootElement = createRootElementSegment
-   setSelStates = setSelStatesSegment
+   createRootElement = createRootElement'
+   setSelStates = setSelStates'
 
 indexCol :: Int -> String
 indexCol = colorScale "schemeAccent"
