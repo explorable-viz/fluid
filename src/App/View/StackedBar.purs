@@ -15,7 +15,7 @@ import Data.Array.NonEmpty as A
 import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Newtype (class Newtype)
-import DataType (f_bars)
+import DataType (f_segments)
 import Effect (Effect)
 import Util (nonEmpty, (!))
 
@@ -52,7 +52,7 @@ setSelStatesStack (StackedBar { segments }) select parent' = do
    segments' <- parent' # selectAll ".bar"
    for_ segments' \segment -> do
       { j } <- datum segment
-      setSelStates (segments ! j) (select <<< dictVal f_bars) segment
+      setSelStates (segments ! j) (select <<< dictVal f_segments) segment
 
 derive instance Newtype StackedBar _
 

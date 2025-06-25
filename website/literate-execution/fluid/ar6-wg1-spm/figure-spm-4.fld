@@ -1,16 +1,18 @@
-let stackedBarHeight stackedBar = sum [ bar.z | bar <- stackedBar.bars ];
+let stackedBarHeight stackedBar = sum [ segment.z | segment <- stackedBar.segments ];
 
 let get x (BarChart record) = fromSome (findWithKey "x" x record.stackedBars);
 
 let mkBarChart scenName table =
-    """Test"""
-    BarChart {
-        caption: "Example bar chart for scenario " ++ scenName,
-        size: { width: 275, height: 185 },
-        stackedBars: map (fun record -> """Annotated record""" { x: record.type, bars: [ { y: "emissions", z: record.emissions } ]}) table
-    };
+   """Test"""
+   BarChart {
+      caption: "Example bar chart for scenario " ++ scenName,
+      size: { width: 275, height: 185 },
+      stackedBars:
+         map (fun record -> """Annotated record""" { x: record.type, segments: [ { y: "emissions", z: record.emissions } ]})
+            table
+   };
 
-let getHeight offset bar = (head bar.bars).z + offset;
+let getHeight offset bar = (head bar.segments).z + offset;
 
 let changed126 = map (fun r -> r.changed) ssp126preds;
     changed245 = map (fun r -> r.changed) ssp245preds;
@@ -18,7 +20,7 @@ let changed126 = map (fun r -> r.changed) ssp126preds;
     ssp126table = ssp126Total : ssp126Source;
     ssp245table =
         """
-        We build this table analagously to the ssp126
+        We build this table analogously to the ssp126
         """
         { type: "Total", emissions: findPercentile 50 changed245 } : ssp245Source;
     ssp126 = mkBarChart "SSP1-2.6" ssp126table;
@@ -27,7 +29,7 @@ let changed126 = map (fun r -> r.changed) ssp126preds;
     co2s = map stackedBarHeight (map (get "CO2") [ssp126, ssp245]);
     nonco2 = map (get "Non-CO2") [ssp126, ssp245]
 in """Within each scenario bar plot, the bars represent total warming (°C), warming from CO2 (°C) and from Non-CO2 GHG's (°C)."""
-    MultiView {
-    leftBarChart: ssp126,
-    rightBarChart: ssp245
+MultiView {
+   leftBarChart: ssp126,
+   rightBarChart: ssp245
 }

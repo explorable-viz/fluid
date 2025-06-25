@@ -30,5 +30,5 @@ setSelStates' :: MultiView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (MultiView views) select rootElement = do
    sequence_ $
       flip mapWithIndex (toUnfoldable views :: Array (String × View)) \i (x × view) -> do
-         elem <- rootElement # D3.select ("svg" <> D3.nthChild (i + 1))
+         elem <- rootElement # D3.select ("svg" <> D3.nthChild (i + 1)) -- TODO: remove 'svg'
          void $ unpack view \v -> setSelStates v (multiViewEntry x >>> select) elem

@@ -17,7 +17,6 @@ You can edit this file as you like.
   , "effect"
   , "either"
   , "exceptions"
-  , "exists"
   , "filterable"
   , "foldable-traversable"
   , "foreign"

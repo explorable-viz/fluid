@@ -8,7 +8,7 @@ in MultiView {
    barChart: BarChart {
       caption: "Non-renewables output",
       size: { width: 275, height: 185 },
-      stackedBars: [ { x: numToStr year, bars: stack year } | year <- [2014..2018] ]
+      stackedBars: [ { x: numToStr year, segments: stack year } | year <- [2014..2018] ]
    },
    scatterPlot: ScatterPlot {
       caption: "",

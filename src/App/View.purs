@@ -23,7 +23,7 @@ import Data.FunctorWithIndex (mapWithIndex)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, f_bars, f_caption, f_labels, f_name, f_plots, f_points, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, f_caption, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Link (Link(..))
@@ -102,7 +102,7 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
 fromStacked :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> StackedBar
 fromStacked i r = StackedBar
    { x: unpack string (snd (get f_x r))
-   , segments: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_bars r))
+   , segments: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_segments r))
    , i
    }
 

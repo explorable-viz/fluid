@@ -9,7 +9,7 @@ import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
-import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cSome, f_bars, f_points, f_stackedBars, f_z)
+import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cSome, f_points, f_segments, f_stackedBars, f_z)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
@@ -73,7 +73,7 @@ scatterPoint i = listElement i >>> dictVal f_points
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
-   dictVal f_z >>> listElement j >>> dictVal f_bars >>> listElement i >>> dictVal f_stackedBars
+   dictVal f_z >>> listElement j >>> dictVal f_segments >>> listElement i >>> dictVal f_stackedBars
 
 paragraph :: SelSetter Val Val
 paragraph = constrArg cParagraph 0
