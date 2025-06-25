@@ -20,7 +20,6 @@ import Data.Int (toNumber)
 import Data.Newtype (unwrap)
 import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
-import Data.Tuple (fst)
 import DataType (f_stackedBars)
 import Effect (Effect)
 import Util (Endo, definitely', nonEmpty, (!))
@@ -28,8 +27,15 @@ import Util (Endo, definitely', nonEmpty, (!))
 newtype BarChart = BarChart
    { caption :: Selectable String
    , size :: Dimensions (Selectable Int)
-   , stackedBars :: (Array StackedBar)
+   , stackedBars :: Array StackedBar
    }
+
+setSelStates' :: BarChart -> Select -> D3.Selection -> Effect Unit
+setSelStates' (BarChart { stackedBars }) select parent = do
+   stacks <- parent # selectAll ".stack"
+   for_ stacks \stack -> do
+      { i } <- datum stack
+      setSelStates (stackedBars ! i) (select <<< barChart <<< dictVal f_stackedBars <<< listElement i) stack
 
 createRootElement' :: BarChart -> D3.Selection -> Effect D3.Selection
 createRootElement' (BarChart { caption, size, stackedBars }) parent = do
@@ -50,21 +56,21 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
            , "dominant-baseline" ↦ "central"
            , "text-anchor" ↦ "middle"
            ]
-      >>= setText (fst caption)
+      >>= setText (contents caption)
 
    createLegend interior g
    pure g
    where
    stackedBars' = nonEmpty stackedBars
    -- Assuming all bars have the same set of names
-   ys = bar.segments <#> \(Segment bar') -> fst bar'.y
+   ys = bar.segments <#> \(Segment bar') -> contents bar'.y
       where
       StackedBar bar = A.head stackedBars'
 
-   xs = stackedBars <#> \(StackedBar bar) -> fst bar.x
+   xs = stackedBars <#> \(StackedBar bar) -> contents bar.x
    js = range 0 $ length ys - 1
 
-   Dimensions { width, height } = size <#> fst
+   Dimensions { width, height } = size <#> contents
 
    margin :: Margin
    margin =
@@ -176,14 +182,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          , "stroke-width" ↦ "1"
          ]
 
-setSelStatesBarChart :: BarChart -> Select -> D3.Selection -> Effect Unit
-setSelStatesBarChart (BarChart { stackedBars }) select parent = do
-   stacks <- parent # selectAll ".stack"
-   for_ stacks \stack -> do
-      { i } <- datum stack
-      setSelStates (stackedBars ! i) (select <<< barChart <<< dictVal f_stackedBars <<< listElement i) stack
-
 instance Drawable BarChart Unit { x :: String, y :: Number } where
    createRootElement _ = createRootElement'
-   setSelStates = setSelStatesBarChart
+   setSelStates = setSelStates'
 
