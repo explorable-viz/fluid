@@ -121,7 +121,7 @@ docComment' expr' = token.lexeme (go <?> "docComment")
    go :: SParser (List (DocCommentElem Expr Unit))
    go = do
       words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
-      pure {-$ spyWhen debug.tracing "Parsed comment: " show-}  words
+      pure words
 
 docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
 docCommentToken expr' =
