@@ -94,17 +94,16 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Se
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
    from r = BarChart
       { caption: unpack string (snd (get f_caption r))
-      , stackedBars: mapWithIndex (\i r' -> dict (fromStacked i) r') $ from (snd (get f_stackedBars r))
+      , stackedBars: dict from <$> from (snd (get f_stackedBars r))
       , size: dict from (snd (get f_size r))
       }
 
--- awful hack to get around lack of extra fields in from
-fromStacked :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> StackedBar
-fromStacked i r = StackedBar
-   { x: unpack string (snd (get f_x r))
-   , segments: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_segments r))
-   , i
-   }
+-- TODO: remove
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
+   from r = StackedBar
+      { x: unpack string (snd (get f_x r))
+      , segments: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_segments r))
+      }
 
 fromBar :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Segment
 fromBar j r = Segment

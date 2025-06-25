@@ -8,7 +8,7 @@ import App.Segment (Segment(..))
 import App.Util (PartialAttrs, Selectable, classes, contents)
 import App.Util.Selector (dictVal)
 import App.View.Util (class Drawable, Select, createRootElement, setSelStates)
-import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum)
+import App.View.Util.D3 (ElementType(..), create, datum, selectAll)
 import App.View.Util.D3 as D3
 import Data.Array (scanl)
 import Data.Array.NonEmpty as A
@@ -22,12 +22,11 @@ import Util (nonEmpty, (!))
 newtype StackedBar = StackedBar
    { x :: Selectable String
    , segments :: Array Segment
-   , i :: Int -- TODO: remove me
    }
 
 createRootElement' :: PartialAttrs { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } -> StackedBar -> D3.Selection -> Effect D3.Selection
-createRootElement' attrFun (StackedBar { x, i, segments }) parent = do
-   stack <- parent # create G [ classes [ "stack" ] ] >>= setDatum { i }
+createRootElement' attrFun (StackedBar { x, segments }) parent = do
+   stack <- parent # create G [ classes [ "stack" ] ]
    forWithIndex_ barData \j bar ->
       createRootElement (\segment attrs' _ -> attrFun bar attrs' segment) (segments ! j) stack
    pure stack

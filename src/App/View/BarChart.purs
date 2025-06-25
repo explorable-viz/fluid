@@ -10,12 +10,13 @@ import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.LineChart (LegendEntry)
 import App.View.StackedBar (StackedBar(..))
 import App.View.Util (class Drawable, Select, createRootElement, setSelStates)
-import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, create, datum, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
 import Data.Array (elemIndex, length, mapWithIndex, range)
 import Data.Array.NonEmpty (head) as A
 import Data.Foldable (for_, sum)
+import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
 import Data.Newtype (unwrap)
 import Data.Number (ceil)
@@ -32,9 +33,9 @@ newtype BarChart = BarChart
 
 setSelStates' :: BarChart -> Select -> D3.Selection -> Effect Unit
 setSelStates' (BarChart { stackedBars }) select barChart' = do
+   -- more robust to iterate over stackedBars and select ith DOM child instead?
    stackedBars' <- barChart' # selectAll ".stack"
-   for_ stackedBars' \stack -> do
-      { i } <- datum stack
+   forWithIndex_ stackedBars' \i stack ->
       setSelStates (stackedBars ! i) (select <<< barChart <<< dictVal f_stackedBars <<< listElement i) stack
 
 createRootElement' :: BarChart -> D3.Selection -> Effect D3.Selection
@@ -43,7 +44,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
 
    g <- svg # create G [ translate { x: margin.left, y: margin.top } ]
    void $ createAxes g
-   createStacks g strokeWidth
+   createStackedBars g strokeWidth
 
    for_ js \j ->
       addHatchPattern g j $ indexCol $ definitely' $ elemIndex j js
@@ -118,9 +119,9 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       , "width" ⟼ bandwidth scales.x
       ]
 
-   createStacks :: D3.Selection -> Int -> Effect Unit
-   createStacks parent' strokeWidth' = do
-      for_ stackedBars \stackedBar -> do
+   createStackedBars :: D3.Selection -> Int -> Effect Unit
+   createStackedBars parent' strokeWidth' = do
+      for_ stackedBars \stackedBar ->
          createRootElement attrFun stackedBar parent'
       where
       attrFun bar attrs segment =
