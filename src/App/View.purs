@@ -102,7 +102,7 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
 fromStacked :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> StackedBar
 fromStacked i r = StackedBar
    { x: unpack string (snd (get f_x r))
-   , bars: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_bars r))
+   , segments: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_bars r))
    , i
    }
 

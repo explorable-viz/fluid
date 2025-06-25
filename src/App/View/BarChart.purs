@@ -6,7 +6,7 @@ import Prelude hiding (absurd)
 
 import App.Segment (Segment(..), indexCol)
 import App.Util (Dimensions(..), Selectable, classes)
-import App.Util.Selector (barChart, dictVal)
+import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.LineChart (LegendEntry)
 import App.View.StackedBar (StackedBar(..))
 import App.View.Util (class Drawable, Select, createRootElement, setSelStates)
@@ -57,7 +57,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    where
    stackedBars' = nonEmpty stackedBars
    -- Assuming all bars have the same set of names
-   ys = bar.bars <#> \(Segment bar') -> fst bar'.y
+   ys = bar.segments <#> \(Segment bar') -> fst bar'.y
       where
       StackedBar bar = A.head stackedBars'
 
@@ -98,7 +98,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
 
    scales = to interior
    nearest = 10.0
-   y_max = ceil $ ((maximum $ map (\(StackedBar bar) -> (sum $ map (\(Segment b) -> fst b.z) bar.bars)) stackedBars') / nearest) * nearest
+   y_max = ceil $ ((maximum $ map (\(StackedBar bar) -> (sum $ map (\(Segment b) -> fst b.z) bar.segments)) stackedBars') / nearest) * nearest
 
    to :: Dimensions Int -> { x :: String -> Number, y :: Endo Number }
    to (Dimensions { width, height }) =
@@ -181,9 +181,9 @@ setSelStatesBarChart (BarChart { stackedBars }) select parent = do
    stacks <- parent # selectAll ".stack"
    for_ stacks \stack -> do
       { i } <- datum stack
-      setSelStates (stackedBars ! i) (select <<< barChart <<< dictVal f_stackedBars) stack
+      setSelStates (stackedBars ! i) (select <<< barChart <<< dictVal f_stackedBars <<< listElement i) stack
 
-instance Drawable BarChart Unit { x :: String, y :: Number, height :: Number } where
+instance Drawable BarChart Unit { x :: String, y :: Number } where
    createRootElement _ = createRootElement'
    setSelStates = setSelStatesBarChart
 

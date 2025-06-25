@@ -6,7 +6,7 @@ import Prelude
 
 import App.Segment (Segment(..))
 import App.Util (PartialAttrs, Selectable, classes, contents)
-import App.Util.Selector (dictVal, listElement)
+import App.Util.Selector (dictVal)
 import App.View.Util (class Drawable, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (ElementType(..), create, datum, selectAll, setDatum)
 import App.View.Util.D3 as D3
@@ -21,19 +21,19 @@ import Util (nonEmpty, (!))
 
 newtype StackedBar = StackedBar
    { x :: Selectable String -- True × "Consumer"
-   , bars :: (Array Segment)
+   , segments :: (Array Segment)
    , i :: Int
    }
 
 createRootElementStack :: PartialAttrs { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } -> StackedBar -> D3.Selection -> Effect D3.Selection
-createRootElementStack attrFun stackedBar@(StackedBar { i, bars }) parent' = do
+createRootElementStack attrFun stackedBar@(StackedBar { i, segments }) parent' = do
    stack <- parent' # create G [ classes [ "stack" ] ] >>= setDatum { i }
    let barSegments = barData stackedBar
 
    forWithIndex_ barSegments \j bar' -> do
       void $ createRootElement
          (\segment attrs' _ -> attrFun bar' attrs' segment)
-         (bars ! j)
+         (segments ! j)
          stack
 
    pure stack
@@ -42,7 +42,7 @@ createRootElementStack attrFun stackedBar@(StackedBar { i, bars }) parent' = do
    barData (StackedBar { x }) =
       foldl go first tail
       where
-      { head: Segment { z }, tail } = A.uncons (nonEmpty bars)
+      { head: Segment { z }, tail } = A.uncons (nonEmpty segments)
       first = A.singleton { x: xv, y: 0.0, height: contents z }
       xv = contents x
 
@@ -52,11 +52,11 @@ createRootElementStack attrFun stackedBar@(StackedBar { i, bars }) parent' = do
          { y, height } = A.last acc
 
 setSelStatesStack :: StackedBar -> Select -> D3.Selection -> Effect Unit
-setSelStatesStack (StackedBar { bars, i }) select parent' = do
-   segments <- parent' # selectAll ".bar"
-   for_ segments \segment -> do
+setSelStatesStack (StackedBar { segments }) select parent' = do
+   segments' <- parent' # selectAll ".bar"
+   for_ segments' \segment -> do
       { j } <- datum segment
-      setSelStates (bars ! j) (select <<< listElement i <<< dictVal f_bars) segment
+      setSelStates (segments ! j) (select <<< dictVal f_bars) segment
 
 derive instance Newtype StackedBar _
 
