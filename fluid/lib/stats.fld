@@ -55,7 +55,9 @@ let mkHistogram data dataName nbins =
     in BarChart {
         caption: "Histogram of distribution of " ++ dataName,
         size: { width: 275, height: 185},
-        stackedBars: map (fun (data, edge) -> { x: data, segments: [{ y: "density", z: (length data) / binWidth }] }) (cut data nbins)
+        stackedBars:
+          map (fun (data, edge) -> { x: data, segments: [{ y: "density", z: length data / binWidth }] })
+            (cut data nbins)
     };
 
 let likelihoodLE data target =
