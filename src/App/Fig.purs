@@ -9,6 +9,7 @@ import App.View (view')
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
+import Data.Array (fromFoldable)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
@@ -28,7 +29,7 @@ import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, absurd, error, spyWhen, (×), (∩))
+import Util (type (×), AffError, Endo, absurd, error, spy, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
@@ -149,8 +150,10 @@ intermediates { spec, in_roots, inerts } αs =
       \query ->
          let
             ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
-               $ runQuery query
-               $ αs.persistent ∪ αs.transient
+               $ spy "Query keys: " (show <<< fromFoldable <<< keys)
+                    ( runQuery query
+                         $ αs.persistent ∪ αs.transient
+                    )
          in
             rebuildι inerts αs ια
 

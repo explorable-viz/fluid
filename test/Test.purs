@@ -2,7 +2,6 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Selector (fst, matrixElement, select)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
@@ -27,17 +26,10 @@ main = run tests
 -- main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ bwdSuite loadFile
-   [ { file: "matrix/matmul"
-     , imports:
-          [ "lib/matrix"
-          , "slicing/matrix/left-matrix"
-          , "slicing/matrix/right-matrix"
-          ]
-     , bwd_expect_file: "matrix/matmul.expect"
-     , δv: fst $ matrixElement 1 1 select
-     , fwd_expect: "(⸨22⸩, 28,\n  49, 64, 9, 12, 15,\n            19, 26, 33,\n            29, 40, 51)"
-     , datasets: []
+scratchpad = asTestSuite $ suite loadFile
+   [ { file: "comments/projection"
+     , imports: []
+     , fwd_expect: "\"\"\" Test \"\"\" 1"
      }
    ]
 

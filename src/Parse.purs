@@ -265,7 +265,7 @@ expr_ =
       op' <- token.operator
       onlyIf (op == op') $
          if op == str.dot then \e e' -> case e' of
-            Var x -> Project e x
+            Var x -> Project None e x
             _ -> error $ "Field names are not first class; got \"" <> prettyP e' <> "\"."
          else if isCtrOp op' then \e e' -> Constr unit None op' (e : e' : empty)
          else \e e' -> BinaryApp e op e'
@@ -316,10 +316,10 @@ expr_ =
             projection e = dprojection e <|> rprojection e
 
             rprojection :: Raw Expr -> SParser (Raw Expr)
-            rprojection e = (Project e <$> (token.reservedOp str.dot *> ident)) <|> pure e
+            rprojection e = (Project doc e <$> (token.reservedOp str.dot *> ident)) <|> pure e
 
             dprojection :: Raw Expr -> SParser (Raw Expr)
-            dprojection e = (DProject e <$> (token.reservedOp str.dot *> token.brackets expr_))
+            dprojection e = (DProject doc e <$> (token.reservedOp str.dot *> token.brackets expr_))
 
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
          simpleExpr :: DocOpt Expr Unit -> SParser (Raw Expr)

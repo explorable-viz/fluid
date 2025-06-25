@@ -145,18 +145,24 @@ eval γ (Matrix α doc e (x × y) e') αs = do
    new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
    new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
-eval γ (Project e x) αs = do
+eval γ (Project doc e x) αs = do
    v <- eval γ e αs
    case v of
-      Val _ _ (V.Dictionary (DictRep d)) -> withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
+      Val _ _ (V.Dictionary (DictRep d)) -> do
+         (Val α' _ v') <- withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
+         vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
+         pure (Val α' vdoc v')
       _ -> throw $ "Found " <> prettyP v <> ", expected dictionary"
-eval γ (DProject e x) α = do
+eval γ (DProject doc e x) α = do
    v <- eval γ e α
    v' <- eval γ x α
    case v of
       Val _ _ (V.Dictionary (DictRep d)) ->
          case v' of
-            Val _ _ (V.Str s) -> withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
+            Val _ _ (V.Str s) -> do
+               (Val α' _ v'') <- (withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found"))
+               vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v'')) doc
+               pure (Val α' vdoc v'')
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval γ (App doc e e') αs = do

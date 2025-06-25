@@ -17,4 +17,5 @@ comments_cases =
    , { file: "comments/list-comp", imports: [], fwd_expect: "\"\"\" We can add comments to list comprehensions \"\"\" (14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))" }
    , { file: "comments/app", imports: [], fwd_expect: "\"\"\" This function application returns the length of a list.\"\"\" 2" }
    , { file: "comments/int", imports: [], fwd_expect: "\"\"\" Comment on ${1} \"\"\" 1" }
+   , { file: "comments/projection", imports: [], fwd_expect: "\"\"\" Test \"\"\" 1" }
    ]
