@@ -35,7 +35,7 @@ module App.View.Util.D3
 
 import Prelude
 
-import App.Util (Attrs, Dimensions, Selectable)
+import App.Util (Attrs, Dimensions)
 import Bind (Bind, (↦))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Generic.Rep (class Generic)
@@ -109,7 +109,7 @@ foreign import createChild :: Selection -> String -> Object String -> Effect Sel
 foreign import remove :: Selection -> Effect Unit
 foreign import colorScale :: forall a. String -> a -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
-foreign import scaleBand :: forall r. Int -> (Selectable String -> String) -> Array ({ x :: Selectable String | r }) -> String -> Number
+foreign import scaleBand :: Int -> Array String -> String -> Number
 foreign import bandwidth :: (String -> Number) -> Number
 -- Currently two different protocols for x and y axis; will subsume into something more general
 foreign import xAxis :: forall a r. { x :: a -> Number | r } -> NonEmptyArray a -> Selection -> Effect Selection

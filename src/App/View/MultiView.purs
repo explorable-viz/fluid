@@ -23,12 +23,12 @@ createRootElement' :: MultiView -> D3.Selection -> Effect D3.Selection
 createRootElement' (MultiView views) parent = do
    rootElement <- parent # create D3.G []
    sequence_ $ flip map views \view -> do
-      unpack view \v -> createRootElement (\_ _ c -> const [] c) v rootElement
+      unpack view \v -> createRootElement (const const) v rootElement
    pure rootElement
 
 setSelStates' :: MultiView -> Select -> D3.Selection -> Effect Unit
 setSelStates' (MultiView views) select rootElement = do
    sequence_ $
       flip mapWithIndex (toUnfoldable views :: Array (String × View)) \i (x × view) -> do
-         elem <- rootElement # D3.select ("svg" <> D3.nthChild (i + 1)) -- TODO: remove 'svg'
-         void $ unpack view \v -> setSelStates v (multiViewEntry x >>> select) elem
+         child <- rootElement # D3.select ("svg" <> D3.nthChild (i + 1)) -- TODO: remove 'svg'
+         void $ unpack view \v -> setSelStates v (multiViewEntry x >>> select) child

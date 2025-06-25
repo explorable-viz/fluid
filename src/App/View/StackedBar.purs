@@ -20,26 +20,21 @@ import Effect (Effect)
 import Util (nonEmpty, (!))
 
 newtype StackedBar = StackedBar
-   { x :: Selectable String -- True × "Consumer"
-   , segments :: (Array Segment)
-   , i :: Int
+   { x :: Selectable String
+   , segments :: Array Segment
+   , i :: Int -- TODO: remove me
    }
 
-createRootElementStack :: PartialAttrs { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } -> StackedBar -> D3.Selection -> Effect D3.Selection
-createRootElementStack attrFun stackedBar@(StackedBar { i, segments }) parent' = do
-   stack <- parent' # create G [ classes [ "stack" ] ] >>= setDatum { i }
-   let barSegments = barData stackedBar
-
-   forWithIndex_ barSegments \j bar' -> do
-      void $ createRootElement
-         (\segment attrs' _ -> attrFun bar' attrs' segment)
-         (segments ! j)
-         stack
-
+createRootElement' :: PartialAttrs { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } -> StackedBar -> D3.Selection -> Effect D3.Selection
+createRootElement' attrFun (StackedBar { x, i, segments }) parent = do
+   stack <- parent # create G [ classes [ "stack" ] ] >>= setDatum { i }
+   forWithIndex_ barData \j bar ->
+      createRootElement (\segment attrs' _ -> attrFun bar attrs' segment) (segments ! j) stack
    pure stack
+
    where
-   barData :: StackedBar -> Array { x :: String, y :: Number, height :: Number }
-   barData (StackedBar { x }) =
+   barData :: Array { x :: String, y :: Number, height :: Number }
+   barData =
       [ first ] <> scanl go first tail
       where
       { head: Segment { z }, tail } = A.uncons (nonEmpty segments)
@@ -47,9 +42,9 @@ createRootElementStack attrFun stackedBar@(StackedBar { i, segments }) parent' =
       go { height, y } (Segment { z }) =
          { x: contents x, y: y + height, height: contents z }
 
-setSelStatesStack :: StackedBar -> Select -> D3.Selection -> Effect Unit
-setSelStatesStack (StackedBar { segments }) select parent' = do
-   segments' <- parent' # selectAll ".bar"
+setSelStates' :: StackedBar -> Select -> D3.Selection -> Effect Unit
+setSelStates' (StackedBar { segments }) select stackedBar = do
+   segments' <- stackedBar # selectAll ".bar" -- TODO: .bar -> .segment
    for_ segments' \segment -> do
       { j } <- datum segment
       setSelStates (segments ! j) (select <<< dictVal f_segments) segment
@@ -57,9 +52,7 @@ setSelStatesStack (StackedBar { segments }) select parent' = do
 derive instance Newtype StackedBar _
 
 instance Drawable StackedBar { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } where
-   createRootElement = createRootElementStack
-   setSelStates = setSelStatesStack
+   createRootElement = createRootElement'
+   setSelStates = setSelStates'
 
--- see data binding in .js
 type BarSegmentCoordinate = { j :: Int }
-

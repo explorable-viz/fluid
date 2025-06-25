@@ -5,7 +5,7 @@ module App.View.BarChart
 import Prelude hiding (absurd)
 
 import App.Segment (Segment(..), indexCol)
-import App.Util (Dimensions(..), Selectable, classes)
+import App.Util (Dimensions(..), Selectable, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.LineChart (LegendEntry)
 import App.View.StackedBar (StackedBar(..))
@@ -31,9 +31,9 @@ newtype BarChart = BarChart
    }
 
 setSelStates' :: BarChart -> Select -> D3.Selection -> Effect Unit
-setSelStates' (BarChart { stackedBars }) select parent = do
-   stacks <- parent # selectAll ".stack"
-   for_ stacks \stack -> do
+setSelStates' (BarChart { stackedBars }) select barChart' = do
+   stackedBars' <- barChart' # selectAll ".stack"
+   for_ stackedBars' \stack -> do
       { i } <- datum stack
       setSelStates (stackedBars ! i) (select <<< barChart <<< dictVal f_stackedBars <<< listElement i) stack
 
@@ -45,7 +45,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    void $ createAxes g
    createStacks g strokeWidth
 
-   for_ js \j -> do
+   for_ js \j ->
       addHatchPattern g j $ indexCol $ definitely' $ elemIndex j js
 
    void $ svg
@@ -62,7 +62,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    pure g
    where
    stackedBars' = nonEmpty stackedBars
-   -- Assuming all bars have the same set of names
+   -- AssuminedBars' all bars have the same set of names
    ys = bar.segments <#> \(Segment bar') -> contents bar'.y
       where
       StackedBar bar = A.head stackedBars'
@@ -87,7 +87,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       }
 
    caption_class = "title-text"
-   caption_height = textHeight caption_class (fst caption) * 2
+   caption_height = textHeight caption_class (contents caption) * 2
 
    legend_entry_x = 15
    legendSquareSize = 4
@@ -104,11 +104,12 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
 
    scales = to interior
    nearest = 10.0
-   y_max = ceil $ ((maximum $ map (\(StackedBar bar) -> (sum $ map (\(Segment b) -> fst b.z) bar.segments)) stackedBars') / nearest) * nearest
+   y_max = ceil $ nearest *
+      ((maximum $ map (\(StackedBar bar) -> (sum $ map (\(Segment b) -> contents b.z) bar.segments)) stackedBars') / nearest)
 
    to :: Dimensions Int -> { x :: String -> Number, y :: Endo Number }
    to (Dimensions { width, height }) =
-      { x: scaleBand width fst $ map (\(StackedBar r) -> { x: r.x }) stackedBars
+      { x: scaleBand width $ map (\(StackedBar r) -> contents r.x) stackedBars
       , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
       }
    strokeWidth = 1

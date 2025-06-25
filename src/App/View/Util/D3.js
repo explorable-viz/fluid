@@ -201,13 +201,11 @@ export function scaleLinear (x1) {
 }
 
 export function scaleBand (width) {
-   return val => {
-      return stackedBars => {
-         return d3.scaleBand()
-            .range([0, width])
-            .domain(stackedBars.map(bar => val(bar.x)))
-            .padding(0.2)
-      }
+   return stackedBars => {
+      return d3.scaleBand()
+         .range([0, width])
+         .domain(stackedBars)
+         .padding(0.2)
    }
 }
 
