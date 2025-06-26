@@ -40,6 +40,9 @@ class View a b c | a -> b, a -> c where
    createRootElement :: PartialAttrs b c -> a -> D3.Selection -> Effect D3.Selection
    setSelStates :: a -> Select -> D3.Selection -> Effect Unit
 
+class View2 a b | a -> b where
+   createRootElement2 :: b -> a -> D3.Selection -> Effect D3.Selection
+
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
 draw :: forall a c. View a Unit c => Renderer a

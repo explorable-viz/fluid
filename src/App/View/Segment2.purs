@@ -2,10 +2,9 @@ module App.View.Segment2 where
 
 import Prelude
 
-import App.Segment (Segment(..))
-import App.Util (Attrs, Dimensions, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
+import App.Util (Attrs, Dimensions, 𝕊(..), Selectable, classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
 import App.Util.Selector (jthSegment)
-import App.View.Util (Select, registerMouseListeners)
+import App.View.Util (class View2, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), bandwidth, colorScale, create, setAttrs)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
@@ -15,6 +14,12 @@ import Data.Tuple (uncurry)
 import Effect (Effect)
 import Util (Endo)
 import Web.Event.EventTarget (eventListener)
+
+newtype Segment = Segment
+   { y :: Selectable String
+   , z :: Selectable Number
+   , j :: Int -- TODO: remove me (numerical index of my y coordinate)
+   }
 
 type Scales = { x :: String -> Number, y :: Endo Number }
 
@@ -26,6 +31,9 @@ type SegmentContext =
    , y :: Number
    , y_index :: Int
    }
+
+instance View2 Segment SegmentContext where
+   createRootElement2 = createRootElement'
 
 createRootElement' :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
 createRootElement' { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
