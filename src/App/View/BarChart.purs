@@ -9,7 +9,7 @@ import App.Util (Dimensions(..), Selectable, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.LineChart (LegendEntry)
 import App.View.StackedBar (StackedBar(..))
-import App.View.Util (class Drawable, Select, createRootElement, setSelStates)
+import App.View.Util (class View, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
@@ -184,7 +184,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          , "stroke-width" ↦ "1"
          ]
 
-instance Drawable BarChart Unit { x :: String, y :: Number } where
+instance View BarChart Unit { x :: String, y :: Number } where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
 

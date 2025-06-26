@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelStates, Selectable, 𝕊, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, matrixElement)
-import App.View.Util (class Drawable, UIHelpers, Select, uiHelpers)
+import App.View.Util (class View, UIHelpers, Select, uiHelpers)
 import App.View.Util.D3 as D3
 import Data.Tuple (snd, uncurry)
 import Effect (Effect)
@@ -76,7 +76,7 @@ matrixViewHelpers =
 
    withElement sel = sel <<< uncurry element <<< selectionEventData'
 
-instance Drawable MatrixView Unit Unit where
+instance View MatrixView Unit Unit where
    createRootElement _ = createRootElement2 uiHelpers
    setSelStates = setSelStates2 matrixViewHelpers uiHelpers
 

@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, Attrs, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
-import App.View.Util (class Drawable, Select, registerMouseListeners)
+import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation(..))
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
@@ -270,7 +270,7 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) parent = do
       rightMargin :: Int
       rightMargin = 4
 
-instance Drawable LineChart Unit Unit where
+instance View LineChart Unit Unit where
    setSelStates = setSelStates
    createRootElement _ = createRootElement
 

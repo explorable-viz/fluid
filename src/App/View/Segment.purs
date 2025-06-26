@@ -6,13 +6,12 @@ module App.Segment
 import Prelude
 
 import App.Util (Attrs, PartialAttrs, Selectable, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
-import App.Util.Selector (dictVal, listElement)
-import App.View.Util (class Drawable, Select, registerMouseListeners)
+import App.Util.Selector (jthSegment)
+import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), colorScale, create, datum, setAttrs, setDatum)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Tuple (uncurry)
-import DataType (f_z)
 import Effect (Effect)
 import Web.Event.EventTarget (eventListener)
 
@@ -26,12 +25,12 @@ createRootElement' :: PartialAttrs { y :: String, z :: Number } Unit -> Segment 
 createRootElement' attrFun (Segment { y, z, j }) parent =
    parent
       # create Rect (attrFun { y: contents y, z: contents z } [ classes [ "bar" ] ] unit)
-      >>= setDatum { j }
+      >>= setDatum j
 
 setSelStates' :: Segment -> Select -> D3.Selection -> Effect Unit
 setSelStates' (Segment { z }) select segment = do
    listener <- eventListener (select <<< uncurry jthSegment <<< selectionEventData')
-   { j } <- datum segment
+   j <- datum segment
    segment # setAttrs (barAttrs j) >>= registerMouseListeners listener
    where
    barAttrs :: Int -> Attrs
@@ -56,9 +55,8 @@ setSelStates' (Segment { z }) select segment = do
       persistent = getPersistent t
       transient = getTransient t
       col' = indexCol j
-   jthSegment { j } = listElement j <<< dictVal f_z
 
-instance Drawable Segment { y :: String, z :: Number } Unit where
+instance View Segment { y :: String, z :: Number } Unit where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 

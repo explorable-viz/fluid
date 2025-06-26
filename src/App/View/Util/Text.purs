@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (Attrs, Selectable, inert, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
-import App.View.Util (class Drawable, Select, registerMouseListeners)
+import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -32,7 +32,7 @@ setSelStates (Text (text × _)) redraw rootElement = do
    textSelector :: ViewSelSetter Text
    textSelector _ = identity
 
-instance Drawable Text Unit Unit where
+instance View Text Unit Unit where
    createRootElement _ = createRootElement
    setSelStates = setSelStates
 

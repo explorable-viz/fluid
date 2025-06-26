@@ -3,7 +3,7 @@ module App.View.MultiView where
 import Prelude
 
 import App.Util.Selector (multiViewEntry)
-import App.View.Util (class Drawable, Select, View, createRootElement, setSelStates, unpack)
+import App.View.Util (class View, Select, View', createRootElement, setSelStates, unpack)
 import App.View.Util.D3 (create)
 import App.View.Util.D3 as D3
 import Data.Array (mapWithIndex)
@@ -13,9 +13,9 @@ import Effect (Effect)
 import Util (type (×), (×))
 import Util.Map (toUnfoldable)
 
-data MultiView = MultiView (Dict View)
+data MultiView = MultiView (Dict View')
 
-instance Drawable MultiView Unit Unit where
+instance View MultiView Unit Unit where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
 
@@ -27,7 +27,7 @@ createRootElement' (MultiView views) parent = do
    pure rootElement
    where
    -- create views in fixed order so we can access positionally in setSelStates and map back to keys
-   views' :: Array (String × View)
+   views' :: Array (String × View')
    views' = toUnfoldable views
 
 setSelStates' :: MultiView -> Select -> D3.Selection -> Effect Unit
@@ -37,5 +37,5 @@ setSelStates' (MultiView views) select rootElement =
          child <- rootElement # D3.select ("svg" <> D3.nthChild (i + 1)) -- TODO: remove 'svg'
          void $ unpack view \v -> setSelStates v (multiViewEntry x >>> select) child
    where
-   views' :: Array (String × View)
+   views' :: Array (String × View')
    views' = toUnfoldable views

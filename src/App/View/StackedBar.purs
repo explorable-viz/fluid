@@ -7,12 +7,11 @@ import Prelude
 import App.Segment (Segment(..))
 import App.Util (PartialAttrs, Selectable, classes, contents)
 import App.Util.Selector (dictVal)
-import App.View.Util (class Drawable, Select, createRootElement, setSelStates)
-import App.View.Util.D3 (ElementType(..), create, datum, selectAll)
+import App.View.Util (class View, Select, createRootElement, setSelStates)
+import App.View.Util.D3 (ElementType(..), create, selectAll)
 import App.View.Util.D3 as D3
 import Data.Array (scanl)
 import Data.Array.NonEmpty as A
-import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Newtype (class Newtype)
 import DataType (f_segments)
@@ -24,7 +23,11 @@ newtype StackedBar = StackedBar
    , segments :: Array Segment
    }
 
-createRootElement' :: PartialAttrs { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } -> StackedBar -> D3.Selection -> Effect D3.Selection
+createRootElement'
+   :: PartialAttrs { x :: String, y :: Number, height :: Number } { y :: String, z :: Number }
+   -> StackedBar
+   -> D3.Selection
+   -> Effect D3.Selection
 createRootElement' attrFun (StackedBar { x, segments }) parent = do
    stack <- parent # create G [ classes [ "stack" ] ]
    forWithIndex_ barData \j bar ->
@@ -44,14 +47,11 @@ createRootElement' attrFun (StackedBar { x, segments }) parent = do
 setSelStates' :: StackedBar -> Select -> D3.Selection -> Effect Unit
 setSelStates' (StackedBar { segments }) select stackedBar = do
    segments' <- stackedBar # selectAll ".bar" -- TODO: .bar -> .segment
-   for_ segments' \segment -> do
-      { j } <- datum segment
+   forWithIndex_ segments' \j segment ->
       setSelStates (segments ! j) (select <<< dictVal f_segments) segment
 
 derive instance Newtype StackedBar _
 
-instance Drawable StackedBar { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } where
+instance View StackedBar { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
-
-type BarSegmentCoordinate = { j :: Int }

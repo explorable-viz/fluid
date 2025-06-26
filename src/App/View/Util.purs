@@ -25,24 +25,24 @@ import Web.Event.EventTarget (EventListener)
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
-newtype View = View (forall r. (forall a c. Drawable a Unit c => a -> r) -> r)
+newtype View' = View' (forall r. (forall a c. View a Unit c => a -> r) -> r)
 
-pack :: forall a c. Drawable a Unit c => a -> View
-pack x = View \k -> k x
+pack :: forall a c. View a Unit c => a -> View'
+pack x = View' (_ $ x)
 
-unpack :: forall r. View -> (forall a c. Drawable a Unit c => a -> r) -> r
-unpack (View vw) k = vw k
+unpack :: forall r. View' -> (forall a c. View a Unit c => a -> r) -> r
+unpack (View' vw) k = vw k
 
 selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
 selListener figVal redraw = redraw <<< figVal
 
-class Drawable a b c | a -> b, a -> c where
+class View a b c | a -> b, a -> c where
    createRootElement :: PartialAttrs b c -> a -> D3.Selection -> Effect D3.Selection
    setSelStates :: a -> Select -> D3.Selection -> Effect Unit
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
-draw :: forall a c. Drawable a Unit c => Renderer a
+draw :: forall a c. View a Unit c => Renderer a
 draw _ { divId, suffix, view } select' = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
@@ -50,12 +50,12 @@ draw _ { divId, suffix, view } select' = do
    maybeRootElement <- div # select ("#" <> childId)
    setSelStates view select' =<<
       ( isEmpty maybeRootElement >>=
-           if _ then do
+           if _ then
               createRootElement (const const) view div <#> D3.setAttrs [ "id" ↦ childId ] # join
            else pure maybeRootElement
       )
 
-drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
+drawView :: RendererSpec View' -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View' -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal _ redraw =
    unpack vw (\view -> draw uiHelpers (rSpec { view = view }) (selListener figVal redraw))
 
@@ -111,10 +111,10 @@ type Fig =
    , linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-   , in_views :: Dict (Maybe View) -- strengthen this
+   , in_views :: Dict (Maybe View') -- strengthen this
    , in_roots :: Set Vertex
-   , out_view :: Maybe View
-   , intermediate_views :: Dict (Maybe View)
+   , out_view :: Maybe View'
+   , intermediate_views :: Dict (Maybe View')
    , inerts :: Set DVertex
    }
 
