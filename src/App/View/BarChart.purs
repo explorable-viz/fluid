@@ -5,7 +5,7 @@ module App.View.BarChart
 import Prelude hiding (absurd)
 
 import App.Segment (Segment(..), indexCol)
-import App.Util (Dimensions(..), Selectable, classes, contents)
+import App.Util (Dimensions(..), Selectable, Attrs, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.LineChart (LegendEntry)
 import App.View.StackedBar (StackedBar(..))
@@ -44,7 +44,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
 
    g <- svg # create G [ translate { x: margin.left, y: margin.top } ]
    void $ createAxes g
-   createStackedBars g strokeWidth
+   createStackedBars g
 
    for_ js \j ->
       addHatchPattern g j $ indexCol $ definitely' $ elemIndex j js
@@ -63,8 +63,8 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    pure g
    where
    stackedBars' = nonEmpty stackedBars
-   -- AssuminedBars' all bars have the same set of names
-   ys = bar.segments <#> \(Segment bar') -> contents bar'.y
+   -- assume all bars have same set of y indices
+   ys = bar.segments <#> \(Segment seg) -> contents seg.y
       where
       StackedBar bar = A.head stackedBars'
 
@@ -74,12 +74,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    Dimensions { width, height } = size <#> contents
 
    margin :: Margin
-   margin =
-      { top: 3
-      , right: 75
-      , bottom: 20
-      , left: 30
-      }
+   margin = { top: 3, right: 75, bottom: 20, left: 30 }
 
    interior :: Dimensions Int
    interior = Dimensions
@@ -113,22 +108,24 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       { x: scaleBand width $ map (\(StackedBar r) -> contents r.x) stackedBars
       , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
       }
-   strokeWidth = 1
-   barChartAttrs =
-      [ "stroke-width" ⟼ strokeWidth
-      , "width" ⟼ bandwidth scales.x
-      ]
 
-   createStackedBars :: D3.Selection -> Int -> Effect Unit
-   createStackedBars parent' strokeWidth' = do
+   createStackedBars :: D3.Selection -> Effect Unit
+   createStackedBars parent' =
       for_ stackedBars \stackedBar ->
          createRootElement attrFun stackedBar parent'
       where
+      attrFun :: { x :: String, y :: Number, height :: Number } -> Attrs -> { y :: String, z :: Number } -> Attrs
       attrFun bar attrs segment =
          [ "x" ⟼ scales.x bar.x
          , "y" ⟼ scales.y (segment.z + bar.y)
-         , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth') - scales.y segment.z
+         , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y segment.z
          ] <> barChartAttrs <> attrs
+
+      strokeWidth = 1
+      barChartAttrs =
+         [ "stroke-width" ⟼ strokeWidth
+         , "width" ⟼ bandwidth scales.x
+         ]
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior') parent' = do
@@ -187,4 +184,3 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
 instance View BarChart Unit { x :: String, y :: Number } where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
-
