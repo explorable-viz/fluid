@@ -116,13 +116,11 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          [ "x" ⟼ scales.x bar.x
          , "y" ⟼ scales.y (segment.z + bar.y)
          , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y segment.z
-         ] <> barChartAttrs <> attrs
+         , "stroke-width" ⟼ strokeWidth
+         , "width" ⟼ bandwidth scales.x
+         ] <> attrs
 
       strokeWidth = 1
-      barChartAttrs =
-         [ "stroke-width" ⟼ strokeWidth
-         , "width" ⟼ bandwidth scales.x
-         ]
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior') parent' = do
@@ -132,14 +130,14 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       for_ entries \{ i, name } -> do
-         let nameIndex = definitely' $ elemIndex name ys
+         let j = definitely' $ elemIndex name ys
          g <- legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
          void $ g #
             ( create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ]
                  >=> setText name
             )
          g # create Rect
-            [ "fill" ↦ indexCol nameIndex
+            [ "fill" ↦ indexCol j
             , "width" ⟼ legendSquareSize
             , "height" ⟼ legendSquareSize
             , "x" ⟼ legendLineHeight / 2 - legendSquareSize / 2
@@ -148,6 +146,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       where
       entries :: Array LegendEntry
       entries = flip mapWithIndex ys \i name -> { i, name }
+
       entry_y i = i * legendLineHeight + 2
 
    createAxes :: D3.Selection -> Effect (Coord D3.Selection)
