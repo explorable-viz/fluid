@@ -3,12 +3,11 @@ let stackedBarHeight stackedBar = sum [ segment.z | segment <- stackedBar.segmen
 let get x (BarChart record) = fromSome (findWithKey "x" x record.stackedBars);
 
 let mkBarChart scenName table =
-   """Test"""
    BarChart {
       caption: "Example bar chart for scenario " ++ scenName,
       size: { width: 275, height: 185 },
       stackedBars:
-         map (fun record -> """Annotated record""" { x: record.type, segments: [ { y: "emissions", z: record.emissions } ]})
+         map (fun record -> { x: record.type, segments: [ { y: "emissions", z:  """Test""" record.emissions } ]})
             table
    };
 
