@@ -3,7 +3,7 @@ module App.View.Paragraph where
 import Prelude
 
 import App.Util.Selector (SelSetter, constrArg, docElement, listElement)
-import App.View.Util (class Drawable, View, Select, createRootElement, setSelStates, unpack)
+import App.View.Util (class Drawable, View', Select, createRootElement, setSelStates, unpack)
 import App.View.Util.D3 (create, ElementType(..))
 import App.View.Util.D3 as D3
 import Data.Array (mapWithIndex)
@@ -12,7 +12,7 @@ import DataType (cParagraph)
 import Effect (Effect)
 import Val (Val)
 
-data Paragraph = Paragraph Boolean (Array View)
+data Paragraph = Paragraph Boolean (Array View')
 
 instance Drawable Paragraph Unit Unit where
    createRootElement _ = createRootElement'

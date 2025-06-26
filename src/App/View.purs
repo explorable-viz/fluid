@@ -13,7 +13,7 @@ import App.View.Paragraph as P
 import App.View.ScatterPlot (ScatterPlot(..))
 import App.View.StackedBar (StackedBar(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
-import App.View.Util (View, pack)
+import App.View.Util (View', pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import App.View.Util.Text as T
@@ -32,13 +32,13 @@ import Util (type (×), (×))
 import Util.Map (get)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
-view' :: Partial => String -> Val (SelStates 𝕊) -> Maybe View -> View
+view' :: Partial => String -> Val (SelStates 𝕊) -> Maybe View' -> View'
 view' title v@(Val _ doc _) _ =
    pack $ DocView { doc: viewPara doc, view: view title v Nothing }
 
--- Convert annotated vue to appropriate view, discarding top-level annotations for now.
+-- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- Ignore view state for now..
-view :: Partial => String -> Val (SelStates 𝕊) -> Maybe View -> View
+view :: Partial => String -> Val (SelStates 𝕊) -> Maybe View' -> View'
 view title (Val _ _ (Constr c (u : Nil))) _
    | c == cBarChart = pack (dict from u :: BarChart)
    | c == cLineChart = pack (dict from u :: LineChart)
@@ -64,7 +64,7 @@ viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe P.Paragraph
 viewPara None = Nothing
 viewPara (Doc doc) = Just $ P.Paragraph true $ fromFoldable $ formatPara $ doc
    where
-   formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List View
+   formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List View'
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
    formatPara (Token str : xs) = pack (T.Text (str × inert)) : formatPara xs
    formatPara (Unquote (Val α _ (Int n)) : xs) = pack (T.Text (show n × α)) : formatPara xs
@@ -98,13 +98,13 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
       , size: dict from (snd (get f_size r))
       }
 
--- TODO: remove
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
    from r = StackedBar
       { x: unpack string (snd (get f_x r))
       , segments: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_segments r))
       }
 
+-- TODO: remove
 fromBar :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Segment
 fromBar j r = Segment
    { y: unpack string (snd (get f_y r))
