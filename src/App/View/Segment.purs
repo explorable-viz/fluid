@@ -8,6 +8,7 @@ import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), colorScale, create, datum, setAttrs, setDatum)
 import App.View.Util.D3 as D3
 import Bind ((↦))
+import Data.Newtype (class Newtype)
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Web.Event.EventTarget (eventListener)
@@ -59,3 +60,9 @@ instance View Segment { y :: String, z :: Number } Unit where
 
 indexCol :: Int -> String
 indexCol = colorScale "schemeAccent"
+
+-- ======================
+-- boilerplate
+-- ======================
+
+derive instance Newtype Segment _
