@@ -3,7 +3,7 @@ module App.View.Paragraph where
 import Prelude
 
 import App.Util.Selector (SelSetter, constrArg, docElement, listElement)
-import App.View.Util (class Drawable, View', Select, createRootElement, setSelStates, unpack)
+import App.View.Util (class View, View', Select, createRootElement, setSelStates, unpack)
 import App.View.Util.D3 (create, ElementType(..))
 import App.View.Util.D3 as D3
 import Data.Array (mapWithIndex)
@@ -14,7 +14,7 @@ import Val (Val)
 
 data Paragraph = Paragraph Boolean (Array View')
 
-instance Drawable Paragraph Unit Unit where
+instance View Paragraph Unit Unit where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
 

@@ -7,7 +7,7 @@ import Prelude
 
 import App.Util (Attrs, PartialAttrs, Selectable, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
 import App.Util.Selector (jthSegment)
-import App.View.Util (class Drawable, Select, registerMouseListeners)
+import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), colorScale, create, datum, setAttrs, setDatum)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -56,7 +56,7 @@ setSelStates' (Segment { z }) select segment = do
       transient = getTransient t
       col' = indexCol j
 
-instance Drawable Segment { y :: String, z :: Number } Unit where
+instance View Segment { y :: String, z :: Number } Unit where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 

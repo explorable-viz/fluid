@@ -4,7 +4,7 @@ import Prelude hiding (join)
 
 import App.Util (SelStates, Selectable, 𝕊, classes, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
-import App.View.Util (class Drawable, Select, registerMouseListeners)
+import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import App.View.Util.Text (class Textual, textAttrs)
@@ -25,7 +25,7 @@ data Link a = Link (Val a) (Selectable String)
 linkContents :: ∀ a. Link a -> String
 linkContents (Link _ (s × _)) = s
 
-instance Drawable (Link (SelStates 𝕊)) Unit Unit where
+instance View (Link (SelStates 𝕊)) Unit Unit where
    createRootElement _ = createRootElement
    setSelStates = setSelState
 

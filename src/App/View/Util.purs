@@ -25,24 +25,24 @@ import Web.Event.EventTarget (EventListener)
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
-newtype View' = View' (forall r. (forall a c. Drawable a Unit c => a -> r) -> r)
+newtype View' = View' (forall r. (forall a c. View a Unit c => a -> r) -> r)
 
-pack :: forall a c. Drawable a Unit c => a -> View'
+pack :: forall a c. View a Unit c => a -> View'
 pack x = View' (_ $ x)
 
-unpack :: forall r. View' -> (forall a c. Drawable a Unit c => a -> r) -> r
+unpack :: forall r. View' -> (forall a c. View a Unit c => a -> r) -> r
 unpack (View' vw) k = vw k
 
 selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
 selListener figVal redraw = redraw <<< figVal
 
-class Drawable a b c | a -> b, a -> c where
+class View a b c | a -> b, a -> c where
    createRootElement :: PartialAttrs b c -> a -> D3.Selection -> Effect D3.Selection
    setSelStates :: a -> Select -> D3.Selection -> Effect Unit
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
-draw :: forall a c. Drawable a Unit c => Renderer a
+draw :: forall a c. View a Unit c => Renderer a
 draw _ { divId, suffix, view } select' = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)

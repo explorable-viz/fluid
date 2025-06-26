@@ -7,7 +7,7 @@ import Prelude
 import App.Segment (Segment(..))
 import App.Util (PartialAttrs, Selectable, classes, contents)
 import App.Util.Selector (dictVal)
-import App.View.Util (class Drawable, Select, createRootElement, setSelStates)
+import App.View.Util (class View, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (ElementType(..), create, selectAll)
 import App.View.Util.D3 as D3
 import Data.Array (scanl)
@@ -52,6 +52,6 @@ setSelStates' (StackedBar { segments }) select stackedBar = do
 
 derive instance Newtype StackedBar _
 
-instance Drawable StackedBar { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } where
+instance View StackedBar { x :: String, y :: Number, height :: Number } { y :: String, z :: Number } where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
