@@ -112,10 +112,10 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          createRootElement attrFun stackedBar parent'
       where
       attrFun :: { x :: String, y :: Number } -> Attrs -> { y :: String, z :: Number } -> Attrs
-      attrFun bar attrs segment =
-         [ "x" ⟼ scales.x bar.x
-         , "y" ⟼ scales.y (segment.z + bar.y)
-         , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y segment.z
+      attrFun seg attrs seg' =
+         [ "x" ⟼ scales.x seg.x
+         , "y" ⟼ scales.y (seg'.z + seg.y)
+         , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y seg'.z
          , "stroke-width" ⟼ strokeWidth
          , "width" ⟼ bandwidth scales.x
          ] <> attrs
