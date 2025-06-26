@@ -11,7 +11,7 @@ import App.View.Util (class View, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
-import Data.Array (elemIndex, length, mapWithIndex, range)
+import Data.Array (length, mapWithIndex, range)
 import Data.Array.NonEmpty (head) as A
 import Data.Foldable (for_, sum)
 import Data.FoldableWithIndex (forWithIndex_)
@@ -21,7 +21,7 @@ import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
 import DataType (f_stackedBars)
 import Effect (Effect)
-import Util (Endo, definitely', nonEmpty, (!))
+import Util (Endo, nonEmpty, (!))
 
 newtype BarChart = BarChart
    { caption :: Selectable String
@@ -130,14 +130,13 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
       for_ entries \{ i, name } -> do
-         let j = definitely' $ elemIndex name ys
          g <- legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
          void $ g #
             ( create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ]
                  >=> setText name
             )
          g # create Rect
-            [ "fill" ↦ indexCol j
+            [ "fill" ↦ indexCol i
             , "width" ⟼ legendSquareSize
             , "height" ⟼ legendSquareSize
             , "x" ⟼ legendLineHeight / 2 - legendSquareSize / 2
@@ -145,7 +144,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
             ]
       where
       entries :: Array LegendEntry
-      entries = flip mapWithIndex ys \i name -> { i, name }
+      entries = flip mapWithIndex ys \i y -> { i, name: y }
 
       entry_y i = i * legendLineHeight + 2
 
