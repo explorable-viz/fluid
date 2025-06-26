@@ -111,7 +111,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       for_ stackedBars \stackedBar ->
          createRootElement attrFun stackedBar parent'
       where
-      attrFun :: { x :: String, y :: Number } -> Attrs -> { y :: String, z :: Number } -> Attrs
+      attrFun :: { x :: String, y :: Number } -> Attrs -> { z :: Number } -> Attrs
       attrFun seg attrs seg' =
          [ "x" ⟼ scales.x seg.x
          , "y" ⟼ scales.y (seg'.z + seg.y)

@@ -19,10 +19,10 @@ newtype Segment = Segment
    , j :: Int -- TODO: remove me
    }
 
-createRootElement' :: PartialAttrs { y :: String, z :: Number } Unit -> Segment -> D3.Selection -> Effect D3.Selection
-createRootElement' attrFun (Segment { y, z, j }) parent =
+createRootElement' :: PartialAttrs { z :: Number } Unit -> Segment -> D3.Selection -> Effect D3.Selection
+createRootElement' attrFun (Segment { z, j }) parent =
    parent
-      # create Rect (attrFun { y: contents y, z: contents z } [ classes [ "bar" ] ] unit)
+      # create Rect (attrFun { z: contents z } [ classes [ "bar" ] ] unit)
       >>= setDatum j
 
 setSelStates' :: Segment -> Select -> D3.Selection -> Effect Unit
@@ -54,7 +54,7 @@ setSelStates' (Segment { z }) select segment = do
       transient = getTransient t
       col' = indexCol j
 
-instance View Segment { y :: String, z :: Number } Unit where
+instance View Segment { z :: Number } Unit where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 

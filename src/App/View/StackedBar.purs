@@ -22,7 +22,7 @@ newtype StackedBar = StackedBar
    }
 
 createRootElement'
-   :: PartialAttrs { x :: String, y :: Number } { y :: String, z :: Number }
+   :: PartialAttrs { x :: String, y :: Number } { z :: Number }
    -> StackedBar
    -> D3.Selection
    -> Effect D3.Selection
@@ -42,7 +42,7 @@ setSelStates' (StackedBar { segments }) select stackedBar = do
    forWithIndex_ segments' \j segment ->
       setSelStates (segments ! j) (select <<< dictVal f_segments) segment
 
-instance View StackedBar { x :: String, y :: Number } { y :: String, z :: Number } where
+instance View StackedBar { x :: String, y :: Number } { z :: Number } where
    createRootElement = createRootElement'
    setSelStates = setSelStates'
 
