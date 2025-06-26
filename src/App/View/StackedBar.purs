@@ -1,6 +1,4 @@
-module App.View.StackedBar
-   ( StackedBar(..)
-   ) where
+module App.View.StackedBar where
 
 import Prelude
 
@@ -29,10 +27,10 @@ createRootElement'
    -> D3.Selection
    -> Effect D3.Selection
 createRootElement' attrFun (StackedBar { x, segments }) parent = do
-   stack <- parent # create G [ classes [ "stack" ] ]
+   g <- parent # create G [ classes [ "stack" ] ]
    forWithIndex_ barData \j bar ->
-      createRootElement (\segment attrs' _ -> attrFun bar attrs' segment) (segments ! j) stack
-   pure stack
+      createRootElement (\segment attrs' _ -> attrFun bar attrs' segment) (segments ! j) g
+   pure g
 
    where
    barData :: Array { x :: String, y :: Number, height :: Number }

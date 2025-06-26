@@ -1,6 +1,4 @@
-module App.View.BarChart
-   ( BarChart(..)
-   ) where
+module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
@@ -46,8 +44,8 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    void $ createAxes g
    createStackedBars g
 
-   for_ js \j ->
-      addHatchPattern g j $ indexCol $ definitely' $ elemIndex j js
+   for_ (range 0 $ length ys - 1) \j ->
+      addHatchPattern g j $ indexCol j
 
    void $ svg
       # create Text
@@ -69,7 +67,6 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       StackedBar bar = A.head stackedBars'
 
    xs = stackedBars <#> \(StackedBar bar) -> contents bar.x
-   js = range 0 $ length ys - 1
 
    Dimensions { width, height } = size <#> contents
 

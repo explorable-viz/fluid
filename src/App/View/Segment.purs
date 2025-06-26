@@ -1,7 +1,4 @@
-module App.Segment
-   ( Segment(..)
-   , indexCol
-   ) where
+module App.Segment where
 
 import Prelude
 

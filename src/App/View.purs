@@ -101,12 +101,12 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
    from r = StackedBar
       { x: unpack string (snd (get f_x r))
-      , segments: mapWithIndex (\j r' -> dict (fromBar j) r') $ from (snd (get f_segments r))
+      , segments: mapWithIndex (\j r' -> dict (fromSegment j) r') $ from (snd (get f_segments r))
       }
 
 -- TODO: remove
-fromBar :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Segment
-fromBar j r = Segment
+fromSegment :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Segment
+fromSegment j r = Segment
    { y: unpack string (snd (get f_y r))
    , z: get_intOrNumber f_z r
    , j
