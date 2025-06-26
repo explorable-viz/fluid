@@ -34,6 +34,7 @@ type SegmentContext =
 
 instance View2 Segment SegmentContext where
    createRootElement2 = createRootElement'
+   setSelStates2 = setSelStates'
 
 createRootElement' :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
 createRootElement' { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
