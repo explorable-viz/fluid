@@ -16,7 +16,7 @@ import Web.Event.EventTarget (eventListener)
 newtype Segment = Segment
    { y :: Selectable String
    , z :: Selectable Number
-   , j :: Int -- TODO: remove me
+   , j :: Int -- TODO: remove me (numerical index of my y coordinate)
    }
 
 createRootElement' :: PartialAttrs { z :: Number } Unit -> Segment -> D3.Selection -> Effect D3.Selection
