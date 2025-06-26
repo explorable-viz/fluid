@@ -5,13 +5,12 @@ import Prelude hiding (absurd)
 import App.Segment (Segment(..), indexCol)
 import App.Util (Dimensions(..), Selectable, Attrs, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
-import App.View.LineChart (LegendEntry)
 import App.View.StackedBar (StackedBar(..))
 import App.View.Util (class View, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
-import Data.Array (length, mapWithIndex, range)
+import Data.Array (length, range)
 import Data.Array.NonEmpty (head) as A
 import Data.Foldable (for_, sum)
 import Data.FoldableWithIndex (forWithIndex_)
@@ -129,11 +128,11 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          [ translate { x: interior'.width + 30, y: max 0 $ (interior'.height - height) / 2 } ]
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
-      for_ entries \{ i, name } -> do
+      forWithIndex_ ys \i y -> do
          g <- legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
          void $ g #
             ( create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ]
-                 >=> setText name
+                 >=> setText y
             )
          g # create Rect
             [ "fill" ↦ indexCol i
@@ -143,9 +142,6 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
             , "y" ⟼ legendLineHeight / 2 - legendSquareSize
             ]
       where
-      entries :: Array LegendEntry
-      entries = flip mapWithIndex ys \i y -> { i, name: y }
-
       entry_y i = i * legendLineHeight + 2
 
    createAxes :: D3.Selection -> Effect (Coord D3.Selection)
