@@ -80,6 +80,7 @@ data ElementType
    = Caption
    | Circle
    | G
+   | Line
    | Path
    | Rect
    | SVG

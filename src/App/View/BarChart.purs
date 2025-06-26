@@ -175,12 +175,12 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          ]
       void $ pattern # create Rect
          [ "width" ⟼ 3.5, "height" ⟼ 3.5, "fill" ↦ col_j ]
-      void $ pattern # create Path
+      void $ pattern # create Line
          [ "x1" ⟼ 0
          , "y" ⟼ 0
          , "x2" ⟼ 0
          , "y2" ⟼ 3.5
-         , "stroke" ↦ "rgb(255, 255, 255, 1)"
+         , "stroke" ↦ "rgba(255, 255, 255, 1)"
          , "stroke-width" ↦ "1"
          ]
 
