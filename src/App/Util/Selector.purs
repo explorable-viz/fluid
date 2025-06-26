@@ -73,7 +73,10 @@ scatterPoint i = listElement i >>> dictVal f_points
 
 barSegment :: Int -> Int -> SelSetter Val Val
 barSegment i j =
-   dictVal f_z >>> listElement j >>> dictVal f_segments >>> listElement i >>> dictVal f_stackedBars
+   jthSegment j >>> dictVal f_segments >>> listElement i >>> dictVal f_stackedBars
+
+jthSegment :: Int -> SelSetter Val Val
+jthSegment j = dictVal f_z >>> listElement j
 
 paragraph :: SelSetter Val Val
 paragraph = constrArg cParagraph 0
