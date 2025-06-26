@@ -149,9 +149,8 @@ eval γ (Project doc e x) αs = do
    v <- eval γ e αs
    case v of
       Val _ _ (V.Dictionary (DictRep d)) -> do
-         (Val α' _ v') <- withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
-         vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
-         pure (Val α' vdoc v')
+         v' <- withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
+         concatDocs γ v' doc
       _ -> throw $ "Found " <> prettyP v <> ", expected dictionary"
 eval γ (DProject doc e x) α = do
    v <- eval γ e α
@@ -160,9 +159,8 @@ eval γ (DProject doc e x) α = do
       Val _ _ (V.Dictionary (DictRep d)) ->
          case v' of
             Val _ _ (V.Str s) -> do
-               (Val α' _ v'') <- (withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found"))
-               vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v'')) doc
-               pure (Val α' vdoc v'')
+               v'' <- (withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found"))
+               concatDocs γ v'' doc
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval γ (App doc e e') αs = do
@@ -230,6 +228,17 @@ new' γ αs doc u = do
    let v' = Val α vdoc u
    extend (DVertex (α × pack v')) αs
    pure v'
+
+concatDocs
+   :: forall m
+    . MonadWithGraphAlloc m
+   => Env Vertex
+   -> Val Vertex
+   -> DocOpt Expr Vertex
+   -> m (Val Vertex)
+concatDocs γ (Val α' vdoc v') doc = do
+   vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
+   pure (Val α' (vdoc' <> vdoc) v')
 
 type GraphEval g s t =
    { g :: g
