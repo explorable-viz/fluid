@@ -3,7 +3,7 @@ module App.View.MultiView where
 import Prelude
 
 import App.Util.Selector (multiViewEntry)
-import App.View.Util (class View, Select, View', createRootElement, setSelStates, unpack)
+import App.View.Util (class View, class View2, Select, View', createRootElement, setSelStates, unpack)
 import App.View.Util.D3 (create)
 import App.View.Util.D3 as D3
 import Data.Array (mapWithIndex)
@@ -18,6 +18,10 @@ data MultiView = MultiView (Dict View')
 instance View MultiView Unit Unit where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
+
+instance View2 MultiView Unit where
+   createElement _ = createRootElement'
+   setSelection _ = setSelStates'
 
 createRootElement' :: MultiView -> D3.Selection -> Effect D3.Selection
 createRootElement' (MultiView views) parent = do

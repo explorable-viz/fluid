@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (Selectable, isPrimary, isSecondary, selectionEventData')
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.Util (class View, UIHelpers, Select, uiHelpers)
+import App.View.Util (class View, class View2, Select, UIHelpers, uiHelpers)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((⟼))
@@ -29,8 +29,16 @@ type ScatterPlotHelpers =
    , withScatterPlotPoint :: Select -> (Event -> Effect Unit)
    }
 
-foreign import createRootElement2 :: UIHelpers -> ScatterPlot -> D3.Selection -> Effect D3.Selection
-foreign import setSelStates2 :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> Select -> D3.Selection -> Effect Unit
+foreign import createElement :: UIHelpers -> ScatterPlot -> D3.Selection -> Effect D3.Selection
+foreign import setSelection :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> Select -> D3.Selection -> Effect Unit
+
+instance View ScatterPlot Unit Unit where
+   createRootElement _ = createElement uiHelpers
+   setSelStates = setSelection scatterPlotHelpers uiHelpers
+
+instance View2 ScatterPlot Unit where
+   createElement _ = createElement uiHelpers
+   setSelection _ = setSelection scatterPlotHelpers uiHelpers
 
 scatterPlotHelpers :: ScatterPlotHelpers
 scatterPlotHelpers =
@@ -51,9 +59,5 @@ scatterPlotHelpers =
    scatterPlotPoint :: ViewSelSetter PointIndex
    scatterPlotPoint { i } = scatterPoint i >>> scatterPlot
    withScatterPlotPoint sel = sel <<< uncurry scatterPlotPoint <<< selectionEventData'
-
-instance View ScatterPlot Unit Unit where
-   createRootElement _ = createRootElement2 uiHelpers
-   setSelStates = setSelStates2 scatterPlotHelpers uiHelpers
 
 type PointIndex = { i :: Int }

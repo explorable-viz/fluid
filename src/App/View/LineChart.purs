@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, Attrs, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
-import App.View.Util (class View, Select, registerMouseListeners)
+import App.View.Util (class View, class View2, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation(..))
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
@@ -57,6 +57,14 @@ nameCol = colorScale "schemePastel1"
 type PointCoordinate = { i :: Int, j :: Int }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
+
+instance View LineChart Unit Unit where
+   setSelStates = setSelStates
+   createRootElement _ = createRootElement
+
+instance View2 LineChart Unit where
+   createElement _ = createRootElement
+   setSelection _ = setSelStates
 
 setSelStates :: LineChart -> Select -> D3.Selection -> Effect Unit
 setSelStates (LineChart { plots }) redraw rootElement = do
@@ -269,10 +277,6 @@ createRootElement (LineChart { size, tickLabels, caption, plots }) parent = do
 
       rightMargin :: Int
       rightMargin = 4
-
-instance View LineChart Unit Unit where
-   setSelStates = setSelStates
-   createRootElement _ = createRootElement
 
 -- ======================
 -- boilerplate

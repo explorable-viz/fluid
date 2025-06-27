@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, listElement)
-import App.View.Util (class View, Select, registerMouseListeners)
+import App.View.Util (class View, class View2, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -77,6 +77,14 @@ transparentBorder = "1px solid transparent"
 
 solidBorder :: String
 solidBorder = "1px solid blue"
+
+instance View TableView Unit Unit where
+   createRootElement _ = createRootElement
+   setSelStates = setSelStates
+
+instance View2 TableView Unit where
+   createElement _ = createRootElement
+   setSelection _ = setSelStates
 
 setSelStates :: TableView -> Select -> D3.Selection -> Effect Unit
 setSelStates (TableView { title, rows }) redraw rootElement = do
@@ -182,10 +190,6 @@ createRootElement (TableView { colNames, filter, rows }) parent = do
    cellClasses colName
       | colName == rowKey = [ "filter-toggle", "toggle-button" ]
       | otherwise = []
-
-instance View TableView Unit Unit where
-   createRootElement _ = createRootElement
-   setSelStates = setSelStates
 
 --      toggleListener <- filterToggleListener filterToggler
 --

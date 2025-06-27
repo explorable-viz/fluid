@@ -41,8 +41,8 @@ class View a b c | a -> b, a -> c where
    setSelStates :: a -> Select -> D3.Selection -> Effect Unit
 
 class View2 a b | a -> b where
-   createRootElement2 :: b -> a -> D3.Selection -> Effect D3.Selection
-   setSelStates2 :: b -> a -> Select -> D3.Selection -> Effect Unit
+   createElement :: b -> a -> D3.Selection -> Effect D3.Selection
+   setSelection :: b -> a -> Select -> D3.Selection -> Effect Unit
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 

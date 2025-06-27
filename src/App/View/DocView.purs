@@ -3,7 +3,7 @@ module App.View.DocView where
 import Prelude
 
 import App.View.Paragraph (Paragraph)
-import App.View.Util (class View, Select, View', createRootElement, setSelStates, unpack)
+import App.View.Util (class View, class View2, Select, View', createRootElement, setSelStates, unpack)
 import App.View.Util.D3 as D3
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -16,6 +16,10 @@ newtype DocView = DocView
 instance View DocView Unit Unit where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
+
+instance View2 DocView Unit where
+   createElement _ = createRootElement'
+   setSelection _ = setSelStates'
 
 createRootElement' :: DocView -> D3.Selection -> Effect D3.Selection
 createRootElement' (DocView { doc: Just doc, view }) parent = do

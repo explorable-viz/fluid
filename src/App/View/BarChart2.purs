@@ -6,7 +6,7 @@ import App.Util (Dimensions(..), Selectable, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.Segment2 (Scales, Segment(..), indexCol)
 import App.View.StackedBar2 (StackedBar(..), StackedBarContext, barHeight)
-import App.View.Util (class View2, Select, createRootElement2, setSelStates2)
+import App.View.Util (class View2, Select, createElement, setSelection)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
@@ -29,18 +29,18 @@ newtype BarChart = BarChart
    }
 
 instance View2 BarChart Unit where
-   setSelStates2 :: Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
-   setSelStates2 _ chart@(BarChart { stackedBars }) select barChart' = do
+   setSelection :: Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
+   setSelection _ chart@(BarChart { stackedBars }) select barChart' = do
       let props = barChartProps chart
       -- more robust to iterate over stackedBars and select ith DOM child instead?
       stackedBars' <- barChart' # selectAll ".stack"
       forWithIndex_ stackedBars' \i stack ->
-         setSelStates2 props.stackedBarContext (stackedBars ! i)
+         setSelection props.stackedBarContext (stackedBars ! i)
             (select <<< barChart <<< dictVal f_stackedBars <<< listElement i)
             stack
 
-   createRootElement2 :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection
-   createRootElement2 _ barChart@(BarChart { caption, stackedBars }) parent = do
+   createElement :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection
+   createElement _ barChart@(BarChart { caption, stackedBars }) parent = do
       svg <- parent # create SVG [ "width" ⟼ props.width, "height" ⟼ props.height ]
       g <- svg # create G [ translate { x: props.margin.left, y: props.margin.top } ]
       void $ createAxes g
@@ -76,7 +76,7 @@ instance View2 BarChart Unit where
       createStackedBars :: D3.Selection -> Effect Unit
       createStackedBars parent' =
          for_ stackedBars \stackedBar ->
-            createRootElement2 props.stackedBarContext stackedBar parent'
+            createElement props.stackedBarContext stackedBar parent'
 
       createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
       createLegend (Dimensions interior') parent' = do

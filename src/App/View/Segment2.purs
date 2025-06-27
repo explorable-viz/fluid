@@ -32,8 +32,8 @@ type SegmentContext =
    }
 
 instance View2 Segment SegmentContext where
-   createRootElement2 :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
-   createRootElement2 { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
+   createElement :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
+   createElement { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
       parent
          # create Rect
               [ "x" ⟼ scales.x x
@@ -44,8 +44,8 @@ instance View2 Segment SegmentContext where
               , classes [ "bar" ]
               ]
 
-   setSelStates2 :: SegmentContext -> Segment -> Select -> D3.Selection -> Effect Unit
-   setSelStates2 { y_index } (Segment { z }) select segment = do
+   setSelection :: SegmentContext -> Segment -> Select -> D3.Selection -> Effect Unit
+   setSelection { y_index } (Segment { z }) select segment = do
       listener <- eventListener (select <<< uncurry jthSegment <<< selectionEventData')
       segment # setAttrs attrs >>= registerMouseListeners listener
       where

@@ -50,7 +50,7 @@ view title (Val _ _ (Constr c (u : Nil))) _
         where
         vws = view title <$> from u
 view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
-   | c == cLink = pack (from v :: Link (SelStates 𝕊))
+   | c == cLink = pack (from v :: Link)
 view title u@(Val _ _ (Constr c _)) _
    | c == cNil || c == cCons = pack (TableView { title, filter: defaultFilter, colNames, rows })
         where
@@ -65,11 +65,11 @@ viewPara None = Nothing
 viewPara (Doc doc) = Just $ P.Paragraph true $ fromFoldable $ formatPara $ doc
    where
    formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List View'
+   formatPara Nil = Nil
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
    formatPara (Token str : xs) = pack (T.Text (str × inert)) : formatPara xs
    formatPara (Unquote (Val α _ (Int n)) : xs) = pack (T.Text (show n × α)) : formatPara xs
    formatPara (Unquote v : xs) = view "" v Nothing : formatPara xs
-   formatPara Nil = Nil
 
 -- ======================
 -- boilerplate
@@ -154,7 +154,7 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot whe
       , labels: dict from (snd (get f_labels r))
       }
 
-instance Reflect (Val (SelStates 𝕊)) (Link (SelStates 𝕊)) where
+instance Reflect (Val (SelStates 𝕊)) Link where
    from (Val _ _ r) = case r of
       (Constr c (Val α doc v : (Val α' _ (Str s) : Nil))) | c == cLink -> Link (Val α doc v) (s × α')
       v -> typeError v "Link"
