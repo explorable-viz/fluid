@@ -5,7 +5,7 @@ import Prelude
 import App.Util (Dimensions(..), Selectable, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.Segment (Scales, Segment(..), indexCol)
-import App.View.StackedBar2 (StackedBar(..), StackedBarContext, barHeight)
+import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
 import App.View.Util (class View2, Select, createElement, setSelection)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3

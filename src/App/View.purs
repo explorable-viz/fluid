@@ -19,6 +19,7 @@ import App.View.Util.Point (Point(..))
 import App.View.Util.Text as T
 import Data.Array ((:)) as A
 import Data.Array (fromFoldable)
+import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
@@ -28,7 +29,7 @@ import Dict (Dict)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Link (Link(..))
 import Primitive (int, string, typeError, unpack)
-import Util (type (×), (×))
+import Util (type (×), error, (×))
 import Util.Map (get)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
@@ -84,6 +85,10 @@ instance Reflect (Val (SelStates 𝕊)) (Dict (SelStates 𝕊 × Val (SelStates 
 instance Reflect (Val (SelStates 𝕊)) (Array (Val (SelStates 𝕊))) where
    from (Val _ _ (Constr c Nil)) | c == cNil = []
    from (Val _ _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
+
+instance Reflect (Val (SelStates 𝕊)) (NonEmptyArray (Val (SelStates 𝕊))) where
+   from (Val _ _ (Constr c Nil)) | c == cNil = error "expected non-empty list"
+   from (Val _ _ (Constr c (u1 : u2 : Nil))) | c == cCons = cons' u1 (from u2)
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Selectable Int)) where
    from r = Dimensions

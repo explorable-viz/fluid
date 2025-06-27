@@ -10,9 +10,9 @@ import App.View.Util (class View, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
-import Data.Array (length, range)
+import Data.Array (range)
 import Data.Array.NonEmpty (head) as A
-import Data.Foldable (for_, sum)
+import Data.Foldable (for_, length, sum)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
 import Data.Newtype (unwrap)
@@ -91,7 +91,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       , height: legendLineHeight * length ys
       }
       where
-      maxTextWidth = maximum (ys <#> textWidth "legend-text" # nonEmpty)
+      maxTextWidth = maximum (ys <#> textWidth "legend-text")
       rightMargin = 4
 
    scales = to interior
