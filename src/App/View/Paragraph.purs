@@ -36,4 +36,3 @@ setSelStates' (Paragraph isDoc views) select rootElement = do
    where
    lift :: Int -> SelSetter Val Val
    lift i = if isDoc then docElement i else constrArg cParagraph 0 <<< listElement i
-
