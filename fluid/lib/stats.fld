@@ -26,7 +26,7 @@ let findQuantile q p data =
     in if rank == x1
     then nth rank data
     else let x2 = x1 + 1;
-             truncated = drop (x1 - 1) data;
+             truncated = drop x1 data;
              left = head truncated;
              right = nth 1 truncated
         in left + (rank - x1) * (right - left);
