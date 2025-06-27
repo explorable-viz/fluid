@@ -19,15 +19,15 @@ let mergesort xs =
           let (ys, zs) = split xs in
           merge (mergesort ys) (mergesort zs);
 
--- assume data is sorted
-let findQuantile q p data =
-    let rank = (p / q) * (length data - 1)
+-- assume xs is sorted
+let findQuantile q p xs =
+    let rank = (p / q) * (length xs - 1)
     in if rank == floor rank
-    then nth rank data
+    then nth rank xs
     else let x1 = floor rank;
              x2 = ceiling rank;
-             left = nth x1 data;
-             right = nth x2 data
+             left = nth x1 xs;
+             right = nth x2 xs
         in left + (rank - x1) * (right - left);
 
 let findPercentile = findQuantile 100;
@@ -36,39 +36,28 @@ let accumBins data Nil = [];
     accumBins data [l] = [];
     accumBins data (l : r : es) =
         let (ge, le) = splitOn (fun x -> x <= r) data
-        in (le , r - l) : accumBins ge (r : es);
+        in (le, r - l) : accumBins ge (r : es);
 
-let cut data nbins =
-    let low = minimum data;
-        binwidth = (maximum data - low) / nbins;
+let cut xs nbins =
+    let low = minimum xs;
+        binwidth = (maximum xs - low) / nbins;
         edges = [ low + (x * binwidth) | x <- enumFromTo 0 nbins ]
-    in accumBins data edges;
+    in accumBins xs edges;
 
-let qcut data qs =
-        let low = minimum data;
-            high = maximum data;
-            edges = append (low : [ findPercentile x data | x <- qs], [high])
-        in accumBins data edges;
+let qcut xs qs =
+    let (low, high) = (minimum xs, maximum xs);
+        edges = append (low : [ findPercentile x xs | x <- qs], [high])
+    in accumBins xs edges;
 
-let mkHistogram data dataName nbins =
-    let binWidth = (maximum data - minimum data) / nbins
-    in BarChart {
-        caption: "Histogram of distribution of " ++ dataName,
-        size: { width: 275, height: 185},
-        stackedBars:
-          map (fun (data, edge) -> { x: data, segments: [{ y: "density", z: length data / binWidth }] })
-            (cut data nbins)
-    };
+let likelihoodLE xs target =
+    length (filter (fun x -> x <= target) xs) / length xs;
 
-let likelihoodLE data target =
-    length (filter (fun x -> x <= target) data) / length data;
-
-let likelihoodGE data target =
-    length (filter (fun x -> x >= target) data) / length data;
+let likelihoodGE xs target =
+    length (filter (fun x -> x >= target) xs) / length xs;
 
 let likelihoodMap table prob = (fromSome (find (fun x -> x.prob <= prob) table)).msg;
 
-let mkPercent num = (numToStr (num * 100)) ++ "%";
+let mkPercent num = numToStr (num * 100) ++ "%";
 
 let leqP n m =
     if n <= m

@@ -15,10 +15,12 @@ import Effect (Effect)
 import Util (Endo)
 import Web.Event.EventTarget (eventListener)
 
+-- NOTE: design is a bit weird here. The (categorical) y coordinates are unused; only their position (y_index)
+-- is relevant.
+
 newtype Segment = Segment
-   { y :: Selectable String
+   { y :: Selectable String -- unused!
    , z :: Selectable Number
-   , j :: Int -- TODO: remove me (numerical index of my y coordinate)
    }
 
 type Scales = { x :: String -> Number, y :: Endo Number }
@@ -28,53 +30,50 @@ type SegmentContext =
    , scales :: Scales
    , strokeWidth :: Int
    , x :: String
-   , y :: Number
+   , y :: Number -- accumulated z values of segments below me in stack
    , y_index :: Int
    }
 
 instance View2 Segment SegmentContext where
-   createRootElement2 = createRootElement'
-   setSelStates2 = setSelStates'
+   createRootElement2 :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
+   createRootElement2 { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
+      parent
+         # create Rect
+              [ "x" ⟼ scales.x x
+              , "y" ⟼ scales.y (contents z + y)
+              , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y (contents z)
+              , "stroke-width" ⟼ strokeWidth
+              , "width" ⟼ bandwidth scales.x
+              , classes [ "bar" ]
+              ]
 
-createRootElement' :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
-createRootElement' { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
-   parent
-      # create Rect
-           [ "x" ⟼ scales.x x
-           , "y" ⟼ scales.y (contents z + y)
-           , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y (contents z)
-           , "stroke-width" ⟼ strokeWidth
-           , "width" ⟼ bandwidth scales.x
-           , classes [ "bar" ]
-           ]
-
-setSelStates' :: SegmentContext -> Segment -> Select -> D3.Selection -> Effect Unit
-setSelStates' { y_index } (Segment { z }) select segment = do
-   listener <- eventListener (select <<< uncurry jthSegment <<< selectionEventData')
-   segment # setAttrs attrs >>= registerMouseListeners listener
-   where
-   attrs :: Attrs
-   attrs =
-      [ "fill" ↦
-           case persistent of
-              None -> col'
-              Secondary -> "url(#diagonalHatch-" <> show y_index <> ")"
-              Primary -> colorShade col' (-40)
-      , "stroke-width" ↦ "1"
-      , "stroke-dasharray" ↦ case transient of
-           None -> "none"
-           Secondary -> "0.5 1" -- "1 2"
-           Primary -> "0.5 1" -- "2 2"
-      , "stroke-linecap" ↦ "round"
-      , "stroke" ↦
-           if persistent /= None || transient /= None then colorShade col' (-70)
-           else col'
-      ]
+   setSelStates2 :: SegmentContext -> Segment -> Select -> D3.Selection -> Effect Unit
+   setSelStates2 { y_index } (Segment { z }) select segment = do
+      listener <- eventListener (select <<< uncurry jthSegment <<< selectionEventData')
+      segment # setAttrs attrs >>= registerMouseListeners listener
       where
-      t = sel z
-      persistent = getPersistent t
-      transient = getTransient t
-      col' = indexCol y_index
+      attrs :: Attrs
+      attrs =
+         [ "fill" ↦
+              case persistent of
+                 None -> col'
+                 Secondary -> "url(#diagonalHatch-" <> show y_index <> ")"
+                 Primary -> colorShade col' (-40)
+         , "stroke-width" ↦ "1"
+         , "stroke-dasharray" ↦ case transient of
+              None -> "none"
+              Secondary -> "0.5 1" -- "1 2"
+              Primary -> "0.5 1" -- "2 2"
+         , "stroke-linecap" ↦ "round"
+         , "stroke" ↦
+              if persistent /= None || transient /= None then colorShade col' (-70)
+              else col'
+         ]
+         where
+         t = sel z
+         persistent = getPersistent t
+         transient = getTransient t
+         col' = indexCol y_index
 
 indexCol :: Int -> String
 indexCol = colorScale "schemeAccent"
