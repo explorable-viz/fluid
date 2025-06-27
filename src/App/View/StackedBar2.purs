@@ -9,16 +9,17 @@ import App.View.Util (class View2, Select, createRootElement2, setSelStates2)
 import App.View.Util.D3 (ElementType(..), create, selectAll)
 import App.View.Util.D3 as D3
 import Data.Array (scanl)
-import Data.Array.NonEmpty (cons', init)
+import Data.Array.NonEmpty (NonEmptyArray, cons', init, toArray)
 import Data.Foldable (sum)
 import Data.FoldableWithIndex (forWithIndex_)
+import Data.Newtype (class Newtype)
 import DataType (f_segments)
 import Effect (Effect)
 import Util ((!))
 
 newtype StackedBar = StackedBar
    { x :: Selectable String
-   , segments :: Array Segment
+   , segments :: NonEmptyArray Segment
    }
 
 type StackedBarContext =
@@ -54,4 +55,6 @@ segmentContext { interior, scales, strokeWidth } (StackedBar { x, segments }) =
       { interior, scales, strokeWidth, x: contents x, y: ys ! y_index, y_index }
    where
    ys :: Array Number
-   ys = init (cons' 0.0 (scanl (+) 0.0 (segments <#> \(Segment seg) -> contents seg.z)))
+   ys = init (cons' 0.0 (scanl (+) 0.0 (segments # toArray <#> \(Segment seg) -> contents seg.z)))
+
+derive instance Newtype StackedBar _

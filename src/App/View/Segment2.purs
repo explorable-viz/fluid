@@ -15,11 +15,8 @@ import Effect (Effect)
 import Util (Endo)
 import Web.Event.EventTarget (eventListener)
 
--- NOTE: design is a bit weird here. The (categorical) y coordinates are unused; only their position (y_index)
--- is relevant.
-
 newtype Segment = Segment
-   { y :: Selectable String -- unused!
+   { y :: Selectable String -- only used for legend
    , z :: Selectable Number
    }
 
