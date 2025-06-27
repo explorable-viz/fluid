@@ -13,11 +13,12 @@ import Data.Argonaut.Decode (decodeJson)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
+import Doc (DocOpt(..))
 import Effect (Effect)
 import Graph (DVertex'(..))
 import Module.Web (File(..), Folder(..), loadFile')
 import Util (error, (×))
-import Val (BaseVal(..), MatrixDim(..), MatrixRep(..), Val(..), asVal)
+import Val (Val(..), asVal)
 
 type JsonSpec =
    { fluidSrcPath :: Array String
@@ -38,7 +39,7 @@ figSpecFromJson spec =
    , query:
         if spec.query then
            Just $ asVal >=> case _ of
-              v@(Val α _ (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
+              v@(Val α (Doc _) _) -> Just $ DVertex (α × v)
               _ -> Nothing
         else Nothing
    }

@@ -2,8 +2,8 @@ module Util where
 
 import Prelude hiding (absurd)
 
-import Control.Apply (lift2)
 import Control.Alt ((<|>))
+import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
 import Control.Monad.Except (Except, ExceptT, runExcept)
 import Control.MonadPlus (class Alt, class Alternative, guard)
@@ -215,11 +215,20 @@ infixr 1 bind2Flipped as =<<<
 type Endo a = a -> a
 
 -- version of this in Data.Array uses unsafePartial
-unsafeIndex :: forall a. Array a -> Int -> a
-unsafeIndex xs i = definitely "index within bounds" (xs !! i)
+class UnsafeArray (f :: Type -> Type) where
+   unsafeIndex :: forall a. f a -> Int -> a
+   unsafeUpdateAt :: forall a. Int -> a -> Endo (f a)
 
-unsafeUpdateAt :: forall a. Int -> a -> Endo (Array a)
-unsafeUpdateAt i x = updateAt i x >>> definitely "index within bounds"
+withinBounds :: forall a. Maybe a -> a
+withinBounds = definitely "index within bounds"
+
+instance UnsafeArray Array where
+   unsafeIndex xs i = withinBounds (xs !! i)
+   unsafeUpdateAt i x = updateAt i x >>> withinBounds
+
+instance UnsafeArray NonEmptyArray where
+   unsafeIndex xs i = withinBounds (xs NEA.!! i)
+   unsafeUpdateAt i x = NEA.updateAt i x >>> withinBounds
 
 infixl 8 unsafeIndex as !
 

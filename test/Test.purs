@@ -27,7 +27,10 @@ main = run tests
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite loadFile
-   [ { file: "comments/app", imports: [], fwd_expect: "2" }
+   [ { file: "comments/projection"
+     , imports: []
+     , fwd_expect: "\"\"\" Test \"\"\" 1"
+     }
    ]
 
 asTestSuite :: BenchSuite -> TestSuite

@@ -6,9 +6,10 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, ViewSetter)
 import App.View (view')
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
+import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View', drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
+import Data.Array (fromFoldable)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
@@ -28,7 +29,7 @@ import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, absurd, error, spyWhen, (×), (∩))
+import Util (type (×), AffError, Endo, absurd, error, spy, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
@@ -53,7 +54,7 @@ selectOutput δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
       Transient | dir.transient /= LinkedOutputs -> γ × dir { transient = LinkedOutputs }
       _ -> γ × dir
 
-setOutputView :: ViewSetter Fig View
+setOutputView :: ViewSetter Fig View'
 setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw }
 
@@ -66,7 +67,7 @@ selectInput x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
       Transient | dir.transient /= LinkedInputs -> v × dir { transient = LinkedInputs }
       _ -> v × dir
 
-setInputView :: Var -> ViewSetter Fig View
+setInputView :: Var -> ViewSetter Fig View'
 setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
@@ -80,7 +81,7 @@ selectIntermediate (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final,
       Transient -> γ × v × dir × ι'
       _ -> γ × v × dir × ι
 
-setIntermediateView :: Vertex -> ViewSetter Fig View
+setIntermediateView :: Vertex -> ViewSetter Fig View'
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
@@ -149,8 +150,10 @@ intermediates { spec, in_roots, inerts } αs =
       \query ->
          let
             ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
-               $ runQuery query
-               $ αs.persistent ∪ αs.transient
+               $ spy "Query keys: " (show <<< fromFoldable <<< keys)
+                    ( runQuery query
+                         $ αs.persistent ∪ αs.transient
+                    )
          in
             rebuildι inerts αs ια
 

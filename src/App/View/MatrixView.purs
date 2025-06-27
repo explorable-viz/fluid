@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelStates, Selectable, 𝕊, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, matrixElement)
-import App.View.Util (class Drawable, UIHelpers, Select, uiHelpers)
+import App.View.Util (class View, Select, UIHelpers, uiHelpers)
 import App.View.Util.D3 as D3
 import Data.Tuple (snd, uncurry)
 import Effect (Effect)
@@ -19,8 +19,12 @@ type IntMatrix = { cells :: Array2 (Selectable Int), i :: Int, j :: Int }
 
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import setSelStates2 :: MatrixViewHelpers -> UIHelpers -> MatrixView -> Select -> D3.Selection -> Effect Unit
-foreign import createRootElement2 :: UIHelpers -> MatrixView -> D3.Selection -> Effect D3.Selection
+foreign import setSelection :: MatrixViewHelpers -> UIHelpers -> MatrixView -> Select -> D3.Selection -> Effect Unit
+foreign import createElement :: UIHelpers -> MatrixView -> D3.Selection -> Effect D3.Selection
+
+instance View MatrixView Unit where
+   createElement _ = createElement uiHelpers
+   setSelection _ = setSelection matrixViewHelpers uiHelpers
 
 type MatrixViewHelpers =
    { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
@@ -75,10 +79,6 @@ matrixViewHelpers =
    element { i, j } = matrixElement i j
 
    withElement sel = sel <<< uncurry element <<< selectionEventData'
-
-instance Drawable MatrixView where
-   createRootElement = createRootElement2 uiHelpers
-   setSelStates = setSelStates2 matrixViewHelpers uiHelpers
 
 matrixRep :: MatrixRep (SelStates 𝕊) -> IntMatrix
 matrixRep (MatrixRep (vss × MatrixDim (i × _) × MatrixDim (j × _))) =

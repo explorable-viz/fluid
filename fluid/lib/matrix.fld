@@ -31,3 +31,11 @@ let convolve image kernel lookup =
      | (i', j') in (i, j) |]
      in matrixSum interMatrix `quot` area
      | (m', n') in (m, n) |];
+
+let matMul a b = 
+    let ((m, n), (i, j)) = (dims a, dims b) in 
+    if not (n == i)
+    then error "Dimensions don't line up"
+    else """Intermediate matrix"""
+        [| sum [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n]
+        | (i', j') in (m, j) |];

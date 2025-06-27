@@ -103,12 +103,12 @@ cSome = "Some" :: Ctr
 cText = "Text" :: Ctr
 cLink = "Link" :: Ctr
 -- Field names used internally by rendering layer.
-f_bars = "bars" :: FieldName
 f_caption = "caption" :: FieldName
 f_colour = "c" :: FieldName
 f_name = "name" :: FieldName
 f_plots = "plots" :: FieldName
 f_points = "points" :: FieldName
+f_segments = "segments" :: FieldName
 f_size = "size" :: FieldName
 f_stackedBars = "stackedBars" :: FieldName
 f_tickLabels = "tickLabels" :: FieldName
@@ -196,6 +196,6 @@ dataTypes = L.fromFoldable
         ]
    , dataType "ParaFragment"
         [ cText × 1 -- Str (str)
-        , cLink × 2 --  Val v, Str (str) 
+        , cLink × 2 --  Val v, Str (str)
         ]
    ]

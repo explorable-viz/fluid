@@ -83,3 +83,7 @@ instance Vertices (e Vertex) => Vertices (DocOpt e Vertex) where
    vertices None = Set.empty
    vertices (Doc doc) = Set.unions (vertices <$> doc)
 
+instance Semigroup (DocOpt a b) where
+   append doc None = doc
+   append None doc = doc
+   append (Doc doc) (Doc doc') = Doc $ doc <> doc'
