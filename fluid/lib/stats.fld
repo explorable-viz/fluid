@@ -21,13 +21,14 @@ let mergesort xs =
 
 -- assume data is sorted
 let findQuantile q p data =
-    let rank = (p / q) * (length data - 1)
-    in if rank == floor rank
+    let rank = (p / q) * (length data - 1);
+        x1 = floor rank
+    in if rank == x1
     then nth rank data
-    else let x1 = floor rank;
-             x2 = ceiling rank;
-             left = nth x1 data;
-             right = nth x2 data
+    else let x2 = x1 + 1;
+             truncated = drop (x1 - 1) data;
+             left = head truncated;
+             right = nth 1 truncated
         in left + (rank - x1) * (right - left);
 
 let findPercentile = findQuantile 100;
