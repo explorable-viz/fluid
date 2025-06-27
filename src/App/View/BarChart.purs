@@ -2,9 +2,9 @@ module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Segment (Segment(..), indexCol)
 import App.Util (Dimensions(..), Selectable, Attrs, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
+import App.View.Segment (Segment(..), indexCol)
 import App.View.StackedBar (StackedBar(..))
 import App.View.Util (class View, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)

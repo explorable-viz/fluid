@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (Dimensions, Selectable, classes, contents)
 import App.Util.Selector (dictVal)
-import App.View.Segment2 (Scales, Segment(..), SegmentContext)
+import App.View.Segment (Scales, Segment(..), SegmentContext)
 import App.View.Util (class View2, Select, createElement, setSelection)
 import App.View.Util.D3 (ElementType(..), create, selectAll)
 import App.View.Util.D3 as D3

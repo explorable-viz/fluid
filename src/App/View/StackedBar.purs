@@ -2,9 +2,9 @@ module App.View.StackedBar where
 
 import Prelude
 
-import App.Segment (Segment(..))
 import App.Util (PartialAttrs, Selectable, classes, contents)
 import App.Util.Selector (dictVal)
+import App.View.Segment (Segment(..))
 import App.View.Util (class View, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (ElementType(..), create, selectAll)
 import App.View.Util.D3 as D3

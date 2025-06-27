@@ -2,15 +2,15 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Segment (Segment(..))
 import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, get_intOrNumber, inert)
 import App.View.BarChart (BarChart(..))
 import App.View.DocView (DocView(..))
 import App.View.LineChart (LineChart(..), LinePlot(..))
 import App.View.MatrixView (MatrixView(..), matrixRep)
 import App.View.MultiView (MultiView(..))
-import App.View.Paragraph as P
+import App.View.Paragraph (Paragraph(..))
 import App.View.ScatterPlot (ScatterPlot(..))
+import App.View.Segment (Segment(..))
 import App.View.StackedBar (StackedBar(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
 import App.View.Util (View', pack)
@@ -46,7 +46,7 @@ view title (Val _ _ (Constr c (u : Nil))) _
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
-   | c == cParagraph = pack (P.Paragraph false (vws <*> (const Nothing <$> vws)))
+   | c == cParagraph = pack (Paragraph false (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> from u
 view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
@@ -60,9 +60,9 @@ view title u@(Val _ _ (Constr c _)) _
 view title (Val _ _ (Matrix r)) _ =
    pack (MatrixView { title, matrix: matrixRep r })
 
-viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe P.Paragraph
+viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe Paragraph
 viewPara None = Nothing
-viewPara (Doc doc) = Just $ P.Paragraph true $ fromFoldable $ formatPara $ doc
+viewPara (Doc doc) = Just $ Paragraph true $ fromFoldable $ formatPara $ doc
    where
    formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List View'
    formatPara Nil = Nil
