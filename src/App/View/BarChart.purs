@@ -11,6 +11,7 @@ import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, create, scal
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
 import Data.Array (range)
+import Data.Array.NonEmpty (NonEmptyArray, toArray)
 import Data.Array.NonEmpty (head) as A
 import Data.Foldable (for_, length, sum)
 import Data.FoldableWithIndex (forWithIndex_)
@@ -20,12 +21,12 @@ import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
 import DataType (f_stackedBars)
 import Effect (Effect)
-import Util (Endo, nonEmpty, (!))
+import Util (Endo, (!))
 
 newtype BarChart = BarChart
    { caption :: Selectable String
    , size :: Dimensions (Selectable Int)
-   , stackedBars :: Array StackedBar
+   , stackedBars :: NonEmptyArray StackedBar
    }
 
 setSelStates' :: BarChart -> Select -> D3.Selection -> Effect Unit
@@ -59,11 +60,10 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    createLegend interior g
    pure g
    where
-   stackedBars' = nonEmpty stackedBars
    -- assume all bars have same set of y indices
    ys = bar.segments <#> \(Segment seg) -> contents seg.y
       where
-      StackedBar bar = A.head stackedBars'
+      StackedBar bar = A.head stackedBars
 
    xs = stackedBars <#> \(StackedBar bar) -> contents bar.x
 
@@ -97,11 +97,11 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    scales = to interior
    nearest = 10.0
    y_max = ceil $ nearest *
-      ((maximum $ map (\(StackedBar bar) -> (sum $ map (\(Segment b) -> contents b.z) bar.segments)) stackedBars') / nearest)
+      ((maximum $ map (\(StackedBar bar) -> (sum $ map (\(Segment b) -> contents b.z) bar.segments)) stackedBars) / nearest)
 
    to :: Dimensions Int -> { x :: String -> Number, y :: Endo Number }
    to (Dimensions { width, height }) =
-      { x: scaleBand width $ map (\(StackedBar r) -> contents r.x) stackedBars
+      { x: scaleBand width $ map (\(StackedBar r) -> contents r.x) (toArray stackedBars)
       , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
       }
 
@@ -146,7 +146,7 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
 
    createAxes :: D3.Selection -> Effect (Coord D3.Selection)
    createAxes parent' = do
-      x <- xAxis scales (nonEmpty xs) =<<
+      x <- xAxis scales xs =<<
          (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap interior).height } ])
       y <- yAxis scales 3.0 =<<
          (parent' # create G [ classes [ "y-axis" ] ])
