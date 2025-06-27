@@ -25,12 +25,12 @@ import Web.Event.EventTarget (EventListener)
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
-newtype View' = View' (forall r. (forall a c. View a Unit c => a -> r) -> r)
+newtype View' = View' (forall r. (forall a c. View a Unit c => View2 a Unit => a -> r) -> r)
 
-pack :: forall a c. View a Unit c => a -> View'
+pack :: forall a c. View a Unit c => View2 a Unit => a -> View'
 pack x = View' (_ $ x)
 
-unpack :: forall r. View' -> (forall a c. View a Unit c => a -> r) -> r
+unpack :: forall r. View' -> (forall a c. View a Unit c => View2 a Unit => a -> r) -> r
 unpack (View' vw) k = vw k
 
 selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
@@ -56,6 +56,19 @@ draw _ { divId, suffix, view } select' = do
       ( isEmpty maybeRootElement >>=
            if _ then
               createRootElement (const const) view div <#> D3.setAttrs [ "id" ↦ childId ] # join
+           else pure maybeRootElement
+      )
+
+draw2 :: forall a. View2 a Unit => Renderer a
+draw2 _ { divId, suffix, view } select' = do
+   let childId = divId <> "-" <> suffix
+   div <- rootSelect ("#" <> divId)
+   isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
+   maybeRootElement <- div # select ("#" <> childId)
+   setSelection unit view select' =<<
+      ( isEmpty maybeRootElement >>=
+           if _ then
+              createElement unit view div <#> D3.setAttrs [ "id" ↦ childId ] # join
            else pure maybeRootElement
       )
 

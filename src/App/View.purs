@@ -13,10 +13,10 @@ import App.View.ScatterPlot (ScatterPlot(..))
 import App.View.Segment (Segment(..))
 import App.View.StackedBar (StackedBar(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
+import App.View.Text (Text(..))
 import App.View.Util (View', pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
-import App.View.Util.Text as T
 import Data.Array ((:)) as A
 import Data.Array (fromFoldable)
 import Data.Array.NonEmpty (NonEmptyArray, cons')
@@ -68,8 +68,8 @@ viewPara (Doc doc) = Just $ Paragraph true $ fromFoldable $ formatPara $ doc
    formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List View'
    formatPara Nil = Nil
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
-   formatPara (Token str : xs) = pack (T.Text (str × inert)) : formatPara xs
-   formatPara (Unquote (Val α _ (Int n)) : xs) = pack (T.Text (show n × α)) : formatPara xs
+   formatPara (Token str : xs) = pack (Text (str × inert)) : formatPara xs
+   formatPara (Unquote (Val α _ (Int n)) : xs) = pack (Text (show n × α)) : formatPara xs
    formatPara (Unquote v : xs) = view "" v Nothing : formatPara xs
 
 -- ======================

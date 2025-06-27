@@ -4,10 +4,10 @@ import Prelude hiding (join)
 
 import App.Util (SelStates, Selectable, 𝕊, classes, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
+import App.View.Text (class Textual, textAttrs)
 import App.View.Util (class View, class View2, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
-import App.View.Util.Text (class Textual, textAttrs)
 import Data.Foldable (foldr)
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)
