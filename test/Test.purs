@@ -26,12 +26,7 @@ main :: Effect Unit
 main = run scratchpad
 
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite loadFile
-   [ { file: "comments/app-chain"
-     , imports: []
-     , fwd_expect: "\"\"\" Nested app-chain \"\"\" 16"
-     }
-   ]
+scratchpad = asTestSuite $ suite loadFile comments_cases
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)

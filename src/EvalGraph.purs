@@ -85,10 +85,12 @@ closeDefs γ ρ αs =
          new (flip Val None) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
-apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
+apply (Val α doc (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
-   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
+   let γ = (γ1 <+> γ2 <+> γ3)
+   v' <- eval γ (asExpr κ) (insert α αs)
+   concatDocs γ v' None doc
 apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
    where
@@ -166,8 +168,8 @@ eval γ (DProject doc e x) α = do
 eval γ (App doc e e') αs = do
    v <- eval γ e αs
    v'@(Val _ doc' _) <- eval γ e' αs
-   v''@(Val _ doc'' _) <- apply v v'
-   concatDocs γ v'' doc (doc' <> doc'')
+   v'' <- apply v v'
+   concatDocs γ v'' doc doc'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit

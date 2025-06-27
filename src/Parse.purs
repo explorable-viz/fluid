@@ -304,7 +304,7 @@ expr_ =
             ctrArgs :: SParser (Raw Expr)
             ctrArgs = docComment expr' >>= \doc -> simpleExprOrProjection doc >>= \e' -> rest doc (Constr α doc' c (es <> (e' : empty)))
          rest doc e =
-            ( docComment expr' >>= simpleExprOrProjection >>= \arg -> rest doc (App doc e arg)
+            ( docComment expr' >>= \doc' -> simpleExprOrProjection doc' >>= \arg -> rest doc' (App doc e arg)
             ) <|> pure e
 
          -- An expression that may need wrapping in parentheses to disambiguate.

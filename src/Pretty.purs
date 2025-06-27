@@ -107,7 +107,7 @@ prettySimple s = case exprType s of
    Expression -> parentheses (pretty s)
 
 prettyAppChain :: forall a. Ann a => Expr a -> Doc
-prettyAppChain (App _ s s') = prettyAppChain s .<>. prettySimple s'
+prettyAppChain (App doc s s') = pretty doc .<>. prettyAppChain s .<>. prettySimple s'
 prettyAppChain s = prettySimple s
 
 prettyBinApp :: forall a. Ann a => Int -> Expr a -> Doc
@@ -160,7 +160,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
    pretty (Project doc s x) = pretty doc .<>. prettySimple s .<>. text str.dot .<>. text x
    pretty (DProject doc s x) = pretty doc .<>. prettySimple s .<>. text str.dot .<>. text str.lBracket .<>. prettySimple x .<>. text str.rBracket
-   pretty (App doc s s') = pretty doc .<>. prettyAppChain (App doc s s')
+   pretty (App doc s s') = prettyAppChain (App doc s s')
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = text str.if_ .<>. pretty s1 .<>. text str.then_ .<>. pretty s2 .<>. text str.else_ .<>. pretty s3
