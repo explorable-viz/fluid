@@ -51,12 +51,12 @@ instance View2 BarChart Unit where
 
       void $ svg
          # create Text
-            [ "x" ⟼ props.width / 2
-            , "y" ⟼ props.height - props.caption_height / 2
-            , classes [ props.caption_class ]
-            , "dominant-baseline" ↦ "central"
-            , "text-anchor" ↦ "middle"
-            ]
+              [ "x" ⟼ props.width / 2
+              , "y" ⟼ props.height - props.caption_height / 2
+              , classes [ props.caption_class ]
+              , "dominant-baseline" ↦ "central"
+              , "text-anchor" ↦ "middle"
+              ]
          >>= setText (contents caption)
 
       createLegend props.interior g
@@ -88,7 +88,7 @@ instance View2 BarChart Unit where
             g <- legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y y_index } ]
             void $ g #
                ( create Text [ classes [ "legend-text" ], translate { x: entry_x, y: 9 } ]
-                  >=> setText y
+                    >=> setText y
                )
             g # create Rect
                [ "fill" ↦ indexCol y_index
