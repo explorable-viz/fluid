@@ -46,6 +46,7 @@ class View2 a b | a -> b where
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
+{-
 draw :: forall a c. View a Unit c => Renderer a
 draw _ { divId, suffix, view } select' = do
    let childId = divId <> "-" <> suffix
@@ -58,9 +59,9 @@ draw _ { divId, suffix, view } select' = do
               createRootElement (const const) view div <#> D3.setAttrs [ "id" ↦ childId ] # join
            else pure maybeRootElement
       )
-
-draw2 :: forall a. View2 a Unit => Renderer a
-draw2 _ { divId, suffix, view } select' = do
+-}
+draw :: forall a. View2 a Unit => Renderer a
+draw _ { divId, suffix, view } select' = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
    isEmpty div <#> not >>= flip check ("Unable to insert figure: no div found with id " <> divId)
