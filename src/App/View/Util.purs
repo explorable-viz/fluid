@@ -2,7 +2,7 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, PartialAttrs, selClasses, selClassesFor)
+import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, selClasses, selClassesFor)
 import App.Util.Selector (ViewSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
@@ -25,20 +25,16 @@ import Web.Event.EventTarget (EventListener)
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
-newtype View' = View' (forall r. (forall a c. View a Unit c => View2 a Unit => a -> r) -> r)
+newtype View' = View' (forall r. (forall a. View2 a Unit => a -> r) -> r)
 
-pack :: forall a c. View a Unit c => View2 a Unit => a -> View'
+pack :: forall a. View2 a Unit => a -> View'
 pack x = View' (_ $ x)
 
-unpack :: forall r. View' -> (forall a c. View a Unit c => View2 a Unit => a -> r) -> r
+unpack :: forall r. View' -> (forall a. View2 a Unit => a -> r) -> r
 unpack (View' vw) k = vw k
 
 selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
 selListener figVal redraw = redraw <<< figVal
-
-class View a b c | a -> b, a -> c where
-   createRootElement :: PartialAttrs b c -> a -> D3.Selection -> Effect D3.Selection
-   setSelStates :: a -> Select -> D3.Selection -> Effect Unit
 
 class View2 a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection

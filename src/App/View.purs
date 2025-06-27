@@ -20,7 +20,6 @@ import App.View.Util.Point (Point(..))
 import Data.Array ((:)) as A
 import Data.Array (fromFoldable)
 import Data.Array.NonEmpty (NonEmptyArray, cons')
-import Data.FunctorWithIndex (mapWithIndex)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
@@ -106,16 +105,15 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where
    from r = StackedBar
       { x: unpack string (snd (get f_x r))
-      , segments: mapWithIndex (\j r' -> dict (fromSegment j) r') $ from (snd (get f_segments r))
+      , segments: dict from <$> from (snd (get f_segments r))
       }
 
--- TODO: remove
-fromSegment :: Partial => Int -> Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Segment
-fromSegment j r = Segment
-   { y: unpack string (snd (get f_y r))
-   , z: get_intOrNumber f_z r
-   , j
-   }
+instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) Segment where
+   from :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Segment
+   from r = Segment
+      { y: unpack string (snd (get f_y r))
+      , z: get_intOrNumber f_z r
+      }
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) LinePlot where
    from r = LinePlot

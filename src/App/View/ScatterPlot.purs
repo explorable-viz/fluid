@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (Selectable, isPrimary, isSecondary, selectionEventData')
 import App.Util.Selector (ViewSelSetter, scatterPlot, scatterPoint)
-import App.View.Util (class View, class View2, Select, UIHelpers, uiHelpers)
+import App.View.Util (class View2, Select, UIHelpers, uiHelpers)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((⟼))
@@ -31,10 +31,6 @@ type ScatterPlotHelpers =
 
 foreign import createElement :: UIHelpers -> ScatterPlot -> D3.Selection -> Effect D3.Selection
 foreign import setSelection :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> Select -> D3.Selection -> Effect Unit
-
-instance View ScatterPlot Unit Unit where
-   createRootElement _ = createElement uiHelpers
-   setSelStates = setSelection scatterPlotHelpers uiHelpers
 
 instance View2 ScatterPlot Unit where
    createElement _ = createElement uiHelpers
