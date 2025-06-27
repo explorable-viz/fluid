@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, listElement)
-import App.View.Util (class View2, Select, registerMouseListeners)
+import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -78,7 +78,7 @@ transparentBorder = "1px solid transparent"
 solidBorder :: String
 solidBorder = "1px solid blue"
 
-instance View2 TableView Unit where
+instance View TableView Unit where
    setSelection :: Unit -> TableView -> Select -> D3.Selection -> Effect Unit
    setSelection _ (TableView { title, rows }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"

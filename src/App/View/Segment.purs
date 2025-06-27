@@ -3,8 +3,8 @@ module App.View.Segment where
 import Prelude
 
 import App.Util (Attrs, Dimensions, Selectable, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
-import App.Util.Selector (jthSegment)
-import App.View.Util (class View2, Select, registerMouseListeners)
+import App.Util.Selector (nthSegment)
+import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), bandwidth, colorScale, create, setAttrs)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
@@ -31,7 +31,7 @@ type SegmentContext =
    , y_index :: Int
    }
 
-instance View2 Segment SegmentContext where
+instance View Segment SegmentContext where
    createElement :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
    createElement { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
       parent
@@ -46,7 +46,7 @@ instance View2 Segment SegmentContext where
 
    setSelection :: SegmentContext -> Segment -> Select -> D3.Selection -> Effect Unit
    setSelection { y_index } (Segment { z }) select segment = do
-      listener <- eventListener (select <<< uncurry jthSegment <<< selectionEventData')
+      listener <- eventListener (select <<< uncurry (\_ -> nthSegment y_index) <<< selectionEventData')
       segment # setAttrs attrs >>= registerMouseListeners listener
       where
       attrs :: Attrs

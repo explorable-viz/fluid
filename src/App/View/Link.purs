@@ -5,7 +5,7 @@ import Prelude hiding (join)
 import App.Util (SelStates, Selectable, 𝕊, classes, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
 import App.View.Text (class Textual, textAttrs)
-import App.View.Util (class View2, Select, registerMouseListeners)
+import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Data.Foldable (foldr)
@@ -25,7 +25,7 @@ data Link = Link (Val (SelStates 𝕊)) (Selectable String)
 linkContents :: Link -> String
 linkContents (Link _ (s × _)) = s
 
-instance View2 Link Unit where
+instance View Link Unit where
    createElement :: Unit -> Link -> D3.Selection -> Effect D3.Selection
    createElement _ link parent = do
       rootElement <- parent # create D3.Text [ classes [ "link" ] ]

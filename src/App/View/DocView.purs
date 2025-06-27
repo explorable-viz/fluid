@@ -3,7 +3,7 @@ module App.View.DocView where
 import Prelude
 
 import App.View.Paragraph (Paragraph)
-import App.View.Util (class View2, Select, View', createElement, setSelection, unpack)
+import App.View.Util (class View, Select, View', createElement, setSelection, unpack)
 import App.View.Util.D3 as D3
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -13,7 +13,7 @@ newtype DocView = DocView
    , view :: View'
    }
 
-instance View2 DocView Unit where
+instance View DocView Unit where
    createElement :: Unit -> DocView -> D3.Selection -> Effect D3.Selection
    createElement _ (DocView { doc: Just doc, view }) parent = do
       rootElement <- parent # D3.create D3.G []

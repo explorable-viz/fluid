@@ -3,7 +3,7 @@ module App.View.MultiView where
 import Prelude
 
 import App.Util.Selector (multiViewEntry)
-import App.View.Util (class View2, Select, View', createElement, setSelection, unpack)
+import App.View.Util (class View, Select, View', createElement, setSelection, unpack)
 import App.View.Util.D3 (create)
 import App.View.Util.D3 as D3
 import Data.Array (mapWithIndex)
@@ -15,7 +15,7 @@ import Util.Map (toUnfoldable)
 
 data MultiView = MultiView (Dict View')
 
-instance View2 MultiView Unit where
+instance View MultiView Unit where
    createElement _ = createRootElement'
    setSelection _ = setSelStates'
 
