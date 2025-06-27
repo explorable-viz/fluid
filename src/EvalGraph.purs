@@ -146,30 +146,28 @@ eval γ (Matrix α doc e (x × y) e') αs = do
 eval γ (Lambda α σ) αs =
    new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project doc e x) αs = do
-   v <- eval γ e αs
+   v@(Val _ doc' _) <- eval γ e αs
    case v of
       Val _ _ (V.Dictionary (DictRep d)) -> do
          v' <- withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
-         concatDocs γ v' doc
+         concatDocs γ v' doc doc'
       _ -> throw $ "Found " <> prettyP v <> ", expected dictionary"
 eval γ (DProject doc e x) α = do
    v <- eval γ e α
-   v' <- eval γ x α
+   v'@(Val _ doc' _) <- eval γ x α
    case v of
       Val _ _ (V.Dictionary (DictRep d)) ->
          case v' of
             Val _ _ (V.Str s) -> do
                v'' <- (withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found"))
-               concatDocs γ v'' doc
+               concatDocs γ v'' doc doc'
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval γ (App doc e e') αs = do
    v <- eval γ e αs
-   v' <- eval γ e' αs
-   v''@(Val α' _ bv) <- apply v v'
-   let γ' = maplet "this" v''
-   vdoc <- evalDocOpt (γ <+> γ') doc
-   pure $ Val α' vdoc bv
+   v'@(Val _ doc' _) <- eval γ e' αs
+   v''@(Val _ doc'' _) <- apply v v'
+   concatDocs γ v'' doc (doc' <> doc'')
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
@@ -235,10 +233,11 @@ concatDocs
    => Env Vertex
    -> Val Vertex
    -> DocOpt Expr Vertex
+   -> DocOpt Val Vertex
    -> m (Val Vertex)
-concatDocs γ (Val α' vdoc v') doc = do
+concatDocs γ (Val α' vdoc v') doc doc' = do
    vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
-   pure (Val α' (vdoc' <> vdoc) v')
+   pure (Val α' (doc' <> vdoc' <> vdoc) v')
 
 type GraphEval g s t =
    { g :: g

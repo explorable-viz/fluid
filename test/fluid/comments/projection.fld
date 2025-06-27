@@ -1,2 +1,2 @@
-let x = { y: 1 }
-in """Test""" x.y
+let x = { y: { z: 1} }
+in """Test""" x.y.z
