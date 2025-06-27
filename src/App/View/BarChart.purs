@@ -1,19 +1,16 @@
-module App.View.BarChart
-   ( BarChart(..)
-   ) where
+module App.View.BarChart where
 
 import Prelude hiding (absurd)
 
 import App.Segment (Segment(..), indexCol)
-import App.Util (Dimensions(..), Selectable, classes, contents)
+import App.Util (Dimensions(..), Selectable, Attrs, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
-import App.View.LineChart (LegendEntry)
 import App.View.StackedBar (StackedBar(..))
 import App.View.Util (class View, Select, createRootElement, setSelStates)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, bandwidth, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
-import Data.Array (elemIndex, length, mapWithIndex, range)
+import Data.Array (length, range)
 import Data.Array.NonEmpty (head) as A
 import Data.Foldable (for_, sum)
 import Data.FoldableWithIndex (forWithIndex_)
@@ -23,7 +20,7 @@ import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
 import DataType (f_stackedBars)
 import Effect (Effect)
-import Util (Endo, definitely', nonEmpty, (!))
+import Util (Endo, nonEmpty, (!))
 
 newtype BarChart = BarChart
    { caption :: Selectable String
@@ -44,10 +41,10 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
 
    g <- svg # create G [ translate { x: margin.left, y: margin.top } ]
    void $ createAxes g
-   createStackedBars g strokeWidth
+   createStackedBars g
 
-   for_ js \j ->
-      addHatchPattern g j $ indexCol $ definitely' $ elemIndex j js
+   for_ (range 0 $ length ys - 1) \j ->
+      addHatchPattern g j $ indexCol j
 
    void $ svg
       # create Text
@@ -63,23 +60,17 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
    pure g
    where
    stackedBars' = nonEmpty stackedBars
-   -- AssuminedBars' all bars have the same set of names
-   ys = bar.segments <#> \(Segment bar') -> contents bar'.y
+   -- assume all bars have same set of y indices
+   ys = bar.segments <#> \(Segment seg) -> contents seg.y
       where
       StackedBar bar = A.head stackedBars'
 
    xs = stackedBars <#> \(StackedBar bar) -> contents bar.x
-   js = range 0 $ length ys - 1
 
    Dimensions { width, height } = size <#> contents
 
    margin :: Margin
-   margin =
-      { top: 3
-      , right: 75
-      , bottom: 20
-      , left: 30
-      }
+   margin = { top: 3, right: 75, bottom: 20, left: 30 }
 
    interior :: Dimensions Int
    interior = Dimensions
@@ -113,22 +104,22 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
       { x: scaleBand width $ map (\(StackedBar r) -> contents r.x) stackedBars
       , y: scaleLinear { min: 0.0, max: y_max } { min: toNumber height, max: 0.0 }
       }
-   strokeWidth = 1
-   barChartAttrs =
-      [ "stroke-width" ⟼ strokeWidth
-      , "width" ⟼ bandwidth scales.x
-      ]
 
-   createStackedBars :: D3.Selection -> Int -> Effect Unit
-   createStackedBars parent' strokeWidth' = do
+   createStackedBars :: D3.Selection -> Effect Unit
+   createStackedBars parent' =
       for_ stackedBars \stackedBar ->
          createRootElement attrFun stackedBar parent'
       where
-      attrFun bar attrs segment =
-         [ "x" ⟼ scales.x bar.x
-         , "y" ⟼ scales.y (segment.z + bar.y)
-         , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth') - scales.y segment.z
-         ] <> barChartAttrs <> attrs
+      attrFun :: { x :: String, y :: Number } -> Attrs -> { z :: Number } -> Attrs
+      attrFun seg attrs seg' =
+         [ "x" ⟼ scales.x seg.x
+         , "y" ⟼ scales.y (seg'.z + seg.y)
+         , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y seg'.z
+         , "stroke-width" ⟼ strokeWidth
+         , "width" ⟼ bandwidth scales.x
+         ] <> attrs
+
+      strokeWidth = 1
 
    createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
    createLegend (Dimensions interior') parent' = do
@@ -137,23 +128,20 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
          [ translate { x: interior'.width + 30, y: max 0 $ (interior'.height - height) / 2 } ]
       void $ legend' # create Rect
          [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
-      for_ entries \{ i, name } -> do
-         let nameIndex = definitely' $ elemIndex name ys
+      forWithIndex_ ys \i y -> do
          g <- legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
          void $ g #
             ( create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ]
-                 >=> setText name
+                 >=> setText y
             )
          g # create Rect
-            [ "fill" ↦ indexCol nameIndex
+            [ "fill" ↦ indexCol i
             , "width" ⟼ legendSquareSize
             , "height" ⟼ legendSquareSize
             , "x" ⟼ legendLineHeight / 2 - legendSquareSize / 2
             , "y" ⟼ legendLineHeight / 2 - legendSquareSize
             ]
       where
-      entries :: Array LegendEntry
-      entries = flip mapWithIndex ys \i name -> { i, name }
       entry_y i = i * legendLineHeight + 2
 
    createAxes :: D3.Selection -> Effect (Coord D3.Selection)
@@ -187,4 +175,3 @@ createRootElement' (BarChart { caption, size, stackedBars }) parent = do
 instance View BarChart Unit { x :: String, y :: Number } where
    createRootElement _ = createRootElement'
    setSelStates = setSelStates'
-
