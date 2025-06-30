@@ -7,7 +7,6 @@ import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
 import Data.Bifunctor (lmap)
 import Data.List (List(..), (:))
-import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
@@ -16,6 +15,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, fv)
+import File (File(..), FileContext, FileLoader, Folder)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
@@ -76,28 +76,3 @@ prepConfig { loadFile, fluidSrcPaths } file progCxt = do
    e <- desug s
    gconfig <- initialConfig e progCxt
    pure { s, e, gconfig }
-
-type FileLoader m = Array Folder -> File -> AffError m String
-
-type FileContext m =
-   { loadFile :: FileLoader m
-   , fluidSrcPaths :: Array Folder
-   }
-
-newtype File = File String
-newtype Folder = Folder String
-
-derive instance Newtype File _
-derive newtype instance Show File
-derive newtype instance Semigroup File
-derive newtype instance Monoid File
-derive instance Newtype Folder _
-derive newtype instance Show Folder
-
-instance Semigroup Folder where
-   append (Folder folder1) (Folder folder2) = Folder (folder1 <> "/" <> folder2)
-
-prependFolder :: Folder -> File -> File
-prependFolder (Folder folder) (File file) = File (folder <> "/" <> file)
-
-infixr 5 prependFolder as </>

@@ -1,4 +1,3 @@
--- Should this be src/Αpp rather than website/Website.LoadFigure?
 module App.LoadFigure where
 
 import Prelude hiding (absurd)
@@ -15,8 +14,9 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Doc (DocOpt(..))
 import Effect (Effect)
+import File (File(..), Folder(..))
 import Graph (DVertex'(..))
-import Module.Web (File(..), Folder(..), loadFile')
+import Module.Web (loadFile')
 import Util (error, (×))
 import Val (Val(..), asVal)
 

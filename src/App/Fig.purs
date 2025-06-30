@@ -9,7 +9,6 @@ import App.View (view')
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View', drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
-import Data.Array (fromFoldable)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
@@ -20,16 +19,17 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
+import File (File(..))
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices, dvertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
-import Module.Web (File(..), loadProgCxt, prepConfig)
+import Module.Web (loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, absurd, error, spy, spyWhen, (×), (∩))
+import Util (type (×), AffError, Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
@@ -150,10 +150,8 @@ intermediates { spec, in_roots, inerts } αs =
       \query ->
          let
             ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
-               $ spy "Query keys: " (show <<< fromFoldable <<< keys)
-                    ( runQuery query
-                         $ αs.persistent ∪ αs.transient
-                    )
+               $ runQuery query
+               $ αs.persistent ∪ αs.transient
          in
             rebuildι inerts αs ια
 
