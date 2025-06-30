@@ -1,2 +1,2 @@
 let x = { y: { z: 1} }
-in """Test""" x.y.z
+in ("""Whole""" x.y.z, """Outermost""" ("""Bracketed""" x.y).z)

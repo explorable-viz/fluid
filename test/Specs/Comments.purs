@@ -18,6 +18,6 @@ comments_cases =
    , { file: "comments/app-chain", imports: [], fwd_expect: "\"\"\" Nested app-chain \"\"\" 16" }
    , { file: "comments/list-comp", imports: [], fwd_expect: "\"\"\" We can add comments to list comprehensions \"\"\" (14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))" }
    , { file: "comments/int", imports: [], fwd_expect: "\"\"\" Comment on ${1} \"\"\" 1" }
-   , { file: "comments/projection", imports: [], fwd_expect: "\"\"\" Test \"\"\" 1" }
+   , { file: "comments/projection", imports: [], fwd_expect: "(\"\"\" Whole \"\"\" 1, \"\"\" Bracketed Outermost \"\"\" 1)" }
    , { file: "comments/nested-projection", imports: [], fwd_expect: "\"\"\" Test \"\"\" 1" }
    ]

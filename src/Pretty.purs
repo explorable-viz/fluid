@@ -158,8 +158,10 @@ instance Ann a => Pretty (Expr a) where
               )
          )
    pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
-   pretty (Project doc s x) = pretty doc .<>. prettySimple s .<>. text str.dot .<>. text x
-   pretty (DProject doc s x) = pretty doc .<>. prettySimple s .<>. text str.dot .<>. text str.lBracket .<>. prettySimple x .<>. text str.rBracket
+   pretty (Project Doc.None s x) = prettySimple s .<>. text str.dot .<>. text x
+   pretty (Project doc s x) = parentheses (pretty doc .<>. prettySimple s .<>. text str.dot .<>. text x)
+   pretty (DProject Doc.None s x) = prettySimple s .<>. text str.dot .<>. text str.lBracket .<>. prettySimple x .<>. text str.rBracket
+   pretty (DProject doc s x) = parentheses (pretty doc .<>. prettySimple s .<>. text str.dot .<>. text str.lBracket .<>. prettySimple x .<>. text str.rBracket)
    pretty (App doc s s') = prettyAppChain (App doc s s')
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
