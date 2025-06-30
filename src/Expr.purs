@@ -34,8 +34,7 @@ data Expr a
    | Constr a (DocOpt a) Ctr (List (Expr a))
    | Matrix a (DocOpt a) (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
-   | Project (DocOpt a) (Expr a) Var
-   | DProject (DocOpt a) (Expr a) (Expr a)
+   | Project (DocOpt a) (Expr a) (Expr a)
    | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
@@ -84,8 +83,7 @@ instance FV (Expr a) where
    fv (Constr _ doc _ es) = fv doc ∪ unions (fv <$> es)
    fv (Matrix _ doc e1 _ e2) = fv doc ∪ fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
-   fv (Project doc e _) = fv doc ∪ fv e
-   fv (DProject doc e x) = fv doc ∪ fv e ∪ fv x
+   fv (Project doc e x) = fv doc ∪ fv e ∪ fv x
    fv (App doc e1 e2) = fv doc ∪ fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
    fv (LetRec ρ e) = fv ρ ∪ fv e
@@ -183,8 +181,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Matrix α doc e1 (x × y) e2) (Matrix α' doc' e1' (x' × y') e2') =
       Matrix (α ∨ α') (doc ∨ doc') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
-   join (Project doc e x) (Project doc' e' x') = Project (doc ∨ doc') (e ∨ e') (x ≜ x')
-   join (DProject doc e x) (DProject doc' e' x') = DProject (doc ∨ doc') (e ∨ e') (x ∨ x')
+   join (Project doc e x) (Project doc' e' x') = Project (doc ∨ doc') (e ∨ e') (x ∨ x')
    join (App doc e1 e2) (App doc' e1' e2') = App (doc ∨ doc') (e1 ∨ e1') (e2 ∨ e2')
    join (Let def e) (Let def' e') = Let (def ∨ def') (e ∨ e')
    join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
@@ -201,8 +198,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Matrix α doc e1 (x × y) e2) (Matrix _ doc' e1' (x' × y') e2') =
       Matrix α (expand doc doc') (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
-   expand (Project doc e x) (Project doc' e' x') = Project (expand doc doc') (expand e e') (x ≜ x')
-   expand (DProject doc e x) (DProject doc' e' x') = DProject (expand doc doc') (expand e e') (expand x x')
+   expand (Project doc e x) (Project doc' e' x') = Project (expand doc doc') (expand e e') (expand x x')
    expand (App doc e1 e2) (App doc' e1' e2') = App (expand doc doc') (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
@@ -223,8 +219,7 @@ instance Vertices (Expr Vertex) where
    vertices e@(Constr α doc _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es) ∪ vertices doc
    vertices e@(Matrix α doc e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
-   vertices (Project doc e _) = vertices doc ∪ vertices e
-   vertices (DProject doc e x) = vertices e ∪ vertices x ∪ vertices doc
+   vertices (Project doc e x) = vertices e ∪ vertices x ∪ vertices doc
    vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
@@ -283,11 +278,10 @@ instance Apply Expr where
    apply (Matrix fα fdoc fe1 (x × y) fe2) (Matrix α doc e1 (x' × y') e2) =
       Matrix (fα α) (fdoc <*> doc) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
-   apply (Project fdoc fe x) (Project doc e _) = Project (fdoc <*> doc) (fe <*> e) x
    apply (App fdoc fe1 fe2) (App doc e1 e2) = App (fdoc <*> doc) (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
-   apply (DProject fdoc fd fk) (DProject doc d k) = DProject (fdoc <*> doc) (fd <*> d) (fk <*> k)
+   apply (Project fdoc fd fk) (Project doc d k) = Project (fdoc <*> doc) (fd <*> d) (fk <*> k)
    apply _ _ = shapeMismatch unit
 
 instance Apply Elim where

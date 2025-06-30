@@ -147,14 +147,14 @@ eval γ (Matrix α doc e (x × y) e') αs = do
    new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
    new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
-eval γ (Project doc e x) αs = do
+eval γ (Project doc e (Var x)) αs = do
    v@(Val _ doc' _) <- eval γ e αs
    case v of
       Val _ _ (V.Dictionary (DictRep d)) -> do
          v' <- withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
          concatDocs γ v' doc doc'
       _ -> throw $ "Found " <> prettyP v <> ", expected dictionary"
-eval γ (DProject doc e x) α = do
+eval γ (Project doc e x) α = do
    v <- eval γ e α
    v'@(Val _ doc' _) <- eval γ x α
    case v of

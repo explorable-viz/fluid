@@ -264,10 +264,10 @@ exprFwd (Matrix α doc s (x × y) s') = do
 exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project doc s x) = do
    edoc <- desugComment doc
-   E.Project edoc <$> desug s <@> x
+   E.Project edoc <$> desug s <@> (E.Var x)
 exprFwd (DProject doc s x) = do
    edoc <- desugComment doc
-   E.DProject edoc <$> desug s <*> desug x
+   E.Project edoc <$> desug s <*> desug x
 exprFwd (App doc s1 s2) = do
    edoc <- desugComment doc
    E.App edoc <$> desug s1 <*> desug s2
@@ -300,7 +300,7 @@ exprBwd (E.Dictionary α edoc ees) (Dictionary _ doc sss) =
 exprBwd (E.Matrix α edoc e1 _ e2) (Matrix _ doc s1 (x × y) s2) =
    Matrix α (desugCommentBwd edoc doc) (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (desugBwd σ μ)
-exprBwd (E.Project doc e x) (Project doc' s _) = Project (desugCommentBwd doc doc') (desugBwd e s) x
+exprBwd (E.Project doc e (E.Var x)) (Project doc' s _) = Project (desugCommentBwd doc doc') (desugBwd e s) x
 exprBwd (E.App doc e1 e2) (App doc' s1 s2) = App (desugCommentBwd doc doc') (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App _ (E.App _ (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
@@ -325,7 +325,7 @@ exprBwd e (ListComp _ _ s qs) =
    let α × qs' × s' = listCompBwd e (qs × s) in ListComp α Doc.None s' qs'
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 exprBwd (E.LetRec xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBwd e s)
-exprBwd (E.DProject doc ed ek) (DProject doc' sd sk) = DProject (desugCommentBwd doc doc') (exprBwd ed sd) (exprBwd ek sk)
+exprBwd (E.Project doc ed ek) (DProject doc' sd sk) = DProject (desugCommentBwd doc doc') (exprBwd ed sd) (exprBwd ek sk)
 exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
