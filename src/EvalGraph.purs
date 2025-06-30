@@ -17,6 +17,7 @@ import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Doc (DocCommentElem(..), DocOpt(..))
+import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
@@ -289,7 +290,7 @@ toGC
    -> GaloisConnection (s 𝔹) (t 𝔹)
 toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
-graphEval :: forall m. MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
+graphEval :: forall m. MonadAff m => MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
 graphEval { n, γ } e = do
    _ × _ × g × inα × outα <- flip runAllocT n do
       eα <- alloc e
