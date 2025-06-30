@@ -18,7 +18,7 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Doc (DocCommentElem(..), DocOpt(..))
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), ProjKey(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -147,14 +147,14 @@ eval γ (Matrix α doc e (x × y) e') αs = do
    new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
    new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
-eval γ (Project doc e x) αs = do
+eval γ (Project doc e (VKey x)) αs = do
    v@(Val _ doc' _) <- eval γ e αs
    case v of
       Val _ _ (V.Dictionary (DictRep d)) -> do
          v' <- withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
          concatDocs γ v' doc doc'
       _ -> throw $ "Found " <> prettyP v <> ", expected dictionary"
-eval γ (DProject doc e x) α = do
+eval γ (Project doc e (EKey x)) α = do
    v <- eval γ e α
    v'@(Val _ doc' _) <- eval γ x α
    case v of

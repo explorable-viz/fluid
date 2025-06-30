@@ -25,7 +25,7 @@ import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Doc (DocCommentElem(..))
 import Doc (DocOpt(..)) as Doc
-import Expr (Cont(..), Elim(..))
+import Expr (Cont(..), Elim(..), ProjKey(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
 import Graph.GraphImpl (GraphImpl)
@@ -383,8 +383,8 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Let (E.VarDef σ e) e') = atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
       (pretty e')
    pretty (E.LetRec (E.RecDefs _ ρ) e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
-   pretty (E.Project doc e x) = pretty doc .<>. pretty e .<>. text str.dot .<>. pretty x
-   pretty (E.DProject doc e x) = pretty doc .<>. pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
+   pretty (E.Project doc e (VKey x)) = pretty doc .<>. pretty e .<>. text str.dot .<>. pretty x
+   pretty (E.Project doc e (EKey x)) = pretty doc .<>. pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App doc e e') = pretty doc .<>. hcat [ pretty e, pretty e' ]
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
