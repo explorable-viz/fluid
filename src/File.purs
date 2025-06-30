@@ -2,7 +2,12 @@ module File where
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Writer (WriterT, lift)
 import Data.Newtype (class Newtype)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Exception (Error)
+import Graph.WithGraph (WithGraphT)
 import Util (AffError)
 
 type FileLoader m = Array Folder -> File -> AffError m String
@@ -11,6 +16,15 @@ type FileContext m =
    { loadFile :: FileLoader m
    , fluidSrcPaths :: Array Folder
    }
+
+class MonadAffLoadFile m where
+   loadFile' :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
+
+instance (Monoid w, MonadError Error m, MonadAff m, MonadAffLoadFile m) => MonadAffLoadFile (WriterT w m) where
+   loadFile' folders file = lift (loadFile' folders file)
+
+instance (MonadError Error m, MonadAff m, MonadAffLoadFile m) => MonadAffLoadFile (WithGraphT m) where
+   loadFile' folders file = lift (loadFile' folders file)
 
 newtype File = File String
 newtype Folder = Folder String

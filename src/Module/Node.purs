@@ -1,25 +1,17 @@
-module Module.Node
-   ( loadFile
-   , parseProgram
-   , module_
-   , datasetAs
-   , loadProgCxt
-   , module Module
-   , prepConfig
-   ) where
+module Module.Node where
 
 import Prelude
 
 import Bind (Bind)
-import Control.Monad.Error.Class (try)
-import Control.Monad.Except (class MonadError)
+import Control.Monad.Error.Class (class MonadThrow, catchError, throwError, try)
+import Control.Monad.Except (class MonadError, class MonadTrans, lift)
 import Data.Either (either)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
-import File (File(..), Folder, FileLoader, prependFolder)
+import File (class MonadAffLoadFile, File(..), FileLoader, Folder, prependFolder)
 import Lattice (Raw)
-import Module (Config, parse)
+import Module (Config)
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
@@ -55,3 +47,38 @@ loadProgCxt fluidSrcPaths = M.loadProgCxt { loadFile, fluidSrcPaths }
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => Array Folder -> File -> ProgCxt Unit -> m Config
 prepConfig fluidSrcPaths = M.prepConfig { loadFile, fluidSrcPaths }
+
+newtype NodeT (m :: Type -> Type) a = NodeT (m a)
+
+runNodeT :: forall m a. NodeT m a -> m a
+runNodeT (NodeT x) = x
+
+-- ======================
+-- boilerplate
+-- ======================
+
+instance MonadTrans NodeT where
+   lift = NodeT
+
+derive instance Functor m => Functor (NodeT m)
+
+instance Apply m => Apply (NodeT m) where
+   apply (NodeT fs) (NodeT xs) = NodeT (fs <*> xs)
+
+instance Applicative m => Applicative (NodeT m) where
+   pure = NodeT <<< pure
+
+instance Bind m => Bind (NodeT m) where
+   bind (NodeT x) f = NodeT $ x >>= runNodeT <<< f
+
+instance Monad m => Monad (NodeT m)
+
+instance (Monad (NodeT m), MonadThrow Error m) => MonadThrow Error (NodeT m) where
+   throwError = lift <<< throwError
+
+instance (MonadError Error m, MonadThrow Error (NodeT m)) => MonadError Error (NodeT m) where
+   catchError (NodeT x) h =
+      NodeT $ catchError x \e -> runNodeT (h e)
+
+instance MonadAff m => MonadAffLoadFile (NodeT m) where
+   loadFile' folders file = loadFile folders file

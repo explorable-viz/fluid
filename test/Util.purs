@@ -16,7 +16,7 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
-import File (File, FileLoader, Folder(..))
+import File (class MonadAffLoadFile, File, FileLoader, Folder(..))
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parse, prepConfig)
@@ -68,7 +68,7 @@ benchNames =
    , demBy_G_suff_dual: "DemBy-Suff"
    }
 
-testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
+testProperties :: forall m. MonadAffLoadFile m => MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
 

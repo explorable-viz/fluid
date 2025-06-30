@@ -16,7 +16,7 @@ import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
 import File (File(..), Folder(..))
 import Lattice (erase)
-import Module.Node (loadProgCxt, prepConfig)
+import Module.Node (loadProgCxt, prepConfig, runNodeT)
 import Node.Buffer (toString)
 import Node.ChildProcess (ChildProcess, ExecOptions, exec)
 import Node.Encoding (Encoding(..))
@@ -102,7 +102,7 @@ commandParser = subparser
 
 dispatchCommand ∷ Command → Aff Unit
 dispatchCommand (Evaluate p) = do
-   v <- (evaluate p)
+   v <- evaluate p
    log (prettyP v)
 dispatchCommand (BundleWebsite bas) =
    void $ liftEffect $ bundleWebsite bas
@@ -151,5 +151,5 @@ evaluate (EvalArgs { local, imports, datasets, fileName, fluidSrcPath }) = do
    let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
    { e, gconfig } <- prepConfig fluidSrcPaths (File fileName) progCxt
-   { outα } <- graphEval gconfig e
+   { outα } <- runNodeT $ graphEval gconfig e
    pure (erase outα)
