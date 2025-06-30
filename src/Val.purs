@@ -19,6 +19,7 @@ import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
 import Doc (DocOpt)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
 import Foreign.Object (foldMap)
@@ -64,7 +65,7 @@ instance Highlightable a => Highlightable (a × b) where
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 -- similar to an isomorphism lens with complement t
-type Op = forall m. MonadWithGraphAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
+type Op = forall m. MonadAff m => MonadWithGraphAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' = ForeignOp'
    { arity :: Int
