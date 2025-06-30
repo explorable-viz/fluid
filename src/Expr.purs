@@ -34,7 +34,11 @@ data Expr a
    | Constr a (DocOpt a) Ctr (List (Expr a))
    | Matrix a (DocOpt a) (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
+<<<<<<< HEAD
    | Project (DocOpt a) (Expr a) (ProjKey a)
+=======
+   | Project (DocOpt a) (Expr a) (Expr a)
+>>>>>>> ec7cba5c7ce946373e724f9d30bd09607eec301e
    | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)

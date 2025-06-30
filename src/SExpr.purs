@@ -264,11 +264,18 @@ exprFwd (Matrix α doc s (x × y) s') = do
 exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project doc s x) = do
    edoc <- desugComment doc
+<<<<<<< HEAD
    E.Project edoc <$> desug s <@> (VKey $ x)
 exprFwd (DProject doc s x) = do
    edoc <- desugComment doc
    ex <- desug x
    E.Project edoc <$> desug s <@> (EKey ex)
+=======
+   E.Project edoc <$> desug s <@> (E.Var x)
+exprFwd (DProject doc s x) = do
+   edoc <- desugComment doc
+   E.Project edoc <$> desug s <*> desug x
+>>>>>>> ec7cba5c7ce946373e724f9d30bd09607eec301e
 exprFwd (App doc s1 s2) = do
    edoc <- desugComment doc
    E.App edoc <$> desug s1 <*> desug s2
@@ -326,7 +333,11 @@ exprBwd e (ListComp _ _ s qs) =
    let α × qs' × s' = listCompBwd e (qs × s) in ListComp α Doc.None s' qs'
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 exprBwd (E.LetRec xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBwd e s)
+<<<<<<< HEAD
 exprBwd (E.Project doc ed (EKey ek)) (DProject doc' sd sk) = DProject (desugCommentBwd doc doc') (exprBwd ed sd) (exprBwd ek sk)
+=======
+exprBwd (E.Project doc ed ek) (DProject doc' sd sk) = DProject (desugCommentBwd doc doc') (exprBwd ed sd) (exprBwd ek sk)
+>>>>>>> ec7cba5c7ce946373e724f9d30bd09607eec301e
 exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
