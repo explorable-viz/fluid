@@ -78,114 +78,111 @@ transparentBorder = "1px solid transparent"
 solidBorder :: String
 solidBorder = "1px solid blue"
 
-setSelStates :: TableView -> Select -> D3.Selection -> Effect Unit
-setSelStates (TableView { title, rows }) redraw rootElement = do
-   cells <- rootElement # selectAll ".table-cell"
-   listener <- eventListener (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
-   for_ cells \cell -> do
-      { i, j, colName } :: CellIndex <- datum cell
-      if i == -1 || j == -1 then pure unit
-      else cell # classed selClasses false
-         >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
-         >>= registerMouseListeners listener
-      cell # setStyles
-         [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
-         , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
+instance View TableView Unit where
+   setSelection :: Unit -> TableView -> Select -> D3.Selection -> Effect Unit
+   setSelection _ (TableView { title, rows }) redraw rootElement = do
+      cells <- rootElement # selectAll ".table-cell"
+      listener <- eventListener (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
+      for_ cells \cell -> do
+         { i, j, colName } :: CellIndex <- datum cell
+         if i == -1 || j == -1 then pure unit
+         else cell # classed selClasses false
+            >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
+            >>= registerMouseListeners listener
+         cell # setStyles
+            [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
+            , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
+            ]
+      hideRecords >>= setCaption
+      where
+      hideRecords :: Effect Int
+      hideRecords = do
+         rows' <- rootElement # selectAll ".table-row"
+         { no: hidden, yes: visible } <- partition snd <$> for rows' \row -> do
+            { i } <- datum row
+            pure (row × record_isVisible (rows ! i))
+         for_ hidden $ fst >>> classed "hidden" true
+         for_ visible $ fst >>> classed "hidden" false
+         pure (length hidden)
+
+      setCaption :: Int -> Effect Unit
+      setCaption numHidden = do
+         let caption = title <> " (" <> show (length rows - numHidden) <> " of " <> show (length rows) <> ")"
+         void $ rootElement # select ".table-caption" >>= setText caption
+
+      width :: Int
+      width = length (definitely' (head rows))
+
+      visibleSucc :: Int -> Maybe Int
+      visibleSucc i
+         | i == length rows - 1 = Nothing
+         | record_isVisible $ rows ! (i + 1) = Just (i + 1)
+         | otherwise = visibleSucc (i + 1)
+
+      -- For a non-header (>=0) row, the immediately prior visible row (potentially the header)
+      visiblePred :: Int -> Int
+      visiblePred i
+         | i < 0 = error absurd
+         | i == 0 = -1
+         | record_isVisible (rows ! (i - 1)) = i - 1
+         | otherwise = visiblePred (i - 1)
+
+      border :: Boolean -> Boolean -> String
+      border true _ = solidBorder
+      border false true = transparentBorder
+      border false false = ""
+
+      hasRightBorder :: Int -> Int -> Boolean
+      hasRightBorder i j
+         | j == width - 1 = isCellTransient i j
+         | otherwise = isCellTransient i j /= isCellTransient i (j + 1)
+
+      hasBottomBorder :: Int -> Int -> Boolean
+      hasBottomBorder i j =
+         case visibleSucc i of
+            Nothing -> isCellTransient i j
+            Just i' -> (isCellTransient i' j /= isCellTransient (visiblePred i') j) && i == i' - 1
+
+      isCellTransient :: Int -> Int -> Boolean
+      isCellTransient i j
+         | i == -1 || j == -1 = false
+         | otherwise = isTransient <<< (\(Val α _ _) -> α) $ rows ! i ! j
+
+      tableViewSelSetter :: ViewSelSetter CellIndex
+      tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
+
+   createElement :: Unit -> TableView -> D3.Selection -> Effect D3.Selection
+   createElement _ (TableView { colNames, filter, rows }) parent = do
+      rootElement <- parent # create Table [ classes [ "table-view" ] ]
+      void $ rootElement # create Caption
+         [ classes [ "title-text", "table-caption" ]
+         , "dominant-baseline" ↦ "middle"
+         , "text-anchor" ↦ "left"
          ]
-   hideRecords >>= setCaption
-   where
-   hideRecords :: Effect Int
-   hideRecords = do
-      rows' <- rootElement # selectAll ".table-row"
-      { no: hidden, yes: visible } <- partition snd <$> for rows' \row -> do
-         { i } <- datum row
-         pure (row × record_isVisible (rows ! i))
-      for_ hidden $ fst >>> classed "hidden" true
-      for_ visible $ fst >>> classed "hidden" false
-      pure (length hidden)
+      let colNames' = [ rowKey ] <> colNames
+      rootElement # createHeader colNames'
+      body <- rootElement # create TBody []
+      forWithIndex_ rows \i row -> do
+         row' <- body # create TR [ classes [ "table-row" ] ] >>= setDatum { i }
+         forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
+            row' # create TD [ classes if j >= 0 then [ "table-cell" ] else [] ]
+               >>= setStyles [ "border-top" ↦ transparentBorder, "border-left" ↦ transparentBorder ]
+               >>= setText value
+               >>= setDatum { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
+      pure rootElement
+      where
+      createHeader colNames' rootElement = do
+         row <- rootElement # create THead [] >>= create TR []
+         forWithIndex_ colNames' \j colName -> do
+            let value = if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName
+            row
+               # create TH [ classes ([ "table-cell" ] <> cellClasses colName) ]
+               >>= setText value
+               >>= setDatum { i: -1, j: j - 1, value, colName: colNames' ! j }
 
-   setCaption :: Int -> Effect Unit
-   setCaption numHidden = do
-      let caption = title <> " (" <> show (length rows - numHidden) <> " of " <> show (length rows) <> ")"
-      void $ rootElement # select ".table-caption" >>= setText caption
-
-   width :: Int
-   width = length (definitely' (head rows))
-
-   visibleSucc :: Int -> Maybe Int
-   visibleSucc i
-      | i == length rows - 1 = Nothing
-      | record_isVisible $ rows ! (i + 1) = Just (i + 1)
-      | otherwise = visibleSucc (i + 1)
-
-   -- For a non-header (>=0) row, the immediately prior visible row (potentially the header)
-   visiblePred :: Int -> Int
-   visiblePred i
-      | i < 0 = error absurd
-      | i == 0 = -1
-      | record_isVisible (rows ! (i - 1)) = i - 1
-      | otherwise = visiblePred (i - 1)
-
-   border :: Boolean -> Boolean -> String
-   border true _ = solidBorder
-   border false true = transparentBorder
-   border false false = ""
-
-   hasRightBorder :: Int -> Int -> Boolean
-   hasRightBorder i j
-      | j == width - 1 = isCellTransient i j
-      | otherwise = isCellTransient i j /= isCellTransient i (j + 1)
-
-   hasBottomBorder :: Int -> Int -> Boolean
-   hasBottomBorder i j =
-      case visibleSucc i of
-         Nothing -> isCellTransient i j
-         Just i' -> (isCellTransient i' j /= isCellTransient (visiblePred i') j) && i == i' - 1
-
-   isCellTransient :: Int -> Int -> Boolean
-   isCellTransient i j
-      | i == -1 || j == -1 = false
-      | otherwise = isTransient <<< (\(Val α _ _) -> α) $ rows ! i ! j
-
-   tableViewSelSetter :: ViewSelSetter CellIndex
-   tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
-
-createRootElement :: TableView -> D3.Selection -> Effect D3.Selection
-createRootElement (TableView { colNames, filter, rows }) parent = do
-   rootElement <- parent # create Table [ classes [ "table-view" ] ]
-   void $ rootElement # create Caption
-      [ classes [ "title-text", "table-caption" ]
-      , "dominant-baseline" ↦ "middle"
-      , "text-anchor" ↦ "left"
-      ]
-   let colNames' = [ rowKey ] <> colNames
-   rootElement # createHeader colNames'
-   body <- rootElement # create TBody []
-   forWithIndex_ rows \i row -> do
-      row' <- body # create TR [ classes [ "table-row" ] ] >>= setDatum { i }
-      forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
-         row' # create TD [ classes if j >= 0 then [ "table-cell" ] else [] ]
-            >>= setStyles [ "border-top" ↦ transparentBorder, "border-left" ↦ transparentBorder ]
-            >>= setText value
-            >>= setDatum { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
-   pure rootElement
-   where
-   createHeader colNames' rootElement = do
-      row <- rootElement # create THead [] >>= create TR []
-      forWithIndex_ colNames' \j colName -> do
-         let value = if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName
-         row
-            # create TH [ classes ([ "table-cell" ] <> cellClasses colName) ]
-            >>= setText value
-            >>= setDatum { i: -1, j: j - 1, value, colName: colNames' ! j }
-
-   cellClasses colName
-      | colName == rowKey = [ "filter-toggle", "toggle-button" ]
-      | otherwise = []
-
-instance View TableView Unit Unit where
-   createRootElement _ = createRootElement
-   setSelStates = setSelStates
+      cellClasses colName
+         | colName == rowKey = [ "filter-toggle", "toggle-button" ]
+         | otherwise = []
 
 --      toggleListener <- filterToggleListener filterToggler
 --

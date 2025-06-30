@@ -11,6 +11,16 @@ let mkBarChart scenName table =
             table
    };
 
+let mkHistogram xs name nbins =
+    let binWidth = (maximum xs - minimum xs) / nbins
+    in BarChart {
+        caption: "Histogram of distribution of " ++ name,
+        size: { width: 275, height: 185},
+        stackedBars:
+          map (fun (data, edge) -> { x: data, segments: [{ y: "density", z: length data / binWidth }] })
+            (cut xs nbins)
+    };
+
 let getHeight offset bar = (head bar.segments).z + offset;
 
 let changed126 = map (fun r -> r.changed) ssp126preds;

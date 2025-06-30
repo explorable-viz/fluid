@@ -1,4 +1,4 @@
-module App.View.Util.Text where
+module App.View.Text where
 
 import Prelude
 
@@ -18,23 +18,20 @@ class Textual a where
 
 newtype Text = Text (Selectable String)
 
-createRootElement :: Text -> D3.Selection -> Effect D3.Selection
-createRootElement (Text (text × _)) parent = do
-   rootElement <- parent # create D3.Text [ "class" ↦ "para-text" ]
-   rootElement # setText text
+instance View Text Unit where
+   createElement :: Unit -> Text -> D3.Selection -> Effect D3.Selection
+   createElement _ (Text (text × _)) parent = do
+      rootElement <- parent # create D3.Text [ "class" ↦ "para-text" ]
+      rootElement # setText text
 
-setSelStates :: Text -> Select -> D3.Selection -> Effect Unit
-setSelStates (Text (text × _)) redraw rootElement = do
-   elem <- rootElement # D3.select ".para-text"
-   listener <- eventListener (redraw <<< uncurry textSelector <<< selectionEventData')
-   elem # setStyles (textAttrs text) >>= registerMouseListeners listener
-   where
-   textSelector :: ViewSelSetter Text
-   textSelector _ = identity
-
-instance View Text Unit Unit where
-   createRootElement _ = createRootElement
-   setSelStates = setSelStates
+   setSelection :: Unit -> Text -> Select -> D3.Selection -> Effect Unit
+   setSelection _ (Text (text × _)) redraw rootElement = do
+      elem <- rootElement # D3.select ".para-text"
+      listener <- eventListener (redraw <<< uncurry textSelector <<< selectionEventData')
+      elem # setStyles (textAttrs text) >>= registerMouseListeners listener
+      where
+      textSelector :: ViewSelSetter Text
+      textSelector _ = identity
 
 instance Textual String where
    getText x = x × inert

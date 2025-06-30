@@ -3,7 +3,7 @@ module App.View.DocView where
 import Prelude
 
 import App.View.Paragraph (Paragraph)
-import App.View.Util (class View, Select, View', createRootElement, setSelStates, unpack)
+import App.View.Util (class View, Select, View', createElement, setSelection, unpack)
 import App.View.Util.D3 as D3
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -13,24 +13,21 @@ newtype DocView = DocView
    , view :: View'
    }
 
-instance View DocView Unit Unit where
-   createRootElement _ = createRootElement'
-   setSelStates = setSelStates'
+instance View DocView Unit where
+   createElement :: Unit -> DocView -> D3.Selection -> Effect D3.Selection
+   createElement _ (DocView { doc: Just doc, view }) parent = do
+      rootElement <- parent # D3.create D3.G []
+      void $ unpack view \v -> createElement unit v rootElement
+      void $ createElement unit doc rootElement
+      pure rootElement
+   createElement _ (DocView { doc: Nothing, view }) parent = do
+      unpack view \v -> createElement unit v parent
 
-createRootElement' :: DocView -> D3.Selection -> Effect D3.Selection
-createRootElement' (DocView { doc: Just doc, view }) parent = do
-   rootElement <- parent # D3.create D3.G []
-   void $ unpack view \v -> createRootElement (\_ _ c -> const [] c) v rootElement
-   void $ createRootElement (\_ _ c -> const [] c) doc rootElement
-   pure rootElement
-createRootElement' (DocView { doc: Nothing, view }) parent = do
-   unpack view \v -> createRootElement (\_ _ c -> const [] c) v parent
-
-setSelStates' :: DocView -> Select -> D3.Selection -> Effect Unit
-setSelStates' (DocView { doc: Just doc, view }) select rootElement = do
-   viewElem <- rootElement # D3.select (D3.nthChild 1)
-   void $ unpack view \v -> setSelStates v select viewElem
-   docElem <- rootElement # D3.select (D3.nthChild 2)
-   void $ setSelStates doc select docElem
-setSelStates' (DocView { doc: Nothing, view }) select rootElement = do
-   unpack view \v -> setSelStates v select rootElement
+   setSelection :: Unit -> DocView -> Select -> D3.Selection -> Effect Unit
+   setSelection _ (DocView { doc: Just doc, view }) select rootElement = do
+      viewElem <- rootElement # D3.select (D3.nthChild 1)
+      void $ unpack view \v -> setSelection unit v select viewElem
+      docElem <- rootElement # D3.select (D3.nthChild 2)
+      void $ setSelection unit doc select docElem
+   setSelection _ (DocView { doc: Nothing, view }) select rootElement = do
+      unpack view \v -> setSelection unit v select rootElement

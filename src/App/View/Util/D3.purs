@@ -1,42 +1,9 @@
-module App.View.Util.D3
-   ( Coord
-   , ElementType(..)
-   , Margin
-   , Selection
-   , attrs
-   , bandwidth
-   , classed
-   , colorScale
-   , create
-   , datum
-   , dimensions
-   , isEmpty
-   , line
-   , nthChild
-   , on
-   , remove
-   , rootSelect
-   , rotate
-   , rotate'
-   , scaleBand
-   , scaleLinear
-   , select
-   , selectAll
-   , setAttrs
-   , setDatum
-   , setStyles
-   , setText
-   , textHeight
-   , textWidth
-   , translate
-   , xAxis
-   , yAxis
-   ) where
+module App.View.Util.D3 where
 
 import Prelude
 
 import App.Util (Attrs, Dimensions)
-import Bind (Bind, (↦))
+import Bind (Bind, (↦), (⟼))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Generic.Rep (class Generic)
 import Data.Newtype (unwrap)
@@ -103,6 +70,29 @@ setAttrs as sel = fromFoldable as # attrs sel
 setStyles :: Attrs -> Selection -> Effect Selection
 setStyles as sel = fromFoldable as # styles sel
 
+nthChild :: Int -> String
+nthChild i = ":nth-child(" <> show i <> ")"
+
+addHatchPattern :: Selection -> Int -> String -> Effect Unit
+addHatchPattern parent' j col_j = do
+   pattern <- parent' # create Pattern
+      [ "id" ↦ "diagonalHatch-" <> show j
+      , "patternUnits" ↦ "userSpaceOnUse"
+      , "width" ⟼ 2
+      , "height" ⟼ 2
+      , "patternTransform" ↦ "rotate(45)"
+      ]
+   void $ pattern # create Rect
+      [ "width" ⟼ 3.5, "height" ⟼ 3.5, "fill" ↦ col_j ]
+   void $ pattern # create Line
+      [ "x1" ⟼ 0
+      , "y" ⟼ 0
+      , "x2" ⟼ 0
+      , "y2" ⟼ 3.5
+      , "stroke" ↦ "rgba(255, 255, 255, 1)"
+      , "stroke-width" ↦ "1"
+      ]
+
 -- Could feasibly rename to Element
 foreign import data Selection :: Type
 
@@ -130,15 +120,12 @@ foreign import setDatum :: forall a. a -> Selection -> Effect Selection
 foreign import datum :: forall a. Selection -> Effect a
 foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
 
-nthChild :: Int -> String
-nthChild i = ":nth-child(" <> show i <> ")"
-
-instance Show ElementType
-   where
-   show = genericShow >>> toLower
-
 -- ======================
 -- boilerplate
 -- ======================
 
 derive instance Generic ElementType _
+
+instance Show ElementType
+   where
+   show = genericShow >>> toLower
