@@ -19,7 +19,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import File (File(..), Folder, FileLoader, prependFolder)
 import Lattice (Raw)
-import Module (Config, initialConfig, parse)
+import Module (Config, parse)
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)

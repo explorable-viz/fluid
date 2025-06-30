@@ -28,7 +28,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import File (FileLoader, Folder, File(..), prependFolder)
 import Lattice (Raw)
-import Module (Config, initialConfig, parse)
+import Module (Config, parse)
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
