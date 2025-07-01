@@ -1,13 +1,4 @@
-module Module.Web
-   ( loadFile
-   , loadFile'
-   , parseProgram
-   , module_
-   , datasetAs
-   , loadProgCxt
-   , module Module
-   , prepConfig
-   ) where
+module Module.Web where
 
 import Prelude
 
@@ -23,12 +14,13 @@ import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import File (class MonadAffLoadFile, File(..), FileLoader, Folder, prependFolder)
+import File (class LoadFile, File(..), FileLoader, Folder, prependFolder)
 import Lattice (Raw)
-import Module (Config, parse)
+import Module (Config)
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
@@ -75,7 +67,7 @@ newtype WebT (m :: Type -> Type) a = WebT (m a)
 runWebT :: forall m a. WebT m a -> m a
 runWebT (WebT x) = x
 
-instance MonadAff (WebT m) => MonadAffLoadFile (WebT m) where
+instance MonadAff (WebT m) => LoadFile (WebT m) where
    loadFile' folders file = loadFile folders file
 
 -- ======================
@@ -98,9 +90,15 @@ instance Bind m => Bind (WebT m) where
 
 instance Monad m => Monad (WebT m)
 
-instance (Monad (WebT m), MonadThrow Error m) => MonadThrow Error (WebT m) where
+instance MonadThrow Error m => MonadThrow Error (WebT m) where
    throwError = lift <<< throwError
 
-instance (MonadError Error m, MonadThrow Error (WebT m)) => MonadError Error (WebT m) where
+instance MonadError Error m => MonadError Error (WebT m) where
    catchError (WebT x) h =
       WebT $ catchError x \e -> runWebT (h e)
+
+instance MonadEffect m => MonadEffect (WebT m) where
+   liftEffect = lift <<< liftEffect
+
+instance MonadAff m => MonadAff (WebT m) where
+   liftAff = lift <<< liftAff

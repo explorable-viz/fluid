@@ -16,7 +16,7 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
-import File (class MonadAffLoadFile, File, Folder(..))
+import File (class LoadFile, File, Folder(..))
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parse, prepConfig2)
@@ -40,7 +40,7 @@ type SelectionSpec =
 fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
-test ∷ forall m. MonadAffLoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test ∷ forall m. LoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file progCxt spec (n × _) = do
    { s, gconfig } <- prepConfig2 { fluidSrcPaths } file progCxt
    testPretty s
@@ -68,7 +68,7 @@ benchNames =
    , demBy_G_suff_dual: "DemBy-Suff"
    }
 
-testProperties :: forall m. MonadAffLoadFile m => MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
+testProperties :: forall m. LoadFile m => MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
 

@@ -1,17 +1,4 @@
-module Test.Util.Suite
-   ( BenchSuite
-   , TestBwdSpec
-   , TestLinkedInputsSpec
-   , TestLinkedOutputsSpec
-   , TestSpec
-   , TestWithDatasetSpec
-   , bwdSuite
-   , linkedInputsSuite
-   , linkedOutputsSuite
-   , linkedOutputsTest
-   , suite
-   , withDatasetSuite
-   ) where
+module Test.Util.Suite where
 
 import Prelude
 
@@ -23,9 +10,9 @@ import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
 import Effect.Aff (Aff)
-import File ((</>), File(..), Folder(..), FileLoader)
+import File (class LoadFile, File(..), FileLoader, Folder(..), (</>))
 import Lattice (botOf)
-import Module (loadProgCxt)
+import Module (loadProgCxt, loadProgCxt2)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
 import Test.Util (checkEq, fluidSrcPaths, test)
 import Test.Util.Debug (timing)
@@ -87,13 +74,13 @@ bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folde
       bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
       test loadFile (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetSuite :: FileLoader Aff -> Array TestWithDatasetSpec -> BenchSuite
-withDatasetSuite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
+withDatasetSuite :: forall m. LoadFile m => Array TestWithDatasetSpec -> BenchSuite
+withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> Aff BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
-      gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports [ x ↦ dataset ]
-      test loadFile (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
+      gconfig <- loadProgCxt2 { fluidSrcPaths } imports [ x ↦ dataset ]
+      test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do

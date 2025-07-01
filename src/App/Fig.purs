@@ -25,7 +25,7 @@ import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
-import Module.Web (loadProgCxt, prepConfig)
+import Module.Web (loadProgCxt, prepConfig, runWebT)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
@@ -207,7 +207,7 @@ loadFig :: forall m. FigSpec -> AffError m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    progCxt <- loadProgCxt fluidSrcPaths imports datasets
    { s, e, gconfig } <- prepConfig fluidSrcPaths file progCxt
-   eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
+   eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- runWebT $ graphEval gconfig e
    let
       opEval = withOp eval
       inputs' = Set.fromFoldable inputs

@@ -21,13 +21,13 @@ type FileContext2 =
    { fluidSrcPaths :: Array Folder
    }
 
-class MonadAff m <= MonadAffLoadFile m where
+class LoadFile m where
    loadFile' :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
 
-instance (Monoid w, MonadError Error m, MonadAff m, MonadAffLoadFile m) => MonadAffLoadFile (WriterT w m) where
+instance (Monoid w, MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WriterT w m) where
    loadFile' folders file = lift (loadFile' folders file)
 
-instance (MonadError Error m, MonadAff m, MonadAffLoadFile m) => MonadAffLoadFile (WithGraphT m) where
+instance (MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WithGraphT m) where
    loadFile' folders file = lift (loadFile' folders file)
 
 newtype File = File String

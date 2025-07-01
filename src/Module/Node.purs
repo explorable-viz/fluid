@@ -8,8 +8,9 @@ import Control.Monad.Except (class MonadError, class MonadTrans, lift)
 import Data.Either (either)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Exception (Error)
-import File (class MonadAffLoadFile, File(..), FileLoader, Folder, prependFolder)
+import File (class LoadFile, File(..), FileLoader, Folder, prependFolder)
 import Lattice (Raw)
 import Module (Config)
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
@@ -53,6 +54,9 @@ newtype NodeT (m :: Type -> Type) a = NodeT (m a)
 runNodeT :: forall m a. NodeT m a -> m a
 runNodeT (NodeT x) = x
 
+instance MonadAff (NodeT m) => LoadFile (NodeT m) where
+   loadFile' folders file = loadFile folders file
+
 -- ======================
 -- boilerplate
 -- ======================
@@ -73,12 +77,15 @@ instance Bind m => Bind (NodeT m) where
 
 instance Monad m => Monad (NodeT m)
 
-instance (Monad (NodeT m), MonadThrow Error m) => MonadThrow Error (NodeT m) where
+instance MonadThrow Error m => MonadThrow Error (NodeT m) where
    throwError = lift <<< throwError
 
-instance (MonadError Error m, MonadThrow Error (NodeT m)) => MonadError Error (NodeT m) where
+instance MonadError Error m => MonadError Error (NodeT m) where
    catchError (NodeT x) h =
       NodeT $ catchError x \e -> runNodeT (h e)
 
-instance MonadAff (NodeT m) => MonadAffLoadFile (NodeT m) where
-   loadFile' folders file = loadFile folders file
+instance MonadEffect m => MonadEffect (NodeT m) where
+   liftEffect = lift <<< liftEffect
+
+instance MonadAff m => MonadAff (NodeT m) where
+   liftAff = lift <<< liftAff
