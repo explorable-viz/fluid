@@ -20,8 +20,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import File (class LoadFile, File(..), FileLoader, Folder, prependFolder)
 import Lattice (Raw)
-import Module (Config)
-import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
+import Module (datasetAs, module_, parseProgram) as M
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as S
 import Util (type (×), (×), AffError, debug, findM)
@@ -55,12 +54,6 @@ module_ = M.module_ loadFile
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs = M.datasetAs loadFile
-
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt fluidSrcPaths = M.loadProgCxt { loadFile, fluidSrcPaths }
-
-prepConfig :: forall m. MonadAff m => MonadError Error m => Array Folder -> File -> ProgCxt Unit -> m Config
-prepConfig fluidSrcPaths = M.prepConfig { loadFile, fluidSrcPaths }
 
 newtype WebT (m :: Type -> Type) a = WebT (m a)
 

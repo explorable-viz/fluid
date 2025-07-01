@@ -12,8 +12,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Exception (Error)
 import File (class LoadFile, File(..), FileLoader, Folder, prependFolder)
 import Lattice (Raw)
-import Module (Config)
-import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
+import Module (datasetAs, module_, parseProgram) as M
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
@@ -42,12 +41,6 @@ module_ = M.module_ loadFile
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs = M.datasetAs loadFile
-
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt fluidSrcPaths = M.loadProgCxt { loadFile, fluidSrcPaths }
-
-prepConfig :: forall m. MonadAff m => MonadError Error m => Array Folder -> File -> ProgCxt Unit -> m Config
-prepConfig fluidSrcPaths = M.prepConfig { loadFile, fluidSrcPaths }
 
 newtype NodeT (m :: Type -> Type) a = NodeT (m a)
 
