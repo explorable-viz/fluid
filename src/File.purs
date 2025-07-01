@@ -17,6 +17,10 @@ type FileContext m =
    , fluidSrcPaths :: Array Folder
    }
 
+type FileContext2 =
+   { fluidSrcPaths :: Array Folder
+   }
+
 class MonadAff m <= MonadAffLoadFile m where
    loadFile' :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
 
