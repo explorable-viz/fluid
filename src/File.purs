@@ -9,7 +9,7 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Graph.WithGraph (WithGraphT)
 
-type FileContext =
+type FileCxt =
    { fluidSrcPaths :: Array Folder
    }
 

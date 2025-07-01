@@ -26,14 +26,14 @@ loadFile folders (File file) = do
    exists :: File -> m (Maybe String)
    exists (File url) = do
       stats <- liftAff $ try (stat url)
-      pure $ if (either (const false) isFile stats) then Just url else Nothing
+      pure $ if either (const false) isFile stats then Just url else Nothing
 
 newtype NodeT (m :: Type -> Type) a = NodeT (m a)
 
 runNodeT :: forall m a. NodeT m a -> m a
 runNodeT (NodeT x) = x
 
-instance MonadAff (NodeT m) => LoadFile (NodeT m) where
+instance LoadFile (NodeT m) where
    loadFile = loadFile
 
 -- ======================

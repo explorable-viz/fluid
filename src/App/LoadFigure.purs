@@ -60,5 +60,5 @@ loadFigure fileName = runAffs_ (uncurry drawFig)
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
-   [ loadFile' [ Folder folder ] (File file)
+   [ runWebT $ loadFile' [ Folder folder ] (File file)
    ]
