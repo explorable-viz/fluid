@@ -86,7 +86,7 @@ closeDefs γ ρ αs =
       in
          new (flip Val None) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
-apply :: forall m. MonadAff m => MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
+apply :: forall m. MonadWithGraphAlloc m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
@@ -115,7 +115,7 @@ apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadAff m => MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
+eval :: forall m. MonadWithGraphAlloc m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval γ (Int α doc n) αs = do
@@ -180,7 +180,7 @@ eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
-eval_module :: forall m. MonadAff m => MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. MonadWithGraphAlloc m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
@@ -193,7 +193,7 @@ eval_module γ = go empty
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       go (γ' <+> γ'') (Module ds) αs
 
-eval_progCxt :: forall m. MonadAff m => MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
+eval_progCxt :: forall m. MonadWithGraphAlloc m => LoadFile m => ProgCxt Vertex -> m (Env Vertex)
 eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
    where
@@ -207,7 +207,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       v <- eval γ e empty
       pure $ γ <+> maplet x v
 
-evalDocOpt :: forall m. MonadAff m => MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
+evalDocOpt :: forall m. MonadWithGraphAlloc m => LoadFile m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
 evalDocOpt _ None = pure None
 evalDocOpt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
    where
@@ -217,8 +217,8 @@ evalDocOpt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
 
 new'
    :: forall m
-    . MonadAff m
-   => MonadWithGraphAlloc m
+    . MonadWithGraphAlloc m
+   => LoadFile m
    => Env Vertex
    -> Set Vertex
    -> DocOpt Expr Vertex
@@ -234,8 +234,8 @@ new' γ αs doc u = do
 
 concatDocs
    :: forall m
-    . MonadAff m
-   => MonadWithGraphAlloc m
+    . MonadWithGraphAlloc m
+   => LoadFile m
    => Env Vertex
    -> Val Vertex
    -> DocOpt Expr Vertex
