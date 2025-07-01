@@ -24,6 +24,7 @@ import Val (Val, Env)
 -- benchmarks parameterised on number of iterations
 type BenchSuite = Int × Boolean -> Array (String × Aff BenchRow)
 type BenchSuite2 m = MonadAff m => MonadError Error m => LoadFile m => Int × Boolean -> Array (String × m BenchRow)
+type BenchSuite3 m = Int × Boolean -> Array (String × m BenchRow)
 
 type TestSpec =
    { imports :: Array String
@@ -58,7 +59,7 @@ type TestLinkedInputsSpec =
    , in_expect :: Selector Env
    }
 
-suite :: forall m. Array TestSpec -> BenchSuite2 m
+suite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestSpec -> BenchSuite3 m
 suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
@@ -66,7 +67,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
       gconfig <- loadProgCxt2 { fluidSrcPaths } imports []
       test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
-bwdSuite :: forall m. Array TestBwdSpec -> BenchSuite2 m
+bwdSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestBwdSpec -> BenchSuite3 m
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
    where
    folder = Folder "slicing"
@@ -77,7 +78,7 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
       bwd_expect <- loadFile' [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
       test (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetSuite :: forall m. Array TestWithDatasetSpec -> BenchSuite2 m
+withDatasetSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite3 m
 withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> m BenchRow

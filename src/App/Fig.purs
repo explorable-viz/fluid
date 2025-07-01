@@ -29,7 +29,6 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module (loadProgCxt2, prepConfig)
-import Module.Web (runWebT)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
@@ -211,7 +210,7 @@ loadFig :: forall m. MonadAff m => MonadError Error m => LoadFile m => FigSpec -
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
    progCxt <- loadProgCxt2 { fluidSrcPaths } imports datasets
    { s, e, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
-   eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- runWebT $ graphEval gconfig e
+   eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval
       inputs' = Set.fromFoldable inputs

@@ -32,6 +32,7 @@ import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite = Array (String × Aff Unit)
 type TestSuite2 m = MonadAff m => MonadError Error m => LoadFile m => Array (String × m Unit)
+type TestSuite3 m = Array (String × m Unit)
 
 type SelectionSpec =
    { δv :: Selector Val
