@@ -136,9 +136,9 @@ listCell n δα = unsafePartial $ case _ of
 
 docElement :: Int -> SelSetter Val Val
 docElement _ _ (Val _ None _) = error absurd
-docElement i δv (Val α (Doc doc) v) =
+docElement i δv (Val α (Doc ins doc) v) =
    first (\doc' -> Val α doc' v)
-      $ first Doc
+      $ first (Doc ins)
       $ definitely' do
            elem' × selType <- δv' <$> index doc i
            (_ × selType) <$> updateAt i elem' doc

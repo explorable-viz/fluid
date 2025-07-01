@@ -111,9 +111,10 @@ docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
-docComment expr' = optionDoc (try $ docComment' expr')
-   where
-   optionDoc p = option None (Doc <$> p)
+docComment expr' = option None (try $ Doc <$> inputs expr' <*> docComment' expr')
+
+inputs :: SParser (Raw Expr) -> SParser (List (Raw Expr))
+inputs expr' = string str.ref *> (sepBy expr' (string str.comma)) # between (string str.lBracket) (string str.rBracket) # option Nil
 
 docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit))
 docComment' expr' = token.lexeme (go <?> "docComment")

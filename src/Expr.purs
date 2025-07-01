@@ -71,7 +71,7 @@ class FV a where
 
 instance FV (Doc.DocOpt Expr a) where
    fv Doc.None = empty
-   fv (Doc.Doc doc) = unions (fv <$> doc)
+   fv (Doc.Doc ins doc) = unions (fv <$> doc) ∪ unions (fv <$> ins)
 
 instance FV (Expr a) where
    fv (Var x) = singleton x

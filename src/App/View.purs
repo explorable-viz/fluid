@@ -62,7 +62,7 @@ view title (Val _ _ (Matrix r)) _ =
 
 viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe Paragraph
 viewPara None = Nothing
-viewPara (Doc doc) = Just $ Paragraph true $ fromFoldable $ formatPara $ doc
+viewPara (Doc _ doc) = Just $ Paragraph true $ fromFoldable $ formatPara $ doc
    where
    formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List View'
    formatPara Nil = Nil

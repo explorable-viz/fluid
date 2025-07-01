@@ -388,7 +388,8 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.App doc e e') = pretty doc .<>. hcat [ pretty e, pretty e' ]
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
-   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
+   pretty (Doc.Doc ins@(Cons _ _) x) = text str.triplequote .<>. (text (str.ref <> str.lBracket) .<>. hcat (pretty <$> ins) .<>. text str.rBracket) .<>. pretty x
+   pretty (Doc.Doc Nil x) = text str.triplequote .<>. pretty x
    pretty Doc.None = empty
 
 instance Pretty (e a) => Pretty (List (DocCommentElem e a)) where

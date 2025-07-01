@@ -39,7 +39,7 @@ figSpecFromJson spec =
    , query:
         if spec.query then
            Just $ asVal >=> case _ of
-              v@(Val α (Doc _) _) -> Just $ DVertex (α × v)
+              v@(Val α (Doc _ _) _) -> Just $ DVertex (α × v)
               _ -> Nothing
         else Nothing
    }
