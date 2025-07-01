@@ -17,8 +17,8 @@ import Affjax.ResponseFormat (string)
 import Affjax.StatusCode (StatusCode(..))
 import Affjax.Web (defaultRequest, printError, request)
 import Bind (Bind)
-import Control.Monad.Error.Class (throwError)
-import Control.Monad.Except (class MonadError, ExceptT(..), runExceptT)
+import Control.Monad.Error.Class (class MonadThrow, catchError, throwError)
+import Control.Monad.Except (class MonadError, class MonadTrans, ExceptT(..), lift, runExceptT)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
@@ -26,7 +26,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import File (FileLoader, Folder, File(..), prependFolder)
+import File (class MonadAffLoadFile, File(..), FileLoader, Folder, prependFolder)
 import Lattice (Raw)
 import Module (Config, parse)
 import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
@@ -69,3 +69,38 @@ loadProgCxt fluidSrcPaths = M.loadProgCxt { loadFile, fluidSrcPaths }
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => Array Folder -> File -> ProgCxt Unit -> m Config
 prepConfig fluidSrcPaths = M.prepConfig { loadFile, fluidSrcPaths }
+
+newtype WebT (m :: Type -> Type) a = WebT (m a)
+
+runWebT :: forall m a. WebT m a -> m a
+runWebT (WebT x) = x
+
+instance MonadAff (WebT m) => MonadAffLoadFile (WebT m) where
+   loadFile' folders file = loadFile folders file
+
+-- ======================
+-- boilerplate
+-- ======================
+
+instance MonadTrans WebT where
+   lift = WebT
+
+derive instance Functor m => Functor (WebT m)
+
+instance Apply m => Apply (WebT m) where
+   apply (WebT fs) (WebT xs) = WebT (fs <*> xs)
+
+instance Applicative m => Applicative (WebT m) where
+   pure = WebT <<< pure
+
+instance Bind m => Bind (WebT m) where
+   bind (WebT x) f = WebT $ x >>= runWebT <<< f
+
+instance Monad m => Monad (WebT m)
+
+instance (Monad (WebT m), MonadThrow Error m) => MonadThrow Error (WebT m) where
+   throwError = lift <<< throwError
+
+instance (MonadError Error m, MonadThrow Error (WebT m)) => MonadError Error (WebT m) where
+   catchError (WebT x) h =
+      WebT $ catchError x \e -> runWebT (h e)

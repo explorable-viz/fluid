@@ -80,5 +80,5 @@ instance (MonadError Error m, MonadThrow Error (NodeT m)) => MonadError Error (N
    catchError (NodeT x) h =
       NodeT $ catchError x \e -> runNodeT (h e)
 
-instance MonadAff m => MonadAffLoadFile (NodeT m) where
+instance MonadAff (NodeT m) => MonadAffLoadFile (NodeT m) where
    loadFile' folders file = loadFile folders file

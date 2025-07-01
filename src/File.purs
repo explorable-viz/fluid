@@ -17,7 +17,7 @@ type FileContext m =
    , fluidSrcPaths :: Array Folder
    }
 
-class MonadAffLoadFile m where
+class MonadAff m <= MonadAffLoadFile m where
    loadFile' :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
 
 instance (Monoid w, MonadError Error m, MonadAff m, MonadAffLoadFile m) => MonadAffLoadFile (WriterT w m) where
