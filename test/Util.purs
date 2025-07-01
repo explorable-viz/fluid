@@ -20,7 +20,7 @@ import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
 import File (class LoadFile, File, Folder(..))
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
-import Module (parse, prepConfig2)
+import Module (parse, prepConfig)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import ProgCxt (ProgCxt)
@@ -44,7 +44,7 @@ fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
 test ∷ forall m. LoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file progCxt spec (n × _) = do
-   { s, gconfig } <- prepConfig2 { fluidSrcPaths } file progCxt
+   { s, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n

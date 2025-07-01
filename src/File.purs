@@ -12,12 +12,7 @@ import Util (AffError)
 
 type FileLoader m = Array Folder -> File -> AffError m String
 
-type FileContext m =
-   { loadFile :: FileLoader m
-   , fluidSrcPaths :: Array Folder
-   }
-
-type FileContext2 =
+type FileContext =
    { fluidSrcPaths :: Array Folder
    }
 
