@@ -19,9 +19,9 @@ import Test.Specs.Graphics (graphics_cases)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Specs.Misc (misc_cases)
-import Test.Util (TestSuite, TestSuite2, TestSuite3)
+import Test.Util (TestSuite2, TestSuite3)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, BenchSuite3, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
+import Test.Util.Suite (BenchSuite3, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
@@ -38,9 +38,6 @@ scratchpad = asTestSuite $ suite
      }
    ]
 -}
-asTestSuite :: BenchSuite -> TestSuite
-asTestSuite suite = second void <$> suite (1 × false)
-
 asTestSuite2 :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite3 m -> TestSuite3 m
 asTestSuite2 suite = second void <$> suite (1 × false)
 
@@ -72,3 +69,6 @@ benchmarks' =
    , bwdSuite bwd_cases
    , withDatasetSuite graphics_cases
    ]
+
+benchmarks2 :: (forall m. LoadFile m => TestSuite3 m) -> TestSuite3 Aff
+benchmarks2 tests = second runWebT <$> tests
