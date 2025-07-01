@@ -34,11 +34,7 @@ data Expr a
    | Constr a (DocOpt a) Ctr (List (Expr a))
    | Matrix a (DocOpt a) (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
-<<<<<<< HEAD
-   | Project (DocOpt a) (Expr a) (ProjKey a)
-=======
    | Project (DocOpt a) (Expr a) (Expr a)
->>>>>>> ec7cba5c7ce946373e724f9d30bd09607eec301e
    | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
@@ -56,10 +52,6 @@ data Elim a
 data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
-
-data ProjKey a
-   = EKey (Expr a)
-   | VKey Var
 
 type DocOpt a = Doc.DocOpt Expr a
 type DocCommentElem a = Doc.DocCommentElem Expr a
@@ -95,10 +87,6 @@ instance FV (Expr a) where
    fv (App doc e1 e2) = fv doc ∪ fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
    fv (LetRec ρ e) = fv ρ ∪ fv e
-
-instance FV (ProjKey a) where
-   fv (EKey e) = fv e
-   fv (VKey x) = singleton x
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ \\ singleton x
@@ -173,11 +161,6 @@ instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
 instance JoinSemilattice a => JoinSemilattice (VarDef a) where
    join (VarDef σ e) (VarDef σ' e') = VarDef (σ ∨ σ') (e ∨ e')
 
-instance JoinSemilattice a => JoinSemilattice (ProjKey a) where
-   join (EKey e) (EKey e') = EKey $ e ∨ e'
-   join (VKey x) (VKey x') = VKey $ x ≜ x'
-   join _ _ = shapeMismatch unit
-
 instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
    expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
@@ -186,11 +169,6 @@ instance JoinSemilattice a => JoinSemilattice (RecDefs a) where
 
 instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
    expand (RecDefs α ρ) (RecDefs _ ρ') = RecDefs α (expand ρ ρ')
-
-instance BoundedJoinSemilattice a => Expandable (ProjKey a) (Raw ProjKey) where
-   expand (EKey e) (EKey e') = EKey $ expand e e'
-   expand (VKey x) (VKey x') = VKey $ x ≜ x'
-   expand _ _ = shapeMismatch unit
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Var x) (Var x') = Var (x ≜ x')
@@ -246,10 +224,6 @@ instance Vertices (Expr Vertex) where
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
 
-instance Vertices (ProjKey Vertex) where
-   vertices (EKey x) = vertices x
-   vertices (VKey _) = empty
-
 instance Vertices (Elim Vertex) where
    vertices (ElimVar _ κ) = vertices κ
    vertices (ElimConstr m) = vertices m
@@ -288,9 +262,7 @@ derive instance Foldable Expr
 derive instance Traversable Expr
 derive instance Functor RecDefs
 derive instance Foldable RecDefs
-derive instance Functor ProjKey
-derive instance Foldable ProjKey
-derive instance Traversable ProjKey
+
 derive instance Traversable RecDefs
 derive instance Newtype (Module a) _
 derive instance Functor Module
@@ -311,11 +283,6 @@ instance Apply Expr where
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
    apply (Project fdoc fd fk) (Project doc d k) = Project (fdoc <*> doc) (fd <*> d) (fk <*> k)
-   apply _ _ = shapeMismatch unit
-
-instance Apply ProjKey where
-   apply (EKey fe) (EKey e) = EKey $ fe <*> e
-   apply (VKey x) (VKey x') = VKey $ x ≜ x'
    apply _ _ = shapeMismatch unit
 
 instance Apply Elim where
@@ -369,14 +336,12 @@ instance Traversable Module where
    sequence = sequenceDefault
 
 derive instance Eq a => Eq (Expr a)
-derive instance Eq a => Eq (ProjKey a)
 derive instance Eq a => Eq (Elim a)
 derive instance Eq a => Eq (Cont a)
 derive instance Eq a => Eq (VarDef a)
 derive instance Eq a => Eq (RecDefs a)
 
 derive instance Ord a => Ord (Expr a)
-derive instance Ord a => Ord (ProjKey a)
 derive instance Ord a => Ord (Elim a)
 derive instance Ord a => Ord (Cont a)
 derive instance Ord a => Ord (VarDef a)
