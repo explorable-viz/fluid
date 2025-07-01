@@ -2,11 +2,14 @@ module Test.Test where
 
 import Prelude hiding (add)
 
+import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
+import Data.Tuple (snd)
 import Effect (Effect)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, Error)
+import Effect.Aff.Class (class MonadAff)
 import File (class LoadFile)
 import Module.Web (runWebT)
 import Test.Specs.Bwd (bwd_cases)
@@ -40,13 +43,19 @@ asTestSuite2 :: forall m. BenchSuite2 m -> TestSuite2 m
 asTestSuite2 suite = second void <$> suite (1 × false)
 
 nib :: (forall m. LoadFile m => String × m Unit) -> String × Aff Unit
-nib quib = second runWebT $ quib
+nib quib = second runWebT quib
+
+nib2 :: (forall m. LoadFile m => m Unit) -> Aff Unit
+nib2 quib = runWebT quib
 
 blah :: (forall m. TestSuite2 m) -> Array (Aff (String × Unit))
 blah suite = runWebT <$> sequence <$> suite
 
---blah2 :: (forall m. TestSuite2 m) -> Array (String × Aff Unit)
---blah2 suite = nib <$> suite
+bibble :: (forall m. TestSuite2 m) -> forall m. MonadAff m => MonadError Error m => LoadFile m => Array (m Unit)
+bibble suite = suite <#> snd
+
+blah2 :: (forall m. MonadAff m => MonadError Error m => LoadFile m => Array (m Unit)) -> Array (Aff Unit)
+blah2 suite = suite <#> runWebT
 
 tests :: TestSuite
 tests = concat (benchmarks <#> asTestSuite)
