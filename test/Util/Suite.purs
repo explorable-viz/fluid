@@ -85,7 +85,7 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
       gconfig <- loadProgCxt2 { fluidSrcPaths } imports [ x ↦ dataset ]
       test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
-linkedOutputsTest :: TestLinkedOutputsSpec -> Aff Fig
+linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
@@ -93,12 +93,12 @@ linkedOutputsTest { spec, δ_out, out_expect } = do
    checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect (botOf <$> v))
    pure fig
 
-linkedOutputsSuite :: Array TestLinkedOutputsSpec -> Array (String × Aff Unit)
+linkedOutputsSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestLinkedOutputsSpec -> Array (String × m Unit)
 linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
    where
    name { spec } = unwrap spec.file
 
-linkedInputsTest :: TestLinkedInputsSpec -> Aff Fig
+linkedInputsTest :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestLinkedInputsSpec -> m Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
@@ -106,7 +106,7 @@ linkedInputsTest { spec, δ_in, in_expect } = do
    checkEq "selected" "expected" (selStates <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (fst $ in_expect (botOf <$> γ))
    pure fig
 
-linkedInputsSuite :: Array TestLinkedInputsSpec -> Array (String × Aff Unit)
+linkedInputsSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestLinkedInputsSpec -> Array (String × m Unit)
 linkedInputsSuite specs = specs <#> (name &&& (linkedInputsTest >>> void))
    where
    name { spec } = unwrap spec.file

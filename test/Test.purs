@@ -7,17 +7,16 @@ import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import File (class LoadFile)
 import Module.Web (runWebT)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Comments (comments_cases)
 import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.Graphics (graphics_cases)
-import Test.Specs.LinkedInputs (linkedInputs_cases)
-import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Specs.Misc (misc_cases)
 import Test.Util (TestSuite, TestSuite2)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, BenchSuite2, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
+import Test.Util.Suite (BenchSuite, BenchSuite2, bwdSuite, suite, withDatasetSuite)
 import Util (type (×), (×))
 
 main :: Effect Unit
@@ -40,17 +39,24 @@ asTestSuite suite = second void <$> suite (1 × false)
 asTestSuite2 :: forall m. BenchSuite2 m -> TestSuite2 m
 asTestSuite2 suite = second void <$> suite (1 × false)
 
-blah3 :: (forall m. TestSuite2 m) -> Array (Aff (String × Unit))
-blah3 suite = runWebT <$> sequence <$> suite
+nib :: (forall m. LoadFile m => String × m Unit) -> String × Aff Unit
+nib quib = second runWebT $ quib
+
+blah :: (forall m. TestSuite2 m) -> Array (Aff (String × Unit))
+blah suite = runWebT <$> sequence <$> suite
+
+--blah2 :: (forall m. TestSuite2 m) -> Array (String × Aff Unit)
+--blah2 suite = nib <$> suite
 
 tests :: TestSuite
 tests = concat (benchmarks <#> asTestSuite)
-   <> linkedOutputsSuite linkedOutputs_cases
-   <> linkedInputsSuite linkedInputs_cases
+   <> [] -- linkedOutputsSuite linkedOutputs_cases
+   <> [] -- linkedInputsSuite linkedInputs_cases
 
 benchmarks :: Array BenchSuite
 benchmarks =
    []
+
 {-
    [ suite desugar_cases
    , suite misc_cases

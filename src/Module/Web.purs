@@ -67,7 +67,7 @@ newtype WebT (m :: Type -> Type) a = WebT (m a)
 runWebT :: forall m a. WebT m a -> m a
 runWebT (WebT x) = x
 
-instance MonadAff (WebT m) => LoadFile (WebT m) where
+instance LoadFile (WebT m) where
    loadFile' folders file = loadFile folders file
 
 -- ======================
