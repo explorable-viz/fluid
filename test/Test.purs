@@ -5,10 +5,8 @@ import Prelude hiding (add)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
-import Data.Traversable (sequence)
-import Data.Tuple (snd)
 import Effect (Effect)
-import Effect.Aff (Aff, Error)
+import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
 import File (class LoadFile)
 import Module.Web (runWebT)
@@ -19,13 +17,13 @@ import Test.Specs.Graphics (graphics_cases)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Specs.Misc (misc_cases)
-import Test.Util (TestSuite2, TestSuite3, TestSuite)
+import Test.Util (TestSuite)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite3, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
-import Util (type (×), (×))
+import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
+import Util ((×))
 
 main :: Effect Unit
-main = run (fluff tests2)
+main = run (second runWebT <$> tests)
 
 -- main = run scratchpad
 
@@ -38,40 +36,20 @@ scratchpad = asTestSuite $ suite
      }
    ]
 -}
-asTestSuite2 :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite3 m -> TestSuite3 m
-asTestSuite2 suite = second void <$> suite (1 × false)
 
-nib :: (forall m. LoadFile m => String × m Unit) -> String × Aff Unit
-nib quib = second runWebT quib
+asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
+asTestSuite suite = second void <$> suite (1 × false)
 
-nib2 :: (forall m. LoadFile m => m Unit) -> Aff Unit
-nib2 quib = runWebT quib
-
-blah :: (forall m. TestSuite2 m) -> Array (Aff (String × Unit))
-blah suite = runWebT <$> sequence <$> suite
-
-bibble :: (forall m. TestSuite2 m) -> forall m. MonadAff m => MonadError Error m => LoadFile m => Array (m Unit)
-bibble suite = suite <#> snd
-
-blah2 :: (forall m. MonadAff m => MonadError Error m => LoadFile m => Array (m Unit)) -> Array (Aff Unit)
-blah2 suite = suite <#> runWebT
-
-tests2 :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestSuite3 m
-tests2 = concat (benchmarks' <#> asTestSuite2)
+tests :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestSuite m
+tests = concat (benchmarks <#> asTestSuite)
    <> linkedOutputsSuite linkedOutputs_cases
    <> linkedInputsSuite linkedInputs_cases
 
-benchmarks' :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array (BenchSuite3 m)
-benchmarks' =
+benchmarks :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array (BenchSuite m)
+benchmarks =
    [ suite desugar_cases
    , suite misc_cases
    , suite comments_cases
    , bwdSuite bwd_cases
    , withDatasetSuite graphics_cases
    ]
-
-fluff :: (forall m. MonadAff m => MonadError Error m => LoadFile m => TestSuite3 m) -> TestSuite
-fluff tests = second runWebT <$> tests
-
-gib :: TestSuite
-gib = fluff tests2

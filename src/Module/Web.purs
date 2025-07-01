@@ -17,10 +17,10 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import File (class LoadFile, File(..), FileLoader, Folder, prependFolder)
+import File (class LoadFile, File(..), Folder, prependFolder)
 import Util (type (×), (×), AffError, debug, findM)
 
-loadFile :: forall m. FileLoader m
+loadFile :: forall m. MonadError Error m => MonadAff m => Array Folder -> File -> m String
 loadFile folders (File file) = do
    let urls = flip prependFolder (File $ file <> ".fld") <$> folders
    result <- runExceptT $ do
@@ -47,7 +47,7 @@ runWebT :: forall m a. WebT m a -> m a
 runWebT (WebT x) = x
 
 instance LoadFile (WebT m) where
-   loadFile' folders file = loadFile folders file
+   loadFile' = loadFile
 
 -- ======================
 -- boilerplate

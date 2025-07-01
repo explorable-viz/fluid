@@ -10,7 +10,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
-import Effect.Aff (Aff, Error)
+import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
 import File (class LoadFile, File(..), Folder(..), loadFile', (</>))
 import Lattice (botOf)
@@ -22,9 +22,7 @@ import Util (type (×), (×))
 import Val (Val, Env)
 
 -- benchmarks parameterised on number of iterations
-type BenchSuite = Int × Boolean -> Array (String × Aff BenchRow)
-type BenchSuite2 m = MonadAff m => MonadError Error m => LoadFile m => Int × Boolean -> Array (String × m BenchRow)
-type BenchSuite3 m = Int × Boolean -> Array (String × m BenchRow)
+type BenchSuite m = Int × Boolean -> Array (String × m BenchRow)
 
 type TestSpec =
    { imports :: Array String
@@ -59,7 +57,7 @@ type TestLinkedInputsSpec =
    , in_expect :: Selector Env
    }
 
-suite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestSpec -> BenchSuite3 m
+suite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestSpec -> BenchSuite m
 suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
@@ -67,7 +65,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
       gconfig <- loadProgCxt2 { fluidSrcPaths } imports []
       test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
-bwdSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestBwdSpec -> BenchSuite3 m
+bwdSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestBwdSpec -> BenchSuite m
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
    where
    folder = Folder "slicing"
@@ -78,7 +76,7 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
       bwd_expect <- loadFile' [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
       test (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite3 m
+withDatasetSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite m
 withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> m BenchRow

@@ -8,9 +8,6 @@ import Data.Newtype (class Newtype)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Graph.WithGraph (WithGraphT)
-import Util (AffError)
-
-type FileLoader m = Array Folder -> File -> AffError m String
 
 type FileContext =
    { fluidSrcPaths :: Array Folder

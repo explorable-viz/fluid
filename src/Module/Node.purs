@@ -9,13 +9,13 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import File (class LoadFile, File(..), FileLoader, prependFolder)
+import File (class LoadFile, File(..), Folder, prependFolder)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
 import Util (error, findM)
 
-loadFile :: forall m. FileLoader m
+loadFile :: forall m. MonadError Error m => MonadAff m => Array Folder -> File -> m String
 loadFile folders (File file) = do
    let urls = flip prependFolder (File $ file <> ".fld") <$> folders
    url <- findM urls exists Nothing
@@ -34,7 +34,7 @@ runNodeT :: forall m a. NodeT m a -> m a
 runNodeT (NodeT x) = x
 
 instance MonadAff (NodeT m) => LoadFile (NodeT m) where
-   loadFile' folders file = loadFile folders file
+   loadFile' = loadFile
 
 -- ======================
 -- boilerplate

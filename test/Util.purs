@@ -11,8 +11,6 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst)
 import Desug (desugGC)
-import Effect.Aff (Aff)
-import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -30,9 +28,7 @@ import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
-type TestSuite = Array (String × Aff Unit)
-type TestSuite2 m = MonadAff m => MonadError Error m => LoadFile m => Array (String × m Unit)
-type TestSuite3 m = Array (String × m Unit)
+type TestSuite m = Array (String × m Unit)
 
 type SelectionSpec =
    { δv :: Selector Val
