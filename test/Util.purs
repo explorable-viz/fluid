@@ -12,6 +12,7 @@ import Data.String (null)
 import Data.Tuple (fst)
 import Desug (desugGC)
 import Effect.Aff (Aff)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -20,16 +21,30 @@ import File (class LoadFile, File, Folder(..))
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parse, prepConfig2)
+import Module.Web (runWebT)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, error, spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite = Array (String × Aff Unit)
+type TestSuite2 m = MonadAff m => LoadFile m => Array (m Unit)
+
+blah :: forall m. MonadAff m => LoadFile m => m Unit
+blah = error "todo"
+
+blah2 :: Aff Unit
+blah2 = runWebT blah
+
+blib :: forall m. TestSuite2 m
+blib = error "todo"
+
+blib2 :: Array (Aff Unit)
+blib2 = runWebT <$> blib
 
 type SelectionSpec =
    { δv :: Selector Val

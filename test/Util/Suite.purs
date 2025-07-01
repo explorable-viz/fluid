@@ -6,13 +6,15 @@ import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
 import App.View.Util (Fig, FigSpec)
 import Bind (Bind, (↦))
+import Control.Monad.Error.Class (class MonadError)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
-import Effect.Aff (Aff)
-import File (class LoadFile, File(..), FileLoader, Folder(..), (</>))
+import Effect.Aff (Aff, Error)
+import Effect.Aff.Class (class MonadAff)
+import File (class LoadFile, File(..), Folder(..), loadFile', (</>))
 import Lattice (botOf)
-import Module (loadProgCxt, loadProgCxt2)
+import Module (loadProgCxt2)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
 import Test.Util (checkEq, fluidSrcPaths, test)
 import Test.Util.Debug (timing)
@@ -21,6 +23,7 @@ import Val (Val, Env)
 
 -- benchmarks parameterised on number of iterations
 type BenchSuite = Int × Boolean -> Array (String × Aff BenchRow)
+type BenchSuite2 m = MonadAff m => MonadError Error m => LoadFile m => Int × Boolean -> Array (String × m BenchRow)
 
 type TestSpec =
    { imports :: Array String
@@ -55,29 +58,29 @@ type TestLinkedInputsSpec =
    , in_expect :: Selector Env
    }
 
-suite :: FileLoader Aff -> Array TestSpec -> BenchSuite
-suite loadFile specs (n × is_bench) = specs <#> (_.file &&& asTest)
+suite :: forall m. Array TestSpec -> BenchSuite2 m
+suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
-   asTest :: TestSpec -> Aff BenchRow
+   asTest :: TestSpec -> m BenchRow
    asTest { imports, file, fwd_expect } = do
-      gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports []
-      test loadFile (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
+      gconfig <- loadProgCxt2 { fluidSrcPaths } imports []
+      test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
-bwdSuite :: FileLoader Aff -> Array TestBwdSpec -> BenchSuite
-bwdSuite loadFile specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
+bwdSuite :: forall m. Array TestBwdSpec -> BenchSuite2 m
+bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
    where
    folder = Folder "slicing"
 
-   asTest :: TestBwdSpec -> Aff BenchRow
+   asTest :: TestBwdSpec -> m BenchRow
    asTest { imports, file, bwd_expect_file, δv, fwd_expect, datasets } = do
-      gconfig <- loadProgCxt { loadFile, fluidSrcPaths } imports datasets
-      bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
-      test loadFile (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
+      gconfig <- loadProgCxt2 { fluidSrcPaths } imports datasets
+      bwd_expect <- loadFile' [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
+      test (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetSuite :: forall m. LoadFile m => Array TestWithDatasetSpec -> BenchSuite
+withDatasetSuite :: forall m. Array TestWithDatasetSpec -> BenchSuite2 m
 withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
-   asTest :: TestWithDatasetSpec -> Aff BenchRow
+   asTest :: TestWithDatasetSpec -> m BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
       gconfig <- loadProgCxt2 { fluidSrcPaths } imports [ x ↦ dataset ]
       test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)

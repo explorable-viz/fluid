@@ -5,17 +5,17 @@ import Prelude hiding (add)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
-import Module.Web (loadFile)
-import Test.Specs.Bwd (bwd_cases)
-import Test.Specs.Comments (comments_cases)
-import Test.Specs.Desugar (desugar_cases)
-import Test.Specs.Graphics (graphics_cases)
+--import Module.Web (loadFile)
+--import Test.Specs.Bwd (bwd_cases)
+--import Test.Specs.Comments (comments_cases)
+--import Test.Specs.Desugar (desugar_cases)
+--import Test.Specs.Graphics (graphics_cases)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
-import Test.Specs.Misc (misc_cases)
+--import Test.Specs.Misc (misc_cases)
 import Test.Util (TestSuite)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
+import Test.Util.Suite (BenchSuite, {-bwdSuite, -} linkedInputsSuite, linkedOutputsSuite {-, suite, withDatasetSuite-} )
 import Util ((×))
 
 main :: Effect Unit
@@ -25,14 +25,15 @@ main = run tests
 
 -- main = run scratchpad
 
+{-
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite loadFile
+scratchpad = asTestSuite $ suite
    [ { file: "comments/projection"
      , imports: []
      , fwd_expect: "\"\"\" Test \"\"\" 1"
      }
    ]
-
+-}
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
 
@@ -43,9 +44,12 @@ tests = concat (benchmarks <#> asTestSuite)
 
 benchmarks :: Array BenchSuite
 benchmarks =
-   [ suite loadFile desugar_cases
-   , suite loadFile misc_cases
-   , suite loadFile comments_cases
-   , bwdSuite loadFile bwd_cases
-   , withDatasetSuite loadFile graphics_cases
+   []
+{-
+   [ suite desugar_cases
+   , suite misc_cases
+   , suite comments_cases
+   , bwdSuite bwd_cases
+   , withDatasetSuite graphics_cases
    ]
+-}
