@@ -2,23 +2,18 @@ module Module.Node where
 
 import Prelude
 
-import Bind (Bind)
-import Control.Monad.Error.Class (class MonadThrow, catchError, throwError, try)
-import Control.Monad.Except (class MonadError, class MonadTrans, lift)
+import Control.Monad.Error.Class (class MonadThrow, try)
+import Control.Monad.Except (class MonadError, class MonadTrans)
 import Data.Either (either)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import File (class LoadFile, File(..), FileLoader, Folder, prependFolder)
-import Lattice (Raw)
-import Module (datasetAs, module_, parseProgram) as M
+import File (class LoadFile, File(..), FileLoader, prependFolder)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
-import ProgCxt (ProgCxt)
-import SExpr (Expr) as S
-import Util (AffError, error, findM)
+import Util (error, findM)
 
 loadFile :: forall m. FileLoader m
 loadFile folders (File file) = do
@@ -32,15 +27,6 @@ loadFile folders (File file) = do
    exists (File url) = do
       stats <- liftAff $ try (stat url)
       pure $ if (either (const false) isFile stats) then Just url else Nothing
-
-parseProgram ∷ ∀ m. Array Folder -> File → AffError m (Raw S.Expr)
-parseProgram = M.parseProgram loadFile
-
-module_ :: forall m. MonadAff m => MonadError Error m => Array Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ = M.module_ loadFile
-
-datasetAs :: forall m. MonadAff m => MonadError Error m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
-datasetAs = M.datasetAs loadFile
 
 newtype NodeT (m :: Type -> Type) a = NodeT (m a)
 
@@ -57,28 +43,12 @@ instance MonadAff (NodeT m) => LoadFile (NodeT m) where
 instance MonadTrans NodeT where
    lift = NodeT
 
-derive instance Functor m => Functor (NodeT m)
-
-instance Apply m => Apply (NodeT m) where
-   apply (NodeT fs) (NodeT xs) = NodeT (fs <*> xs)
-
-instance Applicative m => Applicative (NodeT m) where
-   pure = NodeT <<< pure
-
-instance Bind m => Bind (NodeT m) where
-   bind (NodeT x) f = NodeT $ x >>= runNodeT <<< f
-
-instance Monad m => Monad (NodeT m)
-
-instance MonadThrow Error m => MonadThrow Error (NodeT m) where
-   throwError = lift <<< throwError
-
-instance MonadError Error m => MonadError Error (NodeT m) where
-   catchError (NodeT x) h =
-      NodeT $ catchError x \e -> runNodeT (h e)
-
-instance MonadEffect m => MonadEffect (NodeT m) where
-   liftEffect = lift <<< liftEffect
-
-instance MonadAff m => MonadAff (NodeT m) where
-   liftAff = lift <<< liftAff
+derive newtype instance Functor m => Functor (NodeT m)
+derive newtype instance Apply m => Apply (NodeT m)
+derive newtype instance Applicative m => Applicative (NodeT m)
+derive newtype instance Bind m => Bind (NodeT m)
+derive newtype instance Monad m => Monad (NodeT m)
+derive newtype instance MonadThrow Error m => MonadThrow Error (NodeT m)
+derive newtype instance MonadError Error m => MonadError Error (NodeT m)
+derive newtype instance MonadEffect m => MonadEffect (NodeT m)
+derive newtype instance MonadAff m => MonadAff (NodeT m)
