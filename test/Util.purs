@@ -9,7 +9,6 @@ import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
-import Data.Traversable (sequence)
 import Data.Tuple (fst)
 import Desug (desugGC)
 import Effect.Aff (Aff)
@@ -22,24 +21,17 @@ import File (class LoadFile, File, Folder(..))
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parse, prepConfig2)
-import Module.Web (runWebT)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, error, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite = Array (String × Aff Unit)
-type TestSuite2 m = MonadAff m => LoadFile m => Array (String × m Unit)
-
-blah :: forall m. TestSuite2 m
-blah = error "todo"
-
-blah3 :: Array (Aff (String × Unit))
-blah3 = runWebT <$> sequence <$> blah
+type TestSuite2 m = MonadAff m => MonadError Error m => LoadFile m => Array (String × m Unit)
 
 type SelectionSpec =
    { δv :: Selector Val
