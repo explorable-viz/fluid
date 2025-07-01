@@ -3,7 +3,7 @@ module Test.Specs.LinkedInputs where
 import App.Util.Selector (dictVal, envVal, listElement, select, (>.>))
 import Bind ((↦))
 import Data.Maybe (Maybe(..))
-import Module.Web (File(..), Folder(..))
+import File (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedInputsSpec)
 
 linkedInputs_spec3 :: TestLinkedInputsSpec

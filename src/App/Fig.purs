@@ -9,7 +9,7 @@ import App.View (view')
 import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View', drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
-import Data.Array (fromFoldable)
+import Control.Monad.Error.Class (class MonadError)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
@@ -19,17 +19,20 @@ import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect (Effect)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Exception (Error)
 import EvalGraph (graphEval, graphGC, withOp)
+import File (class LoadFile, File(..))
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices, dvertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
-import Module.Web (File(..), loadProgCxt, prepConfig)
+import Module (loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, absurd, error, spy, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
@@ -150,10 +153,8 @@ intermediates { spec, in_roots, inerts } αs =
       \query ->
          let
             ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
-               $ spy "Query keys: " (show <<< fromFoldable <<< keys)
-                    ( runQuery query
-                         $ αs.persistent ∪ αs.transient
-                    )
+               $ runQuery query
+               $ αs.persistent ∪ αs.transient
          in
             rebuildι inerts αs ια
 
@@ -205,10 +206,10 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. FigSpec -> AffError m Fig
+loadFig :: forall m. MonadAff m => MonadError Error m => LoadFile m => FigSpec -> m Fig
 loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
-   progCxt <- loadProgCxt fluidSrcPaths imports datasets
-   { s, e, gconfig } <- prepConfig fluidSrcPaths file progCxt
+   progCxt <- loadProgCxt { fluidSrcPaths } imports datasets
+   { s, e, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval

@@ -25021,13 +25021,13 @@ var loadProgCxt = (dictMonadAff) => {
   const datasetAs1 = datasetAs(dictMonadAff);
   return (dictMonadError) => {
     const module_22 = module_1(dictMonadError);
-    const datasetAs2 = datasetAs1(dictMonadError);
+    const datasetAs = datasetAs1(dictMonadError);
     return (v) => (mods) => (datasets) => $0.bind($0.bind(Monad0.Applicative0().pure({
       primitives,
       mods: Nil,
       datasets: Nil
     }))(concatM1(arrayMap(module_22(v.loadFile)(v.fluidSrcPaths))(["lib/prelude", ...mods]))))(concatM1(arrayMap((() => {
-      const $1 = datasetAs2(v.loadFile)(v.fluidSrcPaths);
+      const $1 = datasetAs(v.loadFile)(v.fluidSrcPaths);
       return (x) => $1($Tuple(x._1, x._2));
     })())(datasets)));
   };
@@ -25190,16 +25190,16 @@ var loadProgCxt2 = (dictMonadAff) => {
     return (fluidSrcPaths) => loadProgCxt22({ loadFile, fluidSrcPaths });
   };
 };
-var prepConfig2 = (dictMonadAff) => {
+var prepConfig = (dictMonadAff) => {
   const prepConfig1 = prepConfig(dictMonadAff);
   return (dictMonadError) => {
-    const prepConfig22 = prepConfig1(dictMonadError);
-    return (fluidSrcPaths) => prepConfig22({ loadFile, fluidSrcPaths });
+    const prepConfig2 = prepConfig1(dictMonadError);
+    return (fluidSrcPaths) => prepConfig2({ loadFile, fluidSrcPaths });
   };
 };
 
 // output-es/Test.Query/index.js
-var prepConfig3 = /* @__PURE__ */ prepConfig2(monadAffAff)(monadErrorAff);
+var prepConfig3 = /* @__PURE__ */ prepConfig(monadAffAff)(monadErrorAff);
 var graphEval2 = /* @__PURE__ */ graphEval(monadErrorAff);
 var forWithIndex = /* @__PURE__ */ (() => {
   const $0 = traversableWithIndexList.traverseWithIndex(applicativeAff);
