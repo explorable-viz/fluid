@@ -33,9 +33,8 @@ import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite = Array (String × Aff Unit)
 type TestSuite2 m = MonadAff m => LoadFile m => Array (String × m Unit)
-type TestSuite3 m = MonadAff m => LoadFile m => Array (m (String × Unit))
 
-blah :: forall m. MonadAff m => LoadFile m => Array (String × m Unit)
+blah :: forall m. TestSuite2 m
 blah = error "todo"
 
 quib2 :: forall a b m. Monad m => a × m b -> m (a × b)
