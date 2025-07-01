@@ -34,7 +34,7 @@ runNodeT :: forall m a. NodeT m a -> m a
 runNodeT (NodeT x) = x
 
 instance MonadAff (NodeT m) => LoadFile (NodeT m) where
-   loadFile' = loadFile
+   loadFile = loadFile
 
 -- ======================
 -- boilerplate

@@ -12,9 +12,9 @@ import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
-import File (class LoadFile, File(..), Folder(..), loadFile', (</>))
+import File (class LoadFile, File(..), Folder(..), loadFile, (</>))
 import Lattice (botOf)
-import Module (loadProgCxt2)
+import Module (loadProgCxt)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
 import Test.Util (checkEq, fluidSrcPaths, test)
 import Test.Util.Debug (timing)
@@ -62,7 +62,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
    asTest { imports, file, fwd_expect } = do
-      gconfig <- loadProgCxt2 { fluidSrcPaths } imports []
+      gconfig <- loadProgCxt { fluidSrcPaths } imports []
       test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestBwdSpec -> BenchSuite m
@@ -72,8 +72,8 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
 
    asTest :: TestBwdSpec -> m BenchRow
    asTest { imports, file, bwd_expect_file, δv, fwd_expect, datasets } = do
-      gconfig <- loadProgCxt2 { fluidSrcPaths } imports datasets
-      bwd_expect <- loadFile' [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
+      gconfig <- loadProgCxt { fluidSrcPaths } imports datasets
+      bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
       test (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite m
@@ -81,7 +81,7 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> m BenchRow
    asTest { imports, dataset: x ↦ dataset, file } = do
-      gconfig <- loadProgCxt2 { fluidSrcPaths } imports [ x ↦ dataset ]
+      gconfig <- loadProgCxt { fluidSrcPaths } imports [ x ↦ dataset ]
       test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestLinkedOutputsSpec -> m Fig

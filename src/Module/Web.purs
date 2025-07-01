@@ -24,7 +24,7 @@ loadFile :: forall m. MonadError Error m => MonadAff m => Array Folder -> File -
 loadFile folders (File file) = do
    let urls = flip prependFolder (File $ file <> ".fld") <$> folders
    result <- runExceptT $ do
-      (_ × (url')) <- ExceptT $ liftAff $ findM urls checkUrl (Left A.RequestFailedError)
+      _ × url' <- ExceptT $ liftAff $ findM urls checkUrl (Left A.RequestFailedError)
       when debug.logging $ liftAff $ log ("loadFile: resolved URL: " <> url')
       contents <- ExceptT $ liftAff $ request (defaultRequest { url = url', method = Left GET, responseFormat = string })
       pure contents.body
@@ -47,7 +47,7 @@ runWebT :: forall m a. WebT m a -> m a
 runWebT (WebT x) = x
 
 instance LoadFile (WebT m) where
-   loadFile' = loadFile
+   loadFile = loadFile
 
 -- ======================
 -- boilerplate

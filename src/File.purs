@@ -14,13 +14,13 @@ type FileContext =
    }
 
 class LoadFile m where
-   loadFile' :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
+   loadFile :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
 
 instance (Monoid w, MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WriterT w m) where
-   loadFile' folders file = lift (loadFile' folders file)
+   loadFile folders file = lift (loadFile folders file)
 
 instance (MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WithGraphT m) where
-   loadFile' folders file = lift (loadFile' folders file)
+   loadFile folders file = lift (loadFile folders file)
 
 newtype File = File String
 newtype Folder = Folder String
