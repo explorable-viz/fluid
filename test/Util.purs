@@ -9,6 +9,7 @@ import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
+import Data.Tuple (fst)
 import Desug (desugGC)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
@@ -31,30 +32,16 @@ import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfie
 import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite = Array (String × Aff Unit)
-type TestSuite2 m = MonadAff m => LoadFile m => Array (m Unit)
-type TestSuite4 m = MonadAff m => LoadFile m => Array (m (String × Unit))
-
-blib :: forall m. TestSuite2 m
-blib = error "todo"
-
-blib2 :: Array (Aff Unit)
-blib2 = runWebT <$> blib
+type TestSuite2 m = MonadAff m => LoadFile m => Array (String × m Unit)
+type TestSuite3 m = MonadAff m => LoadFile m => Array (m (String × Unit))
 
 blah :: forall m. MonadAff m => LoadFile m => Array (String × m Unit)
 blah = error "todo"
-
-quib :: forall a b m. Monad m => a × m b -> m b
-quib (_ × x) = do
-   x' <- x
-   pure $ x'
 
 quib2 :: forall a b m. Monad m => a × m b -> m (a × b)
 quib2 (a × x) = do
    x' <- x
    pure $ a × x'
-
-blah2 :: Array (Aff Unit)
-blah2 = runWebT <$> quib <$> blah
 
 blah3 :: Array (Aff (String × Unit))
 blah3 = runWebT <$> quib2 <$> blah
