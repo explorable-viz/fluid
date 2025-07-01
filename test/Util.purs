@@ -9,6 +9,7 @@ import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
+import Data.Traversable (sequence)
 import Data.Tuple (fst)
 import Desug (desugGC)
 import Effect.Aff (Aff)
@@ -37,13 +38,8 @@ type TestSuite2 m = MonadAff m => LoadFile m => Array (String × m Unit)
 blah :: forall m. TestSuite2 m
 blah = error "todo"
 
-quib2 :: forall a b m. Monad m => a × m b -> m (a × b)
-quib2 (a × x) = do
-   x' <- x
-   pure $ a × x'
-
 blah3 :: Array (Aff (String × Unit))
-blah3 = runWebT <$> quib2 <$> blah
+blah3 = runWebT <$> sequence <$> blah
 
 type SelectionSpec =
    { δv :: Selector Val
