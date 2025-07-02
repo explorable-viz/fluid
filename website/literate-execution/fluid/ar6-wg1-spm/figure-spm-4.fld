@@ -24,11 +24,15 @@ let mkHistogram xs name nbins =
 let getHeight offset bar = (head bar.segments).z + offset;
 
 let changed126 = map (fun r -> r.changed) ssp126preds;
-    changed245 = """Data distributed according to ${mkHistogram this "SSP2-4.5" 8}""" (map (fun r -> r.changed) ssp245preds);
+    changed245 = """Data are distributed according to ${mkHistogram this "SSP2-4.5" 8}""" 
+        map (fun r -> r.changed) ssp245preds;
+
     ssp126Total = { type: "Total", emissions: sum (map (fun r -> r.emissions) ssp126Source) };
     ssp126table = ssp126Total : ssp126Source;
+
     ssp245table =
-        { type: "Total", emissions: findPercentile 50 changed245 } : ssp245Source;
+        { type: "Total", emissions: """@[changed245]""" (findPercentile 50 changed245) } : ssp245Source;
+
     ssp126 = mkBarChart "SSP1-2.6" ssp126table;
     ssp245 = mkBarChart "SSP2-4.5" ssp245table;
     totals = map stackedBarHeight (map (get "Total") [ssp126, ssp245]);

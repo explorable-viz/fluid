@@ -38,7 +38,7 @@ derive instance Traversable e => Traversable (DocOpt e)
 
 instance Show (e a) => Show (DocOpt e a) where
    show None = "None"
-   show (Doc _ doc) = "Doc " <> show doc
+   show (Doc is doc) = "Doc " <> show is <> show doc
 
 instance Show (e a) => Show (DocCommentElem e a) where
    show (Token s) = "Token " <> show s

@@ -1,1 +1,1 @@
-(matMul leftMatrix rightMatrix, matMul rightMatrix leftMatrix)
+matMul leftMatrix rightMatrix

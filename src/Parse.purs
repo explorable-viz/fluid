@@ -35,7 +35,7 @@ import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, le
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), Endo, error, onlyIf, (×))
+import Util (type (+), type (×), Endo, error, onlyIf, spy, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
 languageDef :: LanguageDef
@@ -111,17 +111,26 @@ docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
-docComment expr' = option None (try $ Doc <$> inputs expr' <*> docComment' expr')
+docComment expr' = do
+   docopt <- option None $ try ((docComment' expr') # between docCommentDelim (docCommentDelim <?> "DocOpt"))
+   void $ token.whiteSpace
+   pure case docopt of
+      Doc _ _ -> spy "DocComment" show docopt
+      _ -> docopt
 
-inputs :: SParser (Raw Expr) -> SParser (List (Raw Expr))
-inputs expr' = string str.ref *> (sepBy expr' (string str.comma)) # between (string str.lBracket) (string str.rBracket) # option Nil
-
-docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit))
-docComment' expr' = token.lexeme (go <?> "docComment")
+docComment' :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
+docComment' expr' = do
+   is <- option Nil $ try inputs
+   rest <- go
+   pure $ Doc is rest
    where
+   inputs :: SParser (List (Raw Expr))
+   inputs =
+      between (string "@[") (string "]") (sepBy expr' (string str.comma))
+
    go :: SParser (List (DocCommentElem Expr Unit))
    go = do
-      words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
+      words <- (List.many $ docCommentToken expr')
       pure words
 
 docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
@@ -344,11 +353,13 @@ expr_ =
 
             where
             matrix :: DocOpt Expr Unit -> SParser (Raw Expr)
-            matrix doc' = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
-               Matrix unit doc'
-                  <$> (expr' <* bar)
-                  <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
-                  <*> (keyword str.in_ *> expr')
+            matrix doc' =
+               ( between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
+                    Matrix unit doc'
+                       <$> (expr' <* bar)
+                       <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
+                       <*> (keyword str.in_ *> expr')
+               ) <?> "matrix literal"
 
             nil :: DocOpt Expr Unit -> SParser (Raw Expr)
             nil doc' = token.brackets $ pure (ListEmpty unit doc')
