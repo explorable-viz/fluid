@@ -3,7 +3,7 @@ module Test.Specs.Bwd where
 import Prelude
 
 import App.Util (SelectionType(..))
-import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, fst, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
+import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
 import Bind ((↦))
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
@@ -68,8 +68,8 @@ bwd_cases =
           , "slicing/matrix/right-matrix"
           ]
      , bwd_expect_file: "matrix/matmul.expect"
-     , δv: fst $ matrixElement 1 1 select
-     , fwd_expect: "(\"\"\"@[a, b] \"\"\" ⸨22⸩, \"\"\"@[a, b] \"\"\" 28,\n  \"\"\"@[a, b] \"\"\" 49, \"\"\"@[a, b] \"\"\" 64, \"\"\"@[a, b] \"\"\" 9, \"\"\"@[a, b] \"\"\" 12, \"\"\"@[a, b] \"\"\" 15,\n                                            \"\"\"@[a, b] \"\"\" 19, \"\"\"@[a, b] \"\"\" 26, \"\"\"@[a, b] \"\"\" 33,\n                                            \"\"\"@[a, b] \"\"\" 29, \"\"\"@[a, b] \"\"\" 40, \"\"\"@[a, b] \"\"\" 51)"
+     , δv: matrixElement 1 1 select
+     , fwd_expect: "⸨22⸩, 28,\n49, 64"
      , datasets: []
      }
    , { file: "dict/create"

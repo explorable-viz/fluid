@@ -35,7 +35,7 @@ import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, le
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), Endo, error, onlyIf, spy, (×))
+import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
 languageDef :: LanguageDef
@@ -114,9 +114,7 @@ docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docComment expr' = do
    docopt <- option None $ try ((docComment' expr') # between docCommentDelim (docCommentDelim <?> "DocOpt"))
    void $ token.whiteSpace
-   pure case docopt of
-      Doc _ _ -> spy "DocComment" show docopt
-      _ -> docopt
+   pure docopt
 
 docComment' :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docComment' expr' = do

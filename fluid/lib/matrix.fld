@@ -36,5 +36,5 @@ let matMul a b =
     let ((m, n), (i, j)) = (dims a, dims b) in 
     if not (n == i)
     then error "Dimensions don't line up"
-    else [| """@[a, b]""" (sum [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n])
+    else [| """@[a, b] IM""" (sum [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n])
          | (i', j') in (m, j) |];
