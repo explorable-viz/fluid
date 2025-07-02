@@ -507,7 +507,7 @@ clausesStateBwd κ0 ks = case κ0 × ks of
 
 desugComment :: ∀ m a. BoundedLattice a => MonadError Error m => DocOpt a -> m (E.DocOpt a)
 desugComment Doc.None = pure Doc.None
-desugComment (Doc.Doc ins c) = Doc.Doc <$> (insFwd ins) <*> (commentFwd c)
+desugComment (Doc.Doc ins c) = Doc.Doc <$> insFwd ins <*> commentFwd c
 
 desugCommentBwd :: ∀ a. BoundedJoinSemilattice a => E.DocOpt a -> Raw DocOpt -> DocOpt a
 desugCommentBwd Doc.None Doc.None = Doc.None

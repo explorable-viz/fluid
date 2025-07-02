@@ -1,1 +1,1 @@
-matMul leftMatrix rightMatrix
+matMul (matMul aMatrix bMatrix) cMatrix

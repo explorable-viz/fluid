@@ -16,7 +16,11 @@ data DocCommentElem :: (Type -> Type) -> Type -> Type
 data DocCommentElem e a = Token String | Unquote (e a)
 
 -- Purescript Typeclass instances
-derive instance Eq (e a) => Eq (DocOpt e a)
+instance Eq (e a) => Eq (DocOpt e a) where
+   eq None None = true
+   eq (Doc _ doc) (Doc _ doc') = doc == doc'
+   eq _ _ = false
+
 instance Eq (e a) => Eq (DocCommentElem e a) where
    eq (Token s) (Token s') = s == s'
    eq (Unquote e) (Unquote e') = e == e'

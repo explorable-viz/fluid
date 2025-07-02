@@ -31,12 +31,13 @@ scratchpad = asTestSuite $ bwdSuite loadFile
    [ { file: "matrix/matmul"
      , imports:
           [ "lib/matrix"
-          , "slicing/matrix/left-matrix"
-          , "slicing/matrix/right-matrix"
+          , "slicing/matrix/a-matrix"
+          , "slicing/matrix/b-matrix"
+          , "slicing/matrix/c-matrix"
           ]
      , bwd_expect_file: "matrix/matmul.expect"
      , δv: matrixElement 1 1 select
-     , fwd_expect: "⸨22⸩, 28,\n49, 64"
+     , fwd_expect: "⸨⸨64⸩, ⸨-58⸩,\n  ⸨154⸩, ⸨-139⸩⸩"
      , datasets: []
      }
    ]
