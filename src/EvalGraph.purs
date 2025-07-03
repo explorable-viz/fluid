@@ -14,13 +14,13 @@ import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, fst, snd)
 import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
-import Dict (Dict)
+import Dict (Dict, fromFoldable)
 import Dict (fromFoldable) as D
 import Doc (DocCommentElem(..), DocOpt(..))
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
+import Graph (class Graph, DVertex'(..), Vertex(..), op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, extend, fresh, new, runAllocT, runWithGraphT_spy)
@@ -30,7 +30,7 @@ import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, check, concatM, defined, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
-import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
+import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, toUnfoldable, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
@@ -90,7 +90,7 @@ apply (Val α doc' (V.Fun (V.Closure γ1 ρ σ))) v@(Val _ doc _) = do
    γ3 × κ × αs <- match v σ
    let γ = (γ1 <+> γ2 <+> γ3)
    v' <- eval γ (asExpr κ) (insert α αs)
-   concatDocs γ v' None (doc' <> doc)
+   accumDocs γ v' None (doc' <> doc)
 apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' φ
    where
@@ -155,14 +155,14 @@ eval γ (Project doc e x) α = do
          case v' of
             Val _ _ (V.Str s) -> do
                v'' <- (withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found"))
-               concatDocs γ v'' doc (doc' <> doc'')
+               accumDocs γ v'' doc (doc' <> doc'')
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval γ (App doc e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
    v'' <- apply v v'
-   concatDocs γ v'' doc None
+   accumDocs γ v'' doc None
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
@@ -200,11 +200,20 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
 
 evalDocOpt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
 evalDocOpt _ None = pure None
-evalDocOpt γ (Doc ins tokens) = Doc <$> sequence (eval γ <$> ins <@> empty) <*> sequence (map evalToken tokens)
+evalDocOpt γ (Doc ins tokens) = Doc <$> evalIns γ ins <*> sequence (map evalToken tokens)
    where
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
    evalToken (Unquote e) = Unquote <$> eval γ e empty
+
+evalIns :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Expr Vertex) -> m (Dict (Val Vertex))
+evalIns γ ins = fromFoldable <$> sequence
+   ( ( \(_ × e) -> do
+          v@(Val (Vertex α) _ _) <- eval γ e empty
+          pure (α × v)
+     )
+        <$> (toUnfoldable ins :: List (String × Expr Vertex))
+   )
 
 new'
    :: forall m
@@ -222,7 +231,7 @@ new' γ αs doc u = do
    extend (DVertex (α × pack v')) αs
    pure v'
 
-concatDocs
+accumDocs
    :: forall m
     . MonadWithGraphAlloc m
    => Env Vertex
@@ -230,7 +239,7 @@ concatDocs
    -> DocOpt Expr Vertex
    -> DocOpt Val Vertex
    -> m (Val Vertex)
-concatDocs γ (Val α' vdoc v') doc doc' = do
+accumDocs γ (Val α' vdoc v') doc doc' = do
    vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
    pure (Val α' (doc' <> vdoc' <> vdoc) v')
 
