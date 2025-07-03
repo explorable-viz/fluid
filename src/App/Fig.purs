@@ -21,7 +21,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, Vertex(..), addresses, dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
+import Graph (class Graph, DVertex, Vertex(..), dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -256,7 +256,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
             γ × _ = vf (v <#> getSel selType)
             v' = fst (γf γ)
          in
-            γ × v' × (spy "" (\αs -> show $ (addresses (fromFoldable αs))) (dvertices g0 (selectαs (v <#> getSel selType >>> to𝔹) outα)))
+            γ × v' × (dvertices g0 (selectαs (v <#> getSel selType >>> to𝔹) outα))
 
       linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkIntermediates ι =

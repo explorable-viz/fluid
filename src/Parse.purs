@@ -112,15 +112,17 @@ docCommentDelim = void $ string str.triplequote
 
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docComment expr' = do
-   docopt <- option None $ try ((docComment' expr') # between docCommentDelim (docCommentDelim <?> "DocOpt"))
+   docopt <- option None $ try $ docComment' expr'
    void $ token.whiteSpace
    pure docopt
 
 docComment' :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docComment' expr' = do
    is <- option Nil $ try inputs
-   rest <- go
-   pure $ Doc is rest
+   rest <- option Nil go
+   case is × rest of
+      Nil × Nil -> pure None
+      _ × _ -> pure $ Doc is rest
    where
    inputs :: SParser (List (Raw Expr))
    inputs =
@@ -128,7 +130,7 @@ docComment' expr' = do
 
    go :: SParser (List (DocCommentElem Expr Unit))
    go = do
-      words <- (List.many $ docCommentToken expr')
+      words <- (List.many $ docCommentToken expr') # between docCommentDelim (docCommentDelim <?> "DocOpt")
       pure words
 
 docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
