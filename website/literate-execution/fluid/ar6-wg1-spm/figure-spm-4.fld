@@ -23,8 +23,8 @@ let mkHistogram xs name nbins =
 
 let getHeight offset bar = (head bar.segments).z + offset;
 
-let changed126 = map (fun r -> r.changed) ssp126preds;
-    changed245 = """Data are distributed according to ${mkHistogram this "SSP2-4.5" 8}""" 
+let changed126 = @[ssp126preds] map (fun r -> r.changed) ssp126preds;
+    changed245 = @[ssp245preds] """Data are distributed according to ${mkHistogram this "SSP2-4.5" 8}""" 
         map (fun r -> r.changed) ssp245preds;
 
     ssp126Total = { type: "Total", emissions: sum (map (fun r -> r.emissions) ssp126Source) };
@@ -39,6 +39,7 @@ let changed126 = map (fun r -> r.changed) ssp126preds;
     co2s = map stackedBarHeight (map (get "CO2") [ssp126, ssp245]);
     nonco2 = map (get "Non-CO2") [ssp126, ssp245]
 in 
+@[ssp126Source, ssp245Source, ssp126preds, ssp245preds]
 """ Within each scenario bar plot, the bars represent total warming (°C),
     warming from CO2 (°C) and from Non-CO2 GHG's (°C). """
 MultiView {

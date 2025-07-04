@@ -23,14 +23,13 @@ import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
-import Dict as Dict
 import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (Raw)
 import Parse.Constants (str)
 import Parsing.Combinators (between, option, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
-import Parsing.String (char, eof, match, satisfy, string)
+import Parsing.String (char, eof, satisfy, string)
 import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
@@ -123,11 +122,11 @@ docComment' expr' = do
    rest <- option Nil go
    case is × rest of
       Nil × Nil -> pure None
-      _ × _ -> pure $ Doc (Dict.fromFoldable is) rest
+      _ × _ -> pure $ Doc is rest
    where
-   inputs :: SParser (List (String × Raw Expr))
+   inputs :: SParser (List (Raw Expr))
    inputs =
-      between (string "@[") (string "]") (sepBy (match expr') (string str.comma))
+      between (string "@[") (string "]") (sepBy expr' (string str.comma))
 
    go :: SParser (List (DocCommentElem Expr Unit))
    go = do

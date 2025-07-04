@@ -5,7 +5,6 @@ import Prelude hiding (apply)
 import Bind (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range) as A
-import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Newtype (unwrap)
@@ -15,13 +14,13 @@ import Data.Set as Set
 import Data.Traversable (class Foldable, for, sequence, traverse)
 import Data.Tuple (curry, fst, snd)
 import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
-import Dict (Dict, fromFoldable)
+import Dict (Dict)
 import Dict (fromFoldable) as D
 import Doc (DocCommentElem(..), DocOpt(..))
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, DVertex'(..), Vertex(..), op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
+import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, extend, fresh, new, runAllocT, runWithGraphT_spy)
@@ -30,8 +29,8 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, defined, orElse, singleton, spy, spyFunWhen, throw, withMsg, (×), (⊆))
-import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, toUnfoldable, (<+>))
+import Util (type (×), Endo, check, concatM, defined, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
+import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
@@ -201,20 +200,11 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
 
 evalDocOpt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
 evalDocOpt _ None = pure None
-evalDocOpt γ (Doc ins tokens) = Doc <$> evalIns γ ins <*> sequence (map evalToken tokens)
+evalDocOpt γ (Doc ins tokens) = Doc <$> sequence (map (\i -> eval γ i empty) ins) <*> sequence (map evalToken tokens)
    where
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
    evalToken (Unquote e) = Unquote <$> eval γ e empty
-
-evalIns :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Expr Vertex) -> m (Dict (Val Vertex))
-evalIns γ ins = fromFoldable <$> sequence
-   ( ( \(_ × e) -> do
-          v@(Val (Vertex α) _ _) <- eval γ e empty
-          pure (α × v)
-     )
-        <$> (toUnfoldable ins :: List (String × Expr Vertex))
-   )
 
 new'
    :: forall m
@@ -240,12 +230,9 @@ accumDocs
    -> DocOpt Expr Vertex
    -> DocOpt Val Vertex
    -> m (Val Vertex)
-accumDocs γ (Val α'@(Vertex k) vdoc v') doc doc' = do
+accumDocs γ (Val α' vdoc v') doc doc' = do
    vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
-   pure (Val α' (keys' (doc' <> vdoc' <> vdoc)) v')
-   where
-   keys' None = None
-   keys' d@(Doc ins _) = spy ("DocOpt for " <> k) (const ((show <<< Array.fromFoldable <<< keys) ins)) d
+   pure (Val α' (doc' <> vdoc' <> vdoc) v')
 
 type GraphEval g s t =
    { g :: g

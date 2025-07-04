@@ -5,14 +5,12 @@ import Prelude
 import Data.List (List, zipWith)
 import Data.Set as Set
 import Data.Traversable (class Foldable, class Traversable)
-import Dict (Dict, toArrayWithKey)
 import Graph (class Vertices, Vertex, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, expand, (∨))
 import Util (error, shapeMismatch, (≜))
-import Util.Set (union)
 
 data DocOpt :: (Type -> Type) -> Type -> Type
-data DocOpt e a = None | Doc (Dict (e a)) (List (DocCommentElem e a))
+data DocOpt e a = None | Doc (List (e a)) (List (DocCommentElem e a))
 
 data DocCommentElem :: (Type -> Type) -> Type -> Type
 data DocCommentElem e a = Token String | Unquote (e a)
@@ -44,7 +42,7 @@ derive instance Traversable e => Traversable (DocOpt e)
 
 instance Show (e a) => Show (DocOpt e a) where
    show None = "None"
-   show (Doc is doc) = "Doc " <> show (toArrayWithKey (const identity) is) <> show doc
+   show (Doc is doc) = "Doc " <> show is <> show doc
 
 instance Show (e a) => Show (DocCommentElem e a) where
    show (Token s) = "Token " <> show s
@@ -52,7 +50,7 @@ instance Show (e a) => Show (DocCommentElem e a) where
 
 instance Apply e => Apply (DocOpt e) where
    apply None _ = None
-   apply (Doc fins doc) (Doc ins doc') = Doc ((map (<*>) fins) <*> ins) (zipWith (<*>) doc doc')
+   apply (Doc fins doc) (Doc ins doc') = Doc (zipWith (<*>) fins ins) (zipWith (<*>) doc doc')
    apply _ _ = error $ shapeMismatch unit
 
 instance Apply e => Apply (DocCommentElem e) where
@@ -89,7 +87,7 @@ instance Vertices (e Vertex) => Vertices (DocOpt e Vertex) where
    vertices None = Set.empty
    vertices (Doc _ doc) = Set.unions (vertices <$> doc)
 
-instance Eq (e a) => Semigroup (DocOpt e a) where
+instance Semigroup (DocOpt e a) where
    append doc None = doc
    append None doc = doc
-   append (Doc ins doc) (Doc ins' doc') = Doc (ins `union` ins') (doc <> doc')
+   append (Doc ins doc) (Doc ins' doc') = Doc (ins <> ins') (doc <> doc')
