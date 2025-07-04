@@ -5,6 +5,7 @@ import Prelude hiding (apply)
 import Bind (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range) as A
+import Data.Array as Array
 import Data.Either (Either(..))
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
 import Data.Newtype (unwrap)
@@ -29,7 +30,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, defined, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
+import Util (type (×), Endo, check, concatM, defined, orElse, singleton, spy, spyFunWhen, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, toUnfoldable, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -239,9 +240,12 @@ accumDocs
    -> DocOpt Expr Vertex
    -> DocOpt Val Vertex
    -> m (Val Vertex)
-accumDocs γ (Val α' vdoc v') doc doc' = do
+accumDocs γ (Val α'@(Vertex k) vdoc v') doc doc' = do
    vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
-   pure (Val α' (doc' <> vdoc' <> vdoc) v')
+   pure (Val α' (keys' (doc' <> vdoc' <> vdoc)) v')
+   where
+   keys' None = None
+   keys' d@(Doc ins _) = spy ("DocOpt for " <> k) (const ((show <<< Array.fromFoldable <<< keys) ins)) d
 
 type GraphEval g s t =
    { g :: g
