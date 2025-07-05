@@ -89,7 +89,8 @@ body {
 }
 
 .para-text {
-   white-space: nowrap;
+   /* white-space: nowrap; */
+   font-size: 9pt;
 }
 
 p {

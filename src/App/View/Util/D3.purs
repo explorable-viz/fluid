@@ -46,10 +46,12 @@ rotate' f = "transform" ↦ \a -> "rotate(" <> show (f a) <> ")"
 data ElementType
    = Caption
    | Circle
+   | Div
    | G
    | Line
    | Path
    | Rect
+   | Span
    | SVG
    | Table
    | Text
