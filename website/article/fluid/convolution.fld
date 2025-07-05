@@ -1,6 +1,6 @@
 let lookup m n image =
     let (m_max, n_max) = dims image
-    -- image!(((m - 1) `mod` m_max) + 1, ((n - 1) `mod` n_max) + 1);
+    -- in image!(((m - 1) `mod` m_max) + 1, ((n - 1) `mod` n_max) + 1);
     in if (m >= 1) `and` (m <= m_max) `and` (n >= 1) `and` (n <= n_max)
     then image!(m, n)
     else 0;
