@@ -4,5 +4,6 @@
     "imports": [ "lib/matrix", "matrix-multiply/a-matrix", "matrix-multiply/b-matrix", "matrix-multiply/c-matrix" ],
     "datasets": [],
     "inputs": [ "aMatrix", "bMatrix", "cMatrix" ],
-    "query": true
+    "query": true,
+    "linking": false
 }

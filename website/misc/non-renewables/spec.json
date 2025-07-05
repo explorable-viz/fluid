@@ -4,5 +4,6 @@
     "imports": [],
     "file": "non-renewables",
     "inputs": ["nonRenewables"],
-    "query": false
+    "query": false,
+    "linking": true
 }

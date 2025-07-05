@@ -4,5 +4,6 @@
     "imports": [],
     "file": "energyscatter",
     "inputs": [ "renewables", "nonRenewables" ],
-    "query": false
+    "query": false,
+    "linking": true
 }

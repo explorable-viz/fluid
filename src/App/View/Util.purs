@@ -97,6 +97,7 @@ type FigSpec =
    , file :: File
    , inputs :: Array Var
    , query :: Maybe (Query (Val Vertex))
+   , linking :: Boolean
    }
 
 data Direction = LinkedInputs | LinkedOutputs | Intermediates

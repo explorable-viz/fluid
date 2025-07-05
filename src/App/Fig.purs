@@ -106,9 +106,6 @@ type SelectionResult =
    , ι :: Env (SelStates 𝔹)
    }
 
-linking :: Boolean -- pull in from Fig instead
-linking = true
-
 selectionResult :: Fig -> SelectionResult
 selectionResult fig@{ dir, v, γ, ι } =
    { v: reportOut v', γ: reportIn γ', ι: ι' }
@@ -120,7 +117,7 @@ selectionResult fig@{ dir, v, γ, ι } =
    to𝕊v = second (first primary)
 
    as𝕊γ :: forall a. SelectionType -> Env (SelState 𝔹) × a -> Env (SelState 𝕊) × a
-   as𝕊γ selType = if linking then first $ primaryOrSecondary selType γ else to𝕊γ
+   as𝕊γ selType = first $ primaryOrSecondary selType γ
 
    to𝕊γ :: forall a. Env (SelState 𝔹) × a -> Env (SelState 𝕊) × a
    to𝕊γ = first primary
@@ -210,7 +207,7 @@ lift
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
 loadFig :: forall m. MonadAff m => MonadError Error m => LoadFile m => FigSpec -> m Fig
-loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
+loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
    progCxt <- loadProgCxt { fluidSrcPaths } imports datasets
    { s, e, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
@@ -247,12 +244,18 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       demandedBy = lift inert'.v gcFwd
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-      linkedInputs selType γ =
-         let v × g = demandedBy (γ <#> getSel selType) in fst (demands v) × v × vertices g
+      linkedInputs selType γ = γ'' × v × vertices g
+         where
+         γ' = γ <#> getSel selType
+         v × g = demandedBy γ'
+         γ'' = if linking then fst (demands v) else γ'
 
       linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-      linkedOutputs selType v =
-         let γ × g = demands (v <#> getSel selType) in γ × fst (demandedBy γ) × vertices g
+      linkedOutputs selType v = γ × v'' × vertices g
+         where
+         v' = v <#> getSel selType
+         γ × g = demands v'
+         v'' = if linking then fst (demandedBy γ) else v'
 
       linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkIntermediates ι =

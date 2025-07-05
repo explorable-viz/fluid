@@ -27,10 +27,11 @@ type JsonSpec =
    , file :: String
    , inputs :: Array String
    , query :: Boolean
+   , linking :: Boolean
    }
 
 figSpecFromJson :: JsonSpec -> FigSpec
-figSpecFromJson spec@{ datasets, file, imports, inputs, query } =
+figSpecFromJson spec@{ datasets, file, imports, inputs, query, linking } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , datasets
    , imports
@@ -42,6 +43,7 @@ figSpecFromJson spec@{ datasets, file, imports, inputs, query } =
               v@(Val α (Doc _) _) -> Just $ DVertex (α × v)
               _ -> Nothing
         else Nothing
+   , linking
    }
 
 loadFigure :: String -> Effect Unit

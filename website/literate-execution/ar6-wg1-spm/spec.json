@@ -4,5 +4,6 @@
     "imports": [ "lib/stats" ],
     "file": "ar6-wg1-spm/figure-spm-4",
     "inputs": [ "ssp126Source", "ssp245Source", "ssp126preds", "ssp245preds" ],
-    "query": true
+    "query": true,
+    "linking": false
 }
