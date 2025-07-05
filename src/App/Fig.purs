@@ -286,11 +286,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
 
-drawFigWithCode :: { fig :: Fig, divId :: HTMLId } -> Effect Unit
-drawFigWithCode { fig, divId } = do
-   drawFig divId fig
-   addEditorView (codeMirrorDiv divId) >>= drawCode (prettyP fig.s)
-
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
