@@ -4,5 +4,6 @@
     "imports": [],
     "file": "methane",
     "inputs": [ "methane" ],
-    "query": false
+    "query": false,
+    "linking": true
 }

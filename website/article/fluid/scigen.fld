@@ -1,0 +1,50 @@
+let ordinalMap = [
+    { lastDigit: 1, suffix: "st" },
+    { lastDigit: 2, suffix: "nd" },
+    { lastDigit: 3, suffix: "rd" }
+];
+
+let ordinal n =
+   if n <= 0 then error "n <= 0 not supported"
+   else if (n < 4) then
+      (findWithKey' "lastDigit" n ordinalMap).suffix
+   else if (n >= 4) `and` (n <= 20) then "th"
+   else error "n > 20 not supported";
+
+let rankLabel word n =
+   if n == 1 then word
+   else ordinal n ++ "-" ++ word;
+
+let trendWord n1 n2 compareWord =
+    compareWord (compare n1 n2);
+
+let growShrink EQ = "unchanging";
+    growShrink LT = "shrinking";
+    growShrink GT = "growing";
+
+let smallerHigher EQ = "equal";
+    smallerHigher LT = "smaller";
+    smallerHigher GT = "larger";
+
+let shorterLonger EQ = "equal";
+    shorterLonger LT = "shorter";
+    shorterLonger GT = "longer";
+
+let betterWorse EQ = "equal";
+    betterWorse LT = "worse";
+    betterWorse GT = "better";
+
+let underOverPerforming EQ = "equal performance to that of";
+    underOverPerforming LT = "underperforming";
+    underOverPerforming GT = "outperforming";
+
+-- (a -> Number) -> List a -> a
+let maximumBy f lst =
+  let helper [] current = current;
+      helper (x: xs) current =
+        if f x > f current then helper xs x else helper xs current
+  in match lst as {
+    [] -> error "Empty list!";
+    (x: xs) -> helper xs x
+  };
+

@@ -4,5 +4,6 @@
     "imports": [],
     "datasets": [["methane", "dataset/methane-emissions"]],
     "inputs": ["methane"],
-    "query": false
+    "query": false,
+    "linking": false
 }

@@ -207,7 +207,7 @@ lift
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
 loadFig :: forall m. MonadAff m => MonadError Error m => LoadFile m => FigSpec -> m Fig
-loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
+loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
    progCxt <- loadProgCxt { fluidSrcPaths } imports datasets
    { s, e, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
@@ -237,19 +237,25 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
       inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
 
-      vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      vf = lift inert'.γ gcBwd
+      demands :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
+      demands = lift inert'.γ gcBwd
 
-      γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      γf = lift inert'.v gcFwd
+      demandedBy :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
+      demandedBy = lift inert'.v gcFwd
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-      linkedInputs selType γ =
-         let v × g = γf (γ <#> getSel selType) in fst (vf v) × v × (vertices g)
+      linkedInputs selType γ = γ'' × v × vertices g
+         where
+         γ' = γ <#> getSel selType
+         v × g = demandedBy γ'
+         γ'' = if linking then fst (demands v) else γ'
 
       linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-      linkedOutputs selType v =
-         let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × (vertices g)
+      linkedOutputs selType v = γ × v'' × vertices g
+         where
+         v' = v <#> getSel selType
+         γ × g = demands v'
+         v'' = if linking then fst (demandedBy γ) else v'
 
       linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkIntermediates ι =
@@ -285,11 +291,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
-
-drawFigWithCode :: { fig :: Fig, divId :: HTMLId } -> Effect Unit
-drawFigWithCode { fig, divId } = do
-   drawFig divId fig
-   addEditorView (codeMirrorDiv divId) >>= drawCode (prettyP fig.s)
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =

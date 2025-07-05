@@ -8,10 +8,8 @@ import Bind ((↦))
 import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_y)
 import File (File(..), Folder(..))
-import Graph (DVertex'(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
 import Util ((×))
-import Val (BaseVal(..), MatrixDim(..), MatrixRep(..), Val(..), asVal)
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
@@ -22,6 +20,7 @@ linkedOutputs_spec1 =
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         , query: Nothing
+        , linking: true
         }
    , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 select))
    , out_expect:
@@ -51,6 +50,7 @@ linkedOutputs_spec2 =
         , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
         , query: Nothing
+        , linking: true
         }
    , δ_out: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
    , out_expect:
@@ -72,6 +72,7 @@ movingAverages_spec =
         , file: File "linked-outputs/moving-average"
         , inputs: [ "methane" ]
         , query: Nothing
+        , linking: true
         }
    , δ_out: identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
    , out_expect: identity >>> (_ × Persistent)
@@ -86,6 +87,7 @@ linkedOutputs_cases =
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           , query: Nothing
+          , linking: true
           }
      , δ_out: snd select
      , out_expect: select
@@ -96,11 +98,8 @@ linkedOutputs_cases =
           , imports: [ "lib/matrix" ]
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
-          , query:
-               Just $ asVal >=> case _ of
-                  v@(Val α _ (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
-                  _ -> Nothing
-
+          , query: Nothing
+          , linking: true
           }
      , δ_out: fst (matrixElement 2 2 select)
      , out_expect:
