@@ -106,6 +106,9 @@ type SelectionResult =
    , ι :: Env (SelStates 𝔹)
    }
 
+linking :: Boolean -- pull in from Fig instead
+linking = true
+
 selectionResult :: Fig -> SelectionResult
 selectionResult fig@{ dir, v, γ, ι } =
    { v: reportOut v', γ: reportIn γ', ι: ι' }
@@ -117,7 +120,7 @@ selectionResult fig@{ dir, v, γ, ι } =
    to𝕊v = second (first primary)
 
    as𝕊γ :: forall a. SelectionType -> Env (SelState 𝔹) × a -> Env (SelState 𝕊) × a
-   as𝕊γ selType = first $ primaryOrSecondary selType γ
+   as𝕊γ selType = if linking then first $ primaryOrSecondary selType γ else to𝕊γ
 
    to𝕊γ :: forall a. Env (SelState 𝔹) × a -> Env (SelState 𝕊) × a
    to𝕊γ = first primary
@@ -237,19 +240,19 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
       inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
 
-      vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      vf = lift inert'.γ gcBwd
+      demands :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
+      demands = lift inert'.γ gcBwd
 
-      γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      γf = lift inert'.v gcFwd
+      demandedBy :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
+      demandedBy = lift inert'.v gcFwd
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedInputs selType γ =
-         let v × g = γf (γ <#> getSel selType) in fst (vf v) × v × (vertices g)
+         let v × g = demandedBy (γ <#> getSel selType) in fst (demands v) × v × vertices g
 
       linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkedOutputs selType v =
-         let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × (vertices g)
+         let γ × g = demands (v <#> getSel selType) in γ × fst (demandedBy γ) × vertices g
 
       linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkIntermediates ι =
