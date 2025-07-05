@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <link rel="icon" href="../favicon.ico" type="image/x-icon">
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Fluid: Data-Linked Visualisations</title>
+   <link href="../css/styles.css" rel="stylesheet" type="text/css">
+   <link href="../css/view-styles.css" rel="stylesheet" type="text/css">
+   <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
+   <script src="../shared/util.js"></script>
+   <style>
+      :root {
+         --text-pane-width: 400px;
+      }
+      .data-pane {
+         max-width: 300px;
+      }
+   </style>
+</head>
+<body>
+<div id="grid" class="grid-container data-pane-hidden">
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
+      <h4>Moving Average</h4>
+      <p>The following chart shows a moving average (or rolling average) plot for methane
+      emissions under projected emissions scenario <a
+      href="https://en.wikipedia.org/wiki/Shared_Socioeconomic_Pathways">SSP5-8.5</a>.
+   </div>
+
+   <div class="flex-right-align data-pane">
+      <p>Every <code>year</code> value is used in both the original curve and its moving average.
+
+      <div id="fig-input"></div>
+
+      <p>With <code>emissions</code>, each value contributes to
+      <span class="highlight">one</span> point in the original curve but <span class="highlight">three</span>
+      in the moving average.</p>
+   </div>
+   <div onclick="toggleDataPane('grid')">
+      <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
+   </div>
+   <div class="flex-left-align">
+      <div id="fig">
+         <div class="fig-loading">loading figure(s)</div>
+      </div>
+   </div>
+</div>
+
+<script type="module">
+   import { loadFigure } from "../shared/load-figure.js"
+   loadFigure("spec.json")()
+</script>
+</body>
+</html>
