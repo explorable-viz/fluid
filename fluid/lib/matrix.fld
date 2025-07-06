@@ -25,7 +25,7 @@ let convolve image kernel lookup =
     in [| let interMatrix =
               """Intermediate matrix for element (${m'}, ${n'})"""
               [| let x = m' + i' - 1 - half_i;
-                    y = n' + j' - 1 - half_j in
+                     y = n' + j' - 1 - half_j in
                 lookup x y image * kernel!(i', j')
               | (i', j') in (i, j) |]
           in matrixSum interMatrix `quot` area

@@ -30,6 +30,15 @@
          justify-content: end;
       }
 
+      .data-pane * {
+         font-size: 9pt; /* otherwise interferes with .para-text */
+      }
+
+      .para-text {
+         margin-left: 5pt;
+         margin-right: 3pt;
+      }
+
       .intermediates:has(> *) {
          border-right: 1px dotted #CCCCCC;
       }
@@ -38,17 +47,8 @@
          fill: rgb(214, 240, 214)
       }
 
-      .matrix-cell.selected-secondary-persistent {
-         fill: White;
-      }
-
       .matrix-cell-text.selected-primary-persistent:not(.matrix-cell-text.selected-primary-transient) {
          color: green
-      }
-
-      .matrix-cell-text.selected-secondary-persistent:not(.matrix-cell-text.selected-primary-transient),
-      .matrix-cell-text.selected-secondary-transient:not(.matrix-cell-text.selected-primary-persistent):not(.matrix-cell-text.selected-primary-transient) {
-         color: rgb(205, 205, 205)
       }
    </style>
 </head>

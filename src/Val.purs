@@ -64,7 +64,6 @@ instance Highlightable a => Highlightable (a × b) where
 
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
--- similar to an isomorphism lens with complement t
 type Op = forall m. MonadWithGraphAlloc m => MonadError Error m => LoadFile m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' = ForeignOp'
@@ -80,7 +79,6 @@ instance Eq ForeignOp where
 instance Ord ForeignOp where
    compare (ForeignOp (s × _)) (ForeignOp (s' × _)) = compare s s'
 
--- Environments.
 newtype Env a = Env (Dict (Val a))
 
 instance IsEmpty (Env a) where

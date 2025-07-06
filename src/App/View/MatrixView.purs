@@ -30,7 +30,7 @@ type MatrixViewHelpers =
    { hBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
    , vBorderStyles :: IntMatrix -> MatrixBorderCoordinate -> String
    , eventListener :: (Event -> Effect Unit) -> Effect EventListener
-   , withElement :: Select -> (Event -> Effect Unit)
+   , withElement :: Select -> Event -> Effect Unit
    }
 
 data ShadowDirection = North | South | East | West | None

@@ -89,7 +89,6 @@ body {
 }
 
 .para-text {
-   /* white-space: nowrap; */
    font-size: 9pt;
 }
 
@@ -315,7 +314,6 @@ nav ul li.active-page a {
 .data-pane-hidden .data-pane * {
    display: none;
 }
-
 
 .data-pane * {
    font-size: 10pt;
