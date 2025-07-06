@@ -71,6 +71,15 @@ function createElement_ (
          .attr('width', width + hMargin)
          .attr('height', height + vMargin)
 
+      rootElement
+         .append('text')
+         .text(title)
+         .attr('x', hMargin / 2)
+         .attr('y', vMargin / 2)
+         .attr('class', 'title-text')
+         .attr('dominant-baseline', 'middle')
+         .attr('text-anchor', 'left')
+
       // group for the whole matrix (rects and texts)
       const matrixGrp = rootElement
          .append('g')

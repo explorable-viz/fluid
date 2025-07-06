@@ -165,7 +165,7 @@ drawIntermediates divId (Env ι) unused redraw = do
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α <> "-doc") >>= remove
 
    sequence_ $ flip mapWithKey ι \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' α (map to𝕊 <$> v) Nothing }
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' str.intermediate (map to𝕊 <$> v) Nothing }
          (selectIntermediate (Vertex α))
          (setIntermediateView (Vertex α))
          redraw
