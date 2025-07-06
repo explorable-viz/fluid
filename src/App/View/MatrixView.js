@@ -73,7 +73,7 @@ function createElement_ (
 
       rootElement
          .append('text')
-         .text(title)
+         .text(title === "intermediate" ? " " : title)
          .attr('x', hMargin / 2)
          .attr('y', vMargin / 2)
          .attr('class', 'title-text')
