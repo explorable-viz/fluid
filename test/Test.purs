@@ -37,7 +37,7 @@ scratchpad = asTestSuite $ bwdSuite loadFile
           ]
      , bwd_expect_file: "matrix/matmul.expect"
      , δv: matrixElement 1 1 select
-     , fwd_expect: "⸨64⸩, -58,\n154, -139"
+     , fwd_expect: "⸨⸨64⸩, ⸨-58⸩,\n  ⸨154⸩, ⸨-139⸩⸩"
      , datasets: []
      }
    ]
