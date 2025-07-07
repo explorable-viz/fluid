@@ -74,7 +74,7 @@ export function xAxis (to) {
    return ticks => {
       return parent => {
          return () => {
-            return parent.call(d3.axisBottom(to.x).tickValues(ticks).tickFormat(d3.format('d')))
+            return parent.call(d3.axisBottom(to.x))
          }
       }
    }
@@ -107,9 +107,7 @@ const colorScale_ = {
 // TODO: better name
 export function colorScale (scheme) {
    return key => {
-      return keys => {
-         return colorScale_[scheme](keys.indexOf(key))
-      }
+      return colorScale_[scheme](key)
    }
 }
 
@@ -200,6 +198,19 @@ export function scaleLinear (x1) {
    return x2 => {
       return d3.scaleLinear().domain([x1.min, x1.max]).range([x2.min, x2.max])
    }
+}
+
+export function scaleBand (width) {
+   return stackedBars => {
+      return d3.scaleBand()
+         .range([0, width])
+         .domain(stackedBars)
+         .padding(0.2)
+   }
+}
+
+export function bandwidth (x) {
+   return x.bandwidth()
 }
 
 export function datum (sel) {

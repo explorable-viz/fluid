@@ -6,9 +6,10 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, ViewSetter)
 import App.View (view')
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
+import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View', drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
+import Control.Monad.Error.Class (class MonadError)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
@@ -18,17 +19,20 @@ import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect (Effect)
+import Effect.Aff.Class (class MonadAff)
+import Effect.Exception (Error)
 import EvalGraph (graphEval, graphGC, withOp)
+import File (class LoadFile, File(..))
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices, dvertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
-import Module.Web (File(..), loadProgCxt, prepConfig)
+import Module (loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, absurd, error, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
@@ -53,7 +57,7 @@ selectOutput δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
       Transient | dir.transient /= LinkedOutputs -> γ × dir { transient = LinkedOutputs }
       _ -> γ × dir
 
-setOutputView :: ViewSetter Fig View
+setOutputView :: ViewSetter Fig View'
 setOutputView δvw fig = fig
    { out_view = fig.out_view <#> δvw }
 
@@ -66,7 +70,7 @@ selectInput x δv fig@{ v, dir, γ } = fig { v = v', γ = γ', dir = dir' }
       Transient | dir.transient /= LinkedInputs -> v × dir { transient = LinkedInputs }
       _ -> v × dir
 
-setInputView :: Var -> ViewSetter Fig View
+setInputView :: Var -> ViewSetter Fig View'
 setInputView x δvw fig = fig
    { in_views = insert x (lookup x fig.in_views # join <#> δvw) fig.in_views
    }
@@ -80,7 +84,7 @@ selectIntermediate (Vertex α) δv fig@{ ι, dir, γ, v } = fig { ι = ι_final,
       Transient -> γ × v × dir × ι'
       _ -> γ × v × dir × ι
 
-setIntermediateView :: Vertex -> ViewSetter Fig View
+setIntermediateView :: Vertex -> ViewSetter Fig View'
 setIntermediateView (Vertex α) δvw fig = fig
    { intermediate_views = insert α (lookup α fig.intermediate_views # join <#> δvw) fig.intermediate_views
    }
@@ -161,7 +165,7 @@ drawIntermediates divId (Env ι) unused redraw = do
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α <> "-doc") >>= remove
 
    sequence_ $ flip mapWithKey ι \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' α (map to𝕊 <$> v) Nothing }
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' str.intermediate (map to𝕊 <$> v) Nothing }
          (selectIntermediate (Vertex α))
          (setIntermediateView (Vertex α))
          redraw
@@ -202,10 +206,10 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. FigSpec -> AffError m Fig
-loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
-   progCxt <- loadProgCxt fluidSrcPaths imports datasets
-   { s, e, gconfig } <- prepConfig fluidSrcPaths file progCxt
+loadFig :: forall m. MonadAff m => MonadError Error m => LoadFile m => FigSpec -> m Fig
+loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
+   progCxt <- loadProgCxt { fluidSrcPaths } imports datasets
+   { s, e, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval
@@ -233,19 +237,25 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       inert = { γ: select𝔹s γα inertBwd, v: select𝔹s outα inertFwd } :: IO 𝔹
       inert' = { γ: selState <$> inert.γ, v: selState <$> inert.v } :: IO (𝔹 -> SelState 𝔹)
 
-      vf :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
-      vf = lift inert'.γ gcBwd
+      demands :: Val (SelState 𝔹) -> Env (SelState 𝔹) × GraphImpl
+      demands = lift inert'.γ gcBwd
 
-      γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
-      γf = lift inert'.v gcFwd
+      demandedBy :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
+      demandedBy = lift inert'.v gcFwd
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-      linkedInputs selType γ =
-         let v × g = γf (γ <#> getSel selType) in fst (vf v) × v × (vertices g)
+      linkedInputs selType γ = γ'' × v × vertices g
+         where
+         γ' = γ <#> getSel selType
+         v × g = demandedBy γ'
+         γ'' = if linking then fst (demands v) else γ'
 
       linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-      linkedOutputs selType v =
-         let γ × g = vf (v <#> getSel selType) in γ × fst (γf γ) × (vertices g)
+      linkedOutputs selType v = γ × v'' × vertices g
+         where
+         v' = v <#> getSel selType
+         γ × g = demands v'
+         v'' = if linking then fst (demandedBy γ) else v'
 
       linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
       linkIntermediates ι =
@@ -281,11 +291,6 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
-
-drawFigWithCode :: { fig :: Fig, divId :: HTMLId } -> Effect Unit
-drawFigWithCode { fig, divId } = do
-   drawFig divId fig
-   addEditorView (codeMirrorDiv divId) >>= drawCode (prettyP fig.s)
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =

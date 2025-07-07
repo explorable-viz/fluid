@@ -2,7 +2,7 @@
 
 import * as d3 from "d3"
 
-function setSelStates2_ (
+function setSelection_ (
    {
       hBorderStyles,
       vBorderStyles,
@@ -49,7 +49,7 @@ function setSelStates2_ (
    }
 }
 
-function createRootElement2_ (
+function createElement_ (
    { val },
    { title, matrix },
    parent
@@ -70,6 +70,15 @@ function createRootElement2_ (
       rootElement
          .attr('width', width + hMargin)
          .attr('height', height + vMargin)
+
+      rootElement
+         .append('text')
+         .text(title === "intermediate" ? " " : title)
+         .attr('x', hMargin / 2)
+         .attr('y', vMargin / 2)
+         .attr('class', 'title-text')
+         .attr('dominant-baseline', 'middle')
+         .attr('text-anchor', 'left')
 
       // group for the whole matrix (rects and texts)
       const matrixGrp = rootElement
@@ -169,5 +178,5 @@ function createRootElement2_ (
    }
 }
 
-export var setSelStates2 = x1 => x2 => x3 => x4 => x5 => setSelStates2_(x1, x2, x3, x4, x5)
-export var createRootElement2 = x1 => x2 => x3 => createRootElement2_(x1, x2, x3)
+export var setSelection = x1 => x2 => x3 => x4 => x5 => setSelection_(x1, x2, x3, x4, x5)
+export var createElement = x1 => x2 => x3 => createElement_(x1, x2, x3)

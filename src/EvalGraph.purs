@@ -17,8 +17,10 @@ import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
 import Doc (DocCommentElem(..), DocOpt(..))
+import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
+import File (class LoadFile)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -84,7 +86,7 @@ closeDefs γ ρ αs =
       in
          new (flip Val None) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
-apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
+apply :: forall m. MonadWithGraphAlloc m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
@@ -113,7 +115,7 @@ apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
+eval :: forall m. MonadWithGraphAlloc m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval γ (Int α doc n) αs = do
@@ -145,18 +147,22 @@ eval γ (Matrix α doc e (x × y) e') αs = do
    new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
    new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
-eval γ (Project e x) αs = do
+eval γ (Project doc e x) αs = do
    v <- eval γ e αs
    case v of
-      Val _ _ (V.Dictionary (DictRep d)) -> withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
+      Val _ _ (V.Dictionary (DictRep d)) -> do
+         v' <- withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
+         concatDocs γ v' doc
       _ -> throw $ "Found " <> prettyP v <> ", expected dictionary"
-eval γ (DProject e x) α = do
+eval γ (DProject doc e x) α = do
    v <- eval γ e α
    v' <- eval γ x α
    case v of
       Val _ _ (V.Dictionary (DictRep d)) ->
          case v' of
-            Val _ _ (V.Str s) -> withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
+            Val _ _ (V.Str s) -> do
+               v'' <- (withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found"))
+               concatDocs γ v'' doc
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval γ (App doc e e') αs = do
@@ -174,7 +180,7 @@ eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
-eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. MonadWithGraphAlloc m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
@@ -187,7 +193,7 @@ eval_module γ = go empty
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       go (γ' <+> γ'') (Module ds) αs
 
-eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
+eval_progCxt :: forall m. MonadWithGraphAlloc m => LoadFile m => ProgCxt Vertex -> m (Env Vertex)
 eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
    where
@@ -201,7 +207,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       v <- eval γ e empty
       pure $ γ <+> maplet x v
 
-evalDocOpt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
+evalDocOpt :: forall m. MonadWithGraphAlloc m => LoadFile m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
 evalDocOpt _ None = pure None
 evalDocOpt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
    where
@@ -212,6 +218,7 @@ evalDocOpt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
 new'
    :: forall m
     . MonadWithGraphAlloc m
+   => LoadFile m
    => Env Vertex
    -> Set Vertex
    -> DocOpt Expr Vertex
@@ -224,6 +231,18 @@ new' γ αs doc u = do
    let v' = Val α vdoc u
    extend (DVertex (α × pack v')) αs
    pure v'
+
+concatDocs
+   :: forall m
+    . MonadWithGraphAlloc m
+   => LoadFile m
+   => Env Vertex
+   -> Val Vertex
+   -> DocOpt Expr Vertex
+   -> m (Val Vertex)
+concatDocs γ (Val α' vdoc v') doc = do
+   vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
+   pure (Val α' (vdoc' <> vdoc) v')
 
 type GraphEval g s t =
    { g :: g
@@ -274,7 +293,7 @@ toGC
    -> GaloisConnection (s 𝔹) (t 𝔹)
 toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
-graphEval :: forall m. MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
+graphEval :: forall m. MonadAff m => LoadFile m => MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
 graphEval { n, γ } e = do
    _ × _ × g × inα × outα <- flip runAllocT n do
       eα <- alloc e

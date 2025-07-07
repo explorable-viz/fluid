@@ -56,7 +56,7 @@
       implementation can automatically reveal how different cells in the output demand different cells in the
       input array and filter.</p>
    </div>
-   
+
    <div id="fig-data-pane" class="flex-right-align data-pane">
       <div id="fig-input" class="data-pane-column"></div>
       <div id="fig-intermediate" class="data-pane-column"></div>
@@ -69,7 +69,7 @@
          <div id="fig">
             <div class="fig-loading">loading figure(s)</div>
          </div>
-         
+
          <div>
             <p class="when-data-pane-visible">Notice how only certain parts of the input are relevant to a
             given output cell. Can some of the irrelevant inputs be attributed to zeros in the filter? Which
@@ -102,8 +102,8 @@
       <code>zero</code>, <code>wrap</code> and <code>extend</code> implement specific policies
       (“methods”) for dealing with the boundary.</p>
       <details>
-         <summary>convolution.fld</summary>
-         <div id="codemirror-convolution"></div>
+         <summary>matrix.fld</summary>
+         <div id="codemirror-matrix"></div>
       </details>
       <details>
          <summary>emboss.fld</summary>
@@ -116,7 +116,7 @@
 
 <script type="module">
    import { loadFigure, drawCode } from "/shared/load-figure.js"
-   drawCode("../fluid/lib")("convolution")()
+   drawCode("../fluid/lib")("matrix")()
    drawCode("../fluid/convolution")("emboss")()
    loadFigure("spec.json")()
 </script>

@@ -1,40 +1,9 @@
-module App.View.Util.D3
-   ( Coord
-   , ElementType(..)
-   , Margin
-   , Selection
-   , attrs
-   , classed
-   , colorScale
-   , create
-   , datum
-   , dimensions
-   , isEmpty
-   , line
-   , nthChild
-   , on
-   , remove
-   , rootSelect
-   , rotate
-   , rotate'
-   , scaleLinear
-   , select
-   , selectAll
-   , setAttrs
-   , setDatum
-   , setStyles
-   , setText
-   , textHeight
-   , textWidth
-   , translate
-   , xAxis
-   , yAxis
-   ) where
+module App.View.Util.D3 where
 
 import Prelude
 
-import App.Util (Dimensions, Attrs)
-import Bind (Bind, (↦))
+import App.Util (Attrs, Dimensions)
+import Bind (Bind, (↦), (⟼))
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Generic.Rep (class Generic)
 import Data.Newtype (unwrap)
@@ -77,9 +46,12 @@ rotate' f = "transform" ↦ \a -> "rotate(" <> show (f a) <> ")"
 data ElementType
    = Caption
    | Circle
+   | Div
    | G
+   | Line
    | Path
    | Rect
+   | Span
    | SVG
    | Table
    | Text
@@ -88,6 +60,7 @@ data ElementType
    | TH
    | THead
    | TR
+   | Pattern
 
 create :: ElementType -> Attrs -> Selection -> Effect Selection
 create elementType as parent =
@@ -99,16 +72,41 @@ setAttrs as sel = fromFoldable as # attrs sel
 setStyles :: Attrs -> Selection -> Effect Selection
 setStyles as sel = fromFoldable as # styles sel
 
+nthChild :: Int -> String
+nthChild i = ":nth-child(" <> show i <> ")"
+
+addHatchPattern :: Selection -> Int -> String -> Effect Unit
+addHatchPattern parent' j col_j = do
+   pattern <- parent' # create Pattern
+      [ "id" ↦ "diagonalHatch-" <> show j
+      , "patternUnits" ↦ "userSpaceOnUse"
+      , "width" ⟼ 2
+      , "height" ⟼ 2
+      , "patternTransform" ↦ "rotate(45)"
+      ]
+   void $ pattern # create Rect
+      [ "width" ⟼ 3.5, "height" ⟼ 3.5, "fill" ↦ col_j ]
+   void $ pattern # create Line
+      [ "x1" ⟼ 0
+      , "y" ⟼ 0
+      , "x2" ⟼ 0
+      , "y2" ⟼ 3.5
+      , "stroke" ↦ "rgba(255, 255, 255, 1)"
+      , "stroke-width" ↦ "1"
+      ]
+
 -- Could feasibly rename to Element
 foreign import data Selection :: Type
 
 foreign import createChild :: Selection -> String -> Object String -> Effect Selection
 foreign import remove :: Selection -> Effect Unit
-foreign import colorScale :: String -> String -> Array String -> String
+foreign import colorScale :: forall a. String -> a -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number
+foreign import scaleBand :: Int -> Array String -> String -> Number
+foreign import bandwidth :: (String -> Number) -> Number
 -- Currently two different protocols for x and y axis; will subsume into something more general
-foreign import xAxis :: Coord (Endo Number) -> NonEmptyArray Number -> Selection -> Effect Selection
-foreign import yAxis :: Coord (Endo Number) -> Number -> Selection -> Effect Selection
+foreign import xAxis :: forall a r. { x :: a -> Number | r } -> NonEmptyArray a -> Selection -> Effect Selection
+foreign import yAxis :: forall a r. { y :: a -> Number | r } -> Number -> Selection -> Effect Selection
 foreign import isEmpty :: Selection -> Effect Boolean
 foreign import dimensions :: Selection -> Effect (Dimensions Int)
 foreign import textDimensions :: String -> String -> Dimensions Int
@@ -124,15 +122,12 @@ foreign import setDatum :: forall a. a -> Selection -> Effect Selection
 foreign import datum :: forall a. Selection -> Effect a
 foreign import on :: EventType -> EventListener -> Selection -> Effect Selection
 
-nthChild :: Int -> String
-nthChild i = ":nth-child(" <> show i <> ")"
-
-instance Show ElementType
-   where
-   show = genericShow >>> toLower
-
 -- ======================
 -- boilerplate
 -- ======================
 
 derive instance Generic ElementType _
+
+instance Show ElementType
+   where
+   show = genericShow >>> toLower
