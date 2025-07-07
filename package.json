@@ -31,7 +31,7 @@
     "build-test": "./script/build-test.sh",
     "bundle-fluid": "./script/bundle-fluid.sh",
     "bundle-serve": "sh -c './script/bundle-website.sh -w \"$@\" && ./script/serve.sh \"$1\"' _",
-    "bundle-website": "./script/bundle-website.sh",
+    "bundle-website": "./script/bundle-website.sh", 
     "fluid": "node ./dist/fluid/shared/fluid.mjs",
     "npm-publish": "./script/npm-publish.sh",
     "serve": "./script/serve.sh",
