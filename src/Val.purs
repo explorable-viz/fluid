@@ -15,15 +15,16 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
+import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
-import Doc (DocOpt)
+import Doc (DocOpt(..))
 import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
+import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, DVertex, pack, typeName, unpack, vertices)
 import Graph.WithGraph (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Unsafe.Coerce (unsafeCoerce)
@@ -44,9 +45,12 @@ data BaseVal a
    | Fun (Fun a)
 
 asVal :: VertexData -> Maybe (Val Vertex)
-asVal e = if type' == "Val" then Just (unpack unsafeCoerce e) else Nothing
+asVal e = if type' == "Val" then Just (unpack coerceVal e) else Nothing
    where
    type' = unpack typeName e
+
+   coerceVal :: forall a. TypeName a => a -> Val Vertex
+   coerceVal = unsafeCoerce
 
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
@@ -127,6 +131,18 @@ reaches ρ xs = go (Set.toUnfoldable xs) empty
       go (Set.toUnfoldable (fv σ ∩ dom_ρ) <> xs') (singleton x ∪ acc)
       where
       σ = get x ρ
+
+collectDocs :: Val Vertex -> Set DVertex
+collectDocs (Val _ doc val) = subVals ∪ current
+   where
+   current = case doc of
+      None -> empty
+      Doc ins _ -> unions $ map (\v'@(Val α' _ _) -> collectDocs v' ∪ singleton (DVertex $ α' × pack v')) ins
+   subVals = case val of
+      Constr _ vals -> unions (collectDocs <$> vals)
+      Dictionary (DictRep d) -> unions (collectDocs <<< snd <$> values d)
+      Matrix (MatrixRep (vss × _ × _)) -> unions (collectDocs <$> concat vss)
+      _ -> empty
 
 forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
 forDefs ρ σ = restrict (reaches ρ (fv σ ∩ Set.fromFoldable (keys ρ))) ρ

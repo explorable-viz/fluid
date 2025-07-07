@@ -11,10 +11,9 @@ import App.View.Util (FigSpec)
 import Bind (Bind)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Either (Either(..))
-import Data.List (List(..))
+import Data.List (List(..), singleton)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
-import Doc (DocOpt(..))
 import Effect (Effect)
 import Graph (DVertex'(..), Vertex, VertexData)
 import Module.Web (File(..), Folder(..), loadFile')
@@ -45,7 +44,7 @@ figSpecFromJson spec =
 
 query' :: VertexData -> List (DVertex' (Val Vertex))
 query' vd = case asVal vd of
-   Just (Val _ (Doc is _) _) -> (\v@(Val α _ _) -> DVertex (α × v)) <$> is
+   Just v@(Val α _ _) -> singleton $ DVertex (α × v)
    _ -> Nil
 
 loadFigure :: String -> Effect Unit

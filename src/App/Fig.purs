@@ -11,6 +11,7 @@ import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set as Set
@@ -21,7 +22,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, Vertex(..), dvertices, runQuery', selectαs, select𝔹s, vertexData, vertices)
+import Graph (class Graph, DVertex, DVertex'(..), Vertex(..), addresses, dvertices, runQuery', selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -31,8 +32,8 @@ import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), AffError, Endo, absurd, error, spy, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
-import Util.Set (empty, (\\), (∈), (∪))
-import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
+import Util.Set (empty, filter, (\\), (∈), (∪))
+import Val (Env(..), EnvExpr(..), Val(..), asVal, collectDocs, unrestrictGC)
 
 str
    :: { output :: String -- pseudo-variable to use as name of output view
@@ -119,18 +120,18 @@ selectionResult fig@{ dir, v, γ, ι } =
    to𝕊γ :: forall a. Env (SelState 𝔹) × a -> Env (SelState 𝕊) × a
    to𝕊γ = first primary
 
-   γ1 × v1 × αs =
+   γ1 × v1 × αs × ιαs =
       case dir.persistent of
          LinkedOutputs -> to𝕊γ $ as𝕊v Persistent $ fig.linkedOutputs Persistent v
          LinkedInputs -> to𝕊v $ as𝕊γ Persistent $ fig.linkedInputs Persistent γ
          Intermediates -> error absurd
-   γ2 × v2 × αs' =
+   γ2 × v2 × αs' × ιαs' =
       case dir.transient of
          LinkedOutputs -> to𝕊γ $ as𝕊v Transient $ fig.linkedOutputs Transient v
          LinkedInputs -> to𝕊v $ as𝕊γ Transient $ fig.linkedInputs Transient γ
          Intermediates -> to𝕊γ $ to𝕊v $ fig.linkIntermediates ι
 
-   ι' = intermediates fig { persistent: αs, transient: αs' }
+   ι' = intermediates fig { persistent: αs, transient: αs' } { persistent: ιαs, transient: ιαs' }
 
    splice :: forall a. SelState a -> SelState a -> SelStates a
    splice Inert _ = SelStates Inert
@@ -144,14 +145,14 @@ selectionResult fig@{ dir, v, γ, ι } =
    reportIn = spyWhen tracing.mediatingData ("Mediating inputs") (prettyP <<< erase)
    reportOut = spyWhen tracing.mediatingData ("Mediating outputs") (prettyP <<< erase)
 
-intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹)
-intermediates { spec, in_roots, inerts } αs =
+intermediates :: Fig -> Selection (Set DVertex) -> Selection (Set DVertex) -> Env (SelStates 𝔹)
+intermediates { spec, in_roots, inerts } αs ιαs =
    flip (maybe empty) spec.query
       \query ->
          let
             ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
                $ runQuery' query
-               $ List.fromFoldable (αs.persistent ∪ αs.transient)
+               $ spy "list" (show <<< map (fst <<< unwrap)) (List.fromFoldable (ιαs.persistent ∪ ιαs.transient))
          in
             rebuildι inerts αs ια
 
@@ -240,22 +241,22 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       γf :: Env (SelState 𝔹) -> Val (SelState 𝔹) × GraphImpl
       γf = lift inert'.v gcFwd
 
-      linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+      linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
       linkedInputs selType γ =
          let
             v × g = γf (γ <#> getSel selType)
          in
-            fst (vf v) × v × vertices g
+            fst (vf v) × v × vertices g × vertices g
 
-      linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+      linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
       linkedOutputs selType v =
          let
-            γ × _ = vf (v <#> getSel selType)
+            γ × g = vf (v <#> getSel selType)
             v' = fst (γf γ)
          in
-            γ × v' × dvertices g0 (spy "αs" show (selectαs (v <#> getSel selType >>> to𝔹) outα))
+            γ × v' × vertices g × filter (\(DVertex (α × _)) -> α ∈ addresses g) (collectDocs outα)
 
-      linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
+      linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
       linkIntermediates ι =
          let
             ια = Env $ ιfromαs g0 (keys ι) :: Env Vertex
@@ -264,7 +265,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
             v = inert'.v <*> select𝔹s outα (vertices $ bwdSlice (αs × opEval.g))
             γ = inert'.γ <*> select𝔹s γα (vertices $ bwdSlice (αs × eval.g))
          in
-            γ × v × (dvertices g0 αs)
+            γ × v × (dvertices g0 αs) × (dvertices g0 αs)
 
    pure
       { spec
