@@ -200,7 +200,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
 
 evalDocOpt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
 evalDocOpt _ None = pure None
-evalDocOpt γ (Doc ins tokens) = Doc <$> sequence (map (\i -> eval γ i empty) ins) <*> sequence (map evalToken tokens)
+evalDocOpt γ (Doc ins tokens) = Doc <$> sequence (eval γ <$> ins <@> empty) <*> sequence (map evalToken tokens)
    where
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s

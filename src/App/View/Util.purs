@@ -13,7 +13,7 @@ import Data.Set (Set)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Effect (Effect)
-import Graph (DVertex, Vertex, Query)
+import Graph (DVertex, Vertex, Query')
 import Lattice (𝔹, Raw, (∨))
 import Module.Web (File, Folder)
 import SExpr as S
@@ -96,7 +96,7 @@ type FigSpec =
    , datasets :: Array (Bind String)
    , file :: File
    , inputs :: Array Var
-   , query :: Maybe (Query (Val Vertex))
+   , query :: Maybe (Query' (Val Vertex))
    }
 
 data Direction = LinkedInputs | LinkedOutputs | Intermediates

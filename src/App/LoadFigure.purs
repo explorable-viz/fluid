@@ -11,11 +11,12 @@ import App.View.Util (FigSpec)
 import Bind (Bind)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Either (Either(..))
+import Data.List (List(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Doc (DocOpt(..))
 import Effect (Effect)
-import Graph (DVertex'(..))
+import Graph (DVertex'(..), Vertex, VertexData)
 import Module.Web (File(..), Folder(..), loadFile')
 import Util (error, (×))
 import Val (Val(..), asVal)
@@ -29,7 +30,7 @@ type JsonSpec =
    , query :: Boolean
    }
 
-figSpecFromJson :: JsonSpec -> FigSpec
+figSpecFromJson ∷ JsonSpec → FigSpec
 figSpecFromJson spec =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , datasets: spec.datasets
@@ -38,11 +39,14 @@ figSpecFromJson spec =
    , inputs: spec.inputs
    , query:
         if spec.query then
-           Just $ asVal >=> case _ of
-              v@(Val α (Doc _ _) _) -> Just $ DVertex (α × v)
-              _ -> Nothing
+           Just $ query'
         else Nothing
    }
+
+query' :: VertexData -> List (DVertex' (Val Vertex))
+query' vd = case asVal vd of
+   Just (Val _ (Doc is _) _) -> (\v@(Val α _ _) -> DVertex (α × v)) <$> is
+   _ -> Nil
 
 loadFigure :: String -> Effect Unit
 loadFigure fileName = runAffs_ (uncurry drawFig)

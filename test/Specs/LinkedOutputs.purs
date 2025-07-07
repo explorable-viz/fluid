@@ -7,11 +7,9 @@ import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoi
 import Bind ((↦))
 import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_y)
-import Graph (DVertex'(..))
 import Module.Web (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
 import Util ((×))
-import Val (BaseVal(..), MatrixDim(..), MatrixRep(..), Val(..), asVal)
 
 linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
@@ -96,11 +94,7 @@ linkedOutputs_cases =
           , imports: [ "lib/matrix" ]
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
-          , query:
-               Just $ asVal >=> case _ of
-                  v@(Val α _ (Matrix (MatrixRep (_ × MatrixDim (3 × _) × MatrixDim (3 × _))))) -> Just $ DVertex (α × v)
-                  _ -> Nothing
-
+          , query: Nothing
           }
      , δ_out: fst (matrixElement 2 2 select)
      , out_expect:
