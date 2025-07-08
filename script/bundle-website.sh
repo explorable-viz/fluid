@@ -46,5 +46,3 @@ echo "Processing shared JavaScript files:"
 cp -r "${PREFIX_}dist/fluid/shared" dist/$WEBSITE
 
 echo "Bundled website $WEBSITE"
-
-
