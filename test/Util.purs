@@ -6,6 +6,7 @@ import App.Util (Selector, getPersistent, unselected)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
+import Data.List (fromFoldable)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
 import Data.String (null)
@@ -17,6 +18,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
 import GaloisConnection (GaloisConnection(..), dual)
+import Graph (selectαs)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (File, FileLoader, Folder(..), parse, prepConfig)
 import Parse (program)
@@ -78,7 +80,8 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
 
    let v = map (const top) outα :: Val 𝔹
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
-
+   log (prettyP out0)
+   log (show <<< fromFoldable $ selectαs out0 outα)
    in0@(EnvExpr in_γ in_e) <- do
       let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))

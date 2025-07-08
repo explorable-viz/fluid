@@ -85,7 +85,7 @@ instance Vertices (e Vertex) => Vertices (DocCommentElem e Vertex) where
 
 instance Vertices (e Vertex) => Vertices (DocOpt e Vertex) where
    vertices None = Set.empty
-   vertices (Doc ins doc) = Set.unions (vertices <$> doc) `Set.difference` Set.unions (vertices <$> ins)
+   vertices (Doc refs doc) = Set.unions (vertices <$> doc) `Set.difference` Set.unions (vertices <$> refs)
 
 instance Semigroup (DocOpt e a) where
    append doc None = doc

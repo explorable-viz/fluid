@@ -11,7 +11,6 @@ import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set as Set
@@ -22,7 +21,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, DVertex'(..), Vertex(..), addresses, dvertices, runQuery', selectαs, select𝔹s, vertexData, vertices)
+import Graph (class Graph, DVertex, DVertex'(..), Vertex(..), dvertices, runQuery', selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -152,7 +151,7 @@ intermediates { spec, in_roots, inerts } αs ιαs =
          let
             ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
                $ runQuery' query
-               $ spy "list" (show <<< map (fst <<< unwrap)) (List.fromFoldable (ιαs.persistent ∪ ιαs.transient))
+               $ List.fromFoldable (ιαs.persistent ∪ ιαs.transient)
          in
             rebuildι inerts αs ια
 
@@ -254,7 +253,9 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
             γ × g = vf (v <#> getSel selType)
             v' = fst (γf γ)
          in
-            γ × v' × vertices g × filter (\(DVertex (α × _)) -> α ∈ addresses g) (collectDocs outα)
+            γ × v' × vertices g × filter (\(DVertex (α × _)) -> α ∈ selectedPart) (collectDocs outα)
+         where
+         selectedPart = (selectαs (spy "v" prettyP (v <#> getSel selType >>> to𝔹)) outα)
 
       linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
       linkIntermediates ι =

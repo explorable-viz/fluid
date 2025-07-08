@@ -74,7 +74,7 @@ class Vertices a where
    vertices :: a -> Set DVertex
 
 instance (Apply f, Foldable f) => Selectαs (f 𝔹) (f Vertex) where
-   selectαs v𝔹 vα = unions ((if _ then singleton else const mempty) <$> v𝔹 <*> vα)
+   selectαs v𝔹 vα = unions ((\b α -> if b then singleton α else mempty) <$> v𝔹 <*> vα)
    select𝔹s vα αs = (\α -> (DVertex (α × pack unit)) ∈ αs) <$> vα
 
 instance (Functor f, Apply f, Foldable f) => Selectαs (Dict (f 𝔹)) (Dict (f Vertex)) where
