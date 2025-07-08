@@ -20,11 +20,11 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
--- main = run tests
+main = run tests
 
 -- main = run $ asTestSuite (suite loadFile comments_cases)
 
-main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ bwdSuite loadFile
@@ -37,7 +37,7 @@ scratchpad = asTestSuite $ bwdSuite loadFile
           ]
      , bwd_expect_file: "matrix/matmul.expect"
      , δv: matrixElement 1 1 select
-     , fwd_expect: "⸨⸨64⸩, ⸨-58⸩,\n  ⸨154⸩, ⸨-139⸩⸩"
+     , fwd_expect: "⸨64⸩, -58,\n154, -139"
      , datasets: []
      }
    ]

@@ -38,7 +38,7 @@ import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, class Highlightable, BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), highlightIf)
+import Val (class Ann, class Highlightable, BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), ValDoc(..), highlightIf)
 
 class Pretty p where
    pretty :: p -> Doc
@@ -391,6 +391,11 @@ instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
    pretty (Doc.Doc _ Nil) = empty
    pretty (Doc.Doc _ x) = text str.triplequote .<>. pretty x
    pretty Doc.None = empty
+
+instance Highlightable a => Pretty (ValDoc a) where
+   pretty (ValDoc _ Nil) = empty
+   pretty (ValDoc _ xs) = text str.triplequote .<>. pretty xs
+   pretty None' = empty
 
 instance Pretty (e a) => Pretty (List (DocCommentElem e a)) where
    pretty (Cons word Nil) = pretty word .<>. text str.triplequote

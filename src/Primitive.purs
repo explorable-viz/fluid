@@ -10,13 +10,12 @@ import Data.Profunctor.Choice ((|||))
 import Data.Set (insert)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Doc (DocOpt(..))
 import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), error, singleton, (×))
-import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpGraph, Val(..))
+import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, OpGraph, Val(..), ValDoc(..))
 
 -- Mediate between wrapped values and underlying datatype d. Wasn't able to make a typeclass version
 -- work with required higher-rank polymorphism.
@@ -29,7 +28,7 @@ unpack :: forall d a. ToFrom d a -> Val a -> d × a
 unpack toFrom (Val α _ v) = toFrom.unpack v × α
 
 pack :: forall d a. ToFrom d a -> d × a -> Val a
-pack toFrom (v × α) = Val α None (toFrom.pack v)
+pack toFrom (v × α) = Val α None' (toFrom.pack v)
 
 typeError :: forall a b. BaseVal a -> String -> b
 typeError v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
@@ -150,7 +149,7 @@ type BinaryZero i o a =
 
 unary :: forall i o a'. BoundedJoinSemilattice a' => String -> (forall a. Unary i o a) -> Bind (Val a')
 unary id f =
-   id × Val bot None (Fun (Foreign (ForeignOp (id × op)) Nil))
+   id × Val bot None' (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
    op :: ForeignOp'
    op = ForeignOp' { arity: 1, op: unsafePartial op' }
@@ -163,28 +162,28 @@ unary id f =
 
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => String -> (forall a. Binary i1 i2 o a) -> Bind (Val a')
 binary id f =
-   id × Val bot None (Fun (Foreign (ForeignOp (id × op)) Nil))
+   id × Val bot None' (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
    op :: ForeignOp'
    op = ForeignOp' { arity: 2, op: unsafePartial op' }
 
    op' :: Partial => OpGraph
    op' (Val α _ v1 : Val β _ v2 : Nil) =
-      new (flip Val None) (singleton α # insert β) $ f.o.pack v'
+      new (flip Val None') (singleton α # insert β) $ f.o.pack v'
       where
       v' = f.fwd (f.i1.unpack v1) (f.i2.unpack v2)
 
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => String -> (forall a. BinaryZero i o a) -> Bind (Val a')
 binaryZero id f =
-   id × Val bot None (Fun (Foreign (ForeignOp (id × op)) Nil))
+   id × Val bot None' (Fun (Foreign (ForeignOp (id × op)) Nil))
    where
    op :: ForeignOp'
    op = ForeignOp' { arity: 2, op: unsafePartial op' }
 
    op' :: Partial => OpGraph
    op' (Val α _ v1 : Val β _ v2 : Nil) =
-      new (flip Val None) αs $ f.o.pack v'
+      new (flip Val None') αs $ f.o.pack v'
       where
       x × y = f.i.unpack v1 × f.i.unpack v2
       v' = f.fwd x y

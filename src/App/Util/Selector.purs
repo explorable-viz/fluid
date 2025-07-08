@@ -10,13 +10,13 @@ import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
 import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cSome, f_points, f_segments, f_stackedBars, f_z)
-import Doc (DocCommentElem(..), DocOpt(..))
+import Doc (DocCommentElem(..))
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely, definitely', error, (×))
 import Util.Map (get, insert, update)
 import Util.Set ((∈))
-import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
+import Val (BaseVal(..), DictRep(..), Env, Val(..), ValDoc(..), matrixGet, matrixPut)
 
 type SelSetter f g = Setter (f (SelStates 𝔹)) (g (SelStates 𝔹))
 type Setter b a = SetSel a -> SetSel b
@@ -135,10 +135,10 @@ listCell n δα = unsafePartial $ case _ of
       else first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listCell (n - 1) δα u)
 
 docElement :: Int -> SelSetter Val Val
-docElement _ _ (Val _ None _) = error absurd
-docElement i δv (Val α (Doc ins doc) v) =
+docElement _ _ (Val _ None' _) = error absurd
+docElement i δv (Val α (ValDoc ins doc) v) =
    first (\doc' -> Val α doc' v)
-      $ first (Doc ins)
+      $ first (ValDoc ins)
       $ definitely' do
            elem' × selType <- δv' <$> index doc i
            (_ × selType) <$> updateAt i elem' doc

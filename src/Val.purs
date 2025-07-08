@@ -19,7 +19,7 @@ import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
-import Doc (DocOpt(..))
+import Doc (DocCommentElem)
 import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
 import Foreign.Object (foldMap)
@@ -33,7 +33,7 @@ import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, k
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
 
-data Val a = Val a (DocOpt Val a) (BaseVal a)
+data Val a = Val a (ValDoc a) (BaseVal a)
 
 data BaseVal a
    = Int Int
@@ -132,16 +132,16 @@ reaches ρ xs = go (Set.toUnfoldable xs) empty
       where
       σ = get x ρ
 
-collectDocs :: Val Vertex -> Set DVertex
-collectDocs (Val _ doc val) = subVals ∪ current
+collectDocs :: Set Vertex -> Val Vertex -> Set DVertex
+collectDocs αs (Val α doc val) = subVals ∪ current
    where
    current = case doc of
-      None -> empty
-      Doc ins _ -> unions $ map (\v'@(Val α' _ _) -> collectDocs v' ∪ singleton (DVertex $ α' × pack v')) ins
+      None' -> empty
+      ValDoc ins _ -> if α ∈ αs then unions $ map (\v'@(Val α' _ _) -> collectDocs αs v' ∪ singleton (DVertex $ α' × pack v')) ins else empty
    subVals = case val of
-      Constr _ vals -> unions (collectDocs <$> vals)
-      Dictionary (DictRep d) -> unions (collectDocs <<< snd <$> values d)
-      Matrix (MatrixRep (vss × _ × _)) -> unions (collectDocs <$> concat vss)
+      Constr _ vals -> unions (collectDocs αs <$> vals)
+      Dictionary (DictRep d) -> unions (collectDocs αs <<< snd <$> values d)
+      Matrix (MatrixRep (vss × _ × _)) -> unions (collectDocs αs <$> concat vss)
       _ -> empty
 
 forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
@@ -404,3 +404,44 @@ instance Vertices (Env Vertex) where
 
 instance Vertices (EnvExpr Vertex) where
    vertices (EnvExpr γ e) = vertices γ ∪ vertices e
+
+-- ==========================
+-- Value Documentation
+-- ==========================
+
+data ValDoc a = None' | ValDoc (List (Val Vertex)) (List (DocCommentElem Val a))
+
+instance Eq a => Eq (ValDoc a) where
+   eq None' None' = true
+   eq (ValDoc refs doc) (ValDoc refs' doc') = refs == refs' && doc == doc'
+   eq _ _ = false
+
+derive instance Ord a => Ord (ValDoc a)
+
+derive instance Functor ValDoc
+derive instance Foldable ValDoc
+derive instance Traversable ValDoc
+
+instance Apply ValDoc where
+   apply None' _ = None'
+   apply (ValDoc refs doc) (ValDoc _ doc') =
+      ValDoc refs (zipWith (<*>) doc doc')
+   apply _ _ = shapeMismatch unit
+
+instance JoinSemilattice a => JoinSemilattice (ValDoc a) where
+   join None' None' = None'
+   join (ValDoc refs doc) (ValDoc _ doc') =
+      ValDoc (refs) (doc ∨ doc')
+   join _ _ = shapeMismatch unit
+
+instance (BoundedJoinSemilattice a) => Expandable (ValDoc a) (Raw ValDoc) where
+   expand None' None' = None'
+   expand (ValDoc refs doc) (ValDoc _ doc') =
+      ValDoc refs (expand doc doc')
+   expand _ _ = shapeMismatch unit
+
+instance Semigroup (ValDoc a) where
+   append None' doc = doc
+   append doc None' = doc
+   append (ValDoc refs doc) (ValDoc _ doc') =
+      ValDoc refs (doc <> doc')

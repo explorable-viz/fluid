@@ -69,6 +69,8 @@ instance (Vertices a) => Vertices (Dict a) where
    vertices d = unions (vertices <$> values (unwrap d))
 else instance (Functor f, Foldable f) => Vertices (f DVertex) where
    vertices = Set.fromFoldable
+else instance Vertices a => Vertices (Set a) where
+   vertices = unions <<< Set.map vertices
 
 class Vertices a where
    vertices :: a -> Set DVertex

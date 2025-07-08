@@ -34,7 +34,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs)
+import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), ValDoc(..), forDefs)
 
 -- Needs a better name.
 type GraphConfig =
@@ -82,7 +82,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `forDefs` σ
       in
-         new (flip Val None) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
+         new (flip Val None') αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
 apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α doc' (V.Fun (V.Closure γ1 ρ σ))) v@(Val _ doc _) = do
@@ -99,13 +99,13 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         new (flip Val None) (singleton α) v'
+         new (flip Val None') (singleton α) v'
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   new (flip Val None) (singleton α) v'
+   new (flip Val None') (singleton α) v'
    where
    v' =
       if length vs < n - 1 then
@@ -142,11 +142,11 @@ eval γ (Matrix α doc e (x × y) e') αs = do
       i <- A.range 1 i'
       singleton $ sequence do
          j <- A.range 1 j'
-         let γ' = maplet x (Val β None (V.Int i)) `disjointUnion` (maplet y (Val β' None (V.Int j)))
+         let γ' = maplet x (Val β None' (V.Int i)) `disjointUnion` (maplet y (Val β' None' (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
    new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
-   new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   new (flip Val None') (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project doc e x) α = do
    v@(Val _ doc' _) <- eval γ e α
    v'@(Val _ doc'' _) <- eval γ x α
@@ -162,7 +162,7 @@ eval γ (App doc e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
    v'' <- apply v v'
-   accumDocs γ v'' doc None
+   accumDocs γ v'' doc None'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
@@ -198,9 +198,9 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       v <- eval γ e empty
       pure $ γ <+> maplet x v
 
-evalDocOpt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
-evalDocOpt _ None = pure None
-evalDocOpt γ (Doc ins tokens) = Doc <$> sequence (eval γ <$> ins <@> empty) <*> sequence (map evalToken tokens)
+evalDocOpt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (ValDoc Vertex)
+evalDocOpt _ None = pure None'
+evalDocOpt γ (Doc ins tokens) = ValDoc <$> sequence (eval γ <$> ins <@> empty) <*> sequence (map evalToken tokens)
    where
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
@@ -214,10 +214,10 @@ new'
    -> DocOpt Expr Vertex
    -> BaseVal Vertex
    -> m (Val Vertex)
-new' _ αs None u = new (\αs' -> \u' -> Val αs' None u') αs u
+new' _ αs None u = new (\αs' -> \u' -> Val αs' None' u') αs u
 new' γ αs doc u = do
    α <- fresh
-   vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None u)) doc
+   vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None' u)) doc
    let v' = Val α vdoc u
    extend (DVertex (α × pack v')) αs
    pure v'
@@ -228,10 +228,10 @@ accumDocs
    => Env Vertex
    -> Val Vertex
    -> DocOpt Expr Vertex
-   -> DocOpt Val Vertex
+   -> ValDoc Vertex
    -> m (Val Vertex)
 accumDocs γ (Val α' vdoc v') doc doc' = do
-   vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
+   vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None' v')) doc
    pure (Val α' (doc' <> vdoc' <> vdoc) v')
 
 type GraphEval g s t =

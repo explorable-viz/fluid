@@ -21,7 +21,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import EvalGraph (graphEval, graphGC, withOp)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, DVertex'(..), Vertex(..), dvertices, runQuery', selectαs, select𝔹s, vertexData, vertices)
+import Graph (class Graph, DVertex, Vertex(..), dvertices, runQuery', selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -29,9 +29,9 @@ import Module.Web (File(..), loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), AffError, Endo, absurd, error, spy, spyWhen, (×), (∩))
+import Util (type (×), AffError, Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
-import Util.Set (empty, filter, (\\), (∈), (∪))
+import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, collectDocs, unrestrictGC)
 
 str
@@ -251,11 +251,12 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets } = do
       linkedOutputs selType v =
          let
             γ × g = vf (v <#> getSel selType)
+
             v' = fst (γf γ)
          in
-            γ × v' × vertices g × filter (\(DVertex (α × _)) -> α ∈ selectedPart) (collectDocs outα)
+            γ × v' × vertices g × collectDocs selectedPart outα
          where
-         selectedPart = (selectαs (spy "v" prettyP (v <#> getSel selType >>> to𝔹)) outα)
+         selectedPart = selectαs (v <#> getSel selType >>> to𝔹) outα
 
       linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
       linkIntermediates ι =
