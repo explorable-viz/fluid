@@ -1,69 +1,27 @@
 module Test.Util.Debug where
 
--- These flags considered only when Util.debug.tracing is true.
-tracing
-   :: { runWithGraphT :: Boolean
-      , graphBwdSlice :: Boolean
-      , graphBwdSlice_vertexData :: Boolean
-      , graphFwdSlice :: Boolean
-      , checkEq :: Boolean
-      , bwdSelection :: Boolean
-      , fwdAfterBwd :: Boolean
-      , mediatingData :: Boolean
-      , mouseEvent :: Boolean
-      , intermediates :: Boolean
-      }
+import Test.Util.Debug.Defaults
 
-tracing =
-   { runWithGraphT: false
-   , graphBwdSlice: false
-   , graphBwdSlice_vertexData: false
-   , graphFwdSlice: false
-   , checkEq: false
-   , bwdSelection: false
-   , fwdAfterBwd: false
-   , mediatingData: false
-   , mouseEvent: false
-   , intermediates: true
+tracing :: TracingConfig
+tracing = tracingDefaults
+   { intermediates = true
    }
 
--- Invariants that are potentially expensive to check and that we might want to disable in production,
--- that are not covered explicitly by tests.
-checking
-   :: { edgeListGC :: Boolean
-      , edgeListSorted :: Boolean
-      , inputsAreSinks :: Boolean
-      , outputsInGraph :: Boolean
-      , allocRoundTrip :: Boolean
-      }
-
-checking =
-   { edgeListGC: true
-   , edgeListSorted: true
-   , inputsAreSinks: true
-   , outputsInGraph: true
-   , allocRoundTrip: false
+checking :: CheckingConfig
+checking = checkingDefaults
+   { edgeListGC = true
+   , edgeListSorted = true
+   , inputsAreSinks = true
+   , outputsInGraph = true
    }
 
--- Should be set to true except when there are specific outstanding problems.
-testing
-   :: { fwdPreservesTop :: Boolean
-      , bwdDuals :: Boolean
-      , fwdDuals :: Boolean
-      , naiveFwd :: Boolean
-      }
-
-testing =
-   { fwdPreservesTop: true
-   , bwdDuals: true
-   , fwdDuals: true
-   , naiveFwd: true
+testing :: TestingConfig
+testing = testingDefaults
+   { fwdPreservesTop = true
+   , bwdDuals = true
+   , fwdDuals = true
+   , naiveFwd = true
    }
 
-timing
-   :: { selectionResult :: Boolean
-      }
-
-timing =
-   { selectionResult: false
-   }
+timing :: TimingConfig
+timing = timingDefaults
