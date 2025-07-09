@@ -10,6 +10,11 @@ while getopts "w:l" opt; do
    esac
 done
 
+if [ ! -d "website/$WEBSITE" ]; then
+   echo "Error: Directory 'website/$WEBSITE' does not exist." >&2
+   exit 1
+fi
+
 PREFIX_=${PREFIX:+$PREFIX/}
 echo "Cleaning dist/$WEBSITE"
 . "${PREFIX_}script/util/clean.sh" $WEBSITE

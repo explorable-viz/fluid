@@ -1,4 +1,3 @@
--- Should this be src/Αpp rather than website/Website.LoadFigure?
 module App.LoadFigure where
 
 import Prelude hiding (absurd)
@@ -11,12 +10,12 @@ import App.View.Util (FigSpec)
 import Bind (Bind)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Either (Either(..))
-import Data.List (List(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Graph (DVertex'(..), Vertex, VertexData)
-import Module.Web (File(..), Folder(..), loadFile')
+import File (File(..), Folder(..))
+import Graph (DVertex'(..))
+import Module.Web (loadFile', runWebT)
 import Util (error, (×))
 import Val (Val(..), ValDoc(..), asVal)
 
@@ -27,25 +26,29 @@ type JsonSpec =
    , file :: String
    , inputs :: Array String
    , query :: Boolean
+   , linking :: Boolean
    }
 
-figSpecFromJson ∷ JsonSpec → FigSpec
-figSpecFromJson spec =
+figSpecFromJson :: JsonSpec -> FigSpec
+figSpecFromJson spec@{ datasets, file, imports, inputs, query, linking } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
-   , datasets: spec.datasets
-   , imports: spec.imports
-   , file: File spec.file
-   , inputs: spec.inputs
+   , datasets
+   , imports
+   , file: File file
+   , inputs
    , query:
-        if spec.query then
-           Just $ query'
+        if query then
+           Just $ asVal >=> case _ of
+              v@(Val α (ValDoc _ _) _) -> Just $ DVertex (α × v)
+              _ -> Nothing
         else Nothing
+   , linking
    }
 
-query' :: VertexData -> List (DVertex' (Val Vertex))
-query' vd = case asVal vd of
-   Just (Val _ (ValDoc refs _) _) -> (\v@(Val α _ _) -> DVertex (α × v)) <$> refs
-   _ -> Nil
+-- query' :: VertexData -> List (DVertex' (Val Vertex))
+-- query' vd = case asVal vd of
+--    Just (Val _ (ValDoc refs _) _) -> (\v@(Val α _ _) -> DVertex (α × v)) <$> refs
+--    _ -> Nil
 
 loadFigure :: String -> Effect Unit
 loadFigure fileName = runAffs_ (uncurry drawFig)
@@ -58,10 +61,10 @@ loadFigure fileName = runAffs_ (uncurry drawFig)
               case decodeJson response.body of
                  Left err -> error ("JSON decoding failed with " <> show err)
                  Right spec -> do
-                    ("fig" × _) <$> loadFig (figSpecFromJson spec)
+                    ("fig" × _) <$> runWebT (loadFig (figSpecFromJson spec))
    ]
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
-   [ loadFile' [ Folder folder ] (File file)
+   [ runWebT $ loadFile' [ Folder folder ] (File file)
    ]

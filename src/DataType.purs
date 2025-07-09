@@ -160,8 +160,8 @@ dataTypes = L.fromFoldable
    , dataType "View"
         [ cBarChart × 1
         , cLineChart × 1
-        , cParagraph × 1
         , cMultiView × 1
+        , cParagraph × 1
         , cScatterPlot × 1
         ]
    ,

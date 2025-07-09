@@ -22,6 +22,7 @@ import Dict as D
 import Doc (DocCommentElem)
 import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
+import File (class LoadFile)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, DVertex, pack, typeName, unpack, vertices)
@@ -67,12 +68,11 @@ instance Highlightable a => Highlightable (a × b) where
 
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
--- similar to an isomorphism lens with complement t
-type OpGraph = forall m. MonadWithGraphsAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
+type Op = forall m. MonadWithGraphsAlloc m => MonadError Error m => LoadFile m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' = ForeignOp'
    { arity :: Int
-   , op :: OpGraph
+   , op :: Op
    }
 
 newtype ForeignOp = ForeignOp (String × ForeignOp') -- string is unique identifier for Eq
@@ -83,7 +83,6 @@ instance Eq ForeignOp where
 instance Ord ForeignOp where
    compare (ForeignOp (s × _)) (ForeignOp (s' × _)) = compare s s'
 
--- Environments.
 newtype Env a = Env (Dict (Val a))
 
 instance IsEmpty (Env a) where

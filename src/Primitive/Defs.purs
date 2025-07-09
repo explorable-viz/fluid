@@ -22,7 +22,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Util (type (+), Endo, error, orElse, singleton, throw, (×))
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
-import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), OpGraph, Val(..), ValDoc(..), matrixGet, matrixPut)
+import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), ValDoc(..), matrixGet, matrixPut)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
 extern (ForeignOp (id × φ)) = id × Val bot None' (Fun ((Foreign (ForeignOp (id × φ))) Nil))
@@ -67,7 +67,7 @@ error_ :: ForeignOp
 error_ =
    ForeignOp ("error" × ForeignOp' { arity: 1, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (Val _ _ (Str s) : Nil) = pure $ error s
    op _ = throw "String expected"
 
@@ -75,7 +75,7 @@ debugLog :: ForeignOp
 debugLog =
    ForeignOp ("debugLog" × ForeignOp' { arity: 1, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (x : Nil) = pure $ trace x (const x)
    op _ = throw "Single value expected"
 
@@ -83,7 +83,7 @@ dims :: ForeignOp
 dims =
    ForeignOp ("dims" × ForeignOp' { arity: 1, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (Val α _ (Matrix (MatrixRep (_ × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil) = do
       v1 <- newDep (flip Val None') (singleton β1) $ Int i
       v2 <- newDep (flip Val None') (singleton β2) $ Int j
@@ -95,7 +95,7 @@ matrixLookup :: ForeignOp
 matrixLookup =
    ForeignOp ("!" × ForeignOp' { arity: 2, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (Val _ _ (Matrix r) : Val _ _ (Constr c (Val _ _ (Int i) : Val _ _ (Int j) : Nil)) : Nil) | c == cPair =
       pure $ matrixGet i j r
    op _ = throw "Matrix and pair of integers expected"
@@ -104,7 +104,7 @@ matrixUpdate :: ForeignOp
 matrixUpdate =
    ForeignOp ("matrixUpdate" × ForeignOp' { arity: 3, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (Val α _ (Matrix r) : Val _ _ (Constr c (Val _ _ (Int i) : Val _ _ (Int j) : Nil)) : v : Nil)
       | c == cPair = newDep (flip Val None') (singleton α) (Matrix (matrixPut i j (const v) r))
    op _ = throw "Matrix, pair of integers and value expected"
@@ -113,7 +113,7 @@ dict_difference :: ForeignOp
 dict_difference =
    ForeignOp ("dict_difference" × ForeignOp' { arity: 2, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) =
       newDep (flip Val None') (singleton α # Set.insert β) (Dictionary (DictRep (d \\ d')))
    op _ = throw "Dictionaries expected."
@@ -122,7 +122,7 @@ dict_disjointUnion :: ForeignOp
 dict_disjointUnion =
    ForeignOp ("dict_disjointUnion" × ForeignOp' { arity: 2, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) = do
       newDep (flip Val None') (singleton α # Set.insert β) (Dictionary (DictRep (disjointUnion d d')))
    op _ = throw "Dictionaries expected"
@@ -131,7 +131,7 @@ dict_foldl :: ForeignOp
 dict_foldl =
    ForeignOp ("dict_foldl" × ForeignOp' { arity: 3, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (v : u : Val _ _ (Dictionary (DictRep d)) : Nil) =
       foldM (\u1 (_ × u2) -> G.apply v u1 >>= flip G.apply u2) u d
    op _ = throw "Function, value and dictionary expected"
@@ -140,7 +140,7 @@ dict_get :: ForeignOp
 dict_get =
    ForeignOp ("dict_get" × ForeignOp' { arity: 2, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (Val _ _ (Str s) : Val _ _ (Dictionary (DictRep d)) : Nil) =
       snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
    op _ = throw "String and dictionary expected"
@@ -149,7 +149,7 @@ dict_intersectionWith :: ForeignOp
 dict_intersectionWith =
    ForeignOp ("dict_intersectionWith" × ForeignOp' { arity: 3, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (v : Val α _ (Dictionary (DictRep d1)) : Val α' _ (Dictionary (DictRep d2)) : Nil) = do
       v' <- Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2))
       newDep (flip Val None') (singleton α # Set.insert α') v'
@@ -164,7 +164,7 @@ dict_map :: ForeignOp
 dict_map =
    ForeignOp ("dict_map" × ForeignOp' { arity: 2, op: op })
    where
-   op :: OpGraph
+   op :: Op
    op (v : Val α _ (Dictionary (DictRep d)) : Nil) = do
       d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
       newDep (flip Val None') (singleton α) (Dictionary (DictRep d'))

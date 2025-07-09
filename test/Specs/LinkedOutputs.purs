@@ -7,7 +7,7 @@ import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoi
 import Bind ((↦))
 import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_y)
-import Module.Web (File(..), Folder(..))
+import File (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
 import Util ((×))
 
@@ -20,6 +20,7 @@ linkedOutputs_spec1 =
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         , query: Nothing
+        , linking: true
         }
    , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 select))
    , out_expect:
@@ -49,6 +50,7 @@ linkedOutputs_spec2 =
         , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
         , query: Nothing
+        , linking: true
         }
    , δ_out: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
    , out_expect:
@@ -70,6 +72,7 @@ movingAverages_spec =
         , file: File "linked-outputs/moving-average"
         , inputs: [ "methane" ]
         , query: Nothing
+        , linking: true
         }
    , δ_out: identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
    , out_expect: identity >>> (_ × Persistent)
@@ -84,6 +87,7 @@ linkedOutputs_cases =
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           , query: Nothing
+          , linking: true
           }
      , δ_out: snd select
      , out_expect: select
@@ -95,6 +99,7 @@ linkedOutputs_cases =
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
           , query: Nothing
+          , linking: true
           }
      , δ_out: fst (matrixElement 2 2 select)
      , out_expect:

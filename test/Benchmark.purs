@@ -2,14 +2,18 @@ module Benchmark where
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat)
 import Data.Array.NonEmpty (fromArray)
 import Data.Either (Either(..))
+import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Aff (Error, runAff_)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
-import Module.Node (loadFile)
+import File (class LoadFile)
+import Module.Node (runNodeT)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (writeTextFile)
 import Test.Benchmark.Util (BenchAcc(..))
@@ -21,25 +25,26 @@ import Test.Util.Suite (BenchSuite, bwdSuite, suite, withDatasetSuite)
 import Util (definitely, error, (×), type (+))
 
 main :: Effect Unit
-main = runAff_ cb do
+main = runAff_ handleBench do
    outs <- sequence $
       ( \(str × row) -> do
            log $ "Benchmarking: " <> str
            (str × _) <$> row
       )
-         <$> (concat (benchmarks <@> (10 × true)))
+         <$> second runNodeT
+         <$> concat (benchmarks <@> (10 × true))
    pure $ BenchAcc $ definitely "More than one benchmark" $ fromArray outs
 
-cb :: Error + BenchAcc -> Effect Unit
-cb (Left err) = error $ show err
-cb (Right bacc) = do
+handleBench :: Error + BenchAcc -> Effect Unit
+handleBench (Left err) = error $ show err
+handleBench (Right bacc) = do
    writeTextFile ASCII "benchmark/benchmarks_artifact.csv" $ show bacc
    log "Benchmarking data written to benchmark/benchmarks_artifact.csv"
 
-benchmarks :: Array BenchSuite
+benchmarks :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array (BenchSuite m)
 benchmarks =
-   [ suite loadFile desugar_cases
-   , suite loadFile misc_cases
-   , bwdSuite loadFile bwd_cases
-   , withDatasetSuite loadFile graphics_cases
+   [ suite desugar_cases
+   , suite misc_cases
+   , bwdSuite bwd_cases
+   , withDatasetSuite graphics_cases
    ]
