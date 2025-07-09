@@ -25,7 +25,7 @@ import Expr (Elim, Expr, fv)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, DVertex, pack, typeName, unpack, vertices)
-import Graph.WithGraph (class MonadWithGraphAlloc)
+import Graph.WithGraph (class MonadWithGraphsAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Unsafe.Coerce (unsafeCoerce)
 import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
@@ -68,7 +68,7 @@ instance Highlightable a => Highlightable (a × b) where
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 -- similar to an isomorphism lens with complement t
-type OpGraph = forall m. MonadWithGraphAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
+type OpGraph = forall m. MonadWithGraphsAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' = ForeignOp'
    { arity :: Int

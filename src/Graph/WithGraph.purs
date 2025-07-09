@@ -7,7 +7,7 @@ import Control.Monad.State (StateT, modify, modify_, runStateT)
 import Data.Identity (Identity)
 import Data.List (List(..), range, (:))
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (first)
+import Data.Profunctor.Strong (first, second)
 import Data.Set (Set, isEmpty)
 import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
@@ -23,6 +23,11 @@ class Monad m <= MonadWithGraph m where
    -- Extend graph with existing vertex and its accompanying data pointing to set of existing vertices.
    extend :: DVertex -> Set Vertex -> m Unit
 
+data WhichGraph = Deps | Refs
+
+class Monad m <= MonadWithGraphs m where
+   extend' :: DVertex -> Set Vertex -> WhichGraph -> m Unit
+
 class Monad m <= MonadAlloc m where
    fresh :: m Vertex
 
@@ -32,11 +37,22 @@ class (MonadAlloc m, MonadError Error m, MonadWithGraph m) <= MonadWithGraphAllo
    -- Extend with a freshly allocated vertex.
    new :: forall f g. TypeName (g Vertex) => (Vertex -> f Vertex -> g Vertex) -> Set Vertex -> f Vertex -> m (g Vertex)
 
+class (MonadAlloc m, MonadError Error m, MonadWithGraphs m) <= MonadWithGraphsAlloc m where
+   newDep :: forall f g. TypeName (g Vertex) => (Vertex -> f Vertex -> g Vertex) -> Set Vertex -> f Vertex -> m (g Vertex)
+   newRef :: forall f g. TypeName (g Vertex) => (Vertex -> f Vertex -> g Vertex) -> Set Vertex -> f Vertex -> m (g Vertex)
+
 type AllocT m = StateT Int m
 type Alloc = AllocT Identity
 type WithGraphAllocT m = WithGraphT (AllocT m)
 type WithGraphT = StateT (List HyperEdge)
 type WithGraph = WithGraphT Identity
+
+type WithGraphsT = StateT ((List HyperEdge) × (List HyperEdge))
+type WithGraphsAllocT m = WithGraphsT (AllocT m)
+
+instance MonadError Error m => MonadWithGraph (WithGraphsT m) where
+   extend α αs = do
+      void $ modify_ $ (first $ (:) (α × αs))
 
 instance Monad m => MonadAlloc (AllocT m) where
    fresh = do
@@ -52,6 +68,32 @@ instance MonadError Error m => MonadWithGraphAlloc (WithGraphAllocT m) where
 
 instance Monad m => MonadWithGraph (WithGraphT m) where
    extend α αs = void $ modify_ $ (:) (α × αs)
+
+instance Monad m => MonadWithGraphs (WithGraphsT m) where
+   extend' α αs Deps = void $ modify_ $ first ((:) (α × αs))
+   extend' α αs Refs = void $ modify_ $ second ((:) (α × αs))
+
+instance Monad m => MonadAlloc (WithGraphsAllocT m) where
+   fresh = lift fresh
+
+instance MonadError Error m => MonadWithGraphAlloc (WithGraphsAllocT m) where
+   new constr αs vd = do
+      α <- fresh
+      let v = constr α vd
+      extend (DVertex (α × pack v)) αs
+      pure v
+
+instance MonadError Error m => MonadWithGraphsAlloc (WithGraphsAllocT m) where
+   newDep constr αs cd = do
+      α <- fresh
+      let v = constr α cd
+      extend' (DVertex (α × pack v)) αs Deps
+      pure v
+   newRef constr αs cd = do
+      α <- fresh
+      let v = constr α cd
+      extend' (DVertex (α × pack v)) αs Refs
+      pure v
 
 alloc :: forall m f. MonadAlloc m => Traversable f => Raw f -> m (f Vertex)
 alloc = traverse (const fresh)
@@ -72,6 +114,14 @@ runWithGraphT m αs = do
    -- only check one direction for now
    assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList mempty (toEdgeList g)) $
       pure (g × a)
+
+runWithGraphsT :: forall g m a. Monad m => Graph g => WithGraphsT m a -> Set DVertex -> m (g × g × a)
+runWithGraphsT m αs = do
+   g × g' × a <- freezeGraphs m αs
+   pure (g × g' × a)
+
+freezeGraphs :: forall g m a. Monad m => Graph g => WithGraphsT m a -> Set DVertex -> m (g × g × a)
+freezeGraphs m αs = runStateT m (Nil × Nil) <#> swap <#> (\((es × es') × a) -> (fromEdgeList αs es) × (fromEdgeList αs es') × a)
 
 freezeGraph :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set DVertex -> m (g × a)
 freezeGraph m αs = runStateT m Nil <#> swap <#> first (fromEdgeList αs <<< report "edge list" showEdgeList)
@@ -94,6 +144,10 @@ runWithGraphT_spy :: forall g m a. Monad m => Graph g => WithGraphT m a -> Set D
 runWithGraphT_spy =
    runWithGraphT
       >>> spyFunWhenM tracing.runWithGraphT "runWithGraphT" (Set.map (fst <<< unwrap) >>> showVertices) (fst >>> showGraph)
+
+runWithGraphsT_spy :: forall g m a. Monad m => Graph g => WithGraphsT m a -> Set DVertex -> m (g × g × a)
+runWithGraphsT_spy = runWithGraphsT
+   >>> spyFunWhenM tracing.runWithGraphT "runWithGraphsT" (Set.map (fst <<< unwrap) >>> showVertices) (fst >>> showGraph)
 
 runWithGraph_spy :: forall g a. Graph g => WithGraph a -> Set DVertex -> g × a
 runWithGraph_spy m = runWithGraphT_spy m >>> unwrap

@@ -23,7 +23,7 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
-import Graph.WithGraph (class MonadWithGraphAlloc, alloc, extend, fresh, new, runAllocT, runWithGraphT_spy)
+import Graph.WithGraph (class MonadWithGraphsAlloc, WhichGraph(..), alloc, extend', fresh, newDep, runAllocT, runWithGraphsT)
 import Lattice (Raw, 𝔹)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
@@ -46,7 +46,7 @@ type GraphConfig =
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall m. MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
+match :: forall m. MonadWithGraphsAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × empty)
    | otherwise = pure (maplet x v × κ × empty)
@@ -67,7 +67,7 @@ match (Val α _ (V.Dictionary (DictRep xvs))) (ElimDict xs κ) = do
    pure $ γ × κ' × (insert α αs)
 match v (ElimDict xs _) = throw (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
+matchMany :: forall m. MonadWithGraphsAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -76,15 +76,15 @@ matchMany (v : vs) (ContElim σ) = do
 matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 
-closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
+closeDefs :: forall m. MonadWithGraphsAlloc m => Env Vertex -> Dict (Elim Vertex) -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    Env <$> for ρ \σ ->
       let
          ρ' = ρ `forDefs` σ
       in
-         new (flip Val None') αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
+         newDep (flip Val None') αs $ V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
 
-apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
+apply :: forall m. MonadWithGraphsAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α doc' (V.Fun (V.Closure γ1 ρ σ))) v@(Val _ doc _) = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
@@ -99,13 +99,13 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         new (flip Val None') (singleton α) v'
+         newDep (flip Val None') (singleton α) v'
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   new (flip Val None') (singleton α) v'
+   newDep (flip Val None') (singleton α) v'
    where
    v' =
       if length vs < n - 1 then
@@ -115,7 +115,7 @@ apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
+eval :: forall m. MonadWithGraphsAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval γ (Int α doc n) αs = do
@@ -146,7 +146,7 @@ eval γ (Matrix α doc e (x × y) e') αs = do
          singleton (eval (γ <+> γ') e αs)
    new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
-   new (flip Val None') (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   newDep (flip Val None') (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project doc e x) α = do
    v@(Val _ doc' _) <- eval γ e α
    v'@(Val _ doc'' _) <- eval γ x α
@@ -171,7 +171,7 @@ eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
-eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. MonadWithGraphsAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
@@ -184,7 +184,7 @@ eval_module γ = go empty
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       go (γ' <+> γ'') (Module ds) αs
 
-eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
+eval_progCxt :: forall m. MonadWithGraphsAlloc m => ProgCxt Vertex -> m (Env Vertex)
 eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
    where
@@ -198,7 +198,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       v <- eval γ e empty
       pure $ γ <+> maplet x v
 
-evalDocOpt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (ValDoc Vertex)
+evalDocOpt :: forall m. MonadWithGraphsAlloc m => Env Vertex -> DocOpt Expr Vertex -> m (ValDoc Vertex)
 evalDocOpt _ None = pure None'
 evalDocOpt γ (Doc ins tokens) = ValDoc <$> sequence (eval γ <$> ins <@> empty) <*> sequence (map evalToken tokens)
    where
@@ -208,23 +208,23 @@ evalDocOpt γ (Doc ins tokens) = ValDoc <$> sequence (eval γ <$> ins <@> empty)
 
 new'
    :: forall m
-    . MonadWithGraphAlloc m
+    . MonadWithGraphsAlloc m
    => Env Vertex
    -> Set Vertex
    -> DocOpt Expr Vertex
    -> BaseVal Vertex
    -> m (Val Vertex)
-new' _ αs None u = new (\αs' -> \u' -> Val αs' None' u') αs u
+new' _ αs None u = newDep (\αs' -> \u' -> Val αs' None' u') αs u
 new' γ αs doc u = do
    α <- fresh
    vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None' u)) doc
    let v' = Val α vdoc u
-   extend (DVertex (α × pack v')) αs
+   extend' (DVertex (α × pack v')) αs Deps
    pure v'
 
 accumDocs
    :: forall m
-    . MonadWithGraphAlloc m
+    . MonadWithGraphsAlloc m
    => Env Vertex
    -> Val Vertex
    -> DocOpt Expr Vertex
@@ -288,7 +288,7 @@ graphEval { n, γ } e = do
    _ × _ × g × inα × outα <- flip runAllocT n do
       eα <- alloc e
       let inα = EnvExpr γ eα
-      g × outα <- runWithGraphT_spy (eval γ eα mempty) (vertices inα)
+      g × _ × outα <- runWithGraphsT (eval γ eα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
       pure (g × inα × outα)
    pure { g, graph_fwd, graph_bwd, inα, outα }
