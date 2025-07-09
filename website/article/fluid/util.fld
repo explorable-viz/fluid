@@ -1,0 +1,36 @@
+let insert cmp x sorted =
+   let helper [] = [x];
+       helper (y: ys) =
+           if cmp x y
+           then x : (y: ys)
+           else y : helper ys
+   in helper sorted;
+
+let insertionSort cmp lst =
+   let helper [] sorted = sorted;
+       helper (x: xs) sorted = helper xs (insert cmp x sorted)
+   in helper lst [];
+
+let findIndex fName x ys =
+   let helper [] rank = -1;
+       helper (y: ys') rank =
+           if y.[fName] == x then rank
+           else helper ys' (rank + 1)
+   in helper ys 1;
+
+let findWithKey' fName x table =
+   fromSome (findWithKey fName x table);
+
+let findWhere pred table =
+   fromSome (find pred table);
+
+let cmpTime a b = a.time_s < b.time_s;
+let cmpParam a b = a.param < b.param;
+
+-- (a -> Number) -> List a -> a
+let maximumBy f [] = error "Empty list!";
+    maximumBy f (x: xs) =
+       let helper [] current = current;
+           helper (y: ys) current =
+             if f y > f current then helper ys y else helper ys current
+       in helper xs x;

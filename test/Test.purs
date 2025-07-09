@@ -2,10 +2,14 @@ module Test.Test where
 
 import Prelude hiding (add)
 
+import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
-import Module.Web (loadFile)
+import Effect.Aff (Error)
+import Effect.Aff.Class (class MonadAff)
+import File (class LoadFile)
+import Module.Web (runWebT)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Comments (comments_cases)
 import Test.Specs.Desugar (desugar_cases)
@@ -19,33 +23,33 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run tests
-
--- main = run $ asTestSuite (suite loadFile comments_cases)
+main = run (second runWebT <$> tests)
 
 -- main = run scratchpad
 
+{-
 scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite loadFile
+scratchpad = asTestSuite $ suite
    [ { file: "comments/projection"
      , imports: []
      , fwd_expect: "\"\"\" Test \"\"\" 1"
      }
    ]
+-}
 
-asTestSuite :: BenchSuite -> TestSuite
+asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)
 
-tests :: TestSuite
+tests :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestSuite m
 tests = concat (benchmarks <#> asTestSuite)
    <> linkedOutputsSuite linkedOutputs_cases
    <> linkedInputsSuite linkedInputs_cases
 
-benchmarks :: Array BenchSuite
+benchmarks :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array (BenchSuite m)
 benchmarks =
-   [ suite loadFile desugar_cases
-   , suite loadFile misc_cases
-   , suite loadFile comments_cases
-   , bwdSuite loadFile bwd_cases
-   , withDatasetSuite loadFile graphics_cases
+   [ suite desugar_cases
+   , suite misc_cases
+   , suite comments_cases
+   , bwdSuite bwd_cases
+   , withDatasetSuite graphics_cases
    ]

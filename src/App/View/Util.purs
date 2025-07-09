@@ -13,9 +13,9 @@ import Data.Set (Set)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Effect (Effect)
+import File (File, Folder)
 import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
-import Module.Web (File, Folder)
 import SExpr as S
 import Util (type (×), Endo, check)
 import Val (Env, Val)
@@ -97,6 +97,7 @@ type FigSpec =
    , file :: File
    , inputs :: Array Var
    , query :: Maybe (Query (Val Vertex))
+   , linking :: Boolean
    }
 
 data Direction = LinkedInputs | LinkedOutputs | Intermediates

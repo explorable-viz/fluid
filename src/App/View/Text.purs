@@ -21,12 +21,12 @@ newtype Text = Text (Selectable String)
 instance View Text Unit where
    createElement :: Unit -> Text -> D3.Selection -> Effect D3.Selection
    createElement _ (Text (text × _)) parent = do
-      rootElement <- parent # create D3.Text [ "class" ↦ "para-text" ]
+      rootElement <- parent # create D3.Span []
       rootElement # setText text
 
    setSelection :: Unit -> Text -> Select -> D3.Selection -> Effect Unit
    setSelection _ (Text (text × _)) redraw rootElement = do
-      elem <- rootElement # D3.select ".para-text"
+      elem <- rootElement # D3.select (D3.nthChild 1)
       listener <- eventListener (redraw <<< uncurry textSelector <<< selectionEventData')
       elem # setStyles (textAttrs text) >>= registerMouseListeners listener
       where

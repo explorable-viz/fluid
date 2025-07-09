@@ -21,7 +21,7 @@ instance View MultiView Unit where
 
 createRootElement' :: MultiView -> D3.Selection -> Effect D3.Selection
 createRootElement' (MultiView views) parent = do
-   rootElement <- parent # create D3.G []
+   rootElement <- parent # create D3.Div []
    sequence_ $ views' <#> \(_ × view) ->
       unpack view \v -> createElement unit v rootElement
    pure rootElement
