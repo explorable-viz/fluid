@@ -16,7 +16,7 @@ import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (fromFoldable) as D
 import EvalGraph (apply) as G
-import Graph.WithGraph (newDep)
+import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
@@ -85,10 +85,10 @@ dims =
    where
    op :: Op
    op (Val α _ (Matrix (MatrixRep (_ × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil) = do
-      v1 <- newDep (flip Val None') (singleton β1) $ Int i
-      v2 <- newDep (flip Val None') (singleton β2) $ Int j
+      v1 <- new (flip Val None') (singleton β1) $ Int i
+      v2 <- new (flip Val None') (singleton β2) $ Int j
       let v = Constr cPair (v1 : v2 : Nil)
-      newDep (flip Val None') (singleton α) v
+      new (flip Val None') (singleton α) v
    op _ = throw "Matrix expected"
 
 matrixLookup :: ForeignOp
@@ -106,7 +106,7 @@ matrixUpdate =
    where
    op :: Op
    op (Val α _ (Matrix r) : Val _ _ (Constr c (Val _ _ (Int i) : Val _ _ (Int j) : Nil)) : v : Nil)
-      | c == cPair = newDep (flip Val None') (singleton α) (Matrix (matrixPut i j (const v) r))
+      | c == cPair = new (flip Val None') (singleton α) (Matrix (matrixPut i j (const v) r))
    op _ = throw "Matrix, pair of integers and value expected"
 
 dict_difference :: ForeignOp
@@ -115,7 +115,7 @@ dict_difference =
    where
    op :: Op
    op (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) =
-      newDep (flip Val None') (singleton α # Set.insert β) (Dictionary (DictRep (d \\ d')))
+      new (flip Val None') (singleton α # Set.insert β) (Dictionary (DictRep (d \\ d')))
    op _ = throw "Dictionaries expected."
 
 dict_disjointUnion :: ForeignOp
@@ -124,7 +124,7 @@ dict_disjointUnion =
    where
    op :: Op
    op (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) = do
-      newDep (flip Val None') (singleton α # Set.insert β) (Dictionary (DictRep (disjointUnion d d')))
+      new (flip Val None') (singleton α # Set.insert β) (Dictionary (DictRep (disjointUnion d d')))
    op _ = throw "Dictionaries expected"
 
 dict_foldl :: ForeignOp
@@ -152,11 +152,11 @@ dict_intersectionWith =
    op :: Op
    op (v : Val α _ (Dictionary (DictRep d1)) : Val α' _ (Dictionary (DictRep d2)) : Nil) = do
       v' <- Dictionary <$> (DictRep <$> sequence (intersectionWith apply' d1 d2))
-      newDep (flip Val None') (singleton α # Set.insert α') v'
+      new (flip Val None') (singleton α # Set.insert α') v'
       where
       apply' (β × u) (β' × u') = do
          v''@(Val _ _ key) <- G.apply v u >>= flip G.apply u'
-         Val β'' _ _ <- newDep (flip Val None') (singleton β # Set.insert β') key
+         Val β'' _ _ <- new (flip Val None') (singleton β # Set.insert β') key
          pure (β'' × v'')
    op _ = throw "Function and two dictionaries expected"
 
@@ -167,7 +167,7 @@ dict_map =
    op :: Op
    op (v : Val α _ (Dictionary (DictRep d)) : Nil) = do
       d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
-      newDep (flip Val None') (singleton α) (Dictionary (DictRep d'))
+      new (flip Val None') (singleton α) (Dictionary (DictRep d'))
    op _ = throw "Function and dictionary expected"
 
 plus :: Int + Number -> Endo (Int + Number)

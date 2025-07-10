@@ -25,7 +25,7 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
-import Graph.WithGraph (class MonadWithGraphsAlloc, WhichGraph(..), alloc, extend', fresh, newDep, runAllocT, runWithGraphsT)
+import Graph.WithGraph (class MonadWithGraphsAlloc, WhichGraph(..), alloc, addHyperEdge, fresh, new, runAllocT, runWithGraphsT)
 import Lattice (Raw, 𝔹)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
@@ -84,7 +84,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `forDefs` σ
       in
-         newDep (flip Val None') αs $ V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
+         new (flip Val None') αs $ V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
 
 apply :: forall m. MonadWithGraphsAlloc m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α doc' (V.Fun (V.Closure γ1 ρ σ))) v@(Val _ doc _) = do
@@ -101,13 +101,13 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         newDep (flip Val None') (singleton α) v'
+         new (flip Val None') (singleton α) v'
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   newDep (flip Val None') (singleton α) v'
+   new (flip Val None') (singleton α) v'
    where
    v' =
       if length vs < n - 1 then
@@ -148,7 +148,7 @@ eval γ (Matrix α doc e (x × y) e') αs = do
          singleton (eval (γ <+> γ') e αs)
    new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
-   newDep (flip Val None') (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   new (flip Val None') (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project doc e x) α = do
    v@(Val _ doc' _) <- eval γ e α
    v'@(Val _ doc'' _) <- eval γ x α
@@ -217,12 +217,12 @@ new'
    -> DocOpt Expr Vertex
    -> BaseVal Vertex
    -> m (Val Vertex)
-new' _ αs None u = newDep (\αs' -> \u' -> Val αs' None' u') αs u
+new' _ αs None u = new (\αs' -> \u' -> Val αs' None' u') αs u
 new' γ αs doc u = do
    α <- fresh
    vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None' u)) doc
    let v' = Val α vdoc u
-   extend' (DVertex (α × pack v')) αs Deps
+   addHyperEdge (DVertex (α × pack v')) αs Deps
    pure v'
 
 accumDocs
