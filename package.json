@@ -23,7 +23,8 @@
     "script/bundle-website.sh",
     "script/bundle-page.sh",
     "script/util/clean.sh",
-    "script/util/lisp-case.sh"
+    "script/util/lisp-case.sh",
+    "website/article"
   ],
   "scripts": {
     "benchmark": "./script/benchmark.sh",
@@ -41,7 +42,8 @@
     "test-page": "./script/test-page.sh",
     "test-website": "./script/test-website.sh",
     "test-website-all": "./script/test-website-all.sh",
-    "tidy": "./script/tidy.sh"
+    "tidy": "./script/tidy.sh",
+    "serve-article": "./script/serve-article.sh"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
