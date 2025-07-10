@@ -1,6 +1,6 @@
 {
   "name": "@explorable-viz/fluid",
-  "version": "0.7.91",
+  "version": "0.7.89",
   "description": "Fluid is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.",
   "main": "index.js",
   "repository": {
@@ -24,7 +24,8 @@
     "script/bundle-page.sh",
     "script/util/clean.sh",
     "script/util/lisp-case.sh",
-    "website/article"
+    "website/article",
+    "script/install-article.sh"
   ],
   "scripts": {
     "benchmark": "./script/benchmark.sh",
@@ -42,8 +43,7 @@
     "test-page": "./script/test-page.sh",
     "test-website": "./script/test-website.sh",
     "test-website-all": "./script/test-website-all.sh",
-    "tidy": "./script/tidy.sh",
-    "serve-article": "./script/serve-article.sh"
+    "tidy": "./script/tidy.sh"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
@@ -81,7 +81,8 @@
   },
   "bin": {
     "fluid": "./dist/fluid/shared/fluid.mjs",
-    "website-test": "./dist/fluid/shared/website-test.js"
+    "website-test": "./dist/fluid/shared/website-test.js",
+    "install-article": "./script/test-article.sh"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
