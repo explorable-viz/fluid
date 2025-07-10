@@ -18,6 +18,13 @@ jobs:
       run: |
         shopt -s extglob nullglob globstar
       if: runner.os == 'Linux'
+    - name: Cache PureScript dependencies
+      uses: actions/cache@v4
+      with:
+        key: ${{ runner.os }}-spago-${{ hashFiles('**/*.dhall') }}
+        path: |
+          .spago
+          output
     - name: test
       run: |
         yarn install
