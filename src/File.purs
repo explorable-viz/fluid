@@ -13,6 +13,8 @@ type FileCxt =
    { fluidSrcPaths :: Array Folder
    }
 
+newtype FileCxt2 = FileCxt2 { fluidSrcPaths :: Array Folder }
+
 class LoadFile m where
    loadFile :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
 

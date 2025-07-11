@@ -12,8 +12,8 @@ import Effect (Effect)
 import Effect.Aff (Error, runAff_)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
-import File (class LoadFile)
-import Module.Node (runNodeT)
+import File (class LoadFile, FileCxt2(..))
+import Module.Node (runNodeT2)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (writeTextFile)
 import Test.Benchmark.Util (BenchAcc(..))
@@ -21,6 +21,7 @@ import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.Graphics (graphics_cases)
 import Test.Specs.Misc (misc_cases)
+import Test.Util (fluidSrcPaths)
 import Test.Util.Suite (BenchSuite, bwdSuite, suite, withDatasetSuite)
 import Util (definitely, error, (×), type (+))
 
@@ -31,7 +32,7 @@ main = runAff_ handleBench do
            log $ "Benchmarking: " <> str
            (str × _) <$> row
       )
-         <$> second runNodeT
+         <$> second (runNodeT2 (FileCxt2 { fluidSrcPaths }))
          <$> concat (benchmarks <@> (10 × true))
    pure $ BenchAcc $ definitely "More than one benchmark" $ fromArray outs
 

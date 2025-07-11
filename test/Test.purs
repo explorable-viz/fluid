@@ -8,8 +8,8 @@ import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
-import File (class LoadFile)
-import Module.Web (runWebT)
+import File (class LoadFile, FileCxt2(..))
+import Module.Web (runWebT2)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Comments (comments_cases)
 import Test.Specs.Desugar (desugar_cases)
@@ -17,13 +17,13 @@ import Test.Specs.Graphics (graphics_cases)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Specs.Misc (misc_cases)
-import Test.Util (TestSuite)
+import Test.Util (TestSuite, fluidSrcPaths)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
 import Util ((×))
 
 main :: Effect Unit
-main = run (second runWebT <$> tests)
+main = run (second (runWebT2 (FileCxt2 { fluidSrcPaths })) <$> tests)
 
 -- main = run scratchpad
 

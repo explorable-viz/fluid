@@ -14,9 +14,9 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Doc (DocOpt(..))
 import Effect (Effect)
-import File (File(..), Folder(..))
+import File (File(..), FileCxt2(..), Folder(..))
 import Graph (DVertex'(..))
-import Module.Web (loadFile', runWebT)
+import Module.Web (loadFile', runWebT2)
 import Util (error, (×))
 import Val (Val(..), asVal)
 
@@ -57,10 +57,11 @@ loadFigure fileName = runAffs_ (uncurry drawFig)
               case decodeJson response.body of
                  Left err -> error ("JSON decoding failed with " <> show err)
                  Right spec -> do
-                    ("fig" × _) <$> runWebT (loadFig (figSpecFromJson spec))
+                    let spec'@{ fluidSrcPaths } = figSpecFromJson spec
+                    ("fig" × _) <$> runWebT2 (FileCxt2 { fluidSrcPaths }) (loadFig spec')
    ]
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
-   [ runWebT $ loadFile' [ Folder folder ] (File file)
+   [ runWebT2 (FileCxt2 { fluidSrcPaths: [ Folder folder ] }) $ loadFile' [ Folder folder ] (File file)
    ]

@@ -63,8 +63,6 @@ initialConfig e progCxt = do
       progCxt' <- alloc progCxt
       let αs = vertices progCxt'
       _ × γ <- runWithGraphT_spy (eval_progCxt progCxt') αs :: AllocT m (GraphImpl × _)
-      -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
-      -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
       pure (progCxt' × restrict (fv e) γ)
    pure { n, progCxt: progCxt', γ }
 
