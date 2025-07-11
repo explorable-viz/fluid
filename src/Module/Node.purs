@@ -3,8 +3,8 @@ module Module.Node where
 import Prelude
 
 import Control.Monad.Error.Class (class MonadThrow, try)
-import Control.Monad.Except (class MonadError, class MonadTrans)
-import Control.Monad.Reader (ReaderT, runReaderT)
+import Control.Monad.Except (class MonadError, class MonadTrans, lift)
+import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runReaderT)
 import Data.Either (either)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -16,7 +16,7 @@ import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
 import Util (error, findM)
 
-instance (MonadAff m, MonadError Error m) => LoadFile (NodeT m) where
+instance (MonadAff m, MonadError Error m, MonadReader FileCxt2 m) => LoadFile (NodeT m) where
    loadFile folders (File file) = do
       let urls = flip prependFolder (File $ file <> ".fld") <$> folders
       url <- findM urls exists Nothing
@@ -28,7 +28,7 @@ instance (MonadAff m, MonadError Error m) => LoadFile (NodeT m) where
          stats <- liftAff $ try (stat url)
          pure $ if either (const false) isFile stats then Just url else Nothing
 
-instance (MonadAff m, MonadError Error m) => LoadFile (NodeT2 m) where
+instance (MonadAff m, MonadError Error m, MonadReader FileCxt2 m) => LoadFile (NodeT2 m) where
    loadFile folders (File file) = do
       let urls = flip prependFolder (File $ file <> ".fld") <$> folders
       url <- findM urls exists Nothing
@@ -58,6 +58,9 @@ runNodeT2 fileCxt (NodeT2 x) = runReaderT x fileCxt
 instance MonadTrans NodeT where
    lift = NodeT
 
+instance MonadTrans NodeT2 where
+   lift m = NodeT2 (lift m)
+
 derive newtype instance Functor m => Functor (NodeT m)
 derive newtype instance Apply m => Apply (NodeT m)
 derive newtype instance Applicative m => Applicative (NodeT m)
@@ -67,6 +70,8 @@ derive newtype instance MonadThrow Error m => MonadThrow Error (NodeT m)
 derive newtype instance MonadError Error m => MonadError Error (NodeT m)
 derive newtype instance MonadEffect m => MonadEffect (NodeT m)
 derive newtype instance MonadAff m => MonadAff (NodeT m)
+derive newtype instance MonadAsk FileCxt2 m => MonadAsk FileCxt2 (NodeT m)
+derive newtype instance MonadReader FileCxt2 m => MonadReader FileCxt2 (NodeT m)
 
 derive newtype instance Functor m => Functor (NodeT2 m)
 derive newtype instance Apply m => Apply (NodeT2 m)
@@ -77,3 +82,5 @@ derive newtype instance MonadThrow Error m => MonadThrow Error (NodeT2 m)
 derive newtype instance MonadError Error m => MonadError Error (NodeT2 m)
 derive newtype instance MonadEffect m => MonadEffect (NodeT2 m)
 derive newtype instance MonadAff m => MonadAff (NodeT2 m)
+derive newtype instance MonadAsk FileCxt2 m => MonadAsk FileCxt2 (NodeT2 m)
+derive newtype instance MonadReader FileCxt2 m => MonadReader FileCxt2 (NodeT2 m)

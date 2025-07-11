@@ -3,6 +3,7 @@ module Test.Test where
 import Prelude hiding (add)
 
 import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Reader (class MonadReader)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
@@ -40,12 +41,12 @@ scratchpad = asTestSuite $ suite
 asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)
 
-tests :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestSuite m
+tests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => TestSuite m
 tests = concat (benchmarks <#> asTestSuite)
    <> linkedOutputsSuite linkedOutputs_cases
    <> linkedInputsSuite linkedInputs_cases
 
-benchmarks :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array (BenchSuite m)
+benchmarks :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => Array (BenchSuite m)
 benchmarks =
    [ suite desugar_cases
    , suite misc_cases
