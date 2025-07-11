@@ -2,6 +2,7 @@ module Test.Test where
 
 import Prelude hiding (add)
 
+import App.Util.Selector (matrixElement, select)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
@@ -25,11 +26,10 @@ import Util ((×))
 main :: Effect Unit
 main = run (second runWebT <$> tests)
 
--- main = run scratchpad
+-- main = run (second runWebT <$> scratchpad)
 
-{-
-scratchpad :: TestSuite
-scratchpad = asTestSuite $ bwdSuite loadFile
+scratchpad :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestSuite m
+scratchpad = asTestSuite $ bwdSuite
    [ { file: "matrix/matmul"
      , imports:
           [ "lib/matrix"
@@ -43,7 +43,6 @@ scratchpad = asTestSuite $ bwdSuite loadFile
      , datasets: []
      }
    ]
--}
 
 asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)

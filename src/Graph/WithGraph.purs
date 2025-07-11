@@ -13,7 +13,7 @@ import Data.Set as Set
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst, swap)
 import Effect.Exception (Error)
-import Graph (class Graph, class TypeName, class Vertices, DVertex, DVertex'(..), HyperEdge, Vertex(..), addresses, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList)
+import Graph (class Graph, class TypeName, class Vertices, DVertex, DVertex'(..), HyperEdge, Vertex(..), addresses, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
@@ -73,11 +73,16 @@ runAllocT m n = do
 runWithGraphsT :: forall g m a. Monad m => Graph g => WithGraphsT m a -> Set DVertex -> m (g × g × a)
 runWithGraphsT m αs = do
    g × g' × a <- freezeGraphs m αs
-   assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList mempty (toEdgeList g)) $
+   assertWhen checking.edgeListGC "edgeListGC" (\_ -> g == fromEdgeList mempty (toEdgeList g) && g' == fromEdgeList mempty (toEdgeList g')) $
       pure (g × g' × a)
 
 freezeGraphs :: forall g m a. Monad m => Graph g => WithGraphsT m a -> Set DVertex -> m (g × g × a)
-freezeGraphs m αs = runStateT m (Nil × Nil) <#> swap <#> (\((es × es') × a) -> (fromEdgeList αs $ report "edge list" showEdgeList es) × (fromEdgeList αs $ report "edge list'" showEdgeList es') × a)
+freezeGraphs m αs = do
+   (es × es') × a <- runStateT m (Nil × Nil) <#> swap
+   let g = fromEdgeList αs $ report "edge list" showEdgeList es
+   let αs' = vertices g
+   let g' = fromEdgeList αs' $ report "edge list'" showEdgeList es'
+   pure (g × g' × a)
    where
    report :: forall c b. String -> (c -> b) -> Endo c
    report msg = spyWhen tracing.runWithGraphT ("runWithGraphT " <> msg)

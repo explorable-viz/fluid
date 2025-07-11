@@ -1,4 +1,21 @@
-module EvalGraph where
+module EvalGraph
+   ( GraphConfig
+   , GraphEval
+   , accumDocs
+   , apply
+   , closeDefs
+   , eval
+   , evalDocOpt
+   , eval_module
+   , eval_progCxt
+   , graphEval
+   , graphGC
+   , match
+   , matchMany
+   , patternMismatch
+   , toGC
+   , withOp
+   ) where
 
 import Prelude hiding (apply)
 
@@ -25,7 +42,7 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
-import Graph.WithGraph (class MonadWithGraphsAlloc, WhichGraph(..), alloc, addHyperEdge, fresh, new, runAllocT, runWithGraphsT)
+import Graph.WithGraph (class MonadWithGraphsAlloc, WhichGraph(..), addHyperEdge, alloc, extend, fresh, new, runAllocT, runWithGraphsT)
 import Lattice (Raw, 𝔹)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
@@ -200,10 +217,17 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       v <- eval γ e empty
       pure $ γ <+> maplet x v
 
-evalDocOpt :: forall m. MonadWithGraphsAlloc m => LoadFile m => Env Vertex -> DocOpt Expr Vertex -> m (ValDoc Vertex)
-evalDocOpt _ None = pure None'
-evalDocOpt γ (Doc ins tokens) = ValDoc <$> sequence (eval γ <$> ins <@> empty) <*> sequence (map evalToken tokens)
+evalDocOpt :: forall m. MonadWithGraphsAlloc m => LoadFile m => Env Vertex -> Val Vertex -> DocOpt Expr Vertex -> m (ValDoc Vertex)
+evalDocOpt _ _ None = pure None'
+evalDocOpt γ v@(Val α _ _) (Doc ins tokens) = do
+   refs <- sequence (eval γ <$> ins <@> empty)
+   let αs = map getα refs
+   _ <- if length αs /= 0 then extend (DVertex (α × pack v)) (Set.fromFoldable αs) else pure unit
+   toks <- sequence (map evalToken tokens)
+   pure $ ValDoc refs toks
    where
+   getα (Val α' _ _) = α'
+
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
    evalToken (Unquote e) = Unquote <$> eval γ e empty
@@ -220,7 +244,7 @@ new'
 new' _ αs None u = new (\αs' -> \u' -> Val αs' None' u') αs u
 new' γ αs doc u = do
    α <- fresh
-   vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None' u)) doc
+   vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None' u)) (Val α None' u) doc
    let v' = Val α vdoc u
    addHyperEdge (DVertex (α × pack v')) αs Deps
    pure v'
@@ -234,8 +258,8 @@ accumDocs
    -> DocOpt Expr Vertex
    -> ValDoc Vertex
    -> m (Val Vertex)
-accumDocs γ (Val α' vdoc v') doc doc' = do
-   vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None' v')) doc
+accumDocs γ v@(Val α' vdoc v') doc doc' = do
+   vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None' v')) v doc
    pure (Val α' (doc' <> vdoc' <> vdoc) v')
 
 type GraphEval g s t =
