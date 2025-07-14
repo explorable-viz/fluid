@@ -1,0 +1,17 @@
+[
+ {model: "LSTM", time_s: 99.0, acc: 80.72, param: 5977},
+ {model: "BiLSTM", time_s: 106, acc: 81.73, param: 7059},
+ {model: "2 stacked BiLSTM", time_s: 207, acc: 81.97, param: 9221},
+ {model: "3 stacked BiLSTM", time_s: 310, acc: 81.53, param: 11383},
+ {model: "4 stacked BiLSTM", time_s: 411, acc: 81.37, param: 13546},
+ {model: "S-LSTM", time_s: 65, acc: 82.64, param: 8768},
+ {model: "CNN", time_s: 34, acc: 80.35, param: 5637},
+ {model: "2 stacked CNN", time_s: 40, acc: 80.97, param: 5717},
+ {model: "3 stacked CNN", time_s: 47, acc: 81.46, param: 5808},
+ {model: "4 stacked CNN", time_s: 51, acc: 81.39, param: 5855},
+ {model: "Transformer (N=6)", time_s: 138, acc: 81.03, param: 7234},
+ {model: "Transformer (N=8)", time_s: 174, acc: 81.86, param: 7615},
+ {model: "Transformer (N=10)", time_s: 214, acc: 81.63, param: 8004},
+ {model: "BiLSTM+Attention", time_s: 126, acc: 82.37, param: 7419},
+ {model: "S-LSTM+Attention", time_s: 87, acc: "83.07*", param: 8858}
+]

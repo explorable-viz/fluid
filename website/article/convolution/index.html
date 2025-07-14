@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <link rel="icon" href="/favicon.ico" type="image/x-icon">
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Fluid: Data-Linked Visualisations</title>
+   <link href="../css/styles.css" rel="stylesheet" type="text/css">
+   <link href="../css/view-styles.css" rel="stylesheet" type="text/css">
+   <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
+   <script src="../shared/util.js"></script>
+   <style>
+      .grid-container, .grid-container.data-pane-hidden {
+         grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
+      }
+
+      .when-data-pane-visible {
+         font-size: 10pt;
+      }
+
+      .grid-container.data-pane-hidden.when-data-pane-visible {
+         display: none;
+      }
+
+      .data-pane {
+         display: grid;
+         grid-template-columns: min-content min-content;
+         vertical-align: top;
+         justify-content: end;
+      }
+
+      .data-pane * {
+         font-size: 9pt; /* otherwise interferes with .para-text */
+      }
+
+      .para-text {
+         margin-left: 5pt;
+         margin-right: 3pt;
+      }
+
+      .intermediates:has(> *) {
+         border-right: 1px dotted #CCCCCC;
+      }
+
+      .matrix-cell.selected-primary-persistent {
+         fill: rgb(214, 240, 214)
+      }
+
+      .matrix-cell-text.selected-primary-persistent:not(.matrix-cell-text.selected-primary-transient) {
+         color: green
+      }
+   </style>
+</head>
+<body>
+<div id="grid" class="grid-container data-pane-hidden">
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
+      <h4>Matrix convolution</h4>
+   </div>
+
+   <div id="fig-data-pane" class="data-pane">
+      <div id="fig-input" class="flex-right-align data-pane-column"></div>
+      <div id="fig-intermediate" class="flex-right-align intermediates"></div>
+   </div>
+   <div onclick="toggleDataPane('grid')">
+      <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
+   </div>
+   <div class="flex-left-align">
+      <div class="flex-top-align">
+         <div id="fig">
+            <div class="fig-loading">loading figure(s)</div>
+         </div>
+         <div></div>
+      </div>
+      <details>
+         <summary>matrix.fld</summary>
+         <div id="codemirror-matrix"></div>
+      </details>
+   </div>
+</div>
+
+<script type="module">
+   import { loadFigure, drawCode } from "../shared/load-figure.js"
+   drawCode("../fluid/lib")("matrix")()
+   loadFigure("spec.json")()
+</script>
+</body>
+</html>
