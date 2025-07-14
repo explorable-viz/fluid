@@ -16,7 +16,7 @@ import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
 import Util (error, findM)
 
-instance (MonadAff m, MonadError Error m, MonadReader FileCxt2 m) => LoadFile (NodeT m) where
+instance (MonadAff m, MonadError Error many) => LoadFile (NodeT m) where
    loadFile folders (File file) = do
       let urls = flip prependFolder (File $ file <> ".fld") <$> folders
       url <- findM urls exists Nothing
@@ -28,7 +28,7 @@ instance (MonadAff m, MonadError Error m, MonadReader FileCxt2 m) => LoadFile (N
          stats <- liftAff $ try (stat url)
          pure $ if either (const false) isFile stats then Just url else Nothing
 
-instance (MonadAff m, MonadError Error m, MonadReader FileCxt2 m) => LoadFile (NodeT2 m) where
+instance (MonadAff m, MonadError Error m) => LoadFile (NodeT2 m) where
    loadFile folders (File file) = do
       let urls = flip prependFolder (File $ file <> ".fld") <$> folders
       url <- findM urls exists Nothing

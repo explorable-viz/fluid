@@ -21,7 +21,7 @@ import Effect.Exception (error) as E
 import File (class LoadFile, File(..), FileCxt2, Folder, loadFile, prependFolder)
 import Util (type (×), (×), AffError, debug, findM)
 
-instance (MonadAff m, MonadError Error m, MonadReader FileCxt2 m) => LoadFile (WebT m) where
+instance (MonadAff m, MonadError Error m) => LoadFile (WebT m) where
    loadFile folders (File file) = do
       let urls = flip prependFolder (File $ file <> ".fld") <$> folders
       result <- runExceptT $ do
@@ -39,7 +39,7 @@ instance (MonadAff m, MonadError Error m, MonadReader FileCxt2 m) => LoadFile (W
             Right _ -> Left A.RequestFailedError
             Left err -> Left err
 
-instance (MonadAff m, MonadError Error m, MonadReader FileCxt2 m) => LoadFile (WebT2 m) where
+instance (MonadAff m, MonadError Error m) => LoadFile (WebT2 m) where
    loadFile folders (File file) = do
       let urls = flip prependFolder (File $ file <> ".fld") <$> folders
       result <- runExceptT $ do
