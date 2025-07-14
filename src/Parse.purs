@@ -139,43 +139,23 @@ commentToken = Token <$> (SCU.fromCharArray <$> Array.some docCommentLetter)
 docCommentLetter :: SParser Char -- says "is this a character that isn't ", $ or whitespace?"
 docCommentLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
 
--- ################################################
--- NEW Doc Comment Code
+-- ####################################################
+-- NEW ANNOTATION CODE
 -- REMEBER that documents are seperate from paragraph and we want to rename these to paragraph
-docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
-docComment expr' = optionDoc (try $ docComment' expr')
-   where
-   optionDoc p = option None (Doc <$> p)
+type AnnotationParser = { annoType :: String, parser :: SParser (Raw Expr) -> Annotation }
 
--- TO CHECK: Between takes the last ending parenthesis rather than first
-docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit))
-docComment' expr' = token.lexeme (go <?> "docComment")
-   where
-   go :: SParser (List (DocCommentElem Expr Unit))
-   go = do
-      words <- between docCommentStart (docCommentEnd <?> "end of docComment") (List.many $ docCommentToken $ formatExpression expr')
-      pure words
+annotationParsers :: Array AnnotationParser
+annotationParsers = [ { annoType: str.atDoc, parser: paragraphParser } ] -- add more parsers
 
--- JS NOTE: Remember that the void notices the deliminer and discards it
-docCommentStart :: SParser Unit
-docCommentStart = void $ string str.docCommentStart
+makeAnnotationParser :: AnnotationParser -> SParser Annotation
+makeAnnotationParser { annoType, parser } = do
+  let annoDelim = str.at <> annoType <> str.lparenth -- matching to "@annoType(""
+  _ <- string annoDelim
+  content <- manyTill anyChar (string str.rparenth) -- TO DO: Check this chooses the correct bracket
+  pure $ parser content
 
-docCommentEnd :: SParser Unit
-docCommentEnd = void $ string str.rparenth
-
--- TO DO: Need to remove white spaces, single quotes and double quotes at both ends
-formatExpression :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
-formatExpression expr' = newExpr
-
-docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
-docCommentToken expr' =
-   token.whiteSpace
-      *> (try commentToken <|> commentExpr expr')
-      <* token.whiteSpace
-
--- TO CHECK: Between takes the last ending curly brackets rather than first
-commentExpr :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
-commentExpr expr' = string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
+chooseAnnotationParser :: SParser (Raw Expr) -> SParser Annotation  -- figure out a type for this 
+chooseAnnotationParser = choice $ map makeAnnotationParser annotationParsers 
 
 -- ####################################################
 
@@ -336,6 +316,7 @@ expr_ =
 
       -- Left-associative tree of applications of one or more simple terms.
       appChain :: SParser (Raw Expr)
+      -- TO DO: Remove docComment from here
       appChain = docComment expr' >>= \doc -> simpleExprOrProjection doc >>= rest doc
          where
 
@@ -343,13 +324,14 @@ expr_ =
          rest _ e@(Constr α doc' c es) = ctrArgs <|> pure e
             where
             ctrArgs :: SParser (Raw Expr)
+            -- TO DO: Remove docComment from here
             ctrArgs = docComment expr' >>= \doc -> simpleExprOrProjection doc >>= \e' -> rest doc (Constr α doc' c (es <> (e' : empty)))
          rest doc e =
             ( docComment expr' >>= simpleExprOrProjection >>= \arg -> rest doc (App doc e arg)
             ) <|> pure e
 
          -- An expression that may need wrapping in parentheses to disambiguate.
-         simpleExprOrProjection :: DocOpt Expr Unit -> SParser (Raw Expr)
+         simpleExprOrProjection :: DocOpt Expr Unit -> SParser (Raw Expr) -- TO DO: change type `DocOpt Expr Unit` to `SParser (Raw Expr) `
          simpleExprOrProjection doc =
             simpleExpr doc >>= projection
             where
@@ -374,7 +356,7 @@ expr_ =
                  <|> try (float doc)
                  <|> try (int doc) -- int may start with +/-
                  <|> string doc
-                 <|> paragraph doc -- JS: To fix
+                 <|> try(paragraph doc) -- TO DO: Check if try is needed
                  <|> try (pair doc)
                  <|> listComp doc
             )
@@ -451,6 +433,39 @@ expr_ =
             pair :: DocOpt Expr Unit -> SParser (Raw Expr)
             pair doc' = token.parens $
                (pure $ \e e' -> Constr unit doc' cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
+            
+            paragraph :: DocOpt Expr Unit -> SParser (Raw Expr)
+            paragraph expr' = optionDoc (try $ paragraph' expr)
+            where 
+               optionDoc p = option None (Doc <$> p) -- TO DO: Check if I should return paragraph type or doc type
+
+               paragraph' :: DocOpt Expr Unit -> SParser (Raw Expr) -- TO DO: Type check
+               paragraph' expr' = token.lexeme (getTokenExpr <?> "paragraph")
+               where
+                  getTokenExpr :: SParser (Raw Expr)
+                  getTokenExpr = do
+                     words <- between paragraphDelim (paragraphDelim <?> "end of paragraph") (List.many $ tokenOrExpr expr')
+                     pure words
+                  where
+                     paragraphDelim :: SParser Unit 
+                     paragraphDelim = void $ string str.triplequote
+
+                     tokenOrExpr :: 
+                     tokenOrExpr expr' =
+                        token.whiteSpace
+                           *> (try paragraphToken <|> paragraphExpr expr')
+                           <* token.whiteSpace
+                     where
+                        -- TO CHECK: Between takes the last ending curly brackets rather than first
+                        paragraphExpr :: 
+                        paragraphExpr expr' = string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
+
+                        paragraphToken :: 
+                        paragraphToken = Token <$> (SCU.fromCharArray <$> Array.some paragraphLetter)
+                        where
+                           paragraphLetter ::
+                           paragraphLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
+
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a

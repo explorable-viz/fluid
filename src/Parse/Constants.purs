@@ -5,6 +5,8 @@ str
    :: { arrayLBracket :: String
       , arrayRBracket :: String
       , as :: String
+      , at :: String
+      , atDoc :: String
       , backslash :: String
       , backtick :: String
       , bar :: String
@@ -15,6 +17,7 @@ str
       , curlyrBrace :: String
       , dictLBracket :: String
       , dictRBracket :: String
+      , dollar :: String
       , dot :: String
       , ellipsis :: String
       , else_ :: String
@@ -32,18 +35,15 @@ str
       , rparenth :: String
       , semiColon :: String
       , then_ :: String
-      , at :: String
       , triplequote :: String
-      , dollar :: String
-      , commentStart :: String
       }
 
 str =
-   { at: "@"
-   , atDoc: "@doc"
-   , arrayLBracket: "[|"
+   { arrayLBracket: "[|"
    , arrayRBracket: "|]"
    , as: "as"
+   , at: "@"
+   , atDoc: "doc"
    , backslash: "\\"
    , backtick: "`"
    , bar: "|"
@@ -54,6 +54,7 @@ str =
    , curlyrBrace: "}"
    , dictLBracket: "{|"
    , dictRBracket: "|}"
+   , dollar: "$"
    , dot: "."
    , ellipsis: ".."
    , else_: "else"
@@ -72,5 +73,4 @@ str =
    , semiColon: ";"
    , then_: "then"
    , triplequote: "\"\"\""
-   , dollar: "$"
    }
