@@ -41,7 +41,6 @@ data Expr a
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
-
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
 data RecDefs a = RecDefs a (Dict (Elim a))

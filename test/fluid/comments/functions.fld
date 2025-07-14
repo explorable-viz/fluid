@@ -1,0 +1,3 @@
+let docMaker x y = @doc(x) y in
+let myCoolDoc = docMaker """my cool doc""" in
+myCoolDoc (4 + 4)
