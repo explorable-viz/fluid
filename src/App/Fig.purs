@@ -244,11 +244,13 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
       demandedBy = lift inert'.v gcFwd
 
       linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
-      linkedInputs selType γ = γ'' × v × vertices g × vertices g
+      linkedInputs selType γ = γ'' × v × vertices g × ιαs
          where
          γ' = γ <#> getSel selType
+         selectedPart = selectαs (γ' <#> to𝔹) γα
          v × g = demandedBy γ'
          γ'' = if linking then fst (demands v) else γ'
+         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices (bwdSlice (selectedPart × opEval.g'))
 
       linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
       linkedOutputs selType v = γ × v'' × vertices g × ιαs
@@ -257,7 +259,8 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
          γ × g = demands v'
          v'' = if linking then fst (demandedBy γ) else v'
          selectedPart = selectαs (v' <#> to𝔹) outα
-         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices (bwdSlice (selectedPart × eval.g'))
+         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices (bwdSlice (
+            selectedPart × eval.g'))
 
       -- ιαs = (spy "ιαs" (show <<< (map (fst <<< unwrap)) <<< Array.fromFoldable) $ vertices (bwdSlice (selectedPart × eval.g')))
 

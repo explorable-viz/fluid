@@ -119,6 +119,7 @@ docComment expr' = do
 docComment' :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docComment' expr' = do
    is <- option empty $ try inputs
+   void $ token.whiteSpace
    rest <- option Nil go
    case is × rest of
       Nil × Nil -> pure None
