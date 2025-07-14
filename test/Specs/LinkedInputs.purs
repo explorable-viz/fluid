@@ -3,7 +3,7 @@ module Test.Specs.LinkedInputs where
 import App.Util.Selector (dictVal, envVal, listElement, select, (>.>))
 import Bind ((↦))
 import Data.Maybe (Maybe(..))
-import Module.Web (File(..), Folder(..))
+import File (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedInputsSpec)
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
@@ -18,6 +18,7 @@ linkedInputs_spec3 =
         , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
+        , linking: true
         }
    , δ_in: "nonRenewables" ↦ listElement 51 (dictVal "coalCap" select)
    , in_expect:
@@ -42,6 +43,7 @@ linkedInputs_spec4 =
         , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
+        , linking: true
         }
    , δ_in: "renewables" ↦ listElement 204 (dictVal "capacity" select)
    , in_expect:
@@ -74,6 +76,7 @@ linkedInputs_spec5 =
              ]
         , inputs: [ "nonRenewables", "renewables" ]
         , query: Nothing
+        , linking: true
         }
    , δ_in: "nonRenewables" ↦ listElement 0 (dictVal "coalCap" select)
    , in_expect:

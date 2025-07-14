@@ -57,10 +57,11 @@ td.table-cell {
 
 .table-cell.selected-primary-transient {
    color: blue;
+   font-weight: 600;
 }
 
 .table-cell.selected-secondary-transient {
-   color: royalblue;
+   /* color: royalblue; */
 }
 
 .table-row {

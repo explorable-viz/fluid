@@ -4,5 +4,6 @@
     "imports": [],
     "file": "bar-chart-line-chart",
     "inputs": ["renewables"],
-    "query": false
+    "query": false,
+    "linking": true
 }
