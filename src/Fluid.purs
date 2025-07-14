@@ -119,19 +119,6 @@ copyOptions =
    , shell: Nothing
    }
 
-bundleWebsite ∷ BundleArgs -> Effect ChildProcess
-bundleWebsite (BundleArgs (Folder website) local) =
-   exec cmd copyOptions \{ error, stdout } ->
-      case error of
-         Just err -> logShow err
-         Nothing -> log =<< toString ASCII stdout
-   where
-   cmd = "."
-      <> (if local then "/" <> fluidLibraryPath else "")
-      <> "/script/bundle-website.sh -w "
-      <> website
-      <> if local then " -l" else ""
-
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
    where
