@@ -17,7 +17,7 @@ import File (File(..), Folder(..))
 import Graph (DVertex'(..))
 import Module.Web (loadFile', runWebT)
 import Util (error, (×))
-import Val (Val(..), ValDoc(..), asVal)
+import Val (Val(..), asVal)
 
 type JsonSpec =
    { fluidSrcPath :: Array String
@@ -39,8 +39,7 @@ figSpecFromJson spec@{ datasets, file, imports, inputs, query, linking } =
    , query:
         if query then
            Just $ asVal >=> case _ of
-              v@(Val α (ValDoc _ _) _) -> Just $ DVertex (α × v)
-              _ -> Nothing
+              v@(Val α _ _) -> Just $ DVertex (α × v)
         else Nothing
    , linking
    }

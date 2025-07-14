@@ -345,13 +345,30 @@ expr_ =
                  <|> string doc
                  <|> try (pair doc)
                  <|> listComp doc
+                 <|> try (parensExpr doc)
             )
                <|> try variable
-               <|> try (token.parens expr')
                <|> listEnum
                <|> try parensOp
 
             where
+            parensExpr :: DocOpt Expr Unit -> SParser (Raw Expr)
+            parensExpr doc' =
+               token.parens $
+                  expr' <#> setDoc
+               where
+               setDoc :: Raw Expr -> Raw Expr
+               setDoc (ListEmpty α doc'') = ListEmpty α (doc' <> doc'')
+               setDoc (ListNonEmpty α doc'' e es) = ListNonEmpty α (doc' <> doc'') e es
+               setDoc (Constr α doc'' c es) = Constr α (doc' <> doc'') c es
+               setDoc (Dictionary α doc'' d) = Dictionary α (doc' <> doc'') d
+               setDoc (Float α doc'' f) = Float α (doc' <> doc'') f
+               setDoc (Int α doc'' i) = Int α (doc' <> doc'') i
+               setDoc (Str α doc'' s) = Str α (doc' <> doc'') s
+               setDoc (ListComp α doc'' e qs) = ListComp α (doc' <> doc'') e qs
+               setDoc (App doc'' e e') = App (doc' <> doc'') e e'
+               setDoc e = e
+
             matrix :: DocOpt Expr Unit -> SParser (Raw Expr)
             matrix doc' =
                ( between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $

@@ -107,7 +107,8 @@ prettySimple s = case exprType s of
    Expression -> parentheses (pretty s)
 
 prettyAppChain :: forall a. Ann a => Expr a -> Doc
-prettyAppChain (App doc s s') = pretty doc .<>. prettyAppChain s .<>. prettySimple s'
+prettyAppChain (App doc@(Doc.Doc _ _) s s') = pretty doc .<>. parentheses (prettyAppChain s .<>. prettySimple s')
+prettyAppChain (App _ s s') = prettyAppChain s .<>. prettySimple s'
 prettyAppChain s = prettySimple s
 
 prettyBinApp :: forall a. Ann a => Int -> Expr a -> Doc

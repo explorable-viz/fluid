@@ -24,7 +24,7 @@ import Effect.Exception (Error)
 import EvalGraph (graphEval, graphGC, withOp)
 import File (class LoadFile, File(..))
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, Vertex(..), dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
+import Graph (class Graph, DVertex, DVertex'(..), Vertex(..), dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -34,7 +34,7 @@ import Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
-import Util.Set (empty, (\\), (∈), (∪))
+import Util.Set (empty, filter, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
 
 str
@@ -251,11 +251,15 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
          γ'' = if linking then fst (demands v) else γ'
 
       linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
-      linkedOutputs selType v = γ × v'' × vertices g × vertices g
+      linkedOutputs selType v = γ × v'' × vertices g × ιαs
          where
          v' = v <#> getSel selType
          γ × g = demands v'
          v'' = if linking then fst (demandedBy γ) else v'
+         selectedPart = selectαs (v' <#> to𝔹) outα
+         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices (bwdSlice (selectedPart × eval.g'))
+
+      -- ιαs = (spy "ιαs" (show <<< (map (fst <<< unwrap)) <<< Array.fromFoldable) $ vertices (bwdSlice (selectedPart × eval.g')))
 
       linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
       linkIntermediates ι =

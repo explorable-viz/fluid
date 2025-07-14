@@ -2,7 +2,6 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import App.Util.Selector (matrixElement, select)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (concat)
 import Data.Profunctor.Strong (second)
@@ -29,20 +28,7 @@ main = run (second runWebT <$> tests)
 -- main = run (second runWebT <$> scratchpad)
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestSuite m
-scratchpad = asTestSuite $ bwdSuite
-   [ { file: "matrix/matmul"
-     , imports:
-          [ "lib/matrix"
-          , "slicing/matrix/a-matrix"
-          , "slicing/matrix/b-matrix"
-          , "slicing/matrix/c-matrix"
-          ]
-     , bwd_expect_file: "matrix/matmul.expect"
-     , δv: matrixElement 1 1 select
-     , fwd_expect: "⸨64⸩, -58,\n154, -139"
-     , datasets: []
-     }
-   ]
+scratchpad = asTestSuite $ suite comments_cases
 
 asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)

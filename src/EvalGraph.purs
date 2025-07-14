@@ -104,13 +104,11 @@ closeDefs γ ρ αs =
          new (flip Val None') αs $ V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
 
 apply :: forall m. MonadWithGraphsAlloc m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
-apply (Val α doc' (V.Fun (V.Closure γ1 ρ σ))) v@(Val _ doc _) = do
+apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
-   let γ = (γ1 <+> γ2 <+> γ3)
-   v' <- eval γ (asExpr κ) (insert α αs)
-   accumDocs γ v' None (doc' <> doc)
-apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
+   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
+apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v = do
    apply' φ
    where
    vs' = snoc vs v
@@ -166,22 +164,22 @@ eval γ (Matrix α doc e (x × y) e') αs = do
    new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
    new (flip Val None') (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
-eval γ (Project doc e x) α = do
-   v@(Val _ doc' _) <- eval γ e α
-   v'@(Val _ doc'' _) <- eval γ x α
+eval γ (Project doc e e') α = do
+   v <- eval γ e α
+   v' <- eval γ e' α
    case v of
       Val _ _ (V.Dictionary (DictRep d)) ->
          case v' of
             Val _ _ (V.Str s) -> do
-               v'' <- (withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found"))
-               accumDocs γ v'' doc (doc' <> doc'')
+               v''@(Val _ doc' _) <- withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
+               accumDocs γ v'' doc doc'
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval γ (App doc e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
-   v'' <- apply v v'
-   accumDocs γ v'' doc None'
+   v''@(Val _ doc' _) <- apply v v'
+   accumDocs γ v'' doc doc'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
@@ -217,17 +215,13 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       v <- eval γ e empty
       pure $ γ <+> maplet x v
 
-evalDocOpt :: forall m. MonadWithGraphsAlloc m => LoadFile m => Env Vertex -> Val Vertex -> DocOpt Expr Vertex -> m (ValDoc Vertex)
-evalDocOpt _ _ None = pure None'
-evalDocOpt γ v@(Val α _ _) (Doc ins tokens) = do
+evalDocOpt :: forall m. MonadWithGraphsAlloc m => LoadFile m => Env Vertex -> DocOpt Expr Vertex -> m (ValDoc Vertex)
+evalDocOpt _ None = pure None'
+evalDocOpt γ (Doc ins tokens) = do
    refs <- sequence (eval γ <$> ins <@> empty)
-   let αs = map getα refs
-   _ <- if length αs /= 0 then extend (DVertex (α × pack v)) (Set.fromFoldable αs) else pure unit
    toks <- sequence (map evalToken tokens)
    pure $ ValDoc refs toks
    where
-   getα (Val α' _ _) = α'
-
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
    evalToken (Unquote e) = Unquote <$> eval γ e empty
@@ -244,8 +238,9 @@ new'
 new' _ αs None u = new (\αs' -> \u' -> Val αs' None' u') αs u
 new' γ αs doc u = do
    α <- fresh
-   vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None' u)) (Val α None' u) doc
+   vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None' u)) doc
    let v' = Val α vdoc u
+   addRefs v' vdoc
    addHyperEdge (DVertex (α × pack v')) αs Deps
    pure v'
 
@@ -259,11 +254,25 @@ accumDocs
    -> ValDoc Vertex
    -> m (Val Vertex)
 accumDocs γ v@(Val α' vdoc v') doc doc' = do
-   vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None' v')) v doc
-   pure (Val α' (doc' <> vdoc' <> vdoc) v')
+   vdoc' <- evalDocOpt (γ <+> (maplet "this" (Val α' None' v'))) doc
+   let new_vdoc = doc' <> vdoc' <> vdoc
+   addRefs v new_vdoc
+   pure (Val α' new_vdoc v')
+
+addRefs :: forall m. MonadWithGraphsAlloc m => Val Vertex -> ValDoc Vertex -> m Unit
+addRefs _ None' = pure unit
+addRefs v@(Val α _ _) (ValDoc refs _) = do
+   let αs = Set.fromFoldable $ getαs <$> refs
+   if length refs /= 0 then
+      extend (DVertex (α × pack v)) αs
+   else
+      pure unit
+   where
+   getαs (Val α' _ _) = α'
 
 type GraphEval g s t =
    { g :: g
+   , g' :: g
    , graph_fwd :: Set Vertex -> Endo g
    , graph_bwd :: Set Vertex -> Endo g
    , inα :: s Vertex
@@ -271,8 +280,8 @@ type GraphEval g s t =
    }
 
 withOp :: forall g s t. Graph g => GraphEval g s t -> GraphEval g t s
-withOp { g, graph_fwd, graph_bwd, inα, outα } =
-   { g: op g, graph_fwd, graph_bwd, inα: outα, outα: inα }
+withOp { g, g', graph_fwd, graph_bwd, inα, outα } =
+   { g: op g, g': op g', graph_fwd, graph_bwd, inα: outα, outα: inα }
 
 graphGC
    :: forall g s t
@@ -313,13 +322,13 @@ toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
 graphEval :: forall m. MonadAff m => LoadFile m => MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
 graphEval { n, γ } e = do
-   _ × _ × g × inα × outα <- flip runAllocT n do
+   _ × _ × g × g' × inα × outα <- flip runAllocT n do
       eα <- alloc e
       let inα = EnvExpr γ eα
-      g × _ × outα <- runWithGraphsT (eval γ eα mempty) (vertices inα)
+      g × g' × outα <- runWithGraphsT (eval γ eα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
-      pure (g × inα × outα)
-   pure { g, graph_fwd, graph_bwd, inα, outα }
+      pure (g × g' × inα × outα)
+   pure { g, g', graph_fwd, graph_bwd, inα, outα }
    where
    graph_fwd = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
    graph_bwd = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")
