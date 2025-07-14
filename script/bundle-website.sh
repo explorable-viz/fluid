@@ -9,8 +9,7 @@ while getopts "l" opt; do
    esac
 done
 
-shift $((OPTIND - 1))
-WEBSITE="${WEBSITE:-$1}"
+WEBSITE="$1"
 if [ -z "$WEBSITE" ]; then
    echo "Usage: $0 [-l] <website-name>" >&2
    exit 1
