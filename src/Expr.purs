@@ -30,6 +30,7 @@ data Expr a
    | Int a (DocOpt a) Int
    | Float a (DocOpt a) Number
    | Str a (DocOpt a) String
+   | Paragraph a (DocOpt a) Paragraph -- TO FIX - remember that the second paragraph is a list of tokens
    | Dictionary a (DocOpt a) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
    | Constr a (DocOpt a) Ctr (List (Expr a))
    | Matrix a (DocOpt a) (Expr a) (Var × Var) (Expr a)
@@ -39,6 +40,7 @@ data Expr a
    | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
+
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)

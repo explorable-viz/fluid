@@ -107,15 +107,16 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
-docCommentDelim :: SParser Unit
+-- OLD Doc comment code 
+docCommentDelim :: SParser Unit -- TO DELETE 
 docCommentDelim = void $ string str.triplequote
 
-docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
+docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit) -- Wraps docComment' as a Doc type also adds a try
 docComment expr' = optionDoc (try $ docComment' expr')
    where
    optionDoc p = option None (Doc <$> p)
 
-docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit))
+docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit)) -- if between """ """ try parsing
 docComment' expr' = token.lexeme (go <?> "docComment")
    where
    go :: SParser (List (DocCommentElem Expr Unit))
@@ -123,20 +124,61 @@ docComment' expr' = token.lexeme (go <?> "docComment")
       words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
       pure words
 
+commentExpr :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit) -- if commentToken fails, this looks out for ${...} in string
+commentExpr expr' = string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
+
+
 docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
 docCommentToken expr' =
    token.whiteSpace
-      *> (try commentToken <|> commentExpr expr')
+      *> (try commentToken <|> commentExpr expr') -- This is where it chooses to evaluate it as a string or as an expression
       <* token.whiteSpace
 
-commentToken :: SParser (DocCommentElem Expr Unit)
+commentToken :: SParser (DocCommentElem Expr Unit) -- Takes the array of strings, turns into strings, then turns to token
 commentToken = Token <$> (SCU.fromCharArray <$> Array.some docCommentLetter)
 
+docCommentLetter :: SParser Char  -- says "is this a character that isn't ", $ or whitespace?"
+docCommentLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
+
+-- ################################################
+-- NEW Doc Comment Code
+-- REMEBER that documents are seperate from paragraph and we want to rename these to paragraph
+docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit) 
+docComment expr' = optionDoc (try $ docComment' expr')
+   where
+   optionDoc p = option None (Doc <$> p)
+
+-- TO CHECK: Between takes the last ending parenthesis rather than first
+docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit)) 
+docComment' expr' = token.lexeme (go <?> "docComment")
+   where
+   go :: SParser (List (DocCommentElem Expr Unit))
+   go = do
+      words <- between docCommentStart (docCommentEnd <?> "end of docComment") (List.many $ docCommentToken $ formatExpression expr')
+      pure words
+
+-- JS NOTE: Remember that the void notices the deliminer and discards it
+docCommentStart :: SParser Unit
+docCommentStart = void $ string str.docCommentStart 
+
+docCommentEnd :: SParser Unit
+docCommentEnd = void $ string str.rparenth 
+
+-- TO DO: Need to remove white spaces, single quotes and double quotes at both ends
+formatExpression :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
+formatExpression expr'  = newExpr 
+
+docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
+docCommentToken expr' =
+   token.whiteSpace
+      *> (try commentToken <|> commentExpr expr') 
+      <* token.whiteSpace
+
+-- TO CHECK: Between takes the last ending curly brackets rather than first
 commentExpr :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
 commentExpr expr' = string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
-docCommentLetter :: SParser Char
-docCommentLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
+-- ####################################################
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -333,6 +375,7 @@ expr_ =
                  <|> try (float doc)
                  <|> try (int doc) -- int may start with +/-
                  <|> string doc
+                 <|> paragraph doc -- JS: To fix
                  <|> try (pair doc)
                  <|> listComp doc
             )

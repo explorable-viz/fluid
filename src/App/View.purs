@@ -69,6 +69,7 @@ viewPara (Doc doc) = Just $ Paragraph true $ fromFoldable $ formatPara $ doc
    formatPara Nil = Nil
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
    formatPara (Token str : xs) = pack (Text (str × inert)) : formatPara xs
+   formatPara (Unquote (Val α _ (Str s)) : xs) = pack (Text (s × α)) : formatPara xs
    formatPara (Unquote (Val α _ (Int n)) : xs) = pack (Text (show n × α)) : formatPara xs
    formatPara (Unquote v : xs) = view "" v Nothing : formatPara xs
 
