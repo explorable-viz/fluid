@@ -18,10 +18,7 @@ import File (File(..), Folder(..))
 import Lattice (erase)
 import Module (loadProgCxt, prepConfig)
 import Module.Node (runNodeT)
-import Node.Buffer (toString)
-import Node.ChildProcess (ChildProcess, ExecOptions, exec)
-import Node.Encoding (Encoding(..))
-import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, switch, value, (<**>))
+import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, switch, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
 import Util (Endo)
@@ -35,9 +32,7 @@ data EvalArgs = EvalArgs
    , fluidSrcPath :: Folder
    }
 
-data BundleArgs = BundleArgs Folder Boolean
-
-data Command = Evaluate EvalArgs | BundleWebsite BundleArgs
+data Command = Evaluate EvalArgs
 
 between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
 between p1 p2 f s =
@@ -83,43 +78,20 @@ parseEvaluate = ado
    fluidSrcPath <- Folder <$> strOption (long "fluid-src-path" <> short 'p' <> help "The path containing the program files")
    in EvalArgs { local, imports, datasets, fileName, fluidSrcPath }
 
-parseBundleArgs :: Parser BundleArgs
-parseBundleArgs = ado
-   website <- Folder <$> strOption (long "website" <> short 'w' <> help "root directory of website under dist/" <> value "Misc")
-   local <- parseLocal
-   in BundleArgs website local
-
-commands :: { bundleWebsite :: Parser Command, evaluate :: Parser Command }
+commands :: { evaluate :: Parser Command }
 commands =
-   { bundleWebsite: BundleWebsite <$> parseBundleArgs
-   , evaluate: Evaluate <$> parseEvaluate
+   { evaluate: Evaluate <$> parseEvaluate
    }
 
 commandParser :: Parser Command
 commandParser = subparser
    ( command "evaluate" (info commands.evaluate (progDesc "Evaluate a file"))
-        <> command "bundle-website" (info commands.bundleWebsite (progDesc "Bundle a website to dist"))
    )
 
 dispatchCommand ∷ Command → Aff Unit
 dispatchCommand (Evaluate p) = do
    v <- evaluate p
    log (prettyP v)
-dispatchCommand (BundleWebsite bas) =
-   void $ liftEffect $ bundleWebsite bas
-
-copyOptions :: ExecOptions
-copyOptions =
-   { cwd: Nothing
-   , env: Nothing
-   , timeout: Nothing
-   , killSignal: Nothing
-   , maxBuffer: Nothing
-   , uid: Nothing
-   , gid: Nothing
-   , encoding: Nothing
-   , shell: Nothing
-   }
 
 main :: Effect Unit
 main = runAff_ callback (dispatchCommand =<< liftEffect (execParser opts))
