@@ -37,5 +37,5 @@ let matMul a b =
     if not (n == i)
     then error "Dimensions mismatch"
     else 
-        [| @[a, b] sum [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n]
+        [| @[a, b] (sum [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n])
         | (i', j') in (m, j) |];

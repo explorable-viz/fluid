@@ -39,7 +39,7 @@ import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import File (class LoadFile)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
+import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphsAlloc, WhichGraph(..), addHyperEdge, alloc, extend, fresh, new, runAllocT, runWithGraphsT)
@@ -51,7 +51,7 @@ import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, check, concatM, defined, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
-import Util.Set ((∪), empty)
+import Util.Set ((∪), empty, (\\))
 import Val (BaseVal(..), Fun(..)) as V
 import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), ValDoc(..), forDefs)
 
@@ -273,6 +273,7 @@ addRefs v@(Val α _ _) (ValDoc refs _) = do
 type GraphEval g s t =
    { g :: g
    , g' :: g
+   , in_roots :: Set Vertex
    , graph_fwd :: Set Vertex -> Endo g
    , graph_bwd :: Set Vertex -> Endo g
    , inα :: s Vertex
@@ -281,7 +282,7 @@ type GraphEval g s t =
 
 withOp :: forall g s t. Graph g => GraphEval g s t -> GraphEval g t s
 withOp { g, g', graph_fwd, graph_bwd, inα, outα } =
-   { g: op g, g': op g', graph_fwd, graph_bwd, inα: outα, outα: inα }
+   { g: op g, g': op g', in_roots: sources g' \\ sinks g', graph_fwd, graph_bwd, inα: outα, outα: inα }
 
 graphGC
    :: forall g s t
@@ -322,13 +323,14 @@ toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
 graphEval :: forall m. MonadAff m => LoadFile m => MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
 graphEval { n, γ } e = do
-   _ × _ × g × g' × inα × outα <- flip runAllocT n do
+   _ × _ × g × g' × in_roots × inα × outα <- flip runAllocT n do
       eα <- alloc e
       let inα = EnvExpr γ eα
       g × g' × outα <- runWithGraphsT (eval γ eα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
-      pure (g × g' × inα × outα)
-   pure { g, g', graph_fwd, graph_bwd, inα, outα }
+      let in_roots = (sinks g') \\ (sources g')
+      pure (g × g' × in_roots × inα × outα)
+   pure { g, g', in_roots, graph_fwd, graph_bwd, inα, outα }
    where
    graph_fwd = curry (fwdSlice # spyFun' tracing.graphFwdSlice "fwdSlice")
    graph_bwd = curry (bwdSlice # spyFun' tracing.graphBwdSlice "bwdSlice")

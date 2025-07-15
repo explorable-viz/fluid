@@ -10,7 +10,9 @@ import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View', drawVi
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
+-- import Data.Array (fromFoldable)
 import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set as Set
@@ -20,6 +22,7 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console (log, logShow)
 import Effect.Exception (Error)
 import EvalGraph (graphEval, graphGC, withOp)
 import File (class LoadFile, File(..))
@@ -32,7 +35,7 @@ import Module (loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, error, spy, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, filter, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
@@ -253,14 +256,17 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
          ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices (bwdSlice (selectedPart × opEval.g'))
 
       linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
-      linkedOutputs selType v = γ × v'' × vertices g × ιαs
+      linkedOutputs selType v = γ × v'' × vertices g × (spy "ιαs" (show <<< Set.map (fst <<< unwrap)) ιαs)
          where
          v' = v <#> getSel selType
          γ × g = demands v'
          v'' = if linking then fst (demandedBy γ) else v'
          selectedPart = selectαs (v' <#> to𝔹) outα
-         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices (bwdSlice (
-            selectedPart × eval.g'))
+         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices
+            ( bwdSlice
+                 ( selectedPart × eval.g'
+                 )
+            )
 
       -- ιαs = (spy "ιαs" (show <<< (map (fst <<< unwrap)) <<< Array.fromFoldable) $ vertices (bwdSlice (selectedPart × eval.g')))
 
@@ -273,8 +279,13 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
             v = inert'.v <*> select𝔹s outα (vertices $ bwdSlice (αs × opEval.g))
             γ = inert'.γ <*> select𝔹s γα (vertices $ bwdSlice (αs × eval.g))
          in
-            γ × v × (dvertices g0 αs) × (dvertices g0 αs)
-
+            γ × v × (dvertices g0 αs) × (Set.map (\α -> DVertex (Vertex α × vertexData g0 (Vertex α))) $ keys ι)
+   log "in_roots"
+   logShow (in_roots)
+   log "eval.in_roots"
+   logShow (eval.in_roots)
+   -- log "g'"
+   -- logShow (map (\α -> α × inN eval.g' α) (fromFoldable (in_roots)))
    pure
       { spec
       , s

@@ -19,7 +19,7 @@ let energy year c_names =
         }
   in
     map energy_per_country c_names
-in ScatterPlot {
+in @[renewables, nonRenewables] ScatterPlot {
     caption: "Clean energy efficiency against proportion of renewable energy cap",
     points: [{
                 x: country.nonRenewables / country.totalCap,
