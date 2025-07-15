@@ -16,7 +16,7 @@ import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
 import Util (error, findM)
 
-instance Monad m => LoadFile (NodeT2 m) where
+instance Monad m => LoadFile (NodeT m) where
    loadFile folders (File file) = do
       let urls = flip prependFolder (File $ file <> ".fld") <$> folders
       url <- findM urls exists Nothing
@@ -28,27 +28,27 @@ instance Monad m => LoadFile (NodeT2 m) where
          stats <- liftAff $ try (stat url)
          pure $ if either (const false) isFile stats then Just url else Nothing
 
-newtype NodeT2 :: forall k. (k -> Type) -> k -> Type
-newtype NodeT2 m a = NodeT2 (ReaderT FileCxt2 m a)
+newtype NodeT :: forall k. (k -> Type) -> k -> Type
+newtype NodeT m a = NodeT (ReaderT FileCxt2 m a)
 
-runNodeT2 :: forall m a. FileCxt2 -> NodeT2 m a -> m a
-runNodeT2 fileCxt (NodeT2 x) = runReaderT x fileCxt
+runNodeT :: forall m a. FileCxt2 -> NodeT m a -> m a
+runNodeT fileCxt (NodeT x) = runReaderT x fileCxt
 
 -- ======================
 -- boilerplate
 -- ======================
 
-instance MonadTrans NodeT2 where
-   lift m = NodeT2 (lift m)
+instance MonadTrans NodeT where
+   lift m = NodeT (lift m)
 
-derive newtype instance Functor m => Functor (NodeT2 m)
-derive newtype instance Apply m => Apply (NodeT2 m)
-derive newtype instance Applicative m => Applicative (NodeT2 m)
-derive newtype instance Bind m => Bind (NodeT2 m)
-derive newtype instance Monad m => Monad (NodeT2 m)
-derive newtype instance MonadThrow Error m => MonadThrow Error (NodeT2 m)
-derive newtype instance MonadError Error m => MonadError Error (NodeT2 m)
-derive newtype instance MonadEffect m => MonadEffect (NodeT2 m)
-derive newtype instance MonadAff m => MonadAff (NodeT2 m)
-derive newtype instance MonadAsk FileCxt2 m => MonadAsk FileCxt2 (NodeT2 m)
-derive newtype instance Monad m => MonadReader FileCxt2 (NodeT2 m)
+derive newtype instance Functor m => Functor (NodeT m)
+derive newtype instance Apply m => Apply (NodeT m)
+derive newtype instance Applicative m => Applicative (NodeT m)
+derive newtype instance Bind m => Bind (NodeT m)
+derive newtype instance Monad m => Monad (NodeT m)
+derive newtype instance MonadThrow Error m => MonadThrow Error (NodeT m)
+derive newtype instance MonadError Error m => MonadError Error (NodeT m)
+derive newtype instance MonadEffect m => MonadEffect (NodeT m)
+derive newtype instance MonadAff m => MonadAff (NodeT m)
+derive newtype instance MonadAsk FileCxt2 m => MonadAsk FileCxt2 (NodeT m)
+derive newtype instance Monad m => MonadReader FileCxt2 (NodeT m)

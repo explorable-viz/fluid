@@ -21,7 +21,7 @@ import Effect.Exception (error) as E
 import File (class LoadFile, File(..), FileCxt2, Folder, loadFile, prependFolder)
 import Util (type (×), (×), AffError, debug, findM)
 
-instance MonadThrow Error m => LoadFile (WebT2 m) where
+instance MonadThrow Error m => LoadFile (WebT m) where
    loadFile folders (File file) = do
       let urls = flip prependFolder (File $ file <> ".fld") <$> folders
       result <- runExceptT $ do
@@ -42,27 +42,27 @@ instance MonadThrow Error m => LoadFile (WebT2 m) where
 loadFile' :: forall m. LoadFile m => Array Folder -> File -> AffError m (File × String)
 loadFile' folders file = (file × _) <$> loadFile folders file
 
-newtype WebT2 :: forall k. (k -> Type) -> k -> Type
-newtype WebT2 m a = WebT2 (ReaderT FileCxt2 m a)
+newtype WebT :: forall k. (k -> Type) -> k -> Type
+newtype WebT m a = WebT (ReaderT FileCxt2 m a)
 
-runWebT2 :: forall m a. FileCxt2 -> WebT2 m a -> m a
-runWebT2 fileCxt (WebT2 x) = runReaderT x fileCxt
+runWebT :: forall m a. FileCxt2 -> WebT m a -> m a
+runWebT fileCxt (WebT x) = runReaderT x fileCxt
 
 -- ======================
 -- boilerplate
 -- ======================
 
-derive newtype instance Functor m => Functor (WebT2 m)
-derive newtype instance Apply m => Apply (WebT2 m)
-derive newtype instance Applicative m => Applicative (WebT2 m)
-derive newtype instance Bind m => Bind (WebT2 m)
-derive newtype instance Monad m => Monad (WebT2 m)
-derive newtype instance MonadThrow Error m => MonadThrow Error (WebT2 m)
-derive newtype instance MonadError Error m => MonadError Error (WebT2 m)
-derive newtype instance MonadEffect m => MonadEffect (WebT2 m)
-derive newtype instance MonadAff m => MonadAff (WebT2 m)
-derive newtype instance MonadAsk FileCxt2 m => MonadAsk FileCxt2 (WebT2 m)
-derive newtype instance Monad m => MonadReader FileCxt2 (WebT2 m)
+derive newtype instance Functor m => Functor (WebT m)
+derive newtype instance Apply m => Apply (WebT m)
+derive newtype instance Applicative m => Applicative (WebT m)
+derive newtype instance Bind m => Bind (WebT m)
+derive newtype instance Monad m => Monad (WebT m)
+derive newtype instance MonadThrow Error m => MonadThrow Error (WebT m)
+derive newtype instance MonadError Error m => MonadError Error (WebT m)
+derive newtype instance MonadEffect m => MonadEffect (WebT m)
+derive newtype instance MonadAff m => MonadAff (WebT m)
+derive newtype instance MonadAsk FileCxt2 m => MonadAsk FileCxt2 (WebT m)
+derive newtype instance Monad m => MonadReader FileCxt2 (WebT m)
 
-instance MonadTrans WebT2 where
-   lift m = WebT2 (lift m)
+instance MonadTrans WebT where
+   lift m = WebT (lift m)

@@ -10,7 +10,7 @@ import Effect (Effect)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
 import File (class LoadFile, FileCxt2(..))
-import Module.Web (runWebT2)
+import Module.Web (runWebT)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Comments (comments_cases)
 import Test.Specs.Desugar (desugar_cases)
@@ -24,7 +24,7 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT2 (FileCxt2 { fluidSrcPaths })) <$> tests)
+main = run (second (runWebT (FileCxt2 { fluidSrcPaths })) <$> tests)
 
 -- main = run scratchpad
 
