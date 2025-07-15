@@ -24,7 +24,6 @@ import Node.Encoding (Encoding(..))
 import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, switch, value, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
-import Test.Util (fluidSrcPaths)
 import Util (Endo)
 import Val (Val)
 
