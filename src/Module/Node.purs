@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import File (class LoadFile, File(..), FileCxt2, prependFolder)
+import File (class LoadFile, File(..), FileCxt, prependFolder)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
@@ -29,9 +29,9 @@ instance Monad m => LoadFile (NodeT m) where
          pure $ if either (const false) isFile stats then Just url else Nothing
 
 newtype NodeT :: forall k. (k -> Type) -> k -> Type
-newtype NodeT m a = NodeT (ReaderT FileCxt2 m a)
+newtype NodeT m a = NodeT (ReaderT FileCxt m a)
 
-runNodeT :: forall m a. FileCxt2 -> NodeT m a -> m a
+runNodeT :: forall m a. FileCxt -> NodeT m a -> m a
 runNodeT fileCxt (NodeT x) = runReaderT x fileCxt
 
 -- ======================
@@ -50,5 +50,5 @@ derive newtype instance MonadThrow Error m => MonadThrow Error (NodeT m)
 derive newtype instance MonadError Error m => MonadError Error (NodeT m)
 derive newtype instance MonadEffect m => MonadEffect (NodeT m)
 derive newtype instance MonadAff m => MonadAff (NodeT m)
-derive newtype instance MonadAsk FileCxt2 m => MonadAsk FileCxt2 (NodeT m)
-derive newtype instance Monad m => MonadReader FileCxt2 (NodeT m)
+derive newtype instance MonadAsk FileCxt m => MonadAsk FileCxt (NodeT m)
+derive newtype instance Monad m => MonadReader FileCxt (NodeT m)

@@ -13,7 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Error, runAff_)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
-import File (class LoadFile, FileCxt2(..))
+import File (class LoadFile, FileCxt(..))
 import Module.Node (runNodeT)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (writeTextFile)
@@ -33,7 +33,7 @@ main = runAff_ handleBench do
            log $ "Benchmarking: " <> str
            (str × _) <$> row
       )
-         <$> second (runNodeT (FileCxt2 { fluidSrcPaths }))
+         <$> second (runNodeT (FileCxt { fluidSrcPaths }))
          <$> concat (benchmarks <@> (10 × true))
    pure $ BenchAcc $ definitely "More than one benchmark" $ fromArray outs
 
@@ -43,7 +43,7 @@ handleBench (Right bacc) = do
    writeTextFile ASCII "benchmark/benchmarks_artifact.csv" $ show bacc
    log "Benchmarking data written to benchmark/benchmarks_artifact.csv"
 
-benchmarks :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => Array (BenchSuite m)
+benchmarks :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array (BenchSuite m)
 benchmarks =
    [ suite desugar_cases
    , suite misc_cases

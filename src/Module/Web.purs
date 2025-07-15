@@ -18,7 +18,7 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import File (class LoadFile, File(..), FileCxt2, Folder, loadFile, prependFolder)
+import File (class LoadFile, File(..), FileCxt, Folder, loadFile, prependFolder)
 import Util (type (×), (×), AffError, debug, findM)
 
 instance MonadThrow Error m => LoadFile (WebT m) where
@@ -43,9 +43,9 @@ loadFile' :: forall m. LoadFile m => Array Folder -> File -> AffError m (File ×
 loadFile' folders file = (file × _) <$> loadFile folders file
 
 newtype WebT :: forall k. (k -> Type) -> k -> Type
-newtype WebT m a = WebT (ReaderT FileCxt2 m a)
+newtype WebT m a = WebT (ReaderT FileCxt m a)
 
-runWebT :: forall m a. FileCxt2 -> WebT m a -> m a
+runWebT :: forall m a. FileCxt -> WebT m a -> m a
 runWebT fileCxt (WebT x) = runReaderT x fileCxt
 
 -- ======================
@@ -61,8 +61,8 @@ derive newtype instance MonadThrow Error m => MonadThrow Error (WebT m)
 derive newtype instance MonadError Error m => MonadError Error (WebT m)
 derive newtype instance MonadEffect m => MonadEffect (WebT m)
 derive newtype instance MonadAff m => MonadAff (WebT m)
-derive newtype instance MonadAsk FileCxt2 m => MonadAsk FileCxt2 (WebT m)
-derive newtype instance Monad m => MonadReader FileCxt2 (WebT m)
+derive newtype instance MonadAsk FileCxt m => MonadAsk FileCxt (WebT m)
+derive newtype instance Monad m => MonadReader FileCxt (WebT m)
 
 instance MonadTrans WebT where
    lift m = WebT (lift m)

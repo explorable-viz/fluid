@@ -9,7 +9,7 @@ import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
-import File (class LoadFile, FileCxt2(..))
+import File (class LoadFile, FileCxt(..))
 import Module.Web (runWebT)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Comments (comments_cases)
@@ -24,7 +24,7 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt2 { fluidSrcPaths })) <$> tests)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
 
 -- main = run scratchpad
 
@@ -41,12 +41,12 @@ scratchpad = asTestSuite $ suite
 asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)
 
-tests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => TestSuite m
+tests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 tests = concat (benchmarks <#> asTestSuite)
    <> linkedOutputsSuite linkedOutputs_cases
    <> linkedInputsSuite linkedInputs_cases
 
-benchmarks :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => Array (BenchSuite m)
+benchmarks :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array (BenchSuite m)
 benchmarks =
    [ suite desugar_cases
    , suite misc_cases

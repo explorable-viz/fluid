@@ -13,7 +13,7 @@ import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
-import File (class LoadFile, File(..), FileCxt2, Folder(..), loadFile, (</>))
+import File (class LoadFile, File(..), FileCxt, Folder(..), loadFile, (</>))
 import Lattice (botOf)
 import Module (loadProgCxt)
 import Test.Benchmark.Util (BenchRow, logTimeWhen)
@@ -58,7 +58,7 @@ type TestLinkedInputsSpec =
    , in_expect :: Selector Env
    }
 
-suite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => Array TestSpec -> BenchSuite m
+suite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestSpec -> BenchSuite m
 suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
@@ -66,7 +66,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
       gconfig <- loadProgCxt imports []
       test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
-bwdSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => Array TestBwdSpec -> BenchSuite m
+bwdSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestBwdSpec -> BenchSuite m
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
    where
    folder = Folder "slicing"
@@ -77,7 +77,7 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
       bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
       test (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
-withDatasetSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite m
+withDatasetSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite m
 withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> m BenchRow
@@ -85,7 +85,7 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
       gconfig <- loadProgCxt imports [ x ↦ dataset ]
       test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
-linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => TestLinkedOutputsSpec -> m Fig
+linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
@@ -93,12 +93,12 @@ linkedOutputsTest { spec, δ_out, out_expect } = do
    checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect (botOf <$> v))
    pure fig
 
-linkedOutputsSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => Array TestLinkedOutputsSpec -> Array (String × m Unit)
+linkedOutputsSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestLinkedOutputsSpec -> Array (String × m Unit)
 linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
    where
    name { spec } = unwrap spec.file
 
-linkedInputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => TestLinkedInputsSpec -> m Fig
+linkedInputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedInputsSpec -> m Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
    fig <- loadFig (spec { file = spec.file }) <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
@@ -106,7 +106,7 @@ linkedInputsTest { spec, δ_in, in_expect } = do
    checkEq "selected" "expected" (selStates <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (fst $ in_expect (botOf <$> γ))
    pure fig
 
-linkedInputsSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => Array TestLinkedInputsSpec -> Array (String × m Unit)
+linkedInputsSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestLinkedInputsSpec -> Array (String × m Unit)
 linkedInputsSuite specs = specs <#> (name &&& (linkedInputsTest >>> void))
    where
    name { spec } = unwrap spec.file
