@@ -54,7 +54,7 @@ datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
 loadProgCxt mods datasets = do
    FileCxt { fluidSrcPaths } <- ask
-   pure (ProgCxt { fluidSrcPaths, primitives, mods: Nil, datasets: Nil })
+   pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
       >>= concatM (File >>> module_ fluidSrcPaths <$> [ "lib/prelude" ] <> mods)
       >>= concatM (second File >>> datasetAs fluidSrcPaths <$> datasets)
 
