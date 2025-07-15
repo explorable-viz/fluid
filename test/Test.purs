@@ -1,11 +1,10 @@
 module Test.Test
-  ( asTestSuite
-  , benchmarks
-  , scratchpad
-  , tests
-  , main
-  )
-  where
+   ( asTestSuite
+   , benchmarks
+   , scratchpad
+   , tests
+   , main
+   ) where
 
 import Prelude hiding (add)
 
@@ -34,9 +33,9 @@ main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite loadFile
-   [ { file: "comments/app", 
-       imports: [], 
-       fwd_expect: "\"\"\" This function application returns the length of a list.\"\"\" 2" 
+   [ { file: "comments/app"
+     , imports: []
+     , fwd_expect: "\"\"\" This function application returns the length of a list.\"\"\" 2"
      }
    ]
 

@@ -250,10 +250,10 @@ expr_ = docComment (fix exprParser) *> fix exprParser
    where
    -- Pushing this to front of operator table to give it higher precedence than any other binary op.
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
---- add doc
+   --- add doc
 
    exprParser expr' =
-    buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
+      buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
 
    backtickOp :: Operator Identity String (Raw Expr)
    backtickOp = flip Infix AssocLeft do
@@ -311,7 +311,7 @@ expr_ = docComment (fix exprParser) *> fix exprParser
 
          -- An expression that may need wrapping in parentheses to disambiguate.
          simpleExprOrProjection :: SParser (Raw Expr)
-         simpleExprOrProjection=
+         simpleExprOrProjection =
             simpleExpr >>= projection
             where
             projection :: Raw Expr -> SParser (Raw Expr)
@@ -327,14 +327,14 @@ expr_ = docComment (fix exprParser) *> fix exprParser
          simpleExpr :: SParser (Raw Expr)
          simpleExpr =
             -- matrix before list
-            ( matrix 
+            ( matrix
                  <|> try nil
                  <|> listNonEmpty
                  <|> try constr
-                 <|> dict 
+                 <|> dict
                  <|> try float
                  <|> try int -- int may start with +/-
-                 <|> string 
+                 <|> string
                  <|> try pair
                  <|> listComp
             )
