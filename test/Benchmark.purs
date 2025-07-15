@@ -3,6 +3,7 @@ module Benchmark where
 import Prelude
 
 import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Reader (class MonadReader)
 import Data.Array (concat)
 import Data.Array.NonEmpty (fromArray)
 import Data.Either (Either(..))
@@ -42,7 +43,7 @@ handleBench (Right bacc) = do
    writeTextFile ASCII "benchmark/benchmarks_artifact.csv" $ show bacc
    log "Benchmarking data written to benchmark/benchmarks_artifact.csv"
 
-benchmarks :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array (BenchSuite m)
+benchmarks :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt2 m => LoadFile m => Array (BenchSuite m)
 benchmarks =
    [ suite desugar_cases
    , suite misc_cases
