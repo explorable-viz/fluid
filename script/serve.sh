@@ -11,4 +11,4 @@ if [ ! -d "dist/$1" ]; then
    exit 1
 fi
 
-npx http-serve dist/$1 -a 0.0.0.0 -d -c-1
+npx http-server dist/$1 -a 0.0.0.0 -d -c-1
