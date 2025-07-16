@@ -8,7 +8,8 @@ import Affjax.ResponseFormat (string)
 import Affjax.StatusCode (StatusCode(..))
 import Affjax.Web (defaultRequest, printError, request)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
-import Control.Monad.Except (class MonadError, class MonadTrans, ExceptT(..), runExceptT)
+import Control.Monad.Except (class MonadError, class MonadTrans, ExceptT(..), lift, runExceptT)
+import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runReaderT)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
@@ -17,10 +18,10 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import File (class LoadFile, File(..), Folder, loadFile, prependFolder)
+import File (class LoadFile, File(..), FileCxt, Folder, loadFile, prependFolder)
 import Util (type (×), (×), AffError, debug, findM)
 
-instance (MonadAff m, MonadError Error m) => LoadFile (WebT m) where
+instance MonadThrow Error m => LoadFile (WebT m) where
    loadFile folders (File file) = do
       let urls = flip prependFolder (File $ file <> ".fld") <$> folders
       result <- runExceptT $ do
@@ -41,17 +42,15 @@ instance (MonadAff m, MonadError Error m) => LoadFile (WebT m) where
 loadFile' :: forall m. LoadFile m => Array Folder -> File -> AffError m (File × String)
 loadFile' folders file = (file × _) <$> loadFile folders file
 
-newtype WebT (m :: Type -> Type) a = WebT (m a)
+newtype WebT :: forall k. (k -> Type) -> k -> Type
+newtype WebT m a = WebT (ReaderT FileCxt m a)
 
-runWebT :: forall m a. WebT m a -> m a
-runWebT (WebT x) = x
+runWebT :: forall m a. FileCxt -> WebT m a -> m a
+runWebT fileCxt (WebT x) = runReaderT x fileCxt
 
 -- ======================
 -- boilerplate
 -- ======================
-
-instance MonadTrans WebT where
-   lift = WebT
 
 derive newtype instance Functor m => Functor (WebT m)
 derive newtype instance Apply m => Apply (WebT m)
@@ -62,3 +61,8 @@ derive newtype instance MonadThrow Error m => MonadThrow Error (WebT m)
 derive newtype instance MonadError Error m => MonadError Error (WebT m)
 derive newtype instance MonadEffect m => MonadEffect (WebT m)
 derive newtype instance MonadAff m => MonadAff (WebT m)
+derive newtype instance MonadAsk FileCxt m => MonadAsk FileCxt (WebT m)
+derive newtype instance Monad m => MonadReader FileCxt (WebT m)
+
+instance MonadTrans WebT where
+   lift m = WebT (lift m)

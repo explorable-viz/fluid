@@ -10,15 +10,13 @@ import Data.Set (unions)
 import Data.Traversable (class Foldable, class Traversable)
 import Data.Tuple (snd)
 import Expr (Expr, Module)
-import File (Folder)
 import Graph (class Vertices, Vertex, vertices)
 import Util.Set ((∪))
 import Val (Env)
 
 -- Module context (plus datasets, reflecting current ad hoc approach to those).
 newtype ProgCxt a = ProgCxt
-   { fluidSrcPaths :: Array Folder
-   , primitives :: Env a
+   { primitives :: Env a
    , mods :: List (Module a) -- in reverse order
    , datasets :: List (Bind (Expr a))
    }
@@ -40,8 +38,7 @@ derive instance Foldable ProgCxt
 instance Apply ProgCxt where
    apply (ProgCxt fζ) (ProgCxt ζ) =
       ProgCxt
-         { fluidSrcPaths: fζ.fluidSrcPaths
-         , primitives: fζ.primitives <*> ζ.primitives
+         { primitives: fζ.primitives <*> ζ.primitives
          , mods: fζ.mods `zipWith (<*>)` ζ.mods
          , datasets: (second (<*>) <$> fζ.datasets) `zipWith (<*>)` ζ.datasets
          }

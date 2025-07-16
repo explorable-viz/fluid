@@ -5,6 +5,7 @@ import Prelude
 import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
+import Control.Monad.Reader (class MonadReader, ask)
 import Data.Bifunctor (lmap)
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (second)
@@ -15,7 +16,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, fv)
-import File (class LoadFile, File(..), Folder, FileCxt, loadFile)
+import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
@@ -50,28 +51,28 @@ datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
    eα <- parseProgram folders file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => LoadFile m => FileCxt -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt { fluidSrcPaths } mods datasets =
-   pure (ProgCxt { fluidSrcPaths, primitives, mods: Nil, datasets: Nil })
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt mods datasets = do
+   FileCxt { fluidSrcPaths } <- ask
+   pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
       >>= concatM (File >>> module_ fluidSrcPaths <$> [ "lib/prelude" ] <> mods)
       >>= concatM (second File >>> datasetAs fluidSrcPaths <$> datasets)
 
-initialConfig :: forall m a. MonadAff m => MonadError Error m => LoadFile m => FV a => a -> Raw ProgCxt -> m GraphConfig
+initialConfig :: forall m a. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
    when checking.allocRoundTrip $ alloc_check "progCxt" (alloc progCxt)
    n × _ × progCxt' × γ <- flip runAllocT 0 do
       progCxt' <- alloc progCxt
       let αs = vertices progCxt'
       _ × γ <- runWithGraphT_spy (eval_progCxt progCxt') αs :: AllocT m (GraphImpl × _)
-      -- Restrict γ derived from prog cxt to free vars for managability, although this precludes mapping back
-      -- to surface syntax for now, and no easy way to similarly restrict inputs of corresponding graph.
       pure (progCxt' × restrict (fv e) γ)
    pure { n, progCxt: progCxt', γ }
 
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => LoadFile m => FileCxt -> File -> Raw ProgCxt -> m Config
-prepConfig { fluidSrcPaths } file progCxt = do
+prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> m Config
+prepConfig file progCxt = do
+   FileCxt { fluidSrcPaths } <- ask
    s <- parseProgram fluidSrcPaths file
    e <- desug s
    gconfig <- initialConfig e progCxt

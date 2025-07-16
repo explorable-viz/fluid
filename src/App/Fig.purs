@@ -10,6 +10,7 @@ import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View', drawVi
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Reader (class MonadReader)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
@@ -22,7 +23,7 @@ import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import EvalGraph (graphEval, graphGC, withOp)
-import File (class LoadFile, File(..))
+import File (class LoadFile, File(..), FileCxt)
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices, dvertices)
 import Graph.GraphImpl (GraphImpl)
@@ -206,10 +207,10 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. MonadAff m => MonadError Error m => LoadFile m => FigSpec -> m Fig
-loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
-   progCxt <- loadProgCxt { fluidSrcPaths } imports datasets
-   { s, e, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
+loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> m Fig
+loadFig spec@{ inputs, imports, file, datasets, linking } = do
+   progCxt <- loadProgCxt imports datasets
+   { s, e, gconfig } <- prepConfig file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval

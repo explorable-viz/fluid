@@ -9,9 +9,7 @@ import Data.Newtype (class Newtype)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 
-type FileCxt =
-   { fluidSrcPaths :: Array Folder
-   }
+newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder }
 
 class LoadFile m where
    loadFile :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
@@ -21,9 +19,6 @@ instance (Monoid w, MonadError Error m, MonadAff m, LoadFile m) => LoadFile (Wri
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) where
    loadFile folders = lift <<< loadFile folders
-
---instance (MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WithGraphT m) where
---   loadFile folders = lift <<< loadFile folders
 
 newtype File = File String
 newtype Folder = Folder String
