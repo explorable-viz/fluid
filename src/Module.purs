@@ -58,7 +58,7 @@ loadProgCxt mods datasets = do
       >>= concatM (File >>> module_ fluidSrcPaths <$> [ "lib/prelude" ] <> mods)
       >>= concatM (second File >>> datasetAs fluidSrcPaths <$> datasets)
 
-initialConfig :: forall m a. MonadAff m => MonadError Error m => LoadFile m => FV a => a -> Raw ProgCxt -> m GraphConfig
+initialConfig :: forall m a. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
    when checking.allocRoundTrip $ alloc_check "progCxt" (alloc progCxt)
    n × _ × progCxt' × γ <- flip runAllocT 0 do

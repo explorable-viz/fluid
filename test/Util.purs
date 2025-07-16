@@ -68,7 +68,7 @@ benchNames =
    , demBy_G_suff_dual: "DemBy-Suff"
    }
 
-testProperties :: forall m. LoadFile m => MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
+testProperties :: forall m. MonadReader FileCxt m => LoadFile m => MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
 
