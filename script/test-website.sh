@@ -10,6 +10,13 @@ if [[ -e "website/Test/$WEBSITE.purs" ]]; then
    . script/test-page.sh $WEBSITE $WEBSITE
 fi
 
+if [[ -f dist/$WEBSITE/test.mjs ]]; then
+   echo "Running dist/$WEBSITE/test.mjs"
+   node ./dist/fluid/shared/website-test.mjs $WEBSITE
+else
+   echo "No test.mjs found for $WEBSITE in dist/$WEBSITE"
+fi
+
 if [[ -e "website/Test/$WEBSITE" ]]; then
    PAGES=($(for FILE in website/Test/$WEBSITE/*.purs; do
       basename "$FILE" | sed 's/\.[^.]*$//'
