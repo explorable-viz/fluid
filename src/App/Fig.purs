@@ -11,6 +11,7 @@ import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.FoldableWithIndex (foldlWithIndex)
+import Data.List ((:))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
@@ -34,7 +35,7 @@ import Module (loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), Endo, absurd, error, singleton, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, filter, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
@@ -152,13 +153,10 @@ selectionResult fig@{ dir, v, γ, ι } =
 intermediates :: Fig -> Selection (Set DVertex) -> Selection (Set DVertex) -> Env (SelStates 𝔹)
 intermediates { spec, in_roots, inerts } αs ιαs =
    flip (maybe empty) spec.query
-      \query ->
-         let
-            ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
+      \query -> rebuildι inerts αs 
+               $ filterKeys (\α -> not (Vertex α ∈ in_roots))
                $ runQuery query
                $ ιαs.persistent ∪ ιαs.transient
-         in
-            rebuildι inerts αs ια
 
 drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
 drawIntermediates divId (Env ι) unused redraw = do
@@ -216,7 +214,7 @@ loadFig spec@{ fluidSrcPaths, imports, file, datasets, linking } = do
    let
       opEval = withOp eval
 
-      inputs' = foldlWithIndex (\k acc (Val α _ _) -> if α ∈ in_roots then singleton k ∪ acc else acc) empty (unwrap γα)
+      inputs' = Set.fromFoldable (foldlWithIndex (\k acc (Val α _ _) -> if α ∈ in_roots then k : acc else acc) mempty (unwrap γα))
 
       graphgc = graphGC eval
       graphgc_op = graphGC opEval
@@ -250,36 +248,31 @@ loadFig spec@{ fluidSrcPaths, imports, file, datasets, linking } = do
       linkedInputs selType γ = γ'' × v × vertices g × ιαs
          where
          γ' = γ <#> getSel selType
-         selectedPart = selectαs (γ' <#> to𝔹) γα
+         selectedα = selectαs (γ' <#> to𝔹) γα
          v × g = demandedBy γ'
          γ'' = if linking then fst (demands v) else γ'
-         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices (bwdSlice (selectedPart × opEval.g'))
+         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedα) $ vertices $ bwdSlice $ selectedα × opEval.g'
 
       linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
       linkedOutputs selType v = γ × v'' × vertices g × ιαs
          where
          v' = v <#> getSel selType
+         selectedα = selectαs (v' <#> to𝔹) outα
          γ × g = demands v'
          v'' = if linking then fst (demandedBy γ) else v'
-         selectedPart = selectαs (v' <#> to𝔹) outα
-         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices
-            ( bwdSlice
-                 ( selectedPart × eval.g'
-                 )
-            )
-
-      -- ιαs = (spy "ιαs" (show <<< (map (fst <<< unwrap)) <<< Array.fromFoldable) $ vertices (bwdSlice (selectedPart × eval.g')))
+         ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedα) $ vertices $ bwdSlice $ selectedα × eval.g'
 
       linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
       linkIntermediates ι =
          let
-            ια = Env $ ιfromαs g0 (keys ι) :: Env Vertex
+            ιkeys = keys ι
+            ια = Env $ ιfromαs g0 ιkeys :: Env Vertex
             ι' = ι <#> getSel Transient >>> to𝔹
             αs = selectαs ι' ια
             v = inert'.v <*> select𝔹s outα (vertices $ bwdSlice (αs × opEval.g))
             γ = inert'.γ <*> select𝔹s γα (vertices $ bwdSlice (αs × eval.g))
          in
-            γ × v × (dvertices g0 αs) × (Set.map (\α -> DVertex (Vertex α × vertexData g0 (Vertex α))) $ keys ι)
+            γ × v × (dvertices g0 αs) × Set.map (\α -> DVertex (Vertex α × vertexData g0 (Vertex α))) ιkeys
 
    pure
       { spec

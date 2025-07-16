@@ -253,20 +253,18 @@ accumDocs
    -> DocOpt Expr Vertex
    -> ValDoc Vertex
    -> m (Val Vertex)
-accumDocs γ v@(Val α' vdoc v') doc doc' = do
-   vdoc' <- evalDocOpt (γ <+> (maplet "this" (Val α' None' v'))) doc
+accumDocs γ v@(Val α' vdoc u) doc doc' = do
+   vdoc' <- evalDocOpt (γ <+> (maplet "this" (Val α' None' u))) doc
    let new_vdoc = doc' <> vdoc' <> vdoc
    addRefs v new_vdoc
-   pure (Val α' new_vdoc v')
+   pure (Val α' new_vdoc u)
 
 addRefs :: forall m. MonadWithGraphsAlloc m => Val Vertex -> ValDoc Vertex -> m Unit
 addRefs _ None' = pure unit
+addRefs _ (ValDoc Nil _) = pure unit
 addRefs v@(Val α _ _) (ValDoc refs _) = do
    let αs = Set.fromFoldable $ getαs <$> refs
-   if length refs /= 0 then
-      extend (DVertex (α × pack v)) αs
-   else
-      pure unit
+   extend (DVertex (α × pack v)) αs
    where
    getαs (Val α' _ _) = α'
 

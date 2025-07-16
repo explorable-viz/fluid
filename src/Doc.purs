@@ -15,7 +15,7 @@ data DocOpt e a = None | Doc (List (e a)) (List (DocCommentElem e a))
 data DocCommentElem :: (Type -> Type) -> Type -> Type
 data DocCommentElem e a = Token String | Unquote (e a)
 
--- Purescript Typeclass instances
+-- Strange Eq instance to overcome parse/prettyP eq issue
 instance Eq (e a) => Eq (DocOpt e a) where
    eq None None = true
    eq (Doc _ doc) (Doc _ doc') = doc == doc'

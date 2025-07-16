@@ -15,7 +15,6 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, unions)
 import Data.Set as Set
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
-import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
@@ -25,7 +24,7 @@ import Expr (Elim, Expr, fv)
 import File (class LoadFile)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, DVertex, pack, typeName, unpack, vertices)
+import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
 import Graph.WithGraph (class MonadWithGraphsAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Unsafe.Coerce (unsafeCoerce)
@@ -130,18 +129,6 @@ reaches ρ xs = go (Set.toUnfoldable xs) empty
       go (Set.toUnfoldable (fv σ ∩ dom_ρ) <> xs') (singleton x ∪ acc)
       where
       σ = get x ρ
-
-collectDocs :: Set Vertex -> Val Vertex -> Set DVertex
-collectDocs αs (Val α doc val) = subVals ∪ current
-   where
-   current = case doc of
-      None' -> empty
-      ValDoc ins _ -> if α ∈ αs then unions $ map (\v'@(Val α' _ _) -> collectDocs αs v' ∪ singleton (DVertex $ α' × pack v')) ins else empty
-   subVals = case val of
-      Constr _ vals -> unions (collectDocs αs <$> vals)
-      Dictionary (DictRep d) -> unions (collectDocs αs <<< snd <$> values d)
-      Matrix (MatrixRep (vss × _ × _)) -> unions (collectDocs αs <$> concat vss)
-      _ -> empty
 
 forDefs :: forall a. Dict (Elim a) -> Elim a -> Dict (Elim a)
 forDefs ρ σ = restrict (reaches ρ (fv σ ∩ Set.fromFoldable (keys ρ))) ρ
