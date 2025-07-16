@@ -3,7 +3,6 @@
     "file": "matrix-multiply/matmul",
     "imports": [ "lib/matrix", "matrix-multiply/a-matrix", "matrix-multiply/b-matrix", "matrix-multiply/c-matrix" ],
     "datasets": [],
-    "inputs": [ "aMatrix", "bMatrix", "cMatrix" ],
     "query": true,
     "linking": false
 }

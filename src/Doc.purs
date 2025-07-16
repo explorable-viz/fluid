@@ -2,7 +2,7 @@ module Doc where
 
 import Prelude
 
-import Data.List (List, zipWith)
+import Data.List (List(..), zipWith)
 import Data.Set as Set
 import Data.Traversable (class Foldable, class Traversable)
 import Graph (class Vertices, Vertex, vertices)
@@ -19,6 +19,8 @@ data DocCommentElem e a = Token String | Unquote (e a)
 instance Eq (e a) => Eq (DocOpt e a) where
    eq None None = true
    eq (Doc _ doc) (Doc _ doc') = doc == doc'
+   eq (Doc _ Nil) None = true
+   eq None (Doc _ Nil) = true
    eq _ _ = false
 
 instance Eq (e a) => Eq (DocCommentElem e a) where

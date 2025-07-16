@@ -328,7 +328,7 @@ graphEval { n, γ } e = do
       let inα = EnvExpr γ eα
       g × g' × outα <- runWithGraphsT (eval γ eα mempty) (vertices inα)
       when checking.outputsInGraph $ check (vertices outα ⊆ vertices g) "outputs in graph"
-      let in_roots = (sinks g') \\ (sources g')
+      let in_roots = sinks g' \\ sources g'
       pure (g × g' × in_roots × inα × outα)
    pure { g, g', in_roots, graph_fwd, graph_bwd, inα, outα }
    where

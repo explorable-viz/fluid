@@ -10,7 +10,7 @@ import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View', drawVi
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
--- import Data.Array (fromFoldable)
+import Data.FoldableWithIndex (foldlWithIndex)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
@@ -22,7 +22,6 @@ import Dict (Dict)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class.Console (log, logShow)
 import Effect.Exception (Error)
 import EvalGraph (graphEval, graphGC, withOp)
 import File (class LoadFile, File(..))
@@ -35,7 +34,7 @@ import Module (loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), Endo, absurd, error, spy, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, error, singleton, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, filter, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
@@ -210,20 +209,21 @@ lift
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
 loadFig :: forall m. MonadAff m => MonadError Error m => LoadFile m => FigSpec -> m Fig
-loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
+loadFig spec@{ fluidSrcPaths, imports, file, datasets, linking } = do
    progCxt <- loadProgCxt { fluidSrcPaths } imports datasets
    { s, e, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
-   eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
+   eval@({ inα: EnvExpr γα _, in_roots, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval
-      inputs' = Set.fromFoldable inputs
-      EnvExpr γ e' = erase eval.inα
-      GC focus = unrestrictGC γ inputs' >>> unprojExpr (EnvExpr γ e')
-      Env γ_restricted = restrict inputs' γα
-      in_roots = Set.fromFoldable $ (\(Val α _ _) -> α) <$> γ_restricted
+
+      inputs' = foldlWithIndex (\k acc (Val α _ _) -> if α ∈ in_roots then singleton k ∪ acc else acc) empty (unwrap γα)
 
       graphgc = graphGC eval
       graphgc_op = graphGC opEval
+
+      EnvExpr γ e' = erase eval.inα
+      GC focus = unrestrictGC γ inputs' >>> unprojExpr (EnvExpr γ e')
+      Env γ_restricted = restrict inputs' γα
 
       gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
       gcBwd v = first focus.bwd (graphgc.bwd v)
@@ -256,7 +256,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
          ιαs = filter (\(DVertex (α × _)) -> not $ α ∈ selectedPart) $ vertices (bwdSlice (selectedPart × opEval.g'))
 
       linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex × Set DVertex
-      linkedOutputs selType v = γ × v'' × vertices g × (spy "ιαs" (show <<< Set.map (fst <<< unwrap)) ιαs)
+      linkedOutputs selType v = γ × v'' × vertices g × ιαs
          where
          v' = v <#> getSel selType
          γ × g = demands v'
@@ -280,12 +280,7 @@ loadFig spec@{ fluidSrcPaths, inputs, imports, file, datasets, linking } = do
             γ = inert'.γ <*> select𝔹s γα (vertices $ bwdSlice (αs × eval.g))
          in
             γ × v × (dvertices g0 αs) × (Set.map (\α -> DVertex (Vertex α × vertexData g0 (Vertex α))) $ keys ι)
-   log "in_roots"
-   logShow (in_roots)
-   log "eval.in_roots"
-   logShow (eval.in_roots)
-   -- log "g'"
-   -- logShow (map (\α -> α × inN eval.g' α) (fromFoldable (in_roots)))
+
    pure
       { spec
       , s

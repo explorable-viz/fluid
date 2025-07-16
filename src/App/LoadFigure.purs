@@ -24,18 +24,16 @@ type JsonSpec =
    , datasets :: Array (Bind String)
    , imports :: Array String
    , file :: String
-   , inputs :: Array String
    , query :: Boolean
    , linking :: Boolean
    }
 
 figSpecFromJson :: JsonSpec -> FigSpec
-figSpecFromJson spec@{ datasets, file, imports, inputs, query, linking } =
+figSpecFromJson spec@{ datasets, file, imports, query, linking } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , datasets
    , imports
    , file: File file
-   , inputs
    , query:
         if query then
            Just $ asVal >=> case _ of

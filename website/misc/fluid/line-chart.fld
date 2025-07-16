@@ -2,7 +2,7 @@ let series type country = [
    { x: row.year, y: row.output }
    | year <- [2013..2018], row <- renewables,
    row.year == year, row.energyType == type, row.country == country
-] in LineChart {
+] in @[renewables] LineChart {
    tickLabels: { x: Default, y: Default },
    caption: "Change in renewable energy output of USA relative to China",
    size: { width: 330, height: 285 },

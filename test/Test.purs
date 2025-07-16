@@ -23,9 +23,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
--- main = run (second runWebT <$> tests)
+main = run (second runWebT <$> tests)
 
-main = run (second runWebT <$> scratchpad)
+-- main = run (second runWebT <$> scratchpad)
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => LoadFile m => TestSuite m
 scratchpad = linkedOutputsSuite linkedOutputs_cases <> linkedInputsSuite linkedInputs_cases

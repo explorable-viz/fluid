@@ -16,7 +16,6 @@ linkedInputs_spec3 =
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
         , file: File "linked-inputs/energyscatter"
-        , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
         , linking: true
         }
@@ -41,7 +40,6 @@ linkedInputs_spec4 =
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
         , file: File "linked-inputs/energyscatter"
-        , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
         , linking: true
         }
@@ -74,7 +72,6 @@ linkedInputs_spec5 =
              [ "nonRenewables" ↦ "dataset/mini-non-renewables"
              , "renewables" ↦ "dataset/mini-renewables"
              ]
-        , inputs: [ "nonRenewables", "renewables" ]
         , query: Nothing
         , linking: true
         }
