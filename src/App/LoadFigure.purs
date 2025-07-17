@@ -14,7 +14,8 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Doc (DocOpt(..))
 import Effect (Effect)
---import Effect.Aff (Aff, launchAff, launchAff_)
+import Effect.Aff (Aff, launchAff_)
+import Effect.Class (liftEffect)
 import File (File(..), FileCxt(..), Folder(..))
 import Graph (DVertex'(..))
 import Module.Web (loadFile', runWebT)
@@ -62,26 +63,8 @@ loadFigure fileName = runAffs_ (uncurry drawFig)
                     ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec')
    ]
 
-{-
--- TRYING TO MAKE THIS WORK
-loadSpec :: String -> JsonSpec
-loadSpec fileName = launchAff_ do
-      result <- get json fileName
-      case result of
-         Left err -> error ("Json fetching failed with " <> printError err)
-         Right response -> case decodeJson response.body of
-            Left err -> error ("JSON decoding failed with " <> show err)
-            Right decodedSpec  -> pure $ decodedSpec
-
-loadFigureOLD :: String -> Effect Unit --OLD WAY OF DOING IT, SHOULD STILL WORK
-loadFigureOLD filename = do
-   jsonSpec <- loadSpec filename
-   figSpec <- figSpecFromJson filename
-   loadFigureFromFigSpec figSpec
--}
-
-loadFigureFromFigSpec :: FigSpec -> Effect Unit
-loadFigureFromFigSpec spec@{ fluidSrcPaths } = runAffs_ (uncurry drawFig)
+loadFigure_ :: FigSpec -> Effect Unit -- TO DO: RENAME TO loadFigure once the old one is gone 
+loadFigure_ spec@{ fluidSrcPaths } = runAffs_ (uncurry drawFig)
    [ do
         ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec)
    ]
@@ -99,6 +82,26 @@ loadFigureFromFilename fileName = runAffs_ (uncurry drawFig)
                     let spec'@{ fluidSrcPaths } = figSpecFromJson spec
                     ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec')
    ]
+
+loadSpec :: String -> Aff (Maybe JsonSpec)
+loadSpec filename = do
+   result <- get json filename
+   case result of
+      Left err -> error ("Json fetching failed with " <> printError err)
+      Right response ->
+         case decodeJson response.body of
+            Left err -> error ("JSON decoding failed with " <> show err)
+            Right spec -> pure $ Just spec
+
+loadFigureOLD :: String -> Effect Unit --OLD WAY OF DOING IT, SHOULD STILL WORK
+loadFigureOLD filename = launchAff_ do
+   jsonSpec' <- loadSpec filename
+   case jsonSpec' of
+      Just jsonSpec -> do
+         let figSpec = figSpecFromJson jsonSpec
+         liftEffect $ loadFigure_ figSpec
+      Nothing -> do
+         pure unit
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
