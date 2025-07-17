@@ -21,6 +21,7 @@ import Prelude hiding (apply)
 
 import Bind (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Reader (class MonadReader)
 import Data.Array (range) as A
 import Data.Either (Either(..))
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
@@ -37,7 +38,7 @@ import Doc (DocCommentElem(..), DocOpt(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
-import File (class LoadFile)
+import File (class LoadFile, FileCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -103,7 +104,7 @@ closeDefs γ ρ αs =
       in
          new (flip Val None') αs $ V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ)
 
-apply :: forall m. MonadWithGraphsAlloc m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
+apply :: forall m. MonadWithGraphsAlloc m => MonadReader FileCxt m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
@@ -132,7 +133,7 @@ apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadWithGraphsAlloc m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
+eval :: forall m. MonadWithGraphsAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ = withMsg "Variable lookup" $ lookup' op γ
 eval γ (Int α doc n) αs = do
@@ -188,7 +189,7 @@ eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
-eval_module :: forall m. MonadWithGraphsAlloc m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. MonadWithGraphsAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
@@ -201,7 +202,7 @@ eval_module γ = go empty
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       go (γ' <+> γ'') (Module ds) αs
 
-eval_progCxt :: forall m. MonadWithGraphsAlloc m => LoadFile m => ProgCxt Vertex -> m (Env Vertex)
+eval_progCxt :: forall m. MonadWithGraphsAlloc m => MonadReader FileCxt m => LoadFile m => ProgCxt Vertex -> m (Env Vertex)
 eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
    where
@@ -215,7 +216,7 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       v <- eval γ e empty
       pure $ γ <+> maplet x v
 
-evalDocOpt :: forall m. MonadWithGraphsAlloc m => LoadFile m => Env Vertex -> DocOpt Expr Vertex -> m (ValDoc Vertex)
+evalDocOpt :: forall m. MonadWithGraphsAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> DocOpt Expr Vertex -> m (ValDoc Vertex)
 evalDocOpt _ None = pure None'
 evalDocOpt γ (Doc ins tokens) = do
    refs <- sequence (eval γ <$> ins <@> empty)
@@ -229,6 +230,7 @@ evalDocOpt γ (Doc ins tokens) = do
 new'
    :: forall m
     . MonadWithGraphsAlloc m
+   => MonadReader FileCxt m
    => LoadFile m
    => Env Vertex
    -> Set Vertex
@@ -247,6 +249,7 @@ new' γ αs doc u = do
 accumDocs
    :: forall m
     . MonadWithGraphsAlloc m
+   => MonadReader FileCxt m
    => LoadFile m
    => Env Vertex
    -> Val Vertex
@@ -319,7 +322,7 @@ toGC
    -> GaloisConnection (s 𝔹) (t 𝔹)
 toGC { fwd, bwd } = GC { fwd: fst <<< fwd, bwd: fst <<< bwd }
 
-graphEval :: forall m. MonadAff m => LoadFile m => MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
+graphEval :: forall m. MonadAff m => MonadReader FileCxt m => LoadFile m => MonadError Error m => GraphConfig -> Raw Expr -> m (GraphEval GraphImpl EnvExpr Val)
 graphEval { n, γ } e = do
    _ × _ × g × g' × in_roots × inα × outα <- flip runAllocT n do
       eα <- alloc e

@@ -5,6 +5,7 @@ import Prelude hiding (absurd, append)
 import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
+import Control.Monad.Reader (class MonadReader)
 import Data.Array (concat, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
@@ -21,7 +22,7 @@ import Dict as D
 import Doc (DocCommentElem)
 import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
-import File (class LoadFile)
+import File (class LoadFile, FileCxt)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
@@ -67,7 +68,7 @@ instance Highlightable a => Highlightable (a × b) where
 
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
-type Op = forall m. MonadWithGraphsAlloc m => MonadError Error m => LoadFile m => List (Val Vertex) -> m (Val Vertex)
+type Op = forall m. MonadWithGraphsAlloc m => MonadError Error m => MonadReader FileCxt m => LoadFile m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' = ForeignOp'
    { arity :: Int

@@ -4,6 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.Util (Selector, getPersistent, unselected)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Reader (class MonadReader)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
@@ -15,7 +16,7 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
-import File (class LoadFile, File, Folder(..))
+import File (class LoadFile, File, FileCxt, Folder(..))
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parse, prepConfig)
@@ -39,9 +40,9 @@ type SelectionSpec =
 fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
-test ∷ forall m. LoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file progCxt spec (n × _) = do
-   { s, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
+   { s, gconfig } <- prepConfig file progCxt
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n
@@ -67,7 +68,7 @@ benchNames =
    , demBy_G_suff_dual: "DemBy-Suff"
    }
 
-testProperties :: forall m. LoadFile m => MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
+testProperties :: forall m. MonadReader FileCxt m => LoadFile m => MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
 

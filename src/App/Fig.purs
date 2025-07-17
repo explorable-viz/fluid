@@ -12,6 +12,7 @@ import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Data.FoldableWithIndex (foldlWithIndex)
 import Data.List ((:))
+import Control.Monad.Reader (class MonadReader)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
@@ -25,7 +26,7 @@ import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import EvalGraph (graphEval, graphGC, withOp)
-import File (class LoadFile, File(..))
+import File (class LoadFile, File(..), FileCxt)
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex, DVertex'(..), Vertex(..), dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -153,10 +154,10 @@ selectionResult fig@{ dir, v, γ, ι } =
 intermediates :: Fig -> Selection (Set DVertex) -> Selection (Set DVertex) -> Env (SelStates 𝔹)
 intermediates { spec, in_roots, inerts } αs ιαs =
    flip (maybe empty) spec.query
-      \query -> rebuildι inerts αs 
-               $ filterKeys (\α -> not (Vertex α ∈ in_roots))
-               $ runQuery query
-               $ ιαs.persistent ∪ ιαs.transient
+      \query -> rebuildι inerts αs
+         $ filterKeys (\α -> not (Vertex α ∈ in_roots))
+         $ runQuery query
+         $ ιαs.persistent ∪ ιαs.transient
 
 drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
 drawIntermediates divId (Env ι) unused redraw = do
@@ -206,10 +207,10 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. MonadAff m => MonadError Error m => LoadFile m => FigSpec -> m Fig
-loadFig spec@{ fluidSrcPaths, imports, file, datasets, linking } = do
-   progCxt <- loadProgCxt { fluidSrcPaths } imports datasets
-   { s, e, gconfig } <- prepConfig { fluidSrcPaths } file progCxt
+loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> m Fig
+loadFig spec@{ imports, file, datasets, linking } = do
+   progCxt <- loadProgCxt imports datasets
+   { s, e, gconfig } <- prepConfig file progCxt
    eval@({ inα: EnvExpr γα _, in_roots, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval

@@ -3,12 +3,17 @@ set -xeu
 
 PREFIX=""
 
-while getopts "w:l" opt; do
+while getopts "l" opt; do
    case $opt in
-      w) WEBSITE="$OPTARG";;
       l) PREFIX=node_modules/@explorable-viz/fluid;;
    esac
 done
+
+WEBSITE="$1"
+if [ -z "$WEBSITE" ]; then
+   echo "Usage: $0 [-l] <website-name>" >&2
+   exit 1
+fi
 
 if [ ! -d "website/$WEBSITE" ]; then
    echo "Error: Directory 'website/$WEBSITE' does not exist." >&2

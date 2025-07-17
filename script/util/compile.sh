@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -xe
 
-rm -rf output
 rm -rf output-es
 yarn tidy
 
