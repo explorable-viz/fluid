@@ -25,7 +25,8 @@
     "script/util/clean.sh",
     "script/util/lisp-case.sh",
     "website/article",
-    "script/install-article.sh"
+    "script/install-article.sh",
+    "script/util/serve.sh"
   ],
   "scripts": {
     "benchmark": "./script/benchmark.sh",
