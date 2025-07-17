@@ -33,9 +33,9 @@ main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite loadFile
-   [ { file: "comments/app"
+   [ { file: "comments/app-arg"
      , imports: []
-     , fwd_expect: "\"\"\" This function application returns the length of a list.\"\"\" 2"
+     , fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
      }
    ]
 

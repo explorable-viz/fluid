@@ -60,6 +60,29 @@ data Expr a
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
+setDocOpt :: forall a. DocOpt a -> Expr a -> Expr a
+setDocOpt _ (Var x) = Var x
+setDocOpt _ (Op op) = Op op
+setDocOpt doc (Int a _ n) = Int a doc n
+setDocOpt doc (Float a _ n) = Float a doc n
+setDocOpt doc (Str a _ s) = Str a doc s
+setDocOpt doc (Dictionary a _ ees) = Dictionary a doc ees
+setDocOpt doc (Constr a _ c es) = Constr a doc c es
+setDocOpt doc (Matrix a _ e1 xy e2) = Matrix a doc e1 xy e2
+setDocOpt _ (Lambda a) = Lambda a
+setDocOpt doc (Project _ e x) = Project doc e x
+setDocOpt doc (DProject _ e x) = DProject doc e x
+setDocOpt doc (App _ e1 e2) = App doc e1 e2
+setDocOpt _ (Let def e) = Let def e
+setDocOpt _ (LetRec recdefs e) = LetRec recdefs e
+setDocOpt _ (BinaryApp e1 op e2) = BinaryApp e1 op e2
+setDocOpt doc (MatchAs e μ) = MatchAs e (map (\(p × e') -> p × setDocOpt doc e') μ)
+setDocOpt _ (IfElse e1 e2 e3) = IfElse e1 e2 e3
+setDocOpt doc (ListEmpty a _) = ListEmpty a doc
+setDocOpt doc (ListNonEmpty a _ e1 e2) = ListNonEmpty a doc e1 e2
+setDocOpt _ (ListEnum e1 e2) = ListEnum e1 e2
+setDocOpt doc (ListComp a _ e qs) = ListComp a doc e qs
+
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
 
 data ListRest a
