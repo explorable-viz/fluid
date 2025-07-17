@@ -69,7 +69,6 @@ loadFigure_ spec@{ fluidSrcPaths } = runAffs_ (uncurry drawFig)
         ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec)
    ]
 
-
 loadSpec :: String -> Aff (Maybe JsonSpec)
 loadSpec filename = do
    result <- get json filename
