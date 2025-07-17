@@ -20,6 +20,10 @@ if [ ! -d "website/$WEBSITE" ]; then
    exit 1
 fi
 
+if [[ "$0" == "node/modules/"* ]]; then
+   PREFIX="node_modules/@explorable-viz/fluid/"
+fi
+
 PREFIX_=${PREFIX:+$PREFIX/}
 echo "Cleaning dist/$WEBSITE"
 . "${PREFIX_}script/util/clean.sh" $WEBSITE
