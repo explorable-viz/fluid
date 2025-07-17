@@ -10,11 +10,8 @@ import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View', drawVi
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
-import Data.FoldableWithIndex (foldlWithIndex)
-import Data.List ((:))
 import Control.Monad.Reader (class MonadReader)
 import Data.Maybe (Maybe(..), maybe)
-import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set as Set
@@ -207,22 +204,21 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> m Fig
-loadFig spec@{ imports, file, datasets, linking } = do
+loadFig :: forall m. MonadAff m => MonadReader FileCxt m => MonadError Error m => LoadFile m => FigSpec -> m Fig
+loadFig spec@{ inputs, imports, file, datasets, linking } = do
    progCxt <- loadProgCxt imports datasets
    { s, e, gconfig } <- prepConfig file progCxt
-   eval@({ inα: EnvExpr γα _, in_roots, outα, g: g0 }) <- graphEval gconfig e
+   eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval
-
-      inputs' = Set.fromFoldable (foldlWithIndex (\k acc (Val α _ _) -> if α ∈ in_roots then k : acc else acc) mempty (unwrap γα))
-
-      graphgc = graphGC eval
-      graphgc_op = graphGC opEval
-
+      inputs' = Set.fromFoldable inputs
       EnvExpr γ e' = erase eval.inα
       GC focus = unrestrictGC γ inputs' >>> unprojExpr (EnvExpr γ e')
       Env γ_restricted = restrict inputs' γα
+      in_roots = Set.fromFoldable $ (\(Val α _ _) -> α) <$> γ_restricted
+
+      graphgc = graphGC eval
+      graphgc_op = graphGC opEval
 
       gcBwd :: Val 𝔹 -> Env 𝔹 × GraphImpl
       gcBwd v = first focus.bwd (graphgc.bwd v)

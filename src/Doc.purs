@@ -18,9 +18,9 @@ data DocCommentElem e a = Token String | Unquote (e a)
 -- Strange Eq instance to overcome parse/prettyP eq issue
 instance Eq (e a) => Eq (DocOpt e a) where
    eq None None = true
+   eq None (Doc Nil Nil) = true
+   eq (Doc Nil Nil) None = true
    eq (Doc _ doc) (Doc _ doc') = doc == doc'
-   eq (Doc _ Nil) None = true
-   eq None (Doc _ Nil) = true
    eq _ _ = false
 
 instance Eq (e a) => Eq (DocCommentElem e a) where

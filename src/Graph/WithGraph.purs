@@ -46,7 +46,7 @@ instance Monad m => MonadAlloc (AllocT m) where
       pure (Vertex $ show n)
 
 instance Monad m => MonadWithGraphs (WithGraphsT m) where
-   addHyperEdge α αs Deps = void $ modify_ $ first (consWith (α × αs))
+   addHyperEdge α αs Deps = void $ modify_ $ first ((:) (α × αs))
    addHyperEdge α αs Refs = void $ modify_ $ second (consWith (α × αs))
 
 instance MonadError Error m => MonadWithGraphsAlloc (WithGraphsAllocT m) where

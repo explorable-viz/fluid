@@ -10,7 +10,7 @@ let nthPad n xs =
          (movingAvg (map (fun r -> r.y) rs) window);
 let points =
       [ { x: r.year, y: r.emissions } | r <- methane, r.type == "Agriculture" ]
-in @[methane] LineChart {
+in LineChart {
    tickLabels: { x: Rotated, y: Default },
    size: { width: 330, height: 285 },
    caption: "SSP5-8.5 projected methane emissions (Agriculture)",

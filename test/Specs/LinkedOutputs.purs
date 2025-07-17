@@ -18,6 +18,7 @@ linkedOutputs_spec1 =
         , datasets: [ "renewables" ↦ "dataset/renewables" ]
         , imports: []
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
+        , inputs: [ "renewables" ]
         , query: Nothing
         , linking: true
         }
@@ -47,6 +48,7 @@ linkedOutputs_spec2 =
              ]
         , imports: []
         , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
+        , inputs: [ "nonRenewables" ]
         , query: Nothing
         , linking: true
         }
@@ -68,6 +70,7 @@ movingAverages_spec =
         , datasets: [ "methane" ↦ "dataset/methane-emissions" ]
         , imports: []
         , file: File "linked-outputs/moving-average"
+        , inputs: [ "methane" ]
         , query: Nothing
         , linking: true
         }
@@ -82,6 +85,7 @@ linkedOutputs_cases =
           , datasets: [ "data" ↦ "linked-outputs/pairs-data" ]
           , imports: []
           , file: File "linked-outputs/pairs"
+          , inputs: [ "data" ]
           , query: Nothing
           , linking: true
           }
@@ -93,6 +97,7 @@ linkedOutputs_cases =
           , datasets: [ "data" ↦ "linked-outputs/convolution-data" ]
           , imports: [ "lib/matrix" ]
           , file: File "linked-outputs/convolution"
+          , inputs: [ "data" ]
           , query: Nothing
           , linking: true
           }

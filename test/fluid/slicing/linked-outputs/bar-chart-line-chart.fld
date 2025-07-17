@@ -1,4 +1,4 @@
-@[renewables] MultiView {
+MultiView {
    barChart:
       let totalFor c rows =
          sum [ row.output | row <- rows, row.country == c ];

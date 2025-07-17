@@ -4,7 +4,7 @@ let totalFor year country =
    in row.nuclearOut + row.gasOut + row.coalOut + row.petrolOut;
 let stack year = [ { y: country, z: totalFor year country } | country <- countries ];
 let yearData year = [ row | row <- nonRenewables, row.year == year, row.country `elem` countries ]
-in @[nonRenewables] MultiView {
+in MultiView {
    barChart: BarChart {
       caption: "Non-renewables output",
       size: { width: 275, height: 185 },
