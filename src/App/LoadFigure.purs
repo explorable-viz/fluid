@@ -69,19 +69,6 @@ loadFigure_ spec@{ fluidSrcPaths } = runAffs_ (uncurry drawFig)
         ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec)
    ]
 
-loadFigureFromFilename :: String -> Effect Unit -- ORIGINAL loadFigure (just renamed) 
-loadFigureFromFilename fileName = runAffs_ (uncurry drawFig)
-   [ do
-        result <- get json fileName
-        case result of
-           Left err -> error ("Json fetching failed with " <> printError err)
-           Right response ->
-              case decodeJson response.body of
-                 Left err -> error ("JSON decoding failed with " <> show err)
-                 Right spec -> do
-                    let spec'@{ fluidSrcPaths } = figSpecFromJson spec
-                    ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec')
-   ]
 
 loadSpec :: String -> Aff (Maybe JsonSpec)
 loadSpec filename = do
