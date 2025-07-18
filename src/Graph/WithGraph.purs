@@ -5,7 +5,8 @@ import Prelude hiding (map)
 import Control.Monad.Except (class MonadError, lift)
 import Control.Monad.State (StateT, modify, modify_, runStateT)
 import Data.Identity (Identity)
-import Data.List (List(..), range, (:))
+import Data.List (List(..), range, (:), findIndex, modifyAt)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set, isEmpty)
@@ -16,7 +17,7 @@ import Effect.Exception (Error)
 import Graph (class Graph, class TypeName, class Vertices, DVertex, DVertex'(..), Vertex(..), HyperEdge, addresses, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
+import Util (type (×), Endo, assertWhen, check, definitely', spy, spyFunWhenM, spyWhen, (×))
 import Util.Set ((\\))
 
 data WhichGraph = Deps | Refs
@@ -46,7 +47,7 @@ instance Monad m => MonadAlloc (AllocT m) where
 
 instance Monad m => MonadWithGraphs (WithGraphsT m) where
    addHyperEdge α αs Deps = void $ modify_ $ first ((:) (α × αs))
-   addHyperEdge α αs Refs = void $ modify_ $ second ((:) (α × αs))
+   addHyperEdge α αs Refs = void $ modify_ $ second (consWith (α × αs))
 
 instance MonadError Error m => MonadWithGraphsAlloc (WithGraphsAllocT m) where
    new constr αs u = do
@@ -113,3 +114,9 @@ runAlloc m = runAllocT m >>> unwrap
 
 instance Monad m => MonadAlloc (WithGraphsAllocT m) where
    fresh = lift fresh
+
+consWith :: HyperEdge -> List HyperEdge -> List HyperEdge
+consWith (α × αs) es =
+   case findIndex (\(α' × _) -> α == α') es of
+      Nothing -> (α × αs) : es
+      Just i -> definitely' $ modifyAt i (second (Set.union αs)) es

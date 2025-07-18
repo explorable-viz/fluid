@@ -172,15 +172,15 @@ eval γ (Project doc e e') α = do
       Val _ _ (V.Dictionary (DictRep d)) ->
          case v' of
             Val _ _ (V.Str s) -> do
-               v'' <- withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
-               accumDocs γ v'' doc
+               v''@(Val _ doc' _) <- withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
+               accumDocs γ v'' doc doc'
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval γ (App doc e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
-   v'' <- apply v v'
-   accumDocs γ v'' doc
+   v''@(Val _ doc' _) <- apply v v'
+   accumDocs γ v'' doc doc'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
@@ -254,12 +254,14 @@ accumDocs
    => Env Vertex
    -> Val Vertex
    -> DocOpt Expr Vertex
+   -> ValDoc Vertex
    -> m (Val Vertex)
-accumDocs γ v@(Val α' vdoc u) doc = do
+accumDocs γ (Val α' vdoc u) doc doc' = do
    vdoc' <- evalDocOpt (γ <+> (maplet "this" (Val α' None' u))) doc
-   let new_vdoc = vdoc' <> vdoc
-   addRefs (Val α' new_vdoc u) new_vdoc
-   pure v
+   let new_vdoc = doc' <> vdoc' <> vdoc
+   let v' = Val α' new_vdoc u
+   addRefs v' new_vdoc
+   pure v'
 
 addRefs :: forall m. MonadWithGraphsAlloc m => Val Vertex -> ValDoc Vertex -> m Unit
 addRefs _ None' = pure unit
