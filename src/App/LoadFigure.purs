@@ -14,7 +14,7 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Doc (DocOpt(..))
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_)
+import Effect.Aff (Aff, launchAff_, throwError)
 import Effect.Class (liftEffect)
 import File (File(..), FileCxt(..), Folder(..))
 import Graph (DVertex'(..))
@@ -63,31 +63,25 @@ loadFigure fileName = runAffs_ (uncurry drawFig)
                     ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec')
    ]
 
-loadFigure_ :: FigSpec -> Effect Unit -- TO DO: RENAME TO loadFigure once the old one is gone 
-loadFigure_ spec@{ fluidSrcPaths } = runAffs_ (uncurry drawFig)
-   [ do
-        ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec)
-   ]
+loadFigureFromSpec :: FigSpec -> Effect Unit
+loadFigureFromSpec spec@{ fluidSrcPaths } = runAffs_ (uncurry drawFig)
+   [ ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec) ]
 
-loadSpec :: String -> Aff (Maybe JsonSpec)
+loadSpec :: String -> Aff JsonSpec
 loadSpec filename = do
    result <- get json filename
    case result of
-      Left err -> error ("Json fetching failed with " <> printError err)
+      Left err -> throwError (error ("Json fetching failed with " <> printError err))
       Right response ->
          case decodeJson response.body of
-            Left err -> error ("JSON decoding failed with " <> show err)
-            Right spec -> pure $ Just spec
+            Left err -> throwError (error ("JSON decoding failed with " <> show err))
+            Right spec -> pure spec
 
 loadFigureOLD :: String -> Effect Unit --OLD WAY OF DOING IT, SHOULD STILL WORK
 loadFigureOLD filename = launchAff_ do
-   jsonSpec' <- loadSpec filename
-   case jsonSpec' of
-      Just jsonSpec -> do
-         let figSpec = figSpecFromJson jsonSpec
-         liftEffect $ loadFigure_ figSpec
-      Nothing -> do
-         pure unit
+   jsonSpec <- loadSpec filename
+   let figSpec = figSpecFromJson jsonSpec
+   liftEffect $ loadFigureFromSpec figSpec
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
