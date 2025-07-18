@@ -48,8 +48,8 @@ figSpecFromJson spec@{ datasets, file, imports, inputs, query, linking } =
    , linking
    }
 
-loadFigure :: String -> Effect Unit -- TO DELETE
-loadFigure fileName = runAffs_ (uncurry drawFig)
+loadFigureOLD :: String -> Effect Unit -- TO DELETE
+loadFigureOLD fileName = runAffs_ (uncurry drawFig)
    [ do
         -- TODO: simplify
         result <- get json fileName
@@ -63,9 +63,13 @@ loadFigure fileName = runAffs_ (uncurry drawFig)
                     ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec')
    ]
 
-loadFigureFromSpec :: FigSpec -> Effect Unit
-loadFigureFromSpec spec@{ fluidSrcPaths } = runAffs_ (uncurry drawFig)
-   [ ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig spec) ]
+loadFigureFromSpec :: JsonSpec -> Effect Unit
+loadFigureFromSpec spec = runAffs_ (uncurry drawFig)
+   [ let
+        figSpec@{ fluidSrcPaths } = figSpecFromJson spec
+     in
+        ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec)
+   ]
 
 loadSpec :: String -> Aff JsonSpec
 loadSpec filename = do
@@ -75,13 +79,12 @@ loadSpec filename = do
       Right response ->
          case decodeJson response.body of
             Left err -> throwError (error ("JSON decoding failed with " <> show err))
-            Right spec -> pure spec
+            Right spec -> pure $ spec
 
-loadFigureOLD :: String -> Effect Unit --OLD WAY OF DOING IT, SHOULD STILL WORK
-loadFigureOLD filename = launchAff_ do
+loadFigure :: String -> Effect Unit
+loadFigure filename = launchAff_ do
    jsonSpec <- loadSpec filename
-   let figSpec = figSpecFromJson jsonSpec
-   liftEffect $ loadFigureFromSpec figSpec
+   liftEffect $ loadFigureFromSpec jsonSpec
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
