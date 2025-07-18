@@ -1,9 +1,0 @@
-{
-    "fluidSrcPath": ["../fluid"],
-    "file": "convolution/emboss-wrap",
-    "imports": [ "lib/matrix", "convolution/test-image", "convolution/filter/emboss" ],
-    "datasets": [],
-    "inputs": [ "inputImage", "filter" ],
-    "query": false,
-    "linking": true
-}
