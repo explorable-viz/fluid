@@ -11,27 +11,28 @@ let mkBarChart scenName table =
             table
    };
 
+let round x = (floor (x * 100)) / 100;  
+
 let mkHistogram xs name nbins =
     let binWidth = (maximum xs - minimum xs) / nbins
     in BarChart {
         caption: "Histogram of distribution of " ++ name,
         size: { width: 275, height: 185},
         stackedBars:
-          map (fun (data, edge) -> { x: data, segments: [{ y: "density", z: length data / binWidth }] })
+          map (fun (data, edge) -> { x: numToStr (round edge), segments: [{ y: "density", z: length data / binWidth }] })
             (cut xs nbins)
     };
 
 let getHeight offset bar = (head bar.segments).z + offset;
 
-let changed126 = @[ssp126preds] (map (fun r -> r.changed) ssp126preds); 
-    changed245 = @[ssp245preds] """Data are distributed according to ${mkHistogram this "SSP2-4.5" 8}""" 
-        (map (fun r -> r.changed) ssp245preds);
+let changed126 = @[ssp126preds] (map (fun r -> { changed: r.changed }) ssp126preds); 
+    changed245 = @[ssp245preds] """ Data are distributed according to ${mkHistogram (map (fun r -> r.changed) this) "SSP2-4.5" 8} """
+        (map (fun r -> { changed: r.changed }) ssp245preds);
 
-    ssp126Total = { type: "Total", emissions: sum (map (fun r -> r.emissions) ssp126Source) };
-    ssp126table = ssp126Total : ssp126Source;
+    ssp126table = { type: "Total", emissions: @[changed126] (findPercentile 50 (map (fun r -> r.changed) changed126)) } : ssp126Source;
 
     ssp245table =
-        { type: "Total", emissions: @[changed245] (findPercentile 50 changed245) } : ssp245Source;
+        { type: "Total", emissions: @[changed245] (findPercentile 50 (map (fun r -> r.changed) changed245)) } : ssp245Source;
 
     ssp126 = mkBarChart "SSP1-2.6" ssp126table;
     ssp245 = mkBarChart "SSP2-4.5" ssp245table;

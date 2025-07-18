@@ -1,4 +1,8 @@
-MultiView { 
+""" Matrix multiplication is an associative operation, however by changing 
+    the bracketing of the multiplication of three matrices, we construct two different
+    intermediate matrices. Try clicking on the corresponding cell of both output matrices,
+    and see what happens in the data-pane. """
+(MultiView { 
     firstMatrix: matMul (matMul aMatrix bMatrix) cMatrix,
     secondMatrix: matMul aMatrix (matMul bMatrix cMatrix)
-}
+})

@@ -256,11 +256,12 @@ accumDocs
    -> DocOpt Expr Vertex
    -> ValDoc Vertex
    -> m (Val Vertex)
-accumDocs γ v@(Val α' vdoc u) doc doc' = do
+accumDocs γ (Val α' vdoc u) doc doc' = do
    vdoc' <- evalDocOpt (γ <+> (maplet "this" (Val α' None' u))) doc
    let new_vdoc = doc' <> vdoc' <> vdoc
-   addRefs v new_vdoc
-   pure (Val α' new_vdoc u)
+   let v' = Val α' new_vdoc u
+   addRefs v' new_vdoc
+   pure v'
 
 addRefs :: forall m. MonadWithGraphsAlloc m => Val Vertex -> ValDoc Vertex -> m Unit
 addRefs _ None' = pure unit

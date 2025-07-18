@@ -29,13 +29,13 @@ let convolve image kernel lookup =
            """Multiply these two elements"""
            (lookup x y image * kernel!(i', j'))
      | (i', j') in (i, j) |]
-     in @[interMatrix] (quot (matrixSum interMatrix) area)
+     in @[interMatrix] ((matrixSum interMatrix) `quot` area)
      | (m', n') in (m, n) |];
 
 let matMul a b =
     let ((m, n), (i, j)) = (dims a, dims b) in
     if not (n == i)
     then error "Dimensions mismatch"
-    else 
+    else
         [| @[a, b] (sum [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n])
         | (i', j') in (m, j) |];

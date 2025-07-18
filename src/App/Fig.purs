@@ -96,7 +96,7 @@ rebuildι inerts αs ι =
    where
    -- Consolidate with analogous calculation with γInert etc in loadFig?
    vs_inert = ι <#> \v -> select𝔹s v inerts
-   vs_selected = ι <#> \v@(Val α _ _) -> α × { persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient }
+   vs_selected = ι <#> \v@(Val α _ _) -> α × ({ persistent: select𝔹s v αs.persistent, transient: select𝔹s v αs.transient })
 
    setSels :: Val 𝔹 -> Vertex × Selection (Val 𝔹) -> String × Val (SelStates 𝔹)
    setSels inert (Vertex α × v) = α × (selStates <$> inert <*> v.persistent <*> v.transient)

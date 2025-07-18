@@ -34,7 +34,7 @@ let accumBins data Nil = [];
     accumBins data [l] = [];
     accumBins data (l : r : es) =
         let (ge, le) = splitOn (fun x -> x <= r) data
-        in (le, r - l) : accumBins ge (r : es);
+        in (le, r) : accumBins ge (r : es);
 
 let cut xs nbins =
     let low = minimum xs;

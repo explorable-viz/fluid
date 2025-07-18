@@ -2,7 +2,7 @@ module Doc where
 
 import Prelude
 
-import Data.List (List(..), zipWith)
+import Data.List (List, zipWith)
 import Data.Set as Set
 import Data.Traversable (class Foldable, class Traversable)
 import Graph (class Vertices, Vertex, vertices)
@@ -18,8 +18,6 @@ data DocCommentElem e a = Token String | Unquote (e a)
 -- Strange Eq instance to overcome parse/prettyP eq issue
 instance Eq (e a) => Eq (DocOpt e a) where
    eq None None = true
-   eq None (Doc Nil Nil) = true
-   eq (Doc Nil Nil) None = true
    eq (Doc _ doc) (Doc _ doc') = doc == doc'
    eq _ _ = false
 
