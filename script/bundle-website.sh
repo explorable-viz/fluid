@@ -3,12 +3,6 @@ set -xeu
 
 PREFIX=""
 
-while getopts "l" opt; do
-   case $opt in
-      l) PREFIX=node_modules/@explorable-viz/fluid;;
-   esac
-done
-
 WEBSITE="$1"
 if [ -z "$WEBSITE" ]; then
    echo "Usage: $0 [-l] <website-name>" >&2
@@ -18,6 +12,10 @@ fi
 if [ ! -d "website/$WEBSITE" ]; then
    echo "Error: Directory 'website/$WEBSITE' does not exist." >&2
    exit 1
+fi
+
+if [[ "${BASH_SOURCE[0]}" == *"/node_modules/"* ]]; then
+   PREFIX="node_modules/@explorable-viz/fluid/"
 fi
 
 PREFIX_=${PREFIX:+$PREFIX/}
