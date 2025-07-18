@@ -5,7 +5,7 @@ import Prelude hiding (map)
 import Control.Monad.Except (class MonadError, lift)
 import Control.Monad.State (StateT, modify, modify_, runStateT)
 import Data.Identity (Identity)
-import Data.List (List(..), range, (:), findIndex, modifyAt)
+import Data.List (List(..), range, (:), findIndex)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
@@ -17,7 +17,7 @@ import Effect.Exception (Error)
 import Graph (class Graph, class TypeName, class Vertices, DVertex, DVertex'(..), Vertex(..), HyperEdge, addresses, fromEdgeList, pack, showEdgeList, showGraph, showVertices, toEdgeList, vertices)
 import Lattice (Raw)
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, assertWhen, check, definitely', spy, spyFunWhenM, spyWhen, (×))
+import Util (type (×), Endo, assertWhen, check, spy, spyFunWhenM, spyWhen, (×))
 import Util.Set ((\\))
 
 data WhichGraph = Deps | Refs
@@ -119,4 +119,4 @@ consWith :: HyperEdge -> List HyperEdge -> List HyperEdge
 consWith (α × αs) es =
    case findIndex (\(α' × _) -> α == α') es of
       Nothing -> (α × αs) : es
-      Just i -> definitely' $ modifyAt i (second (Set.union αs)) es
+      Just _ -> es
