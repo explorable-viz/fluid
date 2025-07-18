@@ -29,7 +29,7 @@ let convolve image kernel lookup =
            """Multiply these two elements"""
            (lookup x y image * kernel!(i', j'))
      | (i', j') in (i, j) |]
-     in @[interMatrix] ((matrixSum interMatrix) `quot` area)
+     in @[interMatrix] (quot (matrixSum interMatrix) area)
      | (m', n') in (m, n) |];
 
 let matMul a b =

@@ -26,7 +26,7 @@ let mkHistogram xs name nbins =
 let getHeight offset bar = (head bar.segments).z + offset;
 
 let changed126 = @[ssp126preds] (map (fun r -> { changed: r.changed }) ssp126preds); 
-    changed245 = @[ssp245preds] """ Data are distributed according to ${mkHistogram (map (fun r -> r.changed) this) "SSP2-4.5" 8} """
+    changed245 = """ Data are distributed according to ${mkHistogram (map (fun r -> r.changed) this) "SSP2-4.5" 8} """
         (map (fun r -> { changed: r.changed }) ssp245preds);
 
     ssp126table = { type: "Total", emissions: @[changed126] (findPercentile 50 (map (fun r -> r.changed) changed126)) } : ssp126Source;

@@ -26,11 +26,9 @@ import Data.Tuple (snd)
 import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
 import Doc (DocCommentElem(..))
-import Lattice (erase)
 import Link (Link(..))
-import Pretty (prettyP)
 import Primitive (int, string, typeError, unpack)
-import Util (type (×), error, spy, (×))
+import Util (type (×), error, (×))
 import Util.Map (get)
 import Val (BaseVal(..), DictRep(..), Val(..), ValDoc(..))
 
@@ -72,7 +70,7 @@ viewPara (ValDoc _ doc) = Just $ Paragraph true $ fromFoldable $ formatPara $ do
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
    formatPara (Token str : xs) = pack (Text (str × inert)) : formatPara xs
    formatPara (Unquote (Val α _ (Int n)) : xs) = pack (Text (show n × α)) : formatPara xs
-   formatPara (Unquote v : xs) = view "" (spy "unquoteval" (prettyP <<< erase) v) Nothing : formatPara xs
+   formatPara (Unquote v : xs) = view "" v Nothing : formatPara xs
 
 -- ======================
 -- boilerplate

@@ -6,7 +6,7 @@ import Control.Monad.Rec.Class (Step(..), tailRec)
 import Data.Array (fromFoldable) as A
 import Data.Foldable (class Foldable)
 import Data.List (List(..), reverse, uncons, (:))
-import Data.List (concat, fromFoldable) as L
+import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, singleton, unions)
@@ -139,15 +139,6 @@ runQuery query αs =
            pure (α × result)
       )
       αs
-
-type Query' a = VertexData -> List (DVertex' a)
-
-runQuery' :: ∀ a. Ord a => Query' a -> List DVertex -> Dict a
-runQuery' query αs =
-   D.fromFoldable $ L.concat $
-      ( \(DVertex (_ × vd)) -> do
-           (\(DVertex ((Vertex α) × vd')) -> α × vd') <$> (query vd)
-      ) <$> αs
 
 -- ======================
 -- Packed data associated with Vertex

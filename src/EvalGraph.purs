@@ -265,7 +265,6 @@ accumDocs γ (Val α' vdoc u) doc doc' = do
 
 addRefs :: forall m. MonadWithGraphsAlloc m => Val Vertex -> ValDoc Vertex -> m Unit
 addRefs _ None' = pure unit
-addRefs _ (ValDoc Nil _) = pure unit
 addRefs v@(Val α _ _) (ValDoc refs _) = do
    let αs = Set.fromFoldable $ getαs <$> refs
    extend (DVertex (α × pack v)) αs
