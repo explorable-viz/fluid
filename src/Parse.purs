@@ -111,17 +111,13 @@ docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
-docComment expr' = optionDoc (try $ docComment' expr')
-   where
-   optionDoc p = option None (Doc <$> p)
+docComment expr' = option None (Doc <$> try (docComment' expr'))
 
 docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit))
 docComment' expr' = token.lexeme (go <?> "docComment")
    where
    go :: SParser (List (DocCommentElem Expr Unit))
-   go = do
-      words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
-      pure words
+   go = between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
 
 docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
 docCommentToken expr' =
@@ -246,18 +242,15 @@ defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are op tree leaves.
 expr_ :: SParser (Raw Expr)
-expr_ = do
-   doc <- docComment (fix exprParser)
-   e <- fix (exprParser)
-   pure $ setDocOpt doc e
+expr_ = fix exprParser
    where
    -- Pushing this to front of operator table to give it higher precedence than any other binary op.
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
-   --- add doc
-
    exprParser :: Endo (SParser (Raw Expr))
-   exprParser expr' =
-      buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
+   exprParser expr' = do
+      doc <- docComment expr'
+      e <- buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
+      pure $ setDocOpt doc e
 
    backtickOp :: Operator Identity String (Raw Expr)
    backtickOp = flip Infix AssocLeft do
@@ -406,7 +399,7 @@ expr_ = do
                (sign >>> Float unit None) <$> token.float
 
             stringLiteral :: SParser (Raw Expr)
-            stringLiteral = Str unit None <$> (notFollowedBy docCommentDelim *> token.stringLiteral)
+            stringLiteral = Str unit None <$> (try (notFollowedBy docCommentDelim) *> token.stringLiteral)
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)
