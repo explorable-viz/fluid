@@ -26,7 +26,7 @@ import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, option, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators (between, notFollowedBy, option, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -338,7 +338,7 @@ expr_ = do
                  <|> dict
                  <|> try float
                  <|> try int -- int may start with +/-
-                 <|> string
+                 <|> stringLiteral
                  <|> try pair
                  <|> listComp
             )
@@ -405,8 +405,8 @@ expr_ = do
                sign <- signOpt
                (sign >>> Float unit None) <$> token.float
 
-            string :: SParser (Raw Expr)
-            string = Str unit None <$> token.stringLiteral
+            stringLiteral :: SParser (Raw Expr)
+            stringLiteral = Str unit None <$> (notFollowedBy docCommentDelim *> token.stringLiteral)
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)

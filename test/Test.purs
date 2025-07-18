@@ -27,15 +27,15 @@ import Util ((×))
 main :: Effect Unit
 -- main = run tests
 
--- main = run $ asTestSuite (suite loadFile comments_cases)
+main = run $ asTestSuite (suite loadFile comments_cases)
 
-main = run scratchpad
+-- main = run scratchpad
 
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite loadFile
-   [ { file: "comments/app-arg"
+   [ { file: "comments/app"
      , imports: []
-     , fwd_expect: "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
+     , fwd_expect: "\"\"\" This function application returns the length of a list.\"\"\" 2"
      }
    ]
 

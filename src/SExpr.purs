@@ -76,12 +76,27 @@ setDocOpt doc (App _ e1 e2) = App doc e1 e2
 setDocOpt _ (Let def e) = Let def e
 setDocOpt _ (LetRec recdefs e) = LetRec recdefs e
 setDocOpt _ (BinaryApp e1 op e2) = BinaryApp e1 op e2
-setDocOpt doc (MatchAs e μ) = MatchAs e (map (\(p × e') -> p × setDocOpt doc e') μ)
+setDocOpt _ (MatchAs e μ) = MatchAs e μ
 setDocOpt _ (IfElse e1 e2 e3) = IfElse e1 e2 e3
 setDocOpt doc (ListEmpty a _) = ListEmpty a doc
 setDocOpt doc (ListNonEmpty a _ e1 e2) = ListNonEmpty a doc e1 e2
 setDocOpt _ (ListEnum e1 e2) = ListEnum e1 e2
 setDocOpt doc (ListComp a _ e qs) = ListComp a doc e qs
+
+docOpt :: forall a. Expr a -> DocOpt a
+docOpt (Int _ doc _) = doc
+docOpt (Float _ doc _) = doc
+docOpt (Str _ doc _) = doc
+docOpt (Constr _ doc _ _) = doc
+docOpt (Dictionary _ doc _) = doc
+docOpt (Matrix _ doc _ _ _) = doc
+docOpt (Project doc _ _) = doc
+docOpt (DProject doc _ _) = doc
+docOpt (App doc _ _) = doc
+docOpt (ListEmpty _ doc) = doc
+docOpt (ListNonEmpty _ doc _ _) = doc
+docOpt (ListComp _ doc _ _) = doc
+docOpt _ = Doc.None
 
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
 
