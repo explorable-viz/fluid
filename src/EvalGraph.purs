@@ -241,10 +241,10 @@ new' _ αs None u = new (\αs' -> \u' -> Val αs' None' u') αs u
 new' γ αs doc u = do
    α <- fresh
    vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None' u)) doc
-   let v' = Val α vdoc u
-   addRefs v' vdoc
-   addHyperEdge (DVertex (α × pack v')) αs Deps
-   pure v'
+   let v = Val α vdoc u
+   addRefs v vdoc
+   addHyperEdge (DVertex (α × pack v)) αs Deps
+   pure v
 
 accumDocs
    :: forall m
@@ -258,9 +258,9 @@ accumDocs
 accumDocs γ (Val α' vdoc u) doc = do
    vdoc' <- evalDocOpt (γ <+> (maplet "this" (Val α' None' u))) doc
    let new_vdoc = vdoc' <> vdoc
-   let v' = Val α' new_vdoc u
-   addRefs v' new_vdoc
-   pure v'
+   let v = Val α' new_vdoc u
+   addRefs v new_vdoc
+   pure v
 
 addRefs :: forall m. MonadWithGraphsAlloc m => Val Vertex -> ValDoc Vertex -> m Unit
 addRefs _ None' = pure unit
