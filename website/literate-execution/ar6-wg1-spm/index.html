@@ -42,9 +42,27 @@
 </div>
 
 <script type="module">
-   import { drawCode, loadFigure } from "../shared/load-figure.js";
-   loadFigure("spec.json")();
+
+   ///*
+   import { drawCode, loadFigureOLD } from "../shared/load-figure.js";
+   loadFigureOLD("spec.json")();
    drawCode("../fluid/ar6-wg1-spm")("figure-spm-4")();
+   //*/
+
+   /*
+   import { drawCode, loadFigureFromSpec } from "../shared/load-figure.js";
+   const spec2 = {
+    "fluidSrcPath": ["../fluid"],
+    "datasets": [["likelihoods", "ar6-wg1-spm/likelihoods"], ["ssp126Source", "ar6-wg1-spm/ssp126"], ["ssp126preds", "ar6-wg1-spm/ssp126preds"], ["ssp245Source", "ar6-wg1-spm/ssp245"], ["ssp245preds", "ar6-wg1-spm/ssp245preds"]],
+    "imports": [ "lib/stats" ],
+    "file": "ar6-wg1-spm/figure-spm-4",
+    "inputs": [ "ssp126Source", "ssp245Source", "ssp126preds", "ssp245preds" ],
+    "query": false,
+    "linking": false
+   }
+   loadFigureFromSpec(spec2)();
+   drawCode("../fluid/ar6-wg1-spm")("figure-spm-4")();
+   */
 </script>
 </body>
 </html>
