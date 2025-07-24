@@ -42,7 +42,7 @@
 </div>
 
 <script type="module">
-   import { drawCode, loadFigureFromSpec } from "../shared/load-figure.js";
+   import { drawCode, loadFigureFromJson } from "../shared/load-figure.js";
 
    const spec = {
     "fluidSrcPath": ["../fluid"],
@@ -54,9 +54,8 @@
     "linking": false
    }
    
-   loadFigureFromSpec(spec)();
+   loadFigureFromJson(spec)();
    drawCode("../fluid/ar6-wg1-spm")("figure-spm-4")();
-   //*/
 </script>
 </body>
 </html>
