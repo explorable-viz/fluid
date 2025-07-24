@@ -3,6 +3,8 @@ module Primitive.Defs where
 import Prelude hiding (absurd, apply, div, mod, top)
 
 import Bind (Bind)
+import Control.Monad.Reader (ask)
+import Data.Argonaut.Decode (parseJson)
 import Data.Foldable (foldM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
@@ -17,6 +19,7 @@ import Debug (trace)
 import Dict (fromFoldable) as D
 import Doc (DocOpt(..))
 import EvalGraph (apply) as G
+import File (File(..), FileCxt(..), loadFile)
 import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
@@ -35,6 +38,7 @@ primitives = wrap $ D.fromFoldable
    , extern debugLog
    , extern dims
    , extern error_
+   , extern loadJson
    , unary "floor" { i: number, o: int, fwd: floor }
    , unary "log" { i: intOrNumber, o: number, fwd: log }
    , unary "numToStr" { i: intOrNumber, o: string, fwd: numToStr }
@@ -79,6 +83,18 @@ debugLog =
    op :: Op
    op (x : Nil) = pure $ trace x (const x)
    op _ = throw "Single value expected"
+
+loadJson :: ForeignOp
+loadJson =
+   ForeignOp ("loadJson" × ForeignOp' { arity: 1, op: op })
+   where
+   op :: Op
+   op (Val _ _ (Str s) : Nil) = do
+      FileCxt { fluidSrcPaths } <- ask
+      str <- loadFile fluidSrcPaths (File s)
+      let json = parseJson str
+      pure v
+   op _ = throw "String expected"
 
 dims :: ForeignOp
 dims =

@@ -20,6 +20,7 @@ import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
 import Doc (DocOpt)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
 import File (class LoadFile, FileCxt)
@@ -65,7 +66,7 @@ instance Highlightable a => Highlightable (a × b) where
 
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
-type Op = forall m. MonadWithGraphAlloc m => MonadError Error m => MonadReader FileCxt m => LoadFile m => List (Val Vertex) -> m (Val Vertex)
+type Op = forall m. MonadWithGraphAlloc m => MonadError Error m => MonadAff m => MonadReader FileCxt m => LoadFile m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' = ForeignOp'
    { arity :: Int

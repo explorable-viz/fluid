@@ -17,20 +17,21 @@ import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, fv)
 import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
-import Graph (vertices)
+import Graph (Vertex(..), vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
+import Graph.WithGraph (class MonadWithGraphAlloc, AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import Parse as P
 import Parsing (runParser)
-import Primitive.Defs (primitives)
+import Primitive.Defs (loadJson, primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
-import Util (type (×), AffError, concatM, debug, (×))
+import Util (type (×), AffError, concatM, debug, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
+import Val (Val)
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
@@ -50,6 +51,12 @@ datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array F
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
    eα <- parseProgram folders file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
+
+loadJson :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => String ->  m (Val Vertex)
+loadJson s = do
+   _ <- loadFile [] (File s)
+   pure $ error ""
+
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
 loadProgCxt mods datasets = do
