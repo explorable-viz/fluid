@@ -1,3 +1,6 @@
+import convolution.test-image
+import convolution.emboss
+
 let lookup m n image =
     let (m_max, n_max) = dims image
     -- in image!(((m - 1) `mod` m_max) + 1, ((n - 1) `mod` n_max) + 1);

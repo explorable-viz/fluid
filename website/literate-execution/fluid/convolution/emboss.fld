@@ -1,1 +1,5 @@
+import lib.matrix
+import convolution.test-image
+import convolution.filter.emboss
+
 convolve inputImage filter zero
