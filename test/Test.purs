@@ -2,22 +2,18 @@ module Test.Test where
 
 import Prelude hiding (add)
 
-import Bind (val)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Array (concat)
-import Data.Number (log)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class.Console (time)
 import File (class LoadFile, FileCxt(..))
+import Graph.WithGraph (runAllocT)
 import Module (loadJson)
 import Module.Web (runWebT)
-import Options.Applicative.Types (Context(..))
 import Pretty (pretty)
-import Primitive.Defs (times)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Comments (comments_cases)
 import Test.Specs.Desugar (desugar_cases)
@@ -28,8 +24,7 @@ import Test.Specs.Misc (misc_cases)
 import Test.Util (TestSuite, fluidSrcPaths)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
-import Toppokki (_bringToFront)
-import Util ((×))
+import Util (log', (×))
 import Util.Pretty (render)
 
 main :: Effect Unit
@@ -39,15 +34,14 @@ main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> scratchpad)
 
 loadJsonTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => m Unit
 loadJsonTest = do
-   _ <- loadJson "my file"
-   log (render $ pretty v)
-   pure unit
+   log' $ "Starting loadJsonTest"
+   void $ flip runAllocT 0 $ do
+      v <- loadJson ""
+      log' (render $ pretty v)
+      pure unit
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-scratchpad = ["test" × loadJsonTest ]
-
-
-
+scratchpad = [ "test" × loadJsonTest ]
 
 {-
 scratchpad :: TestSuite

@@ -5,6 +5,7 @@ import Prelude hiding (absurd, apply, div, mod, top)
 import Bind (Bind)
 import Control.Monad.Reader (ask)
 import Data.Argonaut.Decode (parseJson)
+import Data.Argonaut.Core (Json, toObject)
 import Data.Foldable (foldM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
@@ -92,8 +93,17 @@ loadJson =
    op (Val _ _ (Str s) : Nil) = do
       FileCxt { fluidSrcPaths } <- ask
       str <- loadFile fluidSrcPaths (File s)
-      let json = parseJson str
-      pure v
+      let json = parseJson str -- libraries like argunaut can parse JSON
+      -- turn json dictionary into Val representing a fluid dict (using Val/DictRep constructor)
+      -- dict from loadjson will be raw strings/numbers, so we need to convert them into Val
+      -- fluid dict has keys on left and right is other fluid values
+      -- go over each element of the dictionary and convert it
+      -- Start with Val Unit None (Dictionary (DictRep D.empty)) (walk over a value, every time you find nothing(Unit))
+      -- transform Val Unit into Val Vertex using traverse alloc (Place it by a address)
+
+      -- What are the acceptable JSON types to use?
+
+      pure $ error s
    op _ = throw "String expected"
 
 dims :: ForeignOp
