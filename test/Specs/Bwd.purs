@@ -14,11 +14,7 @@ bwd_cases =
    , { file: "array/lookup", imports: [], bwd_expect_file: "array/lookup.expect", δv: select, fwd_expect: "⸨14⸩", datasets: [] }
    , { file: "array/dims", imports: [], bwd_expect_file: "array/dims.expect", δv: select, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩", datasets: [] }
    , { file: "convolution/edgeDetect"
-     , imports:
-          [ "lib/matrix"
-          , "slicing/convolution/filter/edge-detect"
-          , "slicing/convolution/test-image"
-          ]
+     , imports: []
      , bwd_expect_file: "convolution/edgeDetect.expect"
      , δv: matrixElement 1 1 select
      , fwd_expect:
@@ -30,11 +26,7 @@ bwd_cases =
      , datasets: []
      }
    , { file: "convolution/emboss"
-     , imports:
-          [ "lib/matrix"
-          , "slicing/convolution/filter/emboss"
-          , "slicing/convolution/test-image"
-          ]
+     , imports: []
      , bwd_expect_file: "convolution/emboss.expect"
      , δv: matrixElement 1 1 select
      , fwd_expect:
@@ -46,11 +38,7 @@ bwd_cases =
      , datasets: []
      }
    , { file: "convolution/gaussian"
-     , imports:
-          [ "lib/matrix"
-          , "slicing/convolution/filter/gaussian"
-          , "slicing/convolution/test-image"
-          ]
+     , imports: []
      , bwd_expect_file: "convolution/gaussian.expect"
      , δv: matrixElement 1 1 select
      , fwd_expect:
@@ -62,11 +50,7 @@ bwd_cases =
      , datasets: []
      }
    , { file: "matrix/matmul"
-     , imports:
-          [ "lib/matrix"
-          , "slicing/matrix/left-matrix"
-          , "slicing/matrix/right-matrix"
-          ]
+     , imports: []
      , bwd_expect_file: "matrix/matmul.expect"
      , δv: fst $ matrixElement 1 1 select
      , fwd_expect: "(⸨22⸩, 28,\n  49, 64, 9, 12, 15,\n            19, 26, 33,\n            29, 40, 51)"
@@ -112,20 +96,14 @@ bwd_cases =
      }
    , { file: "dict/match", imports: [], bwd_expect_file: "dict/match.expect", δv: select, fwd_expect: "", datasets: [] }
    , { file: "dtw/compute-dtw"
-     , imports:
-          [ "lib/fnum"
-          , "lib/dtw"
-          ]
+     , imports: []
      , bwd_expect_file: "dtw/compute-dtw.expect"
      , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
      , δv: listElement 1 select
      , datasets: []
      }
    , { file: "dtw/average-series"
-     , imports:
-          [ "lib/fnum"
-          , "lib/dtw"
-          ]
+     , imports: []
      , bwd_expect_file: "dtw/average-series.expect"
      , fwd_expect: "(2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
      , δv: listElement 2 select
@@ -262,9 +240,7 @@ bwd_cases =
           ]
      }
    , { file: "qcut"
-     , imports:
-          [ "lib/stats"
-          ]
+     , imports: []
      , bwd_expect_file: "qcut.expect"
      , δv: identity >>> (_ × Persistent)
      , fwd_expect: "(((1.01 : (1.05 : [])), 0.051000000000000156) : (((1.07 : (1.09 : (1.22 : (1.23 : (1.24 : (1.24 : (1.25 : (1.32 : (1.32 : (1.35 : (1.3900000000000001 : (1.47 : (1.57 : (1.72 : [])))))))))))))), 0.6639999999999999) : (((1.73 : (1.75 : (1.76 : (1.83 : (1.8699999999999999 : (1.94 : (2.04 : (2.14 : (2.18 : (2.36 : (2.37 : (2.38 : (2.52 : (2.54 : [])))))))))))))), 0.8464999999999998) : (((2.61 : (2.67 : [])), 0.09850000000000003) : []))))"

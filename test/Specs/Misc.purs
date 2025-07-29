@@ -29,7 +29,7 @@ misc_cases =
      }
    , { file: "foldr-sumSquares", imports: [], fwd_expect: "661" }
    , { file: "include-input-into-output"
-     , imports: [ "lib/some-constants" ]
+     , imports: []
      , fwd_expect: "(1, 1)"
      }
    , { file: "lexicalScoping", imports: [], fwd_expect: "\"6\"" }

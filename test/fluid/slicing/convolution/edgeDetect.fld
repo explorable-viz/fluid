@@ -1,1 +1,5 @@
+import lib.matrix
+import slicing.convolution.filter.edge-detect
+import slicing.convolution.test-image
+
 convolve inputImage filter extend

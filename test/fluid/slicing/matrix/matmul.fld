@@ -1,1 +1,6 @@
+import lib.matrix
+import slicing.matrix.left-matrix
+import slicing.matrix.right-matrix
+
+
 (matMul leftMatrix rightMatrix, matMul rightMatrix leftMatrix)
