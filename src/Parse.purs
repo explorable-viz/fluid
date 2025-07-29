@@ -111,6 +111,9 @@ rArrow = token.reservedOp str.rArrow
 docCommentDelim :: SParser Unit
 docCommentDelim = void $ string str.triplequote
 
+letters :: SParser Char -> SParser String
+letters char = SCU.fromCharArray <$> Array.some char
+
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docComment expr' = optionDoc (try $ docComment' expr')
    where
@@ -131,7 +134,7 @@ docCommentToken expr' =
       <* token.whiteSpace
 
 commentToken :: SParser (DocCommentElem Expr Unit)
-commentToken = Token <$> (SCU.fromCharArray <$> Array.some docCommentLetter)
+commentToken = Token <$> letters docCommentLetter
 
 commentExpr :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
 commentExpr expr' = string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
@@ -443,10 +446,17 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       onlyIf (isCtrOp op' && op == op') \π π' -> PConstr op' (π : π' : Nil)
 
 imports_ :: SParser (Array String)
-imports_ = many (keyword str.import *> import_)
+imports_ = many (keyword str.import *> modPath)
    where
-   import_ :: SParser String
-   import_ = joinWith "/" <<< fromFoldable <$> sepBy1 token.identifier (token.reservedOp str.dot)
+   modPath :: SParser String
+   modPath =
+      joinWith "/" <<< fromFoldable <$> sepBy1 modName (token.reservedOp str.dot)
+
+   modName :: SParser String
+   modName = token.lexeme $ letters modLetter
+
+   modLetter :: SParser Char
+   modLetter = letter <|> char '_' <|> char '-' <|> alphaNum
 
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
