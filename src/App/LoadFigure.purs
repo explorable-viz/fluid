@@ -50,7 +50,7 @@ figSpecFromJson spec@{ datasets, file, imports, inputs, query, linking } =
    , linking
    }
 
-loadSpec :: String -> Aff Json -- TO DO: Make exportable
+loadSpec :: String -> Aff Json
 loadSpec filename = do
    result <- get json filename
    case result of
