@@ -20,7 +20,7 @@ import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Data.String (codePointFromChar)
+import Data.String (codePointFromChar, joinWith)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Doc (DocCommentElem(..), DocOpt(..))
@@ -443,7 +443,10 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       onlyIf (isCtrOp op' && op == op') \π π' -> PConstr op' (π : π' : Nil)
 
 imports_ :: SParser (Array String)
-imports_ = many (keyword str.import *> token.identifier)
+imports_ = many (keyword str.import *> import_)
+   where
+   import_ :: SParser String
+   import_ = joinWith "/" <<< fromFoldable <$> sepBy1 token.identifier (token.reservedOp str.dot)
 
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof

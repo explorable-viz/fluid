@@ -82,7 +82,7 @@ prepConfig file progCxt = do
    FileCxt { fluidSrcPaths } <- ask
    mods × s <- parseProgram fluidSrcPaths file
    e <- desug s
-   -- for now only support imports from "lib" and if present overwrite mods from spec
-   progCxt' <- if Array.null mods then pure progCxt else loadMods (map ((<>) "lib/") mods) progCxt
+   -- for now if source file imports present overwrite mods from spec
+   progCxt' <- if Array.null mods then pure progCxt else loadMods mods progCxt
    gconfig <- initialConfig e progCxt'
    pure { s, e, gconfig }
