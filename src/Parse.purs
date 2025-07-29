@@ -449,14 +449,7 @@ imports_ :: SParser (Array String)
 imports_ = many (keyword str.import *> modPath)
    where
    modPath :: SParser String
-   modPath =
-      joinWith "/" <<< fromFoldable <$> sepBy1 modName (token.reservedOp str.dot)
-
-   modName :: SParser String
-   modName = token.lexeme $ letters modLetter
-
-   modLetter :: SParser Char
-   modLetter = letter <|> char '_' <|> char '-' <|> alphaNum
+   modPath = joinWith "/" <<< fromFoldable <$> sepBy1 token.identifier (token.reservedOp str.dot)
 
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
