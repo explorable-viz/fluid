@@ -1,7 +1,7 @@
 import lib.matrix
-import matrix-multiply.a-matrix
-import matrix-multiply.b-matrix
-import matrix-multiply.c-matrix
+import matrix-multiply.aMatrix
+import matrix-multiply.bMatrix
+import matrix-multiply.cMatrix
 
 MultiView {
     firstMatrix: matMul (matMul aMatrix bMatrix) cMatrix,

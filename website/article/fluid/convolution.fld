@@ -1,4 +1,4 @@
-import convolution.test-image
+import convolution.testImage
 import convolution.emboss
 
 let lookup m n image =
