@@ -27,6 +27,7 @@ import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (Raw)
 import Parse.Constants (str)
 import Parsing.Combinators (between, option, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators.Array (many)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -49,7 +50,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
    , opStart = opChar
    , opLetter = opChar
    , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow ]
-   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_ ]
+   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, str.import ]
    , caseSensitive = true
    }
    where
@@ -441,11 +442,17 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       op' <- token.operator
       onlyIf (isCtrOp op' && op == op') \π π' -> PConstr op' (π : π' : Nil)
 
+imports_ :: SParser (Array String)
+imports_ = many (keyword str.import *> token.identifier)
+
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
 
-program ∷ SParser (Raw Expr)
-program = topLevel expr_
+program ∷ SParser (Array String × Raw Expr)
+program = topLevel do
+   imports <- imports_
+   expr <- expr_
+   pure $ imports × expr
 
 module_ :: SParser (Raw Module)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)

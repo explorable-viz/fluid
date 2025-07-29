@@ -6,9 +6,11 @@ import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
+import Data.Array as Array
 import Data.Bifunctor (lmap)
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (second)
+import Data.Tuple (snd)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
@@ -35,7 +37,7 @@ import Util.Parse (SParser)
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Raw S.Expr)
+parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Array String × Raw S.Expr)
 parseProgram folders file =
    loadFile folders file >>= flip parse P.program
 
@@ -48,7 +50,7 @@ module_ folders file (ProgCxt r@{ mods }) = do
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- parseProgram folders file >>= desug
+   eα <- snd <$> parseProgram folders file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
@@ -57,6 +59,11 @@ loadProgCxt mods datasets = do
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
       >>= concatM (File >>> module_ fluidSrcPaths <$> [ "lib/prelude" ] <> mods)
       >>= concatM (second File >>> datasetAs fluidSrcPaths <$> datasets)
+
+loadMods :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Raw ProgCxt -> m (Raw ProgCxt)
+loadMods mods (ProgCxt cxt) = do
+   FileCxt { fluidSrcPaths } <- ask
+   concatM (File >>> module_ fluidSrcPaths <$> [ "lib/prelude" ] <> mods) (ProgCxt (cxt { mods = Nil }))
 
 initialConfig :: forall m a. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
@@ -73,7 +80,9 @@ type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> m Config
 prepConfig file progCxt = do
    FileCxt { fluidSrcPaths } <- ask
-   s <- parseProgram fluidSrcPaths file
+   mods × s <- parseProgram fluidSrcPaths file
    e <- desug s
-   gconfig <- initialConfig e progCxt
+   -- for now only support imports from "lib" and if present overwrite mods from spec
+   progCxt' <- if Array.null mods then pure progCxt else loadMods (map ((<>) "lib/") mods) progCxt
+   gconfig <- initialConfig e progCxt'
    pure { s, e, gconfig }
