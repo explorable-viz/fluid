@@ -16,7 +16,7 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
 import Doc (DocOpt(..))
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_, throwError)
+import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import File (File(..), FileCxt(..), Folder(..))
 import Graph (DVertex'(..))
@@ -54,13 +54,13 @@ loadSpec :: String -> Aff Json
 loadSpec filename = do
    result <- get json filename
    case result of
-      Left err -> throwError (error ("Json fetching failed with " <> printError err))
+      Left err -> error ("Json fetching failed with " <> printError err)
       Right response -> pure $ response.body
 
 loadFigureFromJson :: Json -> Effect Unit
 loadFigureFromJson json = runAffs_ (uncurry drawFig)
    [ case decodeJson json :: Either JsonDecodeError JsonSpec of
-        Left err -> throwError (error ("JSON decoding failed with " <> show err))
+        Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec)
            where
            figSpec@{ fluidSrcPaths } = figSpecFromJson spec
