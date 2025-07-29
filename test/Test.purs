@@ -32,7 +32,7 @@ main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
 scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite
    [ { file: "comments/projection"
-     , imports: []
+
      , fwd_expect: "\"\"\" Test \"\"\" 1"
      }
    ]

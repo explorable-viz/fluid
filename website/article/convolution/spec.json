@@ -1,7 +1,6 @@
 {
     "fluidSrcPath": ["../fluid"],
     "file": "convolution",
-    "imports": [],
     "datasets": [],
     "inputs": [ "inputImage", "filter" ],
     "query": true,

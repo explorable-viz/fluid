@@ -23,7 +23,6 @@ import Val (Val(..), asVal)
 type JsonSpec =
    { fluidSrcPath :: Array String
    , datasets :: Array (Bind String)
-   , imports :: Array String
    , file :: String
    , inputs :: Array String
    , query :: Boolean
@@ -31,10 +30,9 @@ type JsonSpec =
    }
 
 figSpecFromJson :: JsonSpec -> FigSpec
-figSpecFromJson spec@{ datasets, file, imports, inputs, query, linking } =
+figSpecFromJson spec@{ datasets, file, inputs, query, linking } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , datasets
-   , imports
    , file: File file
    , inputs
    , query:

@@ -6,7 +6,6 @@ import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
-import Data.Array as Array
 import Data.Bifunctor (lmap)
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (second)
@@ -53,17 +52,17 @@ datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
    eα <- snd <$> parseProgram folders file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt mods datasets = do
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array (Bind String) -> m (Raw ProgCxt)
+loadProgCxt datasets = do
    FileCxt { fluidSrcPaths } <- ask
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= concatM (File >>> module_ fluidSrcPaths <$> [ "lib/prelude" ] <> mods)
       >>= concatM (second File >>> datasetAs fluidSrcPaths <$> datasets)
 
+-- updates a progCxt with imported modules
 loadMods :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Raw ProgCxt -> m (Raw ProgCxt)
-loadMods mods (ProgCxt cxt) = do
+loadMods mods progCxt = do
    FileCxt { fluidSrcPaths } <- ask
-   concatM (File >>> module_ fluidSrcPaths <$> [ "lib/prelude" ] <> mods) (ProgCxt (cxt { mods = Nil }))
+   concatM (File >>> module_ fluidSrcPaths <$> [ "lib/prelude" ] <> mods) progCxt
 
 initialConfig :: forall m a. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FV a => a -> Raw ProgCxt -> m GraphConfig
 initialConfig e progCxt = do
@@ -82,7 +81,6 @@ prepConfig file progCxt = do
    FileCxt { fluidSrcPaths } <- ask
    mods × s <- parseProgram fluidSrcPaths file
    e <- desug s
-   -- for now if source file imports present overwrite mods from spec
-   progCxt' <- if Array.null mods then pure progCxt else loadMods mods progCxt
+   progCxt' <- loadMods mods progCxt
    gconfig <- initialConfig e progCxt'
    pure { s, e, gconfig }
