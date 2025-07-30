@@ -32,7 +32,7 @@ import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, docOpt)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, docOpt, BaseExpr(..))
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -78,28 +78,28 @@ data ExprType = Simple | Expression
 type Sep = Doc -> Doc -> Doc
 
 exprType :: forall a. Expr a -> ExprType
-exprType (Var _) = Simple
-exprType (Op _) = Simple
-exprType (Int _ _ _) = Simple
-exprType (Float _ _ _) = Simple
-exprType (Str _ _ _) = Simple
-exprType (Constr _ _ _ Nil) = Simple
-exprType (Constr _ _ _ _) = Expression
-exprType (Dictionary _ _ _) = Simple
-exprType (Matrix _ _ _ _ _) = Simple
-exprType (Lambda _) = Simple
-exprType (Project _ _ _) = Simple
-exprType (DProject _ _ _) = Simple
-exprType (App _ _ _) = Expression
-exprType (BinaryApp _ _ _) = Expression
-exprType (MatchAs _ _) = Simple
-exprType (IfElse _ _ _) = Simple
-exprType (ListEmpty _ _) = Simple
-exprType (ListNonEmpty _ _ _ _) = Simple
-exprType (ListEnum _ _) = Simple
-exprType (ListComp _ _ _ _) = Simple
-exprType (Let _ _) = Expression
-exprType (LetRec _ _) = Expression
+exprType (Expr' _ (Var _)) = Simple
+exprType (Expr' _ (Op _)) = Simple
+exprType (Expr' _ (Int _ _)) = Simple
+exprType (Expr' _ (Float _ _)) = Simple
+exprType (Expr' _ (Str _ _)) = Simple
+exprType (Expr' _ (Constr _ _ Nil)) = Simple
+exprType (Expr' _ (Constr _ _ _)) = Expression
+exprType (Expr' _ (Dictionary _ _)) = Simple
+exprType (Expr' _ (Matrix _ _ _ _)) = Simple
+exprType (Expr' _ (Lambda _)) = Simple
+exprType (Expr' _ (Project _ _)) = Simple
+exprType (Expr' _ (DProject _ _)) = Simple
+exprType (Expr' _ (App _ _)) = Expression
+exprType (Expr' _ (BinaryApp _ _ _)) = Expression
+exprType (Expr' _ (MatchAs _ _)) = Simple
+exprType (Expr' _ (IfElse _ _ _)) = Simple
+exprType (Expr' _ (ListEmpty _)) = Simple
+exprType (Expr' _ (ListNonEmpty _ _ _)) = Simple
+exprType (Expr' _ (ListEnum _ _)) = Expression
+exprType (Expr' _ (ListComp _ _ _)) = Expression
+exprType (Expr' _ (Let _ _)) = Expression
+exprType (Expr' _ (LetRec _ _)) = Expression
 
 prettySimple :: forall a. Ann a => Expr a -> Doc
 prettySimple s = case exprType s of
@@ -109,11 +109,11 @@ prettySimple s = case exprType s of
    Expression -> parentheses (pretty s)
 
 prettyAppChain :: forall a. Ann a => Expr a -> Doc
-prettyAppChain (App _ s s') = prettyAppChain s .<>. prettySimple s'
+prettyAppChain (Expr' _ (App s s')) = prettyAppChain s .<>. prettySimple s'
 prettyAppChain s = prettySimple s
 
 prettyBinApp :: forall a. Ann a => Int -> Expr a -> Doc
-prettyBinApp n (BinaryApp s op s') =
+prettyBinApp n (Expr' _ (BinaryApp s op s')) =
    case getPrec op of
       -1 -> prettyBinApp prec' s .<>. (text ("`" <> op <> "`")) .<>. prettyBinApp prec' s'
       _ ->
@@ -144,37 +144,62 @@ removeDocWS (Doc d) = Doc
    }
 
 instance Ann a => Pretty (Expr a) where
-   pretty (Var x) = text x
-   pretty (Op op) = parentheses (text op)
-   pretty (Int α doc n) = pretty doc .<>. highlightIf α (text (show n))
-   pretty (Float α doc n) = pretty doc .<>. highlightIf α (text (show n))
-   pretty (Str α doc str) = pretty doc .<>. highlightIf α (text ("\"" <> str <> "\""))
-   pretty (Constr α doc c x) = pretty doc .<>. highlightIf α (prettyConstr c x)
-   pretty (Dictionary α doc sss) = pretty doc .<>. highlightIf α (curlyBraces (prettyDictEntries (.-.) sss))
-   pretty (Matrix α doc e (x × y) e') =
+   pretty (Expr' _ (Var x)) = text x
+   pretty (Expr' _ (Op op)) = parentheses (text op)
+   pretty (Expr' doc (Int α n)) =
+      pretty doc .<>. highlightIf α (text (show n))
+   pretty (Expr' doc (Float α n)) =
+      pretty doc .<>. highlightIf α (text (show n))
+   pretty (Expr' doc (Str α str)) =
+      pretty doc .<>. highlightIf α (text ("\"" <> str <> "\""))
+   pretty (Expr' doc (Constr α c x)) =
+      pretty doc .<>. highlightIf α (prettyConstr c x)
+   pretty (Expr' doc (Dictionary α sss)) =
+      pretty doc .<>. highlightIf α (curlyBraces (prettyDictEntries (.-.) sss))
+   pretty (Expr' doc (Matrix α _ (x × y) e')) =
       pretty doc .<>. highlightIf α
          ( arrayBrackets
-              ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
+              ( text str.bar
+                   .<>. parentheses (text x .<>. text str.comma .<>. text y)
                    .<>. text str.in_
                    .<>. pretty e'
               )
          )
-   pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
-   pretty (Project doc s x) = pretty doc .<>. prettySimple s .<>. text str.dot .<>. text x
-   pretty (DProject doc s x) = pretty doc .<>. prettySimple s .<>. text str.dot .<>. text str.lBracket .<>. prettySimple x .<>. text str.rBracket
-   pretty (App doc s s') = pretty doc .<>. prettyAppChain (App doc s s')
-   pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
-   pretty (MatchAs s cs) = (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
-   pretty (IfElse s1 s2 s3) = text str.if_ .<>. pretty s1 .<>. text str.then_ .<>. pretty s2 .<>. text str.else_ .<>. pretty s3
-   pretty (ListEmpty α doc) = pretty doc .<>. (highlightIf α $ brackets empty)
-   pretty (ListNonEmpty α doc (Dictionary _ _ xss) l) = pretty doc
-      .<>. (highlightIf α (text str.lBracket) .<>. highlightIf α (curlyBraces (prettyDictEntries (.<>.) xss)))
-      .-. pretty l
-   pretty (ListNonEmpty α doc e l) = pretty doc .<>. highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
-   pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
-   pretty (ListComp ann doc s qs) = pretty doc .<>. highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
-   pretty (Let ds s) = (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
-   pretty (LetRec h s) = (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
+   pretty (Expr' _ (Lambda cs)) =
+      parentheses (text str.fun .<>. pretty cs)
+   pretty (Expr' doc (Project s x)) =
+      pretty doc .<>. prettySimple s .<>. text str.dot .<>. text x
+   pretty (Expr' doc (DProject s x)) =
+      pretty doc .<>. prettySimple s
+         .<>. text str.dot
+         .<>. text str.lBracket
+         .<>. prettySimple x
+         .<>. text str.rBracket
+   pretty (Expr' doc (App s s')) =
+      pretty doc .<>. prettyAppChain (Expr' doc (App s s'))
+   pretty (Expr' _ (BinaryApp s op s')) =
+      prettyBinApp 0 (Expr' Doc.None (BinaryApp s op s'))
+   pretty (Expr' _ (MatchAs s cs)) =
+      (text str.match .<>. pretty s .<>. text str.as) .-. curlyBraces (pretty cs)
+   pretty (Expr' _ (IfElse s1 s2 s3)) =
+      text str.if_ .<>. pretty s1 .<>. text str.then_ .<>. pretty s2 .<>. text str.else_ .<>. pretty s3
+   pretty (Expr' doc (ListEmpty α)) =
+      pretty doc .<>. highlightIf α (brackets empty)
+   pretty (Expr' doc (ListNonEmpty α (Expr' _ (Dictionary _ xss)) l)) =
+      pretty doc
+         .<>. highlightIf α (text str.lBracket)
+         .<>. highlightIf α (curlyBraces (prettyDictEntries (.<>.) xss))
+         .-. pretty l
+   pretty (Expr' doc (ListNonEmpty α e l)) =
+      pretty doc .<>. highlightIf α (text str.lBracket) .<>. pretty e .<>. pretty l
+   pretty (Expr' _ (ListEnum s s')) =
+      brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
+   pretty (Expr' doc (ListComp ann s qs)) =
+      pretty doc .<>. highlightIf ann (brackets (pretty s .<>. text str.bar .<>. pretty qs))
+   pretty (Expr' _ (Let ds s)) =
+      (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
+   pretty (Expr' _ (LetRec h s)) =
+      (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
@@ -191,7 +216,7 @@ instance Ann a => Pretty (DictEntry a) where
    pretty (VarKey α k) = highlightIf α $ pretty k
 
 instance Ann a => Pretty (ListRest a) where
-   pretty (Next ann (Dictionary _ _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
+   pretty (Next ann (Expr' _ (Dictionary _ xss)) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
    pretty (Next ann s l) = highlightIf ann (text str.comma) .<>. pretty s .<>. pretty l
    pretty (End ann) = highlightIf ann (text str.rBracket)
 
