@@ -9,7 +9,6 @@ import Control.Monad.Reader (class MonadReader, ask)
 import Data.Bifunctor (lmap)
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (second)
-import Data.Tuple (snd)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
@@ -22,11 +21,12 @@ import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
+import Parse (asModule, standalone)
 import Parse as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
-import SExpr (desugarModuleFwd)
+import SExpr (Module, desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, debug, (×))
@@ -52,7 +52,7 @@ module_ folders (File file) (ProgCxt r@{ mods }) = do
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- snd <$> parseProgram folders file >>= desug
+   eα <- parseProgram folders file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array (Bind String) -> m (Raw ProgCxt)
@@ -83,6 +83,6 @@ prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt 
 prepConfig progCxt fluidSrc = do
    mods × s <- parseFluidSrc fluidSrc
    e <- desug s
-   progCxt' <- loadMods mods progCxt
+   progCxt' <- loadMods imports progCxt
    gconfig <- initialConfig e progCxt'
    pure { s, e, gconfig }

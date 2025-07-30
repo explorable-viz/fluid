@@ -24,6 +24,7 @@ import Data.String (codePointFromChar, joinWith)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Doc (DocCommentElem(..), DocOpt(..))
+import File (File(..))
 import Lattice (Raw)
 import Parse.Constants (str)
 import Parsing.Combinators (between, option, sepBy, sepBy1, try, (<?>))
@@ -35,7 +36,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ModuleDefs(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ModuleDefs(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Module)
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -454,11 +455,17 @@ imports_ = many (keyword str.import *> modPath)
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
 
-importsAnd :: forall a. SParser a -> SParser (Array String × a)
-importsAnd = lift2 (×) imports_
+program ∷ SParser (Raw Expr)
+program = expr_
 
-program ∷ SParser (Array String × Raw Expr)
-program = topLevel $ importsAnd expr_
+module_ :: SParser (Raw ModuleDefs)
+module_ = ModuleDefs <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi
 
-module_ :: SParser (Array String × Raw ModuleDefs)
-module_ = topLevel $ importsAnd $ ModuleDefs <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi
+standalone :: forall a. SParser a -> SParser a
+standalone p = topLevel (imports_ *> p)
+
+asModule :: forall a. File -> SParser a -> SParser (Module a)
+asModule (File name) p = topLevel do
+   imports <- imports_
+   content <- p
+   pure $ { name, imports, content }
