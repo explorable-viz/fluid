@@ -44,7 +44,7 @@ module_ :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Fol
 module_ folders file (ProgCxt r@{ mods }) = do
    when debug.logging $ log ("module_: " <> show (folders × file))
    src <- loadFile folders file
-   mod <- parse src P.module_ >>= desugarModuleFwd
+   mod <- parse src P.module_ >>= desugarModuleFwd <<< snd
    pure $ ProgCxt r { mods = mod : mods }
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)

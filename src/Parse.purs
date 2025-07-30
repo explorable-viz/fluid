@@ -460,5 +460,5 @@ importsAnd = lift2 (×) imports_
 program ∷ SParser (Array String × Raw Expr)
 program = topLevel $ importsAnd expr_
 
-module_ :: SParser (Raw Module)
-module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
+module_ :: SParser (Array String × Raw Module)
+module_ = topLevel $ importsAnd $ Module <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi
