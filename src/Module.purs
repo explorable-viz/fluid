@@ -6,18 +6,15 @@ import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
-import Data.Argonaut.Core (Json)
+import Data.Argonaut.Core (Json, toString)
 import Data.Argonaut.Decode (parseJson)
-
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-
 import Data.List (List(..), (:))
-
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
-
 import Desugarable (desug)
-
+import Doc (DocOpt(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -36,10 +33,11 @@ import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
-import Util (type (×), AffError, concatM, debug, error, (×))
+import Util (type (×), AffError, concatM, debug, error, spy, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
-import Val (Val)
+import Val (Val(..))
+import Val as V
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
@@ -63,19 +61,35 @@ datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
 loadJson :: forall m. MonadAff m => MonadAlloc m => MonadError Error m => LoadFile m => MonadReader FileCxt m => String -> m (Val Vertex)
 loadJson path = do
    FileCxt { fluidSrcPaths } <- ask
+   log $ "Loading JSON file: " <> path
+   log $ "fluidSrcPaths: " <> show fluidSrcPaths
+   -- loaadFile currently uses .fld. Idea: have loadJson remove the automatic .fld extension
+   -- and just load the file as is, so we can use .json files directly.
+   -- For now, we just load the .fld file.
    jfile <- loadFile fluidSrcPaths (File path)
+   log $ "File contents: " <> jfile
    case parseJson jfile of
       Left err -> throwError $ error ("Failed to parse JSON: " <> show err)
       Right j -> do
          alloc (fromJsonVal j)
 
+-- use casejson
+-- make a recursive check with the layout: array,object,string,number
+-- This function converts a Json value to a Val Unit.
+-- use the spy indentity to debug the value
+-- recurse over the JSON structure
 fromJsonVal :: Json -> Val Unit
-fromJsonVal _ =
-   error "fromJsonVal not implemented yet"
+fromJsonVal j = do
+   case toString j of
+      Just s -> spy "json value" identity (Val unit None (V.Str s))
+      Nothing -> error ("FromJsonVal not implemented yet")
 
--- fromJsonVal :: Json -> Val Unit
--- fromJsonVal j =
---   case toObject j of
+--    Nothing ->
+--      case toNumber j of
+--        Just n  -> Val unit None (Int n)
+--        Nothing -> Val unit None (Str "Unsupported JSON type")
+
+--  case toObject j of
 --     Just obj ->
 --       let
 --         dict = D.fromFoldable
@@ -93,11 +107,6 @@ fromJsonVal _ =
 --             Val unit None (Constr "Array" vals)
 
 --         Nothing ->
---           case toString j of
---             Just s  -> Val unit None (Str s)
---             Nothing -> case toNumber j of
---               Just n  -> Val unit None (Int n)
---               Nothing -> Val unit None (Str "Unsupported JSON type")
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
 loadProgCxt mods datasets = do
