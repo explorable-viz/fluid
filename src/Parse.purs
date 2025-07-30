@@ -35,7 +35,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ModuleDefs(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -460,5 +460,5 @@ importsAnd = lift2 (×) imports_
 program ∷ SParser (Array String × Raw Expr)
 program = topLevel $ importsAnd expr_
 
-module_ :: SParser (Array String × Raw Module)
-module_ = topLevel $ importsAnd $ Module <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi
+module_ :: SParser (Array String × Raw ModuleDefs)
+module_ = topLevel $ importsAnd $ ModuleDefs <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi
