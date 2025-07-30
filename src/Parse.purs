@@ -454,11 +454,11 @@ imports_ = many (keyword str.import *> modPath)
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
 
+importsAnd :: forall a. SParser a -> SParser (Array String × a)
+importsAnd = lift2 (×) imports_
+
 program ∷ SParser (Array String × Raw Expr)
-program = topLevel do
-   imports <- imports_
-   expr <- expr_
-   pure $ imports × expr
+program = topLevel $ importsAnd expr_
 
 module_ :: SParser (Raw Module)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
