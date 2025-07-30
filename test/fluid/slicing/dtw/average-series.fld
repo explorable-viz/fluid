@@ -1,3 +1,6 @@
+import lib.fnum
+import lib.dtw
+
 let d x y = (x - y) * (x - y);
 let avg x y = (x + y) / 2;
 let avgSeq seq1 seq2 f = map (fun (i, j) -> f (nth (i - 1) seq1) (nth (j - 1) seq2));

@@ -10,7 +10,7 @@ linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , imports: []
+
         , datasets:
              [ "renewables" ↦ "dataset/renewables-new"
              , "nonRenewables" ↦ "dataset/non-renewables"
@@ -35,7 +35,7 @@ linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , imports: []
+
         , datasets:
              [ "renewables" ↦ "dataset/renewables-new"
              , "nonRenewables" ↦ "dataset/non-renewables"
@@ -69,7 +69,7 @@ linkedInputs_spec5 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
         , file: File "linked-inputs/mini-energyscatter"
-        , imports: []
+
         , datasets:
              [ "nonRenewables" ↦ "dataset/mini-non-renewables"
              , "renewables" ↦ "dataset/mini-renewables"

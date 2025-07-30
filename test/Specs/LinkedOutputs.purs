@@ -16,7 +16,7 @@ linkedOutputs_spec1 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
         , datasets: [ "renewables" ↦ "dataset/renewables" ]
-        , imports: []
+
         , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         , query: Nothing
@@ -46,7 +46,7 @@ linkedOutputs_spec2 =
              [ "renewables" ↦ "dataset/renewables-new"
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
-        , imports: []
+
         , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
         , query: Nothing
@@ -68,7 +68,7 @@ movingAverages_spec =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
         , datasets: [ "methane" ↦ "dataset/methane-emissions" ]
-        , imports: []
+
         , file: File "linked-outputs/moving-average"
         , inputs: [ "methane" ]
         , query: Nothing
@@ -83,7 +83,7 @@ linkedOutputs_cases =
    [ { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
           , datasets: [ "data" ↦ "linked-outputs/pairs-data" ]
-          , imports: []
+
           , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           , query: Nothing
@@ -95,7 +95,7 @@ linkedOutputs_cases =
    , { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
           , datasets: [ "data" ↦ "linked-outputs/convolution-data" ]
-          , imports: [ "lib/matrix" ]
+
           , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
           , query: Nothing

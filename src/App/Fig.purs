@@ -208,8 +208,8 @@ lift
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
 loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> m Fig
-loadFig spec@{ inputs, imports, file, datasets, linking } = do
-   progCxt <- loadProgCxt imports datasets
+loadFig spec@{ inputs, file, datasets, linking } = do
+   progCxt <- loadProgCxt datasets
    { s, e, gconfig } <- prepConfig file progCxt
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let

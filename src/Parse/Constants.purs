@@ -35,6 +35,7 @@ str
       , backquote :: String
       , triplequote :: String
       , dollar :: String
+      , import :: String
       }
 
 str =
@@ -71,4 +72,5 @@ str =
    , backquote: "@"
    , triplequote: "\"\"\""
    , dollar: "$"
+   , import: "import"
    }
