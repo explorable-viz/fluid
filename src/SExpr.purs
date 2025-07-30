@@ -128,6 +128,12 @@ data Qualifier a
    | ListCompGen (DocOpt a) Pattern (Expr a)
    | ListCompDecl (VarDef a) -- could allow VarDefs instead
 
+type Module a =
+   { name :: String
+   , imports :: Array String
+   , content :: a
+   }
+
 data ModuleDefs a = ModuleDefs (List (VarDefs a + RecDefs a))
 
 instance Desugarable DictEntry E.Expr where
