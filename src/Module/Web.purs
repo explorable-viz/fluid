@@ -43,8 +43,12 @@ instance MonadThrow Error m => LoadFile (WebT m) where
             Right _ -> Left A.RequestFailedError
             Left err -> Left err
 
-loadFile' :: forall m. LoadFile m => Array Folder -> File -> AffError m (File × String)
-loadFile' folders file = (file × _) <$> loadFile folders file
+loadFile_ :: forall m. LoadFile m => Array Folder -> File -> AffError m (File × String)
+loadFile_ folders file = (file × _) <$> loadFile folders file
+
+loadFileFromPaths_ :: forall m. LoadFile m => Array File -> AffError m String
+loadFileFromPaths_ paths = loadFileFromPaths paths
+
 
 newtype WebT :: forall k. (k -> Type) -> k -> Type
 newtype WebT m a = WebT (ReaderT FileCxt m a)
