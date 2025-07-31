@@ -353,6 +353,7 @@ expr_ = fix exprParser
             matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $ do
                e <- expr_ <* bar
                void $ token.parens (ident `lift2 (×)` (token.comma *> ident))
+               _ <- keyword str.in_ *> expr_
                pure e
 
             {-
