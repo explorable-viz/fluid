@@ -25,7 +25,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, debug, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite = Array (String × Aff Unit)
@@ -41,8 +41,8 @@ fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
 test ∷ forall m. FileLoader m -> File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test loadFile file progCxt spec (n × _) = do
+   log' ("**** prepConfig")
    { s, gconfig } <- prepConfig { loadFile, fluidSrcPaths } file progCxt
-   when debug.logging $ log ("**** initialConfig")
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n
@@ -133,6 +133,7 @@ checkEq op1 op2 x y = do
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
+   log' ("**** prettyP")
    s' <- parse (prettyP s) program
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))

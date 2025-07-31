@@ -23,7 +23,6 @@ import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
-import Debug (trace)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (Raw)
 import Parse.Constants (str)
@@ -309,12 +308,6 @@ expr_ = fix exprParser
          rest e =
             (simpleExprOrProjection >>= \e' -> rest (Expr' None (App e e'))) <|> pure e
 
-         {-
-         rest :: Raw Expr -> SParser (Raw Expr)
-         rest e@(Expr' _ expr) = case expr of
-            Constr α c es -> (simpleExprOrProjection >>= \e' -> rest (Expr' None (Constr α c (es <> (e' : empty))))) <|> pure e
-            _ -> (simpleExprOrProjection >>= \arg -> rest (Expr' None (App e arg))) <|> pure e
--}
          -- An expression that may need wrapping in parentheses to disambiguate.
          simpleExprOrProjection :: SParser (Raw Expr)
          simpleExprOrProjection =
@@ -351,21 +344,14 @@ expr_ = fix exprParser
 
             where
             matrix :: SParser (Raw Expr)
-            matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $ do
-               e <- expr_ <* bar
-               xy <- token.parens (ident `lift2 (×)` (token.comma *> ident))
-               e' <- keyword str.in_ *> expr_
-               trace (Matrix unit e xy e') \_ ->
-                  pure e
-
-            {-
+            matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
                Expr' None <$>
                   ( Matrix unit
                        <$> (expr_ <* bar)
                        <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
                        <*> (keyword str.in_ *> expr_)
                   )
--}
+
             nil :: SParser (Raw Expr)
             nil = token.brackets $ pure (Expr' None (ListEmpty unit))
 

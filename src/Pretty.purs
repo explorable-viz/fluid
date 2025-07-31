@@ -156,10 +156,10 @@ instance Ann a => Pretty (Expr a) where
       pretty doc .<>. highlightIf α (prettyConstr c x)
    pretty (Expr' doc (Dictionary α sss)) =
       pretty doc .<>. highlightIf α (curlyBraces (prettyDictEntries (.-.) sss))
-   pretty (Expr' doc (Matrix α _ (x × y) e')) =
+   pretty (Expr' doc (Matrix α e (x × y) e')) =
       pretty doc .<>. highlightIf α
          ( arrayBrackets
-              ( text str.bar
+              ( pretty e .<>. text str.bar
                    .<>. parentheses (text x .<>. text str.comma .<>. text y)
                    .<>. text str.in_
                    .<>. pretty e'
@@ -393,7 +393,8 @@ prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
 prettyDict = curlyBraces # prettyRecordOrDict (text str.colon) keyBracks
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
-prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text (i <> "×" <> j) .<>. text str.in_ .<>. pretty e2)
+prettyMatrix e1 i j e2 =
+   arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text (i <> "×" <> j) .<>. text str.in_ .<>. pretty e2)
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
@@ -405,11 +406,12 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Matrix α doc e1 (i × j) e2) = pretty doc .<>. highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda α σ) = hcat [ highlightIf α (text str.fun), pretty σ ]
    pretty (E.Op op) = parens (text op)
-   pretty (E.Let (E.VarDef σ e) e') = atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
-      (pretty e')
+   pretty (E.Let (E.VarDef σ e) e') =
+      atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ]) (pretty e')
    pretty (E.LetRec (E.RecDefs _ ρ) e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
    pretty (E.Project doc e x) = pretty doc .<>. pretty e .<>. text str.dot .<>. pretty x
-   pretty (E.DProject doc e x) = pretty doc .<>. pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
+   pretty (E.DProject doc e x) =
+      pretty doc .<>. pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App doc e e') = pretty doc .<>. hcat [ pretty e, pretty e' ]
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
@@ -460,7 +462,8 @@ instance Highlightable a => Pretty (Cont a) where
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hcat [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
-   pretty (ElimDict xs κ) = hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
+   pretty (ElimDict xs κ) =
+      hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance Highlightable a => Pretty (Val a) where
    pretty (Val α doc v) = pretty doc .<>. highlightIf α (pretty v)
