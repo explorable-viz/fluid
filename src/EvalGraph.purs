@@ -7,7 +7,9 @@ import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Array (range) as A
 import Data.Either (Either(..))
-import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
+import Data.List (List(..), foldM, foldl, fromFoldable, length, reverse, snoc, unzip, zip, (:))
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
@@ -28,11 +30,12 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, extend, fresh, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
+import ModuleGraph (DependencyGraph', ModuleName)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, defined, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
+import Util (type (×), Endo, check, concatM, defined, definitely, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -203,6 +206,44 @@ eval_progCxt (ProgCxt { primitives, mods, datasets }) =
       γ' <- eval_module γ mod empty
       pure $ γ <+> γ'
 
+   addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
+   addDataset (x ↦ e) γ = do
+      v <- eval γ e empty
+      pure $ γ <+> maplet x v
+
+-- copy of above with extra module graph whilst testing, ideally the graph is part of progcxt
+-- TODO: needs environment scoping
+eval_progCxt'
+   :: forall m
+    . MonadWithGraphAlloc m
+   => MonadReader FileCxt m
+   => LoadFile m
+   => ProgCxt Vertex
+   -> DependencyGraph' Vertex
+   -> m (Env Vertex)
+eval_progCxt' (ProgCxt { primitives, datasets }) (topsorted × graph × defs) = do
+   envs <- evalAll primitives topsorted
+
+   -- TODO: take list of imports to filter final env
+   let env = foldl (<+>) primitives (fromFoldable $ Map.values envs)
+   flip concatM env (reverse datasets <#> addDataset)
+
+   where
+   evalAll :: Env Vertex -> List ModuleName -> m (Map ModuleName (Env Vertex))
+   evalAll env mods = foldM evalOne Map.empty mods
+
+      where
+      evalOne :: Map ModuleName (Env Vertex) -> ModuleName -> m (Map ModuleName (Env Vertex))
+      evalOne envs name = do
+         let defs' = definitely ("has module") $ Map.lookup name defs
+         let deps = definitely ("has deps") $ Map.lookup name graph
+         let envs' = map (\dep -> definitely ("has env") $ Map.lookup dep envs) deps
+         -- TODO: filter from import list
+         let env' = foldl (<+>) env envs'
+         env'' <- eval_module env' defs' empty
+         pure $ Map.insert name env'' envs
+
+   -- no change
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
    addDataset (x ↦ e) γ = do
       v <- eval γ e empty

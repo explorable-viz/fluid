@@ -9,24 +9,25 @@ import Control.Monad.Reader (class MonadReader, ask)
 import Data.Bifunctor (lmap)
 import Data.List (List(..), reverse, (:))
 import Data.List as List
-import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Data.Set (Set)
 import Data.Set as Set
+import Data.Traversable (traverse)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import EvalGraph (GraphConfig, eval_progCxt)
+import EvalGraph (GraphConfig, eval_progCxt, eval_progCxt')
 import Expr (class FV, Expr, fv, ModuleDefs)
 import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
+import ModuleGraph (DependencyGraph, ModuleName, Modules, DependencyGraph')
 import Parse (asModule, standalone)
 import Parse as P
 import Parsing (runParser)
@@ -38,6 +39,7 @@ import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, debug, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
+import Util.Set ((∪))
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
@@ -85,6 +87,18 @@ initialConfig e progCxt = do
       pure (progCxt' × restrict (fv e) γ)
    pure { n, progCxt: progCxt', γ }
 
+initialConfigWithGraph :: forall m a. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FV a => a -> Raw ProgCxt -> Raw DependencyGraph' -> m GraphConfig
+initialConfigWithGraph e progCxt (sorted × deps × modules) = do
+   n × _ × progCxt' × _ × γ <- flip runAllocT 0 do
+      progCxt' <- alloc progCxt
+      modules' <- traverse alloc modules
+      let graph' = sorted × deps × modules'
+      let mαs = Set.unions (vertices <$> Map.values modules')
+      let αs = vertices progCxt' ∪ mαs
+      _ × γ <- runWithGraphT_spy (eval_progCxt' progCxt' graph') αs :: AllocT m (GraphImpl × _)
+      pure (progCxt' × modules' × restrict (fv e) γ)
+   pure { n, progCxt: progCxt', γ }
+
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> m Config
@@ -92,15 +106,10 @@ prepConfig file progCxt = do
    FileCxt { fluidSrcPaths } <- ask
    { content: s, imports } <- parseProgramAsModule fluidSrcPaths file
    e <- desug s
-   _ <- loadModuleGraph (List.fromFoldable imports)
+   graph <- loadModuleGraph (List.fromFoldable imports)
    progCxt' <- loadMods imports progCxt
-   gconfig <- initialConfig e progCxt'
+   gconfig <- initialConfigWithGraph e progCxt' graph
    pure { s, e, gconfig }
-
-type ModuleName = String
-
-type DependencyGraph = Map ModuleName (List ModuleName)
-type Modules = Map ModuleName (Raw ModuleDefs)
 
 loadModuleGraph
    :: forall m
@@ -109,7 +118,7 @@ loadModuleGraph
    => MonadReader FileCxt m
    => LoadFile m
    => List ModuleName
-   -> m (List ModuleName × DependencyGraph × Modules)
+   -> m (Raw DependencyGraph')
 loadModuleGraph mods = do
    graph × defs <- collectModules Set.empty Map.empty Map.empty mods
    let sorted = topsort graph
@@ -117,7 +126,7 @@ loadModuleGraph mods = do
 
    where
 
-   collectModules :: Set ModuleName -> DependencyGraph -> Modules -> List ModuleName -> m (DependencyGraph × Modules)
+   collectModules :: Set ModuleName -> DependencyGraph -> Raw Modules -> List ModuleName -> m (DependencyGraph × Raw Modules)
    collectModules visited graph modules roots = case roots of
       Nil -> pure $ (graph × modules)
       mod : rest ->
