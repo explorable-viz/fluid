@@ -280,13 +280,13 @@ expr_ = fix exprParser
 
       ifElse :: SParser (Raw Expr)
       ifElse = do
-         _ <- keyword str.if_
-         cond <- expr'
-         _ <- keyword str.then_
-         thenBranch <- expr'
-         _ <- keyword str.else_
-         elseBranch <- expr'
-         pure $ Expr' None (IfElse cond thenBranch elseBranch)
+         e <- pure IfElse
+            <*> (keyword str.if_ *> expr')
+            <* keyword str.then_
+            <*> expr'
+            <* keyword str.else_
+            <*> expr'
+         pure $ Expr' None e
 
       lambda :: SParser (Raw Expr)
       lambda = (Expr' None <$> Lambda <<< Clauses) <$> (keyword str.fun *> branches expr' clause_curried)
@@ -307,7 +307,8 @@ expr_ = fix exprParser
             ctrArgs = simpleExprOrProjection >>= \e' -> rest (Expr' doc' (Constr α c (es <> (e' : empty))))
          rest e =
             (simpleExprOrProjection >>= \e' -> rest (Expr' None (App e e'))) <|> pure e
-{-
+
+         {-
          rest :: Raw Expr -> SParser (Raw Expr)
          rest e@(Expr' _ expr) = case expr of
             Constr α c es -> (simpleExprOrProjection >>= \e' -> rest (Expr' None (Constr α c (es <> (e' : empty))))) <|> pure e
