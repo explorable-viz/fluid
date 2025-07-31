@@ -5,6 +5,7 @@ str
    :: { arrayLBracket :: String
       , arrayRBracket :: String
       , as :: String
+      , backquote :: String
       , backslash :: String
       , backtick :: String
       , bar :: String
@@ -15,12 +16,15 @@ str
       , curlyrBrace :: String
       , dictLBracket :: String
       , dictRBracket :: String
+      , dollar :: String
       , dot :: String
       , ellipsis :: String
       , else_ :: String
       , equals :: String
+      , fluidExtension :: String
       , fun :: String
       , if_ :: String
+      , import :: String
       , in_ :: String
       , lArrow :: String
       , lBracket :: String
@@ -32,16 +36,14 @@ str
       , rparenth :: String
       , semiColon :: String
       , then_ :: String
-      , backquote :: String
       , triplequote :: String
-      , dollar :: String
-      , import :: String
       }
 
 str =
    { arrayLBracket: "[|"
    , arrayRBracket: "|]"
    , as: "as"
+   , backquote: "@"
    , backslash: "\\"
    , backtick: "`"
    , bar: "|"
@@ -52,12 +54,15 @@ str =
    , curlyrBrace: "}"
    , dictLBracket: "{|"
    , dictRBracket: "|}"
+   , dollar: "$"
    , dot: "."
    , ellipsis: ".."
    , else_: "else"
    , equals: "="
+   , fluidExtension: ".fld"
    , fun: "fun"
    , if_: "if"
+   , import: "import"
    , in_: "in"
    , lArrow: "<-"
    , lBracket: "["
@@ -69,8 +74,5 @@ str =
    , rparenth: ")"
    , semiColon: ";"
    , then_: "then"
-   , backquote: "@"
    , triplequote: "\"\"\""
-   , dollar: "$"
-   , import: "import"
    }
