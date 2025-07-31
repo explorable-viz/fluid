@@ -49,7 +49,6 @@ loadFile_ folders file = (file × _) <$> loadFile folders file
 loadFileFromPaths_ :: forall m. LoadFile m => Array File -> AffError m String
 loadFileFromPaths_ paths = loadFileFromPaths paths
 
-
 newtype WebT :: forall k. (k -> Type) -> k -> Type
 newtype WebT m a = WebT (ReaderT FileCxt m a)
 
