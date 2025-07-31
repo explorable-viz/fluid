@@ -13,12 +13,15 @@ newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder }
 
 class LoadFile m where
    loadFile :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
+   loadFileFromPaths :: MonadAff m => Array File -> m String
 
 instance (Monoid w, MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WriterT w m) where
    loadFile folders = lift <<< loadFile folders
+   loadFileFromPaths = lift <<< loadFileFromPaths
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) where
    loadFile folders = lift <<< loadFile folders
+   loadFileFromPaths = lift <<< loadFileFromPaths
 
 newtype File = File String
 newtype Folder = Folder String

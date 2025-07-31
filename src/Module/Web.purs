@@ -18,24 +18,28 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import File (class LoadFile, File(..), FileCxt, Folder, loadFile, prependFolder)
+import File (class LoadFile, File(..), FileCxt, Folder, loadFile, prependFolder, loadFileFromPaths)
+import Parse.Constants (str)
 import Util (type (×), (×), AffError, debug, findM)
 
 instance MonadThrow Error m => LoadFile (WebT m) where
-   loadFile folders (File file) = do
-      let urls = flip prependFolder (File $ file <> ".fld") <$> folders
+   loadFile folders (File file) = loadFileFromPaths paths
+      where
+      paths = flip prependFolder (File $ file <> str.fluidExtension) <$> folders
+
+   loadFileFromPaths paths = do
       result <- runExceptT $ do
-         _ × url' <- ExceptT $ liftAff $ findM urls checkUrl (Left A.RequestFailedError)
-         when debug.logging $ liftAff $ log ("loadFile: resolved URL: " <> url')
-         contents <- ExceptT $ liftAff $ request (defaultRequest { url = url', method = Left GET, responseFormat = string })
+         _ × path' <- ExceptT $ liftAff $ findM paths checkPath (Left A.RequestFailedError)
+         when debug.logging $ liftAff $ log ("loadFileFromPaths: resolved path: " <> path')
+         contents <- ExceptT $ liftAff $ request (defaultRequest { url = path', method = Left GET, responseFormat = string })
          pure contents.body
       either (throwError <<< E.error <<< printError) pure result
       where
-      checkUrl :: File -> Aff (Either A.Error (Response String × String))
-      checkUrl (File url) = do
-         resp <- request (defaultRequest { url = url, method = Left HEAD, responseFormat = string })
+      checkPath :: File -> Aff (Either A.Error (Response String × String))
+      checkPath (File path) = do
+         resp <- request (defaultRequest { url = path, method = Left HEAD, responseFormat = string })
          pure case resp of
-            Right resp' | resp'.status == StatusCode 200 -> Right (resp' × url)
+            Right resp' | resp'.status == StatusCode 200 -> Right (resp' × path)
             Right _ -> Left A.RequestFailedError
             Left err -> Left err
 
