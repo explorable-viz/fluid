@@ -7,14 +7,14 @@ import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
 import Data.Bifunctor (lmap)
-import Data.List (List(..), (:))
+import Data.List (List(..), reverse, (:))
 import Data.List as List
 import Data.Map (Map)
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Traversable (traverse_)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
@@ -35,7 +35,7 @@ import ProgCxt (ProgCxt(..))
 import SExpr (Module, desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
-import Util (type (×), AffError, concatM, debug, definitely, error, (×))
+import Util (type (×), AffError, concatM, debug, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 
@@ -106,11 +106,11 @@ loadModuleGraph
    => MonadReader FileCxt m
    => LoadFile m
    => List ModuleName
-   -> m (DependencyGraph × Modules)
+   -> m (List ModuleName × DependencyGraph × Modules)
 loadModuleGraph mods = do
    graph × defs <- collectModules Set.empty Map.empty Map.empty mods
-   _ <- traverse_ (checkCyclesFrom graph Nil) (List.fromFoldable $ Map.keys graph)
-   pure (graph × defs)
+   let sorted = topsort graph
+   pure (sorted × graph × defs)
 
    where
 
@@ -136,11 +136,19 @@ loadModuleGraph mods = do
       mod' <- desugarModuleFwd content
       pure $ (List.fromFoldable imports) × mod'
 
-   -- this could be optimisied with black/grey sets
-   checkCyclesFrom :: DependencyGraph -> List ModuleName -> ModuleName -> m Unit
-   checkCyclesFrom graph path node = do
-      if List.elem node path then error "Cycle!!!"
-      else
-         traverse_
-            (checkCyclesFrom graph (node : path))
-            (definitely "module in graph" $ Map.lookup node graph)
+   topsort :: DependencyGraph -> List ModuleName
+   topsort graph = go (List.fromFoldable $ Map.keys graph) Nil
+      where
+      go :: List ModuleName -> List ModuleName -> List ModuleName
+      go Nil result = reverse result
+      go remaining result =
+         -- should always be resolvable if no cycles
+         case List.find resolved remaining of
+            Nothing -> error "cycle!!!"
+            Just next -> go (List.delete next remaining) (next : result)
+         where
+         -- no dependencies or dependencies all resolved
+         resolved :: ModuleName -> Boolean
+         resolved mod = case Map.lookup mod graph of
+            Nothing -> true
+            Just deps -> List.all (\dep -> not (List.elem dep remaining)) deps
