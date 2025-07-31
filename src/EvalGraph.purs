@@ -7,7 +7,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Array (range) as A
 import Data.Either (Either(..))
-import Data.List (List(..), foldM, foldl, fromFoldable, length, reverse, snoc, unzip, zip, (:))
+import Data.List (List(..), foldM, foldl, length, reverse, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Newtype (unwrap)
@@ -220,12 +220,12 @@ eval_progCxt'
    => LoadFile m
    => ProgCxt Vertex
    -> DependencyGraph' Vertex
+   -> List String
    -> m (Env Vertex)
-eval_progCxt' (ProgCxt { primitives, datasets }) (topsorted × graph × defs) = do
+eval_progCxt' (ProgCxt { primitives, datasets }) (topsorted × graph × defs) imports = do
    envs <- evalAll primitives topsorted
-
-   -- TODO: take list of imports to filter final env
-   let env = foldl (<+>) primitives (fromFoldable $ Map.values envs)
+   let envs' = map (\dep -> definitely ("has env") $ Map.lookup dep envs) imports
+   let env = foldl (<+>) primitives envs'
    flip concatM env (reverse datasets <#> addDataset)
 
    where
@@ -238,7 +238,6 @@ eval_progCxt' (ProgCxt { primitives, datasets }) (topsorted × graph × defs) = 
          let defs' = definitely ("has module") $ Map.lookup name defs
          let deps = definitely ("has deps") $ Map.lookup name graph
          let envs' = map (\dep -> definitely ("has env") $ Map.lookup dep envs) deps
-         -- TODO: filter from import list
          let env' = foldl (<+>) env envs'
          env'' <- eval_module env' defs' empty
          pure $ Map.insert name env'' envs

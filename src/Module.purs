@@ -87,15 +87,26 @@ initialConfig e progCxt = do
       pure (progCxt' × restrict (fv e) γ)
    pure { n, progCxt: progCxt', γ }
 
-initialConfigWithGraph :: forall m a. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FV a => a -> Raw ProgCxt -> Raw DependencyGraph' -> m GraphConfig
-initialConfigWithGraph e progCxt (sorted × deps × modules) = do
+initialConfigWithGraph
+   :: forall m a
+    . MonadAff m
+   => MonadError Error m
+   => MonadReader FileCxt m
+   => LoadFile m
+   => FV a
+   => a
+   -> Raw ProgCxt
+   -> Raw DependencyGraph'
+   -> List String
+   -> m GraphConfig
+initialConfigWithGraph e progCxt (sorted × deps × modules) imports = do
    n × _ × progCxt' × _ × γ <- flip runAllocT 0 do
       progCxt' <- alloc progCxt
       modules' <- traverse alloc modules
       let graph' = sorted × deps × modules'
       let mαs = Set.unions (vertices <$> Map.values modules')
       let αs = vertices progCxt' ∪ mαs
-      _ × γ <- runWithGraphT_spy (eval_progCxt' progCxt' graph') αs :: AllocT m (GraphImpl × _)
+      _ × γ <- runWithGraphT_spy (eval_progCxt' progCxt' graph' imports) αs :: AllocT m (GraphImpl × _)
       pure (progCxt' × modules' × restrict (fv e) γ)
    pure { n, progCxt: progCxt', γ }
 
@@ -106,8 +117,9 @@ prepConfig file progCxt = do
    FileCxt { fluidSrcPaths } <- ask
    { content: s, imports } <- parseProgramAsModule fluidSrcPaths file
    e <- desug s
-   graph <- loadModuleGraph ("lib/prelude" : List.fromFoldable imports)
-   gconfig <- initialConfigWithGraph e progCxt graph
+   let imports' = "lib/prelude" : List.fromFoldable imports
+   graph <- loadModuleGraph imports'
+   gconfig <- initialConfigWithGraph e progCxt graph imports'
    pure { s, e, gconfig }
 
 loadModuleGraph
