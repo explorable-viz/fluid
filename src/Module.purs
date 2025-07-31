@@ -11,7 +11,6 @@ import Data.List (List(..), (:))
 import Data.List as List
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (fromMaybe)
 import Data.Profunctor.Strong (second)
 import Data.Set (Set)
 import Data.Set as Set
@@ -36,7 +35,7 @@ import ProgCxt (ProgCxt(..))
 import SExpr (Module, desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
-import Util (type (×), AffError, error, concatM, debug, (×))
+import Util (type (×), AffError, concatM, debug, definitely, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 
@@ -137,4 +136,4 @@ loadModuleGraph mods = do
    checkCyclesFrom graph path node = do
       if List.elem node path then error "Cycle!!!"
       else
-         traverse_ (checkCyclesFrom graph (node : path)) (fromMaybe Nil (Map.lookup node graph))
+         traverse_ (checkCyclesFrom graph (node : path)) (definitely "module in graph" $ Map.lookup node graph)
