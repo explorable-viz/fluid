@@ -6,14 +6,19 @@ import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
-import Data.Argonaut.Core (Json, toString)
+import Data.Argonaut.Core (Json, caseJson, toString)
+import Data.Argonaut.Core as C
 import Data.Argonaut.Decode (parseJson)
+import Data.Array.NonEmpty (fromFoldable, toUnfoldable)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
+import Data.Tuple (Tuple(..))
+import Data.Unfoldable as D
 import Desugarable (desug)
+import Dict (fromFoldable) as D
 import Doc (DocOpt(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
@@ -28,6 +33,7 @@ import Graph.WithGraph (class MonadAlloc, AllocT, alloc, alloc_check, runAllocT,
 import Lattice (Raw)
 import Parse as P
 import Parsing (runParser)
+import Parsing.Language (javaStyle)
 import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
@@ -36,8 +42,12 @@ import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, debug, error, spy, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
-import Val (Val(..))
+import Val (BaseVal, DictRep(..), Val(..))
 import Val as V
+import Data.Array (toUnfoldable) as Array
+import Foreign.Object as Object
+
+
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
@@ -75,6 +85,7 @@ loadJson path = do
 
 -- use casejson
 -- make a recursive check with the layout: array,object,string,number
+-- after checks for array and object we can then assume it is only string and numbers left
 -- This function converts a Json value to a Val Unit.
 -- use the spy indentity to debug the value
 -- recurse over the JSON structure
@@ -83,30 +94,22 @@ fromJsonVal j = do
    case toString j of
       Just s -> spy "json value" identity (Val unit None (V.Str s))
       Nothing -> error ("FromJsonVal not implemented yet")
-
---    Nothing ->
---      case toNumber j of
---        Just n  -> Val unit None (Int n)
---        Nothing -> Val unit None (Str "Unsupported JSON type")
-
---  case toObject j of
---     Just obj ->
---       let
---         dict = D.fromFoldable
---           (map (\(Tuple k v) -> Tuple k (unit × fromJsonVal v))
---                (D.toUnfoldable obj))
---       in
---         Val unit None (Dictionary (DictRep dict))
-
---     Nothing ->
---       case toArray j of
---         Just arr ->
---           let
---             vals = map fromJsonVal arr
---           in
---             Val unit None (Constr "Array" vals)
-
---         Nothing ->
+-- fromJsonVal json = caseJson
+--   (\_ -> spy "Processing null" identity (Val unit None (V.Str "Null")))
+--   (\b -> spy "Processing boolean" identity (Val unit None (V.Str (if b then "True" else "False"))))
+--   (\n -> spy "Processing number" identity (Val unit None (V.Float n)))
+--   (\s -> spy "Processing string" identity (Val unit None (V.Str s)))
+--   (\arr ->
+--     let vals = Array.toUnfoldable (map fromJsonVal arr) -- convert Array to List
+--     in Val unit None (V.Constr "Array" vals)
+--   )
+--   (\obj ->
+--     let
+--       pairs = map (\(Tuple k v) -> Tuple k (fromJsonVal v)) (Object.toUnfoldable obj)
+--       dict = Object.fromFoldable pairs
+--     in Val unit None (V.Dictionary (DictRep dict))
+--   )
+--   json
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
 loadProgCxt mods datasets = do
