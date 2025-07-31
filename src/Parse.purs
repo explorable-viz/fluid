@@ -301,10 +301,18 @@ expr_ = fix exprParser
       appChain = simpleExprOrProjection >>= rest
          where
          rest :: Raw Expr -> SParser (Raw Expr)
+         rest e@(Expr' doc' (Constr α c es)) = ctrArgs <|> pure e
+            where
+            ctrArgs :: SParser (Raw Expr)
+            ctrArgs = simpleExprOrProjection >>= \e' -> rest (Expr' doc' (Constr α c (es <> (e' : empty))))
+         rest e =
+            (simpleExprOrProjection >>= \e' -> rest (Expr' None (App e e'))) <|> pure e
+{-
+         rest :: Raw Expr -> SParser (Raw Expr)
          rest e@(Expr' _ expr) = case expr of
-            Constr doc' c es -> (simpleExprOrProjection >>= \e' -> rest (Expr' None (Constr doc' c (es <> (e' : empty))))) <|> pure e
+            Constr α c es -> (simpleExprOrProjection >>= \e' -> rest (Expr' None (Constr α c (es <> (e' : empty))))) <|> pure e
             _ -> (simpleExprOrProjection >>= \arg -> rest (Expr' None (App e arg))) <|> pure e
-
+-}
          -- An expression that may need wrapping in parentheses to disambiguate.
          simpleExprOrProjection :: SParser (Raw Expr)
          simpleExprOrProjection =
