@@ -103,7 +103,7 @@ prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt 
 prepConfig progCxt fluidSrc = do
    mods × s <- parseFluidSrc fluidSrc
    e <- desug s
-   graph <- loadModuleGraph (List.fromFoldable imports)
+   graph <- loadModuleGraph ("lib/prelude" : List.fromFoldable imports)
    progCxt' <- loadMods imports progCxt
    gconfig <- initialConfigWithGraph e progCxt' graph
    pure { s, e, gconfig }
@@ -143,7 +143,8 @@ loadModuleGraph mods = do
       src <- loadFile fluidSrcPaths (File name)
       { imports, content } <- parse src (asModule (File name) P.module_)
       mod' <- desugarModuleFwd content
-      pure $ (List.fromFoldable imports) × mod'
+      let imports' = if name == "lib/prelude" then List.fromFoldable imports else "lib/prelude" : List.fromFoldable imports
+      pure $ imports' × mod'
 
    topsort :: DependencyGraph -> List ModuleName
    topsort graph = go (List.fromFoldable $ Map.keys graph) Nil
