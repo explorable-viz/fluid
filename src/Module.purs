@@ -122,7 +122,11 @@ loadModuleGraph mods = do
             collectModules visited graph modules rest
          else do
             imports × defs <- loadModule mod
-            collectModules (Set.insert mod visited) (Map.insert mod imports graph) (Map.insert mod defs modules) (imports <> rest)
+            collectModules
+               (Set.insert mod visited)
+               (Map.insert mod imports graph)
+               (Map.insert mod defs modules)
+               (imports <> rest)
 
    loadModule :: ModuleName -> m (List ModuleName × Raw ModuleDefs)
    loadModule name = do
@@ -132,8 +136,11 @@ loadModuleGraph mods = do
       mod' <- desugarModuleFwd content
       pure $ (List.fromFoldable imports) × mod'
 
+   -- this could be optimisied with black/grey sets
    checkCyclesFrom :: DependencyGraph -> List ModuleName -> ModuleName -> m Unit
    checkCyclesFrom graph path node = do
       if List.elem node path then error "Cycle!!!"
       else
-         traverse_ (checkCyclesFrom graph (node : path)) (definitely "module in graph" $ Map.lookup node graph)
+         traverse_
+            (checkCyclesFrom graph (node : path))
+            (definitely "module in graph" $ Map.lookup node graph)
