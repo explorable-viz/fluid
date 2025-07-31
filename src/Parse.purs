@@ -350,14 +350,19 @@ expr_ = fix exprParser
 
             where
             matrix :: SParser (Raw Expr)
-            matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
+            matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $ do
+               e <- expr_ <* bar
+               void $ token.parens (ident `lift2 (×)` (token.comma *> ident))
+               pure e
+
+            {-
                Expr' None <$>
                   ( Matrix unit
                        <$> (expr_ <* bar)
                        <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
                        <*> (keyword str.in_ *> expr_)
                   )
-
+-}
             nil :: SParser (Raw Expr)
             nil = token.brackets $ pure (Expr' None (ListEmpty unit))
 
