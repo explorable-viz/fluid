@@ -23,6 +23,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
+import Debug (trace)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (Raw)
 import Parse.Constants (str)
@@ -352,9 +353,10 @@ expr_ = fix exprParser
             matrix :: SParser (Raw Expr)
             matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $ do
                e <- expr_ <* bar
-               void $ token.parens (ident `lift2 (×)` (token.comma *> ident))
-               _ <- keyword str.in_ *> expr_
-               pure e
+               xy <- token.parens (ident `lift2 (×)` (token.comma *> ident))
+               e' <- keyword str.in_ *> expr_
+               trace (Matrix unit e xy e') \_ ->
+                  pure e
 
             {-
                Expr' None <$>
