@@ -266,7 +266,7 @@ expr_ = fix exprParser
       op' <- token.operator
       onlyIf (op == op') $
          if op == str.dot then \e e' -> case e' of
-            Expr' _ (Var x) -> Expr' None (Project e x)
+            Expr' doc (Var x) -> Expr' doc (Project e x)
             _ -> error $ "Field names are not first class; got \"" <> prettyP e' <> "\"."
          else if isCtrOp op' then \e e' -> Expr' None (Constr unit op' (e : e' : empty))
          else \e e' -> Expr' None (BinaryApp e op e')
@@ -371,7 +371,7 @@ expr_ = fix exprParser
 
             listComp :: SParser (Raw Expr)
             listComp = token.brackets $
-               Expr' None <$> (ListComp unit <$> expr_ <*> (toList <$> sepBy1 qualifier token.comma) <* bar)
+               Expr' None <$> (ListComp unit <$> expr_ <* bar <*> (toList <$> sepBy1 qualifier token.comma))
                where
                qualifier :: SParser (Raw Qualifier)
                qualifier =
