@@ -104,8 +104,7 @@ prepConfig progCxt fluidSrc = do
    mods × s <- parseFluidSrc fluidSrc
    e <- desug s
    graph <- loadModuleGraph ("lib/prelude" : List.fromFoldable imports)
-   progCxt' <- loadMods imports progCxt
-   gconfig <- initialConfigWithGraph e progCxt' graph
+   gconfig <- initialConfigWithGraph e progCxt graph
    pure { s, e, gconfig }
 
 loadModuleGraph
