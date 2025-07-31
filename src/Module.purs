@@ -8,14 +8,21 @@ import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
 import Data.Bifunctor (lmap)
 import Data.List (List(..), (:))
+import Data.List as List
+import Data.Map (Map)
+import Data.Map as Map
+import Data.Maybe (fromMaybe)
 import Data.Profunctor.Strong (second)
+import Data.Set (Set)
+import Data.Set as Set
+import Data.Traversable (traverse_)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
-import Expr (class FV, Expr, fv)
+import Expr (class FV, Expr, fv, ModuleDefs)
 import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -29,7 +36,7 @@ import ProgCxt (ProgCxt(..))
 import SExpr (Module, desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
-import Util (type (×), AffError, concatM, debug, (×))
+import Util (type (×), AffError, error, concatM, debug, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 
@@ -86,6 +93,51 @@ prepConfig file progCxt = do
    FileCxt { fluidSrcPaths } <- ask
    { content: s, imports } <- parseProgramAsModule fluidSrcPaths file
    e <- desug s
+   _ <- loadModuleGraph (List.fromFoldable imports)
    progCxt' <- loadMods imports progCxt
    gconfig <- initialConfig e progCxt'
    pure { s, e, gconfig }
+
+type ModuleName = String
+
+type DependencyGraph = Map ModuleName (List ModuleName)
+type Modules = Map ModuleName (Raw ModuleDefs)
+
+loadModuleGraph
+   :: forall m
+    . MonadAff m
+   => MonadError Error m
+   => MonadReader FileCxt m
+   => LoadFile m
+   => List ModuleName
+   -> m (DependencyGraph × Modules)
+loadModuleGraph mods = do
+   graph × defs <- collectModules Set.empty Map.empty Map.empty mods
+   _ <- traverse_ (checkCyclesFrom graph Nil) (List.fromFoldable $ Map.keys graph)
+   pure (graph × defs)
+
+   where
+
+   collectModules :: Set ModuleName -> DependencyGraph -> Modules -> List ModuleName -> m (DependencyGraph × Modules)
+   collectModules visited graph modules roots = case roots of
+      Nil -> pure $ (graph × modules)
+      mod : rest ->
+         if Set.member mod visited then
+            collectModules visited graph modules rest
+         else do
+            imports × defs <- loadModule mod
+            collectModules (Set.insert mod visited) (Map.insert mod imports graph) (Map.insert mod defs modules) (imports <> rest)
+
+   loadModule :: ModuleName -> m (List ModuleName × Raw ModuleDefs)
+   loadModule name = do
+      FileCxt { fluidSrcPaths } <- ask
+      src <- loadFile fluidSrcPaths (File name)
+      { imports, content } <- parse src (asModule (File name) P.module_)
+      mod' <- desugarModuleFwd content
+      pure $ (List.fromFoldable imports) × mod'
+
+   checkCyclesFrom :: DependencyGraph -> List ModuleName -> ModuleName -> m Unit
+   checkCyclesFrom graph path node = do
+      if List.elem node path then error "Cycle!!!"
+      else
+         traverse_ (checkCyclesFrom graph (node : path)) (fromMaybe Nil (Map.lookup node graph))
