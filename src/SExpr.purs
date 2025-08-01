@@ -28,7 +28,7 @@ import Dict as D
 import Doc (DocOpt(..), DocCommentElem(..)) as Doc
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (Expr(..), ModuleDefs(..), RecDefs(..), VarDef(..), DocOpt, DocCommentElem) as E
+import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..), DocOpt, DocCommentElem) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -128,13 +128,13 @@ data Qualifier a
    | ListCompGen (DocOpt a) Pattern (Expr a)
    | ListCompDecl (VarDef a) -- could allow VarDefs instead
 
-type Module a =
+type Module' a =
    { name :: String
    , imports :: Array String
    , content :: a
    }
 
-data ModuleDefs a = ModuleDefs (List (VarDefs a + RecDefs a))
+data Module a = Module (List (VarDefs a + RecDefs a))
 
 instance Desugarable DictEntry E.Expr where
    desug (ExprKey e) = desug e
@@ -168,7 +168,7 @@ instance Desugarable Clauses Elim where
    desugBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
    desugBwd σ μ = toClausesStateBwd (clausesStateBwd (ContElim σ) (toClausesStateFwd μ))
 
-desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => ModuleDefs a -> m (E.ModuleDefs a)
+desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
 desugarModuleFwd = moduleFwd
 
 -- helpers
@@ -182,8 +182,8 @@ elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
 -- Module. Surface language supports "blocks" of variable declarations; core does not. Currently no backward.
-moduleFwd :: forall a m. MonadError Error m => BoundedLattice a => ModuleDefs a -> m (E.ModuleDefs a)
-moduleFwd (ModuleDefs ds) = E.ModuleDefs <$> traverse varDefOrRecDefsFwd (join (flatten <$> ds))
+moduleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module a -> m (E.Module a)
+moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten <$> ds))
    where
    varDefOrRecDefsFwd :: VarDef a + RecDefs a -> m (E.VarDef a + E.RecDefs a)
    varDefOrRecDefsFwd (Left d) = Left <$> varDefFwd d
@@ -626,8 +626,8 @@ derive instance Functor ListRest
 derive instance Functor VarDef
 derive instance Functor Qualifier
 
-instance Functor ModuleDefs where
-   map f (ModuleDefs defs) = ModuleDefs (mapDefs f <$> defs)
+instance Functor Module where
+   map f (Module defs) = Module (mapDefs f <$> defs)
       where
       mapDefs :: forall a b. (a -> b) -> VarDefs a + RecDefs a -> VarDefs b + RecDefs b
       mapDefs g (Left ds) = Left $ map g <$> ds

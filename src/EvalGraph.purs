@@ -22,7 +22,7 @@ import Dict (fromFoldable) as D
 import Doc (DocCommentElem(..), DocOpt(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), ModuleDefs(..), RecDefs(..), VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import File (class LoadFile, FileCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, DVertex'(..), Vertex, op, pack, selectαs, select𝔹s, showGraph, showVertices, vertices)
@@ -184,24 +184,24 @@ eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
-eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> ModuleDefs Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
    where
-   go :: Env Vertex -> ModuleDefs Vertex -> Set Vertex -> m (Env Vertex)
-   go γ' (ModuleDefs Nil) _ = pure γ'
-   go y' (ModuleDefs (Left (VarDef σ e) : ds)) αs = do
+   go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+   go γ' (Module Nil) _ = pure γ'
+   go y' (Module (Left (VarDef σ e) : ds)) αs = do
       v <- eval (γ <+> y') e αs
       γ'' × _ × αs' <- match v σ
-      go (y' <+> γ'') (ModuleDefs ds) αs'
-   go γ' (ModuleDefs (Right (RecDefs α ρ) : ds)) αs = do
+      go (y' <+> γ'') (Module ds) αs'
+   go γ' (Module (Right (RecDefs α ρ) : ds)) αs = do
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
-      go (γ' <+> γ'') (ModuleDefs ds) αs
+      go (γ' <+> γ'') (Module ds) αs
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => ProgCxt Vertex -> m (Env Vertex)
 eval_progCxt (ProgCxt { primitives, mods, datasets }) =
    flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
    where
-   addModule :: ModuleDefs Vertex -> Env Vertex -> m (Env Vertex)
+   addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
    addModule mod γ = do
       γ' <- eval_module γ mod empty
       pure $ γ <+> γ'

@@ -65,7 +65,7 @@ asExpr :: forall a. Cont a -> Expr a
 asExpr (ContExpr e) = e
 asExpr _ = error "Expression expected"
 
-newtype ModuleDefs a = ModuleDefs (List (VarDef a + RecDefs a))
+newtype Module a = Module (List (VarDef a + RecDefs a))
 
 class FV a where
    fv :: a -> Set Var
@@ -244,8 +244,8 @@ instance Vertices (Cont Vertex) where
 instance Vertices (RecDefs Vertex) where
    vertices defs@(RecDefs α ρ) = singleton (DVertex (α × pack defs)) ∪ vertices ρ
 
-instance Vertices (ModuleDefs Vertex) where
-   vertices (ModuleDefs defs) = unions (go <$> defs)
+instance Vertices (Module Vertex) where
+   vertices (Module defs) = unions (go <$> defs)
       where
       go (Left vardef) = vertices vardef
       go (Right recdefs) = vertices recdefs
@@ -268,8 +268,8 @@ derive instance Traversable Expr
 derive instance Functor RecDefs
 derive instance Foldable RecDefs
 derive instance Traversable RecDefs
-derive instance Newtype (ModuleDefs a) _
-derive instance Functor ModuleDefs
+derive instance Newtype (Module a) _
+derive instance Functor Module
 
 -- For terms of a fixed shape.
 instance Apply Expr where
@@ -308,12 +308,12 @@ instance Apply RecDefs where
    apply (RecDefs fα fρ) (RecDefs α ρ) = RecDefs (fα α) (((<*>) <$> fρ) <*> ρ)
 
 -- Apply instance for Either no good here as doesn't assume fixed shape.
-instance Apply ModuleDefs where
-   apply (ModuleDefs Nil) (ModuleDefs Nil) = ModuleDefs Nil
-   apply (ModuleDefs (Left fdef : fdefs)) (ModuleDefs (Left def : defs)) =
-      ModuleDefs (Left (fdef <*> def) : unwrap (apply (ModuleDefs fdefs) (ModuleDefs defs)))
-   apply (ModuleDefs (Right fdef : fdefs)) (ModuleDefs (Right def : defs)) =
-      ModuleDefs (Right (fdef <*> def) : unwrap (apply (ModuleDefs fdefs) (ModuleDefs defs)))
+instance Apply Module where
+   apply (Module Nil) (Module Nil) = Module Nil
+   apply (Module (Left fdef : fdefs)) (Module (Left def : defs)) =
+      Module (Left (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
+   apply (Module (Right fdef : fdefs)) (Module (Right def : defs)) =
+      Module (Right (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
    apply _ _ = shapeMismatch unit
 
 -- Foldable instance for Either only considers Right case.
@@ -321,22 +321,22 @@ foldlModuleDef :: forall a b. (b -> a -> b) -> b -> VarDef a + RecDefs a -> b
 foldlModuleDef f acc (Left def) = foldl f acc def
 foldlModuleDef f acc (Right def) = foldl f acc def
 
-instance Foldable ModuleDefs where
-   foldl _ acc (ModuleDefs Nil) = acc
-   foldl f acc (ModuleDefs (Left def : defs)) =
+instance Foldable Module where
+   foldl _ acc (Module Nil) = acc
+   foldl f acc (Module (Left def : defs)) =
       foldl (foldlModuleDef f) (foldl f acc def) defs
-   foldl f acc (ModuleDefs (Right def : defs)) =
+   foldl f acc (Module (Right def : defs)) =
       foldl (foldlModuleDef f) (foldl f acc def) defs
 
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
-instance Traversable ModuleDefs where
-   traverse _ (ModuleDefs Nil) = pure (ModuleDefs Nil)
-   traverse f (ModuleDefs (Left def : ds)) =
-      ModuleDefs <$> ((Left <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (ModuleDefs ds)))
-   traverse f (ModuleDefs (Right def : ds)) =
-      ModuleDefs <$> ((Right <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (ModuleDefs ds)))
+instance Traversable Module where
+   traverse _ (Module Nil) = pure (Module Nil)
+   traverse f (Module (Left def : ds)) =
+      Module <$> ((Left <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
+   traverse f (Module (Right def : ds)) =
+      Module <$> ((Right <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
 
    sequence = sequenceDefault
 

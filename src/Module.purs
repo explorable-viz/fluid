@@ -21,7 +21,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt, eval_progCxt')
-import Expr (class FV, Expr, fv, ModuleDefs)
+import Expr (class FV, Expr, fv, Module)
 import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -33,7 +33,7 @@ import Parse as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
-import SExpr (Module, desugarModuleFwd)
+import SExpr (Module', desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, debug, error, (×))
@@ -48,7 +48,7 @@ parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Raw 
 parseProgram folders file =
    loadFile folders file >>= flip parse (standalone P.program)
 
-parseProgramAsModule :: forall m. LoadFile m => Array Folder -> File -> AffError m (Module (Raw S.Expr))
+parseProgramAsModule :: forall m. LoadFile m => Array Folder -> File -> AffError m (Module' (Raw S.Expr))
 parseProgramAsModule folders file =
    loadFile folders file >>= flip parse (asModule file P.program)
 
@@ -151,7 +151,7 @@ loadModuleGraph mods = do
                (Map.insert mod defs modules)
                (imports <> rest)
 
-   loadModule :: ModuleName -> m (List ModuleName × Raw ModuleDefs)
+   loadModule :: ModuleName -> m (List ModuleName × Raw Module)
    loadModule name = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File name)
