@@ -33,7 +33,7 @@ import Parse as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
-import SExpr (Module, desugarModuleFwd)
+import SExpr (Module', desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, debug, error, (×))
@@ -148,7 +148,7 @@ loadModuleGraph mods = do
                (Map.insert mod defs modules)
                (imports <> rest)
 
-   loadModule :: ModuleName -> m (List ModuleName × Raw ModuleDefs)
+   loadModule :: ModuleName -> m (List ModuleName × Raw Module)
    loadModule name = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File name)

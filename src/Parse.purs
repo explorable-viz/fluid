@@ -36,7 +36,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ModuleDefs(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Module)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Module')
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -458,13 +458,13 @@ topLevel p = token.whiteSpace *> p <* eof
 program ∷ SParser (Raw Expr)
 program = expr_
 
-module_ :: SParser (Raw ModuleDefs)
-module_ = ModuleDefs <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi
+module_ :: SParser (Raw Module)
+module_ = Module <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi
 
 standalone :: forall a. SParser a -> SParser a
 standalone p = topLevel (imports_ *> p)
 
-asModule :: forall a. File -> SParser a -> SParser (Module a)
+asModule :: forall a. File -> SParser a -> SParser (Module' a)
 asModule (File name) p = topLevel do
    imports <- imports_
    content <- p
