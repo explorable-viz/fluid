@@ -25,6 +25,9 @@
     "script/util/clean.sh",
     "script/util/lisp-case.sh",
     "website/article",
+    "website/css",
+    "website/font",
+    "website/shared",
     "script/install-article.sh",
     "script/util/serve.sh"
   ],
