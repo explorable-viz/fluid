@@ -17,15 +17,14 @@ import Data.Set as Set
 import Data.Traversable (traverse)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import EvalGraph (GraphConfig, eval_progCxt, eval_progCxt')
+import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, fv, Module)
 import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
+import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleName, Modules, DependencyGraph')
 import Parse (asModule, standalone)
@@ -35,8 +34,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (Module', desugarModuleFwd)
 import SExpr as S
-import Test.Util.Debug (checking)
-import Util (type (×), AffError, concatM, debug, error, (×))
+import Util (type (×), AffError, concatM, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 import Util.Set ((∪))
@@ -52,14 +50,6 @@ parseProgramAsModule :: forall m. LoadFile m => Array Folder -> File -> AffError
 parseProgramAsModule folders file =
    loadFile folders file >>= flip parse (asModule file P.program)
 
-module_ :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ folders file (ProgCxt r@{ mods }) = do
-   when debug.logging $ log ("module_: " <> show (folders × file))
-   src <- loadFile folders file
-   { content } <- parse src (asModule file P.module_)
-   mod' <- desugarModuleFwd content
-   pure $ ProgCxt r { mods = mod' : mods }
-
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
    eα <- parseProgram folders file >>= desug
@@ -71,23 +61,7 @@ loadProgCxt datasets = do
    pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
       >>= concatM (second File >>> datasetAs fluidSrcPaths <$> datasets)
 
--- updates a progCxt with imported modules
-loadMods :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Raw ProgCxt -> m (Raw ProgCxt)
-loadMods mods progCxt = do
-   FileCxt { fluidSrcPaths } <- ask
-   concatM (File >>> module_ fluidSrcPaths <$> [ "lib/prelude" ] <> mods) progCxt
-
-initialConfig :: forall m a. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FV a => a -> Raw ProgCxt -> m GraphConfig
-initialConfig e progCxt = do
-   when checking.allocRoundTrip $ alloc_check "progCxt" (alloc progCxt)
-   n × _ × progCxt' × γ <- flip runAllocT 0 do
-      progCxt' <- alloc progCxt
-      let αs = vertices progCxt'
-      _ × γ <- runWithGraphT_spy (eval_progCxt progCxt') αs :: AllocT m (GraphImpl × _)
-      pure (progCxt' × restrict (fv e) γ)
-   pure { n, progCxt: progCxt', γ }
-
-initialConfigWithGraph
+initialConfig
    :: forall m a
     . MonadAff m
    => MonadError Error m
@@ -99,14 +73,14 @@ initialConfigWithGraph
    -> Raw DependencyGraph'
    -> List String
    -> m GraphConfig
-initialConfigWithGraph e progCxt (sorted × deps × modules) imports = do
+initialConfig e progCxt (sorted × deps × modules) imports = do
    n × _ × progCxt' × _ × γ <- flip runAllocT 0 do
       progCxt' <- alloc progCxt
       modules' <- traverse alloc modules
       let graph' = sorted × deps × modules'
       let mαs = Set.unions (vertices <$> Map.values modules')
       let αs = vertices progCxt' ∪ mαs
-      _ × γ <- runWithGraphT_spy (eval_progCxt' progCxt' graph' imports) αs :: AllocT m (GraphImpl × _)
+      _ × γ <- runWithGraphT_spy (eval_progCxt progCxt' graph' imports) αs :: AllocT m (GraphImpl × _)
       pure (progCxt' × modules' × restrict (fv e) γ)
    pure { n, progCxt: progCxt', γ }
 
@@ -119,7 +93,7 @@ prepConfig file progCxt = do
    e <- desug s
    let imports' = "lib/prelude" : List.fromFoldable imports
    graph <- loadModuleGraph imports'
-   gconfig <- initialConfigWithGraph e progCxt graph imports'
+   gconfig <- initialConfig e progCxt graph imports'
    pure { s, e, gconfig }
 
 loadModuleGraph
