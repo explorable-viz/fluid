@@ -28,7 +28,7 @@ echo "Processing other static files:"
 set +xu  # try to remove +u
 TO_COPY=()
 shopt -s dotglob extglob
-for CHILD in website/$WEBSITE/!(.|..); do
+for CHILD in ${PREFIX_}website/$WEBSITE/!(.|..); do
    BASENAME="$(basename "$CHILD")"
    if [[ "$BASENAME" =~ ^[a-z.] ]]; then
       TO_COPY+=("$CHILD")
