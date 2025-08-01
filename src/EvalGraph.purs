@@ -197,23 +197,7 @@ eval_module γ = go empty
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       go (γ' <+> γ'') (Module ds) αs
 
-eval_progCxt :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => ProgCxt Vertex -> m (Env Vertex)
-eval_progCxt (ProgCxt { primitives, mods, datasets }) =
-   flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
-   where
-   addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
-   addModule mod γ = do
-      γ' <- eval_module γ mod empty
-      pure $ γ <+> γ'
-
-   addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
-   addDataset (x ↦ e) γ = do
-      v <- eval γ e empty
-      pure $ γ <+> maplet x v
-
--- copy of above with extra module graph whilst testing, ideally the graph is part of progcxt
--- TODO: needs environment scoping
-eval_progCxt'
+eval_progCxt
    :: forall m
     . MonadWithGraphAlloc m
    => MonadReader FileCxt m
@@ -222,7 +206,7 @@ eval_progCxt'
    -> DependencyGraph' Vertex
    -> List String
    -> m (Env Vertex)
-eval_progCxt' (ProgCxt { primitives, datasets }) (topsorted × graph × defs) imports = do
+eval_progCxt (ProgCxt { primitives, datasets }) (topsorted × graph × defs) imports = do
    envs <- evalAll primitives topsorted
    let envs' = map (\dep -> definitely ("has env") $ Map.lookup dep envs) imports
    let env = foldl (<+>) primitives envs'
