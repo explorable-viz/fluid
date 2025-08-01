@@ -22,6 +22,11 @@ PREFIX_=${PREFIX:+$PREFIX/}
 echo "Cleaning dist/$WEBSITE"
 . "${PREFIX_}script/util/clean.sh" $WEBSITE
 
+for DIR in css font shared; do
+  echo "Processing $DIR files:"
+  cp -rL "website/$WEBSITE/$DIR" "dist/$WEBSITE/$DIR"
+done
+
 shopt -s nullglob
 
 echo "Processing other static files:"
