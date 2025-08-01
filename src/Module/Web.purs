@@ -18,15 +18,10 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import File (class LoadFile, File(..), FileCxt, Folder, loadFile, prependFolder, loadFileFromPaths)
-import Parse.Constants (str)
+import File (class LoadFile, File(..), FileCxt, Folder, loadFile)
 import Util (type (×), (×), AffError, debug, findM)
 
 instance MonadThrow Error m => LoadFile (WebT m) where
-   loadFile folders (File file) = loadFileFromPaths paths
-      where
-      paths = flip prependFolder (File $ file <> str.fluidExtension) <$> folders
-
    loadFileFromPaths paths = do
       result <- runExceptT $ do
          _ × path' <- ExceptT $ liftAff $ findM paths checkPath (Left A.RequestFailedError)
@@ -45,9 +40,6 @@ instance MonadThrow Error m => LoadFile (WebT m) where
 
 loadFile_ :: forall m. LoadFile m => Array Folder -> File -> AffError m (File × String)
 loadFile_ folders file = (file × _) <$> loadFile folders file
-
-loadFileFromPaths_ :: forall m. LoadFile m => Array File -> AffError m String
-loadFileFromPaths_ paths = loadFileFromPaths paths
 
 newtype WebT :: forall k. (k -> Type) -> k -> Type
 newtype WebT m a = WebT (ReaderT FileCxt m a)

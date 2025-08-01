@@ -8,19 +8,17 @@ import Control.Monad.Writer (WriterT, lift)
 import Data.Newtype (class Newtype)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
+import Util (AffError)
 
 newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder }
 
 class LoadFile m where
-   loadFile :: MonadError Error m => MonadAff m => Array Folder -> File -> m String
-   loadFileFromPaths :: MonadAff m => Array File -> m String
+   loadFileFromPaths :: MonadError Error m => MonadAff m => Array File -> m String
 
 instance (Monoid w, MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WriterT w m) where
-   loadFile folders = lift <<< loadFile folders
    loadFileFromPaths = lift <<< loadFileFromPaths
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) where
-   loadFile folders = lift <<< loadFile folders
    loadFileFromPaths = lift <<< loadFileFromPaths
 
 newtype File = File String
@@ -40,3 +38,11 @@ prependFolder :: Folder -> File -> File
 prependFolder (Folder folder) (File file) = File (folder <> "/" <> file)
 
 infixr 5 prependFolder as </>
+
+fluidExtension :: String
+fluidExtension = ".fld"
+
+loadFile :: forall m. LoadFile m => Array Folder -> File -> AffError m String
+loadFile folders (File file) = loadFileFromPaths paths
+   where
+   paths = flip prependFolder (File $ file <> fluidExtension) <$> folders

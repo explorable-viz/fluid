@@ -10,18 +10,13 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import File (class LoadFile, File(..), FileCxt, prependFolder, loadFileFromPaths)
+import File (class LoadFile, File(..), FileCxt)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
-import Parse.Constants (str)
 import Util (error, findM)
 
 instance Monad m => LoadFile (NodeT m) where
-   loadFile folders (File file) = loadFileFromPaths paths
-      where
-      paths = flip prependFolder (File $ file <> str.fluidExtension) <$> folders
-
    loadFileFromPaths paths = do
       path <- findM paths exists Nothing
       case path of

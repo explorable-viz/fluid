@@ -21,7 +21,6 @@ str
       , ellipsis :: String
       , else_ :: String
       , equals :: String
-      , fluidExtension :: String
       , fun :: String
       , if_ :: String
       , import :: String
@@ -59,7 +58,6 @@ str =
    , ellipsis: ".."
    , else_: "else"
    , equals: "="
-   , fluidExtension: ".fld"
    , fun: "fun"
    , if_: "if"
    , import: "import"
