@@ -6,7 +6,8 @@ import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.State (StateT)
 import Control.Monad.Writer (WriterT, lift)
 import Data.Newtype (class Newtype)
-import Effect.Aff.Class (class MonadAff)
+import Effect.Aff (Aff)
+import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Util (AffError)
 
@@ -20,6 +21,9 @@ instance (Monoid w, MonadError Error m, MonadAff m, LoadFile m) => LoadFile (Wri
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) where
    loadFileFromPaths = lift <<< loadFileFromPaths
+
+instance LoadFile Aff where
+   loadFileFromPaths = liftAff <<< loadFileFromPaths
 
 newtype File = File String
 newtype Folder = Folder String
