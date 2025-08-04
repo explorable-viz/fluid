@@ -5,25 +5,27 @@ import Prelude
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.State (StateT)
 import Control.Monad.Writer (WriterT, lift)
+import Data.Array (foldl)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
-import Util (AffError)
+import Util (error)
 
 newtype FileCxt = FileCxt { fluidSrcPaths :: Array Folder }
 
 class LoadFile m where
-   loadFileFromPaths :: MonadError Error m => MonadAff m => Array File -> m String
+   loadFileFromPath :: MonadError Error m => MonadAff m => File -> m (Maybe String)
 
 instance (Monoid w, MonadError Error m, MonadAff m, LoadFile m) => LoadFile (WriterT w m) where
-   loadFileFromPaths = lift <<< loadFileFromPaths
+   loadFileFromPath = lift <<< loadFileFromPath
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (StateT s m) where
-   loadFileFromPaths = lift <<< loadFileFromPaths
+   loadFileFromPath = lift <<< loadFileFromPath
 
 instance LoadFile Aff where
-   loadFileFromPaths = liftAff <<< loadFileFromPaths
+   loadFileFromPath = liftAff <<< loadFileFromPath
 
 newtype File = File String
 newtype Folder = Folder String
@@ -46,7 +48,17 @@ infixr 5 prependFolder as </>
 fluidExtension :: String
 fluidExtension = ".fld"
 
-loadFile :: forall m. LoadFile m => Array Folder -> File -> AffError m String
-loadFile folders (File file) = loadFileFromPaths paths
-   where
-   paths = flip prependFolder (File $ file <> fluidExtension) <$> folders
+loadFile :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m String
+loadFile folders file = do
+   let paths = prependFolder <$> folders <*> [ file ]
+   result <- foldl
+      ( \acc path -> acc >>= \res -> case res of
+           Just _ -> pure res
+           Nothing -> loadFileFromPath path
+      )
+      (pure Nothing)
+      paths
+   case result of
+      Just contents -> pure contents
+      Nothing -> error ("File not found in any path: " <> show paths)
+

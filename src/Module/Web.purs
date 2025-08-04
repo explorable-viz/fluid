@@ -6,32 +6,32 @@ import Affjax (Error(..)) as A
 import Affjax (Response)
 import Affjax.ResponseFormat (string)
 import Affjax.StatusCode (StatusCode(..))
-import Affjax.Web (defaultRequest, printError, request)
-import Control.Monad.Error.Class (class MonadThrow, throwError)
+import Affjax.Web (defaultRequest, request)
+import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (class MonadError, class MonadTrans, ExceptT(..), lift, runExceptT)
 import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runReaderT)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
+import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import Effect.Exception (error) as E
 import File (class LoadFile, File(..), FileCxt, Folder, loadFile)
-import Util (type (×), (×), AffError, debug, findM)
+import Util (type (×), (×), AffError, debug)
 
 instance MonadThrow Error m => LoadFile (WebT m) where
-   loadFileFromPaths paths = do
+   loadFileFromPath (File path) = do
       result <- runExceptT $ do
-         _ × path' <- ExceptT $ liftAff $ findM paths checkPath (Left A.RequestFailedError)
-         when debug.logging $ liftAff $ log ("loadFileFromPaths: resolved path: " <> path')
+         _ × path' <- ExceptT $ liftAff $ checkPath
+         when debug.logging $ liftAff $ log ("loadFileFromPath: resolved path: " <> path')
          contents <- ExceptT $ liftAff $ request (defaultRequest { url = path', method = Left GET, responseFormat = string })
          pure contents.body
-      either (throwError <<< E.error <<< printError) pure result
+      pure $ either (const Nothing) Just result
       where
-      checkPath :: File -> Aff (Either A.Error (Response String × String))
-      checkPath (File path) = do
+      checkPath :: Aff (Either A.Error (Response String × String))
+      checkPath = do
          resp <- request (defaultRequest { url = path, method = Left HEAD, responseFormat = string })
          pure case resp of
             Right resp' | resp'.status == StatusCode 200 -> Right (resp' × path)

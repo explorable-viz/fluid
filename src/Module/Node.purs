@@ -5,7 +5,7 @@ import Prelude
 import Control.Monad.Error.Class (class MonadThrow, try)
 import Control.Monad.Except (class MonadError, class MonadTrans, lift)
 import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runReaderT)
-import Data.Either (either)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
@@ -14,18 +14,13 @@ import File (class LoadFile, File(..), FileCxt)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
-import Util (error, findM)
 
 instance Monad m => LoadFile (NodeT m) where
-   loadFileFromPaths paths = do
-      path <- findM paths exists Nothing
-      case path of
-         Nothing -> error $ "Files " <> show paths <> " not found."
-         Just name -> liftAff $ readTextFile UTF8 name
-      where
-      exists (File path) = do
-         stats <- liftAff $ try (stat path)
-         pure $ if either (const false) isFile stats then Just path else Nothing
+   loadFileFromPath (File path) = do
+      stats <- liftAff $ try (stat path)
+      case stats of
+         Right s | isFile s -> Just <$> liftAff (readTextFile UTF8 path)
+         _ -> pure Nothing
 
 newtype NodeT :: forall k. (k -> Type) -> k -> Type
 newtype NodeT m a = NodeT (ReaderT FileCxt m a)
