@@ -32,7 +32,7 @@ str
       , rparenth :: String
       , semiColon :: String
       , then_ :: String
-      , backquote :: String
+      , at :: String
       , triplequote :: String
       , dollar :: String
       }
@@ -68,7 +68,7 @@ str =
    , rparenth: ")"
    , semiColon: ";"
    , then_: "then"
-   , backquote: "@"
+   , at: "@"
    , triplequote: "\"\"\""
    , dollar: "$"
    }

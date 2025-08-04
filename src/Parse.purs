@@ -23,7 +23,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
-import Doc (DocCommentElem(..), DocOpt(..))
+import Doc (ParagraphElem(..), DocOpt(..), Paragraph)
 import Lattice (Raw)
 import Parse.Constants (str)
 import Parsing.Combinators (between, notFollowedBy, option, sepBy, sepBy1, try, (<?>))
@@ -48,8 +48,8 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
    , identLetter = alphaNum <|> oneOf [ '_', '\'' ]
    , opStart = opChar
    , opLetter = opChar
-   , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow ]
-   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_ ]
+   , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow, str.at ]
+   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, "doc" ]
    , caseSensitive = true
    }
    where
@@ -107,32 +107,37 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
-docCommentDelim :: SParser Unit
-docCommentDelim = void $ string str.triplequote
+paragraphDelim :: SParser Unit
+paragraphDelim = void $ string str.triplequote
 
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
-docComment expr' = option None (Doc <$> try (docComment' expr'))
+docComment expr' = option None do
+   p <- try do
+      _ <- token.reservedOp str.at -- parses "@"
+      _ <- token.reserved "doc" -- parses "doc"
+      token.parens (paragraph expr')
+   pure (Doc p)
 
-docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit))
-docComment' expr' = token.lexeme (go <?> "docComment")
+paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
+paragraph expr' = token.lexeme (go <?> "docComment")
    where
-   go :: SParser (List (DocCommentElem Expr Unit))
-   go = between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
+   go :: SParser (Paragraph Expr Unit)
+   go = between paragraphDelim (paragraphDelim <?> "end of docComment") (List.many $ paragraphElem expr')
 
-docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
-docCommentToken expr' =
+paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
+paragraphElem expr' =
    token.whiteSpace
-      *> (try commentToken <|> commentExpr expr')
+      *> (try paragraphToken <|> paragraphExpr expr')
       <* token.whiteSpace
 
-commentToken :: SParser (DocCommentElem Expr Unit)
-commentToken = Token <$> (SCU.fromCharArray <$> Array.some docCommentLetter)
+paragraphToken :: SParser (ParagraphElem Expr Unit)
+paragraphToken = Token <$> (SCU.fromCharArray <$> Array.some paragraphLette)
 
-commentExpr :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
-commentExpr expr' = string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
+paragraphExpr :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
+paragraphExpr expr' = string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
-docCommentLetter :: SParser Char
-docCommentLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
+paragraphLette :: SParser Char
+paragraphLette = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -409,7 +414,7 @@ expr_ = fix exprParser
                pure $ Expr' None (Float unit (sign f))
 
             stringLiteral :: SParser (Raw Expr)
-            stringLiteral = Expr' None <$> (Str unit) <$> (try (notFollowedBy docCommentDelim) *> token.stringLiteral)
+            stringLiteral = Expr' None <$> (Str unit) <$> (try (notFollowedBy paragraphDelim) *> token.stringLiteral)
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)

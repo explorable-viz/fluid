@@ -15,7 +15,7 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
-import Doc (DocOpt(..), DocCommentElem(..)) as Doc
+import Doc (DocOpt(..), ParagraphElem(..)) as Doc
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
@@ -55,7 +55,7 @@ data Cont a
    | ContElim (Elim a)
 
 type DocOpt a = Doc.DocOpt Expr a
-type DocCommentElem a = Doc.DocCommentElem Expr a
+type ParagraphElem a = Doc.ParagraphElem Expr a
 
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
@@ -118,7 +118,7 @@ instance FV a => FV (Maybe a) where
 instance (FV a) => FV (List a) where
    fv xs = unions (fv <$> xs)
 
-instance FV (DocCommentElem a) where
+instance FV (ParagraphElem a) where
    fv (Doc.Token _) = empty
    fv (Doc.Unquote e) = fv e
 

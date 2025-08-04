@@ -10,7 +10,7 @@ import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
 import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cSome, f_points, f_segments, f_stackedBars, f_z)
-import Doc (DocCommentElem(..), DocOpt(..))
+import Doc (ParagraphElem(..), DocOpt(..))
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, assert, definitely, definitely', error, (×))

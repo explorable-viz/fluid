@@ -23,7 +23,7 @@ import Data.String (Pattern(..), Replacement(..), contains) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
-import Doc (DocCommentElem(..))
+import Doc (ParagraphElem(..))
 import Doc (DocOpt(..)) as Doc
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
@@ -418,12 +418,12 @@ instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
    pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
    pretty Doc.None = empty
 
-instance Pretty (e a) => Pretty (List (DocCommentElem e a)) where
+instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
    pretty (Cons word Nil) = pretty word .<>. text str.triplequote
    pretty (Cons word xs) = pretty word .<>. pretty xs
    pretty Nil = empty
 
-instance Pretty (e a) => Pretty (DocCommentElem e a) where
+instance Pretty (e a) => Pretty (ParagraphElem e a) where
    pretty (Token str) = text str
    pretty (Unquote e) = text "${" .<>. pretty e .<>. text "}"
 

@@ -25,10 +25,10 @@ import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
-import Doc (DocOpt(..), DocCommentElem(..)) as Doc
+import Doc (DocOpt(..), ParagraphElem(..)) as Doc
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..), DocOpt, DocCommentElem) as E
+import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..), DocOpt, ParagraphElem) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -88,7 +88,7 @@ data ListRestPattern
    | PListNext Pattern ListRestPattern
 
 type DocOpt a = Doc.DocOpt Expr a
-type DocCommentElem a = Doc.DocCommentElem Expr a
+type ParagraphElem a = Doc.ParagraphElem Expr a
 
 pVarAnon :: Pattern
 pVarAnon = PVar varAnon
@@ -552,20 +552,20 @@ desugCommentBwd (Doc.Doc ec) (Doc.Doc c) = Doc.Doc (commentBwd ec c)
 desugCommentBwd Doc.None (Doc.Doc _) = error "E Doc.None S Doc"
 desugCommentBwd (Doc.Doc _) Doc.None = error "E Doc S Doc.None"
 
-commentFwd :: ∀ m a. BoundedLattice a => MonadError Error m => List (DocCommentElem a) -> m (List (E.DocCommentElem a))
+commentFwd :: ∀ m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (List (E.ParagraphElem a))
 commentFwd (Cons s l) = Cons <$> commentElemFwd s <*> commentFwd l
 commentFwd Nil = pure Nil
 
-commentElemFwd :: ∀ m a. BoundedLattice a => MonadError Error m => DocCommentElem a -> m (E.DocCommentElem a)
+commentElemFwd :: ∀ m a. BoundedLattice a => MonadError Error m => ParagraphElem a -> m (E.ParagraphElem a)
 commentElemFwd (Doc.Token s) = pure $ Doc.Token s
 commentElemFwd (Doc.Unquote e) = Doc.Unquote <$> exprFwd e
 
-commentBwd :: ∀ a. BoundedJoinSemilattice a => List (E.DocCommentElem a) -> List (Raw DocCommentElem) -> List (DocCommentElem a)
+commentBwd :: ∀ a. BoundedJoinSemilattice a => List (E.ParagraphElem a) -> List (Raw ParagraphElem) -> List (ParagraphElem a)
 commentBwd (Cons c l) (Cons c' l') = Cons (commentElemBwd c c') (commentBwd l l')
 commentBwd Nil Nil = Nil
 commentBwd _ _ = error "commentBwd mismatch"
 
-commentElemBwd :: ∀ a. BoundedJoinSemilattice a => E.DocCommentElem a -> Raw DocCommentElem -> DocCommentElem a
+commentElemBwd :: ∀ a. BoundedJoinSemilattice a => E.ParagraphElem a -> Raw ParagraphElem -> ParagraphElem a
 commentElemBwd (Doc.Token _) (Doc.Token s') = Doc.Token s'
 commentElemBwd (Doc.Unquote e) (Doc.Unquote e') = Doc.Unquote (exprBwd e e')
 commentElemBwd _ _ = error "commentElemBwd mismatch"

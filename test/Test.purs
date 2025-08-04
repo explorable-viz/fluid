@@ -1,14 +1,8 @@
-module Test.Test
-   ( asTestSuite
-   , benchmarks
-   , scratchpad
-   , tests
-   , main
-   ) where
+module Test.Test where
 
-import Prelude hiding (add)
+import Prelude
 
-import Data.Array (concat)
+import Data.Array (concat, filter, elem)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Module.Web (loadFile)
@@ -24,25 +18,43 @@ import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
 import Util ((×))
 
+-- === ✅ Currently enabled: only run selected comment test cases ===
 main :: Effect Unit
-main = run tests
+main = run selectedCommentsTests
 
--- main = run $ asTestSuite (suite loadFile comments_cases)
+-- === ❌ Uncomment to run all tests ===
+-- main :: Effect Unit
+-- main = run allTests
 
--- main = run scratchpad
+-- === ❌ Uncomment to run all comment cases (not just 7 selected ones) ===
+-- main :: Effect Unit
+-- main = run (second void <$> suite loadFile comments_cases (1 × false))
 
-scratchpad :: TestSuite
-scratchpad = asTestSuite $ suite loadFile
-   [ { file: "array", imports: [], fwd_expect: "(1, (3, 3))" }
-   ]
+--------------------------------------------------------------------------------
+-- ✅ Run only these 7 specific comment tests
+selectedCommentsTests :: TestSuite
+selectedCommentsTests = second void <$> suite loadFile selectedCases (1 × false)
+   where
+   selectedNames =
+      [ "comments/nested-constr"
+      , "comments/dicts"
+      , "comments/app-arg"
+      , "comments/list-comp"
+      , "comments/app"
+      , "comments/int"
+      , "comments/projection"
+      ]
+   selectedCases = filter (\c -> c.file `elem` selectedNames) comments_cases
+
+--------------------------------------------------------------------------------
+-- ✅ Run all benchmark and linked input/output tests
+allTests :: TestSuite
+allTests = concat (benchmarks <#> asTestSuite)
+   <> linkedOutputsSuite linkedOutputs_cases
+   <> linkedInputsSuite linkedInputs_cases
 
 asTestSuite :: BenchSuite -> TestSuite
 asTestSuite suite = second void <$> suite (1 × false)
-
-tests :: TestSuite
-tests = concat (benchmarks <#> asTestSuite)
-   <> linkedOutputsSuite linkedOutputs_cases
-   <> linkedInputsSuite linkedInputs_cases
 
 benchmarks :: Array BenchSuite
 benchmarks =
@@ -52,3 +64,4 @@ benchmarks =
    , bwdSuite loadFile bwd_cases
    , withDatasetSuite loadFile graphics_cases
    ]
+

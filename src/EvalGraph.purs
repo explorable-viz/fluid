@@ -16,7 +16,7 @@ import Data.Tuple (curry, fst, snd)
 import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
-import Doc (DocCommentElem(..), DocOpt(..))
+import Doc (ParagraphElem(..), DocOpt(..))
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
@@ -209,7 +209,7 @@ evalDocOpt :: forall m. MonadWithGraphAlloc m => Env Vertex -> DocOpt Expr Verte
 evalDocOpt _ None = pure None
 evalDocOpt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
    where
-   evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
+   evalToken :: ParagraphElem Expr Vertex -> m (ParagraphElem Val Vertex)
    evalToken (Token s) = pure $ Token s
    evalToken (Unquote e) = Unquote <$> eval γ e empty
 
