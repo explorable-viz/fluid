@@ -1,6 +1,6 @@
 {
     "fluidSrcPath": ["../fluid"],
-    "file": "convolution/emboss-wrap",
+    "file": "convolution/emboss-wrap.fld",
     "datasets": [],
     "inputs": [ "inputImage", "filter" ],
     "query": false,

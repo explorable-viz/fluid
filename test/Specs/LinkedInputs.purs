@@ -12,10 +12,10 @@ linkedInputs_spec3 =
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
 
         , datasets:
-             [ "renewables" ↦ "dataset/renewables-new"
-             , "nonRenewables" ↦ "dataset/non-renewables"
+             [ "renewables" ↦ "dataset/renewables-new.fld"
+             , "nonRenewables" ↦ "dataset/non-renewables.fld"
              ]
-        , file: File "linked-inputs/energyscatter"
+        , file: File "linked-inputs/energyscatter.fld"
         , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
         , linking: true
@@ -37,10 +37,10 @@ linkedInputs_spec4 =
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
 
         , datasets:
-             [ "renewables" ↦ "dataset/renewables-new"
-             , "nonRenewables" ↦ "dataset/non-renewables"
+             [ "renewables" ↦ "dataset/renewables-new.fld"
+             , "nonRenewables" ↦ "dataset/non-renewables.fld"
              ]
-        , file: File "linked-inputs/energyscatter"
+        , file: File "linked-inputs/energyscatter.fld"
         , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
         , linking: true
@@ -68,11 +68,11 @@ linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , file: File "linked-inputs/mini-energyscatter"
+        , file: File "linked-inputs/mini-energyscatter.fld"
 
         , datasets:
-             [ "nonRenewables" ↦ "dataset/mini-non-renewables"
-             , "renewables" ↦ "dataset/mini-renewables"
+             [ "nonRenewables" ↦ "dataset/mini-non-renewables.fld"
+             , "renewables" ↦ "dataset/mini-renewables.fld"
              ]
         , inputs: [ "nonRenewables", "renewables" ]
         , query: Nothing

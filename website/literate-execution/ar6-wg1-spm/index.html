@@ -46,15 +46,15 @@
 
    const spec = {
     "fluidSrcPath": ["../fluid"],
-    "datasets": [["likelihoods", "ar6-wg1-spm/likelihoods"], ["ssp126Source", "ar6-wg1-spm/ssp126"], ["ssp126preds", "ar6-wg1-spm/ssp126preds"], ["ssp245Source", "ar6-wg1-spm/ssp245"], ["ssp245preds", "ar6-wg1-spm/ssp245preds"]],
-    "file": "ar6-wg1-spm/figure-spm-4",
+    "datasets": [["likelihoods", "ar6-wg1-spm/likelihoods.fld"], ["ssp126Source", "ar6-wg1-spm/ssp126.fld"], ["ssp126preds", "ar6-wg1-spm/ssp126preds.fld"], ["ssp245Source", "ar6-wg1-spm/ssp245.fld"], ["ssp245preds", "ar6-wg1-spm/ssp245preds.fld"]],
+    "file": "ar6-wg1-spm/figure-spm-4.fld",
     "inputs": [ "ssp126Source", "ssp245Source", "ssp126preds", "ssp245preds" ],
     "query": true,
     "linking": false
    }
    
    loadFigureFromJson(spec)();
-   drawCode("../fluid/ar6-wg1-spm")("figure-spm-4")();
+   drawCode("../fluid/ar6-wg1-spm")("figure-spm-4.fld")();
 </script>
 </body>
 </html>
