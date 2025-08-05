@@ -56,11 +56,13 @@ loadSpec filename = do
       Left err -> error ("Json fetching failed with " <> printError err)
       Right response -> pure $ response.body
 
+--loadFigureFromFluidCode -- specFilename (String) & fluidSrc (String)
 loadFigureFromFluidCode :: String -> String -> Effect Unit
 loadFigureFromFluidCode specFilename fluidSrc = launchAff_ do
    jsonSpec <- loadSpec specFilename
    liftEffect $ loadFigureFromRawValues jsonSpec fluidSrc
 
+--loadFigureFromJsonInput -- jsonSpec (Json) & srcFilename (String)
 loadFigureFromJsonInput :: Json -> String -> Effect Unit
 loadFigureFromJsonInput jsonSpec srcFilename = launchAff_ do
    fluidSrc_ <- loadFileFromPath (File srcFilename)
@@ -68,6 +70,7 @@ loadFigureFromJsonInput jsonSpec srcFilename = launchAff_ do
       Nothing -> error ("File not found: " <> show srcFilename)
       Just fluidSrc -> liftEffect $ loadFigureFromRawValues jsonSpec fluidSrc
 
+--loadFigureFromFilePaths -- specFilename (String) & srcFilename (String)
 loadFigureFromFilePaths :: String -> String -> Effect Unit
 loadFigureFromFilePaths specFilename srcFilename = launchAff_ do
    jsonSpec <- loadSpec specFilename
@@ -76,6 +79,8 @@ loadFigureFromFilePaths specFilename srcFilename = launchAff_ do
       Nothing -> error ("File not found: " <> show srcFilename)
       Just fluidSrc -> liftEffect $ loadFigureFromRawValues jsonSpec fluidSrc
 
+--loadFigureFromRawValues -- jsonSpec (Json) & fluidSrc (String)
+--PS: all 4 versions pass the parameters to loadFigureFromRawValues
 loadFigureFromRawValues :: Json -> String -> Effect Unit
 loadFigureFromRawValues jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
    [ case decodeJson jsonSpec :: Either JsonDecodeError JsonSpec of
@@ -85,13 +90,6 @@ loadFigureFromRawValues jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
            log $ "fluidSrc = " <> fluidSrc
            ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec)
    ]
-
-{-
-loadFigureFromFilePaths -- specFilename & srcFilename
-loadFigureFromRawValues -- jsonSpec & fluidSrc -- endpoint
-loadFigureFromFluidCode -- specFilename & fluidSrc
-loadFigureFromJsonInput -- jsonSpec & srcFilename
--}
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
