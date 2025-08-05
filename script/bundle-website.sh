@@ -39,7 +39,8 @@ shopt -u extglob dotglob
 set -xu
 
 for CHILD in "${TO_COPY[@]}"; do
-   cp -rL "$CHILD" dist/$WEBSITE
+   BASENAME="$(basename "$CHILD")"
+   cp -rL "$CHILD" "dist/$WEBSITE/$BASENAME"
 done
 
 echo "Processing Fluid source files:"
