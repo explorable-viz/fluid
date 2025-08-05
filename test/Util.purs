@@ -41,8 +41,8 @@ fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
 test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
-test file progCxt spec (n × _) = do
-   { s, gconfig } <- prepConfig file progCxt
+test _ progCxt spec (n × _) = do
+   { s, gconfig } <- prepConfig progCxt ""
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n

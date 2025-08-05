@@ -76,10 +76,13 @@ initialConfig e progCxt = do
 
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> m Config
-prepConfig file progCxt = do
-   FileCxt { fluidSrcPaths } <- ask
-   mods × s <- parseProgram fluidSrcPaths file
+parseFluidSrc :: forall m. String -> AffError m (Array String × Raw S.Expr)
+parseFluidSrc fluidSrc = flip parse P.program fluidSrc
+
+prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw ProgCxt -> String -> m Config
+prepConfig progCxt fluidSrc = do
+   mods × s <- parseFluidSrc fluidSrc
+   log $ "parsed src = " <> show s
    e <- desug s
    progCxt' <- loadMods mods progCxt
    gconfig <- initialConfig e progCxt'

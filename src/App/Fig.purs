@@ -207,10 +207,10 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> m Fig
-loadFig spec@{ inputs, file, datasets, linking } = do
+loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> String -> m Fig
+loadFig spec@{ inputs, datasets, linking } fluidSrc = do
    progCxt <- loadProgCxt datasets
-   { s, e, gconfig } <- prepConfig file progCxt
+   { s, e, gconfig } <- prepConfig progCxt fluidSrc
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval

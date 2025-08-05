@@ -18,7 +18,6 @@ import Doc (DocOpt(..))
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
-import Effect.Class.Console (log)
 import File (File(..), FileCxt(..), Folder(..), loadFileFromPath)
 import Graph (DVertex'(..))
 import Module.Web (loadFile_, runWebT)
@@ -87,8 +86,7 @@ loadFigureFromRawValues jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
         Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> do
            let figSpec@{ fluidSrcPaths } = figSpecFromJson spec
-           log $ "fluidSrc = " <> fluidSrc
-           ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec)
+           ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
    ]
 
 drawCode :: String -> String -> Effect Unit
