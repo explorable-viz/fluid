@@ -26,13 +26,13 @@ import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
-import ModuleGraph (DependencyGraph, ModuleName, Modules, DependencyGraph')
-import Parse (asModule, standalone)
+import ModuleGraph (DependencyGraph, ModuleCxt, ModuleName, Modules)
+import Parse (withImports)
 import Parse as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
-import SExpr (Module', desugarModuleFwd)
+import SExpr (desugarModuleFwd)
 import SExpr as S
 import Util (type (×), AffError, concatM, error, (×))
 import Util.Map (restrict)
@@ -76,17 +76,16 @@ initialConfig
    => FV a
    => a
    -> Raw ProgCxt
-   -> Raw DependencyGraph'
-   -> List String
+   -> Raw ModuleCxt
    -> m GraphConfig
-initialConfig e progCxt (sorted × deps × modules) imports = do
+initialConfig e progCxt moduleCxt = do
    n × _ × progCxt' × _ × γ <- flip runAllocT 0 do
       progCxt' <- alloc progCxt
-      modules' <- traverse alloc modules
-      let graph' = sorted × deps × modules'
+      modules' <- traverse alloc (moduleCxt.modules)
+      let moduleCxt' = moduleCxt { modules = modules' }
       let mαs = Set.unions (vertices <$> Map.values modules')
       let αs = vertices progCxt' ∪ mαs
-      _ × γ <- runWithGraphT_spy (eval_progCxt progCxt' graph' imports) αs :: AllocT m (GraphImpl × _)
+      _ × γ <- runWithGraphT_spy (eval_progCxt progCxt' moduleCxt') αs :: AllocT m (GraphImpl × _)
       pure (progCxt' × modules' × restrict (fv e) γ)
    pure { n, progCxt: progCxt', γ }
 
@@ -96,9 +95,7 @@ prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt 
 prepConfig progCxt fluidSrc = do
    mods × s <- parseFluidSrc fluidSrc
    e <- desug s
-   let imports' = "lib/prelude" : List.fromFoldable imports
-   graph <- loadModuleGraph imports'
-   gconfig <- initialConfig e progCxt graph imports'
+   gconfig <- initialConfig e progCxt moduleCxt
    pure { s, e, gconfig }
 
 loadModuleGraph
@@ -108,36 +105,35 @@ loadModuleGraph
    => MonadReader FileCxt m
    => LoadFile m
    => List ModuleName
-   -> m (Raw DependencyGraph')
-loadModuleGraph mods = do
-   graph × defs <- collectModules Set.empty Map.empty Map.empty mods
-   let sorted = topsort graph
-   pure (sorted × graph × defs)
+   -> m (Raw ModuleCxt)
+loadModuleGraph roots = do
+   graph × modules <- collectModules Set.empty Map.empty Map.empty roots
+   pure $ { roots, topsorted: topsort graph, graph, modules }
 
    where
 
    collectModules :: Set ModuleName -> DependencyGraph -> Raw Modules -> List ModuleName -> m (DependencyGraph × Raw Modules)
-   collectModules visited graph modules roots = case roots of
+   collectModules visited graph modules imports = case imports of
       Nil -> pure $ (graph × modules)
       mod : rest ->
          if Set.member mod visited then
             collectModules visited graph modules rest
          else do
-            imports × defs <- loadModule mod
+            mod' × imports' <- loadModule mod
             collectModules
                (Set.insert mod visited)
-               (Map.insert mod imports graph)
-               (Map.insert mod defs modules)
+               (Map.insert mod imports' graph)
+               (Map.insert mod mod' modules)
                (imports <> rest)
 
-   loadModule :: ModuleName -> m (List ModuleName × Raw Module)
+   loadModule :: ModuleName -> m (Raw Module × List ModuleName)
    loadModule name = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File name)
-      { imports, content } <- parse src (asModule (File name) P.module_)
-      mod' <- desugarModuleFwd content
-      let imports' = if name == "lib/prelude" then List.fromFoldable imports else "lib/prelude" : List.fromFoldable imports
-      pure $ imports' × mod'
+      mod × imports <- parse src (withImports P.module_)
+      mod' <- desugarModuleFwd mod
+      let imports' = if name == "lib/prelude" then imports else "lib/prelude" : imports
+      pure $ mod' × imports'
 
    topsort :: DependencyGraph -> List ModuleName
    topsort graph = go (List.fromFoldable $ Map.keys graph) Nil
