@@ -24,11 +24,9 @@ import Data.String (codePointFromChar, joinWith)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Doc (DocCommentElem(..), DocOpt(..))
-import File (File(..))
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, option, sepBy, sepBy1, try, (<?>))
-import Parsing.Combinators.Array (many)
+import Parsing.Combinators (between, many, option, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -36,7 +34,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Module')
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -446,7 +444,7 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       op' <- token.operator
       onlyIf (isCtrOp op' && op == op') \π π' -> PConstr op' (π : π' : Nil)
 
-imports_ :: SParser (Array String)
+imports_ :: SParser (List String)
 imports_ = many (keyword str.import *> modPath)
    where
    modPath :: SParser String
@@ -464,8 +462,8 @@ module_ = Module <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi
 standalone :: forall a. SParser a -> SParser a
 standalone p = topLevel (imports_ *> p)
 
-asModule :: forall a. File -> SParser a -> SParser (Module' a)
-asModule (File name) p = topLevel do
+withImports :: forall a. SParser a -> SParser (a × List String)
+withImports p = topLevel do
    imports <- imports_
-   content <- p
-   pure $ { name, imports, content }
+   a <- p
+   pure $ a × imports

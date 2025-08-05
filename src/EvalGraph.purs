@@ -30,7 +30,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, extend, fresh, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
-import ModuleGraph (DependencyGraph', ModuleName)
+import ModuleGraph (ModuleName, ModuleCxt)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
@@ -203,12 +203,11 @@ eval_progCxt
    => MonadReader FileCxt m
    => LoadFile m
    => ProgCxt Vertex
-   -> DependencyGraph' Vertex
-   -> List String
+   -> ModuleCxt Vertex
    -> m (Env Vertex)
-eval_progCxt (ProgCxt { primitives, datasets }) (topsorted × graph × defs) imports = do
+eval_progCxt (ProgCxt { primitives, datasets }) { roots, topsorted, graph, modules } = do
    envs <- evalAll primitives topsorted
-   let envs' = map (\dep -> definitely ("has env") $ Map.lookup dep envs) imports
+   let envs' = map (\dep -> definitely ("has env") $ Map.lookup dep envs) roots
    let env = foldl (<+>) primitives envs'
    flip concatM env (reverse datasets <#> addDataset)
 
@@ -219,7 +218,7 @@ eval_progCxt (ProgCxt { primitives, datasets }) (topsorted × graph × defs) imp
       where
       evalOne :: Map ModuleName (Env Vertex) -> ModuleName -> m (Map ModuleName (Env Vertex))
       evalOne envs name = do
-         let defs' = definitely ("has module") $ Map.lookup name defs
+         let defs' = definitely ("has module") $ Map.lookup name modules
          let deps = definitely ("has deps") $ Map.lookup name graph
          let envs' = map (\dep -> definitely ("has env") $ Map.lookup dep envs) deps
          let env' = foldl (<+>) env envs'
