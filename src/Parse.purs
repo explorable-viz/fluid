@@ -48,8 +48,8 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
    , identLetter = alphaNum <|> oneOf [ '_', '\'' ]
    , opStart = opChar
    , opLetter = opChar
-   , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow, str.at ]
-   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, "doc" ]
+   , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow ]
+   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_ ]
    , caseSensitive = true
    }
    where
@@ -69,7 +69,6 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
       , '='
       , '>'
       , '?'
-      , '@'
       , '\\'
       , '^'
       , '|'
@@ -113,9 +112,11 @@ paragraphDelim = void $ string str.triplequote
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docComment expr' = option None do
    p <- try do
-      _ <- token.reservedOp str.at -- parses "@"
-      _ <- token.reserved "doc" -- parses "doc"
-      token.parens (paragraph expr')
+      --      _ <- token.reservedOp str.at -- parses "@"
+      --      _ <- token.reserved "doc" -- parses "doc"
+      --      token.parens (paragraph expr')
+      _ <- token.lexeme (string "@doc")
+      paragraph expr'
    pure (Doc p)
 
 paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)

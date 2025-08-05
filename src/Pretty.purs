@@ -332,9 +332,6 @@ semi = text str.semiColon
 hcomma :: forall f. Foldable f => f Doc -> Doc
 hcomma = fromFoldable >>> intersperse comma >>> hcat
 
-parens :: Endo Doc
-parens = between (text "(") (text ")")
-
 class ToList a where
    toList2 :: a -> List a
 
@@ -355,7 +352,7 @@ prettyCtr = showCtr >>> text
 -- Cheap hack; revisit.
 prettyParensOpt :: forall a. Pretty a => a -> Doc
 prettyParensOpt x =
-   if DS.contains (DS.Pattern " ") (render doc) then parens doc
+   if DS.contains (DS.Pattern " ") (render doc) then parentheses doc
    else doc
    where
    doc = pretty x
@@ -365,11 +362,11 @@ nil = text (str.lBracket <> str.rBracket)
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
 prettyConstr c (x : y : ys)
-   | c == cPair = assert (null ys) $ parens (hcomma [ pretty x, pretty y ])
+   | c == cPair = assert (null ys) $ parentheses (hcomma [ pretty x, pretty y ])
 prettyConstr c ys
    | c == cNil = assert (null ys) nil
 prettyConstr c (x : y : ys)
-   | c == cCons = assert (null ys) $ parens (hcat [ pretty x, text str.colon, pretty y ])
+   | c == cCons = assert (null ys) $ parentheses (hcat [ pretty x, text str.colon, pretty y ])
 prettyConstr c (x : Nil) = prettyCtr c .<>. pretty x
 prettyConstr c xs = hcat (prettyCtr c : (prettyParensOpt <$> xs))
 
@@ -405,7 +402,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Constr α doc c es) = pretty doc .<>. highlightIf α (prettyConstr c es)
    pretty (E.Matrix α doc e1 (i × j) e2) = pretty doc .<>. highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda α σ) = hcat [ highlightIf α (text str.fun), pretty σ ]
-   pretty (E.Op op) = parens (text op)
+   pretty (E.Op op) = parentheses (text op)
    pretty (E.Let (E.VarDef σ e) e') =
       atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ]) (pretty e')
    pretty (E.LetRec (E.RecDefs _ ρ) e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
@@ -415,7 +412,8 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.App doc e e') = pretty doc .<>. hcat [ pretty e, pretty e' ]
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
-   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
+   --   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
+   pretty (Doc.Doc x) = text "@doc" .<>. text str.triplequote .<>. pretty x
    pretty Doc.None = empty
 
 instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
