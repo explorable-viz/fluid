@@ -5,7 +5,7 @@ import Prelude
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.State (StateT)
 import Control.Monad.Writer (WriterT, lift)
-import Data.Array (foldl)
+import Data.Array (foldM)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Effect.Aff (Aff)
@@ -51,14 +51,11 @@ fluidExtension = ".fld"
 loadFile :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m String
 loadFile folders file = do
    let paths = prependFolder <$> folders <*> [ file ]
-   result <- foldl
-      ( \acc path -> acc >>= \res -> case res of
-           Just _ -> pure res
-           Nothing -> loadFileFromPath path
-      )
-      (pure Nothing)
-      paths
+   result <- foldM step Nothing paths
    case result of
       Just contents -> pure contents
       Nothing -> error ("File not found in any path: " <> show paths)
-
+   where
+   step :: Maybe String -> File -> m (Maybe String)
+   step (Just contents) _ = pure (Just contents)
+   step Nothing path = loadFileFromPath path
