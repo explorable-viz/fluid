@@ -120,7 +120,7 @@ loadModuleGraph roots = do
                (Set.insert mod visited)
                (Map.insert mod imports' graph)
                (Map.insert mod mod' modules)
-               (imports <> rest)
+               (imports' <> rest)
 
    loadModule :: ModuleName -> m (Raw Module × List ModuleName)
    loadModule name = do
