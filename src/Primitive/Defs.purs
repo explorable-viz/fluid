@@ -20,7 +20,7 @@ import Debug (trace)
 import Dict (fromFoldable) as D
 import Doc (DocOpt(..))
 import EvalGraph (apply) as G
-import File (File(..), FileCxt(..)) --, loadFile
+-- import File (File(..), FileCxt(..), loadFile)
 import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
