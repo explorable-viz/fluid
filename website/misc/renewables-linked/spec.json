@@ -1,7 +1,7 @@
 {
     "fluidSrcPath": ["../fluid"],
-    "datasets": [["renewables", "dataset/renewables.fld"]],
-    "file": "bar-chart-line-chart.fld",
+    "datasets": [["renewables", "dataset/renewables"]],
+    "file": "bar-chart-line-chart",
     "inputs": ["renewables"],
     "query": false,
     "linking": true

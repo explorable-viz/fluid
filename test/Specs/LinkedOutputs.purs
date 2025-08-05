@@ -15,9 +15,9 @@ linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , datasets: [ "renewables" ↦ "dataset/renewables.fld" ]
+        , datasets: [ "renewables" ↦ "dataset/renewables" ]
 
-        , file: File "slicing/linked-outputs/bar-chart-line-chart.fld"
+        , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         , query: Nothing
         , linking: true
@@ -43,11 +43,11 @@ linkedOutputs_spec2 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
         , datasets:
-             [ "renewables" ↦ "dataset/renewables-new.fld"
-             , "nonRenewables" ↦ "dataset/non-renewables.fld"
+             [ "renewables" ↦ "dataset/renewables-new"
+             , "nonRenewables" ↦ "dataset/non-renewables"
              ]
 
-        , file: File "slicing/linked-outputs/stacked-bar-scatter-plot.fld"
+        , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
         , query: Nothing
         , linking: true
@@ -67,9 +67,9 @@ movingAverages_spec :: TestLinkedOutputsSpec
 movingAverages_spec =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , datasets: [ "methane" ↦ "dataset/methane-emissions.fld" ]
+        , datasets: [ "methane" ↦ "dataset/methane-emissions" ]
 
-        , file: File "linked-outputs/moving-average.fld"
+        , file: File "linked-outputs/moving-average"
         , inputs: [ "methane" ]
         , query: Nothing
         , linking: true
@@ -82,9 +82,9 @@ linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-          , datasets: [ "data" ↦ "linked-outputs/pairs-data.fld" ]
+          , datasets: [ "data" ↦ "linked-outputs/pairs-data" ]
 
-          , file: File "linked-outputs/pairs.fld"
+          , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true
@@ -94,9 +94,9 @@ linkedOutputs_cases =
      }
    , { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-          , datasets: [ "data" ↦ "linked-outputs/convolution-data.fld" ]
+          , datasets: [ "data" ↦ "linked-outputs/convolution-data" ]
 
-          , file: File "linked-outputs/convolution.fld"
+          , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true

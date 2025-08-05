@@ -1,7 +1,7 @@
 {
     "fluidSrcPath": ["../fluid"],
-    "file": "moving-average.fld",
-    "datasets": [["methane", "dataset/methane-emissions.fld"]],
+    "file": "moving-average",
+    "datasets": [["methane", "dataset/methane-emissions"]],
     "inputs": ["methane"],
     "query": false,
     "linking": false

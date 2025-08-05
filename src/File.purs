@@ -45,6 +45,9 @@ prependFolder (Folder folder) (File file) = File (folder <> "/" <> file)
 
 infixr 5 prependFolder as </>
 
+fluidExtension :: String
+fluidExtension = ".fld"
+
 loadFile :: forall m. LoadFile m => Monad m => MonadError Error m => MonadAff m => Array Folder -> File -> m String
 loadFile folders file = do
    let paths = prependFolder <$> folders <*> [ file ]

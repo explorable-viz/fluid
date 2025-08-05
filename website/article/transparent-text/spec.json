@@ -1,8 +1,8 @@
 {
   "imports" : [ "scigen", "util" ],
-  "file" : "1805.02474v1-10.fld",
+  "file" : "1805.02474v1-10",
   "inputs" : [ "tableData" ],
-  "datasets" : [ [ "tableData", "dataset/scigen/1805.02474v1-10.fld" ] ],
+  "datasets" : [ [ "tableData", "dataset/scigen/1805.02474v1-10" ] ],
   "fluidSrcPath" : [ "../fluid" ],
   "query": false,
   "linking": true
