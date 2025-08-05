@@ -3,7 +3,7 @@ module Module.Web where
 import Prelude
 
 import Control.Monad.Error.Class (class MonadThrow)
-import Control.Monad.Except (class MonadError, class MonadTrans,  lift )
+import Control.Monad.Except (class MonadError, class MonadTrans, lift)
 import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runReaderT)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)

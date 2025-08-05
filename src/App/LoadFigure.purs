@@ -18,7 +18,7 @@ import Doc (DocOpt(..))
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
-import File (File(..), FileCxt(..), Folder(..))
+import File (File(..), FileCxt(..), Folder(..), loadFileFromPath)
 import Graph (DVertex'(..))
 import Module.Web (loadFile_, runWebT)
 import Util (error, (×))
@@ -68,6 +68,14 @@ loadFigure :: String -> Effect Unit
 loadFigure filename = launchAff_ do
    jsonSpec <- loadSpec filename
    liftEffect $ loadFigureFromJson jsonSpec
+
+loadFigure_ :: String -> String -> Effect Unit
+loadFigure_ specFilename srcFilename = launchAff_ do
+   src <- loadFileFromPath @Aff (File srcFilename)
+   case src of
+      Nothing -> error ("File not found: " <> show srcFilename)
+      Just _ -> liftEffect $ loadFigure specFilename
+
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
