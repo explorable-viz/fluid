@@ -14,7 +14,7 @@ import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
-import File (class LoadFile, File(..), FileCxt, Folder(..), loadFile, (</>))
+import File (class LoadFile, File(..), FileCxt, Folder(..), fluidExtension, loadFile, (</>))
 import Lattice (botOf)
 import Module (loadProgCxt)
 import Primitive.Defs (primitives)
@@ -74,7 +74,7 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
    asTest :: TestBwdSpec -> m BenchRow
    asTest { file, bwd_expect_file, δv, fwd_expect, datasets } = do
       gconfig <- loadProgCxt datasets
-      bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
+      bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File (bwd_expect_file <> fluidExtension))
       test (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite m
