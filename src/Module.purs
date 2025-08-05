@@ -17,7 +17,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, fv)
-import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
+import File (class LoadFile, File(..), FileCxt(..), Folder, fluidExtension, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
@@ -37,13 +37,13 @@ parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
 parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Array String × Raw S.Expr)
-parseProgram folders file =
-   loadFile folders file >>= flip parse P.program
+parseProgram folders (File file) =
+   loadFile folders (File (file <> fluidExtension)) >>= flip parse P.program
 
 module_ :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ folders file (ProgCxt r@{ mods }) = do
+module_ folders (File file) (ProgCxt r@{ mods }) = do
    when debug.logging $ log ("module_: " <> show (folders × file))
-   src <- loadFile folders file
+   src <- loadFile folders (File (file <> fluidExtension))
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 

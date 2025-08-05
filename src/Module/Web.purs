@@ -18,7 +18,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import File (class LoadFile, File(..), FileCxt, Folder, loadFile)
+import File (class LoadFile, File(..), FileCxt, Folder, fluidExtension, loadFile)
 import Util (type (×), (×), AffError, debug)
 
 instance MonadThrow Error m => LoadFile (WebT m) where
@@ -39,7 +39,10 @@ instance MonadThrow Error m => LoadFile (WebT m) where
             Left err -> Left err
 
 loadFile_ :: forall m. LoadFile m => Array Folder -> File -> AffError m (File × String)
-loadFile_ folders file = (file × _) <$> loadFile folders file
+loadFile_ folders (File file) = (file_ × _) <$> loadFile folders file_
+   where
+      file_ = File (file <> fluidExtension)
+     
 
 newtype WebT :: forall k. (k -> Type) -> k -> Type
 newtype WebT m a = WebT (ReaderT FileCxt m a)
