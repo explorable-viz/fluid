@@ -81,11 +81,33 @@
    </div>
 </div>
 
+<script id="my-code" type="text/plain">
+   import lib.matrix
+   import convolution.testImage
+   import convolution.filter.emboss
+
+   convolve inputImage filter zero
+</script>
+
 <script type="module">
-   import { loadFigure_, drawCode } from "/shared/load-figure.js"
+   import { drawCode, loadFigureFromFluidCode, loadFigureFromJsonInput, loadFigureFromFilePaths, loadFigureFromRawValues } from "/shared/load-figure.js"
    drawCode("../fluid/lib")("matrix")()
    //loadFigure("spec.json")()
-   loadFigure_("spec.json")("../fluid/convolution/emboss.fld")()
+
+   const fluidSrc = document.getElementById("my-code").textContent.trim();
+   const jsonSpec = {
+    "fluidSrcPath": ["../fluid"],
+    "file": "convolution/emboss",
+    "datasets": [],
+    "inputs": [ "inputImage", "filter" ],
+    "query": true,
+    "linking": false
+   }
+
+   loadFigureFromFluidCode("spec.json")(fluidSrc)()
+   loadFigureFromJsonInput(jsonSpec)("../fluid/convolution/emboss.fld")()
+   loadFigureFromFilePaths("spec.json")("../fluid/convolution/emboss.fld")()
+   loadFigureFromRawValues(jsonSpec)(fluidSrc)()
 </script>
 </body>
 </html>

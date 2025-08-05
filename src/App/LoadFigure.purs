@@ -18,6 +18,7 @@ import Doc (DocOpt(..))
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
 import File (File(..), FileCxt(..), Folder(..), loadFileFromPath)
 import Graph (DVertex'(..))
 import Module.Web (loadFile_, runWebT)
@@ -55,27 +56,42 @@ loadSpec filename = do
       Left err -> error ("Json fetching failed with " <> printError err)
       Right response -> pure $ response.body
 
-loadFigureFromJson :: Json -> Effect Unit
-loadFigureFromJson json = runAffs_ (uncurry drawFig)
-   [ case decodeJson json :: Either JsonDecodeError JsonSpec of
+loadFigureFromFluidCode :: String -> String -> Effect Unit
+loadFigureFromFluidCode specFilename fluidSrc = launchAff_ do
+   jsonSpec <- loadSpec specFilename
+   liftEffect $ loadFigureFromRawValues jsonSpec fluidSrc
+
+loadFigureFromJsonInput :: Json -> String -> Effect Unit
+loadFigureFromJsonInput jsonSpec srcFilename = launchAff_ do
+   fluidSrc_ <- loadFileFromPath (File srcFilename)
+   case fluidSrc_ of
+      Nothing -> error ("File not found: " <> show srcFilename)
+      Just fluidSrc -> liftEffect $ loadFigureFromRawValues jsonSpec fluidSrc
+
+loadFigureFromFilePaths :: String -> String -> Effect Unit
+loadFigureFromFilePaths specFilename srcFilename = launchAff_ do
+   jsonSpec <- loadSpec specFilename
+   fluidSrc_ <- loadFileFromPath (File srcFilename)
+   case fluidSrc_ of
+      Nothing -> error ("File not found: " <> show srcFilename)
+      Just fluidSrc -> liftEffect $ loadFigureFromRawValues jsonSpec fluidSrc
+
+loadFigureFromRawValues :: Json -> String -> Effect Unit
+loadFigureFromRawValues jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
+   [ case decodeJson jsonSpec :: Either JsonDecodeError JsonSpec of
         Left err -> error ("JSON decoding failed with " <> show err)
-        Right spec -> ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec)
-           where
-           figSpec@{ fluidSrcPaths } = figSpecFromJson spec
+        Right spec -> do
+           let figSpec@{ fluidSrcPaths } = figSpecFromJson spec
+           log $ "fluidSrc = " <> fluidSrc
+           ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec)
    ]
 
-loadFigure :: String -> Effect Unit
-loadFigure filename = launchAff_ do
-   jsonSpec <- loadSpec filename
-   liftEffect $ loadFigureFromJson jsonSpec
-
-loadFigure_ :: String -> String -> Effect Unit
-loadFigure_ specFilename srcFilename = launchAff_ do
-   src <- loadFileFromPath @Aff (File srcFilename)
-   case src of
-      Nothing -> error ("File not found: " <> show srcFilename)
-      Just _ -> liftEffect $ loadFigure specFilename
-
+{-
+loadFigureFromFilePaths -- specFilename & srcFilename
+loadFigureFromRawValues -- jsonSpec & fluidSrc -- endpoint
+loadFigureFromFluidCode -- specFilename & fluidSrc
+loadFigureFromJsonInput -- jsonSpec & srcFilename
+-}
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
