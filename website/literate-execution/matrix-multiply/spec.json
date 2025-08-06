@@ -1,6 +1,6 @@
 {
     "fluidSrcPath": ["../fluid"],
-    "file": "matrix-multiply/matmul",
+    "file": "matrixMultiply/matmul",
 
     "datasets": [],
     "inputs": [ "aMatrix", "bMatrix", "cMatrix" ],
