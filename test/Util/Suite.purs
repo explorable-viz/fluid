@@ -87,7 +87,8 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect } = do
-   fig <- loadFig (spec { file = spec.file }) "" <#> selectOutput δ_out
+   fluidSrc <- loadFile spec.fluidSrcPaths (spec.file <> File fluidExtension)
+   fig <- loadFig spec fluidSrc <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (selectionResult fig).v
    checkEq "selected" "expected" (selStates <$> (isInert <$> v) <*> (isPersistent <$> v) <*> (isTransient <$> v)) (fst $ out_expect (botOf <$> v))
@@ -100,7 +101,8 @@ linkedOutputsSuite specs = specs <#> (name &&& (linkedOutputsTest >>> void))
 
 linkedInputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedInputsSpec -> m Fig
 linkedInputsTest { spec, δ_in, in_expect } = do
-   fig <- loadFig (spec { file = spec.file }) "" <#> uncurry selectInput δ_in
+   fluidSrc <- loadFile spec.fluidSrcPaths (spec.file <> File fluidExtension)
+   fig <- loadFig spec fluidSrc <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult (unwrap spec.file) \_ ->
       pure (selectionResult fig).γ
    checkEq "selected" "expected" (selStates <$> (isInert <$> γ) <*> (isPersistent <$> γ) <*> (isTransient <$> γ)) (fst $ in_expect (botOf <$> γ))

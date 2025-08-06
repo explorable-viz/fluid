@@ -79,7 +79,7 @@ loadFigureSpec jsonSpec srcFile = launchAff_ do
       Just fluidSrc -> liftEffect $ loadFigureSpecSrc jsonSpec fluidSrc
 
 --loadFigureSpecSrc -- jsonSpec (Json) & fluidSrc (String)
---PS: all 4 versions pass the parameters to loadFigureFromRawValues
+--PS: all 4 versions pass the parameters to loadFigureSpecSrc
 loadFigureSpecSrc :: Json -> String -> Effect Unit
 loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
    [ case decodeJson jsonSpec :: Either JsonDecodeError JsonSpec of

@@ -40,6 +40,9 @@ parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Arra
 parseProgram folders (File file) =
    loadFile folders (File (file <> fluidExtension)) >>= flip parse P.program
 
+parseFluidSrc :: forall m. String -> AffError m (Array String × Raw S.Expr)
+parseFluidSrc fluidSrc = flip parse P.program fluidSrc
+
 module_ :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ folders (File file) (ProgCxt r@{ mods }) = do
    when debug.logging $ log ("module_: " <> show (folders × file))
@@ -76,13 +79,9 @@ initialConfig e progCxt = do
 
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
-parseFluidSrc :: forall m. String -> AffError m (Array String × Raw S.Expr)
-parseFluidSrc fluidSrc = flip parse P.program fluidSrc
-
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw ProgCxt -> String -> m Config
 prepConfig progCxt fluidSrc = do
    mods × s <- parseFluidSrc fluidSrc
-   log $ "parsed src = " <> show s
    e <- desug s
    progCxt' <- loadMods mods progCxt
    gconfig <- initialConfig e progCxt'

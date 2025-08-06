@@ -81,18 +81,9 @@
    </div>
 </div>
 
-<script id="my-code" type="text/plain">
-   import lib.matrix
-   import convolution.testImage
-   import convolution.filter.emboss
-
-   convolve inputImage filter zero
-</script>
-
 <script type="module">
-   import { drawCode, loadFigure, loadFigureSrc, loadFigureSpec, loadFigureSpecSrc } from "/shared/load-figure.js"
+   import { drawCode, loadFigureSpec } from "/shared/load-figure.js"
    drawCode("../fluid/lib")("matrix")()
-   //loadFigure("spec.json")()
 
    const fluidSrc = document.getElementById("my-code").textContent.trim();
    const jsonSpec = {
@@ -104,10 +95,7 @@
     "linking": false
    }
 
-   loadFigure("spec.json")("../fluid/convolution/emboss.fld")()
-   loadFigureSrc("spec.json")(fluidSrc)()
    loadFigureSpec(jsonSpec)("../fluid/convolution/emboss.fld")()
-   loadFigureSpecSrc(jsonSpec)(fluidSrc)()
 </script>
 </body>
 </html>
