@@ -91,6 +91,9 @@ initialConfig e progCxt moduleCxt = do
 
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
+prelude :: ModuleName
+prelude = "lib/prelude"
+
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw ProgCxt -> String -> m Config
 prepConfig progCxt fluidSrc = do
    mods × s <- parseFluidSrc fluidSrc
@@ -127,12 +130,12 @@ loadModuleGraph roots = do
                (imports' <> rest)
 
    loadModule :: ModuleName -> m (Raw Module × List ModuleName)
-   loadModule name = do
+   loadModule path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File name)
       mod × imports <- parse src P.module_
       mod' <- desugarModuleFwd mod
-      let imports' = if name == "lib/prelude" then imports else "lib/prelude" : imports
+      let imports' = if path == prelude then imports else prelude : imports
       pure $ mod' × imports'
 
    topsort :: DependencyGraph -> List ModuleName
