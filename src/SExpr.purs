@@ -25,7 +25,7 @@ import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
-import Doc (DocOpt(..), ParagraphElem(..)) as Doc
+import Doc (DocOpt(..), ParagraphElem(..), Paragraph) as Doc
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..), DocOpt, ParagraphElem) as E
@@ -54,6 +54,7 @@ data BaseExpr a
    | BinaryApp (Expr a) Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
    | IfElse (Expr a) (Expr a) (Expr a)
+   | Paragraph (Doc.Paragraph Expr a)
    | ListEmpty a
    | ListNonEmpty a (Expr a) (ListRest a)
    | ListEnum (Expr a) (Expr a)
@@ -148,6 +149,8 @@ instance Desugarable DictEntry E.Expr where
 varKeyBwd :: forall a. E.Expr a -> Raw DictEntry -> DictEntry a
 varKeyBwd (E.Str α _ _) (VarKey _ v') = VarKey α v'
 varKeyBwd _ _ = error absurd
+
+--desugarate 
 
 instance Desugarable Expr E.Expr where
    desug = exprFwd
@@ -289,6 +292,7 @@ exprFwd (Expr' _ (IfElse s1 s2 s3)) =
    E.App Doc.None
       <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3)))
       <*> desug s1
+exprFwd (Expr' _ (Paragraph _)) = error "to do"
 exprFwd (Expr' doc (ListEmpty α)) = do
    edoc <- desugComment doc
    pure (enil α edoc)

@@ -332,7 +332,8 @@ expr_ = fix exprParser
          simpleExpr :: SParser (Raw Expr)
          simpleExpr =
             -- matrix before list
-            ( matrix
+            ( try paragraphLiteral
+                 <|> matrix
                  <|> try nil
                  <|> listNonEmpty
                  <|> try constr
@@ -416,6 +417,11 @@ expr_ = fix exprParser
 
             stringLiteral :: SParser (Raw Expr)
             stringLiteral = Expr' None <$> (Str unit) <$> (try (notFollowedBy paragraphDelim) *> token.stringLiteral)
+
+            paragraphLiteral :: SParser (Raw Expr)
+            paragraphLiteral = do
+               para <- paragraph expr_
+               pure (Expr' None (Paragraph para))
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)

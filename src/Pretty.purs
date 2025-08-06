@@ -11,7 +11,7 @@ import Prelude hiding (absurd, between)
 import Bind (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), fromFoldable, null, uncons, (:))
+import Data.List (List(..), fromFoldable, null, uncons, (:), foldr)
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
@@ -94,6 +94,7 @@ exprType (Expr' _ (App _ _)) = Expression
 exprType (Expr' _ (BinaryApp _ _ _)) = Expression
 exprType (Expr' _ (MatchAs _ _)) = Simple
 exprType (Expr' _ (IfElse _ _ _)) = Simple
+exprType (Expr' _ (Paragraph _)) = Simple
 exprType (Expr' _ (ListEmpty _)) = Simple
 exprType (Expr' _ (ListNonEmpty _ _ _)) = Simple
 exprType (Expr' _ (ListEnum _ _)) = Expression
@@ -200,6 +201,8 @@ instance Ann a => Pretty (Expr a) where
       (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
    pretty (Expr' _ (LetRec h s)) =
       (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
+   pretty (Expr' doc (Paragraph p)) =
+      pretty doc .<>. pretty p
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
@@ -413,11 +416,11 @@ instance Highlightable a => Pretty (E.Expr a) where
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
    --   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
-   pretty (Doc.Doc x) = text "@doc" .<>. text str.triplequote .<>. pretty x
+   pretty (Doc.Doc x) = text "@doc" .<>. text str.triplequote .<>. pretty x .<>. text str.triplequote
    pretty Doc.None = empty
 
 instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
-   pretty (Cons word Nil) = pretty word .<>. text str.triplequote
+   pretty (Cons word Nil) = pretty word
    pretty (Cons word xs) = pretty word .<>. pretty xs
    pretty Nil = empty
 
