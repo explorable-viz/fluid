@@ -29,7 +29,7 @@ echo "Processing other static files:"
 set +xu  # try to remove +u
 TO_COPY=()
 shopt -s dotglob extglob
-for CHILD in ${PREFIX}website/$WEBSITE/!(.|..); do
+for CHILD in website/$WEBSITE/!(.|..); do
    BASENAME="$(basename "$CHILD")"
    if [[ "$BASENAME" =~ ^[a-z.] ]]; then
       TO_COPY+=("$CHILD")
@@ -39,8 +39,7 @@ shopt -u extglob dotglob
 set -xu
 
 for CHILD in "${TO_COPY[@]}"; do
-   BASENAME="$(basename "$CHILD")"
-   cp -rL "$CHILD" "dist/$WEBSITE/$BASENAME"
+   cp -rL "$CHILD" dist/$WEBSITE
 done
 
 echo "Processing Fluid source files:"
