@@ -218,12 +218,14 @@ eval_progCxt (ProgCxt { primitives, datasets }) { roots, topsorted, graph, modul
       where
       evalOne :: Map ModuleName (Env Vertex) -> ModuleName -> m (Map ModuleName (Env Vertex))
       evalOne envs name = do
-         let defs' = definitely ("has module") $ Map.lookup name modules
-         let deps = definitely ("has deps") $ Map.lookup name graph
-         let envs' = map (\dep -> definitely ("has env") $ Map.lookup dep envs) deps
-         let env' = foldl (<+>) env envs'
-         env'' <- eval_module env' defs' empty
-         pure $ Map.insert name env'' envs
+         let
+            (defs' × envs') = definitely "deps evaluated" do
+               deps <- Map.lookup name graph
+               envs' <- traverse (\dep -> Map.lookup dep envs) deps
+               defs' <- Map.lookup name modules
+               pure (defs' × envs')
+         env' <- eval_module (foldl (<+>) env envs') defs' empty
+         pure $ Map.insert name env' envs
 
    -- no change
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
