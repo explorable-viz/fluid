@@ -15,6 +15,7 @@ import Data.Profunctor.Strong (second)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
+import Data.Tuple (fst)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -26,8 +27,7 @@ import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
-import ModuleGraph (DependencyGraph, ModuleCxt, ModuleName, Modules)
-import Parse (withImports)
+import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
@@ -42,17 +42,13 @@ import Util.Set ((∪))
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Raw S.Expr)
+parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Raw S.Expr × List ModuleName)
 parseProgram folders file =
-   loadFile folders file >>= flip parse (P.standalone P.program)
-
-parseProgramAsModule :: forall m. LoadFile m => Array Folder -> File -> AffError m (Raw S.Expr × List ModuleName)
-parseProgramAsModule folders file =
-   loadFile folders file >>= flip parse (P.withImports P.program)
+   loadFile folders file >>= flip parse P.program
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- parseProgram folders file >>= desug
+   eα <- (fst <$> parseProgram folders file) >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array (Bind String) -> m (Raw ProgCxt)
@@ -88,7 +84,7 @@ type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> m Config
 prepConfig file progCxt = do
    FileCxt { fluidSrcPaths } <- ask
-   s × imports <- parseProgramAsModule fluidSrcPaths file
+   s × imports <- parseProgram fluidSrcPaths file
    moduleCxt <- loadModuleGraph ("lib/prelude" : imports)
    e <- desug s
    gconfig <- initialConfig e progCxt moduleCxt
@@ -126,7 +122,7 @@ loadModuleGraph roots = do
    loadModule name = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File name)
-      mod × imports <- parse src (withImports P.module_)
+      mod × imports <- parse src P.module_
       mod' <- desugarModuleFwd mod
       let imports' = if name == "lib/prelude" then imports else "lib/prelude" : imports
       pure $ mod' × imports'
