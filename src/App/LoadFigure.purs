@@ -55,33 +55,33 @@ loadSpec filename = do
       Left err -> error ("Json fetching failed with " <> printError err)
       Right response -> pure $ response.body
 
---loadFigureFromFluidCode -- specFilename (String) & fluidSrc (String)
-loadFigureFromFluidCode :: String -> String -> Effect Unit
-loadFigureFromFluidCode specFilename fluidSrc = launchAff_ do
-   jsonSpec <- loadSpec specFilename
-   liftEffect $ loadFigureFromRawValues jsonSpec fluidSrc
-
---loadFigureFromJsonInput -- jsonSpec (Json) & srcFilename (String)
-loadFigureFromJsonInput :: Json -> String -> Effect Unit
-loadFigureFromJsonInput jsonSpec srcFilename = launchAff_ do
-   fluidSrc_ <- loadFileFromPath (File srcFilename)
+--loadFigure -- specFile (String) & srcFile (String)
+loadFigure :: String -> String -> Effect Unit
+loadFigure specFile srcFile = launchAff_ do
+   jsonSpec <- loadSpec specFile
+   fluidSrc_ <- loadFileFromPath (File srcFile)
    case fluidSrc_ of
-      Nothing -> error ("File not found: " <> show srcFilename)
-      Just fluidSrc -> liftEffect $ loadFigureFromRawValues jsonSpec fluidSrc
+      Nothing -> error ("File not found: " <> show srcFile)
+      Just fluidSrc -> liftEffect $ loadFigureSpecSrc jsonSpec fluidSrc
 
---loadFigureFromFilePaths -- specFilename (String) & srcFilename (String)
-loadFigureFromFilePaths :: String -> String -> Effect Unit
-loadFigureFromFilePaths specFilename srcFilename = launchAff_ do
-   jsonSpec <- loadSpec specFilename
-   fluidSrc_ <- loadFileFromPath (File srcFilename)
+--loadFigureSrc -- specFile (String) & fluidSrc (String)
+loadFigureSrc :: String -> String -> Effect Unit
+loadFigureSrc specFile fluidSrc = launchAff_ do
+   jsonSpec <- loadSpec specFile
+   liftEffect $ loadFigureSpecSrc jsonSpec fluidSrc
+
+--loadFigureSpec -- jsonSpec (Json) & srcFile (String)
+loadFigureSpec :: Json -> String -> Effect Unit
+loadFigureSpec jsonSpec srcFile = launchAff_ do
+   fluidSrc_ <- loadFileFromPath (File srcFile)
    case fluidSrc_ of
-      Nothing -> error ("File not found: " <> show srcFilename)
-      Just fluidSrc -> liftEffect $ loadFigureFromRawValues jsonSpec fluidSrc
+      Nothing -> error ("File not found: " <> show srcFile)
+      Just fluidSrc -> liftEffect $ loadFigureSpecSrc jsonSpec fluidSrc
 
---loadFigureFromRawValues -- jsonSpec (Json) & fluidSrc (String)
+--loadFigureSpecSrc -- jsonSpec (Json) & fluidSrc (String)
 --PS: all 4 versions pass the parameters to loadFigureFromRawValues
-loadFigureFromRawValues :: Json -> String -> Effect Unit
-loadFigureFromRawValues jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
+loadFigureSpecSrc :: Json -> String -> Effect Unit
+loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
    [ case decodeJson jsonSpec :: Either JsonDecodeError JsonSpec of
         Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> do
