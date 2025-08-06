@@ -20,7 +20,7 @@ import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import File (File(..), FileCxt(..), Folder(..))
 import Graph (DVertex'(..))
-import Module.Web (loadFile', runWebT)
+import Module.Web (loadFile_, runWebT)
 import Util (error, (×))
 import Val (Val(..), asVal)
 
@@ -71,6 +71,6 @@ loadFigure filename = launchAff_ do
 
 drawCode :: String -> String -> Effect Unit
 drawCode folder file = runAffs_ drawFile
-   [ runWebT (FileCxt { fluidSrcPaths: [ Folder folder ] }) $ loadFile' [ Folder folder ] (File file)
+   [ runWebT (FileCxt { fluidSrcPaths: [ Folder folder ] }) $ loadFile_ [ Folder folder ] (File file)
    ]
 

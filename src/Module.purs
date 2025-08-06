@@ -22,7 +22,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, Module, fv)
-import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
+import File (class LoadFile, File(..), FileCxt(..), Folder, fluidExtension, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
@@ -43,8 +43,8 @@ parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
 parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Raw S.Expr × List ModuleName)
-parseProgram folders file =
-   loadFile folders file >>= flip parse P.program
+parseProgram folders (File file) =
+   loadFile folders (File (file <> fluidExtension)) >>= flip parse P.program
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
@@ -121,7 +121,7 @@ loadModuleGraph roots = do
    loadModule :: ModuleName -> m (Raw Module × List ModuleName)
    loadModule name = do
       FileCxt { fluidSrcPaths } <- ask
-      src <- loadFile fluidSrcPaths (File name)
+      src <- loadFile fluidSrcPaths (File (name <> fluidExtension))
       mod × imports <- parse src P.module_
       mod' <- desugarModuleFwd mod
       let imports' = if name == "lib/prelude" then imports else "lib/prelude" : imports
