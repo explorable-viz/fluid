@@ -36,8 +36,18 @@
 </div>
 
 <script type="module">
-   import { loadFigure } from "/shared/load-figure.js"
-   loadFigure("spec.json")()
+   import { loadFigureSpec } from "/shared/load-figure.js"
+
+   const jsonSpec = {
+      "fluidSrcPath": ["../fluid"],
+      "file": "non-renewables",
+      "inputs": ["nonRenewables"],
+      "datasets": [["renewables", "dataset/renewables-new"], ["nonRenewables", "dataset/non-renewables"]],
+      "query" : false,
+      "linking": true
+   }
+
+   loadFigureSpec(jsonSpec)("../fluid/non-renewables")()
 </script>
 </body>
 </html>
