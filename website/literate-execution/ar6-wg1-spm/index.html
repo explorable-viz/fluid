@@ -42,9 +42,9 @@
 </div>
 
 <script type="module">
-   import { drawCode, loadFigureFromJson } from "../shared/load-figure.js";
+   import { drawCode, loadFigureSpec } from "../shared/load-figure.js";
 
-   const spec = {
+   const jsonSpec = {
     "fluidSrcPath": ["../fluid"],
     "datasets": [["likelihoods", "ar6-wg1-spm/likelihoods"], ["ssp126Source", "ar6-wg1-spm/ssp126"], ["ssp126preds", "ar6-wg1-spm/ssp126preds"], ["ssp245Source", "ar6-wg1-spm/ssp245"], ["ssp245preds", "ar6-wg1-spm/ssp245preds"]],
     "file": "ar6-wg1-spm/figure-spm-4",
@@ -53,7 +53,7 @@
     "linking": false
    }
    
-   loadFigureFromJson(spec)();
+   loadFigureSpec(jsonSpec)("../fluid/ar6-wg1-spm/figure-spm-4.fld")();
    drawCode("../fluid/ar6-wg1-spm")("figure-spm-4")();
 </script>
 </body>

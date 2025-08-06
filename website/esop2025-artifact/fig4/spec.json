@@ -3,5 +3,6 @@
     "file": "non-renewables",
     "inputs": ["nonRenewables"],
     "datasets": [["renewables", "dataset/renewables-new"], ["nonRenewables", "dataset/non-renewables"]],
+    "query" : false,
     "linking": true
   }

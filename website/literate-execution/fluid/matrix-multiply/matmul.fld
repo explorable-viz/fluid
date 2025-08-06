@@ -1,9 +1,0 @@
-import lib.matrix
-import matrix-multiply.aMatrix
-import matrix-multiply.bMatrix
-import matrix-multiply.cMatrix
-
-MultiView {
-    firstMatrix: matMul (matMul aMatrix bMatrix) cMatrix,
-    secondMatrix: matMul aMatrix (matMul bMatrix cMatrix)
-}

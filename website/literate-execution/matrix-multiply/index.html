@@ -81,10 +81,24 @@
    </div>
 </div>
 
+<script id="my-code" type="text/plain">
+   import lib.matrix
+   import matrixMultiply.aMatrix
+   import matrixMultiply.bMatrix
+   import matrixMultiply.cMatrix
+
+   MultiView {
+      firstMatrix: matMul (matMul aMatrix bMatrix) cMatrix,
+      secondMatrix: matMul aMatrix (matMul bMatrix cMatrix)
+   }
+</script>
+
 <script type="module">
-   import { loadFigure, drawCode } from "/shared/load-figure.js"
+   import { loadFigureSrc, drawCode } from "/shared/load-figure.js"
+   const src = document.getElementById("my-code").textContent.trim();
+
    drawCode("../fluid/lib")("matrix")()
-   loadFigure("spec.json")()
+   loadFigureSrc("spec.json")(src)()
 </script>
 </body>
 </html>
