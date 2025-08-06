@@ -146,7 +146,7 @@ loadModuleGraph roots = do
       go remaining result =
          -- should always be resolvable if no cycles
          case List.find resolved remaining of
-            Nothing -> error "cycle!!!"
+            Nothing -> error "Modules contain circular imports"
             Just next -> go (List.delete next remaining) (next : result)
          where
          -- no dependencies or dependencies all resolved
