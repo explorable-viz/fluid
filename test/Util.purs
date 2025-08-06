@@ -20,7 +20,7 @@ import File (class LoadFile, File(..), FileCxt, Folder(..), fluidExtension, load
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parse, prepConfig)
-import Parse (program, standalone)
+import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
@@ -134,7 +134,7 @@ checkEq op1 op2 x y = do
 
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
-   s' <- parse (prettyP s) (standalone program)
+   s' × _ <- parse (prettyP s) program
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
 
