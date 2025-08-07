@@ -3,7 +3,7 @@ module Test.Specs.LinkedInputs where
 import App.Util.Selector (dictVal, envVal, listElement, select, (>.>))
 import Bind ((↦))
 import Data.Maybe (Maybe(..))
-import File (File(..), Folder(..))
+import File (Folder(..))
 import Test.Util.Suite (TestLinkedInputsSpec)
 
 linkedInputs_spec3 :: TestLinkedInputsSpec
@@ -15,7 +15,6 @@ linkedInputs_spec3 =
              [ "renewables" ↦ "dataset/renewables-new"
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
-        , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
         , linking: true
@@ -29,6 +28,7 @@ linkedInputs_spec3 =
                    >.> listElement 206 (dictVal "capacity" select)
                    >.> listElement 207 (dictVal "capacity" select)
               )
+   , file: "linked-inputs/energyscatter"
    }
 
 linkedInputs_spec4 :: TestLinkedInputsSpec
@@ -40,7 +40,6 @@ linkedInputs_spec4 =
              [ "renewables" ↦ "dataset/renewables-new"
              , "nonRenewables" ↦ "dataset/non-renewables"
              ]
-        , file: File "linked-inputs/energyscatter"
         , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
         , linking: true
@@ -62,14 +61,13 @@ linkedInputs_spec4 =
                    >.> listElement 206 (dictVal "capacity" select >.> dictVal "output" select)
                    >.> listElement 207 (dictVal "capacity" select >.> dictVal "output" select)
               )
+   , file: "linked-inputs/energyscatter"
    }
 
 linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , file: File "linked-inputs/mini-energyscatter"
-
         , datasets:
              [ "nonRenewables" ↦ "dataset/mini-non-renewables"
              , "renewables" ↦ "dataset/mini-renewables"
@@ -94,6 +92,7 @@ linkedInputs_spec5 =
                    >.> listElement 2 (dictVal "capacity" select)
                    >.> listElement 3 (dictVal "capacity" select)
               )
+   , file: "linked-inputs/mini-energyscatter"
    }
 
 linkedInputs_cases :: Array TestLinkedInputsSpec
