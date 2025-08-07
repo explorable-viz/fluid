@@ -20,7 +20,7 @@ import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import File (File(..), FileCxt(..), Folder(..), fluidExtension, loadFileFromPath)
 import Graph (DVertex'(..))
-import Module.Web (loadFile_, runWebT)
+import Module.Web (runWebT)
 import Util (definitely', error, (×))
 import Val (Val(..), asVal)
 
@@ -81,8 +81,8 @@ loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
            ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
    ]
 
-drawCode :: String -> String -> Effect Unit
-drawCode folder file = runAffs_ drawFile
-   [ runWebT (FileCxt { fluidSrcPaths: [ Folder folder ] }) $ loadFile_ [ Folder folder ] (File file)
-   ]
+drawCode :: String -> Effect Unit
+drawCode file = launchAff_ do
+   fluidSrc <- loadFileFromPath @Aff (File (file <> fluidExtension))
+   liftEffect $ drawFile ((File file) × (definitely' fluidSrc))
 

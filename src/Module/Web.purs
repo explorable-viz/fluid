@@ -8,16 +8,10 @@ import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runRead
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import File (class LoadFile, File(..), FileCxt, Folder, fluidExtension, loadFile, loadFileFromPath)
-import Util (type (×), (×), AffError)
+import File (class LoadFile, FileCxt, loadFileFromPath)
 
 instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (WebT m) where
    loadFileFromPath = lift <<< loadFileFromPath
-
-loadFile_ :: forall m. LoadFile m => Array Folder -> File -> AffError m (File × String)
-loadFile_ folders (File file) = (file_ × _) <$> loadFile folders file_
-   where
-   file_ = File (file <> fluidExtension)
 
 newtype WebT :: forall k. (k -> Type) -> k -> Type
 newtype WebT m a = WebT (ReaderT FileCxt m a)

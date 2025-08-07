@@ -11,10 +11,12 @@ import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
+import Data.Array (last)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set as Set
+import Data.String (Pattern(..), split)
 import Data.Traversable (for_, sequence_)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
@@ -33,7 +35,7 @@ import Module (loadProgCxt, prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Test.Util.Debug (tracing)
-import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
+import Util (type (×), Endo, absurd, definitely', error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
 import Util.Set (empty, (\\), (∈), (∪))
 import Val (Env(..), EnvExpr(..), Val(..), asVal, unrestrictGC)
@@ -186,8 +188,8 @@ drawFig divId fig = do
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
-drawFile (File file × src) =
-   addEditorView (codeMirrorDiv file) >>= drawCode src
+drawFile (File filepath × src) =
+   addEditorView (codeMirrorDiv (toFileName filepath)) >>= drawCode src
 
 unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnection (Env a) (EnvExpr a)
 unprojExpr (EnvExpr _ e) = GC
@@ -292,6 +294,11 @@ loadFig spec@{ inputs, datasets, linking } fluidSrc = do
 
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
+
+toFileName :: String -> String
+toFileName filepath = definitely' $ last splitPath
+   where
+   splitPath = split (Pattern "/") filepath
 
 drawCode :: String -> EditorView -> Effect Unit
 drawCode s ed =
