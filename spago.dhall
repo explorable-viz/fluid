@@ -54,5 +54,5 @@ You can edit this file as you like.
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs", "website/**/*.purs" ]
-, backend = "purs-backend-es build"
+, backend = "npx purs-backend-es build"
 }

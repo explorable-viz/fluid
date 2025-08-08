@@ -1,0 +1,3 @@
+-- A minimal paragraph literal + variable interpolation example
+let name = "Alice" in
+"""Hello, ${name}!"""

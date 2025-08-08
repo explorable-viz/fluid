@@ -420,8 +420,8 @@ expr_ = fix exprParser
 
             paragraphLiteral :: SParser (Raw Expr)
             paragraphLiteral = do
-               para <- paragraph expr_
-               pure (Expr' None (Paragraph para))
+               p <- paragraph expr'
+               pure (Expr' None (Paragraph p))
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)

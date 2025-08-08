@@ -22,7 +22,7 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd, uncurry)
 import Data.Unfoldable (replicate)
-import DataType (Ctr, DataType, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
+import DataType (Ctr, DataType, arity, cCons, cText, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
 import Doc (DocOpt(..), ParagraphElem(..), Paragraph) as Doc
@@ -248,6 +248,32 @@ recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (snd <$> unwr
 recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
 recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (desugBwd σ (Clauses (snd <$> bs))))
 
+-- turn elements of paragraph into Fluid's List
+paragraphElemsToList
+   :: forall a m
+    . BoundedLattice a
+   => MonadError Error m
+   => List (ParagraphElem a)
+   -> m (E.Expr a)
+paragraphElemsToList elems = go elems
+   where
+   -- EmptyList → []
+   go :: List (ParagraphElem a) -> m (E.Expr a)
+   go Nil = pure (enil top Doc.None)
+
+   -- Token s: generate Text "s" element, then attach the recursive tail
+   go (Doc.Token s : xs) = do
+      rest <- go xs
+      let item = E.Constr top Doc.None cText (E.Str top Doc.None s : Nil)
+      pure (econs top Doc.None item rest)
+
+   -- Unquote e: First desug e, then attach the tail
+   go (Doc.Unquote e : xs) = do
+      e' <- desug e
+      rest <- go xs
+      let item = E.Constr top Doc.None cText (e' : Nil)
+      pure (econs top Doc.None item rest)
+
 -- Expr
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
 exprFwd (Expr' _ (Var x)) = pure (E.Var x)
@@ -292,7 +318,9 @@ exprFwd (Expr' _ (IfElse s1 s2 s3)) =
    E.App Doc.None
       <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3)))
       <*> desug s1
-exprFwd (Expr' _ (Paragraph _)) = error "to do"
+exprFwd (Expr' _ (Paragraph xs)) = do
+   list <- paragraphElemsToList xs
+   pure (E.Constr top Doc.None cParagraph (list : Nil))
 exprFwd (Expr' doc (ListEmpty α)) = do
    edoc <- desugComment doc
    pure (enil α edoc)
