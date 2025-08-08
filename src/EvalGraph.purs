@@ -206,26 +206,26 @@ eval_progCxt
    -> ModuleCxt Vertex
    -> m (Env Vertex)
 eval_progCxt (ProgCxt { primitives, datasets }) { roots, topsorted, graph, modules } = do
-   envs <- evalAll primitives topsorted
-   let envs' = map (\dep -> definitely ("has env") $ Map.lookup dep envs) roots
-   let env = foldl (<+>) primitives envs'
-   flip concatM env (reverse datasets <#> addDataset)
+   γs <- evalAll primitives topsorted
+   let γs' = map (\dep -> definitely ("has env") $ Map.lookup dep γs) roots
+   let γ = foldl (<+>) primitives γs'
+   flip concatM γ (reverse datasets <#> addDataset)
 
    where
    evalAll :: Env Vertex -> List ModuleName -> m (Map ModuleName (Env Vertex))
-   evalAll env mods = foldM evalOne Map.empty mods
+   evalAll γ mods = foldM evalOne Map.empty mods
 
       where
       evalOne :: Map ModuleName (Env Vertex) -> ModuleName -> m (Map ModuleName (Env Vertex))
-      evalOne envs name = do
+      evalOne γs name = do
          let
-            (defs' × envs') = definitely "deps evaluated" do
+            (defs' × γs') = definitely "deps evaluated" do
                deps <- Map.lookup name graph
-               envs' <- traverse (\dep -> Map.lookup dep envs) deps
+               γs' <- traverse (\dep -> Map.lookup dep γs) deps
                defs' <- Map.lookup name modules
-               pure (defs' × envs')
-         env' <- eval_module (foldl (<+>) env envs') defs' empty
-         pure $ Map.insert name env' envs
+               pure (defs' × γs')
+         γ' <- eval_module (foldl (<+>) γ γs') defs' empty
+         pure $ Map.insert name γ' γs
 
    -- no change
    addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
