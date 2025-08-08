@@ -32,6 +32,8 @@ import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, debug, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
+import Temp.Pretty (prettyPy)
+import Temp.Util.UnsafeDebug (exitUnsafe, writeFileUnsafe)
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
@@ -80,6 +82,11 @@ prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt 
 prepConfig file progCxt = do
    FileCxt { fluidSrcPaths } <- ask
    mods × s <- parseProgram fluidSrcPaths file
+
+   let out = prettyPy s
+   let _ = writeFileUnsafe "out.py" out
+   let _ = exitUnsafe unit
+
    e <- desug s
    progCxt' <- loadMods mods progCxt
    gconfig <- initialConfig e progCxt'
