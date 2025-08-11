@@ -47,4 +47,6 @@ misc_cases =
 
    , { file: "module/import-simple", fwd_expect: "84" }
    , { file: "module/import-simple-unused", fwd_expect: "84" }
+   , { file: "module/import-modules", fwd_expect: "84" }
+
    ]
