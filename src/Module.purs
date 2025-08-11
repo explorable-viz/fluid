@@ -46,7 +46,7 @@ parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Arra
 parseProgram folders (File file) =
    loadFile folders (File (file <> fluidExtension)) >>= flip parse P.program
 
-parseFluidSrc :: forall m. String -> AffError m (Array String × Raw S.Expr)
+parseFluidSrc :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
 parseFluidSrc fluidSrc = flip parse P.program fluidSrc
 
 module_ :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
