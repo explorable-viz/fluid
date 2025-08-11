@@ -24,7 +24,7 @@ prettyPy x = render (pretty x)
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
 binaryApp n (BinaryApp s op s') =
    case getPrec op of
-      -1 -> text op <> parens (binaryApp 0 s) <> parens (binaryApp 0 s')
+      -1 -> binaryApp 0 s <+> text "|" <> text op <> text "|" <+> binaryApp 0 s'
       n' -> if n' <= n then parens (binaryApp n' s <+> text op <+> binaryApp n' s') else binaryApp n' s <+> text op <+> binaryApp n' s'
 binaryApp _ e = pretty e
 
