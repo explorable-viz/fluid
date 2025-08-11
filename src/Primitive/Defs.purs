@@ -14,6 +14,7 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
+import Data.Set (empty)
 import Data.Set as Set
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..), snd)
@@ -24,7 +25,8 @@ import Doc (DocOpt(..))
 import EvalGraph (apply) as G
 import File (File(..), FileCxt(..), loadFile)
 import Foreign.Object as FO
-import Graph.WithGraph (alloc, new)
+import Graph (Vertex(..))
+import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
@@ -100,8 +102,18 @@ loadJson =
          Left err -> throw ("Failed to parse JSON: " <> show err)
          Right (j :: Json) ->
             -- Json -> Val Unit -> Val Vertex
-            alloc (fromJsonVal j)
+            fromJsonVal' j
    op _ = throw "String expected"
+
+fromJsonVal' :: forall m. MonadWithGraphAlloc m => Json -> m (Val Vertex)
+fromJsonVal' =
+   caseJson
+      (\_ -> ?_)
+      (\b -> ?_)
+      (\n -> new (flip Val None) empty (Float n))
+      (\s -> ?_)
+      (\arr -> ?_)
+      (\obj -> ?_)
 
 fromJsonVal :: Json -> Val Unit
 fromJsonVal =
