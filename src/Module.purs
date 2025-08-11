@@ -20,7 +20,7 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
-import Expr (class FV, Expr, fv)
+import Expr (class FV, Expr, Module, fv)
 import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -57,7 +57,7 @@ module_ folders (File file) (ProgCxt r@{ mods }) = do
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
-   src <- loadFile folders (file <> File fluidExtension)
+   src <- loadFile folders file
    s × _ <- parseProgram src
    eα <- desug s
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
@@ -133,7 +133,7 @@ loadModuleGraph roots = do
    loadModule :: ModuleName -> m (Raw Module × List ModuleName)
    loadModule path = do
       FileCxt { fluidSrcPaths } <- ask
-      src <- loadFile fluidSrcPaths (File name)
+      src <- loadFile fluidSrcPaths (File (path <> ".fld"))
       mod × imports <- parse src P.module_
       mod' <- desugarModuleFwd mod
       let imports' = if path == prelude then imports else prelude : imports

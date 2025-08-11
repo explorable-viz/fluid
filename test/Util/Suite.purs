@@ -13,7 +13,7 @@ import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (fst, uncurry)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
-import File (class LoadFile, File(..), FileCxt, Folder(..), fluidExtension, loadFile, (</>))
+import File (class LoadFile, File(..), FileCxt, Folder(..), loadFile, (</>))
 import Lattice (botOf)
 import Module (loadProgCxt)
 import Primitive.Defs (primitives)
@@ -75,7 +75,7 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
    asTest :: TestBwdSpec -> m BenchRow
    asTest { file, bwd_expect_file, δv, fwd_expect, datasets } = do
       gconfig <- loadProgCxt datasets
-      bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File (bwd_expect_file <> fluidExtension))
+      bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
       test (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite m
@@ -88,7 +88,7 @@ withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect, file } = do
-   fluidSrc <- loadFile spec.fluidSrcPaths (File (file <> fluidExtension))
+   fluidSrc <- loadFile spec.fluidSrcPaths (File file)
    fig <- loadFig spec fluidSrc <#> selectOutput δ_out
    v <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).v
@@ -100,7 +100,7 @@ linkedOutputsSuite testSpecs = testSpecs <#> (_.file &&& (linkedOutputsTest >>> 
 
 linkedInputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedInputsSpec -> m Fig
 linkedInputsTest { spec, δ_in, in_expect, file } = do
-   fluidSrc <- loadFile spec.fluidSrcPaths (File (file <> fluidExtension))
+   fluidSrc <- loadFile spec.fluidSrcPaths (File file)
    fig <- loadFig spec fluidSrc <#> uncurry selectInput δ_in
    γ <- logTimeWhen timing.selectionResult file \_ ->
       pure (selectionResult fig).γ
@@ -109,4 +109,3 @@ linkedInputsTest { spec, δ_in, in_expect, file } = do
 
 linkedInputsSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestLinkedInputsSpec -> Array (String × m Unit)
 linkedInputsSuite testSpecs = testSpecs <#> (_.file &&& (linkedInputsTest >>> void))
-
