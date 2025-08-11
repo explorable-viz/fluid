@@ -15,14 +15,13 @@ import Data.Profunctor.Strong (second)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
-import Data.Tuple (fst)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, Module, fv)
-import File (class LoadFile, File(..), FileCxt(..), Folder, fluidExtension, loadFile)
+import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
@@ -42,23 +41,14 @@ import Util.Set ((∪))
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Raw S.Expr × List ModuleName)
-parseProgram folders (File file) =
-   loadFile folders (File (file <> fluidExtension)) >>= flip parse P.program
-
-parseFluidSrc :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
-parseFluidSrc fluidSrc = flip parse P.program fluidSrc
-
-module_ :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ folders (File file) (ProgCxt r@{ mods }) = do
-   when debug.logging $ log ("module_: " <> show (folders × file))
-   src <- loadFile folders (File (file <> fluidExtension))
-   mod <- parse src P.module_ >>= desugarModuleFwd
-   pure $ ProgCxt r { mods = mod : mods }
+parseProgram :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
+parseProgram fluidSrc = flip parse P.program fluidSrc
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- (fst <$> parseProgram folders file) >>= desug
+   src <- loadFile folders file
+   s × _ <- parseProgram src
+   eα <- desug s
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array (Bind String) -> m (Raw ProgCxt)
@@ -96,7 +86,8 @@ prelude = "lib/prelude"
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw ProgCxt -> String -> m Config
 prepConfig progCxt fluidSrc = do
-   mods × s <- parseFluidSrc fluidSrc
+   s × imports <- parseProgram fluidSrc
+   moduleCxt <- loadModuleGraph (prelude : imports)
    e <- desug s
    gconfig <- initialConfig e progCxt moduleCxt
    pure { s, e, gconfig }
@@ -132,7 +123,7 @@ loadModuleGraph roots = do
    loadModule :: ModuleName -> m (Raw Module × List ModuleName)
    loadModule path = do
       FileCxt { fluidSrcPaths } <- ask
-      src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
+      src <- loadFile fluidSrcPaths (File (path <> ".fld"))
       mod × imports <- parse src P.module_
       mod' <- desugarModuleFwd mod
       let imports' = if path == prelude then imports else prelude : imports
