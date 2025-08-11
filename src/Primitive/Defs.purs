@@ -3,9 +3,11 @@ module Primitive.Defs where
 import Prelude hiding (absurd, apply, div, mod, top)
 
 import Bind (Bind)
--- import Control.Monad.Reader (ask)
--- import Data.Argonaut.Decode (parseJson)
--- import Data.Argonaut.Core (Json)
+import Control.Monad.Reader (ask)
+import Data.Argonaut.Core (Json, caseJson)
+import Data.Argonaut.Decode (parseJson)
+import Data.Array as Array
+import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
@@ -14,18 +16,19 @@ import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
 import Data.Set as Set
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (snd)
-import DataType (cCons, cPair)
-import Debug (trace)
+import Data.Tuple (Tuple(..), snd)
+import DataType (cCons, cNil, cPair, cNone, cTrue, cFalse)
+import Debug (spy, trace)
 import Dict (fromFoldable) as D
 import Doc (DocOpt(..))
 import EvalGraph (apply) as G
--- import File (File(..), FileCxt(..), loadFile)
-import Graph.WithGraph (new)
+import File (File(..), FileCxt(..), loadFile)
+import Foreign.Object as FO
+import Graph.WithGraph (alloc, new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
-import Util (type (+), Endo, error, orElse, singleton, throw, (×))
+import Util ((×), type (+), Endo, error, orElse, singleton, throw)
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut)
 
@@ -39,7 +42,7 @@ primitives = wrap $ D.fromFoldable
    , extern debugLog
    , extern dims
    , extern error_
-   -- , extern loadJson
+   , extern loadJson
    , unary "floor" { i: number, o: int, fwd: floor }
    , unary "log" { i: intOrNumber, o: number, fwd: log }
    , unary "numToStr" { i: intOrNumber, o: string, fwd: numToStr }
@@ -84,6 +87,51 @@ debugLog =
    op :: Op
    op (x : Nil) = pure $ trace x (const x)
    op _ = throw "Single value expected"
+
+loadJson :: ForeignOp
+loadJson =
+   ForeignOp ("loadJson" × ForeignOp' { arity: 1, op })
+   where
+   op :: Op
+   op (Val _ _ (Str path) : Nil) = do
+      FileCxt { fluidSrcPaths } <- ask
+      str <- loadFile fluidSrcPaths (File path)
+      case parseJson str of
+         Left err -> throw ("Failed to parse JSON: " <> show err)
+         Right (j :: Json) ->
+            -- Json -> Val Unit -> Val Vertex
+            alloc (fromJsonVal j)
+   op _ = throw "String expected"
+
+fromJsonVal :: Json -> Val Unit
+fromJsonVal =
+   caseJson
+      (\_ -> spy "Processing null" identity (Val unit None (Constr cNone Nil)))
+      (\b -> spy "Processing boolean" identity (Val unit None (Constr (if b then cTrue else cFalse) Nil)))
+      (\n -> spy "Processing number" identity (Val unit None (Float n)))
+      (\s -> spy "Processing string" identity (Val unit None (Str s)))
+      ( \arr ->
+           let
+              vals = Array.toUnfoldable (map fromJsonVal arr) :: List (Val Unit)
+           in
+              arrVtoVal vals
+      )
+      ( \obj ->
+           -- Object Json -> Array (Tuple String Json)
+           let
+              pairs = FO.toUnfoldable obj :: Array (Tuple String Json)
+              -- Array (k, Json) -> Dict (Unit × Val Unit)
+              dict = D.fromFoldable (pairs <#> \(Tuple k v) -> Tuple k (unit × fromJsonVal v))
+           in
+              spy "Processing object" identity
+                 (Val unit None (Dictionary (DictRep dict)))
+      )
+
+arrVtoVal :: List (Val Unit) -> Val Unit
+arrVtoVal Nil = Val unit None (Constr cNil Nil)
+arrVtoVal (x : xs) =
+   spy "Processing array" identity
+      (Val unit None (Constr cCons (x : arrVtoVal xs : Nil)))
 
 -- loadJson :: ForeignOp
 -- loadJson =

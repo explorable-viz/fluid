@@ -9,12 +9,8 @@ import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Error)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class.Console (log)
 import File (class LoadFile, FileCxt(..))
-import Graph.WithGraph (runAllocT)
-import Module (loadJson)
 import Module.Web (runWebT)
-import Pretty (pretty)
 import Test.Specs.Bwd (bwd_cases)
 import Test.Specs.Comments (comments_cases)
 import Test.Specs.Desugar (desugar_cases)
@@ -26,33 +22,30 @@ import Test.Util (TestSuite, fluidSrcPaths)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
 import Util ((×))
-import Util.Pretty (render)
 
 main :: Effect Unit
 -- main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
 
 main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> scratchpad)
 
-loadJsonTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => m Unit
-loadJsonTest = do
-   log $ "Starting loadJsonTest"
-   void $ flip runAllocT 0 $ do
-      v <- loadJson "testing.json"
-      log (render $ pretty v)
-      pure unit
+-- loadJsonTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => m Unit
+-- loadJsonTest = do
+--    log $ "Starting loadJsonTest"
+--    void $ flip runAllocT 0 $ do
+--       v <- loadJson "testing.json"
+--       log (render $ pretty v)
+--       pure unit
+
+--scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
+--scratchpad = [ "test" × loadJsonTest ]
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-scratchpad = [ "test" × loadJsonTest ]
-
-{-
-scratchpad :: TestSuite
 scratchpad = asTestSuite $ suite
-   [ { file: "comments/projection"
+   [ { file: "loadJson"
      , imports: []
      , fwd_expect: "\"\"\" Test \"\"\" 1"
      }
    ]
--}
 
 asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)

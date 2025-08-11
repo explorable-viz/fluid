@@ -3,19 +3,13 @@ module Module where
 import Prelude
 
 import Bind (Bind, (↦))
-import Control.Monad.Error.Class (liftEither, throwError)
+import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
-import Data.Argonaut.Core (Json, caseJson, toNumber)
-import Data.Argonaut.Decode (parseJson)
-import Data.Array as Array
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..))
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Desugarable (desug)
-import Doc (DocOpt(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -23,9 +17,9 @@ import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, fv)
 import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
-import Graph (Vertex, vertices)
+import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.WithGraph (class MonadAlloc, AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
+import Graph.WithGraph (AllocT, alloc, alloc_check, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import Parse as P
 import Parsing (runParser)
@@ -34,14 +28,9 @@ import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
 import Test.Util.Debug (checking)
-import Util (type (×), AffError, concatM, debug, error, spy, (×))
+import Util (type (×), AffError, concatM, debug, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
-import Val (Val(..))
-import Val as V
-
--- import Data.Array (toUnfoldable) as Array
--- import Foreign.Object as Object
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
@@ -62,69 +51,12 @@ datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
    eα <- parseProgram folders file >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
-loadJson :: forall m. MonadAff m => MonadAlloc m => MonadError Error m => LoadFile m => MonadReader FileCxt m => String -> m (Val Vertex)
-loadJson path = do
-   FileCxt { fluidSrcPaths } <- ask
-   log $ "Loading JSON file: " <> path
-   log $ "fluidSrcPaths: " <> show fluidSrcPaths
-   -- loaadFile currently uses .fld. Idea: have loadJson remove the automatic .fld extension
-   -- and just load the file as is, so we can use .json files directly.
-   -- For now, we just load the .fld file.
-   jfile <- loadFile fluidSrcPaths (File path)
-   log $ "File contents: " <> jfile
-   case parseJson jfile of
-      Left err -> throwError $ error ("Failed to parse JSON: " <> show err)
-      Right j -> do
-         alloc (fromJsonVal j)
-
 -- use casejson
 -- make a recursive check with the layout: array,object,string,number
 -- after checks for array and object we can then assume it is only string and numbers left
 -- This function converts a Json value to a Val Unit.
 -- use the spy indentity to debug the value
 -- recurse over the JSON structure
-
-fromJsonVal :: Json -> Val Unit
--- fromJsonVal j = do
---    -- case toString j of
---    --    Just s -> spy "json value" identity (Val unit None (V.Str s))
---    --    Nothing -> error ("FromJsonVal not implemented yet")
-
---    case toNumber j of
---       Just n -> spy "json value" identity (Val unit None (V.Float n))
---       Nothing -> error ("FromJsonVal not implemented yet")
--- --       case toArray j of
--- --          Just arr -> spy "json value" identity (Val unit None (V.Constr arr))
--- --          Nothing -> error ("FromJsonVal not implemented yet")
--- --             case toObject j of
--- --                Just obj -> spy "json value" identity (Val unit None (V.Dictionary (DictRep obj)))
--- --                Nothing -> error ("FromJsonVal not implemented yet")
-
-fromJsonVal json = caseJson
-  (\_ -> spy "Processing null" identity (Val unit None (V.Str "Null")))
-  (\b -> spy "Processing boolean" identity (Val unit None (V.Str (show b))))
-  (\n -> spy "Processing number" identity (Val unit None (V.Float n)))
-  (\s -> spy "Processing string" identity (Val unit None (V.Str s)))
-  (\arr ->
-       let vals = Array.toUnfoldable (map fromJsonVal arr) :: List (Val Unit)
-       in arrVtoVal vals
-   --  let vals = Array.toUnfoldable (map fromJsonVal arr)
-   --  in Val unit None (V.Constr "Array" vals)
-  )
-  (\obj -> ?_
-   --  let
-   --    pairs = map (\(Tuple k v) -> Tuple k (fromJsonVal v)) (Object.toUnfoldable obj)
-   --    dict = Object.fromFoldable pairs
-   --  in Val unit None (V.Dictionary (DictRep dict))
-  )
-  json
-
-arrVtoVal :: List (Val Unit) -> Val Unit
--- arrVtoVal Nil = Val unit None (V.Constr "Nil" Nil)
--- arrVtoVal (x : xs) = Val unit None (Constr "Cons" [x, arrVtoVal xs])
-
-arrVtoVal vs = error "arrVtoVal not implemented yet"
-
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array (Bind String) -> m (Raw ProgCxt)
 loadProgCxt mods datasets = do
