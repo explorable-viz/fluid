@@ -84,9 +84,10 @@ drawCode file = launchAff_ do
    fluidSrc <- loadFileFromPath (File (file <> fluidExtension))
    liftEffect $ drawFile (File (toFileName file) × definitely' fluidSrc)
    where
-      toFileName :: String -> String
-      toFileName filepath =
-         let
-            splitPath = split (Pattern "/") filepath
-            fullFilename = split (Pattern ".") (definitely' $ last splitPath)
-         in definitely' $ head fullFilename
+   toFileName :: String -> String
+   toFileName filepath =
+      let
+         splitPath = split (Pattern "/") filepath
+         fullFilename = split (Pattern ".") (definitely' $ last splitPath)
+      in
+         definitely' $ head fullFilename
