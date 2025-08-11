@@ -257,22 +257,42 @@ paragraphElemsToList
    -> m (E.Expr a)
 paragraphElemsToList elems = go elems
    where
-   -- EmptyList → []
-   go :: List (ParagraphElem a) -> m (E.Expr a)
-   go Nil = pure (enil top Doc.None)
+   go Nil = pure (enil bot Doc.None)
 
-   -- Token s: generate Text "s" element, then attach the recursive tail
+   -- Token s → Text "s"
    go (Doc.Token s : xs) = do
       rest <- go xs
-      let item = E.Constr top Doc.None cText (E.Str top Doc.None s : Nil)
-      pure (econs top Doc.None item rest)
+      let
+         item = E.Constr bot Doc.None cText
+            (E.Str bot Doc.None s : Nil)
+      pure (econs bot Doc.None item rest)
 
-   -- Unquote e: First desug e, then attach the tail
+   -- Unquote e → Text e'
    go (Doc.Unquote e : xs) = do
       e' <- desug e
       rest <- go xs
-      let item = E.Constr top Doc.None cText (e' : Nil)
-      pure (econs top Doc.None item rest)
+      let item = E.Constr bot Doc.None cText (e' : Nil)
+      pure (econs bot Doc.None item rest)
+
+-- from a core list like Cons (Constr cText [e]) (Cons ... Nil)
+-- reconstruct a list of ParagraphElem (Token/Unquote)
+paragraphListBwd
+   :: forall a
+    . BoundedJoinSemilattice a
+   => E.Expr a
+   -> List (Raw ParagraphElem)
+   -> List (ParagraphElem a)
+paragraphListBwd (E.Constr _ _ c Nil) Nil | c == cNil = Nil
+paragraphListBwd (E.Constr _ _ c (item : rest : Nil)) (Cons pe pes) | c == cCons =
+   itemToElem pe item : paragraphListBwd rest pes
+   where
+   itemToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
+   itemToElem (Doc.Token _) (E.Constr _ _ c' (E.Str _ _ s : Nil)) | c' == cText =
+      Doc.Token s
+   itemToElem (Doc.Unquote e0) (E.Constr _ _ c' (e : Nil)) | c' == cText =
+      Doc.Unquote (desugBwd e e0)
+   itemToElem _ _ = error "paragraphListBwd: item mismatch"
+paragraphListBwd _ _ = error "paragraphListBwd: shape mismatch"
 
 -- Expr
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
@@ -320,7 +340,7 @@ exprFwd (Expr' _ (IfElse s1 s2 s3)) =
       <*> desug s1
 exprFwd (Expr' _ (Paragraph xs)) = do
    list <- paragraphElemsToList xs
-   pure (E.Constr top Doc.None cParagraph (list : Nil))
+   pure (E.Constr bot Doc.None cParagraph (list : Nil))
 exprFwd (Expr' doc (ListEmpty α)) = do
    edoc <- desugComment doc
    pure (enil α edoc)
@@ -371,6 +391,8 @@ exprBwd (E.App _ (E.Lambda _ (ElimConstr m)) e1) (Expr' _ (IfElse s1 s2 s3)) =
            (if cTrue ∈ m then desugBwd (asExpr (get cTrue m)) s2 else botOf s2)
            (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
       )
+exprBwd (E.Constr _ edoc c (lst : Nil)) (Expr' doc (Paragraph xs)) | c == cParagraph =
+   Expr' (desugCommentBwd edoc doc) (Paragraph (paragraphListBwd lst xs))
 exprBwd (E.Constr α edoc _ Nil) (Expr' doc (ListEmpty _)) =
    Expr' (desugCommentBwd edoc doc) (ListEmpty α)
 exprBwd (E.Constr α edoc _ (e1 : e2 : Nil)) (Expr' doc (ListNonEmpty _ s l)) =

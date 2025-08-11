@@ -416,13 +416,19 @@ instance Highlightable a => Pretty (E.Expr a) where
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
    --   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
-   pretty (Doc.Doc x) = text "@doc" .<>. text str.triplequote .<>. pretty x .<>. text str.triplequote
+   pretty (Doc.Doc p) = text "@doc" .<>. text str.triplequote .<>. pretty p .<>. text str.triplequote
    pretty Doc.None = empty
 
 instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
-   pretty (Cons word Nil) = pretty word
-   pretty (Cons word xs) = pretty word .<>. pretty xs
-   pretty Nil = empty
+   pretty xs =
+      let
+         -- fold the inner paragraph body
+         go :: List (ParagraphElem e a) -> Doc
+         go Nil = empty
+         go (Cons w ws) = pretty w .<>. go ws
+      in
+         -- then wrap the whole thing in triple quotes
+         text str.triplequote .<>. go xs .<>. text str.triplequote
 
 instance Pretty (e a) => Pretty (ParagraphElem e a) where
    pretty (Token str) = text str

@@ -134,6 +134,7 @@ checkEq op1 op2 x y = do
 testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
    log' ("**** prettyP")
+   log' (prettyP s)
    s' <- parse (prettyP s) program
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
