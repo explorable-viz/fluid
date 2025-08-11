@@ -10,7 +10,7 @@ import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_asterisk, _case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
-import Temp.Pretty.Doc (Doc(..), line, (<++>), (<+>))
+import Temp.Pretty.Doc (Doc(..), line, text, (<++>), (<+>))
 import Temp.Pretty.Helpers (block, braces, brackets, constr, hsep, hsepWith, num, op, parens, quotes', render, todo, var, vsep)
 import Util (type (×), assert, (×))
 import Val (class Ann)
@@ -45,7 +45,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Project _ s x) = pretty s <> brackets (quotes' x)
    pretty (DProject _ e k) = pretty e <> brackets (pretty k)
    pretty (App _ (Op op) s') = parens (lambda (PVar "x" : Nil) (BinaryApp s' op (Var "x")))
-   pretty (App _ s s') = pretty s <> prettyAppChain s'
+   pretty (App d s s') = prettyAppChain (App d s s') Nil
    pretty (BinaryApp s op s') = binaryApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = _match <+> pretty s <> block (pretty cs)
    pretty (IfElse i t e) = _if <+> pretty i <> block (pretty t) <++> _else <> block (pretty e)
@@ -81,7 +81,7 @@ instance Pretty Pattern where
    pretty (PVar x) = var x
    pretty (PRecord _) = todo "PRecord"
    pretty (PConstr c Nil) = constr c
-   pretty (PConstr "Pair" (x : y : Nil)) = pretty x <> _comma <+> pretty y
+   pretty (PConstr "Pair" (x : y : Nil)) = parens (pretty x <> _comma <+> pretty y)
    pretty (PConstr c ps) = case uncons ps of
       Just { head: p, tail: Nil } -> constr c <+> pretty p
       _ ->
@@ -120,7 +120,7 @@ instance Ann a => Pretty (Branch a) where
    pretty (v × Clause (ps × e)) =
       _def
          <+> var v
-         <> prettyAppChain2 (toList ps)
+         <> parens (prettyParams (toList ps))
          <> block (pretty e)
          <> line
 
@@ -141,7 +141,7 @@ prettyCtr = showCtr >>> constr
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
 prettyConstr c (x : y : ys)
-   | c == cPair = assert (null ys) (pretty x <> _comma <+> pretty y)
+   | c == cPair = assert (null ys) (parens (pretty x <> _comma <+> pretty y))
 prettyConstr c ys
    | c == cNil = assert (null ys) (_empty)
 prettyConstr c (x : y : ys)
@@ -157,10 +157,11 @@ prettyPattConstr sep (Cons p ps) = pretty p <+> sep <+> prettyPattConstr sep ps
 defMatchCase' :: forall a. Ann a => (Pattern × Expr a) -> Doc
 defMatchCase' (p × e) = _case <+> (pretty p) <> block (pretty e) <> line
 
-prettyAppChain :: forall a. Ann a => Expr a -> Doc
-prettyAppChain (App _ s s') = parens (pretty s) <> prettyAppChain s'
-prettyAppChain s = parens (pretty s)
+prettyAppChain :: forall a. Ann a => Expr a -> List Doc -> Doc
+prettyAppChain (App _ f a) as = prettyAppChain f (pretty a : as)
+prettyAppChain f as = pretty f <> parens (hsepWith (text ", ") as)
 
-prettyAppChain2 :: forall a. Pretty a => List a -> Doc
-prettyAppChain2 Nil = mempty
-prettyAppChain2 (d : ds) = parens (pretty d) <> prettyAppChain2 ds
+prettyParams :: forall a. Pretty a => List a -> Doc
+prettyParams Nil = mempty
+prettyParams (d : Nil) = pretty d
+prettyParams (d : ds) = pretty d <> _comma <+> prettyParams ds

@@ -16,6 +16,15 @@ num s = text (show s)
 block :: Doc -> Doc
 block d = _colon <> indent (line <> d)
 
+var :: String -> Doc
+var = text <<< replaceAll (Pattern "'") (Replacement "_")
+
+op :: String -> Doc
+op = text
+
+constr :: String -> Doc
+constr = text
+
 replicate :: Int -> String -> String
 replicate n s
    | n <= 0 = ""
