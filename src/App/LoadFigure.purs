@@ -11,8 +11,10 @@ import Bind (Bind)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
+import Data.Array (last, head)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import Data.String (split, Pattern(..))
 import Data.Tuple (uncurry)
 import Doc (DocOpt(..))
 import Effect (Effect)
@@ -65,7 +67,7 @@ loadFigureSrc specFile fluidSrc = launchAff_ do
 
 loadFigureSpec :: Json -> String -> Effect Unit
 loadFigureSpec jsonSpec srcFile = launchAff_ do
-   fluidSrc <- loadFileFromPath (File (srcFile <> fluidExtension))
+   fluidSrc <- loadFileFromPath (File srcFile)
    liftEffect $ loadFigureSpecSrc jsonSpec (definitely' fluidSrc)
 
 loadFigureSpecSrc :: Json -> String -> Effect Unit
@@ -79,5 +81,13 @@ loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
 
 drawCode :: String -> Effect Unit
 drawCode file = launchAff_ do
-   fluidSrc <- loadFileFromPath (File (file <> fluidExtension))
+   fluidSrc <- loadFileFromPath (File file)
    liftEffect $ drawFile (File file × definitely' fluidSrc)
+   liftEffect $ drawFile (File (toFileName file) × definitely' fluidSrc)
+   where
+      toFileName :: String -> String
+      toFileName filepath =
+         let
+            splitPath = split (Pattern "/") filepath
+            fullFilename = split (Pattern ".") (definitely' $ last splitPath)
+         in definitely' $ head fullFilename
