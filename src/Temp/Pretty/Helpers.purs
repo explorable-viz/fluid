@@ -3,7 +3,6 @@ module Temp.Pretty.Helpers where
 import Prelude
 
 import Data.List (List(..), (:))
-import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Temp.Pretty.Constants (_colon, _lbrace, _lbracket, _lparen, _quote, _rbrace, _rbracket, _rparen)
 import Temp.Pretty.Doc (Doc(..), text, indent, line, (<++>), (<+>))
 
@@ -15,15 +14,6 @@ num s = text (show s)
 
 block :: Doc -> Doc
 block d = _colon <> indent (line <> d)
-
-var :: String -> Doc
-var = text <<< replaceAll (Pattern "'") (Replacement "_")
-
-op :: String -> Doc
-op = text
-
-constr :: String -> Doc
-constr = text
 
 replicate :: Int -> String -> String
 replicate n s

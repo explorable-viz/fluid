@@ -11,7 +11,7 @@ import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_asterisk, _case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
 import Temp.Pretty.Doc (Doc(..), line, text, (<++>), (<+>))
-import Temp.Pretty.Helpers (block, braces, brackets, constr, hsep, hsepWith, num, op, parens, quotes', render, todo, var, vsep)
+import Temp.Pretty.Helpers (block, braces, brackets, hsep, hsepWith, num, parens, quotes', render, todo, vsep)
 import Util (type (×), assert, (×))
 import Val (class Ann)
 
@@ -22,22 +22,22 @@ prettyPy :: forall a. Ann a => Expr a -> String
 prettyPy x = render (pretty x)
 
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
-binaryApp n (BinaryApp s o s') =
-   case getPrec o of
-      -1 -> op o <> parens (binaryApp 0 s) <> parens (binaryApp 0 s')
-      n' -> if n' <= n then parens (binaryApp n' s <+> op o <+> binaryApp n' s') else binaryApp n' s <+> op o <+> binaryApp n' s'
+binaryApp n (BinaryApp s op s') =
+   case getPrec op of
+      -1 -> text op <> parens (binaryApp 0 s) <> parens (binaryApp 0 s')
+      n' -> if n' <= n then parens (binaryApp n' s <+> text op <+> binaryApp n' s') else binaryApp n' s <+> text op <+> binaryApp n' s'
 binaryApp _ e = pretty e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
 lambda ps e = _def <+> (hsepWith _comma (pretty <$> ps)) <> _colon <+> pretty e
 
 instance Ann a => Pretty (Expr a) where
-   pretty (Var x) = var x
-   pretty (Op o) = op o
+   pretty (Var x) = text x
+   pretty (Op o) = text o
    pretty (Int _ _ n) = num n
    pretty (Float _ _ n) = num n
    pretty (Str _ _ str) = quotes' str
-   pretty (Constr _ _ c Nil) = constr c
+   pretty (Constr _ _ c Nil) = text c
    pretty (Constr _ _ c as) = prettyConstr c as
    pretty (Dictionary _ _ es) = braces (pretty es)
    pretty (Matrix _ _ _ _ _) = todo "Matrix"
@@ -78,16 +78,16 @@ getPrec x = case lookup x opDefs of
    Nothing -> -1
 
 instance Pretty Pattern where
-   pretty (PVar x) = var x
+   pretty (PVar x) = text x
    pretty (PRecord _) = todo "PRecord"
-   pretty (PConstr c Nil) = constr c
+   pretty (PConstr c Nil) = text c
    pretty (PConstr "Pair" (x : y : Nil)) = parens (pretty x <> _comma <+> pretty y)
    pretty (PConstr c ps) = case uncons ps of
-      Just { head: p, tail: Nil } -> constr c <+> pretty p
+      Just { head: p, tail: Nil } -> text c <+> pretty p
       _ ->
          if c == cPair then parens $ prettyPattConstr (_comma) ps
          else if c == cCons then brackets (listCase ps)
-         else parens $ constr c <+> prettyPattConstr Empty ps
+         else parens $ text c <+> prettyPattConstr Empty ps
    pretty (PListEmpty) = _empty
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
 
@@ -97,7 +97,7 @@ instance Ann a => Pretty (ListRest a) where
    pretty (End _) = mempty
 
 instance Pretty ListRestPattern where
-   pretty (PListVar x) = var x
+   pretty (PListVar x) = text x
    pretty (PListNext p l) = _comma <+> pretty p <+> pretty l
    pretty PListEnd = mempty
 
@@ -119,7 +119,7 @@ instance Ann a => Pretty (RecDefs a) where
 instance Ann a => Pretty (Branch a) where
    pretty (v × Clause (ps × e)) =
       _def
-         <+> var v
+         <+> text v
          <> parens (prettyParams (toList ps))
          <> block (pretty e)
          <> line
@@ -134,10 +134,10 @@ instance Ann a => Pretty (DictEntry a × Expr a) where
 
 instance Ann a => Pretty (DictEntry a) where
    pretty (ExprKey k) = pretty k
-   pretty (VarKey _ k) = var k
+   pretty (VarKey _ k) = text k
 
 prettyCtr :: Ctr -> Doc
-prettyCtr = showCtr >>> constr
+prettyCtr = showCtr >>> text
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
 prettyConstr c (x : y : ys)
