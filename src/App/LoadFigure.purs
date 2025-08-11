@@ -82,7 +82,6 @@ loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
 drawCode :: String -> Effect Unit
 drawCode file = launchAff_ do
    fluidSrc <- loadFileFromPath (File file)
-   liftEffect $ drawFile (File file × definitely' fluidSrc)
    liftEffect $ drawFile (File (toFileName file) × definitely' fluidSrc)
    where
    toFileName :: String -> String

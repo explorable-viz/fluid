@@ -41,12 +41,12 @@
    const jsonSpec = {
       "fluidSrcPath": ["../fluid"],
       "inputs": ["nonRenewables"],
-      "datasets": [["renewables", "dataset/renewables-new"], ["nonRenewables", "dataset/non-renewables"]],
+      "datasets": [["renewables", "dataset/renewables-new.fld"], ["nonRenewables", "dataset/non-renewables.fld"]],
       "query" : false,
       "linking": true
    }
 
-   loadFigureSpec(jsonSpec)("../fluid/non-renewables")()
+   loadFigureSpec(jsonSpec)("../fluid/non-renewables.fld")()
 </script>
 </body>
 </html>

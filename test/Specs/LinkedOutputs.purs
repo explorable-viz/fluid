@@ -15,7 +15,7 @@ linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , datasets: [ "renewables" ↦ "dataset/renewables" ]
+        , datasets: [ "renewables" ↦ "dataset/renewables.fld" ]
         , inputs: [ "renewables" ]
         , query: Nothing
         , linking: true
@@ -34,7 +34,7 @@ linkedOutputs_spec1 =
                         )
                    )
               )
-   , file: "slicing/linked-outputs/bar-chart-line-chart"
+   , file: "slicing/linked-outputs/bar-chart-line-chart.fld"
    }
 
 linkedOutputs_spec2 :: TestLinkedOutputsSpec
@@ -42,8 +42,8 @@ linkedOutputs_spec2 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
         , datasets:
-             [ "renewables" ↦ "dataset/renewables-new"
-             , "nonRenewables" ↦ "dataset/non-renewables"
+             [ "renewables" ↦ "dataset/renewables-new.fld"
+             , "nonRenewables" ↦ "dataset/non-renewables.fld"
              ]
         , inputs: [ "nonRenewables" ]
         , query: Nothing
@@ -58,39 +58,39 @@ linkedOutputs_spec2 =
                         >.> scatterPoint 6 (dictVal f_y select)
                    )
               )
-   , file: "slicing/linked-outputs/stacked-bar-scatter-plot"
+   , file: "slicing/linked-outputs/stacked-bar-scatter-plot.fld"
    }
 
 movingAverages_spec :: TestLinkedOutputsSpec
 movingAverages_spec =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , datasets: [ "methane" ↦ "dataset/methane-emissions" ]
+        , datasets: [ "methane" ↦ "dataset/methane-emissions.fld" ]
         , inputs: [ "methane" ]
         , query: Nothing
         , linking: true
         }
    , δ_out: identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
    , out_expect: identity >>> (_ × Persistent)
-   , file: "linked-outputs/moving-average"
+   , file: "linked-outputs/moving-average.fld"
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-          , datasets: [ "data" ↦ "linked-outputs/pairs-data" ]
+          , datasets: [ "data" ↦ "linked-outputs/pairs-data.fld" ]
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true
           }
      , δ_out: snd select
      , out_expect: select
-     , file: "linked-outputs/pairs"
+     , file: "linked-outputs/pairs.fld"
      }
    , { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-          , datasets: [ "data" ↦ "linked-outputs/convolution-data" ]
+          , datasets: [ "data" ↦ "linked-outputs/convolution-data.fld" ]
 
           , inputs: [ "data" ]
           , query: Nothing
@@ -116,7 +116,7 @@ linkedOutputs_cases =
                      >.> matrixElement 3 2 select
                      >.> matrixElement 3 3 select
                 )
-     , file: "linked-outputs/convolution"
+     , file: "linked-outputs/convolution.fld"
      }
    , linkedOutputs_spec1
    , linkedOutputs_spec2
