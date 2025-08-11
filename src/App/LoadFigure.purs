@@ -18,7 +18,7 @@ import Doc (DocOpt(..))
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
-import File (File(..), FileCxt(..), Folder(..), fluidExtension, loadFileFromPath)
+import File (File(..), FileCxt(..), Folder(..), loadFileFromPath)
 import Graph (DVertex'(..))
 import Module.Web (runWebT)
 import Util (definitely', error, (×))
@@ -53,25 +53,21 @@ loadSpec filename = do
       Left err -> error ("Json fetching failed with " <> printError err)
       Right response -> pure $ response.body
 
---loadFigure -- specFilename (String) & srcFilename (String)
 loadFigure :: String -> String -> Effect Unit
 loadFigure specFile srcFile = launchAff_ do
    jsonSpec <- loadSpec specFile
    liftEffect $ loadFigureSpec jsonSpec srcFile
 
---loadFigureSrc -- specFilename (String) & fluidSrc (String)
 loadFigureSrc :: String -> String -> Effect Unit
 loadFigureSrc specFile fluidSrc = launchAff_ do
    jsonSpec <- loadSpec specFile
    liftEffect $ loadFigureSpecSrc jsonSpec fluidSrc
 
---loadFigureSpec -- jsonSpec (Json) & srcFilename (String)
 loadFigureSpec :: Json -> String -> Effect Unit
 loadFigureSpec jsonSpec srcFile = launchAff_ do
    fluidSrc <- loadFileFromPath (File (srcFile <> fluidExtension))
    liftEffect $ loadFigureSpecSrc jsonSpec (definitely' fluidSrc)
 
---loadFigureSpecSrc -- jsonSpec (Json) & fluidSrc (String)
 loadFigureSpecSrc :: Json -> String -> Effect Unit
 loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
    [ case decodeJson jsonSpec :: Either JsonDecodeError JsonSpec of
@@ -84,5 +80,4 @@ loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
 drawCode :: String -> Effect Unit
 drawCode file = launchAff_ do
    fluidSrc <- loadFileFromPath (File (file <> fluidExtension))
-   liftEffect $ drawFile ((File file) × (definitely' fluidSrc))
-
+   liftEffect $ drawFile (File file × definitely' fluidSrc)
