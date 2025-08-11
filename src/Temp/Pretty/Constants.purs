@@ -1,27 +1,12 @@
 module Temp.Pretty.Constants where
 
-import Prelude
-
-import Data.List (List, range)
 import Temp.Pretty.Doc (Doc, text)
-
-_x :: Doc
-_x = text "x"
-
-xs :: Int -> List Doc
-xs n = map (\i -> _x <> text (show i)) (range 0 (n - 1))
 
 _if :: Doc
 _if = text "if"
 
 _else :: Doc
 _else = text "else"
-
-_lambda :: Doc
-_lambda = text "lambda"
-
-_return :: Doc
-_return = text "return"
 
 _def :: Doc
 _def = text "def"
@@ -31,9 +16,6 @@ _match = text "match"
 
 _case :: Doc
 _case = text "case"
-
-_equal :: Doc
-_equal = text "="
 
 _colon :: Doc
 _colon = text ":"
@@ -59,5 +41,14 @@ _rparen = text ")"
 _quote :: Doc
 _quote = text "\""
 
-_star :: Doc
-_star = text "*"
+_asterisk :: Doc
+_asterisk = text "*"
+
+_ellipsis :: Doc
+_ellipsis = text ".."
+
+_for :: Doc
+_for = text "for"
+
+_in :: Doc
+_in = text "in"

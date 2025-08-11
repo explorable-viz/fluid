@@ -4,19 +4,25 @@ import Prelude
 import Data.List (List(..), (:))
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Temp.Pretty.Doc (Doc(..), text, indent, line, (<++>), (<+>))
-import Temp.Pretty.Constants (_colon, _lparen, _rparen, _quote)
+import Temp.Pretty.Constants (_colon, _lbracket, _rbracket, _lparen, _rparen, _quote)
 
 indentation :: String
 indentation = "    "
 
-text' :: forall a. Show a => a -> Doc
-text' s = Text (show s)
+num :: forall a. Show a => a -> Doc
+num s = text (show s)
 
 block :: Doc -> Doc
 block d = _colon <> indent (line <> d)
 
 var :: String -> Doc
 var = text <<< replaceAll (Pattern "'") (Replacement "_")
+
+op :: String -> Doc
+op = text
+
+constr :: String -> Doc
+constr = text
 
 replicate :: Int -> String -> String
 replicate n s
@@ -25,6 +31,9 @@ replicate n s
 
 parens :: Doc -> Doc
 parens d = _lparen <> d <> _rparen
+
+brackets :: Doc -> Doc
+brackets d = _lbracket <> d <> _rbracket
 
 quotes :: Doc -> Doc
 quotes d = _quote <> d <> _quote
