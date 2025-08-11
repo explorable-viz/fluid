@@ -26,8 +26,7 @@ import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, option, sepBy, sepBy1, try, (<?>))
-import Parsing.Combinators.Array (many)
+import Parsing.Combinators (between, many, option, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -445,7 +444,7 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       op' <- token.operator
       onlyIf (isCtrOp op' && op == op') \π π' -> PConstr op' (π : π' : Nil)
 
-imports_ :: SParser (Array String)
+imports_ :: SParser (List String)
 imports_ = many (keyword str.import *> modPath)
    where
    modPath :: SParser String
@@ -454,11 +453,14 @@ imports_ = many (keyword str.import *> modPath)
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
 
-program ∷ SParser (Array String × Raw Expr)
-program = topLevel do
+withImports :: forall a. SParser a -> SParser (a × List String)
+withImports p = topLevel do
    imports <- imports_
-   expr <- expr_
-   pure $ imports × expr
+   a <- p
+   pure $ a × imports
 
-module_ :: SParser (Raw Module)
-module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
+program ∷ SParser (Raw Expr × List String)
+program = withImports expr_
+
+module_ :: SParser (Raw Module × List String)
+module_ = withImports $ Module <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi
