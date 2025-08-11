@@ -1,10 +1,11 @@
 module Temp.Pretty.Helpers where
 
 import Prelude
+
 import Data.List (List(..), (:))
 import Data.String (Pattern(..), Replacement(..), replaceAll)
+import Temp.Pretty.Constants (_colon, _lbrace, _lbracket, _lparen, _quote, _rbrace, _rbracket, _rparen)
 import Temp.Pretty.Doc (Doc(..), text, indent, line, (<++>), (<+>))
-import Temp.Pretty.Constants (_colon, _lbracket, _rbracket, _lparen, _rparen, _quote)
 
 indentation :: String
 indentation = "    "
@@ -15,28 +16,25 @@ num s = text (show s)
 block :: Doc -> Doc
 block d = _colon <> indent (line <> d)
 
-var :: String -> Doc
-var = text <<< replaceAll (Pattern "'") (Replacement "_")
-
-op :: String -> Doc
-op = text
-
-constr :: String -> Doc
-constr = text
-
 replicate :: Int -> String -> String
 replicate n s
    | n <= 0 = ""
    | otherwise = s <> replicate (n - 1) s
 
+enclose :: Doc -> Doc -> Doc -> Doc
+enclose l r d = l <> d <> r
+
 parens :: Doc -> Doc
-parens d = _lparen <> d <> _rparen
+parens = enclose _lparen _rparen
 
 brackets :: Doc -> Doc
-brackets d = _lbracket <> d <> _rbracket
+brackets = enclose _lbracket _rbracket
+
+braces :: Doc -> Doc
+braces = enclose _lbrace _rbrace
 
 quotes :: Doc -> Doc
-quotes d = _quote <> d <> _quote
+quotes = enclose _quote _quote
 
 quotes' :: String -> Doc
 quotes' s = quotes (text s)

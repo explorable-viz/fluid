@@ -8,10 +8,10 @@ import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_asterisk, _case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
 import Temp.Pretty.Doc (Doc(..), line, (<++>), (<+>))
-import Temp.Pretty.Helpers (block, brackets, constr, hsep, hsepWith, num, op, parens, quotes', render, todo, var, vsep)
+import Temp.Pretty.Helpers (block, braces, brackets, constr, hsep, hsepWith, num, op, parens, quotes', render, todo, var, vsep)
 import Util (type (×), assert, (×))
 import Val (class Ann)
 
@@ -29,7 +29,7 @@ binaryApp n (BinaryApp s o s') =
 binaryApp _ e = pretty e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
-lambda ps e = _def <+> (hsepWith _comma (map pretty ps)) <> _colon <+> pretty e
+lambda ps e = _def <+> (hsepWith _comma (pretty <$> ps)) <> _colon <+> pretty e
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = var x
@@ -39,10 +39,10 @@ instance Ann a => Pretty (Expr a) where
    pretty (Str _ _ str) = quotes' str
    pretty (Constr _ _ c Nil) = constr c
    pretty (Constr _ _ c as) = prettyConstr c as
-   pretty (Dictionary _ _ _) = todo "Dict"
+   pretty (Dictionary _ _ es) = braces (pretty es)
    pretty (Matrix _ _ _ _ _) = todo "Matrix"
    pretty (Lambda cs) = parens (pretty cs)
-   pretty (Project _ _ _) = todo "Project"
+   pretty (Project _ s x) = pretty s <> brackets (quotes' x)
    pretty (DProject _ e k) = pretty e <> brackets (pretty k)
    pretty (App _ (Op op) s') = parens (lambda (PVar "x" : Nil) (BinaryApp s' op (Var "x")))
    pretty (App _ s s') = pretty s <> prettyAppChain s'
@@ -70,7 +70,7 @@ instance Ann a => Pretty (List (Qualifier a)) where
    pretty Nil = mempty
 
 instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
-   pretty pss = vsep (toList (map defMatchCase' pss))
+   pretty pss = vsep (toList (defMatchCase' <$> pss))
 
 getPrec :: String -> Int
 getPrec x = case lookup x opDefs of
@@ -102,10 +102,10 @@ instance Pretty ListRestPattern where
    pretty PListEnd = mempty
 
 instance Ann a => Pretty (VarDef a) where
-   pretty (VarDef v s) = _def <+> pretty v <> _colon <+> pretty s
+   pretty (VarDef v s) = _def <+> pretty v <> _colon <+> pretty s <> line
 
 instance Ann a => Pretty (VarDefs a) where
-   pretty ds = vsep (toList (map pretty ds))
+   pretty ds = vsep (toList (pretty <$> ds))
 
 instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × e)) = lambda (toList ps) e
@@ -114,7 +114,7 @@ instance Ann a => Pretty (Clauses a) where
    pretty (Clauses cs) = pretty (head cs)
 
 instance Ann a => Pretty (RecDefs a) where
-   pretty bs = vsep (toList (map pretty bs))
+   pretty bs = vsep (toList (pretty <$> bs))
 
 instance Ann a => Pretty (Branch a) where
    pretty (v × Clause (ps × e)) =
@@ -123,6 +123,18 @@ instance Ann a => Pretty (Branch a) where
          <> prettyAppChain2 (toList ps)
          <> block (pretty e)
          <> line
+
+instance Ann a => Pretty (List (DictEntry a × Expr a)) where
+   pretty Nil = mempty
+   pretty (kv : Nil) = pretty kv
+   pretty (kv : kvs) = pretty kv <> _comma <+> pretty kvs
+
+instance Ann a => Pretty (DictEntry a × Expr a) where
+   pretty (k × v) = pretty k <> _colon <+> pretty v
+
+instance Ann a => Pretty (DictEntry a) where
+   pretty (ExprKey k) = pretty k
+   pretty (VarKey _ k) = var k
 
 prettyCtr :: Ctr -> Doc
 prettyCtr = showCtr >>> constr
