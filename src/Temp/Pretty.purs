@@ -155,7 +155,7 @@ prettyPattConstr _ (Cons p Nil) = pretty p
 prettyPattConstr sep (Cons p ps) = pretty p <+> sep <+> prettyPattConstr sep ps
 
 defMatchCase' :: forall a. Ann a => (Pattern × Expr a) -> Doc
-defMatchCase' (p × e) = _case <+> (pretty p) <> block (pretty e) <> line
+defMatchCase' (p × e) = _case <+> (pretty p) <> block (pretty e)
 
 prettyAppChain :: forall a. Ann a => Expr a -> List Doc -> Doc
 prettyAppChain (App _ f a) as = prettyAppChain f (pretty a : as)
