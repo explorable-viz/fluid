@@ -46,8 +46,7 @@ parseProgram fluidSrc = flip parse P.program fluidSrc
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
-   src <- loadFile folders file
-   s × _ <- parseProgram src
+   s × _ <- (\src -> parseProgram src) =<< loadFile folders file
    eα <- desug s
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
