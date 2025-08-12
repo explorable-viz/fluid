@@ -7,7 +7,7 @@ paragraph_comments_cases =
    [ { file: "paragraph/basic"
      , imports: []
      , fwd_expect:
-          "Paragraph (Text \"Hello,\" : (Text \"Alice\" : (Text \"!\" : [])))"
+          "Paragraph (Text \"Hello\" : (Text \"there,\" : (Text Paragraph (Text \"Alice\" : []) : (Text \"!\" : []))))"
      }
    , { file: "paragraph/explicit"
      , imports: []
