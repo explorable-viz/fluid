@@ -11,7 +11,7 @@ import Bind (Bind)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
-import Data.Array (last, head)
+import Data.Array (last)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (split, Pattern(..))
@@ -82,12 +82,15 @@ loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
 drawCode :: String -> Effect Unit
 drawCode file = launchAff_ do
    fluidSrc <- loadFileFromPath (File file)
-   liftEffect $ drawFile (File (toFileName file) × definitely' fluidSrc)
+   liftEffect $ drawFile (File (definitely' filename) × definitely' fluidSrc)
    where
-   toFileName :: String -> String
-   toFileName filepath =
+   filename :: Maybe String
+   filename =
       let
-         splitPath = split (Pattern "/") filepath
+         splitPath = split (Pattern "/") file
          fullFilename = split (Pattern ".") (definitely' $ last splitPath)
       in
-         definitely' $ head fullFilename
+         case fullFilename of
+            [ "", _ ] -> error ("drawCode: Filename is invalid: " <> file)
+            [ filename_, _ ] -> pure filename_
+            _ -> error ("drawCode: Filename is invalid: " <> file)
