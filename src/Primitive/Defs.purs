@@ -14,23 +14,25 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
-import Data.Set (empty)
 import Data.Set as Set
+import Data.Set (empty, fromFoldable)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..), snd)
-import DataType (cCons, cNil, cPair, cNone, cTrue, cFalse)
-import Debug (spy, trace)
+import DataType (cCons, cNil, cPair, cTrue, cFalse)
+import Debug (trace)
+import Pretty (pretty)
+import Util.Pretty (render)
 import Dict (fromFoldable) as D
 import Doc (DocOpt(..))
 import EvalGraph (apply) as G
 import File (File(..), FileCxt(..), loadFile)
 import Foreign.Object as FO
-import Graph (Vertex(..))
-import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new)
+import Graph (Vertex)
+import Graph.WithGraph (class MonadWithGraphAlloc, new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
-import Util ((×), type (+), Endo, error, orElse, singleton, throw)
+import Util ((×), type (+), Endo, error, orElse, singleton, throw, spy)
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut)
 
@@ -105,66 +107,103 @@ loadJson =
             fromJsonVal' j
    op _ = throw "String expected"
 
+-- | Convert a `Json` value to a `Val Vertex` rather than a `Val Unit`, which is used in the graph.
+-- This function is used to convert JSON objects into Fluid values.
+-- It handles different JSON types and converts them into the appropriate Fluid value.
+-- The function uses `caseJson` to pattern match on the JSON value and convert it accordingly
+-- to a `Val Vertex`.
+-- The `MonadWithGraphAlloc` constraint allows for allocation of new vertices in the graph.
+-- The `spy` function is used to log the processing of each JSON value.
+-- Using function `new` that has the effect of allocating a new vertex in the graph.
+-- `new` is equivilent to Val unit None (Float n) where n is the number
+-- It allocates a fresh alpha which is used as the address of the new node and adds an edge, pointing to the new node.
+-- Create the null case to return an error if the JSON is null.
+-- for the array case rather than map we can use traverse to convert each element of the array into a `Val Vertex`.
+-- object case is similar to the array case, but we need to convert each key-value pair into a `Tuple String (Val Vertex)`.
+-- The `DictRep` is used to represent the dictionary in Fluid, and we convert the JSON object into a `DictRep` of `Tuple String (Val Vertex)`.
+-- The function `fromJsonVal'` is used to convert a `Json` value into a `Val Vertex
+-- However, we also need to use traverse to convert each element of the array into a `Val Vertex` for the object case also.
+
 fromJsonVal' :: forall m. MonadWithGraphAlloc m => Json -> m (Val Vertex)
 fromJsonVal' =
    caseJson
-      (\_ -> ?_)
-      (\b -> ?_)
-      (\n -> new (flip Val None) empty (Float n))
-      (\s -> ?_)
-      (\arr -> ?_)
-      (\obj -> ?_)
-
-fromJsonVal :: Json -> Val Unit
-fromJsonVal =
-   caseJson
-      (\_ -> spy "Processing null" identity (Val unit None (Constr cNone Nil)))
-      (\b -> spy "Processing boolean" identity (Val unit None (Constr (if b then cTrue else cFalse) Nil)))
-      (\n -> spy "Processing number" identity (Val unit None (Float n)))
-      (\s -> spy "Processing string" identity (Val unit None (Str s)))
-      ( \arr ->
-           let
-              vals = Array.toUnfoldable (map fromJsonVal arr) :: List (Val Unit)
-           in
-              arrVtoVal vals
+      ( \_ ->
+           throw "Error, Null JSON value cannot be converted to Val Vertex"
       )
-      ( \obj ->
-           -- Object Json -> Array (Tuple String Json)
+      ( \b -> do
+           v <- new (flip Val None) empty (Constr (if b then cTrue else cFalse) Nil)
+           pure (spy "Processing boolean" (render <<< pretty) v)
+      )
+      ( \n -> do
+           v <- new (flip Val None) empty (Float n)
+           pure (spy "Processing number" (render <<< pretty) v)
+      )
+      ( \s -> do
+           v <- new (flip Val None) empty (Str s)
+           pure (spy "Processing string" (render <<< pretty) v)
+      )
+      ( \arr -> do
+           vs <- traverse fromJsonVal' arr
+           v <- arrVtoVal' (Array.toUnfoldable vs :: List (Val Vertex))
+           pure (spy "Processing array" (render <<< pretty) v)
+      )
+      ( \obj -> do
+           let kvs = FO.toUnfoldable obj :: Array (Tuple String Json)
+           entries <- traverse
+              ( \(Tuple k vj) -> do
+                   vv <- fromJsonVal' vj
+                   pure (Tuple k (addr vv × vv))
+              )
+              kvs
            let
-              pairs = FO.toUnfoldable obj :: Array (Tuple String Json)
-              -- Array (k, Json) -> Dict (Unit × Val Unit)
-              dict = D.fromFoldable (pairs <#> \(Tuple k v) -> Tuple k (unit × fromJsonVal v))
-           in
-              spy "Processing object" identity
-                 (Val unit None (Dictionary (DictRep dict)))
+              d = D.fromFoldable entries
+              deps = Set.fromFoldable (entries <#> \(Tuple _ (β × _)) -> β)
+           v <- new (flip Val None) deps (Dictionary (DictRep d))
+           pure (spy "Processing object" (render <<< pretty) v)
       )
 
-arrVtoVal :: List (Val Unit) -> Val Unit
-arrVtoVal Nil = Val unit None (Constr cNil Nil)
-arrVtoVal (x : xs) =
-   spy "Processing array" identity
-      (Val unit None (Constr cCons (x : arrVtoVal xs : Nil)))
+-- build a Fluid list node-by-node, allocating each Cons/Nil and wiring edges to children.
+arrVtoVal' :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> m (Val Vertex)
+arrVtoVal' Nil = new (flip Val None) empty (Constr cNil Nil)
+arrVtoVal' (x : xs) = do
+   tailV <- arrVtoVal' xs
+   let
+      deps = fromFoldable [ addr x, addr tailV ]
+   new (flip Val None) deps (Constr cCons (x : tailV : Nil))
 
--- loadJson :: ForeignOp
--- loadJson =
---    ForeignOp ("loadJson" × ForeignOp' { arity: 1, op: op })
---    where
---    op :: Op
---    op (Val _ _ (Str s) : Nil) = do
---       FileCxt { fluidSrcPaths } <- ask
---       str <- loadFile fluidSrcPaths (File s)
---       let json = parseJson str -- libraries like argunaut can parse JSON
---       -- turn json dictionary into Val representing a fluid dict (using Val/DictRep constructor)
---       -- dict from loadjson will be raw strings/numbers, so we need to convert them into Val
---       -- fluid dict has keys on left and right is other fluid values
---       -- go over each element of the dictionary and convert it
---       -- Start with Val Unit None (Dictionary (DictRep D.empty)) (walk over a value, every time you find nothing(Unit))
---       -- transform Val Unit into Val Vertex using traverse alloc (Place it by a address)
+-- take the nodes vertex address and return the address of the node
+addr :: Val Vertex -> Vertex
+addr (Val α _ _) = α
 
---       -- What are the acceptable JSON types to use?
+-- fromJsonVal :: Json -> Val Unit
+-- fromJsonVal =
+--    caseJson
+--       (\_ -> spy "Processing null" identity (Val unit None (Constr cNone Nil)))
+--       (\b -> spy "Processing boolean" identity (Val unit None (Constr (if b then cTrue else cFalse) Nil)))
+--       (\n -> spy "Processing number" identity (Val unit None (Float n)))
+--       (\s -> spy "Processing string" identity (Val unit None (Str s)))
+--       ( \arr ->
+--            let
+--               vals = Array.toUnfoldable (map fromJsonVal arr) :: List (Val Unit)
+--            in
+--               arrVtoVal vals
+--       )
+--       ( \obj ->
+--            -- Object Json -> Array (Tuple String Json)
+--            let
+--               pairs = FO.toUnfoldable obj :: Array (Tuple String Json)
+--               -- Array (k, Json) -> Dict (Unit × Val Unit)
+--               dict = D.fromFoldable (pairs <#> \(Tuple k v) -> Tuple k (unit × fromJsonVal v))
+--            in
+--               spy "Processing object" identity
+--                  (Val unit None (Dictionary (DictRep dict)))
+--       )
 
---       pure $ error s
---    op _ = throw "String expected"
+-- arrVtoVal :: List (Val Unit) -> Val Unit
+-- arrVtoVal Nil = Val unit None (Constr cNil Nil)
+-- arrVtoVal (x : xs) =
+--    spy "Processing array" identity
+--       (Val unit None (Constr cCons (x : arrVtoVal xs : Nil)))
 
 dims :: ForeignOp
 dims =
