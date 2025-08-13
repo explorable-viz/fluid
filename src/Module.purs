@@ -21,7 +21,7 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, Module, fv)
-import File (class LoadFile, File(..), FileCxt(..), Folder, loadFile)
+import File (class LoadFile, File(..), FileCxt(..), Folder, fluidExtension, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
@@ -122,7 +122,7 @@ loadModuleGraph roots = do
    loadModule :: ModuleName -> m (Raw Module × List ModuleName)
    loadModule path = do
       FileCxt { fluidSrcPaths } <- ask
-      src <- loadFile fluidSrcPaths (File (path <> ".fld"))
+      src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
       mod × imports <- parse src P.module_
       mod' <- desugarModuleFwd mod
       let imports' = if path == prelude then imports else prelude : imports
