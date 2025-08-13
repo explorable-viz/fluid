@@ -15,6 +15,7 @@ import Data.Profunctor.Strong (second)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
+import Data.Tuple (fst)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
@@ -46,8 +47,8 @@ parseProgram fluidSrc = flip parse P.program fluidSrc
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
-   s × _ <- (\src -> parseProgram src) =<< loadFile folders file
-   eα <- desug s
+   src <- loadFile folders file
+   eα <- (fst <$> parseProgram src) >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array (Bind String) -> m (Raw ProgCxt)
