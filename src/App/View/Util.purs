@@ -13,7 +13,7 @@ import Data.Set (Set)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Effect (Effect)
-import File (File, Folder)
+import File (Folder)
 import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
 import SExpr as S
@@ -93,7 +93,6 @@ uiHelpers =
 type FigSpec =
    { fluidSrcPaths :: Array Folder
    , datasets :: Array (Bind String)
-   , file :: File
    , inputs :: Array Var
    , query :: Maybe (Query (Val Vertex))
    , linking :: Boolean

@@ -42,13 +42,13 @@ import Util.Set ((∪))
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. LoadFile m => Array Folder -> File -> AffError m (Raw S.Expr × List ModuleName)
-parseProgram folders (File file) =
-   loadFile folders (File (file <> fluidExtension)) >>= flip parse P.program
+parseProgram :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
+parseProgram fluidSrc = flip parse P.program fluidSrc
 
 datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
 datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
-   eα <- (fst <$> parseProgram folders file) >>= desug
+   src <- loadFile folders file
+   eα <- (fst <$> parseProgram src) >>= desug
    pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array (Bind String) -> m (Raw ProgCxt)
@@ -84,10 +84,9 @@ type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 prelude :: ModuleName
 prelude = "lib/prelude"
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> m Config
-prepConfig file progCxt = do
-   FileCxt { fluidSrcPaths } <- ask
-   s × imports <- parseProgram fluidSrcPaths file
+prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw ProgCxt -> String -> m Config
+prepConfig progCxt fluidSrc = do
+   s × imports <- parseProgram fluidSrc
    moduleCxt <- loadModuleGraph (prelude : imports)
    e <- desug s
    gconfig <- initialConfig e progCxt moduleCxt

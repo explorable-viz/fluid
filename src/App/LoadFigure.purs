@@ -11,33 +11,33 @@ import Bind (Bind)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
+import Data.Array (head, last)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import Data.String (split, Pattern(..))
 import Data.Tuple (uncurry)
 import Doc (DocOpt(..))
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
-import File (File(..), FileCxt(..), Folder(..))
+import File (File(..), FileCxt(..), Folder(..), loadFileFromPath)
 import Graph (DVertex'(..))
-import Module.Web (loadFile_, runWebT)
-import Util (error, (×))
+import Module.Web (runWebT)
+import Util (definitely, definitely', error, (×))
 import Val (Val(..), asVal)
 
 type JsonSpec =
    { fluidSrcPath :: Array String
    , datasets :: Array (Bind String)
-   , file :: String
    , inputs :: Array String
    , query :: Boolean
    , linking :: Boolean
    }
 
 figSpecFromJson :: JsonSpec -> FigSpec
-figSpecFromJson spec@{ datasets, file, inputs, query, linking } =
+figSpecFromJson spec@{ datasets, inputs, query, linking } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , datasets
-   , file: File file
    , inputs
    , query:
         if query then
@@ -55,22 +55,40 @@ loadSpec filename = do
       Left err -> error ("Json fetching failed with " <> printError err)
       Right response -> pure $ response.body
 
-loadFigureFromJson :: Json -> Effect Unit
-loadFigureFromJson json = runAffs_ (uncurry drawFig)
-   [ case decodeJson json :: Either JsonDecodeError JsonSpec of
+loadFigure :: String -> String -> Effect Unit
+loadFigure specFile srcFile = launchAff_ do
+   jsonSpec <- loadSpec specFile
+   liftEffect $ loadFigureSpec jsonSpec srcFile
+
+loadFigureSrc :: String -> String -> Effect Unit
+loadFigureSrc specFile fluidSrc = launchAff_ do
+   jsonSpec <- loadSpec specFile
+   liftEffect $ loadFigureSpecSrc jsonSpec fluidSrc
+
+loadFigureSpec :: Json -> String -> Effect Unit
+loadFigureSpec jsonSpec srcFile = launchAff_ do
+   fluidSrc <- loadFileFromPath (File srcFile)
+   liftEffect $ loadFigureSpecSrc jsonSpec (definitely' fluidSrc)
+
+loadFigureSpecSrc :: Json -> String -> Effect Unit
+loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
+   [ case decodeJson jsonSpec :: Either JsonDecodeError JsonSpec of
         Left err -> error ("JSON decoding failed with " <> show err)
-        Right spec -> ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec)
-           where
-           figSpec@{ fluidSrcPaths } = figSpecFromJson spec
+        Right spec -> do
+           let figSpec@{ fluidSrcPaths } = figSpecFromJson spec
+           ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
    ]
 
-loadFigure :: String -> Effect Unit
-loadFigure filename = launchAff_ do
-   jsonSpec <- loadSpec filename
-   liftEffect $ loadFigureFromJson jsonSpec
+drawCode :: String -> Effect Unit
+drawCode file = launchAff_ do
+   fluidSrc <- loadFileFromPath (File file)
+   liftEffect $ drawFile (File (definitely errEmptyName filename) × definitely errNotFound fluidSrc)
+   where
+   filename :: Maybe String
+   filename = do
+      splitPath <- last (split (Pattern "/") file)
+      filename_ <- head (split (Pattern ".") splitPath)
+      if filename_ == "" then Nothing else pure filename_
 
-drawCode :: String -> String -> Effect Unit
-drawCode folder file = runAffs_ drawFile
-   [ runWebT (FileCxt { fluidSrcPaths: [ Folder folder ] }) $ loadFile_ [ Folder folder ] (File file)
-   ]
-
+   errEmptyName = "drawCode: Filename cannot be empty: " <> file
+   errNotFound = "drawCode: File not found: " <> file

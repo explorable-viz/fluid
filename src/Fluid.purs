@@ -14,7 +14,7 @@ import Effect.Aff (Aff, Error, runAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
-import File (File(..), FileCxt(..), Folder(..))
+import File (File(..), FileCxt(..), Folder(..), loadFile)
 import Lattice (erase)
 import Module (loadProgCxt, prepConfig)
 import Module.Node (runNodeT)
@@ -101,6 +101,7 @@ evaluate (EvalArgs { local, datasets, fileName, fluidSrcPath }) = do
    let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    runNodeT (FileCxt { fluidSrcPaths }) $ do
       progCxt <- loadProgCxt datasets
-      { e, gconfig } <- prepConfig (File fileName) progCxt
+      fluidSrc <- loadFile fluidSrcPaths (File fileName)
+      { e, gconfig } <- prepConfig progCxt fluidSrc
       { outα } <- graphEval gconfig e
       pure (erase outα)
