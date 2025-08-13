@@ -11,7 +11,7 @@ import Bind (Bind)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
-import Data.Array (last)
+import Data.Array (head, last)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (split, Pattern(..))
@@ -23,7 +23,7 @@ import Effect.Class (liftEffect)
 import File (File(..), FileCxt(..), Folder(..), loadFileFromPath)
 import Graph (DVertex'(..))
 import Module.Web (runWebT)
-import Util (definitely', error, (×))
+import Util (definitely, definitely', error, (×))
 import Val (Val(..), asVal)
 
 type JsonSpec =
@@ -82,15 +82,13 @@ loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
 drawCode :: String -> Effect Unit
 drawCode file = launchAff_ do
    fluidSrc <- loadFileFromPath (File file)
-   liftEffect $ drawFile (File (definitely' filename) × definitely' fluidSrc)
+   liftEffect $ drawFile (File (definitely errEmptyName filename) × definitely errNotFound fluidSrc)
    where
    filename :: Maybe String
-   filename =
-      let
-         splitPath = split (Pattern "/") file
-         fullFilename = split (Pattern ".") (definitely' $ last splitPath)
-      in
-         case fullFilename of
-            [ "", _ ] -> error ("drawCode: Filename is invalid: " <> file)
-            [ filename_, _ ] -> pure filename_
-            _ -> error ("drawCode: Filename is invalid: " <> file)
+   filename = do
+      splitPath <- last (split (Pattern "/") file)
+      filename_ <- head (split (Pattern ".") splitPath)
+      if filename_ == "" then Nothing else pure filename_
+
+   errEmptyName = "drawCode: Filename cannot be empty: " <> file
+   errNotFound = "drawCode: File not found: " <> file
