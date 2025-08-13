@@ -41,9 +41,9 @@ main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> scratchpad)
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 scratchpad = asTestSuite $ suite
-   [ { file: "loadJson"
-     , imports: []
-     , fwd_expect: "\"\"\" Test \"\"\" 1"
+   [ { file: "moving-average"
+     , imports: [ "methane" ]
+     , fwd_expect: "100"
      }
    ]
 
