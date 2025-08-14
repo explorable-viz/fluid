@@ -416,7 +416,7 @@ instance Highlightable a => Pretty (E.Expr a) where
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
    --   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
-   pretty (Doc.Doc p) = text "@doc" .<>. text str.triplequote .<>. pretty p .<>. text str.triplequote
+   pretty (Doc.Doc p) = text "@doc" .<>. pretty p
    pretty Doc.None = empty
 
 instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
