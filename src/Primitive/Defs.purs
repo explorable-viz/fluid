@@ -11,29 +11,32 @@ import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
+import Data.Int as Int
 import Data.List (List(..), (:))
+import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import Data.Number (log, pow) as N
-import Data.Set as Set
 import Data.Set (empty, fromFoldable)
+import Data.Set as Set
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..), snd)
 import DataType (cCons, cNil, cPair, cTrue, cFalse)
 import Debug (trace)
-import Pretty (pretty)
-import Util.Pretty (render)
 import Dict (fromFoldable) as D
 import Doc (DocOpt(..))
 import EvalGraph (apply) as G
 import File (File(..), FileCxt(..), loadFile)
+import Foreign.Object (Object)
 import Foreign.Object as FO
 import Graph (Vertex)
 import Graph.WithGraph (class MonadWithGraphAlloc, new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
+import Pretty (pretty)
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Util ((×), type (+), Endo, error, orElse, singleton, throw, spy)
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
+import Util.Pretty (render)
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
@@ -135,7 +138,10 @@ fromJsonVal' =
            pure (spy "Processing boolean" (render <<< pretty) v)
       )
       ( \n -> do
-           v <- new (flip Val None) empty (Float n)
+           v <- do
+              case Int.fromNumber n of
+                 Just n' -> new (flip Val None) empty (Int n')
+                 Nothing -> new (flip Val None) empty (Float n)
            pure (spy "Processing number" (render <<< pretty) v)
       )
       ( \s -> do
@@ -148,21 +154,63 @@ fromJsonVal' =
            pure (spy "Processing array" (render <<< pretty) v)
       )
       ( \obj -> do
-           let kvs = FO.toUnfoldable obj :: Array (Tuple String Json)
+           let kvs = FO.toUnfoldable obj :: Array (Tuple String Json) --turn obj into arr of key-value pairs
            entries <- traverse
-              ( \(Tuple k vj) -> do
-                   vv <- fromJsonVal' vj
-                   pure (Tuple k (addr vv × vv))
+              ( \(Tuple k vj) -> do -- k is key and vj is JSON value
+                   vv <- fromJsonVal' vj -- convert JSON value to Val Vertex
+                   pure (Tuple k (addr vv × vv)) -- convert Val Vertex to address and value
               )
-              kvs
+              kvs -- traverse over the key-value pairs
            let
-              d = D.fromFoldable entries
-              deps = Set.fromFoldable (entries <#> \(Tuple _ (β × _)) -> β)
-           v <- new (flip Val None) deps (Dictionary (DictRep d))
+              d = D.fromFoldable entries -- create dictionary from key-value pairs
+              deps = Set.fromFoldable (entries <#> \(Tuple _ (β × _)) -> β) --map each entry to its address β, then turn list into set. β gets first element of pair
+           v <- new (flip Val None) deps (Dictionary (DictRep d)) -- deps is set of addresses the value depends on
            pure (spy "Processing object" (render <<< pretty) v)
       )
 
--- build a Fluid list node-by-node, allocating each Cons/Nil and wiring edges to children.
+caseNull :: forall m. MonadWithGraphAlloc m => m (Val Vertex)
+caseNull = throw "Error, Null JSON value cannot be converted to Val Vertex"
+
+caseBool :: forall m. MonadWithGraphAlloc m => Boolean -> m (Val Vertex)
+caseBool b = do
+   v <- new (flip Val None) empty (Constr (if b then cTrue else cFalse) Nil)
+   pure (spy "Processing boolean" (render <<< pretty) v)
+
+caseNumber :: forall m. MonadWithGraphAlloc m => Number -> m (Val Vertex)
+caseNumber n = do
+   v <- do
+      case Int.fromNumber n of
+         Just n' -> new (flip Val None) empty (Int n')
+         Nothing -> new (flip Val None) empty (Float n)
+   pure (spy "Processing number" (render <<< pretty) v)
+
+caseString :: forall m. MonadWithGraphAlloc m => String -> m (Val Vertex)
+caseString s = do
+   v <- new (flip Val None) empty (Str s)
+   pure (spy "Processing string" (render <<< pretty) v)
+
+caseArray :: forall m. MonadWithGraphAlloc m => Array Json -> m (Val Vertex)
+caseArray arr = do
+   vs <- traverse fromJsonVal' arr
+   v <- arrVtoVal' (Array.toUnfoldable vs :: List (Val Vertex))
+   pure (spy "Processing array" (render <<< pretty) v)
+
+caseObject :: forall m. MonadWithGraphAlloc m => FO.Object Json -> m (Val Vertex)
+caseObject obj = do
+   let kvs = FO.toUnfoldable obj :: Array (Tuple String Json) -- turn obj into arr of key-value pairs
+   entries <- traverse
+      ( \(Tuple k vj) -> do -- k is key and vj is JSON value
+           vv <- fromJsonVal' vj -- convert JSON value to Val Vertex
+           pure (Tuple k (addr vv × vv)) -- convert Val Vertex to address and value
+      )
+      kvs -- traverse over the key-value pairs
+   let
+      d = D.fromFoldable entries -- create dictionary from key-value pairs
+      deps = Set.fromFoldable (entries <#> \(Tuple _ (β × _)) -> β) -- map each entry to its address β, then turn list into set. β gets first element of pair
+   v <- new (flip Val None) deps (Dictionary (DictRep d)) -- deps is set of addresses the value depends on
+   pure (spy "Processing object" (render <<< pretty) v)
+
+-- build a Fluid list node-by-node, allocating each Cons/Nil and wiring edges to children
 arrVtoVal' :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> m (Val Vertex)
 arrVtoVal' Nil = new (flip Val None) empty (Constr cNil Nil)
 arrVtoVal' (x : xs) = do
@@ -174,36 +222,6 @@ arrVtoVal' (x : xs) = do
 -- take the nodes vertex address and return the address of the node
 addr :: Val Vertex -> Vertex
 addr (Val α _ _) = α
-
--- fromJsonVal :: Json -> Val Unit
--- fromJsonVal =
---    caseJson
---       (\_ -> spy "Processing null" identity (Val unit None (Constr cNone Nil)))
---       (\b -> spy "Processing boolean" identity (Val unit None (Constr (if b then cTrue else cFalse) Nil)))
---       (\n -> spy "Processing number" identity (Val unit None (Float n)))
---       (\s -> spy "Processing string" identity (Val unit None (Str s)))
---       ( \arr ->
---            let
---               vals = Array.toUnfoldable (map fromJsonVal arr) :: List (Val Unit)
---            in
---               arrVtoVal vals
---       )
---       ( \obj ->
---            -- Object Json -> Array (Tuple String Json)
---            let
---               pairs = FO.toUnfoldable obj :: Array (Tuple String Json)
---               -- Array (k, Json) -> Dict (Unit × Val Unit)
---               dict = D.fromFoldable (pairs <#> \(Tuple k v) -> Tuple k (unit × fromJsonVal v))
---            in
---               spy "Processing object" identity
---                  (Val unit None (Dictionary (DictRep dict)))
---       )
-
--- arrVtoVal :: List (Val Unit) -> Val Unit
--- arrVtoVal Nil = Val unit None (Constr cNil Nil)
--- arrVtoVal (x : xs) =
---    spy "Processing array" identity
---       (Val unit None (Constr cCons (x : arrVtoVal xs : Nil)))
 
 dims :: ForeignOp
 dims =
