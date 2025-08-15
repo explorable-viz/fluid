@@ -1,4 +1,5 @@
+let better = "better" in
 Paragraph [
    Text "As shown in Table 3, BiLSTM gives significantly  ",
-   Text (trendWord (model "BiLSTM" tableData).acc (model "LSTM" tableData).acc betterWorse)
+   Text better
 ]

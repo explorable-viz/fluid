@@ -19,7 +19,7 @@ import Data.Newtype (class Newtype)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Data.Set (toUnfoldable) as S
-import Data.String (Pattern(..), Replacement(..), contains) as DS
+import Data.String (Pattern(..), Replacement(..)) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
@@ -74,37 +74,32 @@ pattRepPairs :: Array (DS.Pattern × DS.Replacement)
 pattRepPairs = map (\(x × y) -> (DS.Pattern x × DS.Replacement y)) replacement
 
 newtype FirstGroup a = First (RecDefs a)
-data ExprType = Simple | Expression
 type Sep = Doc -> Doc -> Doc
 
-exprType :: forall a. Expr a -> ExprType
-exprType (Var _) = Simple
-exprType (Op _) = Simple
-exprType (Int _ _ _) = Simple
-exprType (Float _ _ _) = Simple
-exprType (Str _ _ _) = Simple
-exprType (Constr _ _ _ Nil) = Simple
-exprType (Constr _ _ _ _) = Expression
-exprType (Dictionary _ _ _) = Simple
-exprType (Matrix _ _ _ _ _) = Simple
-exprType (Lambda _) = Simple
-exprType (Project _ _ _) = Simple
-exprType (DProject _ _ _) = Simple
-exprType (App _ _ _) = Expression
-exprType (BinaryApp _ _ _) = Expression
-exprType (MatchAs _ _) = Simple
-exprType (IfElse _ _ _) = Simple
-exprType (ListEmpty _ _) = Simple
-exprType (ListNonEmpty _ _ _ _) = Simple
-exprType (ListEnum _ _) = Simple
-exprType (ListComp _ _ _ _) = Simple
-exprType (Let _ _) = Expression
-exprType (LetRec _ _) = Expression
+class IsSimple (e :: Type -> Type) where
+   isSimple :: forall a. e a -> Boolean
 
-prettySimple :: forall a. Ann a => Expr a -> Doc
-prettySimple s = case exprType s of
-   Simple -> pretty s
-   Expression -> parentheses (pretty s)
+instance IsSimple Expr where
+   isSimple (Var _) = true
+   isSimple (Op _) = true
+   isSimple (Int _ _ _) = true
+   isSimple (Float _ _ _) = true
+   isSimple (Str _ _ _) = true
+   isSimple (Constr _ _ _ Nil) = true
+   isSimple (Dictionary _ _ _) = true
+   isSimple (Matrix _ _ _ _ _) = true
+   isSimple (Project _ _ _) = true
+   isSimple (DProject _ _ _) = true
+   isSimple (ListEmpty _ _) = true
+   isSimple (ListNonEmpty _ _ _ _) = true
+   isSimple (ListEnum _ _) = true
+   isSimple (ListComp _ _ _ _) = true
+   isSimple _ = false
+
+prettySimple :: forall e a. IsSimple e => Pretty (e a) => e a -> Doc
+prettySimple s =
+   if isSimple s then pretty s
+   else parentheses (pretty s)
 
 prettyAppChain :: forall a. Ann a => Expr a -> Doc
 prettyAppChain (App _ s s') = prettyAppChain s .<>. prettySimple s'
@@ -157,7 +152,7 @@ instance Ann a => Pretty (Expr a) where
                    .<>. pretty e'
               )
          )
-   pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
+   pretty (Lambda cs) = text str.fun .<>. pretty cs
    pretty (Project doc s x) = pretty doc .<>. prettySimple s .<>. text str.dot .<>. text x
    pretty (DProject doc s x) = pretty doc .<>. prettySimple s .<>. text str.dot .<>. text str.lBracket .<>. prettySimple x .<>. text str.rBracket
    pretty (App doc s s') = pretty doc .<>. prettyAppChain (App doc s s')
@@ -322,26 +317,18 @@ vert delim = fromFoldable >>> vert'
 prettyCtr :: Ctr -> Doc
 prettyCtr = showCtr >>> text
 
--- Cheap hack; revisit.
-prettyParensOpt :: forall a. Pretty a => a -> Doc
-prettyParensOpt x =
-   if DS.contains (DS.Pattern " ") (render doc) then parentheses doc
-   else doc
-   where
-   doc = pretty x
-
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
-prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
+prettyConstr :: forall e a. IsSimple e => Pretty (e a) => Ctr -> List (e a) -> Doc
 prettyConstr c (x : y : ys)
    | c == cPair = assert (null ys) $ parentheses (hcomma [ pretty x, pretty y ])
 prettyConstr c ys
    | c == cNil = assert (null ys) nil
 prettyConstr c (x : y : ys)
    | c == cCons = assert (null ys) $ parentheses (hcat [ pretty x, text str.colon, pretty y ])
-prettyConstr c (x : Nil) = prettyCtr c .<>. pretty x
-prettyConstr c xs = hcat (prettyCtr c : (prettyParensOpt <$> xs))
+prettyConstr c (x : Nil) = prettyCtr c .<>. prettySimple x
+prettyConstr c xs = hcat (prettyCtr c : (prettySimple <$> xs))
 
 prettyRecordOrDict
    :: forall d b
@@ -364,6 +351,19 @@ prettyDict = curlyBraces # prettyRecordOrDict (text str.colon) keyBracks
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
 prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text (i <> "×" <> j) .<>. text str.in_ .<>. pretty e2)
+
+instance IsSimple E.Expr where
+   isSimple (E.Var _) = true
+   isSimple (E.Op _) = true
+   isSimple (E.Int _ _ _) = true
+   isSimple (E.Float _ _ _) = true
+   isSimple (E.Str _ _ _) = true
+   isSimple (E.Constr _ _ _ Nil) = true
+   isSimple (E.Dictionary _ _ _) = true
+   isSimple (E.Matrix _ _ _ _ _) = true
+   isSimple (E.Project _ _ _) = true
+   isSimple (E.DProject _ _ _) = true
+   isSimple _ = false
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
@@ -431,6 +431,11 @@ instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hcat [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
    pretty (ElimDict xs κ) = hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
+
+instance IsSimple Val where
+   isSimple (Val _ _ (V.Constr _ (_ : _))) = false
+   isSimple (Val _ _ (V.Fun (V.PartialConstr _ (_ : _)))) = false
+   isSimple _ = true
 
 instance Highlightable a => Pretty (Val a) where
    pretty (Val α doc v) = pretty doc .<>. highlightIf α (pretty v)
