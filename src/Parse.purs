@@ -120,13 +120,11 @@ paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
 paragraph expr' = token.lexeme (paragraphBody)
    where
    paragraphBody :: SParser (Paragraph Expr Unit)
-   paragraphBody = between paragraphDelim paragraphDelim (List.many $ paragraphElem expr')
+   paragraphBody = between paragraphDelim paragraphDelim (token.whiteSpace *> (List.many $ paragraphElem expr'))
 
 paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
 paragraphElem expr' =
-   token.whiteSpace
-      *> (try paragraphToken <|> paragraphExpr expr')
-      <* token.whiteSpace
+   token.lexeme (try paragraphToken <|> paragraphExpr expr')
 
 paragraphToken :: SParser (ParagraphElem Expr Unit)
 paragraphToken = Token <$> (SCU.fromCharArray <$> Array.some paragraphLette)
