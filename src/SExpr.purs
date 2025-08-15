@@ -11,7 +11,7 @@ import Data.Filterable (filterMap)
 import Data.Foldable (length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
+import Data.List (List(..), foldr, drop, take, unzip, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, unsnoc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -249,24 +249,20 @@ paragraphElemsToList
    => MonadError Error m
    => List (ParagraphElem a)
    -> m (E.Expr a)
-paragraphElemsToList elems = go elems
+paragraphElemsToList =
+   foldr step (pure (enil bot Doc.None))
    where
-   go Nil = pure (enil bot Doc.None)
+   step :: ParagraphElem a -> m (E.Expr a) -> m (E.Expr a)
+   step (Doc.Token s) accM = do
+      acc <- accM
+      let item = E.Constr bot Doc.None cText (E.Str bot Doc.None s : Nil)
+      pure (econs bot Doc.None item acc)
 
-   -- Token s → Text "s"
-   go (Doc.Token s : xs) = do
-      rest <- go xs
-      let
-         item = E.Constr bot Doc.None cText
-            (E.Str bot Doc.None s : Nil)
-      pure (econs bot Doc.None item rest)
-
-   -- Unquote e → Text e'
-   go (Doc.Unquote e : xs) = do
+   step (Doc.Unquote e) accM = do
+      acc <- accM
       e' <- desug e
-      rest <- go xs
       let item = E.Constr bot Doc.None cText (e' : Nil)
-      pure (econs bot Doc.None item rest)
+      pure (econs bot Doc.None item acc)
 
 -- from a core list like Cons (Constr cText [e]) (Cons ... Nil)
 -- reconstruct a list of ParagraphElem (Token/Unquote)
