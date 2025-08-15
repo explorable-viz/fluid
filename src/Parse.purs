@@ -26,7 +26,7 @@ import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Doc (ParagraphElem(..), DocOpt(..), Paragraph)
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, notFollowedBy, option, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators (between, notFollowedBy, option, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -112,18 +112,15 @@ paragraphDelim = void $ string str.triplequote
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docComment expr' = option None do
    p <- try do
-      --      _ <- token.reservedOp str.at -- parses "@"
-      --      _ <- token.reserved "doc" -- parses "doc"
-      --      token.parens (paragraph expr')
-      _ <- token.lexeme (string "@doc")
+      _ <- token.symbol "@doc"
       paragraph expr'
    pure (Doc p)
 
 paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
-paragraph expr' = token.lexeme (go <?> "docComment")
+paragraph expr' = token.lexeme (paragraphBody)
    where
-   go :: SParser (Paragraph Expr Unit)
-   go = between paragraphDelim (paragraphDelim <?> "end of docComment") (List.many $ paragraphElem expr')
+   paragraphBody :: SParser (Paragraph Expr Unit)
+   paragraphBody = between paragraphDelim paragraphDelim (List.many $ paragraphElem expr')
 
 paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
 paragraphElem expr' =
