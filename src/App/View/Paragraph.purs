@@ -11,7 +11,6 @@ import Data.Array (mapWithIndex)
 import Data.Foldable (sequence_)
 import DataType (cParagraph)
 import Effect (Effect)
-import Util (trace)
 import Val (Val)
 
 data Paragraph = Paragraph Boolean (Array View')
@@ -25,7 +24,6 @@ createRootElement' (Paragraph _ views) parent = do
    rootElement <- parent # create Div [ "class" ↦ "para-text" ]
    sequence_ $ views <#> \view ->
       unpack view \v -> do
-         trace "hello"
          createElement unit v rootElement
    pure rootElement
 
