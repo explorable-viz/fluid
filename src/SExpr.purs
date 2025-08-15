@@ -64,12 +64,6 @@ data BaseExpr a
 
 data Expr a = Expr' (DocOpt a) (BaseExpr a)
 
-setDocOpt :: forall a. DocOpt a -> Expr a -> Expr a
-setDocOpt doc (Expr' _ base) = Expr' doc base
-
-docOpt :: forall a. Expr a -> DocOpt a
-docOpt (Expr' doc _) = doc
-
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
 
 data ListRest a

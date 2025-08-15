@@ -34,7 +34,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, setDocOpt, BaseExpr(..))
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, BaseExpr(..))
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -127,13 +127,14 @@ paragraphElem expr' =
    token.lexeme (try paragraphToken <|> paragraphExpr expr')
 
 paragraphToken :: SParser (ParagraphElem Expr Unit)
-paragraphToken = Token <$> (SCU.fromCharArray <$> Array.some paragraphLette)
+paragraphToken = Token <$> (SCU.fromCharArray <$> Array.some paragraphLetter)
 
 paragraphExpr :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
-paragraphExpr expr' = string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
+paragraphExpr expr' =
+   string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
-paragraphLette :: SParser Char
-paragraphLette = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
+paragraphLetter :: SParser Char
+paragraphLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -251,7 +252,8 @@ expr_ = fix exprParser
    exprParser expr' = do
       doc <- docComment expr'
       e <- buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
-      pure $ setDocOpt doc e
+      pure case e of
+         Expr' _ base -> Expr' doc base
 
    backtickOp :: Operator Identity String (Raw Expr)
    backtickOp = flip Infix AssocLeft do
