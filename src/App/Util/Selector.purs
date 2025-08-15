@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel)
 import Bind (Var)
-import Data.List (List(..), index, updateAt, (!!), (:))
+import Data.List (List(..), index, length, updateAt, (!!), (:))
 import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
@@ -92,8 +92,8 @@ listElement n δv = case _ of
       first (\v' -> Val α doc (Constr c (v' : u : Nil))) (δv v)
    Val α doc (Constr c (v : u : Nil)) | c == cCons ->
       first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listElement (n - 1) δv u)
-   Val α _ (Constr c _) ->
-      error $ "listElement: failed condition, c = " <> show c <> " when suppossed to equal to " <> show cCons <> ". For context n = " <> show n <> " while α = " <> show α
+   Val α _ (Constr c l) ->
+      error $ "listElement: failed condition because list is empty, lenght = " <> show (length l) <> ". Then c = " <> show c <> " when suppossed to equal to " <> show cCons <> ". For context n = " <> show n <> " while α = " <> show α
    _ ->
       error $ "listElement: unsupported value structure: other "
 
