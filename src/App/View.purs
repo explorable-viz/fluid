@@ -18,7 +18,7 @@ import App.View.Util (View', pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array ((:)) as A
-import Data.Array (fromFoldable)
+import Data.Array (fromFoldable, zipWith)
 import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
@@ -47,7 +47,7 @@ view title (Val _ _ (Constr c (u : Nil))) _
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
-   | c == cParagraph = pack (Paragraph false (vws <*> (const Nothing <$> vws)))
+   | c == cParagraph = pack (Paragraph false (zipWith ($) vws (const Nothing <$> vws)))
         where
         vws = view title <$> from u
 view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
