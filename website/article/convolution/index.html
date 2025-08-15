@@ -81,22 +81,10 @@
    </div>
 </div>
 
-<script id="my-code" type="text/plain">
-   import scigen
-   import util
-
-   Paragraph [
-      Text "As shown in Table 3, BiLSTM gives significantly  ",
-      Text (trendWord (model "BiLSTM" tableData).acc (model "LSTM" tableData).acc betterWorse)
-   ]
-
-</script>
-
 <script type="module">
-   import { loadFigureSrc, drawCode } from "../shared/load-figure.js"
+   import { loadFigure, drawCode } from "../shared/load-figure.js"
    drawCode("../fluid/lib/matrix.fld")()
-   const src = document.getElementById("my-code").textContent.trim();
-   loadFigureSrc("spec.json")(src)()
+   loadFigure("spec.json")("../fluid/convolution.fld")()
 </script>
 </body>
 </html>

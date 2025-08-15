@@ -1,5 +1,3 @@
-import util
-
 let ordinalMap = [
     { lastDigit: 1, suffix: "st" },
     { lastDigit: 2, suffix: "nd" },
@@ -9,8 +7,8 @@ let ordinalMap = [
 let ordinal n =
    if n <= 0 then error "n <= 0 not supported"
    else if (n < 4) then
-      numToStr n ++ (findWithKey' "lastDigit" n ordinalMap).suffix
-   else if (n >= 4) `and` (n <= 20) then numToStr n ++ "th"
+      (findWithKey' "lastDigit" n ordinalMap).suffix
+   else if (n >= 4) `and` (n <= 20) then "th"
    else error "n > 20 not supported";
 
 let rankLabel word n =
@@ -28,10 +26,6 @@ let smallerHigher EQ = "equal";
     smallerHigher LT = "smaller";
     smallerHigher GT = "larger";
 
-let improve EQ = "does not further improve";
-    improve LT = "does not further improve";
-    improve GT = "further improvements";
-
 let shorterLonger EQ = "equal";
     shorterLonger LT = "shorter";
     shorterLonger GT = "longer";
@@ -40,6 +34,16 @@ let betterWorse EQ = "equal";
     betterWorse LT = "worse";
     betterWorse GT = "better";
 
-let underOverPerforming EQ = "performing the same as";
-    underOverPerforming LT = "performing worse than";
+let underOverPerforming EQ = "equal performance to that of";
+    underOverPerforming LT = "underperforming";
     underOverPerforming GT = "outperforming";
+
+-- (a -> Number) -> List a -> a
+let maximumBy f lst =
+  let helper [] current = current;
+      helper (x: xs) current =
+        if f x > f current then helper xs x else helper xs current
+  in match lst as {
+    [] -> error "Empty list!";
+    (x: xs) -> helper xs x
+  };
