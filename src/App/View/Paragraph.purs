@@ -11,6 +11,7 @@ import Data.Array (mapWithIndex)
 import Data.Foldable (sequence_)
 import DataType (cParagraph)
 import Effect (Effect)
+import Util (trace)
 import Val (Val)
 
 data Paragraph = Paragraph Boolean (Array View')
@@ -22,8 +23,10 @@ instance View Paragraph Unit where
 createRootElement' :: Paragraph -> D3.Selection -> Effect D3.Selection
 createRootElement' (Paragraph _ views) parent = do
    rootElement <- parent # create Div [ "class" ↦ "para-text" ]
-   sequence_ $ flip map views \view -> do
-      unpack view \v -> createElement unit v rootElement
+   sequence_ $ views <#> \view ->
+      unpack view \v -> do
+         trace "hello"
+         createElement unit v rootElement
    pure rootElement
 
 setSelStates' :: Paragraph -> Select -> D3.Selection -> Effect Unit
