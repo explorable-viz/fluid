@@ -305,9 +305,6 @@ semi = text str.semiColon
 hcomma :: forall f. Foldable f => f Doc -> Doc
 hcomma = fromFoldable >>> intersperse comma >>> hcat
 
-parens :: Endo Doc
-parens = between (text "(") (text ")")
-
 class ToList a where
    toList2 :: a -> List a
 
@@ -328,7 +325,7 @@ prettyCtr = showCtr >>> text
 -- Cheap hack; revisit.
 prettyParensOpt :: forall a. Pretty a => a -> Doc
 prettyParensOpt x =
-   if DS.contains (DS.Pattern " ") (render doc) then parens doc
+   if DS.contains (DS.Pattern " ") (render doc) then parentheses doc
    else doc
    where
    doc = pretty x
@@ -338,11 +335,11 @@ nil = text (str.lBracket <> str.rBracket)
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
 prettyConstr c (x : y : ys)
-   | c == cPair = assert (null ys) $ parens (hcomma [ pretty x, pretty y ])
+   | c == cPair = assert (null ys) $ parentheses (hcomma [ pretty x, pretty y ])
 prettyConstr c ys
    | c == cNil = assert (null ys) nil
 prettyConstr c (x : y : ys)
-   | c == cCons = assert (null ys) $ parens (hcat [ pretty x, text str.colon, pretty y ])
+   | c == cCons = assert (null ys) $ parentheses (hcat [ pretty x, text str.colon, pretty y ])
 prettyConstr c (x : Nil) = prettyCtr c .<>. pretty x
 prettyConstr c xs = hcat (prettyCtr c : (prettyParensOpt <$> xs))
 
