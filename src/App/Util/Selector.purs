@@ -87,11 +87,15 @@ matrixElement i j δv (Val α doc (Matrix r)) =
 matrixElement _ _ _ _ = error absurd
 
 listElement :: Int -> SelSetter Val Val
-listElement n δv = unsafePartial $ case _ of
+listElement n δv = case _ of
    Val α doc (Constr c (v : u : Nil)) | n == 0 && c == cCons ->
       first (\v' -> Val α doc (Constr c (v' : u : Nil))) (δv v)
    Val α doc (Constr c (v : u : Nil)) | c == cCons ->
       first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listElement (n - 1) δv u)
+   Val α _ (Constr c _) ->
+      error $ "listElement: failed condition, c = " <> show c <> " when suppossed to equal to " <> show cCons <> ". For context n = " <> show n <> " while α = " <> show α
+   _ ->
+      error $ "listElement: unsupported value structure: other "
 
 constrArg :: Ctr -> Int -> SelSetter Val Val
 constrArg c n δv = unsafePartial $ case _ of

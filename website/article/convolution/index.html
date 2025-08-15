@@ -81,10 +81,61 @@
    </div>
 </div>
 
+<script id="my-code" type="text/plain">
+   import scigen
+   import util
+
+   Paragraph [
+      Text "As shown in Table 3, BiLSTM gives significantly  ",
+      Text (trendWord (model "BiLSTM" tableData).acc (model "LSTM" tableData).acc betterWorse),
+      Text " accuracies compared to uni-directional LSTM2, with the training time per epoch ",
+      Text (trendWord (model "BiLSTM" tableData).time_s (model "LSTM" tableData).time_s growShrink),
+      Text " from ",
+      Text (numToStr (model "LSTM" tableData).time_s),
+      Text " seconds to ",
+      Text (numToStr (model "BiLSTM" tableData).time_s),
+      Text " seconds. Stacking 2 layers of BiLSTM gives  ",
+      Text (trendWord (model "2 stacked BiLSTM" tableData).acc (model "BiLSTM" tableData).acc improve),
+      Text " to development results, with a  ",
+      Text (trendWord (model "2 stacked BiLSTM" tableData).time_s (model "BiLSTM" tableData).time_s smallerHigher),
+      Text " time of ",
+      Text (numToStr (model "2 stacked BiLSTM" tableData).time_s),
+      Text " seconds. 3 layers of stacked BiLSTM ",
+      Text (trendWord (model "3 stacked BiLSTM" tableData).acc (model "BiLSTM" tableData).acc improve),
+      Text " the results. In contrast, S-LSTM gives a development result of ",
+      Text (numToStr (model "S-LSTM" tableData).acc),
+      Text "%, which is significantly ",
+      Text (trendWord (model "S-LSTM" tableData).acc (model "2 stacked BiLSTM" tableData).acc betterWorse),
+      Text " compared to 2-layer stacked BiLSTM, with a ",
+      Text (trendWord (model "S-LSTM" tableData).param (model "2 stacked BiLSTM" tableData).param smallerHigher),
+      Text " number of model parameters and a ",
+      Text (trendWord (model "S-LSTM" tableData).time_s (model "2 stacked BiLSTM" tableData).time_s shorterLonger),
+      Text "  time of ",
+      Text (numToStr (model "S-LSTM" tableData).time_s),
+      Text " seconds.  We additionally make comparisons with stacked CNNs and hierarchical attention (Vaswani et al., 2017), shown in Table 3 (the CNN and Transformer rows), ",
+      Text ((findWithKey' "time_s" (minimum (map (fun y -> y.time_s) tableData)) tableData).model),
+      Text " is the ",
+      Text (let pos = findIndex "model" "CNN" (insertionSort (fun a b -> a.time_s < b.time_s) tableData) in rankLabel "most efficient" pos),
+      Text " among all models compared, with the  ",
+      Text (let pos = findIndex "model" "CNN" (insertionSort (fun a b -> a.param < b.param) tableData) in rankLabel "smallest" pos),
+      Text " model size. On the other hand, a 3-layer stacked CNN gives an accuracy of ",
+      Text (numToStr (model "3 stacked CNN" tableData).acc),
+      Text "%, which is also the ",
+      Text (let pos = findIndex "model" "CNN" (insertionSort (fun a b -> a.time_s < b.time_s) tableData) in rankLabel "lowest" pos),
+      Text " compared with BiLSTM, hierarchical attention and S-LSTM. The best performance of hierarchical attention is between single-layer and two-layer BiLSTMs in terms of both accuracy and efficiency. S-LSTM gives significantly  ",
+      Text (trendWord (model "S-LSTM" tableData).acc (model "CNN" tableData).acc betterWorse),
+      Text " accuracies compared with both CNN and hierarchical attention. Table 3 additionally shows the results of BiLSTM and S-LSTM when external attention is used  Attention leads to improved accuracies for both BiLSTM and S-LSTM in classification, with S-LSTM still ",
+      Text (trendWord (model "S-LSTM" tableData).acc (model "BiLSTM" tableData).acc underOverPerforming),
+      Text " BiLSTM significantly."
+   ]
+
+</script>
+
 <script type="module">
-   import { loadFigure, drawCode } from "../shared/load-figure.js"
+   import { loadFigureSrc, drawCode } from "../shared/load-figure.js"
    drawCode("../fluid/lib/matrix.fld")()
-   loadFigure("spec.json")("../fluid/convolution.fld")()
+   const src = document.getElementById("my-code").textContent.trim();
+   loadFigureSrc("spec.json")(src)()
 </script>
 </body>
 </html>
