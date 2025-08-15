@@ -374,7 +374,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Constr α doc c es) = pretty doc .<>. highlightIf α (prettyConstr c es)
    pretty (E.Matrix α doc e1 (i × j) e2) = pretty doc .<>. highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda α σ) = hcat [ highlightIf α (text str.fun), pretty σ ]
-   pretty (E.Op op) = parens (text op)
+   pretty (E.Op op) = parentheses (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
       (pretty e')
    pretty (E.LetRec (E.RecDefs _ ρ) e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
