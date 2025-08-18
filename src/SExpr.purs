@@ -266,15 +266,15 @@ paragraphElemsToList =
 
 -- from a core list like Cons (Constr cText [e]) (Cons ... Nil)
 -- reconstruct a list of ParagraphElem (Token/Unquote)
-paragraphListBwd
+paragraphElemsBwd
    :: forall a
     . BoundedJoinSemilattice a
    => E.Expr a
    -> List (Raw ParagraphElem)
    -> List (ParagraphElem a)
-paragraphListBwd (E.Constr _ _ c Nil) Nil | c == cNil = Nil
-paragraphListBwd (E.Constr _ _ c (e : es : Nil)) (pe : pes) | c == cCons =
-   exprToElem pe e : paragraphListBwd es pes
+paragraphElemsBwd (E.Constr _ _ c Nil) Nil | c == cNil = Nil
+paragraphElemsBwd (E.Constr _ _ c (e : es : Nil)) (pe : pes) | c == cCons =
+   exprToElem pe e : paragraphElemsBwd es pes
    where
    exprToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
    exprToElem (Doc.Token _) (E.Constr _ _ c' (E.Str _ _ s : Nil)) | c' == cText =
@@ -282,7 +282,7 @@ paragraphListBwd (E.Constr _ _ c (e : es : Nil)) (pe : pes) | c == cCons =
    exprToElem (Doc.Unquote s) (E.Constr _ _ c' (e' : Nil)) | c' == cText =
       Doc.Unquote (desugBwd e' s)
    exprToElem _ _ = error absurd
-paragraphListBwd _ _ = error absurd
+paragraphElemsBwd _ _ = error absurd
 
 -- Expr
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
@@ -382,7 +382,7 @@ exprBwd (E.App _ (E.Lambda _ (ElimConstr m)) e1) (Expr' _ (IfElse s1 s2 s3)) =
            (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
       )
 exprBwd (E.Constr _ edoc c (lst : Nil)) (Expr' doc (Paragraph xs)) | c == cParagraph =
-   Expr' (desugCommentBwd edoc doc) (Paragraph (paragraphListBwd lst xs))
+   Expr' (desugCommentBwd edoc doc) (Paragraph (paragraphElemsBwd lst xs))
 exprBwd (E.Constr α edoc _ Nil) (Expr' doc (ListEmpty _)) =
    Expr' (desugCommentBwd edoc doc) (ListEmpty α)
 exprBwd (E.Constr α edoc _ (e1 : e2 : Nil)) (Expr' doc (ListNonEmpty _ s l)) =
