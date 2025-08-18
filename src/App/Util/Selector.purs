@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel)
 import Bind (Var)
-import Data.List (List(..), index, length, updateAt, (!!), (:))
+import Data.List (List(..), index, updateAt, (!!), (:))
 import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
@@ -87,15 +87,11 @@ matrixElement i j δv (Val α doc (Matrix r)) =
 matrixElement _ _ _ _ = error absurd
 
 listElement :: Int -> SelSetter Val Val
-listElement n δv = case _ of
+listElement n δv = unsafePartial $ case _ of
    Val α doc (Constr c (v : u : Nil)) | n == 0 && c == cCons ->
       first (\v' -> Val α doc (Constr c (v' : u : Nil))) (δv v)
    Val α doc (Constr c (v : u : Nil)) | c == cCons ->
       first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listElement (n - 1) δv u)
-   Val α _ (Constr c l) ->
-      error $ "listElement: failed condition because list is empty, lenght = " <> show (length l) <> ". Then c = " <> show c <> " when suppossed to equal to " <> show cCons <> ". For context n = " <> show n <> " while α = " <> show α
-   _ ->
-      error $ "listElement: unsupported value structure: other "
 
 constrArg :: Ctr -> Int -> SelSetter Val Val
 constrArg c n δv = unsafePartial $ case _ of
