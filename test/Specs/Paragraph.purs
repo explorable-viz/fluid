@@ -1,9 +1,9 @@
-module Test.Specs.ParagraphComments where
+module Test.Specs.Paragraph where
 
 import Test.Util.Suite (TestSpec)
 
-paragraph_comments_cases :: Array TestSpec
-paragraph_comments_cases =
+paragraph_cases :: Array TestSpec
+paragraph_cases =
    [ { file: "paragraph/basic"
      , imports: []
      , fwd_expect:

@@ -13,7 +13,7 @@ import Test.Specs.Graphics (graphics_cases)
 import Test.Specs.LinkedInputs (linkedInputs_cases)
 import Test.Specs.LinkedOutputs (linkedOutputs_cases)
 import Test.Specs.Misc (misc_cases)
-import Test.Specs.ParagraphComments (paragraph_comments_cases)
+import Test.Specs.Paragraph (paragraph_cases)
 import Test.Util (TestSuite)
 import Test.Util.Mocha (run)
 import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
@@ -23,7 +23,7 @@ import Util ((×))
 
 -- ① Only run paragraph tests (default)
 -- main :: Effect Unit
--- main = run paragraphCommentsTests
+-- main = run paragraphTests
 
 -- ② Run everything (uncomment these two lines and comment out the main above)
 main :: Effect Unit
@@ -51,9 +51,9 @@ selectedCommentsTests = second void <$> suite loadFile selectedCases (1 × false
    selectedCases = filter (\c -> c.file `elem` selectedNames) comments_cases
 
 -- Only paragraph tests
-paragraphCommentsTests :: TestSuite
-paragraphCommentsTests =
-   second void <$> suite loadFile paragraph_comments_cases (1 × false)
+paragraphTests :: TestSuite
+paragraphTests =
+   second void <$> suite loadFile paragraph_cases (1 × false)
 
 -- All benchmarks + linked IO tests (paragraph included)
 allTests :: TestSuite
@@ -70,7 +70,7 @@ benchmarks =
    [ suite loadFile desugar_cases
    , suite loadFile misc_cases
    , suite loadFile comments_cases
-   , suite loadFile paragraph_comments_cases
+   , suite loadFile paragraph_cases
    , bwdSuite loadFile bwd_cases
    , withDatasetSuite loadFile graphics_cases
    ]
