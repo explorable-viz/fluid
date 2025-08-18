@@ -255,14 +255,12 @@ paragraphElemsFwd =
    step :: ParagraphElem a -> m (E.Expr a) -> m (E.Expr a)
    step (Doc.Token s) accM = do
       acc <- accM
-      let item = E.Constr bot Doc.None cText (E.Str bot Doc.None s : Nil)
-      pure (econs bot Doc.None item acc)
+      pure (econs bot Doc.None (E.Constr bot Doc.None cText (E.Str bot Doc.None s : Nil)) acc)
 
    step (Doc.Unquote e) accM = do
       acc <- accM
       e' <- desug e
-      let item = E.Constr bot Doc.None cText (e' : Nil)
-      pure (econs bot Doc.None item acc)
+      pure (econs bot Doc.None (E.Constr bot Doc.None cText (e' : Nil)) acc)
 
 -- from a core list like Cons (Constr cText [e]) (Cons ... Nil)
 -- reconstruct a list of ParagraphElem (Token/Unquote)
