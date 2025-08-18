@@ -273,15 +273,15 @@ paragraphListBwd
    -> List (Raw ParagraphElem)
    -> List (ParagraphElem a)
 paragraphListBwd (E.Constr _ _ c Nil) Nil | c == cNil = Nil
-paragraphListBwd (E.Constr _ _ c (item : rest : Nil)) (Cons pe pes) | c == cCons =
-   itemToElem pe item : paragraphListBwd rest pes
+paragraphListBwd (E.Constr _ _ c (e : es : Nil)) (pe : pes) | c == cCons =
+   exprToElem pe e : paragraphListBwd es pes
    where
-   itemToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
-   itemToElem (Doc.Token _) (E.Constr _ _ c' (E.Str _ _ s : Nil)) | c' == cText =
+   exprToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
+   exprToElem (Doc.Token _) (E.Constr _ _ c' (E.Str _ _ s : Nil)) | c' == cText =
       Doc.Token s
-   itemToElem (Doc.Unquote e0) (E.Constr _ _ c' (e : Nil)) | c' == cText =
-      Doc.Unquote (desugBwd e e0)
-   itemToElem _ _ = error "paragraphListBwd: item mismatch"
+   exprToElem (Doc.Unquote e0) (E.Constr _ _ c' (e' : Nil)) | c' == cText =
+      Doc.Unquote (desugBwd e' e0)
+   exprToElem _ _ = error "paragraphListBwd: item mismatch"
 paragraphListBwd _ _ = error "paragraphListBwd: shape mismatch"
 
 -- Expr
