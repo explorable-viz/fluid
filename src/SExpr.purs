@@ -30,7 +30,7 @@ import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..), DocOpt, ParagraphElem) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
-import Partial.Unsafe (unsafePartial, unsafeCrashWith)
+import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
@@ -281,8 +281,8 @@ paragraphListBwd (E.Constr _ _ c (e : es : Nil)) (pe : pes) | c == cCons =
       Doc.Token s
    exprToElem (Doc.Unquote s) (E.Constr _ _ c' (e' : Nil)) | c' == cText =
       Doc.Unquote (desugBwd e' s)
-   exprToElem _ _ = unsafeCrashWith "paragraphListBwd: item mismatch"
-paragraphListBwd _ _ = unsafeCrashWith "paragraphListBwd: shape mismatch"
+   exprToElem _ _ = error absurd
+paragraphListBwd _ _ = error absurd
 
 -- Expr
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
@@ -607,12 +607,12 @@ commentElemFwd (Doc.Unquote e) = Doc.Unquote <$> exprFwd e
 commentBwd :: ∀ a. BoundedJoinSemilattice a => List (E.ParagraphElem a) -> List (Raw ParagraphElem) -> List (ParagraphElem a)
 commentBwd (Cons c l) (Cons c' l') = Cons (commentElemBwd c c') (commentBwd l l')
 commentBwd Nil Nil = Nil
-commentBwd _ _ = error "commentBwd mismatch"
+commentBwd _ _ = error absurd
 
 commentElemBwd :: ∀ a. BoundedJoinSemilattice a => E.ParagraphElem a -> Raw ParagraphElem -> ParagraphElem a
 commentElemBwd (Doc.Token _) (Doc.Token s') = Doc.Token s'
 commentElemBwd (Doc.Unquote e) (Doc.Unquote e') = Doc.Unquote (exprBwd e e')
-commentElemBwd _ _ = error "commentElemBwd mismatch"
+commentElemBwd _ _ = error absurd
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.
