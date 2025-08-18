@@ -26,7 +26,6 @@ import Dict (fromFoldable) as D
 import Doc (DocOpt(..))
 import EvalGraph (apply) as G
 import File (File(..), FileCxt(..), loadFile)
-import Foreign.Object (Object)
 import Foreign.Object as FO
 import Graph (Vertex)
 import Graph.WithGraph (class MonadWithGraphAlloc, new)
@@ -34,7 +33,7 @@ import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
 import Pretty (pretty)
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
-import Util ((×), type (+), Endo, error, orElse, singleton, throw, spy)
+import Util (type (+), Endo, error, orElse, singleton, spy, throw, (×))
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
 import Util.Pretty (render)
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut)
@@ -106,109 +105,56 @@ loadJson =
       case parseJson str of
          Left err -> throw ("Failed to parse JSON: " <> show err)
          Right (j :: Json) ->
-            -- Json -> Val Unit -> Val Vertex
             fromJsonVal' j
    op _ = throw "String expected"
-
--- | Convert a `Json` value to a `Val Vertex` rather than a `Val Unit`, which is used in the graph.
--- This function is used to convert JSON objects into Fluid values.
--- It handles different JSON types and converts them into the appropriate Fluid value.
--- The function uses `caseJson` to pattern match on the JSON value and convert it accordingly
--- to a `Val Vertex`.
--- The `MonadWithGraphAlloc` constraint allows for allocation of new vertices in the graph.
--- The `spy` function is used to log the processing of each JSON value.
--- Using function `new` that has the effect of allocating a new vertex in the graph.
--- `new` is equivilent to Val unit None (Float n) where n is the number
--- It allocates a fresh alpha which is used as the address of the new node and adds an edge, pointing to the new node.
--- Create the null case to return an error if the JSON is null.
--- for the array case rather than map we can use traverse to convert each element of the array into a `Val Vertex`.
--- object case is similar to the array case, but we need to convert each key-value pair into a `Tuple String (Val Vertex)`.
--- The `DictRep` is used to represent the dictionary in Fluid, and we convert the JSON object into a `DictRep` of `Tuple String (Val Vertex)`.
--- The function `fromJsonVal'` is used to convert a `Json` value into a `Val Vertex
--- However, we also need to use traverse to convert each element of the array into a `Val Vertex` for the object case also.
 
 fromJsonVal' :: forall m. MonadWithGraphAlloc m => Json -> m (Val Vertex)
 fromJsonVal' =
    caseJson
-      ( \_ ->
-           throw "Error, Null JSON value cannot be converted to Val Vertex"
-      )
-      ( \b -> do
-           v <- new (flip Val None) empty (Constr (if b then cTrue else cFalse) Nil)
-           pure (spy "Processing boolean" (render <<< pretty) v)
-      )
-      ( \n -> do
-           v <- do
-              case Int.fromNumber n of
-                 Just n' -> new (flip Val None) empty (Int n')
-                 Nothing -> new (flip Val None) empty (Float n)
-           pure (spy "Processing number" (render <<< pretty) v)
-      )
-      ( \s -> do
-           v <- new (flip Val None) empty (Str s)
-           pure (spy "Processing string" (render <<< pretty) v)
-      )
-      ( \arr -> do
-           vs <- traverse fromJsonVal' arr
-           v <- arrVtoVal' (Array.toUnfoldable vs :: List (Val Vertex))
-           pure (spy "Processing array" (render <<< pretty) v)
-      )
-      ( \obj -> do
-           let kvs = FO.toUnfoldable obj :: Array (Tuple String Json) --turn obj into arr of key-value pairs
-           entries <- traverse
-              ( \(Tuple k vj) -> do -- k is key and vj is JSON value
-                   vv <- fromJsonVal' vj -- convert JSON value to Val Vertex
-                   pure (Tuple k (addr vv × vv)) -- convert Val Vertex to address and value
-              )
-              kvs -- traverse over the key-value pairs
-           let
-              d = D.fromFoldable entries -- create dictionary from key-value pairs
-              deps = Set.fromFoldable (entries <#> \(Tuple _ (β × _)) -> β) --map each entry to its address β, then turn list into set. β gets first element of pair
-           v <- new (flip Val None) deps (Dictionary (DictRep d)) -- deps is set of addresses the value depends on
-           pure (spy "Processing object" (render <<< pretty) v)
-      )
+      caseNull
+      caseBool
+      caseNumber
+      caseString
+      caseArray
+      caseObject
+   where
+   caseNull :: Unit -> m (Val Vertex)
+   caseNull _ =
+      error ("Error, Null JSON value cannot be converted to Val Vertex")
 
-caseNull :: forall m. MonadWithGraphAlloc m => m (Val Vertex)
-caseNull = throw "Error, Null JSON value cannot be converted to Val Vertex"
+   caseBool :: Boolean -> m (Val Vertex)
+   caseBool b =
+      new (flip Val None) empty (Constr (if b then cTrue else cFalse) Nil)
 
-caseBool :: forall m. MonadWithGraphAlloc m => Boolean -> m (Val Vertex)
-caseBool b = do
-   v <- new (flip Val None) empty (Constr (if b then cTrue else cFalse) Nil)
-   pure (spy "Processing boolean" (render <<< pretty) v)
-
-caseNumber :: forall m. MonadWithGraphAlloc m => Number -> m (Val Vertex)
-caseNumber n = do
-   v <- do
+   caseNumber :: Number -> m (Val Vertex)
+   caseNumber n =
       case Int.fromNumber n of
          Just n' -> new (flip Val None) empty (Int n')
          Nothing -> new (flip Val None) empty (Float n)
-   pure (spy "Processing number" (render <<< pretty) v)
 
-caseString :: forall m. MonadWithGraphAlloc m => String -> m (Val Vertex)
-caseString s = do
-   v <- new (flip Val None) empty (Str s)
-   pure (spy "Processing string" (render <<< pretty) v)
+   caseString :: String -> m (Val Vertex)
+   caseString s =
+      new (flip Val None) empty (Str s)
 
-caseArray :: forall m. MonadWithGraphAlloc m => Array Json -> m (Val Vertex)
-caseArray arr = do
-   vs <- traverse fromJsonVal' arr
-   v <- arrVtoVal' (Array.toUnfoldable vs :: List (Val Vertex))
-   pure (spy "Processing array" (render <<< pretty) v)
+   caseArray :: Array Json -> m (Val Vertex)
+   caseArray arr = do
+      vs <- traverse fromJsonVal' arr
+      v <- arrVtoVal' (Array.toUnfoldable vs :: List (Val Vertex))
+      pure (spy "Processing array" (render <<< pretty) v)
 
-caseObject :: forall m. MonadWithGraphAlloc m => FO.Object Json -> m (Val Vertex)
-caseObject obj = do
-   let kvs = FO.toUnfoldable obj :: Array (Tuple String Json) -- turn obj into arr of key-value pairs
-   entries <- traverse
-      ( \(Tuple k vj) -> do -- k is key and vj is JSON value
-           vv <- fromJsonVal' vj -- convert JSON value to Val Vertex
-           pure (Tuple k (addr vv × vv)) -- convert Val Vertex to address and value
-      )
-      kvs -- traverse over the key-value pairs
-   let
-      d = D.fromFoldable entries -- create dictionary from key-value pairs
-      deps = Set.fromFoldable (entries <#> \(Tuple _ (β × _)) -> β) -- map each entry to its address β, then turn list into set. β gets first element of pair
-   v <- new (flip Val None) deps (Dictionary (DictRep d)) -- deps is set of addresses the value depends on
-   pure (spy "Processing object" (render <<< pretty) v)
+   caseObject :: FO.Object Json -> m (Val Vertex)
+   caseObject obj = do
+      let kvs = FO.toUnfoldable obj :: Array (Tuple String Json)
+      entries <- traverse
+         ( \(Tuple k vj) -> do
+              vv <- fromJsonVal' vj
+              pure (Tuple k (addr vv × vv))
+         )
+         kvs
+      let
+         d = D.fromFoldable entries
+         deps = Set.fromFoldable (entries <#> \(Tuple _ (β × _)) -> β)
+      new (flip Val None) deps (Dictionary (DictRep d))
 
 -- build a Fluid list node-by-node, allocating each Cons/Nil and wiring edges to children
 arrVtoVal' :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> m (Val Vertex)
@@ -222,6 +168,92 @@ arrVtoVal' (x : xs) = do
 -- take the nodes vertex address and return the address of the node
 addr :: Val Vertex -> Vertex
 addr (Val α _ _) = α
+
+-- fromJsonVal' =
+--    caseJson
+-- ( \_ ->
+--      throw "Error, Null JSON value cannot be converted to Val Vertex"
+-- )
+--       ( \b -> do
+--            v <- new (flip Val None) empty (Constr (if b then cTrue else cFalse) Nil)
+--            pure (spy "Processing boolean" (render <<< pretty) v)
+--       )
+--       ( \n -> do
+--            v <- do
+--               case Int.fromNumber n of
+--                  Just n' -> new (flip Val None) empty (Int n')
+--                  Nothing -> new (flip Val None) empty (Float n)
+--            pure (spy "Processing number" (render <<< pretty) v)
+--       )
+--       ( \s -> do
+--            v <- new (flip Val None) empty (Str s)
+--            pure (spy "Processing string" (render <<< pretty) v)
+--       )
+--       ( \arr -> do
+--            vs <- traverse fromJsonVal' arr
+--            v <- arrVtoVal' (Array.toUnfoldable vs :: List (Val Vertex))
+--            pure (spy "Processing array" (render <<< pretty) v)
+--       )
+--       ( \obj -> do
+--            let kvs = FO.toUnfoldable obj :: Array (Tuple String Json) --turn obj into arr of key-value pairs
+--            entries <- traverse
+--               ( \(Tuple k vj) -> do -- k is key and vj is JSON value
+--                    vv <- fromJsonVal' vj -- convert JSON value to Val Vertex
+--                    pure (Tuple k (addr vv × vv)) -- convert Val Vertex to address and value
+--               )
+--               kvs -- traverse over the key-value pairs
+--            let
+--               d = D.fromFoldable entries -- create dictionary from key-value pairs
+--               deps = Set.fromFoldable (entries <#> \(Tuple _ (β × _)) -> β) --map each entry to its address β, then turn list into set. β gets first element of pair
+--            v <- new (flip Val None) deps (Dictionary (DictRep d)) -- deps is set of addresses the value depends on
+--            pure (spy "Processing object" (render <<< pretty) v)
+--       )
+
+-- caseNull = do
+--   v <- new (flip Val None) empty (Constr cNone Nil)
+--   pure (spy "Processing null" (render <<< pretty) v)
+
+-- caseNull :: forall m. MonadWithGraphAlloc m => Unit -> m (Val Vertex)
+-- caseNull _ = do
+--          error ("Error, Null JSON value cannot be converted to Val Vertex")
+
+-- caseBool :: forall m. MonadWithGraphAlloc m => Boolean -> m (Val Vertex)
+-- caseBool b =
+--    new (flip Val None) empty (Constr (if b then cTrue else cFalse) Nil)
+
+-- caseNumber :: forall m. MonadWithGraphAlloc m => Number -> m (Val Vertex)
+-- caseNumber n = do
+--    v <-
+--       case Int.fromNumber n of
+--          Just n' -> new (flip Val None) empty (Int n')
+--          Nothing -> new (flip Val None) empty (Float n)
+--    pure (spy "Processing number" (render <<< pretty) v)
+
+-- caseString :: forall m. MonadWithGraphAlloc m => String -> m (Val Vertex)
+-- caseString s = do
+--    v <- new (flip Val None) empty (Str s)
+--    pure (spy "Processing string" (render <<< pretty) v)
+
+-- caseArray :: forall m. MonadWithGraphAlloc m => Array Json -> m (Val Vertex)
+-- caseArray arr = do
+--    vs <- traverse fromJsonVal' arr
+--    v <- arrVtoVal' (Array.toUnfoldable vs :: List (Val Vertex))
+--    pure (spy "Processing array" (render <<< pretty) v)
+
+-- caseObject :: forall m. MonadWithGraphAlloc m => FO.Object Json -> m (Val Vertex)
+-- caseObject obj = do
+--    let kvs = FO.toUnfoldable obj :: Array (Tuple String Json) -- turn obj into arr of key-value pairs
+--    entries <- traverse
+--       ( \(Tuple k vj) -> do -- k is key and vj is JSON value
+--            vv <- fromJsonVal' vj -- convert JSON value to Val Vertex
+--            pure (Tuple k (addr vv × vv)) -- convert Val Vertex to address and value
+--       )
+--       kvs -- traverse over the key-value pairs
+--    let
+--       d = D.fromFoldable entries -- create dictionary from key-value pairs
+--       deps = Set.fromFoldable (entries <#> \(Tuple _ (β × _)) -> β) -- map each entry to its address β, then turn list into set. β gets first element of pair
+--    v <- new (flip Val None) deps (Dictionary (DictRep d)) -- deps is set of addresses the value depends on
+--    pure (spy "Processing object" (render <<< pretty) v)
 
 dims :: ForeignOp
 dims =
