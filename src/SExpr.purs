@@ -243,13 +243,13 @@ recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -
 recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (desugBwd σ (Clauses (snd <$> bs))))
 
 -- turn elements of paragraph into Fluid's List
-paragraphElemsToList
+paragraphElemsFwd
    :: forall a m
     . BoundedLattice a
    => MonadError Error m
    => List (ParagraphElem a)
    -> m (E.Expr a)
-paragraphElemsToList =
+paragraphElemsFwd =
    foldr step (pure (enil bot Doc.None))
    where
    step :: ParagraphElem a -> m (E.Expr a) -> m (E.Expr a)
@@ -329,7 +329,7 @@ exprFwd (Expr' _ (IfElse s1 s2 s3)) =
       <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3)))
       <*> desug s1
 exprFwd (Expr' _ (Paragraph xs)) = do
-   list <- paragraphElemsToList xs
+   list <- paragraphElemsFwd xs
    pure (E.Constr bot Doc.None cParagraph (list : Nil))
 exprFwd (Expr' doc (ListEmpty α)) = do
    edoc <- desugComment doc
