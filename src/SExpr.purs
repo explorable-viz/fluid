@@ -30,7 +30,7 @@ import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..), DocOpt, ParagraphElem) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
-import Partial.Unsafe (unsafePartial)
+import Partial.Unsafe (unsafePartial, unsafeCrashWith)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
 import Util.Map (get, lookup)
 import Util.Pair (Pair(..))
@@ -279,10 +279,10 @@ paragraphListBwd (E.Constr _ _ c (e : es : Nil)) (pe : pes) | c == cCons =
    exprToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
    exprToElem (Doc.Token _) (E.Constr _ _ c' (E.Str _ _ s : Nil)) | c' == cText =
       Doc.Token s
-   exprToElem (Doc.Unquote e0) (E.Constr _ _ c' (e' : Nil)) | c' == cText =
-      Doc.Unquote (desugBwd e' e0)
-   exprToElem _ _ = error "paragraphListBwd: item mismatch"
-paragraphListBwd _ _ = error "paragraphListBwd: shape mismatch"
+   exprToElem (Doc.Unquote s) (E.Constr _ _ c' (e' : Nil)) | c' == cText =
+      Doc.Unquote (desugBwd e' s)
+   exprToElem _ _ = unsafeCrashWith "paragraphListBwd: item mismatch"
+paragraphListBwd _ _ = unsafeCrashWith "paragraphListBwd: shape mismatch"
 
 -- Expr
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
