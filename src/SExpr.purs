@@ -699,8 +699,7 @@ derive instance Functor DictEntry
 derive instance Functor ListRest
 derive instance Functor VarDef
 derive instance Functor Qualifier
-instance functorExpr :: Functor Expr where
-   map f (Expr' doc base) = Expr' (map f doc) (map f base)
+derive instance Functor Expr
 
 instance Functor Module where
    map f (Module defs) = Module (mapDefs f <$> defs)
