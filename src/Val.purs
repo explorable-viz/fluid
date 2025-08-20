@@ -110,11 +110,14 @@ data EnvExpr a = EnvExpr (Env a) (Expr a)
 -- Goes from smaller environment to larger (injection into a biproduct).
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
 unrestrictGC γ xs =
-   assertWith (show xs <> " are in environment ") (xs ⊆ keys γ) $ GC
+   assertWith (show xs' <> " are in environment ") (isEmpty xs') $ GC
       { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ (topOf γ \\ γ')
       , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
 
       }
+   where
+   xs' :: Set Var
+   xs' = xs \\ keys γ
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (Set.toUnfoldable xs) empty

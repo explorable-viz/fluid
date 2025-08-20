@@ -1,9 +1,9 @@
 {
     "fluidSrcPath": ["../fluid"],
-    "datasets": [["renewables", "dataset/renewables-new"], ["nonRenewables", "dataset/non-renewables"]],
-    "imports": [],
+    "datasets": [],
+    "imports": ["nonRenewables"],
     "file": "energyscatter",
-    "inputs": [ "renewables", "nonRenewables" ],
+    "inputs": ["nonRenewables"],
     "query": false,
     "linking": true
 }

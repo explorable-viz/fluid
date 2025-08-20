@@ -1,5 +1,0 @@
-let likelihoods   = loadJson "ar6-wg1-spm/likelihoods.json"
-let ssp126Source  = loadJson "ar6-wg1-spm/ssp126.json"
-let ssp126preds   = loadJson "ar6-wg1-spm/ssp126preds.json"
-let ssp245Source  = loadJson "ar6-wg1-spm/ssp245.json"
-let ssp245preds   = loadJson "ar6-wg1-spm/ssp245preds.json"

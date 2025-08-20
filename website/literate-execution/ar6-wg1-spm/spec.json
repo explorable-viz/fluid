@@ -1,9 +1,9 @@
 {
     "fluidSrcPath": ["../fluid"],
     "datasets": [],
-    "imports": [ "lib/stats", "ar6-wg1-spm" ],
+    "imports": ["lib/stats", "new-ar6-wg1-spm"],
     "file": "ar6-wg1-spm/figure-spm-4",
-    "inputs": ["likelihoods", "ssp126Source", "ssp245Source", "ssp126preds", "ssp245preds"],
+    "inputs": ["ssp126Source", "ssp245Source", "ssp126preds", "ssp245preds"],
     "query": true,
     "linking": false
 }
