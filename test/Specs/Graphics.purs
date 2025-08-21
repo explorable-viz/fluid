@@ -6,20 +6,16 @@ import Test.Util.Suite (TestWithDatasetSpec)
 
 graphics_cases :: Array TestWithDatasetSpec
 graphics_cases =
-   [ { imports: [ "lib/graphics" ]
-     , dataset: "data" ↦ "dataset/renewables-restricted"
-     , file: "graphics/background"
+   [ { dataset: "data" ↦ "dataset/renewables-restricted.fld"
+     , file: "graphics/background.fld"
      }
-   , { imports: [ "lib/graphics" ]
-     , dataset: "data" ↦ "dataset/renewables-restricted"
-     , file: "graphics/grouped-bar-chart"
+   , { dataset: "data" ↦ "dataset/renewables-restricted.fld"
+     , file: "graphics/grouped-bar-chart.fld"
      }
-   , { imports: [ "lib/graphics" ]
-     , dataset: "data" ↦ "dataset/renewables-restricted"
-     , file: "graphics/line-chart"
+   , { dataset: "data" ↦ "dataset/renewables-restricted.fld"
+     , file: "graphics/line-chart.fld"
      }
-   , { imports: [ "lib/graphics" ]
-     , dataset: "data" ↦ "dataset/renewables-restricted"
-     , file: "graphics/stacked-bar-chart"
+   , { dataset: "data" ↦ "dataset/renewables-restricted.fld"
+     , file: "graphics/stacked-bar-chart.fld"
      }
    ]

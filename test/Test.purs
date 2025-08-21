@@ -74,4 +74,3 @@ benchmarks =
    , bwdSuite loadFile bwd_cases
    , withDatasetSuite loadFile graphics_cases
    ]
-

@@ -151,10 +151,10 @@ to𝕊 true = Primary
 to𝕊 false = None
 
 primary :: forall f. Apply f => f (SelState 𝔹) -> f (SelState 𝕊)
-primary f = (to𝕊 <$> _) <$> f
+primary x = (to𝕊 <$> _) <$> x
 
 primaryOrSecondary :: forall f. Apply f => SelectionType -> f (SelStates 𝔹) -> f (SelState 𝔹) -> f (SelState 𝕊)
-primaryOrSecondary selType f f1 = lift2 as𝕊 <$> (getSel selType <$> f) <*> f1
+primaryOrSecondary selType x x' = lift2 as𝕊 <$> (getSel selType <$> x) <*> x'
 
 unselected :: SelStates 𝔹
 unselected = SelStates $ Reactive { persistent: false, transient: false }

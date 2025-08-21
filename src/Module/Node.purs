@@ -1,58 +1,48 @@
-module Module.Node
-   ( loadFile
-   , parseProgram
-   , module_
-   , datasetAs
-   , loadProgCxt
-   , module F
-   , module Module
-   , prepConfig
-   ) where
+module Module.Node where
 
 import Prelude
 
-import Bind (Bind)
-import Control.Monad.Error.Class (try)
-import Control.Monad.Except (class MonadError)
-import Data.Either (either)
+import Control.Monad.Error.Class (class MonadThrow, try)
+import Control.Monad.Except (class MonadError, class MonadTrans, lift)
+import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runReaderT)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Class (class MonadEffect)
 import Effect.Exception (Error)
-import Lattice (Raw)
-import Module (Config, initialConfig, parse, prependFolder)
-import Module (File(..), Folder(..), FileLoader) as F
-import Module (datasetAs, loadProgCxt, module_, parseProgram, prepConfig) as M
+import File (class LoadFile, File(..), FileCxt)
 import Node.Encoding (Encoding(..))
 import Node.FS.Aff (readTextFile, stat)
 import Node.FS.Stats (isFile)
-import ProgCxt (ProgCxt)
-import SExpr (Expr) as S
-import Util (AffError, error, findM)
 
-loadFile :: forall m. F.FileLoader m
-loadFile folders (F.File file) = do
-   let urls = flip prependFolder (F.File $ file <> ".fld") <$> folders
-   url <- findM urls exists Nothing
-   case url of
-      Nothing -> error $ "File " <> file <> " not found."
-      Just name -> liftAff $ readTextFile UTF8 name
-   where
-   exists :: F.File -> m (Maybe String)
-   exists (F.File url) = do
-      stats <- liftAff $ try (stat url)
-      pure $ if (either (const false) isFile stats) then Just url else Nothing
+instance Monad m => LoadFile (NodeT m) where
+   loadFileFromPath (File path) = do
+      stats <- liftAff $ try (stat path)
+      case stats of
+         Right s | isFile s -> Just <$> liftAff (readTextFile UTF8 path)
+         _ -> pure Nothing
 
-parseProgram ∷ ∀ m. Array F.Folder -> F.File → AffError m (Raw S.Expr)
-parseProgram = M.parseProgram loadFile
+newtype NodeT :: forall k. (k -> Type) -> k -> Type
+newtype NodeT m a = NodeT (ReaderT FileCxt m a)
 
-module_ :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> F.File -> Raw ProgCxt -> m (Raw ProgCxt)
-module_ = M.module_ loadFile
+runNodeT :: forall m a. FileCxt -> NodeT m a -> m a
+runNodeT fileCxt (NodeT x) = runReaderT x fileCxt
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> Bind F.File -> Raw ProgCxt -> m (Raw ProgCxt)
-datasetAs = M.datasetAs loadFile
+-- ======================
+-- boilerplate
+-- ======================
 
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> Array String -> Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt fluidSrcPaths = M.loadProgCxt { loadFile, fluidSrcPaths }
+instance MonadTrans NodeT where
+   lift m = NodeT (lift m)
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => Array F.Folder -> F.File -> ProgCxt Unit -> m Config
-prepConfig fluidSrcPaths = M.prepConfig { loadFile, fluidSrcPaths }
+derive newtype instance Functor m => Functor (NodeT m)
+derive newtype instance Apply m => Apply (NodeT m)
+derive newtype instance Applicative m => Applicative (NodeT m)
+derive newtype instance Bind m => Bind (NodeT m)
+derive newtype instance Monad m => Monad (NodeT m)
+derive newtype instance MonadThrow Error m => MonadThrow Error (NodeT m)
+derive newtype instance MonadError Error m => MonadError Error (NodeT m)
+derive newtype instance MonadEffect m => MonadEffect (NodeT m)
+derive newtype instance MonadAff m => MonadAff (NodeT m)
+derive newtype instance MonadAsk FileCxt m => MonadAsk FileCxt (NodeT m)
+derive newtype instance Monad m => MonadReader FileCxt (NodeT m)

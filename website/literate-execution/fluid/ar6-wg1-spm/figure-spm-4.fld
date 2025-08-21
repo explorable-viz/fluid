@@ -1,3 +1,5 @@
+import lib.stats
+
 let stackedBarHeight stackedBar = sum [ segment.z | segment <- stackedBar.segments ];
 
 let get x (BarChart record) = fromSome (findWithKey "x" x record.stackedBars);

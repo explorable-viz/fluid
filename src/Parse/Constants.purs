@@ -15,12 +15,14 @@ str
       , curlyrBrace :: String
       , dictLBracket :: String
       , dictRBracket :: String
+      , dollar :: String
       , dot :: String
       , ellipsis :: String
       , else_ :: String
       , equals :: String
       , fun :: String
       , if_ :: String
+      , import :: String
       , in_ :: String
       , lArrow :: String
       , lBracket :: String
@@ -34,7 +36,6 @@ str
       , then_ :: String
       , at :: String
       , triplequote :: String
-      , dollar :: String
       }
 
 str =
@@ -51,12 +52,14 @@ str =
    , curlyrBrace: "}"
    , dictLBracket: "{|"
    , dictRBracket: "|}"
+   , dollar: "$"
    , dot: "."
    , ellipsis: ".."
    , else_: "else"
    , equals: "="
    , fun: "fun"
    , if_: "if"
+   , import: "import"
    , in_: "in"
    , lArrow: "<-"
    , lBracket: "["
@@ -70,5 +73,4 @@ str =
    , then_: "then"
    , at: "@"
    , triplequote: "\"\"\""
-   , dollar: "$"
    }

@@ -103,7 +103,7 @@
       (“methods”) for dealing with the boundary.</p>
       <details>
          <summary>matrix.fld</summary>
-         <div id="codemirror-convolution"></div>
+         <div id="codemirror-matrix"></div>
       </details>
       <details>
          <summary>emboss.fld</summary>
@@ -116,9 +116,9 @@
 
 <script type="module">
    import { loadFigure, drawCode } from "/shared/load-figure.js"
-   drawCode("../fluid/lib")("matrix")()
-   drawCode("../fluid/convolution")("emboss")()
-   loadFigure("spec.json")()
+   drawCode("../fluid/lib/matrix.fld")()
+   drawCode("../fluid/convolution/emboss.fld")()
+   loadFigure("spec.json")("../fluid/convolution/emboss.fld")()
 </script>
 </body>
 </html>

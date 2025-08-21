@@ -1,0 +1,4 @@
+import lib.maths
+import module.foo
+
+dub x

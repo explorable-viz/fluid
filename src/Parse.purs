@@ -20,13 +20,13 @@ import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Data.String (codePointFromChar)
+import Data.String (codePointFromChar, joinWith)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Doc (ParagraphElem(..), DocOpt(..), Paragraph)
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, notFollowedBy, option, sepBy, sepBy1, try)
+import Parsing.Combinators (between, notFollowedBy, many, option, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -49,7 +49,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
    , opStart = opChar
    , opLetter = opChar
    , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow ]
-   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_ ]
+   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_, str.import ]
    , caseSensitive = true
    }
    where
@@ -459,8 +459,20 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       op' <- token.operator
       onlyIf (isCtrOp op' && op == op') \π π' -> PConstr op' (π : π' : Nil)
 
+imports_ :: SParser (List String)
+imports_ = many (keyword str.import *> modPath)
+   where
+   modPath :: SParser String
+   modPath = joinWith "/" <<< fromFoldable <$> sepBy1 token.identifier (token.reservedOp str.dot)
+
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
+
+withImports :: forall a. SParser a -> SParser (a × List String)
+withImports p = topLevel do
+   imports <- imports_
+   a <- p
+   pure $ a × imports
 
 program ∷ SParser (Raw Expr)
 program = topLevel expr_

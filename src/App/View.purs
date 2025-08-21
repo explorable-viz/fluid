@@ -18,12 +18,12 @@ import App.View.Util (View', pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array ((:)) as A
-import Data.Array (fromFoldable)
+import Data.Array (fromFoldable, zipWith)
 import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, f_caption, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
 import Doc (ParagraphElem(..), DocOpt(..))
 import Link (Link(..))
@@ -40,13 +40,14 @@ view' title v@(Val _ doc _) _ =
 -- Ignore view state for now..
 view :: Partial => String -> Val (SelStates 𝕊) -> Maybe View' -> View'
 view title (Val _ _ (Constr c (u : Nil))) _
+   | c == cText = pack (from u :: Text)
    | c == cBarChart = pack (dict from u :: BarChart)
    | c == cLineChart = pack (dict from u :: LineChart)
    | c == cScatterPlot = pack (dict from u :: ScatterPlot)
    | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
         where
         vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
-   | c == cParagraph = pack (Paragraph false (vws <*> (const Nothing <$> vws)))
+   | c == cParagraph = pack (Paragraph false (zipWith ($) vws (const Nothing <$> vws)))
         where
         vws = view title <$> from u
 view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
@@ -62,7 +63,7 @@ view title (Val _ _ (Matrix r)) _ =
 
 viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe Paragraph
 viewPara None = Nothing
-viewPara (Doc doc) = Just $ Paragraph true $ fromFoldable $ formatPara $ doc
+viewPara (Doc doc) = Just $ Paragraph true $ fromFoldable $ formatPara doc
    where
    formatPara :: List (ParagraphElem Val (SelStates 𝕊)) -> List View'
    formatPara Nil = Nil
@@ -157,7 +158,12 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot whe
       , labels: dict from (snd (get f_labels r))
       }
 
+instance Reflect (Val (SelStates 𝕊)) Text where
+   from (Val α _ v) = case v of
+      Str s -> Text (s × α)
+      _ -> typeError v "Text"
+
 instance Reflect (Val (SelStates 𝕊)) Link where
-   from (Val _ _ r) = case r of
+   from (Val _ _ u) = case u of
       (Constr c (Val α doc v : (Val α' _ (Str s) : Nil))) | c == cLink -> Link (Val α doc v) (s × α')
-      v -> typeError v "Link"
+      _ -> typeError u "Link"

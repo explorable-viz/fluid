@@ -76,15 +76,16 @@
       </div>
       <details>
          <summary>matrix.fld</summary>
-         <div id="codemirror-convolution"></div>
+         <div id="codemirror-matrix"></div>
       </details>
    </div>
 </div>
 
 <script type="module">
-   import { loadFigure, drawCode } from "/shared/load-figure.js"
-   drawCode("../fluid/lib")("matrix")()
-   loadFigure("spec.json")()
+   import { drawCode, loadFigure } from "/shared/load-figure.js"
+   drawCode("../fluid/lib/matrix.fld")()
+
+   loadFigure("spec.json")("../fluid/convolution/emboss.fld")()
 </script>
 </body>
 </html>
