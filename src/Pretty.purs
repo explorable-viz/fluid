@@ -87,6 +87,7 @@ instance IsSimple BaseExpr where
    isSimple (Float _ _) = true
    isSimple (Str _ _) = true
    isSimple (Constr _ _ Nil) = true
+   --   isSimple (Constr _ c _) | c == cPair = true
    isSimple (Dictionary _ _) = true
    isSimple (Matrix _ _ _ _) = true
    isSimple (Project _ _) = true
@@ -389,6 +390,7 @@ instance IsSimple E.Expr where
    isSimple (E.Float _ _ _) = true
    isSimple (E.Str _ _ _) = true
    isSimple (E.Constr _ _ _ Nil) = true
+   --   isSimple (E.Constr _ _ c _) | c == cPair = true
    isSimple (E.Dictionary _ _ _) = true
    isSimple (E.Matrix _ _ _ _ _) = true
    isSimple (E.Project _ _ _) = true
