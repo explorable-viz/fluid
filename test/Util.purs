@@ -4,6 +4,7 @@ import Prelude hiding (absurd, compare)
 
 import App.Util (Selector, getPersistent, unselected)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Reader (class MonadReader)
 import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
@@ -11,14 +12,14 @@ import Data.Newtype (unwrap)
 import Data.String (null)
 import Data.Tuple (fst)
 import Desug (desugGC)
-import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
+import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
-import Module (File, FileLoader, Folder(..), parse, prepConfig)
+import Module (parse, prepConfig)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import ProgCxt (ProgCxt)
@@ -28,7 +29,7 @@ import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
-type TestSuite = Array (String × Aff Unit)
+type TestSuite m = Array (String × m Unit)
 
 type SelectionSpec =
    { δv :: Selector Val
@@ -39,10 +40,11 @@ type SelectionSpec =
 fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
-test ∷ forall m. FileLoader m -> File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
-test loadFile file progCxt spec (n × _) = do
+test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test file progCxt spec (n × _) = do
    log' ("**** prepConfig")
-   { s, gconfig } <- prepConfig { loadFile, fluidSrcPaths } file progCxt
+   fluidSrc <- loadFile fluidSrcPaths file
+   { s, gconfig } <- prepConfig progCxt fluidSrc
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n
@@ -68,7 +70,15 @@ benchNames =
    , demBy_G_suff_dual: "DemBy-Suff"
    }
 
-testProperties :: forall m. MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
+testProperties
+   :: forall m
+    . MonadReader FileCxt m
+   => LoadFile m
+   => MonadWriter BenchRow m
+   => Raw SE.Expr
+   -> GraphConfig
+   -> SelectionSpec
+   -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
 
@@ -135,7 +145,7 @@ testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
 testPretty s = do
    log' ("**** prettyP")
    log' (prettyP s)
-   s' <- parse (prettyP s) program
+   s' × _ <- parse (prettyP s) program
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
 

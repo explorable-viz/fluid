@@ -474,8 +474,8 @@ withImports p = topLevel do
    a <- p
    pure $ a × imports
 
-program ∷ SParser (Raw Expr)
-program = topLevel expr_
+program ∷ SParser (Raw Expr × List String)
+program = withImports expr_
 
-module_ :: SParser (Raw Module)
-module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
+module_ :: SParser (Raw Module × List String)
+module_ = withImports $ Module <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi

@@ -19,12 +19,12 @@ import Data.Newtype (class Newtype)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Data.Set (toUnfoldable) as S
-import Data.String (Pattern(..), Replacement(..), contains) as DS
+import Data.String (Pattern(..), Replacement(..)) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
-import Doc (ParagraphElem(..))
 import Doc (DocOpt(..)) as Doc
+import Doc (ParagraphElem(..))
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
@@ -77,35 +77,34 @@ newtype FirstGroup a = First (RecDefs a)
 data ExprType = Simple | Expression
 type Sep = Doc -> Doc -> Doc
 
-exprType :: forall a. Expr a -> ExprType
-exprType (Expr' _ (Var _)) = Simple
-exprType (Expr' _ (Op _)) = Simple
-exprType (Expr' _ (Int _ _)) = Simple
-exprType (Expr' _ (Float _ _)) = Simple
-exprType (Expr' _ (Str _ _)) = Simple
-exprType (Expr' _ (Constr _ _ Nil)) = Simple
-exprType (Expr' _ (Constr _ _ _)) = Expression
-exprType (Expr' _ (Dictionary _ _)) = Simple
-exprType (Expr' _ (Matrix _ _ _ _)) = Simple
-exprType (Expr' _ (Lambda _)) = Simple
-exprType (Expr' _ (Project _ _)) = Simple
-exprType (Expr' _ (DProject _ _)) = Simple
-exprType (Expr' _ (App _ _)) = Expression
-exprType (Expr' _ (BinaryApp _ _ _)) = Expression
-exprType (Expr' _ (MatchAs _ _)) = Simple
-exprType (Expr' _ (IfElse _ _ _)) = Simple
-exprType (Expr' _ (Paragraph _)) = Simple
-exprType (Expr' _ (ListEmpty _)) = Simple
-exprType (Expr' _ (ListNonEmpty _ _ _)) = Simple
-exprType (Expr' _ (ListEnum _ _)) = Expression
-exprType (Expr' _ (ListComp _ _ _)) = Expression
-exprType (Expr' _ (Let _ _)) = Expression
-exprType (Expr' _ (LetRec _ _)) = Expression
+class IsSimple (e :: Type -> Type) where
+   isSimple :: forall a. e a -> Boolean
 
-prettySimple :: forall a. Ann a => Expr a -> Doc
-prettySimple s = case exprType s of
-   Simple -> pretty s
-   Expression -> parentheses (pretty s)
+instance IsSimple BaseExpr where
+   isSimple (Var _) = true
+   isSimple (Op _) = true
+   isSimple (Int _ _) = true
+   isSimple (Float _ _) = true
+   isSimple (Str _ _) = true
+   isSimple (Constr _ _ Nil) = true
+   isSimple (Dictionary _ _) = true
+   isSimple (Matrix _ _ _ _) = true
+   isSimple (Project _ _) = true
+   isSimple (DProject _ _) = true
+   isSimple (Paragraph _) = true
+   isSimple (ListEmpty _) = true
+   isSimple (ListNonEmpty _ _ _) = true
+   isSimple (ListEnum _ _) = true
+   isSimple (ListComp _ _ _) = true
+   isSimple _ = false
+
+instance IsSimple Expr where
+   isSimple (Expr' _ e) = isSimple e
+
+prettySimple :: forall e a. IsSimple e => Pretty (e a) => e a -> Doc
+prettySimple s =
+   if isSimple s then pretty s
+   else parentheses (pretty s)
 
 prettyAppChain :: forall a. Ann a => Expr a -> Doc
 prettyAppChain (Expr' _ (App s s')) = prettyAppChain s .<>. prettySimple s'
@@ -165,7 +164,7 @@ instance Ann a => Pretty (Expr a) where
               )
          )
    pretty (Expr' _ (Lambda cs)) =
-      parentheses (text str.fun .<>. pretty cs)
+      text str.fun .<>. pretty cs
    pretty (Expr' doc (Project s x)) =
       pretty doc .<>. prettySimple s .<>. text str.dot .<>. text x
    pretty (Expr' doc (DProject s x)) =
@@ -312,9 +311,6 @@ between l r doc = l .<>. doc .<>. r
 brackets :: Endo Doc
 brackets = between (text str.lBracket) (text str.rBracket)
 
--- dictBrackets :: Endo Doc
--- dictBrackets = between (text str.dictLBracket) (text str.dictRBracket)
-
 parentheses :: Endo Doc
 parentheses = between (text str.lparenth) (text str.rparenth)
 
@@ -350,26 +346,18 @@ vert delim = fromFoldable >>> vert'
 prettyCtr :: Ctr -> Doc
 prettyCtr = showCtr >>> text
 
--- Cheap hack; revisit.
-prettyParensOpt :: forall a. Pretty a => a -> Doc
-prettyParensOpt x =
-   if DS.contains (DS.Pattern " ") (render doc) then parentheses doc
-   else doc
-   where
-   doc = pretty x
-
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
-prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
-prettyConstr c (x : y : ys)
-   | c == cPair = assert (null ys) $ parentheses (hcomma [ pretty x, pretty y ])
-prettyConstr c ys
-   | c == cNil = assert (null ys) nil
-prettyConstr c (x : y : ys)
-   | c == cCons = assert (null ys) $ parentheses (hcat [ pretty x, text str.colon, pretty y ])
-prettyConstr c (x : Nil) = prettyCtr c .<>. pretty x
-prettyConstr c xs = hcat (prettyCtr c : (prettyParensOpt <$> xs))
+prettyConstr :: forall e a. IsSimple e => Pretty (e a) => Ctr -> List (e a) -> Doc
+prettyConstr c (e1 : e2 : es)
+   | c == cPair = assert (null es) $ parentheses (hcomma [ pretty e1, pretty e2 ])
+prettyConstr c es
+   | c == cNil = assert (null es) nil
+prettyConstr c (e1 : e2 : es)
+   | c == cCons = assert (null es) $ parentheses (hcat [ pretty e1, text str.colon, pretty e2 ])
+prettyConstr c (e : Nil) = prettyCtr c .<>. prettySimple e
+prettyConstr c es = hcat (prettyCtr c : (prettySimple <$> es))
 
 prettyRecordOrDict
    :: forall d b
@@ -393,6 +381,19 @@ prettyDict = curlyBraces # prettyRecordOrDict (text str.colon) keyBracks
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
 prettyMatrix e1 i j e2 =
    arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text (i <> "×" <> j) .<>. text str.in_ .<>. pretty e2)
+
+instance IsSimple E.Expr where
+   isSimple (E.Var _) = true
+   isSimple (E.Op _) = true
+   isSimple (E.Int _ _ _) = true
+   isSimple (E.Float _ _ _) = true
+   isSimple (E.Str _ _ _) = true
+   isSimple (E.Constr _ _ _ Nil) = true
+   isSimple (E.Dictionary _ _ _) = true
+   isSimple (E.Matrix _ _ _ _ _) = true
+   isSimple (E.Project _ _ _) = true
+   isSimple (E.DProject _ _ _) = true
+   isSimple _ = false
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
@@ -469,6 +470,11 @@ instance Highlightable a => Pretty (Elim a) where
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
    pretty (ElimDict xs κ) =
       hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
+
+instance IsSimple Val where
+   isSimple (Val _ _ (V.Constr _ (_ : _))) = false
+   isSimple (Val _ _ (V.Fun (V.PartialConstr _ (_ : _)))) = false
+   isSimple _ = true
 
 instance Highlightable a => Pretty (Val a) where
    pretty (Val α doc v) = pretty doc .<>. highlightIf α (pretty v)
