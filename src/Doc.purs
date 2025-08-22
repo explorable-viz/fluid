@@ -19,15 +19,15 @@ data ParagraphElem e a = Token String | Unquote (e a)
 
 -- Purescript Typeclass instances
 instance eqDocOpt :: Eq (e a) => Eq (DocOpt e a) where
-  eq None None = true
-  eq (Doc a) (Doc b) = a == b
-  eq _ _ = false
+   eq None None = true
+   eq (Doc a) (Doc b) = a == b
+   eq _ _ = false
 
 instance ordDocOpt :: Ord (e a) => Ord (DocOpt e a) where
-  compare None None = EQ
-  compare None (Doc _) = LT
-  compare (Doc _) None = GT
-  compare (Doc a) (Doc b) = compare a b
+   compare None None = EQ
+   compare None (Doc _) = LT
+   compare (Doc _) None = GT
+   compare (Doc a) (Doc b) = compare a b
 
 derive instance Functor e => Functor (ParagraphElem e)
 derive instance Foldable e => Foldable (ParagraphElem e)
@@ -45,9 +45,9 @@ instance Show (e a) => Show (ParagraphElem e a) where
    show (Unquote e) = "Unquote " <> show e
 
 instance Apply f => Apply (DocOpt f) where
-  apply None _ = None
-  apply _ None = None
-  apply (Doc fs) (Doc xs) = Doc (zipWith (<*>) fs xs)
+   apply None _ = None
+   apply _ None = None
+   apply (Doc fs) (Doc xs) = Doc (zipWith (<*>) fs xs)
 
 instance Apply e => Apply (ParagraphElem e) where
    apply (Token s) (Token s') = Token (s ≜ s')
@@ -80,11 +80,10 @@ instance Vertices (e Vertex) => Vertices (ParagraphElem e Vertex) where
    vertices (Unquote e) = vertices e
 
 instance (Foldable e, Functor e, Vertices Vertex) => Vertices (DocOpt e Vertex) where
-  vertices None = Set.empty
-  vertices (Doc doc) = Set.unions (map vertices doc)
-
+   vertices None = Set.empty
+   vertices (Doc doc) = Set.unions (map vertices doc)
 
 instance Semigroup (f a) => Semigroup (DocOpt f a) where
-  append None doc = doc
-  append doc None = doc
-  append (Doc doc) (Doc doc') = Doc (doc <> doc')
+   append None doc = doc
+   append doc None = doc
+   append (Doc doc) (Doc doc') = Doc (doc <> doc')
