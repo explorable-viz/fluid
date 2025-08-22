@@ -10,7 +10,7 @@ import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemila
 import Util (error, shapeMismatch, (≜))
 
 data DocOpt :: (Type -> Type) -> Type -> Type
-data DocOpt e a = None | Doc (List (ParagraphElem e a))
+data DocOpt e a = None | Doc (e a)
 
 type Paragraph e a = List (ParagraphElem e a)
 
@@ -18,18 +18,16 @@ data ParagraphElem :: (Type -> Type) -> Type -> Type
 data ParagraphElem e a = Token String | Unquote (e a)
 
 -- Purescript Typeclass instances
-derive instance Eq (e a) => Eq (DocOpt e a)
-instance Eq (e a) => Eq (ParagraphElem e a) where
-   eq (Token s) (Token s') = s == s'
-   eq (Unquote e) (Unquote e') = e == e'
-   eq _ _ = false
+instance eqDocOpt :: Eq (e a) => Eq (DocOpt e a) where
+  eq None None = true
+  eq (Doc a) (Doc b) = a == b
+  eq _ _ = false
 
-derive instance Ord (e a) => Ord (DocOpt e a)
-instance Ord (e a) => Ord (ParagraphElem e a) where
-   compare (Token s) (Token s') = compare s s'
-   compare (Unquote e) (Unquote e') = compare e e'
-   compare (Token _) (Unquote _) = LT
-   compare (Unquote _) (Token _) = GT
+instance ordDocOpt :: Ord (e a) => Ord (DocOpt e a) where
+  compare None None = EQ
+  compare None (Doc _) = LT
+  compare (Doc _) None = GT
+  compare (Doc a) (Doc b) = compare a b
 
 derive instance Functor e => Functor (ParagraphElem e)
 derive instance Foldable e => Foldable (ParagraphElem e)
@@ -46,10 +44,10 @@ instance Show (e a) => Show (ParagraphElem e a) where
    show (Token s) = "Token " <> show s
    show (Unquote e) = "Unquote " <> show e
 
-instance Apply e => Apply (DocOpt e) where
-   apply None _ = None
-   apply (Doc doc) (Doc doc') = Doc (zipWith (<*>) doc doc')
-   apply _ _ = error $ shapeMismatch unit
+instance Apply f => Apply (DocOpt f) where
+  apply None _ = None
+  apply _ None = None
+  apply (Doc fs) (Doc xs) = Doc (zipWith (<*>) fs xs)
 
 instance Apply e => Apply (ParagraphElem e) where
    apply (Token s) (Token s') = Token (s ≜ s')
@@ -81,11 +79,12 @@ instance Vertices (e Vertex) => Vertices (ParagraphElem e Vertex) where
    vertices (Token _) = Set.empty
    vertices (Unquote e) = vertices e
 
-instance Vertices (e Vertex) => Vertices (DocOpt e Vertex) where
-   vertices None = Set.empty
-   vertices (Doc doc) = Set.unions (vertices <$> doc)
+instance (Foldable e, Functor e, Vertices Vertex) => Vertices (DocOpt e Vertex) where
+  vertices None = Set.empty
+  vertices (Doc doc) = Set.unions (map vertices doc)
 
-instance Semigroup (DocOpt a b) where
-   append doc None = doc
-   append None doc = doc
-   append (Doc doc) (Doc doc') = Doc $ doc <> doc'
+
+instance Semigroup (f a) => Semigroup (DocOpt f a) where
+  append None doc = doc
+  append doc None = doc
+  append (Doc doc) (Doc doc') = Doc (doc <> doc')

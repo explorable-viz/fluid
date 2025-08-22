@@ -109,12 +109,20 @@ rArrow = token.reservedOp str.rArrow
 paragraphDelim :: SParser Unit
 paragraphDelim = void $ string str.triplequote
 
+{-
 docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docComment expr' = option None do
    p <- try do
       _ <- token.symbol "@doc"
       paragraph expr'
    pure (Doc p)
+-}
+
+docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
+docComment expr' = option None $
+   try do
+      _ <- token.symbol "@doc"
+      Doc <$> expr'
 
 paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
 paragraph expr' = token.lexeme (paragraphBody)
