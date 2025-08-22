@@ -22,8 +22,9 @@ instance View Paragraph Unit where
 createRootElement' :: Paragraph -> D3.Selection -> Effect D3.Selection
 createRootElement' (Paragraph _ views) parent = do
    rootElement <- parent # create Div [ "class" ↦ "para-text" ]
-   sequence_ $ flip map views \view -> do
-      unpack view \v -> createElement unit v rootElement
+   sequence_ $ views <#> \view ->
+      unpack view \v -> do
+         createElement unit v rootElement
    pure rootElement
 
 setSelStates' :: Paragraph -> Select -> D3.Selection -> Effect Unit

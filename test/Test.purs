@@ -28,24 +28,10 @@ main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
 
 --main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> scratchpad)
 
--- loadJsonTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => m Unit
--- loadJsonTest = do
---    log $ "Starting loadJsonTest"
---    void $ flip runAllocT 0 $ do
---       v <- loadJson "testing.json"
---       log (render $ pretty v)
---       pure unit
-
---scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
---scratchpad = [ "test" × loadJsonTest ]
-
--- scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
--- scratchpad = asTestSuite $ suite
---    [ { file: "moving-average"
---      , imports: [ "methane" ]
---      , fwd_expect: "100"
---      }
---    ]
+scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
+scratchpad = asTestSuite $ suite
+   [ { file: "paragraph.fld", fwd_expect: "Paragraph ((Text (\"As shown in Table 3, BiLSTM gives significantly  \") : (Text (\"better\") : [])))" }
+   ]
 
 asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)

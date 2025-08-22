@@ -2,45 +2,16 @@ module Module.Web where
 
 import Prelude
 
-import Affjax (Error(..)) as A
-import Affjax (Response)
-import Affjax.ResponseFormat (string)
-import Affjax.StatusCode (StatusCode(..))
-import Affjax.Web (defaultRequest, printError, request)
-import Control.Monad.Error.Class (class MonadThrow, throwError)
-import Control.Monad.Except (class MonadError, class MonadTrans, ExceptT(..), lift, runExceptT)
+import Control.Monad.Error.Class (class MonadThrow)
+import Control.Monad.Except (class MonadError, class MonadTrans, lift)
 import Control.Monad.Reader (class MonadAsk, class MonadReader, ReaderT, runReaderT)
-import Data.Either (Either(..), either)
-import Data.HTTP.Method (Method(..))
-import Effect.Aff (Aff)
-import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
-import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import Effect.Exception (error) as E
-import File (class LoadFile, File(..), FileCxt, Folder, loadFile, prependFolder)
-import Util (type (×), (×), AffError, debug, findM)
+import File (class LoadFile, FileCxt, loadFileFromPath)
 
-instance MonadThrow Error m => LoadFile (WebT m) where
-   loadFile folders (File file) = do
-      let urls = flip prependFolder (File $ file <> ".fld") <$> folders
-      result <- runExceptT $ do
-         _ × url' <- ExceptT $ liftAff $ findM urls checkUrl (Left A.RequestFailedError)
-         when debug.logging $ liftAff $ log ("loadFile: resolved URL: " <> url')
-         contents <- ExceptT $ liftAff $ request (defaultRequest { url = url', method = Left GET, responseFormat = string })
-         pure contents.body
-      either (throwError <<< E.error <<< printError) pure result
-      where
-      checkUrl :: File -> Aff (Either A.Error (Response String × String))
-      checkUrl (File url) = do
-         resp <- request (defaultRequest { url = url, method = Left HEAD, responseFormat = string })
-         pure case resp of
-            Right resp' | resp'.status == StatusCode 200 -> Right (resp' × url)
-            Right _ -> Left A.RequestFailedError
-            Left err -> Left err
-
-loadFile' :: forall m. LoadFile m => Array Folder -> File -> AffError m (File × String)
-loadFile' folders file = (file × _) <$> loadFile folders file
+instance (MonadAff m, MonadError Error m, LoadFile m) => LoadFile (WebT m) where
+   loadFileFromPath = lift <<< loadFileFromPath
 
 newtype WebT :: forall k. (k -> Type) -> k -> Type
 newtype WebT m a = WebT (ReaderT FileCxt m a)

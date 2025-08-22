@@ -186,8 +186,8 @@ drawFig divId fig = do
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
-drawFile (File file × src) =
-   addEditorView (codeMirrorDiv file) >>= drawCode src
+drawFile (File fileName × src) =
+   addEditorView (codeMirrorDiv fileName) >>= drawCode src
 
 unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnection (Env a) (EnvExpr a)
 unprojExpr (EnvExpr _ e) = GC
@@ -207,10 +207,10 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> m Fig
-loadFig spec@{ inputs, imports, file, datasets, linking } = do
-   progCxt <- loadProgCxt imports datasets
-   { s, e, gconfig } <- prepConfig file progCxt
+loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> String -> m Fig
+loadFig spec@{ inputs, datasets, linking } fluidSrc = do
+   progCxt <- loadProgCxt datasets
+   { s, e, gconfig } <- prepConfig progCxt fluidSrc
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval

@@ -1,4 +1,0 @@
-MultiView { 
-    firstMatrix: matMul (matMul aMatrix bMatrix) cMatrix,
-    secondMatrix: matMul aMatrix (matMul bMatrix cMatrix)
-}

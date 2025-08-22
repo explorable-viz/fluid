@@ -1,8 +1,6 @@
 {
     "fluidSrcPath": ["../fluid"],
     "datasets": [],
-    "imports": ["new-methane"],
-    "file": "methane",
     "inputs": [ "methane"],
     "query": false,
     "linking": true

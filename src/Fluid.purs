@@ -14,7 +14,7 @@ import Effect.Aff (Aff, Error, runAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
-import File (File(..), FileCxt(..), Folder(..))
+import File (File(..), FileCxt(..), Folder(..), loadFile)
 import Lattice (erase)
 import Module (loadProgCxt, prepConfig)
 import Module.Node (runNodeT)
@@ -26,7 +26,6 @@ import Val (Val)
 
 data EvalArgs = EvalArgs
    { local :: Boolean
-   , imports :: Array String
    , datasets :: Array (Bind String)
    , fileName :: String
    , fluidSrcPath :: Folder
@@ -58,25 +57,16 @@ parseDatasets =
            <> help "Comma-separated list of datasets"
       )
 
-parseImports :: Parser (List String)
-parseImports =
-   many $ strOption
-      ( long "imports"
-           <> short 'i'
-           <> help "Comma-separated list of files to import"
-      )
-
 parseLocal :: Parser Boolean
 parseLocal = switch (long "local" <> short 'l' <> help "Are you running fluid as a library?")
 
 parseEvaluate :: Parser EvalArgs
 parseEvaluate = ado
    local <- parseLocal
-   imports <- fromFoldable <$> parseImports
    datasets <- fromFoldable <$> parseDatasets
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
    fluidSrcPath <- Folder <$> strOption (long "fluid-src-path" <> short 'p' <> help "The path containing the program files")
-   in EvalArgs { local, imports, datasets, fileName, fluidSrcPath }
+   in EvalArgs { local, datasets, fileName, fluidSrcPath }
 
 commands :: { evaluate :: Parser Command }
 commands =
@@ -107,10 +97,11 @@ fluidLibraryPath :: String
 fluidLibraryPath = "node_modules/@explorable-viz/fluid"
 
 evaluate :: EvalArgs -> Aff (Val Unit)
-evaluate (EvalArgs { local, imports, datasets, fileName, fluidSrcPath }) = do
+evaluate (EvalArgs { local, datasets, fileName, fluidSrcPath }) = do
    let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    runNodeT (FileCxt { fluidSrcPaths }) $ do
-      progCxt <- loadProgCxt imports datasets
-      { e, gconfig } <- prepConfig (File fileName) progCxt
+      progCxt <- loadProgCxt datasets
+      fluidSrc <- loadFile fluidSrcPaths (File fileName)
+      { e, gconfig } <- prepConfig progCxt fluidSrc
       { outα } <- graphEval gconfig e
       pure (erase outα)
