@@ -46,7 +46,6 @@
     "test": "./script/test.sh",
     "test-all": "./script/test-all.sh",
     "test-browser": "./script/test.sh --browsers=Chrome --singleRun=false",
-    "test-page": "./script/test-page.sh",
     "test-website": "./script/test-website.sh",
     "test-website-all": "./script/test-website-all.sh",
     "tidy": "./script/tidy.sh"
