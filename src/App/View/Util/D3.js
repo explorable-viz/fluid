@@ -142,6 +142,7 @@ export function rootSelect (selector) {
 
 export function select (selector) {
    return sel => {
+      assertNonEmpty(sel)
       return () => {
          return sel.select(selector)
       }

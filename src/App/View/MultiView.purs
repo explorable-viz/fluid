@@ -10,32 +10,23 @@ import Data.Array (mapWithIndex)
 import Data.Foldable (sequence_)
 import Dict (Dict)
 import Effect (Effect)
-import Util (type (×), (×))
+import Util ((×))
 import Util.Map (toUnfoldable)
 
 data MultiView = MultiView (Dict View')
 
 instance View MultiView Unit where
-   createElement _ = createRootElement'
-   setSelection _ = setSelStates'
+   -- create views in fixed order, so can access positionally in setSelection and map back to keys
+   createElement :: Unit -> MultiView -> D3.Selection -> Effect D3.Selection
+   createElement _ (MultiView views) parent = do
+      rootElement <- parent # create D3.Div []
+      sequence_ $ (toUnfoldable views :: Array _) <#> \(_ × view) ->
+         unpack view \v -> createElement unit v rootElement
+      pure rootElement
 
-createRootElement' :: MultiView -> D3.Selection -> Effect D3.Selection
-createRootElement' (MultiView views) parent = do
-   rootElement <- parent # create D3.Div []
-   sequence_ $ views' <#> \(_ × view) ->
-      unpack view \v -> createElement unit v rootElement
-   pure rootElement
-   where
-   -- create views in fixed order so we can access positionally in setSelStates and map back to keys
-   views' :: Array (String × View')
-   views' = toUnfoldable views
-
-setSelStates' :: MultiView -> Select -> D3.Selection -> Effect Unit
-setSelStates' (MultiView views) select rootElement =
-   sequence_ $
-      flip mapWithIndex views' \i (x × view) -> do
-         child <- rootElement # D3.select ("svg" <> D3.nthChild (i + 1)) -- TODO: remove 'svg'
-         void $ unpack view \v -> setSelection unit v (multiViewEntry x >>> select) child
-   where
-   views' :: Array (String × View')
-   views' = toUnfoldable views
+   setSelection :: Unit -> MultiView -> Select -> D3.Selection -> Effect Unit
+   setSelection _ (MultiView views) select rootElement =
+      sequence_ $
+         flip mapWithIndex (toUnfoldable views) \i (x × view) -> do
+            child <- rootElement # D3.select ("svg" <> D3.nthChild (i + 1)) -- TODO: remove 'svg'
+            void $ unpack view \v -> setSelection unit v (multiViewEntry x >>> select) child
