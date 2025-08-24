@@ -14,7 +14,7 @@ fi
 echo "NEW_ID = $NEW_ID"
 
 docker save esop-artifact -o esop-artifact.tar
-gzip esop-artifact.tar 
+gzip esop-artifact.tar
 
 ./script/zenodo_upload.sh $NEW_ID esop-artifact.tar.gz
 ./script/zenodo_upload.sh $NEW_ID README.md
