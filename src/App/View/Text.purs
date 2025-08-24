@@ -11,7 +11,7 @@ import Bind ((↦))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Util (spy, (×))
+import Util ((×))
 import Web.Event.EventTarget (eventListener)
 
 class Textual a where
@@ -44,7 +44,7 @@ textAttrs text =
    , "color" ↦ color
    ]
    where
-   sel' = spy "SelStates: " identity $ sel (getText text)
+   sel' = sel (getText text)
 
    border :: String
    border
