@@ -2,6 +2,9 @@
 # run from project root
 set -e
 
+yarn puppeteer browsers install chrome
+yarn puppeteer browsers install firefox
+
 WEBSITE=$1
 
 echo "Testing website: ${WEBSITE}"
