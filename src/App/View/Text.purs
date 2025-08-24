@@ -27,9 +27,8 @@ instance View Text Unit where
 
    setSelection :: Unit -> Text -> Select -> D3.Selection -> Effect Unit
    setSelection _ text redraw rootElement = do
-      elem <- rootElement # D3.select (D3.nthChild 1)
       listener <- eventListener (redraw <<< uncurry textSelector <<< selectionEventData')
-      elem # setStyles (textAttrs text) >>= registerMouseListeners listener
+      rootElement # setStyles (textAttrs text) >>= registerMouseListeners listener
       where
       textSelector :: ViewSelSetter Text
       textSelector _ = identity

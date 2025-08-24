@@ -16,21 +16,18 @@ import Val (Val)
 data Paragraph = Paragraph Boolean (Array View')
 
 instance View Paragraph Unit where
-   createElement _ = createRootElement'
-   setSelection _ = setSelStates'
+   createElement :: Unit -> Paragraph -> D3.Selection -> Effect D3.Selection
+   createElement _ (Paragraph _ views) parent = do
+      rootElement <- parent # create Div [ "class" ↦ "para-text" ]
+      sequence_ $ views <#> \view ->
+         unpack view \v -> do
+            createElement unit v rootElement
+      pure rootElement
 
-createRootElement' :: Paragraph -> D3.Selection -> Effect D3.Selection
-createRootElement' (Paragraph _ views) parent = do
-   rootElement <- parent # create Div [ "class" ↦ "para-text" ]
-   sequence_ $ views <#> \view ->
-      unpack view \v -> do
-         createElement unit v rootElement
-   pure rootElement
-
-setSelStates' :: Paragraph -> Select -> D3.Selection -> Effect Unit
-setSelStates' (Paragraph isDoc views) select rootElement = do
-   sequence_ $ flip mapWithIndex views \i view -> do
-      unpack view \v -> setSelection unit v (select <<< lift i) rootElement
-   where
-   lift :: Int -> SelSetter Val Val
-   lift i = if isDoc then docElement i else constrArg cParagraph 0 <<< listElement i
+   setSelection :: Unit -> Paragraph -> Select -> D3.Selection -> Effect Unit
+   setSelection _ (Paragraph isDoc views) select rootElement = do
+      sequence_ $ flip mapWithIndex views \i view -> do
+         unpack view \v -> setSelection unit v (select <<< lift i) rootElement
+      where
+      lift :: Int -> SelSetter Val Val
+      lift i = if isDoc then docElement i else constrArg cParagraph 0 <<< listElement i
