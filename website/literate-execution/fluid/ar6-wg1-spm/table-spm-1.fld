@@ -8,7 +8,7 @@ let probAsText = likelihoodMap likelihoods;
 
 let mean xs = sum xs / length xs;
 
-let calcLikelihood (min, max) target = 
+let calcLikelihood (min, max) target =
     if max < target
     then 0.05
     else if target <= min

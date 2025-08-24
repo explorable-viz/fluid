@@ -1,0 +1,7 @@
+[
+    { scenario: "SSP1-1.9", bestEstNear: 1.5, lowNear: 1.2, highNear: 1.7, bestEstMid: 1.6, lowMid: 1.2, highMid: 2.0, bestEstLate: 1.4, lowLate: 1.0, highLate: 1.8},
+    { scenario: "SSP1-2.6", bestEstNear: 1.5, lowNear: 1.2, highNear: 1.8, bestEstMid: 1.7, lowMid: 1.3, highMid: 2.2, bestEstLate: 1.8, lowLate: 1.3, highLate: 2.4},
+    { scenario: "SSP2-4.5", bestEstNear: 1.5, lowNear: 1.2, highNear: 1.8, bestEstMid: 2.0, lowMid: 1.6, highMid: 2.5, bestEstLate: 2.7, lowLate: 2.1, highLate: 3.5},
+    { scenario: "SSP3-7.0", bestEstNear: 1.5, lowNear: 1.2, highNear: 1.8, bestEstMid: 2.1, lowMid: 1.7, highMid: 2.6, bestEstLate: 3.6, lowLate: 2.8, highLate: 4.6},
+    { scenario: "SSP5-8.5", bestEstNear: 1.6, lowNear: 1.3, highNear: 1.9, bestEstMid: 2.4, lowMid: 1.9, highMid: 3.0, bestEstLate: 4.4, lowLate: 3.3, highLate: 5.7}
+]
