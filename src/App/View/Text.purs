@@ -2,12 +2,13 @@ module App.View.Text where
 
 import Prelude
 
-import App.Util (Attrs, Selectable, inert, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
+import App.Util (Attrs, Selectable, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
 import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
+import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Util ((×))
@@ -25,26 +26,24 @@ instance View Text Unit where
       rootElement # setText text
 
    setSelection :: Unit -> Text -> Select -> D3.Selection -> Effect Unit
-   setSelection _ (Text (text × _)) redraw rootElement = do
-      elem <- rootElement # D3.select (D3.nthChild 1)
+   setSelection _ text redraw rootElement = do
       listener <- eventListener (redraw <<< uncurry textSelector <<< selectionEventData')
-      elem # setStyles (textAttrs text) >>= registerMouseListeners listener
+      rootElement # setStyles (textAttrs text) >>= registerMouseListeners listener
       where
       textSelector :: ViewSelSetter Text
       textSelector _ = identity
 
-instance Textual String where
-   getText x = x × inert
+instance Textual Text where
+   getText = unwrap
 
 textAttrs :: ∀ a. Textual a => a -> Attrs
-textAttrs x =
+textAttrs text =
    [ "border-bottom" ↦ border
    , "background" ↦ background
    , "color" ↦ color
    ]
    where
-   text = getText x
-   sel' = sel text
+   sel' = sel (getText text)
 
    border :: String
    border
@@ -64,3 +63,9 @@ textAttrs x =
       | otherwise = "black"
 
 type TextElem = { i :: Int }
+
+-- ======================
+-- boilerplate
+-- ======================
+
+derive instance Newtype Text _
