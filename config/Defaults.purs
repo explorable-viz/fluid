@@ -24,7 +24,7 @@ tracingDefaults =
    , bwdSelection: false
    , fwdAfterBwd: false
    , mediatingData: false
-   , mouseEvent: false
+   , mouseEvent: true
    , intermediates: true
    }
 
