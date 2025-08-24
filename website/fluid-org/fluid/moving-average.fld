@@ -1,3 +1,5 @@
+import methane
+
 let nthPad n xs =
       nth (min (max n 0) (length xs - 1)) xs;
     movingAvg ys window =

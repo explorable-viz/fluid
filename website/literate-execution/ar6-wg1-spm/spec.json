@@ -1,8 +1,6 @@
 {
     "fluidSrcPath": ["../fluid"],
     "datasets": [],
-    "imports": ["lib/stats", "new-ar6-wg1-spm"],
-    "file": "ar6-wg1-spm/figure-spm-4",
     "inputs": ["ssp126Source", "ssp245Source", "ssp126preds", "ssp245preds"],
     "query": true,
     "linking": false
