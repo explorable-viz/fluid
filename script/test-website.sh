@@ -12,7 +12,7 @@ fi
 
 if [[ -f dist/$WEBSITE/test.mjs ]]; then
    echo "Running dist/$WEBSITE/test.mjs"
-   node ./dist/fluid/shared/website-test.mjs $WEBSITE
+   node ./dist/fluid/shared/website-test.js $WEBSITE
 else
    echo "No test.mjs found for $WEBSITE in dist/$WEBSITE"
 fi
