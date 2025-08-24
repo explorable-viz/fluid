@@ -1,59 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <link rel="icon" href="/favicon.ico" type="image/x-icon">
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-   <title>Fluid: Data-Linked Visualisations</title>
+   <title>IPCC AR6 WG1 SPM examples</title>
    <link href="../css/styles.css" rel="stylesheet" type="text/css">
-   <link href="../css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
-   <script src="../shared/util.js"></script>
-   <style>
-      .data-pane {
-         max-width: 400px;
-      }
-   </style>
 </head>
 <body>
-<div id="grid" class="grid-container data-pane-hidden">
+
+<div class="grid-container double-size">
    <div></div>
    <div></div>
    <div class="flex-left-align">
-      <h3>Figure SPM.4b</h3>
-      <p>Recreating the bar plots from IPCC AR6 Box SPM.4b</p>
-   </div>
+      <div></div>
+      <h2>IPCC AR6 WG1 SPM examples</h2>
 
-   <div class="flex-right-align data-pane">
-      <div id="fig-input"></div>
-      <div id="fig-intermediate" class="flex-right-align intermediates"></div>
+      <p>Work in progress</a></p>
+
+      <p><a href="figure-spm-4b">Figure SPM 4b</a></p>
+      <p><a href="table-spm-1">Table SPM 1</a></p>
    </div>
-   <div onclick="toggleDataPane('grid')">
-      <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
-   </div>
-   <div id="fig">
-      <div class="fig-loading">loading figure(s)</div>
-   </div>
-   <details>
-      <summary>figure-spm-4.fld</summary>
-      <div id="codemirror-figure-spm-4"></div>
-   </details>
 </div>
-
-<script type="module">
-   import { drawCode, loadFigureSpec } from "../shared/load-figure.js";
-
-   const jsonSpec = {
-    "fluidSrcPath": ["../fluid"],
-    "datasets": [["likelihoods", "ar6-wg1-spm/likelihoods.fld"], ["ssp126Source", "ar6-wg1-spm/ssp126.fld"], ["ssp126preds", "ar6-wg1-spm/ssp126preds.fld"], ["ssp245Source", "ar6-wg1-spm/ssp245.fld"], ["ssp245preds", "ar6-wg1-spm/ssp245preds.fld"]],
-    "inputs": [ "ssp126Source", "ssp245Source", "ssp126preds", "ssp245preds" ],
-    "query": true,
-    "linking": false
-   }
-   
-   loadFigureSpec(jsonSpec)("../fluid/ar6-wg1-spm/figure-spm-4.fld")();
-   drawCode("../fluid/ar6-wg1-spm/figure-spm-4.fld")();
-</script>
 </body>
 </html>
