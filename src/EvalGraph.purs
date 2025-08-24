@@ -201,6 +201,7 @@ eval_progCxt
    :: forall m
     . MonadWithGraphAlloc m
    => MonadReader FileCxt m
+   => MonadAff m
    => LoadFile m
    => ProgCxt Vertex
    -> ModuleCxt Vertex
