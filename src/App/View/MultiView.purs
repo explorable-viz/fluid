@@ -28,5 +28,5 @@ instance View MultiView Unit where
    setSelection _ (MultiView views) select rootElement =
       sequence_ $
          flip mapWithIndex (toUnfoldable views) \i (x × view) -> do
-            child <- rootElement # D3.select ("svg" <> D3.nthChild (i + 1)) -- TODO: remove 'svg'
+            child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
             void $ unpack view \v -> setSelection unit v (multiViewEntry x >>> select) child

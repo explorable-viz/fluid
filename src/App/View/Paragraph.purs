@@ -26,7 +26,7 @@ instance View Paragraph Unit where
    setSelection :: Unit -> Paragraph -> Select -> D3.Selection -> Effect Unit
    setSelection _ (Paragraph isDoc views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
-         child <- rootElement # D3.select (D3.nthChild (i + 1))
+         child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
          unpack view \v -> setSelection unit v (select <<< lift i) child
       where
       lift :: Int -> SelSetter Val Val
