@@ -1,4 +1,4 @@
-import { runTests, testURL, waitForFigure, waitFor } from "./shared/webtest-lib.js"
+import { runTests, testURL, waitFor } from "./shared/webtest-lib.js"
 
 export const main = async () => {
     await runTests(testURL("figure-spm-4b")([
