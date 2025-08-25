@@ -293,10 +293,11 @@ exprFwd (ListNonEmpty α doc s l) = do
    e <- desug s
    l' <- desug l
    pure $ E.DocExpr edoc $ econs α Doc.None e l'
-exprFwd (ListEnum s1 s2) = E.App Doc.None <$> ((E.App Doc.None (E.Var "enumFromTo")) <$> desug s1) <*> desug s2
+exprFwd (ListEnum s1 s2) =
+   E.App Doc.None <$> (E.App Doc.None (E.Var "enumFromTo") <$> desug s1) <*> desug s2
 exprFwd (ListComp α doc s (ListCompGen p s' : qs)) = unsafePartial $ do
    edoc <- desugComment doc
-   e <- listCompFwd (α × ((ListCompGen p s') : qs) × s)
+   e <- listCompFwd (α × (ListCompGen p s' : qs) × s)
    pure $ E.DocExpr edoc e
 exprFwd (ListComp α _ s qs) = listCompFwd (α × qs × s)
 exprFwd (Let ds s) = varDefsFwd (ds × s)
