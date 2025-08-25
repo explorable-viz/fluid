@@ -279,14 +279,15 @@ exprFwd (App doc s1 s2) = do
    e1 <- desug s1
    e2 <- desug s2
    pure $ E.DocExpr edoc $ E.App Doc.None e1 e2
-exprFwd (BinaryApp s1 op s2) = E.App Doc.None <$> (E.App Doc.None (E.Op op) <$> desug s1) <*> desug s2
+exprFwd (BinaryApp s1 op s2) =
+   E.App Doc.None <$> (E.App Doc.None (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (MatchAs s μ) =
    E.App Doc.None <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
 exprFwd (IfElse s1 s2 s3) =
    E.App Doc.None <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3))) <*> desug s1
 exprFwd (ListEmpty α doc) = do
    edoc <- desugComment doc
-   pure (enil α edoc)
+   pure $ E.DocExpr edoc $ enil α Doc.None
 exprFwd (ListNonEmpty α doc s l) = do
    edoc <- desugComment doc
    econs α edoc <$> desug s <*> desug l
@@ -309,7 +310,6 @@ exprBwd (E.App _ (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (desugBwd e1 s1)
       (if cTrue ∈ m then desugBwd (asExpr (get cTrue m)) s2 else botOf s2)
       (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
-exprBwd (E.Constr α edoc _ Nil) (ListEmpty _ doc) = ListEmpty α (desugCommentBwd edoc doc)
 exprBwd (E.Constr α edoc _ (e1 : e2 : Nil)) (ListNonEmpty _ doc s l) =
    ListNonEmpty α (desugCommentBwd edoc doc) (desugBwd e1 s) (desugBwd e2 l)
 exprBwd (E.App _ (E.App _ (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
@@ -339,6 +339,8 @@ exprBwd (E.DocExpr edoc (E.DProject Doc.None e e')) (DProject doc s s') =
    DProject (desugCommentBwd edoc doc) (desugBwd e s) (desugBwd e' s')
 exprBwd (E.DocExpr edoc (E.App Doc.None e1 e2)) (App doc s1 s2) =
    App (desugCommentBwd edoc doc) (desugBwd e1 s1) (desugBwd e2 s2)
+exprBwd (E.DocExpr edoc (E.Constr α Doc.None _ Nil)) (ListEmpty _ doc) =
+   ListEmpty α (desugCommentBwd edoc doc)
 exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
