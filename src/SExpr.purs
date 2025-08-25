@@ -261,7 +261,9 @@ exprFwd (Dictionary α doc sss) = do
    pure $ E.DocExpr edoc $ E.Dictionary α Doc.None $ zipWith Pair ks' es
 exprFwd (Matrix α doc s (x × y) s') = do
    edoc <- desugComment doc
-   E.Matrix α edoc <$> desug s <@> x × y <*> desug s'
+   e <- desug s
+   e' <- desug s'
+   pure $ E.DocExpr edoc $ E.Matrix α edoc e (x × y) e'
 exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project doc s x) = do
    edoc <- desugComment doc
@@ -292,8 +294,6 @@ exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desug s
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
 exprBwd (E.Op _) (Op op) = Op op
-exprBwd (E.Matrix α edoc e1 _ e2) (Matrix _ doc s1 (x × y) s2) =
-   Matrix α (desugCommentBwd edoc doc) (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (desugBwd σ μ)
 exprBwd (E.Project doc e x) (Project doc' s _) = Project (desugCommentBwd doc doc') (desugBwd e s) x
 exprBwd (E.App doc e1 e2) (App doc' s1 s2) = App (desugCommentBwd doc doc') (desugBwd e1 s1) (desugBwd e2 s2)
@@ -329,6 +329,8 @@ exprBwd (E.DocExpr edoc (E.Constr α Doc.None _ es)) (Constr _ doc c ss) =
 exprBwd (E.DocExpr edoc (E.Dictionary α Doc.None ees)) (Dictionary _ doc sss) =
    Dictionary α (desugCommentBwd edoc doc)
       (zipWith (\(Pair e e') (s × s') -> (desugBwd e s) × (desugBwd e' s')) ees sss)
+exprBwd (E.DocExpr edoc (E.Matrix α Doc.None e1 _ e2)) (Matrix _ doc s1 (x × y) s2) =
+   Matrix α (desugCommentBwd edoc doc) (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
