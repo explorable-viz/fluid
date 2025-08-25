@@ -24,9 +24,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
---main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
 
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> scratchpad)
+--main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> scratchpad)
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 scratchpad = asTestSuite $ suite comments_cases

@@ -290,7 +290,9 @@ exprFwd (ListEmpty α doc) = do
    pure $ E.DocExpr edoc $ enil α Doc.None
 exprFwd (ListNonEmpty α doc s l) = do
    edoc <- desugComment doc
-   econs α edoc <$> desug s <*> desug l
+   e <- desug s
+   l' <- desug l
+   pure $ E.DocExpr edoc $ econs α Doc.None e l'
 exprFwd (ListEnum s1 s2) = E.App Doc.None <$> ((E.App Doc.None (E.Var "enumFromTo")) <$> desug s1) <*> desug s2
 exprFwd (ListComp α doc s ((ListCompGen _ p s') : qs)) = listCompFwd (α × ((ListCompGen doc p s') : qs) × s)
 exprFwd (ListComp α _ s qs) = listCompFwd (α × qs × s)
@@ -310,8 +312,6 @@ exprBwd (E.App _ (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (desugBwd e1 s1)
       (if cTrue ∈ m then desugBwd (asExpr (get cTrue m)) s2 else botOf s2)
       (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
-exprBwd (E.Constr α edoc _ (e1 : e2 : Nil)) (ListNonEmpty _ doc s l) =
-   ListNonEmpty α (desugCommentBwd edoc doc) (desugBwd e1 s) (desugBwd e2 l)
 exprBwd (E.App _ (E.App _ (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd e@(E.App doc (E.App _ _ _) _) (ListComp _ doc' s (q@(ListCompGen _ _ _) : qs)) =
@@ -341,6 +341,8 @@ exprBwd (E.DocExpr edoc (E.App Doc.None e1 e2)) (App doc s1 s2) =
    App (desugCommentBwd edoc doc) (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.DocExpr edoc (E.Constr α Doc.None _ Nil)) (ListEmpty _ doc) =
    ListEmpty α (desugCommentBwd edoc doc)
+exprBwd (E.DocExpr edoc (E.Constr α Doc.None _ (e1 : e2 : Nil))) (ListNonEmpty _ doc s l) =
+   ListNonEmpty α (desugCommentBwd edoc doc) (desugBwd e1 s) (desugBwd e2 l)
 exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
