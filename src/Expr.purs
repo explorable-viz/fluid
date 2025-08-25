@@ -190,6 +190,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (App doc e1 e2) (App doc' e1' e2') = App (doc ∨ doc') (e1 ∨ e1') (e2 ∨ e2')
    join (Let def e) (Let def' e') = Let (def ∨ def') (e ∨ e')
    join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
+   join (DocExpr doc e) (DocExpr doc' e') = DocExpr (doc ∨ doc') (e ∨ e')
    join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
@@ -208,6 +209,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (App doc e1 e2) (App doc' e1' e2') = App (expand doc doc') (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
+   expand (DocExpr doc e) (DocExpr doc' e') = DocExpr (expand doc doc') (expand e e')
    expand _ _ = shapeMismatch unit
 
 instance MeetSemilattice a => MeetSemilattice (Expr a) where
@@ -291,6 +293,7 @@ instance Apply Expr where
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
    apply (DProject fdoc fd fk) (DProject doc d k) = DProject (fdoc <*> doc) (fd <*> d) (fk <*> k)
+   apply (DocExpr fdoc fe) (DocExpr doc e) = DocExpr (fdoc <*> doc) (fe <*> e)
    apply _ _ = shapeMismatch unit
 
 instance Apply Elim where

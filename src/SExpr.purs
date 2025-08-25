@@ -242,7 +242,7 @@ exprFwd (Var x) = pure (E.Var x)
 exprFwd (Op op) = pure (E.Op op)
 exprFwd (Int α doc n) = do
    edoc <- desugComment doc
-   pure $ E.Int α edoc n
+   pure $ E.DocExpr edoc $ E.Int α Doc.None n
 exprFwd (Float α doc n) = do
    edoc <- desugComment doc
    pure (E.Float α edoc n)
@@ -323,6 +323,8 @@ exprBwd e (ListComp _ _ s qs) =
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 exprBwd (E.LetRec xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBwd e s)
 exprBwd (E.DProject doc ed ek) (DProject doc' sd sk) = DProject (desugCommentBwd doc doc') (exprBwd ed sd) (exprBwd ek sk)
+exprBwd (E.DocExpr edoc (E.Int α Doc.None _)) (Int _ doc n) =
+   Int α (desugCommentBwd edoc doc) n
 exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
