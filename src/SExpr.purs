@@ -125,7 +125,7 @@ type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a
    = ListCompGuard (Expr a)
-   | ListCompGen (DocOpt a) Pattern (Expr a)
+   | ListCompGen Pattern (Expr a)
    | ListCompDecl (VarDef a) -- could allow VarDefs instead
 
 data Module a = Module (List (VarDefs a + RecDefs a))
@@ -294,7 +294,10 @@ exprFwd (ListNonEmpty α doc s l) = do
    l' <- desug l
    pure $ E.DocExpr edoc $ econs α Doc.None e l'
 exprFwd (ListEnum s1 s2) = E.App Doc.None <$> ((E.App Doc.None (E.Var "enumFromTo")) <$> desug s1) <*> desug s2
-exprFwd (ListComp α doc s ((ListCompGen _ p s') : qs)) = listCompFwd (α × ((ListCompGen doc p s') : qs) × s)
+exprFwd (ListComp α doc s (ListCompGen p s' : qs)) = unsafePartial $ do
+   edoc <- desugComment doc
+   E.App Doc.None e e' <- listCompFwd (α × ((ListCompGen p s') : qs) × s)
+   pure $ E.App edoc e e'
 exprFwd (ListComp α _ s qs) = listCompFwd (α × qs × s)
 exprFwd (Let ds s) = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desug s
@@ -314,7 +317,7 @@ exprBwd (E.App _ (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
       (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
 exprBwd (E.App _ (E.App _ (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (desugBwd e1 s1) (desugBwd e2 s2)
-exprBwd e@(E.App doc (E.App _ _ _) _) (ListComp _ doc' s (q@(ListCompGen _ _ _) : qs)) =
+exprBwd e@(E.App doc (E.App _ _ _) _) (ListComp _ doc' s (q@(ListCompGen _ _) : qs)) =
    let α × qs' × s' = listCompBwd e ((q : qs) × s) in ListComp α (desugCommentBwd doc doc') s' qs'
 exprBwd e (ListComp _ _ s qs) =
    let α × qs' × s' = listCompBwd e (qs × s) in ListComp α Doc.None s' qs'
@@ -355,11 +358,10 @@ listCompFwd (α × (ListCompGuard s : qs) × s') = do
 listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
    σ <- clausesStateFwd (((Left p : Nil) × Nil × ListComp α Doc.None s' qs) : Nil)
    E.App Doc.None (E.Lambda α (asElim σ)) <$> desug s
-listCompFwd (α × (ListCompGen doc p s : qs) × s') = do
+listCompFwd (α × (ListCompGen p s : qs) × s') = do
    let ks = orElseFwd α ((Left p : Nil) × ListComp α Doc.None s' qs)
-   edoc <- desugComment doc
    σ <- clausesStateFwd (toList (ks <#> second (Nil × _)))
-   E.App edoc (E.App Doc.None (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
+   E.App Doc.None (E.App Doc.None (E.Var "concatMap") (E.Lambda α (asElim σ))) <$> desug s
 
 listCompBwd
    :: forall a
@@ -378,10 +380,10 @@ listCompBwd (E.App _ (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × 
       # unsafePartial case _ of
            ((Left _ : Nil) × Nil × ListComp α Doc.None s' qs') : Nil ->
               (α ∨ α') × (ListCompDecl (VarDef p (desugBwd e s0)) : qs') × s'
-listCompBwd (E.App _ (E.App _ (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen _ p s0 : qs) × s0') =
+listCompBwd (E.App _ (E.App _ (E.Var "concatMap") (E.Lambda α' σ)) e) ((ListCompGen p s0 : qs) × s0') =
    orElseBwd k (nonEmpty ks <#> unsafePartial \(π × Nil × s') -> π × s')
       # unsafePartial case _ of
-           β × ListComp α _ s' qs' -> (α ∨ α' ∨ β) × (ListCompGen Doc.None p (desugBwd e s0) : qs') × s'
+           β × ListComp α _ s' qs' -> (α ∨ α' ∨ β) × (ListCompGen p (desugBwd e s0) : qs') × s'
    where
    k = (Left p : Nil) × ListComp unit Doc.None s0' qs
    ks = clausesStateBwd (ContElim σ) (toList (orElseFwd unit k <#> second (Nil × _)))
