@@ -128,17 +128,17 @@ eval _ (Float α n) αs =
    new (flip Val None) (insert α αs) (V.Float n)
 eval _ (Str α s) αs =
    new (flip Val None) (insert α αs) (V.Str s)
-eval γ (Dictionary α doc ees) αs = do
+eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   new' γ (insert α αs) doc $ V.Dictionary (DictRep d)
+   new (flip Val None) (insert α αs) $ V.Dictionary (DictRep d)
 eval γ (Constr α doc c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
    new' γ (insert α αs) doc $ V.Constr c vs
-eval γ (Matrix α doc e (x × y) e') αs = do
+eval γ (Matrix α e (x × y) e') αs = do
    Val _ _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
    check
@@ -150,25 +150,23 @@ eval γ (Matrix α doc e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = maplet x (Val β None (V.Int i)) `disjointUnion` (maplet y (Val β' None (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
-   new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
+   new (flip Val None) (insert α αs) (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
 eval γ (Lambda α σ) αs =
    new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
-eval γ (Project doc e x) αs = do
+eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
       Val _ _ (V.Dictionary (DictRep d)) -> do
-         v' <- withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
-         concatDocs γ v' doc
+         withMsg "Dict lookup" (snd <$> lookup x d # orElse ("Key \"" <> x <> "\" not found"))
       _ -> throw $ "Found " <> prettyP v <> ", expected dictionary"
-eval γ (DProject doc e x) α = do
+eval γ (DProject e x) α = do
    v <- eval γ e α
    v' <- eval γ x α
    case v of
       Val _ _ (V.Dictionary (DictRep d)) ->
          case v' of
             Val _ _ (V.Str s) -> do
-               v'' <- (withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found"))
-               concatDocs γ v'' doc
+               withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
 eval γ (App doc e e') αs = do

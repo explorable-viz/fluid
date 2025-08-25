@@ -258,22 +258,22 @@ exprFwd (Dictionary α doc sss) = do
    ks' <- traverse desug ks
    es <- traverse desug ss
    edoc <- desugComment doc
-   pure $ E.DocExpr edoc $ E.Dictionary α Doc.None $ zipWith Pair ks' es
+   pure $ E.DocExpr edoc $ E.Dictionary α $ zipWith Pair ks' es
 exprFwd (Matrix α doc s (x × y) s') = do
    edoc <- desugComment doc
    e <- desug s
    e' <- desug s'
-   pure $ E.DocExpr edoc $ E.Matrix α edoc e (x × y) e'
+   pure $ E.DocExpr edoc $ E.Matrix α e (x × y) e'
 exprFwd (Lambda μ) = E.Lambda top <$> desug μ
 exprFwd (Project doc s x) = do
    edoc <- desugComment doc
    e <- desug s
-   pure $ E.DocExpr edoc $ E.Project Doc.None e x
+   pure $ E.DocExpr edoc $ E.Project e x
 exprFwd (DProject doc s s') = do
    edoc <- desugComment doc
    e <- desug s
    e' <- desug s'
-   pure $ E.DocExpr edoc $ E.DProject Doc.None e e'
+   pure $ E.DocExpr edoc $ E.DProject e e'
 exprFwd (App doc s1 s2) = do
    edoc <- desugComment doc
    e1 <- desug s1
@@ -332,14 +332,14 @@ exprBwd (E.DocExpr edoc (E.Str α _)) (Str _ doc str) =
    Str α (desugCommentBwd edoc doc) str
 exprBwd (E.DocExpr edoc (E.Constr α Doc.None _ es)) (Constr _ doc c ss) =
    Constr α (desugCommentBwd edoc doc) c (uncurry desugBwd <$> zip es ss)
-exprBwd (E.DocExpr edoc (E.Dictionary α Doc.None ees)) (Dictionary _ doc sss) =
+exprBwd (E.DocExpr edoc (E.Dictionary α ees)) (Dictionary _ doc sss) =
    Dictionary α (desugCommentBwd edoc doc)
       (zipWith (\(Pair e e') (s × s') -> (desugBwd e s) × (desugBwd e' s')) ees sss)
-exprBwd (E.DocExpr edoc (E.Matrix α Doc.None e1 _ e2)) (Matrix _ doc s1 (x × y) s2) =
+exprBwd (E.DocExpr edoc (E.Matrix α e1 _ e2)) (Matrix _ doc s1 (x × y) s2) =
    Matrix α (desugCommentBwd edoc doc) (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
-exprBwd (E.DocExpr edoc (E.Project Doc.None e x)) (Project doc s _) =
+exprBwd (E.DocExpr edoc (E.Project e x)) (Project doc s _) =
    Project (desugCommentBwd edoc doc) (desugBwd e s) x
-exprBwd (E.DocExpr edoc (E.DProject Doc.None e e')) (DProject doc s s') =
+exprBwd (E.DocExpr edoc (E.DProject e e')) (DProject doc s s') =
    DProject (desugCommentBwd edoc doc) (desugBwd e s) (desugBwd e' s')
 exprBwd (E.DocExpr edoc (E.App Doc.None e1 e2)) (App doc s1 s2) =
    App (desugCommentBwd edoc doc) (desugBwd e1 s1) (desugBwd e2 s2)
