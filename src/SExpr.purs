@@ -317,10 +317,7 @@ exprBwd (E.Constr α edoc _ (e1 : e2 : Nil)) (ListNonEmpty _ doc s l) =
 exprBwd (E.App _ (E.App _ (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd e@(E.App doc (E.App _ _ _) _) (ListComp _ doc' s (q@(ListCompGen _ _ _) : qs)) =
-   let
-      α × qs' × s' = listCompBwd e ((q : qs) × s)
-   in
-      ListComp α (desugCommentBwd doc doc') s' qs'
+   let α × qs' × s' = listCompBwd e ((q : qs) × s) in ListComp α (desugCommentBwd doc doc') s' qs'
 exprBwd e (ListComp _ _ s qs) =
    let α × qs' × s' = listCompBwd e (qs × s) in ListComp α Doc.None s' qs'
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))

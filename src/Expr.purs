@@ -39,6 +39,7 @@ data Expr a
    | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
+   | DocExpr (DocOpt a) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -89,6 +90,7 @@ instance FV (Expr a) where
    fv (App doc e1 e2) = fv doc ∪ fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
    fv (LetRec ρ e) = fv ρ ∪ fv e
+   fv (DocExpr doc e') = fv doc ∪ fv e'
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ \\ singleton x
@@ -228,6 +230,7 @@ instance Vertices (Expr Vertex) where
    vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
+   vertices (DocExpr doc e') = vertices doc ∪ vertices e'
 
 instance Vertices (Elim Vertex) where
    vertices (ElimVar _ κ) = vertices κ

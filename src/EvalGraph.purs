@@ -183,6 +183,10 @@ eval γ (Let (VarDef σ e) e') αs = do
 eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
+eval γ (DocExpr doc e') αs = do
+   Val α vdoc v <- eval γ e' αs
+   vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α None v)) doc
+   pure (Val α (vdoc' <> vdoc) v)
 
 eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
@@ -260,6 +264,7 @@ new' γ αs doc u = do
    extend (DVertex (α × pack v')) αs
    pure v'
 
+-- TODO: delete me
 concatDocs
    :: forall m
     . MonadWithGraphAlloc m
