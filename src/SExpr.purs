@@ -296,8 +296,8 @@ exprFwd (ListNonEmpty α doc s l) = do
 exprFwd (ListEnum s1 s2) = E.App Doc.None <$> ((E.App Doc.None (E.Var "enumFromTo")) <$> desug s1) <*> desug s2
 exprFwd (ListComp α doc s (ListCompGen p s' : qs)) = unsafePartial $ do
    edoc <- desugComment doc
-   E.App Doc.None e e' <- listCompFwd (α × ((ListCompGen p s') : qs) × s)
-   pure $ E.App edoc e e'
+   e <- listCompFwd (α × ((ListCompGen p s') : qs) × s)
+   pure $ E.DocExpr edoc e
 exprFwd (ListComp α _ s qs) = listCompFwd (α × qs × s)
 exprFwd (Let ds s) = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desug s
@@ -317,8 +317,8 @@ exprBwd (E.App _ (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
       (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
 exprBwd (E.App _ (E.App _ (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (desugBwd e1 s1) (desugBwd e2 s2)
-exprBwd e@(E.App doc (E.App _ _ _) _) (ListComp _ doc' s (q@(ListCompGen _ _) : qs)) =
-   let α × qs' × s' = listCompBwd e ((q : qs) × s) in ListComp α (desugCommentBwd doc doc') s' qs'
+exprBwd (E.DocExpr edoc e@(E.App Doc.None (E.App _ _ _) _)) (ListComp _ doc s (q@(ListCompGen _ _) : qs)) =
+   let α × qs' × s' = listCompBwd e ((q : qs) × s) in ListComp α (desugCommentBwd edoc doc) s' qs'
 exprBwd e (ListComp _ _ s qs) =
    let α × qs' × s' = listCompBwd e (qs × s) in ListComp α Doc.None s' qs'
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
