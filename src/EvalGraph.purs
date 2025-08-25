@@ -251,7 +251,8 @@ new'
    -> DocOpt Expr Vertex
    -> BaseVal Vertex
    -> m (Val Vertex)
-new' _ αs None u = new (\αs' -> \u' -> Val αs' None u') αs u
+new' _ αs None u =
+   new (flip Val None) αs u
 new' γ αs doc u = do
    α <- fresh
    vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None u)) doc
