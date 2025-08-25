@@ -134,10 +134,10 @@ eval γ (Dictionary α ees) αs = do
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    new (flip Val None) (insert α αs) $ V.Dictionary (DictRep d)
-eval γ (Constr α doc c es) αs = do
+eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   new' γ (insert α αs) doc $ V.Constr c vs
+   new (flip Val None) (insert α αs) $ V.Constr c vs
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
@@ -169,13 +169,10 @@ eval γ (DProject e x) α = do
                withMsg "Dict lookup" $ snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
             _ -> throw $ "Found " <> prettyP v' <> ", expected string"
       _ -> throw $ "Found " <> prettyP v <> ", expected dict"
-eval γ (App doc e e') αs = do
+eval γ (App e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
-   v''@(Val α' _ bv) <- apply v v'
-   let γ' = maplet "this" v''
-   vdoc <- evalDocOpt (γ <+> γ') doc
-   pure $ Val α' vdoc bv
+   apply v v'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
@@ -244,39 +241,6 @@ evalDocOpt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
    evalToken :: DocCommentElem Expr Vertex -> m (DocCommentElem Val Vertex)
    evalToken (Token s) = pure $ Token s
    evalToken (Unquote e) = Unquote <$> eval γ e empty
-
-new'
-   :: forall m
-    . MonadWithGraphAlloc m
-   => MonadReader FileCxt m
-   => LoadFile m
-   => Env Vertex
-   -> Set Vertex
-   -> DocOpt Expr Vertex
-   -> BaseVal Vertex
-   -> m (Val Vertex)
-new' _ αs None u =
-   new (flip Val None) αs u
-new' γ αs doc u = do
-   α <- fresh
-   vdoc <- evalDocOpt (γ <+> (maplet "this" $ Val α None u)) doc
-   let v' = Val α vdoc u
-   extend (DVertex (α × pack v')) αs
-   pure v'
-
--- TODO: delete me
-concatDocs
-   :: forall m
-    . MonadWithGraphAlloc m
-   => MonadReader FileCxt m
-   => LoadFile m
-   => Env Vertex
-   -> Val Vertex
-   -> DocOpt Expr Vertex
-   -> m (Val Vertex)
-concatDocs γ (Val α' vdoc v') doc = do
-   vdoc' <- evalDocOpt (γ <+> (maplet "this" $ Val α' None v')) doc
-   pure (Val α' (vdoc' <> vdoc) v')
 
 type GraphEval g s t =
    { g :: g
