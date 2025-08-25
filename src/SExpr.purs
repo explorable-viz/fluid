@@ -251,7 +251,8 @@ exprFwd (Str α doc s) = do
    pure $ E.DocExpr edoc $ E.Str α Doc.None s
 exprFwd (Constr α doc c ss) = do
    edoc <- desugComment doc
-   E.Constr α edoc c <$> traverse desug ss
+   es <- traverse desug ss
+   pure $ E.DocExpr edoc $ E.Constr α Doc.None c es
 exprFwd (Dictionary α doc sss) = do
    let ks × ss = unzip sss
    ks' <- traverse desug ks
@@ -291,7 +292,6 @@ exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desug s
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
 exprBwd (E.Op _) (Op op) = Op op
-exprBwd (E.Constr α edoc _ es) (Constr _ doc ctr ss) = Constr α (desugCommentBwd edoc doc) ctr (uncurry desugBwd <$> zip es ss)
 exprBwd (E.Dictionary α edoc ees) (Dictionary _ doc sss) =
    Dictionary α (desugCommentBwd edoc doc) (zipWith (\(Pair e e') (s × s') -> (desugBwd e s) × (desugBwd e' s')) ees sss)
 exprBwd (E.Matrix α edoc e1 _ e2) (Matrix _ doc s1 (x × y) s2) =
@@ -326,6 +326,8 @@ exprBwd (E.DocExpr edoc (E.Float α Doc.None _)) (Float _ doc n) =
    Float α (desugCommentBwd edoc doc) n
 exprBwd (E.DocExpr edoc (E.Str α Doc.None _)) (Str _ doc str) =
    Str α (desugCommentBwd edoc doc) str
+exprBwd (E.DocExpr edoc (E.Constr α Doc.None _ es)) (Constr _ doc c ss) =
+   Constr α (desugCommentBwd edoc doc) c (uncurry desugBwd <$> zip es ss)
 exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
