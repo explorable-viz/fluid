@@ -132,12 +132,12 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 
 instance Desugarable DictEntry E.Expr where
    desug (ExprKey e) = desug e
-   desug (VarKey α v) = pure (E.Str α Doc.None v)
+   desug (VarKey α v) = pure (E.Str α v)
    desugBwd e (ExprKey e') = ExprKey $ desugBwd e e'
    desugBwd e v = varKeyBwd e v
 
 varKeyBwd :: forall a. E.Expr a -> Raw DictEntry -> DictEntry a
-varKeyBwd (E.Str α _ _) (VarKey _ v') = VarKey α v'
+varKeyBwd (E.Str α _) (VarKey _ v') = VarKey α v'
 varKeyBwd _ _ = error absurd
 
 instance Desugarable Expr E.Expr where
@@ -242,13 +242,13 @@ exprFwd (Var x) = pure (E.Var x)
 exprFwd (Op op) = pure (E.Op op)
 exprFwd (Int α doc n) = do
    edoc <- desugComment doc
-   pure $ E.DocExpr edoc $ E.Int α Doc.None n
+   pure $ E.DocExpr edoc $ E.Int α n
 exprFwd (Float α doc n) = do
    edoc <- desugComment doc
-   pure $ E.DocExpr edoc $ E.Float α Doc.None n
+   pure $ E.DocExpr edoc $ E.Float α n
 exprFwd (Str α doc s) = do
    edoc <- desugComment doc
-   pure $ E.DocExpr edoc $ E.Str α Doc.None s
+   pure $ E.DocExpr edoc $ E.Str α s
 exprFwd (Constr α doc c ss) = do
    edoc <- desugComment doc
    es <- traverse desug ss
@@ -324,11 +324,11 @@ exprBwd e (ListComp _ _ s qs) =
    let α × qs' × s' = listCompBwd e (qs × s) in ListComp α Doc.None s' qs'
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 exprBwd (E.LetRec xσs e) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (desugBwd e s)
-exprBwd (E.DocExpr edoc (E.Int α Doc.None _)) (Int _ doc n) =
+exprBwd (E.DocExpr edoc (E.Int α _)) (Int _ doc n) =
    Int α (desugCommentBwd edoc doc) n
-exprBwd (E.DocExpr edoc (E.Float α Doc.None _)) (Float _ doc n) =
+exprBwd (E.DocExpr edoc (E.Float α _)) (Float _ doc n) =
    Float α (desugCommentBwd edoc doc) n
-exprBwd (E.DocExpr edoc (E.Str α Doc.None _)) (Str _ doc str) =
+exprBwd (E.DocExpr edoc (E.Str α _)) (Str _ doc str) =
    Str α (desugCommentBwd edoc doc) str
 exprBwd (E.DocExpr edoc (E.Constr α Doc.None _ es)) (Constr _ doc c ss) =
    Constr α (desugCommentBwd edoc doc) c (uncurry desugBwd <$> zip es ss)
