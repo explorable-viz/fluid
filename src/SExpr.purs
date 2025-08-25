@@ -276,7 +276,9 @@ exprFwd (DProject doc s s') = do
    pure $ E.DocExpr edoc $ E.DProject Doc.None e e'
 exprFwd (App doc s1 s2) = do
    edoc <- desugComment doc
-   E.App edoc <$> desug s1 <*> desug s2
+   e1 <- desug s1
+   e2 <- desug s2
+   pure $ E.DocExpr edoc $ E.App Doc.None e1 e2
 exprFwd (BinaryApp s1 op s2) = E.App Doc.None <$> (E.App Doc.None (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (MatchAs s μ) =
    E.App Doc.None <$> (E.Lambda top <$> desug (Clauses (Clause <$> first singleton <$> μ))) <*> desug s
@@ -298,7 +300,6 @@ exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
 exprBwd (E.Op _) (Op op) = Op op
 exprBwd (E.Lambda _ σ) (Lambda μ) = Lambda (desugBwd σ μ)
-exprBwd (E.App doc e1 e2) (App doc' s1 s2) = App (desugCommentBwd doc doc') (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App _ (E.App _ (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
 exprBwd (E.App _ (E.Lambda _ σ) e) (MatchAs s μ) =
@@ -336,6 +337,8 @@ exprBwd (E.DocExpr edoc (E.Project Doc.None e x)) (Project doc s _) =
    Project (desugCommentBwd edoc doc) (desugBwd e s) x
 exprBwd (E.DocExpr edoc (E.DProject Doc.None e e')) (DProject doc s s') =
    DProject (desugCommentBwd edoc doc) (desugBwd e s) (desugBwd e' s')
+exprBwd (E.DocExpr edoc (E.App Doc.None e1 e2)) (App doc s1 s2) =
+   App (desugCommentBwd edoc doc) (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
