@@ -9,7 +9,7 @@ let mkBarChart scenName table =
       caption: "Scenario " ++ scenName,
       size: { width: 275, height: 185 },
       stackedBars:
-         map (fun record -> { x: record.type, segments: [ { y: "emissions", z:  """Test""" record.emissions } ]})
+         map (fun record -> { x: record.type, segments: [ { y: "emissions", z:  record.emissions } ]})
             table
    };
 
@@ -30,9 +30,6 @@ let changed126 = map (fun r -> r.changed) ssp126preds;
     ssp126Total = { type: "Total", emissions: sum (map (fun r -> r.emissions) ssp126Source) };
     ssp126table = ssp126Total : ssp126Source;
     ssp245table =
-        """
-        We build this table analogously to the ssp126
-        """
         { type: "Total", emissions: findPercentile 50 changed245 } : ssp245Source;
     ssp126 = mkBarChart "SSP1-2.6" ssp126table;
     ssp245 = mkBarChart "SSP2-4.5" ssp245table;
