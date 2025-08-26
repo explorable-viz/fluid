@@ -34,7 +34,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, BaseExpr(..))
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -254,12 +254,12 @@ expr_ = fix exprParser
       e <- buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
       pure case doc of
          None -> e
-         Doc p -> Expr' None (DocExpr p e)
+         Doc p -> DocExpr p e
 
    backtickOp :: Operator Identity String (Raw Expr)
    backtickOp = flip Infix AssocLeft do
       x <- between backtick backtick ident
-      pure (\e e' -> Expr' None (BinaryApp e x e'))
+      pure (\e e' -> BinaryApp e x e')
 
    -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
    -- optimise an application tree into a (potentially partial) constructor application. We also treat
@@ -270,47 +270,46 @@ expr_ = fix exprParser
       op' <- token.operator
       onlyIf (op == op') $
          if op == str.dot then \e e' -> case e' of
-            Expr' doc (Var x) -> Expr' doc (Project e x)
+            Var x -> Project e x
             _ -> error $ "Field names are not first class; got \"" <> prettyP e' <> "\"."
-         else if isCtrOp op' then \e e' -> Expr' None (Constr unit op' (e : e' : empty))
-         else \e e' -> Expr' None (BinaryApp e op e')
+         else if isCtrOp op' then \e e' -> Constr unit op' (e : e' : empty)
+         else \e e' -> BinaryApp e op e'
 
    opTreeLeaf :: Endo (SParser (Raw Expr))
    opTreeLeaf expr' = matchAs <|> ifElse <|> lambda <|> defsExpr <|> appChain
       where
       matchAs :: SParser (Raw Expr)
       matchAs =
-         Expr' None <$> (MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' clause_uncurried)
+         MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' clause_uncurried
 
       ifElse :: SParser (Raw Expr)
       ifElse = do
-         e <- pure IfElse
+         pure IfElse
             <*> (keyword str.if_ *> expr')
             <* keyword str.then_
             <*> expr'
             <* keyword str.else_
             <*> expr'
-         pure $ Expr' None e
 
       lambda :: SParser (Raw Expr)
-      lambda = (Expr' None <$> Lambda <<< Clauses) <$> (keyword str.fun *> branches expr' clause_curried)
+      lambda = (Lambda <<< Clauses) <$> (keyword str.fun *> branches expr' clause_curried)
 
       defsExpr :: SParser (Raw Expr)
       defsExpr = do
          defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
-         foldr (\def e -> Expr' None ((Let ||| LetRec) def e)) <$> (keyword str.in_ *> expr') <@> defs'
+         foldr (\def e -> ((Let ||| LetRec) def e)) <$> (keyword str.in_ *> expr') <@> defs'
 
       -- Left-associative tree of applications of one or more simple terms.
       appChain :: SParser (Raw Expr)
       appChain = simpleExprOrProjection >>= rest
          where
          rest :: Raw Expr -> SParser (Raw Expr)
-         rest e@(Expr' doc' (Constr α c es)) = ctrArgs <|> pure e
+         rest e@(Constr α c es) = ctrArgs <|> pure e
             where
             ctrArgs :: SParser (Raw Expr)
-            ctrArgs = simpleExprOrProjection >>= \e' -> rest (Expr' doc' (Constr α c (es <> (e' : empty))))
+            ctrArgs = simpleExprOrProjection >>= \e' -> rest (Constr α c (es <> (e' : empty)))
          rest e =
-            (simpleExprOrProjection >>= \e' -> rest (Expr' None (App e e'))) <|> pure e
+            (simpleExprOrProjection >>= \e' -> rest (App e e')) <|> pure e
 
          -- An expression that may need wrapping in parentheses to disambiguate.
          simpleExprOrProjection :: SParser (Raw Expr)
@@ -321,10 +320,10 @@ expr_ = fix exprParser
             projection e = dprojection e <|> rprojection e
 
             rprojection :: Raw Expr -> SParser (Raw Expr)
-            rprojection e = (Expr' None <$> Project e <$> (token.reservedOp str.dot *> ident)) <|> pure e
+            rprojection e = (Project e <$> (token.reservedOp str.dot *> ident)) <|> pure e
 
             dprojection :: Raw Expr -> SParser (Raw Expr)
-            dprojection e = (Expr' None <$> DProject e <$> (token.reservedOp str.dot *> token.brackets expr_))
+            dprojection e = DProject e <$> (token.reservedOp str.dot *> token.brackets expr_)
 
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
          simpleExpr :: SParser (Raw Expr)
@@ -350,18 +349,16 @@ expr_ = fix exprParser
             where
             matrix :: SParser (Raw Expr)
             matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
-               Expr' None <$>
-                  ( Matrix unit
-                       <$> (expr_ <* bar)
-                       <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
-                       <*> (keyword str.in_ *> expr_)
-                  )
+               Matrix unit
+                  <$> (expr_ <* bar)
+                  <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
+                  <*> (keyword str.in_ *> expr_)
 
             nil :: SParser (Raw Expr)
-            nil = token.brackets $ pure (Expr' None (ListEmpty unit))
+            nil = token.brackets $ pure (ListEmpty unit)
 
             listNonEmpty :: SParser (Raw Expr)
-            listNonEmpty = lBracket *> (Expr' None <$> (ListNonEmpty unit <$> expr_ <*> fix listRest))
+            listNonEmpty = lBracket *> (ListNonEmpty unit <$> expr_ <*> fix listRest)
                where
                listRest :: Endo (SParser (Raw ListRest))
                listRest listRest' =
@@ -370,7 +367,7 @@ expr_ = fix exprParser
 
             listComp :: SParser (Raw Expr)
             listComp = token.brackets $
-               Expr' None <$> (ListComp unit <$> expr_ <* bar <*> (toList <$> sepBy1 qualifier token.comma))
+               ListComp unit <$> expr_ <* bar <*> (toList <$> sepBy1 qualifier token.comma)
                where
                qualifier :: SParser (Raw Qualifier)
                qualifier =
@@ -383,19 +380,19 @@ expr_ = fix exprParser
                start <- expr_
                _ <- ellipsis
                end <- expr_
-               pure (Expr' None (ListEnum start end))
+               pure $ ListEnum start end
 
             constr :: SParser (Raw Expr)
-            constr = Expr' None <$> (Constr unit <$> ctr <@> empty)
+            constr = Constr unit <$> ctr <@> empty
 
             dict :: SParser (Raw Expr)
-            dict = sepBy kvPair token.comma <#> Expr' None <$> Dictionary unit # token.braces
+            dict = sepBy kvPair token.comma <#> Dictionary unit # token.braces
                where
                kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
                kvPair = (((ExprKey <$> expr') # token.brackets) <* token.colon) `lift2 (×)` expr_ <|> ((VarKey unit <$> ident) <* token.colon) `lift2 (×)` expr_
 
             variable :: SParser (Raw Expr)
-            variable = ident <#> Expr' None <$> Var
+            variable = ident <#> Var
 
             signOpt :: ∀ a. Ring a => SParser (a -> a)
             signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
@@ -405,29 +402,29 @@ expr_ = fix exprParser
             int = do
                sign <- signOpt
                n <- token.natural
-               pure $ Expr' None (Int unit (sign n))
+               pure $ Int unit (sign n)
 
             float :: SParser (Raw Expr)
             float = do
                sign <- signOpt
                f <- token.float
-               pure $ Expr' None (Float unit (sign f))
+               pure $ Float unit (sign f)
 
             stringLiteral :: SParser (Raw Expr)
-            stringLiteral = Expr' None <$> (Str unit) <$> (try (notFollowedBy paragraphDelim) *> token.stringLiteral)
+            stringLiteral = Str unit <$> (try (notFollowedBy paragraphDelim) *> token.stringLiteral)
 
             paragraphLiteral :: SParser (Raw Expr)
             paragraphLiteral = do
                p <- paragraph expr'
-               pure (Expr' None (Paragraph p))
+               pure $ Paragraph p
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)
-            parensOp = Expr' None <$> Op <$> token.parens token.operator
+            parensOp = Op <$> token.parens token.operator
 
             pair :: SParser (Raw Expr)
             pair = token.parens $
-               (pure $ \e e' -> Expr' None (Constr unit cPair (e : e' : empty))) <*> (expr' <* token.comma) <*> expr_
+               (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr_
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
