@@ -39,6 +39,7 @@ data Expr a
    | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
+   | DocExpr (DocOpt a) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -89,6 +90,7 @@ instance FV (Expr a) where
    fv (App doc e1 e2) = fv doc ∪ fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
    fv (LetRec ρ e) = fv ρ ∪ fv e
+   fv (DocExpr doc e) = fv doc ∪ fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ \\ singleton x
@@ -186,8 +188,8 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Project doc e x) (Project doc' e' x') = Project (doc ∨ doc') (e ∨ e') (x ≜ x')
    join (DProject doc e x) (DProject doc' e' x') = DProject (doc ∨ doc') (e ∨ e') (x ∨ x')
    join (App doc e1 e2) (App doc' e1' e2') = App (doc ∨ doc') (e1 ∨ e1') (e2 ∨ e2')
-   join (Let def e) (Let def' e') = Let (def ∨ def') (e ∨ e')
    join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
+   join (DocExpr doc e) (DocExpr doc' e') = DocExpr (doc ∨ doc') (e ∨ e')
    join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
@@ -206,6 +208,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (App doc e1 e2) (App doc' e1' e2') = App (expand doc doc') (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
+   expand (DocExpr doc e) (DocExpr doc' e') = DocExpr (expand doc doc') (expand e e')
    expand _ _ = shapeMismatch unit
 
 instance MeetSemilattice a => MeetSemilattice (Expr a) where
@@ -228,6 +231,7 @@ instance Vertices (Expr Vertex) where
    vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
+   vertices (DocExpr doc e) = vertices doc ∪ vertices e
 
 instance Vertices (Elim Vertex) where
    vertices (ElimVar _ κ) = vertices κ
@@ -284,10 +288,11 @@ instance Apply Expr where
       Matrix (fα α) (fdoc <*> doc) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (Project fdoc fe x) (Project doc e _) = Project (fdoc <*> doc) (fe <*> e) x
+   apply (DProject fdoc fd fk) (DProject doc d k) = DProject (fdoc <*> doc) (fd <*> d) (fk <*> k)
    apply (App fdoc fe1 fe2) (App doc e1 e2) = App (fdoc <*> doc) (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
-   apply (DProject fdoc fd fk) (DProject doc d k) = DProject (fdoc <*> doc) (fd <*> d) (fk <*> k)
+   apply (DocExpr fdoc fe) (DocExpr doc e) = DocExpr (fdoc <*> doc) (fe <*> e)
    apply _ _ = shapeMismatch unit
 
 instance Apply Elim where
