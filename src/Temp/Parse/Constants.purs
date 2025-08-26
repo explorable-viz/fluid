@@ -1,5 +1,7 @@
 module Temp.Parse.Constants where
 
+import Parsing.Expr (Operator)
+
 keyword
    :: { case :: String
       , def :: String

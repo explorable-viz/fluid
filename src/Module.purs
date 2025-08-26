@@ -28,12 +28,13 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
+import Temp.Parse (parsePy)
+import Temp.Pretty (prettyPy)
+import Temp.Util.UnsafeDebug (exitUnsafe, logUnsafe)
 import Test.Util.Debug (checking)
 import Util (type (×), AffError, concatM, debug, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
-import Temp.Pretty (prettyPy)
-import Temp.Util.UnsafeDebug (exitUnsafe, writeFileUnsafe)
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
@@ -81,12 +82,22 @@ type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> m Config
 prepConfig file progCxt = do
    FileCxt { fluidSrcPaths } <- ask
-   mods × s <- parseProgram fluidSrcPaths file
 
-   let out = prettyPy s
-   let _ = writeFileUnsafe "out.py" out
+   src <- loadFile fluidSrcPaths (file)
+
+   parsed <- parsePy src
+
+   let _ = logUnsafe ("-----")
+   let _ = logUnsafe (prettyPy parsed)
+   let _ = logUnsafe ("-----\nok")
    let _ = exitUnsafe unit
 
+   -- _ <- Py.parse src Py.program
+
+   -- let out = prettyPy s
+   -- let _ = writeFileUnsafe "out.py" out
+
+   mods × s <- parseProgram fluidSrcPaths file
    e <- desug s
    progCxt' <- loadMods mods progCxt
    gconfig <- initialConfig e progCxt'
