@@ -386,8 +386,8 @@ exprBwd (E.App _ (E.Lambda _ (ElimConstr m)) e1) (Expr' _ (IfElse s1 s2 s3)) =
            (if cTrue ∈ m then desugBwd (asExpr (get cTrue m)) s2 else botOf s2)
            (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
       )
-exprBwd (E.Constr _ edoc c (lst : Nil)) (Expr' doc (Paragraph xs)) | c == cParagraph =
-   Expr' (docOptBwd edoc doc) (Paragraph (paragraphElemsBwd lst xs))
+exprBwd (E.Constr _ Doc.None c (lst : Nil)) (Expr' Doc.None (Paragraph xs)) | c == cParagraph =
+   Expr' Doc.None (Paragraph (paragraphElemsBwd lst xs))
 exprBwd (E.Constr α Doc.None _ Nil) (Expr' Doc.None (ListEmpty _)) =
    Expr' Doc.None (ListEmpty α)
 exprBwd (E.Constr α Doc.None _ (e1 : e2 : Nil)) (Expr' Doc.None (ListNonEmpty _ s l)) =
