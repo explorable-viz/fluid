@@ -25,7 +25,7 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
 import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
-import Doc (DocCommentElem(..), DocOpt(..))
+import Doc (ParagraphElem(..), DocOpt(..))
 import Link (Link(..))
 import Primitive (int, string, typeError, unpack)
 import Util (type (×), error, (×))
@@ -65,7 +65,7 @@ viewPara :: Partial => DocOpt Val (SelStates 𝕊) -> Maybe Paragraph
 viewPara None = Nothing
 viewPara (Doc doc) = Just $ Paragraph true $ fromFoldable $ formatPara doc
    where
-   formatPara :: List (DocCommentElem Val (SelStates 𝕊)) -> List View'
+   formatPara :: List (ParagraphElem Val (SelStates 𝕊)) -> List View'
    formatPara Nil = Nil
    formatPara (Token str : Token str' : xs) = formatPara $ (Token (str <> " " <> str')) : xs
    formatPara (Token str : xs) = pack (Text (str × inert)) : formatPara xs

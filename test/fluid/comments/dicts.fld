@@ -1,7 +1,7 @@
 let d = {};
     e = { ["a"]: 5, ["a" ++ "b"] : 6 };
     f = { ["ab"]: 12 }
-in """We can have a docComment before a dict!""" {
+in @doc"""We can have a docComment before a dict!""" {
    d: d,
    e: e,
    e_ab: e.ab,
