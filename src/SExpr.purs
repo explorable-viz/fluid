@@ -345,13 +345,20 @@ exprFwd (Expr' _ (Let ds s)) =
 exprFwd (Expr' _ (LetRec xcs s)) =
    E.LetRec <$> recDefsFwd xcs <*> desug s
 
+-- docOptBwd' :: ∀ a. BoundedJoinSemilattice a => E.DocOpt a -> Raw DocOpt -> DocOpt a
+-- docOptBwd' = ?_
+
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Expr' _ (Var x)) = Expr' Doc.None (Var x)
 exprBwd (E.Op _) (Expr' _ (Op op)) = Expr' Doc.None (Op op)
 exprBwd (E.Int α Doc.None _) (Expr' Doc.None (Int _ n)) =
    Expr' Doc.None (Int α n)
-exprBwd (E.DocExpr pe (E.Int α Doc.None _)) (Expr' (Doc.Doc p) (Int _ n)) =
-   Expr' (Doc.Doc (paragraphBwd pe p)) (Int α n)
+exprBwd (E.DocExpr pe e) (Expr' (Doc.Doc p) s) =
+   unsafePartial $
+      let
+         Expr' Doc.None s = exprBwd e (Expr' Doc.None s)
+      in
+         Expr' (Doc.Doc (paragraphBwd pe p)) s
 exprBwd (E.Float α edoc _) (Expr' doc (Float _ n)) = Expr' (docOptBwd edoc doc) (Float α n)
 exprBwd (E.Str α edoc _) (Expr' doc (Str _ str)) = Expr' (docOptBwd edoc doc) (Str α str)
 exprBwd (E.Constr α edoc _ es) (Expr' doc (Constr _ ctr ss)) =
