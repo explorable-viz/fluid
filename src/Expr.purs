@@ -16,6 +16,7 @@ import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
 import Doc (DocOpt(..), ParagraphElem(..)) as Doc
+import Doc (Paragraph)
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
@@ -39,7 +40,7 @@ data Expr a
    | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | DocExpr (DocOpt a) (Expr a)
+   | DocExpr (Paragraph Expr a) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -231,7 +232,7 @@ instance Vertices (Expr Vertex) where
    vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
-   vertices (DocExpr doc e) = vertices doc ∪ vertices e
+   vertices (DocExpr p e) = unions (vertices <$> p) ∪ vertices e
 
 instance Vertices (Elim Vertex) where
    vertices (ElimVar _ κ) = vertices κ
@@ -292,7 +293,7 @@ instance Apply Expr where
    apply (App fdoc fe1 fe2) (App doc e1 e2) = App (fdoc <*> doc) (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
-   apply (DocExpr fdoc fe) (DocExpr doc e) = DocExpr (fdoc <*> doc) (fe <*> e)
+   apply (DocExpr fdoc fe) (DocExpr doc e) = DocExpr (zipWith (<*>) fdoc doc) (fe <*> e)
    apply _ _ = shapeMismatch unit
 
 instance Apply Elim where

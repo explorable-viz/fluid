@@ -183,10 +183,11 @@ eval γ (Let (VarDef σ e) e') αs = do
 eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
-eval γ (DocExpr doc e) αs = do
+eval γ (DocExpr p e) αs = do
    Val α vdoc u <- eval γ e αs
-   vdoc' <- evalDocOpt (γ <+> maplet "this" (Val α None u)) doc
-   pure $ Val α (vdoc' <> vdoc) u
+   let γ' = γ <+> maplet "this" (Val α None u)
+   pv <- sequence (evalToken γ' <$> p)
+   pure $ Val α (Doc pv <> vdoc) u
 
 eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
@@ -239,11 +240,11 @@ eval_progCxt (ProgCxt { primitives, datasets }) { roots, topsorted, graph, modul
 
 evalDocOpt :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
 evalDocOpt _ None = pure None
-evalDocOpt γ (Doc tokens) = Doc <$> sequence (map evalToken tokens)
-   where
-   evalToken :: ParagraphElem Expr Vertex -> m (ParagraphElem Val Vertex)
-   evalToken (Token s) = pure $ Token s
-   evalToken (Unquote e) = Unquote <$> eval γ e empty
+evalDocOpt γ (Doc tokens) = Doc <$> sequence (evalToken γ <$> tokens)
+
+evalToken :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> ParagraphElem Expr Vertex -> m (ParagraphElem Val Vertex)
+evalToken _ (Token s) = pure $ Token s
+evalToken γ (Unquote e) = Unquote <$> eval γ e empty
 
 new'
    :: forall m
