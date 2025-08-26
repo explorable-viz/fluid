@@ -315,8 +315,8 @@ exprFwd (Expr' doc (DProject s x)) = do
    e <- E.DProject <$> desug s <*> desug x
    docOptFwd' e doc
 exprFwd (Expr' doc (App s1 s2)) = do
-   edoc <- docOptFwd doc
-   E.App edoc <$> desug s1 <*> desug s2
+   e <- E.App Doc.None <$> desug s1 <*> desug s2
+   docOptFwd' e doc
 exprFwd (Expr' _ (BinaryApp s1 op s2)) =
    E.App Doc.None <$> (E.App Doc.None (E.Op op) <$> desug s1) <*> desug s2
 exprFwd (Expr' _ (MatchAs s μ)) =
@@ -371,8 +371,8 @@ exprBwd (E.Project e x) (Expr' Doc.None (Project s _)) =
    Expr' Doc.None (Project (desugBwd e s) x)
 exprBwd (E.DProject ed ek) (Expr' Doc.None (DProject sd sk)) =
    Expr' Doc.None (DProject (exprBwd ed sd) (exprBwd ek sk))
-exprBwd (E.App doc e1 e2) (Expr' doc' (App s1 s2)) =
-   Expr' (docOptBwd doc doc') (App (desugBwd e1 s1) (desugBwd e2 s2))
+exprBwd (E.App Doc.None e1 e2) (Expr' Doc.None (App s1 s2)) =
+   Expr' Doc.None (App (desugBwd e1 s1) (desugBwd e2 s2))
 exprBwd (E.App _ (E.App _ (E.Op _) e1) e2) (Expr' _ (BinaryApp s1 op s2)) =
    Expr' Doc.None (BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2))
 exprBwd (E.App _ (E.Lambda _ σ) e) (Expr' _ (MatchAs s μ)) =
