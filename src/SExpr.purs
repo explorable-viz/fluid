@@ -301,11 +301,11 @@ exprFwd (Expr' doc (Dictionary α sss)) = do
    let ks × ss = unzip sss
    ks' <- traverse desug ks
    es <- traverse desug ss
-   edoc <- docOptFwd doc
-   E.Dictionary α edoc <$> pure (zipWith Pair ks' es)
+   e <- E.Dictionary α Doc.None <$> pure (zipWith Pair ks' es)
+   docOptFwd' e doc
 exprFwd (Expr' doc (Matrix α s (x × y) s')) = do
-   edoc <- docOptFwd doc
-   E.Matrix α edoc <$> desug s <@> x × y <*> desug s'
+   e <- E.Matrix α Doc.None <$> desug s <@> x × y <*> desug s'
+   docOptFwd' e doc
 exprFwd (Expr' _ (Lambda μ)) =
    E.Lambda top <$> desug μ
 exprFwd (Expr' doc (Project s x)) = do
@@ -358,11 +358,11 @@ exprBwd (E.Str α _) (Expr' Doc.None (Str _ str)) =
    Expr' Doc.None (Str α str)
 exprBwd (E.Constr α Doc.None _ es) (Expr' Doc.None (Constr _ c ss)) =
    Expr' Doc.None (Constr α c (uncurry desugBwd <$> zip es ss))
-exprBwd (E.Dictionary α edoc ees) (Expr' doc (Dictionary _ sss)) =
-   Expr' (docOptBwd edoc doc)
+exprBwd (E.Dictionary α Doc.None ees) (Expr' Doc.None (Dictionary _ sss)) =
+   Expr' Doc.None
       (Dictionary α (zipWith (\(Pair e e') (s × s') -> desugBwd e s × desugBwd e' s') ees sss))
-exprBwd (E.Matrix α edoc e1 _ e2) (Expr' doc (Matrix _ s1 (x × y) s2)) =
-   Expr' (docOptBwd edoc doc)
+exprBwd (E.Matrix α Doc.None e1 _ e2) (Expr' Doc.None (Matrix _ s1 (x × y) s2)) =
+   Expr' Doc.None
       (Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2))
 exprBwd (E.Lambda _ σ) (Expr' _ (Lambda μ)) =
    Expr' Doc.None (Lambda (desugBwd σ μ))
