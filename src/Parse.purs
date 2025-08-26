@@ -252,8 +252,9 @@ expr_ = fix exprParser
    exprParser expr' = do
       doc <- docOpt expr'
       e <- buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
-      pure case e of
-         Expr' _ base -> Expr' doc base
+      pure case doc of
+         None -> e
+         Doc p -> Expr' None (DocExpr p e)
 
    backtickOp :: Operator Identity String (Raw Expr)
    backtickOp = flip Infix AssocLeft do

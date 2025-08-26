@@ -202,7 +202,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Expr' doc (Paragraph p)) =
       pretty doc .<>. pretty p
    pretty (Expr' _ (DocExpr p s)) =
-      pretty p .<>. pretty s
+      text "@doc" .<>. pretty p .<>. pretty s
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
@@ -416,7 +416,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.DProject e x) =
       pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
-   pretty (E.DocExpr doc e) = pretty doc .<>. pretty e
+   pretty (E.DocExpr doc e) = text "@doc" .<>. pretty doc .<>. pretty e
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
    --   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x

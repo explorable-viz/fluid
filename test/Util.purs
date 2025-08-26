@@ -141,7 +141,7 @@ checkEq op1 op2 x y = do
    check (left == "") left
    check (right == "") right
 
-testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
+testPretty :: forall m a. Ann a => Show a => SE.Expr a -> AffError m Unit
 testPretty s = do
    log' ("**** prettyP")
    log' (prettyP s)
