@@ -10,7 +10,7 @@ import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemila
 import Util (error, shapeMismatch, (≜))
 
 data DocOpt :: (Type -> Type) -> Type -> Type
-data DocOpt e a = None | Doc (List (ParagraphElem e a))
+data DocOpt e a = None | Doc (Paragraph e a)
 
 type Paragraph e a = List (ParagraphElem e a)
 
