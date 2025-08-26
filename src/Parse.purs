@@ -373,7 +373,7 @@ expr_ = fix exprParser
                where
                qualifier :: SParser (Raw Qualifier)
                qualifier =
-                  ListCompGen None <$> pattern <* lArrow <*> expr_
+                  ListCompGen <$> pattern <* lArrow <*> expr_
                      <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr_)
                      <|> ListCompGuard <$> expr_
 

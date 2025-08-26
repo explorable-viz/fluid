@@ -291,7 +291,7 @@ instance Ann a => Pretty (List (Expr a)) where
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (ListCompGuard s) Nil) = pretty s
    pretty (Cons (ListCompDecl d) Nil) = text str.let_ .<>. pretty d
-   pretty (Cons (ListCompGen doc p s) Nil) = pretty doc .<>. pretty p .<>. text str.lArrow .<>. pretty s
+   pretty (Cons (ListCompGen p s) Nil) = pretty p .<>. text str.lArrow .<>. pretty s
    pretty (Cons q qs) = pretty (toList (singleton q)) .<>. text str.comma .<>. pretty qs
    pretty Nil = empty
 
