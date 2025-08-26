@@ -309,11 +309,11 @@ exprFwd (Expr' doc (Matrix α s (x × y) s')) = do
 exprFwd (Expr' _ (Lambda μ)) =
    E.Lambda top <$> desug μ
 exprFwd (Expr' doc (Project s x)) = do
-   edoc <- docOptFwd doc
-   E.Project edoc <$> desug s <@> x
+   e <- E.Project <$> desug s <@> x
+   docOptFwd' e doc
 exprFwd (Expr' doc (DProject s x)) = do
-   edoc <- docOptFwd doc
-   E.DProject edoc <$> desug s <*> desug x
+   e <- E.DProject <$> desug s <*> desug x
+   docOptFwd' e doc
 exprFwd (Expr' doc (App s1 s2)) = do
    edoc <- docOptFwd doc
    E.App edoc <$> desug s1 <*> desug s2
@@ -366,8 +366,10 @@ exprBwd (E.Matrix α e1 _ e2) (Expr' Doc.None (Matrix _ s1 (x × y) s2)) =
       (Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2))
 exprBwd (E.Lambda _ σ) (Expr' _ (Lambda μ)) =
    Expr' Doc.None (Lambda (desugBwd σ μ))
-exprBwd (E.Project doc e x) (Expr' doc' (Project s _)) =
-   Expr' (docOptBwd doc doc') (Project (desugBwd e s) x)
+exprBwd (E.Project e x) (Expr' Doc.None (Project s _)) =
+   Expr' Doc.None (Project (desugBwd e s) x)
+exprBwd (E.DProject ed ek) (Expr' Doc.None (DProject sd sk)) =
+   Expr' Doc.None (DProject (exprBwd ed sd) (exprBwd ek sk))
 exprBwd (E.App doc e1 e2) (Expr' doc' (App s1 s2)) =
    Expr' (docOptBwd doc doc') (App (desugBwd e1 s1) (desugBwd e2 s2))
 exprBwd (E.App _ (E.App _ (E.Op _) e1) e2) (Expr' _ (BinaryApp s1 op s2)) =
@@ -408,8 +410,6 @@ exprBwd (E.Let d e) (Expr' _ (Let ds s)) =
       Expr' Doc.None (Let ds' e')
 exprBwd (E.LetRec xσs e) (Expr' _ (LetRec xcs s)) =
    Expr' Doc.None (LetRec (recDefsBwd xσs xcs) (desugBwd e s))
-exprBwd (E.DProject doc ed ek) (Expr' doc' (DProject sd sk)) =
-   Expr' (docOptBwd doc doc') (DProject (exprBwd ed sd) (exprBwd ek sk))
 exprBwd (E.DocExpr pe e) (Expr' (Doc.Doc p) s) =
    unsafePartial $
       let

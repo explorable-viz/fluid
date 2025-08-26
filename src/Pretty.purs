@@ -393,8 +393,8 @@ instance IsSimple E.Expr where
    --   isSimple (E.Constr _ _ c _) | c == cPair = true
    isSimple (E.Dictionary _ _) = true
    isSimple (E.Matrix _ _ _ _) = true
-   isSimple (E.Project _ _ _) = true
-   isSimple (E.DProject _ _ _) = true
+   isSimple (E.Project _ _) = true
+   isSimple (E.DProject _ _) = true
    isSimple _ = false
 
 instance Highlightable a => Pretty (E.Expr a) where
@@ -410,9 +410,9 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Let (E.VarDef σ e) e') =
       atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ]) (pretty e')
    pretty (E.LetRec (E.RecDefs _ ρ) e) = atop (hcat [ text str.let_, pretty ρ, text str.in_ ]) (pretty e)
-   pretty (E.Project doc e x) = pretty doc .<>. pretty e .<>. text str.dot .<>. pretty x
-   pretty (E.DProject doc e x) =
-      pretty doc .<>. pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
+   pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
+   pretty (E.DProject e x) =
+      pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App doc e e') = pretty doc .<>. hcat [ pretty e, pretty e' ]
    pretty (E.DocExpr doc e) = pretty doc .<>. pretty e
 
