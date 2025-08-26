@@ -286,9 +286,8 @@ paragraphElemsBwd _ _ = error absurd
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
 exprFwd (Expr' _ (Var x)) = pure $ E.Var x
 exprFwd (Expr' _ (Op op)) = pure $ E.Op op
-exprFwd (Expr' doc (Int α n)) = do
-   edoc <- docOptFwd doc
-   pure $ E.Int α edoc n
+exprFwd (Expr' doc (Int α n)) =
+   docOptFwd' (E.Int α Doc.None n) doc
 exprFwd (Expr' doc (Float α n)) = do
    edoc <- docOptFwd doc
    pure (E.Float α edoc n)
@@ -349,7 +348,10 @@ exprFwd (Expr' _ (LetRec xcs s)) =
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Expr' _ (Var x)) = Expr' Doc.None (Var x)
 exprBwd (E.Op _) (Expr' _ (Op op)) = Expr' Doc.None (Op op)
-exprBwd (E.Int α edoc _) (Expr' doc (Int _ n)) = Expr' (docOptBwd edoc doc) (Int α n)
+exprBwd (E.Int α Doc.None _) (Expr' Doc.None (Int _ n)) =
+   Expr' Doc.None (Int α n)
+exprBwd (E.DocExpr pe (E.Int α Doc.None _)) (Expr' (Doc.Doc p) (Int _ n)) =
+   Expr' (Doc.Doc (paragraphBwd pe p)) (Int α n)
 exprBwd (E.Float α edoc _) (Expr' doc (Float _ n)) = Expr' (docOptBwd edoc doc) (Float α n)
 exprBwd (E.Str α edoc _) (Expr' doc (Str _ str)) = Expr' (docOptBwd edoc doc) (Str α str)
 exprBwd (E.Constr α edoc _ es) (Expr' doc (Constr _ ctr ss)) =
