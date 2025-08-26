@@ -25,10 +25,10 @@ import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cText, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
-import Doc (DocOpt(..), ParagraphElem(..), Paragraph) as Doc
+import Doc (DocOpt, ParagraphElem(..), Paragraph) as Doc
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (DocOpt, Expr(..), Module(..), ParagraphElem, RecDefs(..), VarDef(..)) as E
+import Expr (Expr(..), Module(..), ParagraphElem, RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -563,22 +563,6 @@ clausesStateBwd κ0 ks = case κ0 × ks of
       where
       kss = defined (popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks)
    ContElim _ × _ -> error (shapeMismatch unit)
-
-docOptFwd :: ∀ m a. BoundedLattice a => MonadError Error m => DocOpt a -> m (E.DocOpt a)
-docOptFwd Doc.None = pure Doc.None
-docOptFwd (Doc.Doc c) = Doc.Doc <$> paragraphFwd c
-
-docOptFwd' :: ∀ m a. BoundedLattice a => MonadError Error m => E.Expr a -> DocOpt a -> m (E.Expr a)
-docOptFwd' e Doc.None = pure e
-docOptFwd' e (Doc.Doc p) = do
-   pe <- paragraphFwd p
-   pure $ E.DocExpr pe e
-
-docOptBwd :: ∀ a. BoundedJoinSemilattice a => E.DocOpt a -> Raw DocOpt -> DocOpt a
-docOptBwd Doc.None Doc.None = Doc.None
-docOptBwd (Doc.Doc ec) (Doc.Doc c) = Doc.Doc (paragraphBwd ec c)
-docOptBwd Doc.None (Doc.Doc _) = error "E Doc.None S Doc"
-docOptBwd (Doc.Doc _) Doc.None = error "E Doc S Doc.None"
 
 paragraphFwd :: ∀ m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (List (E.ParagraphElem a))
 paragraphFwd (Cons s l) = Cons <$> commentElemFwd s <*> paragraphFwd l
