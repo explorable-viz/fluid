@@ -31,7 +31,7 @@ jobs:
         echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
     - name: test
       run: |
-        yarn install --frozen-lockfile
+        yarn install
         set -x -e
         yarn purs-tidy check src/**/*.purs test/**/*.purs website/**/*.purs
         yarn build-test
