@@ -391,8 +391,8 @@ instance IsSimple E.Expr where
    isSimple (E.Str _ _) = true
    isSimple (E.Constr _ _ _ Nil) = true
    --   isSimple (E.Constr _ _ c _) | c == cPair = true
-   isSimple (E.Dictionary _ _ _) = true
-   isSimple (E.Matrix _ _ _ _ _) = true
+   isSimple (E.Dictionary _ _) = true
+   isSimple (E.Matrix _ _ _ _) = true
    isSimple (E.Project _ _ _) = true
    isSimple (E.DProject _ _ _) = true
    isSimple _ = false
@@ -402,9 +402,9 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Int α n) = highlightIf α (text (show n))
    pretty (E.Float α n) = highlightIf α (text (show n))
    pretty (E.Str α str) = highlightIf α (text (show str))
-   pretty (E.Dictionary α doc ees) = pretty doc .<>. highlightIf α (prettyDict pretty (ees <#> toTuple))
+   pretty (E.Dictionary α ees) = highlightIf α (prettyDict pretty (ees <#> toTuple))
    pretty (E.Constr α doc c es) = pretty doc .<>. highlightIf α (prettyConstr c es)
-   pretty (E.Matrix α doc e1 (i × j) e2) = pretty doc .<>. highlightIf α (prettyMatrix e1 i j e2)
+   pretty (E.Matrix α e1 (i × j) e2) = highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda α σ) = hcat [ highlightIf α (text str.fun), pretty σ ]
    pretty (E.Op op) = parentheses (text op)
    pretty (E.Let (E.VarDef σ e) e') =

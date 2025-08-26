@@ -31,9 +31,9 @@ data Expr a
    | Int a Int
    | Float a Number
    | Str a String
-   | Dictionary a (DocOpt a) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
+   | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
    | Constr a (DocOpt a) Ctr (List (Expr a))
-   | Matrix a (DocOpt a) (Expr a) (Var × Var) (Expr a)
+   | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | Project (DocOpt a) (Expr a) Var
    | DProject (DocOpt a) (Expr a) (Expr a)
@@ -82,9 +82,9 @@ instance FV (Expr a) where
    fv (Int _ _) = empty
    fv (Float _ _) = empty
    fv (Str _ _) = empty
-   fv (Dictionary _ doc ees) = fv doc ∪ unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
+   fv (Dictionary _ ees) = unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
    fv (Constr _ doc _ es) = fv doc ∪ unions (fv <$> es)
-   fv (Matrix _ doc e1 _ e2) = fv doc ∪ fv e1 ∪ fv e2
+   fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
    fv (Project doc e _) = fv doc ∪ fv e
    fv (DProject doc e x) = fv doc ∪ fv e ∪ fv x
@@ -181,10 +181,10 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Int α n) (Int α' n') = Int (α ∨ α') (n ≜ n')
    join (Str α str) (Str α' str') = Str (α ∨ α') (str ≜ str')
    join (Float α n) (Float α' n') = Float (α ∨ α') (n ≜ n')
-   join (Dictionary α doc ees) (Dictionary α' doc' ees') = Dictionary (α ∨ α') (doc ∨ doc') (ees ∨ ees')
+   join (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') (ees ∨ ees')
    join (Constr α doc c es) (Constr α' doc' c' es') = Constr (α ∨ α') (doc ∨ doc') (c ≜ c') (es ∨ es') -- TODO: assert consistentWith
-   join (Matrix α doc e1 (x × y) e2) (Matrix α' doc' e1' (x' × y') e2') =
-      Matrix (α ∨ α') (doc ∨ doc') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
+   join (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
+      Matrix (α ∨ α') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
    join (Project doc e x) (Project doc' e' x') = Project (doc ∨ doc') (e ∨ e') (x ≜ x')
    join (DProject doc e x) (DProject doc' e' x') = DProject (doc ∨ doc') (e ∨ e') (x ∨ x')
@@ -199,10 +199,10 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Int α n) (Int _ n') = Int α (n ≜ n')
    expand (Str α str) (Str _ str') = Str α (str ≜ str')
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Dictionary α doc ees) (Dictionary _ doc' ees') = Dictionary α (expand doc doc') (expand ees ees')
+   expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
    expand (Constr α doc c es) (Constr _ doc' c' es') = Constr α (expand doc doc') (c ≜ c') (expand es es')
-   expand (Matrix α doc e1 (x × y) e2) (Matrix _ doc' e1' (x' × y') e2') =
-      Matrix α (expand doc doc') (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
+   expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
+      Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
    expand (Project doc e x) (Project doc' e' x') = Project (expand doc doc') (expand e e') (x ≜ x')
    expand (DProject doc e x) (DProject doc' e' x') = DProject (expand doc doc') (expand e e') (expand x x')
@@ -221,11 +221,11 @@ instance Vertices (Expr Vertex) where
    vertices e@(Int α _) = singleton (DVertex (α × pack e))
    vertices e@(Float α _) = singleton (DVertex (α × pack e))
    vertices e@(Str α _) = singleton (DVertex (α × pack e))
-   vertices d@(Dictionary α doc ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees) ∪ vertices doc
+   vertices d@(Dictionary α ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees)
       where
       go (Pair e e') = vertices e ∪ vertices e'
    vertices e@(Constr α doc _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es) ∪ vertices doc
-   vertices e@(Matrix α doc e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2 ∪ vertices doc
+   vertices e@(Matrix α e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
    vertices (Project doc e _) = vertices doc ∪ vertices e
    vertices (DProject doc e x) = vertices e ∪ vertices x ∪ vertices doc
@@ -283,10 +283,10 @@ instance Apply Expr where
    apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
    apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
    apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Dictionary fα fdoc fxes) (Dictionary α doc xes) = Dictionary (fα α) (fdoc <*> doc) (zipWith (lift2 (<*>)) fxes xes)
+   apply (Dictionary fα fxes) (Dictionary α xes) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxes xes)
    apply (Constr fα fdoc c fes) (Constr α doc c' es) = Constr (fα α) (fdoc <*> doc) (c ≜ c') (zipWith (<*>) fes es)
-   apply (Matrix fα fdoc fe1 (x × y) fe2) (Matrix α doc e1 (x' × y') e2) =
-      Matrix (fα α) (fdoc <*> doc) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
+   apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
+      Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (Project fdoc fe x) (Project doc e _) = Project (fdoc <*> doc) (fe <*> e) x
    apply (DProject fdoc fd fk) (DProject doc d k) = DProject (fdoc <*> doc) (fd <*> d) (fk <*> k)

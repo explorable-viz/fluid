@@ -130,17 +130,17 @@ eval _ (Float α n) αs =
    new (flip Val None) (insert α αs) (V.Float n)
 eval _ (Str α s) αs =
    new (flip Val None) (insert α αs) (V.Str s)
-eval γ (Dictionary α doc ees) αs = do
+eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   new' γ (insert α αs) doc $ V.Dictionary (DictRep d)
+   new (flip Val None) (insert α αs) $ V.Dictionary (DictRep d)
 eval γ (Constr α doc c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
    new' γ (insert α αs) doc $ V.Constr c vs
-eval γ (Matrix α doc e (x × y) e') αs = do
+eval γ (Matrix α e (x × y) e') αs = do
    Val _ _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
    check
@@ -152,7 +152,7 @@ eval γ (Matrix α doc e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = maplet x (Val β None (V.Int i)) `disjointUnion` (maplet y (Val β' None (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
-   new' γ (insert α αs) doc (V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β'))))
+   new (flip Val None) (insert α αs) $ V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β')))
 eval γ (Lambda α σ) αs =
    new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project doc e x) αs = do
