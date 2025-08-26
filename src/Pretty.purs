@@ -413,7 +413,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.DProject e x) =
       pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
-   pretty (E.App doc e e') = pretty doc .<>. hcat [ pretty e, pretty e' ]
+   pretty (E.App e e') = hcat [ pretty e, pretty e' ]
    pretty (E.DocExpr doc e) = pretty doc .<>. pretty e
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where

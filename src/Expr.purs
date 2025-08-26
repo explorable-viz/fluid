@@ -37,7 +37,7 @@ data Expr a
    | Lambda a (Elim a)
    | Project (Expr a) Var
    | DProject (Expr a) (Expr a)
-   | App (DocOpt a) (Expr a) (Expr a)
+   | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
    | DocExpr (Paragraph Expr a) (Expr a)
@@ -88,7 +88,7 @@ instance FV (Expr a) where
    fv (Lambda _ σ) = fv σ
    fv (Project e _) = fv e
    fv (DProject e x) = fv e ∪ fv x
-   fv (App doc e1 e2) = fv doc ∪ fv e1 ∪ fv e2
+   fv (App e1 e2) = fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
    fv (LetRec ρ e) = fv ρ ∪ fv e
    fv (DocExpr doc e) = fv doc ∪ fv e
@@ -188,7 +188,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
    join (Project e x) (Project e' x') = Project (e ∨ e') (x ≜ x')
    join (DProject e1 e2) (DProject e1' e2') = DProject (e1 ∨ e1') (e2 ∨ e2')
-   join (App doc e1 e2) (App doc' e1' e2') = App (doc ∨ doc') (e1 ∨ e1') (e2 ∨ e2')
+   join (App e1 e2) (App e1' e2') = App (e1 ∨ e1') (e2 ∨ e2')
    join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
    join (DocExpr doc e) (DocExpr doc' e') = DocExpr (doc ∨ doc') (e ∨ e')
    join _ _ = shapeMismatch unit
@@ -206,7 +206,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
    expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
    expand (DProject e1 e2) (DProject e1' e2') = DProject (expand e1 e1') (expand e2 e2')
-   expand (App doc e1 e2) (App doc' e1' e2') = App (expand doc doc') (expand e1 e1') (expand e2 e2')
+   expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
    expand (DocExpr doc e) (DocExpr doc' e') = DocExpr (expand doc doc') (expand e e')
@@ -229,7 +229,7 @@ instance Vertices (Expr Vertex) where
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
    vertices (Project e _) = vertices e
    vertices (DProject e e') = vertices e ∪ vertices e'
-   vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ vertices doc
+   vertices (App e1 e2) = vertices e1 ∪ vertices e2
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
    vertices (DocExpr p e) = unions (vertices <$> p) ∪ vertices e
@@ -290,7 +290,7 @@ instance Apply Expr where
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
    apply (DProject fd fk) (DProject d k) = DProject (fd <*> d) (fk <*> k)
-   apply (App fdoc fe1 fe2) (App doc e1 e2) = App (fdoc <*> doc) (fe1 <*> e1) (fe2 <*> e2)
+   apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
    apply (DocExpr fdoc fe) (DocExpr doc e) = DocExpr (zipWith (<*>) fdoc doc) (fe <*> e)

@@ -49,7 +49,7 @@ bwd_cases =
    , { file: "matrix/matmul.fld"
      , bwd_expect_file: "matrix/matmul.expect.fld"
      , δv: fst $ matrixElement 1 1 select
-     , fwd_expect: "(⸨22⸩, 28,\n  49, 64, 9, 12, 15,\n            19, 26, 33,\n            29, 40, 51)"
+     , fwd_expect: "(@doc \"\"\" Intermediate matrix \"\"\" ⸨22⸩, 28,\n                                   49, 64,@doc \"\"\" Intermediate matrix \"\"\" 9, 12, 15,\n                                                                              19, 26, 33,\n                                                                              29, 40, 51)"
      , datasets: []
      }
    , { file: "dict/create.fld"
