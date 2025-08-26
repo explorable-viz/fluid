@@ -136,12 +136,12 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 
 instance Desugarable DictEntry E.Expr where
    desug (ExprKey e) = desug e
-   desug (VarKey α v) = pure (E.Str α Doc.None v)
+   desug (VarKey α v) = pure (E.Str α v)
    desugBwd e (ExprKey e') = ExprKey $ desugBwd e e'
    desugBwd e v = varKeyBwd e v
 
 varKeyBwd :: forall a. E.Expr a -> Raw DictEntry -> DictEntry a
-varKeyBwd (E.Str α _ _) (VarKey _ v') = VarKey α v'
+varKeyBwd (E.Str α _) (VarKey _ v') = VarKey α v'
 varKeyBwd _ _ = error absurd
 
 --desugarate
@@ -255,7 +255,7 @@ paragraphElemsFwd =
    step :: ParagraphElem a -> m (E.Expr a) -> m (E.Expr a)
    step (Doc.Token s) accM = do
       acc <- accM
-      pure (econs bot Doc.None (E.Constr bot Doc.None cText (E.Str bot Doc.None s : Nil)) acc)
+      pure (econs bot Doc.None (E.Constr bot Doc.None cText (E.Str bot s : Nil)) acc)
 
    step (Doc.Unquote e) accM = do
       acc <- accM
@@ -275,7 +275,7 @@ paragraphElemsBwd (E.Constr _ _ c (e : es : Nil)) (pe : pes) | c == cCons =
    exprToElem pe e : paragraphElemsBwd es pes
    where
    exprToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
-   exprToElem (Doc.Token _) (E.Constr _ _ c' (E.Str _ _ s : Nil)) | c' == cText =
+   exprToElem (Doc.Token _) (E.Constr _ _ c' (E.Str _ s : Nil)) | c' == cText =
       Doc.Token s
    exprToElem (Doc.Unquote s) (E.Constr _ _ c' (e' : Nil)) | c' == cText =
       Doc.Unquote (desugBwd e' s)
@@ -291,9 +291,9 @@ exprFwd (Expr' _ (Op op)) =
 exprFwd (Expr' doc (Int α n)) =
    docOptFwd' (E.Int α n) doc
 exprFwd (Expr' doc (Float α n)) =
-   docOptFwd' (E.Float α Doc.None n) doc
+   docOptFwd' (E.Float α n) doc
 exprFwd (Expr' doc (Str α s)) =
-   docOptFwd' (E.Str α Doc.None s) doc
+   docOptFwd' (E.Str α s) doc
 exprFwd (Expr' doc (Constr α c ss)) = do
    e <- E.Constr α Doc.None c <$> traverse desug ss
    docOptFwd' e doc
@@ -352,9 +352,9 @@ exprBwd (E.Op _) (Expr' _ (Op op)) =
    Expr' Doc.None (Op op)
 exprBwd (E.Int α _) (Expr' Doc.None (Int _ n)) =
    Expr' Doc.None (Int α n)
-exprBwd (E.Float α Doc.None _) (Expr' Doc.None (Float _ n)) =
+exprBwd (E.Float α _) (Expr' Doc.None (Float _ n)) =
    Expr' Doc.None (Float α n)
-exprBwd (E.Str α Doc.None _) (Expr' Doc.None (Str _ str)) =
+exprBwd (E.Str α _) (Expr' Doc.None (Str _ str)) =
    Expr' Doc.None (Str α str)
 exprBwd (E.Constr α Doc.None _ es) (Expr' Doc.None (Constr _ c ss)) =
    Expr' Doc.None (Constr α c (uncurry desugBwd <$> zip es ss))

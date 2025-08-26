@@ -126,8 +126,10 @@ eval γ (Op op) _ =
    withMsg "Variable lookup" $ lookup' op γ
 eval _ (Int α n) αs =
    new (flip Val None) (insert α αs) (V.Int n)
-eval γ (Float α doc n) αs = new' γ (insert α αs) doc (V.Float n)
-eval γ (Str α doc s) αs = new' γ (insert α αs) doc (V.Str s)
+eval _ (Float α n) αs =
+   new (flip Val None) (insert α αs) (V.Float n)
+eval _ (Str α s) αs =
+   new (flip Val None) (insert α αs) (V.Str s)
 eval γ (Dictionary α doc ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
