@@ -109,8 +109,8 @@ rArrow = token.reservedOp str.rArrow
 paragraphDelim :: SParser Unit
 paragraphDelim = void $ string str.triplequote
 
-docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
-docComment expr' = option None do
+docOpt :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
+docOpt expr' = option None do
    p <- try do
       _ <- token.symbol "@doc"
       paragraph expr'
@@ -250,7 +250,7 @@ expr_ = fix exprParser
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
    exprParser :: Endo (SParser (Raw Expr))
    exprParser expr' = do
-      doc <- docComment expr'
+      doc <- docOpt expr'
       e <- buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
       pure case e of
          Expr' _ base -> Expr' doc base

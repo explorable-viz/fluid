@@ -201,6 +201,8 @@ instance Ann a => Pretty (Expr a) where
       (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
    pretty (Expr' doc (Paragraph p)) =
       pretty doc .<>. pretty p
+   pretty (Expr' _ (DocExpr p s)) =
+      pretty p .<>. pretty s
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)

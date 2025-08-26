@@ -61,6 +61,7 @@ data BaseExpr a
    | ListComp a (Expr a) (List (Qualifier a))
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
+   | DocExpr (Doc.Paragraph Expr a) (Expr a)
 
 data Expr a = Expr' (DocOpt a) (BaseExpr a)
 
@@ -344,6 +345,10 @@ exprFwd (Expr' _ (Let ds s)) =
    varDefsFwd (ds × s)
 exprFwd (Expr' _ (LetRec xcs s)) =
    E.LetRec <$> recDefsFwd xcs <*> desug s
+exprFwd (Expr' _ (DocExpr p s)) = do
+   pe <- paragraphFwd p
+   e <- exprFwd s
+   pure $ E.DocExpr pe e
 
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Expr' _ (Var x)) =
@@ -416,6 +421,8 @@ exprBwd (E.Let d e) (Expr' _ (Let ds s)) =
       Expr' Doc.None (Let ds' e')
 exprBwd (E.LetRec xσs e) (Expr' _ (LetRec xcs s)) =
    Expr' Doc.None (LetRec (recDefsBwd xσs xcs) (desugBwd e s))
+exprBwd (E.DocExpr pe e) (Expr' Doc.None (DocExpr p s)) =
+   Expr' Doc.None (DocExpr (paragraphBwd pe p) (exprBwd e s))
 exprBwd _ s = error $ "ExprBwd failed, s: " <> show s
 
 -- List Qualifier × Expr
