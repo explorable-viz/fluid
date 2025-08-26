@@ -287,11 +287,8 @@ exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice
 exprFwd (Expr' _ (Var x)) = pure $ E.Var x
 exprFwd (Expr' _ (Op op)) = pure $ E.Op op
 exprFwd (Expr' doc (Int α n)) = do
-   let e = E.Int α Doc.None n
    edoc <- docOptFwd doc
-   case edoc of
-      Doc.None -> pure e
-      Doc.Doc p -> pure $ E.DocExpr p e
+   pure $ E.Int α edoc n
 exprFwd (Expr' doc (Float α n)) = do
    edoc <- docOptFwd doc
    pure (E.Float α edoc n)
@@ -590,6 +587,12 @@ clausesStateBwd κ0 ks = case κ0 × ks of
 docOptFwd :: ∀ m a. BoundedLattice a => MonadError Error m => DocOpt a -> m (E.DocOpt a)
 docOptFwd Doc.None = pure Doc.None
 docOptFwd (Doc.Doc c) = Doc.Doc <$> paragraphFwd c
+
+docOptFwd' :: ∀ m a. BoundedLattice a => MonadError Error m => E.Expr a -> DocOpt a -> m (E.Expr a)
+docOptFwd' e Doc.None = pure e
+docOptFwd' e (Doc.Doc p) = do
+   pe <- paragraphFwd p
+   pure $ E.DocExpr pe e
 
 docOptBwd :: ∀ a. BoundedJoinSemilattice a => E.DocOpt a -> Raw DocOpt -> DocOpt a
 docOptBwd Doc.None Doc.None = Doc.None
