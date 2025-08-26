@@ -32,7 +32,7 @@ data Expr a
    | Float a Number
    | Str a String
    | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
-   | Constr a (DocOpt a) Ctr (List (Expr a))
+   | Constr a Ctr (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
    | Project (Expr a) Var
@@ -83,7 +83,7 @@ instance FV (Expr a) where
    fv (Float _ _) = empty
    fv (Str _ _) = empty
    fv (Dictionary _ ees) = unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
-   fv (Constr _ doc _ es) = fv doc ∪ unions (fv <$> es)
+   fv (Constr _ _ es) = unions (fv <$> es)
    fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
    fv (Project e _) = fv e
@@ -182,7 +182,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Str α str) (Str α' str') = Str (α ∨ α') (str ≜ str')
    join (Float α n) (Float α' n') = Float (α ∨ α') (n ≜ n')
    join (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') (ees ∨ ees')
-   join (Constr α doc c es) (Constr α' doc' c' es') = Constr (α ∨ α') (doc ∨ doc') (c ≜ c') (es ∨ es') -- TODO: assert consistentWith
+   join (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') (c ≜ c') (es ∨ es')
    join (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
@@ -200,7 +200,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Str α str) (Str _ str') = Str α (str ≜ str')
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
    expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
-   expand (Constr α doc c es) (Constr _ doc' c' es') = Constr α (expand doc doc') (c ≜ c') (expand es es')
+   expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
    expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
       Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
@@ -224,7 +224,7 @@ instance Vertices (Expr Vertex) where
    vertices d@(Dictionary α ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees)
       where
       go (Pair e e') = vertices e ∪ vertices e'
-   vertices e@(Constr α doc _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es) ∪ vertices doc
+   vertices e@(Constr α _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es)
    vertices e@(Matrix α e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
    vertices (Project e _) = vertices e
@@ -284,7 +284,7 @@ instance Apply Expr where
    apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
    apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
    apply (Dictionary fα fxes) (Dictionary α xes) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxes xes)
-   apply (Constr fα fdoc c fes) (Constr α doc c' es) = Constr (fα α) (fdoc <*> doc) (c ≜ c') (zipWith (<*>) fes es)
+   apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
    apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
       Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)

@@ -152,12 +152,12 @@ instance Desugarable Expr E.Expr where
 
 instance Desugarable ListRest E.Expr where
    desug :: forall a m. MonadError Error m => BoundedLattice a => ListRest a -> m (E.Expr a)
-   desug (End α) = pure (enil α Doc.None)
-   desug (Next α s l) = econs α Doc.None <$> desug s <*> desug l
+   desug (End α) = pure (enil α)
+   desug (Next α s l) = econs α <$> desug s <*> desug l
 
    desugBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
-   desugBwd (E.Constr α _ _ _) (End _) = End α
-   desugBwd (E.Constr α _ _ (e1 : e2 : Nil)) (Next _ s l) =
+   desugBwd (E.Constr α _ _) (End _) = End α
+   desugBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
       Next α (desugBwd e1 s) (desugBwd e2 l)
    desugBwd _ _ = error absurd
 
@@ -172,11 +172,11 @@ desugarModuleFwd :: forall a m. MonadError Error m => BoundedLattice a => Module
 desugarModuleFwd = moduleFwd
 
 -- helpers
-enil :: forall a. a -> E.DocOpt a -> E.Expr a
-enil α doc = E.Constr α doc cNil Nil
+enil :: forall a. a -> E.Expr a
+enil α = E.Constr α cNil Nil
 
-econs :: forall a. a -> E.DocOpt a -> E.Expr a -> E.Expr a -> E.Expr a
-econs α doc e e' = E.Constr α doc cCons (e : e' : Nil)
+econs :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
+econs α e e' = E.Constr α cCons (e : e' : Nil)
 
 elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
@@ -250,17 +250,17 @@ paragraphElemsFwd
    => List (ParagraphElem a)
    -> m (E.Expr a)
 paragraphElemsFwd =
-   foldr step (pure (enil bot Doc.None))
+   foldr step (pure (enil bot))
    where
    step :: ParagraphElem a -> m (E.Expr a) -> m (E.Expr a)
    step (Doc.Token s) accM = do
       acc <- accM
-      pure (econs bot Doc.None (E.Constr bot Doc.None cText (E.Str bot s : Nil)) acc)
+      pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) acc)
 
    step (Doc.Unquote e) accM = do
       acc <- accM
       e' <- desug e
-      pure (econs bot Doc.None (E.Constr bot Doc.None cText (e' : Nil)) acc)
+      pure (econs bot (E.Constr bot cText (e' : Nil)) acc)
 
 -- from a core list like Cons (Constr cText [e]) (Cons ... Nil)
 -- reconstruct a list of ParagraphElem (Token/Unquote)
@@ -270,14 +270,14 @@ paragraphElemsBwd
    => E.Expr a
    -> List (Raw ParagraphElem)
    -> List (ParagraphElem a)
-paragraphElemsBwd (E.Constr _ _ c Nil) Nil | c == cNil = Nil
-paragraphElemsBwd (E.Constr _ _ c (e : es : Nil)) (pe : pes) | c == cCons =
+paragraphElemsBwd (E.Constr _ c Nil) Nil | c == cNil = Nil
+paragraphElemsBwd (E.Constr _ c (e : es : Nil)) (pe : pes) | c == cCons =
    exprToElem pe e : paragraphElemsBwd es pes
    where
    exprToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
-   exprToElem (Doc.Token _) (E.Constr _ _ c' (E.Str _ s : Nil)) | c' == cText =
+   exprToElem (Doc.Token _) (E.Constr _ c' (E.Str _ s : Nil)) | c' == cText =
       Doc.Token s
-   exprToElem (Doc.Unquote s) (E.Constr _ _ c' (e' : Nil)) | c' == cText =
+   exprToElem (Doc.Unquote s) (E.Constr _ c' (e' : Nil)) | c' == cText =
       Doc.Unquote (desugBwd e' s)
    exprToElem _ _ = error absurd
 paragraphElemsBwd _ _ = error absurd
@@ -295,7 +295,7 @@ exprFwd (Expr' doc (Float α n)) =
 exprFwd (Expr' doc (Str α s)) =
    docOptFwd' (E.Str α s) doc
 exprFwd (Expr' doc (Constr α c ss)) = do
-   e <- E.Constr α Doc.None c <$> traverse desug ss
+   e <- E.Constr α c <$> traverse desug ss
    docOptFwd' e doc
 exprFwd (Expr' doc (Dictionary α sss)) = do
    let ks × ss = unzip sss
@@ -327,11 +327,11 @@ exprFwd (Expr' _ (IfElse s1 s2 s3)) =
       <*> desug s1
 exprFwd (Expr' _ (Paragraph xs)) = do
    list <- paragraphElemsFwd xs
-   pure (E.Constr bot Doc.None cParagraph (list : Nil))
+   pure (E.Constr bot cParagraph (list : Nil))
 exprFwd (Expr' doc (ListEmpty α)) = do
-   docOptFwd' (enil α Doc.None) doc
+   docOptFwd' (enil α) doc
 exprFwd (Expr' doc (ListNonEmpty α s l)) = do
-   e <- econs α Doc.None <$> desug s <*> desug l
+   e <- econs α <$> desug s <*> desug l
    docOptFwd' e doc
 exprFwd (Expr' _ (ListEnum s1 s2)) =
    E.App Doc.None <$> (E.App Doc.None (E.Var "enumFromTo") <$> desug s1) <*> desug s2
@@ -357,7 +357,7 @@ exprBwd (E.Float α _) (Expr' Doc.None (Float _ n)) =
    Expr' Doc.None (Float α n)
 exprBwd (E.Str α _) (Expr' Doc.None (Str _ str)) =
    Expr' Doc.None (Str α str)
-exprBwd (E.Constr α Doc.None _ es) (Expr' Doc.None (Constr _ c ss)) =
+exprBwd (E.Constr α _ es) (Expr' Doc.None (Constr _ c ss)) =
    Expr' Doc.None (Constr α c (uncurry desugBwd <$> zip es ss))
 exprBwd (E.Dictionary α ees) (Expr' Doc.None (Dictionary _ sss)) =
    Expr' Doc.None
@@ -386,11 +386,11 @@ exprBwd (E.App _ (E.Lambda _ (ElimConstr m)) e1) (Expr' _ (IfElse s1 s2 s3)) =
            (if cTrue ∈ m then desugBwd (asExpr (get cTrue m)) s2 else botOf s2)
            (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
       )
-exprBwd (E.Constr _ Doc.None c (lst : Nil)) (Expr' Doc.None (Paragraph xs)) | c == cParagraph =
+exprBwd (E.Constr _ c (lst : Nil)) (Expr' Doc.None (Paragraph xs)) | c == cParagraph =
    Expr' Doc.None (Paragraph (paragraphElemsBwd lst xs))
-exprBwd (E.Constr α Doc.None _ Nil) (Expr' Doc.None (ListEmpty _)) =
+exprBwd (E.Constr α _ Nil) (Expr' Doc.None (ListEmpty _)) =
    Expr' Doc.None (ListEmpty α)
-exprBwd (E.Constr α Doc.None _ (e1 : e2 : Nil)) (Expr' Doc.None (ListNonEmpty _ s l)) =
+exprBwd (E.Constr α _ (e1 : e2 : Nil)) (Expr' Doc.None (ListNonEmpty _ s l)) =
    Expr' Doc.None (ListNonEmpty α (desugBwd e1 s) (desugBwd e2 l))
 exprBwd (E.App _ (E.App _ (E.Var "enumFromTo") e1) e2) (Expr' _ (ListEnum s1 s2)) =
    Expr' Doc.None (ListEnum (desugBwd e1 s1) (desugBwd e2 s2))
@@ -422,10 +422,10 @@ exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)
 listCompFwd (α × Nil × s) =
-   econs α Doc.None <$> desug s <@> enil α Doc.None
+   econs α <$> desug s <@> enil α
 listCompFwd (α × (ListCompGuard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
-   E.App Doc.None (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α Doc.None)))) <$> desug s
+   E.App Doc.None (E.Lambda α (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desug s
 listCompFwd (α × (ListCompDecl (VarDef p s) : qs) × s') = do
    σ <- clausesStateFwd (((Left p : Nil) × Nil × Expr' Doc.None (ListComp α s' qs)) : Nil)
    E.App Doc.None (E.Lambda α (asElim σ)) <$> desug s
@@ -440,12 +440,12 @@ listCompBwd
    => E.Expr a
    -> List (Raw Qualifier) × Raw Expr
    -> a × List (Qualifier a) × Expr a
-listCompBwd (E.Constr α2 _ c (e : E.Constr α1 _ c' Nil : Nil)) (Nil × s) | c == cCons && c' == cNil =
+listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (Nil × s) | c == cCons && c' == cNil =
    (α1 ∨ α2) × Nil × desugBwd e s
 listCompBwd (E.App _ (E.Lambda α' (ElimConstr m)) e) ((ListCompGuard s0 : qs) × s0') =
    listCompBwd (asExpr (get cTrue m)) (qs × s0') × asExpr (get cFalse m)
       # unsafePartial case _ of
-           (α × qs' × s') × E.Constr β _ c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
+           (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ α' ∨ β) × (ListCompGuard (desugBwd e s0) : qs') × s'
 listCompBwd (E.App _ (E.Lambda α' σ) e) ((ListCompDecl (VarDef p s0) : qs) × s0') =
    clausesStateBwd (ContElim σ) (((Left p : Nil) × Nil × Expr' Doc.None (ListComp unit s0' qs)) : Nil)
       # unsafePartial case _ of

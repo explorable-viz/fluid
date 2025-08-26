@@ -136,10 +136,10 @@ eval γ (Dictionary α ees) αs = do
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    new (flip Val None) (insert α αs) $ V.Dictionary (DictRep d)
-eval γ (Constr α doc c es) αs = do
+eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   new' γ (insert α αs) doc $ V.Constr c vs
+   new (flip Val None) (insert α αs) $ V.Constr c vs
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
