@@ -329,11 +329,10 @@ exprFwd (Expr' _ (Paragraph xs)) = do
    list <- paragraphElemsFwd xs
    pure (E.Constr bot Doc.None cParagraph (list : Nil))
 exprFwd (Expr' doc (ListEmpty α)) = do
-   edoc <- docOptFwd doc
-   pure (enil α edoc)
+   docOptFwd' (enil α Doc.None) doc
 exprFwd (Expr' doc (ListNonEmpty α s l)) = do
-   edoc <- docOptFwd doc
-   econs α edoc <$> desug s <*> desug l
+   e <- econs α Doc.None <$> desug s <*> desug l
+   docOptFwd' e doc
 exprFwd (Expr' _ (ListEnum s1 s2)) =
    E.App Doc.None <$> ((E.App Doc.None (E.Var "enumFromTo")) <$> desug s1) <*> desug s2
 exprFwd (Expr' doc (ListComp α s ((ListCompGen _ p s') : qs))) =
@@ -387,10 +386,10 @@ exprBwd (E.App _ (E.Lambda _ (ElimConstr m)) e1) (Expr' _ (IfElse s1 s2 s3)) =
       )
 exprBwd (E.Constr _ edoc c (lst : Nil)) (Expr' doc (Paragraph xs)) | c == cParagraph =
    Expr' (docOptBwd edoc doc) (Paragraph (paragraphElemsBwd lst xs))
-exprBwd (E.Constr α edoc _ Nil) (Expr' doc (ListEmpty _)) =
-   Expr' (docOptBwd edoc doc) (ListEmpty α)
-exprBwd (E.Constr α edoc _ (e1 : e2 : Nil)) (Expr' doc (ListNonEmpty _ s l)) =
-   Expr' (docOptBwd edoc doc) (ListNonEmpty α (desugBwd e1 s) (desugBwd e2 l))
+exprBwd (E.Constr α Doc.None _ Nil) (Expr' Doc.None (ListEmpty _)) =
+   Expr' Doc.None (ListEmpty α)
+exprBwd (E.Constr α Doc.None _ (e1 : e2 : Nil)) (Expr' Doc.None (ListNonEmpty _ s l)) =
+   Expr' Doc.None (ListNonEmpty α (desugBwd e1 s) (desugBwd e2 l))
 exprBwd (E.App _ (E.App _ (E.Var "enumFromTo") e1) e2) (Expr' _ (ListEnum s1 s2)) =
    Expr' Doc.None (ListEnum (desugBwd e1 s1) (desugBwd e2 s2))
 exprBwd e@(E.App doc (E.App _ _ _) _) (Expr' doc' (ListComp _ s (q@(ListCompGen _ _ _) : qs))) =
