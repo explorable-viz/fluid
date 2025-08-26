@@ -62,11 +62,12 @@ After building, tests can be run from the command line via `yarn test-all`
 a browser window.
 - To observe the status of tests, click `Debug` in the browser window, and then open the JavaScript Console for your browser (e.g., via the Developer Tools).
 
-### Run Puppeteer tests for page Y of website X
+### Run Puppeteer tests for website X
 
-Rebuild with `puppeteerTests.headless` set to `false` to run in browser. Then:
 - `yarn bundle-website X`
-- `./script/test-page.sh X X.Y`
+- `yarn test-website X`
+
+Rebuild with `puppeteerTests.headless` set to `false` to run in browser.
 
 ## Development via VS Code
 

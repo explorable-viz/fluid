@@ -76,6 +76,8 @@ show' (T.Selector sel) = sel
 timeout :: Int
 timeout = 240000
 
+-- Should these be Effect (Promise Unit) for better JS integration?
+-- Currently can't really chain JS test conditions that need to wait on each other
 waitFor :: T.Selector -> T.Page -> Aff Unit
 waitFor selector page = do
    log' ("Waiting for " <> show' selector)
@@ -112,7 +114,7 @@ click element page = do
 checkAttribute :: T.Page -> T.Selector -> String -> String -> Aff Unit
 checkAttribute page sel attr expected = do
    found <- getAttributeValue page sel attr
-   let errorMsg = if found == expected then "" else (" (got " <> found <> ")")
+   let errorMsg = if found == expected then "" else (" (got \"" <> found <> "\")")
    testCondition (show' sel) (found == expected) (attr <> " == " <> show expected <> errorMsg)
 
 checkAttributeContains :: T.Page -> T.Selector -> String -> String -> Aff Unit
@@ -138,10 +140,6 @@ textContentValue :: T.Page -> T.Selector -> Aff String
 textContentValue page selector = do
    captionText <- T.unsafePageEval selector "element => element.textContent" page
    pure (unsafeFromForeign captionText)
-
-waitForFigure :: T.Page -> String -> Aff Unit
-waitForFigure page selector =
-   waitFor (T.Selector ("svg" <> selector)) page
 
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page figId = do

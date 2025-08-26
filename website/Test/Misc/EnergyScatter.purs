@@ -6,7 +6,7 @@ import Control.Promise (Promise, fromAff)
 import Data.Foldable (sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Test.Util.Puppeteer (checkAttribute, checkAttributeContains, checkTextContent, click, clickToggle, testURL, waitFor, waitForFigure)
+import Test.Util.Puppeteer (checkAttribute, checkAttributeContains, checkTextContent, click, clickToggle, testURL, waitFor)
 import Toppokki as T
 
 main :: Effect (Promise Unit)
@@ -16,7 +16,7 @@ main = fromAff $ sequence_ $ testURL "energy-scatter"
 
 testFig :: T.Page -> Aff Unit
 testFig page = do
-   waitForFigure page ""
+   waitFor (T.Selector "svg") page
    clickToggle page fig
    clickScatterPlotPoint
 

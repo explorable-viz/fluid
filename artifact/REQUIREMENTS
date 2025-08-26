@@ -1,9 +1,0 @@
-Instructions have been tested with the following specs:
-DOCKER IMAGE:
-  ARCHITECTURE: x86_64
-  SOFTWARE: Docker version 27.4.1 build b9d17ea, git, gunzip
-BUILD FROM SOURCE:
-  SOFTWARE: git, Node.JS >= 14.0.0, yarn >= 1.22, python3 with maptlotlib, numpy, pandas, argparse, re
-
-PROCESSOR: Intel Core i7-10850H CPU @ 2.70GHz
-MEMORY: 16.4GB
