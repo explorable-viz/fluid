@@ -284,16 +284,16 @@ paragraphElemsBwd _ _ = error absurd
 
 -- Expr
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
-exprFwd (Expr' _ (Var x)) = pure $ E.Var x
-exprFwd (Expr' _ (Op op)) = pure $ E.Op op
+exprFwd (Expr' _ (Var x)) =
+   pure $ E.Var x
+exprFwd (Expr' _ (Op op)) =
+   pure $ E.Op op
 exprFwd (Expr' doc (Int α n)) =
    docOptFwd' (E.Int α Doc.None n) doc
-exprFwd (Expr' doc (Float α n)) = do
-   edoc <- docOptFwd doc
-   pure (E.Float α edoc n)
-exprFwd (Expr' doc (Str α s)) = do
-   edoc <- docOptFwd doc
-   pure (E.Str α edoc s)
+exprFwd (Expr' doc (Float α n)) =
+   docOptFwd' (E.Float α Doc.None n) doc
+exprFwd (Expr' doc (Str α s)) =
+   docOptFwd' (E.Str α Doc.None s) doc
 exprFwd (Expr' doc (Constr α c ss)) = do
    edoc <- docOptFwd doc
    E.Constr α edoc c <$> traverse desug ss
@@ -345,22 +345,17 @@ exprFwd (Expr' _ (Let ds s)) =
 exprFwd (Expr' _ (LetRec xcs s)) =
    E.LetRec <$> recDefsFwd xcs <*> desug s
 
--- docOptBwd' :: ∀ a. BoundedJoinSemilattice a => E.DocOpt a -> Raw DocOpt -> DocOpt a
--- docOptBwd' = ?_
-
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
-exprBwd (E.Var _) (Expr' _ (Var x)) = Expr' Doc.None (Var x)
-exprBwd (E.Op _) (Expr' _ (Op op)) = Expr' Doc.None (Op op)
+exprBwd (E.Var _) (Expr' _ (Var x)) =
+   Expr' Doc.None (Var x)
+exprBwd (E.Op _) (Expr' _ (Op op)) =
+   Expr' Doc.None (Op op)
 exprBwd (E.Int α Doc.None _) (Expr' Doc.None (Int _ n)) =
    Expr' Doc.None (Int α n)
-exprBwd (E.DocExpr pe e) (Expr' (Doc.Doc p) s) =
-   unsafePartial $
-      let
-         Expr' Doc.None s = exprBwd e (Expr' Doc.None s)
-      in
-         Expr' (Doc.Doc (paragraphBwd pe p)) s
-exprBwd (E.Float α edoc _) (Expr' doc (Float _ n)) = Expr' (docOptBwd edoc doc) (Float α n)
-exprBwd (E.Str α edoc _) (Expr' doc (Str _ str)) = Expr' (docOptBwd edoc doc) (Str α str)
+exprBwd (E.Float α Doc.None _) (Expr' Doc.None (Float _ n)) =
+   Expr' Doc.None (Float α n)
+exprBwd (E.Str α Doc.None _) (Expr' Doc.None (Str _ str)) =
+   Expr' Doc.None (Str α str)
 exprBwd (E.Constr α edoc _ es) (Expr' doc (Constr _ ctr ss)) =
    Expr' (docOptBwd edoc doc) (Constr α ctr (uncurry desugBwd <$> zip es ss))
 exprBwd (E.Dictionary α edoc ees) (Expr' doc (Dictionary _ sss)) =
@@ -415,6 +410,12 @@ exprBwd (E.LetRec xσs e) (Expr' _ (LetRec xcs s)) =
    Expr' Doc.None (LetRec (recDefsBwd xσs xcs) (desugBwd e s))
 exprBwd (E.DProject doc ed ek) (Expr' doc' (DProject sd sk)) =
    Expr' (docOptBwd doc doc') (DProject (exprBwd ed sd) (exprBwd ek sk))
+exprBwd (E.DocExpr pe e) (Expr' (Doc.Doc p) s) =
+   unsafePartial $
+      let
+         Expr' Doc.None s = exprBwd e (Expr' Doc.None s)
+      in
+         Expr' (Doc.Doc (paragraphBwd pe p)) s
 exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
 
 -- List Qualifier × Expr
