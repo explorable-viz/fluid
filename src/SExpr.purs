@@ -336,9 +336,8 @@ exprFwd (Expr' doc (ListNonEmpty α s l)) = do
 exprFwd (Expr' _ (ListEnum s1 s2)) =
    E.App Doc.None <$> (E.App Doc.None (E.Var "enumFromTo") <$> desug s1) <*> desug s2
 exprFwd (Expr' doc (ListComp α s (ListCompGen p s' : qs))) = unsafePartial $ do
-   edoc <- docOptFwd doc
-   E.App Doc.None e e' <- listCompFwd (α × (ListCompGen p s' : qs) × s)
-   pure $ E.App edoc e e'
+   e <- listCompFwd (α × (ListCompGen p s' : qs) × s)
+   docOptFwd' e doc
 exprFwd (Expr' _ (ListComp α s qs)) =
    listCompFwd (α × qs × s)
 exprFwd (Expr' _ (Let ds s)) =
@@ -394,11 +393,17 @@ exprBwd (E.Constr α _ (e1 : e2 : Nil)) (Expr' Doc.None (ListNonEmpty _ s l)) =
    Expr' Doc.None (ListNonEmpty α (desugBwd e1 s) (desugBwd e2 l))
 exprBwd (E.App _ (E.App _ (E.Var "enumFromTo") e1) e2) (Expr' _ (ListEnum s1 s2)) =
    Expr' Doc.None (ListEnum (desugBwd e1 s1) (desugBwd e2 s2))
-exprBwd e@(E.App doc (E.App _ _ _) _) (Expr' doc' (ListComp _ s (q@(ListCompGen _ _) : qs))) =
+exprBwd e@(E.App _ (E.App _ _ _) _) (Expr' _ (ListComp _ s (q@(ListCompGen _ _) : qs))) =
    let
       α × qs' × s' = listCompBwd e ((q : qs) × s)
    in
-      Expr' (docOptBwd doc doc') (ListComp α s' qs')
+      Expr' Doc.None (ListComp α s' qs')
+exprBwd (E.DocExpr pe e) (Expr' (Doc.Doc p) s) =
+   unsafePartial $
+      let
+         Expr' Doc.None s = exprBwd e (Expr' Doc.None s)
+      in
+         Expr' (Doc.Doc (paragraphBwd pe p)) s
 exprBwd e (Expr' _ (ListComp _ s qs)) =
    let
       α × qs' × s' = listCompBwd e (qs × s)
@@ -411,13 +416,7 @@ exprBwd (E.Let d e) (Expr' _ (Let ds s)) =
       Expr' Doc.None (Let ds' e')
 exprBwd (E.LetRec xσs e) (Expr' _ (LetRec xcs s)) =
    Expr' Doc.None (LetRec (recDefsBwd xσs xcs) (desugBwd e s))
-exprBwd (E.DocExpr pe e) (Expr' (Doc.Doc p) s) =
-   unsafePartial $
-      let
-         Expr' Doc.None s = exprBwd e (Expr' Doc.None s)
-      in
-         Expr' (Doc.Doc (paragraphBwd pe p)) s
-exprBwd _left right = error $ "ExprBwd failed, Right: " <> show right
+exprBwd _ s = error $ "ExprBwd failed, s: " <> show s
 
 -- List Qualifier × Expr
 listCompFwd :: forall a m. MonadError Error m => BoundedLattice a => a × List (Qualifier a) × Expr a -> m (E.Expr a)

@@ -36,7 +36,7 @@ main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> allTests)
 
 -- ③ Only run the selected 7 comment tests
 -- main :: Effect Unit
--- main = run selectedCommentsTests
+-- main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> selectedCommentsTests)
 
 -- --------------------------------
 
@@ -45,13 +45,13 @@ selectedCommentsTests :: forall m. MonadAff m => MonadError Error m => MonadRead
 selectedCommentsTests = second void <$> suite selectedCases (1 × false)
    where
    selectedNames =
-      [ "comments/nested-constr"
-      , "comments/dicts"
-      , "comments/app-arg"
-      , "comments/list-comp"
-      , "comments/app"
-      , "comments/int"
-      , "comments/projection"
+      [ "comments/nested-constr.fld"
+      , "comments/dicts.fld"
+      , "comments/app-arg.fld"
+      , "comments/list-comp.fld"
+      , "comments/app.fld"
+      , "comments/int.fld"
+      , "comments/projection.fld"
       ]
    selectedCases = filter (\c -> c.file `elem` selectedNames) comments_cases
 
