@@ -28,7 +28,7 @@ import Dict as D
 import Doc (DocOpt(..), ParagraphElem(..), Paragraph) as Doc
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..), DocOpt, ParagraphElem) as E
+import Expr (DocOpt, Expr(..), Module(..), ParagraphElem, RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -144,7 +144,7 @@ varKeyBwd :: forall a. E.Expr a -> Raw DictEntry -> DictEntry a
 varKeyBwd (E.Str α _ _) (VarKey _ v') = VarKey α v'
 varKeyBwd _ _ = error absurd
 
---desugarate 
+--desugarate
 
 instance Desugarable Expr E.Expr where
    desug = exprFwd
@@ -284,11 +284,14 @@ paragraphElemsBwd _ _ = error absurd
 
 -- Expr
 exprFwd :: forall a m. BoundedLattice a => MonadError Error m => JoinSemilattice a => Expr a -> m (E.Expr a)
-exprFwd (Expr' _ (Var x)) = pure (E.Var x)
-exprFwd (Expr' _ (Op op)) = pure (E.Op op)
+exprFwd (Expr' _ (Var x)) = pure $ E.Var x
+exprFwd (Expr' _ (Op op)) = pure $ E.Op op
 exprFwd (Expr' doc (Int α n)) = do
+   let e = E.Int α Doc.None n
    edoc <- desugComment doc
-   pure (E.Int α edoc n)
+   case edoc of
+      Doc.None -> pure e
+      Doc.Doc p -> pure $ E.DocExpr p e
 exprFwd (Expr' doc (Float α n)) = do
    edoc <- desugComment doc
    pure (E.Float α edoc n)
@@ -586,26 +589,26 @@ clausesStateBwd κ0 ks = case κ0 × ks of
 
 desugComment :: ∀ m a. BoundedLattice a => MonadError Error m => DocOpt a -> m (E.DocOpt a)
 desugComment Doc.None = pure Doc.None
-desugComment (Doc.Doc c) = Doc.Doc <$> commentFwd c
+desugComment (Doc.Doc c) = Doc.Doc <$> paragraphFwd c
 
 desugCommentBwd :: ∀ a. BoundedJoinSemilattice a => E.DocOpt a -> Raw DocOpt -> DocOpt a
 desugCommentBwd Doc.None Doc.None = Doc.None
-desugCommentBwd (Doc.Doc ec) (Doc.Doc c) = Doc.Doc (commentBwd ec c)
+desugCommentBwd (Doc.Doc ec) (Doc.Doc c) = Doc.Doc (paragraphBwd ec c)
 desugCommentBwd Doc.None (Doc.Doc _) = error "E Doc.None S Doc"
 desugCommentBwd (Doc.Doc _) Doc.None = error "E Doc S Doc.None"
 
-commentFwd :: ∀ m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (List (E.ParagraphElem a))
-commentFwd (Cons s l) = Cons <$> commentElemFwd s <*> commentFwd l
-commentFwd Nil = pure Nil
+paragraphFwd :: ∀ m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (List (E.ParagraphElem a))
+paragraphFwd (Cons s l) = Cons <$> commentElemFwd s <*> paragraphFwd l
+paragraphFwd Nil = pure Nil
+
+paragraphBwd :: ∀ a. BoundedJoinSemilattice a => List (E.ParagraphElem a) -> List (Raw ParagraphElem) -> List (ParagraphElem a)
+paragraphBwd (Cons c l) (Cons c' l') = Cons (commentElemBwd c c') (paragraphBwd l l')
+paragraphBwd Nil Nil = Nil
+paragraphBwd _ _ = error absurd
 
 commentElemFwd :: ∀ m a. BoundedLattice a => MonadError Error m => ParagraphElem a -> m (E.ParagraphElem a)
 commentElemFwd (Doc.Token s) = pure $ Doc.Token s
 commentElemFwd (Doc.Unquote e) = Doc.Unquote <$> exprFwd e
-
-commentBwd :: ∀ a. BoundedJoinSemilattice a => List (E.ParagraphElem a) -> List (Raw ParagraphElem) -> List (ParagraphElem a)
-commentBwd (Cons c l) (Cons c' l') = Cons (commentElemBwd c c') (commentBwd l l')
-commentBwd Nil Nil = Nil
-commentBwd _ _ = error absurd
 
 commentElemBwd :: ∀ a. BoundedJoinSemilattice a => E.ParagraphElem a -> Raw ParagraphElem -> ParagraphElem a
 commentElemBwd (Doc.Token _) (Doc.Token s') = Doc.Token s'
