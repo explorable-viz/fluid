@@ -289,7 +289,7 @@ exprFwd (Expr' _ (Var x)) =
 exprFwd (Expr' _ (Op op)) =
    pure $ E.Op op
 exprFwd (Expr' doc (Int α n)) =
-   docOptFwd' (E.Int α Doc.None n) doc
+   docOptFwd' (E.Int α n) doc
 exprFwd (Expr' doc (Float α n)) =
    docOptFwd' (E.Float α Doc.None n) doc
 exprFwd (Expr' doc (Str α s)) =
@@ -350,7 +350,7 @@ exprBwd (E.Var _) (Expr' _ (Var x)) =
    Expr' Doc.None (Var x)
 exprBwd (E.Op _) (Expr' _ (Op op)) =
    Expr' Doc.None (Op op)
-exprBwd (E.Int α Doc.None _) (Expr' Doc.None (Int _ n)) =
+exprBwd (E.Int α _) (Expr' Doc.None (Int _ n)) =
    Expr' Doc.None (Int α n)
 exprBwd (E.Float α Doc.None _) (Expr' Doc.None (Float _ n)) =
    Expr' Doc.None (Float α n)

@@ -386,7 +386,7 @@ prettyMatrix e1 i j e2 =
 instance IsSimple E.Expr where
    isSimple (E.Var _) = true
    isSimple (E.Op _) = true
-   isSimple (E.Int _ _ _) = true
+   isSimple (E.Int _ _) = true
    isSimple (E.Float _ _ _) = true
    isSimple (E.Str _ _ _) = true
    isSimple (E.Constr _ _ _ Nil) = true
@@ -399,7 +399,7 @@ instance IsSimple E.Expr where
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
-   pretty (E.Int α doc n) = pretty doc .<>. highlightIf α (text (show n))
+   pretty (E.Int α n) = highlightIf α (text (show n))
    pretty (E.Float α doc n) = pretty doc .<>. highlightIf α (text (show n))
    pretty (E.Str α doc str) = pretty doc .<>. highlightIf α (text (show str))
    pretty (E.Dictionary α doc ees) = pretty doc .<>. highlightIf α (prettyDict pretty (ees <#> toTuple))

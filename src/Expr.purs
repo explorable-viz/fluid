@@ -28,7 +28,7 @@ import Util.Set ((\\), (∪))
 data Expr a
    = Var Var
    | Op Var
-   | Int a (DocOpt a) Int
+   | Int a Int
    | Float a (DocOpt a) Number
    | Str a (DocOpt a) String
    | Dictionary a (DocOpt a) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
@@ -79,7 +79,7 @@ instance FV (Doc.DocOpt Expr a) where
 instance FV (Expr a) where
    fv (Var x) = singleton x
    fv (Op op) = singleton op
-   fv (Int _ _ _) = empty
+   fv (Int _ _) = empty
    fv (Float _ _ _) = empty
    fv (Str _ _ _) = empty
    fv (Dictionary _ doc ees) = fv doc ∪ unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
@@ -178,7 +178,7 @@ instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Var x) (Var x') = Var (x ≜ x')
    join (Op op) (Op op') = Op (op ≜ op')
-   join (Int α doc n) (Int α' doc' n') = Int (α ∨ α') (doc ∨ doc') (n ≜ n')
+   join (Int α n) (Int α' n') = Int (α ∨ α') (n ≜ n')
    join (Str α doc str) (Str α' doc' str') = Str (α ∨ α') (doc ∨ doc') (str ≜ str')
    join (Float α doc n) (Float α' doc' n') = Float (α ∨ α') (doc ∨ doc') (n ≜ n')
    join (Dictionary α doc ees) (Dictionary α' doc' ees') = Dictionary (α ∨ α') (doc ∨ doc') (ees ∨ ees')
@@ -196,7 +196,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
 instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Var x) (Var x') = Var (x ≜ x')
    expand (Op op) (Op op') = Op (op ≜ op')
-   expand (Int α doc n) (Int _ doc' n') = Int α (expand doc doc') (n ≜ n')
+   expand (Int α n) (Int _ n') = Int α (n ≜ n')
    expand (Str α doc str) (Str _ doc' str') = Str α (expand doc doc') (str ≜ str')
    expand (Float α doc n) (Float _ doc' n') = Float α (expand doc doc') (n ≜ n')
    expand (Dictionary α doc ees) (Dictionary _ doc' ees') = Dictionary α (expand doc doc') (expand ees ees')
@@ -218,7 +218,7 @@ instance MeetSemilattice a => MeetSemilattice (Expr a) where
 instance Vertices (Expr Vertex) where
    vertices (Var _) = empty
    vertices (Op _) = empty
-   vertices e@(Int α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices e@(Int α _) = singleton (DVertex (α × pack e))
    vertices e@(Float α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
    vertices e@(Str α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
    vertices d@(Dictionary α doc ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees) ∪ vertices doc
@@ -280,7 +280,7 @@ derive instance Functor Module
 instance Apply Expr where
    apply (Var x) (Var x') = Var (x ≜ x')
    apply (Op op) (Op _) = Op op
-   apply (Int fα fdoc n) (Int α doc n') = Int (fα α) (fdoc <*> doc) (n ≜ n')
+   apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
    apply (Float fα fdoc n) (Float α doc n') = Float (fα α) (fdoc <*> doc) (n ≜ n')
    apply (Str fα fdoc s) (Str α doc s') = Str (fα α) (fdoc <*> doc) (s ≜ s')
    apply (Dictionary fα fdoc fxes) (Dictionary α doc xes) = Dictionary (fα α) (fdoc <*> doc) (zipWith (lift2 (<*>)) fxes xes)
