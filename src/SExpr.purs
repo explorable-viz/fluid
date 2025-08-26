@@ -295,8 +295,8 @@ exprFwd (Expr' doc (Float α n)) =
 exprFwd (Expr' doc (Str α s)) =
    docOptFwd' (E.Str α Doc.None s) doc
 exprFwd (Expr' doc (Constr α c ss)) = do
-   edoc <- docOptFwd doc
-   E.Constr α edoc c <$> traverse desug ss
+   e <- E.Constr α Doc.None c <$> traverse desug ss
+   docOptFwd' e doc
 exprFwd (Expr' doc (Dictionary α sss)) = do
    let ks × ss = unzip sss
    ks' <- traverse desug ks
@@ -356,8 +356,8 @@ exprBwd (E.Float α Doc.None _) (Expr' Doc.None (Float _ n)) =
    Expr' Doc.None (Float α n)
 exprBwd (E.Str α Doc.None _) (Expr' Doc.None (Str _ str)) =
    Expr' Doc.None (Str α str)
-exprBwd (E.Constr α edoc _ es) (Expr' doc (Constr _ ctr ss)) =
-   Expr' (docOptBwd edoc doc) (Constr α ctr (uncurry desugBwd <$> zip es ss))
+exprBwd (E.Constr α Doc.None _ es) (Expr' Doc.None (Constr _ c ss)) =
+   Expr' Doc.None (Constr α c (uncurry desugBwd <$> zip es ss))
 exprBwd (E.Dictionary α edoc ees) (Expr' doc (Dictionary _ sss)) =
    Expr' (docOptBwd edoc doc)
       (Dictionary α (zipWith (\(Pair e e') (s × s') -> desugBwd e s × desugBwd e' s') ees sss))
