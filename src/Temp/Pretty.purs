@@ -3,7 +3,8 @@ module Temp.Pretty (prettyPy) where
 import Prelude
 
 import Data.List (List(..), null, singleton, uncons, (:))
-import Data.List.NonEmpty (NonEmptyList, head, toList)
+import Data.List.NonEmpty (NonEmptyList(..), head, toList)
+import Data.NonEmpty ((:|))
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl)
@@ -142,10 +143,15 @@ instance Pretty ListRestPattern where
    pretty PListEnd = mempty
 
 instance Ann a => Pretty (VarDef a) where
-   pretty (VarDef v s) = line <> _def <+> pretty v <> _colon <+> pretty s
+   pretty (VarDef v s) = _def <+> pretty v <> _colon <+> pretty s
+
+instance Ann a => Pretty (List (VarDef a)) where
+   pretty Nil = mempty
+   pretty (x : Nil) = pretty x
+   pretty (x : xs) = pretty x <++> pretty xs
 
 instance Ann a => Pretty (VarDefs a) where
-   pretty ds = foldl (<>) mempty (toList (pretty <$> ds))
+   pretty ds = pretty (toList ds)
 
 instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × e)) = lambda (toList ps) e

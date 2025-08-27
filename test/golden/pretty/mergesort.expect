@@ -2,7 +2,6 @@ def split([]):
   ([], [])
 
 def split([x, *xs]):
-  
   def (ys, zs): split(xs)
   ([x, *zs], ys)
 
@@ -22,7 +21,6 @@ def mergesort(xs):
   if length(xs) < 2:
     xs
   else:
-    
     def (ys, zs): split(xs)
     merge(mergesort(ys), mergesort(zs))
 
