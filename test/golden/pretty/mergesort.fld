@@ -1,0 +1,22 @@
+let split [] = ([], []);
+    split (x : xs) =
+      let (ys, zs) = split xs in (x : zs, ys);
+
+    merge xs ys =
+       match (xs, ys) as {
+          ([], _) -> ys;
+          (x : xs', []) -> xs;
+          (x : xs', y : ys') ->
+             if x < y
+             then x : merge xs' ys
+             else y : merge xs ys'
+       };
+
+    mergesort xs =
+       if length xs < 2
+       then xs
+       else
+          let (ys, zs) = split xs in
+          merge (mergesort ys) (mergesort zs)
+in
+mergesort [3, 1, 2]
