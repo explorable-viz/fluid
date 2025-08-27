@@ -1,0 +1,3 @@
+[
+   { country: "USA", year: 2018, nuclearOut: 807.08, nuclearCap: 871.01, gasOut: 1469.13, gasCap: 4431.51, coalOut: 1149.49, coalCap: 2293.89, petrolOut: 42.68, petrolCap: 304.67}
+]

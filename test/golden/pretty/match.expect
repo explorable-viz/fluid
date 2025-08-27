@@ -1,0 +1,5 @@
+match xs:
+  case []:
+    []
+  case [x, *xs]:
+    [x, *take(n - 1, xs)]

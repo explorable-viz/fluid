@@ -1,0 +1,10 @@
+let d = {};
+    e = { ["a"]: 5, ["a" ++ "b"] : 6 };
+    f = { ["ab"]: 12 }
+in {
+   d: d,
+   e: e,
+   e_ab: e.ab,
+   f: dict_map ((+) 1) e,
+   g: dict_difference e f
+}
