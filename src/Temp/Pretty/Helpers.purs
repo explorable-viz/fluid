@@ -9,9 +9,6 @@ import Temp.Pretty.Doc (Doc(..), text, indent, line, (<++>), (<+>))
 num :: forall a. Show a => a -> Doc
 num s = text (show s)
 
-block :: Doc -> Doc
-block d = _colon <> indent (line <> d)
-
 enclose :: Doc -> Doc -> Doc -> Doc
 enclose l r d = l <> d <> r
 

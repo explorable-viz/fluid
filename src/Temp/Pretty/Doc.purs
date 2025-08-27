@@ -15,6 +15,8 @@ data Doc
    | Indent Doc
    | Concat Doc Doc
 
+   | Block Doc
+
    -- testing different handlings... probably revert
    | Record (List Doc)
    | Array (List Doc)
@@ -34,6 +36,9 @@ line = Line
 
 indent :: Doc -> Doc
 indent = Indent
+
+block :: Doc -> Doc
+block = Block
 
 record :: List Doc -> Doc
 record = Record
@@ -77,6 +82,7 @@ render' _ (Text s) = s
 render' n Line = break n ""
 render' n (Indent d) = render' (n + 1) d
 render' n (Concat d1 d2) = render' n d1 <> render' n d2
+render' n (Block d) = ":" <> break (n + 1) (render' (n + 1) d)
 render' n (Array xs) = renderArray n xs
 render' n (Record xs) = renderRecord n xs
 render' n (Params xs) = renderParams n xs
@@ -126,6 +132,7 @@ width (Text s) = String.length s
 width Line = 0 -- ???
 width (Indent _) = 0 -- ???
 width (Concat d1 d2) = width d1 + width d2
+width (Block d) = width d
 width (Array xs) = widthList xs
 width (Record xs) = widthList xs
 width (Params xs) = widthList xs
