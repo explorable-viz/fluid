@@ -6,19 +6,11 @@ import Data.List (List(..), (:))
 import Temp.Pretty.Constants (_colon, _lbrace, _lbracket, _lparen, _quote, _rbrace, _rbracket, _rparen)
 import Temp.Pretty.Doc (Doc(..), text, indent, line, (<++>), (<+>))
 
-indentation :: String
-indentation = "    "
-
 num :: forall a. Show a => a -> Doc
 num s = text (show s)
 
 block :: Doc -> Doc
 block d = _colon <> indent (line <> d)
-
-replicate :: Int -> String -> String
-replicate n s
-   | n <= 0 = ""
-   | otherwise = s <> replicate (n - 1) s
 
 enclose :: Doc -> Doc -> Doc -> Doc
 enclose l r d = l <> d <> r
@@ -55,14 +47,3 @@ hsepWith :: Doc -> List Doc -> Doc
 hsepWith _ Nil = Empty
 hsepWith _ (d : Nil) = d
 hsepWith sep (d : ds) = d <> sep <> hsepWith sep ds
-
-render :: Doc -> String
-render doc = renderWithIndent 0 doc
-   where
-   renderWithIndent :: Int -> Doc -> String
-   renderWithIndent _ Empty = ""
-   renderWithIndent _ (Text s) = s
-   renderWithIndent n Line = "\n" <> replicate n indentation
-   renderWithIndent n (Indent d) = renderWithIndent (n + 1) d
-   renderWithIndent n (Concat d1 d2) =
-      renderWithIndent n d1 <> renderWithIndent n d2

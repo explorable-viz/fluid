@@ -6,12 +6,13 @@ import Data.List (List(..), null, singleton, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
-import DataType (Ctr, cCons, cNil, cPair, showCtr)
+import Data.Traversable (foldl)
+import DataType (Ctr, cCons, cNil, cPair)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_asterisk, _case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
-import Temp.Pretty.Doc (Doc(..), line, text, (<++>), (<+>))
-import Temp.Pretty.Helpers (block, braces, brackets, hsep, hsepWith, num, parens, quotes', render, todo, vsep)
+import Temp.Pretty.Doc (Doc(..), array, line, record, render, text, (<++>), (<+>))
+import Temp.Pretty.Helpers (block, brackets, hsepWith, num, parens, quotes', todo, vsep)
 import Util (type (×), assert, (×))
 import Val (class Ann)
 
@@ -21,12 +22,47 @@ class Pretty p where
 prettyPy :: forall a. Ann a => Expr a -> String
 prettyPy x = render (pretty x)
 
+data ExprType = Simple | Expression
+
+exprType :: forall a. Expr a -> ExprType
+exprType (Var _) = Simple
+exprType (Op _) = Simple
+exprType (Int _ _ _) = Simple
+exprType (Float _ _ _) = Simple
+exprType (Str _ _ _) = Simple
+exprType (Constr _ _ _ Nil) = Simple
+exprType (Constr _ _ _ _) = Expression
+exprType (Dictionary _ _ _) = Simple
+exprType (Matrix _ _ _ _ _) = Simple
+exprType (Lambda _) = Simple
+exprType (Project _ _ _) = Simple
+exprType (DProject _ _ _) = Simple
+exprType (App _ _ _) = Simple -- change from original
+exprType (BinaryApp _ _ _) = Expression
+exprType (MatchAs _ _) = Simple
+exprType (IfElse _ _ _) = Simple
+exprType (ListEmpty _ _) = Simple
+exprType (ListNonEmpty _ _ _ _) = Simple
+exprType (ListEnum _ _) = Simple
+exprType (ListComp _ _ _ _) = Simple
+exprType (Let _ _) = Expression
+exprType (LetRec _ _) = Expression
+
+prettySimple :: forall a. Ann a => Expr a -> Doc
+prettySimple s = case exprType s of
+   Simple -> pretty s
+   Expression -> parens (pretty s)
+
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
 binaryApp n (BinaryApp s op s') =
    case getPrec op of
       -1 -> binaryApp 0 s <+> text "|" <> text op <> text "|" <+> binaryApp 0 s'
-      n' -> if n' <= n then parens (binaryApp n' s <+> text op <+> binaryApp n' s') else binaryApp n' s <+> text op <+> binaryApp n' s'
-binaryApp _ e = pretty e
+      n' ->
+         if n' <= n then
+            parens (binaryApp n' s <+> text op <+> binaryApp n' s')
+         else
+            binaryApp n' s <+> text op <+> binaryApp n' s'
+binaryApp _ e = prettySimple e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
 lambda ps e = _def <+> (hsepWith _comma (pretty <$> ps)) <> _colon <+> pretty e
@@ -39,7 +75,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Str _ _ str) = quotes' str
    pretty (Constr _ _ c Nil) = text c
    pretty (Constr _ _ c as) = prettyConstr c as
-   pretty (Dictionary _ _ es) = braces (pretty es)
+   pretty (Dictionary _ _ es) = record (map pretty es)
    pretty (Matrix _ _ _ _ _) = todo "Matrix"
    pretty (Lambda cs) = parens (pretty cs)
    pretty (Project _ s x) = pretty s <> brackets (quotes' x)
@@ -50,7 +86,12 @@ instance Ann a => Pretty (Expr a) where
    pretty (MatchAs s cs) = _match <+> pretty s <> block (pretty cs)
    pretty (IfElse i t e) = _if <+> pretty i <> block (pretty t) <++> _else <> block (pretty e)
    pretty (ListEmpty _ _) = _empty
-   pretty (ListNonEmpty _ _ e l) = brackets (pretty e <> pretty l)
+   pretty (ListNonEmpty _ _ e rest) = array (pretty e : collect rest)
+      where
+      collect :: ListRest a -> List Doc
+      collect (Next _ e' rest') = pretty e' : collect rest'
+      collect (End _) = Nil
+
    pretty (ListEnum s s') = brackets (pretty s <+> _ellipsis <+> pretty s')
    pretty (ListComp _ _ s qs) = brackets (pretty s <+> pretty qs)
    pretty (Let ds s) = pretty ds <++> pretty s
@@ -80,32 +121,31 @@ getPrec x = case lookup x opDefs of
 instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord _) = todo "PRecord"
-   pretty (PConstr c Nil) = text c
    pretty (PConstr "Pair" (x : y : Nil)) = parens (pretty x <> _comma <+> pretty y)
    pretty (PConstr c ps) = case uncons ps of
+      Nothing -> text c
       Just { head: p, tail: Nil } -> text c <+> pretty p
       _ ->
          if c == cPair then parens $ prettyPattConstr (_comma) ps
          else if c == cCons then brackets (listCase ps)
-         else parens $ text c <+> prettyPattConstr Empty ps
+         else text c <> parens (hsepWith (text ", ") (map pretty ps))
    pretty (PListEmpty) = _empty
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
 
 instance Ann a => Pretty (ListRest a) where
-   pretty (Next _ (Dictionary _ _ _) _) = todo "listrestdict"
-   pretty (Next _ s l) = _comma <+> pretty s <+> pretty l
+   pretty (Next _ s l) = text "HELLO" <> _comma <+> pretty s <> pretty l
    pretty (End _) = mempty
 
 instance Pretty ListRestPattern where
    pretty (PListVar x) = text x
-   pretty (PListNext p l) = _comma <+> pretty p <+> pretty l
+   pretty (PListNext p l) = _comma <+> pretty p <> pretty l
    pretty PListEnd = mempty
 
 instance Ann a => Pretty (VarDef a) where
-   pretty (VarDef v s) = _def <+> pretty v <> _colon <+> pretty s <> line
+   pretty (VarDef v s) = line <> _def <+> pretty v <> _colon <+> pretty s
 
 instance Ann a => Pretty (VarDefs a) where
-   pretty ds = vsep (toList (pretty <$> ds))
+   pretty ds = foldl (<>) mempty (toList (pretty <$> ds))
 
 instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × e)) = lambda (toList ps) e
@@ -124,20 +164,12 @@ instance Ann a => Pretty (Branch a) where
          <> block (pretty e)
          <> line
 
-instance Ann a => Pretty (List (DictEntry a × Expr a)) where
-   pretty Nil = mempty
-   pretty (kv : Nil) = pretty kv
-   pretty (kv : kvs) = pretty kv <> _comma <+> pretty kvs
-
 instance Ann a => Pretty (DictEntry a × Expr a) where
    pretty (k × v) = pretty k <> _colon <+> pretty v
 
 instance Ann a => Pretty (DictEntry a) where
    pretty (ExprKey k) = pretty k
    pretty (VarKey _ k) = text k
-
-prettyCtr :: Ctr -> Doc
-prettyCtr = showCtr >>> text
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
 prettyConstr c (x : y : ys)
@@ -146,8 +178,7 @@ prettyConstr c ys
    | c == cNil = assert (null ys) (_empty)
 prettyConstr c (x : y : ys)
    | c == cCons = assert (null ys) $ brackets (pretty x <> _comma <+> _asterisk <> pretty y)
-prettyConstr c (x : Nil) = prettyCtr c <+> pretty x
-prettyConstr c xs = hsep (prettyCtr c : (pretty <$> xs))
+prettyConstr c xs = text c <> parens (hsepWith (text ", ") (map pretty xs))
 
 prettyPattConstr :: Doc -> List Pattern -> Doc
 prettyPattConstr _ Nil = Empty
