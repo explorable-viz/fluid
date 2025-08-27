@@ -8,6 +8,9 @@ import Data.String as String
 inlineRecordLimit :: Int
 inlineRecordLimit = 50
 
+inlineBlockLimit :: Int
+inlineBlockLimit = 20
+
 data Doc
    = Empty
    | Text String
@@ -82,10 +85,32 @@ render' _ (Text s) = s
 render' n Line = break n ""
 render' n (Indent d) = render' (n + 1) d
 render' n (Concat d1 d2) = render' n d1 <> render' n d2
-render' n (Block d) = ":" <> break (n + 1) (render' (n + 1) d)
+render' n (Block d) = renderBlock n d
 render' n (Array xs) = renderArray n xs
 render' n (Record xs) = renderRecord n xs
 render' n (Params xs) = renderParams n xs
+
+renderBlock :: Int -> Doc -> String
+renderBlock n d =
+   if inline then
+      ": " <> render' n d
+   else
+      ":" <> break (n + 1) (render' (n + 1) d)
+   where
+   -- we should probably consider the current line width
+   inline :: Boolean
+   inline = inlinable d && width d < inlineBlockLimit
+
+inlinable :: Doc -> Boolean
+inlinable Empty = true
+inlinable (Text _) = true
+inlinable Line = false
+inlinable (Indent _) = false
+inlinable (Concat d1 d2) = inlinable d1 && inlinable d2
+inlinable (Block _) = false
+inlinable (Array _) = true -- check all elements?
+inlinable (Record _) = true -- check all elements?
+inlinable (Params _) = true -- check all elements?
 
 between :: String -> String -> String -> String
 between l r s = l <> s <> r
