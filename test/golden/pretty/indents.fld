@@ -1,0 +1,13 @@
+let empty = {};
+    small = {["country"]: "china"};
+    bigger = {["country"]: "china", ["year"]: 2025, ["morelonger"]: "very long"};
+    list = [{["country"]: "china"}, {["country"]: "china"}, {["country"]: "china"}];
+    nested = [{  ["0"]: {["country"]: "china", ["year"]: 2025, ["morelonger"]: "very long"},
+                ["1"]: {["country"]: "china", ["year"]: 2025, ["morelonger"]: "very long"},
+                ["2"]: {["country"]: "china"} }];
+    emptylist = [];
+    numbers = [1, 2, 3, 4, 5];
+    morenumbers = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
+    nestednumbers = [[1, 2, 3, 4, 5],[1, 2, 3, 4, 5],[1, 2, 3, 4, 5],[1, 2, 3, 4, 5]]
+
+in ["hello", "hello","hello", "hello","hello", "hello","hello", "hello","hello", "hello"]

@@ -72,7 +72,7 @@ process create srcDir srcFile = do
          let pretty = prettyPy parsed' <> "\n"
 
          hasExpect <- exists expectPath
-
+         writeTextFile UTF8 expectPath pretty
          if hasExpect then do
             expect <- readTextFile UTF8 expectPath
             if pretty == expect then do

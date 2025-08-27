@@ -1,10 +1,10 @@
-module Temp.Pretty.Helpers where
+module Temp.Pretty.Helpers (brackets, braces, hsepWith, num, parens, quotes', todo, vsep) where
 
 import Prelude
 
 import Data.List (List(..), (:))
-import Temp.Pretty.Constants (_colon, _lbrace, _lbracket, _lparen, _quote, _rbrace, _rbracket, _rparen)
-import Temp.Pretty.Doc (Doc(..), text, indent, line, (<++>), (<+>))
+import Temp.Pretty.Constants (_lbracket, _rbracket, _lparen, _rparen, _lbrace, _rbrace, _quote)
+import Temp.Pretty.Doc (Doc(..), text, (<++>), (<+>))
 
 num :: forall a. Show a => a -> Doc
 num s = text (show s)

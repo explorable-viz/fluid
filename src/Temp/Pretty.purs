@@ -3,11 +3,9 @@ module Temp.Pretty (prettyPy) where
 import Prelude
 
 import Data.List (List(..), null, singleton, uncons, (:))
-import Data.List.NonEmpty (NonEmptyList(..), head, toList)
-import Data.NonEmpty ((:|))
+import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
-import Data.Traversable (foldl)
 import DataType (Ctr, cCons, cNil, cPair)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
@@ -76,7 +74,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Str _ _ str) = quotes' str
    pretty (Constr _ _ c Nil) = text c
    pretty (Constr _ _ c as) = prettyConstr c as
-   pretty (Dictionary _ _ es) = record (map pretty es)
+   pretty (Dictionary _ _ es) = record $ map pretty es
    pretty (Matrix _ _ _ _ _) = todo "Matrix"
    pretty (Lambda cs) = parens (pretty cs)
    pretty (Project _ s x) = pretty s <> brackets (quotes' x)
@@ -87,7 +85,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (MatchAs s cs) = _match <+> pretty s <> block (pretty cs)
    pretty (IfElse i t e) = _if <+> pretty i <> block (pretty t) <++> _else <> block (pretty e)
    pretty (ListEmpty _ _) = _empty
-   pretty (ListNonEmpty _ _ e rest) = array (pretty e : collect rest)
+   pretty (ListNonEmpty _ _ e rest) = array $ (pretty e : collect rest)
       where
       collect :: ListRest a -> List Doc
       collect (Next _ e' rest') = pretty e' : collect rest'

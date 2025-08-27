@@ -1,4 +1,4 @@
-module Temp.Pretty.Doc where
+module Temp.Pretty.Doc (Doc(..), above, beside, block, record, array, line, render, text, (<++>), (<+>)) where
 
 import Prelude
 
@@ -16,15 +16,10 @@ data Doc
    = Empty
    | Text String
    | Line
-   | Indent Doc
    | Concat Doc Doc
-
    | Block Doc
-
-   -- testing different handlings... probably revert
    | Record (List Doc)
    | Array (List Doc)
-   | Params (List Doc)
 
 instance Semigroup Doc where
    append = Concat
@@ -38,9 +33,6 @@ text = Text
 line :: Doc
 line = Line
 
-indent :: Doc -> Doc
-indent = Indent
-
 block :: Doc -> Doc
 block = Block
 
@@ -49,9 +41,6 @@ record = Record
 
 array :: List Doc -> Doc
 array = Array
-
-params :: List Doc -> Doc
-params = Params
 
 -- Combinators
 infixr 5 beside as <+>
@@ -84,60 +73,38 @@ render' :: Int -> Doc -> String
 render' _ Empty = ""
 render' _ (Text s) = s
 render' n Line = break n ""
-render' n (Indent d) = render' (n + 1) d
 render' n (Concat d1 d2) = render' n d1 <> render' n d2
 render' n (Block d) = renderBlock n d
-render' n (Array xs) = renderArray n xs
-render' n (Record xs) = renderRecord n xs
-render' n (Params xs) = renderParams n xs
-
-renderBlock :: Int -> Doc -> String
-renderBlock n d =
-   if inline then
-      ": " <> render' n d
-   else
-      ":" <> break (n + 1) (render' (n + 1) d)
-   where
-   -- we should probably consider the current line width
-   inline :: Boolean
-   inline = inlinable d && width d < inlineBlockLimit
-
-inlinable :: Doc -> Boolean
-inlinable Empty = true
-inlinable (Text _) = true
-inlinable Line = false
-inlinable (Indent _) = false
-inlinable (Concat d1 d2) = inlinable d1 && inlinable d2
-inlinable (Block _) = false
-inlinable (Array _) = true -- check all elements?
-inlinable (Record _) = true -- check all elements?
-inlinable (Params _) = true -- check all elements?
-
-between :: String -> String -> String -> String
-between l r s = l <> s <> r
+render' n (Record ds) = renderRecord n ds
+render' n (Array ds) = renderArray n ds
 
 renderArray :: Int -> List Doc -> String
-renderArray n elems = renderCollection "[" "]" n elems
-
-renderRecord :: Int -> List Doc -> String
-renderRecord n elems = renderCollection "{" "}" n elems
-
-renderParams :: Int -> List Doc -> String
-renderParams n elems = renderCollection "(" ")" n elems
-
-renderCollection :: String -> String -> Int -> List Doc -> String
-renderCollection l r n elems =
+renderArray n ds =
    if inline then
-      l <> contents <> r
+      "[" <> contents <> "]"
    else
-      l <> "\n" <> contents <> break n r
+      "[\n" <> contents <> break n "]"
 
    where
    inline :: Boolean
-   inline = widthList elems < inlineRecordLimit
+   inline = widthList ds < inlineRecordLimit
 
    contents :: String
-   contents = renderList (n + 1) inline elems
+   contents = renderList (n + 1) inline ds
+
+renderRecord :: Int -> List Doc -> String
+renderRecord _ Nil = "{}"
+renderRecord n ds =
+   if inline then
+      "{ " <> contents <> " }"
+   else
+      "{\n" <> contents <> break n "}"
+   where
+   inline :: Boolean
+   inline = widthList ds < inlineRecordLimit
+
+   contents :: String
+   contents = renderList (n + 1) inline ds
 
 renderList :: Int -> Boolean -> List Doc -> String
 renderList _ _ Nil = ""
@@ -152,16 +119,37 @@ renderList n inline (x : xs) =
    else
       space n <> render' n x <> ",\n" <> renderList n inline xs
 
+renderBlock :: Int -> Doc -> String
+renderBlock n d =
+   if inline then
+      ": " <> render' n d
+   else
+      ":" <> break (n + 1) (render' (n + 1) d)
+   where
+   -- we should probably consider the current line width
+   inline :: Boolean
+   inline = case d of
+      Array _ -> true
+      Record _ -> true
+      _ -> inlinable d && width d < inlineBlockLimit
+
+inlinable :: Doc -> Boolean
+inlinable Empty = true
+inlinable (Text _) = true
+inlinable Line = false
+inlinable (Concat d1 d2) = inlinable d1 && inlinable d2
+inlinable (Block _) = false
+inlinable (Record _) = true
+inlinable (Array _) = true
+
 width :: Doc -> Int
 width Empty = 0
 width (Text s) = String.length s
 width Line = 0 -- ???
-width (Indent _) = 0 -- ???
 width (Concat d1 d2) = width d1 + width d2
 width (Block d) = width d
-width (Array xs) = widthList xs
-width (Record xs) = widthList xs
-width (Params xs) = widthList xs
+width (Record ds) = widthList ds
+width (Array ds) = widthList ds
 
 widthList :: List Doc -> Int
 widthList Nil = 0
