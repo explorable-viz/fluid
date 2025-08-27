@@ -143,7 +143,7 @@ instance Pretty ListRestPattern where
    pretty PListEnd = mempty
 
 instance Ann a => Pretty (VarDef a) where
-   pretty (VarDef v s) = _def <+> pretty v <> _colon <+> pretty s
+   pretty (VarDef v s) = _def <+> pretty v <> block (pretty s)
 
 instance Ann a => Pretty (List (VarDef a)) where
    pretty Nil = mempty

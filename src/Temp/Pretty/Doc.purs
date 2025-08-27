@@ -8,6 +8,7 @@ import Data.String as String
 inlineRecordLimit :: Int
 inlineRecordLimit = 50
 
+-- todo tweak
 inlineBlockLimit :: Int
 inlineBlockLimit = 20
 
