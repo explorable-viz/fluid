@@ -13,7 +13,7 @@ def compare(x, y):
     if x < y: LT
     else: EQ
 
-def negate: (- 0)
+def negate: (-)(0)
 
 def logBase(x, y): log(y) / log(x)
 
@@ -133,7 +133,7 @@ def iterate(n, f, z):
   else:
     [z, *map(f, iterate(n - 1, f, z))]
 
-def sum: foldr(+, 0)
+def sum: foldr((+), 0)
 
 def last([x]): x
 def last([x, *[y, *ys]]): last([y, *ys])

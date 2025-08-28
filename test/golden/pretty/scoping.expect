@@ -1,7 +1,7 @@
 def decr:
   def x: 2
 
-  flip(-, x)
+  flip((-), x)
 def x: 8
 
 numToStr(decr(x))

@@ -68,7 +68,7 @@ lambda ps e = _def <+> (hsepWith _comma (pretty <$> ps)) <> _colon <+> pretty e
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
-   pretty (Op o) = text o
+   pretty (Op o) = parens $ text o
    pretty (Int _ _ n) = num n
    pretty (Float _ _ n) = num n
    pretty (Str _ _ str) = quotes' str
@@ -79,7 +79,6 @@ instance Ann a => Pretty (Expr a) where
    pretty (Lambda cs) = parens (pretty cs)
    pretty (Project _ s x) = pretty s <> brackets (quotes' x)
    pretty (DProject _ e k) = pretty e <> brackets (pretty k)
-   pretty (App _ (Op op) s') = parens (text op <+> pretty s')
    pretty (App d s s') = prettyAppChain (App d s s') Nil
    pretty (BinaryApp s op s') = binaryApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = _match <+> pretty s <> block (pretty cs)
