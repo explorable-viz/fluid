@@ -11,7 +11,7 @@ import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
 import Temp.Pretty.Doc (Doc(..), array, block, record, render, text, (<+++>), (<++>), (<+>))
-import Temp.Pretty.Helpers (brackets, hsepWith, num, parens, quotes', todo, vsep)
+import Temp.Pretty.Helpers (brackets, number, parens, string, todo, vsep)
 import Util (type (×), assert, (×))
 import Val (class Ann)
 
@@ -64,20 +64,20 @@ binaryApp n (BinaryApp s op s') =
 binaryApp _ e = prettySimple e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
-lambda ps e = _def <+> (hsepWith _comma (pretty <$> ps)) <> _colon <+> pretty e
+lambda ps e = _def <+> (prettyList ps) <> _colon <+> pretty e
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op o) = parens $ text o
-   pretty (Int _ _ n) = num n
-   pretty (Float _ _ n) = num n
-   pretty (Str _ _ str) = quotes' str
+   pretty (Int _ _ n) = number n
+   pretty (Float _ _ n) = number n
+   pretty (Str _ _ str) = string str
    pretty (Constr _ _ c Nil) = text c
    pretty (Constr _ _ c as) = prettyConstr c as
    pretty (Dictionary _ _ es) = record $ map pretty es
    pretty (Matrix _ _ _ _ _) = todo "Matrix"
    pretty (Lambda cs) = parens (pretty cs)
-   pretty (Project _ s x) = pretty s <> brackets (quotes' x)
+   pretty (Project _ s x) = pretty s <> brackets (string x)
    pretty (DProject _ e k) = pretty e <> brackets (pretty k)
    pretty (App d s s') = prettyAppChain (App d s s') Nil
    pretty (BinaryApp s op s') = binaryApp 0 (BinaryApp s op s')
@@ -125,13 +125,9 @@ instance Pretty Pattern where
       Just { head: p, tail: Nil } -> text c <> parens (pretty p)
       _ ->
          if c == cCons then (listCase ps)
-         else text c <> parens (hsepWith (text ", ") (map pretty ps))
+         else text c <> parens (prettyList ps)
    pretty (PListEmpty) = _empty
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
-
-instance Ann a => Pretty (ListRest a) where
-   pretty (Next _ s l) = text "HELLO" <> _comma <+> pretty s <> pretty l
-   pretty (End _) = mempty
 
 instance Pretty ListRestPattern where
    pretty (PListVar x) = text x
@@ -157,7 +153,7 @@ instance Ann a => Pretty (Branch a) where
    pretty (v × Clause (ps × e)) =
       _def
          <+> text v
-         <> parens (prettyParams (toList ps))
+         <> parens (prettyList (toList ps))
          <> block (pretty e)
 
 instance Ann a => Pretty (DictEntry a × Expr a) where
@@ -174,16 +170,16 @@ prettyConstr c ys
    | c == cNil = assert (null ys) (_empty)
 prettyConstr c (x : y : ys)
    | c == cCons = assert (null ys) $ (pretty x <+> text ":|" <+> pretty y)
-prettyConstr c xs = text c <> parens (hsepWith (text ", ") (map pretty xs))
+prettyConstr c xs = text c <> parens (prettyList xs)
 
 defMatchCase' :: forall a. Ann a => (Pattern × Expr a) -> Doc
 defMatchCase' (p × e) = _case <+> (pretty p) <> block (pretty e)
 
-prettyAppChain :: forall a. Ann a => Expr a -> List Doc -> Doc
-prettyAppChain (App _ f a) as = prettyAppChain f (pretty a : as)
-prettyAppChain f as = pretty f <> parens (hsepWith (text ", ") as)
+prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
+prettyAppChain (App _ f a) as = prettyAppChain f (a : as)
+prettyAppChain f as = pretty f <> parens (prettyList as)
 
-prettyParams :: forall a. Pretty a => List a -> Doc
-prettyParams Nil = mempty
-prettyParams (d : Nil) = pretty d
-prettyParams (d : ds) = pretty d <> _comma <+> prettyParams ds
+prettyList :: forall a. Pretty a => List a -> Doc
+prettyList Nil = mempty
+prettyList (d : Nil) = pretty d
+prettyList (d : ds) = pretty d <> _comma <+> prettyList ds

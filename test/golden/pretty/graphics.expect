@@ -214,7 +214,7 @@ def categoricalChart(plotValue, withAxes, colours, sep, data):
       viewport(0, w, h, 0, gs)
 
 def rects(colours, ns):
-  zipWith((def colour,n: Rect(0, 0, 1, n, colour)), colours, ns)
+  zipWith((def colour, n: Rect(0, 0, 1, n, colour)), colours, ns)
 
 def stackedBar(colours, ns):
   def heights: map(snd, ns)
