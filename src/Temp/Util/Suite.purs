@@ -2,7 +2,7 @@ module Temp.Util.Suite where
 
 import Prelude
 
-import Data.Array (filter)
+import Data.Array (drop, elem, filter, null)
 import Data.Either (Either(..))
 import Data.String (Pattern(..))
 import Data.String.CodeUnits (takeRight)
@@ -16,6 +16,7 @@ import Effect.Exception (try)
 import Module (parse)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (exists, readTextFile, readdir, writeTextFile)
+import Node.Process (argv)
 import Parse as P
 import Temp.Pretty (prettyPy)
 
@@ -25,9 +26,13 @@ dir = "test/golden/pretty"
 main :: Effect Unit
 main = do
 
-   files <- filter (\s -> takeRight 4 s == ".fld") <$> readdir dir
+   args <- argv
+   let specified = drop 2 args
 
-   results <- traverse (process true dir) files
+   files <- filter (\s -> takeRight 4 s == ".fld") <$> readdir dir
+   let files' = if null specified then files else filter (\s -> elem s specified) files
+
+   results <- traverse (process true dir) files'
 
    let { passes, fails, missing } = tally results
 
@@ -72,7 +77,7 @@ process create srcDir srcFile = do
          let pretty = prettyPy parsed' <> "\n"
 
          hasExpect <- exists expectPath
-         writeTextFile UTF8 expectPath pretty
+
          if hasExpect then do
             expect <- readTextFile UTF8 expectPath
             if pretty == expect then do
