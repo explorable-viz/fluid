@@ -124,8 +124,7 @@ instance Pretty Pattern where
       Nothing -> text c
       Just { head: p, tail: Nil } -> text c <> parens (pretty p)
       _ ->
-         if c == cPair then parens $ prettyPattConstr (_comma) ps
-         else if c == cCons then brackets (listCase ps)
+         if c == cCons then brackets (listCase ps)
          else text c <> parens (hsepWith (text ", ") (map pretty ps))
    pretty (PListEmpty) = _empty
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
@@ -176,11 +175,6 @@ prettyConstr c ys
 prettyConstr c (x : y : ys)
    | c == cCons = assert (null ys) $ brackets (pretty x <> _comma <+> _asterisk <> pretty y)
 prettyConstr c xs = text c <> parens (hsepWith (text ", ") (map pretty xs))
-
-prettyPattConstr :: Doc -> List Pattern -> Doc
-prettyPattConstr _ Nil = Empty
-prettyPattConstr _ (Cons p Nil) = pretty p
-prettyPattConstr sep (Cons p ps) = pretty p <+> sep <+> prettyPattConstr sep ps
 
 defMatchCase' :: forall a. Ann a => (Pattern × Expr a) -> Doc
 defMatchCase' (p × e) = _case <+> (pretty p) <> block (pretty e)
