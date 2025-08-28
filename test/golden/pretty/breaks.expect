@@ -1,0 +1,22 @@
+def zero: 0
+def one: 1
+def int(True): one
+
+def int(False): zero
+
+def float(True): 1.0
+
+def float(False): 0.0
+
+def f(x):
+  def g(x, y): x + y
+  
+  def h(c, t, f):
+    if c: t
+    else: f
+  
+  def y: zero
+  def z: zero
+  g(y, z)
+
+0
