@@ -1,9 +1,8 @@
 def split([]): ([], [])
-
 def split([x, *xs]):
   def (ys, zs): split(xs)
-  ([x, *zs], ys)
 
+  ([x, *zs], ys)
 def merge(xs, ys):
   match (xs, ys):
     case ([], _): ys
@@ -13,11 +12,11 @@ def merge(xs, ys):
         [x, *merge(xs', ys)]
       else:
         [y, *merge(xs, ys')]
-
 def mergesort(xs):
   if length(xs) < 2: xs
   else:
     def (ys, zs): split(xs)
+
     merge(mergesort(ys), mergesort(zs))
 
 mergesort([3, 1, 2])

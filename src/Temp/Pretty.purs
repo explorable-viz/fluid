@@ -10,7 +10,7 @@ import DataType (Ctr, cCons, cNil, cPair)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_asterisk, _case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
-import Temp.Pretty.Doc (Doc(..), array, block, line, record, render, text, (<++>), (<+>))
+import Temp.Pretty.Doc (Doc(..), array, block, record, render, text, (<+++>), (<++>), (<+>))
 import Temp.Pretty.Helpers (brackets, hsepWith, num, parens, quotes', todo, vsep)
 import Util (type (×), assert, (×))
 import Val (class Ann)
@@ -93,8 +93,8 @@ instance Ann a => Pretty (Expr a) where
 
    pretty (ListEnum s s') = brackets (pretty s <+> _ellipsis <+> pretty s')
    pretty (ListComp _ _ s qs) = brackets (pretty s <+> pretty qs)
-   pretty (Let ds s) = pretty ds <++> pretty s
-   pretty (LetRec h s) = pretty h <++> pretty s
+   pretty (Let ds s) = (pretty ds) <+++> pretty s
+   pretty (LetRec h s) = (pretty h) <+++> pretty s
 
 listCase :: List Pattern -> Doc
 listCase Nil = Empty
@@ -143,13 +143,8 @@ instance Pretty ListRestPattern where
 instance Ann a => Pretty (VarDef a) where
    pretty (VarDef v s) = _def <+> pretty v <> block (pretty s)
 
-instance Ann a => Pretty (List (VarDef a)) where
-   pretty Nil = mempty
-   pretty (x : Nil) = pretty x
-   pretty (x : xs) = pretty x <++> pretty xs
-
 instance Ann a => Pretty (VarDefs a) where
-   pretty ds = pretty (toList ds)
+   pretty ds = vsep (toList (pretty <$> ds))
 
 instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × e)) = lambda (toList ps) e
@@ -166,7 +161,6 @@ instance Ann a => Pretty (Branch a) where
          <+> text v
          <> parens (prettyParams (toList ps))
          <> block (pretty e)
-         <> line
 
 instance Ann a => Pretty (DictEntry a × Expr a) where
    pretty (k × v) = pretty k <> _colon <+> pretty v

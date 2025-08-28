@@ -1,13 +1,10 @@
 def and(False, y): False
-
 def and(True, y): y
 
 def or(True, y): True
-
 def or(False, y): y
 
 def not(True): False
-
 def not(False): True
 
 def compare(x, y):
@@ -17,6 +14,7 @@ def compare(x, y):
     else: EQ
 
 def negate: (- 0)
+
 def logBase(x, y): log(y) / log(x)
 
 def ceilingToNearest(n, m): ceiling(n / m) * m
@@ -47,21 +45,17 @@ def swap((a, b)): (b, a)
 
 def head([]):
   error("Can't take head of empty list")
-
 def head([x, *_]): x
 
 def tail([]):
   error("Can't take tail of empty list")
-
 def tail([_, *xs]): xs
 
 def elem(x, []): False
-
 def elem(x, [x', *xs]):
   x == x' |or| elem(x, xs)
 
 def find(p, []): error("not found")
-
 def find(p, [x, *xs]):
   if p(x): Some(x)
   else: find(p, xs)
@@ -76,14 +70,13 @@ def fromSome(option):
     case Some x: x
 
 def filter(p, []): []
-
 def filter(p, [x, *xs]):
   def ys: filter(p, xs)
+
   if p(x): [x, *ys]
   else: ys
 
 def filterMap(p, []): []
-
 def filterMap(p, [x, *xs]):
   match p(x):
     case None: filterMap(f, xs)
@@ -91,53 +84,47 @@ def filterMap(p, [x, *xs]):
       [y, *filterMap(f, xs)]
 
 def foldl(op, z, []): z
-
 def foldl(op, z, [x, *xs]):
   foldl(op, op(z, x), xs)
 
 def foldl1(op, [x, *xs]): foldl(op, x, xs)
 
 def foldr(op, z, []): z
-
 def foldr(op, z, [x, *xs]):
   op(x, foldr(op, z, xs))
 
 def foldr1(op, [x]): x
-
 def foldr1(op, [x, *[y, *xs]]):
   op(x, foldr1(op, [y, *xs]))
 
 def scanl1(op, z, xs):
   def go(x, continue, acc):
     def next: op(acc, x)
+
     [next, *continue(next)]
-  
+
   foldr(go, const([]), xs, z)
 
 def scanl(op, z, xs):
   [z, *scanl1(op, z, xs)]
 
 def map(f, []): []
-
 def map(f, [x, *xs]): [f(x), *map(f, xs)]
 
 def append(([], ys)): ys
-
 def append(([x, *xs], ys)):
   [x, *append((xs, ys))]
 
 def concat2([], ys): ys
-
 def concat2([x, *xs], ys):
   [x, *concat2(xs, ys)]
 
 def concat: foldl(concat2, [])
+
 def concatMap(f, xs): concat(map(f, xs))
 
 def intersperse([], _): []
-
 def intersperse([x], _): [x]
-
 def intersperse([x, *[y, *ys]], sep):
   [x, *[sep, *intersperse([y, *ys], sep)]]
 
@@ -147,20 +134,19 @@ def iterate(n, f, z):
     [z, *map(f, iterate(n - 1, f, z))]
 
 def sum: foldr(+, 0)
-def last([x]): x
 
+def last([x]): x
 def last([x, *[y, *ys]]): last([y, *ys])
 
 def length([]): 0
-
 def length([_, *xs]): 1 + length(xs)
 
 def reverse([]): []
-
 def reverse([x, *xs]):
   append((reverse(xs), [x]))
 
 def repeat: flip(iterate, id)
+
 def take(n, xs):
   if n <= 0: []
   else:
@@ -188,7 +174,6 @@ def nth2(i, j, xss):
 
 def lookup(k, []):
   error("Key not found in map")
-
 def lookup(k, [(k', v), *kvs]):
   if k == k': v
   else: lookup(k, kvs)
@@ -202,21 +187,22 @@ def min(n, m):
   else: m
 
 def maximum: foldr1(max)
-def minimum: foldr1(min)
-def unzip([]): ([], [])
 
+def minimum: foldr1(min)
+
+def unzip([]): ([], [])
 def unzip([(x, y), *zs]):
   def (xs, ys): unzip(zs)
+
   ([x, *xs], [y, *ys])
 
 def zipWith(op, [], ys): []
-
 def zipWith(op, [x, *xs], []): []
-
 def zipWith(op, [x, *xs], [y, *ys]):
   [op(x, y), *zipWith(op, xs, ys)]
 
 def zip: zipWith(curry(id))
+
 def enumFromTo(n, m):
   if n <= m: [n, *[n + 1 .. m]]
   else: []
@@ -230,12 +216,11 @@ def abs(x, y):
 
 def nub(xs):
   def nub'([], _): []
-  
   def nub'([x, *xs], ys):
     if x |elem| ys: nub'(xs, ys)
     else:
       [x, *nub'(xs, [x, *ys])]
-  
+
   nub'(xs, [])
 
 def slice(begin, end, xs):
@@ -244,14 +229,14 @@ def slice(begin, end, xs):
 def splitOn(p, data):
   def go(fls, trs, []):
     (reverse(fls), reverse(trs))
-  
   def go(fls, trs, [x, *xs]):
     if p(x):
       go(fls, [x, *trs], xs)
     else:
       go([x, *fls], trs, xs)
-  
+
   go([], [], data)
 
 def x: 0
+
 x

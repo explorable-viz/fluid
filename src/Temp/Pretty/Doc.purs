@@ -45,12 +45,16 @@ array = Array
 -- Combinators
 infixr 5 beside as <+>
 infixr 5 above as <++>
+infixr 5 above2 as <+++>
 
 beside :: Doc -> Doc -> Doc
 beside a b = a <> text " " <> b
 
 above :: Doc -> Doc -> Doc
 above a b = a <> line <> b
+
+above2 :: Doc -> Doc -> Doc
+above2 a b = a <> (line <> mempty) <> line <> b
 
 spaces :: Int -> String
 spaces n
@@ -66,6 +70,7 @@ renderWithIndent n doc = case doc of
    Line -> "\n" <> spaces (n * config.indentation)
    Text s -> s
    Indent d -> renderWithIndent (n + 1) d
+   Concat Line Empty -> "\n"
    Concat d d' -> renderWithIndent n d <> renderWithIndent n d'
    d -> renderWithIndent n (simplify d)
 
@@ -134,8 +139,8 @@ inlinable doc = case doc of
 
 width :: Doc -> Int
 width Empty = 0
+width Line = 0
 width (Text s) = String.length s
-width Line = 0 -- ???
 width (Indent d) = width d
 width (Concat d1 d2) = width d1 + width d2
 width (Block d) = width d
