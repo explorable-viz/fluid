@@ -5,7 +5,7 @@ import Prelude
 import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
 import App.View.Util (Fig, FigSpec)
-import Bind (Bind, (↦))
+import Bind (Bind)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.List (List(..))
@@ -41,8 +41,7 @@ type TestBwdSpec =
    }
 
 type TestWithDatasetSpec =
-   { dataset :: Bind String
-   , file :: String
+   { file :: String
    }
 
 type TestLinkedOutputsSpec =
@@ -82,8 +81,8 @@ withDatasetSuite :: forall m. MonadAff m => MonadError Error m => MonadReader Fi
 withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> m BenchRow
-   asTest { dataset: x ↦ dataset, file } = do
-      gconfig <- loadProgCxt [ x ↦ dataset ]
+   asTest { file } = do
+      gconfig <- loadProgCxt []
       test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
