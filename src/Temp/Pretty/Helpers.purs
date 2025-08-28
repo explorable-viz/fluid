@@ -1,9 +1,9 @@
-module Temp.Pretty.Helpers (brackets, braces, hsepWith, num, parens, quotes', todo, vsep) where
+module Temp.Pretty.Helpers where
 
 import Prelude
 
 import Data.List (List(..), (:))
-import Temp.Pretty.Constants (_lbracket, _rbracket, _lparen, _rparen, _lbrace, _rbrace, _quote)
+import Temp.Pretty.Constants (_lbracket, _rbracket, _lparen, _rparen, _quote)
 import Temp.Pretty.Doc (Doc(..), text, (<++>), (<+>))
 
 num :: forall a. Show a => a -> Doc
@@ -17,9 +17,6 @@ parens = enclose _lparen _rparen
 
 brackets :: Doc -> Doc
 brackets = enclose _lbracket _rbracket
-
-braces :: Doc -> Doc
-braces = enclose _lbrace _rbrace
 
 quotes :: Doc -> Doc
 quotes = enclose _quote _quote
