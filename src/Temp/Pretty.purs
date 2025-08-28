@@ -173,7 +173,7 @@ prettyConstr c (x : y : ys)
 prettyConstr c ys
    | c == cNil = assert (null ys) (_empty)
 prettyConstr c (x : y : ys)
-   | c == cCons = assert (null ys) $ brackets (pretty x <> _comma <+> _asterisk <> pretty y)
+   | c == cCons = assert (null ys) $ (pretty x <+> text ":|" <+> pretty y)
 prettyConstr c xs = text c <> parens (hsepWith (text ", ") (map pretty xs))
 
 defMatchCase' :: forall a. Ann a => (Pattern × Expr a) -> Doc

@@ -73,7 +73,7 @@ def filter(p, []): []
 def filter(p, [x, *xs]):
   def ys: filter(p, xs)
 
-  if p(x): [x, *ys]
+  if p(x): x :| ys
   else: ys
 
 def filterMap(p, []): []
@@ -81,7 +81,7 @@ def filterMap(p, [x, *xs]):
   match p(x):
     case None: filterMap(f, xs)
     case Some(y):
-      [y, *filterMap(f, xs)]
+      y :| filterMap(f, xs)
 
 def foldl(op, z, []): z
 def foldl(op, z, [x, *xs]):
@@ -95,29 +95,29 @@ def foldr(op, z, [x, *xs]):
 
 def foldr1(op, [x]): x
 def foldr1(op, [x, *[y, *xs]]):
-  op(x, foldr1(op, [y, *xs]))
+  op(x, foldr1(op, y :| xs))
 
 def scanl1(op, z, xs):
   def go(x, continue, acc):
     def next: op(acc, x)
 
-    [next, *continue(next)]
+    next :| continue(next)
 
   foldr(go, const([]), xs, z)
 
 def scanl(op, z, xs):
-  [z, *scanl1(op, z, xs)]
+  z :| scanl1(op, z, xs)
 
 def map(f, []): []
-def map(f, [x, *xs]): [f(x), *map(f, xs)]
+def map(f, [x, *xs]): f(x) :| map(f, xs)
 
 def append(([], ys)): ys
 def append(([x, *xs], ys)):
-  [x, *append((xs, ys))]
+  x :| append((xs, ys))
 
 def concat2([], ys): ys
 def concat2([x, *xs], ys):
-  [x, *concat2(xs, ys)]
+  x :| concat2(xs, ys)
 
 def concat: foldl(concat2, [])
 
@@ -126,17 +126,17 @@ def concatMap(f, xs): concat(map(f, xs))
 def intersperse([], _): []
 def intersperse([x], _): [x]
 def intersperse([x, *[y, *ys]], sep):
-  [x, *[sep, *intersperse([y, *ys], sep)]]
+  x :| sep :| intersperse(y :| ys, sep)
 
 def iterate(n, f, z):
   if n == 0: []
   else:
-    [z, *map(f, iterate(n - 1, f, z))]
+    z :| map(f, iterate(n - 1, f, z))
 
 def sum: foldr((+), 0)
 
 def last([x]): x
-def last([x, *[y, *ys]]): last([y, *ys])
+def last([x, *[y, *ys]]): last(y :| ys)
 
 def length([]): 0
 def length([_, *xs]): 1 + length(xs)
@@ -153,7 +153,7 @@ def take(n, xs):
     match xs:
       case []: []
       case [x, *xs]:
-        [x, *take(n - 1, xs)]
+        x :| take(n - 1, xs)
 
 def drop(n, xs):
   if n <= 0: xs
@@ -194,17 +194,17 @@ def unzip([]): ([], [])
 def unzip([(x, y), *zs]):
   def (xs, ys): unzip(zs)
 
-  ([x, *xs], [y, *ys])
+  (x :| xs, y :| ys)
 
 def zipWith(op, [], ys): []
 def zipWith(op, [x, *xs], []): []
 def zipWith(op, [x, *xs], [y, *ys]):
-  [op(x, y), *zipWith(op, xs, ys)]
+  op(x, y) :| zipWith(op, xs, ys)
 
 def zip: zipWith(curry(id))
 
 def enumFromTo(n, m):
-  if n <= m: [n, *[n + 1 .. m]]
+  if n <= m: n :| [n + 1 .. m]
   else: []
 
 def range((m1, n1), (m2, n2)):
@@ -219,7 +219,7 @@ def nub(xs):
   def nub'([x, *xs], ys):
     if x |elem| ys: nub'(xs, ys)
     else:
-      [x, *nub'(xs, [x, *ys])]
+      x :| nub'(xs, x :| ys)
 
   nub'(xs, [])
 
@@ -231,9 +231,9 @@ def splitOn(p, data):
     (reverse(fls), reverse(trs))
   def go(fls, trs, [x, *xs]):
     if p(x):
-      go(fls, [x, *trs], xs)
+      go(fls, x :| trs, xs)
     else:
-      go([x, *fls], trs, xs)
+      go(x :| fls, trs, xs)
 
   go([], [], data)
 
