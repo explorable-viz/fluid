@@ -67,7 +67,7 @@ def fromSome(option):
   match option:
     case None:
       error("Expected Some!")
-    case Some x: x
+    case Some(x): x
 
 def filter(p, []): []
 def filter(p, [x, *xs]):
@@ -80,7 +80,7 @@ def filterMap(p, []): []
 def filterMap(p, [x, *xs]):
   match p(x):
     case None: filterMap(f, xs)
-    case Some y:
+    case Some(y):
       [y, *filterMap(f, xs)]
 
 def foldl(op, z, []): z

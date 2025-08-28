@@ -122,7 +122,7 @@ instance Pretty Pattern where
    pretty (PConstr "Pair" (x : y : Nil)) = parens (pretty x <> _comma <+> pretty y)
    pretty (PConstr c ps) = case uncons ps of
       Nothing -> text c
-      Just { head: p, tail: Nil } -> text c <+> pretty p
+      Just { head: p, tail: Nil } -> text c <> parens (pretty p)
       _ ->
          if c == cPair then parens $ prettyPattConstr (_comma) ps
          else if c == cCons then brackets (listCase ps)

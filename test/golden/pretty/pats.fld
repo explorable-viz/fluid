@@ -1,0 +1,4 @@
+match opt as {
+    None -> None;
+    Some x -> Some x
+}

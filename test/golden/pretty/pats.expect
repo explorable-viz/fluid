@@ -1,0 +1,3 @@
+match opt:
+  case None: None
+  case Some(x): Some(x)
