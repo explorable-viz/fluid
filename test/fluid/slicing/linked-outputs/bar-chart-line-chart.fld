@@ -1,5 +1,5 @@
-let renewables = loadJson "dataset/renewables.json"
-in
+import dataset.renewables
+
 MultiView {
    barChart:
       let totalFor c rows =
