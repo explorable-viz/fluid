@@ -17,16 +17,17 @@ import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar, joinWith)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
-import Doc (ParagraphElem(..), DocOpt(..), Paragraph)
+import Doc (ParagraphElem(..), Paragraph)
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, notFollowedBy, many, option, sepBy, sepBy1, try)
+import Parsing.Combinators (between, notFollowedBy, many, optionMaybe, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -109,12 +110,20 @@ rArrow = token.reservedOp str.rArrow
 paragraphDelim :: SParser Unit
 paragraphDelim = void $ string str.triplequote
 
+{-
 docOpt :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
 docOpt expr' = option None do
    p <- try do
       _ <- token.symbol "@doc"
       paragraph expr'
    pure (Doc p)
+-}
+
+doc :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
+doc expr' =
+   try do
+      _ <- token.symbol "@doc"
+      paragraph expr'
 
 paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
 paragraph expr' = token.lexeme (paragraphBody)
@@ -250,11 +259,11 @@ expr_ = fix exprParser
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
    exprParser :: Endo (SParser (Raw Expr))
    exprParser expr' = do
-      doc <- docOpt expr'
+      doc' <- optionMaybe (doc expr')
       e <- buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
-      pure case doc of
-         None -> e
-         Doc p -> DocExpr p e
+      pure case doc' of
+         Nothing -> e
+         Just p -> DocExpr p e
 
    backtickOp :: Operator Identity String (Raw Expr)
    backtickOp = flip Infix AssocLeft do

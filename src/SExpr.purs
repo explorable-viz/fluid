@@ -25,7 +25,7 @@ import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cText, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
-import Doc (DocOpt, ParagraphElem(..), Paragraph) as Doc
+import Doc (ParagraphElem(..), Paragraph) as Doc
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), ParagraphElem, RecDefs(..), VarDef(..)) as E
@@ -81,7 +81,6 @@ data ListRestPattern
    | PListEnd
    | PListNext Pattern ListRestPattern
 
-type DocOpt a = Doc.DocOpt Expr a
 type ParagraphElem a = Doc.ParagraphElem Expr a
 
 pVarAnon :: Pattern
