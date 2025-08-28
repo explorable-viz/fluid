@@ -52,10 +52,10 @@ beside a b = a <> text " " <> b
 above :: Doc -> Doc -> Doc
 above a b = a <> line <> b
 
-replicate :: Int -> String -> String
-replicate n s
+spaces :: Int -> String
+spaces n
    | n <= 0 = ""
-   | otherwise = s <> replicate (n - 1) s
+   | otherwise = " " <> spaces (n - 1)
 
 render :: Doc -> String
 render = renderWithIndent 0
@@ -63,7 +63,7 @@ render = renderWithIndent 0
 renderWithIndent :: Int -> Doc -> String
 renderWithIndent n doc = case doc of
    Empty -> ""
-   Line -> "\n" <> replicate (n * config.indentation) " "
+   Line -> "\n" <> spaces (n * config.indentation)
    Text s -> s
    Indent d -> renderWithIndent (n + 1) d
    Concat d d' -> renderWithIndent n d <> renderWithIndent n d'
@@ -71,44 +71,35 @@ renderWithIndent n doc = case doc of
 
 simplify :: Doc -> Doc
 simplify doc = case doc of
-   Block d -> simpleBlock d
-   Record fs -> simpleRecord fs
-   Array fs -> simpleArray fs
+   Block d -> simpleBlock (inline doc) d
+   Record fs -> simpleRecord (inline doc) fs
+   Array fs -> simpleArray (inline doc) fs
    d -> d
 
-simpleBlock :: Doc -> Doc
-simpleBlock doc =
-   if inline then text ": " <> simplify doc
-   else text ":" <> indent (line <> simplify doc)
-   where
-   inline = case doc of
-      Array _ -> true
-      Record _ -> true
-      _ -> inlinable doc && width doc < config.inlineBlockLimit
+simpleBlock :: Boolean -> Doc -> Doc
+simpleBlock inl doc =
+   if inl then
+      text ": " <> simplify doc
+   else
+      text ":" <> indent (line <> simplify doc)
 
-simpleRecord :: List Doc -> Doc
-simpleRecord docs = case docs of
+simpleRecord :: Boolean -> List Doc -> Doc
+simpleRecord inl docs = case docs of
    Nil -> text "{}"
    ds ->
-      if inline then
+      if inl then
          text "{ " <> simples true ds <> text " }"
       else
          text "{" <> simples false ds <> line <> text "}"
 
-      where
-      inline = widthList ds < config.inlineRecordLimit
-
-simpleArray :: List Doc -> Doc
-simpleArray docs = case docs of
+simpleArray :: Boolean -> List Doc -> Doc
+simpleArray inl docs = case docs of
    Nil -> text "[]"
    ds ->
-      if inline then
+      if inl then
          text "[" <> simples true ds <> text "]"
       else
          text "[" <> simples false ds <> line <> text "]"
-
-      where
-      inline = widthList ds < config.inlineRecordLimit
 
 simples :: Boolean -> List Doc -> Doc
 simples inl fs = case fs of
@@ -123,6 +114,16 @@ simples inl fs = case fs of
          (simplify x <> text ", ") <> simples inl xs
       else
          indent (line <> simplify x <> text ",") <> simples inl xs
+
+inline :: Doc -> Boolean
+inline doc = case doc of
+   Block d -> case d of
+      Array _ -> true
+      Record _ -> true
+      _ -> inlinable d && width d < config.inlineBlockLimit
+   Record ds -> widthList ds < config.inlineRecordLimit
+   Array ds -> widthList ds < config.inlineRecordLimit
+   _ -> true
 
 inlinable :: Doc -> Boolean
 inlinable doc = case doc of
