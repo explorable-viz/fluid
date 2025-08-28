@@ -273,6 +273,6 @@ let splitOn p data =
             if p x
             then go fls (x : trs) xs
             else go (x : fls) trs xs
-    in go [] [] data;
+    in go [] [] data
 
-let x = 0 in x
+in 0

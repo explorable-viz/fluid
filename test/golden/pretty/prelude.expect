@@ -237,6 +237,4 @@ def splitOn(p, data):
 
   go([], [], data)
 
-def x: 0
-
-x
+0
