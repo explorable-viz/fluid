@@ -21,38 +21,6 @@ class Pretty p where
 prettyPy :: forall a. Ann a => Expr a -> String
 prettyPy x = render (pretty x)
 
-data ExprType = Simple | Expression
-
-exprType :: forall a. Expr a -> ExprType
-exprType (Var _) = Simple
-exprType (Op _) = Simple
-exprType (Int _ _ _) = Simple
-exprType (Float _ _ _) = Simple
-exprType (Str _ _ _) = Simple
-exprType (Constr _ _ c _)
-   | c == cCons = Expression
-   | otherwise = Simple
-exprType (Dictionary _ _ _) = Simple
-exprType (Matrix _ _ _ _ _) = Simple
-exprType (Lambda _) = Simple
-exprType (Project _ _ _) = Simple
-exprType (DProject _ _ _) = Simple
-exprType (App _ _ _) = Simple
-exprType (BinaryApp _ _ _) = Expression
-exprType (MatchAs _ _) = Simple
-exprType (IfElse _ _ _) = Simple
-exprType (ListEmpty _ _) = Simple
-exprType (ListNonEmpty _ _ _ _) = Simple
-exprType (ListEnum _ _) = Simple
-exprType (ListComp _ _ _ _) = Simple
-exprType (Let _ _) = Expression
-exprType (LetRec _ _) = Expression
-
-prettySimple :: forall a. Ann a => Expr a -> Doc
-prettySimple s = case exprType s of
-   Simple -> pretty s
-   Expression -> parens (pretty s)
-
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
 binaryApp n (BinaryApp s op s') =
    case getPrec op of
@@ -62,7 +30,15 @@ binaryApp n (BinaryApp s op s') =
             parens (binaryApp n' s <+> text op <+> binaryApp n' s')
          else
             binaryApp n' s <+> text op <+> binaryApp n' s'
-binaryApp _ e = prettySimple e
+   where
+   getPrec :: String -> Int
+   getPrec x = case lookup x opDefs of
+      Just y -> y.prec
+      Nothing -> -1
+binaryApp _ e@(Constr _ _ c _) | c == cCons = parens (pretty e)
+binaryApp _ (Let _ _) = text "undefined"
+binaryApp _ (LetRec _ _) = text "undefined"
+binaryApp _ e = pretty e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
 lambda ps e = _def <+> (prettyList ps) <> _colon <+> pretty e
@@ -111,11 +87,6 @@ instance Ann a => Pretty (List (Qualifier a)) where
 
 instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
    pretty pss = vsep (toList (defMatchCase' <$> pss))
-
-getPrec :: String -> Int
-getPrec x = case lookup x opDefs of
-   Just y -> y.prec
-   Nothing -> -1
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
