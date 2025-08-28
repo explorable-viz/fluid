@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import DataType (Ctr, cCons, cNil, cPair)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Temp.Pretty.Constants (_asterisk, _case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
+import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
 import Temp.Pretty.Doc (Doc(..), array, block, record, render, text, (<+++>), (<++>), (<+>))
 import Temp.Pretty.Helpers (brackets, hsepWith, num, parens, quotes', todo, vsep)
 import Util (type (×), assert, (×))
@@ -98,7 +98,7 @@ instance Ann a => Pretty (Expr a) where
 listCase :: List Pattern -> Doc
 listCase Nil = Empty
 listCase (Cons p Nil) = pretty p
-listCase (Cons p (Cons p' Nil)) = pretty p <> _comma <+> _asterisk <> pretty p'
+listCase (Cons p (Cons p' Nil)) = pretty p <+> text ":|" <+> pretty p'
 listCase (Cons p ps) = pretty p <> _comma <+> listCase ps
 
 instance Ann a => Pretty (List (Qualifier a)) where
@@ -124,7 +124,7 @@ instance Pretty Pattern where
       Nothing -> text c
       Just { head: p, tail: Nil } -> text c <> parens (pretty p)
       _ ->
-         if c == cCons then brackets (listCase ps)
+         if c == cCons then (listCase ps)
          else text c <> parens (hsepWith (text ", ") (map pretty ps))
    pretty (PListEmpty) = _empty
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)

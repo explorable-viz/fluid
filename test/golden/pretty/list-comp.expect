@@ -8,7 +8,7 @@ def c:
   [z for x in [5, 4, 3] for y in [9, 7, 5] for z in [x + y] if z < 10]
 
 def d:
-  [x for [x, *xs] in [[5], [4], [3], []]]
+  [x for x :| xs in [[5], [4], [3], []]]
 
 def e:
   [z for x in [5, 4, 3] for z in [x]]

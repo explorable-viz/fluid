@@ -1,13 +1,13 @@
 def split([]): ([], [])
-def split([x, *xs]):
+def split(x :| xs):
   def (ys, zs): split(xs)
 
   (x :| zs, ys)
 def merge(xs, ys):
   match (xs, ys):
     case ([], _): ys
-    case ([x, *xs'], []): xs
-    case ([x, *xs'], [y, *ys']):
+    case (x :| xs', []): xs
+    case (x :| xs', y :| ys'):
       if x < y: x :| merge(xs', ys)
       else: y :| merge(xs, ys')
 def mergesort(xs):
