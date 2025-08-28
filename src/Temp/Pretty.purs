@@ -29,14 +29,15 @@ exprType (Op _) = Simple
 exprType (Int _ _ _) = Simple
 exprType (Float _ _ _) = Simple
 exprType (Str _ _ _) = Simple
-exprType (Constr _ _ _ Nil) = Simple
-exprType (Constr _ _ _ _) = Expression
+exprType (Constr _ _ c _)
+   | c == cCons = Expression
+   | otherwise = Simple
 exprType (Dictionary _ _ _) = Simple
 exprType (Matrix _ _ _ _ _) = Simple
 exprType (Lambda _) = Simple
 exprType (Project _ _ _) = Simple
 exprType (DProject _ _ _) = Simple
-exprType (App _ _ _) = Simple -- change from original
+exprType (App _ _ _) = Simple
 exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
 exprType (IfElse _ _ _) = Simple
