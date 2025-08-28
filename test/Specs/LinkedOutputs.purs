@@ -4,7 +4,6 @@ import Prelude
 
 import App.Util (SelectionType(..))
 import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd, (>.>), select)
-import Bind ((↦))
 import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_y)
 import File (Folder(..))
@@ -15,7 +14,6 @@ linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , datasets: [ "renewables" ↦ "dataset/renewables.fld" ]
         , inputs: [ "renewables" ]
         , query: Nothing
         , linking: true
@@ -41,10 +39,6 @@ linkedOutputs_spec2 :: TestLinkedOutputsSpec
 linkedOutputs_spec2 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , datasets:
-             [ "renewables" ↦ "dataset/renewables-new.fld"
-             , "nonRenewables" ↦ "dataset/non-renewables.fld"
-             ]
         , inputs: [ "nonRenewables" ]
         , query: Nothing
         , linking: true
@@ -65,7 +59,6 @@ movingAverages_spec :: TestLinkedOutputsSpec
 movingAverages_spec =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , datasets: [ "methane" ↦ "dataset/methane-emissions.fld" ]
         , inputs: [ "methane" ]
         , query: Nothing
         , linking: true
@@ -79,7 +72,6 @@ linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-          , datasets: [ "data" ↦ "linked-outputs/pairs-data.fld" ]
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true
@@ -90,7 +82,6 @@ linkedOutputs_cases =
      }
    , { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-          , datasets: [ "data" ↦ "linked-outputs/convolution-data.fld" ]
 
           , inputs: [ "data" ]
           , query: Nothing

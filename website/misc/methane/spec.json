@@ -1,6 +1,5 @@
 {
     "fluidSrcPath": ["../fluid"],
-    "datasets": [],
     "inputs": [ "methane"],
     "query": false,
     "linking": true

@@ -3,7 +3,7 @@ module Fluid where
 import Prelude hiding (between)
 
 import Bind (Bind, (↦))
-import Data.Array (filter, fromFoldable)
+import Data.Array (filter)
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.Maybe (Maybe(..))
@@ -26,7 +26,6 @@ import Val (Val)
 
 data EvalArgs = EvalArgs
    { local :: Boolean
-   , datasets :: Array (Bind String)
    , fileName :: String
    , fluidSrcPath :: Folder
    }
@@ -63,10 +62,9 @@ parseLocal = switch (long "local" <> short 'l' <> help "Are you running fluid as
 parseEvaluate :: Parser EvalArgs
 parseEvaluate = ado
    local <- parseLocal
-   datasets <- fromFoldable <$> parseDatasets
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
    fluidSrcPath <- Folder <$> strOption (long "fluid-src-path" <> short 'p' <> help "The path containing the program files")
-   in EvalArgs { local, datasets, fileName, fluidSrcPath }
+   in EvalArgs { local, fileName, fluidSrcPath }
 
 commands :: { evaluate :: Parser Command }
 commands =
@@ -97,10 +95,10 @@ fluidLibraryPath :: String
 fluidLibraryPath = "node_modules/@explorable-viz/fluid"
 
 evaluate :: EvalArgs -> Aff (Val Unit)
-evaluate (EvalArgs { local, datasets, fileName, fluidSrcPath }) = do
+evaluate (EvalArgs { local, fileName, fluidSrcPath }) = do
    let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    runNodeT (FileCxt { fluidSrcPaths }) $ do
-      progCxt <- loadProgCxt datasets
+      progCxt <- loadProgCxt
       fluidSrc <- loadFile fluidSrcPaths (File fileName)
       { e, gconfig } <- prepConfig progCxt fluidSrc
       { outα } <- graphEval gconfig e

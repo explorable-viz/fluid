@@ -37,7 +37,6 @@ type TestBwdSpec =
    , bwd_expect_file :: String
    , δv :: Selector Val -- relative to bot
    , fwd_expect :: String
-   , datasets :: Array (Bind String)
    }
 
 type TestLinkedOutputsSpec =
@@ -59,7 +58,7 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
    asTest { file, fwd_expect } = do
-      let progCxt = ProgCxt { primitives, mods: Nil, datasets: Nil }
+      let progCxt = ProgCxt { primitives, mods: Nil }
       test (File file) progCxt { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestBwdSpec -> BenchSuite m
@@ -68,8 +67,8 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
    folder = Folder "slicing"
 
    asTest :: TestBwdSpec -> m BenchRow
-   asTest { file, bwd_expect_file, δv, fwd_expect, datasets } = do
-      progCxt <- loadProgCxt datasets
+   asTest { file, bwd_expect_file, δv, fwd_expect } = do
+      progCxt <- loadProgCxt
       bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
       test (folder </> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
 

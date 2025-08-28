@@ -10,11 +10,6 @@ linkedInputs_spec3 :: TestLinkedInputsSpec
 linkedInputs_spec3 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-
-        , datasets:
-             [ "renewables" ↦ "dataset/renewables-new.fld"
-             , "nonRenewables" ↦ "dataset/non-renewables.fld"
-             ]
         , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
         , linking: true
@@ -35,11 +30,6 @@ linkedInputs_spec4 :: TestLinkedInputsSpec
 linkedInputs_spec4 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-
-        , datasets:
-             [ "renewables" ↦ "dataset/renewables-new.fld"
-             , "nonRenewables" ↦ "dataset/non-renewables.fld"
-             ]
         , inputs: [ "renewables", "nonRenewables" ]
         , query: Nothing
         , linking: true
@@ -68,10 +58,7 @@ linkedInputs_spec5 :: TestLinkedInputsSpec
 linkedInputs_spec5 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
-        , datasets:
-             [ "nonRenewables" ↦ "dataset/mini-non-renewables.fld"
-             , "renewables" ↦ "dataset/mini-renewables.fld"
-             ]
+
         , inputs: [ "nonRenewables", "renewables" ]
         , query: Nothing
         , linking: true

@@ -1,6 +1,5 @@
 {
     "fluidSrcPath": ["fluid"],
-    "datasets": [],
     "inputs": ["nonRenewables"],
     "query": false,
     "linking": true

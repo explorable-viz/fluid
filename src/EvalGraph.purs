@@ -206,11 +206,11 @@ eval_progCxt
    => ProgCxt Vertex
    -> ModuleCxt Vertex
    -> m (Env Vertex)
-eval_progCxt (ProgCxt { primitives, datasets }) { roots, topsorted, graph, modules } = do
+eval_progCxt (ProgCxt { primitives }) { roots, topsorted, graph, modules } = do
    γs <- evalAll primitives topsorted
    let γs' = map (\dep -> definitely ("has env") $ Map.lookup dep γs) roots
    let γ = foldl (<+>) primitives γs'
-   flip concatM γ (reverse datasets <#> addDataset)
+   pure γ
 
    where
    evalAll :: Env Vertex -> List ModuleName -> m (Map ModuleName (Env Vertex))
@@ -227,12 +227,6 @@ eval_progCxt (ProgCxt { primitives, datasets }) { roots, topsorted, graph, modul
                pure (defs' × γs')
          γ' <- eval_module (foldl (<+>) γ γs') defs' empty
          pure $ Map.insert name γ' γs
-
-   -- no change
-   addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
-   addDataset (x ↦ e) γ = do
-      v <- eval γ e empty
-      pure $ γ <+> maplet x v
 
 evalDocOpt :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> DocOpt Expr Vertex -> m (DocOpt Val Vertex)
 evalDocOpt _ None = pure None
