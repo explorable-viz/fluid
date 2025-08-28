@@ -63,8 +63,8 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
    asTest { file, fwd_expect } = do
-      let gconfig = ProgCxt { primitives, mods: Nil, datasets: Nil }
-      test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
+      let progCxt = ProgCxt { primitives, mods: Nil, datasets: Nil }
+      test (File file) progCxt { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestBwdSpec -> BenchSuite m
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
@@ -73,17 +73,17 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
 
    asTest :: TestBwdSpec -> m BenchRow
    asTest { file, bwd_expect_file, δv, fwd_expect, datasets } = do
-      gconfig <- loadProgCxt datasets
+      progCxt <- loadProgCxt datasets
       bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
-      test (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
+      test (folder </> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 withDatasetSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite m
 withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestWithDatasetSpec -> m BenchRow
    asTest { file } = do
-      gconfig <- loadProgCxt []
-      test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
+      progCxt <- loadProgCxt []
+      test (File file) progCxt { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect, file } = do
