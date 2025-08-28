@@ -40,10 +40,6 @@ type TestBwdSpec =
    , datasets :: Array (Bind String)
    }
 
-type TestWithDatasetSpec =
-   { file :: String
-   }
-
 type TestLinkedOutputsSpec =
    { spec :: FigSpec
    , δ_out :: Selector Val
@@ -76,14 +72,6 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
       progCxt <- loadProgCxt datasets
       bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
       test (folder </> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
-
-withDatasetSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite m
-withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
-   where
-   asTest :: TestWithDatasetSpec -> m BenchRow
-   asTest { file } = do
-      progCxt <- loadProgCxt []
-      test (File file) progCxt { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect, file } = do

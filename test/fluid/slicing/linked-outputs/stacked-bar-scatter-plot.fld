@@ -1,3 +1,5 @@
+let renewables = loadJson "dataset/renewables-new.json" in
+let nonRenewables = loadJson "dataset/non-renewables.json" in
 MultiView {
    stackedBarChart:
       let totalFor year country rows =

@@ -4,7 +4,6 @@ import Prelude
 
 import App.Util (SelectionType(..))
 import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, fst, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
-import Bind ((↦))
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
 
@@ -206,15 +205,12 @@ bwd_cases =
      , bwd_expect_file: "linked-outputs/stacked-bar-scatter-plot.expect.fld"
      , δv: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
      , fwd_expect: "MultiView {[\"scatterPlot\"] : ScatterPlot {[\"caption\"] : \"Clean energy efficiency vs proportion of renewable energy capacity\", [\"labels\"] : {[\"x\"] : \"Renewables/TotalEnergyCap\", [\"y\"] : \"Clean Capacity Factor\"}, [\"points\"] : ({[\"x\"] : 0.8723185510332055, [\"y\"] : 0.4180741155728385} : ({[\"x\"] : 0.383891020964826, [\"y\"] : 0.3306374135311273} : ({[\"x\"] : 0.5685559399722339, [\"y\"] : 0.2651713517303818} : ({[\"x\"] : 0.39179907463864283, [\"y\"] : 0.5311676111397315} : ({[\"x\"] : 0.0886691179578209, [\"y\"] : 0.4125357483317445} : ({[\"x\"] : 0.3167847396421975, [\"y\"] : 0.2767379556904734} : ({[\"x\"] : 0.3129857171819161, [\"y\"] : 0.20426921772653447} : ({[\"x\"] : 0.29687029792356306, [\"y\"] : 0.3462200657379872} : ({[\"x\"] : 0.16239390265026848, [\"y\"] : 0.4128} : ({[\"x\"] : 0.2115752867627615, [\"y\"] : 0.5086651868096602} : []))))))))))}, [\"stackedBarChart\"] : BarChart {[\"caption\"] : \"Non-renewables by country\", [\"size\"] : {[\"height\"] : 185, [\"width\"] : 275}, [\"stackedBars\"] : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 151.05} : ({[\"y\"] : \"EGY\", [\"z\"] : 159.93} : ({[\"y\"] : \"IND\", [\"z\"] : 1060.1799999999998} : ({[\"y\"] : \"JPN\", [\"z\"] : 928.82} : [])))), [\"x\"] : \"2014\"} : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 142.76} : ({[\"y\"] : \"EGY\", [\"z\"] : 170.68} : ({[\"y\"] : \"IND\", [\"z\"] : 1118.8899999999999} : ({[\"y\"] : \"JPN\", [\"z\"] : 876.0999999999999} : [])))), [\"x\"] : \"2015\"} : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 108.03} : ({[\"y\"] : \"EGY\", [\"z\"] : 174.07999999999998} : ({[\"y\"] : \"IND\", [\"z\"] : 1193.53} : ({[\"y\"] : \"JPN\", [\"z\"] : 883.3299999999999} : [])))), [\"x\"] : \"2016\"} : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 116.76} : ({[\"y\"] : \"EGY\", [\"z\"] : 181.31} : ({[\"y\"] : \"IND\", [\"z\"] : ⸨1236.43⸩} : ({[\"y\"] : \"JPN\", [\"z\"] : 875.32} : [])))), [\"x\"] : \"2017\"} : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 101.48} : ({[\"y\"] : \"EGY\", [\"z\"] : ⸨182.31⸩} : ({[\"y\"] : \"IND\", [\"z\"] : 1315.57} : ({[\"y\"] : \"JPN\", [\"z\"] : ⸨873.39⸩} : [])))), [\"x\"] : \"2018\"} : [])))))}}"
-     , datasets:
-          [ "renewables" ↦ "dataset/renewables-new.fld"
-          , "nonRenewables" ↦ "dataset/non-renewables.fld"
-          ]
+     , datasets: []
      }
    , { file: "qcut.fld"
      , bwd_expect_file: "qcut.expect.fld"
      , δv: identity >>> (_ × Persistent)
      , fwd_expect: "(((1.01 : (1.05 : [])), 0.051000000000000156) : (((1.07 : (1.09 : (1.22 : (1.23 : (1.24 : (1.24 : (1.25 : (1.32 : (1.32 : (1.35 : (1.3900000000000001 : (1.47 : (1.57 : (1.72 : [])))))))))))))), 0.6639999999999999) : (((1.73 : (1.75 : (1.76 : (1.83 : (1.8699999999999999 : (1.94 : (2.04 : (2.14 : (2.18 : (2.36 : (2.37 : (2.38 : (2.52 : (2.54 : [])))))))))))))), 0.8464999999999998) : (((2.61 : (2.67 : [])), 0.09850000000000003) : []))))"
-     , datasets: [ "ssp126" ↦ "dataset/ssp126-2081-2100.fld" ]
+     , datasets: []
      }
    ]

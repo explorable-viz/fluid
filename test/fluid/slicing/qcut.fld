@@ -1,4 +1,4 @@
 import lib.stats
-
+let ssp126 = loadJson "dataset/ssp126-2081-2100.json" in
 let data = mergesort [ x.changed | x <- ssp126]
 in qcut data [ 5, 50, 95 ]
