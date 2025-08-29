@@ -1,13 +1,13 @@
 def zero(m, n, image):
   def (m_max, n_max): dims(image)
 
-  if m >= 1 |and| m <= m_max |and| n >= 1 |and| n <= n_max: image ! ((m, n))
+  if m >= 1 |and| m <= m_max |and| n >= 1 |and| n <= n_max: image ! (m, n)
   else: 0
 
 def wrap(m, n, image):
   def (m_max, n_max): dims(image)
 
-  image ! ((m - 1 |mod| m_max + 1, n - 1 |mod| n_max + 1))
+  image ! (m - 1 |mod| m_max + 1, n - 1 |mod| n_max + 1)
 
 def extend(m, n, image):
   def (m_max, n_max): dims(image)
@@ -16,12 +16,12 @@ def extend(m, n, image):
   def n':
     min(max(n, 1), n_max)
 
-  image ! ((m', n'))
+  image ! (m', n')
 
 def matrixSum(matr):
   def (m, n): dims(matr)
 
-  foldl((+), 0, [matr ! ((i, j)) for (i, j) in range((1, 1), (m, n))])
+  foldl((+), 0, [matr ! (i, j) for (i, j) in range((1, 1), (m, n))])
 
 def convolve(image, kernel, lookup):
   def ((m, n), (i, j)):
