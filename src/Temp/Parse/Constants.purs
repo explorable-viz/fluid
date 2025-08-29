@@ -1,10 +1,9 @@
 module Temp.Parse.Constants where
 
-import Parsing.Expr (Operator)
-
 keyword
    :: { case :: String
       , def :: String
+      , lambda :: String
       , else :: String
       , for :: String
       , if :: String
@@ -15,6 +14,7 @@ keyword =
    { if: "if"
    , else: "else"
    , def: "def"
+   , lambda: "lambda"
    , match: "match"
    , case: "case"
    , for: "for"

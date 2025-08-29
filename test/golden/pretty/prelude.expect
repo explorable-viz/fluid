@@ -61,7 +61,7 @@ def find(p, x :| xs):
   else: find(p, xs)
 
 def findWithKey(fname, fval, table):
-  find((def y: y[fname] == fval), table)
+  find((lambda y: y[fname] == fval), table)
 
 def fromSome(option):
   match option:

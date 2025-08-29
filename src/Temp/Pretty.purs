@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import DataType (Ctr, cCons)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
+import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _lambda, _match)
 import Temp.Pretty.Doc (Doc, array, block, record, render, text, (<+++>), (<++>), (<+>))
 import Temp.Pretty.Helpers (brackets, number, parens, string, todo, vsep)
 import Util (type (×), (×))
@@ -41,7 +41,7 @@ binaryApp _ (LetRec _ _) = text "undefined"
 binaryApp _ e = pretty e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
-lambda ps e = _def <+> (prettyList ps) <> _colon <+> pretty e
+lambda ps e = _lambda <+> prettyList ps <> _colon <+> pretty e
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
@@ -107,7 +107,7 @@ instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × e)) = lambda (toList ps) e
 
 instance Ann a => Pretty (Clauses a) where
-   pretty (Clauses cs) = pretty (head cs)
+   pretty (Clauses cs) = pretty (head cs) -- TODO: head ?
 
 instance Ann a => Pretty (RecDefs a) where
    pretty bs = vsep (toList (pretty <$> bs))

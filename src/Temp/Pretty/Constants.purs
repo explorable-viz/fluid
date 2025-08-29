@@ -14,6 +14,9 @@ _else = text keyword.else
 _def :: Doc
 _def = text keyword.def
 
+_lambda :: Doc
+_lambda = text keyword.lambda
+
 _match :: Doc
 _match = text keyword.match
 
