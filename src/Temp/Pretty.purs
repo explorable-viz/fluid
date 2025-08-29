@@ -2,17 +2,17 @@ module Temp.Pretty (prettyPy) where
 
 import Prelude
 
-import Data.List (List(..), null, singleton, uncons, (:))
+import Data.List (List(..), singleton, (:))
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
-import DataType (Ctr, cCons, cNil, cPair)
+import DataType (Ctr, cCons)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _match)
-import Temp.Pretty.Doc (Doc(..), array, block, record, render, text, (<+++>), (<++>), (<+>))
+import Temp.Pretty.Doc (Doc, array, block, record, render, text, (<+++>), (<++>), (<+>))
 import Temp.Pretty.Helpers (brackets, number, parens, string, todo, vsep)
-import Util (type (×), assert, (×))
+import Util (type (×), (×))
 import Val (class Ann)
 
 class Pretty p where
@@ -72,12 +72,6 @@ instance Ann a => Pretty (Expr a) where
    pretty (Let ds s) = (pretty ds) <+++> pretty s
    pretty (LetRec h s) = (pretty h) <+++> pretty s
 
-listCase :: List Pattern -> Doc
-listCase Nil = Empty
-listCase (Cons p Nil) = pretty p
-listCase (Cons p (Cons p' Nil)) = pretty p <+> text ":|" <+> pretty p'
-listCase (Cons p ps) = pretty p <> _comma <+> listCase ps
-
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (ListCompDecl (VarDef v s)) Nil) = _for <+> pretty v <+> _in <+> brackets (pretty s)
    pretty (Cons (ListCompGuard s) Nil) = _if <+> pretty s
@@ -86,18 +80,15 @@ instance Ann a => Pretty (List (Qualifier a)) where
    pretty Nil = mempty
 
 instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
-   pretty pss = vsep (toList (defMatchCase' <$> pss))
+   pretty cs = vsep (toList (pretty <$> cs))
+
+instance Ann a => Pretty (Pattern × Expr a) where
+   pretty (p × e) = _case <+> (pretty p) <> block (pretty e)
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord _) = todo "PRecord"
-   pretty (PConstr "Pair" (x : y : Nil)) = parens (pretty x <> _comma <+> pretty y)
-   pretty (PConstr c ps) = case uncons ps of
-      Nothing -> text c
-      Just { head: p, tail: Nil } -> text c <> parens (pretty p)
-      _ ->
-         if c == cCons then (listCase ps)
-         else text c <> parens (prettyList ps)
+   pretty (PConstr c ps) = prettyConstr c ps
    pretty (PListEmpty) = _empty
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
 
@@ -136,16 +127,10 @@ instance Ann a => Pretty (DictEntry a) where
    pretty (VarKey _ k) = text k
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
-prettyConstr c (x : y : ys)
-   | c == cPair = assert (null ys) (parens (pretty x <> _comma <+> pretty y))
-prettyConstr c ys
-   | c == cNil = assert (null ys) (_empty)
-prettyConstr c (x : y : ys)
-   | c == cCons = assert (null ys) $ (pretty x <+> text ":|" <+> pretty y)
-prettyConstr c xs = text c <> parens (prettyList xs)
-
-defMatchCase' :: forall a. Ann a => (Pattern × Expr a) -> Doc
-defMatchCase' (p × e) = _case <+> (pretty p) <> block (pretty e)
+prettyConstr c Nil = text c
+prettyConstr "Pair" (x : y : Nil) = parens (pretty x <> _comma <+> pretty y)
+prettyConstr ":" (x : y : Nil) = pretty x <+> text ":|" <+> pretty y
+prettyConstr c ps = text c <> parens (prettyList ps)
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
 prettyAppChain (App _ f a) as = prettyAppChain f (a : as)
