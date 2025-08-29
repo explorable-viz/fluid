@@ -51,6 +51,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Str _ _ str) = string str
    pretty (Constr _ _ c Nil) = text c
    pretty (Constr _ _ c as) = prettyConstr c as
+   pretty (Dictionary _ _ Nil) = text "{}"
    pretty (Dictionary _ _ es) = record $ map pretty es
    pretty (Matrix _ _ _ _ _) = todo "Matrix"
    pretty (Lambda cs) = parens (pretty cs)

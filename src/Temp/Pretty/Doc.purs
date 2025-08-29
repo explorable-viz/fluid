@@ -4,6 +4,7 @@ import Prelude
 
 import Data.List (List(..), (:))
 import Data.String as String
+import Data.Traversable (intercalate)
 import Temp.Pretty.Config (config)
 
 data Doc
@@ -15,8 +16,11 @@ data Doc
    | Concat Doc Doc
    -- fancy doc
    | Block Doc
-   | Record (List Doc)
-   | Array (List Doc)
+   | Collection Collection (List Doc)
+
+data Collection = Record | Array
+
+data Format = Inline | Multiline
 
 instance Semigroup Doc where
    append = Concat
@@ -37,10 +41,10 @@ block :: Doc -> Doc
 block = Block
 
 record :: List Doc -> Doc
-record = Record
+record = Collection Record
 
 array :: List Doc -> Doc
-array = Array
+array = Collection Array
 
 -- Combinators
 infixr 5 beside as <+>
@@ -55,6 +59,12 @@ above a b = a <> line <> b
 
 above2 :: Doc -> Doc -> Doc
 above2 a b = a <> (line <> mempty) <> line <> b
+
+enclosed :: Doc -> Doc -> Doc -> Doc
+enclosed l r d = l <> d <> r
+
+between :: Doc -> Doc -> Doc -> Doc
+between l r d = l <+> d <+> r
 
 spaces :: Int -> String
 spaces n
@@ -76,59 +86,36 @@ renderWithIndent n doc = case doc of
 
 simplify :: Doc -> Doc
 simplify doc = case doc of
-   Block d -> simpleBlock (inline doc) d
-   Record fs -> simpleRecord (inline doc) fs
-   Array fs -> simpleArray (inline doc) fs
+   Block d -> case fmt of
+      Inline -> text ": " <> simplify d
+      Multiline -> text ":" <> indent (line <> simplify d)
+   Collection c ds -> delimit fmt c $ simplifyList ds fmt
    d -> d
 
-simpleBlock :: Boolean -> Doc -> Doc
-simpleBlock inl doc =
-   if inl then
-      text ": " <> simplify doc
-   else
-      text ":" <> indent (line <> simplify doc)
+   where
+   fmt = format doc
 
-simpleRecord :: Boolean -> List Doc -> Doc
-simpleRecord inl docs = case docs of
-   Nil -> text "{}"
-   ds ->
-      if inl then
-         text "{ " <> simples true ds <> text " }"
-      else
-         text "{" <> simples false ds <> line <> text "}"
+   delimit Inline Record = inside "{ " " }"
+   delimit Multiline Record = inside "{" "}"
+   delimit _ Array = inside "[" "]"
 
-simpleArray :: Boolean -> List Doc -> Doc
-simpleArray inl docs = case docs of
-   Nil -> text "[]"
-   ds ->
-      if inl then
-         text "[" <> simples true ds <> text "]"
-      else
-         text "[" <> simples false ds <> line <> text "]"
+   inside l r d = text l <> d <> text r
 
-simples :: Boolean -> List Doc -> Doc
-simples inl fs = case fs of
-   Nil -> mempty
-   (x : Nil) ->
-      if inl then
-         simplify x
-      else
-         indent (line <> simplify x)
-   (x : xs) ->
-      if inl then
-         (simplify x <> text ", ") <> simples inl xs
-      else
-         indent (line <> simplify x <> text ",") <> simples inl xs
+simplifyList :: List Doc -> Format -> Doc
+simplifyList ds fmt = case fmt of
+   Inline -> intercalate (text ", ") ((\d -> simplify d) <$> ds)
+   Multiline -> indent (intercalate (text ",") ((\d -> line <> simplify d) <$> ds)) <> line
 
-inline :: Doc -> Boolean
-inline doc = case doc of
-   Block d -> case d of
-      Array _ -> true
-      Record _ -> true
-      _ -> inlinable d && width d < config.inlineBlockLimit
-   Record ds -> widthList ds < config.inlineRecordLimit
-   Array ds -> widthList ds < config.inlineRecordLimit
-   _ -> true
+format :: Doc -> Format
+format doc = case doc of
+   Block (Collection _ _) -> Inline
+   Block d
+      | inlinable d && width d < config.inlineBlockLimit -> Inline
+      | otherwise -> Multiline
+   Collection _ ds
+      | widthList ds < config.inlineRecordLimit -> Inline
+      | otherwise -> Multiline
+   _ -> Inline
 
 inlinable :: Doc -> Boolean
 inlinable doc = case doc of
@@ -144,8 +131,7 @@ width (Text s) = String.length s
 width (Indent d) = width d
 width (Concat d1 d2) = width d1 + width d2
 width (Block d) = width d
-width (Record ds) = widthList ds
-width (Array ds) = widthList ds
+width (Collection _ ds) = widthList ds
 
 widthList :: List Doc -> Int
 widthList Nil = 0
