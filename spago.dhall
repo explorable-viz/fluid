@@ -61,6 +61,7 @@ in  { name = ""
       , "web-events"
       ]
     , packages = ./packages.dhall
+    , baseSources
     , sources = baseSources # [ "config/dev/**/*.purs" ]
     , backend = "npx purs-backend-es build"
     }
