@@ -56,7 +56,6 @@ data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
 
-type DocOpt a = Doc.DocOpt Expr a
 type ParagraphElem a = Doc.ParagraphElem Expr a
 
 asElim :: forall a. Cont a -> Elim a
