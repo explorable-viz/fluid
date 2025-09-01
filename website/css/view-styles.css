@@ -188,3 +188,11 @@ td.table-cell {
 .scatterplot-point.selected-secondary-transient {
    stroke-width: 1;
 }
+
+.para-text {
+   font-size: 10pt;
+}
+
+.para-text span::after {
+  content: " ";
+}

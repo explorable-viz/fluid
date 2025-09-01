@@ -5,7 +5,6 @@ str
    :: { arrayLBracket :: String
       , arrayRBracket :: String
       , as :: String
-      , backquote :: String
       , backslash :: String
       , backtick :: String
       , bar :: String
@@ -35,6 +34,7 @@ str
       , rparenth :: String
       , semiColon :: String
       , then_ :: String
+      , at :: String
       , triplequote :: String
       }
 
@@ -42,7 +42,6 @@ str =
    { arrayLBracket: "[|"
    , arrayRBracket: "|]"
    , as: "as"
-   , backquote: "@"
    , backslash: "\\"
    , backtick: "`"
    , bar: "|"
@@ -72,5 +71,6 @@ str =
    , rparenth: ")"
    , semiColon: ";"
    , then_: "then"
+   , at: "@"
    , triplequote: "\"\"\""
    }

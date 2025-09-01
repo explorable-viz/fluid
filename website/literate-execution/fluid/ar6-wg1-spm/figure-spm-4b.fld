@@ -7,10 +7,10 @@ let get x (BarChart record) = fromSome (findWithKey "x" x record.stackedBars);
 
 let mkBarChart scenName table =
    BarChart {
-      caption: "Example bar chart for scenario " ++ scenName,
+      caption: "Scenario " ++ scenName,
       size: { width: 275, height: 185 },
       stackedBars:
-         map (fun record -> { x: record.type, segments: [ { y: "emissions", z:  """Test""" record.emissions } ]})
+         map (fun record -> { x: record.type, segments: [ { y: "emissions", z:  record.emissions } ]})
             table
    };
 
@@ -31,17 +31,18 @@ let changed126 = map (fun r -> r.changed) ssp126preds;
     ssp126Total = { type: "Total", emissions: sum (map (fun r -> r.emissions) ssp126Source) };
     ssp126table = ssp126Total : ssp126Source;
     ssp245table =
-        """
-        We build this table analogously to the ssp126
-        """
         { type: "Total", emissions: findPercentile 50 changed245 } : ssp245Source;
     ssp126 = mkBarChart "SSP1-2.6" ssp126table;
     ssp245 = mkBarChart "SSP2-4.5" ssp245table;
     totals = map stackedBarHeight (map (get "Total") [ssp126, ssp245]);
     co2s = map stackedBarHeight (map (get "CO2") [ssp126, ssp245]);
     nonco2 = map (get "Non-CO2") [ssp126, ssp245]
-in """Within each scenario bar plot, the bars represent total warming (°C), warming from CO2 (°C) and from Non-CO2 GHG's (°C)."""
+in
 MultiView {
    leftBarChart: ssp126,
-   rightBarChart: ssp245
+   rightBarChart: ssp245,
+   explanation:
+      Paragraph [ Text "Within each scenario bar plot, the bars represent:", Link totals " total warming (°C),",
+                  Link co2s " warming from CO2 (°C) ", Text " and from ",
+                  Link (map stackedBarHeight nonco2) " Non-CO2 GHG's (°C)." ]
 }

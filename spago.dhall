@@ -62,5 +62,5 @@ in  { name = ""
     , packages = ./packages.dhall
     , baseSources
     , sources = baseSources # [ "config/dev/**/*.purs" ]
-    , backend = "purs-backend-es build"
+    , backend = "npx purs-backend-es build"
     }
