@@ -107,20 +107,13 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
-paragraphDelim :: SParser Unit
-paragraphDelim = void $ string str.triplequote
-
 doc :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
 doc expr' =
-   try do
-      _ <- token.symbol "@doc"
-      paragraph expr'
+   try $ token.symbol "@doc" *> paragraph expr'
 
 paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
-paragraph expr' = token.lexeme (paragraphBody)
-   where
-   paragraphBody :: SParser (Paragraph Expr Unit)
-   paragraphBody = between paragraphDelim paragraphDelim (token.whiteSpace *> (List.many $ paragraphElem expr'))
+paragraph expr' = token.lexeme $
+   between (string str.triplequote) (string str.triplequote) (token.whiteSpace *> List.many (paragraphElem expr'))
 
 paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
 paragraphElem expr' =
@@ -411,7 +404,7 @@ expr_ = fix exprParser
                pure $ Float unit (sign f)
 
             stringLiteral :: SParser (Raw Expr)
-            stringLiteral = Str unit <$> (try (notFollowedBy paragraphDelim) *> token.stringLiteral)
+            stringLiteral = Str unit <$> (try (notFollowedBy $ string str.triplequote) *> token.stringLiteral)
 
             paragraphLiteral :: SParser (Raw Expr)
             paragraphLiteral = do

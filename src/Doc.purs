@@ -17,7 +17,42 @@ type Paragraph e a = List (ParagraphElem e a)
 data ParagraphElem :: (Type -> Type) -> Type -> Type
 data ParagraphElem e a = Token String | Unquote (e a)
 
--- Purescript Typeclass instances
+instance JoinSemilattice (e a) => JoinSemilattice (DocOpt e a) where
+   join None None = None
+   join (Doc doc) (Doc doc') = Doc (doc ∨ doc')
+   join _ _ = error $ shapeMismatch unit
+
+instance JoinSemilattice (e a) => JoinSemilattice (ParagraphElem e a) where
+   join (Token s) (Token s') = Token (s ≜ s')
+   join (Unquote e) (Unquote e') = Unquote (e ∨ e')
+   join _ _ = error $ shapeMismatch unit
+
+instance (BoundedJoinSemilattice a, Expandable (e a) (Raw e)) => Expandable (DocOpt e a) (DocOpt e Unit) where
+   expand None _ = None
+   expand (Doc doc) (Doc doc') = Doc (expand doc doc')
+   expand _ _ = error $ shapeMismatch unit
+
+instance (BoundedJoinSemilattice a, (Expandable (e a) (Raw e))) => Expandable (ParagraphElem e a) (ParagraphElem e Unit) where
+   expand (Token s) (Token s') = Token (s ≜ s')
+   expand (Unquote e) (Unquote e') = Unquote (expand e e')
+   expand _ _ = error $ shapeMismatch unit
+
+instance Vertices (e Vertex) => Vertices (ParagraphElem e Vertex) where
+   vertices (Token _) = Set.empty
+   vertices (Unquote e) = vertices e
+
+instance Vertices (e Vertex) => Vertices (DocOpt e Vertex) where
+   vertices None = Set.empty
+   vertices (Doc doc) = Set.unions (vertices <$> doc)
+
+instance Semigroup (DocOpt a b) where
+   append doc None = doc
+   append None doc = doc
+   append (Doc doc) (Doc doc') = Doc $ doc <> doc'
+
+-- ======================
+-- boilerplate
+-- ======================
 derive instance Eq (e a) => Eq (DocOpt e a)
 instance Eq (e a) => Eq (ParagraphElem e a) where
    eq (Token s) (Token s') = s == s'
@@ -55,37 +90,3 @@ instance Apply e => Apply (ParagraphElem e) where
    apply (Token s) (Token s') = Token (s ≜ s')
    apply (Unquote e) (Unquote e') = Unquote (e <*> e')
    apply _ _ = error $ shapeMismatch unit
-
--- Fluid specific instances
-instance JoinSemilattice (e a) => JoinSemilattice (DocOpt e a) where
-   join None None = None
-   join (Doc doc) (Doc doc') = Doc (doc ∨ doc')
-   join _ _ = error $ shapeMismatch unit
-
-instance JoinSemilattice (e a) => JoinSemilattice (ParagraphElem e a) where
-   join (Token s) (Token s') = Token (s ≜ s')
-   join (Unquote e) (Unquote e') = Unquote (e ∨ e')
-   join _ _ = error $ shapeMismatch unit
-
-instance (BoundedJoinSemilattice a, Expandable (e a) (Raw e)) => Expandable (DocOpt e a) (DocOpt e Unit) where
-   expand None _ = None
-   expand (Doc doc) (Doc doc') = Doc (expand doc doc')
-   expand _ _ = error $ shapeMismatch unit
-
-instance (BoundedJoinSemilattice a, (Expandable (e a) (Raw e))) => Expandable (ParagraphElem e a) (ParagraphElem e Unit) where
-   expand (Token s) (Token s') = Token (s ≜ s')
-   expand (Unquote e) (Unquote e') = Unquote (expand e e')
-   expand _ _ = error $ shapeMismatch unit
-
-instance Vertices (e Vertex) => Vertices (ParagraphElem e Vertex) where
-   vertices (Token _) = Set.empty
-   vertices (Unquote e) = vertices e
-
-instance Vertices (e Vertex) => Vertices (DocOpt e Vertex) where
-   vertices None = Set.empty
-   vertices (Doc doc) = Set.unions (vertices <$> doc)
-
-instance Semigroup (DocOpt a b) where
-   append doc None = doc
-   append None doc = doc
-   append (Doc doc) (Doc doc') = Doc $ doc <> doc'
