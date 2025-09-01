@@ -1,9 +1,0 @@
-[
-  { prob: 0.99, msg: "virtually certain" },
-  { prob: 0.9, msg: "very likely"},
-  { prob: 0.66, msg: "likely"},
-  { prob: 0.33, msg: "about as likely as not"},
-  { prob: 0.1, msg: "unlikely"},
-  { prob: 0.01, msg: "very unlikely"},
-  { prob: 0.0, msg: "exceptionally unlikely"}
-]

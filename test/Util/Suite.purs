@@ -5,7 +5,7 @@ import Prelude
 import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
 import App.View.Util (Fig, FigSpec)
-import Bind (Bind, (↦))
+import Bind (Bind)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.List (List(..))
@@ -37,12 +37,6 @@ type TestBwdSpec =
    , bwd_expect_file :: String
    , δv :: Selector Val -- relative to bot
    , fwd_expect :: String
-   , datasets :: Array (Bind String)
-   }
-
-type TestWithDatasetSpec =
-   { dataset :: Bind String
-   , file :: String
    }
 
 type TestLinkedOutputsSpec =
@@ -64,8 +58,8 @@ suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
    asTest :: TestSpec -> m BenchRow
    asTest { file, fwd_expect } = do
-      let gconfig = ProgCxt { primitives, mods: Nil, datasets: Nil }
-      test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
+      let progCxt = ProgCxt { primitives, mods: Nil }
+      test (File file) progCxt { δv: identity >>> (_ × Persistent), fwd_expect, bwd_expect: mempty } (n × is_bench)
 
 bwdSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestBwdSpec -> BenchSuite m
 bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) >>> show) &&& asTest)
@@ -73,18 +67,10 @@ bwdSuite specs (n × is_bench) = specs <#> ((_.file >>> File >>> (folder </> _) 
    folder = Folder "slicing"
 
    asTest :: TestBwdSpec -> m BenchRow
-   asTest { file, bwd_expect_file, δv, fwd_expect, datasets } = do
-      gconfig <- loadProgCxt datasets
+   asTest { file, bwd_expect_file, δv, fwd_expect } = do
+      progCxt <- loadProgCxt
       bwd_expect <- loadFile [ Folder "test/fluid" ] (folder </> File bwd_expect_file)
-      test (folder </> File file) gconfig { δv, fwd_expect, bwd_expect } (n × is_bench)
-
-withDatasetSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestWithDatasetSpec -> BenchSuite m
-withDatasetSuite specs (n × is_bench) = specs <#> (_.file &&& asTest)
-   where
-   asTest :: TestWithDatasetSpec -> m BenchRow
-   asTest { dataset: x ↦ dataset, file } = do
-      gconfig <- loadProgCxt [ x ↦ dataset ]
-      test (File file) gconfig { δv: identity >>> (_ × Persistent), fwd_expect: mempty, bwd_expect: mempty } (n × is_bench)
+      test (folder </> File file) progCxt { δv, fwd_expect, bwd_expect } (n × is_bench)
 
 linkedOutputsTest :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestLinkedOutputsSpec -> m Fig
 linkedOutputsTest { spec, δ_out, out_expect, file } = do

@@ -2,7 +2,6 @@ module Module where
 
 import Prelude
 
-import Bind (Bind, (↦))
 import Control.Monad.Error.Class (liftEither)
 import Control.Monad.Except (class MonadError)
 import Control.Monad.Reader (class MonadReader, ask)
@@ -11,18 +10,16 @@ import Data.List (List(..), reverse, (:))
 import Data.List as List
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Profunctor.Strong (second)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse)
-import Data.Tuple (fst)
 import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval_progCxt)
 import Expr (class FV, Expr, Module, fv)
-import File (class LoadFile, File(..), FileCxt(..), Folder, fluidExtension, loadFile)
+import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
 import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
@@ -34,7 +31,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
-import Util (type (×), AffError, concatM, error, (×))
+import Util (type (×), AffError, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 import Util.Set ((∪))
@@ -45,17 +42,8 @@ parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 parseProgram :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
 parseProgram fluidSrc = flip parse P.program fluidSrc
 
-datasetAs :: forall m. MonadAff m => MonadError Error m => LoadFile m => Array Folder -> Bind File -> Raw ProgCxt -> m (Raw ProgCxt)
-datasetAs folders (x ↦ file) (ProgCxt r@{ datasets }) = do
-   src <- loadFile folders file
-   eα <- (fst <$> parseProgram src) >>= desug
-   pure $ ProgCxt r { datasets = (x ↦ eα) : datasets }
-
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array (Bind String) -> m (Raw ProgCxt)
-loadProgCxt datasets = do
-   FileCxt { fluidSrcPaths } <- ask
-   pure (ProgCxt { primitives, mods: Nil, datasets: Nil })
-      >>= concatM (second File >>> datasetAs fluidSrcPaths <$> datasets)
+loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => m (Raw ProgCxt)
+loadProgCxt = pure (ProgCxt { primitives, mods: Nil })
 
 initialConfig
    :: forall m a

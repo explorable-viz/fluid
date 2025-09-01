@@ -2,12 +2,12 @@ module EvalGraph where
 
 import Prelude hiding (apply)
 
-import Bind (Bind, (↦), varAnon)
+import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Array (range) as A
 import Data.Either (Either(..))
-import Data.List (List(..), foldM, foldl, length, reverse, snoc, unzip, zip, (:))
+import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Newtype (unwrap)
@@ -35,7 +35,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, defined, definitely, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
+import Util (type (×), Endo, check, defined, definitely, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
@@ -90,7 +90,7 @@ closeDefs γ ρ αs =
       in
          new (flip Val None) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
-apply :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
+apply :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
@@ -119,7 +119,7 @@ apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
+eval :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ =
    withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ =
@@ -191,7 +191,7 @@ eval γ (DocExpr p e) αs = do
    evalToken _ (Token s) = pure $ Token s
    evalToken γ' (Unquote e') = Unquote <$> eval γ' e' empty
 
-eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
@@ -208,15 +208,16 @@ eval_progCxt
    :: forall m
     . MonadWithGraphAlloc m
    => MonadReader FileCxt m
+   => MonadAff m
    => LoadFile m
    => ProgCxt Vertex
    -> ModuleCxt Vertex
    -> m (Env Vertex)
-eval_progCxt (ProgCxt { primitives, datasets }) { roots, topsorted, graph, modules } = do
+eval_progCxt (ProgCxt { primitives }) { roots, topsorted, graph, modules } = do
    γs <- evalAll primitives topsorted
    let γs' = map (\dep -> definitely ("has env") $ Map.lookup dep γs) roots
    let γ = foldl (<+>) primitives γs'
-   flip concatM γ (reverse datasets <#> addDataset)
+   pure γ
 
    where
    evalAll :: Env Vertex -> List ModuleName -> m (Map ModuleName (Env Vertex))
@@ -233,12 +234,6 @@ eval_progCxt (ProgCxt { primitives, datasets }) { roots, topsorted, graph, modul
                pure (defs' × γs')
          γ' <- eval_module (foldl (<+>) γ γs') defs' empty
          pure $ Map.insert name γ' γs
-
-   -- no change
-   addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
-   addDataset (x ↦ e) γ = do
-      v <- eval γ e empty
-      pure $ γ <+> maplet x v
 
 type GraphEval g s t =
    { g :: g

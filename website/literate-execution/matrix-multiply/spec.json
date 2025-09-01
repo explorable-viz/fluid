@@ -1,6 +1,5 @@
 {
     "fluidSrcPath": ["../fluid"],
-    "datasets": [],
     "inputs": [ "aMatrix", "bMatrix", "cMatrix" ],
     "query": true,
     "linking": false

@@ -21,26 +21,15 @@ import Test.Specs.Misc (misc_cases)
 import Test.Specs.Paragraph (paragraph_cases)
 import Test.Util (TestSuite, fluidSrcPaths)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite, withDatasetSuite)
+import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite)
 import Util ((×))
 
--- ====== pick ONE main ======
-
--- ① Only run paragraph tests (default)
--- main :: Effect Unit
--- main = run paragraphTests
-
--- ② Run everything (uncomment these two lines and comment out the main above)
 main :: Effect Unit
 main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> allTests)
 
--- ③ Only run the selected 7 comment tests
--- main :: Effect Unit
--- main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> selectedCommentsTests)
+scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
+scratchpad = linkedInputsSuite linkedInputs_cases
 
--- --------------------------------
-
--- Only the 7 specific comment tests
 selectedCommentsTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 selectedCommentsTests = second void <$> suite selectedCases (1 × false)
    where
@@ -55,12 +44,6 @@ selectedCommentsTests = second void <$> suite selectedCases (1 × false)
       ]
    selectedCases = filter (\c -> c.file `elem` selectedNames) comments_cases
 
--- Only paragraph tests
-paragraphTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-paragraphTests =
-   second void <$> suite paragraph_cases (1 × false)
-
--- All benchmarks + linked IO tests (paragraph included)
 allTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 allTests =
    concat (benchmarks <#> asTestSuite)
@@ -77,5 +60,5 @@ benchmarks =
    , suite comments_cases
    , suite paragraph_cases
    , bwdSuite bwd_cases
-   , withDatasetSuite graphics_cases
+   , suite graphics_cases
    ]

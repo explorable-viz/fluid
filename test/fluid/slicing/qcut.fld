@@ -1,4 +1,5 @@
 import lib.stats
+import dataset.ssp126
 
 let data = mergesort [ x.changed | x <- ssp126]
 in qcut data [ 5, 50, 95 ]

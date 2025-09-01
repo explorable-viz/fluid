@@ -6,7 +6,7 @@ import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetS
 import App.Util.Selector (ViewSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
-import Bind (Bind, Var, (↦))
+import Bind (Var, (↦))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe)
 import Data.Set (Set)
@@ -92,7 +92,6 @@ uiHelpers =
 
 type FigSpec =
    { fluidSrcPaths :: Array Folder
-   , datasets :: Array (Bind String)
    , inputs :: Array Var
    , query :: Maybe (Query (Val Vertex))
    , linking :: Boolean

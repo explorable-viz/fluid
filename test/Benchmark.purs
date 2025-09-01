@@ -23,7 +23,7 @@ import Test.Specs.Desugar (desugar_cases)
 import Test.Specs.Graphics (graphics_cases)
 import Test.Specs.Misc (misc_cases)
 import Test.Util (fluidSrcPaths)
-import Test.Util.Suite (BenchSuite, bwdSuite, suite, withDatasetSuite)
+import Test.Util.Suite (BenchSuite, bwdSuite, suite)
 import Util (definitely, error, (×), type (+))
 
 main :: Effect Unit
@@ -48,5 +48,5 @@ benchmarks =
    [ suite desugar_cases
    , suite misc_cases
    , bwdSuite bwd_cases
-   , withDatasetSuite graphics_cases
+   , suite graphics_cases
    ]

@@ -1,21 +1,21 @@
 module Test.Specs.Graphics where
 
-import Bind ((↦))
+import Prelude
 
-import Test.Util.Suite (TestWithDatasetSpec)
+import Test.Util.Suite (TestSpec)
 
-graphics_cases :: Array TestWithDatasetSpec
+graphics_cases :: Array TestSpec
 graphics_cases =
-   [ { dataset: "data" ↦ "dataset/renewables-restricted.fld"
-     , file: "graphics/background.fld"
+   [ { file: "graphics/background.fld"
+     , fwd_expect: mempty
      }
-   , { dataset: "data" ↦ "dataset/renewables-restricted.fld"
-     , file: "graphics/grouped-bar-chart.fld"
+   , { file: "graphics/grouped-bar-chart.fld"
+     , fwd_expect: mempty
      }
-   , { dataset: "data" ↦ "dataset/renewables-restricted.fld"
-     , file: "graphics/line-chart.fld"
+   , { file: "graphics/line-chart.fld"
+     , fwd_expect: mempty
      }
-   , { dataset: "data" ↦ "dataset/renewables-restricted.fld"
-     , file: "graphics/stacked-bar-chart.fld"
+   , { file: "graphics/stacked-bar-chart.fld"
+     , fwd_expect: mempty
      }
    ]
