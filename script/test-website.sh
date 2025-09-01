@@ -7,6 +7,11 @@ yarn puppeteer browsers install firefox
 
 WEBSITE=$1
 
+if [ ! -d "dist/$WEBSITE" ]; then
+   echo "Error: Directory 'dist/$WEBSITE' does not exist." >&2
+   exit 1
+fi
+
 echo "Testing website: ${WEBSITE}"
 
 if [[ -e "website/Test/$WEBSITE.purs" ]]; then

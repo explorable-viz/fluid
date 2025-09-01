@@ -1,0 +1,4 @@
+let ssp126Source  = loadJson "ar6_wg1_spm/ssp126.json";
+let ssp126preds   = loadJson "ar6_wg1_spm/ssp126preds.json";
+let ssp245Source  = loadJson "ar6_wg1_spm/ssp245.json";
+let ssp245preds   = loadJson "ar6_wg1_spm/ssp245preds.json";

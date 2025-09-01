@@ -7,7 +7,6 @@ import Affjax.Web (get, printError)
 import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
 import App.View.Util (FigSpec)
-import Bind (Bind)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
@@ -28,16 +27,14 @@ import Val (Val(..), asVal)
 
 type JsonSpec =
    { fluidSrcPath :: Array String
-   , datasets :: Array (Bind String)
    , inputs :: Array String
    , query :: Boolean
    , linking :: Boolean
    }
 
 figSpecFromJson :: JsonSpec -> FigSpec
-figSpecFromJson spec@{ datasets, inputs, query, linking } =
+figSpecFromJson spec@{ inputs, query, linking } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
-   , datasets
    , inputs
    , query:
         if query then
