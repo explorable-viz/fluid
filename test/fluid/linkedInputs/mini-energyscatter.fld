@@ -1,3 +1,5 @@
+import dataset.nonRenewables
+
 let sumNonRenewables x = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap;
 let country_check name x = name == x.country;
 let year_check year x = year == x.year;
