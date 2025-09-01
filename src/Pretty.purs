@@ -193,7 +193,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Paragraph p) =
       pretty p
    pretty (DocExpr p s) =
-      text "@doc" .<>. pretty p .<>. pretty s
+      text str.atDoc .<>. parentheses (pretty p) .<>. pretty s
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
@@ -407,11 +407,10 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.DProject e x) =
       pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
-   pretty (E.DocExpr doc e) = text "@doc" .<>. pretty doc .<>. pretty e
+   pretty (E.DocExpr p e) = text str.atDoc .<>. parentheses (pretty p) .<>. pretty e
 
 instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
-   --   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
-   pretty (Doc.Doc p) = text "@doc" .<>. pretty p
+   pretty (Doc.Doc p) = text str.atDoc .<>. parentheses (pretty p)
    pretty Doc.None = empty
 
 instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
@@ -427,7 +426,7 @@ instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
 
 instance Pretty (e a) => Pretty (ParagraphElem e a) where
    pretty (Token str) = text str
-   pretty (Unquote e) = text "${" .<>. pretty e .<>. text "}"
+   pretty (Unquote e) = text (str.dollar <> str.curlylBrace) .<>. pretty e .<>. text str.curlyrBrace
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty ρ = go (toUnfoldable ρ)

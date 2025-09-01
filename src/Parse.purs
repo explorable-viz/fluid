@@ -109,7 +109,7 @@ rArrow = token.reservedOp str.rArrow
 
 doc :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
 doc expr' =
-   try $ token.symbol "@doc" *> paragraph expr'
+   try $ token.symbol str.atDoc *> token.parens (paragraph expr')
 
 paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
 paragraph expr' = token.lexeme $

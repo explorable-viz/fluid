@@ -26,7 +26,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite m = Array (String × m Unit)
@@ -145,7 +145,7 @@ testPretty :: forall m a. Ann a => Show a => SE.Expr a -> AffError m Unit
 testPretty s = do
    log' ("**** prettyP")
    log' (prettyP s)
-   s' × _ <- parse (prettyP s) program
+   s' × _ <- withMsg "testPretty" $ parse (prettyP s) program
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
 
