@@ -117,14 +117,14 @@ paragraph expr' = token.lexeme $
 
 paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
 paragraphElem expr' =
-   token.lexeme (try paragraphToken <|> paragraphExpr expr')
+   token.lexeme (try token' <|> unquote)
+   where
+   token' :: SParser (ParagraphElem Expr Unit)
+   token' = Token <$> (SCU.fromCharArray <$> Array.some paragraphLetter)
 
-paragraphToken :: SParser (ParagraphElem Expr Unit)
-paragraphToken = Token <$> (SCU.fromCharArray <$> Array.some paragraphLetter)
-
-paragraphExpr :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
-paragraphExpr expr' =
-   string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
+   unquote :: SParser (ParagraphElem Expr Unit)
+   unquote =
+      string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
 paragraphLetter :: SParser Char
 paragraphLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
