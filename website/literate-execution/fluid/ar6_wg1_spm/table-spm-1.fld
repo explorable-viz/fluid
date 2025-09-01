@@ -1,4 +1,5 @@
 import lib.stats
+import ar6_wg1_spm.table_spm_1_data
 
 let newDataTable offset = map (fun s -> { scenario: s.scenario, beNear: s.bestEstNear + offset, nearRange: (s.lowNear, s.highNear), beMid: s.bestEstMid, midRange: (s.lowMid, s.highMid), beLong: s.bestEstLate, longRange: (s.lowLate, s.highLate)}) tableData;
 

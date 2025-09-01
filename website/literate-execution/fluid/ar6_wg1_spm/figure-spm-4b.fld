@@ -1,5 +1,4 @@
 import lib.stats
-import new-ar6-wg1-spm
 
 let stackedBarHeight stackedBar = sum [ segment.z | segment <- stackedBar.segments ];
 

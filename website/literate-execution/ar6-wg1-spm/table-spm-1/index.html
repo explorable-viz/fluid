@@ -39,21 +39,16 @@
         </div>
     </div>
 
-
     <script type="module">
         import { loadFigureSpec } from "../../shared/load-figure.js"
 
          const jsonSpec = {
             "fluidSrcPath": ["../../fluid"],
-            "datasets": [
-               ["tableData", "ar6-wg1-spm/explainable-table.fld"],
-               ["likelihoods", "ar6-wg1-spm/likelihoods.fld"],
-            ],
             "inputs": ["tableData", "likelihoods"],
             "query": true,
             "linking": true
          }
-        loadFigureSpec(jsonSpec)("../../fluid/ar6-wg1-spm/table-spm-1.fld")()
+        loadFigureSpec(jsonSpec)("../../fluid/ar6_wg1_spm/table-spm-1.fld")()
     </script>
 </body>
 </html>

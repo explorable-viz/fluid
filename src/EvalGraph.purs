@@ -119,7 +119,7 @@ apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    n = defined (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
+eval :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ =
    withMsg "Variable lookup" $ lookup' x γ
 eval γ (Op op) _ =

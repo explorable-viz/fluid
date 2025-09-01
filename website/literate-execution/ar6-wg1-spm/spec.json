@@ -1,6 +1,0 @@
-{
-    "fluidSrcPath": ["../fluid"],
-    "inputs": ["ssp126Source", "ssp245Source", "ssp126preds", "ssp245preds"],
-    "query": true,
-    "linking": false
-}
