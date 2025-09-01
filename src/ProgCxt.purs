@@ -11,7 +11,6 @@ import Graph (class Vertices, Vertex, vertices)
 import Util.Set ((∪))
 import Val (Env)
 
--- Module context (plus datasets, reflecting current ad hoc approach to those).
 newtype ProgCxt a = ProgCxt
    { primitives :: Env a
    , mods :: List (Module a) -- in reverse order

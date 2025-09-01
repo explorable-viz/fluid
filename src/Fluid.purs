@@ -5,7 +5,6 @@ import Prelude hiding (between)
 import Bind (Bind, (↦))
 import Data.Array (filter)
 import Data.Either (Either(..))
-import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split, stripPrefix, stripSuffix, trim)
 import Data.String as String
@@ -18,7 +17,7 @@ import File (File(..), FileCxt(..), Folder(..), loadFile)
 import Lattice (erase)
 import Module (loadProgCxt, prepConfig)
 import Module.Node (runNodeT)
-import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, switch, (<**>))
+import Options.Applicative (Parser, command, execParser, fullDesc, header, help, helper, long, progDesc, short, strOption, subparser, switch, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
 import Util (Endo)
@@ -47,14 +46,6 @@ parsePair = between (Pattern "(") (Pattern ")") $ \s ->
 parseImports' :: Pattern -> Pattern -> (String -> Either String (Array String))
 parseImports' open close = between open close $ \s -> do
    Right (map trim $ filter (not <<< String.null) $ split (Pattern ",") s)
-
-parseDatasets :: Parser (List (Bind String))
-parseDatasets =
-   many $ option (eitherReader parsePair)
-      ( long "datasets"
-           <> short 'd'
-           <> help "Comma-separated list of datasets"
-      )
 
 parseLocal :: Parser Boolean
 parseLocal = switch (long "local" <> short 'l' <> help "Are you running fluid as a library?")
