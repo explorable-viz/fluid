@@ -2,12 +2,12 @@ module EvalGraph where
 
 import Prelude hiding (apply)
 
-import Bind (Bind, (↦), varAnon)
+import Bind (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Array (range) as A
 import Data.Either (Either(..))
-import Data.List (List(..), foldM, foldl, length, reverse, snoc, unzip, zip, (:))
+import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Newtype (unwrap)
@@ -35,7 +35,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
-import Util (type (×), Endo, check, concatM, defined, definitely, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
+import Util (type (×), Endo, check, defined, definitely, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
