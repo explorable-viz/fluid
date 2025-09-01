@@ -1,4 +1,4 @@
-import new-methane
+import methane_data
 
 let series type = [
    { x: row.year, y: row.emissions }
