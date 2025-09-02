@@ -23,7 +23,6 @@ import Data.String (Pattern(..), Replacement(..)) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
-import Doc (ParagraphElem(..))
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
@@ -31,7 +30,7 @@ import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -416,10 +415,10 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
    pretty (E.DocExpr p e) = text str.atDoc .<>. parentheses (pretty p) .<>. pretty e
 
-instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
+instance Ann a => Pretty (List (ParagraphElem a)) where
    pretty xs = text str.triplequote .<>. hcat (pretty <$> xs) .<>. text str.triplequote
 
-instance Pretty (e a) => Pretty (ParagraphElem e a) where
+instance Ann a => Pretty (ParagraphElem a) where
    pretty (Token str) = text str
    pretty (Unquote e) = text (str.dollar <> str.curlylBrace) .<>. pretty e .<>. text str.curlyrBrace
 

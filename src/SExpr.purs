@@ -25,7 +25,6 @@ import Data.Unfoldable (replicate)
 import DataType (Ctr, DataType, arity, cCons, cText, cParagraph, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Desugarable (class Desugarable, desug, desugBwd)
 import Dict as D
-import Doc (ParagraphElem(..), Paragraph) as Doc
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
@@ -54,14 +53,14 @@ data Expr a
    | BinaryApp (Expr a) Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
    | IfElse (Expr a) (Expr a) (Expr a)
-   | Paragraph (Doc.Paragraph Expr a)
+   | Paragraph (Paragraph a)
    | ListEmpty a
    | ListNonEmpty a (Expr a) (ListRest a)
    | ListEnum (Expr a) (Expr a)
    | ListComp a (Expr a) (List (Qualifier a))
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | DocExpr (Doc.Paragraph Expr a) (Expr a)
+   | DocExpr (Paragraph a) (Expr a)
 
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
 
@@ -81,7 +80,8 @@ data ListRestPattern
    | PListEnd
    | PListNext Pattern ListRestPattern
 
-type ParagraphElem a = Doc.ParagraphElem Expr a
+data ParagraphElem a = Token String | Unquote (Expr a)
+type Paragraph a = List (ParagraphElem a)
 
 pVarAnon :: Pattern
 pVarAnon = PVar varAnon
@@ -240,12 +240,12 @@ recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (snd <$> unwr
 recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
 recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (desugBwd σ (Clauses (snd <$> bs))))
 
-paragraphFwd :: ∀ m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (E.Expr a)
+paragraphFwd :: forall m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (E.Expr a)
 paragraphFwd elems = do
    es <- paragraphElemsFwd elems
    pure (E.Constr bot cParagraph (es : Nil))
 
-paragraphBwd :: ∀ a. BoundedJoinSemilattice a => E.Expr a -> List (Raw ParagraphElem) -> List (ParagraphElem a)
+paragraphBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> List (Raw ParagraphElem) -> List (ParagraphElem a)
 paragraphBwd (E.Constr _ c (es : Nil)) elems | c == cParagraph =
    paragraphElemsBwd es elems
 paragraphBwd _ _ = error absurd
@@ -260,17 +260,14 @@ paragraphElemsFwd =
    foldr step (pure (enil bot))
    where
    step :: ParagraphElem a -> m (E.Expr a) -> m (E.Expr a)
-   step (Doc.Token s) accM = do
+   step (Token s) accM = do
       acc <- accM
       pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) acc)
-
-   step (Doc.Unquote e) accM = do
+   step (Unquote e) accM = do
       acc <- accM
       e' <- desug e
       pure (econs bot (E.Constr bot cText (e' : Nil)) acc)
 
--- from a core list like Cons (Constr cText [e]) (Cons ... Nil)
--- reconstruct a list of ParagraphElem (Token/Unquote)
 paragraphElemsBwd
    :: forall a
     . BoundedJoinSemilattice a
@@ -282,10 +279,10 @@ paragraphElemsBwd (E.Constr _ c (e : es : Nil)) (pe : pes) | c == cCons =
    exprToElem pe e : paragraphElemsBwd es pes
    where
    exprToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
-   exprToElem (Doc.Token _) (E.Constr _ c' (E.Str _ s : Nil)) | c' == cText =
-      Doc.Token s
-   exprToElem (Doc.Unquote s) (E.Constr _ c' (e' : Nil)) | c' == cText =
-      Doc.Unquote (desugBwd e' s)
+   exprToElem (Token _) (E.Constr _ c' (E.Str _ s : Nil)) | c' == cText =
+      Token s
+   exprToElem (Unquote s) (E.Constr _ c' (e' : Nil)) | c' == cText =
+      Unquote (desugBwd e' s)
    exprToElem _ _ = error absurd
 paragraphElemsBwd _ _ = error absurd
 
@@ -376,8 +373,8 @@ exprBwd (E.App (E.Lambda _ (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (desugBwd e1 s1)
       (if cTrue ∈ m then desugBwd (asExpr (get cTrue m)) s2 else botOf s2)
       (if cFalse ∈ m then desugBwd (asExpr (get cFalse m)) s3 else botOf s3)
-exprBwd (E.Constr _ c (lst : Nil)) (Paragraph xs) | c == cParagraph =
-   Paragraph (paragraphElemsBwd lst xs)
+exprBwd (E.Constr _ c (es : Nil)) (Paragraph elems) | c == cParagraph =
+   Paragraph (paragraphElemsBwd es elems)
 exprBwd (E.Constr α _ Nil) (ListEmpty _) =
    ListEmpty α
 exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
@@ -657,6 +654,7 @@ derive instance Functor DictEntry
 derive instance Functor ListRest
 derive instance Functor VarDef
 derive instance Functor Qualifier
+derive instance Functor ParagraphElem
 derive instance Functor Expr
 
 instance Functor Module where
@@ -712,4 +710,9 @@ instance Show a => Show (VarDef a) where
 derive instance Eq a => Eq (Qualifier a)
 derive instance Generic (Qualifier a) _
 instance Show a => Show (Qualifier a) where
+   show c = genericShow c
+
+derive instance Eq a => Eq (ParagraphElem a)
+derive instance Generic (ParagraphElem a) _
+instance Show a => Show (ParagraphElem a) where
    show c = genericShow c

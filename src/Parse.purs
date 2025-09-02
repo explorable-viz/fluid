@@ -24,7 +24,6 @@ import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar, joinWith)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
-import Doc (ParagraphElem(..), Paragraph)
 import Lattice (Raw)
 import Parse.Constants (str)
 import Parsing.Combinators (between, notFollowedBy, many, optionMaybe, sepBy, sepBy1, try)
@@ -35,7 +34,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Paragraph, Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -107,22 +106,22 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
-doc :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
+doc :: SParser (Raw Expr) -> SParser (Paragraph Unit)
 doc expr' =
    try $ token.symbol str.atDoc *> token.parens (paragraph expr')
 
-paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
+paragraph :: SParser (Raw Expr) -> SParser (Paragraph Unit)
 paragraph expr' = token.lexeme $
    between (string str.triplequote) (string str.triplequote) (token.whiteSpace *> List.many (paragraphElem expr'))
 
-paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
+paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Unit)
 paragraphElem expr' =
    token.lexeme (try token' <|> unquote)
    where
-   token' :: SParser (ParagraphElem Expr Unit)
+   token' :: SParser (ParagraphElem Unit)
    token' = Token <$> (SCU.fromCharArray <$> Array.some paragraphLetter)
 
-   unquote :: SParser (ParagraphElem Expr Unit)
+   unquote :: SParser (ParagraphElem Unit)
    unquote =
       string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
