@@ -19,7 +19,6 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict)
 import Dict as D
-import Doc (DocOpt)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Elim, Expr, fv)
@@ -35,7 +34,7 @@ import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, k
 import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
 
-data Val a = Val a (DocOpt Val a) (BaseVal a)
+data Val a = Val a (Maybe (Val a)) (BaseVal a)
 
 data BaseVal a
    = Int Int
@@ -47,9 +46,7 @@ data BaseVal a
    | Fun (Fun a)
 
 asVal :: VertexData -> Maybe (Val Vertex)
-asVal e = if type' == "Val" then Just (unpack unsafeCoerce e) else Nothing
-   where
-   type' = unpack typeName e
+asVal e = if unpack typeName e == "Val" then Just (unpack unsafeCoerce e) else Nothing
 
 data Fun a
    = Closure (Env a) (Dict (Elim a)) (Elim a)
@@ -193,7 +190,9 @@ derive instance Foldable Env
 derive instance Foldable EnvExpr
 
 instance Apply Val where
-   apply (Val fα fdoc fv) (Val α doc v) = Val (fα α) (fdoc <*> doc) (fv <*> v)
+   apply (Val fα Nothing fv) (Val α Nothing v) = Val (fα α) Nothing (fv <*> v)
+   apply (Val fα (Just fdoc) fv) (Val α (Just doc) v) = Val (fα α) (Just (fdoc <*> doc)) (fv <*> v)
+   apply _ _ = shapeMismatch unit
 
 instance Apply BaseVal where
    apply (Int n) (Int n') = Int (n ≜ n')

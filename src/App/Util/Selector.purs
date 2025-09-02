@@ -134,18 +134,6 @@ listCell n δα = unsafePartial $ case _ of
       if n == 0 then first (\α' -> Val α' doc (Constr c (v : u : Nil))) (persist δα α)
       else first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listCell (n - 1) δα u)
 
-docElement :: Int -> SelSetter Val Val
-docElement _ _ (Val _ None _) = error absurd
-docElement i δv (Val α (Doc doc) v) =
-   first (\doc' -> Val α doc' v)
-      $ first Doc
-      $ definitely' do
-           elem' × selType <- δv' <$> index doc i
-           (_ × selType) <$> updateAt i elem' doc
-   where
-   δv' (Unquote v') = first Unquote (δv v')
-   δv' _ = error absurd
-
 composeSetSel :: forall a. SetSel a -> SetSel a -> SetSel a
 composeSetSel f g = \x -> let x' × _ = f x in g x'
 

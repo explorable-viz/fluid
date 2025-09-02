@@ -28,7 +28,7 @@ import Dict as D
 import Doc (ParagraphElem(..), Paragraph) as Doc
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (Expr(..), Module(..), ParagraphElem, RecDefs(..), VarDef(..)) as E
+import Expr (Expr(..), Module(..), RecDefs(..), VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class JoinSemilattice, Raw, bot, botOf, top, (∨))
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, absurd, appendList, assert, defined, definitely, definitely', error, nonEmpty, shapeMismatch, singleton, throw, unimplemented, (×), (≜))
@@ -240,7 +240,16 @@ recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> desug (Clauses (snd <$> unwr
 recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
 recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (desugBwd σ (Clauses (snd <$> bs))))
 
--- turn elements of paragraph into Fluid's List
+paragraphFwd :: ∀ m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (E.Expr a)
+paragraphFwd elems = do
+   es <- paragraphElemsFwd elems
+   pure (E.Constr bot cParagraph (es : Nil))
+
+paragraphBwd :: ∀ a. BoundedJoinSemilattice a => E.Expr a -> List (Raw ParagraphElem) -> List (ParagraphElem a)
+paragraphBwd (E.Constr _ c (es : Nil)) elems | c == cParagraph =
+   paragraphElemsBwd es elems
+paragraphBwd _ _ = error absurd
+
 paragraphElemsFwd
    :: forall a m
     . BoundedLattice a
@@ -317,9 +326,8 @@ exprFwd (IfElse s1 s2 s3) =
    E.App
       <$> (E.Lambda top <$> (elimBool <$> (ContExpr <$> desug s2) <*> (ContExpr <$> desug s3)))
       <*> desug s1
-exprFwd (Paragraph xs) = do
-   list <- paragraphElemsFwd xs
-   pure (E.Constr bot cParagraph (list : Nil))
+exprFwd (Paragraph elems) =
+   paragraphFwd elems
 exprFwd (ListEmpty α) =
    pure $ enil α
 exprFwd (ListNonEmpty α s l) = do
@@ -335,9 +343,9 @@ exprFwd (Let ds s) =
 exprFwd (LetRec xcs s) =
    E.LetRec <$> recDefsFwd xcs <*> desug s
 exprFwd (DocExpr p s) = do
-   pe <- paragraphFwd p
-   e <- exprFwd s
-   pure $ E.DocExpr pe e
+   e <- paragraphFwd p
+   e' <- exprFwd s
+   pure $ E.DocExpr e e'
 
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
@@ -384,8 +392,8 @@ exprBwd (E.Let d e) (Let ds s) =
    let ds' × e' = varDefsBwd (E.Let d e) (ds × s) in Let ds' e'
 exprBwd (E.LetRec xσs e) (LetRec xcs s) =
    LetRec (recDefsBwd xσs xcs) (desugBwd e s)
-exprBwd (E.DocExpr pe e) (DocExpr p s) =
-   DocExpr (paragraphBwd pe p) (exprBwd e s)
+exprBwd (E.DocExpr e e') (DocExpr p s) =
+   DocExpr (paragraphBwd e p) (exprBwd e' s)
 exprBwd _ s = error $ "ExprBwd failed, s: " <> show s
 
 -- List Qualifier × Expr
@@ -562,24 +570,6 @@ clausesStateBwd κ0 ks = case κ0 × ks of
       where
       kss = defined (popConstrFwd (defined (dataTypeFor (definitely' (ctrFor p)))) ks)
    ContElim _ × _ -> error (shapeMismatch unit)
-
-paragraphFwd :: ∀ m a. BoundedLattice a => MonadError Error m => List (ParagraphElem a) -> m (List (E.ParagraphElem a))
-paragraphFwd (Cons s l) = Cons <$> commentElemFwd s <*> paragraphFwd l
-paragraphFwd Nil = pure Nil
-
-paragraphBwd :: ∀ a. BoundedJoinSemilattice a => List (E.ParagraphElem a) -> List (Raw ParagraphElem) -> List (ParagraphElem a)
-paragraphBwd (Cons c l) (Cons c' l') = Cons (commentElemBwd c c') (paragraphBwd l l')
-paragraphBwd Nil Nil = Nil
-paragraphBwd _ _ = error absurd
-
-commentElemFwd :: ∀ m a. BoundedLattice a => MonadError Error m => ParagraphElem a -> m (E.ParagraphElem a)
-commentElemFwd (Doc.Token s) = pure $ Doc.Token s
-commentElemFwd (Doc.Unquote e) = Doc.Unquote <$> exprFwd e
-
-commentElemBwd :: ∀ a. BoundedJoinSemilattice a => E.ParagraphElem a -> Raw ParagraphElem -> ParagraphElem a
-commentElemBwd (Doc.Token _) (Doc.Token s') = Doc.Token s'
-commentElemBwd (Doc.Unquote e) (Doc.Unquote e') = Doc.Unquote (exprBwd e e')
-commentElemBwd _ _ = error absurd
 
 -- First component π is stack of subpatterns active during processing of a single top-level pattern p,
 -- initially containing only p and empty when the recursion terminates.

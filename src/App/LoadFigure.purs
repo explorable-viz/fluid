@@ -15,7 +15,6 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (split, Pattern(..))
 import Data.Tuple (uncurry)
-import Doc (DocOpt(..))
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
@@ -39,7 +38,7 @@ figSpecFromJson spec@{ inputs, query, linking } =
    , query:
         if query then
            Just $ asVal >=> case _ of
-              v@(Val α (Doc _) _) -> Just $ DVertex (α × v)
+              v@(Val α (Just _) _) -> Just $ DVertex (α × v)
               _ -> Nothing
         else Nothing
    , linking

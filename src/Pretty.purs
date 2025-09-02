@@ -14,7 +14,7 @@ import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
@@ -472,7 +472,7 @@ instance IsSimple Val where
    isSimple _ = true
 
 instance Highlightable a => Pretty (Val a) where
-   pretty (Val α doc v) = pretty doc .<>. highlightIf α (pretty v)
+   pretty (Val α v_opt v) = maybe empty pretty v_opt .<>. highlightIf α (pretty v)
 
 instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Int n) = text (show n)

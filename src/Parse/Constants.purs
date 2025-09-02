@@ -35,6 +35,7 @@ str
       , rparenth :: String
       , semiColon :: String
       , then_ :: String
+      , this :: String
       , triplequote :: String
       }
 
@@ -72,5 +73,6 @@ str =
    , rparenth: ")"
    , semiColon: ";"
    , then_: "then"
+   , this: "this"
    , triplequote: "\"\"\""
    }
