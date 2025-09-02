@@ -104,6 +104,11 @@ prettySimple s =
    if isSimple s then pretty s
    else parentheses (pretty s)
 
+instance RootOp Expr where
+   rootOp (Constr _ c _) | c == cCons = Just str.colon
+   rootOp (BinaryApp _ op _) = Just op
+   rootOp _ = Nothing
+
 prettyAppChain :: forall a. Ann a => Expr a -> Doc
 prettyAppChain (App s s') = prettyAppChain s .<>. prettySimple s'
 prettyAppChain s = prettySimple s
@@ -120,6 +125,9 @@ prettyBinApp n (BinaryApp s op s') =
    where
    prec' = getPrec op
 prettyBinApp _ s = prettyAppChain s
+
+class RootOp (e :: Type -> Type) where
+   rootOp :: forall a. e a -> Maybe String
 
 getPrec :: String -> Int
 getPrec x = case lookup x opDefs of
@@ -343,14 +351,20 @@ prettyCtr = showCtr >>> text
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
-prettyConstr :: forall e a. IsSimple e => Pretty (e a) => Ctr -> List (e a) -> Doc
+prettyConstr :: forall e a. RootOp e => IsSimple e => Pretty (e a) => Ctr -> List (e a) -> Doc
 prettyConstr c (e1 : e2 : es)
    | c == cPair = assert (null es) $ parentheses (hcomma [ pretty e1, pretty e2 ])
 prettyConstr c es
    | c == cNil = assert (null es) nil
 prettyConstr c (e1 : e2 : es)
-   | c == cCons = assert (null es) $ hcat [ pretty e1, text str.colon, prettySimple e2 ]
+   | c == cCons = assert (null es) $ hcat [ prettyConsArg e1, text str.colon, prettyConsArg e2 ]
 prettyConstr c es = hcat (prettyCtr c : (prettySimple <$> es))
+
+-- Unify with prettyBinApp?
+prettyConsArg :: forall e a. RootOp e => Pretty (e a) => e a -> Doc
+prettyConsArg e = case rootOp e of
+   Nothing -> pretty e
+   Just op -> if getPrec op <= getPrec str.colon then parentheses (pretty e) else pretty e
 
 prettyRecordOrDict
    :: forall d b
@@ -369,7 +383,7 @@ keyBracks :: Endo Doc
 keyBracks = between (text str.lBracket) (text str.rBracket)
 
 prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyDict = curlyBraces # prettyRecordOrDict (text str.colon) keyBracks
+prettyDict = prettyRecordOrDict (text str.colon) keyBracks curlyBraces
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
 prettyMatrix e1 i j e2 =
@@ -388,6 +402,10 @@ instance IsSimple E.Expr where
    isSimple (E.Project _ _) = true
    isSimple (E.DProject _ _) = true
    isSimple _ = false
+
+instance RootOp E.Expr where
+   rootOp (E.Constr _ c _) | c == cCons = Just str.colon
+   rootOp _ = Nothing
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
@@ -465,6 +483,14 @@ instance IsSimple BaseVal where
    isSimple (V.Constr _ (_ : _)) = false
    isSimple (V.Fun (V.PartialConstr _ (_ : _))) = false
    isSimple _ = true
+
+instance RootOp Val where
+   rootOp (Val _ Nothing u) = rootOp u
+   rootOp (Val _ (Just _) _) = Nothing
+
+instance RootOp BaseVal where
+   rootOp (V.Constr c _) | c == cCons = Just str.colon
+   rootOp _ = Nothing
 
 instance Highlightable a => Pretty (Val a) where
    pretty (Val α Nothing u) = highlightIf α (pretty u)

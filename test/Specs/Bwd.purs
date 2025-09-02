@@ -89,17 +89,17 @@ bwd_cases =
    , { file: "filter.fld"
      , bwd_expect_file: "filter.expect.fld"
      , δv: listCell 0 select'
-     , fwd_expect: "⸨(⸨8⸩ : (7 : []))⸩"
+     , fwd_expect: "⸨⸨8⸩ : (7 : [])⸩"
      }
    , { file: "intersperse.fld"
      , bwd_expect_file: "intersperse-1.expect.fld"
      , δv: listCell 1 select'
-     , fwd_expect: "(1 : ⸨(0 : (2 : (0 : (3 : []))))⸩)"
+     , fwd_expect: "1 : ⸨(0 : (2 : (0 : (3 : []))))⸩"
      }
    , { file: "intersperse.fld"
      , bwd_expect_file: "intersperse-2.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "⸨(1 : (0 : ⸨(2 : (0 : (3 : [])))⸩))⸩"
+     , fwd_expect: "⸨1 : (0 : (⸨2 : (0 : (3 : []))⸩))⸩"
      }
    , { file: "length.fld", bwd_expect_file: "length.expect.fld", δv: select, fwd_expect: "⸨5⸩" }
    , { file: "list-comp.fld"
@@ -162,12 +162,12 @@ bwd_cases =
    , { file: "zeros.fld"
      , bwd_expect_file: "zeros-2.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "(0 : (0 : ⸨[]⸩))"
+     , fwd_expect: "0 : (0 : ⸨[]⸩)"
      }
    , { file: "zipWith.fld"
      , bwd_expect_file: "zipWith-1.expect.fld"
      , δv: listElement 1 select'
-     , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
+     , fwd_expect: "13.0 : (⸨25.0⸩ : (41.0 : []))"
      }
    , { file: "linkedOutputs/bar-chart-line-chart.fld"
      , bwd_expect_file: "linkedOutputs/bar-chart-line-chart.expect.fld"
@@ -182,6 +182,6 @@ bwd_cases =
    , { file: "qcut.fld"
      , bwd_expect_file: "qcut.expect.fld"
      , δv: (_ × Persistent)
-     , fwd_expect: "(((1.01 : (1.05 : [])), 0.051000000000000156) : (((1.07 : (1.09 : (1.22 : (1.23 : (1.24 : (1.24 : (1.25 : (1.32 : (1.32 : (1.35 : (1.39 : (1.47 : (1.57 : (1.72 : [])))))))))))))), 0.6639999999999999) : (((1.73 : (1.75 : (1.76 : (1.83 : (1.87 : (1.94 : (2.04 : (2.14 : (2.18 : (2.36 : (2.37 : (2.38 : (2.52 : (2.54 : [])))))))))))))), 0.8464999999999998) : (((2.61 : (2.67 : [])), 0.09850000000000003) : []))))"
+     , fwd_expect: "(1.01 : (1.05 : []), 0.051000000000000156) : ((1.07 : (1.09 : (1.22 : (1.23 : (1.24 : (1.24 : (1.25 : (1.32 : (1.32 : (1.35 : (1.39 : (1.47 : (1.57 : (1.72 : []))))))))))))), 0.6639999999999999) : ((1.73 : (1.75 : (1.76 : (1.83 : (1.87 : (1.94 : (2.04 : (2.14 : (2.18 : (2.36 : (2.37 : (2.38 : (2.52 : (2.54 : []))))))))))))), 0.8464999999999998) : ((2.61 : (2.67 : []), 0.09850000000000003) : [])))"
      }
    ]

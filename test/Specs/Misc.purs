@@ -13,14 +13,14 @@ misc_cases =
      }
    , { file: "div-mod-quot-rem.fld"
      , fwd_expect:
-          "1 : (-1 : (-2 : (2 : []))) : \
-          \(2 : (2 : (1 : (1 : []))) : \
-          \(1 : (-1 : (-1 : (1 : []))) : \
-          \(2 : (2 : (-2 : (-2 : []))) : [])))"
+          "(1 : (-1 : (-2 : (2 : [])))) : \
+          \((2 : (2 : (1 : (1 : [])))) : \
+          \((1 : (-1 : (-1 : (1 : [])))) : \
+          \((2 : (2 : (-2 : (-2 : [])))) : [])))"
      }
    , { file: "factorial.fld", fwd_expect: "40320" }
    , { file: "filter.fld", fwd_expect: "8 : (7 : [])" }
-   , { file: "first-class-constr.fld", fwd_expect: "((10 : []) : ((12 : []) : ((20 : []) : [])))" }
+   , { file: "first-class-constr.fld", fwd_expect: "(10 : []) : ((12 : []) : ((20 : []) : []))" }
    , { file: "flatten.fld"
      , fwd_expect: "(3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : [])))"
      }
@@ -40,7 +40,7 @@ misc_cases =
      }
    , { file: "pattern-match.fld", fwd_expect: "4" }
    , { file: "range.fld", fwd_expect: "(0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : [])))" }
-   , { file: "records.fld", fwd_expect: "{[\"a\"] : 2, [\"b\"] : 6, [\"c\"] : 7, [\"d\"] : (5 : []), [\"e\"] : 7}" }
+   , { file: "records.fld", fwd_expect: "{[\"a\"] : 2, [\"b\"] : 6, [\"c\"] : 7, [\"d\"] : 5 : [], [\"e\"] : 7}" }
    , { file: "record-lookup.fld", fwd_expect: "True" }
    , { file: "reverse.fld", fwd_expect: "2 : (1 : [])" }
    , { file: "module/import-simple.fld", fwd_expect: "84" }
