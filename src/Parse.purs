@@ -107,9 +107,7 @@ rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
 doc :: SParser (Raw Expr) -> SParser (Expr Unit)
-doc expr' = do
-   p <- try $ token.symbol str.atDoc *> token.parens (paragraph expr')
-   pure $ Paragraph p
+doc expr' = try $ token.symbol str.atDoc *> token.parens expr'
 
 paragraph :: SParser (Raw Expr) -> SParser (Paragraph Unit)
 paragraph expr' = token.lexeme $
