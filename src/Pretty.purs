@@ -349,7 +349,7 @@ prettyConstr c (e1 : e2 : es)
 prettyConstr c es
    | c == cNil = assert (null es) nil
 prettyConstr c (e1 : e2 : es)
-   | c == cCons = assert (null es) $ parentheses (hcat [ pretty e1, text str.colon, pretty e2 ])
+   | c == cCons = assert (null es) $ hcat [ pretty e1, text str.colon, pretty e2 ]
 prettyConstr c es = hcat (prettyCtr c : (prettySimple <$> es))
 
 prettyRecordOrDict

@@ -14,6 +14,6 @@ comments_cases =
    , { file: "comments/app-arg.fld", fwd_expect: "@doc (\"\"\" Comments on arguments don't surface on the outermost application \"\"\") (5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))" }
    , { file: "comments/list-comp.fld", fwd_expect: "@doc (\"\"\" We can add comments to list comprehensions \"\"\") (14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))" }
    , { file: "comments/app.fld", fwd_expect: "@doc (\"\"\" This function application returns the length of a list.\"\"\") 2" }
-   , { file: "comments/int.fld", fwd_expect: "@doc (\"\"\" Comment on ${1} \"\"\") 1" }
-   , { file: "comments/projection.fld", fwd_expect: "@doc (\"\"\" Test \"\"\") 1" }
+   , { file: "comments/int.fld", fwd_expect: "@doc (Paragraph (Text \"Comment\" : Text \"on\" : Text \"1\" : [])) 1" }
+   , { file: "comments/projection.fld", fwd_expect: "@doc (Paragraph (Text \"Test\" : [])) 1" }
    ]
