@@ -23,7 +23,6 @@ import Data.String (Pattern(..), Replacement(..)) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
-import Doc (DocOpt(..)) as Doc
 import Doc (ParagraphElem(..))
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
@@ -416,10 +415,6 @@ instance Highlightable a => Pretty (E.Expr a) where
       pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
    pretty (E.DocExpr p e) = text str.atDoc .<>. parentheses (pretty p) .<>. pretty e
-
-instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
-   pretty (Doc.Doc p) = text str.atDoc .<>. parentheses (pretty p)
-   pretty Doc.None = empty
 
 instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
    pretty xs = text str.triplequote .<>. hcat (pretty <$> xs) .<>. text str.triplequote
