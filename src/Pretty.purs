@@ -458,7 +458,8 @@ instance Highlightable a => Pretty (Elim a) where
       hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance IsSimple Val where
-   isSimple (Val _ _ u) = isSimple u
+   isSimple (Val _ Nothing u) = isSimple u
+   isSimple (Val _ (Just _) _) = false
 
 instance IsSimple BaseVal where
    isSimple (V.Constr _ (_ : _)) = false

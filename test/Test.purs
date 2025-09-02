@@ -25,10 +25,10 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> selectedCommentsTests)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> allTests)
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-scratchpad = asTestSuite (suite paragraph_cases)
+scratchpad = second void <$> suite paragraph_cases (1 × false)
 
 selectedCommentsTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 selectedCommentsTests = second void <$> suite selectedCases (1 × false)
