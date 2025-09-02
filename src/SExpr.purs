@@ -60,7 +60,7 @@ data Expr a
    | ListComp a (Expr a) (List (Qualifier a))
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | DocExpr (Paragraph a) (Expr a)
+   | DocExpr (Expr a) (Expr a)
 
 data DictEntry a = ExprKey (Expr a) | VarKey a Var
 
@@ -339,9 +339,9 @@ exprFwd (Let ds s) =
    varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) =
    E.LetRec <$> recDefsFwd xcs <*> desug s
-exprFwd (DocExpr p s) = do
-   e <- paragraphFwd p
-   e' <- exprFwd s
+exprFwd (DocExpr s s') = do
+   e <- exprFwd s
+   e' <- exprFwd s'
    pure $ E.DocExpr e e'
 
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
@@ -389,8 +389,8 @@ exprBwd (E.Let d e) (Let ds s) =
    let ds' × e' = varDefsBwd (E.Let d e) (ds × s) in Let ds' e'
 exprBwd (E.LetRec xσs e) (LetRec xcs s) =
    LetRec (recDefsBwd xσs xcs) (desugBwd e s)
-exprBwd (E.DocExpr e e') (DocExpr p s) =
-   DocExpr (paragraphBwd e p) (exprBwd e' s)
+exprBwd (E.DocExpr e e') (DocExpr s s') =
+   DocExpr (exprBwd e s) (exprBwd e' s')
 exprBwd _ s = error $ "ExprBwd failed, s: " <> show s
 
 -- List Qualifier × Expr
