@@ -23,8 +23,6 @@ import Data.String (Pattern(..), Replacement(..)) as DS
 import Data.String (drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
-import Doc (DocOpt(..)) as Doc
-import Doc (ParagraphElem(..))
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RecDefs(..), VarDef(..)) as E
 import Graph (showGraph)
@@ -32,7 +30,7 @@ import Graph.GraphImpl (GraphImpl)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
@@ -104,6 +102,11 @@ prettySimple s =
    if isSimple s then pretty s
    else parentheses (pretty s)
 
+instance RootOp Expr where
+   rootOp (Constr _ c _) | c == cCons = Just str.colon
+   rootOp (BinaryApp _ op _) = Just op
+   rootOp _ = Nothing
+
 prettyAppChain :: forall a. Ann a => Expr a -> Doc
 prettyAppChain (App s s') = prettyAppChain s .<>. prettySimple s'
 prettyAppChain s = prettySimple s
@@ -120,6 +123,9 @@ prettyBinApp n (BinaryApp s op s') =
    where
    prec' = getPrec op
 prettyBinApp _ s = prettyAppChain s
+
+class RootOp (e :: Type -> Type) where
+   rootOp :: forall a. e a -> Maybe String
 
 getPrec :: String -> Int
 getPrec x = case lookup x opDefs of
@@ -193,7 +199,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Paragraph p) =
       pretty p
    pretty (DocExpr p s) =
-      text "@doc" .<>. pretty p .<>. pretty s
+      text str.atDoc .<>. parentheses (pretty p) .<>. pretty s
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
@@ -203,16 +209,18 @@ prettyOperator _ Nil = empty
 prettyDictEntries :: forall a. Ann a => (Doc -> Doc -> Doc) -> (List (DictEntry a × Expr a)) -> Doc
 prettyDictEntries _ Nil = empty
 prettyDictEntries _ ((k × v) : Nil) = pretty k .<>. text str.colon .<>. pretty v
-prettyDictEntries sep ((k × v) : kvs) = sep (prettyDictEntries sep (toList (singleton (k × v))) .<>. text str.comma) (prettyDictEntries sep kvs)
+prettyDictEntries sep ((k × v) : kvs) =
+   sep (prettyDictEntries sep (toList (singleton (k × v))) .<>. text str.comma) (prettyDictEntries sep kvs)
 
 instance Ann a => Pretty (DictEntry a) where
    pretty (ExprKey k) = text str.lBracket .<>. pretty k .<>. text str.rBracket
    pretty (VarKey α k) = highlightIf α $ pretty k
 
 instance Ann a => Pretty (ListRest a) where
-   pretty (Next ann (Dictionary _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
-   pretty (Next ann s l) = highlightIf ann (text str.comma) .<>. pretty s .<>. pretty l
-   pretty (End ann) = highlightIf ann (text str.rBracket)
+   pretty (Next α (Dictionary _ xss) l) =
+      highlightIf α (text str.comma) .<>. (highlightIf α (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
+   pretty (Next α s l) = highlightIf α (text str.comma) .<>. pretty s .<>. pretty l
+   pretty (End α) = highlightIf α (text str.rBracket)
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil) = prettyPairs (Pair e e')
@@ -343,34 +351,28 @@ prettyCtr = showCtr >>> text
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
-prettyConstr :: forall e a. IsSimple e => Pretty (e a) => Ctr -> List (e a) -> Doc
+prettyConstr :: forall e a. RootOp e => IsSimple e => Pretty (e a) => Ctr -> List (e a) -> Doc
 prettyConstr c (e1 : e2 : es)
    | c == cPair = assert (null es) $ parentheses (hcomma [ pretty e1, pretty e2 ])
 prettyConstr c es
    | c == cNil = assert (null es) nil
 prettyConstr c (e1 : e2 : es)
-   | c == cCons = assert (null es) $ parentheses (hcat [ pretty e1, text str.colon, pretty e2 ])
-prettyConstr c (e : Nil) = prettyCtr c .<>. prettySimple e
+   | c == cCons = assert (null es) $ hcat [ prettyConsArg e1, text str.colon, prettyConsArg e2 ]
 prettyConstr c es = hcat (prettyCtr c : (prettySimple <$> es))
 
-prettyRecordOrDict
-   :: forall d b
-    . Pretty d
-   => Doc
-   -> Endo Doc
-   -> Endo Doc
-   -> (b -> Doc)
-   -> List (b × d)
-   -> Doc
-prettyRecordOrDict sep kdelim bracify prettyKey xvs =
-   xvs <#> first (prettyKey <#> kdelim) <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
-      # hcomma >>> bracify
+-- Unify with prettyBinApp?
+prettyConsArg :: forall e a. RootOp e => Pretty (e a) => e a -> Doc
+prettyConsArg e = case rootOp e of
+   Nothing -> pretty e
+   Just op -> if getPrec op <= getPrec str.colon then parentheses (pretty e) else pretty e
+
+prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
+prettyDict prettyKey xvs =
+   xvs <#> first prettyKey <#> (\(x × v) -> hcat [ x .<>. text str.colon, pretty v ])
+      # hcomma >>> curlyBraces
 
 keyBracks :: Endo Doc
 keyBracks = between (text str.lBracket) (text str.rBracket)
-
-prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyDict = curlyBraces # prettyRecordOrDict (text str.colon) keyBracks
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
 prettyMatrix e1 i j e2 =
@@ -390,12 +392,16 @@ instance IsSimple E.Expr where
    isSimple (E.DProject _ _) = true
    isSimple _ = false
 
+instance RootOp E.Expr where
+   rootOp (E.Constr _ c _) | c == cCons = Just str.colon
+   rootOp _ = Nothing
+
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
    pretty (E.Int α n) = highlightIf α (text (show n))
    pretty (E.Float α n) = highlightIf α (text (show n))
    pretty (E.Str α str) = highlightIf α (text (show str))
-   pretty (E.Dictionary α ees) = highlightIf α (prettyDict pretty (ees <#> toTuple))
+   pretty (E.Dictionary α ees) = highlightIf α (prettyDict (pretty >>> keyBracks) (ees <#> toTuple))
    pretty (E.Constr α c es) = highlightIf α (prettyConstr c es)
    pretty (E.Matrix α e1 (i × j) e2) = highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda α σ) = hcat [ highlightIf α (text str.fun), pretty σ ]
@@ -407,27 +413,14 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.DProject e x) =
       pretty e .<>. text str.dot .<>. text str.lBracket .<>. pretty x .<>. text str.rBracket
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
-   pretty (E.DocExpr doc e) = text "@doc" .<>. pretty doc .<>. pretty e
+   pretty (E.DocExpr p e) = text str.atDoc .<>. parentheses (pretty p) .<>. pretty e
 
-instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
-   --   pretty (Doc.Doc x) = text str.triplequote .<>. pretty x
-   pretty (Doc.Doc p) = text "@doc" .<>. pretty p
-   pretty Doc.None = empty
+instance Ann a => Pretty (List (ParagraphElem a)) where
+   pretty xs = text str.triplequote .<>. hcat (pretty <$> xs) .<>. text str.triplequote
 
-instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
-   pretty xs =
-      let
-         -- fold the inner paragraph body
-         go :: List (ParagraphElem e a) -> Doc
-         go Nil = empty
-         go (Cons w ws) = pretty w .<>. go ws
-      in
-         -- then wrap the whole thing in triple quotes
-         text str.triplequote .<>. go xs .<>. text str.triplequote
-
-instance Pretty (e a) => Pretty (ParagraphElem e a) where
+instance Ann a => Pretty (ParagraphElem a) where
    pretty (Token str) = text str
-   pretty (Unquote e) = text "${" .<>. pretty e .<>. text "}"
+   pretty (Unquote e) = text (str.dollar <> str.curlylBrace) .<>. pretty e .<>. text str.curlyrBrace
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty ρ = go (toUnfoldable ρ)
@@ -468,19 +461,35 @@ instance Highlightable a => Pretty (Elim a) where
       hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance IsSimple Val where
-   isSimple (Val _ _ (V.Constr _ (_ : _))) = false
-   isSimple (Val _ _ (V.Fun (V.PartialConstr _ (_ : _)))) = false
+   isSimple (Val _ Nothing u) = isSimple u
+   isSimple (Val _ (Just _) _) = false
+
+instance IsSimple BaseVal where
+   isSimple (V.Constr _ (_ : _)) = false
+   isSimple (V.Fun (V.PartialConstr _ (_ : _))) = false
    isSimple _ = true
 
+instance RootOp Val where
+   rootOp (Val _ Nothing u) = rootOp u
+   rootOp (Val _ (Just _) _) = Nothing
+
+instance RootOp BaseVal where
+   rootOp (V.Constr c _) | c == cCons = Just str.colon
+   rootOp _ = Nothing
+
 instance Highlightable a => Pretty (Val a) where
-   pretty (Val α doc v) = pretty doc .<>. highlightIf α (pretty v)
+   pretty (Val α Nothing u) = highlightIf α (pretty u)
+   pretty (Val α (Just v') u) = prettyDoc v' .<>. highlightIf α (prettySimple u)
+
+prettyDoc :: forall a. Highlightable a => Val a -> Doc
+prettyDoc v = text str.atDoc .<>. parentheses (pretty v)
 
 instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Int n) = text (show n)
    pretty (V.Float n) = text (show n)
    pretty (V.Str str) = text (show str)
    pretty (V.Dictionary (DictRep svs)) = prettyDict
-      (\(s × β) -> highlightIf β (text (show s)))
+      (\(s × β) -> highlightIf β (text s))
       (svs # toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)
    pretty (V.Constr c vs) = prettyConstr c vs
    pretty (V.Matrix (MatrixRep (vss × _ × _))) = vert comma (((<$>) pretty >>> hcomma) <$> vss)

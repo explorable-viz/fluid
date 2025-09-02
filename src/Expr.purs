@@ -15,8 +15,6 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
-import Doc (DocOpt(..), ParagraphElem(..)) as Doc
-import Doc (Paragraph)
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
@@ -40,7 +38,7 @@ data Expr a
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | DocExpr (Paragraph Expr a) (Expr a)
+   | DocExpr (Expr a) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -56,9 +54,6 @@ data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
 
-type DocOpt a = Doc.DocOpt Expr a
-type ParagraphElem a = Doc.ParagraphElem Expr a
-
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
 asElim _ = error "Eliminator expected"
@@ -71,10 +66,6 @@ newtype Module a = Module (List (VarDef a + RecDefs a))
 
 class FV a where
    fv :: a -> Set Var
-
-instance FV (Doc.DocOpt Expr a) where
-   fv Doc.None = empty
-   fv (Doc.Doc doc) = unions (fv <$> doc)
 
 instance FV (Expr a) where
    fv (Var x) = singleton x
@@ -120,10 +111,6 @@ instance FV a => FV (Maybe a) where
 
 instance (FV a) => FV (List a) where
    fv xs = unions (fv <$> xs)
-
-instance FV (ParagraphElem a) where
-   fv (Doc.Token _) = empty
-   fv (Doc.Unquote e) = fv e
 
 class BV a where
    bv :: a -> Set Var
@@ -232,7 +219,7 @@ instance Vertices (Expr Vertex) where
    vertices (App e1 e2) = vertices e1 ∪ vertices e2
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
-   vertices (DocExpr p e) = unions (vertices <$> p) ∪ vertices e
+   vertices (DocExpr e e') = vertices e ∪ vertices e'
 
 instance Vertices (Elim Vertex) where
    vertices (ElimVar _ κ) = vertices κ
@@ -293,7 +280,7 @@ instance Apply Expr where
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
-   apply (DocExpr fdoc fe) (DocExpr doc e) = DocExpr (zipWith (<*>) fdoc doc) (fe <*> e)
+   apply (DocExpr fe fe') (DocExpr e e') = DocExpr (fe <*> e) (fe' <*> e')
    apply _ _ = shapeMismatch unit
 
 instance Apply Elim where

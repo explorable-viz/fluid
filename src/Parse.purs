@@ -17,16 +17,16 @@ import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar, joinWith)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
-import Doc (ParagraphElem(..), DocOpt(..), Paragraph)
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, notFollowedBy, many, option, sepBy, sepBy1, try)
+import Parsing.Combinators (between, notFollowedBy, many, optionMaybe, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -34,7 +34,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Paragraph, Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -106,32 +106,23 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
-paragraphDelim :: SParser Unit
-paragraphDelim = void $ string str.triplequote
+doc :: SParser (Raw Expr) -> SParser (Expr Unit)
+doc expr' = try $ token.symbol str.atDoc *> token.parens expr'
 
-docOpt :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
-docOpt expr' = option None do
-   p <- try do
-      _ <- token.symbol "@doc"
-      paragraph expr'
-   pure (Doc p)
+paragraph :: SParser (Raw Expr) -> SParser (Paragraph Unit)
+paragraph expr' = token.lexeme $
+   between (string str.triplequote) (string str.triplequote) (token.whiteSpace *> List.many (paragraphElem expr'))
 
-paragraph :: SParser (Raw Expr) -> SParser (Paragraph Expr Unit)
-paragraph expr' = token.lexeme (paragraphBody)
-   where
-   paragraphBody :: SParser (Paragraph Expr Unit)
-   paragraphBody = between paragraphDelim paragraphDelim (token.whiteSpace *> (List.many $ paragraphElem expr'))
-
-paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
+paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Unit)
 paragraphElem expr' =
-   token.lexeme (try paragraphToken <|> paragraphExpr expr')
+   token.lexeme (try token' <|> unquote)
+   where
+   token' :: SParser (ParagraphElem Unit)
+   token' = Token <$> (SCU.fromCharArray <$> Array.some paragraphLetter)
 
-paragraphToken :: SParser (ParagraphElem Expr Unit)
-paragraphToken = Token <$> (SCU.fromCharArray <$> Array.some paragraphLetter)
-
-paragraphExpr :: SParser (Raw Expr) -> SParser (ParagraphElem Expr Unit)
-paragraphExpr expr' =
-   string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
+   unquote :: SParser (ParagraphElem Unit)
+   unquote =
+      string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
 paragraphLetter :: SParser Char
 paragraphLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
@@ -250,11 +241,11 @@ expr_ = fix exprParser
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
    exprParser :: Endo (SParser (Raw Expr))
    exprParser expr' = do
-      doc <- docOpt expr'
+      doc' <- optionMaybe (doc expr')
       e <- buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
-      pure case doc of
-         None -> e
-         Doc p -> DocExpr p e
+      pure case doc' of
+         Nothing -> e
+         Just p -> DocExpr p e
 
    backtickOp :: Operator Identity String (Raw Expr)
    backtickOp = flip Infix AssocLeft do
@@ -411,7 +402,7 @@ expr_ = fix exprParser
                pure $ Float unit (sign f)
 
             stringLiteral :: SParser (Raw Expr)
-            stringLiteral = Str unit <$> (try (notFollowedBy paragraphDelim) *> token.stringLiteral)
+            stringLiteral = Str unit <$> (try (notFollowedBy $ string str.triplequote) *> token.stringLiteral)
 
             paragraphLiteral :: SParser (Raw Expr)
             paragraphLiteral = do

@@ -10,6 +10,7 @@ import Data.Either (Either(..))
 import Data.List (List(..), foldM, foldl, length, snoc, unzip, zip, (:))
 import Data.Map (Map)
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, insert)
@@ -19,7 +20,6 @@ import Data.Tuple (curry, fst, snd)
 import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
 import Dict (Dict)
 import Dict (fromFoldable) as D
-import Doc (ParagraphElem(..), DocOpt(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs(..), VarDef(..), asExpr, fv)
@@ -31,6 +31,7 @@ import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
 import ModuleGraph (ModuleName, ModuleCxt)
+import Parse.Constants (str)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
@@ -88,7 +89,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `forDefs` σ
       in
-         new (flip Val None) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
+         new (flip Val Nothing) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
 apply :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
@@ -103,13 +104,13 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         new (flip Val None) (singleton α) v'
+         new (flip Val Nothing) (singleton α) v'
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   new (flip Val None) (singleton α) v'
+   new (flip Val Nothing) (singleton α) v'
    where
    v' =
       if length vs < n - 1 then
@@ -125,21 +126,21 @@ eval γ (Var x) _ =
 eval γ (Op op) _ =
    withMsg "Variable lookup" $ lookup' op γ
 eval _ (Int α n) αs =
-   new (flip Val None) (insert α αs) (V.Int n)
+   new (flip Val Nothing) (insert α αs) (V.Int n)
 eval _ (Float α n) αs =
-   new (flip Val None) (insert α αs) (V.Float n)
+   new (flip Val Nothing) (insert α αs) (V.Float n)
 eval _ (Str α s) αs =
-   new (flip Val None) (insert α αs) (V.Str s)
+   new (flip Val Nothing) (insert α αs) (V.Str s)
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> unpack string) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   new (flip Val None) (insert α αs) $ V.Dictionary (DictRep d)
+   new (flip Val Nothing) (insert α αs) $ V.Dictionary (DictRep d)
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   new (flip Val None) (insert α αs) $ V.Constr c vs
+   new (flip Val Nothing) (insert α αs) $ V.Constr c vs
 eval γ (Matrix α e (x × y) e') αs = do
    Val _ _ v <- eval γ e' αs
    let (i' × β) × (j' × β') = intPair.unpack v
@@ -150,11 +151,11 @@ eval γ (Matrix α e (x × y) e') αs = do
       i <- A.range 1 i'
       singleton $ sequence do
          j <- A.range 1 j'
-         let γ' = maplet x (Val β None (V.Int i)) `disjointUnion` (maplet y (Val β' None (V.Int j)))
+         let γ' = maplet x (Val β Nothing (V.Int i)) `disjointUnion` (maplet y (Val β' Nothing (V.Int j)))
          singleton (eval (γ <+> γ') e αs)
-   new (flip Val None) (insert α αs) $ V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β')))
+   new (flip Val Nothing) (insert α αs) $ V.Matrix (MatrixRep (vss × MatrixDim (i' × β) × MatrixDim (j' × β')))
 eval γ (Lambda α σ) αs =
-   new (flip Val None) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
+   new (flip Val Nothing) (insert α αs) $ V.Fun (V.Closure (restrict (fv σ) γ) empty σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
@@ -182,14 +183,11 @@ eval γ (Let (VarDef σ e) e') αs = do
 eval γ (LetRec (RecDefs α ρ) e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
-eval γ (DocExpr p e) αs = do
-   Val α vdoc u <- eval γ e αs
-   pv <- sequence (evalToken (γ <+> maplet "this" (Val α None u)) <$> p)
-   pure $ Val α (Doc pv <> vdoc) u
-   where
-   evalToken :: Env Vertex -> ParagraphElem Expr Vertex -> m (ParagraphElem Val Vertex)
-   evalToken _ (Token s) = pure $ Token s
-   evalToken γ' (Unquote e') = Unquote <$> eval γ' e' empty
+eval γ (DocExpr e e') αs = do
+   Val α _ u' <- eval γ e' αs
+   v <- eval (γ <+> maplet str.this (Val α Nothing u')) e αs
+   -- TODO: concatenate with any existing paragraph!
+   pure $ Val α (Just v) u'
 
 eval_module :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go empty
