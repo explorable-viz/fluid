@@ -142,22 +142,22 @@ bwd_cases =
    , { file: "section-5-example.fld"
      , bwd_expect_file: "section-5-example-1.expect.fld"
      , δv: listCell 0 select'
-     , fwd_expect: "⸨(88 : (6 : (4 : [])))⸩"
+     , fwd_expect: "⸨88 : (6 : (4 : []))⸩"
      }
    , { file: "section-5-example.fld"
      , bwd_expect_file: "section-5-example-2.expect.fld"
      , δv: listElement 1 select
-     , fwd_expect: "(⸨88⸩ : (⸨6⸩ : (⸨4⸩ : [])))"
+     , fwd_expect: "⸨88⸩ : (⸨6⸩ : (⸨4⸩ : []))"
      }
    , { file: "section-5-example.fld"
      , bwd_expect_file: "section-5-example-3.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "(88 : (6 : ⸨(4 : [])⸩))"
+     , fwd_expect: "88 : (6 : (⸨4 : []⸩))"
      }
    , { file: "zeros.fld"
      , bwd_expect_file: "zeros-1.expect.fld"
      , δv: listCell 0 select' >.> listCell 2 select'
-     , fwd_expect: "⸨(0 : (0 : ⸨[]⸩))⸩"
+     , fwd_expect: "⸨0 : (0 : ⸨[]⸩)⸩"
      }
    , { file: "zeros.fld"
      , bwd_expect_file: "zeros-2.expect.fld"

@@ -366,24 +366,13 @@ prettyConsArg e = case rootOp e of
    Nothing -> pretty e
    Just op -> if getPrec op <= getPrec str.colon then parentheses (pretty e) else pretty e
 
-prettyRecordOrDict
-   :: forall d b
-    . Pretty d
-   => Doc
-   -> Endo Doc
-   -> Endo Doc
-   -> (b -> Doc)
-   -> List (b × d)
-   -> Doc
-prettyRecordOrDict sep kdelim bracify prettyKey xvs =
-   xvs <#> first (prettyKey <#> kdelim) <#> (\(x × v) -> hcat [ x .<>. sep, pretty v ])
-      # hcomma >>> bracify
+prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
+prettyDict prettyKey xvs =
+   xvs <#> first (prettyKey <#> keyBracks) <#> (\(x × v) -> hcat [ x .<>. text str.colon, pretty v ])
+      # hcomma >>> curlyBraces
 
 keyBracks :: Endo Doc
 keyBracks = between (text str.lBracket) (text str.rBracket)
-
-prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
-prettyDict = prettyRecordOrDict (text str.colon) keyBracks curlyBraces
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
 prettyMatrix e1 i j e2 =
