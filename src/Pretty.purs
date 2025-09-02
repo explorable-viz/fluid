@@ -14,7 +14,7 @@ import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
@@ -458,12 +458,16 @@ instance Highlightable a => Pretty (Elim a) where
       hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance IsSimple Val where
-   isSimple (Val _ _ (V.Constr _ (_ : _))) = false
-   isSimple (Val _ _ (V.Fun (V.PartialConstr _ (_ : _)))) = false
+   isSimple (Val _ _ u) = isSimple u
+
+instance IsSimple BaseVal where
+   isSimple (V.Constr _ (_ : _)) = false
+   isSimple (V.Fun (V.PartialConstr _ (_ : _))) = false
    isSimple _ = true
 
 instance Highlightable a => Pretty (Val a) where
-   pretty (Val α v_opt v) = maybe empty prettyDoc v_opt .<>. highlightIf α (pretty v)
+   pretty (Val α Nothing u) = highlightIf α (pretty u)
+   pretty (Val α (Just v') u) = prettyDoc v' .<>. highlightIf α (prettySimple u)
 
 prettyDoc :: forall a. Highlightable a => Val a -> Doc
 prettyDoc v = text str.atDoc .<>. parentheses (pretty v)
