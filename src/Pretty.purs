@@ -21,7 +21,7 @@ import Data.Profunctor.Strong (first)
 import Data.Set (toUnfoldable) as S
 import Data.String (Pattern(..), Replacement(..)) as DS
 import Data.String (drop, replaceAll)
-import DataType (Ctr, cCons, cNil, cPair, showCtr)
+import DataType (Ctr, cCons, cNil, cPair, cParagraph, showCtr)
 import Dict (Dict)
 import Doc (DocOpt(..)) as Doc
 import Doc (ParagraphElem(..))
@@ -33,7 +33,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), Endo, assert, intersperse, (×))
+import Util (type (+), type (×), Endo, assert, error, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
@@ -471,7 +471,11 @@ instance IsSimple Val where
    isSimple _ = true
 
 instance Highlightable a => Pretty (Val a) where
-   pretty (Val α v_opt v) = maybe empty pretty v_opt .<>. highlightIf α (pretty v)
+   pretty (Val α v_opt v) = maybe empty prettyParagraph v_opt .<>. highlightIf α (pretty v)
+
+prettyParagraph :: forall a. Highlightable a => Val a -> Doc
+prettyParagraph (Val _ _ v@(V.Constr c _)) | c == cParagraph = pretty v
+prettyParagraph _ = error "Paragraph expected"
 
 instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Int n) = text (show n)
