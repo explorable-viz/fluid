@@ -9,7 +9,7 @@ misc_cases =
    , { file: "compose.fld", fwd_expect: "5" }
    , { file: "dicts.fld"
      , fwd_expect:
-          "{[\"d\"] : {}, [\"e\"] : {[\"a\"] : 5, [\"ab\"] : 6}, [\"e_ab\"] : 6, [\"f\"] : {[\"a\"] : 6, [\"ab\"] : 7}, [\"g\"] : {[\"a\"] : 5}}"
+          "{d : {}, e : {a : 5, ab : 6}, e_ab : 6, f : {a : 6, ab : 7}, g : {a : 5}}"
      }
    , { file: "div-mod-quot-rem.fld"
      , fwd_expect:
@@ -40,7 +40,7 @@ misc_cases =
      }
    , { file: "pattern-match.fld", fwd_expect: "4" }
    , { file: "range.fld", fwd_expect: "(0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : [])))" }
-   , { file: "records.fld", fwd_expect: "{[\"a\"] : 2, [\"b\"] : 6, [\"c\"] : 7, [\"d\"] : 5 : [], [\"e\"] : 7}" }
+   , { file: "records.fld", fwd_expect: "{a : 2, b : 6, c : 7, d : 5 : [], e : 7}" }
    , { file: "record-lookup.fld", fwd_expect: "True" }
    , { file: "reverse.fld", fwd_expect: "2 : (1 : [])" }
    , { file: "module/import-simple.fld", fwd_expect: "84" }

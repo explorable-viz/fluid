@@ -211,16 +211,18 @@ prettyOperator _ Nil = empty
 prettyDictEntries :: forall a. Ann a => (Doc -> Doc -> Doc) -> (List (DictEntry a × Expr a)) -> Doc
 prettyDictEntries _ Nil = empty
 prettyDictEntries _ ((k × v) : Nil) = pretty k .<>. text str.colon .<>. pretty v
-prettyDictEntries sep ((k × v) : kvs) = sep (prettyDictEntries sep (toList (singleton (k × v))) .<>. text str.comma) (prettyDictEntries sep kvs)
+prettyDictEntries sep ((k × v) : kvs) =
+   sep (prettyDictEntries sep (toList (singleton (k × v))) .<>. text str.comma) (prettyDictEntries sep kvs)
 
 instance Ann a => Pretty (DictEntry a) where
    pretty (ExprKey k) = text str.lBracket .<>. pretty k .<>. text str.rBracket
    pretty (VarKey α k) = highlightIf α $ pretty k
 
 instance Ann a => Pretty (ListRest a) where
-   pretty (Next ann (Dictionary _ xss) l) = highlightIf ann (text str.comma) .<>. (highlightIf ann (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
-   pretty (Next ann s l) = highlightIf ann (text str.comma) .<>. pretty s .<>. pretty l
-   pretty (End ann) = highlightIf ann (text str.rBracket)
+   pretty (Next α (Dictionary _ xss) l) =
+      highlightIf α (text str.comma) .<>. (highlightIf α (curlyBraces (prettyDictEntries (.<>.) xss))) .-. pretty l
+   pretty (Next α s l) = highlightIf α (text str.comma) .<>. pretty s .<>. pretty l
+   pretty (End α) = highlightIf α (text str.rBracket)
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil) = prettyPairs (Pair e e')
@@ -368,7 +370,7 @@ prettyConsArg e = case rootOp e of
 
 prettyDict :: forall d b. Pretty d => (b -> Doc) -> List (b × d) -> Doc
 prettyDict prettyKey xvs =
-   xvs <#> first (prettyKey <#> keyBracks) <#> (\(x × v) -> hcat [ x .<>. text str.colon, pretty v ])
+   xvs <#> first prettyKey <#> (\(x × v) -> hcat [ x .<>. text str.colon, pretty v ])
       # hcomma >>> curlyBraces
 
 keyBracks :: Endo Doc
@@ -401,7 +403,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Int α n) = highlightIf α (text (show n))
    pretty (E.Float α n) = highlightIf α (text (show n))
    pretty (E.Str α str) = highlightIf α (text (show str))
-   pretty (E.Dictionary α ees) = highlightIf α (prettyDict pretty (ees <#> toTuple))
+   pretty (E.Dictionary α ees) = highlightIf α (prettyDict (pretty >>> keyBracks) (ees <#> toTuple))
    pretty (E.Constr α c es) = highlightIf α (prettyConstr c es)
    pretty (E.Matrix α e1 (i × j) e2) = highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda α σ) = hcat [ highlightIf α (text str.fun), pretty σ ]
@@ -493,7 +495,7 @@ instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Float n) = text (show n)
    pretty (V.Str str) = text (show str)
    pretty (V.Dictionary (DictRep svs)) = prettyDict
-      (\(s × β) -> highlightIf β (text (show s)))
+      (\(s × β) -> highlightIf β (text s))
       (svs # toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)
    pretty (V.Constr c vs) = prettyConstr c vs
    pretty (V.Matrix (MatrixRep (vss × _ × _))) = vert comma (((<$>) pretty >>> hcomma) <$> vss)

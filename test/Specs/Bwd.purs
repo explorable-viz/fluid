@@ -50,23 +50,23 @@ bwd_cases =
    , { file: "dict/create.fld"
      , bwd_expect_file: "dict/create.expect.fld"
      , δv: dictKey "ab" select'
-     , fwd_expect: "{[\"a\"] : 5, [⸨\"ab\"⸩] : 6}"
+     , fwd_expect: "{a : 5, ⸨ab⸩ : 6}"
      }
    , { file: "dict/difference.fld"
      , bwd_expect_file: "dict/difference.expect.fld"
      , δv: dict select'
-     , fwd_expect: "⸨{[\"a\"] : 5}⸩"
+     , fwd_expect: "⸨{a : 5}⸩"
      }
    , { file: "dict/disjointUnion.fld"
      , bwd_expect_file: "dict/disjointUnion.expect.fld"
      , δv: dictKey "a" select' >.> dictVal "c" select
-     , fwd_expect: "{[⸨\"a\"⸩] : 5, [\"b\"] : 6, [\"c\"] : ⸨7⸩}"
+     , fwd_expect: "{⸨a⸩ : 5, b : 6, c : ⸨7⸩}"
      }
    , { file: "dict/foldl.fld", bwd_expect_file: "dict/foldl.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
    , { file: "dict/intersectionWith.fld"
      , bwd_expect_file: "dict/intersectionWith.expect.fld"
      , δv: dictVal "b" select >.> dictVal "c" select
-     , fwd_expect: "{[\"b\"] : ⸨0⸩, [\"c\"] : ⸨20⸩}"
+     , fwd_expect: "{b : ⸨0⸩, c : ⸨20⸩}"
      }
    , { file: "dict/get.fld", bwd_expect_file: "dict/get.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
    , { file: "dict/map.fld", bwd_expect_file: "dict/map.expect.fld", δv: select, fwd_expect: "⸨20⸩" }
