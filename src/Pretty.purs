@@ -21,7 +21,7 @@ import Data.Profunctor.Strong (first)
 import Data.Set (toUnfoldable) as S
 import Data.String (Pattern(..), Replacement(..)) as DS
 import Data.String (drop, replaceAll)
-import DataType (Ctr, cCons, cNil, cPair, cParagraph, showCtr)
+import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Doc (DocOpt(..)) as Doc
 import Doc (ParagraphElem(..))
@@ -33,7 +33,7 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricD
 import Parse.Constants (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), Endo, assert, error, intersperse, (×))
+import Util (type (+), type (×), Endo, assert, intersperse, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
@@ -413,15 +413,7 @@ instance Pretty (e a) => Pretty (Doc.DocOpt e a) where
    pretty Doc.None = empty
 
 instance Pretty (e a) => Pretty (List (ParagraphElem e a)) where
-   pretty xs =
-      let
-         -- fold the inner paragraph body
-         go :: List (ParagraphElem e a) -> Doc
-         go Nil = empty
-         go (Cons w ws) = pretty w .<>. go ws
-      in
-         -- then wrap the whole thing in triple quotes
-         text str.triplequote .<>. go xs .<>. text str.triplequote
+   pretty xs = text str.triplequote .<>. hcat (pretty <$> xs) .<>. text str.triplequote
 
 instance Pretty (e a) => Pretty (ParagraphElem e a) where
    pretty (Token str) = text str
@@ -471,11 +463,10 @@ instance IsSimple Val where
    isSimple _ = true
 
 instance Highlightable a => Pretty (Val a) where
-   pretty (Val α v_opt v) = maybe empty prettyParagraph v_opt .<>. highlightIf α (pretty v)
+   pretty (Val α v_opt v) = maybe empty prettyDoc v_opt .<>. highlightIf α (pretty v)
 
-prettyParagraph :: forall a. Highlightable a => Val a -> Doc
-prettyParagraph (Val _ _ v@(V.Constr c _)) | c == cParagraph = pretty v
-prettyParagraph _ = error "Paragraph expected"
+prettyDoc :: forall a. Highlightable a => Val a -> Doc
+prettyDoc v = text str.atDoc .<>. parentheses (pretty v)
 
 instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Int n) = text (show n)
