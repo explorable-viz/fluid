@@ -45,7 +45,7 @@ bwd_cases =
    , { file: "matrix/matmul.fld"
      , bwd_expect_file: "matrix/matmul.expect.fld"
      , δv: fst $ matrixElement 1 1 select
-     , fwd_expect: "(@doc (Paragraph (Text \"Intermediate\" : (Text \"matrix\" : []))) ⸨22⸩, 28,\n                                                                      49, 64,@doc (Paragraph (Text \"Intermediate\" : (Text \"matrix\" : []))) 9, 12, 15,\n                                                                                      19, 26, 33,\n                                                                                      29, 40, 51)"
+     , fwd_expect: "(@doc (Paragraph (Text \"Intermediate\" : (Text \"matrix\" : []))) ⸨22⸩, 28,\n                                                                      49, 64,@doc (Paragraph (Text \"Intermediate\" : (Text \"matrix\" : []))) 9, 12, 15,\n                                                                                                                                                    19, 26, 33,\n                                                                                                                                                    29, 40, 51)"
      }
    , { file: "dict/create.fld"
      , bwd_expect_file: "dict/create.expect.fld"
@@ -94,7 +94,7 @@ bwd_cases =
    , { file: "intersperse.fld"
      , bwd_expect_file: "intersperse-1.expect.fld"
      , δv: listCell 1 select'
-     , fwd_expect: "1 : ⸨(0 : (2 : (0 : (3 : []))))⸩"
+     , fwd_expect: "1 : (⸨0 : (2 : (0 : (3 : [])))⸩)"
      }
    , { file: "intersperse.fld"
      , bwd_expect_file: "intersperse-2.expect.fld"
@@ -105,12 +105,12 @@ bwd_cases =
    , { file: "list-comp.fld"
      , bwd_expect_file: "list-comp-1.expect.fld"
      , δv: listCell 1 select'
-     , fwd_expect: "6.2 : ⸨(260 : (19.9 : (91 : [])))⸩"
+     , fwd_expect: "6.2 : (⸨260 : (19.9 : (91 : []))⸩)"
      }
    , { file: "list-comp.fld"
      , bwd_expect_file: "list-comp-2.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "6.2 : (260 : ⸨(19.9 : (91 : []))⸩)"
+     , fwd_expect: "6.2 : (260 : (⸨19.9 : (91 : [])⸩))"
      }
    , { file: "lookup.fld"
      , bwd_expect_file: "lookup.expect.fld"
