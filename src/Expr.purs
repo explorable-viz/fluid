@@ -15,7 +15,6 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
-import Doc (DocOpt(..), ParagraphElem(..)) as Doc
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
@@ -55,8 +54,6 @@ data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
 
-type ParagraphElem a = Doc.ParagraphElem Expr a
-
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
 asElim _ = error "Eliminator expected"
@@ -69,10 +66,6 @@ newtype Module a = Module (List (VarDef a + RecDefs a))
 
 class FV a where
    fv :: a -> Set Var
-
-instance FV (Doc.DocOpt Expr a) where
-   fv Doc.None = empty
-   fv (Doc.Doc doc) = unions (fv <$> doc)
 
 instance FV (Expr a) where
    fv (Var x) = singleton x
@@ -118,10 +111,6 @@ instance FV a => FV (Maybe a) where
 
 instance (FV a) => FV (List a) where
    fv xs = unions (fv <$> xs)
-
-instance FV (ParagraphElem a) where
-   fv (Doc.Token _) = empty
-   fv (Doc.Unquote e) = fv e
 
 class BV a where
    bv :: a -> Set Var
