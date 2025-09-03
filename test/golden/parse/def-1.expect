@@ -1,0 +1,7 @@
+let four = 4 in
+let four = 4 in
+let add x y = x + y in
+let add x y = x + y in
+let f x = let four = 4 in
+          four in
+0
