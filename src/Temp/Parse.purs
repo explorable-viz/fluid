@@ -9,19 +9,21 @@ import Control.Monad.Except (class MonadError)
 import Control.Monad.State (StateT)
 import Data.Bifunctor (lmap)
 import Data.Identity (Identity)
+import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList)
+import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl)
 import Doc (DocOpt(..))
 import Effect.Exception (Error, error)
 import Lattice (Raw)
 import Parsing (ParseError(..), Position(..), runParserT)
-import Parsing.Combinators (sepBy, sepBy1)
+import Parsing.Combinators (optionMaybe, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
-import SExpr (Clause(..), Expr(..), Pattern(..))
-import Temp.Parse.Parser (Parser, align, block, delim, floating, integer, lexeme, lines, parens, reserved, unreserved, whitespace)
+import SExpr (Clause(..), Expr(..), Pattern(..), VarDef(..))
+import Temp.Parse.Parser (Parser, align, block, delim, floating, integer, lexeme, lines, number, parens, reserved, sign, unreserved, whitespace)
 import Temp.Util.UnsafeDebug (exitUnsafe, logErrorUnsafe)
 import Util (nonEmpty, (×))
 
@@ -90,18 +92,27 @@ expression =
          pure $ IfElse c t e
 
       def :: Parser (Raw Expr)
-      def = do
-         reserved "def"
-         name <- unreserved
-         ps <- params
-         e <- block expr'
-         e' <- align expr'
-         pure $ LetRec (nonEmpty ((name × Clause (ps × e)) : Nil)) e'
+      def = reserved "def" *> (try fun <|> val)
 
          where
 
-         params :: Parser (NonEmptyList Pattern)
-         params = parens $ sepBy1 pvar (lexeme $ char ',')
+         fun :: Parser (Raw Expr)
+         fun = do
+            name <- unreserved
+            ps <- params
+            e <- block expr'
+            e' <- align expr'
+            pure $ LetRec (nonEmpty ((name × Clause (ps × e)) : Nil)) e'
+            where
+            params :: Parser (NonEmptyList Pattern)
+            params = parens $ sepBy1 pvar (lexeme $ char ',')
+
+         val :: Parser (Raw Expr)
+         val = do
+            name <- pvar
+            e <- block expr'
+            e' <- align expr'
+            pure $ Let (nonEmpty ((VarDef name e) : Nil)) e'
 
       appChain :: Parser (Raw Expr)
       appChain = simple >>= \e -> app e
@@ -117,7 +128,8 @@ expression =
             app (foldl (App None) e ps)
 
          simple :: Parser (Raw Expr)
-         simple = variable <|> float <|> int
+         simple = try float <|> int <|> variable
+
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expression <* whitespace <* eof
