@@ -78,7 +78,7 @@ testParse src = do
    parsed <- try $ parsePy src
    case parsed of
       Left error -> pure $ Left (show error)
-      Right expr -> pure $ Right (prettyP expr)
+      Right expr -> pure $ Right (prettyP expr <> "\n")
 
 test :: TestFn -> String -> String -> Effect Result
 test f srcDir srcFile = do
