@@ -12,7 +12,7 @@ import Data.Traversable (foldr)
 import Parsing (fail)
 import Parsing.Combinators (between, try, (<?>))
 import Parsing.Combinators.Array (many, many1)
-import Parsing.Indent (IndentParser, checkIndent, indented, withPos)
+import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy)
 import Parsing.String.Basic (alphaNum, digit, letter, lower, upper)
 import Parsing.Token (oneOf)
@@ -27,7 +27,7 @@ operators :: Array String
 operators = [ ".", "!", "**", "*", "/", "+", "-", ":|", "++", "==", "/=", "<", ">", "<=", ">=" ]
 
 block :: forall a. Parser a -> Parser a
-block e = delim ':' *> ((lines1 *> spaces *> indented *> withPos e) <|> e)
+block e = delim ':' *> sameOrIndented *> withPos e
 
 -- use between
 parens :: forall a. Parser a -> Parser a
@@ -40,7 +40,7 @@ brackets :: forall a. Parser a -> Parser a
 brackets e = delim '[' *> e <* delim ']'
 
 align :: forall a. Parser a -> Parser a
-align p = lines1 *> spaces *> checkIndent *> p
+align p = whitespace *> checkIndent *> p
 
 identifier :: Parser Char -> Parser Char -> Parser String
 identifier start letter = lexeme $ do
@@ -87,7 +87,7 @@ whitespace :: Parser Unit
 whitespace = void $ many (oneOf [ ' ', '\t', '\n' ])
 
 lexeme :: forall a. Parser a -> Parser a
-lexeme p = p <* spaces
+lexeme p = p <* whitespace
 
 newline :: Parser Unit
 newline = void $ char '\n'
