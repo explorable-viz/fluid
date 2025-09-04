@@ -20,12 +20,12 @@ import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
 import SExpr (Clause(..), Expr(..), Pattern(..), VarDef(..))
-import Temp.Parse.Parser (Parser, align, block, delim, floating, identifier, integer, lexeme, lines, parens, reserved, unreserved, whitespace)
+import Temp.Parse.Parser (Parser, align, block, delim, floating, integer, lexeme, lines, parens, reserved, variable, whitespace)
 import Temp.Util.UnsafeDebug (exitUnsafe, logErrorUnsafe)
-import Util (type(×), nonEmpty, (×))
+import Util (type (×), nonEmpty, (×))
 
 pvar :: Parser Pattern
-pvar = unreserved <#> PVar
+pvar = variable <#> PVar
 
 pattern :: Parser Pattern
 pattern = simplePattern
@@ -38,7 +38,7 @@ simplePattern = listEmpty <|> var
       _ <- lexeme $ string "[]"
       pure PListEmpty
    var :: Parser Pattern
-   var = PVar <$> identifier
+   var = PVar <$> variable
 
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
 binaryOp op = do
@@ -47,7 +47,7 @@ binaryOp op = do
 
 backtickOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 backtickOp = do
-   x <- delim '(' *> unreserved <* delim ')'
+   x <- delim '(' *> variable <* delim ')'
    pure (\e e' -> BinaryApp e x e')
 
 opdefs :: Array (Array (Operator (StateT Position Identity) String (Raw Expr)))
@@ -116,7 +116,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|>  opTree
       funDef :: Parser (Raw Expr)
       funDef = do
          reserved "def"
-         name <- unreserved
+         name <- variable
          ps <- params
          e <- block expr
          e' <- align expr
@@ -151,7 +151,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|>  opTree
          where
 
          appChain :: Parser (Raw Expr)
-         appChain = variable >>= \e -> app e
+         appChain = var >>= \e -> app e
             where
             app :: Raw Expr -> Parser (Raw Expr)
             app e = args e <|> pure e
@@ -161,8 +161,8 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|>  opTree
                ps <- parens $ sepBy simple (lexeme $ char ',')
                app (foldl (App None) e ps)
 
-         variable :: Parser (Raw Expr)
-         variable = unreserved <#> Var
+         var :: Parser (Raw Expr)
+         var = variable <#> Var
 
          int :: Parser (Raw Expr)
          int = integer <#> Int unit None

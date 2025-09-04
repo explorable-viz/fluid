@@ -3,18 +3,17 @@ module Temp.Parse.Parser where
 import Prelude hiding (between)
 
 import Control.Alt ((<|>))
-import Data.Array (cons, elem)
+import Data.Array (elem)
 import Data.Array as Array
 import Data.Int (fromString, toNumber)
 import Data.Maybe (maybe)
-import Data.String.CodeUnits (fromCharArray)
 import Data.String.CodeUnits as SCU
 import Parsing (fail)
 import Parsing.Combinators (try)
 import Parsing.Combinators.Array (many, many1)
 import Parsing.Indent (IndentParser, checkIndent, indented, withPos)
 import Parsing.String (char)
-import Parsing.String.Basic (alphaNum, digit, letter)
+import Parsing.String.Basic (alphaNum, digit, letter, lower, upper)
 import Parsing.Token (oneOf)
 
 type Parser a = IndentParser String a
@@ -25,28 +24,34 @@ keywords = [ "def", "if", "else" ]
 block :: forall a. Parser a -> Parser a
 block e = delim ':' *> ((lines1 *> spaces *> indented *> withPos e) <|> e)
 
+-- use between
 parens :: forall a. Parser a -> Parser a
 parens e = delim '(' *> e <* delim ')'
 
 align :: forall a. Parser a -> Parser a
 align p = lines1 *> spaces *> checkIndent *> p
 
--- Identifiers and keywords
-identifier :: Parser String
-identifier = lexeme $ do
-   first <- letter <|> char '_'
-   rest <- many (alphaNum <|> oneOf [ '_', '\'' ])
-   pure $ fromCharArray (cons first rest)
+identifier :: Parser Char -> Parser Char -> Parser String
+identifier start letter = lexeme $ do
+   c <- start
+   cs <- Array.many letter
+   pure $ SCU.singleton c <> SCU.fromCharArray cs
 
-unreserved :: Parser String
-unreserved = do
-   name <- identifier
+unreserved :: Parser String -> Parser String
+unreserved p = do
+   name <- p
    if name `elem` keywords then fail $ "Reserved identifier: " <> name
    else pure name
 
+variable :: Parser String
+variable = unreserved $ identifier (lower <|> char '_') (alphaNum <|> oneOf [ '_', '\'' ])
+
+constructor :: Parser String
+constructor = unreserved $ identifier upper (alphaNum <|> oneOf [ '_', '\'' ])
+
 reserved :: String -> Parser Unit
 reserved expected = try do
-   received <- identifier
+   received <- identifier (letter <|> char '_') (alphaNum <|> oneOf [ '_', '\'' ])
    if expected /= received then fail $ "Expected `" <> expected <> "`, received `" <> received <> "`"
    else pure unit
 
@@ -70,53 +75,6 @@ lexeme p = p <* spaces
 
 newline :: Parser Unit
 newline = void $ char '\n'
-
--- type Parser s = IndentParser String s
-
--- whitespace :: Parser Unit
--- whitespace = skipMany (oneOf [ ' ', '\t', '\n' ])
-
--- eof :: Parser Unit
--- eof = optional anyChar >>= maybe (pure unit) (\_ -> fail "Expected EOF")
-
--- parens :: forall s. Parser s -> Parser s
--- parens p = between (symbol "(") (symbol ")") p
-
--- symbol :: String -> Parser String
--- symbol name = lexeme (string name)
-
--- lexeme :: forall a. Parser a -> Parser a
--- lexeme p = p <* whitespace
-
--- comma :: Parser String
--- comma = symbol ","
-
--- colon :: Parser String
--- colon = symbol ":"
-
--- reserved :: Array String
--- reserved = [ keyword.def ]
-
--- isReserved :: String -> Boolean
--- isReserved name = Array.elem name reserved
-
--- unreserved :: Parser String -> Parser String
--- unreserved p = do
---    name <- p
---    if (isReserved name) then fail ("reserved word " <> show name)
---    else pure name
-
--- ident :: Parser Char -> Parser Char -> Parser String
--- ident start letter = lexeme $ do
---    c <- start
---    cs <- Array.many letter
---    pure $ SCU.singleton c <> SCU.fromCharArray cs
-
--- var :: Parser String
--- var = unreserved $ ident (lower <|> char '_') (alphaNum <|> oneOf [ '_', '\'' ])
-
--- constr :: Parser String
--- constr = unreserved $ ident upper (alphaNum <|> oneOf [ '_', '\'' ])
 
 integer :: Parser Int
 integer = do
