@@ -25,18 +25,18 @@ import Temp.Pretty (prettyPy)
 
 type TestFn = String -> Effect (Either String String)
 
-parseArgs :: Effect {fn :: TestFn, dir :: String, files :: Array String}
+parseArgs :: Effect { fn :: TestFn, dir :: String, files :: Array String }
 parseArgs = do
    args <- argv
    case (index args 2) of
       Nothing -> throw "missing"
-      Just "pretty" -> pure $ {fn: testPretty, dir: "test/golden/pretty", files: drop 3 args}
-      Just "parse" -> pure $ {fn: testParse, dir: "test/golden/parse", files: drop 3 args}
+      Just "pretty" -> pure $ { fn: testPretty, dir: "test/golden/pretty", files: drop 3 args }
+      Just "parse" -> pure $ { fn: testParse, dir: "test/golden/parse", files: drop 3 args }
       Just _ -> throw "unsupported"
 
 main :: Effect Unit
 main = do
-   {fn, dir, files} <- parseArgs
+   { fn, dir, files } <- parseArgs
    files' <- filter (\s -> takeRight 4 s == ".fld") <$> readdir dir
    let files'' = if null files then files' else filter (\s -> elem s files) files'
    results <- traverse (test fn dir) files''
@@ -62,9 +62,6 @@ tally = foldl tally' { passes: 0, fails: 0, missing: 0 }
    tally' acc Fail = acc { fails = acc.fails + 1 }
    tally' acc Missing = acc { missing = acc.missing + 1 }
    tally' acc _ = acc -- ignore Error cases
-
-
-
 
 testPretty :: TestFn
 testPretty src = do

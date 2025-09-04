@@ -37,6 +37,7 @@ simplePattern = listEmpty <|> var
    listEmpty = do
       _ <- lexeme $ string "[]"
       pure PListEmpty
+
    var :: Parser Pattern
    var = PVar <$> variable
 
@@ -90,84 +91,83 @@ opdefs =
 --    | ... everything else, all child expressions are opTree ...
 
 expr :: Parser (Raw Expr)
-expr = matchAs <|> ifElse <|> try funDef <|> valDef <|>  opTree
+expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree
    where
-      matchAs :: Parser (Raw Expr)
-      matchAs = do
-         reserved "match"
-         e <- opTree
-         bs <- block branches
-         pure $ MatchAs e bs
-         where
+   matchAs :: Parser (Raw Expr)
+   matchAs = do
+      reserved "match"
+      e <- opTree
+      bs <- block branches
+      pure $ MatchAs e bs
+      where
 
-         branches :: Parser (NonEmptyList (Pattern × Raw Expr))
-         branches = do
-            b <- branch
-            bs <- many (try $ align branch)
-            pure $ (nonEmpty (b : bs))
+      branches :: Parser (NonEmptyList (Pattern × Raw Expr))
+      branches = do
+         b <- branch
+         bs <- many (try $ align branch)
+         pure $ (nonEmpty (b : bs))
 
-         branch :: Parser (Pattern × Raw Expr)
-         branch = do
-            reserved "case"
-            p <- pattern
-            e <- block expr
-            pure $ (p × e)
-
-
-      funDef :: Parser (Raw Expr)
-      funDef = do
-         reserved "def"
-         name <- variable
-         ps <- params
+      branch :: Parser (Pattern × Raw Expr)
+      branch = do
+         reserved "case"
+         p <- pattern
          e <- block expr
-         e' <- align expr
-         pure $ LetRec (nonEmpty ((name × Clause (ps × e)) : Nil)) e'
+         pure $ (p × e)
+
+   funDef :: Parser (Raw Expr)
+   funDef = do
+      reserved "def"
+      name <- variable
+      ps <- params
+      e <- block expr
+      e' <- align expr
+      pure $ LetRec (nonEmpty ((name × Clause (ps × e)) : Nil)) e'
+      where
+      params :: Parser (NonEmptyList Pattern)
+      params = parens $ sepBy1 pvar (lexeme $ char ',')
+
+   valDef :: Parser (Raw Expr)
+   valDef = do
+      reserved "def"
+      name <- pvar
+      e <- block expr
+      e' <- align expr
+      pure $ Let (nonEmpty ((VarDef name e) : Nil)) e'
+
+   ifElse :: Parser (Raw Expr)
+   ifElse = do
+      reserved "if"
+      c <- opTree
+      t <- block expr
+      align (reserved "else")
+      e <- block expr
+      pure $ IfElse c t e
+
+   opTree :: Parser (Raw Expr)
+   opTree = (buildExprParser opdefs simple)
+      where
+      simple :: Parser (Raw Expr)
+      simple = try float <|> int <|> try appChain
          where
-         params :: Parser (NonEmptyList Pattern)
-         params = parens $ sepBy1 pvar (lexeme $ char ',')
-
-      valDef :: Parser (Raw Expr)
-      valDef = do
-         reserved "def"
-         name <- pvar
-         e <- block expr
-         e' <- align expr
-         pure $ Let (nonEmpty ((VarDef name e) : Nil)) e'
-
-      ifElse :: Parser (Raw Expr)
-      ifElse = do
-         reserved "if"
-         c <- opTree
-         t <- block expr
-         align (reserved "else")
-         e <- block expr
-         pure $ IfElse c t e
-
-      opTree :: Parser (Raw Expr)
-      opTree =  (buildExprParser opdefs simple)
-         where
-         simple :: Parser (Raw Expr)
-         simple = try float <|> int <|> try appChain
+         appChain :: Parser (Raw Expr)
+         appChain = var >>= \e -> app e
             where
-            appChain :: Parser (Raw Expr)
-            appChain = var >>= \e -> app e
-               where
-               app :: Raw Expr -> Parser (Raw Expr)
-               app e = args e <|> pure e
+            app :: Raw Expr -> Parser (Raw Expr)
+            app e = args e <|> pure e
 
-               args :: Raw Expr -> Parser (Raw Expr)
-               args e = do
-                  ps <- parens $ sepBy opTree (lexeme $ char ',')
-                  app (foldl (App None) e ps)
+            args :: Raw Expr -> Parser (Raw Expr)
+            args e = do
+               ps <- parens $ sepBy opTree (lexeme $ char ',')
+               app (foldl (App None) e ps)
 
-            var :: Parser (Raw Expr)
-            var = variable <#> Var
+         var :: Parser (Raw Expr)
+         var = variable <#> Var
 
-            int :: Parser (Raw Expr)
-            int = integer <#> Int unit None
+         int :: Parser (Raw Expr)
+         int = integer <#> Int unit None
 
-            float :: Parser (Raw Expr)
-            float = floating <#> Float unit None
+         float :: Parser (Raw Expr)
+         float = floating <#> Float unit None
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof
