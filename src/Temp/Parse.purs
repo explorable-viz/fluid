@@ -18,8 +18,8 @@ import Parsing.Combinators (many, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
-import SExpr (Clause(..), DictEntry(..), Expr(..), Pattern(..), VarDef(..))
-import Temp.Parse.Parser (Parser, align, block, braces, delim, floating, integer, lexeme, lines, parens, reserved, stringLiteral, variable, whitespace)
+import SExpr (Clause(..), DictEntry(..), Expr(..), ListRest(..), Pattern(..), VarDef(..))
+import Temp.Parse.Parser (Parser, align, block, braces, brackets, delim, floating, integer, lexeme, lines, parens, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (×), nonEmpty, (×))
 
@@ -153,7 +153,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
    opTree = (buildExprParser opdefs simple)
       where
       simple :: Parser (Raw Expr)
-      simple = try float <|> try int <|> try string <|> try appChain <|> try dict <?> "expected simple"
+      simple = try listEmpty <|> listNonEmpty <|> try float <|> try int <|> try string <|> try appChain <|> try dict <?> "expected simple"
          where
          appChain :: Parser (Raw Expr)
          appChain = var >>= \e -> app e
@@ -188,6 +188,31 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
             v <- opTree
             whitespace
             pure $ (ExprKey k × v)
+
+         listEmpty :: Parser (Raw Expr)
+         listEmpty = brackets whitespace $> ListEmpty unit None
+
+         listNonEmpty :: Parser (Raw Expr)
+         listNonEmpty = do
+            delim '['
+            head <- opTree
+            rest <- listRest
+            pure $ ListNonEmpty unit None head rest
+
+            where
+            listRest :: Parser (Raw ListRest)
+            listRest = listEnd <|> listNext
+
+               where
+               listEnd :: Parser (Raw ListRest)
+               listEnd = delim ']' $> End unit
+
+               listNext :: Parser (Raw ListRest)
+               listNext = do
+                  delim ','
+                  e <- opTree
+                  r <- listRest
+                  pure $ Next unit e r
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof

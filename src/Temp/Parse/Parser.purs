@@ -32,6 +32,9 @@ parens e = delim '(' *> e <* delim ')'
 braces :: forall a. Parser a -> Parser a
 braces e = delim '{' *> e <* delim '}'
 
+brackets :: forall a. Parser a -> Parser a
+brackets e = delim '[' *> e <* delim ']'
+
 align :: forall a. Parser a -> Parser a
 align p = lines1 *> spaces *> checkIndent *> p
 
