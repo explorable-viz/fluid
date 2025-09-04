@@ -15,17 +15,20 @@ import Doc (DocOpt(..))
 import Effect.Exception (Error, error)
 import Lattice (Raw)
 import Parsing (ParseError(..), Position(..), runParserT)
-import Parsing.Combinators (sepBy, sepBy1, try)
+import Parsing.Combinators (many, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
 import SExpr (Clause(..), Expr(..), Pattern(..), VarDef(..))
 import Temp.Parse.Parser (Parser, align, block, delim, floating, identifier, integer, lexeme, lines, parens, reserved, unreserved, whitespace)
 import Temp.Util.UnsafeDebug (exitUnsafe, logErrorUnsafe)
-import Util (nonEmpty, (×))
+import Util (type(×), nonEmpty, (×))
 
 pvar :: Parser Pattern
 pvar = unreserved <#> PVar
+
+pattern :: Parser Pattern
+pattern = simplePattern
 
 simplePattern :: Parser Pattern
 simplePattern = listEmpty <|> var
@@ -86,8 +89,30 @@ opdefs =
 --    | ... everything else, all child expressions are simple ...
 
 expr :: Parser (Raw Expr)
-expr = ifElse <|> try funDef <|> valDef <|>  opTree
+expr = matchAs <|> ifElse <|> try funDef <|> valDef <|>  opTree
    where
+      matchAs :: Parser (Raw Expr)
+      matchAs = do
+         reserved "match"
+         e <- opTree
+         bs <- block branches
+         pure $ MatchAs e bs
+         where
+
+         branches :: Parser (NonEmptyList (Pattern × Raw Expr))
+         branches = do
+            b <- branch
+            bs <- many (try $ align branch)
+            pure $ (nonEmpty (b : bs))
+
+         branch :: Parser (Pattern × Raw Expr)
+         branch = do
+            reserved "case"
+            p <- pattern
+            e <- block expr
+            pure $ (p × e)
+
+
       funDef :: Parser (Raw Expr)
       funDef = do
          reserved "def"
