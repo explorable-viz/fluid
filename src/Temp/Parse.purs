@@ -11,6 +11,7 @@ import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList)
 import Data.Traversable (foldl)
+import DataType (cPair)
 import Doc (DocOpt(..))
 import Lattice (Raw)
 import Parsing (Position, runParserT)
@@ -153,7 +154,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
    opTree = (buildExprParser opdefs simple)
       where
       simple :: Parser (Raw Expr)
-      simple = try listEmpty <|> listNonEmpty <|> try float <|> try int <|> try string <|> try appChain <|> try dict <?> "expected simple"
+      simple = try listEmpty <|> listNonEmpty <|> try float <|> try int <|> try string <|> try appChain <|> try dict <|> pair <?> "expected simple"
          where
          appChain :: Parser (Raw Expr)
          appChain = var >>= \e -> app e
@@ -213,6 +214,15 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
                   e <- opTree
                   r <- listRest
                   pure $ Next unit e r
+
+         pair :: Parser (Raw Expr)
+         pair = do
+            delim '('
+            e <- opTree
+            delim ','
+            e' <- opTree
+            delim ')'
+            pure $ Constr unit None cPair (e : e' : Nil)
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof
