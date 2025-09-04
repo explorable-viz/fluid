@@ -4,4 +4,5 @@ let iii = add x y z in
 let iv = add x y z in
 let v = add (add x y) z in
 let vi = add (add x (add x y z)) x in
+let vii = add (x + y) in
 0

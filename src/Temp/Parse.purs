@@ -86,7 +86,8 @@ opdefs =
 --
 -- simple :=
 --    | (opTree)
---    | ... everything else, all child expressions are simple ...
+--    | App opTree opTree
+--    | ... everything else, all child expressions are opTree ...
 
 expr :: Parser (Raw Expr)
 expr = matchAs <|> ifElse <|> try funDef <|> valDef <|>  opTree
@@ -144,31 +145,29 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|>  opTree
 
       opTree :: Parser (Raw Expr)
       opTree =  (buildExprParser opdefs simple)
-
-      simple :: Parser (Raw Expr)
-      simple = try float <|> int <|> try appChain
-
          where
-
-         appChain :: Parser (Raw Expr)
-         appChain = var >>= \e -> app e
+         simple :: Parser (Raw Expr)
+         simple = try float <|> int <|> try appChain
             where
-            app :: Raw Expr -> Parser (Raw Expr)
-            app e = args e <|> pure e
+            appChain :: Parser (Raw Expr)
+            appChain = var >>= \e -> app e
+               where
+               app :: Raw Expr -> Parser (Raw Expr)
+               app e = args e <|> pure e
 
-            args :: Raw Expr -> Parser (Raw Expr)
-            args e = do
-               ps <- parens $ sepBy simple (lexeme $ char ',')
-               app (foldl (App None) e ps)
+               args :: Raw Expr -> Parser (Raw Expr)
+               args e = do
+                  ps <- parens $ sepBy opTree (lexeme $ char ',')
+                  app (foldl (App None) e ps)
 
-         var :: Parser (Raw Expr)
-         var = variable <#> Var
+            var :: Parser (Raw Expr)
+            var = variable <#> Var
 
-         int :: Parser (Raw Expr)
-         int = integer <#> Int unit None
+            int :: Parser (Raw Expr)
+            int = integer <#> Int unit None
 
-         float :: Parser (Raw Expr)
-         float = floating <#> Float unit None
+            float :: Parser (Raw Expr)
+            float = floating <#> Float unit None
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof

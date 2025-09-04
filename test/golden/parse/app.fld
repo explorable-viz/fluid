@@ -16,4 +16,7 @@ def v:
 def vi:
     add(add(x)(add(x, y)(z)))(x)
 
+def vii:
+    add(x + y)
+
 0
