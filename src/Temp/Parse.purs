@@ -17,7 +17,7 @@ import Parsing.Combinators (many, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
-import SExpr (Clause(..), Expr(..), Pattern(..), VarDef(..))
+import SExpr (Clause(..), DictEntry(..), Expr(..), Pattern(..), VarDef(..))
 import Temp.Parse.Parser (Parser, align, block, delim, floating, integer, lexeme, lines, parens, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (×), nonEmpty, (×))
@@ -87,6 +87,14 @@ opdefs =
 --    | (opTree)
 --    | App opTree opTree
 --    | ... everything else, all child expressions are opTree ...
+--
+-- identified requirements:
+--
+-- 1. different whitespace handling inside expr (with blocks) vs inside optree
+--    (or maybe only inside lists/records/parens)
+-- 2. simplify pattern such as in dict where we need to avoid left recursive functions
+--    (maybe this is what `fix` is doing in original parser?)
+-- 3. fix `++` operator not parsing correctly
 
 expr :: Parser (Raw Expr)
 expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree
@@ -145,7 +153,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree
    opTree = (buildExprParser opdefs simple)
       where
       simple :: Parser (Raw Expr)
-      simple = try float <|> int <|> string <|> try appChain
+      simple = try float <|> try int <|> try string <|> try appChain <|> try dict
          where
          appChain :: Parser (Raw Expr)
          appChain = var >>= \e -> app e
@@ -169,6 +177,43 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree
 
          string :: Parser (Raw Expr)
          string = stringLiteral <#> Str unit None
+
+         -- todo unuglify
+         dict :: Parser (Raw Expr)
+         dict = try empty <|> try nonEmpty
+            where
+
+            empty :: Parser (Raw Expr)
+            empty = do
+               _ <- lexeme $ char '{'
+               _ <- lexeme $ char '}'
+               pure $ Dictionary unit None Nil
+
+            nonEmpty :: Parser (Raw Expr)
+            nonEmpty = do
+               kv <- first
+               kvs <- many (try rest)
+               whitespace
+               _ <- lexeme $ char '}'
+               pure $ Dictionary unit None ((kv : kvs))
+
+               where
+               first :: Parser ((Raw DictEntry) × (Raw Expr))
+               first = do
+                  _ <- lexeme $ char '{'
+                  k <- opTree
+                  _ <- lexeme $ char ':'
+                  v <- opTree
+                  pure $ (ExprKey k × v)
+
+               rest :: Parser ((Raw DictEntry) × (Raw Expr))
+               rest = do
+
+                  _ <- lexeme $ char ','
+                  k <- opTree
+                  _ <- lexeme $ char ':'
+                  v <- opTree
+                  pure $ (ExprKey k × v)
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof
