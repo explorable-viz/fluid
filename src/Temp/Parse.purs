@@ -161,9 +161,10 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
             <|> try dict
             <|> try float
             <|> try int
-            <|> try string
+            <|> try str
             <|> try appChain
             <|> pair
+            <|> listEnum
                <?> "expected simple"
          where
          appChain :: Parser (Raw Expr)
@@ -189,8 +190,8 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
          float :: Parser (Raw Expr)
          float = floating <#> Float unit None
 
-         string :: Parser (Raw Expr)
-         string = stringLiteral <#> Str unit None
+         str :: Parser (Raw Expr)
+         str = stringLiteral <#> Str unit None
 
          dict :: Parser (Raw Expr)
          dict = braces (sepBy kv (lexeme $ char ',')) <#> Dictionary unit None
@@ -227,6 +228,15 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
                   e <- opTree
                   r <- listRest
                   pure $ Next unit e r
+
+         listEnum :: Parser (Raw Expr)
+         listEnum = do
+            delim '['
+            e <- opTree
+            _ <- lexeme $ string ".."
+            e' <- opTree
+            delim ']'
+            pure $ ListEnum e e'
 
          pair :: Parser (Raw Expr)
          pair = do
