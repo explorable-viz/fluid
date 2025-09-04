@@ -23,7 +23,7 @@ import Parsing.String (char, eof, string)
 import SExpr (Clause(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..))
 import Temp.Parse.Parser (Parser, align, block, braces, brackets, constructor, delim, floating, integer, lexeme, lines, operator, parens, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
-import Util (type (×), nonEmpty, (×))
+import Util (type (×), nonEmpty, onlyIf, (×))
 
 pattern :: Parser Pattern
 pattern = defer $ \_ -> simplePattern
@@ -101,9 +101,10 @@ simplePattern =
       pure $ PConstr cPair (p : p' : Nil)
 
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-binaryOp op = do
-   op' <- lexeme $ string op
-   pure $ \e e' -> BinaryApp e op' e'
+binaryOp op = try do
+   op' <- lexeme $ operator
+   onlyIf (op == op')
+      $ \e e' -> BinaryApp e op' e'
 
 backtickOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 backtickOp = do
@@ -155,7 +156,6 @@ opdefs =
 -- 1. different whitespace handling inside expr (with blocks) vs inside optree
 --    (or maybe only inside lists/records/parens)
 -- 2. use fix or defer on left recursion
--- 3. fix `++` operator not parsing correctly
 
 expr :: Parser (Raw Expr)
 expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected expr"

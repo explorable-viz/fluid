@@ -24,7 +24,7 @@ keywords :: Array String
 keywords = [ "def", "if", "else" ]
 
 operators :: Array String
-operators = [ ".", "!", "**", "*", "/", "+", "-", "++", "==", "/=", "<", ">", "<=", ">=" ]
+operators = [ ".", "!", "**", "*", "/", "+", "-", ":|", "++", "==", "/=", "<", ">", "<=", ">=" ]
 
 block :: forall a. Parser a -> Parser a
 block e = delim ':' *> ((lines1 *> spaces *> indented *> withPos e) <|> e)
