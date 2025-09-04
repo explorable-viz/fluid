@@ -2,6 +2,7 @@ module Temp.Parse (parsePy) where
 
 import Prelude
 
+import Bind (Var)
 import Control.Alt ((<|>))
 import Control.Lazy (defer)
 import Control.Monad.State (StateT)
@@ -19,27 +20,85 @@ import Parsing.Combinators (many, many1, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
-import SExpr (Clause(..), DictEntry(..), Expr(..), ListRest(..), Pattern(..), Qualifier(..), VarDef(..))
+import SExpr (Clause(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..))
 import Temp.Parse.Parser (Parser, align, block, braces, brackets, constructor, delim, floating, integer, lexeme, lines, operator, parens, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (×), nonEmpty, (×))
 
-pvar :: Parser Pattern
-pvar = variable <#> PVar
-
 pattern :: Parser Pattern
-pattern = simplePattern
+pattern = defer $ \_ -> simplePattern
 
 simplePattern :: Parser Pattern
-simplePattern = listEmpty <|> var
+simplePattern =
+   try pListEmpty
+      <|> pListNonEmpty
+      <|> try pConstr
+      <|> try pRecord
+      <|> try pVar
+      <|> try parensPattern
+      <|> pPair
    where
-   listEmpty :: Parser Pattern
-   listEmpty = do
-      _ <- lexeme $ string "[]"
-      pure PListEmpty
+   pListEmpty :: Parser Pattern
+   pListEmpty = brackets whitespace $> PListEmpty
 
-   var :: Parser Pattern
-   var = PVar <$> variable
+   pListNonEmpty :: Parser Pattern
+   pListNonEmpty = do
+      delim '['
+      head <- pattern
+      rest <- pListRest
+      pure $ PListNonEmpty head rest
+
+      where
+      pListRest :: Parser ListRestPattern
+      pListRest = pListEnd <|> pListNext
+
+         where
+         pListEnd :: Parser ListRestPattern
+         pListEnd = delim ']' $> PListEnd
+
+         pListNext :: Parser ListRestPattern
+         pListNext = do
+            delim ','
+            p <- pattern
+            r <- pListRest
+            pure $ PListNext p r
+
+   pConstr :: Parser Pattern
+   pConstr = PConstr <$> constructor <@> Nil
+
+   pRecord :: Parser Pattern
+   pRecord = do
+      delim '{'
+      fs <- sepBy pField (lexeme $ char ',')
+      delim '}'
+      pure $ PRecord fs
+
+      where
+      pField :: Parser (Var × Pattern)
+      pField = do
+         v <- variable
+         delim ':'
+         p <- pattern
+         pure $ v × p
+
+   pVar :: Parser Pattern
+   pVar = PVar <$> variable
+
+   parensPattern :: Parser Pattern
+   parensPattern = do
+      delim '('
+      e <- pattern
+      delim ')'
+      pure $ e
+
+   pPair :: Parser Pattern
+   pPair = do
+      delim '('
+      p <- pattern
+      delim ','
+      p' <- pattern
+      delim ')'
+      pure $ PConstr cPair (p : p' : Nil)
 
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
 binaryOp op = do
@@ -132,12 +191,12 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
       pure $ LetRec (nonEmpty ((name × Clause (ps × e)) : Nil)) e'
       where
       params :: Parser (NonEmptyList Pattern)
-      params = parens $ sepBy1 pvar (lexeme $ char ',')
+      params = parens $ sepBy1 pattern (lexeme $ char ',')
 
    valDef :: Parser (Raw Expr)
    valDef = do
       reserved "def"
-      name <- pvar
+      name <- pattern
       e <- block expr
       e' <- align expr
       pure $ Let (nonEmpty ((VarDef name e) : Nil)) e'
