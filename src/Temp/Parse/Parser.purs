@@ -29,6 +29,9 @@ block e = delim ':' *> ((lines1 *> spaces *> indented *> withPos e) <|> e)
 parens :: forall a. Parser a -> Parser a
 parens e = delim '(' *> e <* delim ')'
 
+braces :: forall a. Parser a -> Parser a
+braces e = delim '{' *> e <* delim '}'
+
 align :: forall a. Parser a -> Parser a
 align p = lines1 *> spaces *> checkIndent *> p
 
