@@ -9,17 +9,17 @@ import Data.Bifunctor (lmap)
 import Data.Either (Either)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (NonEmptyList)
+import Data.List.NonEmpty (NonEmptyList, toList)
 import Data.Traversable (foldl)
 import DataType (cPair)
 import Doc (DocOpt(..))
 import Lattice (Raw)
 import Parsing (Position, runParserT)
-import Parsing.Combinators (many, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators (many, many1, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
-import SExpr (Clause(..), DictEntry(..), Expr(..), ListRest(..), Pattern(..), VarDef(..))
+import SExpr (Clause(..), DictEntry(..), Expr(..), ListRest(..), Pattern(..), Qualifier(..), VarDef(..))
 import Temp.Parse.Parser (Parser, align, block, braces, brackets, constructor, delim, floating, integer, lexeme, lines, operator, parens, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (×), nonEmpty, (×))
@@ -64,6 +64,7 @@ opdefs =
    , [ Infix (binaryOp "+") AssocLeft
      , Infix (binaryOp "-") AssocLeft
      ]
+   , [ Infix (binaryOp ":|") AssocRight ]
    , [ Infix (binaryOp "++") AssocRight ]
    , [ Infix (binaryOp "==") AssocNone
      , Infix (binaryOp "/=") AssocNone
@@ -164,6 +165,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
             <|> try str
             <|> try appChain
             <|> try pair
+            <|> try listComp
             <|> listEnum
             <|> try parensExpr
             <|> try parensOp
@@ -230,6 +232,41 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
                   e <- opTree
                   r <- listRest
                   pure $ Next unit e r
+
+         listComp :: Parser (Raw Expr)
+         listComp = do
+            delim '['
+            e <- opTree
+            qs <- many1 qualifier
+            delim ']'
+            pure $ ListComp unit None e (toList qs)
+
+            where
+            qualifier :: Parser (Raw Qualifier)
+            qualifier = listCompGen <|> listCompDecl <|> listCompGuard
+
+               where
+               listCompGen :: Parser (Raw Qualifier)
+               listCompGen = do
+                  reserved "for"
+                  p <- pattern
+                  reserved "in"
+                  e <- opTree
+                  pure $ ListCompGen None p e
+
+               listCompDecl :: Parser (Raw Qualifier)
+               listCompDecl = do
+                  reserved "for"
+                  p <- pattern
+                  reserved "in"
+                  e <- brackets $ opTree
+                  pure $ ListCompDecl (VarDef p e)
+
+               listCompGuard :: Parser (Raw Qualifier)
+               listCompGuard = do
+                  reserved "if"
+                  e <- opTree
+                  pure $ ListCompGuard e
 
          listEnum :: Parser (Raw Expr)
          listEnum = do
