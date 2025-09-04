@@ -20,7 +20,7 @@ import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
 import SExpr (Clause(..), Expr(..), Pattern(..), VarDef(..))
-import Temp.Parse.Parser (Parser, align, block, delim, floating, integer, lexeme, lines, parens, reserved, variable, whitespace)
+import Temp.Parse.Parser (Parser, align, block, delim, floating, integer, lexeme, lines, parens, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.UnsafeDebug (exitUnsafe, logErrorUnsafe)
 import Util (type (×), nonEmpty, (×))
 
@@ -147,7 +147,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree
    opTree = (buildExprParser opdefs simple)
       where
       simple :: Parser (Raw Expr)
-      simple = try float <|> int <|> try appChain
+      simple = try float <|> int <|> string <|> try appChain
          where
          appChain :: Parser (Raw Expr)
          appChain = var >>= \e -> app e
@@ -168,6 +168,9 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree
 
          float :: Parser (Raw Expr)
          float = floating <#> Float unit None
+
+         string :: Parser (Raw Expr)
+         string = stringLiteral <#> Str unit None
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof

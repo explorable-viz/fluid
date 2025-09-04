@@ -3,16 +3,17 @@ module Temp.Parse.Parser where
 import Prelude hiding (between)
 
 import Control.Alt ((<|>))
-import Data.Array (elem)
+import Data.Array (cons, elem)
 import Data.Array as Array
 import Data.Int (fromString, toNumber)
-import Data.Maybe (maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.String.CodeUnits as SCU
+import Data.Traversable (foldr)
 import Parsing (fail)
-import Parsing.Combinators (try)
+import Parsing.Combinators (between, try, (<?>))
 import Parsing.Combinators.Array (many, many1)
 import Parsing.Indent (IndentParser, checkIndent, indented, withPos)
-import Parsing.String (char)
+import Parsing.String (char, satisfy)
 import Parsing.String.Basic (alphaNum, digit, letter, lower, upper)
 import Parsing.Token (oneOf)
 
@@ -99,3 +100,24 @@ sign :: forall a. (Ring a) => Parser (a -> a)
 sign = (char '-' $> negate)
    <|> (char '+' $> identity)
    <|> pure identity
+
+-- TODO: this is from Parsing.Token without string escapes
+stringLiteral :: Parser String
+stringLiteral = lexeme (go <?> "literal string")
+   where
+   go :: Parser String
+   go = do
+      maybeChars <- between (char '"') (char '"' <?> "end of string") (many stringChar)
+      pure $ SCU.fromCharArray $ foldr folder [] maybeChars
+
+   folder :: Maybe Char -> Array Char -> Array Char
+   folder Nothing chars = chars
+   folder (Just c) chars = cons c chars
+
+stringChar :: Parser (Maybe Char)
+stringChar =
+   (Just <$> stringLetter)
+      <?> "string character"
+
+stringLetter :: Parser Char
+stringLetter = satisfy (\c -> (c /= '"') && (c /= '\\') && (c > '\x1A'))

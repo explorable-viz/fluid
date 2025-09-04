@@ -1,0 +1,4 @@
+let str = "hello" in
+let int = 4 in
+let float = 4.0 in
+0
