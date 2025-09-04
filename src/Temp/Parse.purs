@@ -12,13 +12,14 @@ import Data.List.NonEmpty (NonEmptyList)
 import Data.Traversable (foldl)
 import Doc (DocOpt(..))
 import Lattice (Raw)
-import Parsing (Position, parseErrorMessage, runParserT)
+import Parsing (Position, runParserT)
 import Parsing.Combinators (many, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
 import SExpr (Clause(..), Expr(..), Pattern(..), VarDef(..))
 import Temp.Parse.Parser (Parser, align, block, delim, floating, integer, lexeme, lines, parens, reserved, stringLiteral, variable, whitespace)
+import Temp.Util.Error (prettyParseError)
 import Util (type (×), nonEmpty, (×))
 
 pvar :: Parser Pattern
@@ -173,4 +174,4 @@ program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof
 
 parsePy :: String -> Either String (Raw Expr)
-parsePy input = lmap parseErrorMessage $ runIndent $ runParserT input program
+parsePy input = lmap prettyParseError $ runIndent $ runParserT input program

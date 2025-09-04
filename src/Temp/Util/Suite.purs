@@ -18,10 +18,11 @@ import Node.Encoding (Encoding(..))
 import Node.FS.Sync (exists, readTextFile, readdir, writeTextFile)
 import Node.Process (argv)
 import Parse as P
-import Parsing (parseErrorMessage, runParser)
+import Parsing (runParser)
 import Pretty (prettyP)
 import Temp.Parse (parsePy)
 import Temp.Pretty (prettyPy)
+import Temp.Util.Error (prettyParseError)
 
 type TestFn = String -> (Either String String)
 
@@ -47,8 +48,7 @@ main = do
          else if fails == 0 then yellow
          else red
 
-   log "\n"
-   log $ colour $ show fails <> " fail, " <> show missing <> " missing, " <> show passes <> " pass "
+   log $ colour $ "\n" <> show fails <> " fail, " <> show missing <> " missing, " <> show passes <> " pass "
 
    pure unit
 
@@ -66,7 +66,7 @@ tally = foldl tally' { passes: 0, fails: 0, missing: 0 }
 testPretty :: TestFn
 testPretty src =
    case (runParser src P.program) of
-      Left error -> Left (parseErrorMessage error)
+      Left error -> Left (prettyParseError error)
       Right expr -> Right (prettyPy (snd $ expr) <> "\n")
 
 testParse :: TestFn
@@ -82,7 +82,7 @@ test f srcDir srcFile = do
    case f src of
       Left error -> do
          log $ red ("✘ " <> srcFile)
-         log $ show error
+         log $ error
          pure Fail
       Right out -> do
          hasExpect <- exists expectPath
