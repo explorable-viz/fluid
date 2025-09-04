@@ -13,17 +13,17 @@ import Data.Traversable (foldl, traverse)
 import Data.Tuple (snd)
 import Effect (Effect)
 import Effect.Console (log)
-import Effect.Exception (throw, try)
-import Module (parse)
+import Effect.Exception (throw)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (exists, readTextFile, readdir, writeTextFile)
 import Node.Process (argv)
 import Parse as P
+import Parsing (parseErrorMessage, runParser)
 import Pretty (prettyP)
 import Temp.Parse (parsePy)
 import Temp.Pretty (prettyPy)
 
-type TestFn = String -> Effect (Either String String)
+type TestFn = String -> (Either String String)
 
 parseArgs :: Effect { fn :: TestFn, dir :: String, files :: Array String }
 parseArgs = do
@@ -64,26 +64,22 @@ tally = foldl tally' { passes: 0, fails: 0, missing: 0 }
    tally' acc _ = acc -- ignore Error cases
 
 testPretty :: TestFn
-testPretty src = do
-   parsed <- try $ snd <$> parse src P.program
-   case parsed of
-      Left error -> pure $ Left (show error)
-      Right expr -> pure $ Right (prettyPy expr <> "\n")
+testPretty src =
+   case (runParser src P.program) of
+      Left error -> Left (parseErrorMessage error)
+      Right expr -> Right (prettyPy (snd $ expr) <> "\n")
 
 testParse :: TestFn
-testParse src = do
-   parsed <- try $ parsePy src
-   case parsed of
-      Left error -> pure $ Left (show error)
-      Right expr -> pure $ Right (prettyP expr <> "\n")
+testParse src = case (parsePy src) of
+   Left error -> Left error
+   Right expr -> Right (prettyP expr <> "\n")
 
 test :: TestFn -> String -> String -> Effect Result
 test f srcDir srcFile = do
    let srcPath = srcDir <> "/" <> srcFile
    let expectPath = replace (Pattern ".fld") (Replacement ".expect") srcPath
    src <- readTextFile UTF8 srcPath
-   result <- f src
-   case result of
+   case f src of
       Left error -> do
          log $ red ("✘ " <> srcFile)
          log $ show error

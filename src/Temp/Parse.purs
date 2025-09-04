@@ -3,25 +3,22 @@ module Temp.Parse (parsePy) where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Monad.Error.Class (liftEither)
-import Control.Monad.Except (class MonadError)
 import Control.Monad.State (StateT)
 import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList)
 import Data.Traversable (foldl)
 import Doc (DocOpt(..))
-import Effect.Exception (Error, error)
 import Lattice (Raw)
-import Parsing (ParseError(..), Position(..), runParserT)
+import Parsing (Position, parseErrorMessage, runParserT)
 import Parsing.Combinators (many, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
 import SExpr (Clause(..), Expr(..), Pattern(..), VarDef(..))
 import Temp.Parse.Parser (Parser, align, block, delim, floating, integer, lexeme, lines, parens, reserved, stringLiteral, variable, whitespace)
-import Temp.Util.UnsafeDebug (exitUnsafe, logErrorUnsafe)
 import Util (type (×), nonEmpty, (×))
 
 pvar :: Parser Pattern
@@ -175,12 +172,5 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof
 
-parsePy :: forall m. MonadError Error m => String -> m (Raw Expr)
-parsePy input = liftEither $ lmap (evil input) $ runIndent $ runParserT input program
-
-evil :: String -> ParseError -> Error
-evil _ e@(ParseError msg (Position { line, column })) = do
-   let e' = "Parse error at line " <> (show line) <> ", column " <> (show column) <> ":\n" <> msg
-   let _ = logErrorUnsafe e'
-   let _ = exitUnsafe unit
-   error (show e)
+parsePy :: String -> Either String (Raw Expr)
+parsePy input = lmap parseErrorMessage $ runIndent $ runParserT input program
