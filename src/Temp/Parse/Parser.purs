@@ -16,11 +16,15 @@ import Parsing.Indent (IndentParser, checkIndent, indented, withPos)
 import Parsing.String (char, satisfy)
 import Parsing.String.Basic (alphaNum, digit, letter, lower, upper)
 import Parsing.Token (oneOf)
+import Temp.Parse.Constants (opChars)
 
 type Parser a = IndentParser String a
 
 keywords :: Array String
 keywords = [ "def", "if", "else" ]
+
+operators :: Array String
+operators = [ ".", "!", "**", "*", "/", "+", "-", "++", "==", "/=", "<", ">", "<=", ">=" ]
 
 block :: forall a. Parser a -> Parser a
 block e = delim ':' *> ((lines1 *> spaces *> indented *> withPos e) <|> e)
@@ -61,6 +65,11 @@ reserved expected = try do
    received <- identifier (letter <|> char '_') (alphaNum <|> oneOf [ '_', '\'' ])
    if expected /= received then fail $ "Expected `" <> expected <> "`, received `" <> received <> "`"
    else pure unit
+
+operator :: Parser String
+operator = do
+   cs <- Array.some $ oneOf opChars
+   pure $ SCU.fromCharArray cs
 
 delim :: Char -> Parser Unit
 delim c = void $ lexeme $ char c

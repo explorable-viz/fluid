@@ -20,7 +20,7 @@ import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
 import SExpr (Clause(..), DictEntry(..), Expr(..), ListRest(..), Pattern(..), VarDef(..))
-import Temp.Parse.Parser (Parser, align, block, braces, brackets, constructor, delim, floating, integer, lexeme, lines, parens, reserved, stringLiteral, variable, whitespace)
+import Temp.Parse.Parser (Parser, align, block, braces, brackets, constructor, delim, floating, integer, lexeme, lines, operator, parens, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (×), nonEmpty, (×))
 
@@ -163,8 +163,10 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
             <|> try int
             <|> try str
             <|> try appChain
-            <|> pair
+            <|> try pair
             <|> listEnum
+            <|> try parensExpr
+            <|> try parensOp
                <?> "expected simple"
          where
          appChain :: Parser (Raw Expr)
@@ -246,6 +248,16 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
             e' <- opTree
             delim ')'
             pure $ Constr unit None cPair (e : e' : Nil)
+
+         parensExpr :: Parser (Raw Expr)
+         parensExpr = do
+            delim '('
+            e <- opTree
+            delim ')'
+            pure $ e
+
+         parensOp :: Parser (Raw Expr)
+         parensOp = parens operator <#> Op
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof

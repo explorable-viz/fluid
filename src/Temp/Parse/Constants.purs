@@ -48,8 +48,8 @@ symbol =
    , ellipsis: ".."
    }
 
-ops :: Array Char
-ops =
+opChars :: Array Char
+opChars =
    [ ':'
    , '!'
    , '#'
