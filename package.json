@@ -83,7 +83,7 @@
   },
   "bin": {
     "fluid": "./dist/fluid/shared/fluid.mjs",
-    "website-test": "./dist/fluid/shared/website-test.js",
+    "test-website": "./dist/fluid/shared/website-test.js",
     "install-article": "./script/install-article.sh",
     "bundle-website": "./script/bundle-website.sh"
   },
