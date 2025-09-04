@@ -77,24 +77,23 @@ opdefs =
 --    | IfElse opTree expr expr
 --
 -- opTree :=
---    | opTreeLeaf
---    | BinaryApp opTreeLeaf opTreeLeaf
+--    | simple
+--    | BinaryApp simple simple
 --
--- opTreeLeaf :=
+-- simple :=
 --    | (opTree)
---    | ... everything else, all child expressions are opTrees ...
+--    | ... everything else, all child expressions are simple ...
 
-
-blocky :: Parser (Raw Expr)
-blocky = ifElse <|> try funDef <|> valDef <|>  opTree
+expr :: Parser (Raw Expr)
+expr = ifElse <|> try funDef <|> valDef <|>  opTree
    where
       funDef :: Parser (Raw Expr)
       funDef = do
          reserved "def"
          name <- unreserved
          ps <- params
-         e <- block blocky
-         e' <- align blocky
+         e <- block expr
+         e' <- align expr
          pure $ LetRec (nonEmpty ((name × Clause (ps × e)) : Nil)) e'
          where
          params :: Parser (NonEmptyList Pattern)
@@ -104,17 +103,17 @@ blocky = ifElse <|> try funDef <|> valDef <|>  opTree
       valDef = do
          reserved "def"
          name <- pvar
-         e <- block blocky
-         e' <- align blocky
+         e <- block expr
+         e' <- align expr
          pure $ Let (nonEmpty ((VarDef name e) : Nil)) e'
 
       ifElse :: Parser (Raw Expr)
       ifElse = do
          reserved "if"
          c <- opTree
-         t <- block blocky
+         t <- block expr
          align (reserved "else")
-         e <- block blocky
+         e <- block expr
          pure $ IfElse c t e
 
       opTree :: Parser (Raw Expr)
@@ -138,7 +137,7 @@ blocky = ifElse <|> try funDef <|> valDef <|>  opTree
             simple' = try float <|> int <|> variable
 
 program :: Parser (Raw Expr)
-program = lines *> withPos blocky <* whitespace <* eof
+program = lines *> withPos expr <* whitespace <* eof
 
 parsePy :: forall m. MonadError Error m => String -> m (Raw Expr)
 parsePy input = liftEither $ lmap (evil input) $ runIndent $ runParserT input program
