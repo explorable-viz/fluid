@@ -1,0 +1,7 @@
+let i = add x y in
+let ii = add x in
+let iii = add x y z in
+let iv = add x y z in
+let v = add (add x y) z in
+let vi = add (add x (add x y z)) x in
+0

@@ -20,21 +20,22 @@ import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
 import SExpr (Clause(..), Expr(..), Pattern(..), VarDef(..))
-import Temp.Parse.Parser (Parser, align, block, delim, floating, integer, lexeme, lines, parens, reserved, unreserved, whitespace)
+import Temp.Parse.Parser (Parser, align, block, delim, floating, identifier, integer, lexeme, lines, parens, reserved, unreserved, whitespace)
 import Temp.Util.UnsafeDebug (exitUnsafe, logErrorUnsafe)
 import Util (nonEmpty, (×))
 
-variable :: Parser (Raw Expr)
-variable = unreserved <#> Var
-
-int :: Parser (Raw Expr)
-int = integer <#> Int unit None
-
-float :: Parser (Raw Expr)
-float = floating <#> Float unit None
-
 pvar :: Parser Pattern
 pvar = unreserved <#> PVar
+
+simplePattern :: Parser Pattern
+simplePattern = listEmpty <|> var
+   where
+   listEmpty :: Parser Pattern
+   listEmpty = do
+      _ <- lexeme $ string "[]"
+      pure PListEmpty
+   var :: Parser Pattern
+   var = PVar <$> identifier
 
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
 binaryOp op = do
@@ -120,10 +121,12 @@ expr = ifElse <|> try funDef <|> valDef <|>  opTree
       opTree =  (buildExprParser opdefs simple)
 
       simple :: Parser (Raw Expr)
-      simple = appChain
+      simple = try float <|> int <|> try appChain
+
          where
+
          appChain :: Parser (Raw Expr)
-         appChain = simple' >>= \e -> app e
+         appChain = variable >>= \e -> app e
             where
             app :: Raw Expr -> Parser (Raw Expr)
             app e = args e <|> pure e
@@ -133,8 +136,14 @@ expr = ifElse <|> try funDef <|> valDef <|>  opTree
                ps <- parens $ sepBy simple (lexeme $ char ',')
                app (foldl (App None) e ps)
 
-            simple' :: Parser (Raw Expr)
-            simple' = try float <|> int <|> variable
+         variable :: Parser (Raw Expr)
+         variable = unreserved <#> Var
+
+         int :: Parser (Raw Expr)
+         int = integer <#> Int unit None
+
+         float :: Parser (Raw Expr)
+         float = floating <#> Float unit None
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof

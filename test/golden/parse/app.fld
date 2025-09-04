@@ -1,0 +1,19 @@
+def i:
+    add(x, y)
+
+def ii:
+    add(x)
+
+def iii:
+    add(x, y)(z)
+
+def iv:
+    add(x)(y)(z)
+
+def v:
+    add(add(x)(y))(z)
+
+def vi:
+    add(add(x)(add(x, y)(z)))(x)
+
+0
