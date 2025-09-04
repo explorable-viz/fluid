@@ -20,7 +20,7 @@ import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
 import SExpr (Clause(..), DictEntry(..), Expr(..), ListRest(..), Pattern(..), VarDef(..))
-import Temp.Parse.Parser (Parser, align, block, braces, brackets, delim, floating, integer, lexeme, lines, parens, reserved, stringLiteral, variable, whitespace)
+import Temp.Parse.Parser (Parser, align, block, braces, brackets, constructor, delim, floating, integer, lexeme, lines, parens, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (×), nonEmpty, (×))
 
@@ -154,7 +154,17 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
    opTree = (buildExprParser opdefs simple)
       where
       simple :: Parser (Raw Expr)
-      simple = try listEmpty <|> listNonEmpty <|> try float <|> try int <|> try string <|> try appChain <|> try dict <|> pair <?> "expected simple"
+      simple =
+         try listEmpty
+            <|> listNonEmpty
+            <|> try constr
+            <|> try dict
+            <|> try float
+            <|> try int
+            <|> try string
+            <|> try appChain
+            <|> pair
+               <?> "expected simple"
          where
          appChain :: Parser (Raw Expr)
          appChain = var >>= \e -> app e
@@ -169,6 +179,9 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
 
          var :: Parser (Raw Expr)
          var = variable <#> Var
+
+         constr :: Parser (Raw Expr)
+         constr = constructor <#> Constr unit None <*> pure Nil
 
          int :: Parser (Raw Expr)
          int = integer <#> Int unit None
