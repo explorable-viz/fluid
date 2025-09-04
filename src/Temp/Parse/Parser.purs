@@ -94,16 +94,18 @@ newline = void $ char '\n'
 
 integer :: Parser Int
 integer = do
-   f <- lexeme sign
+   f <- sign
    n <- number
+   spaces
    pure $ f n
 
 floating :: Parser Number
 floating = do
-   f <- lexeme sign
+   f <- sign
    n <- toNumber <$> number
    _ <- char '.'
    n' <- toNumber <$> number
+   spaces
    pure $ f (n + (n' / 10.0))
 
 number :: Parser Int
