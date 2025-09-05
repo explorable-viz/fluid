@@ -243,6 +243,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
             <|> try float
             <|> try int
             <|> try str
+            <|> try projection
             <|> try appChain
             <|> try pair
             <|> try listComp
@@ -250,6 +251,25 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
             <|> try parensExpr
                <?> "expected simple"
          where
+
+         projection :: Parser (Raw Expr)
+         projection = dprojection <|> rprojection
+            where
+            rprojection :: Parser (Raw Expr)
+            rprojection = do
+               e <- var
+               delim '.'
+               k <- variable
+               pure $ Project None e k
+
+            dprojection :: Parser (Raw Expr)
+            dprojection = do
+               e <- var
+               delim '['
+               k <- opTree
+               delim ']'
+               pure $ DProject None e k
+
          appChain :: Parser (Raw Expr)
          appChain = var <|> constr <|> parensOp >>= \e -> app e
             where
