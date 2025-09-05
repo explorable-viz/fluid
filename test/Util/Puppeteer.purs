@@ -142,8 +142,9 @@ textContentValue page selector = do
    pure (unsafeFromForeign captionText)
 
 clickToggle :: T.Page -> String -> Aff Unit
-clickToggle page figId = do
-   let toggle = T.Selector ("div#" <> figId <> "-data-pane" <> " + div .toggle-button")
+clickToggle page idPrev = do
+   waitFor (T.Selector ("#grid.data-pane-hidden")) page
+   let toggle = T.Selector ("div#" <> idPrev <> " + div .toggle-button")
    waitFor toggle page
    click toggle page
-   waitFor (T.Selector ("div#" <> figId <> "-data-pane")) page
+   waitFor (T.Selector ("#grid:not(.data-pane-hidden)")) page
