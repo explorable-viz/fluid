@@ -33,12 +33,16 @@ symbol
       , rBracket :: String
       , rParen :: String
       , star :: String
+      , lArray :: String
+      , rArray :: String
       }
 symbol =
    { lBrace: "{"
    , rBrace: "}"
    , lBracket: "["
    , rBracket: "]"
+   , lArray: "[|"
+   , rArray: "|]"
    , lParen: "("
    , rParen: ")"
    , star: "*"

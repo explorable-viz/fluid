@@ -50,6 +50,12 @@ _lbracket = text symbol.lBracket
 _rbracket :: Doc
 _rbracket = text symbol.rBracket
 
+_larray :: Doc
+_larray = text symbol.lArray
+
+_rarray :: Doc
+_rarray = text symbol.rArray
+
 _lparen :: Doc
 _lparen = text symbol.lParen
 

@@ -3,8 +3,9 @@ module Temp.Pretty.Helpers where
 import Prelude
 
 import Data.List (List(..), (:))
-import Temp.Pretty.Constants (_lbracket, _rbracket, _lparen, _rparen, _quote)
-import Temp.Pretty.Doc (Doc, text, (<++>))
+import Temp.Pretty.Constants (_comma, _larray, _lbracket, _lparen, _quote, _rarray, _rbracket, _rparen)
+import Temp.Pretty.Doc (Doc, text, (<+>), (<++>))
+import Util (type (×), (×))
 
 enclose :: Doc -> Doc -> Doc -> Doc
 enclose l r d = l <> d <> r
@@ -14,6 +15,12 @@ parens = enclose _lparen _rparen
 
 brackets :: Doc -> Doc
 brackets = enclose _lbracket _rbracket
+
+matrix :: Doc -> Doc
+matrix p = _larray <+> p <+> _rarray
+
+pair :: forall a. (a -> Doc) -> a -> a -> Doc
+pair f x y = parens (f x <> _comma <+> f y)
 
 quotes :: Doc -> Doc
 quotes = enclose _quote _quote

@@ -11,7 +11,7 @@ import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _lambda, _match)
 import Temp.Pretty.Doc (Doc, array, block, record, render, text, (<+++>), (<++>), (<+>))
-import Temp.Pretty.Helpers (brackets, number, parens, string, todo, vsep)
+import Temp.Pretty.Helpers (brackets, matrix, number, pair, parens, string, todo, vsep)
 import Util (type (×), (×))
 import Val (class Ann)
 
@@ -53,7 +53,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Constr _ _ c as) = prettyConstr c as
    pretty (Dictionary _ _ Nil) = text "{}"
    pretty (Dictionary _ _ es) = record $ map pretty es
-   pretty (Matrix _ _ _ _ _) = todo "Matrix"
+   pretty (Matrix _ _ e (x × y) e') = matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e')
    pretty (Lambda cs) = parens (pretty cs)
    pretty (Project _ s x) = pretty s <> text "." <> text x
    pretty (DProject _ e k) = pretty e <> brackets (pretty k)
@@ -129,7 +129,7 @@ instance Ann a => Pretty (DictEntry a) where
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
 prettyConstr c Nil = text c
-prettyConstr "Pair" (x : y : Nil) = parens (pretty x <> _comma <+> pretty y)
+prettyConstr "Pair" (x : y : Nil) = pair pretty x y
 prettyConstr ":" (x : y : Nil) = pretty x <+> text ":|" <+> pretty y
 prettyConstr c ps = text c <> parens (prettyList ps)
 
