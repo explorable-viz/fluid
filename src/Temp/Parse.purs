@@ -32,7 +32,6 @@ simplePattern :: Parser Pattern
 simplePattern =
    try pListEmpty
       <|> pListNonEmpty
-      -- <|> try pConstr
       <|> try pRecord
       <|> try pVar
       <|> try pAppChain
