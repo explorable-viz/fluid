@@ -26,18 +26,32 @@ import Temp.Util.Error (prettyParseError)
 import Util (type (×), nonEmpty, onlyIf, (×))
 
 pattern :: Parser Pattern
-pattern = defer $ \_ -> simplePattern
+pattern = defer $ \_ -> buildExprParser popdefs simplePattern
 
 simplePattern :: Parser Pattern
 simplePattern =
    try pListEmpty
       <|> pListNonEmpty
-      <|> try pConstr
+      -- <|> try pConstr
       <|> try pRecord
       <|> try pVar
+      <|> try pAppChain
       <|> try parensPattern
       <|> pPair
    where
+
+   pAppChain :: Parser Pattern
+   pAppChain = pConstr >>= \e -> app e
+      where
+      app :: Pattern -> Parser Pattern
+      app e = args e <|> pure e
+
+      args :: Pattern -> Parser Pattern
+      args (PConstr c ps) = do
+         ps' <- parens $ sepBy simplePattern (lexeme $ char ',')
+         app (PConstr c (ps <> ps'))
+      args p = pure p
+
    pListEmpty :: Parser Pattern
    pListEmpty = brackets whitespace $> PListEmpty
 
@@ -106,6 +120,12 @@ binaryOp op = try do
    onlyIf (op == op')
       $ \e e' -> BinaryApp e op' e'
 
+pBinaryOp :: String -> Parser (Pattern -> Pattern -> Pattern)
+pBinaryOp op = try do
+   op' <- lexeme $ operator
+   onlyIf (op == op')
+      $ \e e' -> PConstr op' (e : e' : Nil)
+
 backtickOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 backtickOp = do
    x <- delim '(' *> variable <* delim ')'
@@ -134,6 +154,9 @@ opdefs =
      , Infix (binaryOp ">=") AssocLeft
      ]
    ]
+
+popdefs :: Array (Array (Operator (StateT Position Identity) String Pattern))
+popdefs = [ [ Infix (pBinaryOp ":|") AssocRight ] ]
 
 -- expr :=
 --    | opTree
@@ -217,7 +240,6 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
       simple =
          try listEmpty
             <|> listNonEmpty
-            <|> try constr
             <|> try dict
             <|> try float
             <|> try int
@@ -227,11 +249,10 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
             <|> try listComp
             <|> listEnum
             <|> try parensExpr
-            <|> try parensOp
                <?> "expected simple"
          where
          appChain :: Parser (Raw Expr)
-         appChain = var >>= \e -> app e
+         appChain = var <|> constr <|> parensOp >>= \e -> app e
             where
             app :: Raw Expr -> Parser (Raw Expr)
             app e = args e <|> pure e
