@@ -253,7 +253,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
          where
 
          projection :: Parser (Raw Expr)
-         projection = dprojection <|> rprojection
+         projection = try dprojection <|> rprojection
             where
             rprojection :: Parser (Raw Expr)
             rprojection = do
@@ -299,13 +299,24 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
          dict :: Parser (Raw Expr)
          dict = braces (sepBy kv (lexeme $ char ',')) <#> Dictionary unit None
 
-         kv :: Parser (Raw DictEntry × Raw Expr)
-         kv = defer \_ -> do
-            k <- opTree
-            _ <- lexeme $ char ':'
-            v <- opTree
-            whitespace
-            pure $ (ExprKey k × v)
+            where
+            kv :: Parser (Raw DictEntry × Raw Expr)
+            kv = do
+               k <- exprKey <|> varKey
+               _ <- lexeme $ char ':'
+               v <- opTree
+               pure $ (k × v)
+
+               where
+               exprKey :: Parser (Raw DictEntry)
+               exprKey = do
+                  delim '['
+                  e <- opTree
+                  delim ']'
+                  pure $ ExprKey e
+
+               varKey :: Parser (Raw DictEntry)
+               varKey = variable <#> VarKey unit
 
          listEmpty :: Parser (Raw Expr)
          listEmpty = brackets whitespace $> ListEmpty unit None

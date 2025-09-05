@@ -1,11 +1,17 @@
 def d: {}
-def e: { "a": 5, "a" ++ "b": 6 }
-def f: { "ab": 12 }
+
+def e: { ["a"]: 5, ["a" ++ "b"]: 6 }
+
+def f: { ["ab"]: 12 }
+
+def g: { ab: 12 }
 
 {
   d: d,
   e: e,
-  e_ab: e["ab"],
+  e_ab: e.ab,
+  g_ab1: g["a" ++ "b"],
+  g_ab2: g.ab,
   f: dict_map((+)(1), e),
   g: dict_difference(e, f)
 }

@@ -55,7 +55,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Dictionary _ _ es) = record $ map pretty es
    pretty (Matrix _ _ _ _ _) = todo "Matrix"
    pretty (Lambda cs) = parens (pretty cs)
-   pretty (Project _ s x) = pretty s <> brackets (string x)
+   pretty (Project _ s x) = pretty s <> text "." <> text x
    pretty (DProject _ e k) = pretty e <> brackets (pretty k)
    pretty (App d s s') = prettyAppChain (App d s s') Nil
    pretty (BinaryApp s op s') = binaryApp 0 (BinaryApp s op s')
@@ -124,7 +124,7 @@ instance Ann a => Pretty (DictEntry a × Expr a) where
    pretty (k × v) = pretty k <> _colon <+> pretty v
 
 instance Ann a => Pretty (DictEntry a) where
-   pretty (ExprKey k) = pretty k
+   pretty (ExprKey k) = brackets (pretty k)
    pretty (VarKey _ k) = text k
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc

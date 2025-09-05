@@ -66,7 +66,7 @@ def likelihoodGE(xs, target):
   length(filter((lambda x: x >= target), xs)) / length(xs)
 
 def likelihoodMap(table, prob):
-  fromSome(find((lambda x: x["prob"] <= prob), table))["msg"]
+  fromSome(find((lambda x: x.prob <= prob), table)).msg
 
 def mkPercent(num):
   numToStr(num * 100) ++ "%"
