@@ -5,7 +5,6 @@ import Prelude
 import Data.List (List(..), (:))
 import Temp.Pretty.Constants (_comma, _larray, _lbracket, _lparen, _quote, _rarray, _rbracket, _rparen)
 import Temp.Pretty.Doc (Doc, text, (<+>), (<++>))
-import Util (type (×), (×))
 
 enclose :: Doc -> Doc -> Doc -> Doc
 enclose l r d = l <> d <> r
