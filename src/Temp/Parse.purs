@@ -11,12 +11,13 @@ import Data.Either (Either)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList, toList)
+import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl)
 import DataType (cPair)
 import Doc (DocOpt(..))
 import Lattice (Raw)
 import Parsing (Position, runParserT)
-import Parsing.Combinators (many, many1, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators (many, many1, optionMaybe, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, withPos)
 import Parsing.String (char, eof, string)
@@ -237,8 +238,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
       where
       simple :: Parser (Raw Expr)
       simple =
-         try listEmpty
-            <|> listNonEmpty
+         listExpr
             <|> try dict
             <|> try float
             <|> try int
@@ -246,10 +246,7 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
             <|> try projection
             <|> try appChain
             <|> try pair
-            <|> try listComp
-            <|> listEnum
             <|> try parensExpr
-               <?> "expected simple"
          where
 
          projection :: Parser (Raw Expr)
@@ -318,59 +315,48 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
                varKey :: Parser (Raw DictEntry)
                varKey = variable <#> VarKey unit
 
-         listEmpty :: Parser (Raw Expr)
-         listEmpty = brackets whitespace $> ListEmpty unit None
-
-         listNonEmpty :: Parser (Raw Expr)
-         listNonEmpty = do
+         listExpr :: Parser (Raw Expr)
+         listExpr = do
             delim '['
-            head <- opTree
-            rest <- listRest
-            pure $ ListNonEmpty unit None head rest
-
+            maybeExpr <- optionMaybe (try opTree)
+            case maybeExpr of
+               Nothing -> do
+                  delim ']'
+                  pure $ ListEmpty unit None
+               Just e -> listEnum e <|> listComp e <|> listNonEmpty e
             where
-            listRest :: Parser (Raw ListRest)
-            listRest = listEnd <|> listNext
+
+            listEnum :: Raw Expr -> Parser (Raw Expr)
+            listEnum e = do
+               _ <- lexeme $ string ".."
+               e' <- opTree
+               delim ']'
+               pure $ ListEnum e e'
+
+            listComp :: Raw Expr -> Parser (Raw Expr)
+            listComp exp = do
+               qs <- many1 (listCompGuard <|> listCompGenOrDecl)
+               delim ']'
+               pure $ ListComp unit None exp (toList qs)
 
                where
-               listEnd :: Parser (Raw ListRest)
-               listEnd = delim ']' $> End unit
-
-               listNext :: Parser (Raw ListRest)
-               listNext = do
-                  delim ','
-                  e <- opTree
-                  r <- listRest
-                  pure $ Next unit e r
-
-         listComp :: Parser (Raw Expr)
-         listComp = do
-            delim '['
-            e <- opTree
-            qs <- many1 qualifier
-            delim ']'
-            pure $ ListComp unit None e (toList qs)
-
-            where
-            qualifier :: Parser (Raw Qualifier)
-            qualifier = listCompGen <|> listCompDecl <|> listCompGuard
-
-               where
-               listCompGen :: Parser (Raw Qualifier)
-               listCompGen = do
+               listCompGenOrDecl :: Parser (Raw Qualifier)
+               listCompGenOrDecl = do
                   reserved "for"
                   p <- pattern
                   reserved "in"
-                  e <- opTree
-                  pure $ ListCompGen None p e
+                  (listCompDecl' p <|> listCompGen' p)
 
-               listCompDecl :: Parser (Raw Qualifier)
-               listCompDecl = do
-                  reserved "for"
-                  p <- pattern
-                  reserved "in"
-                  e <- brackets $ opTree
-                  pure $ ListCompDecl (VarDef p e)
+                  where
+                  listCompDecl' :: Pattern -> Parser (Raw Qualifier)
+                  listCompDecl' p = do
+                     e <- brackets $ opTree
+                     pure $ ListCompDecl (VarDef p e)
+
+                  listCompGen' :: Pattern -> Parser (Raw Qualifier)
+                  listCompGen' p = do
+                     e <- opTree
+                     pure $ ListCompGen None p e
 
                listCompGuard :: Parser (Raw Qualifier)
                listCompGuard = do
@@ -378,14 +364,23 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
                   e <- opTree
                   pure $ ListCompGuard e
 
-         listEnum :: Parser (Raw Expr)
-         listEnum = do
-            delim '['
-            e <- opTree
-            _ <- lexeme $ string ".."
-            e' <- opTree
-            delim ']'
-            pure $ ListEnum e e'
+            listNonEmpty :: Raw Expr -> Parser (Raw Expr)
+            listNonEmpty head = do
+               rest <- listRest
+               pure $ ListNonEmpty unit None head rest
+               where
+               listRest :: Parser (Raw ListRest)
+               listRest = listEnd <|> listNext
+                  where
+                  listEnd :: Parser (Raw ListRest)
+                  listEnd = delim ']' $> End unit
+
+                  listNext :: Parser (Raw ListRest)
+                  listNext = do
+                     delim ','
+                     e <- opTree
+                     r <- listRest
+                     pure $ Next unit e r
 
          pair :: Parser (Raw Expr)
          pair = do

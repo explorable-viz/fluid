@@ -7,6 +7,9 @@ def b:
 def c:
   [z for x in [5, 4, 3] for y in [9, 7, 5] for z in [x + y] if z < 10]
 
+def d:
+  [x for x :| xs in [[5], [4], [3], []]]
+
 def e:
   [z for x in [5, 4, 3] for z in [x]]
 
@@ -14,5 +17,14 @@ def f: [z for z in [5]]
 
 def g:
   [[] for [] in [[5], [4], [3], []]]
+
+def h:
+  [x for [x] in [[5], [4], [3], []]]
+
+def i:
+  [x + y for [x, y] in [[5], [4, 6], [3], [], [9, 10]]]
+
+def j:
+  [x for [x] in [[], [4, 6]]]
 
 0
