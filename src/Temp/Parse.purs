@@ -19,9 +19,9 @@ import Lattice (Raw)
 import Parsing (Position, runParserT)
 import Parsing.Combinators (many, many1, optionMaybe, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
-import Parsing.Indent (runIndent, withPos)
+import Parsing.Indent (runIndent, sameLine, withPos)
 import Parsing.String (char, eof, string)
-import SExpr (Clause(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..))
+import SExpr (Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..))
 import Temp.Parse.Parser (Parser, align, block, braces, brackets, constructor, delim, floating, integer, lexeme, lines, operator, parens, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (×), nonEmpty, onlyIf, (×))
@@ -279,14 +279,18 @@ expr = matchAs <|> ifElse <|> def <|> opTree <?> "expr"
                pure $ DProject None e k
 
          appChain :: Parser (Raw Expr)
-         appChain = var <|> constr <|> parensOp >>= \e -> app e
+         appChain = var <|> constr <|> parensOp >>= \e -> withPos $ app e
             where
             app :: Raw Expr -> Parser (Raw Expr)
             app e = args e <|> pure e
 
             args :: Raw Expr -> Parser (Raw Expr)
             args e = do
-               ps <- parens $ sepBy opTree (lexeme $ char ',')
+               try $ do
+                  delim '('
+                  sameLine
+               ps <- sepBy opTree (lexeme $ char ',')
+               delim ')'
                app (foldl (App None) e ps)
 
          var :: Parser (Raw Expr)
