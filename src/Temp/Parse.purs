@@ -181,7 +181,7 @@ popdefs = [ [ Infix (pBinaryOp ":|") AssocRight ] ]
 -- 2. use fix or defer on left recursion
 
 expr :: Parser (Raw Expr)
-expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected expr"
+expr = matchAs <|> ifElse <|> def <|> opTree <?> "expr"
    where
    matchAs :: Parser (Raw Expr)
    matchAs = do
@@ -204,25 +204,27 @@ expr = matchAs <|> ifElse <|> try funDef <|> valDef <|> opTree <?> "expected exp
          e <- block expr
          pure $ (p × e)
 
-   funDef :: Parser (Raw Expr)
-   funDef = do
+   def :: Parser (Raw Expr)
+   def = do
       reserved "def"
-      name <- variable
-      ps <- params
-      e <- block expr
-      e' <- align expr
-      pure $ LetRec (nonEmpty ((name × Clause (ps × e)) : Nil)) e'
+      funDef <|> valDef
       where
-      params :: Parser (NonEmptyList Pattern)
-      params = parens $ sepBy1 pattern (lexeme $ char ',')
+      funDef :: Parser (Raw Expr)
+      funDef = do
+         name × ps <- try $ do
+            name <- variable
+            ps <- parens $ sepBy1 pattern (lexeme $ char ',')
+            pure $ name × ps
+         e <- block expr
+         e' <- align expr
+         pure $ LetRec (nonEmpty ((name × Clause (ps × e)) : Nil)) e'
 
-   valDef :: Parser (Raw Expr)
-   valDef = do
-      reserved "def"
-      name <- pattern
-      e <- block expr
-      e' <- align expr
-      pure $ Let (nonEmpty ((VarDef name e) : Nil)) e'
+      valDef :: Parser (Raw Expr)
+      valDef = do
+         name <- pattern
+         e <- block expr
+         e' <- align expr
+         pure $ Let (nonEmpty ((VarDef name e) : Nil)) e'
 
    ifElse :: Parser (Raw Expr)
    ifElse = do
