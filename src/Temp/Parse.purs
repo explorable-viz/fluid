@@ -241,6 +241,7 @@ expr = matchAs <|> ifElse <|> def <|> opTree <?> "expr"
       simple :: Parser (Raw Expr)
       simple =
          listExpr
+            <|> lambda
             <|> try dict
             <|> try float
             <|> try int
@@ -250,6 +251,14 @@ expr = matchAs <|> ifElse <|> def <|> opTree <?> "expr"
             <|> try pair
             <|> try parensExpr
          where
+
+         lambda :: Parser (Raw Expr)
+         lambda = do
+            reserved "lambda"
+            ps <- sepBy1 pattern (lexeme $ char ',')
+            delim ':'
+            e <- opTree
+            pure $ Lambda (Clauses (nonEmpty (Clause (ps × e) : Nil)))
 
          projection :: Parser (Raw Expr)
          projection = try dprojection <|> rprojection
