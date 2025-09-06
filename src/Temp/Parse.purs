@@ -126,14 +126,14 @@ pBinaryOp op = try do
    onlyIf (op == op')
       $ \e e' -> PConstr op' (e : e' : Nil)
 
-backtickOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
-backtickOp = do
-   x <- delim '(' *> variable <* delim ')'
+infixFn :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
+infixFn = do
+   x <- delim '|' *> variable <* delim '|'
    pure (\e e' -> BinaryApp e x e')
 
 opdefs :: Array (Array (Operator (StateT Position Identity) String (Raw Expr)))
 opdefs =
-   [ [ Infix backtickOp AssocLeft ]
+   [ [ Infix infixFn AssocLeft ]
    , [ Infix (binaryOp ".") AssocLeft
      , Infix (binaryOp "!") AssocLeft
      , Infix (binaryOp "**") AssocRight
