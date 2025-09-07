@@ -11,7 +11,7 @@ import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _lambda, _match)
 import Temp.Pretty.Doc (Doc, array, block, record, render, text, (<+++>), (<++>), (<+>))
-import Temp.Pretty.Helpers (brackets, matrix, number, pair, parens, string, todo, vsep)
+import Temp.Pretty.Helpers (brackets, matrix, number, pair, parens, string, vsep)
 import Util (type (×), (×))
 import Val (class Ann)
 
@@ -88,10 +88,13 @@ instance Ann a => Pretty (Pattern × Expr a) where
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
-   pretty (PRecord _) = todo "PRecord"
+   pretty (PRecord xps) = record $ map pretty xps
    pretty (PConstr c ps) = prettyConstr c ps
    pretty (PListEmpty) = _empty
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
+
+instance Pretty (String × Pattern) where
+   pretty (k × v) = text k <> _colon <+> pretty v
 
 instance Pretty ListRestPattern where
    pretty (PListVar x) = text x

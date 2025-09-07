@@ -5,31 +5,47 @@ import Prelude hiding (between)
 import Control.Alt ((<|>))
 import Data.Array (cons, elem)
 import Data.Array as Array
-import Data.Int (fromString, toNumber)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
+import Data.String.CodeUnits (take)
 import Data.String.CodeUnits as SCU
 import Data.Traversable (foldr)
-import Parsing (fail)
-import Parsing.Combinators (between, try, (<?>))
-import Parsing.Combinators.Array (many, many1)
+import Parsing (ParseError(..), ParseState(..), ParserT, Position(..), fail, position, region, stateParserT)
+import Parsing.Combinators (between, (<?>))
+import Parsing.Combinators.Array (many)
 import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy)
-import Parsing.String.Basic (alphaNum, digit, letter, lower, upper)
+import Parsing.String.Basic (alphaNum, letter, lower, upper)
 import Parsing.Token (oneOf)
 import Temp.Parse.Constants (opChars)
+import Temp.Util.UnsafeDebug (logUnsafe)
+import Util (type (×), (×))
 
 type Parser a = IndentParser String a
 
 keywords :: Array String
-keywords = [ "def", "if", "else" ]
+keywords = [ "def", "if", "else", "lambda", "match", "case", "for", "in" ]
 
-operators :: Array String
-operators = [ ".", "!", "**", "*", "/", "+", "-", ":|", "++", "==", "/=", "<", ">", "<=", ">=" ]
+logState :: Parser Unit
+logState = do
+   _ × position × consumed <- state
+   let _ = logUnsafe ("\nPosition: " <> show position <> "\nConsumed: " <> show consumed <> "\n")
+   pure unit
+   where
+   state :: forall s m. ParserT s m (s × Position × Boolean)
+   state = stateParserT \state1@(ParseState input pos con) -> (input × pos × con) × state1
+
+context :: forall a. String -> Parser a -> Parser a
+context s p = do
+   pos <- position
+   region (addContext pos) p
+   where
+   addContext :: Position -> ParseError -> ParseError
+   addContext (Position { line, column }) (ParseError msg pos) =
+      ParseError (take 200 (msg <> "\n " <> s <> " on line " <> show line <> ", column " <> show column)) pos
 
 block :: forall a. Parser a -> Parser a
 block e = delim ':' *> sameOrIndented *> withPos e
 
--- use between
 parens :: forall a. Parser a -> Parser a
 parens e = delim '(' *> e <* delim ')'
 
@@ -61,7 +77,7 @@ constructor :: Parser String
 constructor = unreserved $ identifier upper (alphaNum <|> oneOf [ '_', '\'' ])
 
 reserved :: String -> Parser Unit
-reserved expected = try do
+reserved expected = do
    received <- identifier (letter <|> char '_') (alphaNum <|> oneOf [ '_', '\'' ])
    if expected /= received then fail $ "Expected `" <> expected <> "`, received `" <> received <> "`"
    else pure unit
@@ -80,9 +96,6 @@ spaces = void $ many (oneOf [ ' ', '\t' ])
 lines :: Parser Unit
 lines = void $ many (spaces *> newline)
 
-lines1 :: Parser Unit
-lines1 = void $ many1 (spaces *> newline)
-
 whitespace :: Parser Unit
 whitespace = void $ many (oneOf [ ' ', '\t', '\n' ])
 
@@ -92,33 +105,9 @@ lexeme p = p <* whitespace
 newline :: Parser Unit
 newline = void $ char '\n'
 
-integer :: Parser Int
-integer = do
-   f <- sign
-   n <- number
-   spaces
-   pure $ f n
-
-floating :: Parser Number
-floating = do
-   f <- sign
-   n <- toNumber <$> number
-   _ <- char '.'
-   n' <- toNumber <$> number
-   spaces
-   pure $ f (n + (n' / 10.0))
-
-number :: Parser Int
-number = do
-   digits <- Array.some digit
-   maybe (fail "not digits") pure $ fromString (SCU.fromCharArray digits)
-
-sign :: forall a. (Ring a) => Parser (a -> a)
-sign = (char '-' $> negate)
-   <|> (char '+' $> identity)
-   <|> pure identity
-
--- TODO: this is from Parsing.Token without string escapes
+-----------------------------------------------------------
+-- String things extracted from "Parsing.Token"
+-----------------------------------------------------------
 stringLiteral :: Parser String
 stringLiteral = lexeme (go <?> "literal string")
    where

@@ -30,9 +30,6 @@ string s = quotes (text s)
 number :: forall a. Show a => a -> Doc
 number s = text (show s)
 
-todo :: String -> Doc
-todo x = quotes (text ("TODO: " <> x))
-
 vsep :: List Doc -> Doc
 vsep Nil = mempty
 vsep (d : Nil) = d

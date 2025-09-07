@@ -1,10 +1,10 @@
 let split [] = ([], []) in
-let split (:|x xs) = let (ys, zs) = split xs in
-                        (x `:|` zs, ys) in
+let split (x : xs) = let (ys, zs) = split xs in
+                       ((x : zs), ys) in
 let merge xs ys = match (xs, ys) as
                   {([], _) -> ys;
-                    ((:|x xs'), []) -> xs;
-                    ((:|x xs'), (:|y ys')) -> if x < y then x `:|` merge xs' ys else y `:|` merge xs ys'} in
+                    ((x : xs'), []) -> xs;
+                    ((x : xs'), (y : ys')) -> if x < y then (x : merge xs' ys) else (y : merge xs ys')} in
 let mergesort xs = if length xs < 2 then xs else let (ys, zs) = split xs in
                                                  merge (mergesort ys) (mergesort zs) in
 let findQuantile q p xs = let rank = (p / q) * (length xs - 1) in
@@ -16,14 +16,14 @@ let findQuantile q p xs = let rank = (p / q) * (length xs - 1) in
 let findPercentile = findQuantile 100 in
 let accumBins data (Nil) = [] in
 let accumBins data [l] = [] in
-let accumBins data (:|l (:|r es)) = let (ge, le) = splitOn (fun x = x <= r) data in
-                                          ((le, r - l)) `:|` accumBins ge (r `:|` es) in
+let accumBins data (l : (r : es)) = let (ge, le) = splitOn (fun x = x <= r) data in
+                                        ((le, r - l) : accumBins ge ((r : es))) in
 let cut xs nbins = let low = minimum xs in
                    let binwidth = (maximum xs - low) / nbins in
                    let edges = [low + x * binwidth|x <- enumFromTo 0 nbins] in
                    accumBins xs edges in
 let qcut xs qs = let (low, high) = (minimum xs, maximum xs) in
-                 let edges = append ((low `:|` [findPercentile x xs|x <- qs], [high])) in
+                 let edges = append (((low : [findPercentile x xs|x <- qs]), [high])) in
                  accumBins xs edges in
 let likelihoodLE xs target = length (filter (fun x = x <= target) xs) / length xs in
 let likelihoodGE xs target = length (filter (fun x = x >= target) xs) / length xs in
