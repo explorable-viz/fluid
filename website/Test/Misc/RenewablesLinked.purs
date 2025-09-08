@@ -22,7 +22,7 @@ testFig page = do
    checkXTicks
    checkPointRadius
 
-   clickToggle page "fig"
+   clickToggle page "fig-data-pane"
    clickBarChart
    where
    barChart = nthChildOf "#fig-output" 1
