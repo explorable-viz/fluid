@@ -1,0 +1,16 @@
+let isCountry name x = name == x.country in
+let isYear year x = year == x.year in
+let plot year countries = let rens = filter (isYear year) renewables in
+                          let nonRens = filter (isYear year) nonRenewables in
+                          let plotCountry country = let rens' = filter (isCountry country) rens in
+                                                    let rensOut = sum (map (fun x = x.output) rens') in
+                                                    let rensCap = sum (map (fun x = x.capacity) rens') in
+                                                    let x = head (filter (isCountry country) nonRens) in
+                                                    let nonRensCap = ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap in
+                                                    {x : rensCap / (rensCap + nonRensCap),
+                                                      y : (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)} in
+                          map plotCountry countries in
+ScatterPlot {caption : "Clean energy efficiency vs.proportion of renewable energy capacity",
+              points : plot 2018 ["BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA"],
+              labels : {x : "Renewables/TotalEnergyCap",
+                         y : "Clean Capacity Factor"}}

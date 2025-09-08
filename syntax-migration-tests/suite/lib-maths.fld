@@ -1,0 +1,7 @@
+let mul x y = x * y;
+
+let dub = mul 2;
+
+let trip = mul 3;
+
+let x = x in x

@@ -1,0 +1,6 @@
+let d x y = (x - y) * (x - y) in
+let seq1 = [3, 1, 2, 2, 1] in
+let seq2 = [2, 0, 0, 3, 3, 1, 0] in
+let window = 2 in
+let (costs, matched) = computeDTW seq1 seq2 d window in
+matched

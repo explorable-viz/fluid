@@ -1,0 +1,4 @@
+let e = {["a"] : 5,
+          ["a" ++ "b"] : 6} in
+let f = {["ab"] : 12} in
+dict_difference e f

@@ -1,0 +1,18 @@
+let comp (Infty) (Infty) = EQ in
+let comp (Infty) (FNum) y = GT in
+let comp (FNum) x (Infty) = LT in
+let comp (FNum) x (FNum) y = compare x y in
+let fmin x y = match comp x y as
+               {(LT) -> x;
+                 (EQ) -> x;
+                 (GT) -> y} in
+let minimal = foldl1 fmin in
+let add (Infty) _ = Infty in
+let add (FNum) x (Infty) = Infty in
+let add (FNum) x (FNum) y = (FNum x) + y in
+let eq (Infty) (Infty) = True in
+let eq (Infty) (FNum) x = False in
+let eq (FNum) x (Infty) = False in
+let eq (FNum) x (FNum) y = x == y in
+let x = x in
+x

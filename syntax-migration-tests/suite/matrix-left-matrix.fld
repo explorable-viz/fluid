@@ -1,0 +1,5 @@
+let leftMatrix =
+    let matrix = [[1, 2,3], [4, 5, 6]] in
+    [| nth2 i j matrix | (i, j) in (2,3) |] ;
+
+let x = x in x
