@@ -1,0 +1,2 @@
+let nonRenewables = loadJson "dataset/non-renewables.json";
+let renewables = loadJson "dataset/renewable.json";

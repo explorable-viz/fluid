@@ -1,4 +1,5 @@
 import lib.graphics
+import dataset.renewablesRestricted
 
 let year = 2015;
 -- List (Country, List (EnergyType, Output)) -> List (Country, List (EnergyType, Output))

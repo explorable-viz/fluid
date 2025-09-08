@@ -17,17 +17,16 @@ import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.String (codePointFromChar, joinWith)
 import Data.String.CodeUnits as SCU
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
-import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (Raw)
 import Parse.Constants (str)
-import Parsing.Combinators (between, option, sepBy, sepBy1, try, (<?>))
-import Parsing.Combinators.Array (many)
+import Parsing.Combinators (between, notFollowedBy, many, optionMaybe, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof, satisfy, string)
@@ -35,7 +34,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Pretty (prettyP)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Paragraph, Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, error, onlyIf, (×))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -70,7 +69,6 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
       , '='
       , '>'
       , '?'
-      , '@'
       , '\\'
       , '^'
       , '|'
@@ -108,39 +106,26 @@ rBracket = void $ token.symbol str.rBracket
 rArrow :: SParser Unit
 rArrow = token.reservedOp str.rArrow
 
-docCommentDelim :: SParser Unit
-docCommentDelim = void $ string str.triplequote
+doc :: SParser (Raw Expr) -> SParser (Expr Unit)
+doc expr' = try $ token.symbol str.atDoc *> token.parens expr'
 
-letters :: SParser Char -> SParser String
-letters char = SCU.fromCharArray <$> Array.some char
+paragraph :: SParser (Raw Expr) -> SParser (Paragraph Unit)
+paragraph expr' = token.lexeme $
+   between (string str.triplequote) (string str.triplequote) (token.whiteSpace *> List.many (paragraphElem expr'))
 
-docComment :: SParser (Raw Expr) -> SParser (DocOpt Expr Unit)
-docComment expr' = optionDoc (try $ docComment' expr')
+paragraphElem :: SParser (Raw Expr) -> SParser (ParagraphElem Unit)
+paragraphElem expr' =
+   token.lexeme (try token' <|> unquote)
    where
-   optionDoc p = option None (Doc <$> p)
+   token' :: SParser (ParagraphElem Unit)
+   token' = Token <$> (SCU.fromCharArray <$> Array.some paragraphLetter)
 
-docComment' :: SParser (Raw Expr) -> SParser (List (DocCommentElem Expr Unit))
-docComment' expr' = token.lexeme (go <?> "docComment")
-   where
-   go :: SParser (List (DocCommentElem Expr Unit))
-   go = do
-      words <- between docCommentDelim (docCommentDelim <?> "end of docComment") (List.many $ docCommentToken expr')
-      pure words
+   unquote :: SParser (ParagraphElem Unit)
+   unquote =
+      string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
 
-docCommentToken :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
-docCommentToken expr' =
-   token.whiteSpace
-      *> (try commentToken <|> commentExpr expr')
-      <* token.whiteSpace
-
-commentToken :: SParser (DocCommentElem Expr Unit)
-commentToken = Token <$> letters docCommentLetter
-
-commentExpr :: SParser (Raw Expr) -> SParser (DocCommentElem Expr Unit)
-commentExpr expr' = string str.dollar *> (Unquote <$> (expr' # between (string str.curlylBrace) (string str.curlyrBrace)))
-
-docCommentLetter :: SParser Char
-docCommentLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
+paragraphLetter :: SParser Char
+paragraphLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -250,11 +235,18 @@ defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are op tree leaves.
 expr_ :: SParser (Raw Expr)
-expr_ =
-   fix (opTreeLeaf >>> buildExprParser ([ backtickOp ] `cons` operators binaryOp))
+expr_ = fix exprParser
    where
    -- Pushing this to front of operator table to give it higher precedence than any other binary op.
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
+   exprParser :: Endo (SParser (Raw Expr))
+   exprParser expr' = do
+      doc' <- optionMaybe (doc expr')
+      e <- buildExprParser ([ backtickOp ] `cons` operators binaryOp) (opTreeLeaf expr')
+      pure case doc' of
+         Nothing -> e
+         Just p -> DocExpr p e
+
    backtickOp :: Operator Identity String (Raw Expr)
    backtickOp = flip Infix AssocLeft do
       x <- between backtick backtick ident
@@ -269,9 +261,9 @@ expr_ =
       op' <- token.operator
       onlyIf (op == op') $
          if op == str.dot then \e e' -> case e' of
-            Var x -> Project None e x
+            Var x -> Project e x
             _ -> error $ "Field names are not first class; got \"" <> prettyP e' <> "\"."
-         else if isCtrOp op' then \e e' -> Constr unit None op' (e : e' : empty)
+         else if isCtrOp op' then \e e' -> Constr unit op' (e : e' : empty)
          else \e e' -> BinaryApp e op e'
 
    opTreeLeaf :: Endo (SParser (Raw Expr))
@@ -282,12 +274,13 @@ expr_ =
          MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' clause_uncurried
 
       ifElse :: SParser (Raw Expr)
-      ifElse = pure IfElse
-         <*> (keyword str.if_ *> expr')
-         <* keyword str.then_
-         <*> expr'
-         <* keyword str.else_
-         <*> expr'
+      ifElse = do
+         pure IfElse
+            <*> (keyword str.if_ *> expr')
+            <* keyword str.then_
+            <*> expr'
+            <* keyword str.else_
+            <*> expr'
 
       lambda :: SParser (Raw Expr)
       lambda = (Lambda <<< Clauses) <$> (keyword str.fun *> branches expr' clause_curried)
@@ -295,96 +288,99 @@ expr_ =
       defsExpr :: SParser (Raw Expr)
       defsExpr = do
          defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
-         foldr (\def -> (Let ||| LetRec) def) <$> (keyword str.in_ *> expr') <@> defs'
+         foldr (\def e -> ((Let ||| LetRec) def e)) <$> (keyword str.in_ *> expr') <@> defs'
 
       -- Left-associative tree of applications of one or more simple terms.
       appChain :: SParser (Raw Expr)
-      appChain = docComment expr' >>= \doc -> simpleExprOrProjection doc >>= rest doc
+      appChain = simpleExprOrProjection >>= rest
          where
-
-         rest :: DocOpt Expr Unit -> Raw Expr -> SParser (Raw Expr)
-         rest _ e@(Constr α doc' c es) = ctrArgs <|> pure e
+         rest :: Raw Expr -> SParser (Raw Expr)
+         rest e@(Constr α c es) = ctrArgs <|> pure e
             where
             ctrArgs :: SParser (Raw Expr)
-            ctrArgs = docComment expr' >>= \doc -> simpleExprOrProjection doc >>= \e' -> rest doc (Constr α doc' c (es <> (e' : empty)))
-         rest doc e =
-            ( docComment expr' >>= simpleExprOrProjection >>= \arg -> rest doc (App doc e arg)
-            ) <|> pure e
+            ctrArgs = simpleExprOrProjection >>= \e' -> rest (Constr α c (es <> (e' : empty)))
+         rest e =
+            (simpleExprOrProjection >>= \e' -> rest (App e e')) <|> pure e
 
          -- An expression that may need wrapping in parentheses to disambiguate.
-         simpleExprOrProjection :: DocOpt Expr Unit -> SParser (Raw Expr)
-         simpleExprOrProjection doc =
-            simpleExpr doc >>= projection
+         simpleExprOrProjection :: SParser (Raw Expr)
+         simpleExprOrProjection =
+            simpleExpr >>= projection
             where
             projection :: Raw Expr -> SParser (Raw Expr)
             projection e = dprojection e <|> rprojection e
 
             rprojection :: Raw Expr -> SParser (Raw Expr)
-            rprojection e = (Project doc e <$> (token.reservedOp str.dot *> ident)) <|> pure e
+            rprojection e = (Project e <$> (token.reservedOp str.dot *> ident)) <|> pure e
 
             dprojection :: Raw Expr -> SParser (Raw Expr)
-            dprojection e = (DProject doc e <$> (token.reservedOp str.dot *> token.brackets expr_))
+            dprojection e = DProject e <$> (token.reservedOp str.dot *> token.brackets expr_)
 
          -- An "atomic" expression that never needs wrapping in parentheses to disambiguate.
-         simpleExpr :: DocOpt Expr Unit -> SParser (Raw Expr)
-         simpleExpr doc =
+         simpleExpr :: SParser (Raw Expr)
+         simpleExpr =
             -- matrix before list
-            ( matrix doc
-                 <|> try (nil doc)
-                 <|> listNonEmpty doc
-                 <|> try (constr doc)
-                 <|> dict doc
-                 <|> try (float doc)
-                 <|> try (int doc) -- int may start with +/-
-                 <|> string doc
-                 <|> try (pair doc)
-                 <|> listComp doc
+            ( try paragraphLiteral
+                 <|> matrix
+                 <|> try nil
+                 <|> listNonEmpty
+                 <|> try constr
+                 <|> dict
+                 <|> try float
+                 <|> try int -- int may start with +/-
+                 <|> stringLiteral
+                 <|> try pair
+                 <|> listComp
             )
                <|> try variable
-               <|> try (token.parens expr')
+               <|> try (token.parens expr_)
                <|> listEnum
                <|> try parensOp
 
             where
-            matrix :: DocOpt Expr Unit -> SParser (Raw Expr)
-            matrix doc' = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
-               Matrix unit doc'
-                  <$> (expr' <* bar)
+            matrix :: SParser (Raw Expr)
+            matrix = between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
+               Matrix unit
+                  <$> (expr_ <* bar)
                   <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
-                  <*> (keyword str.in_ *> expr')
+                  <*> (keyword str.in_ *> expr_)
 
-            nil :: DocOpt Expr Unit -> SParser (Raw Expr)
-            nil doc' = token.brackets $ pure (ListEmpty unit doc')
+            nil :: SParser (Raw Expr)
+            nil = token.brackets $ pure (ListEmpty unit)
 
-            listNonEmpty :: DocOpt Expr Unit -> SParser (Raw Expr)
-            listNonEmpty doc' = lBracket *> (ListNonEmpty unit doc' <$> expr' <*> fix listRest)
+            listNonEmpty :: SParser (Raw Expr)
+            listNonEmpty = lBracket *> (ListNonEmpty unit <$> expr_ <*> fix listRest)
                where
                listRest :: Endo (SParser (Raw ListRest))
                listRest listRest' =
                   rBracket *> pure (End unit) <|>
-                     token.comma *> (Next unit <$> expr' <*> listRest')
+                     token.comma *> (Next unit <$> expr_ <*> listRest')
 
-            listComp :: DocOpt Expr Unit -> SParser (Raw Expr)
-            listComp doc' = token.brackets $
-               pure (ListComp unit doc') <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
+            listComp :: SParser (Raw Expr)
+            listComp = token.brackets $
+               ListComp unit <$> expr_ <* bar <*> (toList <$> sepBy1 qualifier token.comma)
                where
                qualifier :: SParser (Raw Qualifier)
                qualifier =
-                  ListCompGen None <$> pattern <* lArrow <*> expr'
-                     <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
-                     <|> ListCompGuard <$> expr'
+                  ListCompGen <$> pattern <* lArrow <*> expr_
+                     <|> ListCompDecl <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr_)
+                     <|> ListCompGuard <$> expr_
 
             listEnum :: SParser (Raw Expr)
-            listEnum = token.brackets $ pure ListEnum <*> expr' <* ellipsis <*> expr'
+            listEnum = token.brackets do
+               start <- expr_
+               _ <- ellipsis
+               end <- expr_
+               pure $ ListEnum start end
 
-            constr :: DocOpt Expr Unit -> SParser (Raw Expr)
-            constr doc' = Constr unit doc' <$> ctr <@> empty
+            constr :: SParser (Raw Expr)
+            constr = Constr unit <$> ctr <@> empty
 
-            dict :: DocOpt Expr Unit -> SParser (Raw Expr)
-            dict doc' = sepBy kvPair token.comma <#> Dictionary unit doc' # token.braces
+            dict :: SParser (Raw Expr)
+            dict = sepBy kvPair token.comma <#> Dictionary unit # token.braces
                where
                kvPair :: SParser ((Raw DictEntry) × (Raw Expr))
-               kvPair = (((ExprKey <$> expr') # token.brackets) <* token.colon) `lift2 (×)` expr' <|> ((VarKey unit <$> ident) <* token.colon) `lift2 (×)` expr'
+               kvPair = (((ExprKey <$> expr') # token.brackets) <* token.colon) `lift2 (×)` expr_ <|> ((VarKey unit <$> ident) <* token.colon) `lift2 (×)` expr_
 
             variable :: SParser (Raw Expr)
             variable = ident <#> Var
@@ -393,26 +389,33 @@ expr_ =
             signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
 
             -- built-in integer/float parsers don't seem to allow leading signs.
-            int :: DocOpt Expr Unit -> SParser (Raw Expr)
-            int doc' = do
+            int :: SParser (Raw Expr)
+            int = do
                sign <- signOpt
-               (sign >>> Int unit doc') <$> token.natural
+               n <- token.natural
+               pure $ Int unit (sign n)
 
-            float :: DocOpt Expr Unit -> SParser (Raw Expr)
-            float doc' = do
+            float :: SParser (Raw Expr)
+            float = do
                sign <- signOpt
-               (sign >>> Float unit doc') <$> token.float
+               f <- token.float
+               pure $ Float unit (sign f)
 
-            string :: DocOpt Expr Unit -> SParser (Raw Expr)
-            string doc' = Str unit doc' <$> token.stringLiteral
+            stringLiteral :: SParser (Raw Expr)
+            stringLiteral = Str unit <$> (try (notFollowedBy $ string str.triplequote) *> token.stringLiteral)
+
+            paragraphLiteral :: SParser (Raw Expr)
+            paragraphLiteral = do
+               p <- paragraph expr'
+               pure $ Paragraph p
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)
             parensOp = Op <$> token.parens token.operator
 
-            pair :: DocOpt Expr Unit -> SParser (Raw Expr)
-            pair doc' = token.parens $
-               (pure $ \e e' -> Constr unit doc' cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
+            pair :: SParser (Raw Expr)
+            pair = token.parens $
+               (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr_
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
@@ -445,7 +448,7 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       op' <- token.operator
       onlyIf (isCtrOp op' && op == op') \π π' -> PConstr op' (π : π' : Nil)
 
-imports_ :: SParser (Array String)
+imports_ :: SParser (List String)
 imports_ = many (keyword str.import *> modPath)
    where
    modPath :: SParser String
@@ -454,11 +457,14 @@ imports_ = many (keyword str.import *> modPath)
 topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
 
-program ∷ SParser (Array String × Raw Expr)
-program = topLevel do
+withImports :: forall a. SParser a -> SParser (a × List String)
+withImports p = topLevel do
    imports <- imports_
-   expr <- expr_
-   pure $ imports × expr
+   a <- p
+   pure $ a × imports
 
-module_ :: SParser (Raw Module)
-module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
+program ∷ SParser (Raw Expr × List String)
+program = withImports expr_
+
+module_ :: SParser (Raw Module × List String)
+module_ = withImports $ Module <<< concat <$> sepBy_try (defs expr_) token.semi <* token.semi

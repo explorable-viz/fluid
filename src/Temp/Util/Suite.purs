@@ -10,7 +10,7 @@ import Data.String.CodeUnits (takeRight)
 import Data.String.Common (replace)
 import Data.String.Pattern (Replacement(..))
 import Data.Traversable (foldl, traverse)
-import Data.Tuple (snd)
+import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Console (log)
 import Effect.Exception (throw)
@@ -67,7 +67,7 @@ testPretty :: TestFn
 testPretty src =
    case (runParser src P.program) of
       Left error -> Left (prettyParseError error)
-      Right expr -> Right (prettyPy (snd $ expr) <> "\n")
+      Right expr -> Right (prettyPy (fst expr) <> "\n")
 
 testParse :: TestFn
 testParse src = case (parsePy src) of
