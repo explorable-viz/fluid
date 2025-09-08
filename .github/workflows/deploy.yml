@@ -15,27 +15,6 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
 
-  deploy-npm:
-    runs-on: ubuntu-22.04
-    needs: build
-    if: false # disable for now
-    # if: github.ref == 'refs/heads/develop'
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 22
-        registry-url: 'https://registry.npmjs.org'
-    - run: |
-        yarn install
-        yarn build
-        yarn npm-publish
-      env:
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
   deploy-fluid-org:
     runs-on: ubuntu-22.04
     needs: build
@@ -45,7 +24,7 @@ jobs:
     - name: build
       run: |
         yarn install
-        yarn build
+        yarn build-prod
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
