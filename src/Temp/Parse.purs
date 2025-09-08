@@ -22,7 +22,7 @@ import Parsing.Combinators (many, many1, optionMaybe, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, withPos)
 import Parsing.String (char, eof, string)
-import SExpr (Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..))
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Parse.Number (float, integer)
 import Temp.Parse.Parser (Parser, align, block, brackets, constructor, context, delim, lexeme, lines, operator, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
@@ -168,6 +168,37 @@ opdefs =
 popdefs :: Array (Array (Operator (StateT Position Identity) String Pattern))
 popdefs = [ [ Infix pConsOp AssocRight ] ]
 
+varDefs :: Parser (Raw VarDefs)
+varDefs = do
+   head <- varDef
+   rest <- many varDef
+   pure $ nonEmpty (head : rest)
+
+   where
+   varDef :: Parser (Raw VarDef)
+   varDef = try do
+      reserved "def"
+      name <- pattern
+      e <- block expr
+      pure $ VarDef name e
+
+recDefs :: Parser (Raw RecDefs)
+recDefs = do
+   head <- recDef
+   rest <- many recDef
+   pure $ nonEmpty (head : rest)
+
+   where
+   recDef :: Parser (Raw Branch)
+   recDef = try do
+      reserved "def"
+      name <- variable
+      delim '('
+      ps <- sepBy1 pattern (lexeme $ char ',')
+      delim ')'
+      e <- block expr
+      pure $ name × Clause (ps × e)
+
 expr :: Parser (Raw Expr)
 expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
    where
@@ -194,27 +225,19 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
    def :: Parser (Raw Expr)
    def = context "def" do
-      try $ reserved "def"
-      funDef <|> valDef
+      try funDef <|> valDef
       where
       funDef :: Parser (Raw Expr)
       funDef = context "funDef" do
-         name × ps <- try $ do
-            name <- variable
-            delim '('
-            ps <- sepBy1 pattern (lexeme $ char ',')
-            delim ')'
-            pure $ name × ps
-         e <- context "funDef body" $ block expr
-         e' <- context "funDef cont." $ align expr
-         pure $ LetRec (nonEmpty ((name × Clause (ps × e)) : Nil)) e'
+         defs <- try recDefs
+         e' <- align expr
+         pure $ LetRec defs e'
 
       valDef :: Parser (Raw Expr)
       valDef = context "valDef" do
-         name <- pattern
-         e <- block expr
+         defs <- try varDefs
          e' <- align expr
-         pure $ Let (nonEmpty ((VarDef name e) : Nil)) e'
+         pure $ Let defs e'
 
    ifElse :: Parser (Raw Expr)
    ifElse = do
