@@ -31,6 +31,7 @@ import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
+import Temp.Parse (parsePy')
 import Util (type (×), AffError, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
@@ -41,6 +42,9 @@ parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
 parseProgram :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
 parseProgram fluidSrc = flip parse P.program fluidSrc
+
+parseProgram' :: forall m. MonadError Error m => String -> m (Raw S.Expr × List ModuleName)
+parseProgram' src = liftEither <<< lmap (E.error <<< show) $ parsePy' src
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => m (Raw ProgCxt)
 loadProgCxt = pure (ProgCxt { primitives, mods: Nil })
@@ -74,7 +78,7 @@ prelude = "lib/prelude"
 
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw ProgCxt -> String -> m Config
 prepConfig progCxt fluidSrc = do
-   s × imports <- parseProgram fluidSrc
+   s × imports <- parseProgram' fluidSrc
    moduleCxt <- loadModuleGraph (prelude : imports)
    e <- desug s
    gconfig <- initialConfig e progCxt moduleCxt

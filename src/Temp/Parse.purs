@@ -1,4 +1,4 @@
-module Temp.Parse (parsePy) where
+module Temp.Parse (parsePy, parsePy') where
 
 import Prelude
 
@@ -6,12 +6,14 @@ import Bind (Var)
 import Control.Alt ((<|>))
 import Control.Lazy (defer)
 import Control.Monad.State (StateT)
+import Data.Array (fromFoldable)
 import Data.Bifunctor (lmap)
 import Data.Either (Either)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList, toList)
 import Data.Maybe (Maybe(..))
+import Data.String.Common (joinWith)
 import Data.Traversable (foldl)
 import DataType (cPair)
 import Lattice (Raw)
@@ -434,5 +436,23 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof
 
+imports_ :: Parser (List String)
+imports_ = many (try $ reserved "import" *> modPath)
+   where
+   modPath :: Parser String
+   modPath = joinWith "/" <<< fromFoldable <$> sepBy1 variable (delim '.')
+
+topLevel :: forall a. Parser a -> Parser a
+topLevel p = whitespace *> withPos p <* eof
+
+withImports :: forall a. Parser a -> Parser (a × List String)
+withImports p = topLevel do
+   imports <- imports_
+   a <- p
+   pure $ a × imports
+
 parsePy :: String -> Either String (Raw Expr)
 parsePy input = lmap prettyParseError $ runIndent $ runParserT input program
+
+parsePy' :: String -> Either String (Raw Expr × List String)
+parsePy' input = lmap prettyParseError $ runIndent $ runParserT input (withImports expr)
