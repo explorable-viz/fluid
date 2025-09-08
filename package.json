@@ -1,6 +1,6 @@
 {
   "name": "@explorable-viz/fluid",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "description": "A functional programming language which integrates a bidirectional dynamic analysis, connecting outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.",
   "main": "index.js",
   "repository": {
