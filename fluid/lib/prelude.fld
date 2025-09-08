@@ -1,276 +1,238 @@
--- "Num" throughout means (Int + Float).
+def and(False, y): False
+def and(True, y): y
 
--- Bool -> Bool
-let and False y = False;
-    and True y = y;
+def or(True, y): True
+def or(False, y): y
 
--- Bool -> Bool
-let or True y = True;
-    or False y = y;
+def not(True): False
+def not(False): True
 
--- Bool -> Bool
-let not True = False;
-    not False = True;
+def compare(x, y):
+  if x > y: GT
+  else:
+    if x < y: LT
+    else: EQ
 
--- Int -> Int -> Ordering
-let compare x y =
-   if x > y
-   then GT
-   else if x < y
-      then LT
-      else EQ;
+def negate: (-)(0)
 
--- Num -> Num
-let negate = (-) 0;
+def logBase(x, y): log(y) / log(x)
 
--- Log of x in base y.
--- Float -> Float -> Float
-let logBase x y = log y / log x;
+def ceilingToNearest(n, m): ceiling(n / m) * m
 
--- Float -> Float -> Float
-let ceilingToNearest n m =
-   ceiling (n / m) * m;
+def compose(f, g, x): f(g(x))
 
--- (b -> c) -> (a -> b) -> a -> c
--- Want infix <<<
-let compose f g x = f (g x);
+def curry(f, x, y): f((x, y))
 
--- ((a, b) -> c) -> a -> b -> c
-let curry f x y = f (x, y);
+def uncurry(f, (x, y)): f(x, y)
 
--- (a -> b -> c) -> (a, b) -> c
-let uncurry f (x, y) = f x y;
-
--- a -> b -> a
-let const x _ = x;
-
--- (a -> b) -> (a, c) -> (b, c)
-let first f (a, c) = (f a, c);
+def const(x, _): x
 
--- (a, b) -> b
-let snd (_, y) = y;
+def first(f, (a, c)): (f(a), c)
 
--- (a -> b) -> (c, a) -> (c, b)
-let second f (c, a) = (c, f a);
+def snd((_, y)): y
 
--- (a -> b -> c) -> b -> a -> c
-let flip f x y = f y x;
-
--- (a, b) -> a
-let fst (x, _) = x;
+def second(f, (c, a)): (c, f(a))
 
--- a -> a
-let id x = x;
+def flip(f, x, y): f(y, x)
 
--- (a -> b) -> (a -> c) -> a -> (b, c)
--- Want infix &&&
-let prod f g x = (f x, g x);
+def fst((x, _)): x
 
--- (a, b) -> (b, a)
-let swap (a, b) = (b, a);
+def id(x): x
 
--- List a -> a
-let head [] = error "Can't take head of empty list";
-    head (x : _) = x;
+def prod(f, g, x): (f(x), g(x))
 
--- List a -> List a
-let tail [] = error "Can't take tail of empty list";
-    tail (_ : xs) = xs;
+def swap((a, b)): (b, a)
 
--- Eq a => a -> List a -> Bool
-let elem x [] = False;
-    elem x (x' : xs) = (x == x') `or` (elem x xs);
+def head([]):
+  error("Can't take head of empty list")
+def head(x :| _): x
 
--- (a -> Bool) -> List a -> Option a
-let find p [] = error "not found";
-    find p (x : xs) = if p x then Some x else find p xs;
-
--- String -> String -> List Dict -> Option Dict
-let findWithKey fname fval table = find (fun y -> y.[fname] == fval) table;
-
-let fromSome option = match option as {
-    None -> error "Expected Some!";
-    Some x -> x
-};
-
--- (a -> Bool) -> List a -> List a
-let filter p [] = [];
-    filter p (x : xs) =
-      let ys = filter p xs in
-      if p x then x : ys else ys;
-
--- (a -> Option b) -> List a -> List b
-let filterMap p [] = [];
-    filterMap p (x : xs) =
-      match p x as {
-         None -> filterMap f xs;
-         Some y -> y : filterMap f xs
-      };
-
--- (a -> b -> a) -> a -> List b -> a
-let foldl op z [] = z;
-    foldl op z (x : xs) = foldl op (op z x) xs;
-
--- (a -> b -> a) -> List b -> a
-let foldl1 op (x : xs) = foldl op x xs;
-
--- (a -> b -> b) -> b -> List a -> b
-let foldr op z [] = z;
-    foldr op z (x : xs) = op x (foldr op z xs);
-
--- (a -> b -> b) -> List a -> b
-let foldr1 op [x] = x;
-    foldr1 op (x : y : xs) = op x (foldr1 op (y : xs));
-
--- (a -> b -> a) -> a -> List b -> List a
-let scanl1 op z xs =
-   let go x continue acc =
-      let next = op acc x in
-      next : continue next in
-   foldr go (const []) xs z;
-
--- (a -> b -> a) -> a -> List b -> List a
-let scanl op z xs =
-   z : scanl1 op z xs;
-
--- (a -> b) -> List a -> List b
-let map f [] = [];
-    map f (x : xs) = f x : map f xs;
-
--- (List a, List a) -> List a
-let append ([], ys) = ys;
-    append (x : xs, ys) = x : append (xs, ys);
-
--- List a -> List -> List a
--- Want infix ++
-let concat2 [] ys = ys;
-    concat2 (x : xs) ys = x : concat2 xs ys;
-
--- List (List a) -> List a
-let concat = foldl concat2 [];
-
--- (a -> List b) -> List a -> List b
-let concatMap f xs = concat (map f xs);
-
--- List a -> a -> List a
-let intersperse [] _ = [];
-    intersperse [x] _ = [x];
-    intersperse (x : y : ys) sep = x : sep : intersperse (y : ys) sep;
-
--- Int -> (a -> a) -> a -> List a
-let iterate n f z =
-   if n == 0 then [] else z : map f (iterate (n - 1) f z);
-
--- List Int -> Int
-let sum = foldr (+) 0;
-
--- List a -> a
-let last [x] = x;
-    last (x : y : ys) = last (y : ys);
-
--- List a -> Int
-let length [] = 0;
-    length (_ : xs) = 1 + length xs;
-
--- List a -> List a
-let reverse [] = [];
-    reverse (x : xs) = append (reverse xs, [x]);
-
--- Int -> a -> List a
-let repeat = flip iterate id;
-
--- Int -> List a -> List a
-let take n xs =
-    if n <= 0
-    then []
-    else match xs as {
-       [] -> [];
-       x : xs -> x : take (n - 1) xs
-    };
-
--- Int -> List a -> List a
-let drop n xs =
-   if n <= 0
-   then xs
-   else match xs as {
-      [] -> [];
-      _ : xs -> drop (n - 1) xs
-   };
-
--- Int -> List a -> List a
-let lastN n xs =
-   foldl (compose const (drop 1)) xs (drop n xs);
-
--- Expects non-negative integer as first argument and non-empty list as second argument.
--- Int -> List a -> a
-let nth n (x : xs) =
-   if n == 0 then x else nth (n - 1) xs;
-
--- Matrix Int -> Int -> Int -> Int
-let nth2 i j xss =
-   nth (j - 1) (nth (i - 1) xss);
-
--- Partial; requires k to be in the map.
--- Int -> List (Int, b) -> b
-let lookup k [] = error "Key not found in map";
-    lookup k ((k', v) : kvs) =
-       if k == k' then v else lookup k kvs;
-
--- Int -> Int -> Int
-let max n m =
-   if n > m then n else m;
-
--- Int -> Int -> Int
-let min n m =
-   if n < m then n else m;
-
--- List Int -> Int
-let maximum = foldr1 max;
-
--- List Int -> Int
-let minimum = foldr1 min;
-
--- List (a, b) -> (List a, List b)
-let unzip [] = ([], []);
-    unzip ((x, y) : zs) =
-      let (xs, ys) = unzip zs in
-      (x : xs, y : ys);
-
--- (a -> b -> c) -> List a -> List b -> List c
-let zipWith op [] ys = [];
-    zipWith op (x : xs) [] = [];
-    zipWith op (x : xs) (y : ys) = op x y : zipWith op xs ys;
-
--- List a -> List b -> List (a, b)
-let zip = zipWith (curry id);
-
--- Int -> Int -> List Int
-let enumFromTo n m =
-    if n <= m then n : [n + 1 .. m] else [];
-
-let range (m1, n1) (m2, n2) =
-      [ (i1, i2) | i1 <- [m1 .. m2], i2 <- [n1 .. n2] ];
-
--- Int -> Int -> Int
-let abs x y =
-   if x - y < 0 then negate (x - y) else (x - y);
-
--- Eq a => [a] -> [a]
-let nub xs =
-    let nub' [] _ = [];
-        nub' (x : xs) ys = if x `elem` ys then nub' xs ys else x : nub' xs (x : ys) in
-    nub' xs [];
-
--- Int -> Int -> [a] -> [a]
-let slice begin end xs =
-   take (end - begin) (drop begin xs);
-
-
--- (a -> Boolean) -> List a -> (List a, List a)
-let splitOn p data =
-    let go fls trs [] = (reverse fls, reverse trs);
-        go fls trs (x : xs) =
-            if p x
-            then go fls (x : trs) xs
-            else go (x : fls) trs xs
-    in go [] [] data;
+def tail([]):
+  error("Can't take tail of empty list")
+def tail(_ :| xs): xs
+
+def elem(x, []): False
+def elem(x, x' :| xs):
+  x == x' |or| elem(x, xs)
+
+def find(p, []): error("not found")
+def find(p, x :| xs):
+  if p(x): Some(x)
+  else: find(p, xs)
+
+def findWithKey(fname, fval, table):
+  find((lambda y: y[fname] == fval), table)
+
+def fromSome(option):
+  match option:
+    case None:
+      error("Expected Some!")
+    case Some(x): x
+
+def filter(p, []): []
+def filter(p, x :| xs):
+  def ys: filter(p, xs)
+
+  if p(x): x :| ys
+  else: ys
+
+def filterMap(p, []): []
+def filterMap(p, x :| xs):
+  match p(x):
+    case None: filterMap(f, xs)
+    case Some(y):
+      y :| filterMap(f, xs)
+
+def foldl(op, z, []): z
+def foldl(op, z, x :| xs):
+  foldl(op, op(z, x), xs)
+
+def foldl1(op, x :| xs): foldl(op, x, xs)
+
+def foldr(op, z, []): z
+def foldr(op, z, x :| xs):
+  op(x, foldr(op, z, xs))
+
+def foldr1(op, [x]): x
+def foldr1(op, x :| y :| xs):
+  op(x, foldr1(op, y :| xs))
+
+def scanl1(op, z, xs):
+  def go(x, continue, acc):
+    def next: op(acc, x)
+
+    next :| continue(next)
+
+  foldr(go, const([]), xs, z)
+
+def scanl(op, z, xs):
+  z :| scanl1(op, z, xs)
+
+def map(f, []): []
+def map(f, x :| xs): f(x) :| map(f, xs)
+
+def append(([], ys)): ys
+def append((x :| xs, ys)):
+  x :| append((xs, ys))
+
+def concat2([], ys): ys
+def concat2(x :| xs, ys):
+  x :| concat2(xs, ys)
+
+def concat: foldl(concat2, [])
+
+def concatMap(f, xs): concat(map(f, xs))
+
+def intersperse([], _): []
+def intersperse([x], _): [x]
+def intersperse(x :| y :| ys, sep):
+  x :| sep :| intersperse(y :| ys, sep)
+
+def iterate(n, f, z):
+  if n == 0: []
+  else:
+    z :| map(f, iterate(n - 1, f, z))
+
+def sum: foldr((+), 0)
+
+def last([x]): x
+def last(x :| y :| ys): last(y :| ys)
+
+def length([]): 0
+def length(_ :| xs): 1 + length(xs)
+
+def reverse([]): []
+def reverse(x :| xs):
+  append((reverse(xs), [x]))
+
+def repeat: flip(iterate, id)
+
+def take(n, xs):
+  if n <= 0: []
+  else:
+    match xs:
+      case []: []
+      case x :| xs:
+        x :| take(n - 1, xs)
+
+def drop(n, xs):
+  if n <= 0: xs
+  else:
+    match xs:
+      case []: []
+      case _ :| xs: drop(n - 1, xs)
+
+def lastN(n, xs):
+  foldl(compose(const, drop(1)), xs, drop(n, xs))
+
+def nth(n, x :| xs):
+  if n == 0: x
+  else: nth(n - 1, xs)
+
+def nth2(i, j, xss):
+  nth(j - 1, nth(i - 1, xss))
+
+def lookup(k, []):
+  error("Key not found in map")
+def lookup(k, (k', v) :| kvs):
+  if k == k': v
+  else: lookup(k, kvs)
+
+def max(n, m):
+  if n > m: n
+  else: m
+
+def min(n, m):
+  if n < m: n
+  else: m
+
+def maximum: foldr1(max)
+
+def minimum: foldr1(min)
+
+def unzip([]): ([], [])
+def unzip((x, y) :| zs):
+  def (xs, ys): unzip(zs)
+
+  (x :| xs, y :| ys)
+
+def zipWith(op, [], ys): []
+def zipWith(op, x :| xs, []): []
+def zipWith(op, x :| xs, y :| ys):
+  op(x, y) :| zipWith(op, xs, ys)
+
+def zip: zipWith(curry(id))
+
+def enumFromTo(n, m):
+  if n <= m: n :| [n + 1 .. m]
+  else: []
+
+def range((m1, n1), (m2, n2)):
+  [(i1, i2) for i1 in [m1 .. m2] for i2 in [n1 .. n2]]
+
+def abs(x, y):
+  if x - y < 0: negate(x - y)
+  else: x - y
+
+def nub(xs):
+  def nub'([], _): []
+  def nub'(x :| xs, ys):
+    if x |elem| ys: nub'(xs, ys)
+    else:
+      x :| nub'(xs, x :| ys)
+
+  nub'(xs, [])
+
+def slice(begin, end, xs):
+  take(end - begin, drop(begin, xs))
+
+def splitOn(p, data):
+  def go(fls, trs, []):
+    (reverse(fls), reverse(trs))
+  def go(fls, trs, x :| xs):
+    if p(x):
+      go(fls, x :| trs, xs)
+    else:
+      go(x :| fls, trs, xs)
+
+  go([], [], data)

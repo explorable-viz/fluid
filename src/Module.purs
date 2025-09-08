@@ -27,13 +27,11 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse as P
 import Parsing (runParser)
-import Pretty (prettyP)
 import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
-import Temp.Parse (parsePy')
-import Temp.Util.UnsafeDebug (logUnsafe)
+import Temp.Parse (parsePy', parsePyModule')
 import Util (type (×), AffError, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
@@ -47,6 +45,9 @@ parseProgram fluidSrc = flip parse P.program fluidSrc
 
 parseProgram' :: forall m. MonadError Error m => String -> m (Raw S.Expr × List ModuleName)
 parseProgram' src = liftEither <<< lmap (E.error <<< show) $ parsePy' src
+
+parseModule' :: forall m. MonadError Error m => String -> m (Raw S.Module × List ModuleName)
+parseModule' src = liftEither <<< lmap (E.error <<< show) $ parsePyModule' src
 
 loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => m (Raw ProgCxt)
 loadProgCxt = pure (ProgCxt { primitives, mods: Nil })
@@ -81,9 +82,6 @@ prelude = "lib/prelude"
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw ProgCxt -> String -> m Config
 prepConfig progCxt fluidSrc = do
    s × imports <- parseProgram' fluidSrc
-
-   let _ = logUnsafe (prettyP s)
-
    moduleCxt <- loadModuleGraph (prelude : imports)
    e <- desug s
    gconfig <- initialConfig e progCxt moduleCxt
@@ -121,7 +119,7 @@ loadModuleGraph roots = do
    loadModule path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
-      mod × imports <- parse src P.module_
+      mod × imports <- parseModule' src
       mod' <- desugarModuleFwd mod
       let imports' = if path == prelude then imports else prelude : imports
       pure $ mod' × imports'

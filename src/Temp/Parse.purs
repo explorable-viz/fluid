@@ -1,4 +1,4 @@
-module Temp.Parse (parsePy, parsePy') where
+module Temp.Parse (parsePy, parsePy', parsePyModule') where
 
 import Prelude
 
@@ -8,7 +8,7 @@ import Control.Lazy (defer)
 import Control.Monad.State (StateT)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (lmap)
-import Data.Either (Either)
+import Data.Either (Either, choose)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList, toList)
@@ -22,11 +22,11 @@ import Parsing.Combinators (many, many1, optionMaybe, optional, sepBy, sepBy1, t
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, withPos)
 import Parsing.String (char, eof, string)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Parse.Number (float, integer)
 import Temp.Parse.Parser (Parser, align, block, brackets, constructor, context, delim, lexeme, lines, operator, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
-import Util (type (×), nonEmpty, onlyIf, (×))
+import Util (type (+), type (×), nonEmpty, onlyIf, (×))
 
 pattern :: Parser Pattern
 pattern = defer $ \_ -> buildExprParser popdefs simplePattern
@@ -461,6 +461,14 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof
 
+defs :: Parser ((Raw VarDefs + Raw RecDefs))
+defs = choose (try $ varDefs) (recDefs)
+
+module_ :: Parser (Raw Module)
+module_ = do
+   defs' <- many (defs)
+   pure $ Module defs'
+
 imports_ :: Parser (List String)
 imports_ = many (try $ reserved "import" *> modPath)
    where
@@ -481,3 +489,6 @@ parsePy input = lmap prettyParseError $ runIndent $ runParserT input program
 
 parsePy' :: String -> Either String (Raw Expr × List String)
 parsePy' input = lmap prettyParseError $ runIndent $ runParserT input (withImports expr)
+
+parsePyModule' :: String -> Either String (Raw Module × List String)
+parsePyModule' input = lmap prettyParseError $ runIndent $ runParserT input (withImports module_)
