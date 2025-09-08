@@ -76,15 +76,29 @@
       </div>
       <details>
          <summary>matrix.fld</summary>
-         <div id="codemirror-convolution"></div>
+         <div id="codemirror-matrix"></div>
       </details>
    </div>
 </div>
 
+<script id="my-code" type="text/plain">
+   import lib.matrix
+   import matrixMultiply.aMatrix
+   import matrixMultiply.bMatrix
+   import matrixMultiply.cMatrix
+
+   MultiView {
+      firstMatrix: matMul (matMul aMatrix bMatrix) cMatrix,
+      secondMatrix: matMul aMatrix (matMul bMatrix cMatrix)
+   }
+</script>
+
 <script type="module">
-   import { loadFigure, drawCode } from "/shared/load-figure.js"
-   drawCode("../fluid/lib")("matrix")()
-   loadFigure("spec.json")()
+   import { loadFigureSrc, drawCode } from "/shared/load-figure.js"
+   const src = document.getElementById("my-code").textContent.trim();
+
+   drawCode("../fluid/lib/matrix.fld")()
+   loadFigureSrc("spec.json")(src)()
 </script>
 </body>
 </html>

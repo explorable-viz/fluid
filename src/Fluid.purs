@@ -3,9 +3,8 @@ module Fluid where
 import Prelude hiding (between)
 
 import Bind (Bind, (↦))
-import Data.Array (filter, fromFoldable)
+import Data.Array (filter)
 import Data.Either (Either(..))
-import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split, stripPrefix, stripSuffix, trim)
 import Data.String as String
@@ -14,11 +13,11 @@ import Effect.Aff (Aff, Error, runAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
-import File (File(..), FileCxt(..), Folder(..))
+import File (File(..), FileCxt(..), Folder(..), loadFile)
 import Lattice (erase)
 import Module (loadProgCxt, prepConfig)
 import Module.Node (runNodeT)
-import Options.Applicative (Parser, command, eitherReader, execParser, fullDesc, header, help, helper, long, many, option, progDesc, short, strOption, subparser, switch, (<**>))
+import Options.Applicative (Parser, command, execParser, fullDesc, header, help, helper, long, progDesc, short, strOption, subparser, switch, (<**>))
 import Options.Applicative.Builder (info)
 import Pretty (prettyP)
 import Util (Endo)
@@ -26,7 +25,6 @@ import Val (Val)
 
 data EvalArgs = EvalArgs
    { local :: Boolean
-   , datasets :: Array (Bind String)
    , fileName :: String
    , fluidSrcPath :: Folder
    }
@@ -49,24 +47,15 @@ parseImports' :: Pattern -> Pattern -> (String -> Either String (Array String))
 parseImports' open close = between open close $ \s -> do
    Right (map trim $ filter (not <<< String.null) $ split (Pattern ",") s)
 
-parseDatasets :: Parser (List (Bind String))
-parseDatasets =
-   many $ option (eitherReader parsePair)
-      ( long "datasets"
-           <> short 'd'
-           <> help "Comma-separated list of datasets"
-      )
-
 parseLocal :: Parser Boolean
 parseLocal = switch (long "local" <> short 'l' <> help "Are you running fluid as a library?")
 
 parseEvaluate :: Parser EvalArgs
 parseEvaluate = ado
    local <- parseLocal
-   datasets <- fromFoldable <$> parseDatasets
    fileName <- strOption (long "file" <> short 'f' <> help "The file to parse")
    fluidSrcPath <- Folder <$> strOption (long "fluid-src-path" <> short 'p' <> help "The path containing the program files")
-   in EvalArgs { local, datasets, fileName, fluidSrcPath }
+   in EvalArgs { local, fileName, fluidSrcPath }
 
 commands :: { evaluate :: Parser Command }
 commands =
@@ -97,10 +86,11 @@ fluidLibraryPath :: String
 fluidLibraryPath = "node_modules/@explorable-viz/fluid"
 
 evaluate :: EvalArgs -> Aff (Val Unit)
-evaluate (EvalArgs { local, datasets, fileName, fluidSrcPath }) = do
+evaluate (EvalArgs { local, fileName, fluidSrcPath }) = do
    let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    runNodeT (FileCxt { fluidSrcPaths }) $ do
-      progCxt <- loadProgCxt datasets
-      { e, gconfig } <- prepConfig (File fileName) progCxt
+      progCxt <- loadProgCxt
+      fluidSrc <- loadFile fluidSrcPaths (File fileName)
+      { e, gconfig } <- prepConfig progCxt fluidSrc
       { outα } <- graphEval gconfig e
       pure (erase outα)

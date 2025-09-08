@@ -1,1 +1,1 @@
-"""We can add comments to list comprehensions""" [ x + y | x <- [5, 4, 3], y <- [9, 7, 5] ]
+@doc("""We can add comments to list comprehensions""") [ x + y | x <- [5, 4, 3], y <- [9, 7, 5] ]

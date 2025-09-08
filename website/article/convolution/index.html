@@ -9,7 +9,6 @@
    <link href="../css/styles.css" rel="stylesheet" type="text/css">
    <link href="../css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
-   <script src="../shared/util.js"></script>
    <style>
       .grid-container, .grid-container.data-pane-hidden {
          grid-template-columns: 0.8fr var(--toggle-button-width) var(--text-pane-width);
@@ -83,8 +82,8 @@
 
 <script type="module">
    import { loadFigure, drawCode } from "../shared/load-figure.js"
-   drawCode("../fluid/lib")("matrix")()
-   loadFigure("spec.json")()
+   drawCode("../fluid/lib/matrix.fld")()
+   loadFigure("spec.json")("../fluid/convolution.fld")()
 </script>
 </body>
 </html>

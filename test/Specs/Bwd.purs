@@ -4,17 +4,16 @@ import Prelude
 
 import App.Util (SelectionType(..))
 import App.Util.Selector (barChart, barSegment, dict, dictKey, dictVal, fst, listCell, listElement, matrixElement, multiViewEntry, select, select', snd, some, (>.>))
-import Bind ((↦))
 import Test.Util.Suite (TestBwdSpec)
 import Util ((×))
 
 bwd_cases :: Array TestBwdSpec
 bwd_cases =
-   [ { file: "add", bwd_expect_file: "add.expect", δv: select, fwd_expect: "⸨8⸩", datasets: [] }
-   , { file: "array/lookup", bwd_expect_file: "array/lookup.expect", δv: select, fwd_expect: "⸨14⸩", datasets: [] }
-   , { file: "array/dims", bwd_expect_file: "array/dims.expect", δv: select, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩", datasets: [] }
-   , { file: "convolution/edgeDetect"
-     , bwd_expect_file: "convolution/edgeDetect.expect"
+   [ { file: "add.fld", bwd_expect_file: "add.expect.fld", δv: select, fwd_expect: "⸨8⸩" }
+   , { file: "array/lookup.fld", bwd_expect_file: "array/lookup.expect.fld", δv: select, fwd_expect: "⸨14⸩" }
+   , { file: "array/dims.fld", bwd_expect_file: "array/dims.expect.fld", δv: select, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩" }
+   , { file: "convolution/edgeDetect.fld"
+     , bwd_expect_file: "convolution/edgeDetect.expect.fld"
      , δv: matrixElement 1 1 select
      , fwd_expect:
           "⸨0⸩, -1, 2, 0, -1,\n\
@@ -22,10 +21,9 @@ bwd_cases =
           \-1, 1, -5, 0, 4,\n\
           \1, -1, 4, 0, -4,\n\
           \1, 0, -3, 2, 0"
-     , datasets: []
      }
-   , { file: "convolution/emboss"
-     , bwd_expect_file: "convolution/emboss.expect"
+   , { file: "convolution/emboss.fld"
+     , bwd_expect_file: "convolution/emboss.expect.fld"
      , δv: matrixElement 1 1 select
      , fwd_expect:
           "⸨5⸩, 4, 2, 5, 2,\n\
@@ -33,10 +31,9 @@ bwd_cases =
           \3, 0, 1, 0, -1,\n\
           \2, 1, -2, 0, 0,\n\
           \1, 0, -1, -1, -2"
-     , datasets: []
      }
-   , { file: "convolution/gaussian"
-     , bwd_expect_file: "convolution/gaussian.expect"
+   , { file: "convolution/gaussian.fld"
+     , bwd_expect_file: "convolution/gaussian.expect.fld"
      , δv: matrixElement 1 1 select
      , fwd_expect:
           "⸨38⸩, 37, 28, 30, 38,\n\
@@ -44,105 +41,89 @@ bwd_cases =
           \37, 41, 54, 34, 20,\n\
           \21, 35, 31, 31, 42,\n\
           \13, 32, 35, 19, 26"
-     , datasets: []
      }
-   , { file: "matrix/matmul"
-     , bwd_expect_file: "matrix/matmul.expect"
+   , { file: "matrix/matmul.fld"
+     , bwd_expect_file: "matrix/matmul.expect.fld"
      , δv: fst $ matrixElement 1 1 select
-     , fwd_expect: "(⸨22⸩, 28,\n  49, 64, 9, 12, 15,\n            19, 26, 33,\n            29, 40, 51)"
-     , datasets: []
+     , fwd_expect: "(@doc (Paragraph (Text \"Intermediate\" : (Text \"matrix\" : []))) ⸨22⸩, 28,\n                                                                      49, 64,@doc (Paragraph (Text \"Intermediate\" : (Text \"matrix\" : []))) 9, 12, 15,\n                                                                                                                                                    19, 26, 33,\n                                                                                                                                                    29, 40, 51)"
      }
-   , { file: "dict/create"
-     , bwd_expect_file: "dict/create.expect"
+   , { file: "dict/create.fld"
+     , bwd_expect_file: "dict/create.expect.fld"
      , δv: dictKey "ab" select'
-     , fwd_expect: "{[\"a\"] : 5, [⸨\"ab\"⸩] : 6}"
-     , datasets: []
+     , fwd_expect: "{a : 5, ⸨ab⸩ : 6}"
      }
-   , { file: "dict/difference"
-     , bwd_expect_file: "dict/difference.expect"
+   , { file: "dict/difference.fld"
+     , bwd_expect_file: "dict/difference.expect.fld"
      , δv: dict select'
-     , fwd_expect: "⸨{[\"a\"] : 5}⸩"
-     , datasets: []
+     , fwd_expect: "⸨{a : 5}⸩"
      }
-   , { file: "dict/disjointUnion"
-     , bwd_expect_file: "dict/disjointUnion.expect"
+   , { file: "dict/disjointUnion.fld"
+     , bwd_expect_file: "dict/disjointUnion.expect.fld"
      , δv: dictKey "a" select' >.> dictVal "c" select
-     , fwd_expect: "{[⸨\"a\"⸩] : 5, [\"b\"] : 6, [\"c\"] : ⸨7⸩}"
-     , datasets: []
+     , fwd_expect: "{⸨a⸩ : 5, b : 6, c : ⸨7⸩}"
      }
-   , { file: "dict/foldl", bwd_expect_file: "dict/foldl.expect", δv: select, fwd_expect: "⸨0⸩", datasets: [] }
-   , { file: "dict/intersectionWith"
-     , bwd_expect_file: "dict/intersectionWith.expect"
+   , { file: "dict/foldl.fld", bwd_expect_file: "dict/foldl.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
+   , { file: "dict/intersectionWith.fld"
+     , bwd_expect_file: "dict/intersectionWith.expect.fld"
      , δv: dictVal "b" select >.> dictVal "c" select
-     , fwd_expect: "{[\"b\"] : ⸨0⸩, [\"c\"] : ⸨20⸩}"
-     , datasets: []
+     , fwd_expect: "{b : ⸨0⸩, c : ⸨20⸩}"
      }
-   , { file: "dict/get", bwd_expect_file: "dict/get.expect", δv: select, fwd_expect: "⸨0⸩", datasets: [] }
-   , { file: "dict/map", bwd_expect_file: "dict/map.expect", δv: select, fwd_expect: "⸨20⸩", datasets: [] }
-   , { file: "divide"
-     , bwd_expect_file: "divide.expect"
+   , { file: "dict/get.fld", bwd_expect_file: "dict/get.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
+   , { file: "dict/map.fld", bwd_expect_file: "dict/map.expect.fld", δv: select, fwd_expect: "⸨20⸩" }
+   , { file: "divide.fld"
+     , bwd_expect_file: "divide.expect.fld"
      , δv: select
      , fwd_expect: "⸨40.22222222222222⸩"
-     , datasets: []
      }
-   , { file: "dict/match", bwd_expect_file: "dict/match.expect", δv: select, fwd_expect: "", datasets: [] }
-   , { file: "dtw/compute-dtw"
-     , bwd_expect_file: "dtw/compute-dtw.expect"
-     , fwd_expect: "((1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : [])))))))"
+   , { file: "dict/match.fld", bwd_expect_file: "dict/match.expect.fld", δv: select, fwd_expect: "" }
+   , { file: "dtw/compute-dtw.fld"
+     , bwd_expect_file: "dtw/compute-dtw.expect.fld"
+     , fwd_expect: "(1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : []))))))"
      , δv: listElement 1 select
-     , datasets: []
      }
-   , { file: "dtw/average-series"
-     , bwd_expect_file: "dtw/average-series.expect"
-     , fwd_expect: "(2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : [])))))))"
+   , { file: "dtw/average-series.fld"
+     , bwd_expect_file: "dtw/average-series.expect.fld"
+     , fwd_expect: "2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : []))))))"
      , δv: listElement 2 select
-     , datasets: []
      }
-   , { file: "filter"
-     , bwd_expect_file: "filter.expect"
+   , { file: "filter.fld"
+     , bwd_expect_file: "filter.expect.fld"
      , δv: listCell 0 select'
-     , fwd_expect: "⸨(⸨8⸩ : (7 : []))⸩"
-     , datasets: []
+     , fwd_expect: "⸨⸨8⸩ : (7 : [])⸩"
      }
-   , { file: "intersperse"
-     , bwd_expect_file: "intersperse-1.expect"
+   , { file: "intersperse.fld"
+     , bwd_expect_file: "intersperse-1.expect.fld"
      , δv: listCell 1 select'
-     , fwd_expect: "(1 : ⸨(0 : (2 : (0 : (3 : []))))⸩)"
-     , datasets: []
+     , fwd_expect: "1 : (⸨0 : (2 : (0 : (3 : [])))⸩)"
      }
-   , { file: "intersperse"
-     , bwd_expect_file: "intersperse-2.expect"
+   , { file: "intersperse.fld"
+     , bwd_expect_file: "intersperse-2.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "⸨(1 : (0 : ⸨(2 : (0 : (3 : [])))⸩))⸩"
-     , datasets: []
+     , fwd_expect: "⸨1 : (0 : (⸨2 : (0 : (3 : []))⸩))⸩"
      }
-   , { file: "length", bwd_expect_file: "length.expect", δv: select, fwd_expect: "⸨5⸩", datasets: [] }
-   , { file: "list-comp"
-     , bwd_expect_file: "list-comp-1.expect"
+   , { file: "length.fld", bwd_expect_file: "length.expect.fld", δv: select, fwd_expect: "⸨5⸩" }
+   , { file: "list-comp.fld"
+     , bwd_expect_file: "list-comp-1.expect.fld"
      , δv: listCell 1 select'
-     , fwd_expect: "(6.2 : ⸨(260 : (19.9 : (91 : [])))⸩)"
-     , datasets: []
+     , fwd_expect: "6.2 : (⸨260 : (19.9 : (91 : []))⸩)"
      }
-   , { file: "list-comp"
-     , bwd_expect_file: "list-comp-2.expect"
+   , { file: "list-comp.fld"
+     , bwd_expect_file: "list-comp-2.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "(6.2 : (260 : ⸨(19.9 : (91 : []))⸩))"
-     , datasets: []
+     , fwd_expect: "6.2 : (260 : (⸨19.9 : (91 : [])⸩))"
      }
-   , { file: "lookup"
-     , bwd_expect_file: "lookup.expect"
+   , { file: "lookup.fld"
+     , bwd_expect_file: "lookup.expect.fld"
      , δv: some select'
      , fwd_expect: "⸨Some \"Germany\"⸩"
-     , datasets: []
      }
-   , { file: "map"
-     , bwd_expect_file: "map.expect"
+   , { file: "map.fld"
+     , bwd_expect_file: "map.expect.fld"
      , δv: listCell 0 select' >.> listCell 1 select'
-     , fwd_expect: "⸨(5 : ⸨(6 : [])⸩)⸩"
-     , datasets: []
+     , fwd_expect: "⸨5 : (⸨6 : []⸩)⸩"
      }
-   , { file: "matrix-update"
-     , bwd_expect_file: "matrix-update.expect"
+   , { file: "matrix-update.fld"
+     , bwd_expect_file: "matrix-update.expect.fld"
      , fwd_expect:
           "15, 13, 6, 9, 16,\n\
           \12, ⸨4000⸩, 15, 4, 13,\n\
@@ -150,71 +131,57 @@ bwd_cases =
           \4, 10, 3, 7, 19,\n\
           \3, 11, 15, 2, 9"
      , δv: matrixElement 2 2 select
-     , datasets: []
      }
-   , { file: "multiply", bwd_expect_file: "multiply.expect", δv: select, fwd_expect: "⸨0⸩", datasets: [] }
-   , { file: "nth", bwd_expect_file: "nth.expect", δv: select, fwd_expect: "⸨4⸩", datasets: [] }
-   , { file: "output-not-source"
-     , bwd_expect_file: "output-not-source.expect"
+   , { file: "multiply.fld", bwd_expect_file: "multiply.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
+   , { file: "nth.fld", bwd_expect_file: "nth.expect.fld", δv: select, fwd_expect: "⸨4⸩" }
+   , { file: "output-not-source.fld"
+     , bwd_expect_file: "output-not-source.expect.fld"
      , fwd_expect: "(⸨3⸩, ⸨True⸩)"
      , δv: snd select -- selection on just first component will be discarded by bwdSlice; see #818.
-     , datasets: []
      }
-   , { file: "section-5-example"
-     , bwd_expect_file: "section-5-example-1.expect"
+   , { file: "section-5-example.fld"
+     , bwd_expect_file: "section-5-example-1.expect.fld"
      , δv: listCell 0 select'
-     , fwd_expect: "⸨(88 : (6 : (4 : [])))⸩"
-     , datasets: []
+     , fwd_expect: "⸨88 : (6 : (4 : []))⸩"
      }
-   , { file: "section-5-example"
-     , bwd_expect_file: "section-5-example-2.expect"
+   , { file: "section-5-example.fld"
+     , bwd_expect_file: "section-5-example-2.expect.fld"
      , δv: listElement 1 select
-     , fwd_expect: "(⸨88⸩ : (⸨6⸩ : (⸨4⸩ : [])))"
-     , datasets: []
+     , fwd_expect: "⸨88⸩ : (⸨6⸩ : (⸨4⸩ : []))"
      }
-   , { file: "section-5-example"
-     , bwd_expect_file: "section-5-example-3.expect"
+   , { file: "section-5-example.fld"
+     , bwd_expect_file: "section-5-example-3.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "(88 : (6 : ⸨(4 : [])⸩))"
-     , datasets: []
+     , fwd_expect: "88 : (6 : (⸨4 : []⸩))"
      }
-   , { file: "zeros"
-     , bwd_expect_file: "zeros-1.expect"
+   , { file: "zeros.fld"
+     , bwd_expect_file: "zeros-1.expect.fld"
      , δv: listCell 0 select' >.> listCell 2 select'
-     , fwd_expect: "⸨(0 : (0 : ⸨[]⸩))⸩"
-     , datasets: []
+     , fwd_expect: "⸨0 : (0 : ⸨[]⸩)⸩"
      }
-   , { file: "zeros"
-     , bwd_expect_file: "zeros-2.expect"
+   , { file: "zeros.fld"
+     , bwd_expect_file: "zeros-2.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "(0 : (0 : ⸨[]⸩))"
-     , datasets: []
+     , fwd_expect: "0 : (0 : ⸨[]⸩)"
      }
-   , { file: "zipWith"
-     , bwd_expect_file: "zipWith-1.expect"
+   , { file: "zipWith.fld"
+     , bwd_expect_file: "zipWith-1.expect.fld"
      , δv: listElement 1 select'
-     , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
-     , datasets: []
+     , fwd_expect: "13.0 : (⸨25.0⸩ : (41.0 : []))"
      }
-   , { file: "linked-outputs/bar-chart-line-chart"
-     , bwd_expect_file: "linked-outputs/bar-chart-line-chart.expect"
+   , { file: "linkedOutputs/bar-chart-line-chart.fld"
+     , bwd_expect_file: "linkedOutputs/bar-chart-line-chart.expect.fld"
      , δv: multiViewEntry "barChart" (barChart (barSegment 1 0 select))
-     , fwd_expect: "MultiView {[\"barChart\"] : BarChart {[\"caption\"] : \"Total output by country\", [\"size\"] : {[\"height\"] : 185, [\"width\"] : 275}, [\"stackedBars\"] : ({[\"segments\"] : ({[\"y\"] : \"output\", [\"z\"] : 295.3} : []), [\"x\"] : \"China\"} : ({[\"segments\"] : ({[\"y\"] : \"output\", [\"z\"] : ⸨196.7⸩} : []), [\"x\"] : \"USA\"} : ({[\"segments\"] : ({[\"y\"] : \"output\", [\"z\"] : 97.69999999999999} : []), [\"x\"] : \"Germany\"} : [])))}, [\"lineChart\"] : LineChart {[\"caption\"] : \"Output of USA relative to China\", [\"plots\"] : (LinePlot {[\"name\"] : \"Bio\", [\"points\"] : ({[\"x\"] : 2013, [\"y\"] : 2.5483870967741935} : ({[\"x\"] : 2014, [\"y\"] : 1.61} : ({[\"x\"] : 2015, [\"y\"] : 1.6213592233009706} : ({[\"x\"] : 2016, [\"y\"] : 1.4000000000000001} : ({[\"x\"] : 2017, [\"y\"] : 1.1208053691275166} : ({[\"x\"] : 2018, [\"y\"] : 0.9101123595505617} : []))))))} : (LinePlot {[\"name\"] : \"Hydro\", [\"points\"] : ({[\"x\"] : 2013, [\"y\"] : 0.3} : ({[\"x\"] : 2014, [\"y\"] : 0.28214285714285714} : ({[\"x\"] : 2015, [\"y\"] : 0.8333333333333334} : ({[\"x\"] : 2016, [\"y\"] : 0.26229508196721313} : ({[\"x\"] : 2017, [\"y\"] : 0.25559105431309903} : ({[\"x\"] : 2018, [\"y\"] : 0.2484472049689441} : []))))))} : (LinePlot {[\"name\"] : \"Solar\", [\"points\"] : ({[\"x\"] : 2013, [\"y\"] : 0.6080402010050252} : ({[\"x\"] : 2014, [\"y\"] : 0.6428571428571429} : ({[\"x\"] : 2015, [\"y\"] : 0.5909090909090909} : ({[\"x\"] : 2016, [\"y\"] : 0.5324675324675324} : ({[\"x\"] : 2017, [\"y\"] : 0.3893129770992366} : ({[\"x\"] : 2018, [\"y\"] : 0.3522727272727273} : []))))))} : (LinePlot {[\"name\"] : \"Wind\", [\"points\"] : ({[\"x\"] : 2013, [\"y\"] : 0.6703296703296703} : ({[\"x\"] : 2014, [\"y\"] : 0.5739130434782609} : ({[\"x\"] : 2015, [\"y\"] : 0.5103448275862069} : ({[\"x\"] : 2016, [\"y\"] : 0.48520710059171596} : ({[\"x\"] : 2017, [\"y\"] : 0.4734042553191489} : ({[\"x\"] : 2018, [\"y\"] : 0.45714285714285713} : []))))))} : [])))), [\"size\"] : {[\"height\"] : 285, [\"width\"] : 330}, [\"tickLabels\"] : {[\"x\"] : Default, [\"y\"] : Default}}}"
-     , datasets: [ "renewables" ↦ "dataset/renewables" ]
+     , fwd_expect: "MultiView {barChart : BarChart {caption : \"Total output by country\", size : {height : 185, width : 275}, stackedBars : {segments : {y : \"output\", z : 295.3} : [], x : \"China\"} : ({segments : {y : \"output\", z : ⸨196.7⸩} : [], x : \"USA\"} : ({segments : {y : \"output\", z : 97.69999999999999} : [], x : \"Germany\"} : []))}, lineChart : LineChart {caption : \"Output of USA relative to China\", plots : LinePlot {name : \"Bio\", points : {x : 2013, y : 2.5483870967741935} : ({x : 2014, y : 1.61} : ({x : 2015, y : 1.6213592233009706} : ({x : 2016, y : 1.4000000000000001} : ({x : 2017, y : 1.1208053691275166} : ({x : 2018, y : 0.9101123595505617} : [])))))} : (LinePlot {name : \"Hydro\", points : {x : 2013, y : 0.3} : ({x : 2014, y : 0.28214285714285714} : ({x : 2015, y : 0.8333333333333334} : ({x : 2016, y : 0.26229508196721313} : ({x : 2017, y : 0.25559105431309903} : ({x : 2018, y : 0.2484472049689441} : [])))))} : (LinePlot {name : \"Solar\", points : {x : 2013, y : 0.6080402010050252} : ({x : 2014, y : 0.6428571428571429} : ({x : 2015, y : 0.5909090909090909} : ({x : 2016, y : 0.5324675324675324} : ({x : 2017, y : 0.3893129770992366} : ({x : 2018, y : 0.3522727272727273} : [])))))} : (LinePlot {name : \"Wind\", points : {x : 2013, y : 0.6703296703296703} : ({x : 2014, y : 0.5739130434782609} : ({x : 2015, y : 0.5103448275862069} : ({x : 2016, y : 0.48520710059171596} : ({x : 2017, y : 0.4734042553191489} : ({x : 2018, y : 0.45714285714285713} : [])))))} : []))), size : {height : 285, width : 330}, tickLabels : {x : Default, y : Default}}}"
      }
-   , { file: "linked-outputs/stacked-bar-scatter-plot"
-     , bwd_expect_file: "linked-outputs/stacked-bar-scatter-plot.expect"
+   , { file: "linkedOutputs/stacked-bar-scatter-plot.fld"
+     , bwd_expect_file: "linkedOutputs/stacked-bar-scatter-plot.expect.fld"
      , δv: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
-     , fwd_expect: "MultiView {[\"scatterPlot\"] : ScatterPlot {[\"caption\"] : \"Clean energy efficiency vs proportion of renewable energy capacity\", [\"labels\"] : {[\"x\"] : \"Renewables/TotalEnergyCap\", [\"y\"] : \"Clean Capacity Factor\"}, [\"points\"] : ({[\"x\"] : 0.8723185510332055, [\"y\"] : 0.4180741155728385} : ({[\"x\"] : 0.383891020964826, [\"y\"] : 0.3306374135311273} : ({[\"x\"] : 0.5685559399722339, [\"y\"] : 0.2651713517303818} : ({[\"x\"] : 0.39179907463864283, [\"y\"] : 0.5311676111397315} : ({[\"x\"] : 0.0886691179578209, [\"y\"] : 0.4125357483317445} : ({[\"x\"] : 0.3167847396421975, [\"y\"] : 0.2767379556904734} : ({[\"x\"] : 0.3129857171819161, [\"y\"] : 0.20426921772653447} : ({[\"x\"] : 0.29687029792356306, [\"y\"] : 0.3462200657379872} : ({[\"x\"] : 0.16239390265026848, [\"y\"] : 0.4128} : ({[\"x\"] : 0.2115752867627615, [\"y\"] : 0.5086651868096602} : []))))))))))}, [\"stackedBarChart\"] : BarChart {[\"caption\"] : \"Non-renewables by country\", [\"size\"] : {[\"height\"] : 185, [\"width\"] : 275}, [\"stackedBars\"] : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 151.05} : ({[\"y\"] : \"EGY\", [\"z\"] : 159.93} : ({[\"y\"] : \"IND\", [\"z\"] : 1060.1799999999998} : ({[\"y\"] : \"JPN\", [\"z\"] : 928.82} : [])))), [\"x\"] : \"2014\"} : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 142.76} : ({[\"y\"] : \"EGY\", [\"z\"] : 170.68} : ({[\"y\"] : \"IND\", [\"z\"] : 1118.8899999999999} : ({[\"y\"] : \"JPN\", [\"z\"] : 876.0999999999999} : [])))), [\"x\"] : \"2015\"} : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 108.03} : ({[\"y\"] : \"EGY\", [\"z\"] : 174.07999999999998} : ({[\"y\"] : \"IND\", [\"z\"] : 1193.53} : ({[\"y\"] : \"JPN\", [\"z\"] : 883.3299999999999} : [])))), [\"x\"] : \"2016\"} : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 116.76} : ({[\"y\"] : \"EGY\", [\"z\"] : 181.31} : ({[\"y\"] : \"IND\", [\"z\"] : ⸨1236.43⸩} : ({[\"y\"] : \"JPN\", [\"z\"] : 875.32} : [])))), [\"x\"] : \"2017\"} : ({[\"segments\"] : ({[\"y\"] : \"BRA\", [\"z\"] : 101.48} : ({[\"y\"] : \"EGY\", [\"z\"] : ⸨182.31⸩} : ({[\"y\"] : \"IND\", [\"z\"] : 1315.57} : ({[\"y\"] : \"JPN\", [\"z\"] : ⸨873.39⸩} : [])))), [\"x\"] : \"2018\"} : [])))))}}"
-     , datasets:
-          [ "renewables" ↦ "dataset/renewables-new"
-          , "nonRenewables" ↦ "dataset/non-renewables"
-          ]
+     , fwd_expect: "MultiView {scatterPlot : ScatterPlot {caption : \"Clean energy efficiency vs proportion of renewable energy capacity\", labels : {x : \"Renewables/TotalEnergyCap\", y : \"Clean Capacity Factor\"}, points : {x : 0.8723185510332055, y : 0.4180741155728385} : ({x : 0.383891020964826, y : 0.3306374135311273} : ({x : 0.5685559399722339, y : 0.2651713517303818} : ({x : 0.39179907463864283, y : 0.5311676111397315} : ({x : 0.0886691179578209, y : 0.4125357483317445} : ({x : 0.3167847396421975, y : 0.2767379556904734} : ({x : 0.3129857171819161, y : 0.20426921772653447} : ({x : 0.29687029792356306, y : 0.3462200657379872} : ({x : 0.16239390265026848, y : 0.4128} : ({x : 0.2115752867627615, y : 0.5086651868096602} : [])))))))))}, stackedBarChart : BarChart {caption : \"Non-renewables by country\", size : {height : 185, width : 275}, stackedBars : {segments : {y : \"BRA\", z : 151.05} : ({y : \"EGY\", z : 159.93} : ({y : \"IND\", z : 1060.1799999999998} : ({y : \"JPN\", z : 928.82} : []))), x : \"2014\"} : ({segments : {y : \"BRA\", z : 142.76} : ({y : \"EGY\", z : 170.68} : ({y : \"IND\", z : 1118.8899999999999} : ({y : \"JPN\", z : 876.0999999999999} : []))), x : \"2015\"} : ({segments : {y : \"BRA\", z : 108.03} : ({y : \"EGY\", z : 174.07999999999998} : ({y : \"IND\", z : 1193.53} : ({y : \"JPN\", z : 883.3299999999999} : []))), x : \"2016\"} : ({segments : {y : \"BRA\", z : 116.76} : ({y : \"EGY\", z : 181.31} : ({y : \"IND\", z : ⸨1236.43⸩} : ({y : \"JPN\", z : 875.32} : []))), x : \"2017\"} : ({segments : {y : \"BRA\", z : 101.48} : ({y : \"EGY\", z : ⸨182.31⸩} : ({y : \"IND\", z : 1315.57} : ({y : \"JPN\", z : ⸨873.39⸩} : []))), x : \"2018\"} : []))))}}"
      }
-   , { file: "qcut"
-     , bwd_expect_file: "qcut.expect"
-     , δv: identity >>> (_ × Persistent)
-     , fwd_expect: "(((1.01 : (1.05 : [])), 0.051000000000000156) : (((1.07 : (1.09 : (1.22 : (1.23 : (1.24 : (1.24 : (1.25 : (1.32 : (1.32 : (1.35 : (1.3900000000000001 : (1.47 : (1.57 : (1.72 : [])))))))))))))), 0.6639999999999999) : (((1.73 : (1.75 : (1.76 : (1.83 : (1.8699999999999999 : (1.94 : (2.04 : (2.14 : (2.18 : (2.36 : (2.37 : (2.38 : (2.52 : (2.54 : [])))))))))))))), 0.8464999999999998) : (((2.61 : (2.67 : [])), 0.09850000000000003) : []))))"
-     , datasets: [ "ssp126" ↦ "dataset/ssp126-2081-2100" ]
+   , { file: "qcut.fld"
+     , bwd_expect_file: "qcut.expect.fld"
+     , δv: (_ × Persistent)
+     , fwd_expect: "(1.01 : (1.05 : []), 0.051000000000000156) : ((1.07 : (1.09 : (1.22 : (1.23 : (1.24 : (1.24 : (1.25 : (1.32 : (1.32 : (1.35 : (1.39 : (1.47 : (1.57 : (1.72 : []))))))))))))), 0.6639999999999999) : ((1.73 : (1.75 : (1.76 : (1.83 : (1.87 : (1.94 : (2.04 : (2.14 : (2.18 : (2.36 : (2.37 : (2.38 : (2.52 : (2.54 : []))))))))))))), 0.8464999999999998) : ((2.61 : (2.67 : []), 0.09850000000000003) : [])))"
      }
    ]

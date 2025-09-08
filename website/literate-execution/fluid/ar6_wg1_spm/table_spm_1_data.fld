@@ -1,0 +1,2 @@
+let tableData = loadJson "ar6_wg1_spm/explainable-table.json";
+let likelihoods = loadJson "ar6_wg1_spm/likelihoods.json";

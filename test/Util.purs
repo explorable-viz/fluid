@@ -16,7 +16,7 @@ import Effect.Class (class MonadEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
-import File (class LoadFile, File, FileCxt, Folder(..))
+import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parse, prepConfig)
@@ -26,7 +26,7 @@ import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
-import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, spyWhen, throw, (×))
+import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))
 import Val (class Ann, EnvExpr(..), Val)
 
 type TestSuite m = Array (String × m Unit)
@@ -42,7 +42,9 @@ fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
 test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
 test file progCxt spec (n × _) = do
-   { s, gconfig } <- prepConfig file progCxt
+   log' ("**** prepConfig")
+   fluidSrc <- loadFile fluidSrcPaths file
+   { s, gconfig } <- prepConfig progCxt fluidSrc
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n
@@ -68,7 +70,15 @@ benchNames =
    , demBy_G_suff_dual: "DemBy-Suff"
    }
 
-testProperties :: forall m. MonadReader FileCxt m => LoadFile m => MonadWriter BenchRow m => Raw SE.Expr -> GraphConfig -> SelectionSpec -> AffError m Unit
+testProperties
+   :: forall m
+    . MonadReader FileCxt m
+   => LoadFile m
+   => MonadWriter BenchRow m
+   => Raw SE.Expr
+   -> GraphConfig
+   -> SelectionSpec
+   -> AffError m Unit
 testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    { gc: GC desug, e } <- desugGC s
 
@@ -131,9 +141,11 @@ checkEq op1 op2 x y = do
    check (left == "") left
    check (right == "") right
 
-testPretty :: forall m a. Ann a => SE.Expr a -> AffError m Unit
+testPretty :: forall m a. Ann a => Show a => SE.Expr a -> AffError m Unit
 testPretty s = do
-   _ × s' <- parse (prettyP s) program
+   log' ("**** prettyP")
+   log' (prettyP s)
+   s' × _ <- withMsg "testPretty" $ parse (prettyP s) program
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
 

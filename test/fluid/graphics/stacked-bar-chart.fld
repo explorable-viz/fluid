@@ -1,4 +1,5 @@
 import lib.graphics
+import dataset.renewablesRestricted
 
 let year = 2015 in
 caption ("Total renewables (GW) by country, " ++ numToStr year)

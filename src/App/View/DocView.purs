@@ -25,9 +25,9 @@ instance View DocView Unit where
 
    setSelection :: Unit -> DocView -> Select -> D3.Selection -> Effect Unit
    setSelection _ (DocView { doc: Just doc, view }) select rootElement = do
-      viewElem <- rootElement # D3.select (D3.nthChild 1)
+      viewElem <- rootElement # D3.select (D3.nthChildOf D3.scope 1)
       void $ unpack view \v -> setSelection unit v select viewElem
-      docElem <- rootElement # D3.select (D3.nthChild 2)
+      docElem <- rootElement # D3.select (D3.nthChildOf D3.scope 2)
       void $ setSelection unit doc select docElem
    setSelection _ (DocView { doc: Nothing, view }) select rootElement = do
       unpack view \v -> setSelection unit v select rootElement
