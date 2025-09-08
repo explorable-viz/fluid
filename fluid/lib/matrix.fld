@@ -23,10 +23,9 @@ let convolve image kernel lookup =
         (half_i, half_j) = (i `quot` 2, j `quot` 2);
         area = i * j
     in [| let interMatrix =
-              @doc("""Intermediate matrix for element (${m'}, ${n'})""")
+              """Intermediate matrix for element (${m'}, ${n'})"""
               [| let x = m' + i' - 1 - half_i;
                      y = n' + j' - 1 - half_j in
-                @doc("""Multiply these two elements""")
                 lookup x y image * kernel!(i', j')
               | (i', j') in (i, j) |]
           in matrixSum interMatrix `quot` area
@@ -35,7 +34,6 @@ let convolve image kernel lookup =
 let matMul a b =
     let ((m, n), (i, j)) = (dims a, dims b) in
     if not (n == i)
-    then error "Dimensions don't line up"
-    else @doc("""Intermediate matrix""")
-        [| sum [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n]
-        | (i', j') in (m, j) |];
+    then error "Dimension mismatch"
+    else [| sum [ a!(i', k) * b!(k, j') | k <- enumFromTo 1 n]
+          | (i', j') in (m, j) |];

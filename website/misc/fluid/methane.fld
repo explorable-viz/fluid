@@ -1,5 +1,3 @@
-import methane_data
-
 let series type = [
    { x: row.year, y: row.emissions }
    | row <- methane, row.type == type

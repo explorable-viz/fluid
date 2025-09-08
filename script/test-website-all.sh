@@ -2,14 +2,9 @@
 # run from project root
 set -xe
 
-WEBSITES=($(for DIR in website/*/; do
-    if [[ -f "$DIR/index.html" ]]; then
-        basename "$DIR"
-    fi
+WEBSITES=($(for FILE in website/Test/* website/Test/*.purs; do
+    basename "$FILE" | sed 's/\.[^.]*$//'
 done | sort -u))
-
-echo "Testing websites"
-printf "%s\n" "${WEBSITES[@]}"
 
 for WEBSITE in "${WEBSITES[@]}"; do
    . script/test-website.sh $WEBSITE

@@ -26,12 +26,6 @@ function canvasFont (el) {
    return `${computed(el, 'font-weight')} ${computed(el, 'font-size')} ${computed(el, 'font-family')}`
 }
 
-function assertNonEmpty (sel) {
-   if (sel.empty()) {
-      throw new Error("Assertion failed: D3 selection is empty")
-   }
-}
-
 // Could assume a div in document set up for this purpose. Pure; side-effects should be unobservable.
 // Not especially reliable as might not inherit in situ styling that the actual text will
 export function textDimensions (class_) {
@@ -142,7 +136,6 @@ export function rootSelect (selector) {
 
 export function select (selector) {
    return sel => {
-      assertNonEmpty(sel)
       return () => {
          return sel.select(selector)
       }
@@ -237,7 +230,6 @@ export function setDatum (d) {
 export function on (eventType) {
    return listener => {
       return sel => {
-         assertNonEmpty(sel)
          return () => {
             return sel.on(eventType, e => {
                if (e.button == 0) { // assumes e is a mouse event, which is the case for now

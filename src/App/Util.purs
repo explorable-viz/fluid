@@ -172,7 +172,7 @@ runAffs_ f as = flip runAff_ (sequence as) case _ of
    Right as' -> as' <#> f # sequence_
 
 selectionEventData' :: forall a. Event -> a × SetSel (Val (SelStates 𝔹))
-selectionEventData' = (eventData &&& type_ >>> selector)
+selectionEventData' = (eventData &&& type_ >>> selector')
 
 eventData :: forall a. Event -> a
 eventData = target >>> unsafeEventData
@@ -180,9 +180,9 @@ eventData = target >>> unsafeEventData
    unsafeEventData :: Maybe EventTarget -> a
    unsafeEventData tgt = (unsafeCoerce $ definitely' tgt).__data__
 
-selector :: EventType -> SetSel (Val (SelStates 𝔹))
+selector :: EventType -> Endo (Val (SelStates 𝔹))
 selector (EventType ev) v =
-   (reportSelStates <<< setSel <$> reportTarget v) × selType
+   reportSelStates <<< setSel <$> reportTarget v
    where
    setSel :: Endo (SelStates 𝔹)
    setSel (SelStates Inert) = SelStates Inert
@@ -194,6 +194,18 @@ selector (EventType ev) v =
 
    reportSelStates = spyWhen tracing.mouseEvent "to " show
    reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyP
+
+selector' :: EventType -> SetSel (Val (SelStates 𝔹))
+selector' (EventType ev) v =
+   (setSel <$> v) × selType
+   where
+   setSel :: Endo (SelStates 𝔹)
+   setSel (SelStates Inert) = SelStates Inert
+   setSel (SelStates (Reactive sel'))
+      | ev == "mousedown" = SelStates (Reactive (sel' { persistent = neg sel'.persistent }))
+      | ev == "mouseenter" = SelStates (Reactive (sel' { transient = true }))
+      | ev == "mouseleave" = SelStates (Reactive (sel' { transient = false }))
+      | otherwise = error "Unsupported event type"
 
    selType :: SelectionType
    selType

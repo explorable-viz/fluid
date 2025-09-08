@@ -1,5 +1,4 @@
 import lib.graphics
-import dataset.renewablesRestricted
 
 let year1 = head data;
 -- List (EnergyType, Output) -> List (EnergyType, Output)

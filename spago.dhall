@@ -39,6 +39,7 @@ in  { name = ""
       , "maybe"
       , "newtype"
       , "node-buffer"
+      , "node-child-process"
       , "node-fs"
       , "node-process"
       , "nonempty"
@@ -63,5 +64,5 @@ in  { name = ""
     , packages = ./packages.dhall
     , baseSources
     , sources = baseSources # [ "config/dev/**/*.purs" ]
-    , backend = "npx purs-backend-es build"
+    , backend = "purs-backend-es build"
     }

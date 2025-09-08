@@ -1,2 +1,0 @@
-let renewables = loadJson "dataset/renewables-new.json";
-let nonRenewables = loadJson "dataset/non-renewables.json";

@@ -1,2 +1,2 @@
 let x = { y: 1 }
-in @doc("""Test""") x.y
+in """Test""" x.y

@@ -1,5 +1,0 @@
-let better = "better" in
-Paragraph [
-   Text "As shown in Table 3, BiLSTM gives significantly  ",
-   Text better
-]

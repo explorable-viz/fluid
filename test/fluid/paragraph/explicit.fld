@@ -1,3 +1,0 @@
--- Explicit Paragraph constructor (valid in Surface language)
-let name = "Alice" in
-Paragraph [ Text "Hi ", Text name, Text "!" ]

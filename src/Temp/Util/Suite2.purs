@@ -26,7 +26,7 @@ import Util ((×))
 parse :: String -> Either String (Expr Unit)
 parse src = case runParser src P.program of
    Left e -> Left $ prettyParseError e
-   Right (expr × _) -> Right expr
+   Right (_ × expr) -> Right expr
 
 pretty :: forall d. Pretty d => d -> String
 pretty = prettyP

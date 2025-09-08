@@ -82,10 +82,9 @@
 </div>
 
 <script type="module">
-   import { drawCode, loadFigure } from "/shared/load-figure.js"
-   drawCode("../fluid/lib/matrix.fld")()
-
-   loadFigure("spec.json")("../fluid/convolution/emboss.fld")()
+   import { loadFigure, drawCode } from "/shared/load-figure.js"
+   drawCode("../fluid/lib")("matrix")()
+   loadFigure("spec.json")()
 </script>
 </body>
 </html>

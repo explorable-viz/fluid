@@ -1,5 +1,4 @@
 import lib.graphics
-import dataset.renewablesRestricted
 
 let rect = Rect 0 0 1 3 "red";
     g = Group [Viewport 0 0 1 3 "white" 0 (Scale 1 1) (Translate 0 0) rect];

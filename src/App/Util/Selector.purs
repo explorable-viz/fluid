@@ -4,15 +4,16 @@ import Prelude hiding (absurd)
 
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), SetSel)
 import Bind (Var)
-import Data.List (List(..), updateAt, (!!), (:))
+import Data.List (List(..), index, updateAt, (!!), (:))
 import Data.Maybe (fromJust)
 import Data.Newtype (over)
 import Data.Profunctor.Strong (first, second)
 import Data.Tuple (fst) as T
 import DataType (Ctr, cBarChart, cCons, cLineChart, cLinePlot, cMultiView, cNil, cPair, cParagraph, cScatterPlot, cSome, f_points, f_segments, f_stackedBars, f_z)
+import Doc (DocCommentElem(..), DocOpt(..))
 import Lattice (class Neg, 𝔹, neg)
 import Partial.Unsafe (unsafePartial)
-import Util (Endo, absurd, assert, definitely, error, (×))
+import Util (Endo, absurd, assert, definitely, definitely', error, (×))
 import Util.Map (get, insert, update)
 import Util.Set ((∈))
 import Val (BaseVal(..), DictRep(..), Env, Val(..), matrixGet, matrixPut)
@@ -132,6 +133,18 @@ listCell n δα = unsafePartial $ case _ of
    Val α doc (Constr c (v : u : Nil)) | c == cCons ->
       if n == 0 then first (\α' -> Val α' doc (Constr c (v : u : Nil))) (persist δα α)
       else first (\u' -> Val α doc (Constr c (v : u' : Nil))) (listCell (n - 1) δα u)
+
+docElement :: Int -> SelSetter Val Val
+docElement _ _ (Val _ None _) = error absurd
+docElement i δv (Val α (Doc doc) v) =
+   first (\doc' -> Val α doc' v)
+      $ first Doc
+      $ definitely' do
+           elem' × selType <- δv' <$> index doc i
+           (_ × selType) <$> updateAt i elem' doc
+   where
+   δv' (Unquote v') = first Unquote (δv v')
+   δv' _ = error absurd
 
 composeSetSel :: forall a. SetSel a -> SetSel a -> SetSel a
 composeSetSel f g = \x -> let x' × _ = f x in g x'

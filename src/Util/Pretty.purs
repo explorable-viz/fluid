@@ -99,21 +99,18 @@ firstLine (Doc d) = helperUnwrapMaybe (head d.lines)
 lastLine :: Doc -> String
 lastLine (Doc d) = helperUnwrapMaybe (last d.lines)
 
+-- takes all but the first lines of d2 so say e.g. [s1, s2] and spaces returns "  " (length of last line of d1) and we do ["  ", " "]
+-- we then zip this with all but the first line of d2 so we have indented the document by the length of the last line of d1
 indentedExpression :: Doc -> Doc -> Array String
 indentedExpression (Doc d1) (Doc d2) =
    zipWith (<>)
-      (A.replicate (A.length (allButFirst (Doc d2))) (spaces (S.length (lastLine (Doc d1)))))
+      ( A.replicate (A.length (allButFirst (Doc d2)))
+           (spaces (S.length (lastLine (Doc d1))))
+      )
       (allButFirst (Doc d2))
 
 beside :: Doc -> Doc -> Doc
-beside (Doc d1) (Doc d2) =
-   Doc
-      { width: d1.width + d2.width
-      , height: d1.height + d2.height
-      , lines: allButLast (Doc d1)
-           <> singleton (lastLine (Doc d1) <> "" <> firstLine (Doc d2))
-           <> indentedExpression (Doc d1) (Doc d2)
-      }
+beside (Doc d1) (Doc d2) = Doc { width: d1.width + d2.width, height: d1.height + d2.height, lines: allButLast (Doc d1) <> (singleton (lastLine (Doc d1) <> "" <> firstLine (Doc d2))) <> indentedExpression (Doc d1) (Doc d2) }
 
 hcat :: forall f. Foldable f => f Doc -> Doc
 hcat = ala Columns foldMap
@@ -121,6 +118,7 @@ hcat = ala Columns foldMap
 vcat :: forall f. Foldable f => f Doc -> Doc
 vcat = ala Stack foldMap
 
+-- | A wrapper for `Doc` with a `Monoid` instance which stacks documents vertically.
 newtype Stack = Stack Doc
 
 derive instance Newtype Stack _
@@ -131,6 +129,7 @@ instance Semigroup Stack where
 instance Monoid Stack where
    mempty = Stack empty
 
+-- | A wrapper for `Doc` with a `Monoid` instance which stacks documents in columns.
 newtype Columns = Columns Doc
 
 derive instance Newtype Columns _

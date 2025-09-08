@@ -6,14 +6,14 @@ import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetS
 import App.Util.Selector (ViewSetter)
 import App.View.Util.D3 (isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
-import Bind (Var, (↦))
+import Bind (Bind, Var, (↦))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe)
 import Data.Set (Set)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Effect (Effect)
-import File (Folder)
+import File (File, Folder)
 import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
 import SExpr as S
@@ -92,6 +92,8 @@ uiHelpers =
 
 type FigSpec =
    { fluidSrcPaths :: Array Folder
+   , datasets :: Array (Bind String)
+   , file :: File
    , inputs :: Array Var
    , query :: Maybe (Query (Val Vertex))
    , linking :: Boolean

@@ -1,4 +1,0 @@
-import linkedOutputs.pairsData
-
-let q = 1 in
-(fun (w, x) -> (w, (w, x))) data

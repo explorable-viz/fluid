@@ -34,37 +34,37 @@ let fromSome option = match option as
                         Some x -> x} in
 let filter p [] = [] in
 let filter p (x : xs) = let ys = filter p xs in
-                          if p x then x : ys else ys in
+                          if p x then (x : ys) else ys in
 let filterMap p [] = [] in
 let filterMap p (x : xs) = match p x as
                              {(None) -> filterMap f xs;
-                               Some y -> y : filterMap f xs} in
+                               Some y -> (y : filterMap f xs)} in
 let foldl op z [] = z in
 let foldl op z (x : xs) = foldl op (op z x) xs in
 let foldl1 op (x : xs) = foldl op x xs in
 let foldr op z [] = z in
 let foldr op z (x : xs) = op x (foldr op z xs) in
 let foldr1 op [x] = x in
-let foldr1 op (x : (y : xs)) = op x (foldr1 op (y : xs)) in
+let foldr1 op (x : (y : xs)) = op x (foldr1 op ((y : xs))) in
 let scanl1 op z xs = let go x continue acc = let next = op acc x in
-                                             next : continue next in
+                                             (next : continue next) in
                      foldr go (const []) xs z in
-let scanl op z xs = z : scanl1 op z xs in
+let scanl op z xs = (z : scanl1 op z xs) in
 let map f [] = [] in
-let map f (x : xs) = f x : map f xs in
+let map f (x : xs) = (f x : map f xs) in
 let append ([], ys) = ys in
-let append ((x : xs), ys) = x : append ((xs, ys)) in
+let append ((x : xs), ys) = (x : append ((xs, ys))) in
 let concat2 [] ys = ys in
-let concat2 (x : xs) ys = x : concat2 xs ys in
+let concat2 (x : xs) ys = (x : concat2 xs ys) in
 let concat = foldl concat2 [] in
 let concatMap f xs = concat (map f xs) in
 let intersperse [] _ = [] in
 let intersperse [x] _ = [x] in
-let intersperse (x : (y : ys)) sep = x : (sep : intersperse (y : ys) sep) in
-let iterate n f z = if n == 0 then [] else z : map f (iterate (n - 1) f z) in
+let intersperse (x : (y : ys)) sep = (x : (sep : intersperse ((y : ys)) sep)) in
+let iterate n f z = if n == 0 then [] else (z : map f (iterate (n - 1) f z)) in
 let sum = foldr (+) 0 in
 let last [x] = x in
-let last (x : (y : ys)) = last (y : ys) in
+let last (x : (y : ys)) = last ((y : ys)) in
 let length [] = 0 in
 let length (_ : xs) = 1 + length xs in
 let reverse [] = [] in
@@ -72,7 +72,7 @@ let reverse (x : xs) = append ((reverse xs, [x])) in
 let repeat = flip iterate id in
 let take n xs = if n <= 0 then [] else match xs as
                                         {[] -> [];
-                                          (x : xs) -> x : take (n - 1) xs} in
+                                          (x : xs) -> (x : take (n - 1) xs)} in
 let drop n xs = if n <= 0 then xs else match xs as
                                        {[] -> [];
                                          (_ : xs) -> drop (n - 1) xs} in
@@ -87,19 +87,19 @@ let maximum = foldr1 max in
 let minimum = foldr1 min in
 let unzip [] = ([], []) in
 let unzip ((x, y) : zs) = let (xs, ys) = unzip zs in
-                               (x : xs, y : ys) in
+                               ((x : xs), (y : ys)) in
 let zipWith op [] ys = [] in
 let zipWith op (x : xs) [] = [] in
-let zipWith op (x : xs) (y : ys) = op x y : zipWith op xs ys in
+let zipWith op (x : xs) (y : ys) = (op x y : zipWith op xs ys) in
 let zip = zipWith (curry id) in
-let enumFromTo n m = if n <= m then n : [n + 1..m] else [] in
+let enumFromTo n m = if n <= m then (n : [n + 1..m]) else [] in
 let range (m1, n1) (m2, n2) = [(i1, i2)|i1 <- [m1..m2], i2 <- [n1..n2]] in
 let abs x y = if x - y < 0 then negate (x - y) else x - y in
 let nub xs = let nub' [] _ = [] in
-             let nub' (x : xs) ys = if x `elem` ys then nub' xs ys else x : nub' xs (x : ys) in
+             let nub' (x : xs) ys = if x `elem` ys then nub' xs ys else (x : nub' xs ((x : ys))) in
              nub' xs [] in
 let slice begin end xs = take (end - begin) (drop begin xs) in
 let splitOn p data = let go fls trs [] = (reverse fls, reverse trs) in
-                     let go fls trs (x : xs) = if p x then go fls (x : trs) xs else go (x : fls) trs xs in
+                     let go fls trs (x : xs) = if p x then go fls ((x : trs)) xs else go ((x : fls)) trs xs in
                      go [] [] data in
 0

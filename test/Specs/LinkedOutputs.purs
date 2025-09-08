@@ -4,9 +4,10 @@ import Prelude
 
 import App.Util (SelectionType(..))
 import App.Util.Selector (barChart, barSegment, dictVal, fst, lineChart, linePoint, listElement, matrixElement, multiViewEntry, scatterPlot, scatterPoint, snd, (>.>), select)
+import Bind ((↦))
 import Data.Maybe (Maybe(..))
 import DataType (f_plots, f_y)
-import File (Folder(..))
+import File (File(..), Folder(..))
 import Test.Util.Suite (TestLinkedOutputsSpec)
 import Util ((×))
 
@@ -14,6 +15,9 @@ linkedOutputs_spec1 :: TestLinkedOutputsSpec
 linkedOutputs_spec1 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+        , datasets: [ "renewables" ↦ "dataset/renewables" ]
+
+        , file: File "slicing/linked-outputs/bar-chart-line-chart"
         , inputs: [ "renewables" ]
         , query: Nothing
         , linking: true
@@ -32,13 +36,18 @@ linkedOutputs_spec1 =
                         )
                    )
               )
-   , file: "slicing/linkedOutputs/bar-chart-line-chart.fld"
    }
 
 linkedOutputs_spec2 :: TestLinkedOutputsSpec
 linkedOutputs_spec2 =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+        , datasets:
+             [ "renewables" ↦ "dataset/renewables-new"
+             , "nonRenewables" ↦ "dataset/non-renewables"
+             ]
+
+        , file: File "slicing/linked-outputs/stacked-bar-scatter-plot"
         , inputs: [ "nonRenewables" ]
         , query: Nothing
         , linking: true
@@ -52,37 +61,42 @@ linkedOutputs_spec2 =
                         >.> scatterPoint 6 (dictVal f_y select)
                    )
               )
-   , file: "slicing/linkedOutputs/stacked-bar-scatter-plot.fld"
    }
 
 movingAverages_spec :: TestLinkedOutputsSpec
 movingAverages_spec =
    { spec:
         { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+        , datasets: [ "methane" ↦ "dataset/methane-emissions" ]
+
+        , file: File "linked-outputs/moving-average"
         , inputs: [ "methane" ]
         , query: Nothing
         , linking: true
         }
    , δ_out: identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
    , out_expect: identity >>> (_ × Persistent)
-   , file: "linkedOutputs/moving-average.fld"
    }
 
 linkedOutputs_cases :: Array TestLinkedOutputsSpec
 linkedOutputs_cases =
    [ { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+          , datasets: [ "data" ↦ "linked-outputs/pairs-data" ]
+
+          , file: File "linked-outputs/pairs"
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true
           }
      , δ_out: snd select
      , out_expect: select
-     , file: "linkedOutputs/pairs.fld"
      }
    , { spec:
           { fluidSrcPaths: [ Folder "fluid", Folder "test/fluid" ]
+          , datasets: [ "data" ↦ "linked-outputs/convolution-data" ]
 
+          , file: File "linked-outputs/convolution"
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true
@@ -107,7 +121,6 @@ linkedOutputs_cases =
                      >.> matrixElement 3 2 select
                      >.> matrixElement 3 3 select
                 )
-     , file: "linkedOutputs/convolution.fld"
      }
    , linkedOutputs_spec1
    , linkedOutputs_spec2

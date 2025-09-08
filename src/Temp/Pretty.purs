@@ -35,7 +35,7 @@ binaryApp n (BinaryApp s op s') =
    getPrec x = case lookup x opDefs of
       Just y -> y.prec
       Nothing -> -1
-binaryApp _ e@(Constr _ c _) | c == cCons = parens (pretty e)
+binaryApp _ e@(Constr _ _ c _) | c == cCons = parens (pretty e)
 binaryApp _ (Let _ _) = text "undefined"
 binaryApp _ (LetRec _ _) = text "undefined"
 binaryApp _ e = pretty e
@@ -46,40 +46,37 @@ lambda ps e = _lambda <+> prettyList ps <> _colon <+> pretty e
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op o) = parens $ text o
-   pretty (Int _ n) = number n
-   pretty (Float _ n) = number n
-   pretty (Str _ str) = string str
-   pretty (Constr _ c Nil) = text c
-   pretty (Constr _ c as) = prettyConstr c as
-   pretty (Dictionary _ Nil) = text "{}"
-   pretty (Dictionary _ es) = record $ map pretty es
-   pretty (Matrix _ e (x × y) e') = matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e')
+   pretty (Int _ _ n) = number n
+   pretty (Float _ _ n) = number n
+   pretty (Str _ _ str) = string str
+   pretty (Constr _ _ c Nil) = text c
+   pretty (Constr _ _ c as) = prettyConstr c as
+   pretty (Dictionary _ _ Nil) = text "{}"
+   pretty (Dictionary _ _ es) = record $ map pretty es
+   pretty (Matrix _ _ e (x × y) e') = matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e')
    pretty (Lambda cs) = parens (pretty cs)
-   pretty (Project s x) = pretty s <> text "." <> text x
-   pretty (DProject e k) = pretty e <> brackets (pretty k)
-   pretty (App s s') = prettyAppChain (App s s') Nil
+   pretty (Project _ s x) = pretty s <> text "." <> text x
+   pretty (DProject _ e k) = pretty e <> brackets (pretty k)
+   pretty (App d s s') = prettyAppChain (App d s s') Nil
    pretty (BinaryApp s op s') = binaryApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = _match <+> pretty s <> block (pretty cs)
    pretty (IfElse i t e) = _if <+> pretty i <> block (pretty t) <++> _else <> block (pretty e)
-   pretty (ListEmpty _) = _empty
-   pretty (ListNonEmpty _ e rest) = array $ (pretty e : collect rest)
+   pretty (ListEmpty _ _) = _empty
+   pretty (ListNonEmpty _ _ e rest) = array $ (pretty e : collect rest)
       where
       collect :: ListRest a -> List Doc
       collect (Next _ e' rest') = pretty e' : collect rest'
       collect (End _) = Nil
 
    pretty (ListEnum s s') = brackets (pretty s <+> _ellipsis <+> pretty s')
-   pretty (ListComp _ s qs) = brackets (pretty s <+> pretty qs)
+   pretty (ListComp _ _ s qs) = brackets (pretty s <+> pretty qs)
    pretty (Let ds s) = (pretty ds) <+++> pretty s
    pretty (LetRec h s) = (pretty h) <+++> pretty s
-   -- TODO:
-   pretty (Paragraph _) = text "undefined"
-   pretty (DocExpr _ e) = pretty e
 
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (ListCompDecl (VarDef v s)) Nil) = _for <+> pretty v <+> _in <+> brackets (pretty s)
    pretty (Cons (ListCompGuard s) Nil) = _if <+> pretty s
-   pretty (Cons (ListCompGen p s) Nil) = _for <+> pretty p <+> _in <+> pretty s
+   pretty (Cons (ListCompGen _ p s) Nil) = _for <+> pretty p <+> _in <+> pretty s
    pretty (Cons q qs) = pretty (singleton q) <+> pretty qs
    pretty Nil = mempty
 
@@ -140,7 +137,7 @@ prettyConstr ":" (x : y : Nil) = pretty x <+> text ":|" <+> pretty y
 prettyConstr c ps = text c <> parens (prettyList ps)
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
-prettyAppChain (App f a) as = prettyAppChain f (a : as)
+prettyAppChain (App _ f a) as = prettyAppChain f (a : as)
 prettyAppChain f as = pretty f <> parens (prettyList as)
 
 prettyList :: forall a. Pretty a => List a -> Doc

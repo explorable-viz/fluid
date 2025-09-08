@@ -15,6 +15,7 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr)
 import Dict (Dict)
+import Doc (DocOpt(..), DocCommentElem(..)) as Doc
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex, pack, vertices)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, (∧), (∨))
 import Util (type (+), type (×), error, shapeMismatch, singleton, (×), (≜))
@@ -26,19 +27,18 @@ import Util.Set ((\\), (∪))
 data Expr a
    = Var Var
    | Op Var
-   | Int a Int
-   | Float a Number
-   | Str a String
-   | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
-   | Constr a Ctr (List (Expr a))
-   | Matrix a (Expr a) (Var × Var) (Expr a)
+   | Int a (DocOpt a) Int
+   | Float a (DocOpt a) Number
+   | Str a (DocOpt a) String
+   | Dictionary a (DocOpt a) (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
+   | Constr a (DocOpt a) Ctr (List (Expr a))
+   | Matrix a (DocOpt a) (Expr a) (Var × Var) (Expr a)
    | Lambda a (Elim a)
-   | Project (Expr a) Var
-   | DProject (Expr a) (Expr a)
-   | App (Expr a) (Expr a)
+   | Project (DocOpt a) (Expr a) Var
+   | DProject (DocOpt a) (Expr a) (Expr a)
+   | App (DocOpt a) (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | DocExpr (Expr a) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -54,6 +54,9 @@ data Cont a
    = ContExpr (Expr a)
    | ContElim (Elim a)
 
+type DocOpt a = Doc.DocOpt Expr a
+type DocCommentElem a = Doc.DocCommentElem Expr a
+
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
 asElim _ = error "Eliminator expected"
@@ -67,22 +70,25 @@ newtype Module a = Module (List (VarDef a + RecDefs a))
 class FV a where
    fv :: a -> Set Var
 
+instance FV (Doc.DocOpt Expr a) where
+   fv Doc.None = empty
+   fv (Doc.Doc doc) = unions (fv <$> doc)
+
 instance FV (Expr a) where
    fv (Var x) = singleton x
    fv (Op op) = singleton op
-   fv (Int _ _) = empty
-   fv (Float _ _) = empty
-   fv (Str _ _) = empty
-   fv (Dictionary _ ees) = unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
-   fv (Constr _ _ es) = unions (fv <$> es)
-   fv (Matrix _ e1 _ e2) = fv e1 ∪ fv e2
+   fv (Int _ _ _) = empty
+   fv (Float _ _ _) = empty
+   fv (Str _ _ _) = empty
+   fv (Dictionary _ doc ees) = fv doc ∪ unions ((\(Pair e e') -> fv e ∪ fv e') <$> ees)
+   fv (Constr _ doc _ es) = fv doc ∪ unions (fv <$> es)
+   fv (Matrix _ doc e1 _ e2) = fv doc ∪ fv e1 ∪ fv e2
    fv (Lambda _ σ) = fv σ
-   fv (Project e _) = fv e
-   fv (DProject e x) = fv e ∪ fv x
-   fv (App e1 e2) = fv e1 ∪ fv e2
+   fv (Project doc e _) = fv doc ∪ fv e
+   fv (DProject doc e x) = fv doc ∪ fv e ∪ fv x
+   fv (App doc e1 e2) = fv doc ∪ fv e1 ∪ fv e2
    fv (Let def e) = fv def ∪ (fv e \\ bv def)
    fv (LetRec ρ e) = fv ρ ∪ fv e
-   fv (DocExpr doc e) = fv doc ∪ fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ \\ singleton x
@@ -111,6 +117,10 @@ instance FV a => FV (Maybe a) where
 
 instance (FV a) => FV (List a) where
    fv xs = unions (fv <$> xs)
+
+instance FV (DocCommentElem a) where
+   fv (Doc.Token _) = empty
+   fv (Doc.Unquote e) = fv e
 
 class BV a where
    bv :: a -> Set Var
@@ -165,38 +175,37 @@ instance BoundedJoinSemilattice a => Expandable (RecDefs a) (Raw RecDefs) where
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join (Var x) (Var x') = Var (x ≜ x')
    join (Op op) (Op op') = Op (op ≜ op')
-   join (Int α n) (Int α' n') = Int (α ∨ α') (n ≜ n')
-   join (Str α str) (Str α' str') = Str (α ∨ α') (str ≜ str')
-   join (Float α n) (Float α' n') = Float (α ∨ α') (n ≜ n')
-   join (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') (ees ∨ ees')
-   join (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') (c ≜ c') (es ∨ es')
-   join (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
-      Matrix (α ∨ α') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
+   join (Int α doc n) (Int α' doc' n') = Int (α ∨ α') (doc ∨ doc') (n ≜ n')
+   join (Str α doc str) (Str α' doc' str') = Str (α ∨ α') (doc ∨ doc') (str ≜ str')
+   join (Float α doc n) (Float α' doc' n') = Float (α ∨ α') (doc ∨ doc') (n ≜ n')
+   join (Dictionary α doc ees) (Dictionary α' doc' ees') = Dictionary (α ∨ α') (doc ∨ doc') (ees ∨ ees')
+   join (Constr α doc c es) (Constr α' doc' c' es') = Constr (α ∨ α') (doc ∨ doc') (c ≜ c') (es ∨ es') -- TODO: assert consistentWith
+   join (Matrix α doc e1 (x × y) e2) (Matrix α' doc' e1' (x' × y') e2') =
+      Matrix (α ∨ α') (doc ∨ doc') (e1 ∨ e1') ((x ≜ x') × (y ≜ y')) (e2 ∨ e2')
    join (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') (σ ∨ σ')
-   join (Project e x) (Project e' x') = Project (e ∨ e') (x ≜ x')
-   join (DProject e1 e2) (DProject e1' e2') = DProject (e1 ∨ e1') (e2 ∨ e2')
-   join (App e1 e2) (App e1' e2') = App (e1 ∨ e1') (e2 ∨ e2')
+   join (Project doc e x) (Project doc' e' x') = Project (doc ∨ doc') (e ∨ e') (x ≜ x')
+   join (DProject doc e x) (DProject doc' e' x') = DProject (doc ∨ doc') (e ∨ e') (x ∨ x')
+   join (App doc e1 e2) (App doc' e1' e2') = App (doc ∨ doc') (e1 ∨ e1') (e2 ∨ e2')
+   join (Let def e) (Let def' e') = Let (def ∨ def') (e ∨ e')
    join (LetRec ρ e) (LetRec ρ' e') = LetRec (ρ ∨ ρ') (e ∨ e')
-   join (DocExpr doc e) (DocExpr doc' e') = DocExpr (doc ∨ doc') (e ∨ e')
    join _ _ = shapeMismatch unit
 
 instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Var x) (Var x') = Var (x ≜ x')
    expand (Op op) (Op op') = Op (op ≜ op')
-   expand (Int α n) (Int _ n') = Int α (n ≜ n')
-   expand (Str α str) (Str _ str') = Str α (str ≜ str')
-   expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
-   expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
-   expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
-      Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
+   expand (Int α doc n) (Int _ doc' n') = Int α (expand doc doc') (n ≜ n')
+   expand (Str α doc str) (Str _ doc' str') = Str α (expand doc doc') (str ≜ str')
+   expand (Float α doc n) (Float _ doc' n') = Float α (expand doc doc') (n ≜ n')
+   expand (Dictionary α doc ees) (Dictionary _ doc' ees') = Dictionary α (expand doc doc') (expand ees ees')
+   expand (Constr α doc c es) (Constr _ doc' c' es') = Constr α (expand doc doc') (c ≜ c') (expand es es')
+   expand (Matrix α doc e1 (x × y) e2) (Matrix _ doc' e1' (x' × y') e2') =
+      Matrix α (expand doc doc') (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
-   expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
-   expand (DProject e1 e2) (DProject e1' e2') = DProject (expand e1 e1') (expand e2 e2')
-   expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
+   expand (Project doc e x) (Project doc' e' x') = Project (expand doc doc') (expand e e') (x ≜ x')
+   expand (DProject doc e x) (DProject doc' e' x') = DProject (expand doc doc') (expand e e') (expand x x')
+   expand (App doc e1 e2) (App doc' e1' e2') = App (expand doc doc') (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
-   expand (DocExpr doc e) (DocExpr doc' e') = DocExpr (expand doc doc') (expand e e')
    expand _ _ = shapeMismatch unit
 
 instance MeetSemilattice a => MeetSemilattice (Expr a) where
@@ -205,21 +214,20 @@ instance MeetSemilattice a => MeetSemilattice (Expr a) where
 instance Vertices (Expr Vertex) where
    vertices (Var _) = empty
    vertices (Op _) = empty
-   vertices e@(Int α _) = singleton (DVertex (α × pack e))
-   vertices e@(Float α _) = singleton (DVertex (α × pack e))
-   vertices e@(Str α _) = singleton (DVertex (α × pack e))
-   vertices d@(Dictionary α ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees)
+   vertices e@(Int α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices e@(Float α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices e@(Str α doc _) = singleton (DVertex (α × pack e)) ∪ vertices doc
+   vertices d@(Dictionary α doc ees) = singleton (DVertex (α × pack d)) ∪ unions (go <$> ees) ∪ vertices doc
       where
       go (Pair e e') = vertices e ∪ vertices e'
-   vertices e@(Constr α _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es)
-   vertices e@(Matrix α e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2
+   vertices e@(Constr α doc _ es) = singleton (DVertex (α × pack e)) ∪ unions (vertices <$> es) ∪ vertices doc
+   vertices e@(Matrix α doc e1 _ e2) = singleton (DVertex (α × pack e)) ∪ vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices e@(Lambda α σ) = singleton (DVertex (α × pack e)) ∪ vertices σ
-   vertices (Project e _) = vertices e
-   vertices (DProject e e') = vertices e ∪ vertices e'
-   vertices (App e1 e2) = vertices e1 ∪ vertices e2
+   vertices (Project doc e _) = vertices doc ∪ vertices e
+   vertices (DProject doc e x) = vertices e ∪ vertices x ∪ vertices doc
+   vertices (App doc e1 e2) = vertices e1 ∪ vertices e2 ∪ vertices doc
    vertices (Let def e) = vertices def ∪ vertices e
    vertices (LetRec ρ e) = vertices ρ ∪ vertices e
-   vertices (DocExpr e e') = vertices e ∪ vertices e'
 
 instance Vertices (Elim Vertex) where
    vertices (ElimVar _ κ) = vertices κ
@@ -267,20 +275,19 @@ derive instance Functor Module
 instance Apply Expr where
    apply (Var x) (Var x') = Var (x ≜ x')
    apply (Op op) (Op _) = Op op
-   apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
-   apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
-   apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
-   apply (Dictionary fα fxes) (Dictionary α xes) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxes xes)
-   apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
-   apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
-      Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
+   apply (Int fα fdoc n) (Int α doc n') = Int (fα α) (fdoc <*> doc) (n ≜ n')
+   apply (Float fα fdoc n) (Float α doc n') = Float (fα α) (fdoc <*> doc) (n ≜ n')
+   apply (Str fα fdoc s) (Str α doc s') = Str (fα α) (fdoc <*> doc) (s ≜ s')
+   apply (Dictionary fα fdoc fxes) (Dictionary α doc xes) = Dictionary (fα α) (fdoc <*> doc) (zipWith (lift2 (<*>)) fxes xes)
+   apply (Constr fα fdoc c fes) (Constr α doc c' es) = Constr (fα α) (fdoc <*> doc) (c ≜ c') (zipWith (<*>) fes es)
+   apply (Matrix fα fdoc fe1 (x × y) fe2) (Matrix α doc e1 (x' × y') e2) =
+      Matrix (fα α) (fdoc <*> doc) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
-   apply (Project fe x) (Project e _) = Project (fe <*> e) x
-   apply (DProject fd fk) (DProject d k) = DProject (fd <*> d) (fk <*> k)
-   apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
+   apply (Project fdoc fe x) (Project doc e _) = Project (fdoc <*> doc) (fe <*> e) x
+   apply (App fdoc fe1 fe2) (App doc e1 e2) = App (fdoc <*> doc) (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (fρ <*> ρ) (fe <*> e)
-   apply (DocExpr fe fe') (DocExpr e e') = DocExpr (fe <*> e) (fe' <*> e')
+   apply (DProject fdoc fd fk) (DProject doc d k) = DProject (fdoc <*> doc) (fd <*> d) (fk <*> k)
    apply _ _ = shapeMismatch unit
 
 instance Apply Elim where

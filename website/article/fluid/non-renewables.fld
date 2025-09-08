@@ -1,5 +1,3 @@
-import nonRenewables
-
 let countries = ["BRA", "EGY", "IND", "JPN"];
 let totalFor year country =
    let [ row ] = [ row | row <- nonRenewables, row.year == year, row.country == country ]

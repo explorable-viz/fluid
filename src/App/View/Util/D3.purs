@@ -72,12 +72,8 @@ setAttrs as sel = fromFoldable as # attrs sel
 setStyles :: Attrs -> Selection -> Effect Selection
 setStyles as sel = fromFoldable as # styles sel
 
--- Intentially clunky name to differentiate from CSS :nth-child
-nthChildOf :: String -> Int -> String
-nthChildOf selector i = selector <> " > :nth-child(" <> show i <> ")"
-
-scope :: String
-scope = ":scope"
+nthChild :: Int -> String
+nthChild i = ":nth-child(" <> show i <> ")"
 
 addHatchPattern :: Selection -> Int -> String -> Effect Unit
 addHatchPattern parent' j col_j = do

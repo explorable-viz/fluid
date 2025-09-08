@@ -9,6 +9,7 @@
    <link href="../css/styles.css" rel="stylesheet" type="text/css">
    <link href="../css/view-styles.css" rel="stylesheet" type="text/css">
    <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
+   <script src="../shared/util.js"></script>
    <style>
       :root {
          --text-pane-width: 400px;
@@ -50,8 +51,7 @@
 
 <script type="module">
    import { loadFigure } from "../shared/load-figure.js"
-   loadFigure("spec.json")("../fluid/moving-average.fld")()
-
+   loadFigure("spec.json")()
 </script>
 </body>
 </html>

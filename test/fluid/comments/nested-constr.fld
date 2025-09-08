@@ -1,1 +1,1 @@
-@doc("""This is a ${@doc("""This is a nested docComment!""") "some string"} docComment!""") False
+"""This is a ${"""This is a nested docComment!""" True} docComment!""" False

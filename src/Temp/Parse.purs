@@ -14,6 +14,7 @@ import Data.List.NonEmpty (NonEmptyList, toList)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl)
 import DataType (cPair)
+import Doc (DocOpt(..))
 import Lattice (Raw)
 import Parsing (Position, consume, runParserT)
 import Parsing.Combinators (many, many1, optionMaybe, sepBy, sepBy1, try, (<?>))
@@ -137,7 +138,7 @@ consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 consOp = try do
    op <- lexeme $ operator
    onlyIf (op == ":|")
-      $ \e e' -> Constr unit ":" (e : e' : Nil)
+      $ \e e' -> Constr unit None ":" (e : e' : Nil)
 
 opdefs :: Array (Array (Operator (StateT Position Identity) String (Raw Expr)))
 opdefs =
@@ -257,7 +258,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                e <- var
                delim '.'
                k <- variable
-               pure $ Project e k
+               pure $ Project None e k
 
             dprojection :: Parser (Raw Expr)
             dprojection = do
@@ -265,7 +266,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                delim '['
                k <- opTree
                delim ']'
-               pure $ DProject e k
+               pure $ DProject None e k
 
          appChain :: Parser (Raw Expr)
          appChain = context "app chain" $ withPos $
@@ -282,20 +283,20 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                ps <- sepBy opTree (lexeme $ char ',')
                delim ')'
                case e of
-                  (Constr a c es) -> app (Constr a c (es <> ps <> Nil))
-                  _ -> app (foldl App e ps)
+                  (Constr a d c es) -> app (Constr a d c (es <> ps <> Nil))
+                  _ -> app (foldl (App None) e ps)
 
          var :: Parser (Raw Expr)
          var = variable <#> Var
 
          constr :: Parser (Raw Expr)
-         constr = constructor <#> Constr unit <*> pure Nil
+         constr = constructor <#> Constr unit None <*> pure Nil
 
          number :: Parser (Raw Expr)
-         number = try (float <#> Float unit) <|> (integer <#> Int unit)
+         number = try (float <#> Float unit None) <|> (integer <#> Int unit None)
 
          str :: Parser (Raw Expr)
-         str = stringLiteral <#> Str unit
+         str = stringLiteral <#> Str unit None
 
          dict :: Parser (Raw Expr)
          dict = context "dict" do
@@ -303,7 +304,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             kvs <- sepBy kv (lexeme $ char ',')
             whitespace
             delim '}'
-            pure $ Dictionary unit kvs
+            pure $ Dictionary unit None kvs
 
             where
             kv :: Parser (Raw DictEntry × Raw Expr)
@@ -337,7 +338,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             reserved "in"
             e' <- opTree
             _ <- lexeme $ string "|]"
-            pure $ Matrix unit e (x × y) e'
+            pure $ Matrix unit None e (x × y) e'
 
          listExpr :: Parser (Raw Expr)
          listExpr = context "listExpr" do
@@ -346,7 +347,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             case maybeExpr of
                Nothing -> do
                   delim ']'
-                  pure $ ListEmpty unit
+                  pure $ ListEmpty unit None
                Just e -> listEnum e <|> listComp e <|> listNonEmpty e
             where
 
@@ -361,7 +362,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             listComp exp = context "listComp" do
                qs <- many1 (listCompGuard <|> listCompGenOrDecl)
                delim ']'
-               pure $ ListComp unit exp (toList qs)
+               pure $ ListComp unit None exp (toList qs)
 
                where
                listCompGenOrDecl :: Parser (Raw Qualifier)
@@ -380,7 +381,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                   listCompGen' :: Pattern -> Parser (Raw Qualifier)
                   listCompGen' p = do
                      e <- opTree
-                     pure $ ListCompGen p e
+                     pure $ ListCompGen None p e
 
                listCompGuard :: Parser (Raw Qualifier)
                listCompGuard = do
@@ -391,7 +392,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             listNonEmpty :: Raw Expr -> Parser (Raw Expr)
             listNonEmpty head = do
                rest <- listRest
-               pure $ ListNonEmpty unit head rest
+               pure $ ListNonEmpty unit None head rest
                where
                listRest :: Parser (Raw ListRest)
                listRest = listEnd <|> listNext
@@ -415,7 +416,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                pure e
             e' <- opTree
             delim ')'
-            pure $ Constr unit cPair (e : e' : Nil)
+            pure $ Constr unit None cPair (e : e' : Nil)
 
          parensExpr :: Parser (Raw Expr)
          parensExpr = context "parens expr" do

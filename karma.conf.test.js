@@ -33,7 +33,7 @@ module.exports = function (config) {
             nocache: false
          },
          {
-            pattern: "./test/**/*.*",
+            pattern: "./test/**/*.fld",
             watched: true,
             included: false,
             served: true,
