@@ -31,12 +31,12 @@ def convolve(image, kernel, lookup):
   def area: i * j
 
   [| def interMatrix:
-    [| def x:
+    undefined([| def x:
       ((m' + i') - 1) - half_i
     def y:
       ((n' + j') - 1) - half_j
 
-    lookup(x, y, image) * kernel ! (i', j') for (i', j') in (i, j) |]
+    lookup(x, y, image) * kernel ! (i', j') for (i', j') in (i, j) |])
 
   matrixSum(interMatrix) |quot| area for (m', n') in (m, n) |]
 
