@@ -1,7 +1,10 @@
-def d: {}
-def e: { ["a"]: 5, ["a" ++ "b"]: 6 }
-def f: { ["ab"]: 12 }
-def g: { ab: 12 }
+def d: {};
+
+def e: { ["a"]: 5, ["a" ++ "b"]: 6 };
+
+def f: { ["ab"]: 12 };
+
+def g: { ab: 12 };
 
 {
   d: d,

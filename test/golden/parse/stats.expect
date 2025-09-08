@@ -1,5 +1,5 @@
-let split [] = ([], []) in
-let split (x : xs) = let (ys, zs) = split xs in
+let split [] = ([], []);
+    split (x : xs) = let (ys, zs) = split xs in
                        (x : zs, ys) in
 let merge xs ys = match (xs, ys) as
                   {([], _) -> ys;
@@ -8,22 +8,22 @@ let merge xs ys = match (xs, ys) as
 let mergesort xs = if length xs < 2 then xs else let (ys, zs) = split xs in
                                                  merge (mergesort ys) (mergesort zs) in
 let findQuantile q p xs = let rank = (p / q) * (length xs - 1) in
-                          if rank == floor rank then nth rank xs else let x1 = floor rank in
-                                                                      let x2 = ceiling rank in
-                                                                      let left = nth x1 xs in
-                                                                      let right = nth x2 xs in
+                          if rank == floor rank then nth rank xs else let x1 = floor rank;
+                                                                          x2 = ceiling rank;
+                                                                          left = nth x1 xs;
+                                                                          right = nth x2 xs in
                                                                       left + (rank - x1) * (right - left) in
 let findPercentile = findQuantile 100 in
-let accumBins data (Nil) = [] in
-let accumBins data [l] = [] in
-let accumBins data (l : (r : es)) = let (ge, le) = splitOn (fun x = x <= r) data in
+let accumBins data (Nil) = [];
+    accumBins data [l] = [];
+    accumBins data (l : (r : es)) = let (ge, le) = splitOn (fun x = x <= r) data in
                                         (le, r - l) : accumBins ge (r : es) in
-let cut xs nbins = let low = minimum xs in
-                   let binwidth = (maximum xs - low) / nbins in
-                   let edges = [low + x * binwidth|x <- enumFromTo 0 nbins] in
+let cut xs nbins = let low = minimum xs;
+                       binwidth = (maximum xs - low) / nbins;
+                       edges = [low + x * binwidth|x <- enumFromTo 0 nbins] in
                    accumBins xs edges in
-let qcut xs qs = let (low, high) = (minimum xs, maximum xs) in
-                 let edges = append ((low : [findPercentile x xs|x <- qs], [high])) in
+let qcut xs qs = let (low, high) = (minimum xs, maximum xs);
+                     edges = append ((low : [findPercentile x xs|x <- qs], [high])) in
                  accumBins xs edges in
 let likelihoodLE xs target = length (filter (fun x = x <= target) xs) / length xs in
 let likelihoodGE xs target = length (filter (fun x = x >= target) xs) / length xs in

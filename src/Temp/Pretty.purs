@@ -70,8 +70,8 @@ instance Ann a => Pretty (Expr a) where
 
    pretty (ListEnum s s') = brackets (pretty s <+> _ellipsis <+> pretty s')
    pretty (ListComp _ s qs) = brackets (pretty s <+> pretty qs)
-   pretty (Let ds s) = (pretty ds) <+++> pretty s
-   pretty (LetRec h s) = (pretty h) <+++> pretty s
+   pretty (Let ds s) = (pretty ds) <> text ";" <+++> pretty s
+   pretty (LetRec h s) = (pretty h) <> text ";" <+++> pretty s
    -- TODO:
    pretty (Paragraph _) = text "undefined"
    pretty (DocExpr _ e) = pretty e

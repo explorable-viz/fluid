@@ -27,11 +27,13 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse as P
 import Parsing (runParser)
+import Pretty (prettyP)
 import Primitive.Defs (primitives)
 import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
 import Temp.Parse (parsePy')
+import Temp.Util.UnsafeDebug (logUnsafe)
 import Util (type (×), AffError, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
@@ -79,6 +81,9 @@ prelude = "lib/prelude"
 prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw ProgCxt -> String -> m Config
 prepConfig progCxt fluidSrc = do
    s × imports <- parseProgram' fluidSrc
+
+   let _ = logUnsafe (prettyP s)
+
    moduleCxt <- loadModuleGraph (prelude : imports)
    e <- desug s
    gconfig <- initialConfig e progCxt moduleCxt

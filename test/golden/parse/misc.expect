@@ -1,4 +1,4 @@
-let parensOp = (+) in
-let parensExpr = x + y in
-let constr = Hello in
+let parensOp = (+);
+    parensExpr = x + y;
+    constr = Hello in
 0

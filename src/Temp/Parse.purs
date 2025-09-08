@@ -18,7 +18,7 @@ import Data.Traversable (foldl)
 import DataType (cPair)
 import Lattice (Raw)
 import Parsing (Position, consume, runParserT)
-import Parsing.Combinators (many, many1, optionMaybe, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators (many, many1, optionMaybe, optional, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, withPos)
 import Parsing.String (char, eof, string)
@@ -172,6 +172,7 @@ varDefs :: Parser (Raw VarDefs)
 varDefs = do
    head <- varDef
    rest <- many varDef
+   _ <- optional (delim ';')
    pure $ nonEmpty (head : rest)
 
    where
@@ -186,6 +187,7 @@ recDefs :: Parser (Raw RecDefs)
 recDefs = do
    head <- recDef
    rest <- many recDef
+   _ <- optional (delim ';')
    pure $ nonEmpty (head : rest)
 
    where
