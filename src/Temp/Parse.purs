@@ -231,15 +231,15 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       where
       funDef :: Parser (Raw Expr)
       funDef = context "funDef" do
-         defs <- try recDefs
+         defs' <- try recDefs
          e' <- align expr
-         pure $ LetRec defs e'
+         pure $ LetRec defs' e'
 
       valDef :: Parser (Raw Expr)
       valDef = context "valDef" do
-         defs <- try varDefs
+         defs' <- try varDefs
          e' <- align expr
-         pure $ Let defs e'
+         pure $ Let defs' e'
 
    ifElse :: Parser (Raw Expr)
    ifElse = do
