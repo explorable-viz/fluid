@@ -6,13 +6,16 @@ import Bind (Var)
 import Control.Alt ((<|>))
 import Control.Lazy (defer)
 import Control.Monad.State (StateT)
-import Data.Array (fromFoldable)
+import Data.Array (fromFoldable, some)
 import Data.Bifunctor (lmap)
+import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either, choose)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList, toList)
 import Data.Maybe (Maybe(..))
+import Data.String (codePointFromChar)
+import Data.String.CodeUnits as SCU
 import Data.String.Common (joinWith)
 import Data.Traversable (foldl)
 import DataType (cPair)
@@ -21,8 +24,8 @@ import Parsing (Position, consume, runParserT)
 import Parsing.Combinators (many, many1, optionMaybe, optional, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, withPos)
-import Parsing.String (char, eof, string)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import Parsing.String (char, eof, satisfy, string)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Parse.Number (float, integer)
 import Temp.Parse.Parser (Parser, align, block, brackets, constructor, context, delim, lexeme, lines, operator, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
@@ -260,6 +263,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             <|> lambda
             <|> dict
             <|> number
+            <|> paragraph
             <|> str
             <|> try projection
             <|> pair
@@ -323,6 +327,33 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          str :: Parser (Raw Expr)
          str = stringLiteral <#> Str unit
+
+         paragraph :: Parser (Raw Expr)
+         paragraph = do
+            _ <- try $ lexeme $ string "\"\"\""
+            es <- many $ lexeme paragraphElem
+            _ <- lexeme $ string "\"\"\""
+            pure $ Paragraph es
+            where
+            paragraphElem :: Parser (Raw ParagraphElem)
+            paragraphElem = token <|> unquote
+               where
+               token :: Parser (Raw ParagraphElem)
+               token = do
+                  cs <- some paragraphLetter
+                  pure $ Token (SCU.fromCharArray cs)
+
+                  where
+                  paragraphLetter :: Parser Char
+                  paragraphLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
+
+               unquote :: Parser (Raw ParagraphElem)
+               unquote = do
+                  delim '$'
+                  delim '{'
+                  e <- opTree
+                  delim '}'
+                  pure $ Unquote e
 
          dict :: Parser (Raw Expr)
          dict = context "dict" do
