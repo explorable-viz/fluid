@@ -1,5 +1,3 @@
-let filter =
-   let emboss = [[-2, -1, 0],
-                 [-1,  1, 1],
-                 [ 0,  1, 2]] in
-   [| nth2 i j emboss | (i, j) in (3, 3) |];
+def filter:
+  def emboss: [[-2, -1, 0], [-1, 1, 1], [0, 1, 2]]
+  [| nth2(i, j, emboss) for (i, j) in (3, 3) |]

@@ -1,26 +1,27 @@
 import convolution.testImage
 import convolution.emboss
 
-let lookup m n image =
-    let (m_max, n_max) = dims image
-    -- in image!(((m - 1) `mod` m_max) + 1, ((n - 1) `mod` n_max) + 1);
-    in if (m >= 1) `and` (m <= m_max) `and` (n >= 1) `and` (n <= n_max)
-    then image!(m, n)
-    else 0;
+def lookup(m, n, image):
+  def (m_max, n_max): dims(image)
 
-let matrixSum matr =
-    let (m, n) = dims matr
-    in foldl (+) 0 [ matr!(i, j) | (i, j) <- range (1, 1) (m, n) ];
+  if (m >= 1) |and| (m <= m_max) |and| (n >= 1) |and| (n <= n_max): image ! (m, n)
+  else: 0
 
-let convolve image kernel =
-    let ((m, n), (i, j)) = (dims image, dims kernel);
-        (half_i, half_j) = (i `quot` 2, j `quot` 2);
-        area = i * j;
-    let interMatrix m' n' =
-        @doc("""average these to compute value of element (${m'},${n'})""")
-        [| kernel!(i', j') *
-           lookup (m' + i' - 1 - half_i) (n' + j' - 1 - half_j) image
-        | (i', j') in (i, j) |]
-    in [| matrixSum (interMatrix m' n') `quot` area | (m', n') in (m, n) |]
-in
-convolve inputImage filter
+def matrixSum(matr):
+  def (m, n): dims(matr)
+
+  foldl((+), 0, [matr ! (i, j) for (i, j) in range((1, 1), (m, n))]);
+
+def convolve(image, kernel):
+  def ((m, n), (i, j)):
+    (dims(image), dims(kernel))
+  def (half_i, half_j):
+    (i |quot| 2, j |quot| 2)
+  def area: i * j
+
+  def interMatrix(m_, n_):
+    @doc("""average these to compute value of element ( ${m_} , ${n_} )""") [| kernel ! (i_, j_) * lookup(((m_ + i_) - 1) - half_i, ((n_ + j_) - 1) - half_j, image) for (i_, j_) in (i, j) |]
+
+  [| matrixSum(interMatrix(m_, n_)) |quot| area for (m_, n_) in (m, n) |]
+
+convolve(inputImage, filter)
