@@ -10,7 +10,7 @@ import Data.String.CodeUnits (take)
 import Data.String.CodeUnits as SCU
 import Data.Traversable (foldr)
 import Parsing (ParseError(..), ParseState(..), ParserT, Position(..), fail, position, region, stateParserT)
-import Parsing.Combinators (between, (<?>))
+import Parsing.Combinators (between, skipMany, (<?>))
 import Parsing.Combinators.Array (many)
 import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy)
@@ -97,7 +97,10 @@ lines :: Parser Unit
 lines = void $ many (spaces *> newline)
 
 whitespace :: Parser Unit
-whitespace = void $ many (oneOf [ ' ', '\t', '\n' ])
+whitespace = skipMany (space <|> comment)
+   where
+   space = void $ oneOf [ ' ', '\t', '\n' ]
+   comment = char '#' *> skipMany (satisfy (_ /= '\n'))
 
 lexeme :: forall a. Parser a -> Parser a
 lexeme p = p <* whitespace
