@@ -27,9 +27,9 @@ MultiView({
     size: { width: 330, height: 285 },
     caption: "Output of USA relative to China",
     plots: [
-      LinePlot({ name: type, points: plot })
-      for type in ["Bio", "Hydro", "Solar", "Wind"]
-      for plot in [zipWith((lambda p1, p2: { x: p1.x, y: p1.y / p2.y }), series(type, "USA"), series(type, "China"))]
+      LinePlot({ name: energyType, points: plot })
+      for energyType in ["Bio", "Hydro", "Solar", "Wind"]
+      for plot in [zipWith((lambda p1, p2: { x: p1.x, y: p1.y / p2.y }), series(energyType, "USA"), series(energyType, "China"))]
     ]
   })
 })
