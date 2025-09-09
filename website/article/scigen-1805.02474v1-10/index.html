@@ -36,15 +36,15 @@
 </div>
 
 <script type="module">
-    import { loadFigureSpec } from "../shared/load-figure.js"
-    const jsonSpec = {
-       "fluidSrcPath": ["../fluid"],
-       "inputs": ["tableData"],
-       "query": false,
-       "linking": true
+   import { loadFigureSpec, drawCode } from "../shared/load-figure.js"
+   const jsonSpec = {
+      "fluidSrcPath": ["../fluid"],
+      "inputs": [ "tableData" ],
+      "query": true,
+      "linking": false
    }
 
-    loadFigureSpec(jsonSpec)("../fluid/1805.02474v1-10.fld")()
+   loadFigureSpec(jsonSpec)("../fluid/1805.02474v1-10.fld")()
 </script>
 </body>
 </html>
