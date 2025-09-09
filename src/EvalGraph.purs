@@ -31,7 +31,6 @@ import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
 import ModuleGraph (ModuleName, ModuleCxt)
-import Parse.Constants (str)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
 import ProgCxt (ProgCxt(..))
@@ -124,7 +123,8 @@ eval :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m =
 eval γ e0 αs = do
    αu_opt <- evalVal γ e0 αs
    case αu_opt of
-      Just (α × u) -> new (flip Val Nothing) (insert α αs) u
+      Just (α × u) ->
+         new (flip Val Nothing) (insert α αs) u
       Nothing -> case e0 of
          Var x ->
             withMsg "Variable lookup" $ lookup' x γ
@@ -158,10 +158,16 @@ eval γ e0 αs = do
             γ' <- closeDefs γ ρ (insert α αs)
             eval (γ <+> γ') e (insert α αs)
          DocExpr e e' -> do
-            Val α _ u' <- eval γ e' αs
-            v <- eval (γ <+> maplet str.this (Val α Nothing u')) e αs
-            -- TODO: concatenate with any existing paragraph!
-            pure $ Val α (Just v) u'
+            αu_opt' <- evalVal γ e' αs
+            case αu_opt' of
+               Just (α × u) -> do
+                  v <- eval γ e αs
+                  new (flip Val (Just v)) (insert α αs) u
+               Nothing -> do
+                  -- No way to update value once added to graph. Moreover unclear what semantics should be.
+                  Val α _ u <- eval γ e' αs -- discard any existing doc
+                  v <- eval γ e αs
+                  pure $ Val α (Just v) u
          _ -> error absurd
 
 evalVal :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Maybe (Vertex × BaseVal Vertex))

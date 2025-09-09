@@ -17,7 +17,7 @@ let convolve image kernel =
         (half_i, half_j) = (i `quot` 2, j `quot` 2);
         area = i * j
     in [| let interMatrix =
-              @doc("""average these to compute value of element (${m'},${n'})""")
+              @doc("""average these values to compute element (${m'},${n'})""")
               [| let x = m' + i' - 1 - half_i;
                      y = n' + j' - 1 - half_j in
                 lookup x y image * kernel!(i', j')
