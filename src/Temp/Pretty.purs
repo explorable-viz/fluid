@@ -73,8 +73,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Let ds s) = (pretty ds) <> text ";" <+++> pretty s
    pretty (LetRec h s) = (pretty h) <> text ";" <+++> pretty s
    pretty (Paragraph p) = pretty p
-   -- TODO:
-   pretty (DocExpr _ e) = pretty e
+   pretty (DocExpr p e) = text "@doc" <> parens (pretty p) <+> pretty e
 
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (ListCompDecl (VarDef v s)) Nil) = _for <+> pretty v <+> _in <+> brackets (pretty s)
