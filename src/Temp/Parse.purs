@@ -146,8 +146,7 @@ consOp = try do
 
 opdefs :: Array (Array (Operator (StateT Position Identity) String (Raw Expr)))
 opdefs =
-   [ [ Infix infixFn AssocLeft ]
-   , [ Infix (binaryOp ".") AssocLeft
+   [ [ Infix (binaryOp ".") AssocLeft
      , Infix (binaryOp "!") AssocLeft
      , Infix (binaryOp "**") AssocRight
      ]
@@ -166,6 +165,7 @@ opdefs =
      , Infix (binaryOp "<=") AssocLeft
      , Infix (binaryOp ">=") AssocLeft
      ]
+   , [ Infix infixFn AssocLeft ]
    ]
 
 popdefs :: Array (Array (Operator (StateT Position Identity) String Pattern))
