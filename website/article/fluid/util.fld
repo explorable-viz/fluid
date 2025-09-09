@@ -31,6 +31,9 @@ def maximumBy(f, []):
 def maximumBy(f, x :| xs):
   def helper([], current): current
   def helper(y :| ys, current):
-    helper(ys, if f(y) > f(current): y else: current)
+    if f(y) > f(current):
+      helper(ys, y)
+    else:
+      helper(ys, current)
 
   helper(xs, x)
