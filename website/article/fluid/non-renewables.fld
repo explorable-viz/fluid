@@ -12,7 +12,7 @@ def stack(year):
   [{ y: country, z: totalFor(year, country) } for country in countries]
 
 def yearData(year):
-  [row for row in nonRenewables]
+  [row for row in nonRenewables if row.year == year if row.country |elem| countries]
 
 MultiView({
   barChart: BarChart({

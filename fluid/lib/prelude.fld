@@ -52,8 +52,8 @@ def tail([]):
 def tail(_ :| xs): xs
 
 def elem(x, []): False
-def elem(x, x' :| xs):
-  x == x' |or| elem(x, xs)
+def elem(x, y :| xs):
+  (x == y) |or| elem(x, xs)
 
 def find(p, []): error("not found")
 def find(p, x :| xs):
@@ -174,8 +174,8 @@ def nth2(i, j, xss):
 
 def lookup(k, []):
   error("Key not found in map")
-def lookup(k, (k', v) :| kvs):
-  if k == k': v
+def lookup(k, (k_, v) :| kvs):
+  if k == k_: v
   else: lookup(k, kvs)
 
 def max(n, m):
@@ -215,13 +215,13 @@ def abs(x, y):
   else: x - y
 
 def nub(xs):
-  def nub'([], _): []
-  def nub'(x :| xs, ys):
-    if x |elem| ys: nub'(xs, ys)
+  def nub_([], _): []
+  def nub_(x :| xs, ys):
+    if x |elem| ys: nub_(xs, ys)
     else:
-      x :| nub'(xs, x :| ys)
+      x :| nub_(xs, x :| ys)
 
-  nub'(xs, [])
+  nub_(xs, [])
 
 def slice(begin, end, xs):
   take(end - begin, drop(begin, xs))
