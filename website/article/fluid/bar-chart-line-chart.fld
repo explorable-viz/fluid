@@ -10,8 +10,11 @@ def countryData: [{
   } for c in ["China", "USA", "Germany"]]
 
 def series(type, country):
-  [{ x: row.year, y: row.output } for year in [2013 .. 2018] for row in renewables if row.year == year if row.energyType == type if row.country == country]
-
+  [
+    { x: row.year, y: row.output }
+    for year in [2013 .. 2018] for row in renewables
+    if row.year == year if row.energyType == type if row.country == country
+  ]
 
 MultiView({
   barChart: BarChart({
@@ -23,6 +26,12 @@ MultiView({
     tickLabels: { x: Rotated, y: Default },
     size: { width: 330, height: 285 },
     caption: "Output of USA relative to China",
-    plots: [LinePlot({ name: type, points: plot }) for type in ["Bio", "Hydro", "Solar", "Wind"] for plot in [zipWith((lambda p1, p2: { x: p1.x, y: p1.y / p2.y }), series(type, "USA"), series(type, "China"))]]
+    plots: [
+      LinePlot({ name: energyType, points: plot })
+      for energyType in ["Bio", "Hydro", "Solar", "Wind"]
+      for plot in [
+        zipWith((lambda p1, p2: { x: p1.x, y: p1.y / p2.y }), series(energyType, "USA"), series(energyType, "China"))
+      ]
+    ]
   })
 })
