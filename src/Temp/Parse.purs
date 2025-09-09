@@ -269,6 +269,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             <|> pair
             <|> appChain
             <|> parensExpr
+            <|> docExpr
                <?> "simple expression"
          where
 
@@ -488,6 +489,15 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             op <- operator
             delim ')'
             pure $ Op op
+
+         docExpr :: Parser (Raw Expr)
+         docExpr = context "doc expr" do
+            _ <- try $ lexeme $ string "@doc"
+            delim '('
+            e <- opTree
+            delim ')'
+            e' <- opTree
+            pure $ DocExpr e e'
 
 program :: Parser (Raw Expr)
 program = lines *> withPos expr <* whitespace <* eof
