@@ -30,14 +30,14 @@ def mostEfficient:
    time of ${model_S_LSTM.time_s} seconds. We additionally make comparisons with
    stacked CNNs and hierarchical attention (Vaswani et al., 2017), shown in Table 3 (the CNN and Transformer rows),
    ${mostEfficient.model} is the
-   ${rankLabel("most efficient", findIndex("model", "CNN", insertionSort((lambda a, b: a.time_s < b.time_s), tableData)))}
+   ${rankLabel("most efficient", findIndex("model", "CNN", insertionSort(lambda a, b: a.time_s < b.time_s, tableData)))}
    among all models compared, with the
-   ${rankLabel("smallest", findIndex("model", "CNN", insertionSort((lambda a, b: a.param < b.param), tableData)))}
+   ${rankLabel("smallest", findIndex("model", "CNN", insertionSort(lambda a, b: a.param < b.param, tableData)))}
    model size. On the other hand, a 3-layer stacked CNN gives an accuracy of
    ${model_3_stacked_CNN.acc}%, which is also the
-   ${rankLabel("lowest", findIndex("model", "CNN", insertionSort((lambda a, b: a.time_s < b.time_s), tableData)))}
+   ${rankLabel("lowest", findIndex("model", "CNN", insertionSort(lambda a, b: a.time_s < b.time_s, tableData)))}
    compared with BiLSTM, hierarchical attention and S-LSTM. The
-   ${rankLabel("best", findIndex("model", "S-LSTM+Attention", insertionSort((lambda a, b: b.acc < a.acc), tableData)))}
+   ${rankLabel("best", findIndex("model", "S-LSTM+Attention", insertionSort(lambda a, b: b.acc < a.acc, tableData)))}
    performance of hierarchical attention is obtained by S-LSTM+Attention in terms of both accuracy and efficiency.
    S-LSTM gives significantly ${trendWord(model_S_LSTM.acc, model_CNN.acc, betterWorse)}
    accuracies compared with both CNN and hierarchical attention. Table 3 additionally shows the results of
