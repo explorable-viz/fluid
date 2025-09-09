@@ -2,6 +2,8 @@ name: deploy
 
 on:
   push:
+    branches-ignore:
+    - 'pretty-pythonic'
     paths-ignore:
     - 'old/**'
     - '**.md'
