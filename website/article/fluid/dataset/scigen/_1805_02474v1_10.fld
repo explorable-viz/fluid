@@ -1,1 +1,1 @@
-def tableData: loadJson("datasets/scigen/1805.02474v1-10.json")
+def tableData: loadJson("dataset/scigen/1805.02474v1-10.json")
