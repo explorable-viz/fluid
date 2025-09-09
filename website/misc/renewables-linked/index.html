@@ -45,10 +45,17 @@
 </div>
 
 <script type="module">
-   import { loadFigure, drawCode } from "/shared/load-figure.js"
+   import { loadFigureSpec, drawCode } from "/shared/load-figure.js"
+   const jsonSpec = {
+    "fluidSrcPath": ["../fluid"],
+    "inputs": ["renewables"],
+    "query": false,
+    "linking": true
+   }
+
    drawCode("../fluid/bar-chart-line-chart.fld")()
    drawCode("../fluid/dataset/renewables.fld")()
-   loadFigure("spec.json")("../fluid/bar-chart-line-chart.fld")()
+   loadFigureSpec(jsonSpec)("../fluid/bar-chart-line-chart.fld")()
 </script>
 </body>
 </html>
