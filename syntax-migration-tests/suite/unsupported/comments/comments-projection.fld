@@ -1,2 +1,0 @@
-let x = { y: 1 }
-in """Test""" x.y
