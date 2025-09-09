@@ -1,0 +1,35 @@
+import scigen
+import util
+import dataset.scigen._1805_02474v1_10
+
+"""As shown in Table 3, BiLSTM gives significantly
+   ${trendWord(model("BiLSTM", tableData).acc, model("LSTM", tableData).acc, betterWorse)}
+   accuracies compared to uni-directional LSTM2, with the training time per epoch
+   ${trendWord(model("BiLSTM", tableData).time_s, model("LSTM", tableData).time_s, growShrink)} from
+   ${numToStr(model("LSTM", tableData).time_s)} seconds to ${numToStr(model("BiLSTM", tableData).time_s)} seconds.
+   Stacking 2 layers of BiLSTM gives ${trendWord(model("2 stacked BiLSTM", tableData).acc, model("BiLSTM", tableData).acc, improve)}
+   to development results, with a ${trendWord(model("2 stacked BiLSTM", tableData).time_s, model("BiLSTM", tableData).time_s, smallerHigher)}
+   time of ${numToStr(model("2 stacked BiLSTM", tableData).time_s)} seconds. 3 layers of stacked BiLSTM
+   ${trendWord(model("3 stacked BiLSTM", tableData).acc, model("BiLSTM", tableData).acc, improve)} the results.
+   In contrast, S-LSTM gives a development result of ${numToStr(model("S-LSTM", tableData).acc)}%, which is significantly
+   ${trendWord(model("S-LSTM", tableData).acc, model("2 stacked BiLSTM", tableData).acc, betterWorse)}
+   compared to 2-layer stacked BiLSTM, with a
+   ${trendWord(model("S-LSTM", tableData).param, model("2 stacked BiLSTM", tableData).param, smallerHigher)}
+   number of model parameters and a
+   ${trendWord(model("S-LSTM", tableData).time_s, model("2 stacked BiLSTM", tableData).time_s, shorterLonger)}
+   time of ${numToStr(model("S-LSTM", tableData).time_s)} seconds. We additionally make comparisons with
+   stacked CNNs and hierarchical attention (Vaswani et al., 2017), shown in Table 3 (the CNN and Transformer rows),
+   ${findWithKey'("time_s", minimum(map((lambda y: y.time_s), tableData)), tableData).model} is the
+   ${def pos: findIndex("model", "CNN", insertionSort((lambda a, b: a.time_s < b.time_s), tableData)); rankLabel("most efficient", pos)}
+   among all models compared, with the ${def pos: findIndex("model", "CNN", insertionSort((lambda a, b: a.param < b.param), tableData)); rankLabel("smallest", pos)}
+   model size. On the other hand, a 3-layer stacked CNN gives an accuracy of
+   ${numToStr(model("3 stacked CNN", tableData).acc)}%, which is also the
+   ${def pos: findIndex("model", "CNN", insertionSort((lambda a, b: a.time_s < b.time_s), tableData)); rankLabel("lowest", pos)}
+   compared with BiLSTM, hierarchical attention and S-LSTM. The
+   ${def pos: findIndex("model", "S-LSTM+Attention", insertionSort((lambda a, b: b.acc < a.acc), tableData)); rankLabel("best", pos)}
+   performance of hierarchical attention is obtained by S-LSTM+Attention in terms of both accuracy and efficiency.
+   S-LSTM gives significantly ${trendWord(model("S-LSTM", tableData).acc, model("CNN", tableData).acc, betterWorse)}
+   accuracies compared with both CNN and hierarchical attention. Table 3 additionally shows the results of
+   BiLSTM and S-LSTM when external attention is used Attention leads to improved accuracies for both BiLSTM and
+   S-LSTM in classification, with S-LSTM still
+   ${trendWord(model("S-LSTM", tableData).acc, model("BiLSTM", tableData).acc, underOverPerforming)} BiLSTM significantly."""
