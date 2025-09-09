@@ -10,7 +10,7 @@ def model_S_LSTM: model("S-LSTM", tableData)
 def model_CNN: model("CNN", tableData)
 def model_3_stacked_CNN: model("3 stacked CNN", tableData)
 def mostEfficient:
-   findWithKey_("time_s", minimum(map((lambda y: y.time_s), tableData)), tableData)
+   findWithKey_("time_s", minimum(map(lambda y: y.time_s, tableData)), tableData)
 
 """As shown in Table 3, BiLSTM gives significantly
    ${trendWord(model_BiLSTM.acc, model_LSTM.acc, betterWorse)}
