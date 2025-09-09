@@ -155,6 +155,8 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot whe
 
 instance Reflect (Val (SelStates 𝕊)) Text where
    from (Val α _ v) = case v of
+      Int n -> Text (show n × α)
+      Float n -> Text (show n × α)
       Str s -> Text (s × α)
       _ -> typeError v "Text"
 
