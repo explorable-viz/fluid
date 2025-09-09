@@ -34,3 +34,8 @@ vsep :: List Doc -> Doc
 vsep Nil = mempty
 vsep (d : Nil) = d
 vsep (d : ds) = d <++> vsep ds
+
+hsep :: List Doc -> Doc
+hsep Nil = mempty
+hsep (d : Nil) = d
+hsep (d : ds) = d <+> hsep ds

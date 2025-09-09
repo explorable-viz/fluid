@@ -8,10 +8,10 @@ import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr, cCons)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _lambda, _match)
 import Temp.Pretty.Doc (Doc, array, block, record, render, text, (<+++>), (<++>), (<+>))
-import Temp.Pretty.Helpers (brackets, matrix, number, pair, parens, string, vsep)
+import Temp.Pretty.Helpers (brackets, hsep, matrix, number, pair, parens, string, vsep)
 import Util (type (×), (×))
 import Val (class Ann)
 
@@ -72,8 +72,8 @@ instance Ann a => Pretty (Expr a) where
    pretty (ListComp _ s qs) = brackets (pretty s <+> pretty qs)
    pretty (Let ds s) = (pretty ds) <> text ";" <+++> pretty s
    pretty (LetRec h s) = (pretty h) <> text ";" <+++> pretty s
+   pretty (Paragraph p) = pretty p
    -- TODO:
-   pretty (Paragraph _) = text "undefined"
    pretty (DocExpr _ e) = pretty e
 
 instance Ann a => Pretty (List (Qualifier a)) where
@@ -132,6 +132,13 @@ instance Ann a => Pretty (DictEntry a × Expr a) where
 instance Ann a => Pretty (DictEntry a) where
    pretty (ExprKey k) = brackets (pretty k)
    pretty (VarKey _ k) = text k
+
+instance Ann a => Pretty (List (ParagraphElem a)) where
+   pretty xs = text "\"\"\"" <> hsep (pretty <$> xs) <> text "\"\"\""
+
+instance Ann a => Pretty (ParagraphElem a) where
+   pretty (Token str) = text str
+   pretty (Unquote e) = text "${" <> pretty e <> text "}"
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
 prettyConstr c Nil = text c
