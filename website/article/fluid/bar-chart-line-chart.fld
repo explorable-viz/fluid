@@ -8,11 +8,11 @@ def countryData: [{
     segments: [{ y: "output", z: totalFor(c, data2015) }]
   } for c in ["China", "USA", "Germany"]]
 
-def series(type, country):
+def series(energyType, country):
   [
     { x: row.year, y: row.output }
     for year in [2013 .. 2018] for row in renewables
-    if row.year == year if row.energyType == type if row.country == country
+    if row.year == year if row.energyType == energyType if row.country == country
   ]
 
 MultiView({
