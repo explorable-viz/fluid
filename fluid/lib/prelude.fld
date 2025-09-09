@@ -53,7 +53,7 @@ def tail(_ :| xs): xs
 
 def elem(x, []): False
 def elem(x, y :| xs):
-  (x == y) |or| elem(x, xs)
+  x == y |or| elem(x, xs)
 
 def find(p, []): error("not found")
 def find(p, x :| xs):
