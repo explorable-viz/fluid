@@ -3,7 +3,6 @@ import renewables
 def totalFor(c, rows): sum([row.output for row in rows if row.country == c])
 
 def data2015: [row for row in renewables if row.year == 2015]
-
 def countryData: [{
     x: c,
     segments: [{ y: "output", z: totalFor(c, data2015) }]
@@ -27,11 +26,12 @@ MultiView({
     size: { width: 330, height: 285 },
     caption: "Output of USA relative to China",
     plots: [
-      LinePlot({ name: energyType, points: plot })
+      LinePlot({
+        name: energyType,
+        points: zipWith(lambda p1, p2: { x: p1.x, y: p1.y / p2.y }, usa, china)
+      })
       for energyType in ["Bio", "Hydro", "Solar", "Wind"]
-      for plot in [
-        zipWith((lambda p1, p2: { x: p1.x, y: p1.y / p2.y }), series(energyType, "USA"), series(energyType, "China"))
-      ]
+      for (usa, china) in [(series(energyType, "USA"), series(energyType, "China"))]
     ]
   })
 })
