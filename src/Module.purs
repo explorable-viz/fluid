@@ -32,7 +32,7 @@ import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
 import Temp.Parse (parsePy', parsePyModule')
-import Util (type (×), AffError, error, (×))
+import Util (type (×), AffError, error, withMsg, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 import Util.Set ((∪))
@@ -40,8 +40,8 @@ import Util.Set ((∪))
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
-parseProgram fluidSrc = flip parse P.program fluidSrc
+--parseProgram :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
+--parseProgram fluidSrc = flip parse P.program fluidSrc
 
 parseProgram' :: forall m. MonadError Error m => String -> m (Raw S.Expr × List ModuleName)
 parseProgram' src = liftEither <<< lmap (E.error <<< show) $ parsePy' src
@@ -119,7 +119,7 @@ loadModuleGraph roots = do
    loadModule path = do
       FileCxt { fluidSrcPaths } <- ask
       src <- loadFile fluidSrcPaths (File (path <> fluidExtension))
-      mod × imports <- parseModule' src
+      mod × imports <- withMsg ("Loading module " <> path) $ parseModule' src
       mod' <- desugarModuleFwd mod
       let imports' = if path == prelude then imports else prelude : imports
       pure $ mod' × imports'
