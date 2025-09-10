@@ -77,11 +77,10 @@ export function line (to) {
 }
 
 export function xAxis (to) {
-   // doesn't use ticks
    return ticks => {
       return parent => {
          return () => {
-            return parent.call(d3.axisBottom(to.x))
+            return parent.call(d3.axisBottom(to.x).ticks(ticks.length).tickFormat(d => d))
          }
       }
    }

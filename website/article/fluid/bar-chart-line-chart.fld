@@ -22,7 +22,7 @@ MultiView({
 #     stackedBars: countryData
 #   }),
   lineChart: LineChart({
-    tickLabels: { x: Rotated, y: Default },
+    tickLabels: { x: Default, y: Default },
     size: { width: 330, height: 285 },
     caption: "Output of USA relative to China",
     plots: [

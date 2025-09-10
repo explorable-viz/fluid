@@ -20,7 +20,6 @@ import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (f_plots)
 import Effect (Effect)
-import Effect.Console (log)
 import Lattice ((∨), (∧))
 import Util (type (×), Endo, definitely', init, nonEmpty, tail, zipWith, (!), (×))
 import Web.Event.EventTarget (eventListener)
@@ -155,7 +154,6 @@ instance View LineChart Unit where
       createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
       createAxes range parent' = do
          let Point { x: xLabels, y: yLabels } = tickLabels
-         log $ show points.x
          x <- xAxis (to range) (nub points.x) =<<
             (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
          when (fst xLabels == Rotated) do
