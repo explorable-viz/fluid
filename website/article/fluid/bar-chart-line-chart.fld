@@ -24,7 +24,7 @@ MultiView({
   lineChart: LineChart({
     tickLabels: { x: Default, y: Default },
     size: { width: 330, height: 285 },
-    caption: "Output of USA relative to China",
+    caption: "Renewables output of USA relative to China",
     plots: [
      LinePlot({
        name: energyType,
