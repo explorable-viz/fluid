@@ -196,3 +196,7 @@ td.table-cell {
 .para-text span::after {
   content: " ";
 }
+
+.bar {
+   stroke-width: 1.5;
+}

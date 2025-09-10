@@ -136,7 +136,7 @@ barChartProps (BarChart { caption, size, stackedBars }) =
    where
 
    xs = stackedBars <#> \(StackedBar bar) -> contents bar.x
-   ys = (unwrap $ head stackedBars).segments <#> \(Segment seg) -> contents seg.y -- TODO: check uniformity for each bar
+   ys = (unwrap $ head stackedBars).segments <#> \(Segment seg) -> contents seg.y -- TODO: enforce uniformity across bars
    Dimensions { width, height } = size <#> contents
 
    margin :: Margin
@@ -161,4 +161,4 @@ barChartProps (BarChart { caption, size, stackedBars }) =
 
    nearest = 10.0
    y_max = ceil $ nearest * (maximum (barHeight <$> stackedBars) / nearest)
-   strokeWidth = 1
+   strokeWidth = 2

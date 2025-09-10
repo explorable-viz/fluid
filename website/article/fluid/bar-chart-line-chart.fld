@@ -17,7 +17,7 @@ def series(energyType, country):
 
 MultiView({
   barChart: BarChart({
-    caption: "Total output by country",
+    caption: "Total renewables output by country",
     size: { width: 275, height: 185 },
     stackedBars: countryData
   }),
@@ -26,12 +26,12 @@ MultiView({
     size: { width: 330, height: 285 },
     caption: "Output of USA relative to China",
     plots: [
-      LinePlot({
-        name: energyType,
-        points: zipWith(lambda p1, p2: { x: p1.x, y: p1.y / p2.y }, usa, china)
-      })
-      for energyType in ["Bio", "Hydro", "Solar", "Wind"]
-      for (usa, china) in [(series(energyType, "USA"), series(energyType, "China"))]
-    ]
-  })
+     LinePlot({
+       name: energyType,
+       points: zipWith(lambda p1, p2: { x: p1.x, y: p1.y / p2.y }, usa, china)
+     })
+     for energyType in ["Bio", "Hydro", "Solar", "Wind"]
+     for (usa, china) in [(series(energyType, "USA"), series(energyType, "China"))]
+   ]
+ })
 })
