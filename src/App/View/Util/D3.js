@@ -77,6 +77,7 @@ export function line (to) {
 }
 
 export function xAxis (to) {
+   // doesn't use ticks
    return ticks => {
       return parent => {
          return () => {
