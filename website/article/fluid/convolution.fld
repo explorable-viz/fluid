@@ -13,10 +13,9 @@ def matrixSum(matr):
   foldl((+), 0, [matr!(i, j) for (i, j) in range((1, 1), (m, n))])
 
 def convolve(image, kernel):
-  def ((m, n), (i, j)):
-    (dims(image), dims(kernel))
-  def (half_i, half_j):
-    (i |quot| 2, j |quot| 2)
+  def (m, n): dims(image)
+  def (i, j): dims(kernel)
+  def (half_i, half_j): (i |quot| 2, j |quot| 2)
   def area: i * j
 
   def interMatrix(m_, n_):
