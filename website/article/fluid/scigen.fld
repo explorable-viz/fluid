@@ -17,8 +17,10 @@ def ordinal(n):
         error("n > 20 not supported")
 
 def rankLabel(word, n):
-  if n == 1: ""
-  else: ordinal(n) ++ "-" ++ word
+  def prefix:
+    if n == 1: ""
+    else: ordinal(n) ++ "-"
+  prefix ++ word
 
 def trendWord(n1, n2, compareWord):
   compareWord(compare(n1, n2))
