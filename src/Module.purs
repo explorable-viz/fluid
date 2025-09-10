@@ -17,7 +17,7 @@ import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import EvalGraph (GraphConfig, eval_progCxt)
+import EvalGraph (GraphConfig, eval_primitives)
 import Expr (class FV, Expr, Module, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
 import Graph (vertices)
@@ -27,23 +27,19 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import Parse as P
 import Parsing (runParser)
-import Primitive.Defs (primitives)
-import ProgCxt (ProgCxt(..))
 import SExpr (desugarModuleFwd)
 import SExpr as S
 import Util (type (×), AffError, error, (×))
 import Util.Map (restrict)
 import Util.Parse (SParser)
 import Util.Set ((∪))
+import Val (Env)
 
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
 
 parseProgram :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
 parseProgram fluidSrc = flip parse P.program fluidSrc
-
-loadProgCxt :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => m (Raw ProgCxt)
-loadProgCxt = pure (ProgCxt { primitives, mods: Nil })
 
 initialConfig
    :: forall m a
@@ -53,31 +49,31 @@ initialConfig
    => LoadFile m
    => FV a
    => a
-   -> Raw ProgCxt
+   -> Raw Env
    -> Raw ModuleCxt
    -> m GraphConfig
-initialConfig e progCxt moduleCxt = do
-   n × _ × progCxt' × _ × γ <- flip runAllocT 0 do
-      progCxt' <- alloc progCxt
+initialConfig e primitives moduleCxt = do
+   n × _ × primitives' × _ × γ <- flip runAllocT 0 do
+      primitives' <- alloc primitives
       modules' <- traverse alloc (moduleCxt.modules)
       let moduleCxt' = moduleCxt { modules = modules' }
       let mαs = Set.unions (vertices <$> Map.values modules')
-      let αs = vertices progCxt' ∪ mαs
-      _ × γ <- runWithGraphT_spy (eval_progCxt progCxt' moduleCxt') αs :: AllocT m (GraphImpl × _)
-      pure (progCxt' × modules' × restrict (fv e) γ)
-   pure { n, progCxt: progCxt', γ }
+      let αs = vertices primitives' ∪ mαs
+      _ × γ <- runWithGraphT_spy (eval_primitives primitives' moduleCxt') αs :: AllocT m (GraphImpl × _)
+      pure (primitives' × modules' × restrict (fv e) γ)
+   pure { n, primitives: primitives', γ }
 
 type Config = { s :: Raw S.Expr, e :: Raw Expr, gconfig :: GraphConfig }
 
 prelude :: ModuleName
 prelude = "lib/prelude"
 
-prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw ProgCxt -> String -> m Config
-prepConfig progCxt fluidSrc = do
+prepConfig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Raw Env -> String -> m Config
+prepConfig primitives fluidSrc = do
    s × imports <- parseProgram fluidSrc
    moduleCxt <- loadModuleGraph (prelude : imports)
    e <- desug s
-   gconfig <- initialConfig e progCxt moduleCxt
+   gconfig <- initialConfig e primitives moduleCxt
    pure { s, e, gconfig }
 
 loadModuleGraph

@@ -33,7 +33,6 @@ import Lattice (Raw, 𝔹)
 import ModuleGraph (ModuleName, ModuleCxt)
 import Pretty (prettyP)
 import Primitive (intPair, string, unpack)
-import ProgCxt (ProgCxt(..))
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, absurd, check, defined, definitely, error, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
@@ -44,7 +43,7 @@ import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp
 
 -- Needs a better name.
 type GraphConfig =
-   { progCxt :: ProgCxt Vertex
+   { primitives :: Env Vertex
    , n :: Int
    , γ :: Env Vertex
    }
@@ -217,18 +216,18 @@ eval_module γ = go empty
       γ'' <- closeDefs (γ <+> γ') ρ (insert α αs)
       go (γ' <+> γ'') (Module ds) αs
 
-eval_progCxt
+eval_primitives
    :: forall m
     . MonadWithGraphAlloc m
    => MonadReader FileCxt m
    => MonadAff m
    => LoadFile m
-   => ProgCxt Vertex
+   => Env Vertex
    -> ModuleCxt Vertex
    -> m (Env Vertex)
-eval_progCxt (ProgCxt { primitives }) { roots, topsorted, graph, modules } = do
+eval_primitives primitives { roots, topsorted, graph, modules } = do
    γs <- evalAll primitives topsorted
-   let γs' = map (\dep -> definitely ("has env") $ Map.lookup dep γs) roots
+   let γs' = roots <#> \dep -> definitely ("has env") $ Map.lookup dep γs
    let γ = foldl (<+>) primitives γs'
    pure γ
 

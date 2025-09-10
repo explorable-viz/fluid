@@ -22,12 +22,11 @@ import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf
 import Module (parse, prepConfig)
 import Parse (program)
 import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
-import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))
-import Val (class Ann, EnvExpr(..), Val)
+import Val (class Ann, Env, EnvExpr(..), Val)
 
 type TestSuite m = Array (String × m Unit)
 
@@ -40,11 +39,11 @@ type SelectionSpec =
 fluidSrcPaths :: Array Folder
 fluidSrcPaths = [ Folder "fluid", Folder "test/fluid" ]
 
-test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw ProgCxt -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
-test file progCxt spec (n × _) = do
+test ∷ forall m. MonadReader FileCxt m => LoadFile m => File -> Raw Env -> SelectionSpec -> Int × Boolean -> AffError m BenchRow
+test file primitives spec (n × _) = do
    log' ("**** prepConfig")
    fluidSrc <- loadFile fluidSrcPaths file
-   { s, gconfig } <- prepConfig progCxt fluidSrc
+   { s, gconfig } <- prepConfig primitives fluidSrc
    testPretty s
    _ × res <- runWriterT (replicateM n (testProperties s gconfig spec))
    pure $ res `divRow` n
