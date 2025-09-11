@@ -300,24 +300,6 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             e <- opTree
             pure $ Lambda (Clauses (nonEmpty (Clause (ps × e) : Nil)))
 
-         -- projection :: Parser (Raw Expr)
-         -- projection = context "projection" $ try dprojection <|> try rprojection
-         --    where
-         --    rprojection :: Parser (Raw Expr)
-         --    rprojection = do
-         --       e <- var
-         --       delim '.'
-         --       k <- variable
-         --       pure $ Project e k
-
-         --    dprojection :: Parser (Raw Expr)
-         --    dprojection = do
-         --       e <- var
-         --       delim '['
-         --       k <- opTree
-         --       delim ']'
-         --       pure $ DProject e k
-
          appChain :: Parser (Raw Expr)
          appChain = context "app chain" $ withPos $
             var <|> constr <|> try parensExpr <|> try parensOp >>= \e -> app e
