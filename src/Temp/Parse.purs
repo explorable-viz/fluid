@@ -29,7 +29,7 @@ import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest
 import Temp.Parse.Number (float, integer)
 import Temp.Parse.Parser (Parser, align, block, brackets, constructor, context, delim, lexeme, lines, operator, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
-import Util (type (+), type (×), error, nonEmpty, onlyIf, (×))
+import Util (type (+), type (×), nonEmpty, onlyIf, (×))
 
 pattern :: Parser Pattern
 pattern = defer $ \_ -> buildExprParser popdefs simplePattern
@@ -125,11 +125,8 @@ binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
 binaryOp op = try do
    op' <- lexeme $ operator
    onlyIf (op == op') $
-      if op == "." then \e e' -> case e' of
-         Var x -> Project e x
-         _ -> error "fix me"
       -- else if ":|" op' then \e e' -> Constr unit op' (e : e' : empty)
-      else \e e' -> BinaryApp e op e'
+      \e e' -> BinaryApp e op e'
 
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = try do
@@ -150,8 +147,7 @@ consOp = try do
 
 opdefs :: Array (Array (Operator (StateT Position Identity) String (Raw Expr)))
 opdefs =
-   [ [ Infix (binaryOp ".") AssocLeft
-     , Infix (binaryOp "!") AssocLeft
+   [ [ Infix (binaryOp "!") AssocLeft
      , Infix (binaryOp "**") AssocRight
      ]
    , [ Infix (binaryOp "*") AssocLeft
@@ -271,14 +267,14 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             rprojection = try do
                delim '.'
                k <- variable
-               pure $ Project e k
+               projection (Project e k)
 
             dprojection :: Parser (Raw Expr)
             dprojection = try do
                delim '['
                k <- opTree
                delim ']'
-               pure $ DProject e k
+               projection (DProject e k)
 
       simple :: Parser (Raw Expr)
       simple = context "simple" $
