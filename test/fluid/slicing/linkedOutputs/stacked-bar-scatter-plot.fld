@@ -1,40 +1,68 @@
 import dataset.nonRenewables
 
-MultiView {
-   stackedBarChart:
-      let totalFor year country rows =
-         let [ row ] = [ row | row <- rows, row.year == year, row.country == country ]
-         in row.nuclearOut + row.gasOut + row.coalOut + row.petrolOut;
-      let stack year = [ { y: country, z: totalFor year country nonRenewables }
-                     | country <- ["BRA", "EGY", "IND", "JPN"] ]
-      in BarChart {
-         caption: "Non-renewables by country",
-         size: { width: 275, height: 185 },
-         stackedBars: [ { x: numToStr year, segments: stack year }
-                      | year <- [2014..2018] ]
-      },
-   scatterPlot:
-      let isCountry name x = name == x.country;
-         isYear year x = year == x.year;
+MultiView({
+  stackedBarChart: def totalFor(year, country, rows):
+    def [row]:
+      [row for row in rows if row.year == year if row.country == country];
 
-      let plot year countries =
-      let rens = filter (isYear year) renewables;
-            nonRens = filter (isYear year) nonRenewables;
-      let plotCountry country =
-         let rens' = filter (isCountry country) rens;
-            rensOut = sum (map (fun x -> x.output) rens');
-            rensCap = sum (map (fun x -> x.capacity) rens');
-            x = head (filter (isCountry country) nonRens);
-            nonRensCap = x.nuclearCap + x.petrolCap + x.gasCap + x.coalCap
-         in {
-            x: rensCap / (rensCap + nonRensCap),
-            y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
-         }
-      in map plotCountry countries
+    ((row.nuclearOut + row.gasOut) + row.coalOut) + row.petrolOut;
 
-      in ScatterPlot {
-         caption: "Clean energy efficiency vs proportion of renewable energy capacity",
-         points: plot 2018 [ "BRA", "CHN", "DEU", "FRA", "EGY", "IND", "JPN", "MEX", "NGA", "USA" ],
-         labels: { x: "Renewables/TotalEnergyCap", y: "Clean Capacity Factor" }
-      }
-}
+  def stack(year):
+    [{
+      y: country,
+      z: totalFor(year, country, nonRenewables)
+    } for country in ["BRA", "EGY", "IND", "JPN"]];
+
+  BarChart({
+    caption: "Non-renewables by country",
+    size: { width: 275, height: 185 },
+    stackedBars: [{ x: numToStr(year), segments: stack(year) } for year in [2014 .. 2018]]
+  }),
+  scatterPlot: def isCountry(name, x): name == x.country
+  def isYear(year, x): year == x.year;
+
+  def plot(year, countries):
+    def rens:
+      filter(isYear(year), renewables)
+    def nonRens:
+      filter(isYear(year), nonRenewables);
+
+    def plotCountry(country):
+      def rens':
+        filter(isCountry(country), rens)
+      def rensOut:
+        sum(map((lambda x: x.output), rens'))
+      def rensCap:
+        sum(map((lambda x: x.capacity), rens'))
+      def x:
+        head(filter(isCountry(country), nonRens))
+      def nonRensCap:
+        ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap;
+
+      {
+        x: rensCap / (rensCap + nonRensCap),
+        y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
+      };
+
+    map(plotCountry, countries);
+
+  ScatterPlot({
+    caption: "Clean energy efficiency vs proportion of renewable energy capacity",
+    points: plot(2018, [
+      "BRA",
+      "CHN",
+      "DEU",
+      "FRA",
+      "EGY",
+      "IND",
+      "JPN",
+      "MEX",
+      "NGA",
+      "USA"
+    ]),
+    labels: {
+      x: "Renewables/TotalEnergyCap",
+      y: "Clean Capacity Factor"
+    }
+  })
+})

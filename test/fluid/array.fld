@@ -1,2 +1,4 @@
-let xs = [| i * j | (i, j) in (3, 3) |]
-in (xs ! (1, 1), dims xs)
+def xs:
+  [| i * j for (i, j) in (3, 3) |];
+
+(xs ! (1, 1), dims(xs))

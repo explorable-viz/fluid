@@ -1,2 +1,3 @@
-let incr = (+) 1 in
-(compose incr incr) 3
+def incr: (+)(1);
+
+compose(incr, incr, 3)

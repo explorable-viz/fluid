@@ -29,7 +29,7 @@ import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest
 import Temp.Parse.Number (float, integer)
 import Temp.Parse.Parser (Parser, align, block, brackets, constructor, context, delim, lexeme, lines, operator, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
-import Util (type (+), type (×), nonEmpty, onlyIf, (×))
+import Util (type (+), type (×), error, nonEmpty, onlyIf, (×))
 
 pattern :: Parser Pattern
 pattern = defer $ \_ -> buildExprParser popdefs simplePattern
@@ -124,8 +124,12 @@ simplePattern =
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
 binaryOp op = try do
    op' <- lexeme $ operator
-   onlyIf (op == op')
-      $ \e e' -> BinaryApp e op' e'
+   onlyIf (op == op') $
+      if op == "." then \e e' -> case e' of
+         Var x -> Project e x
+         _ -> error "fix me"
+      -- else if ":|" op' then \e e' -> Constr unit op' (e : e' : empty)
+      else \e e' -> BinaryApp e op e'
 
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = try do
@@ -254,8 +258,28 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       pure $ IfElse c t e
 
    opTree :: Parser (Raw Expr)
-   opTree = context "opTree" (buildExprParser opdefs simple) <* consume -- this thing seems to break the `consume` state
+   opTree = context "opTree" (buildExprParser opdefs simpleOrProjection) <* consume -- this thing seems to break the `consume` state
       where
+
+      simpleOrProjection :: Parser (Raw Expr)
+      simpleOrProjection = simple >>= projection
+         where
+         projection :: Raw Expr -> Parser (Raw Expr)
+         projection e = dprojection <|> rprojection <|> pure e
+            where
+            rprojection :: Parser (Raw Expr)
+            rprojection = try do
+               delim '.'
+               k <- variable
+               pure $ Project e k
+
+            dprojection :: Parser (Raw Expr)
+            dprojection = try do
+               delim '['
+               k <- opTree
+               delim ']'
+               pure $ DProject e k
+
       simple :: Parser (Raw Expr)
       simple = context "simple" $
          matrix
@@ -265,7 +289,6 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             <|> number
             <|> paragraph
             <|> str
-            <|> try projection
             <|> pair
             <|> appChain
             <|> parensExpr
@@ -281,23 +304,23 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             e <- opTree
             pure $ Lambda (Clauses (nonEmpty (Clause (ps × e) : Nil)))
 
-         projection :: Parser (Raw Expr)
-         projection = context "projection" $ try dprojection <|> try rprojection
-            where
-            rprojection :: Parser (Raw Expr)
-            rprojection = do
-               e <- var
-               delim '.'
-               k <- variable
-               pure $ Project e k
+         -- projection :: Parser (Raw Expr)
+         -- projection = context "projection" $ try dprojection <|> try rprojection
+         --    where
+         --    rprojection :: Parser (Raw Expr)
+         --    rprojection = do
+         --       e <- var
+         --       delim '.'
+         --       k <- variable
+         --       pure $ Project e k
 
-            dprojection :: Parser (Raw Expr)
-            dprojection = do
-               e <- var
-               delim '['
-               k <- opTree
-               delim ']'
-               pure $ DProject e k
+         --    dprojection :: Parser (Raw Expr)
+         --    dprojection = do
+         --       e <- var
+         --       delim '['
+         --       k <- opTree
+         --       delim ']'
+         --       pure $ DProject e k
 
          appChain :: Parser (Raw Expr)
          appChain = context "app chain" $ withPos $

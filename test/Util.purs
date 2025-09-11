@@ -19,11 +19,11 @@ import EvalGraph (GraphConfig, graphEval, graphGC, toGC, withOp)
 import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
-import Module (parse, prepConfig)
-import Parse (program)
-import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
+import Module (parseProgram', prepConfig)
+import Pretty (class Pretty, PrettyShow(..), compare, prettyP) as Old
 import ProgCxt (ProgCxt)
 import SExpr (Expr) as SE
+import Temp.Pretty (prettyPy)
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))
@@ -90,15 +90,15 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
 
    in0@(EnvExpr in_γ in_e) <- do
-      let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
+      let report = spyWhen tracing.bwdSelection "Selection for bwd" Old.prettyP
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
    let in_s = desug.bwd in_e
    out1 <- do
       let in_e' = desug.fwd in_s
-      unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
+      unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (Old.PrettyShow in_e')
       graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e'))
-   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out1)
+   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (Old.PrettyShow out1)
 
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
 
@@ -106,14 +106,14 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    unless (null bwd_expect) $
       checkPretty ("bwd_expect") bwd_expect in_s
    unless (null fwd_expect) do
-      let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
+      let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" Old.prettyP
       checkPretty ("fwd_expect") fwd_expect (report out1)
 
    recordGraphSize g
 
    let out_top = evalG.fwd in_top
    when testing.fwdPreservesTop $
-      unwrap >>> (_ == topOf v) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top)
+      unwrap >>> (_ == topOf v) # checkSatisfies "graph fwd preserves ⊤" (Old.PrettyShow out_top)
 
    let GC evalG_dual = dual (GC evalG)
    let GC evalG_op = withOp graphed # graphGC # toGC
@@ -129,7 +129,7 @@ checkEq
    => Neg a
    => MeetSemilattice a
    => Eq a
-   => Pretty a
+   => Old.Pretty a
    => MonadError Error m
    => String
    -> String
@@ -137,22 +137,22 @@ checkEq
    -> a
    -> m Unit
 checkEq op1 op2 x y = do
-   let left × right = compare op1 op2 x y
+   let left × right = Old.compare op1 op2 x y
    check (left == "") left
    check (right == "") right
 
 testPretty :: forall m a. Ann a => Show a => SE.Expr a -> AffError m Unit
 testPretty s = do
-   log' ("**** prettyP")
-   log' (prettyP s)
-   s' × _ <- withMsg "testPretty" $ parse (prettyP s) program
+   log' ("**** prettyPy")
+   log' (prettyPy s)
+   s' × _ <- withMsg "testPretty" $ parseProgram' (prettyPy s)
    unless (eq (erase s) (erase s')) $
-      throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
+      throw ("parse/prettyPy round trip:\nOriginal\n" <> prettyPy (erase s) <> "\nNew\n" <> prettyPy (erase s'))
 
-checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
+checkPretty :: forall a m. Old.Pretty a => String -> String -> a -> EffectError m Unit
 checkPretty msg expect x =
-   unless (expect `eq` prettyP x) $
-      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
+   unless (expect `eq` Old.prettyP x) $
+      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> Old.prettyP x)
 
 testOutcome :: Boolean -> Endo String
 testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s

@@ -1,4 +1,4 @@
-module Temp.Pretty (prettyPy) where
+module Temp.Pretty (PrettyShow(..), class Pretty, compare, pretty, prettyPy) where
 
 import Prelude
 
@@ -6,7 +6,9 @@ import Data.List (List(..), singleton, (:))
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype)
 import DataType (Ctr, cCons)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _lambda, _match)
@@ -18,7 +20,14 @@ import Val (class Ann)
 class Pretty p where
    pretty :: p -> Doc
 
-prettyPy :: forall a. Ann a => Expr a -> String
+newtype PrettyShow a = PrettyShow a
+
+derive instance Newtype (PrettyShow a) _
+
+instance Pretty a => Show (PrettyShow a) where
+   show (PrettyShow x) = pretty x # render
+
+prettyPy :: forall a. Pretty a => a -> String
 prettyPy x = render (pretty x)
 
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
@@ -153,3 +162,12 @@ prettyList :: forall a. Pretty a => List a -> Doc
 prettyList Nil = mempty
 prettyList (d : Nil) = pretty d
 prettyList (d : ds) = pretty d <> _comma <+> prettyList ds
+
+compare :: forall a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => String -> String -> a -> a -> String × String
+compare op1 op2 x y =
+   let
+      x_minus_y × y_minus_x = symmetricDiff x y
+      left = if x_minus_y == botOf x then "" else op1 <> " but not " <> op2 <> ":\n" <> prettyPy x_minus_y
+      right = if y_minus_x == botOf x then "" else op2 <> " but not " <> op1 <> ":\n" <> prettyPy y_minus_x
+   in
+      left × right

@@ -1,1 +1,1 @@
-convolve inputImage filter wrap
+convolve(inputImage, filter, wrap)
