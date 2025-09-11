@@ -27,7 +27,7 @@ let qcut xs qs = let (low, high) = (minimum xs, maximum xs);
                  accumBins xs edges in
 let likelihoodLE xs target = length (filter (fun x = x <= target) xs) / length xs in
 let likelihoodGE xs target = length (filter (fun x = x >= target) xs) / length xs in
-let likelihoodMap table prob = fromSome (find (fun x = x.prob <= prob) table).msg in
+let likelihoodMap table prob = (fromSome (find (fun x = x.prob <= prob) table)).msg in
 let mkPercent num = numToStr (num * 100) ++ "%" in
 let leqP n m = if n <= m then "less" else "more" in
 let gradedLeqP n m = let ratio = n / m in
