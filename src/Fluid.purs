@@ -16,13 +16,14 @@ import Effect.Class.Console (log, logShow)
 import EvalGraph (graphEval)
 import File (File(..), FileCxt(..), Folder(..), loadFile)
 import Lattice (erase)
-import Module (loadProgCxt, prepConfig)
+import Module (prepConfig)
 import Module.Node (runNodeT)
 import Options.Applicative (Parser, command, execParser, fullDesc, header, help, helper, long, progDesc, short, strOption, subparser, switch, (<**>))
 import Options.Applicative.Builder (info)
 import Parse as P
 import Parsing (runParser)
 import Pretty (prettyP)
+import Primitive.Defs (primitives)
 import Temp.Pretty (prettyPy)
 import Temp.Util.Error (prettyParseError)
 import Util (Endo)
@@ -99,9 +100,8 @@ evaluate :: EvalArgs -> Aff (Val Unit)
 evaluate (EvalArgs { local, fileName, fluidSrcPath }) = do
    let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
    runNodeT (FileCxt { fluidSrcPaths }) $ do
-      progCxt <- loadProgCxt
       fluidSrc <- loadFile fluidSrcPaths (File fileName)
-      { e, gconfig } <- prepConfig progCxt fluidSrc
+      { e, gconfig } <- prepConfig primitives fluidSrc
       { outα } <- graphEval gconfig e
       pure (erase outα)
 

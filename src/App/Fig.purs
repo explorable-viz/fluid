@@ -29,9 +29,10 @@ import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
-import Module (loadProgCxt, prepConfig)
+import Module (prepConfig)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
+import Primitive.Defs (primitives)
 import Test.Util.Debug (tracing)
 import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
@@ -209,8 +210,7 @@ lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
 loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> String -> m Fig
 loadFig spec@{ inputs, linking } fluidSrc = do
-   progCxt <- loadProgCxt
-   { s, e, gconfig } <- prepConfig progCxt fluidSrc
+   { s, e, gconfig } <- prepConfig primitives fluidSrc
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e
    let
       opEval = withOp eval

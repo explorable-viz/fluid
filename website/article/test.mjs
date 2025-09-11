@@ -7,4 +7,6 @@ export const main = async () => {
       page => waitFor("#fig-output > svg:nth-child(1)")(page),
       page => waitFor("#fig-output > svg:nth-child(2)")(page),
    ]))()
+   await runTests(testURL("renewables-linked")([page => waitFor("#fig-output > svg:nth-child(1)")(page)]))()
+   await runTests(testURL("scigen-1805.02474v1-10")([ page => waitFor("div#fig-output")(page) ]))()
 }

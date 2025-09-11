@@ -3,35 +3,35 @@ import renewables
 def totalFor(c, rows): sum([row.output for row in rows if row.country == c])
 
 def data2015: [row for row in renewables if row.year == 2015]
-
 def countryData: [{
     x: c,
     segments: [{ y: "output", z: totalFor(c, data2015) }]
   } for c in ["China", "USA", "Germany"]]
 
-def series(type, country):
+def series(energyType, country):
   [
     { x: row.year, y: row.output }
     for year in [2013 .. 2018] for row in renewables
-    if row.year == year if row.energyType == type if row.country == country
+    if row.year == year if row.energyType == energyType if row.country == country
   ]
 
 MultiView({
-  barChart: BarChart({
-    caption: "Total output by country",
-    size: { width: 275, height: 185 },
-    stackedBars: countryData
-  }),
+#   barChart: BarChart({
+#     caption: "Total renewables output by country",
+#     size: { width: 275, height: 185 },
+#     stackedBars: countryData
+#   }),
   lineChart: LineChart({
-    tickLabels: { x: Rotated, y: Default },
+    tickLabels: { x: Default, y: Default },
     size: { width: 330, height: 285 },
-    caption: "Output of USA relative to China",
+    caption: "Renewables output of USA relative to China",
     plots: [
-      LinePlot({ name: energyType, points: plot })
-      for energyType in ["Bio", "Hydro", "Solar", "Wind"]
-      for plot in [
-        zipWith((lambda p1, p2: { x: p1.x, y: p1.y / p2.y }), series(energyType, "USA"), series(energyType, "China"))
-      ]
-    ]
-  })
+     LinePlot({
+       name: energyType,
+       points: zipWith(lambda p1, p2: { x: p1.x, y: p1.y / p2.y }, usa, china)
+     })
+     for energyType in ["Bio", "Hydro", "Solar", "Wind"]
+     for (usa, china) in [(series(energyType, "USA"), series(energyType, "China"))]
+   ]
+ })
 })

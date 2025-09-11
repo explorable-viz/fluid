@@ -1,0 +1,39 @@
+def insert(lt, x, []): [x]
+def insert(lt, x, y :| ys):
+  if x |lt| y: x :| y :| ys
+  else:
+    y :| insert(lt, x, ys)
+
+def insertionSort(lt, lst):
+  def helper([], sorted): sorted
+  def helper(x :| xs, sorted):
+    helper(xs, insert(lt, x, sorted))
+
+  helper(lst, [])
+
+def findIndex(fName, x, []): -1
+def findIndex(fName, x, y :| ys):
+  if y[fName] == x: 1
+  else:
+    findIndex(fName, x, ys) + 1
+
+def findWithKey_(fName, x, table):
+  fromSome(findWithKey(fName, x, table))
+
+def findWhere(pred, table):
+  fromSome(find(pred, table))
+
+def model(m, t):
+  findWithKey_("model", m, t)
+
+def maximumBy(f, []):
+  error("Empty list!")
+def maximumBy(f, x :| xs):
+  def helper([], current): current
+  def helper(y :| ys, current):
+    if f(y) > f(current):
+      helper(ys, y)
+    else:
+      helper(ys, current)
+
+  helper(xs, x)
