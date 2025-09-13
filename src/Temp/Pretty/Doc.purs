@@ -20,7 +20,7 @@ data Doc
 
 data Collection = Record | Array
 
-data Format = Inline | Multiline
+data Format = Inline | Multiline | Squash
 
 instance Semigroup Doc where
    append = Concat
@@ -87,6 +87,7 @@ renderWithIndent n doc = case doc of
 simplify :: Doc -> Doc
 simplify doc = case doc of
    Block d -> case fmt of
+      Squash -> text ": " <> simplify d
       Inline -> text ": " <> simplify d
       Multiline -> text ":" <> indent (line <> simplify d)
    Collection c ds -> delimit fmt c $ simplifyList ds fmt
@@ -94,7 +95,7 @@ simplify doc = case doc of
 
    where
    fmt = format doc
-
+   delimit Squash Record = inside "{" "}"
    delimit Inline Record = inside "{ " " }"
    delimit Multiline Record = inside "{" "}"
    delimit _ Array = inside "[" "]"
@@ -103,6 +104,7 @@ simplify doc = case doc of
 
 simplifyList :: List Doc -> Format -> Doc
 simplifyList ds fmt = case fmt of
+   Squash -> mempty
    Inline -> intercalate (text ", ") ((\d -> simplify d) <$> ds)
    Multiline -> indent (intercalate (text ",") ((\d -> line <> simplify d) <$> ds)) <> line
 
@@ -113,6 +115,7 @@ format doc = case doc of
       | inlinable d && width d < config.inlineBlockLimit -> Inline
       | otherwise -> Multiline
    Collection _ ds
+      | widthList ds == 0 -> Squash
       | widthList ds < config.inlineRecordLimit -> Inline
       | otherwise -> Multiline
    _ -> Inline
