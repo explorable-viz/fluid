@@ -258,12 +258,12 @@ paragraphElemsFwd
    -> m (E.Expr a)
 paragraphElemsFwd Nil = pure (enil bot)
 paragraphElemsFwd (Token s : elems) = do
-   elems' <- paragraphElemsFwd elems
-   pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) elems')
+   es <- paragraphElemsFwd elems
+   pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) es)
 paragraphElemsFwd (Unquote e : elems) = do
-   elems' <- paragraphElemsFwd elems
+   es <- paragraphElemsFwd elems
    e' <- desug e
-   pure (econs bot (E.Constr bot cText (e' : Nil)) elems')
+   pure (econs bot (E.Constr bot cText (e' : Nil)) es)
 
 paragraphElemsBwd
    :: forall a
