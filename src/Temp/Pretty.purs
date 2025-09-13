@@ -1,8 +1,8 @@
-module Temp.Pretty (PrettyShow(..), class Pretty, compare, pretty, prettyPy) where
+module Temp.Pretty (PrettyShow(..), class Pretty, class Highlightable, compare, highlightIf, pretty, prettyPy) where
 
 import Prelude
 
-import Bind (Bind, Var)
+import Bind (Bind, Var, (↦))
 import Data.List (List(..), fromFoldable, singleton, (:))
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (lookup)
@@ -206,7 +206,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Project e x) = pretty e <> text "." <> pretty x
    pretty (E.DProject e x) = pretty e <> brackets (pretty x)
    pretty (E.App e e') = pretty e <> parens (pretty e') -- TODO
-   pretty (E.Let (E.VarDef o e) e') = text "def" <+> pretty o <> text ":" <> block (pretty e) <+++> pretty e'
+   pretty (E.Let (E.VarDef o e) e') = text "def" <+> pretty o <> block (pretty e) <+++> pretty e'
    pretty (E.LetRec (E.RecDefs _ p) e') = text "def" <+> pretty p <+++> pretty e'
    pretty (E.DocExpr p e) = text "@doc" <> parens (pretty p) <+> pretty e
 
@@ -228,7 +228,7 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
       go (xσ : δ) = (go δ <+> text ";") <+> (pretty xσ)
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
-   pretty _ = text ""
+   pretty (x ↦ σ) = pretty x <> pretty ":" <+> pretty σ
 
 compare :: forall a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => String -> String -> a -> a -> String × String
 compare op1 op2 x y =
