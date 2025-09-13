@@ -39,8 +39,37 @@ instance Pretty a => Show (PrettyShow a) where
 instance Pretty String where
    pretty = text
 
+class RootOp (e :: Type) where
+   rootOp :: e -> Maybe String
+
+instance RootOp Pattern where
+   rootOp (PConstr c _) | c == cCons = Just ":"
+   rootOp _ = Nothing
+
+instance Ann a => RootOp (Expr a) where
+   rootOp (Constr _ c _) | c == cCons = Just ":"
+   rootOp (BinaryApp _ op _) = Just op
+   rootOp _ = Nothing
+
+instance Highlightable a => RootOp (E.Expr a) where
+   rootOp (E.Constr _ c _) | c == cCons = Just ":"
+   rootOp _ = Nothing
+
+instance Highlightable a => RootOp (Val a) where
+   rootOp (Val _ Nothing u) = rootOp u
+   rootOp (Val _ (Just _) _) = Nothing
+
+instance Highlightable a => RootOp (BaseVal a) where
+   rootOp (V.Constr c _) | c == cCons = Just ":"
+   rootOp _ = Nothing
+
 prettyP :: forall a. Pretty a => a -> String
 prettyP x = render (pretty x)
+
+getPrec :: String -> Int
+getPrec x = case lookup x opDefs of
+   Just y -> y.prec
+   Nothing -> -1
 
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
 binaryApp n (BinaryApp s op s') =
@@ -51,11 +80,6 @@ binaryApp n (BinaryApp s op s') =
             parens (binaryApp n' s <+> text op <+> binaryApp n' s')
          else
             binaryApp n' s <+> text op <+> binaryApp n' s'
-   where
-   getPrec :: String -> Int
-   getPrec x = case lookup x opDefs of
-      Just y -> y.prec
-      Nothing -> -1
 binaryApp _ e@(Constr _ c _) | c == cCons = parens (pretty e)
 binaryApp _ (Let _ _) = text "undefined"
 binaryApp _ (LetRec _ _) = text "undefined"
@@ -112,6 +136,7 @@ instance Ann a => Pretty (Pattern × Expr a) where
 instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord xps) = record $ map pretty xps
+   pretty (PConstr c Nil) = text c
    pretty (PConstr c ps) = prettyConstr c ps
    pretty (PListEmpty) = _empty
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
@@ -160,12 +185,17 @@ instance Ann a => Pretty (ParagraphElem a) where
    pretty (Token str) = text str
    pretty (Unquote e) = text "${" <> pretty e <> text "}"
 
-prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
+prettyConstr :: forall a. RootOp a => Pretty a => Ctr -> List a -> Doc
 prettyConstr "Nil" Nil = _empty
 prettyConstr "Pair" (x : y : Nil) = pair pretty x y
-prettyConstr ":" (x : y : Nil) = pretty x <+> text ":|" <+> pretty y
+prettyConstr ":" (x : y : Nil) = prettyConsArg x <+> text ":|" <+> prettyConsArg y
 prettyConstr c Nil = text c
 prettyConstr c ps = text c <> parens (prettyList ps)
+
+prettyConsArg :: forall a. RootOp a => Pretty a => a -> Doc
+prettyConsArg e = case rootOp e of
+   Nothing -> pretty e
+   Just op -> if getPrec op <= getPrec ":" then parens (pretty e) else pretty e
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
 prettyAppChain (App f a) as = prettyAppChain f (a : as)
