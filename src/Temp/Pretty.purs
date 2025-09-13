@@ -1,4 +1,4 @@
-module Temp.Pretty (PrettyShow(..), class Pretty, class Highlightable, compare, highlightIf, pretty, prettyPy) where
+module Temp.Pretty (PrettyShow(..), class Pretty, class Ann, class Highlightable, compare, highlightIf, pretty, prettyPy) where
 
 import Prelude
 
@@ -14,7 +14,7 @@ import Dict (Dict)
 import Expr (Cont(..), Elim(..))
 import Expr as E
 import Graph (Vertex(..))
-import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
+import Lattice (class BotOf, class BoundedLattice, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _lambda, _match)
@@ -24,7 +24,7 @@ import Util (type (×), Endo, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
 import Val (BaseVal(..), Fun(..)) as V
-import Val (class Ann, BaseVal, DictRep(..), ForeignOp(..), Fun, MatrixRep(..), Val(..))
+import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), Fun, MatrixRep(..), Val(..))
 
 class Pretty p where
    pretty :: p -> Doc
@@ -181,6 +181,16 @@ prettyList xs = commas (pretty <$> fromFoldable xs)
 class Highlightable a where
    highlightIf :: a -> Endo Doc
 
+-- TODO: use Ann and Highlightable from Val
+-- currently they are defined in reference to old Doc
+class (Highlightable a, BoundedLattice a) <= Ann a
+
+instance Ann Boolean
+instance Ann Unit
+
+instance Highlightable a => Highlightable (a × b) where
+   highlightIf (a × _) doc = highlightIf a doc
+
 instance Highlightable Unit where
    highlightIf _ = identity
 
@@ -227,6 +237,17 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
       go Nil = mempty
       go (xσ : Nil) = pretty xσ
       go (xσ : δ) = (go δ <+> text ";") <+> (pretty xσ)
+
+instance Highlightable a => Pretty (Env a) where
+   pretty (Env γ) = brackets $ go (toUnfoldable γ)
+      where
+      go :: List (Var × Val a) -> Doc
+      go Nil = mempty
+      go ((x × v) : rest) =
+         (text x <+> text "->" <+> pretty v <+> text ",") <++> go rest
+
+instance Highlightable a => Pretty (EnvExpr a) where
+   pretty (EnvExpr γ e) = (pretty γ) <++> (pretty e)
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = pretty x <> pretty ":" <+> pretty σ

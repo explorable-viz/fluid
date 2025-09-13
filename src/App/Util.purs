@@ -23,14 +23,14 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Class.Console (log)
 import Foreign.Object (Object, empty, fromFoldable, union)
 import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∧), (∨))
-import Pretty (prettyP)
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
+import Temp.Pretty (class Highlightable, highlightIf, prettyPy)
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), Endo, definitely', error, shapeMismatch, spyWhen, (×))
 import Util.Map (get)
-import Val (class Highlightable, Val(..), highlightIf)
+import Val (Val(..))
 import Web.Event.Event (Event, EventType(..), target, type_)
 import Web.Event.EventTarget (EventTarget)
 
@@ -193,7 +193,7 @@ selector (EventType ev) v =
       | otherwise = error "Unsupported event type"
 
    reportSelStates = spyWhen tracing.mouseEvent "to " show
-   reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyP
+   reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyPy
 
    selType :: SelectionType
    selType
