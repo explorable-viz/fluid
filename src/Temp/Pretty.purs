@@ -161,9 +161,10 @@ instance Ann a => Pretty (ParagraphElem a) where
    pretty (Unquote e) = text "${" <> pretty e <> text "}"
 
 prettyConstr :: forall d. Pretty d => Ctr -> List d -> Doc
-prettyConstr c Nil = text c
+prettyConstr "Nil" Nil = _empty
 prettyConstr "Pair" (x : y : Nil) = pair pretty x y
 prettyConstr ":" (x : y : Nil) = pretty x <+> text ":|" <+> pretty y
+prettyConstr c Nil = text c
 prettyConstr c ps = text c <> parens (prettyList ps)
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
