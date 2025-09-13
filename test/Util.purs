@@ -20,13 +20,12 @@ import File (class LoadFile, File, FileCxt, Folder(..), loadFile)
 import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parseProgram', prepConfig)
-import Pretty (class Pretty, PrettyShow(..), compare, prettyP) as Old
 import SExpr (Expr) as SE
-import Temp.Pretty (prettyPy)
+import Temp.Pretty (class Ann, class Pretty, PrettyShow(..), compare, prettyPy)
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))
-import Val (class Ann, Env, EnvExpr(..), Val)
+import Val (Env, EnvExpr(..), Val)
 
 type TestSuite m = Array (String × m Unit)
 
@@ -89,15 +88,15 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
 
    in0@(EnvExpr in_γ in_e) <- do
-      let report = spyWhen tracing.bwdSelection "Selection for bwd" Old.prettyP
+      let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyPy
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
    let in_s = desug.bwd in_e
    out1 <- do
       let in_e' = desug.fwd in_s
-      unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (Old.PrettyShow in_e')
+      unwrap >>> (_ >= in_e) # checkSatisfies "fwd ⚬ bwd round-trip (desugar)" (PrettyShow in_e')
       graphBenchmark benchNames.fwd \_ -> pure (evalG.fwd (EnvExpr in_γ in_e'))
-   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (Old.PrettyShow out1)
+   unwrap >>> (_ >= out0) # checkSatisfies "fwd ⚬ bwd round-trip (eval)" (PrettyShow out1)
 
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
 
@@ -105,14 +104,14 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    unless (null bwd_expect) $
       checkPretty ("bwd_expect") bwd_expect in_s
    unless (null fwd_expect) do
-      let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" Old.prettyP
+      let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyPy
       checkPretty ("fwd_expect") fwd_expect (report out1)
 
    recordGraphSize g
 
    let out_top = evalG.fwd in_top
    when testing.fwdPreservesTop $
-      unwrap >>> (_ == topOf v) # checkSatisfies "graph fwd preserves ⊤" (Old.PrettyShow out_top)
+      unwrap >>> (_ == topOf v) # checkSatisfies "graph fwd preserves ⊤" (PrettyShow out_top)
 
    let GC evalG_dual = dual (GC evalG)
    let GC evalG_op = withOp graphed # graphGC # toGC
@@ -128,7 +127,7 @@ checkEq
    => Neg a
    => MeetSemilattice a
    => Eq a
-   => Old.Pretty a
+   => Pretty a
    => MonadError Error m
    => String
    -> String
@@ -136,7 +135,7 @@ checkEq
    -> a
    -> m Unit
 checkEq op1 op2 x y = do
-   let left × right = Old.compare op1 op2 x y
+   let left × right = compare op1 op2 x y
    check (left == "") left
    check (right == "") right
 
@@ -148,10 +147,10 @@ testPretty s = do
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyPy round trip:\nOriginal\n" <> prettyPy (erase s) <> "\nNew\n" <> prettyPy (erase s'))
 
-checkPretty :: forall a m. Old.Pretty a => String -> String -> a -> EffectError m Unit
+checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
 checkPretty msg expect x =
-   unless (expect `eq` Old.prettyP x) $
-      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> Old.prettyP x)
+   unless (expect `eq` prettyPy x) $
+      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyPy x)
 
 testOutcome :: Boolean -> Endo String
 testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s
