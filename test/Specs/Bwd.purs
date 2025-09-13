@@ -45,22 +45,26 @@ bwd_cases =
    , { file: "matrix/matmul.fld"
      , bwd_expect_file: "matrix/matmul.expect.fld"
      , δv: fst $ matrixElement 1 1 select
-     , fwd_expect: "(@doc (Paragraph (Text \"Intermediate\" : (Text \"matrix\" : []))) ⸨22⸩, 28,\n                                                                      49, 64,@doc (Paragraph (Text \"Intermediate\" : (Text \"matrix\" : []))) 9, 12, 15,\n                                                                                                                                                    19, 26, 33,\n                                                                                                                                                    29, 40, 51)"
+     , fwd_expect:
+          """(@doc(Paragraph(Text("Intermediate") :| Text("matrix") :| [])) ⸨22⸩, 28,
+49, 64, @doc(Paragraph(Text("Intermediate") :| Text("matrix") :| [])) 9, 12, 15,
+19, 26, 33,
+29, 40, 51)"""
      }
    , { file: "dict/create.fld"
      , bwd_expect_file: "dict/create.expect.fld"
      , δv: dictKey "ab" select'
-     , fwd_expect: "{a : 5, ⸨ab⸩ : 6}"
+     , fwd_expect: "{ a: 5, ⸨ab⸩: 6 }"
      }
    , { file: "dict/difference.fld"
      , bwd_expect_file: "dict/difference.expect.fld"
      , δv: dict select'
-     , fwd_expect: "⸨{a : 5}⸩"
+     , fwd_expect: "⸨{ a: 5 }⸩"
      }
    , { file: "dict/disjointUnion.fld"
      , bwd_expect_file: "dict/disjointUnion.expect.fld"
      , δv: dictKey "a" select' >.> dictVal "c" select
-     , fwd_expect: "{⸨a⸩ : 5, b : 6, c : ⸨7⸩}"
+     , fwd_expect: "{ ⸨a⸩: 5, b: 6, c: ⸨7⸩ }"
      }
    , { file: "dict/foldl.fld", bwd_expect_file: "dict/foldl.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
    , { file: "dict/intersectionWith.fld"
@@ -89,38 +93,38 @@ bwd_cases =
    , { file: "filter.fld"
      , bwd_expect_file: "filter.expect.fld"
      , δv: listCell 0 select'
-     , fwd_expect: "⸨⸨8⸩ : (7 : [])⸩"
+     , fwd_expect: "⸨⸨8⸩ :| 7 :| []⸩"
      }
    , { file: "intersperse.fld"
      , bwd_expect_file: "intersperse-1.expect.fld"
      , δv: listCell 1 select'
-     , fwd_expect: "1 : (⸨0 : (2 : (0 : (3 : [])))⸩)"
+     , fwd_expect: "1 :| ⸨0 :| 2 :| 0 :| 3 :| []⸩"
      }
    , { file: "intersperse.fld"
      , bwd_expect_file: "intersperse-2.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "⸨1 : (0 : (⸨2 : (0 : (3 : []))⸩))⸩"
+     , fwd_expect: "⸨1 :| 0 :| ⸨2 :| 0 :| 3 :| []⸩⸩"
      }
    , { file: "length.fld", bwd_expect_file: "length.expect.fld", δv: select, fwd_expect: "⸨5⸩" }
    , { file: "list-comp.fld"
      , bwd_expect_file: "list-comp-1.expect.fld"
      , δv: listCell 1 select'
-     , fwd_expect: "6.2 : (⸨260 : (19.9 : (91 : []))⸩)"
+     , fwd_expect: "6.2 :| ⸨260 :| 19.9 :| 91 :| []⸩"
      }
    , { file: "list-comp.fld"
      , bwd_expect_file: "list-comp-2.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "6.2 : (260 : (⸨19.9 : (91 : [])⸩))"
+     , fwd_expect: "6.2 :| 260 :| ⸨19.9 :| 91 :| []⸩"
      }
    , { file: "lookup.fld"
      , bwd_expect_file: "lookup.expect.fld"
      , δv: some select'
-     , fwd_expect: "⸨Some \"Germany\"⸩"
+     , fwd_expect: "⸨Some(\"Germany\")⸩"
      }
    , { file: "map.fld"
      , bwd_expect_file: "map.expect.fld"
      , δv: listCell 0 select' >.> listCell 1 select'
-     , fwd_expect: "⸨5 : (⸨6 : []⸩)⸩"
+     , fwd_expect: "⸨5 :| ⸨6 :| []⸩⸩"
      }
    , { file: "matrix-update.fld"
      , bwd_expect_file: "matrix-update.expect.fld"
@@ -142,7 +146,7 @@ bwd_cases =
    , { file: "section-5-example.fld"
      , bwd_expect_file: "section-5-example-1.expect.fld"
      , δv: listCell 0 select'
-     , fwd_expect: "⸨88 : (6 : (4 : []))⸩"
+     , fwd_expect: "⸨88 :| 6 :| 4 :| []⸩"
      }
    , { file: "section-5-example.fld"
      , bwd_expect_file: "section-5-example-2.expect.fld"
@@ -152,22 +156,22 @@ bwd_cases =
    , { file: "section-5-example.fld"
      , bwd_expect_file: "section-5-example-3.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "88 : (6 : (⸨4 : []⸩))"
+     , fwd_expect: "88 :| 6 :| ⸨4 :| []⸩"
      }
    , { file: "zeros.fld"
      , bwd_expect_file: "zeros-1.expect.fld"
      , δv: listCell 0 select' >.> listCell 2 select'
-     , fwd_expect: "⸨0 : (0 : ⸨[]⸩)⸩"
+     , fwd_expect: "⸨0 :| 0 :| ⸨[]⸩⸩"
      }
    , { file: "zeros.fld"
      , bwd_expect_file: "zeros-2.expect.fld"
      , δv: listCell 2 select'
-     , fwd_expect: "0 : (0 : ⸨[]⸩)"
+     , fwd_expect: "0 :| 0 :| ⸨[]⸩"
      }
    , { file: "zipWith.fld"
      , bwd_expect_file: "zipWith-1.expect.fld"
      , δv: listElement 1 select'
-     , fwd_expect: "13.0 : (⸨25.0⸩ : (41.0 : []))"
+     , fwd_expect: "13.0 :| ⸨25.0⸩ :| 41.0 :| []"
      }
    , { file: "linkedOutputs/bar-chart-line-chart.fld"
      , bwd_expect_file: "linkedOutputs/bar-chart-line-chart.expect.fld"
@@ -182,6 +186,6 @@ bwd_cases =
    , { file: "qcut.fld"
      , bwd_expect_file: "qcut.expect.fld"
      , δv: (_ × Persistent)
-     , fwd_expect: "(1.01 : (1.05 : []), 0.051000000000000156) : ((1.07 : (1.09 : (1.22 : (1.23 : (1.24 : (1.24 : (1.25 : (1.32 : (1.32 : (1.35 : (1.39 : (1.47 : (1.57 : (1.72 : []))))))))))))), 0.6639999999999999) : ((1.73 : (1.75 : (1.76 : (1.83 : (1.87 : (1.94 : (2.04 : (2.14 : (2.18 : (2.36 : (2.37 : (2.38 : (2.52 : (2.54 : []))))))))))))), 0.8464999999999998) : ((2.61 : (2.67 : []), 0.09850000000000003) : [])))"
+     , fwd_expect: "(1.01 :| 1.05 :| [], 0.051000000000000156) :| (1.07 :| 1.09 :| 1.22 :| 1.23 :| 1.24 :| 1.24 :| 1.25 :| 1.32 :| 1.32 :| 1.35 :| 1.39 :| 1.47 :| 1.57 :| 1.72 :| [], 0.6639999999999999) :| (1.73 :| 1.75 :| 1.76 :| 1.83 :| 1.87 :| 1.94 :| 2.04 :| 2.14 :| 2.18 :| 2.36 :| 2.37 :| 2.38 :| 2.52 :| 2.54 :| [], 0.8464999999999998) :| (2.61 :| 2.67 :| [], 0.09850000000000003) :| []"
      }
    ]
