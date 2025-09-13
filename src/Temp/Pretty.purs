@@ -2,19 +2,27 @@ module Temp.Pretty (PrettyShow(..), class Pretty, compare, pretty, prettyPy) whe
 
 import Prelude
 
-import Data.List (List(..), singleton, (:))
+import Bind (Bind, Var)
+import Data.List (List(..), fromFoldable, singleton, (:))
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
+import Data.Traversable (class Foldable)
 import DataType (Ctr, cCons)
+import Dict (Dict)
+import Expr (Cont(..), Elim(..))
+import Expr as E
+import Graph (Vertex(..))
 import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _lambda, _match)
 import Temp.Pretty.Doc (Doc, array, block, record, render, text, (<+++>), (<++>), (<+>))
-import Temp.Pretty.Helpers (brackets, hsep, matrix, number, pair, parens, string, vsep)
-import Util (type (×), (×))
+import Temp.Pretty.Helpers (braces, brackets, hsep, matrix, number, pair, parens, string, vsep)
+import Util (type (×), Endo, (×))
+import Util.Map (toUnfoldable)
+import Util.Pair (Pair(..))
 import Val (class Ann)
 
 class Pretty p where
@@ -26,6 +34,9 @@ derive instance Newtype (PrettyShow a) _
 
 instance Pretty a => Show (PrettyShow a) where
    show (PrettyShow x) = pretty x # render
+
+instance Pretty String where
+   pretty = text
 
 prettyPy :: forall a. Pretty a => a -> String
 prettyPy x = render (pretty x)
@@ -158,10 +169,66 @@ prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
 prettyAppChain (App f a) as = prettyAppChain f (a : as)
 prettyAppChain f as = pretty f <> parens (prettyList as)
 
-prettyList :: forall a. Pretty a => List a -> Doc
-prettyList Nil = mempty
-prettyList (d : Nil) = pretty d
-prettyList (d : ds) = pretty d <> _comma <+> prettyList ds
+commas :: List Doc -> Doc
+commas Nil = mempty
+commas (d : Nil) = d
+commas (d : ds) = d <> _comma <+> commas ds
+
+prettyList :: forall f a. Foldable f => Pretty a => f a -> Doc
+prettyList xs = commas (pretty <$> fromFoldable xs)
+
+class Highlightable a where
+   highlightIf :: a -> Endo Doc
+
+instance Highlightable Unit where
+   highlightIf _ = identity
+
+instance Highlightable Boolean where
+   highlightIf false = identity
+   highlightIf true = \doc -> text "⸨" <> doc <> text "⸩"
+
+instance Highlightable Vertex where
+   highlightIf (Vertex α) = \doc -> doc <> text "_" <> text ("⟨" <> α <> "⟩")
+
+instance Highlightable a => Pretty (Pair (E.Expr a)) where
+   pretty (Pair k v) = pretty k <> text ":" <+> pretty v
+
+instance Highlightable a => Pretty (E.Expr a) where
+   pretty (E.Var x) = text x
+   pretty (E.Op op) = parens (text op)
+   pretty (E.Int a n) = highlightIf a (number n)
+   pretty (E.Float a n) = highlightIf a (number n)
+   pretty (E.Str a str) = highlightIf a (string str)
+   pretty (E.Dictionary a ees) = highlightIf a $ record (pretty <$> ees)
+   pretty (E.Constr a c es) = highlightIf a (prettyConstr c es)
+   pretty (E.Matrix a e1 (i × j) e2) = highlightIf a $ matrix (pretty e1 <+> _for <+> pair text i j <+> _in <+> pretty e2)
+   pretty (E.Lambda a o) = highlightIf a (text "lambda") <+> pretty o -- really?
+   pretty (E.Project e x) = pretty e <> text "." <> pretty x
+   pretty (E.DProject e x) = pretty e <> brackets (pretty x)
+   pretty (E.App e e') = pretty e <> parens (pretty e') -- TODO
+   pretty (E.Let (E.VarDef o e) e') = text "def" <+> pretty o <> text ":" <> block (pretty e) <+++> pretty e'
+   pretty (E.LetRec (E.RecDefs _ p) e') = text "def" <+> pretty p <+++> pretty e'
+   pretty (E.DocExpr p e) = text "@doc" <> parens (pretty p) <+> pretty e
+
+instance Highlightable a => Pretty (Cont a) where
+   pretty (ContExpr e) = pretty e
+   pretty (ContElim σ) = pretty σ
+
+instance Highlightable a => Pretty (Elim a) where
+   pretty (ElimVar x k) = pretty x <> text "->" <> pretty k
+   pretty (ElimConstr ks) = prettyList ks
+   pretty (ElimDict xs k) = braces (prettyList xs) <+> text "->" <+> braces (pretty k)
+
+instance Highlightable a => Pretty (Dict (Elim a)) where
+   pretty ρ = go (toUnfoldable ρ)
+      where
+      go :: List (Var × Elim a) -> Doc
+      go Nil = mempty
+      go (xσ : Nil) = pretty xσ
+      go (xσ : δ) = (go δ <+> text ";") <+> (pretty xσ)
+
+instance Highlightable a => Pretty (Bind (Elim a)) where
+   pretty _ = text ""
 
 compare :: forall a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => String -> String -> a -> a -> String × String
 compare op1 op2 x y =
