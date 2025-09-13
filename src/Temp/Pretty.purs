@@ -176,7 +176,7 @@ instance Ann a => Pretty (DictEntry a × Expr a) where
 
 instance Ann a => Pretty (DictEntry a) where
    pretty (ExprKey k) = brackets (pretty k)
-   pretty (VarKey _ k) = text k
+   pretty (VarKey a k) = highlightIf a (text k)
 
 instance Ann a => Pretty (List (ParagraphElem a)) where
    pretty xs = text "\"\"\"" <> hsep (pretty <$> xs) <> text "\"\"\""
