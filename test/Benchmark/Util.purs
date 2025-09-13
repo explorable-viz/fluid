@@ -19,7 +19,7 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Graph (class Graph, size)
-import Pretty (class Pretty, prettyP)
+import Temp.Pretty (class Pretty, prettyP)
 import Util (type (×), EffectError, Thunk, debug, force, (×))
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
