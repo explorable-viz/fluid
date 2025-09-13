@@ -117,7 +117,7 @@ test srcFile = do
                               <> block "error" err
                         Right pythonicParsed ->
                            let
-                              resPretty = prettyP pythonicParsed
+                              resPretty = Old.prettyP pythonicParsed
                            in
                               if resPretty == srcPretty then do
                                  whenM (exists reportPath) (rm reportPath)
