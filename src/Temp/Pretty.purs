@@ -257,14 +257,14 @@ instance Highlightable a => Pretty (Val a) where
    pretty (Val a Nothing u) = highlightIf a (pretty u)
    pretty (Val a (Just v') u) = text "@doc" <> parens (pretty v') <+> highlightIf a (pretty u)
 
-instance Highlightable a => Pretty (a × Val a) where
-   pretty (a × v) = highlightIf a (pretty v) -- ???
+instance Highlightable a => Pretty (Var × (a × Val a)) where
+   pretty (k × (a × v)) = highlightIf a (pretty k) <> text ":" <+> pretty v -- ???
 
 instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Int n) = number n
    pretty (V.Float n) = number n
    pretty (V.Str str) = string str
-   pretty (V.Dictionary (DictRep svs)) = record $ fromFoldable (pretty <$> svs)
+   pretty (V.Dictionary (DictRep svs)) = braces (commas $ pretty <$> (toUnfoldable svs))
    pretty (V.Constr c vs) = prettyConstr c vs
    pretty (V.Matrix (MatrixRep (vss × _ × _))) = commas $ fromFoldable (prettyList <$> vss) -- ???
    pretty (V.Fun phi) = pretty phi
