@@ -1,75 +1,86 @@
-let split [] = ([], []);
-    split (x : xs) =
-      let (ys, zs) = split xs in (x : zs, ys);
+def split([]): ([], [])
+def split(x :| xs):
+  def (ys, zs): split(xs);
 
-let merge xs ys =
-       match (xs, ys) as {
-          ([], _) -> ys;
-          (x : xs', []) -> xs;
-          (x : xs', y : ys') ->
-             if x < y
-             then x : merge xs' ys
-             else y : merge xs ys'
-       };
+  (x :| zs, ys);
 
-let mergesort xs =
-       if length xs < 2
-       then xs
-       else
-          let (ys, zs) = split xs in
-          merge (mergesort ys) (mergesort zs);
+def merge(xs, ys):
+  match (xs, ys):
+    case ([], _): ys
+    case (x :| xs', []): xs
+    case (x :| xs', y :| ys'):
+      if x < y: x :| merge(xs', ys)
+      else: y :| merge(xs, ys');
 
--- assume xs is sorted
-let findQuantile q p xs =
-    let rank = (p / q) * (length xs - 1)
-    in if rank == floor rank
-    then nth rank xs
-    else let x1 = floor rank;
-             x2 = ceiling rank;
-             left = nth x1 xs;
-             right = nth x2 xs
-        in left + (rank - x1) * (right - left);
+def mergesort(xs):
+  if length(xs) < 2: xs
+  else:
+    def (ys, zs): split(xs);
 
-let findPercentile = findQuantile 100;
+    merge(mergesort(ys), mergesort(zs));
 
-let accumBins data Nil = [];
-    accumBins data [l] = [];
-    accumBins data (l : r : es) =
-        let (ge, le) = splitOn (fun x -> x <= r) data
-        in (le, r - l) : accumBins ge (r : es);
+def findQuantile(q, p, xs):
+  def rank:
+    (p / q) * (length(xs) - 1);
 
-let cut xs nbins =
-    let low = minimum xs;
-        binwidth = (maximum xs - low) / nbins;
-        edges = [ low + (x * binwidth) | x <- enumFromTo 0 nbins ]
-    in accumBins xs edges;
+  if rank == floor(rank): nth(rank, xs)
+  else:
+    def x1: floor(rank)
+    def x2: ceiling(rank)
+    def left: nth(x1, xs)
+    def right: nth(x2, xs);
 
-let qcut xs qs =
-    let (low, high) = (minimum xs, maximum xs);
-        edges = append (low : [ findPercentile x xs | x <- qs], [high])
-    in accumBins xs edges;
+    left + (rank - x1) * (right - left);
 
-let likelihoodLE xs target =
-    length (filter (fun x -> x <= target) xs) / length xs;
+def findPercentile: findQuantile(100);
 
-let likelihoodGE xs target =
-    length (filter (fun x -> x >= target) xs) / length xs;
+def accumBins(data, Nil): []
+def accumBins(data, [l]): []
+def accumBins(data, l :| r :| es):
+  def (ge, le):
+    splitOn((lambda x: x <= r), data);
 
-let likelihoodMap table prob = (fromSome (find (fun x -> x.prob <= prob) table)).msg;
+  (le, r - l) :| accumBins(ge, r :| es);
 
-let mkPercent num = numToStr (num * 100) ++ "%";
+def cut(xs, nbins):
+  def low: minimum(xs)
+  def binwidth:
+    (maximum(xs) - low) / nbins
+  def edges:
+    [low + x * binwidth for x in enumFromTo(0, nbins)];
 
-let leqP n m =
-    if n <= m
-    then "less"
-    else "more";
+  accumBins(xs, edges);
 
-let gradedLeqP n m =
-    let ratio = n / m
-    in if ratio <= 1.0
-        then if ratio <=0.5
-            then "much less"
-            else "less"
-        else if ratio >= 2.0
-            then "much more"
-            else "more";
+def qcut(xs, qs):
+  def (low, high):
+    (minimum(xs), maximum(xs))
+  def edges:
+    append((low :| [findPercentile(x, xs) for x in qs], [high]));
+
+  accumBins(xs, edges);
+
+def likelihoodLE(xs, target):
+  length(filter((lambda x: x <= target), xs)) / length(xs);
+
+def likelihoodGE(xs, target):
+  length(filter((lambda x: x >= target), xs)) / length(xs);
+
+def likelihoodMap(table, prob):
+  fromSome(find((lambda x: x.prob <= prob), table)).msg;
+
+def mkPercent(num):
+  numToStr(num * 100) ++ "%";
+
+def leqP(n, m):
+  if n <= m: "less"
+  else: "more";
+
+def gradedLeqP(n, m):
+  def ratio: n / m;
+
+  if ratio <= 1.0:
+    if ratio <= 0.5: "much less"
+    else: "less"
+  else:
+    if ratio >= 2.0: "much more"
+    else: "more";
