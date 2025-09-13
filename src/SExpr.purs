@@ -11,7 +11,7 @@ import Data.Filterable (filterMap)
 import Data.Foldable (length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), foldr, drop, take, unzip, zip, zipWith, (:), (\\))
+import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, unsnoc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -256,17 +256,14 @@ paragraphElemsFwd
    => MonadError Error m
    => List (ParagraphElem a)
    -> m (E.Expr a)
-paragraphElemsFwd =
-   foldr step (pure (enil bot))
-   where
-   step :: ParagraphElem a -> m (E.Expr a) -> m (E.Expr a)
-   step (Token s) accM = do
-      acc <- accM
-      pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) acc)
-   step (Unquote e) accM = do
-      acc <- accM
-      e' <- desug e
-      pure (econs bot (E.Constr bot cText (e' : Nil)) acc)
+paragraphElemsFwd Nil = pure (enil bot)
+paragraphElemsFwd (Token s : xs) = do
+   rest <- paragraphElemsFwd xs
+   pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) rest)
+paragraphElemsFwd (Unquote e : xs) = do
+   rest <- paragraphElemsFwd xs
+   e' <- desug e
+   pure (econs bot (E.Constr bot cText (e' : Nil)) rest)
 
 paragraphElemsBwd
    :: forall a
