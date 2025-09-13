@@ -5,13 +5,10 @@ def bigger: {
   ["year"]: 2025,
   ["morelonger"]: "very long"
 }
-def list: [
-  { ["country"]: "china" },
-  { ["country"]: "china" },
-  { ["country"]: "china" }
-]
-def nested: [
-  {
+def list:
+  [{ ["country"]: "china" }, { ["country"]: "china" }, { ["country"]: "china" }]
+def nested:
+  [{
     ["0"]: {
       ["country"]: "china",
       ["year"]: 2025,
@@ -23,48 +20,12 @@ def nested: [
       ["morelonger"]: "very long"
     },
     ["2"]: { ["country"]: "china" }
-  }
-]
+  }]
 def emptylist: []
 def numbers: [1, 2, 3, 4, 5]
-def morenumbers: [
-  1,
-  2,
-  3,
-  4,
-  5,
-  1,
-  2,
-  3,
-  4,
-  5,
-  1,
-  2,
-  3,
-  4,
-  5,
-  1,
-  2,
-  3,
-  4,
-  5
-]
-def nestednumbers: [
-  [1, 2, 3, 4, 5],
-  [1, 2, 3, 4, 5],
-  [1, 2, 3, 4, 5],
-  [1, 2, 3, 4, 5]
-];
+def morenumbers:
+  [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5]
+def nestednumbers:
+  [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]];
 
-[
-  "hello",
-  "hello",
-  "hello",
-  "hello",
-  "hello",
-  "hello",
-  "hello",
-  "hello",
-  "hello",
-  "hello"
-]
+["hello", "hello", "hello", "hello", "hello", "hello", "hello", "hello", "hello", "hello"]

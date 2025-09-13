@@ -51,27 +51,11 @@ def height(g):
 def spaceRight(z, sep, gs):
   zipWith(set_x, iterate(length(gs), (+)(sep), z), gs);
 
-def colours1: [
-  "#66c2a5",
-  "#a6d854",
-  "#ffd92f",
-  "#e5c494",
-  "#fc8d62",
-  "#b3b3b3",
-  "#8da0cb",
-  "#e78ac3"
-];
+def colours1:
+  ["#66c2a5", "#a6d854", "#ffd92f", "#e5c494", "#fc8d62", "#b3b3b3", "#8da0cb", "#e78ac3"];
 
-def colours2: [
-  "#e41a1c",
-  "#377eb8",
-  "#4daf4a",
-  "#984ea3",
-  "#ff7f00",
-  "#ffff33",
-  "#a65628",
-  "#f781bf"
-];
+def colours2:
+  ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf"];
 
 def scaleToWidth(w, Rect(x, y, _, h, fill)):
   Rect(x, y, w, h, fill)
@@ -112,10 +96,7 @@ def label(Vert, x, distance, str):
   String(0 - distance, x, str, "end", "central");
 
 def labelledTick(orient, colour, len, str):
-  Group([
-    tick(orient, colour, len),
-    label(orient, 0, len, str)
-  ]);
+  Group([tick(orient, colour, len), label(orient, 0, len, str)]);
 
 def mkPoint(Horiz, x, y): Point(y, x)
 def mkPoint(Vert, x, y): Point(x, y);
@@ -143,10 +124,7 @@ def axis(orient, x, start, end):
   def ps:
     map(mkPoint(orient, x), ys)
   def ax:
-    Group([
-      Line(head(ps), last(ps), axisColour, axisStrokeWidth),
-      Polymarkers(ps, flip(map, ys, compose(labelledTick(orient, axisColour, tickLength), numToStr)))
-    ]);
+    Group([Line(head(ps), last(ps), axisColour, axisStrokeWidth), Polymarkers(ps, flip(map, ys, compose(labelledTick(orient, axisColour, tickLength), numToStr)))]);
 
   (ax, lastTick);
 
@@ -156,11 +134,7 @@ def catAxis(orient, x, catValues):
   def ps:
     map(mkPoint(orient, x), ys);
 
-  Group([
-    Line(head(ps), last(ps), axisColour, axisStrokeWidth),
-    Polymarkers(tail(ps), map(const(tick(orient, axisColour, tickLength)), catValues)),
-    Polymarkers(flip(map, tail(ps), (lambda Point(x, y): Point(x - 0.5, y))), map(label(orient, -0.5, 0), catValues))
-  ]);
+  Group([Line(head(ps), last(ps), axisColour, axisStrokeWidth), Polymarkers(tail(ps), map(const(tick(orient, axisColour, tickLength)), catValues)), Polymarkers(flip(map, tail(ps), (lambda Point(x, y): Point(x - 0.5, y))), map(label(orient, -0.5, 0), catValues))]);
 
 def viewport(x_start, x_finish, y_finish, margin, gs):
   Viewport(0, 0, x_finish - x_start, y_finish, backgroundColour, margin, Scale(1, 1), Translate(0 - x_start, 0), Group(gs));
@@ -174,10 +148,7 @@ def lineChart(withAxes, colours, x_start, data):
     def ps:
       map((lambda (x, kvs): Point(x, snd(nth(n, kvs)))), data);
 
-    Group([
-      Polyline(ps, colour, 1),
-      Polymarkers(ps, repeat(length(ps), Circle(0, 0, markerRadius, colour)))
-    ]);
+    Group([Polyline(ps, colour, 1), Polymarkers(ps, repeat(length(ps), Circle(0, 0, markerRadius, colour)))]);
 
   def lines:
     zipWith(curry(plot), iterate(nCat, (+)(1), 0), colours)
@@ -238,10 +209,7 @@ def stackedBarChart:
 
 def caption(str, Viewport(x, y, w, h, fill, margin, scale, translate, g)):
   def g':
-    Group([
-      String(x + w / 2, -2, str, "middle", "hanging"),
-      Viewport(0, 0, w, h, fill, margin, scale, translate, g)
-    ]);
+    Group([String(x + w / 2, -2, str, "middle", "hanging"), Viewport(0, 0, w, h, fill, margin, scale, translate, g)]);
 
   Viewport(x, y, w, h, backgroundColour, defaultMargin / 2 + 4, Scale(1, 1), Translate(0, 0), g');
 

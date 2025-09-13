@@ -67,12 +67,12 @@ testPretty :: TestFn
 testPretty src =
    case (runParser src P.program) of
       Left error -> Left (prettyParseError error)
-      Right expr -> Right (Old.prettyP (fst expr) <> "\n")
+      Right expr -> Right (prettyP (fst expr) <> "\n")
 
 testParse :: TestFn
 testParse src = case (parsePy src) of
    Left error -> Left error
-   Right expr -> Right (prettyP expr <> "\n")
+   Right expr -> Right (Old.prettyP expr <> "\n")
 
 test :: TestFn -> String -> String -> Effect Result
 test f srcDir srcFile = do
