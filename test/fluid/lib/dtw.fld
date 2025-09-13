@@ -4,11 +4,10 @@ def nextIndices(n, m, window):
   [(i, j) for i in [1 .. n] for j in [max(1, i - window) .. min(m, i + window)]];
 
 def costMatrixInit(rows, cols, window):
-  [| def initV:
+  def initV(n, m):
     if n == 1 |and| m == 1 |or| abs(n, m) <= window |and| not(n == 1 |or| m == 1): FNum(0)
-    else: Infty;
-
-  initV for (n, m) in (rows, cols) |];
+    else: Infty
+  [| initV(n, m) for (n, m) in (rows, cols) |];
 
 def minAndPrev((i, j), im1, jm1, ijm1):
   def minim:
