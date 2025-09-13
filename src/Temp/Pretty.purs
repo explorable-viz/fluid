@@ -91,13 +91,13 @@ lambda ps e = _lambda <+> prettyList ps <> _colon <+> pretty e
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op o) = parens $ text o
-   pretty (Int _ n) = number n
-   pretty (Float _ n) = number n
-   pretty (Str _ str) = string str
-   pretty (Constr _ c Nil) = text c
-   pretty (Constr _ c as) = prettyConstr c as
-   pretty (Dictionary _ es) = record $ map pretty es
-   pretty (Matrix _ e (x × y) e') = matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e')
+   pretty (Int α n) = highlightIf α (number n)
+   pretty (Float α n) = highlightIf α (number n)
+   pretty (Str α str) = highlightIf α (string str)
+   pretty (Constr α c Nil) = highlightIf α (text c)
+   pretty (Constr α c as) = highlightIf α (prettyConstr c as)
+   pretty (Dictionary α es) = highlightIf α (record $ map pretty es)
+   pretty (Matrix α e (x × y) e') = highlightIf α (matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e'))
    pretty (Lambda cs) = parens (pretty cs)
    pretty (Project s x) = pretty s <> text "." <> text x
    pretty (DProject e k) = pretty e <> brackets (pretty k)
@@ -105,15 +105,16 @@ instance Ann a => Pretty (Expr a) where
    pretty (BinaryApp s op s') = binaryApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = _match <+> pretty s <> block (pretty cs)
    pretty (IfElse i t e) = _if <+> pretty i <> block (pretty t) <++> _else <> block (pretty e)
-   pretty (ListEmpty _) = _empty
-   pretty (ListNonEmpty _ e rest) = array $ (pretty e : collect rest)
+   pretty (ListEmpty α) = highlightIf α _empty
+   -- TODO: list dictionary case??
+   pretty (ListNonEmpty α e rest) = highlightIf α (array $ (pretty e : collect rest))
       where
       collect :: ListRest a -> List Doc
       collect (Next _ e' rest') = pretty e' : collect rest'
       collect (End _) = Nil
 
    pretty (ListEnum s s') = brackets (pretty s <+> _ellipsis <+> pretty s')
-   pretty (ListComp _ s qs) = brackets (pretty s <+> pretty qs)
+   pretty (ListComp α s qs) = highlightIf α (brackets (pretty s <+> pretty qs))
    pretty (Let ds s) = (pretty ds) <> text ";" <+++> pretty s
    pretty (LetRec h s) = (pretty h) <> text ";" <+++> pretty s
    pretty (Paragraph p) = pretty p
