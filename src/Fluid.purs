@@ -22,9 +22,8 @@ import Options.Applicative (Parser, command, execParser, fullDesc, header, help,
 import Options.Applicative.Builder (info)
 import Parse as P
 import Parsing (runParser)
-import Pretty (prettyP)
 import Primitive.Defs (primitives)
-import Temp.Pretty (prettyPy)
+import Temp.Pretty (prettyP)
 import Temp.Util.Error (prettyParseError)
 import Util (Endo)
 import Val (Val)
@@ -112,4 +111,4 @@ migrate (EvalArgs { local, fileName, fluidSrcPath }) = do
       fluidSrc <- loadFile fluidSrcPaths (File fileName)
       case (runParser fluidSrc P.program) of
          Left err -> pure $ prettyParseError err
-         Right expr -> pure $ prettyPy (fst expr)
+         Right expr -> pure $ prettyP (fst expr)

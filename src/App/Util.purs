@@ -25,7 +25,7 @@ import Foreign.Object (Object, empty, fromFoldable, union)
 import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class JoinSemilattice, class MeetSemilattice, 𝔹, bot, neg, (∧), (∨))
 import Primitive (as, intOrNumber, unpack)
 import Primitive as P
-import Temp.Pretty (class Highlightable, highlightIf, prettyPy)
+import Temp.Pretty (class Highlightable, highlightIf, prettyP)
 import Test.Util.Debug (tracing)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), Endo, definitely', error, shapeMismatch, spyWhen, (×))
@@ -193,7 +193,7 @@ selector (EventType ev) v =
       | otherwise = error "Unsupported event type"
 
    reportSelStates = spyWhen tracing.mouseEvent "to " show
-   reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyPy
+   reportTarget = spyWhen tracing.mouseEvent "Setting selStates of " prettyP
 
    selType :: SelectionType
    selType

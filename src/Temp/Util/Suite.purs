@@ -19,9 +19,9 @@ import Node.FS.Sync (exists, readTextFile, readdir, writeTextFile)
 import Node.Process (argv)
 import Parse as P
 import Parsing (runParser)
-import Pretty (prettyP)
+import Pretty as Old
 import Temp.Parse (parsePy)
-import Temp.Pretty (prettyPy)
+import Temp.Pretty (prettyP)
 import Temp.Util.Error (prettyParseError)
 
 type TestFn = String -> (Either String String)
@@ -67,7 +67,7 @@ testPretty :: TestFn
 testPretty src =
    case (runParser src P.program) of
       Left error -> Left (prettyParseError error)
-      Right expr -> Right (prettyPy (fst expr) <> "\n")
+      Right expr -> Right (Old.prettyP (fst expr) <> "\n")
 
 testParse :: TestFn
 testParse src = case (parsePy src) of

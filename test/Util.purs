@@ -21,7 +21,7 @@ import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parseProgram', prepConfig)
 import SExpr (Expr) as SE
-import Temp.Pretty (class Ann, class Pretty, PrettyShow(..), compare, prettyPy)
+import Temp.Pretty (class Ann, class Pretty, PrettyShow(..), compare, prettyP)
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))
@@ -88,7 +88,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let out0 = fst (δv (const unselected <$> v)) <#> getPersistent
 
    in0@(EnvExpr in_γ in_e) <- do
-      let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyPy
+      let report = spyWhen tracing.bwdSelection "Selection for bwd" prettyP
       graphBenchmark benchNames.bwd \_ -> pure (evalG.bwd (report out0))
 
    let in_s = desug.bwd in_e
@@ -104,7 +104,7 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    unless (null bwd_expect) $
       checkPretty ("bwd_expect") bwd_expect in_s
    unless (null fwd_expect) do
-      let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyPy
+      let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
       checkPretty ("fwd_expect") fwd_expect (report out1)
 
    recordGraphSize g
@@ -141,16 +141,16 @@ checkEq op1 op2 x y = do
 
 testPretty :: forall m a. Ann a => Show a => SE.Expr a -> AffError m Unit
 testPretty s = do
-   log' ("**** prettyPy")
-   log' (prettyPy s)
-   s' × _ <- withMsg "testPretty" $ parseProgram' (prettyPy s)
+   log' ("**** prettyP")
+   log' (prettyP s)
+   s' × _ <- withMsg "testPretty" $ parseProgram' (prettyP s)
    unless (eq (erase s) (erase s')) $
-      throw ("parse/prettyPy round trip:\nOriginal\n" <> prettyPy (erase s) <> "\nNew\n" <> prettyPy (erase s'))
+      throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
 
 checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
 checkPretty msg expect x =
-   unless (expect `eq` prettyPy x) $
-      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyPy x)
+   unless (expect `eq` prettyP x) $
+      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
 
 testOutcome :: Boolean -> Endo String
 testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s

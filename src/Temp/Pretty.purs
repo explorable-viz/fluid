@@ -1,4 +1,4 @@
-module Temp.Pretty (PrettyShow(..), class Pretty, class Ann, class Highlightable, compare, highlightIf, pretty, prettyPy) where
+module Temp.Pretty (PrettyShow(..), class Pretty, class Ann, class Highlightable, compare, highlightIf, pretty, prettyP) where
 
 import Prelude
 
@@ -39,8 +39,8 @@ instance Pretty a => Show (PrettyShow a) where
 instance Pretty String where
    pretty = text
 
-prettyPy :: forall a. Pretty a => a -> String
-prettyPy x = render (pretty x)
+prettyP :: forall a. Pretty a => a -> String
+prettyP x = render (pretty x)
 
 binaryApp :: forall a. Ann a => Int -> Expr a -> Doc
 binaryApp n (BinaryApp s op s') =
@@ -280,7 +280,7 @@ compare :: forall a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a
 compare op1 op2 x y =
    let
       x_minus_y × y_minus_x = symmetricDiff x y
-      left = if x_minus_y == botOf x then "" else op1 <> " but not " <> op2 <> ":\n" <> prettyPy x_minus_y
-      right = if y_minus_x == botOf x then "" else op2 <> " but not " <> op1 <> ":\n" <> prettyPy y_minus_x
+      left = if x_minus_y == botOf x then "" else op1 <> " but not " <> op2 <> ":\n" <> prettyP x_minus_y
+      right = if y_minus_x == botOf x then "" else op2 <> " but not " <> op1 <> ":\n" <> prettyP y_minus_x
    in
       left × right

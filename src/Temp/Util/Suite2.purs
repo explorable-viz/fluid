@@ -16,10 +16,10 @@ import Node.FS.Sync (exists, mkdir, readTextFile, readdir, rm, writeTextFile)
 import Node.Process (argv)
 import Parse as P
 import Parsing (runParser)
-import Pretty (class Pretty, prettyP)
+import Pretty as Old
 import SExpr (Expr)
 import Temp.Parse (parsePy)
-import Temp.Pretty (prettyPy)
+import Temp.Pretty (prettyP)
 import Temp.Util.Error (prettyParseError)
 import Util ((×))
 
@@ -27,9 +27,6 @@ parse :: String -> Either String (Expr Unit)
 parse src = case runParser src P.program of
    Left e -> Left $ prettyParseError e
    Right (expr × _) -> Right expr
-
-pretty :: forall d. Pretty d => d -> String
-pretty = prettyP
 
 srcDir :: String
 srcDir = "syntax-migration-tests/suite"
@@ -99,7 +96,7 @@ test srcFile = do
                  <> block "error" err
       Right _expr ->
          let
-            _srcPretty = pretty _expr
+            _srcPretty = Old.prettyP _expr
          in
             case parse _srcPretty of
                Left err ->
@@ -109,8 +106,8 @@ test srcFile = do
                         <> block "error" err
                Right expr ->
                   let
-                     srcPretty = pretty expr
-                     srcPrettyPy = prettyPy expr
+                     srcPretty = Old.prettyP expr
+                     srcPrettyPy = prettyP expr
 
                   in
                      case (parsePy srcPrettyPy) of
