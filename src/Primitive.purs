@@ -14,7 +14,7 @@ import Dict (Dict)
 import Graph.WithGraph (new)
 import Lattice (class BoundedJoinSemilattice, bot, erase)
 import Partial.Unsafe (unsafePartial)
-import Pretty (prettyP)
+import Temp.Pretty (prettyP)
 import Util (type (+), type (×), error, singleton, (×))
 import Val (BaseVal(..), DictRep(..), ForeignOp(..), ForeignOp'(..), Fun(..), MatrixRep, Op, Val(..))
 

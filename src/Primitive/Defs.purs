@@ -31,11 +31,10 @@ import Graph (Vertex)
 import Graph.WithGraph (class MonadWithGraphAlloc, new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
-import Pretty (pretty)
+import Temp.Pretty (prettyP)
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Util (type (+), Endo, error, log', orElse, singleton, throw, (×))
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
-import Util.Pretty (render)
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
@@ -141,7 +140,7 @@ fromJsonVal =
    caseArray arr = do
       vs <- traverse fromJsonVal arr
       v <- toList (Array.toUnfoldable vs :: List (Val Vertex))
-      log' ("Converted JSON array to Val Vertex: " <> render (pretty v))
+      log' ("Converted JSON array to Val Vertex: " <> prettyP v)
       pure v
 
    caseObject :: FO.Object Json -> m (Val Vertex)
