@@ -23,7 +23,8 @@ import Temp.Pretty.Helpers (braces, brackets, hsep, matrix, number, pair, parens
 import Util (type (×), Endo, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
-import Val (class Ann)
+import Val (BaseVal(..), Fun(..)) as V
+import Val (class Ann, BaseVal, DictRep(..), ForeignOp(..), Fun, MatrixRep(..), Val(..))
 
 class Pretty p where
    pretty :: p -> Doc
@@ -229,6 +230,30 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = pretty x <> pretty ":" <+> pretty σ
+
+instance Highlightable a => Pretty (Val a) where
+   pretty (Val a Nothing u) = highlightIf a (pretty u)
+   pretty (Val a (Just v') u) = text "@doc" <> parens (pretty v') <+> highlightIf a (pretty u)
+
+instance Highlightable a => Pretty (a × Val a) where
+   pretty (a × v) = highlightIf a (pretty v) -- ???
+
+instance Highlightable a => Pretty (BaseVal a) where
+   pretty (V.Int n) = number n
+   pretty (V.Float n) = number n
+   pretty (V.Str str) = string str
+   pretty (V.Dictionary (DictRep svs)) = record $ fromFoldable (pretty <$> svs)
+   pretty (V.Constr c vs) = prettyConstr c vs
+   pretty (V.Matrix (MatrixRep (vss × _ × _))) = commas $ fromFoldable (prettyList <$> vss) -- ???
+   pretty (V.Fun phi) = pretty phi
+
+instance Highlightable a => Pretty (Fun a) where
+   pretty (V.Closure _ _ _) = text "cl"
+   pretty (V.Foreign phi _) = pretty phi
+   pretty (V.PartialConstr c vs) = prettyConstr c vs
+
+instance Pretty ForeignOp where
+   pretty (ForeignOp (s × _)) = pretty s
 
 compare :: forall a. BotOf a a => Neg a => MeetSemilattice a => Eq a => Pretty a => String -> String -> a -> a -> String × String
 compare op1 op2 x y =
