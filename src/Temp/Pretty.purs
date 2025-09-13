@@ -188,14 +188,14 @@ instance Ann a => Pretty (ParagraphElem a) where
 prettyConstr :: forall a. RootOp a => Pretty a => Ctr -> List a -> Doc
 prettyConstr "Nil" Nil = _empty
 prettyConstr "Pair" (x : y : Nil) = pair pretty x y
-prettyConstr ":" (x : y : Nil) = prettyConsArg x <+> text ":|" <+> prettyConsArg y
+prettyConstr ":" (x : y : Nil) = prettyConsArg x true <+> text ":|" <+> prettyConsArg y false
 prettyConstr c Nil = text c
 prettyConstr c ps = text c <> parens (prettyList ps)
 
-prettyConsArg :: forall a. RootOp a => Pretty a => a -> Doc
-prettyConsArg e = case rootOp e of
+prettyConsArg :: forall a. RootOp a => Pretty a => a -> Boolean -> Doc
+prettyConsArg e lhs = case rootOp e of
    Nothing -> pretty e
-   Just op -> if getPrec op <= getPrec ":" then parens (pretty e) else pretty e
+   Just op -> if (if lhs then (<=) else (<)) (getPrec op) (getPrec ":") then parens (pretty e) else pretty e
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
 prettyAppChain (App f a) as = prettyAppChain f (a : as)
