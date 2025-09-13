@@ -9,7 +9,7 @@ import Control.Monad.Writer.Class (class MonadWriter)
 import Control.Monad.Writer.Trans (runWriterT)
 import Data.List.Lazy (replicateM)
 import Data.Newtype (unwrap)
-import Data.String (null)
+import Data.String (null, trim)
 import Data.Tuple (fst)
 import Desug (desugGC)
 import Effect.Class (class MonadEffect)
@@ -149,7 +149,7 @@ testPretty s = do
 
 checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
 checkPretty msg expect x =
-   unless (expect `eq` prettyP x) $
+   unless (trim expect `eq` prettyP x) $
       throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
 
 testOutcome :: Boolean -> Endo String
