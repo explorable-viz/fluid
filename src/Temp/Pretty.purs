@@ -18,7 +18,7 @@ import Lattice (class BotOf, class BoundedLattice, class MeetSemilattice, class 
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _lambda, _match)
-import Temp.Pretty.Doc (Doc, array, block, record, render, text, (<+++>), (<++>), (<+>))
+import Temp.Pretty.Doc (Doc, block, record, render, text, (<+++>), (<++>), (<+>))
 import Temp.Pretty.Helpers (braces, brackets, hsep, matrix, number, pair, parens, string, vsep)
 import Util (type (×), Endo, (×))
 import Util.Map (toUnfoldable)
@@ -107,11 +107,11 @@ instance Ann a => Pretty (Expr a) where
    pretty (IfElse i t e) = _if <+> pretty i <> block (pretty t) <++> _else <> block (pretty e)
    pretty (ListEmpty α) = highlightIf α _empty
    -- TODO: list dictionary case??
-   pretty (ListNonEmpty α e rest) = highlightIf α (array $ (pretty e : collect rest))
+   pretty (ListNonEmpty α e rest) = highlightIf α (text "[") <> pretty e <> collect rest
       where
-      collect :: ListRest a -> List Doc
-      collect (Next _ e' rest') = pretty e' : collect rest'
-      collect (End _) = Nil
+      collect :: ListRest a -> Doc
+      collect (Next α' e' rest') = highlightIf α' (text ",") <+> pretty e' <> collect rest'
+      collect (End α') = highlightIf α' (text "]")
 
    pretty (ListEnum s s') = brackets (pretty s <+> _ellipsis <+> pretty s')
    pretty (ListComp α s qs) = highlightIf α (brackets (pretty s <+> pretty qs))
@@ -206,6 +206,11 @@ commas Nil = mempty
 commas (d : Nil) = d
 commas (d : ds) = d <> _comma <+> commas ds
 
+vcommas :: List Doc -> Doc
+vcommas Nil = mempty
+vcommas (d : Nil) = d
+vcommas (d : ds) = d <> _comma <++> vcommas ds
+
 prettyList :: forall f a. Foldable f => Pretty a => f a -> Doc
 prettyList xs = commas (pretty <$> fromFoldable xs)
 
@@ -296,7 +301,7 @@ instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Str str) = string str
    pretty (V.Dictionary (DictRep svs)) = record (pretty <$> (toUnfoldable svs))
    pretty (V.Constr c vs) = prettyConstr c vs
-   pretty (V.Matrix (MatrixRep (vss × _ × _))) = commas $ fromFoldable (prettyList <$> vss) -- ???
+   pretty (V.Matrix (MatrixRep (vss × _ × _))) = vcommas $ fromFoldable (prettyList <$> vss) -- ???
    pretty (V.Fun phi) = pretty phi
 
 instance Highlightable a => Pretty (Fun a) where
