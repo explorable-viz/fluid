@@ -273,14 +273,12 @@ paragraphElemsBwd
    -> List (ParagraphElem a)
 paragraphElemsBwd (E.Constr _ c Nil) Nil | c == cNil = Nil
 paragraphElemsBwd (E.Constr _ c (e : es : Nil)) (pe : pes) | c == cCons =
-   exprToElem pe e : paragraphElemsBwd es pes
-   where
-   exprToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
-   exprToElem (Token _) (E.Constr _ c' (E.Str _ s : Nil)) | c' == cText =
-      Token s
-   exprToElem (Unquote s) (E.Constr _ c' (e' : Nil)) | c' == cText =
-      Unquote (desugBwd e' s)
-   exprToElem _ _ = error absurd
+   case pe, e of
+      Token _, E.Constr _ c' (E.Str _ s : Nil) | c' == cText ->
+         Token s : paragraphElemsBwd es pes
+      Unquote s, E.Constr _ c' (e' : Nil) | c' == cText ->
+         Unquote (desugBwd e' s) : paragraphElemsBwd es pes
+      _, _ -> error absurd
 paragraphElemsBwd _ _ = error absurd
 
 -- Expr
