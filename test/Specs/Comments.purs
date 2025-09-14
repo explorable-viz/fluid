@@ -5,7 +5,7 @@ import Test.Util.Suite (TestSpec)
 comments_cases :: Array TestSpec
 comments_cases =
    [ { file: "comments/nested-constr.fld"
-     , fwd_expect: """@doc (Paragraph (Text "This" : (Text "is" : (Text "a" : (@doc (Paragraph (Text "This" : (Text "is" : (Text "a" : (Text "nested" : (Text "docComment!" : [])))))) "some string" : (Text "docComment!" : [])))))) False"""
+     , fwd_expect: "@doc (Paragraph (Text \"This\" : (Text \"is\" : (Text \"a\" : (@doc (Paragraph (Text \"This\" : (Text \"is\" : (Text \"a\" : (Text \"nested\" : (Text \"docComment!\" : [])))))) \"some string\" : (Text \"docComment!\" : [])))))) False"
      }
    , { file: "comments/dicts.fld"
      , fwd_expect:
