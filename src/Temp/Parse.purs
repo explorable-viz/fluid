@@ -278,7 +278,8 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
       simple :: Parser (Raw Expr)
       simple = context "simple" $
-         matrix
+         letExpr
+            <|> matrix
             <|> listExpr
             <|> lambda
             <|> dict
@@ -291,6 +292,22 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             <|> docExpr
                <?> "simple expression"
          where
+
+         letExpr :: Parser (Raw Expr)
+         letExpr = context "letExpr" do
+            head <- varDef
+            rest <- many varDef
+            e' <- opTree
+            pure $ Let (nonEmpty (head : rest)) e'
+            where
+            varDef :: Parser (Raw VarDef)
+            varDef = try do
+               reserved "def"
+               name <- pattern
+               delim ':'
+               e <- opTree
+               delim ';'
+               pure $ VarDef name e
 
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
