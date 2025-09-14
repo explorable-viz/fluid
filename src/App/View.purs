@@ -37,8 +37,11 @@ view' title v@(Val _ v_opt _) _ =
    pack $ DocView { doc: viewParagraph <$> v_opt, view: view title v Nothing }
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
--- Ignore view state for now..
+-- Ignore view state for now.
 view :: Partial => String -> Val (SelStates 𝕊) -> Maybe View' -> View'
+view _ (Val α _ (Int n)) _ = pack (Text (show n × α))
+view _ (Val α _ (Float n)) _ = pack (Text (show n × α))
+view _ (Val α _ (Str str)) _ = pack (Text (str × α))
 view title (Val _ _ (Constr c (u : Nil))) _
    | c == cText = pack (from u :: Text)
    | c == cBarChart = pack (dict from u :: BarChart)
@@ -153,6 +156,7 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot whe
       , labels: dict from (snd (get f_labels r))
       }
 
+-- TODO: remove this in light of changes to `view`
 instance Reflect (Val (SelStates 𝕊)) Text where
    from (Val α _ v) = case v of
       Int n -> Text (show n × α)
