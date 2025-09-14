@@ -9,7 +9,7 @@ import Temp.Pretty.Doc (Doc, indent, inlOrMul, line, stmtOrExpr, text, (<++>), (
 block :: Doc -> Doc
 block d = stmtOrExpr
    (text ":" <> inlOrMul (text " " <> d) (indent (line <> d)))
-   (text ":" <> inlOrMul (text " " <> d) (indent (line <> d)))
+   (text ":" <+> d <> text ";")
 
 record :: List Doc -> Doc
 record ds = inlOrMul

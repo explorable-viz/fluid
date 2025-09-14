@@ -81,8 +81,8 @@ binaryApp n (BinaryApp s op s') =
          else
             binaryApp n' s <+> text op <+> binaryApp n' s'
 binaryApp _ e@(Constr _ c _) | c == cCons = parens (pretty e)
-binaryApp _ (Let _ _) = text "undefined"
-binaryApp _ (LetRec _ _) = text "undefined"
+binaryApp _ e@(Let _ _) = parens (pretty e) -- probably not required but might be a good convention
+binaryApp _ e@(LetRec _ _) = parens (pretty e)
 binaryApp _ e = pretty e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
@@ -121,8 +121,8 @@ instance Ann a => Pretty (Expr a) where
    pretty (ListEnum s s') = brackets $ expr (pretty s <+> _ellipsis <+> pretty s')
    pretty (ListComp α s qs) = highlightIf α (brackets (expr (pretty s) <+> pretty qs)) -- Qualifier
    -- TODO: remove semis after migration
-   pretty (Let ds s) = pretty ds <> (stmtOrExpr (text ";" <> line <> line) (text "; ")) <> pretty s
-   pretty (LetRec h s) = pretty h <> (stmtOrExpr (text ";" <> line <> line) (text "; ")) <> pretty s
+   pretty (Let ds s) = pretty ds <> (stmtOrExpr (text ";" <> line <> line) (text " ")) <> pretty s
+   pretty (LetRec h s) = pretty h <> (stmtOrExpr (text ";" <> line <> line) (text " ")) <> pretty s
    pretty (Paragraph p) = pretty p
    pretty (DocExpr p e) = text "@doc" <> parens (pretty p) </> pretty e
 
