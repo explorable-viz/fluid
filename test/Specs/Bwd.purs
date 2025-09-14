@@ -70,7 +70,7 @@ bwd_cases =
    , { file: "dict/intersectionWith.fld"
      , bwd_expect_file: "dict/intersectionWith.expect.fld"
      , δv: dictVal "b" select >.> dictVal "c" select
-     , fwd_expect: "{b : ⸨0⸩, c : ⸨20⸩}"
+     , fwd_expect: "{ b: ⸨0⸩, c: ⸨20⸩ }"
      }
    , { file: "dict/get.fld", bwd_expect_file: "dict/get.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
    , { file: "dict/map.fld", bwd_expect_file: "dict/map.expect.fld", δv: select, fwd_expect: "⸨20⸩" }

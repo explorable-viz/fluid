@@ -1,5 +1,4 @@
 def (x, y): ⸨(⸨3⸩, ⸨3⸩)⸩
-def yss:
-  ⸨[| 0 for (i, j) in (x, y) |]⸩;
+def yss: ⸨[| 0 for (i, j) in (x, y)|]⸩;
 
 dims(yss)

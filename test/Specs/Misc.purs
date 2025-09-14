@@ -8,14 +8,7 @@ misc_cases =
    , { file: "array.fld", fwd_expect: "(1, (3, 3))" }
    , { file: "compose.fld", fwd_expect: "5" }
    , { file: "dicts.fld"
-     , fwd_expect:
-          """{
-  d: {},
-  e: { a: 5, ab: 6 },
-  e_ab: 6,
-  f: { a: 6, ab: 7 },
-  g: { a: 5 }
-}"""
+     , fwd_expect: "{ d: {}, e: { a: 5, ab: 6 }, e_ab: 6, f: { a: 6, ab: 7 }, g: { a: 5 } }"
      }
    , { file: "div-mod-quot-rem.fld"
      , fwd_expect:
