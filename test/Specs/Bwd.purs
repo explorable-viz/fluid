@@ -46,8 +46,8 @@ bwd_cases =
      , bwd_expect_file: "matrix/matmul.expect.fld"
      , δv: fst $ matrixElement 1 1 select
      , fwd_expect:
-          """(@doc(Paragraph(Text("Intermediate") :| Text("matrix") :| [])) ⸨22⸩, 28,
-49, 64, @doc(Paragraph(Text("Intermediate") :| Text("matrix") :| [])) 9, 12, 15,
+          """(@doc(Paragraph("Intermediate" :| "matrix" :| [])) ⸨22⸩, 28,
+49, 64, @doc(Paragraph("Intermediate" :| "matrix" :| [])) 9, 12, 15,
 19, 26, 33,
 29, 40, 51)"""
      }
