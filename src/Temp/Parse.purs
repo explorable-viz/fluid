@@ -233,13 +233,13 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       try funDef <|> valDef
       where
       funDef :: Parser (Raw Expr)
-      funDef = context "funDef" do
+      funDef = context "funDef" $ withPos do
          defs' <- try recDefs
          e' <- align expr
          pure $ LetRec defs' e'
 
       valDef :: Parser (Raw Expr)
-      valDef = context "valDef" do
+      valDef = context "valDef" $ withPos do
          defs' <- try varDefs
          e' <- align expr
          pure $ Let defs' e'
@@ -311,7 +311,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                pure $ VarDef name e
 
          letRecExpr :: Parser (Raw Expr)
-         letRecExpr = context "letExpr" do
+         letRecExpr = context "letRecExpr" do
             head <- recDef
             rest <- many recDef
             e' <- opTree
@@ -407,7 +407,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             kv = do
                k <- exprKey <|> varKey
                _ <- lexeme $ char ':'
-               v <- opTree
+               v <- expr
                pure $ (k × v)
 
                where

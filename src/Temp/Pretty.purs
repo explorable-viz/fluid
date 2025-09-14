@@ -18,7 +18,7 @@ import Lattice (class BotOf, class BoundedLattice, class MeetSemilattice, class 
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _for, _if, _in, _lambda, _match)
-import Temp.Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmtOrExpr, text, (<++>), (<+>), (</>))
+import Temp.Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Temp.Pretty.Helpers (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Util (type (×), Endo, isEmpty, (×))
 import Util.Map (toUnfoldable)
@@ -178,7 +178,12 @@ instance Ann a => Pretty (Branch a) where
          <> block (pretty e)
 
 instance Ann a => Pretty (DictEntry a × Expr a) where
-   pretty (k × v) = pretty k <> _colon <+> pretty v
+   pretty (k × v) =
+      pretty k <> stmt
+         ( inlOrMul
+              (text ":" <+> pretty v)
+              (text ":" <> indent (line <> pretty v))
+         )
 
 instance Ann a => Pretty (DictEntry a) where
    pretty (ExprKey k) = brackets (pretty k)
