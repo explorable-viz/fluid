@@ -2,7 +2,7 @@ module App.View.Text where
 
 import Prelude
 
-import App.Util (Attrs, Selectable, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
+import App.Util (Attrs, Selectable, contents, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
 import App.View.Util (class View, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setStyles, setText)
@@ -11,7 +11,6 @@ import Bind ((↦))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Util ((×))
 import Web.Event.EventTarget (eventListener)
 
 class Textual a where
@@ -21,9 +20,9 @@ newtype Text = Text (Selectable String)
 
 instance View Text Unit where
    createElement :: Unit -> Text -> D3.Selection -> Effect D3.Selection
-   createElement _ (Text (text × _)) parent = do
+   createElement _ text parent = do
       rootElement <- parent # create D3.Span []
-      rootElement # setText text
+      rootElement # setText (contents $ getText text)
 
    setSelection :: Unit -> Text -> Select -> D3.Selection -> Effect Unit
    setSelection _ text redraw rootElement = do
@@ -38,15 +37,15 @@ instance Textual Text where
 
 textAttrs :: ∀ a. Textual a => a -> Attrs
 textAttrs text =
-   [ "border-bottom" ↦ border
+   [ "border-bottom" ↦ bottom_border
    , "background" ↦ background
    , "color" ↦ color
    ]
    where
    sel' = sel (getText text)
 
-   border :: String
-   border
+   bottom_border :: String
+   bottom_border
       | isTransient sel' = "1px solid blue"
       | otherwise = "none"
 
@@ -59,7 +58,6 @@ textAttrs text =
    color :: String
    color
       | isPrimary sel' && isTransient sel' = "blue"
-      | isSecondary sel' && isTransient sel' = "royalblue"
       | otherwise = "black"
 
 type TextElem = { i :: Int }
