@@ -4,6 +4,7 @@ on:
   push:
     branches-ignore:
     - 'pretty-pythonic'
+    - 'pretty-pythonic-indent-modes'
     paths-ignore:
     - 'old/**'
     - '**.md'
