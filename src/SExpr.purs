@@ -261,9 +261,9 @@ paragraphElemsFwd (Token s : elems) = do
    e' <- paragraphElemsFwd elems
    pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) e')
 paragraphElemsFwd (Unquote s : elems) = do
-   e' <- paragraphElemsFwd elems
    e <- desug s
-   pure (econs bot (E.Constr bot cText (e : Nil)) e')
+   e' <- paragraphElemsFwd elems
+   pure (econs bot e e')
 
 paragraphElemsBwd
    :: forall a
@@ -272,12 +272,12 @@ paragraphElemsBwd
    -> List (Raw ParagraphElem)
    -> List (ParagraphElem a)
 paragraphElemsBwd (E.Constr _ c Nil) Nil | c == cNil = Nil
-paragraphElemsBwd (E.Constr _ c (e : es : Nil)) (elem : elems) | c == cCons =
+paragraphElemsBwd (E.Constr _ c (e : e' : Nil)) (elem : elems) | c == cCons =
    case elem, e of
       Token _, E.Constr _ c' (E.Str _ s : Nil) | c' == cText ->
-         Token s : paragraphElemsBwd es elems
-      Unquote s, E.Constr _ c' (e' : Nil) | c' == cText ->
-         Unquote (desugBwd e' s) : paragraphElemsBwd es elems
+         Token s : paragraphElemsBwd e' elems
+      Unquote s, _ ->
+         Unquote (desugBwd e s) : paragraphElemsBwd e' elems
       _, _ -> error absurd
 paragraphElemsBwd _ _ = error absurd
 

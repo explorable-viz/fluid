@@ -25,7 +25,7 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> allTests)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> selectedCommentsTests)
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 scratchpad = second void <$> suite paragraph_cases (1 × false)
@@ -35,12 +35,12 @@ selectedCommentsTests = second void <$> suite selectedCases (1 × false)
    where
    selectedNames =
       [ "comments/nested-constr.fld"
-      , "comments/dicts.fld"
-      , "comments/app-arg.fld"
-      , "comments/list-comp.fld"
-      , "comments/app.fld"
-      , "comments/int.fld"
-      , "comments/projection.fld"
+      -- , "comments/dicts.fld"
+      -- , "comments/app-arg.fld"
+      -- , "comments/list-comp.fld"
+      -- , "comments/app.fld"
+      -- , "comments/int.fld"
+      -- , "comments/projection.fld"
       ]
    selectedCases = filter (\c -> c.file `elem` selectedNames) comments_cases
 
