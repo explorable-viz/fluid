@@ -16,31 +16,31 @@ bwd_cases =
      , bwd_expect_file: "convolution/edgeDetect.expect.fld"
      , δv: matrixElement 1 1 select
      , fwd_expect:
-          "⸨0⸩, -1, 2, 0, -1,\n\
-          \0, 3, -2, 3, -2,\n\
-          \-1, 1, -5, 0, 4,\n\
-          \1, -1, 4, 0, -4,\n\
-          \1, 0, -3, 2, 0"
+          """⸨0⸩, -1, 2, 0, -1,
+0, 3, -2, 3, -2,
+-1, 1, -5, 0, 4,
+1, -1, 4, 0, -4,
+1, 0, -3, 2, 0"""
      }
    , { file: "convolution/emboss.fld"
      , bwd_expect_file: "convolution/emboss.expect.fld"
      , δv: matrixElement 1 1 select
      , fwd_expect:
-          "⸨5⸩, 4, 2, 5, 2,\n\
-          \3, 1, 2, -1, -2,\n\
-          \3, 0, 1, 0, -1,\n\
-          \2, 1, -2, 0, 0,\n\
-          \1, 0, -1, -1, -2"
+          """⸨5⸩, 4, 2, 5, 2,
+3, 1, 2, -1, -2,
+3, 0, 1, 0, -1,
+2, 1, -2, 0, 0,
+1, 0, -1, -1, -2"""
      }
    , { file: "convolution/gaussian.fld"
      , bwd_expect_file: "convolution/gaussian.expect.fld"
      , δv: matrixElement 1 1 select
      , fwd_expect:
-          "⸨38⸩, 37, 28, 30, 38,\n\
-          \38, 36, 46, 31, 34,\n\
-          \37, 41, 54, 34, 20,\n\
-          \21, 35, 31, 31, 42,\n\
-          \13, 32, 35, 19, 26"
+          """⸨38⸩, 37, 28, 30, 38,
+38, 36, 46, 31, 34,
+37, 41, 54, 34, 20,
+21, 35, 31, 31, 42,
+13, 32, 35, 19, 26"""
      }
    , { file: "matrix/matmul.fld"
      , bwd_expect_file: "matrix/matmul.expect.fld"
@@ -129,11 +129,11 @@ bwd_cases =
    , { file: "matrix-update.fld"
      , bwd_expect_file: "matrix-update.expect.fld"
      , fwd_expect:
-          "15, 13, 6, 9, 16,\n\
-          \12, ⸨4000⸩, 15, 4, 13,\n\
-          \14, 9, 20, 8, 1,\n\
-          \4, 10, 3, 7, 19,\n\
-          \3, 11, 15, 2, 9"
+          """15, 13, 6, 9, 16,
+12, ⸨4000⸩, 15, 4, 13,
+14, 9, 20, 8, 1,
+4, 10, 3, 7, 19,
+3, 11, 15, 2, 9"""
      , δv: matrixElement 2 2 select
      }
    , { file: "multiply.fld", bwd_expect_file: "multiply.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
