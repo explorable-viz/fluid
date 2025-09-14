@@ -20,7 +20,7 @@ import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _for, _if, _in, _lambda, _match)
 import Temp.Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Temp.Pretty.Helpers (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
-import Util (type (×), Endo, (×))
+import Util (type (×), Endo, isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
 import Val (BaseVal(..), Fun(..)) as V
@@ -305,7 +305,9 @@ instance Highlightable a => Pretty (BaseVal a) where
    pretty (V.Int n) = number n
    pretty (V.Float n) = number n
    pretty (V.Str str) = string str
-   pretty (V.Dictionary (DictRep svs)) = record (pretty <$> (toUnfoldable svs))
+   pretty (V.Dictionary (DictRep svs))
+      | isEmpty svs = text "{}"
+      | otherwise = record (pretty <$> (toUnfoldable svs))
    pretty (V.Constr c vs) = prettyConstr c vs
    pretty (V.Matrix (MatrixRep (vss × _ × _))) = vcommas $ fromFoldable (prettyList <$> vss) -- ???
    pretty (V.Fun phi) = pretty phi
