@@ -103,7 +103,6 @@ addHatchPattern parent' j col_j = do
 foreign import data Selection :: Type
 
 foreign import createChild :: Selection -> String -> Object String -> Effect Selection
-foreign import createText :: Selection -> String -> Effect Selection
 foreign import remove :: Selection -> Effect Unit
 foreign import colorScale :: forall a. String -> a -> String
 foreign import scaleLinear :: { min :: Number, max :: Number } -> { min :: Number, max :: Number } -> Endo Number

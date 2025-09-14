@@ -11,7 +11,7 @@ import Data.Filterable (filterMap)
 import Data.Foldable (length)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), drop, take, unzip, zip, zipWith, (:), (\\))
+import Data.List (List(..), foldr, drop, take, unzip, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, unsnoc)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -256,14 +256,17 @@ paragraphElemsFwd
    => MonadError Error m
    => List (ParagraphElem a)
    -> m (E.Expr a)
-paragraphElemsFwd Nil = pure (enil bot)
-paragraphElemsFwd (Token s : elems) = do
-   e' <- paragraphElemsFwd elems
-   pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) e')
-paragraphElemsFwd (Unquote s : elems) = do
-   e <- desug s
-   e' <- paragraphElemsFwd elems
-   pure (econs bot e e')
+paragraphElemsFwd =
+   foldr step (pure (enil bot))
+   where
+   step :: ParagraphElem a -> m (E.Expr a) -> m (E.Expr a)
+   step (Token s) accM = do
+      acc <- accM
+      pure (econs bot (E.Constr bot cText (E.Str bot s : Nil)) acc)
+   step (Unquote e) accM = do
+      acc <- accM
+      e' <- desug e
+      pure (econs bot (E.Constr bot cText (e' : Nil)) acc)
 
 paragraphElemsBwd
    :: forall a
@@ -272,13 +275,15 @@ paragraphElemsBwd
    -> List (Raw ParagraphElem)
    -> List (ParagraphElem a)
 paragraphElemsBwd (E.Constr _ c Nil) Nil | c == cNil = Nil
-paragraphElemsBwd (E.Constr _ c (e : e' : Nil)) (elem : elems) | c == cCons =
-   case elem, e of
-      Token _, E.Constr _ c' (E.Str _ s : Nil) | c' == cText ->
-         Token s : paragraphElemsBwd e' elems
-      Unquote s, _ ->
-         Unquote (desugBwd e s) : paragraphElemsBwd e' elems
-      _, _ -> error absurd
+paragraphElemsBwd (E.Constr _ c (e : es : Nil)) (pe : pes) | c == cCons =
+   exprToElem pe e : paragraphElemsBwd es pes
+   where
+   exprToElem :: Raw ParagraphElem -> E.Expr a -> ParagraphElem a
+   exprToElem (Token _) (E.Constr _ c' (E.Str _ s : Nil)) | c' == cText =
+      Token s
+   exprToElem (Unquote s) (E.Constr _ c' (e' : Nil)) | c' == cText =
+      Unquote (desugBwd e' s)
+   exprToElem _ _ = error absurd
 paragraphElemsBwd _ _ = error absurd
 
 -- Expr

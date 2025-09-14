@@ -34,7 +34,7 @@ def mostEfficient:
    among all models compared, with the
    ${rankLabel("smallest", findIndex("model", "CNN", insertionSort(lambda a, b: a.param < b.param, tableData)))}
    model size. On the other hand, a 3-layer stacked CNN gives an accuracy of
-   ${numToStr(model_3_stacked_CNN.acc)}%, which is also the
+   ${model_3_stacked_CNN.acc}%, which is also the
    ${rankLabel("lowest", findIndex("model", "CNN", insertionSort(lambda a, b: a.time_s < b.time_s, tableData)))}
    compared with BiLSTM, hierarchical attention and S-LSTM. The
    ${rankLabel("best", findIndex("model", "S-LSTM+Attention", insertionSort(lambda a, b: b.acc < a.acc, tableData)))}

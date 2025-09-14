@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util.Selector (constrArg, listElement)
 import App.View.Util (class View, Select, View', createElement, setSelection, unpack)
-import App.View.Util.D3 (ElementType(..), create, createText)
+import App.View.Util.D3 (ElementType(..), create)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (mapWithIndex)
@@ -18,10 +18,8 @@ instance View Paragraph Unit where
    createElement :: Unit -> Paragraph -> D3.Selection -> Effect D3.Selection
    createElement _ (Paragraph _ views) parent = do
       rootElement <- parent # create Div [ "class" ↦ "para-text" ]
-      sequence_ $ views <#> \view -> do
-         void $ createText rootElement " "
+      sequence_ $ views <#> \view ->
          unpack view \v -> createElement unit v rootElement
-
       pure rootElement
 
    setSelection :: Unit -> Paragraph -> Select -> D3.Selection -> Effect Unit

@@ -192,3 +192,7 @@ td.table-cell {
 .para-text {
    font-size: 10pt;
 }
+
+.para-text span::after {
+  content: " ";
+}

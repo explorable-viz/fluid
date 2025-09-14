@@ -61,17 +61,6 @@ export function createChild (parent) {
       }
    }
 }
-
-export function createText (parent) {
-   return text => {
-      return () => {
-        return parent.append(() => {
-          return document.createTextNode(text)
-        })
-      }
-   }
-}
-
 export function remove (element) {
    return () => {
       element.remove()

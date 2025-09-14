@@ -37,11 +37,8 @@ view' title v@(Val _ v_opt _) _ =
    pack $ DocView { doc: viewParagraph <$> v_opt, view: view title v Nothing }
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
--- Ignore view state for now.
+-- Ignore view state for now..
 view :: Partial => String -> Val (SelStates 𝕊) -> Maybe View' -> View'
-view _ (Val α _ (Int n)) _ = pack (Text (show n × α))
-view _ (Val α _ (Float n)) _ = pack (Text (show n × α))
-view _ (Val α _ (Str str)) _ = pack (Text (str × α))
 view title (Val _ _ (Constr c (u : Nil))) _
    | c == cText = pack (from u :: Text)
    | c == cBarChart = pack (dict from u :: BarChart)
@@ -54,7 +51,6 @@ view title (Val _ _ (Constr c (u : Nil))) _
         where
         vws = view "" <$> from u
 view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
-   -- would be more consistent with other views if Link took a single argument of record type
    | c == cLink = pack (from v :: Link)
 view title u@(Val _ _ (Constr c _)) _
    | c == cNil || c == cCons = pack (TableView { title, filter: defaultFilter, colNames, rows })
@@ -159,10 +155,12 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) ScatterPlot whe
 
 instance Reflect (Val (SelStates 𝕊)) Text where
    from (Val α _ v) = case v of
+      Int n -> Text (show n × α)
+      Float n -> Text (show n × α)
       Str s -> Text (s × α)
-      _ -> typeError v "Text expects string"
+      _ -> typeError v "Text"
 
 instance Reflect (Val (SelStates 𝕊)) Link where
    from (Val _ _ u) = case u of
-      (Constr c (v : (Val α' _ (Str s) : Nil))) | c == cLink -> Link v (s × α')
-      _ -> typeError u "Link expects string as second argument"
+      (Constr c (Val α doc v : (Val α' _ (Str s) : Nil))) | c == cLink -> Link (Val α doc v) (s × α')
+      _ -> typeError u "Link"
