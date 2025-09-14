@@ -42,5 +42,6 @@ MultiView {
    leftBarChart: ssp126,
    rightBarChart: ssp245,
    explanation:
-      """Within each scenario bar plot, the bars represent: ${Link totals " total warming (°C)"}, ${Link co2s " warming from CO2 (°C) "} and from ${Link (map stackedBarHeight nonco2) " Non-CO2 GHG's (°C)"}."""
+      """Within each scenario bar plot, the bars represent: ${Link totals "total warming (°C)"},
+         ${Link co2s "warming from CO2 (°C) "} and from ${Link (map stackedBarHeight nonco2) "Non-CO2 GHG's (°C)"}."""
 }
