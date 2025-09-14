@@ -17,9 +17,9 @@ import Graph (Vertex(..))
 import Lattice (class BotOf, class BoundedLattice, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _empty, _for, _if, _in, _lambda, _match)
-import Temp.Pretty.Doc (Doc, block, record, render, text, (<+++>), (<++>), (<+>))
-import Temp.Pretty.Helpers (braces, brackets, hsep, matrix, number, pair, parens, string, vsep)
+import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _for, _if, _in, _lambda, _match)
+import Temp.Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmtOrExpr, text, (<++>), (<+>), (</>))
+import Temp.Pretty.Helpers (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
 import Util (type (×), Endo, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
@@ -95,37 +95,43 @@ instance Ann a => Pretty (Expr a) where
    pretty (Float α n) = highlightIf α (number n)
    pretty (Str α str) = highlightIf α (string str)
    pretty (Constr α c Nil) = highlightIf α (text c)
-   pretty (Constr α c as) = highlightIf α (prettyConstr c as)
-   pretty (Dictionary α es) = highlightIf α (record $ map pretty es)
-   pretty (Matrix α e (x × y) e') = highlightIf α (matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e'))
-   pretty (Lambda cs) = parens (pretty cs)
-   pretty (Project s x) = pretty s <> text "." <> text x
-   pretty (DProject e k) = pretty e <> brackets (pretty k)
-   pretty (App s s') = prettyAppChain (App s s') Nil
-   pretty (BinaryApp s op s') = binaryApp 0 (BinaryApp s op s')
+   pretty (Constr α c as) = highlightIf α (expr $ prettyConstr c as)
+   pretty (Dictionary α Nil) = highlightIf α (text "{}")
+   pretty (Dictionary α es) = highlightIf α (expr $ record $ map pretty es)
+   pretty (Matrix α e (x × y) e') = highlightIf α (expr $ matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e'))
+   pretty (Lambda cs) = parens (pretty cs) -- Clauses
+   pretty (Project s x) = expr $ pretty s <> text "." <> text x
+   pretty (DProject e k) = expr $ pretty e <> brackets (expr $ pretty k)
+   pretty (App s s') = expr $ prettyAppChain (App s s') Nil
+   pretty (BinaryApp s op s') = expr $ binaryApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = _match <+> pretty s <> block (pretty cs)
-   pretty (IfElse i t e) = _if <+> pretty i <> block (pretty t) <++> _else <> block (pretty e)
-   pretty (ListEmpty α) = highlightIf α _empty
-   -- TODO: list dictionary case??
-   pretty (ListNonEmpty α e rest) = highlightIf α (text "[") <> pretty e <> collect rest
-      where
-      collect :: ListRest a -> Doc
-      collect (Next α' e' rest') = highlightIf α' (text ",") <+> pretty e' <> collect rest'
-      collect (End α') = highlightIf α' (text "]")
+   pretty (IfElse i t e) = _if <+> expr (pretty i) <> block (pretty t) <++> _else <> block (pretty e)
 
-   pretty (ListEnum s s') = brackets (pretty s <+> _ellipsis <+> pretty s')
-   pretty (ListComp α s qs) = highlightIf α (brackets (pretty s <+> pretty qs))
-   pretty (Let ds s) = (pretty ds) <> text ";" <+++> pretty s
-   pretty (LetRec h s) = (pretty h) <> text ";" <+++> pretty s
+   pretty (ListEmpty α) = highlightIf α (text "[]")
+   pretty (ListNonEmpty α e rest) =
+      highlightIf α (text "[")
+         <> inlOrMul
+            (pretty e <> collect rest true)
+            (indent (line <> pretty e) <> collect rest false)
+      where
+      collect :: ListRest a -> Boolean -> Doc
+      collect (Next α' e' rest') inline = highlightIf α' (text ",") <> (if inline then text " " <> pretty e' else indent (line <> pretty e')) <> collect rest' inline
+      collect (End α') inline = if inline then highlightIf α' (text "]") else line <> highlightIf α' (text "]")
+
+   pretty (ListEnum s s') = brackets $ expr (pretty s <+> _ellipsis <+> pretty s')
+   pretty (ListComp α s qs) = highlightIf α (brackets (expr (pretty s) <+> pretty qs)) -- Qualifier
+   -- TODO: remove semis after migration
+   pretty (Let ds s) = pretty ds <> (stmtOrExpr (text ";" <> line <> line) (text "; ")) <> pretty s
+   pretty (LetRec h s) = pretty h <> (stmtOrExpr (text ";" <> line <> line) (text "; ")) <> pretty s
    pretty (Paragraph p) = pretty p
-   pretty (DocExpr p e) = text "@doc" <> parens (pretty p) <+> pretty e
+   pretty (DocExpr p e) = text "@doc" <> parens (pretty p) </> pretty e
 
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (ListCompDecl (VarDef v s)) Nil) = _for <+> pretty v <+> _in <+> brackets (pretty s)
    pretty (Cons (ListCompGuard s) Nil) = _if <+> pretty s
    pretty (Cons (ListCompGen p s) Nil) = _for <+> pretty p <+> _in <+> pretty s
    pretty (Cons q qs) = pretty (singleton q) <+> pretty qs
-   pretty Nil = mempty
+   pretty Nil = empty
 
 instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
    pretty cs = vsep (toList (pretty <$> cs))
@@ -138,7 +144,7 @@ instance Pretty Pattern where
    pretty (PRecord xps) = record $ map pretty xps
    pretty (PConstr c Nil) = text c
    pretty (PConstr c ps) = prettyConstr c ps
-   pretty (PListEmpty) = _empty
+   pretty (PListEmpty) = text "[]"
    pretty (PListNonEmpty p l) = brackets (pretty p <> pretty l)
 
 instance Pretty (String × Pattern) where
@@ -147,13 +153,13 @@ instance Pretty (String × Pattern) where
 instance Pretty ListRestPattern where
    pretty (PListVar x) = text x
    pretty (PListNext p l) = _comma <+> pretty p <> pretty l
-   pretty PListEnd = mempty
+   pretty PListEnd = empty
 
 instance Ann a => Pretty (VarDef a) where
    pretty (VarDef v s) = _def <+> pretty v <> block (pretty s)
 
 instance Ann a => Pretty (VarDefs a) where
-   pretty ds = vsep (toList (pretty <$> ds))
+   pretty ds = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> ds))
 
 instance Ann a => Pretty (Clause a) where
    pretty (Clause (ps × e)) = lambda (toList ps) e
@@ -162,7 +168,7 @@ instance Ann a => Pretty (Clauses a) where
    pretty (Clauses cs) = pretty (head cs) -- TODO: head ?
 
 instance Ann a => Pretty (RecDefs a) where
-   pretty bs = vsep (toList (pretty <$> bs))
+   pretty bs = sep' (stmtOrExpr line (text " ")) (toList (pretty <$> bs))
 
 instance Ann a => Pretty (Branch a) where
    pretty (v × Clause (ps × e)) =
@@ -186,7 +192,7 @@ instance Ann a => Pretty (ParagraphElem a) where
    pretty (Unquote e) = text "${" <> pretty e <> text "}"
 
 prettyConstr :: forall a. RootOp a => Pretty a => Ctr -> List a -> Doc
-prettyConstr "Nil" Nil = _empty
+prettyConstr "Nil" Nil = text "[]"
 prettyConstr "Pair" (x : y : Nil) = pair pretty x y
 prettyConstr ":" (x : y : Nil) = prettyConsArg x true <+> text ":|" <+> prettyConsArg y false
 prettyConstr c Nil = text c
@@ -202,12 +208,12 @@ prettyAppChain (App f a) as = prettyAppChain f (a : as)
 prettyAppChain f as = pretty f <> parens (prettyList as)
 
 commas :: List Doc -> Doc
-commas Nil = mempty
+commas Nil = empty
 commas (d : Nil) = d
 commas (d : ds) = d <> _comma <+> commas ds
 
 vcommas :: List Doc -> Doc
-vcommas Nil = mempty
+vcommas Nil = empty
 vcommas (d : Nil) = d
 vcommas (d : ds) = d <> _comma <++> vcommas ds
 
@@ -253,8 +259,8 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Project e x) = pretty e <> text "." <> pretty x
    pretty (E.DProject e x) = pretty e <> brackets (pretty x)
    pretty (E.App e e') = pretty e <> parens (pretty e') -- TODO
-   pretty (E.Let (E.VarDef o e) e') = text "def" <+> pretty o <> block (pretty e) <+++> pretty e'
-   pretty (E.LetRec (E.RecDefs _ p) e') = text "def" <+> pretty p <+++> pretty e'
+   pretty (E.Let (E.VarDef o e) e') = text "def" <+> pretty o <> block (pretty e) <++> pretty e'
+   pretty (E.LetRec (E.RecDefs _ p) e') = text "def" <+> pretty p <++> pretty e'
    pretty (E.DocExpr p e) = text "@doc" <> parens (pretty p) <+> pretty e
 
 instance Highlightable a => Pretty (Cont a) where
@@ -270,7 +276,7 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty ρ = go (toUnfoldable ρ)
       where
       go :: List (Var × Elim a) -> Doc
-      go Nil = mempty
+      go Nil = empty
       go (xσ : Nil) = pretty xσ
       go (xσ : δ) = (go δ <+> text ";") <+> (pretty xσ)
 
@@ -278,7 +284,7 @@ instance Highlightable a => Pretty (Env a) where
    pretty (Env γ) = brackets $ go (toUnfoldable γ)
       where
       go :: List (Var × Val a) -> Doc
-      go Nil = mempty
+      go Nil = empty
       go ((x × v) : rest) =
          (text x <+> text "->" <+> pretty v <+> text ",") <++> go rest
 

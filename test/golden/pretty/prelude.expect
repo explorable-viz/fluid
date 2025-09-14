@@ -43,30 +43,25 @@ def prod(f, g, x): (f(x), g(x));
 
 def swap((a, b)): (b, a);
 
-def head([]):
-  error("Can't take head of empty list")
+def head([]): error("Can't take head of empty list")
 def head(x :| _): x;
 
-def tail([]):
-  error("Can't take tail of empty list")
+def tail([]): error("Can't take tail of empty list")
 def tail(_ :| xs): xs;
 
 def elem(x, []): False
-def elem(x, x' :| xs):
-  x == x' |or| elem(x, xs);
+def elem(x, x' :| xs): x == x' |or| elem(x, xs);
 
 def find(p, []): error("not found")
 def find(p, x :| xs):
   if p(x): Some(x)
   else: find(p, xs);
 
-def findWithKey(fname, fval, table):
-  find((lambda y: y[fname] == fval), table);
+def findWithKey(fname, fval, table): find((lambda y: y[fname] == fval), table);
 
 def fromSome(option):
   match option:
-    case None:
-      error("Expected Some!")
+    case None: error("Expected Some!")
     case Some(x): x;
 
 def filter(p, []): []
@@ -80,22 +75,18 @@ def filterMap(p, []): []
 def filterMap(p, x :| xs):
   match p(x):
     case None: filterMap(f, xs)
-    case Some(y):
-      y :| filterMap(f, xs);
+    case Some(y): y :| filterMap(f, xs);
 
 def foldl(op, z, []): z
-def foldl(op, z, x :| xs):
-  foldl(op, op(z, x), xs);
+def foldl(op, z, x :| xs): foldl(op, op(z, x), xs);
 
 def foldl1(op, x :| xs): foldl(op, x, xs);
 
 def foldr(op, z, []): z
-def foldr(op, z, x :| xs):
-  op(x, foldr(op, z, xs));
+def foldr(op, z, x :| xs): op(x, foldr(op, z, xs));
 
 def foldr1(op, [x]): x
-def foldr1(op, x :| y :| xs):
-  op(x, foldr1(op, y :| xs));
+def foldr1(op, x :| y :| xs): op(x, foldr1(op, y :| xs));
 
 def scanl1(op, z, xs):
   def go(x, continue, acc):
@@ -105,19 +96,16 @@ def scanl1(op, z, xs):
 
   foldr(go, const([]), xs, z);
 
-def scanl(op, z, xs):
-  z :| scanl1(op, z, xs);
+def scanl(op, z, xs): z :| scanl1(op, z, xs);
 
 def map(f, []): []
 def map(f, x :| xs): f(x) :| map(f, xs);
 
 def append(([], ys)): ys
-def append((x :| xs, ys)):
-  x :| append((xs, ys));
+def append((x :| xs, ys)): x :| append((xs, ys));
 
 def concat2([], ys): ys
-def concat2(x :| xs, ys):
-  x :| concat2(xs, ys);
+def concat2(x :| xs, ys): x :| concat2(xs, ys);
 
 def concat: foldl(concat2, []);
 
@@ -125,13 +113,11 @@ def concatMap(f, xs): concat(map(f, xs));
 
 def intersperse([], _): []
 def intersperse([x], _): [x]
-def intersperse(x :| y :| ys, sep):
-  x :| sep :| intersperse(y :| ys, sep);
+def intersperse(x :| y :| ys, sep): x :| sep :| intersperse(y :| ys, sep);
 
 def iterate(n, f, z):
   if n == 0: []
-  else:
-    z :| map(f, iterate(n - 1, f, z));
+  else: z :| map(f, iterate(n - 1, f, z));
 
 def sum: foldr((+), 0);
 
@@ -142,8 +128,7 @@ def length([]): 0
 def length(_ :| xs): 1 + length(xs);
 
 def reverse([]): []
-def reverse(x :| xs):
-  append((reverse(xs), [x]));
+def reverse(x :| xs): append((reverse(xs), [x]));
 
 def repeat: flip(iterate, id);
 
@@ -152,8 +137,7 @@ def take(n, xs):
   else:
     match xs:
       case []: []
-      case x :| xs:
-        x :| take(n - 1, xs);
+      case x :| xs: x :| take(n - 1, xs);
 
 def drop(n, xs):
   if n <= 0: xs
@@ -162,18 +146,15 @@ def drop(n, xs):
       case []: []
       case _ :| xs: drop(n - 1, xs);
 
-def lastN(n, xs):
-  foldl(compose(const, drop(1)), xs, drop(n, xs));
+def lastN(n, xs): foldl(compose(const, drop(1)), xs, drop(n, xs));
 
 def nth(n, x :| xs):
   if n == 0: x
   else: nth(n - 1, xs);
 
-def nth2(i, j, xss):
-  nth(j - 1, nth(i - 1, xss));
+def nth2(i, j, xss): nth(j - 1, nth(i - 1, xss));
 
-def lookup(k, []):
-  error("Key not found in map")
+def lookup(k, []): error("Key not found in map")
 def lookup(k, (k', v) :| kvs):
   if k == k': v
   else: lookup(k, kvs);
@@ -198,8 +179,7 @@ def unzip((x, y) :| zs):
 
 def zipWith(op, [], ys): []
 def zipWith(op, x :| xs, []): []
-def zipWith(op, x :| xs, y :| ys):
-  op(x, y) :| zipWith(op, xs, ys);
+def zipWith(op, x :| xs, y :| ys): op(x, y) :| zipWith(op, xs, ys);
 
 def zip: zipWith(curry(id));
 
@@ -218,22 +198,17 @@ def nub(xs):
   def nub'([], _): []
   def nub'(x :| xs, ys):
     if x |elem| ys: nub'(xs, ys)
-    else:
-      x :| nub'(xs, x :| ys);
+    else: x :| nub'(xs, x :| ys);
 
   nub'(xs, []);
 
-def slice(begin, end, xs):
-  take(end - begin, drop(begin, xs));
+def slice(begin, end, xs): take(end - begin, drop(begin, xs));
 
 def splitOn(p, data):
-  def go(fls, trs, []):
-    (reverse(fls), reverse(trs))
+  def go(fls, trs, []): (reverse(fls), reverse(trs))
   def go(fls, trs, x :| xs):
-    if p(x):
-      go(fls, x :| trs, xs)
-    else:
-      go(x :| fls, trs, xs);
+    if p(x): go(fls, x :| trs, xs)
+    else: go(x :| fls, trs, xs);
 
   go([], [], data);
 
