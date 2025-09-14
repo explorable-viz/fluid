@@ -1,41 +1,9 @@
 @charset "UTF-8";
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code&display=swap");
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;1,300&display=swap');
 
-@font-face {
-   font-family: 'OdiseanTech';
-   src: url('../font/OdiseanTech.woff2') format('woff2');
-   font-weight: normal;
-   font-style: normal;
-}
-
-@font-face {
-   font-family: 'GraphikLight';
-   src: url('../font/GraphikLight.woff2') format('woff2');
-   font-weight: 300;
-   font-style: normal;
-}
-
-@font-face {
-   font-family: 'GraphikLightItalic';
-   src: url('../font/GraphikLightItalic.woff2') format('woff2');
-   font-weight: 300;
-   font-style: italic;
-}
-
-@font-face {
-   font-family: 'GraphikMedium';
-   src: url('../font/GraphikMedium.woff2') format('woff2');
-   font-weight: 500;
-   font-style: normal;
-}
-
-@font-face {
-   font-family: 'GraphikMediumItalic';
-   src: url('../font/GraphikMediumItalic.woff2') format('woff2');
-   font-weight: 500;
-   font-style: italic;
-}
+/* Dropped use of Graphik as seems to have a bug at font-weight 300 */
 
 .fluid-logo {
    margin-bottom: 0;
@@ -78,7 +46,7 @@ code {
 
 body {
    font-size: 12pt;
-   font-family: "GraphikLight", sans-serif;
+   font-family: "Roboto", sans-serif;
    font-weight: 300;
    line-height: 1.25;
    padding: 0;
