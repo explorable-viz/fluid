@@ -37,9 +37,9 @@ def improve(EQ): "does not further improve"
 def improve(LT): "does not further improve"
 def improve(GT): "further improves"
 
-def improvements(EQ): "further improvements"
+def improvements(EQ): "no further improvements"
 def improvements(LT): "no further improvements"
-def improvements(GT): "no further improvements"
+def improvements(GT): "further improvements"
 
 def shorterLonger(EQ): "equal"
 def shorterLonger(LT): "shorter"
