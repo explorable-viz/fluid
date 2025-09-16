@@ -7,7 +7,7 @@ def zero(m, n, image):
 def wrap(m, n, image):
   def (m_max, n_max): dims(image);
 
-  image ! (m - 1 |mod| m_max + 1, n - 1 |mod| n_max + 1);
+  image ! (((m - 1) |mod| m_max) + 1, ((n - 1) |mod| n_max) + 1);
 
 def extend(m, n, image):
   def (m_max, n_max): dims(image)
