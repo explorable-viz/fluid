@@ -2,31 +2,33 @@ module Temp.Pretty.Doc where
 
 import Prelude
 
-import Data.List (List(..), (:))
 import Data.String as String
-import Data.Traversable (intercalate)
+import Data.Tuple (fst)
 import Temp.Pretty.Config (config)
+import Util (type (×), (×))
 
 data Doc
-   -- base doc
    = Empty
    | Line
    | Text String
    | Indent Doc
    | Concat Doc Doc
-   -- fancy doc
-   | Block Doc
-   | Collection Collection (List Doc)
+   | Mode Mode Doc
+   | StmtOrExpr Doc Doc
+   | InlOrMul Doc Doc
 
-data Collection = Record | Array
+data Mode = Stmt | Expr
 
-data Format = Inline | Multiline | Squash
+data Format = Inline | Multiline
 
 instance Semigroup Doc where
    append = Concat
 
 instance Monoid Doc where
    mempty = Empty
+
+empty :: Doc
+empty = Empty
 
 text :: String -> Doc
 text = Text
@@ -37,19 +39,22 @@ line = Line
 indent :: Doc -> Doc
 indent = Indent
 
-block :: Doc -> Doc
-block = Block
+stmt :: Doc -> Doc
+stmt = Mode Stmt
 
-record :: List Doc -> Doc
-record = Collection Record
+expr :: Doc -> Doc
+expr = Mode Expr
 
-array :: List Doc -> Doc
-array = Collection Array
+stmtOrExpr :: Doc -> Doc -> Doc
+stmtOrExpr = StmtOrExpr
+
+inlOrMul :: Doc -> Doc -> Doc
+inlOrMul = InlOrMul
 
 -- Combinators
 infixr 5 beside as <+>
 infixr 5 above as <++>
-infixr 5 above2 as <+++>
+infixr 6 sep as </>
 
 beside :: Doc -> Doc -> Doc
 beside a b = a <> text " " <> b
@@ -57,14 +62,8 @@ beside a b = a <> text " " <> b
 above :: Doc -> Doc -> Doc
 above a b = a <> line <> b
 
-above2 :: Doc -> Doc -> Doc
-above2 a b = a <> (line <> mempty) <> line <> b
-
-enclosed :: Doc -> Doc -> Doc -> Doc
-enclosed l r d = l <> d <> r
-
-between :: Doc -> Doc -> Doc -> Doc
-between l r d = l <+> d <+> r
+sep :: Doc -> Doc -> Doc
+sep a b = inlOrMul (a <+> b) (a <++> b)
 
 spaces :: Int -> String
 spaces n
@@ -72,71 +71,62 @@ spaces n
    | otherwise = " " <> spaces (n - 1)
 
 render :: Doc -> String
-render = renderWithIndent 0
+render d = fst $ renderWithIndent Stmt 0 0 d
 
-renderWithIndent :: Int -> Doc -> String
-renderWithIndent n doc = case doc of
-   Empty -> ""
-   Line -> "\n" <> spaces (n * config.indentation)
-   Text s -> s
-   Indent d -> renderWithIndent (n + 1) d
-   Concat Line Empty -> "\n"
-   Concat d d' -> renderWithIndent n d <> renderWithIndent n d'
-   d -> renderWithIndent n (simplify d)
+renderWithIndent :: Mode -> Int -> Int -> Doc -> (String × Int)
+renderWithIndent m i w doc = case doc of
+   Empty -> "" × w
+   Line -> ("\n" <> spaces indentation) × indentation
+   Concat Line Empty -> "\n" × 0
+   Concat Line Line -> ("\n\n" <> spaces indentation) × indentation
+   Text s -> s × (w + String.length s)
+   Indent d -> renderWithIndent m (i + 1) w d
+   Concat d1 d2 ->
+      let
+         (d1' × w') = renderWithIndent m i w d1
+         (d2' × w'') = renderWithIndent m i w' d2
+      in
+         (d1' <> d2') × w''
 
-simplify :: Doc -> Doc
-simplify doc = case doc of
-   Block d -> case fmt of
-      Squash -> text ": " <> simplify d
-      Inline -> text ": " <> simplify d
-      Multiline -> text ":" <> indent (line <> simplify d)
-   Collection c ds -> delimit fmt c $ simplifyList ds fmt
-   d -> d
+   Mode m' d -> renderWithIndent m' i w d
+   StmtOrExpr d1 d2 -> case m of
+      Stmt -> renderWithIndent m i w d1
+      Expr -> renderWithIndent m i w d2
+   InlOrMul d1 d2 -> case fmt of
+      Inline -> renderWithIndent m i w d1
+      Multiline -> renderWithIndent m i w d2
 
    where
-   fmt = format doc
-   delimit Squash Record = inside "{" "}"
-   delimit Inline Record = inside "{ " " }"
-   delimit Multiline Record = inside "{" "}"
-   delimit _ Array = inside "[" "]"
+   fmt = format m w doc
+   indentation = i * config.indentation
 
-   inside l r d = text l <> d <> text r
+format :: Mode -> Int -> Doc -> Format
+format m w doc
+   | inlinable m doc && width m doc < (config.lineWidth - w) = Inline
+   | otherwise = Multiline
 
-simplifyList :: List Doc -> Format -> Doc
-simplifyList ds fmt = case fmt of
-   Squash -> mempty
-   Inline -> intercalate (text ", ") ((\d -> simplify d) <$> ds)
-   Multiline -> indent (intercalate (text ",") ((\d -> line <> simplify d) <$> ds)) <> line
-
-format :: Doc -> Format
-format doc = case doc of
-   Block (Collection _ _) -> Inline
-   Block d
-      | inlinable d && width d < config.inlineBlockLimit -> Inline
-      | otherwise -> Multiline
-   Collection _ ds
-      | widthList ds == 0 -> Squash
-      | widthList ds < config.inlineRecordLimit -> Inline
-      | otherwise -> Multiline
-   _ -> Inline
-
-inlinable :: Doc -> Boolean
-inlinable doc = case doc of
+inlinable :: Mode -> Doc -> Boolean
+inlinable m doc = case doc of
+   Empty -> true
    Line -> false
+   Text _ -> true
    Indent _ -> false
-   Concat d1 d2 -> inlinable d1 && inlinable d2
-   _ -> true
+   Concat d1 d2 -> inlinable m d1 && inlinable m d2
+   Mode m' d -> inlinable m' d
+   StmtOrExpr _ d -> case m of
+      Stmt -> false
+      Expr -> inlinable m d
+   InlOrMul d _ -> inlinable m d
 
-width :: Doc -> Int
-width Empty = 0
-width Line = 0
-width (Text s) = String.length s
-width (Indent d) = width d
-width (Concat d1 d2) = width d1 + width d2
-width (Block d) = width d
-width (Collection _ ds) = widthList ds
-
-widthList :: List Doc -> Int
-widthList Nil = 0
-widthList (x : Nil) = width x
-widthList (x : xs) = width x + 2 + widthList xs
+width :: Mode -> Doc -> Int
+width m doc = case doc of
+   Empty -> 0
+   Line -> 0
+   Text s -> String.length s
+   Indent d -> width m d
+   Concat d1 d2 -> width m d1 + width m d2
+   Mode m' d -> width m' d
+   StmtOrExpr d1 d2 -> case m of
+      Stmt -> width m d1
+      Expr -> width m d2
+   InlOrMul d1 _ -> width m d1

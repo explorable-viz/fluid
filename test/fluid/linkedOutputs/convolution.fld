@@ -1,16 +1,11 @@
 import lib.matrix
 import linkedOutputs.convolutionData
 
-(def filter': [[0, 0, 0], [3, 7, 1], [0, 0, 0]]
-def filter:
-  [| nth2(i, j, filter') for (i, j) in (3, 3) |]
-def image:
-  [| nth2(i, j, data) for (i, j) in (5, 5) |];
-
-convolve(image, filter, wrap), def filter': [[0, 2, 0], [0, 7, 0], [0, 5, 0]]
-def filter:
-  [| nth2(i, j, filter') for (i, j) in (3, 3) |]
-def image:
-  [| nth2(i, j, data) for (i, j) in (5, 5) |];
-
-convolve(image, filter, zero))
+(def filter': [[0, 0, 0], [3, 7, 1], [0, 0, 0]]; def filter: [|
+nth2(i, j, filter') for (i, j) in (3, 3)|]; def image: [|
+nth2(i, j, data) for (i, j) in (5, 5)|]; convolve(image, filter, wrap), def filter': [
+  [0, 2, 0],
+  [0, 7, 0],
+  [0, 5, 0]
+]; def filter: [| nth2(i, j, filter') for (i, j) in (3, 3)|]; def image: [|
+nth2(i, j, data) for (i, j) in (5, 5)|]; convolve(image, filter, zero))
