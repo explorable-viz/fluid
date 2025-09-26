@@ -144,7 +144,8 @@ textContentValue page selector = do
 clickToggle :: T.Page -> String -> Aff Unit
 clickToggle page idPrev = do
    waitFor (T.Selector ("#grid.data-pane-hidden")) page
-   let toggle = T.Selector ("div#" <> idPrev <> " + div .toggle-button")
+   -- previously " + div .toggle-button", but doesn't work if FontAwesome <i> element doesn't load
+   let toggle = T.Selector ("div#" <> idPrev <> " + div")
    waitFor toggle page
    click toggle page
    waitFor (T.Selector ("#grid:not(.data-pane-hidden)")) page
