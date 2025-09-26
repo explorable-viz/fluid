@@ -25,8 +25,7 @@ def calcLikelihood((min, max), target):
     if target <= min: 0.95
     else: (target - min) / (max - min)
 
-def realTable: newDataTable(0)
-def getByScenario_: getByScenario(realTable)
+def getByScenario_: getByScenario(newDataTable(0))
 def ssp119: getByScenario_("SSP1-1.9")
 def ssp245: getByScenario_("SSP2-4.5")
 
