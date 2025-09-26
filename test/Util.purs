@@ -101,11 +101,11 @@ testProperties s gconfig { δv, bwd_expect, fwd_expect } = do
    let in_top = EnvExpr (topOf in_γ) (topOf in_e)
 
    -- empty string somewhat hacky encoding for "don't care"
-   unless (null bwd_expect) $
-      checkPretty ("bwd_expect") bwd_expect in_s
+   unless (null bwd_expect) $ do
+      withMsg "bwd_expect" $ checkPretty bwd_expect in_s
    unless (null fwd_expect) do
       let report = spyWhen tracing.fwdAfterBwd "fwd ⚬ bwd" prettyP
-      checkPretty ("fwd_expect") fwd_expect (report out1)
+      withMsg "fwd_expect" $ checkPretty fwd_expect (report out1)
 
    recordGraphSize g
 
@@ -147,10 +147,10 @@ testPretty s = do
    unless (eq (erase s) (erase s')) $
       throw ("parse/prettyP round trip:\nOriginal\n" <> prettyP (erase s) <> "\nNew\n" <> prettyP (erase s'))
 
-checkPretty :: forall a m. Pretty a => String -> String -> a -> EffectError m Unit
-checkPretty msg expect x =
+checkPretty :: forall a m. Pretty a => String -> a -> EffectError m Unit
+checkPretty expect x = do
    unless (trim expect `eq` prettyP x) $
-      throw (msg <> ":\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
+      throw ("checkPretty:\nExpected\n" <> expect <> "\nReceived\n" <> prettyP x)
 
 testOutcome :: Boolean -> Endo String
 testOutcome b s = "\x1b[" <> (if b then "32" else "31") <> "m " <> (if b then "✔" else "✖") <> "\x1b[0m " <> s
