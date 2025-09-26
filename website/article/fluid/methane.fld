@@ -1,7 +1,7 @@
 import methane_data
 
 def series(type):
-  [{ x: row.year, y: row.emissions } for row in methane if row.type == type];
+  [{ x: row.year, y: row.emissions } for row in methane if row.type == type]
 
 LineChart({
   size: { width: 450, height: 285 },

@@ -93,10 +93,9 @@ def matMul(a, b):
     @doc("""Intermediate matrix""")
     [| sum([a ! (i', k) * b ! (k, j') for k in enumFromTo(1, n)]) for (i', j') in (m, j) |];
 
-
 MultiView({
-  firstMatrix: matMul(matMul(aMatrix, bMatrix), cMatrix),
-  secondMatrix: matMul(aMatrix, matMul(bMatrix, cMatrix))
+  firstMatrix: matMul(matMul(a, b), c),
+  secondMatrix: matMul(a, matMul(b, c))
 })
 </script>
 
@@ -105,7 +104,7 @@ MultiView({
    const src = document.getElementById("my-code").textContent.trim();
    const spec = {
       "fluidSrcPath": ["../fluid"],
-      "inputs": [ "aMatrix", "bMatrix", "cMatrix" ],
+      "inputs": [ "a", "b", "c" ],
       "query": true,
       "linking": false
   }

@@ -1,11 +1,11 @@
-let aMatrix =
-    let matrix = [[1, 2,3], [4, 5, 6]] in
-    [| nth2 i j matrix | (i, j) in (2,3) |] ;
+def a:
+  def matrix: [[1, 2, 3], [4, 5, 6]]
+  [| nth2(i, j, matrix) | for (i, j) in (2, 3) |]
 
-let bMatrix =
-    let matrix = [[7, 8], [9, 10], [11, 12]] in
-    [| nth2 i j matrix | (i, j) in (3,2) |];
+def b:
+  def matrix: [[7, 8], [9, 10], [11, 12]]
+  [| nth2(i, j, matrix) | for (i, j) in (3, 2) |]
 
-let cMatrix =
-    let matrix = [[0, -1], [1, 0]] in
-    [| nth2 i j matrix | (i, j) in (2,2) |] ;
+def c:
+  def matrix: [[0, -1], [1, 0]]
+  [| nth2(i, j, matrix) | for (i, j) in (2, 2) |]
