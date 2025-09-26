@@ -25,15 +25,9 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> allTests)
-
-scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-scratchpad = second void <$> suite paragraph_cases (1 × false)
-
-selectedCommentsTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-selectedCommentsTests = second void <$> suite selectedCases (1 × false)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> selectedCommentsTests files)
    where
-   selectedNames =
+   files =
       [ "comments/nested-constr.fld"
       -- , "comments/dicts.fld"
       -- , "comments/app-arg.fld"
@@ -42,7 +36,14 @@ selectedCommentsTests = second void <$> suite selectedCases (1 × false)
       -- , "comments/int.fld"
       -- , "comments/projection.fld"
       ]
-   selectedCases = filter (\c -> c.file `elem` selectedNames) comments_cases
+
+scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
+scratchpad = second void <$> suite paragraph_cases (1 × false)
+
+selectedCommentsTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> TestSuite m
+selectedCommentsTests files = second void <$> suite selectedCases (1 × false)
+   where
+   selectedCases = filter (\c -> c.file `elem` files) comments_cases
 
 allTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 allTests =
