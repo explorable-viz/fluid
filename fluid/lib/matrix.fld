@@ -26,7 +26,6 @@ def convolve(image, kernel, lookup):
     (i |quot| 2, j |quot| 2)
   def area: i * j
   def interMatrix(m', n'):
-    @doc("""Intermediate matrix for element ( ${m'} , ${n'} )""")
-    [| @doc("""Multiply these two elements""") lookup(((m' + i') - 1) - half_i, ((n' + j') - 1) - half_j, image) * kernel ! (i', j') for (i', j') in (i, j) |]
+    [| lookup(((m' + i') - 1) - half_i, ((n' + j') - 1) - half_j, image) * kernel ! (i', j') for (i', j') in (i, j) |]
 
   [| matrixSum(interMatrix(m', n')) |quot| area for (m', n') in (m, n) |]
