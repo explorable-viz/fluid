@@ -82,7 +82,7 @@ bwd_cases =
    , { file: "dict/match.fld", bwd_expect_file: "dict/match.expect.fld", δv: select, fwd_expect: "" }
    , { file: "dtw/compute-dtw.fld"
      , bwd_expect_file: "dtw/compute-dtw.expect.fld"
-     , fwd_expect: "(1, 1) : (⸨(⸨2⸩, ⸨2⸩)⸩ : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : []))))))"
+     , fwd_expect: "(1, 1) :| ⸨(⸨2⸩, ⸨2⸩)⸩ :| (2, 3) :| (3, 4) :| (4, 5) :| (5, 6) :| (5, 7) :| []"
      , δv: listElement 1 select
      }
    , { file: "dtw/average-series.fld"
