@@ -34,11 +34,3 @@ def convolve(image, kernel, lookup):
     [| @doc("""Multiply these two elements""") lookup(((m' + i') - 1) - half_i, ((n' + j') - 1) - half_j, image) * kernel ! (i', j') for (i', j') in (i, j) |];
 
   [| matrixSum(interMatrix(m', n')) |quot| area for (m', n') in (m, n) |];
-
-def matMul(a, b):
-  def ((m, n), (i, j)): (dims(a), dims(b));
-
-  if not(n == i):
-    error("Dimensions don't line up")
-  else:
-    @doc("""Intermediate matrix""") [| sum([a ! (i', k) * b ! (k, j') for k in enumFromTo(1, n)]) for (i', j') in (m, j) |];

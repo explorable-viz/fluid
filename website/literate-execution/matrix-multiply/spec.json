@@ -1,6 +1,0 @@
-{
-    "fluidSrcPath": ["../fluid"],
-    "inputs": [ "aMatrix", "bMatrix", "cMatrix" ],
-    "query": true,
-    "linking": false
-}

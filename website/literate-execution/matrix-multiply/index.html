@@ -82,23 +82,34 @@
 </div>
 
 <script id="my-code" type="text/plain">
-   import lib.matrix
-   import matrixMultiply.aMatrix
-   import matrixMultiply.bMatrix
-   import matrixMultiply.cMatrix
+import matrixMultiply.matrices
 
-   MultiView {
-      firstMatrix: matMul (matMul aMatrix bMatrix) cMatrix,
-      secondMatrix: matMul aMatrix (matMul bMatrix cMatrix)
-   }
+def matMul(a, b):
+  def ((m, n), (i, j)): (dims(a), dims(b));
+
+  if not(n == i):
+    error("Dimensions don't line up")
+  else:
+    @doc("""Intermediate matrix""")
+    [| sum([a ! (i', k) * b ! (k, j') for k in enumFromTo(1, n)]) for (i', j') in (m, j) |];
+
+
+MultiView({
+  firstMatrix: matMul(matMul(aMatrix, bMatrix), cMatrix),
+  secondMatrix: matMul(aMatrix, matMul(bMatrix, cMatrix))
+})
 </script>
 
 <script type="module">
-   import { loadFigureSrc, drawCode } from "/shared/load-figure.js"
+   import { loadFigureSpecSrc, drawCode } from "/shared/load-figure.js"
    const src = document.getElementById("my-code").textContent.trim();
-
-   drawCode("../fluid/lib/matrix.fld")()
-   loadFigureSrc("spec.json")(src)()
+   const spec = {
+      "fluidSrcPath": ["../fluid"],
+      "inputs": [ "aMatrix", "bMatrix", "cMatrix" ],
+      "query": true,
+      "linking": false
+  }
+   loadFigureSpecSrc(spec)(src)()
 </script>
 </body>
 </html>
