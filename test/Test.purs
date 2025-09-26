@@ -21,11 +21,11 @@ import Test.Specs.Misc (misc_cases)
 import Test.Specs.Paragraph (paragraph_cases)
 import Test.Util (TestSuite, fluidSrcPaths)
 import Test.Util.Mocha (run)
-import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite)
+import Test.Util.Suite (BenchSuite, TestSpec, bwdSuite, linkedInputsSuite, linkedOutputsSuite, suite)
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> filterSuite files)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> filterSuite files comments_cases)
    where
    files =
       [ "comments/nested-constr.fld"
@@ -40,10 +40,9 @@ main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> filterSuite files)
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 scratchpad = second void <$> suite paragraph_cases (1 × false)
 
-filterSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> TestSuite m
-filterSuite files = second void <$> suite selectedCases (1 × false)
-   where
-   selectedCases = filter (\c -> c.file `elem` files) comments_cases
+filterSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> Array TestSpec -> TestSuite m
+filterSuite files cases =
+   second void <$> suite (filter (\c -> c.file `elem` files) cases) (1 × false)
 
 allTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 allTests =
