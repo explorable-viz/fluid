@@ -28,8 +28,7 @@ main :: Effect Unit
 main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> filterSuite files bwd_cases bwdSuite)
    where
    files =
-      [ "dtw/compute-dtw.fld"
-      , "dtw/average-series.fld"
+      [ "section-5-example.fld"
       ]
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
