@@ -25,16 +25,11 @@ import Test.Util.Suite (BenchSuite, SuiteFactory, bwdSuite, linkedInputsSuite, l
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> filterSuite files comments_cases suite)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> filterSuite files bwd_cases bwdSuite)
    where
    files =
-      [ "comments/nested-constr.fld"
-      -- , "comments/dicts.fld"
-      -- , "comments/app-arg.fld"
-      -- , "comments/list-comp.fld"
-      -- , "comments/app.fld"
-      -- , "comments/int.fld"
-      -- , "comments/projection.fld"
+      [ "dtw/compute-dtw.fld"
+      , "dtw/average-series.fld"
       ]
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
