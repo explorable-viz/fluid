@@ -78,9 +78,16 @@
 </div>
 
 <script type="module">
-   import { loadFigure, drawCode } from "/shared/load-figure.js"
+   import { loadFigureSpec, drawCode } from "/shared/load-figure.js"
+   const spec = {
+      "fluidSrcPath": ["../fluid"],
+      "inputs": ["methane"],
+      "query": false,
+      "linking": false
+   }
+
    drawCode("../fluid/moving-average.fld")()
-   loadFigure("spec.json")("../fluid/moving-average.fld")()
+   loadFigureSpec(spec)("../fluid/moving-average.fld")()
 </script>
 </body>
 </html>

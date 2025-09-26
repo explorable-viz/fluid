@@ -45,8 +45,15 @@
 </div>
 
 <script type="module">
-   import { loadFigure } from "/shared/load-figure.js"
-   loadFigure("spec.json")("../fluid/convolution/emboss-wrap.fld")()
+   import { loadFigureSpec } from "/shared/load-figure.js"
+   const spec = {
+      "fluidSrcPath": ["../fluid"],
+      "inputs": [ "inputImage", "filter" ],
+      "query": false,
+      "linking": true
+   }
+
+   loadFigureSpec(spec)("../fluid/convolution/emboss-wrap.fld")()
 </script>
 </body>
 </html>
