@@ -50,6 +50,8 @@ type TestLinkedInputsSpec =
    , file :: String
    }
 
+type SuiteFactory r m = MonadError Error m => MonadReader FileCxt m => LoadFile m => Array { file :: String | r } -> BenchSuite m
+
 suite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array TestSpec -> BenchSuite m
 suite specs (n × is_bench) = specs <#> (_.file &&& asTest)
    where
