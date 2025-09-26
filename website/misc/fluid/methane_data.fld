@@ -1,2 +1,0 @@
-def methane:
-  loadJson("dataset/methane-emissions.json")

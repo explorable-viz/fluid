@@ -1,4 +1,4 @@
-import methane
+import methane_data
 
 def nthPad(n, xs):
   nth(min(max(n, 0), length(xs) - 1), xs)
