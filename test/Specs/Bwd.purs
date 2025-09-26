@@ -87,7 +87,7 @@ bwd_cases =
      }
    , { file: "dtw/average-series.fld"
      , bwd_expect_file: "dtw/average-series.expect.fld"
-     , fwd_expect: "2.5 : (0.5 : (⸨0.5⸩ : (2.5 : (2.5 : (1.0 : (0.5 : []))))))"
+     , fwd_expect: "2.5 :| 0.5 :| ⸨0.5⸩ :| 2.5 :| 2.5 :| 1.0 :| 0.5 :| []"
      , δv: listElement 2 select
      }
    , { file: "filter.fld"
