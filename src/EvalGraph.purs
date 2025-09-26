@@ -31,8 +31,8 @@ import Graph.Slice (bwdSlice, fwdSlice)
 import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWithGraphT_spy)
 import Lattice (Raw, 𝔹)
 import ModuleGraph (ModuleName, ModuleCxt)
-import Temp.Pretty (prettyP)
 import Primitive (intPair, string, unpack)
+import Temp.Pretty (prettyP)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, absurd, check, defined, definitely, error, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))
@@ -148,10 +148,10 @@ eval γ e0 αs = do
          App e e' -> do
             v <- eval γ e αs
             v' <- eval γ e' αs
-            apply v v'
+            withMsg ("In to " <> funName e) $ apply v v'
          Let (VarDef σ e) e' -> do
             v <- eval γ e αs
-            γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
+            γ' × _ × αs' <- withMsg "In destructuring def" $ match v σ -- terminal meta-type of eliminator is meta-unit
             eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
          LetRec (RecDefs α ρ) e -> do
             γ' <- closeDefs γ ρ (insert α αs)
@@ -168,6 +168,12 @@ eval γ e0 αs = do
                   v <- eval γ e αs
                   pure $ Val α (Just v) u
          _ -> error absurd
+   where
+   funName :: forall a. Expr a -> String
+   funName (Var x) = x
+   funName (Op op) = op
+   funName (App e _) = funName e
+   funName _ = "unknown"
 
 evalVal :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Maybe (Vertex × BaseVal Vertex))
 evalVal _ (Int α n) _ =
