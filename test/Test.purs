@@ -25,11 +25,10 @@ import Test.Util.Suite (BenchSuite, SuiteFactory, bwdSuite, linkedInputsSuite, l
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> filterSuite files bwd_cases bwdSuite)
-   where
-   files =
-      [ "section-5-example.fld"
-      ]
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
+
+tests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
+tests = allTests
 
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 scratchpad = second void <$> suite paragraph_cases (1 × false)
