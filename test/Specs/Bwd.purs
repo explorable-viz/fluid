@@ -151,7 +151,7 @@ bwd_cases =
    , { file: "section-5-example.fld"
      , bwd_expect_file: "section-5-example-2.expect.fld"
      , δv: listElement 1 select
-     , fwd_expect: "⸨88⸩ : (⸨6⸩ : (⸨4⸩ : []))"
+     , fwd_expect: "⸨88⸩ :| ⸨6⸩ :| ⸨4⸩ :| []"
      }
    , { file: "section-5-example.fld"
      , bwd_expect_file: "section-5-example-3.expect.fld"
