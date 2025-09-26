@@ -47,7 +47,7 @@ debug
       }
 
 debug =
-   { logging: false
+   { logging: true
    , tracing: true
    }
 

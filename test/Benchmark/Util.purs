@@ -11,7 +11,6 @@ import Data.List (List(..), fold, length, union)
 import Data.List (singleton) as L
 import Data.Map (Map, singleton, unionWith, keys, values)
 import Data.Map (empty) as M
-import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over2)
 import Data.Number (pow, sqrt)
 import Data.Tuple (snd)
@@ -19,7 +18,6 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console (log)
 import Graph (class Graph, size)
-import Temp.Pretty (class Pretty, prettyP)
 import Util (type (×), EffectError, Thunk, debug, force, (×))
 
 logAs :: forall m. MonadEffect m => String -> String -> m Unit
@@ -70,20 +68,13 @@ logTimeWhen true msg m = do
    logAs msg (show t)
    pure x
 
-benchmarkLog :: forall m a. MonadWriter BenchRow m => Pretty a => String -> Thunk (m a) -> EffectError m a
-benchmarkLog name = benchmark' name (Just prettyP)
-
 benchmark :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
-benchmark name = benchmark' name Nothing
+benchmark name = benchmark' name
 
-benchmark' :: forall m a. MonadWriter BenchRow m => String -> Maybe (a -> String) -> Thunk (m a) -> EffectError m a
-benchmark' name show_opt m = do
+benchmark' :: forall m a. MonadWriter BenchRow m => String -> Thunk (m a) -> EffectError m a
+benchmark' name m = do
    when debug.logging $ log ("**** " <> name)
    t × x <- time m
-   when debug.logging $
-      case show_opt of
-         Nothing -> pure unit
-         Just show -> logAs name (show x)
    tell (BenchRow $ singleton name (L.singleton t))
    pure x
 
