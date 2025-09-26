@@ -85,13 +85,13 @@
 import matrixMultiply.matrices
 
 def matMul(a, b):
-  def ((m, n), (i, j)): (dims(a), dims(b));
+  def ((m, n), (i, j)): (dims(a), dims(b))
 
   if not(n == i):
     error("Dimensions don't line up")
   else:
     @doc("""Intermediate matrix""")
-    [| sum([a ! (i', k) * b ! (k, j') for k in enumFromTo(1, n)]) for (i', j') in (m, j) |];
+    [| sum([a!(i_, k) * b!(k, j_) for k in enumFromTo(1, n)]) for (i_, j_) in (m, j) |]
 
 MultiView({
   firstMatrix: matMul(matMul(a, b), c),
