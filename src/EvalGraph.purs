@@ -148,10 +148,10 @@ eval γ e0 αs = do
          App e e' -> do
             v <- eval γ e αs
             v' <- eval γ e' αs
-            withMsg ("In to " <> funName e) $ apply v v'
+            withMsg ("In " <> funName e) $ apply v v'
          Let (VarDef σ e) e' -> do
             v <- eval γ e αs
-            γ' × _ × αs' <- withMsg "In destructuring def" $ match v σ -- terminal meta-type of eliminator is meta-unit
+            γ' × _ × αs' <- withMsg "In variable def" $ match v σ -- terminal meta-type of eliminator is meta-unit
             eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
          LetRec (RecDefs α ρ) e -> do
             γ' <- closeDefs γ ρ (insert α αs)
