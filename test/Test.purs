@@ -25,7 +25,7 @@ import Test.Util.Suite (BenchSuite, bwdSuite, linkedInputsSuite, linkedOutputsSu
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> selectedCommentsTests files)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> filterSuite files)
    where
    files =
       [ "comments/nested-constr.fld"
@@ -40,8 +40,8 @@ main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> selectedCommentsTes
 scratchpad :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 scratchpad = second void <$> suite paragraph_cases (1 × false)
 
-selectedCommentsTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> TestSuite m
-selectedCommentsTests files = second void <$> suite selectedCases (1 × false)
+filterSuite :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Array String -> TestSuite m
+filterSuite files = second void <$> suite selectedCases (1 × false)
    where
    selectedCases = filter (\c -> c.file `elem` files) comments_cases
 
