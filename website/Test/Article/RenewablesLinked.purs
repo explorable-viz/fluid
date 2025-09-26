@@ -1,4 +1,4 @@
-module Website.Test.Misc.RenewablesLinked where
+module Website.Test.Article.RenewablesLinked where
 
 import Prelude
 
