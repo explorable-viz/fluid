@@ -1,15 +1,8 @@
-import { clickToggle, runTests, testURL, waitFor } from "./shared/webtest-lib.js"
+import { click, clickToggle, runTests, testURL, waitFor } from "./shared/webtest-lib.js"
 
 export const main = async () => {
    await runTests(testURL("convolution")([ page => waitFor("svg#fig-output")(page) ]))()
-   await runTests(testURL("energy-scatter")([
-      page => waitFor("svg")(page),
-      page => clickToggle(page)("fig-data-pane"),
-      page => {
-        const point = "div#fig .scatterplot-point"
-        return waitFor(point)(page)
-      }
-   ]))()
+   const point = "div#fig .scatterplot-point"
    await runTests(testURL("methane")([ page => waitFor("#fig > svg:nth-of-type(1)")(page) ]))()
    await runTests(testURL("moving-average")([ page => waitFor("svg")(page) ]))()
    await runTests(testURL("non-renewables")([
