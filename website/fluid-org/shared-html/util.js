@@ -1,5 +1,5 @@
 function loadHeader () {
-   fetch('/shared/header.html')
+   fetch('/shared-html/header.html')
       .then(response => response.text())
       .then(data => {
          const header = document.createElement('div')
@@ -11,7 +11,7 @@ function loadHeader () {
       })
       .catch(error => console.error('Error loading shared HTML:', error))
 
-   fetch('/shared/footer.html')
+   fetch('/shared-html/footer.html')
       .then(response => response.text())
       .then(data => {
          const footer = document.createElement('div')
@@ -40,7 +40,7 @@ function activateCurrentLink (el) {
 }
 
 function loadSubHeader () {
-   fetch('/shared/sub-header.html')
+   fetch('/shared-html/sub-header.html')
       .then(response => response.text())
       .then(data => {
          const header = document.createElement('div')
