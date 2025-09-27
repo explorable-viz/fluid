@@ -1,5 +1,5 @@
 import lib.matrix
 import convolution.testImage
-import convolution.filter.emboss
+import convolution.emboss
 
 convolve(inputImage, filter, wrap)
