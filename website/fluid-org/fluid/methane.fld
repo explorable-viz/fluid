@@ -1,1 +1,1 @@
-let methane = loadJson "dataset/methane-emissions.json";
+def methane: loadJson("dataset/methane-emissions.json")

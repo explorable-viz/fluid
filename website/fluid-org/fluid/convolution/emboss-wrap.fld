@@ -2,4 +2,4 @@ import lib.matrix
 import convolution.testImage
 import convolution.filter.emboss
 
-convolve inputImage filter wrap
+convolve(inputImage, filter, wrap)
