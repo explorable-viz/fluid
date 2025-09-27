@@ -188,7 +188,7 @@ drawFig divId fig = do
 
 drawFile :: File × String -> Effect Unit
 drawFile (File fileName × src) =
-   addEditorView (codeMirrorDiv fileName) >>= drawCode src
+   addEditorView (codeMirrorDiv fileName) >>= loadCode src
 
 unprojExpr :: forall a. BoundedMeetSemilattice a => Raw EnvExpr -> GaloisConnection (Env a) (EnvExpr a)
 unprojExpr (EnvExpr _ e) = GC
@@ -293,6 +293,6 @@ loadFig spec@{ inputs, linking } fluidSrc = do
 codeMirrorDiv :: Endo String
 codeMirrorDiv = ("codemirror-" <> _)
 
-drawCode :: String -> EditorView -> Effect Unit
-drawCode s ed =
+loadCode :: String -> EditorView -> Effect Unit
+loadCode s ed =
    dispatch ed =<< update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]

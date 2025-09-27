@@ -32,7 +32,7 @@
 </div>
 
 <script type="module">
-    import { loadFigureSpec } from "/shared/load-figure.js"
+    import { loadFigure } from "/shared/load-figure.js"
     const spec = {
       "fluidSrcPath": ["../fluid"],
       "inputs": [ "methane"],
@@ -40,7 +40,7 @@
       "linking": true
     }
 
-    loadFigureSpec(spec)("../fluid/methane.fld")()
+    loadFigure(spec)("../fluid/methane.fld")()
 </script>
 </body>
 </html>

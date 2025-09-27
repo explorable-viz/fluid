@@ -46,7 +46,7 @@
 </div>
 
 <script type="module">
-   import { loadFigureSpec } from "/shared/load-figure.js"
+   import { loadFigure } from "/shared/load-figure.js"
    const spec = {
       "fluidSrcPath": ["../fluid"],
       "inputs": [ "inputImage", "filter" ],
@@ -54,7 +54,7 @@
       "linking": true
    }
 
-   loadFigureSpec(spec)("../fluid/convolution-wraped.fld")()
+   loadFigure(spec)("../fluid/convolution-wraped.fld")()
 </script>
 </body>
 </html>

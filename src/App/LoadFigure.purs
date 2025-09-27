@@ -51,18 +51,13 @@ loadSpec filename = do
       Left err -> error ("Json fetching failed with " <> printError err)
       Right response -> pure $ response.body
 
-loadFigureSrc :: String -> String -> Effect Unit
-loadFigureSrc specFile fluidSrc = launchAff_ do
-   jsonSpec <- loadSpec specFile
-   liftEffect $ loadFigureSpecSrc jsonSpec fluidSrc
-
-loadFigureSpec :: Json -> String -> Effect Unit
-loadFigureSpec jsonSpec srcFile = launchAff_ do
+loadFigure :: Json -> String -> Effect Unit
+loadFigure jsonSpec srcFile = launchAff_ do
    fluidSrc <- loadFileFromPath (File srcFile)
-   liftEffect $ loadFigureSpecSrc jsonSpec (definitely' fluidSrc)
+   liftEffect $ loadFigureSrc jsonSpec (definitely' fluidSrc)
 
-loadFigureSpecSrc :: Json -> String -> Effect Unit
-loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
+loadFigureSrc :: Json -> String -> Effect Unit
+loadFigureSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
    [ case decodeJson jsonSpec :: Either JsonDecodeError JsonSpec of
         Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> do
@@ -70,8 +65,8 @@ loadFigureSpecSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
            ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
    ]
 
-drawCode :: String -> Effect Unit
-drawCode file = launchAff_ do
+loadCode :: String -> Effect Unit
+loadCode file = launchAff_ do
    fluidSrc <- loadFileFromPath (File file)
    liftEffect $ drawFile (File (definitely errEmptyName filename) × definitely errNotFound fluidSrc)
    where
@@ -81,5 +76,5 @@ drawCode file = launchAff_ do
       filename_ <- head (split (Pattern ".") splitPath)
       if filename_ == "" then Nothing else pure filename_
 
-   errEmptyName = "drawCode: Filename cannot be empty: " <> file
-   errNotFound = "drawCode: File not found: " <> file
+   errEmptyName = "loadCode: Filename cannot be empty: " <> file
+   errNotFound = "loadCode: File not found: " <> file

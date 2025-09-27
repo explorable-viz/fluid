@@ -114,7 +114,7 @@
 </div>
 
 <script type="module">
-   import { drawCode, loadFigureSpec } from "/shared/load-figure.js"
+   import { loadCode, loadFigure } from "/shared/load-figure.js"
    const spec = {
       "fluidSrcPath": ["fluid"],
       "inputs": ["nonRenewables"],
@@ -122,8 +122,8 @@
       "linking": true
    }
 
-   drawCode("fluid/non-renewables.fld")()
-   loadFigureSpec(spec)("fluid/non-renewables.fld")()
+   loadCode("fluid/non-renewables.fld")()
+   loadFigure(spec)("fluid/non-renewables.fld")()
 </script>
 </body>
 </html>

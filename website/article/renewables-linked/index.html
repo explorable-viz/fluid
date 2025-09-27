@@ -33,14 +33,14 @@
 </div>
 
 <script type="module">
-   import { loadFigureSpec, drawCode } from "../shared/load-figure.js"
+   import { loadFigure, loadCode } from "../shared/load-figure.js"
    const jsonSpec = {
     "fluidSrcPath": ["../fluid"],
     "inputs": ["renewables"],
     "query": false,
     "linking": true
    }
-   loadFigureSpec(jsonSpec)("../fluid/bar-chart-line-chart.fld")()
+   loadFigure(jsonSpec)("../fluid/bar-chart-line-chart.fld")()
 </script>
 </body>
 </html>

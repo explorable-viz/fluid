@@ -40,7 +40,7 @@
 </div>
 
 <script type="module">
-   import { loadFigureSpec, drawCode } from "../shared/load-figure.js"
+   import { loadFigure, loadCode } from "../shared/load-figure.js"
    const jsonSpec = {
       "fluidSrcPath": ["../fluid"],
       "inputs": [ "tableData" ],
@@ -48,7 +48,7 @@
       "linking": true
    }
 
-   loadFigureSpec(jsonSpec)("../fluid/1805.02474v1-10.fld")()
+   loadFigure(jsonSpec)("../fluid/1805.02474v1-10.fld")()
 </script>
 </body>
 </html>

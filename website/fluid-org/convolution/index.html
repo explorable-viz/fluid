@@ -112,7 +112,7 @@
 </div>
 
 <script type="module">
-   import { loadFigureSpec, drawCode } from "/shared/load-figure.js"
+   import { loadFigure, loadCode } from "/shared/load-figure.js"
    const spec = {
       "fluidSrcPath": ["../fluid"],
       "inputs": [ "inputImage", "filter" ],
@@ -120,8 +120,8 @@
       "linking": false
    }
 
-   drawCode("../fluid/lib/matrix.fld")()
-   loadFigureSpec(spec)("../fluid/convolution.fld")()
+   loadCode("../fluid/lib/matrix.fld")()
+   loadFigure(spec)("../fluid/convolution.fld")()
 </script>
 </body>
 </html>

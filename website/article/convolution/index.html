@@ -82,8 +82,8 @@
 </div>
 
 <script type="module">
-   import { loadFigureSpec, drawCode } from "../shared/load-figure.js"
-   drawCode("../fluid/convolution.fld")()
+   import { loadFigure, loadCode } from "../shared/load-figure.js"
+   loadCode("../fluid/convolution.fld")()
    const jsonSpec = {
       "fluidSrcPath": ["../fluid"],
       "inputs": [ "inputImage", "filter" ],
@@ -91,7 +91,7 @@
       "linking": false
    }
 
-   loadFigureSpec(jsonSpec)("../fluid/convolution.fld")()
+   loadFigure(jsonSpec)("../fluid/convolution.fld")()
 </script>
 </body>
 </html>

@@ -50,7 +50,7 @@
 </div>
 
 <script type="module">
-   import { loadFigureSpec } from "../shared/load-figure.js"
+   import { loadFigure } from "../shared/load-figure.js"
    const jsonSpec = {
       "fluidSrcPath": ["../fluid"],
       "inputs": ["methane"],
@@ -58,7 +58,7 @@
       "linking": false
    }
 
-   loadFigureSpec(jsonSpec)("../fluid/moving-average.fld")()
+   loadFigure(jsonSpec)("../fluid/moving-average.fld")()
 </script>
 </body>
 </html>
