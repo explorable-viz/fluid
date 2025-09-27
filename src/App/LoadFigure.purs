@@ -51,11 +51,6 @@ loadSpec filename = do
       Left err -> error ("Json fetching failed with " <> printError err)
       Right response -> pure $ response.body
 
-loadFigure :: String -> String -> Effect Unit
-loadFigure specFile srcFile = launchAff_ do
-   jsonSpec <- loadSpec specFile
-   liftEffect $ loadFigureSpec jsonSpec srcFile
-
 loadFigureSrc :: String -> String -> Effect Unit
 loadFigureSrc specFile fluidSrc = launchAff_ do
    jsonSpec <- loadSpec specFile
