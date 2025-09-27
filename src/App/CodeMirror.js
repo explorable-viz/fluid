@@ -15,9 +15,10 @@ function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
-import {EditorState} from "@codemirror/state"
-import {EditorView, keymap, lineNumbers} from "@codemirror/view"
-import {defaultKeymap} from "@codemirror/commands"
+import { EditorState } from "@codemirror/state"
+import { EditorView, keymap, lineNumbers } from "@codemirror/view"
+import { defaultKeymap } from "@codemirror/commands"
+// import { python } from "@codemirror/lang-python"
 
 let startState = EditorState.create({
    doc: "",
@@ -25,6 +26,7 @@ let startState = EditorState.create({
       [ keymap.of(defaultKeymap)
       , EditorView.editable.of(false)
       , lineNumbers()
+//      , python()
       ]
 })
 
