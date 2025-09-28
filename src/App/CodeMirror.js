@@ -18,7 +18,8 @@ function curry4 (f) {
 import { EditorState } from "@codemirror/state"
 import { EditorView, keymap, lineNumbers } from "@codemirror/view"
 import { defaultKeymap } from "@codemirror/commands"
-// import { python } from "@codemirror/lang-python"
+import { python } from "@codemirror/lang-python"
+import { oneDark } from "@codemirror/theme-one-dark"
 
 let startState = EditorState.create({
    doc: "",
@@ -26,7 +27,8 @@ let startState = EditorState.create({
       [ keymap.of(defaultKeymap)
       , EditorView.editable.of(false)
       , lineNumbers()
-//      , python()
+      , python()
+      , oneDark
       ]
 })
 
