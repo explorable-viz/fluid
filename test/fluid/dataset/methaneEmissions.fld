@@ -1,2 +1,2 @@
 def methane:
-  loadJson("dataset/methane-emissions.json");
+  loadJson("/dataset/methane-emissions.json");

@@ -1,2 +1,2 @@
 def renewables:
-  loadJson("renewables.json");
+  loadJson("/dataset/renewables.json");
