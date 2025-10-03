@@ -25,7 +25,7 @@ import Test.Util.Suite (BenchSuite, SuiteFactory, bwdSuite, linkedInputsSuite, l
 import Util ((×))
 
 main :: Effect Unit
-main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> tests)
+main = run (second (runWebT (FileCxt { fluidSrcPaths })) <$> linkingTests)
 
 tests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
 tests = allTests
@@ -38,10 +38,10 @@ filterSuite files cases makeSuite =
    second void <$> makeSuite (filter (\c -> c.file `elem` files) cases) (1 × false)
 
 allTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
-allTests =
-   concat (benchmarks <#> asTestSuite)
-      <> linkedOutputsSuite linkedOutputs_cases
-      <> linkedInputsSuite linkedInputs_cases
+allTests = concat (benchmarks <#> asTestSuite) <> linkingTests
+
+linkingTests :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => TestSuite m
+linkingTests = linkedOutputsSuite linkedOutputs_cases <> linkedInputsSuite linkedInputs_cases
 
 asTestSuite :: forall m. MonadAff m => MonadError Error m => LoadFile m => BenchSuite m -> TestSuite m
 asTestSuite suite = second void <$> suite (1 × false)
