@@ -1,3 +1,28 @@
 import ar6_wg1.ts.figure12_data
 
-"""TODO"""
+# extract from data set instead?
+def models:
+  [
+    "HadGEM3-GC31-MM_ssp585",
+    "EC-Earth3-Veg_ssp585",
+    "ACCESS-CM2_ssp585",
+    "HadGEM3-GC31-LL_ssp585",
+    "CNRM-CM6-1-HR_ssp585",
+    "CESM2-WACCM_ssp585",
+    "IPSL-CM6A-LR_ssp585",
+    "CIESM_ssp585",
+    "CanESM5_ssp585",
+    "CanESM5-CanOE_ssp585",
+    "EC-Earth3_ssp585",
+    "UKESM1-0-LL_ssp585",
+    "KACE-1-0-G_ssp585",
+    "CNRM-CM6-1_ssp585",
+    "CESM2_ssp585"
+  ]
+
+def temps:
+  [ "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0", "3.25", "3.5", "3.75", "4.0", "4.25", "4.5", "4.75", "5.0" ]
+
+def xs: [ hydroData.pr.std.extra_annual.ens[ temp ][ model ] for model in models for temp in temps ]
+
+"""${length(xs)} records found."""
