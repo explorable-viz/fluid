@@ -3,7 +3,6 @@ module Primitive.Defs where
 import Prelude hiding (absurd, apply, div, mod, top)
 
 import Bind (Bind)
-import Control.Monad.Reader (ask)
 import Data.Argonaut.Core (Json, caseJson)
 import Data.Argonaut.Decode (parseJson)
 import Data.Array as Array
@@ -25,15 +24,15 @@ import Debug (trace)
 import Dict (fromFoldable) as D
 import Effect.Class (class MonadEffect)
 import EvalGraph (apply) as G
-import File (File(..), FileCxt(..), loadFile)
+import File (File(..), loadFileFromPath)
 import Foreign.Object as FO
 import Graph (Vertex)
 import Graph.WithGraph (class MonadWithGraphAlloc, new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
-import Temp.Pretty (prettyP)
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
-import Util (type (+), Endo, error, log', orElse, singleton, throw, (×))
+import Temp.Pretty (prettyP)
+import Util (type (+), Endo, definitely, error, log', orElse, singleton, throw, (×))
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut)
 
@@ -100,12 +99,10 @@ loadJson =
    where
    op :: Op
    op (Val _ _ (Str path) : Nil) = do
-      FileCxt { fluidSrcPaths } <- ask
-      str <- loadFile fluidSrcPaths (File path)
+      str <- definitely ("File \"" <> path <> "\" exists") <$> loadFileFromPath (File path)
       case parseJson str of
          Left err -> throw ("Failed to parse JSON: " <> show err)
-         Right (j :: Json) ->
-            fromJsonVal j
+         Right json -> fromJsonVal json
    op _ = throw "String expected"
 
 fromJsonVal :: forall m. MonadWithGraphAlloc m => MonadEffect m => Json -> m (Val Vertex)

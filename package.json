@@ -1,6 +1,6 @@
 {
   "name": "@explorable-viz/fluid",
-  "version": "0.10.5",
+  "version": "0.11.1",
   "description": "A functional programming language which integrates a bidirectional dynamic analysis, connecting outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.",
   "main": "index.js",
   "repository": {
@@ -76,7 +76,7 @@
     "karma-mocha-reporter": "2.2.5",
     "mocha": "^10.0.0",
     "puppeteer": "^23.2.0",
-    "purescript": "^0.15.10",
+    "purescript": "0.15.10",
     "purescript-language-server": "0.16.6",
     "purescript-psa": "0.8.2",
     "purs-backend-es": "^1.4.2",

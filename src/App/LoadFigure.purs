@@ -68,13 +68,10 @@ loadFigureSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
 loadCode :: String -> Effect Unit
 loadCode file = launchAff_ do
    fluidSrc <- loadFileFromPath (File file)
-   liftEffect $ drawFile (File (definitely errEmptyName filename) × definitely errNotFound fluidSrc)
+   liftEffect $ drawFile (File filename × definitely ("loadCode: File not found: " <> file) fluidSrc)
    where
-   filename :: Maybe String
-   filename = do
+   filename :: String
+   filename = definitely ("loadCode: Filename cannot be empty: " <> file) do
       splitPath <- last (split (Pattern "/") file)
       filename_ <- head (split (Pattern ".") splitPath)
       if filename_ == "" then Nothing else pure filename_
-
-   errEmptyName = "loadCode: Filename cannot be empty: " <> file
-   errNotFound = "loadCode: File not found: " <> file

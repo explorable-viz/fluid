@@ -1,2 +1,2 @@
-def tableData: loadJson("ar6_wg1_spm/explainable-table.json")
-def likelihoods: loadJson("ar6_wg1_spm/likelihoods.json")
+def tableData: loadJson("/dataset/AR6-WG1/SPM/explainable-table.json")
+def likelihoods: loadJson("/dataset/AR6-WG1/SPM/likelihoods.json")
