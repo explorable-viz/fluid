@@ -44,7 +44,7 @@ module.exports = function (config) {
       logLevel: config.LOG_ERROR,
       proxies: {
          "/fluid/": "/base/fluid/",
-         "/test/dataset/": "/base/test/dataset/",
+         "/dataset/": "/base/test/dataset/",
          "/test/fluid/": "/base/test/fluid/"
       },
       reporters: ["mocha"],
