@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Fluid: Data-Linked Visualisations</title>
-    <link href="../../css/styles.css" rel="stylesheet" type="text/css">
-    <link href="../../css/view-styles.css" rel="stylesheet" type="text/css">
+    <link href="../../../css/styles.css" rel="stylesheet" type="text/css">
+    <link href="../../../css/view-styles.css" rel="stylesheet" type="text/css">
     <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
-    <script src="../../shared/util.js"></script>
+    <script src="../../../shared/util.js"></script>
     <style>
         .data-pane {
             max-width: 400px;
@@ -40,15 +40,15 @@
     </div>
 
     <script type="module">
-        import { loadFigure } from "../../shared/load-figure.js"
+        import { loadFigure } from "../../../shared/load-figure.js"
 
          const jsonSpec = {
-            "fluidSrcPath": ["../../fluid"],
+            "fluidSrcPath": ["../../../fluid"],
             "inputs": ["tableData", "likelihoods"],
             "query": true,
             "linking": true
          }
-        loadFigure(jsonSpec)("../../fluid/ar6_wg1/spm/table1.fld")()
+        loadFigure(jsonSpec)("../../../fluid/ar6_wg1/spm/table1.fld")()
     </script>
 </body>
 </html>
