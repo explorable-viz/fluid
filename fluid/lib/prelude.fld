@@ -177,8 +177,13 @@ def iterate(n, f, z):
   else:
     z :| map(f, iterate(n - 1, f, z))
 
-# List Int -> Int
-def sum: foldr((+), 0)
+# List Num -> Num
+def sum: foldl((+), 0)
+
+# List Num -> Num
+def mean(xs):
+  def (s, n): foldl(lambda (s, n), x: (s + x, n + 1), (0, 0), xs)
+  s / n
 
 # List a -> a
 def last([x]): x
