@@ -26,6 +26,8 @@ linkContents :: Link -> String
 linkContents (Link _ (s × _)) = s
 
 instance Viewable Link Unit where
+   isLeaf = const true
+
    createElement :: Unit -> Link -> D3.Selection -> Effect D3.Selection
    createElement _ link parent = do
       rootElement <- parent # create D3.Text [ classes [ "link" ] ]

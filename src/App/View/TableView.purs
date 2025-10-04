@@ -80,6 +80,8 @@ solidBorder :: String
 solidBorder = "1px solid blue"
 
 instance Viewable TableView Unit where
+   isLeaf = const false
+
    setSelection :: Unit -> TableView -> Select -> D3.Selection -> Effect Unit
    setSelection _ (TableView { title, rows }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"

@@ -32,6 +32,8 @@ type SegmentContext =
    }
 
 instance Viewable Segment SegmentContext where
+   isLeaf = const false
+
    createElement :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
    createElement { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
       parent

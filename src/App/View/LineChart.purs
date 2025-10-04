@@ -59,6 +59,8 @@ type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 
 instance Viewable LineChart Unit where
+   isLeaf = const false
+
    setSelection :: Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
    setSelection _ (LineChart { plots }) redraw rootElement = do
       points <- rootElement # selectAll ".linechart-point"

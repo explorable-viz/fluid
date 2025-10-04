@@ -32,6 +32,8 @@ barHeight :: StackedBar -> Number
 barHeight (StackedBar bar) = sum (map (\(Segment seg) -> contents seg.z) bar.segments)
 
 instance Viewable StackedBar StackedBarContext where
+   isLeaf = const false
+
    createElement :: StackedBarContext -> StackedBar -> D3.Selection -> Effect D3.Selection
    createElement context (stackedBar@(StackedBar { segments })) parent = do
       g <- parent # create G [ classes [ "stack" ] ]

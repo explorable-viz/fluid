@@ -33,6 +33,7 @@ foreign import createElement :: UIHelpers -> ScatterPlot -> D3.Selection -> Effe
 foreign import setSelection :: ScatterPlotHelpers -> UIHelpers -> ScatterPlot -> Select -> D3.Selection -> Effect Unit
 
 instance Viewable ScatterPlot Unit where
+   isLeaf = const false
    createElement _ = createElement uiHelpers
    setSelection _ = setSelection scatterPlotHelpers uiHelpers
 

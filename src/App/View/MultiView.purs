@@ -12,6 +12,8 @@ import Util (type (×))
 data MultiView = MultiView (Dict (View × View))
 
 instance Viewable MultiView Unit where
+   isLeaf = const false
+
    createElement :: Unit -> MultiView -> D3.Selection -> Effect D3.Selection
    createElement _ (MultiView views) = createElement unit views
 

@@ -23,6 +23,7 @@ foreign import setSelection :: MatrixViewHelpers -> UIHelpers -> MatrixView -> S
 foreign import createElement :: UIHelpers -> MatrixView -> D3.Selection -> Effect D3.Selection
 
 instance Viewable MatrixView Unit where
+   isLeaf = const false
    createElement _ = createElement uiHelpers
    setSelection _ = setSelection matrixViewHelpers uiHelpers
 

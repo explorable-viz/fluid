@@ -19,6 +19,8 @@ class Textual a where
 newtype Text = Text (Selectable String)
 
 instance Viewable Text Unit where
+   isLeaf = const true
+
    createElement :: Unit -> Text -> D3.Selection -> Effect D3.Selection
    createElement _ text parent = do
       rootElement <- parent # create D3.Span []

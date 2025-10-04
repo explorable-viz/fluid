@@ -29,6 +29,8 @@ newtype BarChart = BarChart
    }
 
 instance Viewable BarChart Unit where
+   isLeaf = const false
+
    setSelection :: Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
    setSelection _ chart@(BarChart { stackedBars }) select barChart' = do
       let props = barChartProps chart

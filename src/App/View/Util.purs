@@ -7,7 +7,7 @@ import App.Util.Selector (ViewSetter, dictVal)
 import App.View.Util.D3 (create, isEmpty, on, rootSelect, select, setAttrs)
 import App.View.Util.D3 as D3
 import Bind (Var, (↦))
-import Data.Foldable (for_, sequence_)
+import Data.Foldable (all, for_, sequence_)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Maybe (Maybe)
 import Data.Set (Set)
@@ -19,7 +19,8 @@ import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
 import SExpr as S
 import Util (type (×), Endo, check, (×))
-import Util.Map (toUnfoldable)
+import Util.Map (toUnfoldable, values)
+import Util.Set (size)
 import Val (Env, Val)
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener)
@@ -41,15 +42,20 @@ selListener figVal redraw = redraw <<< figVal
 class Viewable a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection
    setSelection :: b -> a -> Select -> D3.Selection -> Effect Unit
+   isLeaf :: a -> Boolean
 
 instance Viewable View Unit where
+   isLeaf view = unpack view \v -> isLeaf v
    createElement _ view parent = unpack view \v -> createElement unit v parent
    setSelection _ view select rootElement = unpack view \v -> setSelection unit v select rootElement
 
 instance Viewable (Dict (View × View)) Unit where
+   isLeaf views = size views == 0
+
    createElement :: Unit -> Dict (View × View) -> D3.Selection -> Effect D3.Selection
    createElement _ views parent = do
-      rootElement <- parent # create D3.Div [ classes [ "tree-children" ] ]
+      let columnar = if all isLeaf (snd <$> values views) then [ "columnar" ] else []
+      rootElement <- parent # create D3.Div [ classes $ [ "tree-children" ] <> columnar ]
       -- create views in fixed order, so can access positionally in setSelection and map back to keys
       sequence_ $ (toUnfoldable views :: Array _) <#> \(_ × (k_view × view)) -> do
          child <- rootElement # create D3.Div [ classes [ "tree-node" ] ]
