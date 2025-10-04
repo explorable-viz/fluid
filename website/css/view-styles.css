@@ -134,7 +134,7 @@ td.table-cell {
 
 .matrix-cell-text {
    font-size: 10pt;
-   font-family: "GraphikLight", sans-serif;
+   font-family: "Roboto", sans-serif;
    color: rgb(205, 205, 205)
 }
 
@@ -191,4 +191,8 @@ td.table-cell {
 
 .para-text {
    font-size: 10pt;
+}
+
+.bar {
+   stroke-width: 1.5;
 }
