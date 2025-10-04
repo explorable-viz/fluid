@@ -7,8 +7,9 @@ import App.View.Util (class View, Select, View', createElement, setSelection)
 import App.View.Util.D3 as D3
 import Dict (Dict)
 import Effect (Effect)
+import Util (type (×))
 
-data MultiView = MultiView (Dict View')
+data MultiView = MultiView (Dict (View' × View'))
 
 instance View MultiView Unit where
    createElement :: Unit -> MultiView -> D3.Selection -> Effect D3.Selection

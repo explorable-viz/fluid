@@ -18,7 +18,7 @@ import File (Folder)
 import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
 import SExpr as S
-import Util (type (×), (×), Endo, check)
+import Util (type (×), Endo, check, (×))
 import Util.Map (toUnfoldable)
 import Val (Env, Val)
 import Web.Event.Event (EventType(..))
@@ -42,20 +42,23 @@ class View a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection
    setSelection :: b -> a -> Select -> D3.Selection -> Effect Unit
 
-instance View (Dict View') Unit where
-   -- create views in fixed order, so can access positionally in setSelection and map back to keys
-   createElement :: Unit -> Dict View' -> D3.Selection -> Effect D3.Selection
+instance View (Dict (View' × View')) Unit where
+   createElement :: Unit -> Dict (View' × View') -> D3.Selection -> Effect D3.Selection
    createElement _ views parent = do
       rootElement <- parent # create D3.Div []
-      sequence_ $ (toUnfoldable views :: Array _) <#> \(_ × view) ->
-         unpack view \v -> createElement unit v rootElement
+      -- create views in fixed order, so can access positionally in setSelection and map back to keys
+      sequence_ $ (toUnfoldable views :: Array _) <#> \(_ × (k_view × view)) -> do
+         child <- rootElement # create D3.Div []
+         void $ unpack k_view \v -> createElement unit v child
+         void $ unpack view \v -> createElement unit v child
       pure rootElement
 
-   setSelection :: Unit -> Dict View' -> Select -> D3.Selection -> Effect Unit
+   setSelection :: Unit -> Dict (View' × View') -> Select -> D3.Selection -> Effect Unit
    setSelection _ views select rootElement =
       sequence_ $
-         flip mapWithIndex (toUnfoldable views :: Array _) \i (x × view) -> do
+         flip mapWithIndex (toUnfoldable views :: Array _) \i (x × k_view × view) -> do
             child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
+            void $ unpack k_view \v -> setSelection unit v select child
             void $ unpack view \v -> setSelection unit v (dictVal x >>> select) child
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit

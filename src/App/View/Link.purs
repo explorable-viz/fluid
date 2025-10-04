@@ -35,11 +35,11 @@ instance View Link Unit where
    setSelection _ link redraw rootElement = do
       listener <- eventListener (redraw <<< uncurry selLink <<< selectionEventData')
       rootElement # setStyles (textAttrs link) >>= registerMouseListeners listener
-
-selLink :: ViewSelSetter Link
-selLink _ δv = unsafePartial $ case _ of
-   (Val α doc (Constr c (v1 : v2 : Nil))) | c == cLink ->
-      first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
+      where
+      selLink :: ViewSelSetter Link
+      selLink _ δv = unsafePartial $ case _ of
+         (Val α doc (Constr c (v1 : v2 : Nil))) | c == cLink ->
+            first (\v1' -> Val α doc (Constr c (v1' : v2 : Nil))) (δv v1)
 
 instance Textual Link where
    getText (Link v (s × _)) = s × foldr join bot v

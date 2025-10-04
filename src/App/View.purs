@@ -21,7 +21,7 @@ import Data.Array ((:)) as A
 import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), (:))
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_width, f_x, f_y, f_z)
 import Dict (Dict)
 import Link (Link(..))
 import Primitive (int, string, typeError)
@@ -35,7 +35,6 @@ view' title v@(Val _ v_opt _) =
    pack $ DocView { doc: viewParagraph <$> v_opt, view: view title v }
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
--- Ignore view state for now.
 view :: Partial => String -> Val (SelStates 𝕊) -> View'
 view title v@(Val α _ u') = case u' of
    Int n -> pack (Text (show n × α))
@@ -47,7 +46,10 @@ view title v@(Val α _ u') = case u' of
       | c == cLineChart -> pack (dict from u :: LineChart)
       | c == cScatterPlot -> pack (dict from u :: ScatterPlot)
       | c == cMultiView ->
-           pack (MultiView (view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)))
+           pack (MultiView (mapWithKey (\k (α' × v') -> pack (Text (k × α')) × view k v') d))
+           where
+           d :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))
+           d = from u
       | c == cParagraph -> pack (Paragraph false (view "" <$> from u))
    Constr c (_ : _ : Nil)
       -- more consistent with other views for Link to take single argument of record type
@@ -61,7 +63,7 @@ view title v@(Val α _ u') = case u' of
    Matrix r ->
       pack (MatrixView { title, matrix: matrixRep r })
    Dictionary (DictRep d) ->
-      pack (mapWithKey (\k (_ × v') -> view k v') d)
+      pack (mapWithKey (\k (α' × v') -> pack (Text (k × α')) × view k v') d)
 
 viewParagraph :: Partial => Val (SelStates 𝕊) -> Paragraph
 viewParagraph (Val _ _ (Constr c (u : Nil))) | c == cParagraph =
@@ -87,8 +89,8 @@ instance Reflect (Val (SelStates 𝕊)) (NonEmptyArray (Val (SelStates 𝕊))) w
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) (Dimensions (Selectable Int)) where
    from r = Dimensions
-      { width: P.unpack int (snd (get "width" r))
-      , height: P.unpack int (snd (get "height" r))
+      { width: P.unpack int (snd (get f_width r))
+      , height: P.unpack int (snd (get f_height r))
       }
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
