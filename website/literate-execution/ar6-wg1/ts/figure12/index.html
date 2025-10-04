@@ -40,38 +40,41 @@
         <div class="tree-node"><div class="tree-label">root2</div></div>
       </div>
 
-      <div class="tree-node">
-        <div class="tree-label">root1</div>
-        <div class="tree-children">
-          <!-- Normal recursive branch -->
-            <div class="tree-node">
-              <div class="tree-label">longer name 1</div>
-              <div class="tree-children">
-                <div class="tree-node"><div class="tree-label">longer grandchild 1</div></div>
-                <div class="tree-node"><div class="tree-label">grandchild 2</div></div>
-              </div>
-            </div>
-            <div class="tree-node"><div class="tree-label">child 2</div></div>
-
-          <!-- Degenerate “columnar” branch -->
-          <div class="tree-node">
-            <div class="tree-label">X</div>
-            <div class="tree-children columnar">
+      <div class="tree-children">
+        <div class="tree-node">
+          <div class="tree-label">root1</div>
+          <div class="tree-children">
+            <!-- Normal recursive branch -->
               <div class="tree-node">
-                <div class="tree-label">Y</div>
+                <div class="tree-label">longer name 1</div>
                 <div class="tree-children">
-                  <div class="tree-node"><div class="tree-label">A</div></div>
+                  <div class="tree-node"><div class="tree-label">longer grandchild 1</div></div>
+                  <div class="tree-node"><div class="tree-label">grandchild 2</div></div>
                 </div>
               </div>
-              <div class="tree-node">
-                <div class="tree-label">Z</div>
-                <div class="tree-children">
-                  <div class="tree-node"><div class="tree-label">B</div></div>
+              <div class="tree-node"><div class="tree-label">child 2</div></div>
+
+            <!-- Degenerate “columnar” branch -->
+            <div class="tree-node">
+              <div class="tree-label">X</div>
+              <div class="tree-children columnar">
+                <div class="tree-node">
+                  <div class="tree-label">Y</div>
+                  <div class="tree-children">
+                    <div class="tree-node"><div class="tree-label">A</div></div>
+                  </div>
+                </div>
+                <div class="tree-node">
+                  <div class="tree-label">Z</div>
+                  <div class="tree-children">
+                    <div class="tree-node"><div class="tree-label">B</div></div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        <div class="tree-node"><div class="tree-label">root2</div></div>
       </div>
 
    </div>
