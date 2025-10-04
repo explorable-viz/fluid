@@ -30,6 +30,7 @@ import Util (type (×), error, (×))
 import Util.Map (get, mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
+-- TODO: merge with 'view' below.
 view' :: Partial => String -> Val (SelStates 𝕊) -> View
 view' title v@(Val _ v_opt _) =
    pack $ DocView { doc: viewParagraph <$> v_opt, view: view title v }

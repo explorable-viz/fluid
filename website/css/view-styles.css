@@ -234,7 +234,7 @@ td.table-cell {
 }
 
 .tree-children.columnar > .tree-node {
-  display: contents; /* flatten Y/Z to share grid rows */
+  display: contents; /* flatten to share grid rows */
 }
 
 .tree-children.columnar .tree-children {
