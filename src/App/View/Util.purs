@@ -45,10 +45,10 @@ class View a b | a -> b where
 instance View (Dict (View' × View')) Unit where
    createElement :: Unit -> Dict (View' × View') -> D3.Selection -> Effect D3.Selection
    createElement _ views parent = do
-      rootElement <- parent # create D3.Div []
+      rootElement <- parent # create D3.Div [ classes [ "tree-children" ] ]
       -- create views in fixed order, so can access positionally in setSelection and map back to keys
       sequence_ $ (toUnfoldable views :: Array _) <#> \(_ × (k_view × view)) -> do
-         child <- rootElement # create D3.Div []
+         child <- rootElement # create D3.Div [ classes [ "tree-node" ] ]
          key <- unpack k_view \v -> createElement unit v child
          void $ key # setAttrs [ classes [ "tree-label" ] ]
          void $ unpack view \v -> createElement unit v child
