@@ -18,8 +18,8 @@ import Data.Number (fromString)
 import Data.Number (log, pow) as N
 import Data.Set (empty)
 import Data.Set as Set
-import Data.Traversable (sequence, traverse)
-import Data.Tuple (Tuple, snd)
+import Data.Traversable (for, sequence, traverse)
+import Data.Tuple (snd)
 import DataType (cCons, cNil, cPair, cTrue, cFalse)
 import Debug (trace)
 import Dict (fromFoldable) as D
@@ -33,7 +33,7 @@ import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Temp.Pretty (prettyP)
-import Util (type (+), Endo, definitely, definitely', error, log', orElse, singleton, throw, (×))
+import Util (type (+), type (×), Endo, definitely, definitely', error, log', orElse, singleton, throw, (×))
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut)
 
@@ -119,7 +119,7 @@ fromJsonVal =
    where
    caseNull :: Unit -> m (Val Vertex)
    caseNull _ =
-      error ("Error, Null JSON value cannot be converted to Val Vertex")
+      error ("Error, Null JSON value cannot be converted to Val")
 
    caseBool :: Boolean -> m (Val Vertex)
    caseBool b =
@@ -136,31 +136,24 @@ fromJsonVal =
       new (flip Val Nothing) empty (Str s)
 
    caseArray :: Array Json -> m (Val Vertex)
-   caseArray arr = do
-      vs <- traverse fromJsonVal arr
-      v <- toList (Array.toUnfoldable vs :: List (Val Vertex))
-      log' ("Converted JSON array to Val Vertex: " <> prettyP v)
-      pure v
+   caseArray xs = do
+      vs <- traverse fromJsonVal xs
+      toList (Array.toUnfoldable vs)
+      where
+      toList :: List (Val Vertex) -> m (Val Vertex)
+      toList Nil = new (flip Val Nothing) empty (Constr cNil Nil)
+      toList (v : vs) = do
+         v' <- toList vs
+         new (flip Val Nothing) empty (Constr cCons (v : v' : Nil))
 
    caseObject :: FO.Object Json -> m (Val Vertex)
    caseObject obj = do
-      let kvs = FO.toUnfoldable obj :: Array (Tuple String Json)
-      entries <- traverse
-         ( \(k × vj) -> do
-              Val α _ _ <- new (flip Val Nothing) empty (Str k)
-              v <- fromJsonVal vj
-              pure (k × α × v)
-         )
-         kvs
-      let
-         d = D.fromFoldable entries
-      new (flip Val Nothing) empty (Dictionary (DictRep d))
-
-   toList :: List (Val Vertex) -> m (Val Vertex)
-   toList Nil = new (flip Val Nothing) empty (Constr cNil Nil)
-   toList (x : xs) = do
-      tailV <- toList xs
-      new (flip Val Nothing) empty (Constr cCons (x : tailV : Nil))
+      let kvs = FO.toUnfoldable obj :: Array (String × Json)
+      entries <- for kvs \(k × x) -> do
+         Val α _ _ <- new (flip Val Nothing) empty (Str k)
+         v <- fromJsonVal x
+         pure (k × α × v)
+      new (flip Val Nothing) empty (Dictionary (DictRep (D.fromFoldable entries)))
 
 dims :: ForeignOp
 dims =
