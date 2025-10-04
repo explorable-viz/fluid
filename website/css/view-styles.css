@@ -197,10 +197,6 @@ td.table-cell {
    stroke-width: 1.5;
 }
 
-.dict-entry {
-   display: flex; /* flex-direction row by default */
-}
-
 .tree-node {
    display: grid;
    grid-template-columns: auto 1fr; /* label on left, children on right */

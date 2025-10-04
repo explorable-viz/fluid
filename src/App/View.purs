@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, get_intOrNumber, inert)
+import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, get_intOrNumber)
 import App.View.BarChart (BarChart(..))
 import App.View.DocView (DocView(..))
 import App.View.LineChart (LineChart(..), LinePlot(..))
@@ -65,8 +65,7 @@ view title v@(Val α _ u') = case u' of
       pack (viewDict d)
 
 viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View' × View')
-viewDict = mapWithKey \k (α' × v') ->
-   pack (Paragraph [ pack $ Text (k × α'), pack $ Text (":" × inert) ]) × view k v'
+viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view k v'
 
 class Reflect a b where
    from :: Partial => a -> b
