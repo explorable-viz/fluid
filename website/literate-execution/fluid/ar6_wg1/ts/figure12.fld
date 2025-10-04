@@ -21,11 +21,13 @@ def models:
   ]
 
 def temps:
-  [ "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0", "3.25", "3.5", "3.75", "4.0", "4.25", "4.5", "4.75", "5.0" ]
+  [ "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0", "3.25",
+    "3.5", "3.75", "4.0", "4.25", "4.5", "4.75", "5.0" ]
 
-def pr(ensemble_data):
+def precip(ensemble_data):
   mean([ ensemble_data[ model ] for model in models ])
 
-def xs: [ { x: temp, y: pr(hydroData.pr.std.extra_annual.ens[ temp ]) } for temp in temps ]
+def points:
+  [ { x: temp, y: precip(hydroData.pr.std.extra_annual.ens[ temp ]) } for temp in temps ]
 
-"""${length(xs)} records found."""
+"""${length(points)} records found."""
