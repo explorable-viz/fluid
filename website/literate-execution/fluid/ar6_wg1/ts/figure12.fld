@@ -28,6 +28,14 @@ def precip(ensemble_data):
   mean([ ensemble_data[ model ] for model in models ])
 
 def points:
-  [ { x: temp, y: precip(hydroData.pr.std.extra_annual.ens[ temp ]) } for temp in temps ]
+  [ { x: float(temp), y: precip(hydroData.pr.std.extra_annual.ens[ temp ]) } for temp in temps ]
 
-"""${length(points)} records found."""
+LineChart({
+  tickLabels: { x: Default, y: Default },
+  size: { width: 530, height: 285 },
+  caption: "Hydrological change over extratropical land",
+  plots: [
+    LinePlot({ name: "Precipitation annual mean", points: points })
+  ]
+})
+# """${length(points)} records found."""
