@@ -58,7 +58,7 @@ instance View (Dict (View' × View')) Unit where
       sequence_ $
          flip mapWithIndex (toUnfoldable views :: Array _) \i (x × k_view × view) -> do
             child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
-            void $ unpack k_view \v -> setSelection unit v select child
+            void $ unpack k_view \v -> setSelection unit v (\_ -> pure unit) child
             void $ unpack view \v -> setSelection unit v (dictVal x >>> select) child
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
