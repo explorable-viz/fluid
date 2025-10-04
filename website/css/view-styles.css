@@ -196,3 +196,48 @@ td.table-cell {
 .bar {
    stroke-width: 1.5;
 }
+
+.tree-node {
+   display: grid;
+   grid-template-columns: auto 1fr; /* label on left, children on right */
+   gap: 8px;
+   align-items: start;
+}
+
+.tree-children {
+   display: grid;
+   grid-auto-rows: min-content;
+   gap: 4px;
+   border-left: 2px solid #ccc;
+   padding-left: 8px;
+}
+
+.tree-label {
+  background: #f8f8f8;
+  border: 1px solid #ccc;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.node {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px;
+  align-items: start;
+}
+
+.tree-children.columnar {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 12px;
+  row-gap: 4px;
+}
+
+.tree-children.columnar > .tree-node {
+  display: contents; /* flatten to share grid rows */
+}
+
+.tree-children.columnar .tree-children {
+  border-left: none;
+  padding-left: 0;
+}

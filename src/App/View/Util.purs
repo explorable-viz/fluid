@@ -2,12 +2,12 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, selClasses, selClassesFor)
+import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, classes, selClasses, selClassesFor)
 import App.Util.Selector (ViewSetter, dictVal)
-import App.View.Util.D3 (create, isEmpty, on, rootSelect, select)
+import App.View.Util.D3 (create, isEmpty, on, rootSelect, select, setAttrs)
 import App.View.Util.D3 as D3
 import Bind (Var, (↦))
-import Data.Foldable (for_, sequence_)
+import Data.Foldable (all, for_, sequence_)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Maybe (Maybe)
 import Data.Set (Set)
@@ -19,7 +19,8 @@ import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
 import SExpr as S
 import Util (type (×), Endo, check, (×))
-import Util.Map (toUnfoldable)
+import Util.Map (toUnfoldable, values)
+import Util.Set (size)
 import Val (Env, Val)
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (EventListener)
@@ -27,45 +28,55 @@ import Web.Event.EventTarget (EventListener)
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
-newtype View' = View' (forall r. (forall a. View a Unit => a -> r) -> r)
+newtype View = View (forall r. (forall a. Viewable a Unit => a -> r) -> r)
 
-pack :: forall a. View a Unit => a -> View'
-pack x = View' (_ $ x)
+pack :: forall a. Viewable a Unit => a -> View
+pack x = View (_ $ x)
 
-unpack :: forall r. View' -> (forall a. View a Unit => a -> r) -> r
-unpack (View' vw) k = vw k
+unpack :: forall r. View -> (forall a. Viewable a Unit => a -> r) -> r
+unpack (View vw) k = vw k
 
 selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
 selListener figVal redraw = redraw <<< figVal
 
-class View a b | a -> b where
+class Viewable a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection
    setSelection :: b -> a -> Select -> D3.Selection -> Effect Unit
+   isLeaf :: a -> Boolean
 
-instance View (Dict (View' × View')) Unit where
-   createElement :: Unit -> Dict (View' × View') -> D3.Selection -> Effect D3.Selection
+instance Viewable View Unit where
+   isLeaf view = unpack view \v -> isLeaf v
+   createElement _ view parent = unpack view \v -> createElement unit v parent
+   setSelection _ view select rootElement = unpack view \v -> setSelection unit v select rootElement
+
+instance Viewable (Dict (View × View)) Unit where
+   isLeaf views = size views == 0
+
+   createElement :: Unit -> Dict (View × View) -> D3.Selection -> Effect D3.Selection
    createElement _ views parent = do
-      rootElement <- parent # create D3.Div []
+      let columnar = if all isLeaf (snd <$> values views) then [ "columnar" ] else []
+      rootElement <- parent # create D3.Div [ classes $ [ "tree-children" ] <> columnar ]
       -- create views in fixed order, so can access positionally in setSelection and map back to keys
       sequence_ $ (toUnfoldable views :: Array _) <#> \(_ × (k_view × view)) -> do
-         child <- rootElement # create D3.Div []
-         void $ unpack k_view \v -> createElement unit v child
-         void $ unpack view \v -> createElement unit v child
+         child <- rootElement # create D3.Div [ classes [ "tree-node" ] ]
+         key <- createElement unit k_view child
+         void $ key # setAttrs [ classes [ "tree-label" ] ]
+         createElement unit view child
       pure rootElement
 
-   setSelection :: Unit -> Dict (View' × View') -> Select -> D3.Selection -> Effect Unit
+   setSelection :: Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
    setSelection _ views select rootElement =
       sequence_ $
          flip mapWithIndex (toUnfoldable views :: Array _) \i (x × k_view × view) -> do
             child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
             child1 <- child # D3.select (D3.nthChildOf D3.scope 1)
             child2 <- child # D3.select (D3.nthChildOf D3.scope 2)
-            void $ unpack k_view \v -> setSelection unit v (\_ -> pure unit) child1
-            void $ unpack view \v -> setSelection unit v (dictVal x >>> select) child2
+            void $ setSelection unit k_view (\_ -> pure unit) child1 -- TODO: revisit!
+            void $ setSelection unit view (dictVal x >>> select) child2
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
-draw :: forall a. View a Unit => Renderer a
+draw :: forall a. Viewable a Unit => Renderer a
 draw _ { divId, suffix, view } select' = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
@@ -78,7 +89,7 @@ draw _ { divId, suffix, view } select' = do
            else pure maybeRootElement
       )
 
-drawView :: RendererSpec View' -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View' -> Redraw -> Effect Unit
+drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal _ redraw =
    unpack vw (\view -> draw uiHelpers (rSpec { view = view }) (selListener figVal redraw))
 
@@ -132,10 +143,10 @@ type Fig =
    , linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-   , in_views :: Dict (Maybe View') -- strengthen this
+   , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
-   , out_view :: Maybe View'
-   , intermediate_views :: Dict (Maybe View')
+   , out_view :: Maybe View
+   , intermediate_views :: Dict (Maybe View)
    , inerts :: Set DVertex
    }
 

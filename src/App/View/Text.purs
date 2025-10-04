@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (Attrs, Selectable, contents, isPersistent, isPrimary, isSecondary, isTransient, sel, selectionEventData')
 import App.Util.Selector (ViewSelSetter)
-import App.View.Util (class View, Select, registerMouseListeners)
+import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (create, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -18,7 +18,9 @@ class Textual a where
 
 newtype Text = Text (Selectable String)
 
-instance View Text Unit where
+instance Viewable Text Unit where
+   isLeaf = const true
+
    createElement :: Unit -> Text -> D3.Selection -> Effect D3.Selection
    createElement _ text parent = do
       rootElement <- parent # create D3.Span []

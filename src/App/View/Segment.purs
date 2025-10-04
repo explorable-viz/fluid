@@ -4,7 +4,7 @@ import Prelude
 
 import App.Util (Attrs, Dimensions, Selectable, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
 import App.Util.Selector (nthSegment)
-import App.View.Util (class View, Select, registerMouseListeners)
+import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), bandwidth, colorScale, create, setAttrs)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
@@ -31,7 +31,9 @@ type SegmentContext =
    , y_index :: Int
    }
 
-instance View Segment SegmentContext where
+instance Viewable Segment SegmentContext where
+   isLeaf = const false
+
    createElement :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
    createElement { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
       parent

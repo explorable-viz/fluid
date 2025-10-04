@@ -405,9 +405,7 @@ expr_ = fix exprParser
             stringLiteral = Str unit <$> (try (notFollowedBy $ string str.triplequote) *> token.stringLiteral)
 
             paragraphLiteral :: SParser (Raw Expr)
-            paragraphLiteral = do
-               p <- paragraph expr'
-               pure $ Paragraph p
+            paragraphLiteral = Paragraph <$> paragraph expr'
 
             -- any binary operator, in parentheses
             parensOp :: SParser (Raw Expr)
