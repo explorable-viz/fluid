@@ -176,7 +176,7 @@ drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
    drawView { divId, suffix: str.output, view: out_view } selectOutput setOutputView redraw
 
-   sequence_ $ flip mapWithKey in_views \x view -> do
+   sequence_ $ flip mapWithKey in_views \x view ->
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) (setInputView x) redraw
 
    drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw

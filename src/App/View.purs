@@ -27,7 +27,7 @@ import Link (Link(..))
 import Primitive (int, string, typeError)
 import Primitive (unpack) as P
 import Util (type (×), error, (×))
-import Util.Map (get)
+import Util.Map (get, mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
 view' :: Partial => String -> Val (SelStates 𝕊) -> View'
@@ -50,7 +50,7 @@ view title v@(Val α _ u') = case u' of
            pack (MultiView (view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)))
       | c == cParagraph -> pack (Paragraph false (view "" <$> from u))
    Constr c (_ : _ : Nil)
-      -- would be more consistent with other views if Link took single argument of record type
+      -- more consistent with other views for Link to take single argument of record type
       | c == cLink -> pack (from v :: Link)
    Constr c _
       | c == cNil || c == cCons -> pack (TableView { title, filter: defaultFilter, colNames, rows })
@@ -60,6 +60,8 @@ view title v@(Val α _ u') = case u' of
            rows = arrayDictToArray2 colNames records <#> map snd
    Matrix r ->
       pack (MatrixView { title, matrix: matrixRep r })
+   Dictionary (DictRep d) ->
+      pack (mapWithKey (\k (_ × v') -> view k v') d)
 
 viewParagraph :: Partial => Val (SelStates 𝕊) -> Paragraph
 viewParagraph (Val _ _ (Constr c (u : Nil))) | c == cParagraph =
