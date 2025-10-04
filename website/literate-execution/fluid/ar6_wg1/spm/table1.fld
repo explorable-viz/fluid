@@ -1,5 +1,5 @@
 import lib.stats
-import ar6_wg1_spm.table_spm_1_data
+import ar6_wg1.spm.table1_data
 
 def newDataTable(offset):
   map(lambda s: {

@@ -14,6 +14,7 @@ import Data.Int as Int
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
+import Data.Number (fromString)
 import Data.Number (log, pow) as N
 import Data.Set (empty)
 import Data.Set as Set
@@ -32,13 +33,13 @@ import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Temp.Pretty (prettyP)
-import Util (type (+), Endo, definitely, error, log', orElse, singleton, throw, (×))
+import Util (type (+), Endo, definitely, definitely', error, log', orElse, singleton, throw, (×))
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
 extern (ForeignOp (id × φ)) =
-   id × Val bot Nothing (Fun ((Foreign (ForeignOp (id × φ))) Nil))
+   id × Val bot Nothing (Fun (Foreign (ForeignOp (id × φ)) Nil))
 
 primitives :: Raw Env
 primitives = wrap $ D.fromFoldable
@@ -48,9 +49,10 @@ primitives = wrap $ D.fromFoldable
    , extern dims
    , extern error_
    , extern loadJson
+   , unary "float" { i: string, o: number, fwd: definitely' <<< fromString }
    , unary "floor" { i: number, o: int, fwd: floor }
    , unary "log" { i: intOrNumber, o: number, fwd: log }
-   , unary "numToStr" { i: intOrNumber, o: string, fwd: numToStr }
+   , unary "numToStr" { i: intOrNumber, o: string, fwd: numToStr } -- rename to 'str' (more Pythonic)
    , binary "+" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: plus }
    , binary "-" { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: minus }
    , binaryZero "*" { i: intOrNumber, o: intOrNumber, fwd: times }

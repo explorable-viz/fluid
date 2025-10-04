@@ -18,7 +18,7 @@ import Data.Traversable (for)
 import Data.Tuple (fst, snd, uncurry)
 import Dict (Dict)
 import Effect (Effect)
-import Util (Endo, type (×), (×), absurd, definitely', error, length, (!))
+import Util (type (×), (×), absurd, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (eventListener)
@@ -27,7 +27,8 @@ type Record' = Array (Val (SelStates 𝕊)) -- somewhat anomalous, as elsewhere 
 
 data Filter = Everything | Interactive | Relevant
 
--- homogeneous array of records with fields of primitive type; each row has same length as colNames
+-- Homogeneous array of records with fields of primitive type; each row has same length as colNames.
+-- Can we treat as array of DictView?
 newtype TableView = TableView
    { title :: String
    , filter :: Filter
@@ -181,24 +182,8 @@ instance View TableView Unit where
                >>= setDatum { i: -1, j: j - 1, value, colName: colNames' ! j }
 
       cellClasses colName
-         | colName == rowKey = [ "filter-toggle", "toggle-button" ]
+         | colName == rowKey = [ "filter-toggle", "toggle-button" ] -- filter-toggle currently unused
          | otherwise = []
-
---      toggleListener <- filterToggleListener filterToggler
---
---      filterToggleListener :: FilterToggler -> Effect EventListener
---      filterToggleListener toggler = eventListener (eventData >>> toggler >>> (\_ -> identity) >>> redraw)
-
--- convert mouse event data (here, always rowKey) to view change
-type FilterToggler = String -> Endo TableView
-
-filterToggler :: FilterToggler
-filterToggler _ (TableView view) = TableView view { filter = rotate view.filter }
-   where
-   rotate :: Endo Filter
-   rotate Everything = Interactive
-   rotate Interactive = Relevant
-   rotate Relevant = Everything
 
 -- 0-based index of selected record and name of field; -1th field name is "__n" (rowKey)
 type CellIndex = { i :: Int, j :: Int, colName :: String, value :: String }
