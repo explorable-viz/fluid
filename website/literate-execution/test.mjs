@@ -6,8 +6,8 @@ export const main = async () => {
         page => waitFor("#fig-output > div:nth-of-type(2)")(page),
     ]))()
     await runTests(testURL("ar6-wg1/spm/table1")([
-        page => waitFor("#fig-output > div.para-text:nth-of-type(1)")(page),
-        page => waitFor("#fig-output > div.para-text:nth-of-type(2)")(page)
+        page => waitFor("#fig-output > div:nth-of-type(1) > div.para-text")(page),
+        page => waitFor("#fig-output > div:nth-of-type(2) > div.para-text")(page)
     ]))()
     console.log("Success!")
 }
