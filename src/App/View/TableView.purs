@@ -27,7 +27,8 @@ type Record' = Array (Val (SelStates 𝕊)) -- somewhat anomalous, as elsewhere 
 
 data Filter = Everything | Interactive | Relevant
 
--- homogeneous array of records with fields of primitive type; each row has same length as colNames
+-- Homogeneous array of records with fields of primitive type; each row has same length as colNames.
+-- Can we treat as array of DictView?
 newtype TableView = TableView
    { title :: String
    , filter :: Filter

@@ -18,10 +18,8 @@ import App.View.Util (View', pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array ((:)) as A
-import Data.Array (zipWith)
 import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
 import Data.Tuple (snd)
 import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_x, f_y, f_z)
 import Dict (Dict)
@@ -32,44 +30,40 @@ import Util (type (×), error, (×))
 import Util.Map (get)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
-view' :: Partial => String -> Val (SelStates 𝕊) -> Maybe View' -> View'
-view' title v@(Val _ v_opt _) _ =
-   pack $ DocView { doc: viewParagraph <$> v_opt, view: view title v Nothing }
+view' :: Partial => String -> Val (SelStates 𝕊) -> View'
+view' title v@(Val _ v_opt _) =
+   pack $ DocView { doc: viewParagraph <$> v_opt, view: view title v }
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 -- Ignore view state for now.
-view :: Partial => String -> Val (SelStates 𝕊) -> Maybe View' -> View'
-view _ (Val α _ (Int n)) _ = pack (Text (show n × α))
-view _ (Val α _ (Float n)) _ = pack (Text (show n × α))
-view _ (Val α _ (Str str)) _ = pack (Text (str × α))
-view title (Val _ _ (Constr c (u : Nil))) _
-   | c == cText = pack (from u :: Text)
-   | c == cBarChart = pack (dict from u :: BarChart)
-   | c == cLineChart = pack (dict from u :: LineChart)
-   | c == cScatterPlot = pack (dict from u :: ScatterPlot)
-   | c == cMultiView = pack (MultiView (vws <*> (const Nothing <$> vws)))
-        where
-        vws = view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)
-   | c == cParagraph = pack (Paragraph false (zipWith ($) vws (const Nothing <$> vws)))
-        where
-        vws = view "" <$> from u
-view _ v@(Val _ _ (Constr c (_ : _ : Nil))) _
-   -- would be more consistent with other views if Link took a single argument of record type
-   | c == cLink = pack (from v :: Link)
-view title u@(Val _ _ (Constr c _)) _
-   | c == cNil || c == cCons = pack (TableView { title, filter: defaultFilter, colNames, rows })
-        where
-        records = dict identity <$> from u
-        colNames = headers records
-        rows = arrayDictToArray2 colNames records <#> map snd
-view title (Val _ _ (Matrix r)) _ =
-   pack (MatrixView { title, matrix: matrixRep r })
+view :: Partial => String -> Val (SelStates 𝕊) -> View'
+view title v@(Val α _ u') = case u' of
+   Int n -> pack (Text (show n × α))
+   Float n -> pack (Text (show n × α))
+   Str str -> pack (Text (str × α))
+   Constr c (u : Nil)
+      | c == cText -> pack (from u :: Text)
+      | c == cBarChart -> pack (dict from u :: BarChart)
+      | c == cLineChart -> pack (dict from u :: LineChart)
+      | c == cScatterPlot -> pack (dict from u :: ScatterPlot)
+      | c == cMultiView ->
+           pack (MultiView (view title <$> ((from u :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))) # map snd)))
+      | c == cParagraph -> pack (Paragraph false (view "" <$> from u))
+   Constr c (_ : _ : Nil)
+      -- would be more consistent with other views if Link took single argument of record type
+      | c == cLink -> pack (from v :: Link)
+   Constr c _
+      | c == cNil || c == cCons -> pack (TableView { title, filter: defaultFilter, colNames, rows })
+           where
+           records = dict identity <$> from v
+           colNames = headers records
+           rows = arrayDictToArray2 colNames records <#> map snd
+   Matrix r ->
+      pack (MatrixView { title, matrix: matrixRep r })
 
 viewParagraph :: Partial => Val (SelStates 𝕊) -> Paragraph
 viewParagraph (Val _ _ (Constr c (u : Nil))) | c == cParagraph =
-   Paragraph false (zipWith ($) vws (const Nothing <$> vws))
-   where
-   vws = view "" <$> from u
+   Paragraph false (view "" <$> from u)
 
 -- ======================
 -- boilerplate

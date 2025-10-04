@@ -167,7 +167,7 @@ drawIntermediates divId (Env ι) unused redraw = do
    for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α <> "-doc") >>= remove
 
    sequence_ $ flip mapWithKey ι \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' str.intermediate (map to𝕊 <$> v) Nothing }
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' str.intermediate (map to𝕊 <$> v) }
          (selectIntermediate (Vertex α))
          (setIntermediateView (Vertex α))
          redraw
@@ -182,8 +182,8 @@ drawFig divId fig = do
    drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where
    { v, γ, ι } = selectionResult fig
-   out_view = unsafePartial $ view' str.output v fig.out_view
-   in_views = (\(Env γ) -> unsafePartial (mapWithKey view' γ) <*> fig.in_views) γ
+   out_view = unsafePartial $ view' str.output v
+   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey view' γ)
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
 
 drawFile :: File × String -> Effect Unit
