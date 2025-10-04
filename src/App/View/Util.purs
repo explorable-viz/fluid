@@ -2,7 +2,7 @@ module App.View.Util where
 
 import Prelude
 
-import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, selClasses, selClassesFor)
+import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, classes, selClasses, selClassesFor)
 import App.Util.Selector (ViewSetter, dictVal)
 import App.View.Util.D3 (create, isEmpty, on, rootSelect, select)
 import App.View.Util.D3 as D3
@@ -48,7 +48,7 @@ instance View (Dict (View' × View')) Unit where
       rootElement <- parent # create D3.Div []
       -- create views in fixed order, so can access positionally in setSelection and map back to keys
       sequence_ $ (toUnfoldable views :: Array _) <#> \(_ × (k_view × view)) -> do
-         child <- rootElement # create D3.Div []
+         child <- rootElement # create D3.Div [ classes [ "dict-entry" ] ]
          void $ unpack k_view \v -> createElement unit v child
          void $ unpack view \v -> createElement unit v child
       pure rootElement

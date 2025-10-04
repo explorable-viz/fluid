@@ -2,7 +2,7 @@ module App.View where
 
 import Prelude hiding (absurd)
 
-import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, get_intOrNumber)
+import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, dict, get_intOrNumber, inert)
 import App.View.BarChart (BarChart(..))
 import App.View.DocView (DocView(..))
 import App.View.LineChart (LineChart(..), LinePlot(..))
@@ -33,6 +33,9 @@ import Val (BaseVal(..), DictRep(..), Val(..))
 view' :: Partial => String -> Val (SelStates 𝕊) -> View'
 view' title v@(Val _ v_opt _) =
    pack $ DocView { doc: viewParagraph <$> v_opt, view: view title v }
+   where
+   viewParagraph (Val _ _ (Constr c (u : Nil))) | c == cParagraph =
+      Paragraph (view "" <$> from u)
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
 view :: Partial => String -> Val (SelStates 𝕊) -> View'
@@ -45,12 +48,8 @@ view title v@(Val α _ u') = case u' of
       | c == cBarChart -> pack (dict from u :: BarChart)
       | c == cLineChart -> pack (dict from u :: LineChart)
       | c == cScatterPlot -> pack (dict from u :: ScatterPlot)
-      | c == cMultiView ->
-           pack (MultiView (mapWithKey (\k (α' × v') -> pack (Text (k × α')) × view k v') d))
-           where
-           d :: Dict (SelStates 𝕊 × Val (SelStates 𝕊))
-           d = from u
-      | c == cParagraph -> pack (Paragraph false (view "" <$> from u))
+      | c == cMultiView -> pack (MultiView (viewDict (from u)))
+      | c == cParagraph -> pack (Paragraph (view "" <$> from u))
    Constr c (_ : _ : Nil)
       -- more consistent with other views for Link to take single argument of record type
       | c == cLink -> pack (from v :: Link)
@@ -63,15 +62,11 @@ view title v@(Val α _ u') = case u' of
    Matrix r ->
       pack (MatrixView { title, matrix: matrixRep r })
    Dictionary (DictRep d) ->
-      pack (mapWithKey (\k (α' × v') -> pack (Text (k × α')) × view k v') d)
+      pack (viewDict d)
 
-viewParagraph :: Partial => Val (SelStates 𝕊) -> Paragraph
-viewParagraph (Val _ _ (Constr c (u : Nil))) | c == cParagraph =
-   Paragraph false (view "" <$> from u)
-
--- ======================
--- boilerplate
--- ======================
+viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View' × View')
+viewDict = mapWithKey \k (α' × v') ->
+   pack (Paragraph [ pack $ Text (k × α'), pack $ Text (":" × inert) ]) × view k v'
 
 class Reflect a b where
    from :: Partial => a -> b

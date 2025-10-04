@@ -22,6 +22,20 @@
    <div></div>
    <div class="flex-left-align">
       <h3>Figure TS.12(f)</h3>
+
+      <div class="tree-node">
+        <div class="tree-label">root</div>
+        <div class="tree-children">
+          <div class="tree-node">
+            <div class="tree-label">child 1</div>
+            <div class="tree-children">
+              <div class="tree-node"><div class="tree-label">grandchild 1</div></div>
+              <div class="tree-node"><div class="tree-label">grandchild 2</div></div>
+            </div>
+          </div>
+          <div class="tree-node"><div class="tree-label">child 2</div></div>
+        </div>
+      </div>
    </div>
 
    <div class="flex-right-align data-pane">
@@ -41,7 +55,7 @@
 
    const jsonSpec = {
       "fluidSrcPath": [ "../../../fluid" ],
-      "inputs": [ "hydroData" ],
+      "inputs": [ "hydroData_agg" ],
       "query": false,
       "linking": true
    }

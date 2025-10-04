@@ -12,11 +12,11 @@ import Data.Foldable (sequence_)
 import DataType (cParagraph)
 import Effect (Effect)
 
-data Paragraph = Paragraph Boolean (Array View')
+data Paragraph = Paragraph (Array View')
 
 instance View Paragraph Unit where
    createElement :: Unit -> Paragraph -> D3.Selection -> Effect D3.Selection
-   createElement _ (Paragraph _ views) parent = do
+   createElement _ (Paragraph views) parent = do
       rootElement <- parent # create Div [ "class" ↦ "para-text" ]
       sequence_ $ views <#> \view -> do
          void $ createText rootElement " "
@@ -25,7 +25,7 @@ instance View Paragraph Unit where
       pure rootElement
 
    setSelection :: Unit -> Paragraph -> Select -> D3.Selection -> Effect Unit
-   setSelection _ (Paragraph _ views) select rootElement = do
+   setSelection _ (Paragraph views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
          child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
          unpack view \v -> setSelection unit v (select <<< constrArg cParagraph 0 <<< listElement i) child

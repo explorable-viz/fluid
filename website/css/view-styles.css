@@ -196,3 +196,29 @@ td.table-cell {
 .bar {
    stroke-width: 1.5;
 }
+
+.dict-entry {
+   display: flex; /* flex-direction row by default */
+}
+
+.tree-node {
+   display: grid;
+   grid-template-columns: auto 1fr; /* label on left, children on right */
+   gap: 8px;
+   align-items: start;
+}
+
+.tree-children {
+   display: grid;
+   grid-auto-rows: min-content;
+   gap: 4px;
+   border-left: 2px solid #ccc;
+   padding-left: 8px;
+}
+
+.tree-label {
+  background: #f8f8f8;
+  border: 1px solid #ccc;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
