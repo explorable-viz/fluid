@@ -27,23 +27,23 @@ import Web.Event.EventTarget (EventListener)
 type HTMLId = String
 type Redraw = Endo Fig -> Effect Unit
 
-newtype View' = View' (forall r. (forall a. View a Unit => a -> r) -> r)
+newtype View = View (forall r. (forall a. Viewable a Unit => a -> r) -> r)
 
-pack :: forall a. View a Unit => a -> View'
-pack x = View' (_ $ x)
+pack :: forall a. Viewable a Unit => a -> View
+pack x = View (_ $ x)
 
-unpack :: forall r. View' -> (forall a. View a Unit => a -> r) -> r
-unpack (View' vw) k = vw k
+unpack :: forall r. View -> (forall a. Viewable a Unit => a -> r) -> r
+unpack (View vw) k = vw k
 
 selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
 selListener figVal redraw = redraw <<< figVal
 
-class View a b | a -> b where
+class Viewable a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection
    setSelection :: b -> a -> Select -> D3.Selection -> Effect Unit
 
-instance View (Dict (View' × View')) Unit where
-   createElement :: Unit -> Dict (View' × View') -> D3.Selection -> Effect D3.Selection
+instance Viewable (Dict (View × View)) Unit where
+   createElement :: Unit -> Dict (View × View) -> D3.Selection -> Effect D3.Selection
    createElement _ views parent = do
       rootElement <- parent # create D3.Div [ classes [ "tree-children" ] ]
       -- create views in fixed order, so can access positionally in setSelection and map back to keys
@@ -54,7 +54,7 @@ instance View (Dict (View' × View')) Unit where
          void $ unpack view \v -> createElement unit v child
       pure rootElement
 
-   setSelection :: Unit -> Dict (View' × View') -> Select -> D3.Selection -> Effect Unit
+   setSelection :: Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
    setSelection _ views select rootElement =
       sequence_ $
          flip mapWithIndex (toUnfoldable views :: Array _) \i (x × k_view × view) -> do
@@ -66,7 +66,7 @@ instance View (Dict (View' × View')) Unit where
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
-draw :: forall a. View a Unit => Renderer a
+draw :: forall a. Viewable a Unit => Renderer a
 draw _ { divId, suffix, view } select' = do
    let childId = divId <> "-" <> suffix
    div <- rootSelect ("#" <> divId)
@@ -79,7 +79,7 @@ draw _ { divId, suffix, view } select' = do
            else pure maybeRootElement
       )
 
-drawView :: RendererSpec View' -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View' -> Redraw -> Effect Unit
+drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
 drawView rSpec@{ view: vw } figVal _ redraw =
    unpack vw (\view -> draw uiHelpers (rSpec { view = view }) (selListener figVal redraw))
 
@@ -133,10 +133,10 @@ type Fig =
    , linkedInputs :: SelectionType -> Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , linkedOutputs :: SelectionType -> Val (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
    , linkIntermediates :: Env (SelStates 𝔹) -> Env (SelState 𝔹) × Val (SelState 𝔹) × Set DVertex
-   , in_views :: Dict (Maybe View') -- strengthen this
+   , in_views :: Dict (Maybe View) -- strengthen this
    , in_roots :: Set Vertex
-   , out_view :: Maybe View'
-   , intermediate_views :: Dict (Maybe View')
+   , out_view :: Maybe View
+   , intermediate_views :: Dict (Maybe View)
    , inerts :: Set DVertex
    }
 

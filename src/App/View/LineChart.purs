@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, Attrs, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
-import App.View.Util (class View, Select, registerMouseListeners)
+import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.Axes (Orientation(..))
 import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 (Selection) as D3
@@ -58,7 +58,7 @@ type PointCoordinate = { i :: Int, j :: Int }
 type SegmentCoordinates = { i :: Int, j1 :: Int, j2 :: Int }
 type Segment = { name :: String, start :: Coord Number, end :: Coord Number }
 
-instance View LineChart Unit where
+instance Viewable LineChart Unit where
    setSelection :: Unit -> LineChart -> Select -> D3.Selection -> Effect Unit
    setSelection _ (LineChart { plots }) redraw rootElement = do
       points <- rootElement # selectAll ".linechart-point"

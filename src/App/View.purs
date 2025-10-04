@@ -14,7 +14,7 @@ import App.View.Segment (Segment(..))
 import App.View.StackedBar (StackedBar(..))
 import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
 import App.View.Text (Text(..))
-import App.View.Util (View', pack)
+import App.View.Util (View, pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array ((:)) as A
@@ -30,7 +30,7 @@ import Util (type (×), error, (×))
 import Util.Map (get, mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
-view' :: Partial => String -> Val (SelStates 𝕊) -> View'
+view' :: Partial => String -> Val (SelStates 𝕊) -> View
 view' title v@(Val _ v_opt _) =
    pack $ DocView { doc: viewParagraph <$> v_opt, view: view title v }
    where
@@ -38,7 +38,7 @@ view' title v@(Val _ v_opt _) =
       Paragraph (view "" <$> from u)
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
-view :: Partial => String -> Val (SelStates 𝕊) -> View'
+view :: Partial => String -> Val (SelStates 𝕊) -> View
 view title v@(Val α _ u') = case u' of
    Int n -> pack (Text (show n × α))
    Float n -> pack (Text (show n × α))
@@ -64,7 +64,7 @@ view title v@(Val α _ u') = case u' of
    Dictionary (DictRep d) ->
       pack (viewDict d)
 
-viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View' × View')
+viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
 viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view k v'
 
 class Reflect a b where

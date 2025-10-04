@@ -3,7 +3,7 @@ module App.View.Paragraph where
 import Prelude
 
 import App.Util.Selector (constrArg, listElement)
-import App.View.Util (class View, Select, View', createElement, setSelection, unpack)
+import App.View.Util (class Viewable, Select, View, createElement, setSelection, unpack)
 import App.View.Util.D3 (ElementType(..), create, createText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
@@ -12,9 +12,9 @@ import Data.Foldable (sequence_)
 import DataType (cParagraph)
 import Effect (Effect)
 
-data Paragraph = Paragraph (Array View')
+data Paragraph = Paragraph (Array View)
 
-instance View Paragraph Unit where
+instance Viewable Paragraph Unit where
    createElement :: Unit -> Paragraph -> D3.Selection -> Effect D3.Selection
    createElement _ (Paragraph views) parent = do
       rootElement <- parent # create Div [ "class" ↦ "para-text" ]

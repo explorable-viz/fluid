@@ -5,7 +5,7 @@ import Prelude
 import App.Util (Dimensions, Selectable, classes, contents)
 import App.Util.Selector (dictVal)
 import App.View.Segment (Scales, Segment(..), SegmentContext)
-import App.View.Util (class View, Select, createElement, setSelection)
+import App.View.Util (class Viewable, Select, createElement, setSelection)
 import App.View.Util.D3 (ElementType(..), create, selectAll)
 import App.View.Util.D3 as D3
 import Data.Array (scanl)
@@ -31,7 +31,7 @@ type StackedBarContext =
 barHeight :: StackedBar -> Number
 barHeight (StackedBar bar) = sum (map (\(Segment seg) -> contents seg.z) bar.segments)
 
-instance View StackedBar StackedBarContext where
+instance Viewable StackedBar StackedBarContext where
    createElement :: StackedBarContext -> StackedBar -> D3.Selection -> Effect D3.Selection
    createElement context (stackedBar@(StackedBar { segments })) parent = do
       g <- parent # create G [ classes [ "stack" ] ]

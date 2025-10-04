@@ -6,7 +6,7 @@ import App.Util (Dimensions(..), Selectable, classes, contents)
 import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.Segment (Segment(..), Scales, indexCol)
 import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
-import App.View.Util (class View, Select, createElement, setSelection)
+import App.View.Util (class Viewable, Select, createElement, setSelection)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
@@ -28,7 +28,7 @@ newtype BarChart = BarChart
    , stackedBars :: NonEmptyArray StackedBar
    }
 
-instance View BarChart Unit where
+instance Viewable BarChart Unit where
    setSelection :: Unit -> BarChart -> Select -> D3.Selection -> Effect Unit
    setSelection _ chart@(BarChart { stackedBars }) select barChart' = do
       let props = barChartProps chart
