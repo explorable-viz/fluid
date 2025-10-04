@@ -42,6 +42,10 @@ class Viewable a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection
    setSelection :: b -> a -> Select -> D3.Selection -> Effect Unit
 
+instance Viewable View Unit where
+   createElement _ view parent = unpack view \v -> createElement unit v parent
+   setSelection _ view select rootElement = unpack view \v -> setSelection unit v select rootElement
+
 instance Viewable (Dict (View × View)) Unit where
    createElement :: Unit -> Dict (View × View) -> D3.Selection -> Effect D3.Selection
    createElement _ views parent = do
@@ -49,9 +53,9 @@ instance Viewable (Dict (View × View)) Unit where
       -- create views in fixed order, so can access positionally in setSelection and map back to keys
       sequence_ $ (toUnfoldable views :: Array _) <#> \(_ × (k_view × view)) -> do
          child <- rootElement # create D3.Div [ classes [ "tree-node" ] ]
-         key <- unpack k_view \v -> createElement unit v child
+         key <- createElement unit k_view child
          void $ key # setAttrs [ classes [ "tree-label" ] ]
-         void $ unpack view \v -> createElement unit v child
+         createElement unit view child
       pure rootElement
 
    setSelection :: Unit -> Dict (View × View) -> Select -> D3.Selection -> Effect Unit
@@ -61,8 +65,8 @@ instance Viewable (Dict (View × View)) Unit where
             child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
             child1 <- child # D3.select (D3.nthChildOf D3.scope 1)
             child2 <- child # D3.select (D3.nthChildOf D3.scope 2)
-            void $ unpack k_view \v -> setSelection unit v (\_ -> pure unit) child1 -- TODO: revisit!
-            void $ unpack view \v -> setSelection unit v (dictVal x >>> select) child2
+            void $ setSelection unit k_view (\_ -> pure unit) child1 -- TODO: revisit!
+            void $ setSelection unit view (dictVal x >>> select) child2
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
 
