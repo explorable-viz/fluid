@@ -34,7 +34,7 @@ def temps:
     "3.5", "3.75", "4.0", "4.25", "4.5", "4.75", "5.0" ]
 
 def points:
-  [ { x: float(temp), y: precip(hydroData.pr.std.extra_annual.ens[ temp ]) } for temp in temps ]
+  [ { x: float(temp), y: hydroData_agg.pr.std.extra_annual[ temp ] } for temp in temps ]
 
 LineChart({
   tickLabels: { x: Default, y: Default },
