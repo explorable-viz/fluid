@@ -61,7 +61,7 @@ instance Viewable (Dict (View × View)) Unit where
             child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
             child1 <- child # D3.select (D3.nthChildOf D3.scope 1)
             child2 <- child # D3.select (D3.nthChildOf D3.scope 2)
-            void $ unpack k_view \v -> setSelection unit v (\_ -> pure unit) child1
+            void $ unpack k_view \v -> setSelection unit v (\_ -> pure unit) child1 -- TODO: revisit!
             void $ unpack view \v -> setSelection unit v (dictVal x >>> select) child2
 
 type Select = SetSel (Val (SelStates 𝔹)) -> Effect Unit
