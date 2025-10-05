@@ -127,6 +127,7 @@ def span(p, x :| xs_):
   else:
     { init: Nil, rest: x :| xs_ }
 
+# Each returned list is non-empty.
 # (a -> a -> Bool) -> List a -> List (List a)
 def groupBy(eq, Nil): Nil
 def groupBy(eq, x :| xs):

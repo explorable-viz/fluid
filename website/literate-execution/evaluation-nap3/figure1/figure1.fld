@@ -1,5 +1,13 @@
 import figure1_data
 
+def ccra_chapters:
+  [ "B",  # Business and Industry
+    "H",  # Health, Communities and Build Environment
+    "I",  # Infrastructure
+    "ID", # International Dimensions
+    "N"   # Natural Environment and Assets
+  ]
+
 def split_data:
   groupBy(lambda r1, r2: r1[ "Risk ID#" ] == r2[ "Risk ID#" ], eval_data)
 
