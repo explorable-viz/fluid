@@ -6,7 +6,7 @@ import Bind (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
-import Data.Array (concat, (!!))
+import Data.Array (concat, fromFoldable, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Foldable (class Foldable, foldMapDefaultL, foldl, foldrDefault)
@@ -15,6 +15,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, unions)
 import Data.Set as Set
+import Data.String (joinWith)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict)
@@ -107,14 +108,15 @@ data EnvExpr a = EnvExpr (Env a) (Expr a)
 -- Goes from smaller environment to larger (injection into a biproduct).
 unrestrictGC :: forall a. BoundedMeetSemilattice a => Raw Env -> Set Var -> GaloisConnection (Env a) (Env a)
 unrestrictGC γ xs =
-   assertWith (show xs' <> " are in environment ") (isEmpty xs') $ GC
+   assertWith ("Variable(s) " <> joinWith ", " (fromFoldable unfound <#> show) <> " are in environment ")
+      (isEmpty unfound) $ GC
       { fwd: \γ' -> assert (keys γ' ⊆ keys γ) $ γ' ∪ (topOf γ \\ γ')
       , bwd: \γ' -> assert (keys γ' == keys γ) $ restrict xs γ'
 
       }
    where
-   xs' :: Set Var
-   xs' = xs \\ keys γ
+   unfound :: Set Var
+   unfound = xs \\ keys γ
 
 reaches :: forall a. Dict (Elim a) -> Endo (Set Var)
 reaches ρ xs = go (Set.toUnfoldable xs) empty
