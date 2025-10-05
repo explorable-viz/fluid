@@ -22,7 +22,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
-import EvalGraph (graphEval, graphGC, withOp)
+import Eval (graphEval, graphGC, withOp)
 import File (class LoadFile, File(..), FileCxt)
 import GaloisConnection (GaloisConnection(..), deMorgan)
 import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices, dvertices)

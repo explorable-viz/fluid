@@ -1,4 +1,4 @@
-module EvalGraph where
+module Eval where
 
 import Prelude hiding (absurd, apply)
 

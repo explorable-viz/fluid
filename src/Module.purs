@@ -17,7 +17,7 @@ import Desugarable (desug)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import EvalGraph (GraphConfig, eval_primitives)
+import Eval (GraphConfig, eval_primitives)
 import Expr (class FV, Expr, Module, fv)
 import File (class LoadFile, File(..), FileCxt(..), fluidExtension, loadFile)
 import Graph (vertices)

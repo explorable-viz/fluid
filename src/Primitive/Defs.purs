@@ -24,7 +24,7 @@ import DataType (cCons, cNil, cPair, cTrue, cFalse)
 import Debug (trace)
 import Dict (fromFoldable) as D
 import Effect.Class (class MonadEffect)
-import EvalGraph (apply) as G
+import Eval (apply) as G
 import File (File(..), loadFileFromPath)
 import Foreign.Object as FO
 import Graph (Vertex)
