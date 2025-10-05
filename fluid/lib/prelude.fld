@@ -19,6 +19,10 @@ def compare(x, y):
     if x < y: LT
     else: EQ
 
+# (b -> b -> c) -> (a -> b) -> a -> a -> c
+def on(binOp, prop, x, y):
+  binOp(prop(x), prop(y))
+
 # Num -> Num
 def negate: (-)(0)
 
@@ -112,6 +116,22 @@ def filterMap(p, x :| xs):
     case None: filterMap(f, xs)
     case Some(y):
       y :| filterMap(f, xs)
+
+# Split list into longest initial segment whose elements satisfy a predicate, and the rest.
+# (a -> Bool) -> List a -> { init :: List a, rest :: List a }
+def span(p, Nil): { init: Nil, rest: Nil }
+def span(p, x :| xs_):
+  if p(x):
+    def { init: ys, rest: zs }: span(p, xs_)
+    { init: x :| ys, rest: zs }
+  else:
+    { init: Nil, rest: x :| xs_ }
+
+# (a -> a -> Bool) -> List a -> List (List a)
+def groupBy(eq, Nil): Nil
+def groupBy(eq, x :| xs):
+  def { init: ys, rest: zs }: span(eq(x), xs)
+  x :| ys :| groupBy(eq, zs)
 
 # (a -> b -> a) -> a -> List b -> a
 def foldl(op, z, []): z
