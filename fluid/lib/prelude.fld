@@ -131,7 +131,7 @@ def span(p, x :| xs_):
 def groupBy(eq, Nil): Nil
 def groupBy(eq, x :| xs):
   def { init: ys, rest: zs }: span(eq(x), xs)
-  x :| ys :| groupBy(eq, zs)
+  (x :| ys) :| groupBy(eq, zs)
 
 # (a -> b -> a) -> a -> List b -> a
 def foldl(op, z, []): z
