@@ -3,6 +3,7 @@ module Primitive.Defs where
 import Prelude hiding (absurd, apply, div, mod, top)
 
 import Bind (Bind)
+import Control.Monad.Error.Class (class MonadError)
 import Data.Argonaut.Core (Json, caseJson)
 import Data.Argonaut.Decode (parseJson)
 import Data.Array as Array
@@ -16,14 +17,16 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import Data.Number (fromString)
 import Data.Number (log, pow) as N
-import Data.Set (empty)
+import Data.Set (Set, empty, insert)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (snd)
 import DataType (cCons, cNil, cPair, cTrue, cFalse)
 import Debug (trace)
+import Dict (fromFoldable)
 import Dict (fromFoldable) as D
 import Effect.Class (class MonadEffect)
+import Effect.Exception (Error)
 import Eval (apply) as G
 import File (File(..), loadFileFromPath)
 import Foreign.Object as FO
@@ -80,7 +83,7 @@ primitives = wrap $ D.fromFoldable
 
 error_ :: ForeignOp
 error_ =
-   ForeignOp ("error" × ForeignOp' { arity: 1, op: op })
+   ForeignOp ("error" × ForeignOp' { arity: 1, op })
    where
    op :: Op
    op (Val _ _ (Str s) : Nil) = pure $ error s
@@ -88,11 +91,11 @@ error_ =
 
 debugLog :: ForeignOp
 debugLog =
-   ForeignOp ("debugLog" × ForeignOp' { arity: 1, op: op })
+   ForeignOp ("debugLog" × ForeignOp' { arity: 1, op })
    where
    op :: Op
    op (x : Nil) = pure $ trace x (const x)
-   op _ = throw "Single value expected"
+   op _ = throw "Single argument expected"
 
 loadJson :: ForeignOp
 loadJson =
@@ -156,7 +159,7 @@ fromJsonVal =
 
 dims :: ForeignOp
 dims =
-   ForeignOp ("dims" × ForeignOp' { arity: 1, op: op })
+   ForeignOp ("dims" × ForeignOp' { arity: 1, op })
    where
    op :: Op
    op (Val α _ (Matrix (MatrixRep (_ × MatrixDim (i × β1) × MatrixDim (j × β2)))) : Nil) = do
@@ -168,7 +171,7 @@ dims =
 
 matrixLookup :: ForeignOp
 matrixLookup =
-   ForeignOp ("!" × ForeignOp' { arity: 2, op: op })
+   ForeignOp ("!" × ForeignOp' { arity: 2, op })
    where
    op :: Op
    op (Val _ _ (Matrix r) : Val _ _ (Constr c (Val _ _ (Int i) : Val _ _ (Int j) : Nil)) : Nil) | c == cPair =
@@ -177,7 +180,7 @@ matrixLookup =
 
 matrixUpdate :: ForeignOp
 matrixUpdate =
-   ForeignOp ("matrixUpdate" × ForeignOp' { arity: 3, op: op })
+   ForeignOp ("matrixUpdate" × ForeignOp' { arity: 3, op })
    where
    op :: Op
    op (Val α _ (Matrix r) : Val _ _ (Constr c (Val _ _ (Int i) : Val _ _ (Int j) : Nil)) : v : Nil)
@@ -186,7 +189,7 @@ matrixUpdate =
 
 dict_difference :: ForeignOp
 dict_difference =
-   ForeignOp ("dict_difference" × ForeignOp' { arity: 2, op: op })
+   ForeignOp ("dict_difference" × ForeignOp' { arity: 2, op })
    where
    op :: Op
    op (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) =
@@ -195,7 +198,7 @@ dict_difference =
 
 dict_disjointUnion :: ForeignOp
 dict_disjointUnion =
-   ForeignOp ("dict_disjointUnion" × ForeignOp' { arity: 2, op: op })
+   ForeignOp ("dict_disjointUnion" × ForeignOp' { arity: 2, op })
    where
    op :: Op
    op (Val α _ (Dictionary (DictRep d)) : Val β _ (Dictionary (DictRep d')) : Nil) = do
@@ -204,7 +207,7 @@ dict_disjointUnion =
 
 dict_foldl :: ForeignOp
 dict_foldl =
-   ForeignOp ("dict_foldl" × ForeignOp' { arity: 3, op: op })
+   ForeignOp ("dict_foldl" × ForeignOp' { arity: 3, op })
    where
    op :: Op
    op (v : u : Val _ _ (Dictionary (DictRep d)) : Nil) =
@@ -213,7 +216,7 @@ dict_foldl =
 
 dict_get :: ForeignOp
 dict_get =
-   ForeignOp ("dict_get" × ForeignOp' { arity: 2, op: op })
+   ForeignOp ("dict_get" × ForeignOp' { arity: 2, op })
    where
    op :: Op
    op (Val _ _ (Str s) : Val _ _ (Dictionary (DictRep d)) : Nil) =
@@ -222,7 +225,7 @@ dict_get =
 
 dict_intersectionWith :: ForeignOp
 dict_intersectionWith =
-   ForeignOp ("dict_intersectionWith" × ForeignOp' { arity: 3, op: op })
+   ForeignOp ("dict_intersectionWith" × ForeignOp' { arity: 3, op })
    where
    op :: Op
    op (v : Val α _ (Dictionary (DictRep d1)) : Val α' _ (Dictionary (DictRep d2)) : Nil) = do
@@ -237,13 +240,30 @@ dict_intersectionWith =
 
 dict_map :: ForeignOp
 dict_map =
-   ForeignOp ("dict_map" × ForeignOp' { arity: 2, op: op })
+   ForeignOp ("dict_map" × ForeignOp' { arity: 2, op })
    where
    op :: Op
    op (v : Val α _ (Dictionary (DictRep d)) : Nil) = do
       d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
       new (flip Val Nothing) (singleton α) (Dictionary (DictRep d'))
    op _ = throw "Function and dictionary expected"
+
+dict :: ForeignOp
+dict =
+   ForeignOp ("dict" × ForeignOp' { arity: 1, op })
+   where
+   op :: Op
+   op (v : Nil) = do
+      αs × kvs <- kvs' v
+      new (flip Val Nothing) αs (Dictionary (DictRep $ fromFoldable kvs))
+      where
+      kvs' :: forall m. MonadError Error m => Val Vertex -> m (Set Vertex × List (String × (Vertex × Val Vertex)))
+      kvs' (Val α _ (Constr c Nil)) | c == cNil = pure $ singleton α × Nil
+      kvs' (Val α _ (Constr c (Val β _ (Str k) : u2 : Nil))) | c == cCons = do
+         αs' × kvs <- kvs' u2
+         pure $ insert α αs' × ((k × (β × u2)) : kvs)
+      kvs' _ = throw "List of (key, value) pairs expected"
+   op _ = throw "Single argument expected"
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

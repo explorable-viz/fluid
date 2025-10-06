@@ -71,14 +71,14 @@ viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view k v'
 class Reflect a b where
    from :: Partial => a -> b
 
-instance Reflect (Val (SelStates 𝕊)) (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) where
+instance Reflect (Val a) (Dict (a × Val a)) where
    from (Val _ _ (Dictionary (DictRep d))) = d
 
-instance Reflect (Val (SelStates 𝕊)) (Array (Val (SelStates 𝕊))) where
+instance Reflect (Val a) (Array (Val a)) where
    from (Val _ _ (Constr c Nil)) | c == cNil = []
    from (Val _ _ (Constr c (u1 : u2 : Nil))) | c == cCons = u1 A.: from u2
 
-instance Reflect (Val (SelStates 𝕊)) (NonEmptyArray (Val (SelStates 𝕊))) where
+instance Reflect (Val a) (NonEmptyArray (Val a)) where
    from (Val _ _ (Constr c Nil)) | c == cNil = error "expected non-empty list"
    from (Val _ _ (Constr c (u1 : u2 : Nil))) | c == cCons = cons' u1 (from u2)
 
