@@ -3,7 +3,11 @@ import figure1_data
 def chapter:
   dict([ (risk[ "ID#" ], risk[ "Chapter" ]) for risk in risks ])
 
-def split_data:
-  groupBy(lambda r1, r2: chapter[ r1 [ "Risk ID#" ] ] == chapter [ r2 [ "Risk ID#" ] ], eval_data)
+def data_by_chapter:
+  groupBy(on((==), lambda r: chapter[ r [ "Risk ID#" ] ]), eval_data)
 
-"""Grouped by ${length(split_data)} chapters."""
+def by_eval_score:
+  [ groupBy(on((==), lambda r: r [ "Evaluation score" ]), chapter_data)
+    for chapter_data in data_by_chapter ]
+
+"""Grouped by ${length(data_by_chapter)} chapters."""
