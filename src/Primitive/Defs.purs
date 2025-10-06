@@ -74,6 +74,7 @@ primitives = wrap $ D.fromFoldable
    , extern dict_get
    , extern dict_intersectionWith
    , extern dict_map
+   , extern dict
    , extern matrixUpdate
    , binaryZero "div" { i: int, o: int, fwd: div }
    , binaryZero "mod" { i: int, o: int, fwd: mod }
@@ -259,10 +260,11 @@ dict =
       where
       kvs' :: forall m. MonadError Error m => Val Vertex -> m (Set Vertex × List (String × (Vertex × Val Vertex)))
       kvs' (Val α _ (Constr c Nil)) | c == cNil = pure $ singleton α × Nil
-      kvs' (Val α _ (Constr c (Val β _ (Str k) : u2 : Nil))) | c == cCons = do
-         αs' × kvs <- kvs' u2
-         pure $ insert α αs' × ((k × (β × u2)) : kvs)
-      kvs' _ = throw "List of (key, value) pairs expected"
+      kvs' (Val α _ (Constr c (Val β' _ (Constr c' (Val β _ (Str k) : u : Nil)) : v' : Nil)))
+         | c == cCons && c' == cPair = do
+              αs' × kvs <- kvs' v'
+              pure $ insert α (insert β' αs') × ((k × (β × u)) : kvs)
+      kvs' _ = throw $ "List of (key, value) pairs expected"
    op _ = throw "Single argument expected"
 
 plus :: Int + Number -> Endo (Int + Number)

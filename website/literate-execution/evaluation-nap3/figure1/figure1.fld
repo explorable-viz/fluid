@@ -3,4 +3,7 @@ import figure1_data
 def split_data:
   groupBy(lambda r1, r2: r1[ "Risk ID#" ] == r2[ "Risk ID#" ], eval_data)
 
+def risk_chapter:
+  dict([ (risk[ "ID#" ], risk[ "Chapter" ]) for risk in risks ])
+
 """${length(split_data)} risk ids in data, ${length(risks)} risks in risk database."""
