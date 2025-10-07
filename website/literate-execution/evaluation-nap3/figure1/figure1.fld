@@ -6,7 +6,10 @@ def chapter_for_risk:
 def chapters:
   groupBy(on((==), lambda r: chapter_for_risk[ r [ "Risk ID#" ] ]), eval_data)
 
-def by_eval_score:
+def eval_scores:
   [ groupBy(on((==), lambda r: r [ "Evaluation score" ]), chapter) for chapter in chapters ]
 
-"""Grouped by ${length(chapters)} chapters."""
+def bar_chart_data:
+  [ { x: "(chapter name)",  y: length(eval_score) } for chapter in eval_scores for eval_score in chapter ]
+
+bar_chart_data
