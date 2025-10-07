@@ -369,7 +369,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          paragraph :: Parser (Raw Expr)
          paragraph = do
-            _ <- try $ lexeme $ string "\"\"\""
+            _ <- lexeme $ string "f\"\"\""
             es <- many $ lexeme paragraphElem
             _ <- lexeme $ string "\"\"\""
             pure $ Paragraph es

@@ -1,3 +1,3 @@
-def name: """Alice""";
+def name: f"""Alice""";
 
-"""Hello there, ${name} !"""
+f"""Hello there, ${name} !"""

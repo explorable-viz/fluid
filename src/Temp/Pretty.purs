@@ -190,7 +190,7 @@ instance Ann a => Pretty (DictEntry a) where
    pretty (VarKey a k) = highlightIf a (text k)
 
 instance Ann a => Pretty (List (ParagraphElem a)) where
-   pretty xs = text "\"\"\"" <> hsep (pretty <$> xs) <> text "\"\"\""
+   pretty xs = text "f\"\"\"" <> hsep (pretty <$> xs) <> text "\"\"\""
 
 instance Ann a => Pretty (ParagraphElem a) where
    pretty (Token str) = text str

@@ -36,5 +36,5 @@ def matMul(a, b):
   if not(n == i):
     error("Dimensions don't line up")
   else:
-    @doc("""Intermediate matrix""")
+    @doc(f"""Intermediate matrix""")
     [| sum([a!(i_, k) * b!(k, j_) for k in enumFromTo(1, n)]) for (i_, j_) in (m, j) |]
