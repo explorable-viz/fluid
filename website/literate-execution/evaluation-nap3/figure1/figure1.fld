@@ -1,10 +1,13 @@
 import figure1_data
 
-def chapter_for_risk:
+def risk_chapter:
   dict([ (risk[ "ID#" ], risk[ "Chapter" ]) for risk in risks ])
 
+def chapter_for_risk(r):
+  risk_chapter[ r [ "Risk ID#" ] ]
+
 def chapters:
-  groupBy(on((==), lambda r: chapter_for_risk[ r [ "Risk ID#" ] ]), eval_data)
+  groupBy(on((==), chapter_for_risk), eval_data)
 
 def eval_scores:
   [ groupBy(on((==), lambda r: r [ "Evaluation score" ]), chapter) for chapter in chapters ]
@@ -12,4 +15,5 @@ def eval_scores:
 def bar_chart_data:
   [ { x: "(chapter name)",  y: length(eval_score) } for chapter in eval_scores for eval_score in chapter ]
 
+# now make a 100% stacked bar chart
 bar_chart_data
