@@ -12,8 +12,9 @@ def chapters:
 def eval_scores:
   [ groupBy(on((==), lambda r: r [ "Evaluation score" ]), chapter) for chapter in chapters ]
 
-def bar_chart_data:
-  [ { x: "(chapter name)",  y: length(eval_score) } for chapter in eval_scores for eval_score in chapter ]
+def bars:
+  [ { x: "(chapter name)", segments: { y: "(eval score)", z: length(eval_score) } }
+    for chapter in eval_scores for eval_score in chapter ]
 
 # now make a 100% stacked bar chart
-bar_chart_data
+MultiView(dict([ (bar.x, bar.segments) for bar in bars ]))
