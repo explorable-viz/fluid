@@ -254,27 +254,55 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       pure $ IfElse c t e
 
    opTree :: Parser (Raw Expr)
-   opTree = context "opTree" (buildExprParser opdefs simpleOrProjection) <* consume -- this thing seems to break the `consume` state
+   opTree = context "opTree" (buildExprParser opdefs simpleChain) <* consume -- this thing seems to break the `consume` state
       where
 
-      simpleOrProjection :: Parser (Raw Expr)
-      simpleOrProjection = simple >>= projection
+      -- the `withPos` here is used as a reference for the `sameLine` in
+      -- `app`. we should use `withPos` inside of `chain` but this wont work
+      -- as expected because `simple` might consume trailing newlines. we
+      -- should use something similar for field access too.
+      --
+      -- currently this ensures the following is parsed correctly (i.e. not an app):
+      -- ```
+      -- def x: lambda y: y + 1
+      -- (0)
+      -- ```
+      --
+      -- but it doesn't support this:
+      -- ```
+      -- {
+      --  x: lambda y: y + 1
+      -- }.x(0)
+      -- ```
+      simpleChain :: Parser (Raw Expr)
+      simpleChain = withPos (simple >>= chain)
          where
-         projection :: Raw Expr -> Parser (Raw Expr)
-         projection e = dprojection <|> rprojection <|> pure e
+         chain :: Raw Expr -> Parser (Raw Expr)
+         chain e = project <|> dproject <|> sameLine *> app <|> pure e
             where
-            rprojection :: Parser (Raw Expr)
-            rprojection = try do
+            project :: Parser (Raw Expr)
+            project = try do
                delim '.'
                k <- variable
-               projection (Project e k)
+               chain (Project e k)
 
-            dprojection :: Parser (Raw Expr)
-            dprojection = try do
+            dproject :: Parser (Raw Expr)
+            dproject = try do
                delim '['
                k <- opTree
                delim ']'
-               projection (DProject e k)
+               chain (DProject e k)
+
+            app :: Parser (Raw Expr)
+            app = do
+               try $ do
+                  delim '('
+                  sameLine
+               ps <- sepBy opTree (lexeme $ char ',')
+               delim ')'
+               case e of
+                  (Constr a c es) -> chain (Constr a c (es <> ps <> Nil))
+                  _ -> chain (foldl App e ps)
 
       simple :: Parser (Raw Expr)
       simple = context "simple" $
@@ -284,13 +312,16 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             <|> listExpr
             <|> lambda
             <|> dict
-            <|> number
             <|> paragraph
             <|> str
             <|> pair
-            <|> appChain
-            <|> parensExpr
+            <|> var
+            <|> constr
+            -- TODO: better handling over try
+            <|> try parensOp
+            <|> try parensExpr
             <|> docExpr
+            <|> number
                <?> "simple expression"
          where
 
@@ -336,24 +367,6 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             delim ':'
             e <- opTree
             pure $ Lambda (Clauses (nonEmpty (Clause (ps × e) : Nil)))
-
-         appChain :: Parser (Raw Expr)
-         appChain = context "app chain" $ withPos $
-            var <|> constr <|> try parensExpr <|> try parensOp >>= \e -> app e
-            where
-            app :: Raw Expr -> Parser (Raw Expr)
-            app e = sameLine *> args e <|> pure e
-
-            args :: Raw Expr -> Parser (Raw Expr)
-            args e = do
-               try $ do
-                  delim '('
-                  sameLine
-               ps <- sepBy opTree (lexeme $ char ',')
-               delim ')'
-               case e of
-                  (Constr a c es) -> app (Constr a c (es <> ps <> Nil))
-                  _ -> app (foldl App e ps)
 
          var :: Parser (Raw Expr)
          var = variable <#> Var
