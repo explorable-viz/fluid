@@ -1,0 +1,39 @@
+import figure1_data
+
+def risk_chapter:
+  dict([ (risk[ "ID#" ], risk[ "Chapter" ]) for risk in risks ])
+
+def chapter_for_risk(r):
+  risk_chapter[ r [ "Risk ID#" ] ]
+
+def chapters:
+  [ (chapter_for_risk(head(chapter)), chapter)
+    # already partitioned by chapter, so groupBy good
+    for chapter in groupBy(on((==), chapter_for_risk), eval_data) ]
+
+def update_eval_score(d, eval_score, risk):
+  match get(d, "Evaluation score"):
+    None: insert(d,
+
+def by_eval_score(risks):
+  foldl(lambda d, risk: insert(d, risk[ "Evaluation score" ], risk), {}, risks)
+
+def items(d):
+  foldl_with_index(lambda k, ks, risks: { y: k, z: 5 } :| ks, [], d)
+
+def eval_scores:
+  [ (chapter, by_eval_score(risks)) for (chapter, risks) in chapters ]
+
+def bars:
+  [ {
+      x: chapter,
+      segments: length(items(scores))
+#      [ {
+#        y: head(score)[ "Evaluation score" ],
+#        z: length(score)
+#      } for score in scores ]
+    }
+    for (chapter, scores) in eval_scores ]
+
+"""${sum([ bar.segments for bar in bars ])}
+   ${MultiView(dict([ (bar.x, bar.segments) for bar in bars ]))}"""
