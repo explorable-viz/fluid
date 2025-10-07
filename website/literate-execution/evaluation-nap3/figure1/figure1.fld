@@ -28,9 +28,12 @@ def bars:
 def bars_:
   [ {
       x: chapter,
-      segments: [ (head(score)[ "Evaluation score" ], length(score)) for score in scores ]
+      segments: [ {
+        y: head(score)[ "Evaluation score" ],
+        z: length(score)
+      } for score in scores ]
     }
     for (chapter, scores) in eval_scores_ ]
 
 # now make a 100% stacked bar chart
-"""${length(bars)}"""
+"""${length(bars_)}"""
