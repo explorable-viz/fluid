@@ -123,14 +123,14 @@ simplePattern =
 
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
 binaryOp op = try do
-   op' <- lexeme $ operator
+   op' <- lexeme' $ operator
    onlyIf (op == op') $
       -- else if ":|" op' then \e e' -> Constr unit op' (e : e' : empty)
       \e e' -> BinaryApp e op e'
 
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = try do
-   op <- lexeme $ operator
+   op <- lexeme' $ operator
    onlyIf (op == ":|")
       $ \e e' -> PConstr ":" (e : e' : Nil)
 
@@ -141,7 +141,7 @@ infixFn = try do
 
 consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 consOp = try do
-   op <- lexeme $ operator
+   op <- lexeme' $ operator
    onlyIf (op == ":|")
       $ \e e' -> Constr unit ":" (e : e' : Nil)
 
@@ -365,8 +365,8 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          paragraph :: Parser (Raw Expr)
          paragraph = do
-            _ <- lexeme $ string "f\"\"\""
-            es <- many $ lexeme paragraphElem
+            _ <- lexeme' $ string "f\"\"\""
+            es <- many $ lexeme' paragraphElem
             _ <- lexeme $ string "\"\"\""
             pure $ Paragraph es
             where
@@ -422,6 +422,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             _ <- try $ lexeme $ string "[|"
             whitespace
             e <- opTree
+            whitespace
             reserved "for"
             delim '('
             x <- variable
@@ -454,15 +455,16 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             listComp :: Raw Expr -> Parser (Raw Expr)
             listComp exp = context "listComp" do
                qs <- many1 (listCompGuard <|> listCompGenOrDecl)
+               whitespace
                delim ']'
                pure $ ListComp unit exp (toList qs)
 
                where
                listCompGenOrDecl :: Parser (Raw Qualifier)
                listCompGenOrDecl = do
-                  try $ reserved "for"
+                  try $ whitespace *> reserved "for"
                   p <- pattern
-                  reserved "in"
+                  whitespace *> reserved "in"
                   (listCompDecl' p <|> listCompGen' p)
 
                   where
@@ -478,7 +480,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
                listCompGuard :: Parser (Raw Qualifier)
                listCompGuard = do
-                  try $ reserved "if"
+                  try $ whitespace *> reserved "if"
                   e <- opTree
                   pure $ ListCompGuard e
 
