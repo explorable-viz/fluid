@@ -26,7 +26,7 @@ def eval_scores:
 def bars:
   [ {
       x: chapter,
-      segments: length(items(scores))
+      segments: items(scores)
 #      [ {
 #        y: head(score)[ "Evaluation score" ],
 #        z: length(score)
@@ -34,5 +34,4 @@ def bars:
     }
     for (chapter, scores) in eval_scores ]
 
-"""${sum([ bar.segments for bar in bars ])}
-   ${MultiView(dict([ (bar.x, bar.segments) for bar in bars ]))}"""
+"""${MultiView(dict([ (bar.x, bar.segments) for bar in bars ]))}"""
