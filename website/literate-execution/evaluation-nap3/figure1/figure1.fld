@@ -24,14 +24,10 @@ def eval_scores:
   [ (chapter, by_eval_score(risks)) for (chapter, risks) in chapters ]
 
 def bars:
-  [ {
-      x: chapter,
-      segments: items(scores)
-#      [ {
-#        y: head(score)[ "Evaluation score" ],
-#        z: length(score)
-#      } for score in scores ]
-    }
-    for (chapter, scores) in eval_scores ]
+  [ { x: chapter, segments: items(scores) } for (chapter, scores) in eval_scores ]
 
-"""${MultiView(dict([ (bar.x, bar.segments) for bar in bars ]))}"""
+BarChart({
+  caption: "Evaluation of NAP3 against actions from CCRA3",
+  size: { width: 275, height: 185 },
+  stackedBars: bars
+})
