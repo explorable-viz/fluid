@@ -1,5 +1,0 @@
-import lib.matrix
-import slicing.convolution.filter.emboss
-import slicing.convolution.testImage
-
-convolve inputImage filter zero

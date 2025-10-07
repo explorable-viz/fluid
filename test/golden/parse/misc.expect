@@ -1,4 +1,0 @@
-let parensOp = (+);
-    parensExpr = x + y;
-    constr = Hello in
-0

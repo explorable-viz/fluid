@@ -1,2 +1,0 @@
-let i = if x + y then x + y else x + y in
-if x + y then x + y else if x + y then x + y else x + y

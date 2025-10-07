@@ -1,3 +1,0 @@
-let city = {name : "Germany"} in
-let country = {cities : ["Germany"]} in
-city.name `elem` country.cities

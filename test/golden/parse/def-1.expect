@@ -1,7 +1,0 @@
-let four = 4;
-    four = 4 in
-let add x y = x + y;
-    add x y = x + y;
-    f x = let four = 4 in
-          four in
-0

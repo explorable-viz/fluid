@@ -1,8 +1,0 @@
-let i = add x y;
-    ii = add x;
-    iii = add x y z;
-    iv = add x y z;
-    v = add (add x y) z;
-    vi = add (add x (add x y z)) x;
-    vii = add (x + y) in
-0
