@@ -32,6 +32,6 @@ MultiView({
           "Hydro",
           "Solar",
           "Wind"
-        ] for plot in [zipWith((lambda p1, p2: { x: p1.x, y: p1.y / p2.y }), series(type, "USA"), series(type, "China"))]]
+        ] for plot in [zipWith(lambda p1, p2: { x: p1.x, y: p1.y / p2.y }, series(type, "USA"), series(type, "China"))]]
     })
 })

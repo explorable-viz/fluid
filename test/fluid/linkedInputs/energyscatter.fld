@@ -13,9 +13,9 @@ def plot(year, countries):
     def rens':
       filter(isCountry(country), rens)
     def rensOut:
-      sum(map((lambda x: x.output), rens'))
+      sum(map(lambda x: x.output, rens'))
     def rensCap:
-      sum(map((lambda x: x.capacity), rens'))
+      sum(map(lambda x: x.capacity, rens'))
     def x:
       head(filter(isCountry(country), nonRens))
     def nonRensCap:

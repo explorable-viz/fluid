@@ -94,7 +94,7 @@ def find(p, x :| xs):
 
 # String -> String -> List Dict -> Option Dict
 def findWithKey(fname, fval, d):
-  find((lambda y: y[fname] == fval), d)
+  find(lambda y: y[fname] == fval, d)
 
 # Option a -> a
 def fromSome(None): error("Expected Some!")

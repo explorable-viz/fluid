@@ -22,10 +22,10 @@ def energy(year, c_names):
       head(filter(country_check(c_name), nonrens2018))
 
     def rensOut:
-      sum(map((lambda x: x.output), filteredRen))
+      sum(map(lambda x: x.output, filteredRen))
 
     def rensCap:
-      sum(map((lambda x: x.capacity), filteredRen))
+      sum(map(lambda x: x.capacity, filteredRen))
 
     def nonRensCap:
       sumNonRenewables(non_ren_x)

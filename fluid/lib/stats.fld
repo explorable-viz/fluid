@@ -36,7 +36,7 @@ def accumBins(data, Nil): []
 def accumBins(data, [l]): []
 def accumBins(data, l :| r :| es):
   def (ge, le):
-    splitOn((lambda x: x <= r), data)
+    splitOn(lambda x: x <= r, data)
   (le, r - l) :| accumBins(ge, r :| es)
 
 def cut(xs, nbins):
@@ -57,13 +57,13 @@ def qcut(xs, qs):
   accumBins(xs, edges)
 
 def likelihoodLE(xs, target):
-  length(filter((lambda x: x <= target), xs)) / length(xs)
+  length(filter(lambda x: x <= target, xs)) / length(xs)
 
 def likelihoodGE(xs, target):
-  length(filter((lambda x: x >= target), xs)) / length(xs)
+  length(filter(lambda x: x >= target, xs)) / length(xs)
 
 def likelihoodMap(table, prob):
-  fromSome(find((lambda x: x.prob <= prob), table)).msg
+  fromSome(find(lambda x: x.prob <= prob, table)).msg
 
 def mkPercent(num):
   numToStr(num * 100) ++ "%"
