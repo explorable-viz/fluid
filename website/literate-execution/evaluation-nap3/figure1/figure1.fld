@@ -11,7 +11,7 @@ def chapters:
     for chapter in groupBy(on((==), chapter_for_risk), eval_data) ]
 
 def eval_scores:
-  [ (chapter, risks) # groupBy(on((==), lambda r: r [ "Evaluation score" ]), risks))
+  [ (chapter, debugLog(groupBy(on((==), lambda r: r [ "Evaluation score" ]), risks)))
     for (chapter, risks) in chapters ]
 
 def bars:
