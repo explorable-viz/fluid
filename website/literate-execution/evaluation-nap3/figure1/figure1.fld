@@ -15,7 +15,7 @@ def by_eval_score(risks):
   foldl(lambda d, risk: dict_insert(d, risk[ "Evaluation score" ], risk), {}, risks)
 
 def items(d):
-  foldl_with_index(lambda k, ks, risks: { y: k, z: length(risks) } :| ks, [], d)
+  foldl_with_index(lambda k, ks, risks: { y: k, z: 5 } :| ks, [], d)
 
 def eval_scores:
   [ (chapter, by_eval_score(risks)) for (chapter, risks) in chapters ]
@@ -23,7 +23,7 @@ def eval_scores:
 def bars:
   [ {
       x: chapter,
-      segments: length(items(debugLog(scores)))
+      segments: length(items(scores))
 #      [ {
 #        y: head(score)[ "Evaluation score" ],
 #        z: length(score)
