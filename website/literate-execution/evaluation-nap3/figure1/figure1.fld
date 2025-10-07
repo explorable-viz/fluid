@@ -8,16 +8,22 @@ def chapter_for_risk(r):
 
 def chapters:
   [ (chapter_for_risk(head(chapter)), chapter)
+    # already partitioned by chapter, so groupBy good
     for chapter in groupBy(on((==), chapter_for_risk), eval_data) ]
 
+def by_eval_score(risks):
+  dict([ (risk[ "Evaluation score" ], risk) for risk in risks ])
+
+def keys(d):
+  dict_foldl(lambda (k, _), ks: k :| ks, [], d)
+
 def eval_scores:
-  [ (chapter, debugLog(groupBy(on((==), lambda r: r [ "Evaluation score" ]), risks)))
-    for (chapter, risks) in chapters ]
+  [ (chapter, by_eval_score(risks)) for (chapter, risks) in chapters ]
 
 def bars:
   [ {
       x: chapter,
-      segments: length(scores)
+      segments: 5
 #      [ {
 #        y: head(score)[ "Evaluation score" ],
 #        z: length(score)
