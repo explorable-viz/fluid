@@ -67,8 +67,9 @@ bwd_cases =
      , fwd_expect: "{ ⸨a⸩: 5, b: 6, c: ⸨7⸩ }"
      }
    , { file: "dict/foldl_with_index.fld"
-     , bwd_expect_file: "dict/foldl_with_index.fld"
-     , δv: select, fwd_expect: "⸨0⸩"
+     , bwd_expect_file: "dict/foldl_with_index.expect.fld"
+     , δv: select
+     , fwd_expect: "⸨0⸩"
      }
    , { file: "dict/intersectionWith.fld"
      , bwd_expect_file: "dict/intersectionWith.expect.fld"
