@@ -12,8 +12,7 @@ def chapters:
     for chapter in groupBy(on((==), chapter_for_risk), eval_data) ]
 
 def add_risk(d, eval_score, risk):
-  def risks: fromOption(get(eval_score, d), [])
-  insert(d, eval_score, risk :| risks)
+  insert(d, eval_score, risk :| fromOption(get(eval_score, d), []))
 
 def by_eval_score(risks):
   foldl(lambda d, risk: add_risk(d, risk[ "Evaluation score" ], risk), {}, risks)
