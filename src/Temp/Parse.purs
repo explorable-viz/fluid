@@ -295,9 +295,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
             app :: Parser (Raw Expr)
             app = do
-               try $ do
-                  delim '('
-                  sameLine
+               delim '('
                ps <- sepBy opTree (lexeme $ char ',')
                delim ')'
                case e of
