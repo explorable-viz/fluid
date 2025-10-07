@@ -11,19 +11,19 @@ def chapters:
     for chapter in groupBy(on((==), chapter_for_risk), eval_data) ]
 
 def eval_scores:
-  [ (chapter, groupBy(on((==), lambda r: r [ "Evaluation score" ]), risks))
+  [ (chapter, risks) # groupBy(on((==), lambda r: r [ "Evaluation score" ]), risks))
     for (chapter, risks) in chapters ]
 
 def bars:
   [ {
       x: chapter,
-      segments: [ {
-        y: head(score)[ "Evaluation score" ],
-        z: length(score)
-      } for score in scores ]
+      segments: length(scores)
+#      [ {
+#        y: head(score)[ "Evaluation score" ],
+#        z: length(score)
+#      } for score in scores ]
     }
     for (chapter, scores) in eval_scores ]
 
-# now make a 100% stacked bar chart
-"""${length(bars)}
+"""${sum([ bar.segments for bar in bars ])}
    ${MultiView(dict([ (bar.x, bar.segments) for bar in bars ]))}"""
