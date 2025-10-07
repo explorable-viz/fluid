@@ -12,10 +12,10 @@ def chapters:
     for chapter in groupBy(on((==), chapter_for_risk), eval_data) ]
 
 def by_eval_score(risks):
-  foldl(lambda d, risk: dict_insert(d, debugLog(risk)[ "Evaluation score" ], risk), {}, risks)
+  foldl(lambda d, risk: dict_insert(d, risk[ "Evaluation score" ], risk), {}, risks)
 
 def keys(d):
-  foldl_with_index(lambda ks, (k, _): k :| ks, [], d)
+  foldl_with_index(lambda k, ks, _: k :| ks, [], d)
 
 def eval_scores:
   [ (chapter, by_eval_score(risks)) for (chapter, risks) in chapters ]
@@ -23,7 +23,7 @@ def eval_scores:
 def bars:
   [ {
       x: chapter,
-      segments: length(keys(scores))
+      segments: length(keys(debugLog(scores)))
 #      [ {
 #        y: head(score)[ "Evaluation score" ],
 #        z: length(score)
