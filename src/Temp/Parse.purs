@@ -27,7 +27,7 @@ import Parsing.Indent (runIndent, sameLine, withPos)
 import Parsing.String (char, eof, satisfy, string)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Parse.Number (float, integer)
-import Temp.Parse.Parser (Parser, align, block, brackets, constructor, context, delim, lexeme, lines, operator, reserved, stringLiteral, variable, whitespace)
+import Temp.Parse.Parser (Parser, align, block, brackets, constructor, context, delim, delim', lexeme, lexeme', operator, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (+), type (×), nonEmpty, onlyIf, (×))
 
@@ -98,7 +98,7 @@ simplePattern =
       pField :: Parser (Var × Pattern)
       pField = do
          v <- variable
-         delim ':'
+         delim' ':'
          p <- pattern
          pure $ v × p
 
@@ -175,7 +175,7 @@ varDefs :: Parser (Raw VarDefs)
 varDefs = do
    head <- varDef
    rest <- many varDef
-   _ <- optional (delim ';')
+   _ <- optional (delim' ';')
    pure $ nonEmpty (head : rest)
 
    where
@@ -184,13 +184,14 @@ varDefs = do
       reserved "def"
       name <- pattern
       e <- block expr
+      whitespace
       pure $ VarDef name e
 
 recDefs :: Parser (Raw RecDefs)
 recDefs = do
    head <- recDef
    rest <- many recDef
-   _ <- optional (delim ';')
+   _ <- optional (delim' ';')
    pure $ nonEmpty (head : rest)
 
    where
@@ -202,6 +203,7 @@ recDefs = do
       ps <- sepBy1 pattern (lexeme $ char ',')
       delim ')'
       e <- block expr
+      whitespace
       pure $ name × Clause (ps × e)
 
 expr :: Parser (Raw Expr)
@@ -257,28 +259,11 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
    opTree = context "opTree" (buildExprParser opdefs simpleChain) <* consume -- this thing seems to break the `consume` state
       where
 
-      -- the `withPos` here is used as a reference for the `sameLine` in
-      -- `app`. we should use `withPos` inside of `chain` but this wont work
-      -- as expected because `simple` might consume trailing newlines. we
-      -- should use something similar for field access too.
-      --
-      -- currently this ensures the following is parsed correctly (i.e. not an app):
-      -- ```
-      -- def x: lambda y: y + 1
-      -- (0)
-      -- ```
-      --
-      -- but it doesn't support this:
-      -- ```
-      -- {
-      --  x: lambda y: y + 1
-      -- }.x(0)
-      -- ```
       simpleChain :: Parser (Raw Expr)
-      simpleChain = withPos (simple >>= chain)
+      simpleChain = simple >>= chain
          where
          chain :: Raw Expr -> Parser (Raw Expr)
-         chain e = project <|> dproject <|> sameLine *> app <|> pure e
+         chain e = withPos (project <|> dproject <|> sameLine *> app <|> pure e)
             where
             project :: Parser (Raw Expr)
             project = try do
@@ -334,9 +319,9 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             varDef = try do
                reserved "def"
                name <- pattern
-               delim ':'
+               delim' ':'
                e <- opTree
-               delim ';'
+               delim' ';'
                pure $ VarDef name e
 
          letRecExpr :: Parser (Raw Expr)
@@ -353,9 +338,9 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                delim '('
                ps <- sepBy1 pattern (lexeme $ char ',')
                delim ')'
-               delim ':'
+               delim' ':'
                e <- opTree
-               delim ';'
+               delim' ';'
                pure $ name × Clause (ps × e)
 
          lambda :: Parser (Raw Expr)
@@ -407,8 +392,8 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          dict :: Parser (Raw Expr)
          dict = context "dict" do
-            delim '{'
-            kvs <- sepBy kv (lexeme $ char ',')
+            delim' '{'
+            kvs <- sepBy kv (lexeme' $ char ',')
             whitespace
             delim '}'
             pure $ Dictionary unit kvs
@@ -417,7 +402,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             kv :: Parser (Raw DictEntry × Raw Expr)
             kv = do
                k <- exprKey <|> varKey
-               _ <- lexeme $ char ':'
+               _ <- lexeme' $ char ':'
                v <- expr
                pure $ (k × v)
 
@@ -435,6 +420,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          matrix :: Parser (Raw Expr)
          matrix = context "matrix" do
             _ <- try $ lexeme $ string "[|"
+            whitespace
             e <- opTree
             reserved "for"
             delim '('
@@ -449,8 +435,8 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          listExpr :: Parser (Raw Expr)
          listExpr = context "listExpr" do
-            delim '['
-            maybeExpr <- optionMaybe (try opTree)
+            delim' '['
+            maybeExpr <- optionMaybe (try opTree <* whitespace)
             case maybeExpr of
                Nothing -> do
                   delim ']'
@@ -509,8 +495,9 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
                   listNext :: Parser (Raw ListRest)
                   listNext = do
-                     delim ','
+                     delim' ','
                      e <- opTree
+                     whitespace
                      r <- listRest
                      pure $ Next unit e r
 
@@ -545,11 +532,12 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             delim '('
             e <- opTree
             delim ')'
+            whitespace
             e' <- opTree
             pure $ DocExpr e e'
 
 program :: Parser (Raw Expr)
-program = lines *> withPos expr <* whitespace <* eof
+program = whitespace *> withPos expr <* whitespace <* eof
 
 defs :: Parser ((Raw VarDefs + Raw RecDefs))
 defs = choose (try $ varDefs) (recDefs)
@@ -560,13 +548,13 @@ module_ = do
    pure $ Module defs'
 
 imports_ :: Parser (List String)
-imports_ = many (try $ reserved "import" *> modPath)
+imports_ = many (try $ reserved "import" *> modPath <* whitespace)
    where
    modPath :: Parser String
    modPath = joinWith "/" <<< fromFoldable <$> sepBy1 variable (delim '.')
 
 topLevel :: forall a. Parser a -> Parser a
-topLevel p = whitespace *> withPos p <* eof
+topLevel p = whitespace *> withPos p <* whitespace <* eof
 
 withImports :: forall a. Parser a -> Parser (a × List String)
 withImports p = topLevel do

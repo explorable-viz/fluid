@@ -33,7 +33,7 @@ context s p = do
       ParseError (take 200 (msg <> "\n " <> s <> " on line " <> show line <> ", column " <> show column)) pos
 
 block :: forall a. Parser a -> Parser a
-block e = delim ':' *> sameOrIndented *> withPos e
+block e = delim ':' *> whitespace *> sameOrIndented *> withPos e
 
 parens :: forall a. Parser a -> Parser a
 parens e = delim '(' *> e <* delim ')'
@@ -79,11 +79,11 @@ operator = do
 delim :: Char -> Parser Unit
 delim c = void $ lexeme $ char c
 
-spaces :: Parser Unit
-spaces = void $ many (oneOf [ ' ', '\t' ])
+delim' :: Char -> Parser Unit
+delim' c = void $ lexeme' $ char c
 
 lines :: Parser Unit
-lines = void $ many (spaces *> newline)
+lines = void $ many (whitespace *> newline)
 
 whitespace :: Parser Unit
 whitespace = skipMany (space <|> comment)
@@ -91,8 +91,17 @@ whitespace = skipMany (space <|> comment)
    space = void $ oneOf [ ' ', '\t', '\n' ]
    comment = char '#' *> skipMany (satisfy (_ /= '\n'))
 
+whitespace_ :: Parser Unit
+whitespace_ = skipMany (space <|> comment)
+   where
+   space = void $ oneOf [ ' ', '\t' ]
+   comment = char '#' *> skipMany (satisfy (_ /= '\n'))
+
 lexeme :: forall a. Parser a -> Parser a
-lexeme p = p <* whitespace
+lexeme p = p <* whitespace_
+
+lexeme' :: forall a. Parser a -> Parser a
+lexeme' p = p <* whitespace
 
 newline :: Parser Unit
 newline = void $ char '\n'
