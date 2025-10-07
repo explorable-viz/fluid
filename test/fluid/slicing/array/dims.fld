@@ -1,5 +1,5 @@
 def (x, y): (3, 3)
 def yss:
-  [| 0 for (i, j) in (x, y) |];
+  [| 0 for (i, j) in (x, y) |]
 
 dims(yss)

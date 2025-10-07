@@ -3,7 +3,7 @@ import dataset.renewables
 MultiView({
   barChart:
     def totalFor(c, rows):
-      sum([row.output for row in rows if row.country == c]);
+      sum([row.output for row in rows if row.country == c])
 
     def data2015: [row for row in renewables if row.year == 2015]
     def countryData:
@@ -11,7 +11,7 @@ MultiView({
         "China",
         "USA",
         "Germany"
-      ]];
+      ]]
 
     BarChart({
       caption: "Total output by country",
@@ -20,7 +20,7 @@ MultiView({
     }),
   lineChart:
     def series(type, country):
-      [{ x: row.year, y: row.output } for year in [2013 .. 2018] for row in renewables if row.year == year if row.energyType == type if row.country == country];
+      [{ x: row.year, y: row.output } for year in [2013 .. 2018] for row in renewables if row.year == year if row.energyType == type if row.country == country]
 
     LineChart({
       tickLabels: { x: Default, y: Default },

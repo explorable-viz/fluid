@@ -1,6 +1,6 @@
 def f({ fst: x, snd: [] }): x
 def f({ fst: x, snd: y :| xs }): y
-def g({  }): 7;
+def g({  }): 7
 
 {
   a: f({ snd: [], fst: 2 }),

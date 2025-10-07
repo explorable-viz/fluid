@@ -1,9 +1,9 @@
 def incHead:
-  def x: ⸨3⸩;
+  def x: ⸨3⸩
 
   lambda xs: head(xs) + x
 def d: { a: [⸨5⸩, 6], b: [⸨9⸩, 10], c: [3, 4] }
 def e: { c: [] }
-def d': dict_map(incHead, dict_difference(d, e));
+def d': dict_map(incHead, dict_difference(d, e))
 
 d'.a + d'.b

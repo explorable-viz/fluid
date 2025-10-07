@@ -2,6 +2,6 @@ import lib.stats
 import dataset.ssp126
 
 def data:
-  mergesort([x.changed for x in ssp126]);
+  mergesort([x.changed for x in ssp126])
 
 qcut(data, [5, 50, 95])

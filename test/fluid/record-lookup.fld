@@ -1,4 +1,4 @@
 def city: { name: "Germany" }
-def country: { cities: ["Germany"] };
+def country: { cities: ["Germany"] }
 
 city.name |elem| country.cities

@@ -1,5 +1,5 @@
 def zipWith(op, [], ys): []
 def zipWith(op, x :| xs, []): []
-def zipWith(op, x :| xs, y :| ys): op(x, y) :| zipWith(op, xs, ys);
+def zipWith(op, x :| xs, y :| ys): op(x, y) :| zipWith(op, xs, ys)
 
 zipWith(lambda x, y: x ** ⸨2⸩ + y ** ⸨2⸩, [2, ⸨3⸩, 4], [3, ⸨4⸩, 5, 6])

@@ -1,13 +1,13 @@
 import dataset.nonRenewables
 
 def isCountry(name, x): name == x.country
-def isYear(year, x): year == x.year;
+def isYear(year, x): year == x.year
 
 def plot(year, countries):
   def rens:
     filter(isYear(year), renewables)
   def nonRens:
-    filter(isYear(year), nonRenewables);
+    filter(isYear(year), nonRenewables)
 
   def plotCountry(country):
     def rens':
@@ -19,14 +19,14 @@ def plot(year, countries):
     def x:
       head(filter(isCountry(country), nonRens))
     def nonRensCap:
-      ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap;
+      ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
 
     {
       x: rensCap / (rensCap + nonRensCap),
       y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
-    };
+    }
 
-  map(plotCountry, countries);
+  map(plotCountry, countries)
 
 ScatterPlot({
   caption: "Clean energy efficiency vs. proportion of renewable energy capacity",

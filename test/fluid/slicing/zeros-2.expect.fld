@@ -1,4 +1,4 @@
 def zeros([]): ⸨[]⸩
-def zeros(x :| xs): 0 :| zeros(xs);
+def zeros(x :| xs): 0 :| zeros(xs)
 
 zeros([1, 2⸨]⸩)

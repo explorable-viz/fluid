@@ -121,9 +121,8 @@ instance Ann a => Pretty (Expr a) where
 
    pretty (ListEnum s s') = brackets $ expr (pretty s <+> _ellipsis <+> pretty s')
    pretty (ListComp α s qs) = highlightIf α (brackets (expr (pretty s) <+> pretty qs)) -- Qualifier
-   -- TODO: remove semis after migration
-   pretty (Let ds s) = pretty ds <> (stmtOrExpr (text ";" <> line <> line) (text " ")) <> pretty s
-   pretty (LetRec h s) = pretty h <> (stmtOrExpr (text ";" <> line <> line) (text " ")) <> pretty s
+   pretty (Let ds s) = pretty ds <> (stmtOrExpr (line <> line) (text " ")) <> pretty s
+   pretty (LetRec h s) = pretty h <> (stmtOrExpr (line <> line) (text " ")) <> pretty s
    pretty (Paragraph p) = pretty p
    pretty (DocExpr p e) = text "@doc" <> parens (pretty p) </> pretty e
 

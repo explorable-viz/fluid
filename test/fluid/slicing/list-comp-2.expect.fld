@@ -4,6 +4,6 @@ def data:
     { year: 2013, country: "China", energyType: "Hydro", output: 260 },
     { year: 2013, country: "China", energyType: ⸨"Solar"⸩, output: 19.9 },
     { year: 2013, country: "China", energyType: "Wind", output: 91 }
-  ];
+  ]
 
 ⸨[row.output for type in ["Bio", "Hydro", ⸨"Solar"⸩, "Wind"] for row in data if row.energyType == type]⸩

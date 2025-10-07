@@ -19,7 +19,7 @@ def mergesort(xs):
 
 def findQuantile(q, p, xs):
   def rank:
-    (p / q) * (length(xs) - 1);
+    (p / q) * (length(xs) - 1)
 
   if rank == floor(rank):
     nth(rank, xs)
@@ -46,7 +46,7 @@ def cut(xs, nbins):
   def edges:
     [low + x * binwidth for x in enumFromTo(0, nbins)]
 
-  accumBins(xs, edges);
+  accumBins(xs, edges)
 
 def qcut(xs, qs):
   def (low, high):

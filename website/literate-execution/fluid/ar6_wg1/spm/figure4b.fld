@@ -31,7 +31,7 @@ def mkHistogram(xs, name, nbins):
       }, cut(xs, nbins))
   })
 
-def getHeight(offset, bar): head(bar.segments).z + offset;
+def getHeight(offset, bar): head(bar.segments).z + offset
 
 def changed126: map(lambda r: r.changed, ssp126preds)
 def changed245: map(lambda r: r.changed, ssp245preds)
