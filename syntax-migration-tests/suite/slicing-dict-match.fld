@@ -1,6 +1,0 @@
-let f {fst : x,
-        snd : []} = x in
-let f {fst : x,
-        snd : (y : ys)} = y in
-{a : f {snd : [],
-          fst : 2}}

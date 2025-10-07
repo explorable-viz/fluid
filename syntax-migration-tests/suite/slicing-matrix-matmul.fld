@@ -1,6 +1,0 @@
-import lib.matrix
-import slicing.matrix.leftMatrix
-import slicing.matrix.rightMatrix
-
-
-(matMul leftMatrix rightMatrix, matMul rightMatrix leftMatrix)

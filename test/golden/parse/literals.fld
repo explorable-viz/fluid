@@ -1,7 +1,0 @@
-def str: "hello"
-
-def int: 4
-
-def float: 4.0
-
-0

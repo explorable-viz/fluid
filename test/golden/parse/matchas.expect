@@ -1,3 +1,0 @@
-match x + y as
-{x -> x + y;
-  y -> x + y}

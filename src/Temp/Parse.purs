@@ -369,7 +369,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          paragraph :: Parser (Raw Expr)
          paragraph = do
-            _ <- try $ lexeme $ string "\"\"\""
+            _ <- lexeme $ string "f\"\"\""
             es <- many $ lexeme paragraphElem
             _ <- lexeme $ string "\"\"\""
             pure $ Paragraph es
@@ -383,12 +383,12 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                   pure $ Token (SCU.fromCharArray cs)
 
                   where
+                  -- TODO: allow escaped `"` and `{`
                   paragraphLetter :: Parser Char
-                  paragraphLetter = satisfy $ \c -> (c /= '"' && c /= '$' && not (isSpace (codePointFromChar c)))
+                  paragraphLetter = satisfy $ \c -> (c /= '"' && c /= '{' && not (isSpace (codePointFromChar c)))
 
                unquote :: Parser (Raw ParagraphElem)
                unquote = do
-                  delim '$'
                   delim '{'
                   e <- opTree
                   delim '}'

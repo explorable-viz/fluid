@@ -1,3 +1,0 @@
-match x + y:
-    case x: x + y
-    case y: x + y

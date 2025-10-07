@@ -1,2 +1,0 @@
-@doc("""This function application returns the length of a list.""")
-length [1, 2]

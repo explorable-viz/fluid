@@ -1,4 +1,0 @@
- dict_intersectionWith
-   (let x = 2 in (fun n m  = (( n  +  m ) *  x )) )
-   { a: 5, b: 6, c: 3 }
-   { b: -6, c: 7 }
