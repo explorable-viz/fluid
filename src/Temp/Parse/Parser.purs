@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (take)
 import Data.String.CodeUnits as SCU
 import Data.Traversable (foldr)
-import Parsing (ParseError(..), ParseState(..), ParserT, Position(..), fail, position, region, stateParserT)
+import Parsing (ParseError(..), Position(..), fail, position, region)
 import Parsing.Combinators (between, skipMany, (<?>))
 import Parsing.Combinators.Array (many)
 import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
@@ -17,22 +17,11 @@ import Parsing.String (char, satisfy)
 import Parsing.String.Basic (alphaNum, letter, lower, upper)
 import Parsing.Token (oneOf)
 import Temp.Parse.Constants (opChars)
-import Temp.Util.UnsafeDebug (logUnsafe)
-import Util (type (×), (×))
 
 type Parser a = IndentParser String a
 
 keywords :: Array String
 keywords = [ "def", "if", "else", "lambda", "match", "case", "for", "in" ]
-
-logState :: Parser Unit
-logState = do
-   _ × position × consumed <- state
-   let _ = logUnsafe ("\nPosition: " <> show position <> "\nConsumed: " <> show consumed <> "\n")
-   pure unit
-   where
-   state :: forall s m. ParserT s m (s × Position × Boolean)
-   state = stateParserT \state1@(ParseState input pos con) -> (input × pos × con) × state1
 
 context :: forall a. String -> Parser a -> Parser a
 context s p = do
