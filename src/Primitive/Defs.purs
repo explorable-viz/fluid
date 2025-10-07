@@ -17,11 +17,10 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (wrap)
 import Data.Number (fromString)
 import Data.Number (log, pow) as N
-import Data.Set (Set, empty, insert)
+import Data.Set (Set, empty)
 import Data.Set as Set
 import Data.Traversable (for, sequence, traverse)
-import Data.Tuple (snd)
-import DataType (cCons, cNil, cPair, cTrue, cFalse)
+import DataType (cCons, cFalse, cNil, cNone, cPair, cSome, cTrue)
 import Debug (trace)
 import Dict (fromFoldable)
 import Dict (fromFoldable) as D
@@ -35,7 +34,7 @@ import Graph.WithGraph (class MonadWithGraphAlloc, new)
 import Lattice (class BoundedJoinSemilattice, Raw, bot)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
-import Util (type (+), type (×), Endo, definitely, definitely', error, orElse, singleton, throw, (×))
+import Util (type (+), type (×), Endo, definitely, definitely', error, singleton, throw, (×))
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
 import Util.Map as Dict
 import Util.Map as Map
@@ -70,11 +69,12 @@ primitives = wrap $ D.fromFoldable
    , binary ">=" { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
    , binary "++" { i1: string, i2: string, o: string, fwd: concat }
    , extern matrixLookup
+   -- TODO: rename the rest of these (apart from dict_map?) to lose the dict_ prefix
    , extern dict_difference
    , extern dict_disjointUnion
    , extern foldl_with_index
-   , extern dict_get
-   , extern dict_insert
+   , extern get
+   , extern insert
    , extern dict_intersectionWith
    , extern dict_map
    , extern dict
@@ -221,18 +221,20 @@ foldl_with_index =
       kvs = Dict.toUnfoldable d
    op _ = throw "Function, value and dictionary expected"
 
-dict_get :: ForeignOp
-dict_get =
-   ForeignOp ("dict_get" × ForeignOp' { arity: 2, op })
+get :: ForeignOp
+get =
+   ForeignOp ("get" × ForeignOp' { arity: 2, op })
    where
    op :: Op
-   op (Val _ _ (Str s) : Val _ _ (Dictionary (DictRep d)) : Nil) =
-      snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
+   op (Val α _ (Str s) : Val _ _ (Dictionary (DictRep d)) : Nil) =
+      case lookup s d of
+         Nothing -> new (flip Val Nothing) (singleton α) (Constr cNone Nil)
+         Just (β × v) -> new (flip Val Nothing) (Set.insert β (singleton α)) (Constr cSome (v : Nil))
    op _ = throw "String and dictionary expected"
 
-dict_insert :: ForeignOp
-dict_insert =
-   ForeignOp ("dict_insert" × ForeignOp' { arity: 3, op })
+insert :: ForeignOp
+insert =
+   ForeignOp ("insert" × ForeignOp' { arity: 3, op })
    where
    op :: Op
    op (Val α _ (Dictionary (DictRep d)) : Val α' _ (Str k) : v : Nil) =
@@ -278,7 +280,7 @@ dict =
       kvs' (Val α _ (Constr c (Val β' _ (Constr c' (Val β _ (Str k) : u : Nil)) : v' : Nil)))
          | c == cCons && c' == cPair = do
               αs' × kvs <- kvs' v'
-              pure $ insert α (insert β' αs') × ((k × (β × u)) : kvs)
+              pure $ Set.insert α (Set.insert β' αs') × ((k × (β × u)) : kvs)
       kvs' _ = throw $ "List of (key, value) pairs expected"
    op _ = throw "Single argument expected"
 

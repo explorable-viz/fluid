@@ -97,9 +97,12 @@ def findWithKey(fname, fval, d):
   find((lambda y: y[fname] == fval), d)
 
 # Option a -> a
-def fromSome(None):
-  error("Expected Some!")
+def fromSome(None): error("Expected Some!")
 def fromSome(Some(x)): x
+
+# Option a -> a -> a
+def fromOption(None, y): y
+def fromOption(Some(x), _): x
 
 # (a -> Bool) -> List a -> List a
 def filter(p, []): []
