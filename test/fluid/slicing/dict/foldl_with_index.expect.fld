@@ -1,0 +1,5 @@
+foldl((*), 1, foldl_with_index((lambda _: concat2), [], {
+  a: [5, 6],
+  b: [⸨0⸩, 10],
+  c: [3, 4]
+}))

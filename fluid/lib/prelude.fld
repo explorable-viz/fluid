@@ -156,9 +156,7 @@ def foldr1(op, x :| y :| xs):
 def scanl1(op, z, xs):
   def go(x, continue, acc):
     def next: op(acc, x)
-
     next :| continue(next)
-
   foldr(go, const([]), xs, z)
 
 # (a -> b -> a) -> a -> List b -> List a

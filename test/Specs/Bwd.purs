@@ -66,7 +66,10 @@ bwd_cases =
      , δv: dictKey "a" select' >.> dictVal "c" select
      , fwd_expect: "{ ⸨a⸩: 5, b: 6, c: ⸨7⸩ }"
      }
-   , { file: "dict/foldl.fld", bwd_expect_file: "dict/foldl.expect.fld", δv: select, fwd_expect: "⸨0⸩" }
+   , { file: "dict/foldl_with_index.fld"
+     , bwd_expect_file: "dict/foldl_with_index.fld"
+     , δv: select, fwd_expect: "⸨0⸩"
+     }
    , { file: "dict/intersectionWith.fld"
      , bwd_expect_file: "dict/intersectionWith.expect.fld"
      , δv: dictVal "b" select >.> dictVal "c" select

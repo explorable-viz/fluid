@@ -37,6 +37,8 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Util (type (+), type (×), Endo, definitely, definitely', error, orElse, singleton, throw, (×))
 import Util.Map (disjointUnion, intersectionWith, lookup, (\\))
+import Util.Map as Dict
+import Util.Map as Map
 import Val (BaseVal(..), DictRep(..), Env, ForeignOp(..), ForeignOp'(..), Fun(..), MatrixDim(..), MatrixRep(..), Op, Val(..), matrixGet, matrixPut)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Bind (Val a)
@@ -70,8 +72,9 @@ primitives = wrap $ D.fromFoldable
    , extern matrixLookup
    , extern dict_difference
    , extern dict_disjointUnion
-   , extern dict_foldl
+   , extern foldl_with_index
    , extern dict_get
+   , extern dict_insert
    , extern dict_intersectionWith
    , extern dict_map
    , extern dict
@@ -206,13 +209,16 @@ dict_disjointUnion =
       new (flip Val Nothing) (singleton α # Set.insert β) (Dictionary (DictRep (disjointUnion d d')))
    op _ = throw "Dictionaries expected"
 
-dict_foldl :: ForeignOp
-dict_foldl =
-   ForeignOp ("dict_foldl" × ForeignOp' { arity: 3, op })
+foldl_with_index :: ForeignOp
+foldl_with_index =
+   ForeignOp ("foldl_with_index" × ForeignOp' { arity: 3, op })
    where
    op :: Op
    op (v : u : Val _ _ (Dictionary (DictRep d)) : Nil) =
-      foldM (\u1 (_ × u2) -> G.apply v u1 >>= flip G.apply u2) u d
+      foldM (\u1 (k × (α × u2)) -> G.apply v (Val α Nothing (Str k)) >>= flip G.apply u1 >>= flip G.apply u2) u kvs
+      where
+      kvs :: List _
+      kvs = Dict.toUnfoldable d
    op _ = throw "Function, value and dictionary expected"
 
 dict_get :: ForeignOp
@@ -223,6 +229,15 @@ dict_get =
    op (Val _ _ (Str s) : Val _ _ (Dictionary (DictRep d)) : Nil) =
       snd <$> lookup s d # orElse ("Key \"" <> s <> "\" not found")
    op _ = throw "String and dictionary expected"
+
+dict_insert :: ForeignOp
+dict_insert =
+   ForeignOp ("dict_insert" × ForeignOp' { arity: 3, op })
+   where
+   op :: Op
+   op (Val α _ (Dictionary (DictRep d)) : Val α' _ (Str k) : v : Nil) =
+      new (flip Val Nothing) (singleton α) (Dictionary (DictRep (Map.insert k (α' × v) d)))
+   op _ = throw "Dictionary, key and value expected"
 
 dict_intersectionWith :: ForeignOp
 dict_intersectionWith =
