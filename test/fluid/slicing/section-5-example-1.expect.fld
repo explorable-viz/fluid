@@ -12,4 +12,4 @@ def data:
 def output:
   ⸨[row.output for type in [⸨"Hydro"⸩, "Solar", "Geo"] for row in data if row.energyType == type]⸩;
 
-map((lambda x: floor((x / sum(output)) * 100)), output)
+map(lambda x: floor((x / sum(output)) * 100), output)

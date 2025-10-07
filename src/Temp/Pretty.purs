@@ -83,6 +83,7 @@ binaryApp n (BinaryApp s op s') =
 binaryApp _ e@(Constr _ c _) | c == cCons = parens (pretty e)
 binaryApp _ e@(Let _ _) = parens (pretty e) -- probably not required but might be a good convention
 binaryApp _ e@(LetRec _ _) = parens (pretty e)
+binaryApp _ e@(Lambda _) = parens (pretty e)
 binaryApp _ e = pretty e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
@@ -99,7 +100,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Dictionary α Nil) = highlightIf α (text "{}")
    pretty (Dictionary α es) = highlightIf α (expr $ record $ map pretty es)
    pretty (Matrix α e (x × y) e') = highlightIf α (expr $ matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e'))
-   pretty (Lambda cs) = parens (pretty cs) -- Clauses
+   pretty (Lambda cs) = pretty cs -- Clauses
    pretty (Project s x) = expr $ pretty s <> text "." <> text x
    pretty (DProject e k) = expr $ pretty e <> brackets (expr $ pretty k)
    pretty (App s s') = expr $ prettyAppChain (App s s') Nil
@@ -210,6 +211,7 @@ prettyConsArg e lhs = case rootOp e of
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
 prettyAppChain (App f a) as = prettyAppChain f (a : as)
+prettyAppChain (Lambda f) as = parens (pretty f) <> parens (prettyList as)
 prettyAppChain f as = pretty f <> parens (prettyList as)
 
 commas :: List Doc -> Doc
