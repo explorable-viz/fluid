@@ -18,7 +18,7 @@ def by_eval_score(risks):
   foldl(lambda d, risk: add_risk(d, risk[ "Evaluation score" ], risk), {}, risks)
 
 def items(d):
-  foldl_with_index(lambda k, ks, risks: { y: k, z: length(risks) } :| ks, [], d)
+  foldl_with_index(lambda k, segments, risks: { y: k, z: length(risks) } :| segments, [], d)
 
 def eval_scores:
   [ (chapter, by_eval_score(risks)) for (chapter, risks) in chapters ]
