@@ -194,7 +194,7 @@ instance Ann a => Pretty (List (ParagraphElem a)) where
 
 instance Ann a => Pretty (ParagraphElem a) where
    pretty (Token str) = text str
-   pretty (Unquote e) = text "${" <> pretty e <> text "}"
+   pretty (Unquote e) = text "{" <> pretty e <> text "}"
 
 prettyConstr :: forall a. RootOp a => Pretty a => Ctr -> List a -> Doc
 prettyConstr "Nil" Nil = text "[]"
