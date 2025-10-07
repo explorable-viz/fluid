@@ -17,4 +17,5 @@ def bars:
     for chapter in eval_scores for eval_score in chapter ]
 
 # now make a 100% stacked bar chart
-MultiView(dict([ (bar.x, bar.segments) for bar in bars ]))
+"""${length(bars)}
+   ${MultiView(dict([ (bar.x, bar.segments) for bar in bars ]))}"""
