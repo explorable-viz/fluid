@@ -6,15 +6,15 @@ def risk_chapter:
 def chapter_for_risk(r):
   risk_chapter[ r [ "Risk ID#" ] ]
 
-def chapters_:
+def chapters:
   [ (chapter_for_risk(head(chapter)), chapter)
     for chapter in groupBy(on((==), chapter_for_risk), eval_data) ]
 
-def eval_scores_:
+def eval_scores:
   [ (chapter, groupBy(on((==), lambda r: r [ "Evaluation score" ]), risks))
-    for (chapter, risks) in chapters_ ]
+    for (chapter, risks) in chapters ]
 
-def bars_:
+def bars:
   [ {
       x: chapter,
       segments: [ {
@@ -22,7 +22,8 @@ def bars_:
         z: length(score)
       } for score in scores ]
     }
-    for (chapter, scores) in eval_scores_ ]
+    for (chapter, scores) in eval_scores ]
 
 # now make a 100% stacked bar chart
-"""${length(bars_)}"""
+"""${length(bars)}
+   ${MultiView(dict([ (bar.x, bar.segments) for bar in bars ]))}"""
