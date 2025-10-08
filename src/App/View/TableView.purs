@@ -85,7 +85,7 @@ instance Viewable TableView Unit where
    isLeaf = const false
 
    setSelection :: Unit -> TableView -> Select -> D3.Selection -> Effect Unit
-   setSelection _ (TableView { title, rows }) redraw rootElement = do
+   setSelection _ (TableView { title, colNames, rows }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"
       listener <- eventListener (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
       foreachE cells \cell -> do
@@ -134,6 +134,18 @@ instance Viewable TableView Unit where
          | i == 0 = -1
          | row_isVisible (rows ! (i - 1)) = i - 1
          | otherwise = row_visiblePred (i - 1)
+
+      column_visibleSucc :: Int -> Maybe Int
+      column_visibleSucc i
+         | i == length colNames - 1 = Nothing
+         | column_isVisible (i + 1) rows = Just (i + 1)
+         | otherwise = column_visibleSucc (i + 1)
+
+      column_visiblePred :: Int -> Int
+      column_visiblePred i
+         | i <= 0 = error absurd
+         | column_isVisible (i - 1) rows = i - 1
+         | otherwise = column_visiblePred (i - 1)
 
       border :: Boolean -> Boolean -> String
       border true _ = solidBorder
