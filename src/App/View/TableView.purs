@@ -5,9 +5,9 @@ import Prelude hiding (absurd)
 import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, listElement)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
-import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
+import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText, textWidth)
 import App.View.Util.D3 as D3
-import Bind ((↦))
+import Bind ((↦), (⟼))
 import Data.Array ((..), elem, filter, head, null, partition, sort)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
@@ -198,7 +198,7 @@ instance Viewable TableView Unit where
 
    createElement :: Unit -> TableView -> D3.Selection -> Effect D3.Selection
    createElement _ (TableView { colNames, filter, rows }) parent = do
-      rootElement <- parent # create Div [ classes [] ]
+      rootElement <- parent # create Div [ classes [ "table-wrapper" ] ]
       table <- rootElement # create Table [ classes [ "table-view" ] ]
       void $ table # create Caption
          [ classes [ "title-text", "table-caption" ]
