@@ -20,7 +20,7 @@ import Data.Traversable (foldl, foldr)
 import DataType (cPair)
 import Lattice (Raw)
 import Parsing (Position, consume, fail, runParserT)
-import Parsing.Combinators (choice, many, many1, optional, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators (choice, many, many1, option, optional, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
@@ -33,62 +33,27 @@ import Util (type (+), type (×), nonEmpty, (×))
 pattern :: Parser Pattern
 pattern = defer $ \_ -> buildExprParser popdefs simplePattern
 
--- TODO: check try usage
 simplePattern :: Parser Pattern
-simplePattern =
-   try pListEmpty
-      <|> pListNonEmpty
-      <|> try pRecord
-      <|> try pVar
-      <|> try pAppChain
-      <|> try parensPattern
-      <|> pPair
+simplePattern = pVar <|> pConstr <|> pRecord <|> bracketsPattern <|> parensPattern
+
    where
 
-   pAppChain :: Parser Pattern
-   pAppChain = pConstr >>= \e -> app e
-      where
-      app :: Pattern -> Parser Pattern
-      app e = args e <|> pure e
-
-      args :: Pattern -> Parser Pattern
-      args (PConstr c ps) = do
-         delim '('
-         ps' <- sepBy simplePattern (delim ',')
-         delim ')'
-         app (PConstr c (ps <> ps'))
-      args p = pure p
-
-   pListEmpty :: Parser Pattern
-   pListEmpty = do
-      delim '['
-      delim ']'
-      pure $ PListEmpty
-
-   pListNonEmpty :: Parser Pattern
-   pListNonEmpty = do
-      delim '['
-      head <- pattern
-      rest <- pListRest
-      pure $ PListNonEmpty head rest
-
-      where
-      pListRest :: Parser ListRestPattern
-      pListRest = pListEnd <|> pListNext
-
-         where
-         pListEnd :: Parser ListRestPattern
-         pListEnd = delim ']' $> PListEnd
-
-         pListNext :: Parser ListRestPattern
-         pListNext = do
-            delim ','
-            p <- pattern
-            r <- pListRest
-            pure $ PListNext p r
+   pVar :: Parser Pattern
+   pVar = PVar <$> variable
 
    pConstr :: Parser Pattern
-   pConstr = PConstr <$> constructor <@> Nil
+   pConstr = do
+      c <- constructor
+      ps <- option Nil pApp
+      pure $ PConstr c ps
+
+      where
+      pApp :: Parser (List Pattern)
+      pApp = do
+         delim '('
+         ps <- sepBy simplePattern (delim ',')
+         delim ')'
+         pure ps
 
    pRecord :: Parser Pattern
    pRecord = do
@@ -103,26 +68,36 @@ simplePattern =
          v <- variable
          delim ':'
          p <- pattern
-         pure $ v × p
+         pure (v × p)
 
-   pVar :: Parser Pattern
-   pVar = PVar <$> variable
+   bracketsPattern :: Parser Pattern
+   bracketsPattern = do
+      delim '['
+      choice
+         [ do
+              delim ']'
+              pure $ PListEmpty
+         , do
+              p <- pattern
+              ps <- many (delim ',' *> pattern)
+              delim ']'
+              pure $ PListNonEmpty p (foldr (PListNext) (PListEnd) ps)
+         ]
 
    parensPattern :: Parser Pattern
    parensPattern = do
       delim '('
-      e <- pattern
-      delim ')'
-      pure $ e
-
-   pPair :: Parser Pattern
-   pPair = do
-      delim '('
       p <- pattern
-      delim ','
-      p' <- pattern
-      delim ')'
-      pure $ PConstr cPair (p : p' : Nil)
+      choice
+         [ do
+              delim ')'
+              pure p
+         , do
+              delim ','
+              p' <- pattern
+              delim ')'
+              pure $ PConstr cPair (p : p' : Nil)
+         ]
 
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
 binaryOp op = do
@@ -378,7 +353,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                k <- exprKey <|> varKey
                _ <- delim ':'
                v <- expr
-               pure $ (k × v)
+               pure (k × v)
 
                where
                exprKey :: Parser (Raw DictEntry)
