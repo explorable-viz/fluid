@@ -30,5 +30,5 @@ testFig page = do
       click point page
       checkAttributeContains page point "class" "selected-primary-persistent"
       checkAttribute page point "r" "3.2"
-      let caption = T.Selector ("table#" <> fig <> "-input-renewables > caption.table-caption")
+      let caption = T.Selector ("div#" <> fig <> "-input-renewables > table > caption.table-caption")
       checkTextContent page caption "renewables (40 of 240 × 5 of 5)"

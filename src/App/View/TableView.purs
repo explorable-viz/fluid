@@ -198,15 +198,16 @@ instance Viewable TableView Unit where
 
    createElement :: Unit -> TableView -> D3.Selection -> Effect D3.Selection
    createElement _ (TableView { colNames, filter, rows }) parent = do
-      rootElement <- parent # create Table [ classes [ "table-view" ] ]
-      void $ rootElement # create Caption
+      rootElement <- parent # create Div [ classes [] ]
+      table <- rootElement # create Table [ classes [ "table-view" ] ]
+      void $ table # create Caption
          [ classes [ "title-text", "table-caption" ]
          , "dominant-baseline" ↦ "middle"
          , "text-anchor" ↦ "left"
          ]
       let colNames' = [ rowKey ] <> colNames
-      rootElement # createHeader colNames'
-      body <- rootElement # create TBody []
+      table # createHeader colNames'
+      body <- table # create TBody []
       forWithIndex_ rows \i row -> do
          row' <- body # create TR [ classes [ "table-row" ] ] >>= setDatum { i }
          forWithIndex_ ([ show (i + 1) ] <> (row <#> prim)) \j value -> do
@@ -216,8 +217,8 @@ instance Viewable TableView Unit where
                >>= setDatum { i, j: j - 1, value, colName: colNames' ! j } -- TODO: rename "value" to "text"?
       pure rootElement
       where
-      createHeader colNames' rootElement = do
-         row <- rootElement # create THead [] >>= create TR []
+      createHeader colNames' table = do
+         row <- table # create THead [] >>= create TR []
          forWithIndex_ colNames' \j colName -> do
             let value = if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName
             row
