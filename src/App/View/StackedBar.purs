@@ -25,7 +25,7 @@ newtype StackedBar = StackedBar
 type StackedBarContext =
    { interior :: Dimensions Int
    , scales :: Scales
-   , strokeWidth :: Int
+   , strokeWidth :: Int -- should probably expect this to be set in CSS instead
    }
 
 barHeight :: StackedBar -> Number
