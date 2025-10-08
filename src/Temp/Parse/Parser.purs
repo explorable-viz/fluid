@@ -1,4 +1,4 @@
-module Temp.Parse.Parser where
+module Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, stringLiteral, variable, whitespace) where
 
 import Prelude hiding (between)
 
@@ -33,16 +33,7 @@ context s p = do
       ParseError (take 200 (msg <> "\n " <> s <> " on line " <> show line <> ", column " <> show column)) pos
 
 block :: forall a. Parser a -> Parser a
-block e = delim ':' *> sameOrIndented *> withPos e
-
-parens :: forall a. Parser a -> Parser a
-parens e = delim '(' *> e <* delim ')'
-
-braces :: forall a. Parser a -> Parser a
-braces e = delim '{' *> e <* delim '}'
-
-brackets :: forall a. Parser a -> Parser a
-brackets e = delim '[' *> e <* delim ']'
+block e = delim ':' *> whitespace *> sameOrIndented *> withPos e
 
 align :: forall a. Parser a -> Parser a
 align p = whitespace *> checkIndent *> p
@@ -77,25 +68,16 @@ operator = do
    pure $ SCU.fromCharArray cs
 
 delim :: Char -> Parser Unit
-delim c = void $ lexeme $ char c
+delim c = char c *> whitespace
 
-spaces :: Parser Unit
-spaces = void $ many (oneOf [ ' ', '\t' ])
-
-lines :: Parser Unit
-lines = void $ many (spaces *> newline)
+lexeme :: forall a. Parser a -> Parser a
+lexeme p = p <* whitespace
 
 whitespace :: Parser Unit
 whitespace = skipMany (space <|> comment)
    where
    space = void $ oneOf [ ' ', '\t', '\n' ]
    comment = char '#' *> skipMany (satisfy (_ /= '\n'))
-
-lexeme :: forall a. Parser a -> Parser a
-lexeme p = p <* whitespace
-
-newline :: Parser Unit
-newline = void $ char '\n'
 
 -----------------------------------------------------------
 -- String things extracted from "Parsing.Token"

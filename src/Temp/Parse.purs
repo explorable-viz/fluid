@@ -24,10 +24,10 @@ import Parsing (Position, consume, runParserT)
 import Parsing.Combinators (many, many1, optionMaybe, optional, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, withPos)
-import Parsing.String (char, eof, satisfy, string)
+import Parsing.String (eof, satisfy, string)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Parse.Number (float, integer)
-import Temp.Parse.Parser (Parser, align, block, brackets, constructor, context, delim, lexeme, lines, operator, reserved, stringLiteral, variable, whitespace)
+import Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, stringLiteral, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (+), type (×), nonEmpty, onlyIf, (×))
 
@@ -54,13 +54,16 @@ simplePattern =
       args :: Pattern -> Parser Pattern
       args (PConstr c ps) = do
          delim '('
-         ps' <- sepBy simplePattern (lexeme $ char ',')
+         ps' <- sepBy simplePattern (delim ',')
          delim ')'
          app (PConstr c (ps <> ps'))
       args p = pure p
 
    pListEmpty :: Parser Pattern
-   pListEmpty = brackets whitespace $> PListEmpty
+   pListEmpty = do
+      delim '['
+      delim ']'
+      pure $ PListEmpty
 
    pListNonEmpty :: Parser Pattern
    pListNonEmpty = do
@@ -90,7 +93,7 @@ simplePattern =
    pRecord :: Parser Pattern
    pRecord = do
       delim '{'
-      fs <- sepBy pField (lexeme $ char ',')
+      fs <- sepBy pField (delim ',')
       delim '}'
       pure $ PRecord fs
 
@@ -123,14 +126,14 @@ simplePattern =
 
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
 binaryOp op = try do
-   op' <- lexeme $ operator
+   op' <- lexeme operator
    onlyIf (op == op') $
       -- else if ":|" op' then \e e' -> Constr unit op' (e : e' : empty)
       \e e' -> BinaryApp e op e'
 
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = try do
-   op <- lexeme $ operator
+   op <- lexeme operator
    onlyIf (op == ":|")
       $ \e e' -> PConstr ":" (e : e' : Nil)
 
@@ -141,7 +144,7 @@ infixFn = try do
 
 consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 consOp = try do
-   op <- lexeme $ operator
+   op <- lexeme operator
    onlyIf (op == ":|")
       $ \e e' -> Constr unit ":" (e : e' : Nil)
 
@@ -199,7 +202,7 @@ recDefs = do
       reserved "def"
       name <- variable
       delim '('
-      ps <- sepBy1 pattern (lexeme $ char ',')
+      ps <- sepBy1 pattern (delim ',')
       delim ')'
       e <- block expr
       pure $ name × Clause (ps × e)
@@ -257,23 +260,6 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
    opTree = context "opTree" (buildExprParser opdefs simpleChain) <* consume -- this thing seems to break the `consume` state
       where
 
-      -- the `withPos` here is used as a reference for the `sameLine` in
-      -- `app`. we should use `withPos` inside of `chain` but this wont work
-      -- as expected because `simple` might consume trailing newlines. we
-      -- should use something similar for field access too.
-      --
-      -- currently this ensures the following is parsed correctly (i.e. not an app):
-      -- ```
-      -- def x: lambda y: y + 1
-      -- (0)
-      -- ```
-      --
-      -- but it doesn't support this:
-      -- ```
-      -- {
-      --  x: lambda y: y + 1
-      -- }.x(0)
-      -- ```
       simpleChain :: Parser (Raw Expr)
       simpleChain = withPos (simple >>= chain)
          where
@@ -296,7 +282,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             app :: Parser (Raw Expr)
             app = do
                delim '('
-               ps <- sepBy opTree (lexeme $ char ',')
+               ps <- sepBy opTree (delim ',')
                delim ')'
                case e of
                   (Constr a c es) -> chain (Constr a c (es <> ps <> Nil))
@@ -351,7 +337,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                reserved "def"
                name <- variable
                delim '('
-               ps <- sepBy1 pattern (lexeme $ char ',')
+               ps <- sepBy1 pattern (delim ',')
                delim ')'
                delim ':'
                e <- opTree
@@ -361,7 +347,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
             try $ reserved "lambda"
-            ps <- sepBy1 pattern (lexeme $ char ',')
+            ps <- sepBy1 pattern (delim ',')
             delim ':'
             e <- opTree
             pure $ Lambda (Clauses (nonEmpty (Clause (ps × e) : Nil)))
@@ -408,8 +394,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          dict :: Parser (Raw Expr)
          dict = context "dict" do
             delim '{'
-            kvs <- sepBy kv (lexeme $ char ',')
-            whitespace
+            kvs <- sepBy kv (delim ',')
             delim '}'
             pure $ Dictionary unit kvs
 
@@ -417,7 +402,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             kv :: Parser (Raw DictEntry × Raw Expr)
             kv = do
                k <- exprKey <|> varKey
-               _ <- lexeme $ char ':'
+               _ <- delim ':'
                v <- expr
                pure $ (k × v)
 
@@ -434,7 +419,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          matrix :: Parser (Raw Expr)
          matrix = context "matrix" do
-            _ <- try $ lexeme $ string "[|"
+            _ <- lexeme $ string "[|"
             e <- opTree
             reserved "for"
             delim '('
@@ -481,8 +466,10 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
                   where
                   listCompDecl' :: Pattern -> Parser (Raw Qualifier)
-                  listCompDecl' p = do
-                     e <- try $ brackets $ opTree
+                  listCompDecl' p = try do
+                     delim '['
+                     e <- opTree
+                     delim ']'
                      pure $ ListCompDecl (VarDef p e)
 
                   listCompGen' :: Pattern -> Parser (Raw Qualifier)
@@ -541,7 +528,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          docExpr :: Parser (Raw Expr)
          docExpr = context "doc expr" do
-            _ <- try $ lexeme $ string "@doc"
+            _ <- lexeme $ string "@doc"
             delim '('
             e <- opTree
             delim ')'
@@ -549,7 +536,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             pure $ DocExpr e e'
 
 program :: Parser (Raw Expr)
-program = lines *> withPos expr <* whitespace <* eof
+program = whitespace *> withPos expr <* whitespace <* eof
 
 defs :: Parser ((Raw VarDefs + Raw RecDefs))
 defs = choose (try $ varDefs) (recDefs)
@@ -560,13 +547,13 @@ module_ = do
    pure $ Module defs'
 
 imports_ :: Parser (List String)
-imports_ = many (try $ reserved "import" *> modPath)
+imports_ = many (try $ reserved "import" *> modPath <* whitespace)
    where
    modPath :: Parser String
    modPath = joinWith "/" <<< fromFoldable <$> sepBy1 variable (delim '.')
 
 topLevel :: forall a. Parser a -> Parser a
-topLevel p = whitespace *> withPos p <* eof
+topLevel p = whitespace *> withPos p <* whitespace <* eof
 
 withImports :: forall a. Parser a -> Parser (a × List String)
 withImports p = topLevel do
