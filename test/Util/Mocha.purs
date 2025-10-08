@@ -4,9 +4,9 @@ module Test.Util.Mocha
    ) where
 
 import Prelude
+
 import Data.Either (either)
-import Data.Traversable (traverse_)
-import Effect (Effect)
+import Effect (Effect, foreachE)
 import Effect.Aff (Aff, Error, runAff_)
 import Util ((×), type (×))
 
@@ -29,4 +29,4 @@ executeTest (name × example) = itAsync true name cb
       runAff_ (either onError (const onSuccess)) example
 
 run :: forall a. Array (String × Aff a) -> Effect Unit
-run = traverse_ executeTest
+run = flip foreachE executeTest

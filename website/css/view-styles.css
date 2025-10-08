@@ -35,6 +35,10 @@ thead {
    border-top: 0.5px solid lightgray;
 }
 
+thead th {
+  vertical-align: top;
+}
+
 .table-cell {
    border-radius: 0px;
 }

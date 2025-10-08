@@ -17,7 +17,6 @@ import Data.Traversable (for)
 import Data.Tuple (snd, uncurry)
 import Dict (Dict)
 import Effect (Effect, foreachE)
-import Effect.Console (log)
 import Util (type (×), (×), absurd, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
@@ -90,7 +89,6 @@ instance Viewable TableView Unit where
          { i, j, colName } :: CellIndex <- datum cell
          if i == -1 || j == -1 then pure unit
          else do
-            log $ "Registering mouse listeners for table cell i: " <> show i <> ", j: " <> show j <> " }"
             cell # classed selClasses false
                >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
                >>= registerMouseListeners listener

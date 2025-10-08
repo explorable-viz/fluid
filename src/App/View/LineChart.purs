@@ -20,7 +20,6 @@ import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (f_plots)
 import Effect (Effect, foreachE)
-import Effect.Console (log)
 import Lattice ((∨), (∧))
 import Util (type (×), Endo, definitely', init, nonEmpty, tail, zipWith, (!), (×))
 import Web.Event.EventTarget (eventListener)
@@ -69,7 +68,6 @@ instance Viewable LineChart Unit where
 
       foreachE points \point -> do
          point' <- datum point
-         log $ "Registering mouse listeners for Point { x: " <> show point'.i <> ", y: " <> show point'.j <> " }"
          point # setAttrs (pointAttrs point') >>= registerMouseListeners listener
       segments <- rootElement # selectAll ".linechart-segment"
       foreachE segments \segment -> do
@@ -173,9 +171,9 @@ instance Viewable LineChart Unit where
 
       createLines :: Dimensions Int -> D3.Selection -> Effect Unit
       createLines range parent' =
-         for_ (concat $ mapWithIndex segments plots)
+         foreachE (concat $ mapWithIndex segments plots)
             \({ start, end } × segmentCoords) ->
-               parent' #
+               void $ parent' #
                   ( create Path [ classes [ "linechart-segment" ], "d" ↦ line (to range) [ start, end ] ]
                        >=> setDatum segmentCoords
                   )
@@ -193,8 +191,8 @@ instance Viewable LineChart Unit where
 
       createPoints :: Dimensions Int -> D3.Selection -> Effect Unit
       createPoints range parent' =
-         for_ entries \(Point { x, y } × { i, j }) ->
-            parent' #
+         foreachE entries \(Point { x, y } × { i, j }) ->
+            void $ parent' #
                ( create Circle
                     [ classes [ "linechart-point" ]
                     , "stroke-width" ⟼ 1
@@ -216,14 +214,14 @@ instance Viewable LineChart Unit where
          void $ legend' # create Rect
             [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
          let circle_centre = lineHeight / 2 - point_smallRadius / 2
-         for_ entries \{ i, name } -> do
+         foreachE entries \{ i, name } -> do
             g <- legend' # create G [ classes [ "legend-entry" ], translate { x: 0, y: entry_y i } ]
             void $ g #
                -- align text with boxes
                ( create Text [ classes [ "legend-text" ], translate { x: legend_entry_x, y: 9 } ]
                     >=> setText name
                )
-            g # create Circle
+            void $ g # create Circle
                [ "fill" ↦ nameCol (definitely' $ elemIndex name (names plots))
                , "r" ⟼ point_smallRadius
                , "cx" ⟼ circle_centre

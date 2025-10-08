@@ -12,7 +12,6 @@ import Data.Int (toNumber)
 import Data.Newtype (class Newtype)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Effect.Console (log)
 import Util (Endo)
 import Web.Event.EventTarget (eventListener)
 
@@ -48,9 +47,8 @@ instance Viewable Segment SegmentContext where
               ]
 
    setSelection :: SegmentContext -> Segment -> Select -> D3.Selection -> Effect Unit
-   setSelection { y_index } (Segment { y, z }) select segment = do
+   setSelection { y_index } (Segment { z }) select segment = do
       listener <- eventListener (select <<< uncurry (\_ -> nthSegment y_index) <<< selectionEventData')
-      log $ "Registering mouse listeners for Segment { y: " <> show y <> ", z: " <> show z <> " }"
       segment # setAttrs attrs >>= registerMouseListeners listener
       where
       attrs :: Attrs
