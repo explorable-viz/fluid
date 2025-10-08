@@ -99,9 +99,7 @@ instance Viewable TableView Unit where
             [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
             , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
             ]
-      hiddenRows <- hideRows
-      _ <- hideColumns
-      setCaption hiddenRows
+      void $ setCaption <$> hideRows <*> hideColumns
       where
       hideRows :: Effect Int
       hideRows = do
@@ -118,21 +116,27 @@ instance Viewable TableView Unit where
       hideColumns :: Effect Int
       hideColumns = do
          -- very expensive and also overkill to do on every selection as currently hidden cells are fixed
-         let hiddenColumns = filter (flip column_isVisible rows) (0 .. (length colNames - 1))
+         let hiddenColumns = filter (not <<< flip column_isVisible rows) (0 .. (length colNames - 1))
          cells <- rootElement # selectAll ".table-cell"
          foreachE cells \cell -> do
             { j } :: CellIndex <- datum cell
             void $
-               if j `elem` hiddenColumns
-               then classed "hidden" true cell
+               if j `elem` hiddenColumns then classed "hidden" true cell
                else classed "hidden" false cell
          pure (length hiddenColumns)
 
-      setCaption :: Int -> Effect Unit
-      setCaption numHidden = do
-         let caption = title <> " (" <> show (length rows - numHidden) <> " of " <> show (length rows) <> ")"
-         void $ rootElement # select ".table-caption" >>= setText caption
+      setCaption :: Int -> Int -> Effect Unit
+      setCaption _ _ = do
+         void $ rootElement # select ".table-caption" >>= setText title
 
+      {-
+         where
+         caption = title <> " ("
+            <> (show (length rows - hiddenRows) <> " of " <> show (length rows))
+            <> " × "
+            <> (show (length colNames - hiddenColumns) <> " of " <> show (length colNames))
+            <> " )"
+-}
       width :: Int
       width = length (definitely' (head rows))
 

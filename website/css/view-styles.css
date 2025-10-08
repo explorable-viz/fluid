@@ -81,6 +81,11 @@ td.table-cell {
    display: none;
 }
 
+/* To hide a column, add 'hidden' to every cell in the column. visibility: collapse doesn't work here. */
+.table-cell.hidden {
+   display: none;
+}
+
 /* hack to match Safari-only */
 @supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) {
    .table-row.hidden {
