@@ -2,7 +2,7 @@ module App.View.Segment where
 
 import Prelude
 
-import App.Util (Attrs, Dimensions, Selectable, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
+import App.Util (Attrs, Dimensions(..), Selectable, 𝕊(..), classes, colorShade, contents, getPersistent, getTransient, sel, selectionEventData')
 import App.Util.Selector (nthSegment)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), bandwidth, colorScale, create, setAttrs)
@@ -16,7 +16,7 @@ import Util (Endo)
 import Web.Event.EventTarget (eventListener)
 
 newtype Segment = Segment
-   { y :: Selectable String
+   { y :: Selectable String -- overloading of y here and in SegmentContext needs fixing
    , z :: Selectable Number
    }
 
@@ -35,12 +35,12 @@ instance Viewable Segment SegmentContext where
    isLeaf = const false
 
    createElement :: SegmentContext -> Segment -> D3.Selection -> Effect D3.Selection
-   createElement { interior, scales, strokeWidth, x, y } (Segment { z }) parent =
+   createElement { interior: Dimensions { height }, scales, strokeWidth, x, y } (Segment { z }) parent =
       parent
          # create Rect
               [ "x" ⟼ scales.x x
               , "y" ⟼ scales.y (contents z + y)
-              , "height" ⟼ toNumber ((unwrap interior).height - strokeWidth) - scales.y (contents z)
+              , "height" ⟼ toNumber (height - strokeWidth) - scales.y (contents z)
               , "stroke-width" ⟼ strokeWidth
               , "width" ⟼ bandwidth scales.x
               , classes [ "bar" ]
