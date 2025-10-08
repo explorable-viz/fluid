@@ -447,7 +447,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                             pure $ ListNonEmpty unit e (foldr (Next unit) (End unit) rest)
 
                        , context "listEnum" do
-                            _ <- try $ lexeme $ string ".."
+                            _ <- lexeme $ string ".."
                             e' <- opTree
                             delim ']'
                             pure $ ListEnum e e'
