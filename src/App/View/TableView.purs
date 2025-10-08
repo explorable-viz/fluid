@@ -121,19 +121,19 @@ instance Viewable TableView Unit where
       width :: Int
       width = length (definitely' (head rows))
 
-      visibleSucc :: Int -> Maybe Int
-      visibleSucc i
+      row_visibleSucc :: Int -> Maybe Int
+      row_visibleSucc i
          | i == length rows - 1 = Nothing
          | row_isVisible $ rows ! (i + 1) = Just (i + 1)
-         | otherwise = visibleSucc (i + 1)
+         | otherwise = row_visibleSucc (i + 1)
 
       -- For a non-header (>=0) row, the immediately prior visible row (potentially the header)
-      visiblePred :: Int -> Int
-      visiblePred i
+      row_visiblePred :: Int -> Int
+      row_visiblePred i
          | i < 0 = error absurd
          | i == 0 = -1
          | row_isVisible (rows ! (i - 1)) = i - 1
-         | otherwise = visiblePred (i - 1)
+         | otherwise = row_visiblePred (i - 1)
 
       border :: Boolean -> Boolean -> String
       border true _ = solidBorder
@@ -147,9 +147,9 @@ instance Viewable TableView Unit where
 
       hasBottomBorder :: Int -> Int -> Boolean
       hasBottomBorder i j =
-         case visibleSucc i of
+         case row_visibleSucc i of
             Nothing -> isCellTransient i j
-            Just i' -> (isCellTransient i' j /= isCellTransient (visiblePred i') j) && i == i' - 1
+            Just i' -> (isCellTransient i' j /= isCellTransient (row_visiblePred i') j) && i == i' - 1
 
       isCellTransient :: Int -> Int -> Boolean
       isCellTransient i j
