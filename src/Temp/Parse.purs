@@ -33,6 +33,7 @@ import Util (type (+), type (×), nonEmpty, onlyIf, (×))
 pattern :: Parser Pattern
 pattern = defer $ \_ -> buildExprParser popdefs simplePattern
 
+-- TODO: check try usage
 simplePattern :: Parser Pattern
 simplePattern =
    try pListEmpty
@@ -123,6 +124,7 @@ simplePattern =
       delim ')'
       pure $ PConstr cPair (p : p' : Nil)
 
+-- TODO: check try usage
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
 binaryOp op = try do
    op' <- lexeme operator
@@ -130,17 +132,20 @@ binaryOp op = try do
       -- else if ":|" op' then \e e' -> Constr unit op' (e : e' : empty)
       \e e' -> BinaryApp e op e'
 
+-- TODO: check try usage
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
 pConsOp = try do
    op <- lexeme operator
    onlyIf (op == ":|")
       $ \e e' -> PConstr ":" (e : e' : Nil)
 
+-- TODO: check try usage
 infixFn :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 infixFn = try do
    x <- delim '|' *> variable <* delim '|'
    pure (\e e' -> BinaryApp e x e')
 
+-- TODO: check try usage
 consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
 consOp = try do
    op <- lexeme operator
@@ -207,6 +212,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
       branches :: Parser (NonEmptyList (Pattern × Raw Expr))
       branches = do
          b <- branch
+         -- TODO: check try usage
          bs <- many (try $ align branch)
          pure $ (nonEmpty (b : bs))
 
@@ -261,6 +267,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
             dproject :: Parser (Raw Expr)
             dproject = do
+               -- TODO: check try usage
                k <- try do
                   delim '['
                   k <- opTree
@@ -302,6 +309,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             e' <- opTree
             pure $ Let (nonEmpty (head : rest)) e'
             where
+            -- TODO: check try usage
             varDef :: Parser (Raw VarDef)
             varDef = try do
                reserved "def"
@@ -318,6 +326,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             e' <- opTree
             pure $ LetRec (nonEmpty (head : rest)) e'
             where
+            -- TODO: check try usage
             recDef :: Parser (Raw Branch)
             recDef = try do
                reserved "def"
@@ -472,6 +481,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             delim '('
             choice
                [ do
+                    -- TODO: check try usage
                     op <- try operator
                     delim ')'
                     pure $ Op op
