@@ -298,12 +298,11 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             <|> dict
             <|> paragraph
             <|> str
-            <|> pair
             <|> var
             <|> constr
-            -- TODO: better handling over try
-            <|> try parensOp
-            <|> try parensExpr
+            <|> pair
+            <|> parensOp
+            <|> parensExpr
             <|> docExpr
             <|> number
                <?> "simple expression"
@@ -514,15 +513,17 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          parensExpr :: Parser (Raw Expr)
          parensExpr = context "parens expr" do
-            delim '('
-            e <- opTree
+            e <- try do
+               delim '('
+               opTree
             delim ')'
             pure $ e
 
          parensOp :: Parser (Raw Expr)
          parensOp = context "parens op" do
-            delim '('
-            op <- operator
+            op <- try do
+               delim '('
+               operator
             delim ')'
             pure $ Op op
 
