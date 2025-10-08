@@ -266,16 +266,19 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          chain e = project <|> dproject <|> sameLine *> app <|> pure e
             where
             project :: Parser (Raw Expr)
-            project = try do
-               delim '.'
-               k <- variable
+            project = do
+               k <- try do
+                  delim '.'
+                  variable
                chain (Project e k)
 
             dproject :: Parser (Raw Expr)
-            dproject = try do
-               delim '['
-               k <- opTree
-               delim ']'
+            dproject = do
+               k <- try do
+                  delim '['
+                  k <- opTree
+                  delim ']'
+                  pure k
                chain (DProject e k)
 
             app :: Parser (Raw Expr)
@@ -472,6 +475,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                                ]
                             delim ']'
                             pure $ ListComp unit e (toList qs)
+                       , fail "Expected `]"
                        ]
                , fail "Expected `]` or a list expression after `[`"
                ]
