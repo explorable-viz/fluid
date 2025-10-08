@@ -99,7 +99,9 @@ instance Viewable TableView Unit where
             [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
             , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
             ]
-      void $ setCaption <$> hideRows <*> hideColumns
+      hiddenRows <- hideRows
+      hiddenColumns <- hideColumns
+      setCaption hiddenRows hiddenColumns
       where
       hideRows :: Effect Int
       hideRows = do
@@ -126,17 +128,15 @@ instance Viewable TableView Unit where
          pure (length hiddenColumns)
 
       setCaption :: Int -> Int -> Effect Unit
-      setCaption _ _ = do
-         void $ rootElement # select ".table-caption" >>= setText title
-
-      {-
+      setCaption hiddenRows hiddenColumns = do
+         void $ rootElement # select ".table-caption" >>= setText caption
          where
          caption = title <> " ("
             <> (show (length rows - hiddenRows) <> " of " <> show (length rows))
             <> " × "
             <> (show (length colNames - hiddenColumns) <> " of " <> show (length colNames))
-            <> " )"
--}
+            <> ")"
+
       width :: Int
       width = length (definitely' (head rows))
 
