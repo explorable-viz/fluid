@@ -8,7 +8,7 @@ import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (filter, head, null, partition, sort)
+import Data.Array ((..), elem, filter, head, null, partition, sort)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
@@ -66,7 +66,7 @@ row_isVisible :: Record' -> Boolean
 row_isVisible r = not <<< null $ flip filter r (visible defaultFilter)
 
 column_isVisible :: Int -> Array Record' -> Boolean
-column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) (visible Everything)
+column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) (visible defaultFilter)
 
 prim :: Val (SelStates 𝕊) -> String
 prim (Val _ _ v) = v # case _ of
@@ -99,7 +99,9 @@ instance Viewable TableView Unit where
             [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
             , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
             ]
-      hideRows >>= setCaption
+      hiddenRows <- hideRows
+      _ <- hideColumns
+      setCaption hiddenRows
       where
       hideRows :: Effect Int
       hideRows = do
@@ -112,6 +114,20 @@ instance Viewable TableView Unit where
          foreachE visible' $ \(row × _) ->
             void $ classed "hidden" false row
          pure (length hidden)
+
+      hideColumns :: Effect Int
+      hideColumns = do
+         -- very expensive and also overkill to do on every selection as currently hidden cells are fixed
+         let hiddenColumns = filter (flip column_isVisible rows) (0 .. (length colNames - 1))
+         cells <- rootElement # selectAll ".table-cell"
+         { no: hidden, yes: visible' } <- partition snd <$> for cells \cell -> do
+            { j } :: CellIndex <- datum cell
+            pure (cell × j `elem` hiddenColumns)
+         foreachE hidden $ \(cell × _) ->
+            void $ classed "hidden" true cell
+         foreachE visible' $ \(cell × _) ->
+            void $ classed "hidden" false cell
+         pure (length hiddenColumns)
 
       setCaption :: Int -> Effect Unit
       setCaption numHidden = do
