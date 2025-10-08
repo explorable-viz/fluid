@@ -19,6 +19,10 @@
 .table-view {
 }
 
+.table-caption {
+   border-bottom: 0.5px solid lightgray;
+}
+
 .table-view th {
    font-size: 11px;
    text-align: left;
@@ -38,7 +42,7 @@ table {
 }
 
 thead {
-   border-top: 0.5px solid lightgray;
+   /* border-top: 0.5px solid lightgray; */
 }
 
 thead th {
