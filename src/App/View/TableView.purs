@@ -52,8 +52,8 @@ cell_selClassesFor colName s
    | colName == rowKey = ""
    | otherwise = selClassesFor s
 
-visible :: Val (SelStates 𝕊) -> Boolean
-visible (Val α _ _) = visible' defaultFilter α
+visible :: Filter -> Val (SelStates 𝕊) -> Boolean
+visible filter (Val α _ _) = visible' filter α
    where
    visible' Everything = const true
    visible' Interactive = not isInert
@@ -63,10 +63,10 @@ visible (Val α _ _) = visible' defaultFilter α
    isNone a = getPersistent a == None && getTransient a == None
 
 row_isVisible :: Record' -> Boolean
-row_isVisible r = not <<< null $ flip filter r visible
+row_isVisible r = not <<< null $ flip filter r (visible defaultFilter)
 
 column_isVisible :: Int -> Array Record' -> Boolean
-column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) visible
+column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) (visible Everything)
 
 prim :: Val (SelStates 𝕊) -> String
 prim (Val _ _ v) = v # case _ of
@@ -142,10 +142,11 @@ instance Viewable TableView Unit where
          | otherwise = column_visibleSucc (i + 1)
 
       column_visiblePred :: Int -> Int
-      column_visiblePred i
-         | i <= 0 = error absurd
-         | column_isVisible (i - 1) rows = i - 1
-         | otherwise = column_visiblePred (i - 1)
+      column_visiblePred j
+         | j < 0 = error absurd
+         | j == 0 = -1
+         | column_isVisible (j - 1) rows = j - 1
+         | otherwise = column_visiblePred (j - 1)
 
       border :: Boolean -> Boolean -> String
       border true _ = solidBorder
@@ -153,9 +154,10 @@ instance Viewable TableView Unit where
       border false false = ""
 
       hasRightBorder :: Int -> Int -> Boolean
-      hasRightBorder i j
-         | j == width - 1 = isCellTransient i j
-         | otherwise = isCellTransient i j /= isCellTransient i (j + 1)
+      hasRightBorder i j =
+         case column_visibleSucc j of
+            Nothing -> isCellTransient i j
+            Just j' -> (isCellTransient i j' /= isCellTransient i (column_visiblePred j')) && j == j' - 1
 
       hasBottomBorder :: Int -> Int -> Boolean
       hasBottomBorder i j =
