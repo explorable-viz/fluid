@@ -248,7 +248,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
    ifElse :: Parser (Raw Expr)
    ifElse = do
-      try $ reserved "if"
+      reserved "if"
       c <- opTree
       t <- block expr
       align $ reserved "else"
@@ -345,7 +345,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
-            try $ reserved "lambda"
+            reserved "lambda"
             ps <- sepBy1 pattern (delim ',')
             delim ':'
             e <- opTree
@@ -455,11 +455,11 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                        , context "listComp" do
                             qs <- many1 $ choice
                                [ context "listCompGuard" do
-                                    try $ reserved "if"
+                                    reserved "if"
                                     e' <- opTree
                                     pure $ ListCompGuard e'
                                , do
-                                    try $ reserved "for"
+                                    reserved "for"
                                     p <- pattern
                                     reserved "in"
                                     choice
@@ -525,7 +525,7 @@ module_ = do
    pure $ Module defs'
 
 imports_ :: Parser (List String)
-imports_ = many (try $ reserved "import" *> modPath <* whitespace)
+imports_ = many (reserved "import" *> modPath <* whitespace)
    where
    modPath :: Parser String
    modPath = joinWith "/" <<< fromFoldable <$> sepBy1 variable (delim '.')

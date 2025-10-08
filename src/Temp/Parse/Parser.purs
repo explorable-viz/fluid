@@ -10,7 +10,7 @@ import Data.String.CodeUnits (take)
 import Data.String.CodeUnits as SCU
 import Data.Traversable (foldr)
 import Parsing (ParseError(..), Position(..), fail, position, region)
-import Parsing.Combinators (between, skipMany, (<?>))
+import Parsing.Combinators (between, skipMany, try, (<?>))
 import Parsing.Combinators.Array (many)
 import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy, string)
@@ -57,7 +57,7 @@ constructor :: Parser String
 constructor = unreserved $ identifier upper (alphaNum <|> oneOf [ '_', '\'' ])
 
 reserved :: String -> Parser Unit
-reserved expected = do
+reserved expected = try do
    received <- identifier (letter <|> char '_') (alphaNum <|> oneOf [ '_', '\'' ])
    if expected /= received then fail $ "Expected `" <> expected <> "`, received `" <> received <> "`"
    else pure unit
