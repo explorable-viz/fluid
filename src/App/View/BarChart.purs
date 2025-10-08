@@ -70,7 +70,7 @@ instance Viewable BarChart Unit where
       createAxes :: D3.Selection -> Effect (Coord D3.Selection)
       createAxes parent' = do
          x <- xAxis props.scales props.xs =<<
-            (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap props.interior).height + strokeWidth } ])
+            (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap props.interior).height } ])
          y <- yAxis props.scales 3.0 =<<
             (parent' # create G [ classes [ "y-axis" ] ])
          pure { x, y }
