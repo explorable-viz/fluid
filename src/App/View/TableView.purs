@@ -52,17 +52,21 @@ cell_selClassesFor colName s
    | colName == rowKey = ""
    | otherwise = selClassesFor s
 
-record_isVisible :: Record' -> Boolean
-record_isVisible r =
-   not <<< null $ flip filter r \(Val α _ _) -> visible defaultFilter α
+visible :: Val (SelStates 𝕊) -> Boolean
+visible (Val α _ _) = visible' defaultFilter α
    where
-   visible :: Filter -> SelStates 𝕊 -> Boolean
-   visible Everything = const true
-   visible Interactive = not isInert
-   visible Relevant = not (isNone || isInert)
+   visible' Everything = const true
+   visible' Interactive = not isInert
+   visible' Relevant = not (isNone || isInert)
 
    isNone :: SelStates 𝕊 -> Boolean
    isNone a = getPersistent a == None && getTransient a == None
+
+row_isVisible :: Record' -> Boolean
+row_isVisible r = not <<< null $ flip filter r visible
+
+column_isVisible :: Int -> Array Record' -> Boolean
+column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) visible
 
 prim :: Val (SelStates 𝕊) -> String
 prim (Val _ _ v) = v # case _ of
@@ -95,17 +99,17 @@ instance Viewable TableView Unit where
             [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
             , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
             ]
-      hideRecords >>= setCaption
+      hideRows >>= setCaption
       where
-      hideRecords :: Effect Int
-      hideRecords = do
+      hideRows :: Effect Int
+      hideRows = do
          rows' <- rootElement # selectAll ".table-row"
-         { no: hidden, yes: visible } <- partition snd <$> for rows' \row -> do
+         { no: hidden, yes: visible' } <- partition snd <$> for rows' \row -> do
             { i } <- datum row
-            pure (row × record_isVisible (rows ! i))
+            pure (row × row_isVisible (rows ! i))
          foreachE hidden $ \(row × _) ->
             void $ classed "hidden" true row
-         foreachE visible $ \(row × _) ->
+         foreachE visible' $ \(row × _) ->
             void $ classed "hidden" false row
          pure (length hidden)
 
@@ -120,7 +124,7 @@ instance Viewable TableView Unit where
       visibleSucc :: Int -> Maybe Int
       visibleSucc i
          | i == length rows - 1 = Nothing
-         | record_isVisible $ rows ! (i + 1) = Just (i + 1)
+         | row_isVisible $ rows ! (i + 1) = Just (i + 1)
          | otherwise = visibleSucc (i + 1)
 
       -- For a non-header (>=0) row, the immediately prior visible row (potentially the header)
@@ -128,7 +132,7 @@ instance Viewable TableView Unit where
       visiblePred i
          | i < 0 = error absurd
          | i == 0 = -1
-         | record_isVisible (rows ! (i - 1)) = i - 1
+         | row_isVisible (rows ! (i - 1)) = i - 1
          | otherwise = visiblePred (i - 1)
 
       border :: Boolean -> Boolean -> String
