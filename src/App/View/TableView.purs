@@ -65,9 +65,6 @@ visible filter (Val α _ _) = visible' filter α
 row_isVisible :: Record' -> Boolean
 row_isVisible r = not <<< null $ flip filter r (visible defaultFilter)
 
-column_isVisible :: Int -> Array Record' -> Boolean
-column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) (visible Everything)
-
 prim :: Val (SelStates 𝕊) -> String
 prim (Val _ _ v) = v # case _ of
    Int n -> show n
@@ -102,7 +99,14 @@ instance Viewable TableView Unit where
       hiddenRows <- hideRows
       hiddenColumns <- hideColumns
       setCaption hiddenRows hiddenColumns
+
       where
+      column_isVisible :: Int -> Array Record' -> Boolean
+      column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) (visible filter')
+         where
+         -- arbitrarily (for now) enable column filtering when there are a lot of columns
+         filter' = if length colNames >= 10 then defaultFilter else Everything
+
       hideRows :: Effect Int
       hideRows = do
          rows' <- rootElement # selectAll ".table-row"
