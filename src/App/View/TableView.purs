@@ -66,7 +66,7 @@ row_isVisible :: Record' -> Boolean
 row_isVisible r = not <<< null $ flip filter r (visible defaultFilter)
 
 column_isVisible :: Int -> Array Record' -> Boolean
-column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) (visible defaultFilter)
+column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) (visible Everything)
 
 prim :: Val (SelStates 𝕊) -> String
 prim (Val _ _ v) = v # case _ of
@@ -176,7 +176,7 @@ instance Viewable TableView Unit where
       hasRightBorder i j =
          case column_visibleSucc j of
             Nothing -> isCellTransient i j
-            Just j' -> (isCellTransient i j' /= isCellTransient i (column_visiblePred j')) && j == j' - 1
+            Just j' -> (isCellTransient i j' /= isCellTransient i (column_visiblePred j'))
 
       hasBottomBorder :: Int -> Int -> Boolean
       hasBottomBorder i j =
