@@ -12,7 +12,7 @@ import Data.CodePoint.Unicode (isSpace)
 import Data.Either (Either, choose)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (NonEmptyList, toList)
+import Data.List.NonEmpty (toList)
 import Data.String (codePointFromChar)
 import Data.String.CodeUnits as SCU
 import Data.String.Common (joinWith)
@@ -198,17 +198,10 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
    matchAs = do
       reserved "match"
       e <- opTree
-      bs <- block branches
+      bs <- block (many1 (align branch))
       pure $ MatchAs e bs
+
       where
-
-      branches :: Parser (NonEmptyList (Pattern × Raw Expr))
-      branches = do
-         b <- branch
-         -- TODO: check try usage
-         bs <- many (try $ align branch)
-         pure $ (nonEmpty (b : bs))
-
       branch :: Parser (Pattern × Raw Expr)
       branch = do
          reserved "case"
@@ -253,6 +246,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             where
             project :: Parser (Raw Expr)
             project = do
+               -- TODO: newline/indentation constraints
                k <- try do
                   delim '.'
                   variable
@@ -260,7 +254,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
             dproject :: Parser (Raw Expr)
             dproject = do
-               -- TODO: check try usage
+               -- TODO: newline/indentation constraints
                k <- try do
                   delim '['
                   k <- opTree
@@ -297,40 +291,32 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          letExpr :: Parser (Raw Expr)
          letExpr = context "letExpr" do
-            head <- varDef
-            rest <- many varDef
+            e <- many1 varDef
             e' <- opTree
-            pure $ Let (nonEmpty (head : rest)) e'
+            pure $ Let e e'
             where
-            -- TODO: check try usage
             varDef :: Parser (Raw VarDef)
-            varDef = try do
-               reserved "def"
-               name <- pattern
-               delim ':'
+            varDef = do
+               p <- try (reserved "def" *> pattern <* delim ':')
                e <- opTree
                delim ';'
-               pure $ VarDef name e
+               pure $ VarDef p e
 
          letRecExpr :: Parser (Raw Expr)
          letRecExpr = context "letRecExpr" do
-            head <- recDef
-            rest <- many recDef
+            e <- many1 recDef
             e' <- opTree
-            pure $ LetRec (nonEmpty (head : rest)) e'
+            pure $ LetRec e e'
             where
-            -- TODO: check try usage
             recDef :: Parser (Raw Branch)
-            recDef = try do
-               reserved "def"
-               name <- variable
-               delim '('
+            recDef = do
+               p <- try (reserved "def" *> variable <* delim '(')
                ps <- sepBy1 pattern (delim ',')
                delim ')'
                delim ':'
                e <- opTree
                delim ';'
-               pure $ name × Clause (ps × e)
+               pure $ p × Clause (ps × e)
 
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
