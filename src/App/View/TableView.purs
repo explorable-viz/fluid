@@ -120,13 +120,12 @@ instance Viewable TableView Unit where
          -- very expensive and also overkill to do on every selection as currently hidden cells are fixed
          let hiddenColumns = filter (flip column_isVisible rows) (0 .. (length colNames - 1))
          cells <- rootElement # selectAll ".table-cell"
-         { no: hidden, yes: visible' } <- partition snd <$> for cells \cell -> do
+         foreachE cells \cell -> do
             { j } :: CellIndex <- datum cell
-            pure (cell × j `elem` hiddenColumns)
-         foreachE hidden $ \(cell × _) ->
-            void $ classed "hidden" true cell
-         foreachE visible' $ \(cell × _) ->
-            void $ classed "hidden" false cell
+            void $
+               if j `elem` hiddenColumns
+               then classed "hidden" true cell
+               else classed "hidden" false cell
          pure (length hiddenColumns)
 
       setCaption :: Int -> Effect Unit
