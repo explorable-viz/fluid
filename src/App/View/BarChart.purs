@@ -70,7 +70,7 @@ instance Viewable BarChart Unit where
       createAxes :: D3.Selection -> Effect (Coord D3.Selection)
       createAxes parent' = do
          x <- xAxis props.scales props.xs =<<
-            (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap props.interior).height } ])
+            (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap props.interior).height + strokeWidth } ])
          y <- yAxis props.scales 3.0 =<<
             (parent' # create G [ classes [ "y-axis" ] ])
          pure { x, y }
@@ -122,6 +122,9 @@ type BarChartProperties =
    , stackedBarContext :: StackedBarContext
    }
 
+strokeWidth :: Int
+strokeWidth = 2
+
 barChartProps :: BarChart -> BarChartProperties
 barChartProps (BarChart { caption, size, stackedBars }) =
    { width
@@ -163,4 +166,3 @@ barChartProps (BarChart { caption, size, stackedBars }) =
 
    nearest = 10.0
    y_max = ceil $ nearest * (maximum (barHeight <$> stackedBars) / nearest)
-   strokeWidth = 2
