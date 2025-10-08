@@ -23,10 +23,10 @@ import Parsing (Position, consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, optional, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, withPos)
-import Parsing.String (eof, satisfy, string)
+import Parsing.String (eof, satisfy)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Parse.Number (float, integer)
-import Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, stringLiteral, variable, whitespace)
+import Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, stringLiteral, token, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (+), type (×), nonEmpty, onlyIf, (×))
 
@@ -211,7 +211,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
    where
    matchAs :: Parser (Raw Expr)
    matchAs = do
-      try $ reserved "match"
+      reserved "match"
       e <- opTree
       bs <- block branches
       pure $ MatchAs e bs
@@ -225,7 +225,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
       branch :: Parser (Pattern × Raw Expr)
       branch = do
-         try $ reserved "case"
+         reserved "case"
          p <- pattern
          e <- block expr
          pure $ (p × e)
@@ -365,16 +365,16 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          paragraph :: Parser (Raw Expr)
          paragraph = do
-            _ <- lexeme $ string "f\"\"\""
+            token "f\"\"\""
             es <- many $ lexeme paragraphElem
-            _ <- lexeme $ string "\"\"\""
+            token "\"\"\""
             pure $ Paragraph es
             where
             paragraphElem :: Parser (Raw ParagraphElem)
-            paragraphElem = token <|> unquote
+            paragraphElem = paragraphToken <|> unquote
                where
-               token :: Parser (Raw ParagraphElem)
-               token = do
+               paragraphToken :: Parser (Raw ParagraphElem)
+               paragraphToken = do
                   cs <- some paragraphLetter
                   pure $ Token (SCU.fromCharArray cs)
 
@@ -418,7 +418,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          matrix :: Parser (Raw Expr)
          matrix = context "matrix" do
-            _ <- lexeme $ string "[|"
+            token "[|"
             e <- opTree
             reserved "for"
             delim '('
@@ -428,7 +428,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             delim ')'
             reserved "in"
             e' <- opTree
-            _ <- lexeme $ string "|]"
+            token "|]"
             pure $ Matrix unit e (x × y) e'
 
          bracketsExpr :: Parser (Raw Expr)
@@ -447,7 +447,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                             pure $ ListNonEmpty unit e (foldr (Next unit) (End unit) rest)
 
                        , context "listEnum" do
-                            _ <- lexeme $ string ".."
+                            token ".."
                             e' <- opTree
                             delim ']'
                             pure $ ListEnum e e'
@@ -506,7 +506,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
          docExpr :: Parser (Raw Expr)
          docExpr = context "doc expr" do
-            _ <- lexeme $ string "@doc"
+            token "@doc"
             delim '('
             e <- opTree
             delim ')'

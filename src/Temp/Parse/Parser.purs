@@ -1,4 +1,4 @@
-module Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, stringLiteral, variable, whitespace) where
+module Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, stringLiteral, token, variable, whitespace) where
 
 import Prelude hiding (between)
 
@@ -13,7 +13,7 @@ import Parsing (ParseError(..), Position(..), fail, position, region)
 import Parsing.Combinators (between, skipMany, (<?>))
 import Parsing.Combinators.Array (many)
 import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
-import Parsing.String (char, satisfy)
+import Parsing.String (char, satisfy, string)
 import Parsing.String.Basic (alphaNum, letter, lower, upper)
 import Parsing.Token (oneOf)
 import Temp.Parse.Constants (opChars)
@@ -72,6 +72,9 @@ delim c = char c *> whitespace
 
 lexeme :: forall a. Parser a -> Parser a
 lexeme p = p <* whitespace
+
+token :: String -> Parser Unit
+token t = void $ lexeme $ string t
 
 whitespace :: Parser Unit
 whitespace = skipMany (space <|> comment)
