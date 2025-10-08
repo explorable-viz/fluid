@@ -20,13 +20,13 @@ import Data.Traversable (foldl, foldr)
 import DataType (cPair)
 import Lattice (Raw)
 import Parsing (Position, consume, fail, runParserT)
-import Parsing.Combinators (choice, many, many1, option, optional, sepBy, sepBy1, try, (<?>))
+import Parsing.Combinators (choice, many, many1, option, optional, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Parse.Number (float, integer)
-import Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, reservedOperator, stringLiteral, token, variable, whitespace)
+import Temp.Parse.Parser (Parser, align, block, braces, brackets, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, token, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
 import Util (type (+), type (×), nonEmpty, (×))
 
@@ -44,22 +44,12 @@ simplePattern = pVar <|> pConstr <|> pRecord <|> bracketsPattern <|> parensPatte
    pConstr :: Parser Pattern
    pConstr = do
       c <- constructor
-      ps <- option Nil pApp
+      ps <- option Nil (parens (commas simplePattern))
       pure $ PConstr c ps
-
-      where
-      pApp :: Parser (List Pattern)
-      pApp = do
-         delim '('
-         ps <- sepBy simplePattern (delim ',')
-         delim ')'
-         pure ps
 
    pRecord :: Parser Pattern
    pRecord = do
-      delim '{'
-      fs <- sepBy pField (delim ',')
-      delim '}'
+      fs <- braces (commas pField)
       pure $ PRecord fs
 
       where
@@ -161,7 +151,7 @@ recDefs = many1 recDef <* optional (delim ';')
    recDef :: Parser (Raw Branch)
    recDef = do
       p <- try (reserved "def" *> variable <* delim '(')
-      ps <- sepBy1 pattern (delim ',')
+      ps <- commas1 pattern
       delim ')'
       e <- block expr
       pure $ p × Clause (ps × e)
@@ -230,18 +220,12 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             dproject :: Parser (Raw Expr)
             dproject = do
                -- TODO: newline/indentation constraints
-               k <- try do
-                  delim '['
-                  k <- opTree
-                  delim ']'
-                  pure k
+               k <- try $ brackets opTree
                chain (DProject e k)
 
             app :: Parser (Raw Expr)
             app = do
-               delim '('
-               ps <- sepBy opTree (delim ',')
-               delim ')'
+               ps <- parens (commas opTree)
                case e of
                   (Constr a c es) -> chain (Constr a c (es <> ps <> Nil))
                   _ -> chain (foldl App e ps)
@@ -286,7 +270,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             recDef :: Parser (Raw Branch)
             recDef = do
                p <- try (reserved "def" *> variable <* delim '(')
-               ps <- sepBy1 pattern (delim ',')
+               ps <- commas1 pattern
                delim ')'
                delim ':'
                e <- opTree
@@ -296,7 +280,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          lambda :: Parser (Raw Expr)
          lambda = context "lambda" do
             reserved "lambda"
-            ps <- sepBy1 pattern (delim ',')
+            ps <- commas1 pattern
             delim ':'
             e <- opTree
             pure $ Lambda (Clauses (nonEmpty (Clause (ps × e) : Nil)))
@@ -334,17 +318,13 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                   paragraphLetter = satisfy $ \c -> (c /= '"' && c /= '{' && not (isSpace (codePointFromChar c)))
 
                unquote :: Parser (Raw ParagraphElem)
-               unquote = do
-                  delim '{'
-                  e <- opTree
-                  delim '}'
+               unquote = defer $ \_ -> do
+                  e <- braces (opTree)
                   pure $ Unquote e
 
          dict :: Parser (Raw Expr)
          dict = context "dict" do
-            delim '{'
-            kvs <- sepBy kv (delim ',')
-            delim '}'
+            kvs <- braces (commas kv)
             pure $ Dictionary unit kvs
 
             where
@@ -357,10 +337,8 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
                where
                exprKey :: Parser (Raw DictEntry)
-               exprKey = do
-                  delim '['
-                  e <- opTree
-                  delim ']'
+               exprKey = defer $ \_ -> do
+                  e <- brackets opTree
                   pure $ ExprKey e
 
                varKey :: Parser (Raw DictEntry)
@@ -457,9 +435,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
          docExpr :: Parser (Raw Expr)
          docExpr = context "doc expr" do
             token "@doc"
-            delim '('
-            e <- opTree
-            delim ')'
+            e <- parens opTree
             e' <- opTree
             pure $ DocExpr e e'
 

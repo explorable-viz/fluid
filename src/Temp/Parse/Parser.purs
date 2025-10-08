@@ -1,16 +1,17 @@
-module Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, reservedOperator, stringLiteral, token, variable, whitespace) where
+module Temp.Parse.Parser where
 
 import Prelude hiding (between)
 
 import Control.Alt ((<|>))
 import Data.Array (cons, elem)
 import Data.Array as Array
+import Data.List.Types (List, NonEmptyList)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (take)
 import Data.String.CodeUnits as SCU
 import Data.Traversable (foldr)
 import Parsing (ParseError(..), Position(..), fail, position, region)
-import Parsing.Combinators (between, skipMany, try, (<?>))
+import Parsing.Combinators (between, sepBy, sepBy1, skipMany, try, (<?>))
 import Parsing.Combinators.Array (many)
 import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy, string)
@@ -87,6 +88,21 @@ whitespace = skipMany (space <|> comment)
    where
    space = void $ oneOf [ ' ', '\t', '\n' ]
    comment = char '#' *> skipMany (satisfy (_ /= '\n'))
+
+braces :: forall a. Parser a -> Parser a
+braces = between (delim '{') (delim '}')
+
+brackets :: forall a. Parser a -> Parser a
+brackets = between (delim '[') (delim ']')
+
+parens :: forall a. Parser a -> Parser a
+parens = between (delim '(') (delim ')')
+
+commas :: forall a. Parser a -> Parser (List a)
+commas p = sepBy p (delim ',')
+
+commas1 :: forall a. Parser a -> Parser (NonEmptyList a)
+commas1 p = sepBy1 p (delim ',')
 
 -----------------------------------------------------------
 -- String things extracted from "Parsing.Token"
