@@ -19,7 +19,8 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup.Foldable (maximum, minimum)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (f_plots)
-import Effect (Effect)
+import Effect (Effect, foreachE)
+import Effect.Console (log)
 import Lattice ((∨), (∧))
 import Util (type (×), Endo, definitely', init, nonEmpty, tail, zipWith, (!), (×))
 import Web.Event.EventTarget (eventListener)
@@ -66,13 +67,14 @@ instance Viewable LineChart Unit where
       points <- rootElement # selectAll ".linechart-point"
       listener <- eventListener (redraw <<< uncurry pointSel <<< selectionEventData')
 
-      for_ points \point -> do
+      foreachE points \point -> do
          point' <- datum point
+         log $ "Registering mouse listeners for Point { x: " <> show point'.i <> ", y: " <> show point'.j <> " }"
          point # setAttrs (pointAttrs point') >>= registerMouseListeners listener
       segments <- rootElement # selectAll ".linechart-segment"
-      for_ segments \segment -> do
+      foreachE segments \segment -> do
          segment' <- datum segment
-         segment # setAttrs (segmentAttrs segment')
+         void $ segment # setAttrs (segmentAttrs segment')
 
       where
       pointAttrs :: PointCoordinate -> Attrs

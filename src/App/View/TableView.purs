@@ -9,15 +9,15 @@ import App.View.Util.D3 (ElementType(..), classed, create, datum, select, select
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array (filter, head, null, partition, sort)
-import Data.Foldable (for_)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Data.Traversable (for)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (snd, uncurry)
 import Dict (Dict)
-import Effect (Effect)
+import Effect (Effect, foreachE)
+import Effect.Console (log)
 import Util (type (×), (×), absurd, definitely', error, length, (!))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
@@ -86,13 +86,15 @@ instance Viewable TableView Unit where
    setSelection _ (TableView { title, rows }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"
       listener <- eventListener (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
-      for_ cells \cell -> do
+      foreachE cells \cell -> do
          { i, j, colName } :: CellIndex <- datum cell
          if i == -1 || j == -1 then pure unit
-         else cell # classed selClasses false
-            >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
-            >>= registerMouseListeners listener
-         cell # setStyles
+         else do
+            log $ "Registering mouse listeners for table cell i: " <> show i <> ", j: " <> show j <> " }"
+            cell # classed selClasses false
+               >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
+               >>= registerMouseListeners listener
+         void $ cell # setStyles
             [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
             , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
             ]
@@ -104,8 +106,10 @@ instance Viewable TableView Unit where
          { no: hidden, yes: visible } <- partition snd <$> for rows' \row -> do
             { i } <- datum row
             pure (row × record_isVisible (rows ! i))
-         for_ hidden $ fst >>> classed "hidden" true
-         for_ visible $ fst >>> classed "hidden" false
+         foreachE hidden $ \(row × _) ->
+            void $ classed "hidden" true row
+         foreachE visible $ \(row × _) ->
+            void $ classed "hidden" false row
          pure (length hidden)
 
       setCaption :: Int -> Effect Unit

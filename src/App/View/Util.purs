@@ -7,13 +7,13 @@ import App.Util.Selector (ViewSetter, dictVal)
 import App.View.Util.D3 (create, isEmpty, on, rootSelect, select, setAttrs)
 import App.View.Util.D3 as D3
 import Bind (Var, (↦))
-import Data.Foldable (all, for_, sequence_)
+import Data.Foldable (all, sequence_)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Maybe (Maybe)
 import Data.Set (Set)
 import Data.Tuple (fst, snd)
 import Dict (Dict)
-import Effect (Effect)
+import Effect (Effect, foreachE)
 import File (Folder)
 import Graph (DVertex, Vertex, Query)
 import Lattice (𝔹, Raw, (∨))
@@ -95,8 +95,8 @@ drawView rSpec@{ view: vw } figVal _ redraw =
 
 registerMouseListeners :: EventListener -> D3.Selection -> Effect Unit
 registerMouseListeners redraw element = do
-   for_ [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
-      element # on (EventType ev) redraw
+   foreachE [ "mousedown", "mouseenter", "mouseleave" ] \ev ->
+      void $ element # on (EventType ev) redraw
 
 -- Heavily curried type isn't convenient for FFI
 type RendererSpec a =

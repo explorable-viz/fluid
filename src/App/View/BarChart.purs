@@ -12,14 +12,14 @@ import App.View.Util.D3 as D3
 import Bind ((↦), (⟼))
 import Data.Array (range)
 import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
-import Data.Foldable (for_, length)
+import Data.Foldable (length)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
 import Data.Newtype (unwrap)
 import Data.Number (ceil)
 import Data.Semigroup.Foldable (maximum)
 import DataType (f_stackedBars)
-import Effect (Effect)
+import Effect (Effect, foreachE)
 import Util ((!))
 
 newtype BarChart = BarChart
@@ -48,7 +48,7 @@ instance Viewable BarChart Unit where
       void $ createAxes g
       createStackedBars g
 
-      for_ (range 0 $ length props.ys - 1) \y_index ->
+      foreachE (range 0 $ length props.ys - 1) \y_index ->
          addHatchPattern g y_index $ indexCol y_index
 
       void $ svg
@@ -77,8 +77,8 @@ instance Viewable BarChart Unit where
 
       createStackedBars :: D3.Selection -> Effect Unit
       createStackedBars parent' =
-         for_ stackedBars \stackedBar ->
-            createElement props.stackedBarContext stackedBar parent'
+         foreachE (toArray stackedBars) \stackedBar ->
+            void $ createElement props.stackedBarContext stackedBar parent'
 
       createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
       createLegend (Dimensions interior') parent' = do
