@@ -12,6 +12,6 @@ def m: 0.25
 def x_scale:
   max(w - 2 * m, 0) / w
 def translate:
-  Translate(m / x_scale, 0);
+  Translate(m / x_scale, 0)
 
 Viewport(0, 0, w, 3, "gray", 0, Scale(x_scale, 1), translate, g)

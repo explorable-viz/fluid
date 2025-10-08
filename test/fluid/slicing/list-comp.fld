@@ -23,6 +23,6 @@ def data: [
     energyType: "Wind",
     output: 91
   }
-];
+]
 
 [row.output for type in ["Bio", "Hydro", "Solar", "Wind"] for row in data if row.energyType == type]

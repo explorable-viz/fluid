@@ -1,5 +1,5 @@
-def mul(x, y): x * y;
+def mul(x, y): x * y
 
-def dub: mul(2);
+def dub: mul(2)
 
-def trip: mul(3);
+def trip: mul(3)

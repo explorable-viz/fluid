@@ -1,8 +1,8 @@
 def filter(p, []): []
 def filter(p, x :| xs):
-  def ys: filter(p, xs);
+  def ys: filter(p, xs)
 
   if p(x): ⸨x :| ys⸩
-  else: ys;
+  else: ys
 
 filter((<)(⸨5⸩), [⸨8⸩, 4, 7, 3])

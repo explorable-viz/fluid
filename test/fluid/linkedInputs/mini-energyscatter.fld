@@ -1,43 +1,43 @@
 import dataset.nonRenewables
 
 def sumNonRenewables(x):
-  ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap;
+  ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
 
-def country_check(name, x): name == x.country;
+def country_check(name, x): name == x.country
 
-def year_check(year, x): year == x.year;
+def year_check(year, x): year == x.year
 
 def energy(year, c_names):
   def rens2018:
-    filter(year_check(year), renewables);
+    filter(year_check(year), renewables)
 
   def nonrens2018:
-    filter(year_check(year), nonRenewables);
+    filter(year_check(year), nonRenewables)
 
   def energy_per_country(c_name):
     def filteredRen:
-      filter(country_check(c_name), rens2018);
+      filter(country_check(c_name), rens2018)
 
     def non_ren_x:
-      head(filter(country_check(c_name), nonrens2018));
+      head(filter(country_check(c_name), nonrens2018))
 
     def rensOut:
-      sum(map((lambda x: x.output), filteredRen));
+      sum(map(lambda x: x.output, filteredRen))
 
     def rensCap:
-      sum(map((lambda x: x.capacity), filteredRen));
+      sum(map(lambda x: x.capacity, filteredRen))
 
     def nonRensCap:
-      sumNonRenewables(non_ren_x);
+      sumNonRenewables(non_ren_x)
 
     {
       name: c_name,
       totalCap: rensCap + nonRensCap,
       nonRenewables: nonRensCap,
       renCapFactor: (rensOut + non_ren_x.nuclearOut) / (rensCap + non_ren_x.nuclearCap)
-    };
+    }
 
-  map(energy_per_country, c_names);
+  map(energy_per_country, c_names)
 
 ScatterPlot({
   caption: "Clean energy efficiency against proportion of renewable energy cap",

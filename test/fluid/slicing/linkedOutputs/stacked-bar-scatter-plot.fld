@@ -4,9 +4,9 @@ MultiView({
   stackedBarChart:
     def totalFor(year, country, rows):
       def [row]:
-        [row for row in rows if row.year == year if row.country == country];
+        [row for row in rows if row.year == year if row.country == country]
 
-      ((row.nuclearOut + row.gasOut) + row.coalOut) + row.petrolOut;
+      ((row.nuclearOut + row.gasOut) + row.coalOut) + row.petrolOut
 
     def stack(year):
       [{ y: country, z: totalFor(year, country, nonRenewables) } for country in [
@@ -14,7 +14,7 @@ MultiView({
         "EGY",
         "IND",
         "JPN"
-      ]];
+      ]]
 
     BarChart({
       caption: "Non-renewables by country",
@@ -24,25 +24,25 @@ MultiView({
     }),
   scatterPlot:
     def isCountry(name, x): name == x.country
-    def isYear(year, x): year == x.year;
+    def isYear(year, x): year == x.year
 
     def plot(year, countries):
       def rens: filter(isYear(year), renewables)
-      def nonRens: filter(isYear(year), nonRenewables);
+      def nonRens: filter(isYear(year), nonRenewables)
 
       def plotCountry(country):
         def rens': filter(isCountry(country), rens)
-        def rensOut: sum(map((lambda x: x.output), rens'))
-        def rensCap: sum(map((lambda x: x.capacity), rens'))
+        def rensOut: sum(map(lambda x: x.output, rens'))
+        def rensCap: sum(map(lambda x: x.capacity, rens'))
         def x: head(filter(isCountry(country), nonRens))
-        def nonRensCap: ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap;
+        def nonRensCap: ((x.nuclearCap + x.petrolCap) + x.gasCap) + x.coalCap
 
         {
           x: rensCap / (rensCap + nonRensCap),
           y: (rensOut + x.nuclearOut) / (rensCap + x.nuclearCap)
-        };
+        }
 
-      map(plotCountry, countries);
+      map(plotCountry, countries)
 
     ScatterPlot({
       caption:

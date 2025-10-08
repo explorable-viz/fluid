@@ -23,6 +23,7 @@ import Options.Applicative.Builder (info)
 import Parse as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
+import Temp.Parse (parsePy')
 import Temp.Pretty (prettyP)
 import Temp.Util.Error (prettyParseError)
 import Util (Endo)
@@ -34,7 +35,7 @@ data EvalArgs = EvalArgs
    , fluidSrcPath :: Folder
    }
 
-data Command = Evaluate EvalArgs | Migrate EvalArgs
+data Command = Evaluate EvalArgs | Parse_ EvalArgs | Migrate EvalArgs
 
 between :: forall a. Pattern -> Pattern -> Endo (String -> Either String a)
 between p1 p2 f s =
@@ -62,22 +63,27 @@ parseEvaluate = ado
    fluidSrcPath <- Folder <$> strOption (long "fluid-src-path" <> short 'p' <> help "The path containing the program files")
    in EvalArgs { local, fileName, fluidSrcPath }
 
-commands :: { evaluate :: Parser Command, migrate :: Parser Command }
+commands :: { evaluate :: Parser Command, parse :: Parser Command, migrate :: Parser Command }
 commands =
    { evaluate: Evaluate <$> parseEvaluate
+   , parse: Parse_ <$> parseEvaluate
    , migrate: Migrate <$> parseEvaluate
    }
 
 commandParser :: Parser Command
 commandParser = subparser
-   ( command "evaluate" (info commands.evaluate (progDesc "Evaluate a file")) <>
-        command "migrate" (info commands.migrate (progDesc "Migrate a file"))
+   ( command "evaluate" (info commands.evaluate (progDesc "Evaluate a file"))
+        <> command "parse" (info commands.parse (progDesc "Parse a file"))
+        <> command "migrate" (info commands.migrate (progDesc "Migrate a file"))
    )
 
 dispatchCommand ∷ Command → Aff Unit
 dispatchCommand (Evaluate p) = do
    v <- evaluate p
    log (prettyP v)
+dispatchCommand (Parse_ p) = do
+   r <- parse p
+   log r
 dispatchCommand (Migrate p) = do
    r <- migrate p
    log r
@@ -103,6 +109,15 @@ evaluate (EvalArgs { local, fileName, fluidSrcPath }) = do
       { e, gconfig } <- prepConfig primitives fluidSrc
       { outα } <- graphEval gconfig e
       pure (erase outα)
+
+parse :: EvalArgs -> Aff String
+parse (EvalArgs { local, fileName, fluidSrcPath }) = do
+   let fluidSrcPaths = [ fluidSrcPath ] <> if local then [ Folder (fluidLibraryPath <> "/dist/fluid/fluid") ] else []
+   runNodeT (FileCxt { fluidSrcPaths }) $ do
+      fluidSrc <- loadFile fluidSrcPaths (File fileName)
+      case (parsePy' fluidSrc) of
+         Left err -> pure err
+         Right expr -> pure $ prettyP (fst expr)
 
 migrate :: EvalArgs -> Aff String
 migrate (EvalArgs { local, fileName, fluidSrcPath }) = do

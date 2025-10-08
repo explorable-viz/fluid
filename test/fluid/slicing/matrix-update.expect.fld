@@ -8,6 +8,6 @@ def image':
   ]
 def image: [| nth2(i, j, image') for (i, j) in (5, 5)|]
 def index: (2, 2)
-def pair: ⸨4000⸩;
+def pair: ⸨4000⸩
 
 matrixUpdate(image, index, pair)
