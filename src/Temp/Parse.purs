@@ -20,8 +20,8 @@ import Data.String.Common (joinWith)
 import Data.Traversable (foldl)
 import DataType (cPair)
 import Lattice (Raw)
-import Parsing (Position, consume, runParserT)
-import Parsing.Combinators (many, many1, optionMaybe, optional, sepBy, sepBy1, try, (<?>))
+import Parsing (Position, consume, fail, runParserT)
+import Parsing.Combinators (choice, many, many1, optionMaybe, optional, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, withPos)
 import Parsing.String (eof, satisfy, string)
@@ -300,8 +300,6 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             <|> str
             <|> var
             <|> constr
-            <|> pair
-            <|> parensOp
             <|> parensExpr
             <|> docExpr
             <|> number
@@ -500,32 +498,29 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
                      r <- listRest
                      pure $ Next unit e r
 
-         pair :: Parser (Raw Expr)
-         pair = context "pair" $ do
-            e <- try do
-               delim '('
-               e <- opTree
-               delim ','
-               pure e
-            e' <- opTree
-            delim ')'
-            pure $ Constr unit cPair (e : e' : Nil)
-
          parensExpr :: Parser (Raw Expr)
-         parensExpr = context "parens expr" do
-            e <- try do
-               delim '('
-               opTree
-            delim ')'
-            pure $ e
-
-         parensOp :: Parser (Raw Expr)
-         parensOp = context "parens op" do
-            op <- try do
-               delim '('
-               operator
-            delim ')'
-            pure $ Op op
+         parensExpr = context "parens" do
+            delim '('
+            choice
+               [ do
+                    op <- try operator
+                    delim ')'
+                    pure $ Op op
+               , do
+                    e <- opTree
+                    choice
+                       [ do
+                            delim ')'
+                            pure e
+                       , do
+                            delim ','
+                            e' <- opTree
+                            delim ')'
+                            pure $ Constr unit cPair (e : e' : Nil)
+                       , fail "Expected `)` or `,` after `(expr`"
+                       ]
+               , fail "Expected `op` or `expr` after `(`"
+               ]
 
          docExpr :: Parser (Raw Expr)
          docExpr = context "doc expr" do
