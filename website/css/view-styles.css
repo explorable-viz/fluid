@@ -13,12 +13,6 @@
    font-size: 9pt;
 }
 
-.table-wrapper {
-}
-
-.table-view {
-}
-
 .table-caption {
    border-bottom: 0.5px solid lightgray;
 }
@@ -42,7 +36,6 @@ table {
 }
 
 thead {
-   /* border-top: 0.5px solid lightgray; */
 }
 
 thead th {

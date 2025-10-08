@@ -279,6 +279,10 @@ nav ul li.active-page a {
    display: none;
 }
 
+.data-pane {
+  padding-right: 0.25em;
+}
+
 .data-pane * {
    font-size: 10pt;
 }
