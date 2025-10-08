@@ -1,4 +1,4 @@
-module Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, stringLiteral, token, variable, whitespace) where
+module Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, reservedOperator, stringLiteral, token, variable, whitespace) where
 
 import Prelude hiding (between)
 
@@ -63,9 +63,15 @@ reserved expected = try do
    else pure unit
 
 operator :: Parser String
-operator = do
+operator = lexeme $ do
    cs <- Array.some $ oneOf opChars
    pure $ SCU.fromCharArray cs
+
+reservedOperator :: String -> Parser Unit
+reservedOperator expected = try do
+   received <- operator
+   if expected /= received then fail $ "Expected `" <> expected <> "`, received `" <> received <> "`"
+   else pure unit
 
 delim :: Char -> Parser Unit
 delim c = char c *> whitespace

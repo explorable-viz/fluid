@@ -26,9 +26,9 @@ import Parsing.Indent (runIndent, sameLine, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Parse.Number (float, integer)
-import Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, stringLiteral, token, variable, whitespace)
+import Temp.Parse.Parser (Parser, align, block, constructor, context, delim, lexeme, operator, reserved, reservedOperator, stringLiteral, token, variable, whitespace)
 import Temp.Util.Error (prettyParseError)
-import Util (type (+), type (×), nonEmpty, onlyIf, (×))
+import Util (type (+), type (×), nonEmpty, (×))
 
 pattern :: Parser Pattern
 pattern = defer $ \_ -> buildExprParser popdefs simplePattern
@@ -124,33 +124,26 @@ simplePattern =
       delim ')'
       pure $ PConstr cPair (p : p' : Nil)
 
--- TODO: check try usage
 binaryOp :: String -> Parser (Raw Expr -> Raw Expr -> Raw Expr)
-binaryOp op = try do
-   op' <- lexeme operator
-   onlyIf (op == op') $
-      -- else if ":|" op' then \e e' -> Constr unit op' (e : e' : empty)
-      \e e' -> BinaryApp e op e'
+binaryOp op = do
+   reservedOperator op
+   pure $ \e e' -> BinaryApp e op e'
 
--- TODO: check try usage
 pConsOp :: Parser (Pattern -> Pattern -> Pattern)
-pConsOp = try do
-   op <- lexeme operator
-   onlyIf (op == ":|")
-      $ \e e' -> PConstr ":" (e : e' : Nil)
+pConsOp = do
+   reservedOperator ":|"
+   pure $ \e e' -> PConstr ":" (e : e' : Nil)
 
--- TODO: check try usage
 infixFn :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
-infixFn = try do
-   x <- delim '|' *> variable <* delim '|'
+infixFn = do
+   x <- try (delim '|' *> variable)
+   delim '|'
    pure (\e e' -> BinaryApp e x e')
 
--- TODO: check try usage
 consOp :: Parser (Raw Expr -> Raw Expr -> Raw Expr)
-consOp = try do
-   op <- lexeme operator
-   onlyIf (op == ":|")
-      $ \e e' -> Constr unit ":" (e : e' : Nil)
+consOp = do
+   reservedOperator ":|"
+   pure $ \e e' -> Constr unit ":" (e : e' : Nil)
 
 opdefs :: Array (Array (Operator (StateT Position Identity) String (Raw Expr)))
 opdefs =
@@ -481,8 +474,7 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
             delim '('
             choice
                [ do
-                    -- TODO: check try usage
-                    op <- try operator
+                    op <- operator
                     delim ')'
                     pure $ Op op
                , do
