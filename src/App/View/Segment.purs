@@ -12,7 +12,7 @@ import Data.Int (toNumber)
 import Data.Newtype (class Newtype)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Util (Endo, spy)
+import Util (Endo)
 import Web.Event.EventTarget (eventListener)
 
 newtype Segment = Segment
@@ -40,7 +40,7 @@ instance Viewable Segment SegmentContext where
          # create Rect
               [ "x" ⟼ scales.x x
               , "y" ⟼ scales.y (contents z + y)
-              , "height" ⟼ spy "#1: " show (toNumber height) - spy "#2: " show (scales.y (contents z))
+              , "height" ⟼ toNumber height - scales.y (contents z)
               , "stroke-width" ⟼ strokeWidth
               , "width" ⟼ bandwidth scales.x
               , classes [ "bar" ]
