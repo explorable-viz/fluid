@@ -1,4 +1,4 @@
-module Temp.Parse (parsePy, parsePy', parsePyModule') where
+module Temp.Parse where
 
 import Prelude
 
@@ -22,7 +22,7 @@ import Lattice (Raw)
 import Parsing (Position, consume, fail, runParserT)
 import Parsing.Combinators (choice, many, many1, optional, sepBy, sepBy1, try, (<?>))
 import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
-import Parsing.Indent (runIndent, sameLine, withPos)
+import Parsing.Indent (runIndent, sameLine, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Parse.Number (float, integer)
@@ -174,37 +174,24 @@ popdefs :: Array (Array (Operator (StateT Position Identity) String Pattern))
 popdefs = [ [ Infix pConsOp AssocRight ] ]
 
 varDefs :: Parser (Raw VarDefs)
-varDefs = do
-   head <- varDef
-   rest <- many varDef
-   _ <- optional (delim ';')
-   pure $ nonEmpty (head : rest)
-
+varDefs = many1 varDef <* optional (delim ';')
    where
    varDef :: Parser (Raw VarDef)
-   varDef = try do
-      reserved "def"
-      name <- pattern
-      e <- block expr
-      pure $ VarDef name e
+   varDef = do
+      p <- try (reserved "def" *> pattern <* delim ':')
+      e <- sameOrIndented *> withPos expr
+      pure $ VarDef p e
 
 recDefs :: Parser (Raw RecDefs)
-recDefs = do
-   head <- recDef
-   rest <- many recDef
-   _ <- optional (delim ';')
-   pure $ nonEmpty (head : rest)
-
+recDefs = many1 recDef <* optional (delim ';')
    where
    recDef :: Parser (Raw Branch)
-   recDef = try do
-      reserved "def"
-      name <- variable
-      delim '('
+   recDef = do
+      p <- try (reserved "def" *> variable <* delim '(')
       ps <- sepBy1 pattern (delim ',')
       delim ')'
       e <- block expr
-      pure $ name × Clause (ps × e)
+      pure $ p × Clause (ps × e)
 
 expr :: Parser (Raw Expr)
 expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
@@ -232,17 +219,17 @@ expr = context "expr" $ matchAs <|> ifElse <|> def <|> opTree <?> "expression"
 
    def :: Parser (Raw Expr)
    def = context "def" do
-      try funDef <|> valDef
+      funDef <|> valDef
       where
       funDef :: Parser (Raw Expr)
       funDef = context "funDef" $ withPos do
-         defs' <- try recDefs
+         defs' <- recDefs
          e' <- align expr
          pure $ LetRec defs' e'
 
       valDef :: Parser (Raw Expr)
       valDef = context "valDef" $ withPos do
-         defs' <- try varDefs
+         defs' <- varDefs
          e' <- align expr
          pure $ Let defs' e'
 
@@ -517,7 +504,7 @@ program :: Parser (Raw Expr)
 program = whitespace *> withPos expr <* whitespace <* eof
 
 defs :: Parser ((Raw VarDefs + Raw RecDefs))
-defs = choose (try $ varDefs) (recDefs)
+defs = choose varDefs recDefs
 
 module_ :: Parser (Raw Module)
 module_ = do
