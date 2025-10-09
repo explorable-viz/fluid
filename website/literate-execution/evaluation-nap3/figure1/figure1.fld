@@ -1,40 +1,19 @@
 import figure1_data
 
-def risk_chapter:
-  dict([ (risk[ "ID#" ], risk[ "Chapter" ]) for risk in risks ])
-
-def chapter_for_risk(r):
-  risk_chapter[ r [ "Risk ID#" ] ]
-
-def chapters:
-  [ (chapter_for_risk(head(chapter)), chapter)
-    # already partitioned by chapter, so groupBy good
-    for chapter in groupBy(on((==), chapter_for_risk), eval_data) ]
-
-def add_risk(d, eval_score, risk):
-  insert(d, eval_score, risk :| fromOption(get(eval_score, d), []))
-
-def by_eval_score(risks):
-  foldl(lambda d, risk: add_risk(d, risk[ "Evaluation score" ], risk), {}, risks)
-
-def items(d):
-  foldl_with_index(lambda k, segments, risks: { y: k, z: length(risks) } :| segments, [], d)
-
-def eval_scores:
-  [ (chapter, by_eval_score(risks)) for (chapter, risks) in chapters ]
-
 def bars:
-  [ { x: chapter, segments: items(scores) } for (chapter, scores) in eval_scores ]
-
-def bars2:
   [ { x: chapter,
       segments: [
-        eval_score
+        { y: eval_score,
+          z: length([
+            action for action in eval_data
+            if action[ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score
+          ])
+        }
         for eval_score in
           [ "Significantly addressed", "Recognised but not addressed", "Not addressed", "Minimally addressed", "Fully addressed" ]
       ]
     }
-    for chapter in [ "3", "4", "5", "6", "7" ]
+    for chapter in [ "6", "5", "4", "7", "3" ]
   ]
 
 BarChart({
