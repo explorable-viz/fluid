@@ -7,8 +7,8 @@ import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.Segment (Segment(..), Scales, indexCol)
 import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
 import App.View.Util (class Viewable, Select, createElement, setSelection)
-import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, rotate, scaleBand, scaleLinear, selectAll, setAttrs, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util.Axes (Orientation(..), create_xAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, rotate, scaleBand, scaleLinear, selectAll, setAttrs, setStyles, setText, textHeight, textWidth, translate, yAxis)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
@@ -70,16 +70,6 @@ instance Viewable BarChart Unit where
       where
       props = barChartProps barChart
 
-      create_xAxis :: D3.Selection -> Orientation -> Effect D3.Selection
-      create_xAxis parent' orientation = do
-         x <- xAxis props.scales props.xs =<<
-            (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap props.interior).height } ])
-         when (orientation == Rotated) do
-            labels <- x # selectAll "text"
-            for_ labels $
-               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
-         pure x
-
       create_yAxis :: D3.Selection -> Orientation -> Effect D3.Selection
       create_yAxis parent' orientation = do
          y <- yAxis props.scales 3.0 =<<
@@ -93,7 +83,7 @@ instance Viewable BarChart Unit where
       createAxes :: D3.Selection -> Effect (Coord D3.Selection)
       createAxes parent' = do
          let Point { x: xLabels, y: yLabels } = tickLabels
-         x <- create_xAxis parent' (contents xLabels)
+         x <- create_xAxis parent' props.scales props.xs (unwrap props.interior).height (contents xLabels)
          y <- create_yAxis parent' (contents yLabels)
          pure { x, y }
 

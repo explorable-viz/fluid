@@ -2,8 +2,15 @@ module App.View.Util.Axes where
 
 import Prelude
 
+import App.Util (classes)
+import App.View.Util.D3 (ElementType(..), create, rotate, selectAll, setAttrs, setStyles, translate, xAxis)
+import App.View.Util.D3 as D3
+import Bind ((↦))
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Foldable (for_)
 import Data.List (List(..))
 import DataType (cDefault, cRotated)
+import Effect (Effect)
 import Primitive (ToFrom, typeError)
 import Val (BaseVal(..))
 
@@ -29,3 +36,13 @@ orientation =
            | c == cRotated -> Rotated
         v -> typeError v "Orientation"
    }
+
+create_xAxis :: forall a r. D3.Selection -> { x :: a -> Number | r } -> NonEmptyArray a -> Int -> Orientation -> Effect D3.Selection
+create_xAxis parent' to ticks y orient = do
+   x <- xAxis to ticks =<<
+      (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y } ])
+   when (orient == Rotated) do
+      labels <- x # selectAll "text"
+      for_ labels $
+         setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
+   pure x
