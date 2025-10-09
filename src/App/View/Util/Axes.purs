@@ -3,7 +3,7 @@ module App.View.Util.Axes where
 import Prelude
 
 import App.Util (classes)
-import App.View.Util.D3 (ElementType(..), create, rotate, selectAll, setAttrs, setStyles, translate, xAxis)
+import App.View.Util.D3 (ElementType(..), create, rotate, selectAll, setAttrs, setStyles, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
 import Bind ((↦))
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -46,3 +46,13 @@ create_xAxis parent' to ticks y orient = do
       for_ labels $
          setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
    pure x
+
+create_yAxis :: forall a r. D3.Selection -> { y :: a -> Number | r } -> Number -> Orientation -> Effect D3.Selection
+create_yAxis parent' to ticks orient = do
+   y <- yAxis to ticks =<<
+      (parent' # create G [ classes [ "y-axis" ] ])
+   when (orient == Rotated) do
+      labels <- y # selectAll "text"
+      for_ labels $
+         setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "end" ]
+   pure y

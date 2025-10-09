@@ -7,14 +7,14 @@ import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.Segment (Segment(..), Scales, indexCol)
 import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
 import App.View.Util (class Viewable, Select, createElement, setSelection)
-import App.View.Util.Axes (Orientation(..), create_xAxis)
-import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, rotate, scaleBand, scaleLinear, selectAll, setAttrs, setStyles, setText, textHeight, textWidth, translate, yAxis)
+import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import Data.Array (range)
 import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
-import Data.Foldable (for_, length)
+import Data.Foldable (length)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
 import Data.Newtype (unwrap)
@@ -70,21 +70,11 @@ instance Viewable BarChart Unit where
       where
       props = barChartProps barChart
 
-      create_yAxis :: D3.Selection -> Orientation -> Effect D3.Selection
-      create_yAxis parent' orientation = do
-         y <- yAxis props.scales 3.0 =<<
-            (parent' # create G [ classes [ "y-axis" ] ])
-         when (orientation == Rotated) do
-            labels <- y # selectAll "text"
-            for_ labels $
-               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "end" ]
-         pure y
-
       createAxes :: D3.Selection -> Effect (Coord D3.Selection)
       createAxes parent' = do
          let Point { x: xLabels, y: yLabels } = tickLabels
          x <- create_xAxis parent' props.scales props.xs (unwrap props.interior).height (contents xLabels)
-         y <- create_yAxis parent' (contents yLabels)
+         y <- create_yAxis parent' props.scales 3.0 (contents yLabels)
          pure { x, y }
 
       createStackedBars :: D3.Selection -> Effect Unit
