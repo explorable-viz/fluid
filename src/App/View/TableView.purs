@@ -8,16 +8,18 @@ import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array ((..), elem, filter, head, null, partition, sort)
+import Data.Array (elem, filter, null, partition, sort, (..))
+import Data.Array.NonEmpty (head)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
-import Data.Traversable (for)
+import Data.Traversable (for, sequence)
 import Data.Tuple (snd, uncurry)
 import Dict (Dict)
 import Effect (Effect, foreachE)
-import Util (type (×), (×), absurd, definitely', error, length, (!))
+import Effect.Console (log)
+import Util (type (×), absurd, error, length, nonEmpty, (!), (×))
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (eventListener)
@@ -31,12 +33,12 @@ newtype TableView = TableView
    { title :: String
    , filter :: Filter
    , colNames :: Array String
-   , rows :: Array Record' -- would list make more sense given the filtering?
+   , rows :: Array Record' -- non-empty?
    }
 
 -- helpers to decompose array of records represented as dictionaries into colNames and rows
 headers :: Array (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) -> Array String
-headers records = sort <<< toUnfoldable <<< keys <<< definitely' $ head records
+headers records = (sort <<< toUnfoldable <<< keys <<< head <<< nonEmpty) records
 
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 = map <<< flip (map <<< flip get)
@@ -99,8 +101,18 @@ instance Viewable TableView Unit where
       hiddenRows <- hideRows
       hiddenColumns <- hideColumns
       setCaption hiddenRows hiddenColumns
-
+      log $ show (length rows) <> " × " <> show (length colNames)
+      let columns = transpose rows
+      log $ show (length columns) <> " × " <> show (length rows)
       where
+      {-
+      column_isVisible2 :: Array Boolean
+      column_isVisible2 = columns <#> all (visible filter')
+         where
+         columns = sequence rows
+         -- arbitrarily (for now) enable column filtering when there are a lot of columns
+         filter' = if length colNames >= 10 then defaultFilter else Everything
+-}
       column_isVisible :: Int -> Array Record' -> Boolean
       column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) (visible filter')
          where
@@ -142,7 +154,7 @@ instance Viewable TableView Unit where
             <> ")"
 
       width :: Int
-      width = length (definitely' (head rows))
+      width = length (head (nonEmpty rows))
 
       row_visibleSucc :: Int -> Maybe Int
       row_visibleSucc i
