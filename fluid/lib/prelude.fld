@@ -120,6 +120,13 @@ def filterMap(p, x :| xs):
     case Some(y):
       y :| filterMap(f, xs)
 
+# Equivalent to but more efficient than length ∘ filter(p)
+def count_if(p):
+  def f(n, x):
+    if p(x): n + 1
+    else: n
+  foldl(f, 0)
+
 # Split list into longest initial segment whose elements satisfy a predicate, and the rest.
 # (a -> Bool) -> List a -> { init :: List a, rest :: List a }
 def span(p, Nil): { init: Nil, rest: Nil }

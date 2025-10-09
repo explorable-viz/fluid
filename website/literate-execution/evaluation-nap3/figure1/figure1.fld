@@ -3,12 +3,6 @@ import figure1_data
 def eval_scores:
   [ "Significantly addressed", "Recognised but not addressed", "Not addressed", "Minimally addressed", "Fully addressed" ]
 
-def count_if(p):
-  def f(n, x):
-    if p(x): n + 1
-    else: n
-  foldl(f, 0)
-
 def actions_by(key, keys):
   [ { x: key_,
       segments: [
