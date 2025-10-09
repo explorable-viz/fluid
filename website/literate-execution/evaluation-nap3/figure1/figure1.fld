@@ -26,6 +26,17 @@ def eval_scores:
 def bars:
   [ { x: chapter, segments: items(scores) } for (chapter, scores) in eval_scores ]
 
+def bars2:
+  [ { x: chapter,
+      segments: [
+        eval_score
+        for eval_score in
+          [ "Significantly addressed", "Recognised but not addressed", "Not addressed", "Minimally addressed", "Fully addressed" ]
+      ]
+    }
+    for chapter in [ "3", "4", "5", "6", "7" ]
+  ]
+
 BarChart({
   caption: "Evaluation of NAP3 against actions from CCRA3",
   size: { width: 275, height: 185 },
