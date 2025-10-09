@@ -14,7 +14,7 @@ import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
-import Data.Traversable (for, sequence)
+import Data.Traversable (for)
 import Data.Tuple (snd, uncurry)
 import Dict (Dict)
 import Effect (Effect, foreachE)
@@ -102,8 +102,6 @@ instance Viewable TableView Unit where
       hiddenColumns <- hideColumns
       setCaption hiddenRows hiddenColumns
       log $ show (length rows) <> " × " <> show (length colNames)
-      let columns = transpose rows
-      log $ show (length columns) <> " × " <> show (length rows)
       where
       {-
       column_isVisible2 :: Array Boolean
