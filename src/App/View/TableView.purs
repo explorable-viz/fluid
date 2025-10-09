@@ -8,7 +8,7 @@ import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (all, elem, filter, null, partition, sort, (..))
+import Data.Array (any, elem, filter, null, partition, sort, (..))
 import Data.Array.NonEmpty (head)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
@@ -104,9 +104,8 @@ instance Viewable TableView Unit where
       where
 
       column_isVisible :: Array Boolean
-      column_isVisible = columns <#> all (visible filter')
+      column_isVisible = transpose rows <#> any (visible filter')
          where
-         columns = transpose rows
          -- arbitrarily (for now) enable column filtering when there are a lot of columns
          filter' = if length colNames >= 10 then defaultFilter else Everything
 
@@ -125,7 +124,7 @@ instance Viewable TableView Unit where
       hideColumns :: Effect Int
       hideColumns = do
          -- very expensive and also overkill to do on every selection as currently hidden cells are fixed
-         let hiddenColumns = filter ((!) column_isVisible) (0 .. (length colNames - 1))
+         let hiddenColumns = filter ((!) column_isVisible >>> not) (0 .. (length colNames - 1))
          cells <- rootElement # selectAll ".table-cell"
          foreachE cells \cell -> do
             { j } :: CellIndex <- datum cell
