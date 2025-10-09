@@ -63,6 +63,41 @@ instance Highlightable a => RootOp (BaseVal a) where
    rootOp (V.Constr c _) | c == cCons = Just ":"
    rootOp _ = Nothing
 
+class IsSimple (e :: Type) where
+   isSimple :: e -> Boolean
+
+instance Ann a => IsSimple (Expr a) where
+   isSimple (BinaryApp _ _ _) = false
+   isSimple (Constr _ c _) | c == cCons = false
+   isSimple (Lambda _) = false
+   isSimple (Let _ _) = false
+   isSimple (LetRec _ _) = false
+   isSimple (IfElse _ _ _) = false
+   isSimple (MatchAs _ _) = false
+   isSimple _ = true
+
+instance Highlightable a => IsSimple (E.Expr a) where
+   isSimple (E.Constr _ c _) | c == cCons = false
+   isSimple (E.Lambda _ _) = false
+   isSimple (E.Let _ _) = false
+   isSimple (E.LetRec _ _) = false
+   isSimple _ = true
+
+instance Highlightable a => IsSimple (Val a) where
+   isSimple (Val _ Nothing u) = isSimple u
+   isSimple (Val _ (Just _) _) = false
+
+instance Highlightable a => IsSimple (BaseVal a) where
+   isSimple _ = true
+
+instance IsSimple Pattern where
+   isSimple _ = true
+
+prettySimple :: forall a. IsSimple a => Pretty a => a -> Doc
+prettySimple s =
+   if isSimple s then pretty s
+   else parens (pretty s)
+
 prettyP :: forall a. Pretty a => a -> String
 prettyP x = render (pretty x)
 
@@ -80,11 +115,7 @@ binaryApp n (BinaryApp s op s') =
             parens (binaryApp n' s <+> text op <+> binaryApp n' s')
          else
             binaryApp n' s <+> text op <+> binaryApp n' s'
-binaryApp _ e@(Constr _ c _) | c == cCons = parens (pretty e)
-binaryApp _ e@(Let _ _) = parens (pretty e) -- probably not required but might be a good convention
-binaryApp _ e@(LetRec _ _) = parens (pretty e)
-binaryApp _ e@(Lambda _) = parens (pretty e)
-binaryApp _ e = pretty e
+binaryApp _ e = prettySimple e
 
 lambda :: forall a. Ann a => List Pattern -> Expr a -> Doc
 lambda ps e = _lambda <+> prettyList ps <> _colon <+> pretty e
@@ -101,8 +132,8 @@ instance Ann a => Pretty (Expr a) where
    pretty (Dictionary α es) = highlightIf α (expr $ record $ map pretty es)
    pretty (Matrix α e (x × y) e') = highlightIf α (expr $ matrix (pretty e <+> _for <+> pair text x y <+> _in <+> pretty e'))
    pretty (Lambda cs) = pretty cs -- Clauses
-   pretty (Project s x) = expr $ pretty s <> text "." <> text x
-   pretty (DProject e k) = expr $ pretty e <> brackets (expr $ pretty k)
+   pretty (Project s x) = expr $ prettySimple s <> text "." <> text x
+   pretty (DProject e k) = expr $ prettySimple e <> brackets (expr $ pretty k)
    pretty (App s s') = expr $ prettyAppChain (App s s') Nil
    pretty (BinaryApp s op s') = expr $ binaryApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = _match <+> pretty s <> block (pretty cs)
@@ -196,22 +227,21 @@ instance Ann a => Pretty (ParagraphElem a) where
    pretty (Token str) = text str
    pretty (Unquote e) = text "{" <> pretty e <> text "}"
 
-prettyConstr :: forall a. RootOp a => Pretty a => Ctr -> List a -> Doc
+prettyConstr :: forall a. RootOp a => IsSimple a => Pretty a => Ctr -> List a -> Doc
 prettyConstr "Nil" Nil = text "[]"
 prettyConstr "Pair" (x : y : Nil) = pair pretty x y
 prettyConstr ":" (x : y : Nil) = prettyConsArg x true <+> text ":|" <+> prettyConsArg y false
 prettyConstr c Nil = text c
 prettyConstr c ps = text c <> parens (prettyList ps)
 
-prettyConsArg :: forall a. RootOp a => Pretty a => a -> Boolean -> Doc
+prettyConsArg :: forall a. RootOp a => IsSimple a => Pretty a => a -> Boolean -> Doc
 prettyConsArg e lhs = case rootOp e of
-   Nothing -> pretty e
+   Nothing -> prettySimple e
    Just op -> if (if lhs then (<=) else (<)) (getPrec op) (getPrec ":") then parens (pretty e) else pretty e
 
 prettyAppChain :: forall a. Ann a => Expr a -> List (Expr a) -> Doc
 prettyAppChain (App f a) as = prettyAppChain f (a : as)
-prettyAppChain (Lambda f) as = parens (pretty f) <> parens (prettyList as)
-prettyAppChain f as = pretty f <> parens (prettyList as)
+prettyAppChain f as = prettySimple f <> parens (prettyList as)
 
 commas :: List Doc -> Doc
 commas Nil = empty
