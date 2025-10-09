@@ -70,21 +70,31 @@ instance Viewable BarChart Unit where
       where
       props = barChartProps barChart
 
-      createAxes :: D3.Selection -> Effect (Coord D3.Selection)
-      createAxes parent' = do
-         let Point { x: xLabels, y: yLabels } = tickLabels
+      create_xAxis :: D3.Selection -> Orientation -> Effect D3.Selection
+      create_xAxis parent' orientation = do
          x <- xAxis props.scales props.xs =<<
             (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap props.interior).height } ])
-         when (contents xLabels == Rotated) do
+         when (orientation == Rotated) do
             labels <- x # selectAll "text"
             for_ labels $
                setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
+         pure x
+
+      create_yAxis :: D3.Selection -> Orientation -> Effect D3.Selection
+      create_yAxis parent' orientation = do
          y <- yAxis props.scales 3.0 =<<
             (parent' # create G [ classes [ "y-axis" ] ])
-         when (contents yLabels == Rotated) do
+         when (orientation == Rotated) do
             labels <- y # selectAll "text"
             for_ labels $
                setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "end" ]
+         pure y
+
+      createAxes :: D3.Selection -> Effect (Coord D3.Selection)
+      createAxes parent' = do
+         let Point { x: xLabels, y: yLabels } = tickLabels
+         x <- create_xAxis parent' (contents xLabels)
+         y <- create_yAxis parent' (contents yLabels)
          pure { x, y }
 
       createStackedBars :: D3.Selection -> Effect Unit
