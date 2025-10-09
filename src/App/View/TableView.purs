@@ -8,7 +8,7 @@ import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (elem, filter, null, partition, sort, (..))
+import Data.Array (all, elem, filter, null, partition, sort, (..))
 import Data.Array.NonEmpty (head)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
@@ -18,8 +18,8 @@ import Data.Traversable (for)
 import Data.Tuple (snd, uncurry)
 import Dict (Dict)
 import Effect (Effect, foreachE)
-import Effect.Console (log)
 import Util (type (×), absurd, error, length, nonEmpty, (!), (×))
+import Util.Array (transpose)
 import Util.Map (get, keys)
 import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (eventListener)
@@ -101,19 +101,12 @@ instance Viewable TableView Unit where
       hiddenRows <- hideRows
       hiddenColumns <- hideColumns
       setCaption hiddenRows hiddenColumns
-      log $ show (length rows) <> " × " <> show (length colNames)
       where
-      {-
-      column_isVisible2 :: Array Boolean
-      column_isVisible2 = columns <#> all (visible filter')
+
+      column_isVisible :: Array Boolean
+      column_isVisible = columns <#> all (visible filter')
          where
-         columns = sequence rows
-         -- arbitrarily (for now) enable column filtering when there are a lot of columns
-         filter' = if length colNames >= 10 then defaultFilter else Everything
--}
-      column_isVisible :: Int -> Array Record' -> Boolean
-      column_isVisible i rs = not <<< null $ flip filter (flip (!) i <$> rs) (visible filter')
-         where
+         columns = transpose rows
          -- arbitrarily (for now) enable column filtering when there are a lot of columns
          filter' = if length colNames >= 10 then defaultFilter else Everything
 
@@ -132,7 +125,7 @@ instance Viewable TableView Unit where
       hideColumns :: Effect Int
       hideColumns = do
          -- very expensive and also overkill to do on every selection as currently hidden cells are fixed
-         let hiddenColumns = filter (not <<< flip column_isVisible rows) (0 .. (length colNames - 1))
+         let hiddenColumns = filter ((!) column_isVisible) (0 .. (length colNames - 1))
          cells <- rootElement # selectAll ".table-cell"
          foreachE cells \cell -> do
             { j } :: CellIndex <- datum cell
@@ -171,14 +164,14 @@ instance Viewable TableView Unit where
       column_visibleSucc :: Int -> Maybe Int
       column_visibleSucc i
          | i == length colNames - 1 = Nothing
-         | column_isVisible (i + 1) rows = Just (i + 1)
+         | column_isVisible ! (i + 1) = Just (i + 1)
          | otherwise = column_visibleSucc (i + 1)
 
       column_visiblePred :: Int -> Int
       column_visiblePred j
          | j < 0 = error absurd
          | j == 0 = -1
-         | column_isVisible (j - 1) rows = j - 1
+         | column_isVisible ! (j - 1) = j - 1
          | otherwise = column_visiblePred (j - 1)
 
       border :: Boolean -> Boolean -> String
