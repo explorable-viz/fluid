@@ -41,7 +41,7 @@ MultiView({
   by_owner:
     BarChart({
       caption: "Actions by government department",
-      tickLabels: { x: Default, y: Default },
+      tickLabels: { x: Rotated, y: Default },
       size: { width: 375, height: 200 },
       stackedBars: by_owner
     })

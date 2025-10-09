@@ -7,14 +7,14 @@ import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.Segment (Segment(..), Scales, indexCol)
 import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
 import App.View.Util (class Viewable, Select, createElement, setSelection)
-import App.View.Util.Axes (Orientation)
-import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util.Axes (Orientation(..))
+import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, rotate, scaleBand, scaleLinear, selectAll, setAttrs, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
-import App.View.Util.Point (Point)
+import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import Data.Array (range)
 import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
-import Data.Foldable (length)
+import Data.Foldable (for_, length)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Int (toNumber)
 import Data.Newtype (unwrap)
@@ -45,7 +45,7 @@ instance Viewable BarChart Unit where
             stack
 
    createElement :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection
-   createElement _ barChart@(BarChart { caption, stackedBars }) parent = do
+   createElement _ barChart@(BarChart { caption, stackedBars, tickLabels }) parent = do
       svg <- parent # create SVG [ "width" ⟼ props.width, "height" ⟼ props.height ]
       g <- svg # create G [ translate { x: props.margin.left, y: props.margin.top } ]
       void $ createAxes g
@@ -72,10 +72,19 @@ instance Viewable BarChart Unit where
 
       createAxes :: D3.Selection -> Effect (Coord D3.Selection)
       createAxes parent' = do
+         let Point { x: xLabels, y: yLabels } = tickLabels
          x <- xAxis props.scales props.xs =<<
             (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap props.interior).height } ])
+         when (contents xLabels == Rotated) do
+            labels <- x # selectAll "text"
+            for_ labels $
+               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
          y <- yAxis props.scales 3.0 =<<
             (parent' # create G [ classes [ "y-axis" ] ])
+         when (contents yLabels == Rotated) do
+            labels <- y # selectAll "text"
+            for_ labels $
+               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "end" ]
          pure { x, y }
 
       createStackedBars :: D3.Selection -> Effect Unit
