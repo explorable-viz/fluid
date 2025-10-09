@@ -1,23 +1,55 @@
 import figure1_data
 
-def bars:
+def eval_scores:
+  [ "Significantly addressed", "Recognised but not addressed", "Not addressed", "Minimally addressed", "Fully addressed" ]
+
+def count_if(p):
+  def f(n, x):
+    if p(x): n + 1
+    else: n
+  foldl(f, 0)
+
+def by_chapter:
   [ { x: chapter,
       segments: [
         { y: eval_score,
-          z: length(nub([
-            action[ "Action ID#" ] for action in eval_data
-            if action[ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score
-          ]))
+          z: count_if(
+            lambda action: action[ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score,
+            eval_data
+          )
         }
-        for eval_score in
-          [ "Significantly addressed", "Recognised but not addressed", "Not addressed", "Minimally addressed", "Fully addressed" ]
+        for eval_score in eval_scores
       ]
     }
     for chapter in [ "6", "5", "4", "7", "3" ]
   ]
 
-BarChart({
-  caption: "Evaluation of NAP3 against actions from CCRA3",
-  size: { width: 275, height: 185 },
-  stackedBars: bars
+def by_owner:
+  [ { x: owner,
+      segments: [
+        { y: eval_score,
+          z: count_if(
+            lambda action: action[ "Action Owner" ] == owner |and| action[ "Evaluation score" ] == eval_score,
+            eval_data
+          )
+        }
+        for eval_score in eval_scores
+      ]
+    }
+    for owner in [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+  ]
+
+MultiView({
+  by_chapter:
+    BarChart({
+      caption: "Evaluation of NAP3 against actions from CCRA3",
+      size: { width: 275, height: 185 },
+      stackedBars: by_chapter
+    }),
+  by_owner:
+    BarChart({
+      caption: "Actions by government department",
+      size: { width: 375, height: 185 },
+      stackedBars: by_owner
+    })
 })
