@@ -9,35 +9,32 @@ def count_if(p):
     else: n
   foldl(f, 0)
 
-def by_chapter:
-  [ { x: chapter,
+def actions_by(key, keys):
+  [ { x: key_,
       segments: [
         { y: eval_score,
           z: count_if(
-            lambda action: action[ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score,
+            lambda action: action[ key ] == key_ |and| action[ "Evaluation score" ] == eval_score,
             eval_data
           )
         }
         for eval_score in eval_scores
       ]
     }
-    for chapter in [ "6", "5", "4", "7", "3" ]
+    for key_ in keys
   ]
 
+def by_chapter:
+  actions_by(
+    "Chapter",
+    [ "6", "5", "4", "7", "3" ]
+  )
+
 def by_owner:
-  [ { x: owner,
-      segments: [
-        { y: eval_score,
-          z: count_if(
-            lambda action: action[ "Action Owner" ] == owner |and| action[ "Evaluation score" ] == eval_score,
-            eval_data
-          )
-        }
-        for eval_score in eval_scores
-      ]
-    }
-    for owner in [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
-  ]
+  actions_by(
+    "Action Owner",
+    [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+  )
 
 MultiView({
   by_chapter:
