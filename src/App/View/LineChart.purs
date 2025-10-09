@@ -2,17 +2,17 @@ module App.View.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (Dimensions(..), SelStates, Selectable, 𝕊, Attrs, classes, colorShade, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
+import App.Util (Attrs, Dimensions(..), SelStates, Selectable, 𝕊, classes, colorShade, contents, isPersistent, isPrimary, isSecondary, isTransient, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, lineChart, linePoint, listElement)
 import App.View.Util (class Viewable, Select, registerMouseListeners)
-import App.View.Util.Axes (Orientation(..))
-import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, rotate, scaleLinear, selectAll, setAttrs, setDatum, setStyles, setText, textHeight, textWidth, translate, xAxis, yAxis)
+import App.View.Util.Axes (Orientation, create_xAxis, create_yAxis)
+import App.View.Util.D3 (Coord, ElementType(..), Margin, colorScale, create, datum, dimensions, line, remove, scaleLinear, selectAll, setAttrs, setDatum, setText, textHeight, textWidth, translate)
 import App.View.Util.D3 (Selection) as D3
 import App.View.Util.Point (Point(..))
 import Bind ((↦), (⟼))
 import Data.Array (concat, elemIndex, mapWithIndex)
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, nub)
-import Data.Foldable (for_, length)
+import Data.Foldable (length)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -156,17 +156,8 @@ instance Viewable LineChart Unit where
       createAxes :: Dimensions Int -> D3.Selection -> Effect (Coord D3.Selection)
       createAxes range parent' = do
          let Point { x: xLabels, y: yLabels } = tickLabels
-         x <- xAxis (to range) (nub points.x) =<<
-            (parent' # create G [ classes [ "x-axis" ], translate { x: 0, y: (unwrap range).height } ])
-         when (fst xLabels == Rotated) do
-            labels <- x # selectAll "text"
-            for_ labels $
-               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "start" ]
-         y <- yAxis (to range) 3.0 =<< (parent' # create G [ classes [ "y-axis" ] ])
-         when (fst yLabels == Rotated) do
-            labels <- y # selectAll "text"
-            for_ labels $
-               setAttrs [ rotate 45 ] >=> setStyles [ "text-anchor" ↦ "end" ]
+         x <- create_xAxis parent' (to range) (nub points.x) (unwrap range).height (contents xLabels)
+         y <- create_yAxis parent' (to range) 3.0 (contents yLabels)
          pure { x, y }
 
       createLines :: Dimensions Int -> D3.Selection -> Effect Unit
