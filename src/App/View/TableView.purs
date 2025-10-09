@@ -64,9 +64,6 @@ visible filter (Val α _ _) = visible' filter α
    isNone :: SelStates 𝕊 -> Boolean
    isNone a = getPersistent a == None && getTransient a == None
 
-row_isVisible :: Record' -> Boolean
-row_isVisible = any (visible defaultFilter)
-
 prim :: Val (SelStates 𝕊) -> String
 prim (Val _ _ v) = v # case _ of
    Int n -> show n
@@ -103,6 +100,9 @@ instance Viewable TableView Unit where
       setCaption hiddenRows hiddenColumns
       where
 
+      row_isVisible :: Array Boolean
+      row_isVisible = rows <#> any (visible defaultFilter)
+
       column_isVisible :: Array Boolean
       column_isVisible = transpose rows <#> any (visible filter')
          where
@@ -114,7 +114,7 @@ instance Viewable TableView Unit where
          rows' <- rootElement # selectAll ".table-row"
          { no: hidden, yes: visible' } <- partition snd <$> for rows' \row -> do
             { i } <- datum row
-            pure (row × row_isVisible (rows ! i))
+            pure (row × row_isVisible ! i)
          foreachE hidden $ \(row × _) ->
             void $ classed "hidden" true row
          foreachE visible' $ \(row × _) ->
@@ -123,7 +123,6 @@ instance Viewable TableView Unit where
 
       hideColumns :: Effect Int
       hideColumns = do
-         -- very expensive and also overkill to do on every selection as currently hidden cells are fixed
          let hiddenColumns = filter ((!) column_isVisible >>> not) (0 .. (length colNames - 1))
          cells <- rootElement # selectAll ".table-cell"
          foreachE cells \cell -> do
@@ -149,7 +148,7 @@ instance Viewable TableView Unit where
       row_visibleSucc :: Int -> Maybe Int
       row_visibleSucc i
          | i == length rows - 1 = Nothing
-         | row_isVisible $ rows ! (i + 1) = Just (i + 1)
+         | row_isVisible ! (i + 1) = Just (i + 1)
          | otherwise = row_visibleSucc (i + 1)
 
       -- For a non-header (>=0) row, the immediately prior visible row (potentially the header)
@@ -157,7 +156,7 @@ instance Viewable TableView Unit where
       row_visiblePred i
          | i < 0 = error absurd
          | i == 0 = -1
-         | row_isVisible (rows ! (i - 1)) = i - 1
+         | row_isVisible ! (i - 1) = i - 1
          | otherwise = row_visiblePred (i - 1)
 
       column_visibleSucc :: Int -> Maybe Int
