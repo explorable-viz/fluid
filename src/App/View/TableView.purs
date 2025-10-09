@@ -8,7 +8,7 @@ import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Array (any, elem, filter, null, partition, sort, (..))
+import Data.Array (any, elem, filter, partition, sort, (..))
 import Data.Array.NonEmpty (head)
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..))
@@ -65,7 +65,7 @@ visible filter (Val α _ _) = visible' filter α
    isNone a = getPersistent a == None && getTransient a == None
 
 row_isVisible :: Record' -> Boolean
-row_isVisible r = not <<< null $ flip filter r (visible defaultFilter)
+row_isVisible = any (visible defaultFilter)
 
 prim :: Val (SelStates 𝕊) -> String
 prim (Val _ _ v) = v # case _ of
