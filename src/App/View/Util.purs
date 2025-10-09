@@ -3,7 +3,7 @@ module App.View.Util where
 import Prelude
 
 import App.Util (SelState, SelStates, Selectable, Selection, SelectionType, SetSel, 𝕊, classes, selClasses, selClassesFor)
-import App.Util.Selector (ViewSetter, dictVal)
+import App.Util.Selector (dictVal)
 import App.View.Util.D3 (create, isEmpty, on, rootSelect, select, setAttrs)
 import App.View.Util.D3 as D3
 import Bind (Var, (↦))
@@ -35,9 +35,6 @@ pack x = View (_ $ x)
 
 unpack :: forall r. View -> (forall a. Viewable a Unit => a -> r) -> r
 unpack (View vw) k = vw k
-
-selListener :: (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Select
-selListener figVal redraw = redraw <<< figVal
 
 class Viewable a b | a -> b where
    createElement :: b -> a -> D3.Selection -> Effect D3.Selection
@@ -89,9 +86,9 @@ draw _ { divId, suffix, view } select' = do
            else pure maybeRootElement
       )
 
-drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> ViewSetter Fig View -> Redraw -> Effect Unit
-drawView rSpec@{ view: vw } figVal _ redraw =
-   unpack vw (\view -> draw uiHelpers (rSpec { view = view }) (selListener figVal redraw))
+drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Effect Unit
+drawView rSpec@{ view: vw } figVal redraw =
+   unpack vw (\view -> draw uiHelpers (rSpec { view = view }) (redraw <<< figVal))
 
 registerMouseListeners :: EventListener -> D3.Selection -> Effect Unit
 registerMouseListeners redraw element = do
