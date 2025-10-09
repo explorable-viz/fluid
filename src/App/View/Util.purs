@@ -86,9 +86,9 @@ draw _ { divId, suffix, view } select' = do
            else pure maybeRootElement
       )
 
-drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Endo Fig) -> Redraw -> Effect Unit
-drawView rSpec@{ view: vw } figVal redraw =
-   unpack vw (\view -> draw uiHelpers (rSpec { view = view }) (redraw <<< figVal))
+drawView :: RendererSpec View -> (SetSel (Val (SelStates 𝔹)) -> Effect Unit) -> Effect Unit
+drawView rSpec@{ view: vw } redraw =
+   unpack vw (\view -> draw uiHelpers (rSpec { view = view }) redraw)
 
 registerMouseListeners :: EventListener -> D3.Selection -> Effect Unit
 registerMouseListeners redraw element = do

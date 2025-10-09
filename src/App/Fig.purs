@@ -168,15 +168,14 @@ drawIntermediates divId (Env ι) unused redraw = do
 
    sequence_ $ flip mapWithKey ι \α v ->
       drawView { divId: prefix, suffix: α, view: unsafePartial $ view' str.intermediate (map to𝕊 <$> v) }
-         (selectIntermediate (Vertex α))
-         redraw
+         (selectIntermediate (Vertex α) >>> redraw)
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig = do
-   drawView { divId, suffix: str.output, view: out_view } selectOutput redraw
+   drawView { divId, suffix: str.output, view: out_view } (selectOutput >>> redraw)
 
    sequence_ $ flip mapWithKey in_views \x view ->
-      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x) redraw
+      drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
 
    drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
    where
