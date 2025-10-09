@@ -11,7 +11,7 @@ import Bind ((↦))
 import Data.Array (any, elem, filter, partition, sort, (..))
 import Data.Array.NonEmpty (head)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Number.Format (fixed, toStringWith)
 import Data.Set (toUnfoldable)
 import Data.Traversable (for)
@@ -92,7 +92,7 @@ instance Viewable TableView Unit where
                >>= classed (cell_selClassesFor colName (rows ! i ! j # \(Val α _ _) -> α)) true
                >>= registerMouseListeners listener
          void $ cell # setStyles
-            [ "border-right" ↦ border (hasRightBorder i j) (j == width - 1)
+            [ "border-right" ↦ border (hasRightBorder i j) (isNothing $ column_visibleSucc j)
             , "border-bottom" ↦ border (hasBottomBorder i j) (i == length rows - 1)
             ]
       hiddenRows <- hideRows
@@ -141,9 +141,6 @@ instance Viewable TableView Unit where
             <> " × "
             <> (show (length colNames - hiddenColumns) <> " of " <> show (length colNames))
             <> ")"
-
-      width :: Int
-      width = length (head (nonEmpty rows))
 
       row_visibleSucc :: Int -> Maybe Int
       row_visibleSucc i
