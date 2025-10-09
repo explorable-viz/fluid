@@ -11,6 +11,7 @@ def mkBarChart(scenName, table):
   BarChart({
     caption: "Scenario " ++ scenName,
     size: { width: 275, height: 185 },
+    tickLabels: { x: Default, y: Default },
     stackedBars:
       map(lambda record: {
         x: record.type,
@@ -24,6 +25,7 @@ def mkHistogram(xs, name, nbins):
   BarChart({
     caption: "Histogram of distribution of " ++ name,
     size: { width: 275, height: 185 },
+    tickLabels: { x: Default, y: Default },
     stackedBars:
       map(lambda (data, edge): {
         x: data,

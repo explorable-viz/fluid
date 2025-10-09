@@ -18,6 +18,7 @@ MultiView({
   barChart: BarChart({
     caption: "Non-renewables output",
     size: { width: 275, height: 185 },
+    tickLabels: { x: Default, y: Default },
     stackedBars: [{ x: numToStr(year), segments: stack(year) } for year in [2014 .. 2018]]
   }),
   scatterPlot: ScatterPlot({

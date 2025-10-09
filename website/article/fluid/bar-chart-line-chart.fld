@@ -19,6 +19,7 @@ MultiView({
   barChart: BarChart({
     caption: "Total renewables output by country",
     size: { width: 275, height: 185 },
+    tickLabels: { x: Default, y: Default },
     stackedBars: countryData
   }),
   lineChart: LineChart({

@@ -7,8 +7,10 @@ import App.Util.Selector (barChart, dictVal, listElement)
 import App.View.Segment (Segment(..), Scales, indexCol)
 import App.View.StackedBar (StackedBar(..), StackedBarContext, barHeight)
 import App.View.Util (class Viewable, Select, createElement, setSelection)
+import App.View.Util.Axes (Orientation)
 import App.View.Util.D3 (Coord, ElementType(..), Margin, addHatchPattern, create, scaleBand, scaleLinear, selectAll, setText, textHeight, textWidth, translate, xAxis, yAxis)
 import App.View.Util.D3 as D3
+import App.View.Util.Point (Point)
 import Bind ((↦), (⟼))
 import Data.Array (range)
 import Data.Array.NonEmpty (NonEmptyArray, head, toArray)
@@ -25,6 +27,7 @@ import Util ((!))
 newtype BarChart = BarChart
    { caption :: Selectable String
    , size :: Dimensions (Selectable Int)
+   , tickLabels :: Point Orientation
    , stackedBars :: NonEmptyArray StackedBar
    }
 

@@ -16,6 +16,7 @@ MultiView({
     BarChart({
       caption: "Total output by country",
       size: { width: 275, height: 185 },
+      tickLabels: { x: Default, y: Default },
       stackedBars: countryData
     }),
   lineChart:

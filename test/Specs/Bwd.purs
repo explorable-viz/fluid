@@ -188,7 +188,8 @@ bwd_cases =
     stackedBars: { segments: { y: "output", z: 295.3 } :| [], x: "China" } :| {
       segments: { y: "output", z: ⸨196.7⸩ } :| [],
       x: "USA"
-    } :| { segments: { y: "output", z: 97.7 } :| [], x: "Germany" } :| []
+    } :| { segments: { y: "output", z: 97.7 } :| [], x: "Germany" } :| [],
+    tickLabels: { x: Default, y: Default }
   }),
   lineChart: LineChart({
     caption: "Output of USA relative to China",
@@ -298,7 +299,8 @@ bwd_cases =
         z: 1315.57
       } :| { y: "JPN", z: ⸨873.39⸩ } :| [],
       x: "2018"
-    } :| []
+    } :| [],
+    tickLabels: { x: Default, y: Default }
   })
 })"""
      }

@@ -93,6 +93,7 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
       { caption: P.unpack string (snd (get f_caption r))
       , stackedBars: dict from <$> from (snd (get f_stackedBars r))
       , size: dict from (snd (get f_size r))
+      , tickLabels: dict from (snd (get f_tickLabels r))
       }
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where

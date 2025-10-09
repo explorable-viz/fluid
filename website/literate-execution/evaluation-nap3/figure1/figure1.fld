@@ -35,12 +35,14 @@ MultiView({
     BarChart({
       caption: "Evaluation of NAP3 against actions from CCRA3",
       size: { width: 275, height: 185 },
+      tickLabels: { x: Default, y: Default },
       stackedBars: by_chapter
     }),
   by_owner:
     BarChart({
       caption: "Actions by government department",
-      size: { width: 375, height: 185 },
+      tickLabels: { x: Default, y: Default },
+      size: { width: 375, height: 200 },
       stackedBars: by_owner
     })
 })
