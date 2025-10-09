@@ -313,7 +313,8 @@ def abs(x, y):
 def nub(xs):
   def nub_([], _): []
   def nub_(x :| xs, ys):
-    if x |elem| ys: nub_(xs, ys)
+    if x |elem| ys:
+      nub_(xs, ys)
     else:
       x :| nub_(xs, x :| ys)
 

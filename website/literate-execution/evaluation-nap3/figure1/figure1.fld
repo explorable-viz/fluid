@@ -4,10 +4,10 @@ def bars:
   [ { x: chapter,
       segments: [
         { y: eval_score,
-          z: length([
-            action for action in eval_data
+          z: length(nub([
+            action[ "Action ID#" ] for action in eval_data
             if action[ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score
-          ])
+          ]))
         }
         for eval_score in
           [ "Significantly addressed", "Recognised but not addressed", "Not addressed", "Minimally addressed", "Fully addressed" ]
