@@ -12,7 +12,7 @@ import App.View.Paragraph (Paragraph(..))
 import App.View.ScatterPlot (ScatterPlot(..))
 import App.View.Segment (Segment(..))
 import App.View.StackedBar (StackedBar(..))
-import App.View.TableView (TableView(..), arrayDictToArray2, defaultFilter, headers)
+import App.View.TableView (Filter(..), TableView(..), arrayDictToArray2, headers)
 import App.View.Text (Text(..))
 import App.View.Util (View, pack)
 import App.View.Util.Axes (Orientation, orientation)
@@ -55,7 +55,7 @@ view title v@(Val α _ u') = case u' of
       -- more consistent with other views for Link to take single argument of record type
       | c == cLink -> pack (from v :: Link)
    Constr c _
-      | c == cNil || c == cCons -> pack (TableView { title, filter: defaultFilter, colNames, rows })
+      | c == cNil || c == cCons -> pack (TableView { title, defaultFilter: Interactive, colNames, rows })
            where
            records = dict identity <$> from v
            colNames = headers records

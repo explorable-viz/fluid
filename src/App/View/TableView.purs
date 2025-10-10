@@ -31,7 +31,7 @@ data Filter = Everything | Interactive | Relevant
 -- Homogeneous array of records with fields of primitive type; each row has same length as colNames.
 newtype TableView = TableView
    { title :: String
-   , filter :: Filter
+   , defaultFilter :: Filter
    , colNames :: Array String
    , rows :: Array Record' -- non-empty?
    }
@@ -42,9 +42,6 @@ headers records = (sort <<< toUnfoldable <<< keys <<< head <<< nonEmpty) records
 
 arrayDictToArray2 :: forall a. Array String -> Array (Dict a) -> Array2 a
 arrayDictToArray2 = map <<< flip (map <<< flip get)
-
-defaultFilter :: Filter
-defaultFilter = Interactive
 
 rowKey :: String
 rowKey = "__n"
@@ -81,7 +78,7 @@ instance Viewable TableView Unit where
    isLeaf = const false
 
    setSelection :: Unit -> TableView -> Select -> D3.Selection -> Effect Unit
-   setSelection _ (TableView { title, colNames, rows }) redraw rootElement = do
+   setSelection _ (TableView { title, colNames, rows, defaultFilter }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"
       listener <- eventListener (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
       foreachE cells \cell -> do
@@ -195,7 +192,7 @@ instance Viewable TableView Unit where
       tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
 
    createElement :: Unit -> TableView -> D3.Selection -> Effect D3.Selection
-   createElement _ (TableView { colNames, filter, rows }) parent = do
+   createElement _ (TableView { colNames, defaultFilter, rows }) parent = do
       rootElement <- parent # create Div [ classes [ "table-wrapper" ] ]
       void $ rootElement # create Div -- hard to have Caption element with size independent of table contents
          [ classes [ "title-text", "table-caption" ]
@@ -218,7 +215,7 @@ instance Viewable TableView Unit where
       createHeader colNames' table = do
          row <- table # create THead [] >>= create TR []
          forWithIndex_ colNames' \j colName -> do
-            let value = if colName == rowKey then if filter == Relevant then "▸" else "▾" else colName
+            let value = if colName == rowKey then if defaultFilter == Relevant then "▸" else "▾" else colName
             row
                # create TH [ classes ([ "table-cell" ] <> cellClasses colName) ]
                >>= setText value
