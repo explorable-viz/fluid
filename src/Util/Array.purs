@@ -4,7 +4,8 @@ import Prelude
 import Data.Array (foldl, index, snoc)
 import Data.Maybe (Maybe(..), maybe)
 
--- Defined in Data.Array 7.2.x but upgrading the package set seems to throw away optparse
+-- Defined in Data.Array 7.2.x but upgrading the package set seems to throw away optparse.
+-- Never use sequence to transpose arrays.
 transpose :: forall a. Array (Array a) -> Array (Array a)
 transpose xs = go 0 []
    where

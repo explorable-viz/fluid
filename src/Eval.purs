@@ -39,7 +39,7 @@ import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<
 import Util.Pair (unzip) as P
 import Util.Set ((∪), empty)
 import Val (BaseVal(..), Fun(..)) as V
-import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs)
+import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), ForeignOp'(..), MatrixDim(..), MatrixRep(..), Val(..), forDefs, val)
 
 -- Needs a better name.
 type GraphConfig =
@@ -87,7 +87,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `forDefs` σ
       in
-         new (flip Val Nothing) αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
+         val αs (V.Fun (V.Closure (restrict (fv ρ' ∪ fv σ) γ) ρ' σ))
 
 apply :: forall m. MonadWithGraphAlloc m => MonadReader FileCxt m => MonadAff m => LoadFile m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (Val α _ (V.Fun (V.Closure γ1 ρ σ))) v = do
@@ -102,13 +102,13 @@ apply (Val α _ (V.Fun (V.Foreign (ForeignOp (id × φ)) vs))) v =
    apply' :: ForeignOp' -> m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         new (flip Val Nothing) (singleton α) v'
+         val (singleton α) v'
       else φ'.op vs'
       where
       v' = V.Fun (V.Foreign (ForeignOp (id × φ)) vs')
 apply (Val α _ (V.Fun (V.PartialConstr c vs))) v = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   new (flip Val Nothing) (singleton α) v'
+   val (singleton α) v'
    where
    v' =
       if length vs < n - 1 then
@@ -123,7 +123,7 @@ eval γ e0 αs = do
    αu_opt <- evalVal γ e0 αs
    case αu_opt of
       Just (α × u) ->
-         new (flip Val Nothing) (insert α αs) u
+         val (insert α αs) u
       Nothing -> case e0 of
          Var x ->
             withMsg "Variable lookup" $ lookup' x γ

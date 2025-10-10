@@ -6,7 +6,7 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, ViewSetter)
 import App.View (view')
-import App.View.Util (Direction(..), Fig, FigSpec, HTMLId, Redraw, View, drawView)
+import App.View.Util (Direction(..), Fig, Options, HTMLId, Redraw, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
@@ -206,7 +206,7 @@ lift
    -> f (SelState 𝔹) × g
 lift selState_f f v = first (apply selState_f) (f (v <#> to𝔹))
 
-loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => FigSpec -> String -> m Fig
+loadFig :: forall m. MonadAff m => MonadError Error m => MonadReader FileCxt m => LoadFile m => Options -> String -> m Fig
 loadFig spec@{ inputs, linking } fluidSrc = do
    { s, e, gconfig } <- prepConfig primitives fluidSrc
    eval@({ inα: EnvExpr γα _, outα, g: g0 }) <- graphEval gconfig e

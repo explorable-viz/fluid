@@ -27,7 +27,7 @@ import File (class LoadFile, FileCxt)
 import Foreign.Object (foldMap)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
-import Graph.WithGraph (class MonadWithGraphAlloc)
+import Graph.WithGraph (class MonadWithGraphAlloc, new)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
 import Unsafe.Coerce (unsafeCoerce)
 import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
@@ -45,6 +45,9 @@ data BaseVal a
    | Dictionary (DictRep a)
    | Matrix (MatrixRep a)
    | Fun (Fun a)
+
+val :: forall m. MonadWithGraphAlloc m => Set Vertex -> BaseVal Vertex -> m (Val Vertex)
+val = new (flip Val Nothing)
 
 asVal :: VertexData -> Maybe (Val Vertex)
 asVal e = if unpack typeName e == "Val" then Just (unpack unsafeCoerce e) else Nothing

@@ -121,7 +121,7 @@ uiHelpers =
    , selClassesFor
    }
 
-type FigSpec =
+type Options =
    { fluidSrcPaths :: Array Folder
    , inputs :: Array Var
    , query :: Maybe (Query (Val Vertex))
@@ -131,7 +131,7 @@ type FigSpec =
 data Direction = LinkedInputs | LinkedOutputs | Intermediates
 
 type Fig =
-   { spec :: FigSpec
+   { spec :: Options
    , s :: Raw S.Expr
    , γ :: Env (SelStates 𝔹)
    , v :: Val (SelStates 𝔹)

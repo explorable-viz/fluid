@@ -4,7 +4,7 @@ import Prelude
 
 import App.Fig (loadFig, selectInput, selectOutput, selectionResult)
 import App.Util (SelectionType(..), Selector, isInert, isPersistent, isTransient, selStates)
-import App.View.Util (Fig, FigSpec)
+import App.View.Util (Fig, Options)
 import Bind (Bind)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
@@ -37,14 +37,14 @@ type TestBwdSpec =
    }
 
 type TestLinkedOutputsSpec =
-   { spec :: FigSpec
+   { spec :: Options
    , δ_out :: Selector Val
    , out_expect :: Selector Val
    , file :: String
    }
 
 type TestLinkedInputsSpec =
-   { spec :: FigSpec
+   { spec :: Options
    , δ_in :: Bind (Selector Val)
    , in_expect :: Selector Env
    , file :: String

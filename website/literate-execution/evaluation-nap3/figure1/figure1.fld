@@ -1,7 +1,8 @@
 import figure1_data
 
 def eval_scores:
-  [ "Significantly addressed", "Recognised but not addressed", "Not addressed", "Minimally addressed", "Fully addressed" ]
+  [ "Significantly addressed", "Recognised but not addressed",
+    "Not addressed", "Minimally addressed", "Fully addressed" ]
 
 def actions_by(key, keys):
   [ { x: key_,
@@ -18,31 +19,23 @@ def actions_by(key, keys):
     for key_ in keys
   ]
 
-def by_chapter:
-  actions_by(
-    "Chapter",
-    [ "6", "5", "4", "7", "3" ]
-  )
-
-def by_owner:
-  actions_by(
-    "Action Owner",
-    [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
-  )
-
 MultiView({
   by_chapter:
     BarChart({
       caption: "Evaluation of NAP3 against actions from CCRA3",
       size: { width: 275, height: 185 },
       tickLabels: { x: Default, y: Default },
-      stackedBars: by_chapter
+      stackedBars: actions_by("Chapter", [ "6", "5", "4", "7", "3" ])
     }),
   by_owner:
     BarChart({
       caption: "Actions by government department",
       tickLabels: { x: Rotated, y: Default },
       size: { width: 375, height: 200 },
-      stackedBars: by_owner
+      stackedBars: actions_by(
+        "Action Owner",
+        [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT",
+          "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+      )
     })
 })

@@ -6,7 +6,7 @@ import Affjax.ResponseFormat (json)
 import Affjax.Web (get, printError)
 import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
-import App.View.Util (FigSpec)
+import App.View.Util (Options)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
@@ -31,7 +31,7 @@ type JsonSpec =
    , linking :: Boolean
    }
 
-figSpecFromJson :: JsonSpec -> FigSpec
+figSpecFromJson :: JsonSpec -> Options
 figSpecFromJson spec@{ inputs, query, linking } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , inputs
