@@ -55,7 +55,7 @@ view options title v@(Val α _ u') = case u' of
       -- more consistent with other views for Link to take single argument of record type
       | c == cLink -> pack (from v :: Link)
    Constr c _
-      | c == cNil || c == cCons -> pack (TableView { title, defaultFilter: Interactive, colNames, rows })
+      | c == cNil || c == cCons -> pack (TableView { title, rowFilter: Interactive, colNames, rows })
            where
            records = dict identity <$> from v
            colNames = headers records

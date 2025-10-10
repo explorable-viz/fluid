@@ -8,8 +8,11 @@ import App.View.Util (class Viewable, Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..))
+import Data.Argonaut.Decode.Decoders (decodeString)
 import Data.Array (any, elem, filter, partition, sort, (..))
 import Data.Array.NonEmpty (head)
+import Data.Either (Either(..))
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Number.Format (fixed, toStringWith)
@@ -31,7 +34,7 @@ data Filter = Everything | Interactive | Relevant
 -- Homogeneous array of records with fields of primitive type; each row has same length as colNames.
 newtype TableView = TableView
    { title :: String
-   , defaultFilter :: Filter
+   , rowFilter :: Filter
    , colNames :: Array String
    , rows :: Array Record' -- non-empty?
    }
@@ -78,7 +81,7 @@ instance Viewable TableView Unit where
    isLeaf = const false
 
    setSelection :: Unit -> TableView -> Select -> D3.Selection -> Effect Unit
-   setSelection _ (TableView { title, colNames, rows, defaultFilter }) redraw rootElement = do
+   setSelection _ (TableView { title, colNames, rows, rowFilter }) redraw rootElement = do
       cells <- rootElement # selectAll ".table-cell"
       listener <- eventListener (redraw <<< uncurry tableViewSelSetter <<< selectionEventData')
       foreachE cells \cell -> do
@@ -98,13 +101,13 @@ instance Viewable TableView Unit where
       where
 
       row_isVisible :: Array Boolean
-      row_isVisible = rows <#> any (visible defaultFilter)
+      row_isVisible = rows <#> any (visible rowFilter)
 
       column_isVisible :: Array Boolean
       column_isVisible = transpose rows <#> any (visible filter')
          where
          -- arbitrarily (for now) enable column filtering when there are a lot of columns
-         filter' = if length colNames >= 10 then defaultFilter else Everything
+         filter' = if length colNames >= 10 then rowFilter else Everything
 
       hideRows :: Effect Int
       hideRows = do
@@ -192,7 +195,7 @@ instance Viewable TableView Unit where
       tableViewSelSetter { i, colName } = listElement i <<< dictVal colName
 
    createElement :: Unit -> TableView -> D3.Selection -> Effect D3.Selection
-   createElement _ (TableView { colNames, defaultFilter, rows }) parent = do
+   createElement _ (TableView { colNames, rowFilter, rows }) parent = do
       rootElement <- parent # create Div [ classes [ "table-wrapper" ] ]
       void $ rootElement # create Div -- hard to have Caption element with size independent of table contents
          [ classes [ "title-text", "table-caption" ]
@@ -215,7 +218,7 @@ instance Viewable TableView Unit where
       createHeader colNames' table = do
          row <- table # create THead [] >>= create TR []
          forWithIndex_ colNames' \j colName -> do
-            let value = if colName == rowKey then if defaultFilter == Relevant then "▸" else "▾" else colName
+            let value = if colName == rowKey then if rowFilter == Relevant then "▸" else "▾" else colName
             row
                # create TH [ classes ([ "table-cell" ] <> cellClasses colName) ]
                >>= setText value
@@ -232,3 +235,12 @@ type CellIndex = { i :: Int, j :: Int, colName :: String, value :: String }
 -- boilerplate
 -- ======================
 derive instance Eq Filter
+
+instance decodeJsonFilter :: DecodeJson Filter where
+   decodeJson json = do
+      s <- decodeString json
+      case s of
+         "Everything" -> pure Everything
+         "Interactive" -> pure Interactive
+         "Relevant" -> pure Relevant
+         _ -> Left $ TypeMismatch $ "Unknown Filter: " <> s

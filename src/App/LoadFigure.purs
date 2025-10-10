@@ -2,10 +2,9 @@ module App.LoadFigure where
 
 import Prelude hiding (absurd)
 
-import Affjax.ResponseFormat (json)
-import Affjax.Web (get, printError)
 import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
+import App.View.TableView (Filter)
 import App.View.Util (Options)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
@@ -16,7 +15,7 @@ import Data.Maybe (Maybe(..))
 import Data.String (split, Pattern(..))
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_)
+import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import File (File(..), FileCxt(..), Folder(..), loadFileFromPath)
 import Graph (DVertex'(..))
@@ -29,10 +28,11 @@ type JsonSpec =
    , inputs :: Array String
    , query :: Boolean
    , linking :: Boolean
+   , tableViewFilter :: Maybe Filter
    }
 
-figSpecFromJson :: JsonSpec -> Options
-figSpecFromJson spec@{ inputs, query, linking } =
+optionsFromJson :: JsonSpec -> Options
+optionsFromJson spec@{ inputs, query, linking } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , inputs
    , query:
@@ -44,24 +44,17 @@ figSpecFromJson spec@{ inputs, query, linking } =
    , linking
    }
 
-loadSpec :: String -> Aff Json
-loadSpec filename = do
-   result <- get json filename
-   case result of
-      Left err -> error ("Json fetching failed with " <> printError err)
-      Right response -> pure $ response.body
-
 loadFigure :: Json -> String -> Effect Unit
 loadFigure jsonSpec srcFile = launchAff_ do
    fluidSrc <- loadFileFromPath (File srcFile)
    liftEffect $ loadFigureSrc jsonSpec (definitely' fluidSrc)
 
 loadFigureSrc :: Json -> String -> Effect Unit
-loadFigureSrc jsonSpec fluidSrc = runAffs_ (uncurry drawFig)
-   [ case decodeJson jsonSpec :: Either JsonDecodeError JsonSpec of
+loadFigureSrc options fluidSrc = runAffs_ (uncurry drawFig)
+   [ case decodeJson options :: Either JsonDecodeError JsonSpec of
         Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> do
-           let figSpec@{ fluidSrcPaths } = figSpecFromJson spec
+           let figSpec@{ fluidSrcPaths } = optionsFromJson spec
            ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
    ]
 
