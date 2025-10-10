@@ -9,23 +9,20 @@ def actions_by(key, keys):
       segments: [
         { y: eval_score,
           z: count_if(
-            lambda action: action[ key ] == key_ |and| action[ "Evaluation score" ] == eval_score,
+            lambda action:
+              action[ key ] == key_ |and| action[ "Evaluation score" ] == eval_score,
             eval_data
-          )
-        }
-        for eval_score in eval_scores
-      ]
-    }
-    for key_ in keys
+          ) } for eval_score in eval_scores
+      ] } for key_ in keys
   ]
 
 MultiView([
   BarChart({
-    caption: "Evaluation of NAP3 against actions from CCRA3",
+    caption: "Evaluation of NAP3 against CCRA3 actions",
     size: { width: 275, height: 185 },
     tickLabels: { x: Default, y: Default },
     stackedBars: actions_by("Chapter", [ "6", "5", "4", "7", "3" ]),
-    legend: False
+    legend: True
   }),
   BarChart({
     caption: "Actions by government department",
@@ -36,6 +33,6 @@ MultiView([
       [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT",
         "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
     ),
-    legend: True
+    legend: False
   })
 ])
