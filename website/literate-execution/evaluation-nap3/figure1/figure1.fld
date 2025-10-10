@@ -1,4 +1,4 @@
-import figure1_data
+import nap3_ccra3_data
 
 def eval_scores:
   [ "Significantly addressed", "Recognised but not addressed",
