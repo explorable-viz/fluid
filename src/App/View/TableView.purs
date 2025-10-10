@@ -107,7 +107,7 @@ instance Viewable TableView Unit where
       column_isVisible = transpose rows <#> any (visible filter')
          where
          -- arbitrarily (for now) enable column filtering when there are a lot of columns
-         filter' = if length colNames >= 10 then rowFilter else Everything
+         filter' = if length colNames >= 10 then Relevant else Everything
 
       hideRows :: Effect Int
       hideRows = do

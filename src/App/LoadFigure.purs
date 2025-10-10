@@ -28,7 +28,7 @@ type JsonSpec =
    , inputs :: Array String
    , query :: Boolean
    , linking :: Boolean
-   , tableViewFilter :: Maybe Filter
+   , rowFilter :: Maybe Filter
    }
 
 optionsFromJson :: JsonSpec -> Options
