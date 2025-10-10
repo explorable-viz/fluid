@@ -1,12 +1,15 @@
 # "Num" throughout means (Int + Float).
 
+# To resolve in new semantics: expected dependencies don't arise for and/or unless they  make a fresh value.
 # Bool -> Bool
 def and(False, y): False
-def and(True, y): y
+def and(True, True): True
+def and(True, False): False
 
 # Bool -> Bool
 def or(True, y): True
-def or(False, y): y
+def or(False, True): True
+def or(False, False): False
 
 # Bool -> Bool
 def not(True): False

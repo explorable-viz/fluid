@@ -46,6 +46,20 @@ thead th {
    border-radius: 0px;
 }
 
+td, th {
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   max-width: 120px;
+}
+
+td, th {
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   max-width: 120px;
+}
+
 td.table-cell {
    background-color: white;
 }
