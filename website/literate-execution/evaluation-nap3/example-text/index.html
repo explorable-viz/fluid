@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <link rel="icon" href="/favicon.ico" type="image/x-icon">
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Fluid: Data-Linked Visualisations</title>
+   <link href="../../../css/styles.css" rel="stylesheet" type="text/css">
+   <link href="../../../css/view-styles.css" rel="stylesheet" type="text/css">
+   <script src="https://kit.fontawesome.com/20cf8b42c0.js" crossorigin="anonymous"></script>
+   <script src="../../../shared/util.js"></script>
+   <style>
+      .data-pane {
+         max-width: 400px;
+      }
+
+      .table-cell.selected-primary-persistent {
+         background-color: rgb(236, 236, 236);
+      }
+
+      .table-cell.selected-primary-transient {
+         color: black;
+         background-color: rgb(230, 230, 255);
+      }
+
+      #fig-output > svg:nth-of-type(2) {
+         display: block;
+      }
+   </style>
+</head>
+<body>
+<div id="grid" class="grid-container data-pane-hidden">
+   <div></div>
+   <div></div>
+   <div class="flex-left-align">
+      <h3>Figure 1</h3>
+   </div>
+
+   <div class="flex-right-align data-pane">
+      <div id="fig-input"></div>
+      <div id="fig-intermediate" class="flex-right-align intermediates"></div>
+   </div>
+   <div onclick="toggleDataPane('grid')">
+      <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
+   </div>
+   <div id="fig">
+      <div class="fig-loading">loading figure(s)</div>
+   </div>
+</div>
+
+<script type="module">
+   import { loadCode, loadFigure } from "../../../shared/load-figure.js"
+
+   const jsonSpec = {
+      "fluidSrcPath": [ "..", "../../../fluid" ],
+      "inputs": [],
+      "query": true,
+      "linking": true,
+      "rowFilter": "Relevant"
+   }
+
+   loadFigure(jsonSpec)("paragraph.fld")()
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+import nap3_ccra3_data
+
+f"""
+When grouped by typology, most interventions fall under “No and low regret adaptation” or “Climate-smart
+design”, reflecting a pragmatic focus on cost-effective measures deliverable within the current policy cycle.
+Yet only a small minority are tagged as “Further investigation”, implying that the evidence base is already
+sufficient for most priority actions—an encouraging signal for implementation readiness. Interestingly, about
+half of the actions aimed at non-government actors (e.g., businesses) remain minimally addressed, suggesting
+that while government-led adaptation planning has advanced, diffusion of responsibility to the private sector
+and civil society continues to pose a major delivery challenge.
+"""
