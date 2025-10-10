@@ -168,22 +168,17 @@ drawFig divId fig@{ spec: options } = do
    sequence_ $ flip mapWithKey in_views \x view ->
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
 
-   drawIntermediates (keys fig.ι \\ keys ι)
+   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
+   sequence_ $ flip mapWithKey (unwrap ι) \α v ->
+      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' options str.intermediate (map to𝕊 <$> v) }
+         (selectIntermediate (Vertex α) >>> redraw)
    where
    { v, γ, ι } = selectionResult fig
    out_view = unsafePartial $ view' options str.output v
    in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' options) γ)
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
-
-   drawIntermediates :: Set String -> Effect Unit
-   drawIntermediates unused = do
-      let prefix = divId <> "-" <> str.intermediate
-      for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
-      for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α <> "-doc") >>= remove -- DELETE ME?
-
-      sequence_ $ flip mapWithKey (unwrap ι) \α v ->
-         drawView { divId: prefix, suffix: α, view: unsafePartial $ view' options str.intermediate (map to𝕊 <$> v) }
-            (selectIntermediate (Vertex α) >>> redraw)
+   unused = keys fig.ι \\ keys ι
+   prefix = divId <> "-" <> str.intermediate
 
 drawFile :: File × String -> Effect Unit
 drawFile (File fileName × src) =
