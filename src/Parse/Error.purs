@@ -1,4 +1,4 @@
-module Temp.Util.Error where
+module Parse.Error where
 
 import Prelude
 

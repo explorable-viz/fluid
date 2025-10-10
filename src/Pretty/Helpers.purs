@@ -1,10 +1,10 @@
-module Temp.Pretty.Helpers where
+module Pretty.Helpers where
 
 import Prelude
 
 import Data.List (List(..), (:))
-import Temp.Pretty.Constants (_comma, _larray, _lbrace, _lbracket, _lparen, _quote, _rarray, _rbrace, _rbracket, _rparen)
-import Temp.Pretty.Doc (Doc, indent, inlOrMul, line, stmtOrExpr, text, (<++>), (<+>), (</>))
+import Pretty.Constants (_comma, _larray, _lbrace, _lbracket, _lparen, _quote, _rarray, _rbrace, _rbracket, _rparen)
+import Pretty.Doc (Doc, indent, inlOrMul, line, stmtOrExpr, text, (<++>), (<+>), (</>))
 
 block :: Doc -> Doc
 block d = stmtOrExpr

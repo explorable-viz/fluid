@@ -25,21 +25,13 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.WithGraph (AllocT, alloc, runAllocT, runWithGraphT_spy)
 import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
-import Parsing (runParser)
+import Parse (parsePy', parsePyModule')
 import SExpr (desugarModuleFwd)
 import SExpr as S
-import Temp.Parse (parsePy', parsePyModule')
 import Util (type (×), error, withMsg, (×))
 import Util.Map (restrict)
-import Util.Parse (SParser)
 import Util.Set ((∪))
 import Val (Env)
-
-parse :: forall a m. MonadError Error m => String -> SParser a -> m a
-parse src = liftEither <<< lmap (E.error <<< show) <<< runParser src
-
---parseProgram :: forall m. String -> AffError m (Raw S.Expr × List ModuleName)
---parseProgram fluidSrc = flip parse P.program fluidSrc
 
 parseProgram' :: forall m. MonadError Error m => String -> m (Raw S.Expr × List ModuleName)
 parseProgram' src = liftEither <<< lmap (E.error <<< show) $ parsePy' src
