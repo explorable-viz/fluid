@@ -1,4 +1,4 @@
-module Temp.Parse where
+module Parse where
 
 import Prelude
 
@@ -25,9 +25,9 @@ import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Parsing.Indent (runIndent, sameLine, sameOrIndented, withPos)
 import Parsing.String (eof, satisfy)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Temp.Parse.Number (float, integer)
-import Temp.Parse.Parser (Parser, align, block, braces, brackets, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, token, variable, whitespace)
-import Temp.Util.Error (prettyParseError)
+import Parse.Number (float, integer)
+import Parse.Parser (Parser, align, block, braces, brackets, commas, commas1, constructor, context, delim, lexeme, operator, parens, reserved, reservedOperator, stringLiteral, token, variable, whitespace)
+import Parse.Error (prettyParseError)
 import Util (type (+), type (×), nonEmpty, (×))
 
 pattern :: Parser Pattern

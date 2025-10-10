@@ -27,7 +27,7 @@ import Lattice (Raw)
 import ModuleGraph (DependencyGraph, ModuleCxt, Modules, ModuleName)
 import SExpr (desugarModuleFwd)
 import SExpr as S
-import Temp.Parse (parsePy', parsePyModule')
+import Parse (parsePy', parsePyModule')
 import Util (type (×), error, withMsg, (×))
 import Util.Map (restrict)
 import Util.Set ((∪))

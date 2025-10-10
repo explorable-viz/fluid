@@ -21,7 +21,7 @@ import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parseProgram', prepConfig)
 import SExpr (Expr) as SE
-import Temp.Pretty (class Pretty, PrettyShow(..), compare, prettyP)
+import Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))

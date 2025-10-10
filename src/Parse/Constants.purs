@@ -1,4 +1,4 @@
-module Temp.Parse.Constants where
+module Parse.Constants where
 
 keyword
    :: { case :: String

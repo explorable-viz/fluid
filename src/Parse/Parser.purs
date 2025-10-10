@@ -1,4 +1,4 @@
-module Temp.Parse.Parser where
+module Parse.Parser where
 
 import Prelude hiding (between)
 
@@ -17,7 +17,7 @@ import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy, string)
 import Parsing.String.Basic (alphaNum, letter, lower, upper)
 import Parsing.Token (oneOf)
-import Temp.Parse.Constants (opChars)
+import Parse.Constants (opChars)
 
 type Parser a = IndentParser String a
 

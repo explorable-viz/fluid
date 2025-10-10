@@ -1,4 +1,4 @@
-module Temp.Parse.Number where
+module Parse.Number where
 
 import Prelude hiding (between, when)
 
@@ -16,7 +16,7 @@ import Parsing.Indent (IndentParser)
 import Parsing.String (char)
 import Parsing.String.Basic (oneOf)
 import Parsing.String.Basic as Basic
-import Temp.Parse.Parser (lexeme)
+import Parse.Parser (lexeme)
 
 type Parser a = IndentParser String a
 

@@ -1,4 +1,4 @@
-module Temp.Pretty.Config where
+module Pretty.Config where
 
 config
    :: { indentation :: Int

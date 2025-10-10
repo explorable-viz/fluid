@@ -32,7 +32,7 @@ import Graph.WithGraph (class MonadWithGraphAlloc, alloc, new, runAllocT, runWit
 import Lattice (Raw, 𝔹)
 import ModuleGraph (ModuleName, ModuleCxt)
 import Primitive (intPair, string, unpack)
-import Temp.Pretty (prettyP)
+import Pretty (prettyP)
 import Test.Util.Debug (checking, tracing)
 import Util (type (×), Endo, absurd, check, defined, definitely, error, orElse, singleton, spyFunWhen, throw, withMsg, (×), (⊆))
 import Util.Map (disjointUnion, get, keys, lookup, lookup', maplet, restrict, (<+>))

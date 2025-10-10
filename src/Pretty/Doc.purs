@@ -1,10 +1,10 @@
-module Temp.Pretty.Doc where
+module Pretty.Doc where
 
 import Prelude
 
 import Data.String as String
 import Data.Tuple (fst)
-import Temp.Pretty.Config (config)
+import Pretty.Config (config)
 import Util (type (×), (×))
 
 data Doc
