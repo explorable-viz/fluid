@@ -1,4 +1,4 @@
-module Temp.Pretty (PrettyShow(..), class Pretty, class Ann, class Highlightable, compare, highlightIf, pretty, prettyP) where
+module Temp.Pretty (PrettyShow(..), class Pretty, compare, pretty, prettyP) where
 
 import Prelude
 
@@ -13,18 +13,17 @@ import DataType (Ctr, cCons)
 import Dict (Dict)
 import Expr (Cont(..), Elim(..))
 import Expr as E
-import Graph (Vertex(..))
-import Lattice (class BotOf, class BoundedLattice, class MeetSemilattice, class Neg, botOf, symmetricDiff)
+import Lattice (class BotOf, class MeetSemilattice, class Neg, botOf, symmetricDiff)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), DictEntry(..), Expr(..), ListRest(..), ListRestPattern(..), ParagraphElem(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Temp.Pretty.Constants (_case, _colon, _comma, _def, _ellipsis, _else, _for, _if, _in, _lambda, _match)
 import Temp.Pretty.Doc (Doc, empty, expr, indent, inlOrMul, line, render, stmt, stmtOrExpr, text, (<++>), (<+>), (</>))
 import Temp.Pretty.Helpers (block, braces, brackets, hsep, matrix, number, pair, parens, record, sep', string, vsep)
-import Util (type (×), Endo, isEmpty, (×))
+import Util (type (×), isEmpty, (×))
 import Util.Map (toUnfoldable)
 import Util.Pair (Pair(..))
 import Val (BaseVal(..), Fun(..)) as V
-import Val (BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), Fun, MatrixRep(..), Val(..))
+import Val (class Ann, class Highlightable, BaseVal, DictRep(..), Env(..), EnvExpr(..), ForeignOp(..), Fun, MatrixRep(..), Val(..), highlightIf)
 
 class Pretty p where
    pretty :: p -> Doc
@@ -255,29 +254,6 @@ vcommas (d : ds) = d <> _comma <++> vcommas ds
 
 prettyList :: forall f a. Foldable f => Pretty a => f a -> Doc
 prettyList xs = commas (pretty <$> fromFoldable xs)
-
-class Highlightable a where
-   highlightIf :: a -> Endo Doc
-
--- TODO: use Ann and Highlightable from Val
--- currently they are defined in reference to old Doc
-class (Highlightable a, BoundedLattice a) <= Ann a
-
-instance Ann Boolean
-instance Ann Unit
-
-instance Highlightable a => Highlightable (a × b) where
-   highlightIf (a × _) doc = highlightIf a doc
-
-instance Highlightable Unit where
-   highlightIf _ = identity
-
-instance Highlightable Boolean where
-   highlightIf false = identity
-   highlightIf true = \doc -> text "⸨" <> doc <> text "⸩"
-
-instance Highlightable Vertex where
-   highlightIf (Vertex α) = \doc -> doc <> text "_" <> text ("⟨" <> α <> "⟩")
 
 instance Highlightable a => Pretty (Pair (E.Expr a)) where
    pretty (Pair k v) = pretty k <> text ":" <+> pretty v

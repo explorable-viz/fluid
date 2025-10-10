@@ -21,11 +21,11 @@ import GaloisConnection (GaloisConnection(..), dual)
 import Lattice (class BotOf, class MeetSemilattice, class Neg, Raw, erase, topOf, 𝔹)
 import Module (parseProgram', prepConfig)
 import SExpr (Expr) as SE
-import Temp.Pretty (class Ann, class Pretty, PrettyShow(..), compare, prettyP)
+import Temp.Pretty (class Pretty, PrettyShow(..), compare, prettyP)
 import Test.Benchmark.Util (BenchRow, benchmark, divRow, recordGraphSize)
 import Test.Util.Debug (testing, tracing)
 import Util (type (×), AffError, EffectError, Endo, Thunk, check, checkSatisfies, log', spyWhen, throw, withMsg, (×))
-import Val (Env, EnvExpr(..), Val)
+import Val (class Ann, Env, EnvExpr(..), Val)
 
 type TestSuite m = Array (String × m Unit)
 

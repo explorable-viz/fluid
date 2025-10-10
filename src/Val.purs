@@ -32,7 +32,7 @@ import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Bounde
 import Unsafe.Coerce (unsafeCoerce)
 import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
-import Util.Pretty (Doc, beside, text)
+import Temp.Pretty.Doc (Doc, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
 
 data Val a = Val a (Maybe (Val a)) (BaseVal a)
@@ -165,10 +165,10 @@ instance Highlightable Unit where
 
 instance Highlightable Boolean where
    highlightIf false = identity
-   highlightIf true = \doc -> text "⸨" `beside` doc `beside` text "⸩"
+   highlightIf true = \doc -> text "⸨" <> doc <> text "⸩"
 
 instance Highlightable Vertex where
-   highlightIf (Vertex α) = \doc -> doc `beside` text "_" `beside` text ("⟨" <> α <> "⟩")
+   highlightIf (Vertex α) = \doc -> doc <> text "_" <> text ("⟨" <> α <> "⟩")
 
 -- ======================
 -- boilerplate
