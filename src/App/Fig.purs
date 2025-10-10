@@ -26,7 +26,7 @@ import Effect.Exception (Error)
 import Eval (graphEval, graphGC, withOp)
 import File (class LoadFile, File(..), FileCxt)
 import GaloisConnection (GaloisConnection(..), deMorgan)
-import Graph (class Graph, DVertex, Vertex(..), runQuery, selectαs, select𝔹s, vertexData, vertices, dvertices)
+import Graph (class Graph, DVertex, DVertex', Vertex(..), VertexData(..), dvertices, runQuery, selectαs, select𝔹s, vertexData, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
@@ -152,14 +152,11 @@ selectionResult fig@{ dir, v, γ, ι } =
 
 intermediates :: Fig -> Selection (Set DVertex) -> Env (SelStates 𝔹)
 intermediates { spec, in_roots, inerts } αs =
-   flip (maybe empty) spec.query
-      \query ->
-         let
-            ια = filterKeys (\α -> not (Vertex α ∈ in_roots))
-               $ runQuery query
-               $ αs.persistent ∪ αs.transient
-         in
-            rebuildι inerts αs ια
+   flip (maybe empty) spec.query findIntermediates
+   where
+   findIntermediates :: (VertexData -> Maybe (DVertex' (Val Vertex))) -> Env (SelStates Boolean)
+   findIntermediates query = rebuildι inerts αs $
+      filterKeys (\α -> not (Vertex α ∈ in_roots)) $ runQuery query $ αs.persistent ∪ αs.transient
 
 drawFig :: HTMLId -> Fig -> Effect Unit
 drawFig divId fig@{ spec: options } = do
