@@ -81,10 +81,10 @@
 import lib.matrix
 import matrixMultiply.matrices
 
-MultiView({
-  firstMatrix: matMul(matMul(a, b), c),
-  secondMatrix: matMul(a, matMul(b, c))
-})
+MultiView([
+  matMul(matMul(a, b), c),
+  matMul(a, matMul(b, c))
+])
 </script>
 
 <script type="module">

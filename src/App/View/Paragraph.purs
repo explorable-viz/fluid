@@ -29,4 +29,4 @@ instance Viewable Paragraph Unit where
    setSelection _ (Paragraph views) select rootElement = do
       sequence_ $ flip mapWithIndex views \i view -> do
          child <- rootElement # D3.select (D3.nthChildOf D3.scope (i + 1))
-         setSelection unit view (select <<< constrArg cParagraph 0 <<< listElement i) child
+         setSelection unit view (listElement i >>> constrArg cParagraph 0 >>> select) child

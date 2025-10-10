@@ -19,10 +19,10 @@ linkedOutputs_spec1 =
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 select))
+   , δ_out: multiViewEntry 0 (barChart (barSegment 1 0 select))
    , out_expect:
-        multiViewEntry "barChart" (barChart (barSegment 1 0 select))
-           >.> multiViewEntry "lineChart"
+        multiViewEntry 0 (barChart (barSegment 1 0 select))
+           >.> multiViewEntry 1
               ( lineChart
                    ( dictVal f_plots
                         ( listElement 0 (linePoint 2 (dictVal f_y select))
@@ -45,10 +45,10 @@ linkedOutputs_spec2 =
         , linking: true
         , rowFilter: Nothing
         }
-   , δ_out: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+   , δ_out: multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
    , out_expect:
-        multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
-           >.> multiViewEntry "scatterPlot"
+        multiViewEntry 0 (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
+           >.> multiViewEntry 1
               ( scatterPlot
                    ( scatterPoint 4 (dictVal f_y select)
                         >.> scatterPoint 6 (dictVal f_y select)

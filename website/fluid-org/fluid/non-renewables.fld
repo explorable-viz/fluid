@@ -14,24 +14,22 @@ def stack(year):
 def yearData(year):
   [row for row in nonRenewables if row.year == year if row.country |elem| countries]
 
-MultiView({
-  barChart:
-    BarChart({
-      caption: "Non-renewables output",
-      size: { width: 275, height: 185 },
-      tickLabels: { x: Default, y: Default },
-      stackedBars:
-        [{ x: numToStr(year), segments: stack(year) } for year in [2014 .. 2018]],
-      legend: True
-    }),
-  scatterPlot:
-    ScatterPlot({
-      caption: "",
-      points:
-        [{
-          x: sum([row.nuclearOut for row in yearData(year)]),
-          y: sum([row.nuclearCap for row in yearData(year)])
-        } for year in [2014 .. 2018]],
-      labels: { x: "Nuclear capacity", y: "Nuclear output" }
-    })
-})
+MultiView([
+  BarChart({
+    caption: "Non-renewables output",
+    size: { width: 275, height: 185 },
+    tickLabels: { x: Default, y: Default },
+    stackedBars:
+      [{ x: numToStr(year), segments: stack(year) } for year in [2014 .. 2018]],
+    legend: True
+  }),
+  ScatterPlot({
+    caption: "",
+    points:
+      [{
+        x: sum([row.nuclearOut for row in yearData(year)]),
+        y: sum([row.nuclearCap for row in yearData(year)])
+      } for year in [2014 .. 2018]],
+    labels: { x: "Nuclear capacity", y: "Nuclear output" }
+  })
+])

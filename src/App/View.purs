@@ -50,7 +50,7 @@ view options title v@(Val α _ u') = case u' of
       | c == cBarChart -> pack (dict from u :: BarChart)
       | c == cLineChart -> pack (dict from u :: LineChart)
       | c == cScatterPlot -> pack (dict from u :: ScatterPlot)
-      | c == cMultiView -> pack (MultiView (viewDict (from u)))
+      | c == cMultiView -> pack (MultiView (view options "" <$> from u))
       | c == cParagraph -> pack (Paragraph (view options "" <$> from u))
    Constr c (_ : _ : Nil)
       -- more consistent with other views for Link to take single argument of record type
