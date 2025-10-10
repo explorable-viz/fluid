@@ -29,6 +29,7 @@ newtype BarChart = BarChart
    , size :: Dimensions (Selectable Int)
    , tickLabels :: Point Orientation
    , stackedBars :: NonEmptyArray StackedBar
+   , legend :: Selectable Boolean
    }
 
 instance Viewable BarChart Unit where
@@ -45,7 +46,7 @@ instance Viewable BarChart Unit where
             stack
 
    createElement :: Unit -> BarChart -> D3.Selection -> Effect D3.Selection
-   createElement _ barChart@(BarChart { caption, stackedBars, tickLabels }) parent = do
+   createElement _ barChart@(BarChart { caption, stackedBars, tickLabels, legend }) parent = do
       svg <- parent # create SVG [ "width" ⟼ props.width, "height" ⟼ props.height ]
       g <- svg # create G [ translate { x: props.margin.left, y: props.margin.top } ]
       void $ createAxes g
@@ -64,7 +65,8 @@ instance Viewable BarChart Unit where
               ]
          >>= setText (contents caption)
 
-      createLegend props.interior g
+      when (contents legend) $
+         createLegend props.interior g
       pure g
 
       where

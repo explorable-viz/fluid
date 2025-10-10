@@ -107,6 +107,7 @@ f_caption = "caption" :: FieldName
 f_colour = "c" :: FieldName
 f_height = "height" :: FieldName
 f_labels = "labels" :: FieldName
+f_legend = "legend" :: FieldName
 f_name = "name" :: FieldName
 f_plots = "plots" :: FieldName
 f_points = "points" :: FieldName

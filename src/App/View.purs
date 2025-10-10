@@ -22,10 +22,10 @@ import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), (:))
 import Data.Maybe (fromMaybe)
 import Data.Tuple (snd)
-import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_width, f_x, f_y, f_z)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_legend, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_width, f_x, f_y, f_z)
 import Dict (Dict)
 import Link (Link(..))
-import Primitive (int, string, typeError)
+import Primitive (boolean, int, string, typeError)
 import Primitive (unpack) as P
 import Util (type (×), error, (×))
 import Util.Map (get, mapWithKey)
@@ -50,7 +50,7 @@ view options title v@(Val α _ u') = case u' of
       | c == cBarChart -> pack (dict from u :: BarChart)
       | c == cLineChart -> pack (dict from u :: LineChart)
       | c == cScatterPlot -> pack (dict from u :: ScatterPlot)
-      | c == cMultiView -> pack (MultiView (viewDict (from u)))
+      | c == cMultiView -> pack (MultiView (view options "" <$> from u))
       | c == cParagraph -> pack (Paragraph (view options "" <$> from u))
    Constr c (_ : _ : Nil)
       -- more consistent with other views for Link to take single argument of record type
@@ -96,6 +96,7 @@ instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) BarChart where
       , stackedBars: dict from <$> from (snd (get f_stackedBars r))
       , size: dict from (snd (get f_size r))
       , tickLabels: dict from (snd (get f_tickLabels r))
+      , legend: P.unpack boolean (snd (get f_legend r))
       }
 
 instance Reflect (Dict (SelStates 𝕊 × Val (SelStates 𝕊))) StackedBar where

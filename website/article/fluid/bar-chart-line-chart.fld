@@ -15,14 +15,15 @@ def series(energyType, country):
     if row.year == year if row.energyType == energyType if row.country == country
   ]
 
-MultiView({
-  barChart: BarChart({
+MultiView([
+  BarChart({
     caption: "Total renewables output by country",
     size: { width: 275, height: 185 },
     tickLabels: { x: Default, y: Default },
-    stackedBars: countryData
+    stackedBars: countryData,
+    legend: True
   }),
-  lineChart: LineChart({
+  LineChart({
     tickLabels: { x: Default, y: Default },
     size: { width: 330, height: 285 },
     caption: "Renewables output of USA relative to China",
@@ -35,4 +36,4 @@ MultiView({
      for (usa, china) in [(series(energyType, "USA"), series(energyType, "China"))]
    ]
  })
-})
+])
