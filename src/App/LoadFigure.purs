@@ -4,8 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (drawFig, drawFile, loadFig)
 import App.Util (runAffs_)
-import App.View.TableView (Filter)
-import App.View.Util (Options)
+import App.View.Util (Filter, Options)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Decode.Error (JsonDecodeError)
@@ -23,7 +22,8 @@ import Module.Web (runWebT)
 import Util (definitely, definitely', error, (×))
 import Val (Val(..), asVal)
 
-type JsonSpec =
+-- TODO: remove this extra type
+type JsonOptions =
    { fluidSrcPath :: Array String
    , inputs :: Array String
    , query :: Boolean
@@ -31,8 +31,8 @@ type JsonSpec =
    , rowFilter :: Maybe Filter
    }
 
-optionsFromJson :: JsonSpec -> Options
-optionsFromJson spec@{ inputs, query, linking } =
+optionsFromJson :: JsonOptions -> Options
+optionsFromJson spec@{ inputs, query, linking, rowFilter } =
    { fluidSrcPaths: Folder <$> spec.fluidSrcPath
    , inputs
    , query:
@@ -42,6 +42,7 @@ optionsFromJson spec@{ inputs, query, linking } =
               _ -> Nothing
         else Nothing
    , linking
+   , rowFilter
    }
 
 loadFigure :: Json -> String -> Effect Unit
@@ -51,7 +52,7 @@ loadFigure jsonSpec srcFile = launchAff_ do
 
 loadFigureSrc :: Json -> String -> Effect Unit
 loadFigureSrc options fluidSrc = runAffs_ (uncurry drawFig)
-   [ case decodeJson options :: Either JsonDecodeError JsonSpec of
+   [ case decodeJson options :: Either JsonDecodeError JsonOptions of
         Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> do
            let figSpec@{ fluidSrcPaths } = optionsFromJson spec

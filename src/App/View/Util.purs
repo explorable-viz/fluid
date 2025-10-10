@@ -7,6 +7,9 @@ import App.Util.Selector (dictVal)
 import App.View.Util.D3 (create, isEmpty, on, rootSelect, select, setAttrs)
 import App.View.Util.D3 as D3
 import Bind (Var, (↦))
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..))
+import Data.Argonaut.Decode.Decoders (decodeString)
+import Data.Either (Either(..))
 import Data.Foldable (all, sequence_)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Maybe (Maybe)
@@ -121,11 +124,14 @@ uiHelpers =
    , selClassesFor
    }
 
+data Filter = Everything | Interactive | Relevant
+
 type Options =
    { fluidSrcPaths :: Array Folder
    , inputs :: Array Var
    , query :: Maybe (Query (Val Vertex))
    , linking :: Boolean
+   , rowFilter :: Maybe Filter
    }
 
 data Direction = LinkedInputs | LinkedOutputs | Intermediates
@@ -152,3 +158,13 @@ type Fig =
 -- ======================
 
 derive instance Eq Direction
+derive instance Eq Filter
+
+instance decodeJsonFilter :: DecodeJson Filter where
+   decodeJson json = do
+      s <- decodeString json
+      case s of
+         "Everything" -> pure Everything
+         "Interactive" -> pure Interactive
+         "Relevant" -> pure Relevant
+         _ -> Left $ TypeMismatch $ "Unknown Filter: " <> s

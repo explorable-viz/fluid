@@ -17,6 +17,7 @@ linkedOutputs_spec1 =
         , inputs: [ "renewables" ]
         , query: Nothing
         , linking: true
+        , rowFilter: Nothing
         }
    , δ_out: multiViewEntry "barChart" (barChart (barSegment 1 0 select))
    , out_expect:
@@ -42,6 +43,7 @@ linkedOutputs_spec2 =
         , inputs: [ "nonRenewables" ]
         , query: Nothing
         , linking: true
+        , rowFilter: Nothing
         }
    , δ_out: multiViewEntry "stackedBarChart" (barChart (barSegment 3 2 select >.> barSegment 4 1 select >.> barSegment 4 3 select))
    , out_expect:
@@ -62,6 +64,7 @@ movingAverages_spec =
         , inputs: [ "methane" ]
         , query: Nothing
         , linking: true
+        , rowFilter: Nothing
         }
    , δ_out: identity >>> (_ × Persistent) -- TODO: make this a non-trivial test
    , out_expect: identity >>> (_ × Persistent)
@@ -75,6 +78,7 @@ linkedOutputs_cases =
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true
+          , rowFilter: Nothing
           }
      , δ_out: snd select
      , out_expect: select
@@ -86,6 +90,7 @@ linkedOutputs_cases =
           , inputs: [ "data" ]
           , query: Nothing
           , linking: true
+          , rowFilter: Nothing
           }
      , δ_out: fst (matrixElement 2 2 select)
      , out_expect:

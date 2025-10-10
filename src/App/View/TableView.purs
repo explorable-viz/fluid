@@ -4,15 +4,12 @@ import Prelude hiding (absurd)
 
 import App.Util (SelStates, 𝕊(..), classes, getPersistent, getTransient, isInert, isTransient, selClasses, selClassesFor, selectionEventData')
 import App.Util.Selector (ViewSelSetter, dictVal, listElement)
-import App.View.Util (class Viewable, Select, registerMouseListeners)
+import App.View.Util (class Viewable, Filter(..), Select, registerMouseListeners)
 import App.View.Util.D3 (ElementType(..), classed, create, datum, select, selectAll, setDatum, setStyles, setText)
 import App.View.Util.D3 as D3
 import Bind ((↦))
-import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..))
-import Data.Argonaut.Decode.Decoders (decodeString)
 import Data.Array (any, elem, filter, partition, sort, (..))
 import Data.Array.NonEmpty (head)
-import Data.Either (Either(..))
 import Data.FoldableWithIndex (forWithIndex_)
 import Data.Maybe (Maybe(..), isNothing)
 import Data.Number.Format (fixed, toStringWith)
@@ -28,8 +25,6 @@ import Val (Array2, BaseVal(..), Val(..))
 import Web.Event.EventTarget (eventListener)
 
 type Record' = Array (Val (SelStates 𝕊)) -- somewhat anomalous, as elsewhere we have Selectables
-
-data Filter = Everything | Interactive | Relevant
 
 -- Homogeneous array of records with fields of primitive type; each row has same length as colNames.
 newtype TableView = TableView
@@ -230,17 +225,3 @@ instance Viewable TableView Unit where
 
 -- 0-based index of selected record and name of field; -1th field name is "__n" (rowKey)
 type CellIndex = { i :: Int, j :: Int, colName :: String, value :: String }
-
--- ======================
--- boilerplate
--- ======================
-derive instance Eq Filter
-
-instance decodeJsonFilter :: DecodeJson Filter where
-   decodeJson json = do
-      s <- decodeString json
-      case s of
-         "Everything" -> pure Everything
-         "Interactive" -> pure Interactive
-         "Relevant" -> pure Relevant
-         _ -> Left $ TypeMismatch $ "Unknown Filter: " <> s

@@ -12,14 +12,15 @@ import App.View.Paragraph (Paragraph(..))
 import App.View.ScatterPlot (ScatterPlot(..))
 import App.View.Segment (Segment(..))
 import App.View.StackedBar (StackedBar(..))
-import App.View.TableView (Filter(..), TableView(..), arrayDictToArray2, headers)
+import App.View.TableView (TableView(..), arrayDictToArray2, headers)
 import App.View.Text (Text(..))
-import App.View.Util (View, Options, pack)
+import App.View.Util (Filter(..), View, Options, pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array ((:)) as A
 import Data.Array.NonEmpty (NonEmptyArray, cons')
 import Data.List (List(..), (:))
+import Data.Maybe (fromMaybe)
 import Data.Tuple (snd)
 import DataType (cBarChart, cCons, cLineChart, cLinePlot, cLink, cMultiView, cNil, cParagraph, cScatterPlot, cText, f_caption, f_height, f_labels, f_name, f_plots, f_points, f_segments, f_size, f_stackedBars, f_tickLabels, f_width, f_x, f_y, f_z)
 import Dict (Dict)
@@ -55,8 +56,9 @@ view options title v@(Val α _ u') = case u' of
       -- more consistent with other views for Link to take single argument of record type
       | c == cLink -> pack (from v :: Link)
    Constr c _
-      | c == cNil || c == cCons -> pack (TableView { title, rowFilter: Interactive, colNames, rows })
+      | c == cNil || c == cCons -> pack (TableView { title, rowFilter, colNames, rows })
            where
+           rowFilter = fromMaybe Interactive options.rowFilter
            records = dict identity <$> from v
            colNames = headers records
            rows = arrayDictToArray2 colNames records <#> map snd
