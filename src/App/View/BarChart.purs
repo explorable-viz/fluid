@@ -29,6 +29,7 @@ newtype BarChart = BarChart
    , size :: Dimensions (Selectable Int)
    , tickLabels :: Point Orientation
    , stackedBars :: NonEmptyArray StackedBar
+   , legend :: Selectable Boolean
    }
 
 instance Viewable BarChart Unit where

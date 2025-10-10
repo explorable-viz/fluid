@@ -16,7 +16,8 @@ def mkBarChart(scenName, table):
       map(lambda record: {
         x: record.type,
         segments: [{ y: "emissions", z: record.emissions }]
-      }, table)
+      }, table),
+    legend: True
   })
 
 def mkHistogram(xs, name, nbins):
@@ -30,7 +31,8 @@ def mkHistogram(xs, name, nbins):
       map(lambda (data, edge): {
         x: data,
         segments: [{ y: "density", z: length(data) / binWidth }]
-      }, cut(xs, nbins))
+      }, cut(xs, nbins)),
+    legend: True
   })
 
 def getHeight(offset, bar): head(bar.segments).z + offset

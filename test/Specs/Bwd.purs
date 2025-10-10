@@ -184,6 +184,7 @@ bwd_cases =
           """MultiView({
   barChart: BarChart({
     caption: "Total output by country",
+    legend: True,
     size: { height: 185, width: 275 },
     stackedBars: { segments: { y: "output", z: 295.3 } :| [], x: "China" } :| {
       segments: { y: "output", z: ⸨196.7⸩ } :| [],
@@ -268,6 +269,7 @@ bwd_cases =
   }),
   stackedBarChart: BarChart({
     caption: "Non-renewables by country",
+    legend: True,
     size: { height: 185, width: 275 },
     stackedBars: {
       segments: { y: "BRA", z: 151.05 } :| { y: "EGY", z: 159.93 } :| {

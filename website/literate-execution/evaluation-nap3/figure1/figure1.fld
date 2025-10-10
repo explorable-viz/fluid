@@ -25,7 +25,8 @@ MultiView({
       caption: "Evaluation of NAP3 against actions from CCRA3",
       size: { width: 275, height: 185 },
       tickLabels: { x: Default, y: Default },
-      stackedBars: actions_by("Chapter", [ "6", "5", "4", "7", "3" ])
+      stackedBars: actions_by("Chapter", [ "6", "5", "4", "7", "3" ]),
+      legend: False
     }),
   by_owner:
     BarChart({
@@ -36,6 +37,7 @@ MultiView({
         "Action Owner",
         [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT",
           "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
-      )
+      ),
+      legend: True
     })
 })
