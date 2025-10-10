@@ -6,12 +6,13 @@ import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, u
 import App.Util (SelState(..), SelStates(..), Selection, SelectionType(..), Selector, 𝕊, getSel, selState, selStates, to𝔹, to𝕊, primary, primaryOrSecondary)
 import App.Util.Selector (envVal, ViewSetter)
 import App.View (view')
-import App.View.Util (Direction(..), Fig, Options, HTMLId, Redraw, View, drawView)
+import App.View.Util (Direction(..), Fig, Options, HTMLId, View, drawView)
 import App.View.Util.D3 (remove, rootSelect)
 import Bind (Var)
 import Control.Monad.Error.Class (class MonadError)
 import Control.Monad.Reader (class MonadReader)
 import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set as Set
@@ -31,8 +32,8 @@ import Graph.Slice (bwdSlice)
 import Lattice (class BoundedMeetSemilattice, Raw, 𝔹, botOf, erase, topOf)
 import Module (prepConfig)
 import Partial.Unsafe (unsafePartial)
-import Temp.Pretty (prettyP)
 import Primitive.Defs (primitives)
+import Temp.Pretty (prettyP)
 import Test.Util.Debug (tracing)
 import Util (type (×), Endo, absurd, error, spyWhen, (×), (∩))
 import Util.Map (filterKeys, insert, keys, lookup, mapWithKey, restrict)
@@ -160,29 +161,29 @@ intermediates { spec, in_roots, inerts } αs =
          in
             rebuildι inerts αs ια
 
-drawIntermediates :: HTMLId -> Env (SelStates 𝔹) -> Set String -> Redraw -> Effect Unit
-drawIntermediates divId (Env ι) unused redraw = do
-   let prefix = divId <> "-" <> str.intermediate
-   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
-   for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α <> "-doc") >>= remove
-
-   sequence_ $ flip mapWithKey ι \α v ->
-      drawView { divId: prefix, suffix: α, view: unsafePartial $ view' str.intermediate (map to𝕊 <$> v) }
-         (selectIntermediate (Vertex α) >>> redraw)
-
 drawFig :: HTMLId -> Fig -> Effect Unit
-drawFig divId fig = do
+drawFig divId fig@{ spec: options } = do
    drawView { divId, suffix: str.output, view: out_view } (selectOutput >>> redraw)
 
    sequence_ $ flip mapWithKey in_views \x view ->
       drawView { divId: divId <> "-" <> str.input, suffix: x, view } (selectInput x >>> redraw)
 
-   drawIntermediates divId ι (keys fig.ι \\ keys ι) redraw
+   drawIntermediates (keys fig.ι \\ keys ι)
    where
    { v, γ, ι } = selectionResult fig
-   out_view = unsafePartial $ view' str.output v
-   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey view' γ)
+   out_view = unsafePartial $ view' options str.output v
+   in_views = γ # \(Env γ) -> unsafePartial (mapWithKey (view' options) γ)
    redraw = (_ $ fig { ι = ι }) >>> drawFig divId
+
+   drawIntermediates :: Set String -> Effect Unit
+   drawIntermediates unused = do
+      let prefix = divId <> "-" <> str.intermediate
+      for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α) >>= remove
+      for_ unused \α -> rootSelect ("#" <> prefix <> "-" <> α <> "-doc") >>= remove -- DELETE ME?
+
+      sequence_ $ flip mapWithKey (unwrap ι) \α v ->
+         drawView { divId: prefix, suffix: α, view: unsafePartial $ view' options str.intermediate (map to𝕊 <$> v) }
+            (selectIntermediate (Vertex α) >>> redraw)
 
 drawFile :: File × String -> Effect Unit
 drawFile (File fileName × src) =

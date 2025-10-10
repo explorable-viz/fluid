@@ -14,7 +14,7 @@ import App.View.Segment (Segment(..))
 import App.View.StackedBar (StackedBar(..))
 import App.View.TableView (Filter(..), TableView(..), arrayDictToArray2, headers)
 import App.View.Text (Text(..))
-import App.View.Util (View, pack)
+import App.View.Util (View, Options, pack)
 import App.View.Util.Axes (Orientation, orientation)
 import App.View.Util.Point (Point(..))
 import Data.Array ((:)) as A
@@ -31,16 +31,16 @@ import Util.Map (get, mapWithKey)
 import Val (BaseVal(..), DictRep(..), Val(..))
 
 -- TODO: merge with 'view' below.
-view' :: Partial => String -> Val (SelStates 𝕊) -> View
-view' title v@(Val _ v_opt _) =
-   pack $ DocView { doc: viewParagraph <$> v_opt, view: view title v }
+view' :: Partial => Options -> String -> Val (SelStates 𝕊) -> View
+view' options title v@(Val _ v_opt _) =
+   pack $ DocView { doc: viewParagraph <$> v_opt, view: view options title v }
    where
    viewParagraph (Val _ _ (Constr c (u : Nil))) | c == cParagraph =
-      Paragraph (view "" <$> from u)
+      Paragraph (view options "" <$> from u)
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
-view :: Partial => String -> Val (SelStates 𝕊) -> View
-view title v@(Val α _ u') = case u' of
+view :: Partial => Options -> String -> Val (SelStates 𝕊) -> View
+view options title v@(Val α _ u') = case u' of
    Int n -> pack (Text (show n × α))
    Float n -> pack (Text (show n × α))
    Str str -> pack (Text (str × α))
@@ -50,7 +50,7 @@ view title v@(Val α _ u') = case u' of
       | c == cLineChart -> pack (dict from u :: LineChart)
       | c == cScatterPlot -> pack (dict from u :: ScatterPlot)
       | c == cMultiView -> pack (MultiView (viewDict (from u)))
-      | c == cParagraph -> pack (Paragraph (view "" <$> from u))
+      | c == cParagraph -> pack (Paragraph (view options "" <$> from u))
    Constr c (_ : _ : Nil)
       -- more consistent with other views for Link to take single argument of record type
       | c == cLink -> pack (from v :: Link)
@@ -64,9 +64,9 @@ view title v@(Val α _ u') = case u' of
       pack (MatrixView { title, matrix: matrixRep r })
    Dictionary (DictRep d) ->
       pack (viewDict d)
-
-viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
-viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view k v'
+   where
+   viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
+   viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view options k v'
 
 class Reflect a b where
    from :: Partial => a -> b
