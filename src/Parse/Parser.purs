@@ -10,6 +10,7 @@ import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (take)
 import Data.String.CodeUnits as SCU
 import Data.Traversable (foldr)
+import Parse.Constants (opChars)
 import Parsing (ParseError(..), Position(..), fail, position, region)
 import Parsing.Combinators (between, sepBy, sepBy1, skipMany, try, (<?>))
 import Parsing.Combinators.Array (many)
@@ -17,7 +18,6 @@ import Parsing.Indent (IndentParser, checkIndent, sameOrIndented, withPos)
 import Parsing.String (char, satisfy, string)
 import Parsing.String.Basic (alphaNum, letter, lower, upper)
 import Parsing.Token (oneOf)
-import Parse.Constants (opChars)
 
 type Parser a = IndentParser String a
 
