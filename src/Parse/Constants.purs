@@ -1,78 +1,77 @@
 module Parse.Constants where
 
--- Constants (should also be used by prettyprinter). Haven't found a way to avoid the type definition.
-str
-   :: { arrayLBracket :: String
-      , arrayRBracket :: String
-      , as :: String
-      , atDoc :: String
-      , backslash :: String
-      , backtick :: String
-      , bar :: String
-      , colon :: String
-      , colonEq :: String
-      , comma :: String
-      , curlylBrace :: String
-      , curlyrBrace :: String
-      , dictLBracket :: String
-      , dictRBracket :: String
-      , dollar :: String
-      , dot :: String
-      , ellipsis :: String
-      , else_ :: String
-      , equals :: String
-      , fun :: String
-      , if_ :: String
-      , import :: String
-      , in_ :: String
-      , lArrow :: String
-      , lBracket :: String
-      , let_ :: String
-      , lparenth :: String
+keyword
+   :: { case :: String
+      , def :: String
+      , lambda :: String
+      , else :: String
+      , for :: String
+      , if :: String
+      , in :: String
       , match :: String
-      , rArrow :: String
-      , rBracket :: String
-      , rparenth :: String
-      , semiColon :: String
-      , then_ :: String
-      , this :: String
-      , triplequote :: String
       }
-
-str =
-   { arrayLBracket: "[|"
-   , arrayRBracket: "|]"
-   , as: "as"
-   , atDoc: "@doc"
-   , backslash: "\\"
-   , backtick: "`"
-   , bar: "|"
-   , colon: ":"
-   , colonEq: ":="
-   , comma: ","
-   , curlylBrace: "{"
-   , curlyrBrace: "}"
-   , dictLBracket: "{|"
-   , dictRBracket: "|}"
-   , dollar: "$"
-   , dot: "."
-   , ellipsis: ".."
-   , else_: "else"
-   , equals: "="
-   , fun: "fun"
-   , if_: "if"
-   , import: "import"
-   , in_: "in"
-   , lArrow: "<-"
-   , lBracket: "["
-   , let_: "let"
-   , lparenth: "("
+keyword =
+   { if: "if"
+   , else: "else"
+   , def: "def"
+   , lambda: "lambda"
    , match: "match"
-   , rArrow: "->"
-   , rBracket: "]"
-   , rparenth: ")"
-   , semiColon: ";"
-   , then_: "then"
-   , this: "this"
-   , triplequote: "\"\"\""
+   , case: "case"
+   , for: "for"
+   , in: "in"
    }
+
+symbol
+   :: { colon :: String
+      , comma :: String
+      , ellipsis :: String
+      , lBrace :: String
+      , lBracket :: String
+      , lParen :: String
+      , quote :: String
+      , rBrace :: String
+      , rBracket :: String
+      , rParen :: String
+      , star :: String
+      , lArray :: String
+      , rArray :: String
+      }
+symbol =
+   { lBrace: "{"
+   , rBrace: "}"
+   , lBracket: "["
+   , rBracket: "]"
+   , lArray: "[|"
+   , rArray: "|]"
+   , lParen: "("
+   , rParen: ")"
+   , star: "*"
+   , colon: ":"
+   , comma: ","
+   , quote: "\""
+   , ellipsis: ".."
+   }
+
+opChars :: Array Char
+opChars =
+   [ ':'
+   , '!'
+   , '#'
+   , '$'
+   , '%'
+   , '&'
+   , '*'
+   , '+'
+   , '.'
+   , '/'
+   , '<'
+   , '='
+   , '>'
+   , '?'
+   , '@'
+   , '\\'
+   , '^'
+   , '|'
+   , '-'
+   , '~'
+   ]

@@ -29,10 +29,10 @@ import GaloisConnection (GaloisConnection(..))
 import Graph (class TypeName, class Vertices, DVertex'(..), Vertex(..), VertexData, pack, typeName, unpack, vertices)
 import Graph.WithGraph (class MonadWithGraphAlloc, new)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class MeetSemilattice, Raw, expand, topOf, (∧), (∨))
+import Pretty.Doc (Doc, text)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (class IsEmpty, type (×), Endo, assert, assertWith, definitely, isEmpty, shapeMismatch, singleton, unsafeUpdateAt, (!), (×), (∩), (≜), (⊆))
 import Util.Map (class Map, delete, filterKeys, get, insert, intersectionWith, keys, lookup, maplet, restrict, toUnfoldable, unionWith, values)
-import Util.Pretty (Doc, beside, text)
 import Util.Set (class Set, difference, empty, filter, size, union, (\\), (∈), (∪))
 
 data Val a = Val a (Maybe (Val a)) (BaseVal a)
@@ -165,10 +165,10 @@ instance Highlightable Unit where
 
 instance Highlightable Boolean where
    highlightIf false = identity
-   highlightIf true = \doc -> text "⸨" `beside` doc `beside` text "⸩"
+   highlightIf true = \doc -> text "⸨" <> doc <> text "⸩"
 
 instance Highlightable Vertex where
-   highlightIf (Vertex α) = \doc -> doc `beside` text "_" `beside` text ("⟨" <> α <> "⟩")
+   highlightIf (Vertex α) = \doc -> doc <> text "_" <> text ("⟨" <> α <> "⟩")
 
 -- ======================
 -- boilerplate

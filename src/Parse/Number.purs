@@ -1,4 +1,4 @@
-module Temp.Parse.Number where
+module Parse.Number where
 
 import Prelude hiding (between, when)
 
@@ -10,13 +10,13 @@ import Data.Int (toNumber)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Number (pow)
 import Data.String.CodePoints (codePointFromChar)
+import Parse.Parser (lexeme)
 import Parsing (fail)
 import Parsing.Combinators (option, optionMaybe, (<?>), (<??>))
 import Parsing.Indent (IndentParser)
 import Parsing.String (char)
 import Parsing.String.Basic (oneOf)
 import Parsing.String.Basic as Basic
-import Temp.Parse.Parser (lexeme)
 
 type Parser a = IndentParser String a
 

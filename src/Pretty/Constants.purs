@@ -1,9 +1,9 @@
-module Temp.Pretty.Constants where
+module Pretty.Constants where
 
 import Prelude ((<>))
 
-import Temp.Parse.Constants (keyword, symbol)
-import Temp.Pretty.Doc (Doc, text)
+import Parse.Constants (keyword, symbol)
+import Pretty.Doc (Doc, text)
 
 _if :: Doc
 _if = text keyword.if
