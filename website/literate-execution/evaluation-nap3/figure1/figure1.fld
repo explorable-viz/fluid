@@ -16,6 +16,13 @@ def actions_by(key, keys):
       ] } for key_ in keys
   ]
 
+def by_action_owner:
+  actions_by(
+    "Action Owner",
+    [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT",
+      "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+  )
+
 MultiView([
   BarChart({
     caption: "Evaluation of NAP3 against CCRA3 actions",
@@ -28,11 +35,7 @@ MultiView([
     caption: "Actions by government department",
     tickLabels: { x: Rotated, y: Default },
     size: { width: 375, height: 200 },
-    stackedBars: actions_by(
-      "Action Owner",
-      [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT",
-        "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
-    ),
+    stackedBars: by_action_owner,
     legend: True
   }),
   # Sectoral and Departmental Disparities Signal Policy Misalignment
