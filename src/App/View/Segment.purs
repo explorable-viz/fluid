@@ -40,7 +40,7 @@ instance Viewable Segment SegmentContext where
          # create Rect
               [ "x" ⟼ scales.x x
               , "y" ⟼ scales.y (contents z + y)
-              , "height" ⟼ max (toNumber (height - strokeWidth) - scales.y (contents z)) 0.0
+              , "height" ⟼ max (toNumber (height - strokeWidth / 2) - scales.y (contents z)) 0.0
               , "stroke-width" ⟼ strokeWidth
               , "width" ⟼ bandwidth scales.x
               , classes [ "bar" ]
