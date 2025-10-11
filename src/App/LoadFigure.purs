@@ -45,18 +45,19 @@ optionsFromJson spec@{ inputs, query, linking, rowFilter } =
    , rowFilter
    }
 
-loadFigure :: Json -> String -> Effect Unit
-loadFigure jsonSpec srcFile = launchAff_ do
+loadFigure :: Json -> String -> String -> Effect Unit
+loadFigure jsonSpec divId srcFile = launchAff_ do
    fluidSrc <- loadFileFromPath (File srcFile)
-   liftEffect $ loadFigureSrc jsonSpec (definitely' fluidSrc)
+   liftEffect $ loadFigureSrc jsonSpec divId (definitely' fluidSrc)
 
-loadFigureSrc :: Json -> String -> Effect Unit
-loadFigureSrc options fluidSrc = runAffs_ (uncurry drawFig)
+-- TODO: runAffs_ overkill as always a singleton
+loadFigureSrc :: Json -> String -> String -> Effect Unit
+loadFigureSrc options divId fluidSrc = runAffs_ (uncurry drawFig)
    [ case decodeJson options :: Either JsonDecodeError JsonOptions of
         Left err -> error ("JSON decoding failed with " <> show err)
         Right spec -> do
            let figSpec@{ fluidSrcPaths } = optionsFromJson spec
-           ("fig" × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
+           (divId × _) <$> runWebT (FileCxt { fluidSrcPaths }) (loadFig figSpec fluidSrc)
    ]
 
 loadCode :: String -> Effect Unit
