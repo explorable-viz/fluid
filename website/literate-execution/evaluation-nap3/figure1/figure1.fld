@@ -48,14 +48,14 @@ def max_with_score(actions, eval_score):
 
 MultiView([
   BarChart({
-    caption: "Evaluation of NAP3 against CCRA3 actions",
+    caption: "NAP3 against CCRA3 risks by chapter",
     size: { width: 275, height: 185 },
     tickLabels: { x: Default, y: Default },
     stackedBars: actions_by_chapter,
     legend: False
   }),
   BarChart({
-    caption: "Actions by government department",
+    caption: "NAP3 actions by government department",
     tickLabels: { x: Rotated, y: Default },
     size: { width: 375, height: 200 },
     stackedBars: by_action_owner,
