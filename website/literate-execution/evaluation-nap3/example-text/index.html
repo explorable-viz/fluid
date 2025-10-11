@@ -44,15 +44,8 @@
    <div onclick="toggleDataPane('grid')">
       <i class="data-pane-button toggle-button fa-solid fa-eye-slash"></i>
    </div>
-   <div>
-      <h3>Other example</h3>
-      <div id="para-1">
-          <div class="fig-loading">loading text</div>
-      </div>
-      <h3>Disparities in Action Allocation Across Risks and Opportunities</h3>
-      <div id="para-2">
-          <div class="fig-loading">loading text</div>
-      </div>
+   <div id="fig">
+      <div class="fig-loading">loading text</div>
    </div>
 </div>
 
@@ -67,7 +60,7 @@
       "rowFilter": "Relevant"
    }
 
-   loadFigure(jsonSpec)("para-1")("paragraph.fld")()
+   loadFigure(jsonSpec)("fig")("paragraphs.fld")()
 </script>
 </body>
 </html>
