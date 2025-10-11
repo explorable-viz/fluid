@@ -25,8 +25,11 @@ def by_action_owner:
 # action_counts in the [ { y, z } ] format produced by actions_by
 # re-express as a fold?
 def actions_with_score(action_counts, eval_score):
-  sum([ z for { y: y, z: z } in action_counts if y == eval_score ]) /
-  sum([ z for { z : z } in action_counts ])
+  def total: sum([ z for { z : z } in action_counts ])
+  if total == 0:
+    0
+  else:
+    sum([ z for { y: y, z: z } in action_counts if y == eval_score ]) / total
 
 def max_with_score(actions, eval_score):
   max([ actions_with_score(actions_.segments, eval_score) for actions_ in actions ])
