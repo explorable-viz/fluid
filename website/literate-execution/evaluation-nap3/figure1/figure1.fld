@@ -1,21 +1,5 @@
 import nap3_ccra3_data
 
-def eval_scores:
-  [ "Significantly addressed", "Recognised but not addressed",
-    "Not addressed", "Minimally addressed", "Fully addressed" ]
-
-def actions_by(key, keys):
-  [ { x: key_,
-      segments: [
-        { y: eval_score,
-          z: count_if(
-            lambda action:
-              action[ key ] == key_ |and| action[ "Evaluation score" ] == eval_score,
-            eval_data
-          ) } for eval_score in eval_scores
-      ] } for key_ in keys
-  ]
-
 MultiView([
   BarChart({
     caption: "Evaluation of NAP3 against CCRA3 actions",

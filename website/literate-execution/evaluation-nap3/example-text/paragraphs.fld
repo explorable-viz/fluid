@@ -1,5 +1,15 @@
 import nap3_ccra3_data
 
+def by_topology:
+  actions_by(
+    "Typology",
+    [ "No and low regret adaptation, including capacity building",
+      "Climate-smart design, considering uncertainty",
+      "Further investigation",
+      "Early activities to support future adaptation",
+      "Unclear typology noted in text" ]
+  )
+
 MultiView([
   # Progress on Addressing CCRA3 Actions
   f"""
