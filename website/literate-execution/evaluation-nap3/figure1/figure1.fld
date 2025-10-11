@@ -16,14 +16,16 @@ def actions_by(key, keys):
       ] } for key_ in keys
   ]
 
+def risks_:
+  dict([ (r[ "ID#" ], r) for r in risks ])
+
 def actions_by_chapter:
   [ { x: chapter,
       segments: [
         { y: eval_score,
           z: count_if(
             lambda action:
-              # TODO: try nested comprehension instead
-              fromSome(findWithKey("ID#", action[ "Risk ID#" ], risks))[ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score,
+              risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score,
             eval_data
           ) } for eval_score in eval_scores
       ] } for chapter in [ "3", "4", "5", "6", "7" ]
