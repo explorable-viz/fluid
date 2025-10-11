@@ -16,6 +16,19 @@ def actions_by(key, keys):
       ] } for key_ in keys
   ]
 
+def actions_by_chapter:
+  [ { x: chapter,
+      segments: [
+        { y: eval_score,
+          z: count_if(
+            lambda action:
+              # TODO: try nested comprehension instead
+              fromSome(findWithKey("ID#", action[ "Risk ID#" ], risks))[ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score,
+            eval_data
+          ) } for eval_score in eval_scores
+      ] } for chapter in [ "3", "4", "5", "6", "7" ]
+  ]
+
 def departments:
   [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
@@ -36,7 +49,7 @@ MultiView([
     caption: "Evaluation of NAP3 against CCRA3 actions",
     size: { width: 275, height: 185 },
     tickLabels: { x: Default, y: Default },
-    stackedBars: actions_by("Chapter", [ "6", "5", "4", "7", "3" ]),
+    stackedBars: actions_by_chapter,
     legend: False
   }),
   BarChart({
