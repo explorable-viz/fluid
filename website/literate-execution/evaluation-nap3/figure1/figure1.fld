@@ -16,12 +16,16 @@ def actions_by(key, keys):
       ] } for key_ in keys
   ]
 
+def departments:
+  [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+
 def by_action_owner:
-  actions_by(
-    "Action Owner",
-    [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT",
-      "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
-  )
+  actions_by("Action Owner", departments)
+
+# actions in the [ { y, z } ] format produced by actions_by
+def wibble(eval_score, actions):
+  sum([ z for { y: y, z: z } in actions if y == eval_score ]) /
+  sum([ z for { z : z } in actions ])
 
 MultiView([
   BarChart({
