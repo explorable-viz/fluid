@@ -149,7 +149,7 @@ barChartProps (BarChart { caption, size, stackedBars }) =
    Dimensions { width, height } = size <#> contents
 
    margin :: Margin
-   margin = { top: 3, right: 75, bottom: 20, left: 30 }
+   margin = { top: 3, right: 75, bottom: 30, left: 30 }
 
    interior :: Dimensions Int
    interior = Dimensions

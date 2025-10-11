@@ -32,10 +32,10 @@ def actions_by_chapter:
   ]
 
 def departments:
-  [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
+  [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
 def by_action_owner:
-  actions_by("Risk Owner", departments)
+  actions_by("Action Owner", departments)
 
 # action_counts in the [ { y, z } ] format produced by actions_by
 def actions_with_score(action_counts, eval_score):
@@ -48,7 +48,7 @@ def max_with_score(actions, eval_score):
 
 MultiView([
   BarChart({
-    caption: "NAP3 against CCRA3 risks by chapter",
+    caption: "NAP3 actions against CCRA3 risks by chapter",
     size: { width: 275, height: 185 },
     tickLabels: { x: Default, y: Default },
     stackedBars: actions_by_chapter,
