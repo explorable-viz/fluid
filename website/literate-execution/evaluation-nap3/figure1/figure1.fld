@@ -22,10 +22,14 @@ def departments:
 def by_action_owner:
   actions_by("Action Owner", departments)
 
-# actions in the [ { y, z } ] format produced by actions_by
-def wibble(eval_score, actions):
-  sum([ z for { y: y, z: z } in actions if y == eval_score ]) /
-  sum([ z for { z : z } in actions ])
+# action_counts in the [ { y, z } ] format produced by actions_by
+# re-express as a fold?
+def actions_with_score(action_counts, eval_score):
+  sum([ z for { y: y, z: z } in action_counts if y == eval_score ]) /
+  sum([ z for { z : z } in action_counts ])
+
+def max_with_score(actions, eval_score):
+  max([ actions_with_score(actions_.segments, eval_score) for actions_ in actions ])
 
 MultiView([
   BarChart({
@@ -51,8 +55,9 @@ MultiView([
   the departmental level, Defra (Dept. for Environment, Food and Rural Affairs) dominated with over 130 actions,
   although a small portion was fully or significantly addressed. Meanwhile, departments with key cross-sectoral
   mandates such as DSIT (Science & Technology) and HMT (Treasury) had a smaller action base and weaker scores.
-  No department had more than 10% of its actions fully addressed, and in many, the largest category was
-  “minimally addressed.” These gaps point to a fragmented governance ecosystem where adaptation is siloed,
-  under-resourced, or misaligned with the urgency of the climate crisis.
+  No department had more than {max_with_score(by_action_owner, "Fully addressed")}% of its actions fully
+  addressed, and in many, the largest category was “minimally addressed.” These gaps point to a fragmented
+  governance ecosystem where adaptation is siloed, under-resourced, or misaligned with the urgency of the climate
+  crisis.
   """
 ])
