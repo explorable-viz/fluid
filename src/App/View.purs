@@ -40,6 +40,7 @@ view' options title v@(Val _ v_opt _) =
       Paragraph (view options "" <$> from u)
 
 -- Convert annotated value to appropriate view, discarding top-level annotations for now.
+-- TODO: given the typeError clause, Partial no longer needed
 view :: Partial => Options -> String -> Val (SelStates 𝕊) -> View
 view options title v@(Val α _ u') = case u' of
    Int n -> pack (Text (show n × α))
