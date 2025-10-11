@@ -20,7 +20,7 @@ def departments:
   [ "Cross-government", "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
 def by_action_owner:
-  actions_by("Action Owner", departments)
+  actions_by("Risk Owner", departments)
 
 # action_counts in the [ { y, z } ] format produced by actions_by
 def actions_with_score(action_counts, eval_score):
