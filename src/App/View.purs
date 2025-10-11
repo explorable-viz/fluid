@@ -66,6 +66,7 @@ view options title v@(Val α _ u') = case u' of
       pack (MatrixView { title, matrix: matrixRep r })
    Dictionary (DictRep d) ->
       pack (viewDict d)
+   _ -> typeError u' "Viewable"
    where
    viewDict :: Partial => Dict (SelStates 𝕊 × Val (SelStates 𝕊)) -> Dict (View × View)
    viewDict = mapWithKey \k (α' × v') -> pack (Text (k × α')) × view options k v'
