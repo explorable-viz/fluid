@@ -40,6 +40,7 @@ import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
 import Foreign.Object (Object)
 import Foreign.Object as Object
+import Test.Util.Debug (checking)
 
 debug
    :: { logging :: Boolean -- logging via "log"; requires an effect context
@@ -183,10 +184,7 @@ mayEq :: forall a. Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
 
 mustEq :: forall a. Eq a => Show a => a -> Endo a
-mustEq x x' = definitely (show x <> " equal to " <> show x') (x ≟ x')
-
-mustGeq :: forall a. Ord a => Show a => a -> Endo a
-mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >= x') x)
+mustEq x x' = assertWhen checking.mustEq "mustEq" (\_ -> x == x') x
 
 unionWithMaybe :: forall a b. Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
@@ -197,7 +195,6 @@ mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
 infixl 4 mayEq as ≟
 infixl 4 mayFailEq as ≞
 infixl 4 mustEq as ≜
-infixl 4 mustGeq as ⪄
 
 -- could be more efficient
 intersperse :: forall a. a -> Endo (List a)
