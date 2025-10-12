@@ -86,36 +86,25 @@ MultiView([
     legend: True
   }),
   f"""
-  Disaggregating by department revealed acute disparities in government response. {
+  Disaggregating by department revealed marked disparities in government response. {
     Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
-  } performed relatively well, with over {
+  } performed relatively well, with {
       sum([
-        actions_with_score(action_counts.segments, eval_score)
+        actions_with_score(action_counts, eval_score)
         for eval_score in [ "Fully addressed", "Minimally addressed" ]
-        for action_counts in by_nat_env_and_infra
+        for { segments: action_counts } in by_nat_env_and_infra
       ])
   } of {
-      sum([ total_actions(action_counts.segments) for action_counts in by_nat_env_and_infra])
+      sum([ total_actions(action_counts) for { segments: action_counts } in by_nat_env_and_infra])
   } actions at least “minimally addressed.”
-  In contrast, business and industry actions lagged severely, with nearly half either unaddressed or only
-  nominally recognized. This suggests an institutional lapse where private sector resilience is concerned. At
-  the departmental level, Defra (Dept. for Environment, Food and Rural Affairs) dominated with over 130 actions,
-  although a small portion was fully or significantly addressed. Meanwhile, departments with key cross-sectoral
-  mandates such as DSIT (Science & Technology) and HMT (Treasury) had a smaller action base and weaker scores.
-  No department had more than {
+  In contrast, business and industry actions lagged sharply, with nearly half unaddressed or only nominally
+  recognized—an institutional lapse in private-sector resilience. Defra (Environment, Food and Rural Affairs)
+  dominated with over 130 actions, though only a small portion were fully or significantly addressed. Departments
+  with cross-sectoral mandates such as DSIT (Science & Technology) and HMT (Treasury) had smaller action bases
+  and weaker scores. No department had more than {
     ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)
-  }% of its actions fully addressed, and in many, the largest category was “minimally addressed.” These gaps
-  point to a fragmented governance ecosystem where adaptation is siloed, under-resourced, or misaligned with the
-  urgency of the climate crisis.
-  """,
-  f"""
-  When grouped by typology, most interventions fall under “No and low regret adaptation” or “Climate-smart
-  design”, reflecting a pragmatic focus on cost-effective measures deliverable within the current policy cycle.
-  Yet only a small minority are tagged as “Further investigation”, implying that the evidence base is already
-  sufficient for most priority actions—an encouraging signal for implementation readiness. Interestingly, about
-  half of the actions aimed at non-government actors (e.g., businesses) remain minimally addressed, suggesting
-  that while government-led adaptation planning has advanced, diffusion of responsibility to the private sector
-  and civil society continues to pose a major delivery challenge.
+  }% of its actions fully addressed, reinforcing the impression of a fragmented governance system where adaptation
+  remains siloed and under-resourced.
   """,
   f"""
   Of the {
@@ -125,6 +114,10 @@ MultiView([
       ],
       "committee's priority risks"
     )
-  }, ...
+  }, the distribution also reveals where policy attention is converging. Chapters 3 and 4 (Nature and
+  Infrastructure) contain the densest clusters of actions, suggesting that physical-system adaptation still
+  dominates the UK’s climate agenda. By contrast, social, business, and interdependency-related risks—those
+  demanding coordination across institutions or behavioural change—show thinner coverage and weaker evaluation
+  scores.
   """
 ])
