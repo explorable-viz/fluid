@@ -63,8 +63,8 @@ def proportion(x, y):
 
 def max_with_score(actions, eval_score):
   maximum([
-    proportion(actions_with_score(action_counts.segments, eval_score), total_actions(action_counts.segments))
-    for action_counts in actions
+    proportion(actions_with_score(action_counts, eval_score), total_actions(action_counts))
+    for { segments: action_counts } in actions
   ])
 
 def by_nat_env_and_infra:
