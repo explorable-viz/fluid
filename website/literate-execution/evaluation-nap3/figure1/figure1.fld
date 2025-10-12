@@ -57,13 +57,10 @@ def max_with_score(actions, eval_score):
   maximum([ actions_with_score(action_counts.segments, eval_score) for action_counts in actions ])
 
 def nat_env_and_infrastructure:
-  def actions: actions_by("Action Owner", [ "Defra" ]) #, "DESNZ", "DfT", "DLUHC" ])
   sum([
-      sum([
-      actions_with_score(action_counts.segments, eval_score)
-      for eval_score in ["Fully addressed", "Minimally addressed"]
-    ])
-    for action_counts in actions
+    actions_with_score(action_counts.segments, eval_score)
+    for eval_score in [ "Fully addressed", "Minimally addressed" ]
+    for action_counts in actions_by("Action Owner", [ "Defra", "DESNZ", "DfT", "DLUHC" ])
   ])
 
 MultiView([
