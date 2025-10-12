@@ -48,17 +48,23 @@ def by_topology:
   )
 
 # action_counts in the [ { y, z } ] format produced by actions_by
+def total_actions(action_counts):
+  sum([ r.z for r in action_counts ])
+
 def actions_with_score(action_counts, eval_score):
-  def total: sum([ r.z for r in action_counts ])
+  sum([ r.z for r in action_counts if r.y == eval_score ])
+
+def proportion_actions_with_score(action_counts, eval_score):
+  def total: total_actions(action_counts)
   if total == 0: 0
-  else: sum([ r.z for r in action_counts if r.y == eval_score ]) / total
+  else: actions_with_score(action_counts, eval_score) / total
 
 def max_with_score(actions, eval_score):
-  maximum([ actions_with_score(action_counts.segments, eval_score) for action_counts in actions ])
+  maximum([ proportion_actions_with_score(action_counts.segments, eval_score) for action_counts in actions ])
 
 def nat_env_and_infrastructure:
   sum([
-    actions_with_score(action_counts.segments, eval_score)
+    proportion_actions_with_score(action_counts.segments, eval_score)
     for eval_score in [ "Fully addressed", "Minimally addressed" ]
     for action_counts in actions_by("Action Owner", [ "Defra", "DESNZ", "DfT", "DLUHC" ])
   ])
@@ -81,14 +87,17 @@ MultiView([
   # Sectoral and Departmental Disparities Signal Policy Misalignment
   f"""
   Disaggregating by department revealed acute disparities in government response. Natural environment and
-  infrastructure sectors performed relatively well, with over 70% of their actions at least “minimally addressed.”
+  infrastructure sectors performed relatively well, with over {
+    nat_env_and_infrastructure
+  }
+  70% of their actions at least “minimally addressed.”
   In contrast, business and industry actions lagged severely, with nearly half either unaddressed or only
   nominally recognized. This suggests an institutional lapse where private sector resilience is concerned. At
   the departmental level, Defra (Dept. for Environment, Food and Rural Affairs) dominated with over 130 actions,
   although a small portion was fully or significantly addressed. Meanwhile, departments with key cross-sectoral
   mandates such as DSIT (Science & Technology) and HMT (Treasury) had a smaller action base and weaker scores.
   No department had more than {
-  numToStr(ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)) ++ "%"
+    numToStr(ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)) ++ "%"
   } of its actions fully addressed, and in many, the largest category was “minimally addressed.” These gaps
   point to a fragmented governance ecosystem where adaptation is siloed, under-resourced, or misaligned with the
   urgency of the climate crisis.
