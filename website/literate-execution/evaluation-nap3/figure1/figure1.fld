@@ -81,7 +81,7 @@ MultiView([
   BarChart({
     caption: "NAP3 actions by government department",
     tickLabels: { x: Rotated, y: Default },
-    size: { width: 375, height: 200 },
+    size: { width: 275, height: 200 },
     stackedBars: by_action_owner,
     legend: True
   }),
@@ -99,7 +99,7 @@ MultiView([
   } actions at least “minimally addressed.”
   In contrast, business and industry actions lagged sharply, with nearly half unaddressed or only nominally
   recognized—an institutional lapse in private-sector resilience. Defra (Environment, Food and Rural Affairs)
-  dominated with over 130 actions, though only a small portion were fully or significantly addressed. Departments
+  dominated, although only a small portion of actions were fully or significantly addressed. Departments
   with cross-sectoral mandates such as DSIT (Science & Technology) and HMT (Treasury) had smaller action bases
   and weaker scores. No department had more than {
     ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)

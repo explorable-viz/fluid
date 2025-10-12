@@ -87,7 +87,7 @@ instance Viewable BarChart Unit where
       createLegend :: Dimensions Int -> D3.Selection -> Effect Unit
       createLegend (Dimensions interior') parent' = do
          legend' <- parent' # create G
-            [ translate { x: interior'.width + 30, y: max 0 $ (interior'.height - height) / 2 } ]
+            [ translate { x: interior'.width + 0, y: max 0 $ (interior'.height - height) / 2 } ]
          void $ legend' # create Rect
             [ classes [ "legend-box" ], "x" ⟼ 0, "y" ⟼ 0, "height" ⟼ height, "width" ⟼ width ]
          forWithIndex_ props.ys \y_index y -> do
@@ -149,7 +149,8 @@ barChartProps (BarChart { caption, size, stackedBars }) =
    Dimensions { width, height } = size <#> contents
 
    margin :: Margin
-   margin = { top: 3, right: 75, bottom: 30, left: 30 }
+   -- previously some right margin hack to accommodate legend
+   margin = { top: 3, right: 20, bottom: 30, left: 20 }
 
    interior :: Dimensions Int
    interior = Dimensions
