@@ -54,7 +54,17 @@ def actions_with_score(action_counts, eval_score):
   else: sum([ r.z for r in action_counts if r.y == eval_score ]) / total
 
 def max_with_score(actions, eval_score):
-  maximum([ actions_with_score(actions_.segments, eval_score) for actions_ in actions ])
+  maximum([ actions_with_score(action_counts.segments, eval_score) for action_counts in actions ])
+
+def nat_env_and_infrastructure:
+  def actions: actions_by("Action Owner", [ "Defra" ]) #, "DESNZ", "DfT", "DLUHC" ])
+  sum([
+      sum([
+      actions_with_score(action_counts.segments, eval_score)
+      for eval_score in ["Fully addressed", "Minimally addressed"]
+    ])
+    for action_counts in actions
+  ])
 
 MultiView([
   BarChart({
@@ -81,8 +91,8 @@ MultiView([
   although a small portion was fully or significantly addressed. Meanwhile, departments with key cross-sectoral
   mandates such as DSIT (Science & Technology) and HMT (Treasury) had a smaller action base and weaker scores.
   No department had more than {
-  ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)
-  }% of its actions fully addressed, and in many, the largest category was “minimally addressed.” These gaps
+  numToStr(ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)) ++ "%"
+  } of its actions fully addressed, and in many, the largest category was “minimally addressed.” These gaps
   point to a fragmented governance ecosystem where adaptation is siloed, under-resourced, or misaligned with the
   urgency of the climate crisis.
   """,
