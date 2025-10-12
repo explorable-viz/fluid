@@ -11,13 +11,13 @@ def actions_by(key, keys):
           z: count_if(
             lambda action:
               action[ key ] == key_ |and| action[ "Evaluation score" ] == eval_score,
-            evaluation
+            ccra3_actions
           ) } for eval_score in eval_scores
       ] } for key_ in keys
   ]
 
 def risks_:
-  dict([ (r[ "ID#" ], r) for r in risks ])
+  dict([ (r[ "ID#" ], r) for r in nap3_risks ])
 
 def actions_by_chapter:
   [ { x: chapter,
@@ -26,7 +26,7 @@ def actions_by_chapter:
           z: count_if(
             lambda action:
               risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score,
-            evaluation
+            ccra3_actions
           ) } for eval_score in eval_scores
       ] } for chapter in [ "3", "4", "5", "6", "7" ]
   ]
@@ -71,6 +71,12 @@ def by_nat_env_and_infra:
   actions_by("Action Owner", nat_env_and_infra_depts)
 
 MultiView([
+  f"""
+  Climate Change Risk Assessment (CCRA3) identified {
+    length(nub([ risk[ "Risk or Opportunity Descriptor" ] for risk in nap3_risks ]))
+  } risks/opportunities for the UK;
+  this report evaluates extent to which NAP3 commitments actually address them.
+  """,
   BarChart({
     caption: "NAP3 actions by chapter",
     size: { width: 275, height: 185 },
@@ -110,7 +116,7 @@ MultiView([
   # Of the {
   #   Link(
   #     [ (risk[ "Chapter" ], risk[ "Risk or Opportunity Descriptor" ])
-  #       for risk in risks if risk[ "CCC Priority" ] == "Yes"
+  #       for risk in nap3_risks if risk[ "CCC Priority" ] == "Yes"
   #     ],
   #     "committee's priority risks"
   #   )

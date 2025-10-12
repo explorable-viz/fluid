@@ -216,8 +216,11 @@ td.table-cell {
    stroke-width: 1;
 }
 
-.para-text {
+.para-text + .para-text {
    margin-top: 0.75em;
+}
+
+.para-text {
    font-size: 10pt;
 }
 
