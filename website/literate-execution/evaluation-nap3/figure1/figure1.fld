@@ -34,6 +34,9 @@ def actions_by_chapter:
 def departments:
   [ "DBT", "DCMS", "Defra", "DESNZ", "DfT", "DHSC", "DLUHC", "DSIT", "FCDO", "HMT", "MoJ" ]
 
+def nat_env_and_infra_depts:
+  [ "Defra", "DESNZ", "DfT", "DLUHC" ]
+
 def by_action_owner:
   actions_by("Action Owner", departments)
 
@@ -62,11 +65,13 @@ def proportion_actions_with_score(action_counts, eval_score):
 def max_with_score(actions, eval_score):
   maximum([ proportion_actions_with_score(action_counts.segments, eval_score) for action_counts in actions ])
 
-def nat_env_and_infrastructure:
+def by_nat_env_and_infra:
+  actions_by("Action Owner", nat_env_and_infra_depts)
+
+def nat_env_and_infra:
   sum([
-    proportion_actions_with_score(action_counts.segments, eval_score)
-    for eval_score in [ "Fully addressed", "Minimally addressed" ]
-    for action_counts in actions_by("Action Owner", [ "Defra", "DESNZ", "DfT", "DLUHC" ])
+    actions_with_score(action_counts.segments, eval_score)
+    for eval_score in [ "Fully addressed", "Minimally addressed" ] for action_counts in by_nat_env_and_infra
   ])
 
 MultiView([
@@ -86,9 +91,10 @@ MultiView([
   }),
   # Sectoral and Departmental Disparities Signal Policy Misalignment
   f"""
-  Disaggregating by department revealed acute disparities in government response. Natural environment and
-  infrastructure sectors performed relatively well, with over {
-    nat_env_and_infrastructure
+  Disaggregating by department revealed acute disparities in government response. {
+    Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
+  } performed relatively well, with over {
+    nat_env_and_infra
   }
   70% of their actions at least “minimally addressed.”
   In contrast, business and industry actions lagged severely, with nearly half either unaddressed or only
