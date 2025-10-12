@@ -89,13 +89,14 @@ MultiView([
   Disaggregating by department revealed acute disparities in government response. {
     Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
   } performed relatively well, with over {
-    sum([
-      actions_with_score(action_counts.segments, eval_score)
-      for eval_score in [ "Fully addressed", "Minimally addressed" ]
-      for action_counts in by_nat_env_and_infra
-    ])
-  }
-  70% of their actions at least “minimally addressed.”
+      sum([
+        actions_with_score(action_counts.segments, eval_score)
+        for eval_score in [ "Fully addressed", "Minimally addressed" ]
+        for action_counts in by_nat_env_and_infra
+      ])
+  } of {
+      sum([ total_actions(action_counts.segments) for action_counts in by_nat_env_and_infra])
+  } actions at least “minimally addressed.”
   In contrast, business and industry actions lagged severely, with nearly half either unaddressed or only
   nominally recognized. This suggests an institutional lapse where private sector resilience is concerned. At
   the departmental level, Defra (Dept. for Environment, Food and Rural Affairs) dominated with over 130 actions,
