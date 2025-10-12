@@ -83,7 +83,7 @@ MultiView([
   No department had more than {
   ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)
   }% of its actions fully addressed, and in many, the largest category was “minimally addressed.” These gaps
-  poin to a fragmented governance ecosystem where adaptation is siloed, under-resourced, or misaligned with the
+  point to a fragmented governance ecosystem where adaptation is siloed, under-resourced, or misaligned with the
   urgency of the climate crisis.
   """,
   f"""
