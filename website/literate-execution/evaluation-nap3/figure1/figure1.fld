@@ -72,7 +72,7 @@ def by_nat_env_and_infra:
 
 MultiView([
   BarChart({
-    caption: "NAP3 actions against CCRA3 risks by chapter",
+    caption: "NAP3 actions by chapter",
     size: { width: 275, height: 185 },
     tickLabels: { x: Default, y: Default },
     stackedBars: actions_by_chapter,
