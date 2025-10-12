@@ -99,7 +99,7 @@ MultiView([
   Of the {
     Link(
       [ (risk[ "Chapter" ], risk[ "Risk or Opportunity Descriptor" ])
-        for risk in risks if risk[ "Committee Priority risk" ] == "Yes"
+        for risk in risks if risk[ "CCC Priority" ] == "Yes"
       ],
       "committee's priority risks"
     )

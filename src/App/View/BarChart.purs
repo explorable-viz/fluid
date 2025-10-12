@@ -76,7 +76,7 @@ instance Viewable BarChart Unit where
       createAxes parent' = do
          let Point { x: xLabels, y: yLabels } = tickLabels
          x <- create_xAxis parent' props.scales props.xs (unwrap props.interior).height (contents xLabels)
-         y <- create_yAxis parent' props.scales 3.0 (contents yLabels)
+         y <- create_yAxis parent' props.scales 3.0 0 (contents yLabels)
          pure { x, y }
 
       createStackedBars :: D3.Selection -> Effect Unit
