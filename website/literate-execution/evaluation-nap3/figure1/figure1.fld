@@ -57,22 +57,18 @@ def total_actions(action_counts):
 def actions_with_score(action_counts, eval_score):
   sum([ r.z for r in action_counts if r.y == eval_score ])
 
-def proportion_actions_with_score(action_counts, eval_score):
-  def total: total_actions(action_counts)
-  if total == 0: 0
-  else: actions_with_score(action_counts, eval_score) / total
+def proportion(x, y):
+  if y == 0: 0
+  else: x / y
 
 def max_with_score(actions, eval_score):
-  maximum([ proportion_actions_with_score(action_counts.segments, eval_score) for action_counts in actions ])
+  maximum([
+    proportion(actions_with_score(action_counts.segments, eval_score), total_actions(action_counts.segments))
+    for action_counts in actions
+  ])
 
 def by_nat_env_and_infra:
   actions_by("Action Owner", nat_env_and_infra_depts)
-
-def nat_env_and_infra:
-  sum([
-    actions_with_score(action_counts.segments, eval_score)
-    for eval_score in [ "Fully addressed", "Minimally addressed" ] for action_counts in by_nat_env_and_infra
-  ])
 
 MultiView([
   BarChart({
@@ -89,12 +85,15 @@ MultiView([
     stackedBars: by_action_owner,
     legend: True
   }),
-  # Sectoral and Departmental Disparities Signal Policy Misalignment
   f"""
   Disaggregating by department revealed acute disparities in government response. {
     Link(nat_env_and_infra_depts, "Natural environment and infrastructure sectors")
   } performed relatively well, with over {
-    nat_env_and_infra
+    sum([
+      actions_with_score(action_counts.segments, eval_score)
+      for eval_score in [ "Fully addressed", "Minimally addressed" ]
+      for action_counts in by_nat_env_and_infra
+    ])
   }
   70% of their actions at least “minimally addressed.”
   In contrast, business and industry actions lagged severely, with nearly half either unaddressed or only
@@ -103,8 +102,8 @@ MultiView([
   although a small portion was fully or significantly addressed. Meanwhile, departments with key cross-sectoral
   mandates such as DSIT (Science & Technology) and HMT (Treasury) had a smaller action base and weaker scores.
   No department had more than {
-    numToStr(ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)) ++ "%"
-  } of its actions fully addressed, and in many, the largest category was “minimally addressed.” These gaps
+    ceiling(max_with_score(by_action_owner, "Fully addressed") * 100)
+  }% of its actions fully addressed, and in many, the largest category was “minimally addressed.” These gaps
   point to a fragmented governance ecosystem where adaptation is siloed, under-resourced, or misaligned with the
   urgency of the climate crisis.
   """,
