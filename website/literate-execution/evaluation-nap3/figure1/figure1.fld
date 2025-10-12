@@ -11,7 +11,7 @@ def actions_by(key, keys):
           z: count_if(
             lambda action:
               action[ key ] == key_ |and| action[ "Evaluation score" ] == eval_score,
-            eval_data
+            evaluation
           ) } for eval_score in eval_scores
       ] } for key_ in keys
   ]
@@ -26,7 +26,7 @@ def actions_by_chapter:
           z: count_if(
             lambda action:
               risks_[ action[ "Risk ID#" ] ][ "Chapter" ] == chapter |and| action[ "Evaluation score" ] == eval_score,
-            eval_data
+            evaluation
           ) } for eval_score in eval_scores
       ] } for chapter in [ "3", "4", "5", "6", "7" ]
   ]
